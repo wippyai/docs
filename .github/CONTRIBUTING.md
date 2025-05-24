@@ -48,7 +48,7 @@ If you encounter any issues in the documentation or have suggestions for improve
 
 ### Proposing Changes
 
-Before making significant changes, it’s a good idea to discuss them with the maintainers:
+Before making significant changes, it's a good idea to discuss them with the maintainers:
 
 1. Open a new issue or comment on an existing one to propose your changes.
 2. Provide a clear explanation of the changes and why they are necessary.
@@ -84,17 +84,27 @@ Before making significant changes, it’s a good idea to discuss them with the m
 
 To maintain consistency and quality, please adhere to the following standards:
 
-1. **Markdown Formatting**:
+1. **Documentation Engine**:
+    - We use **Writeside** as our documentation engine.
+      See the [Writeside documentation](https://www.jetbrains.com/help/writerside) for detailed guidance.
+    - Contributors must follow Writeside conventions and best practices.
+    - Prefer **Markdown files** over XML format wherever possible.
+    - Use **semantic tags** to enhance content structure and meaning.
+
+2. **Markdown Formatting**:
     - Use proper heading levels (`#`, `##`, `###`, etc.).
     - Use code blocks for examples and commands.
     - Write clear and concise descriptions.
-2. **Style Guidelines**:
+
+3. **Style Guidelines**:
     - Follow the existing tone and style of the documentation.
     - Use American English for spelling and grammar.
-3. **Code Examples**:
+
+4. **Code Examples**:
     - Ensure all code examples are functional and tested.
     - Use proper syntax highlighting in code blocks (e.g., ` ```yaml `, ` ```bash `).
-4. **File Naming**:
+
+5. **File Naming**:
     - Use lowercase and hyphens for file names (e.g., `module-overview.md`).
 
 ---
