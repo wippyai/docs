@@ -21,3 +21,7 @@
 
 > [!NOTE]
 > This documentation is actively being developed. Content may be incomplete or subject to updates.
+
+## Contributing
+
+We welcome contributions to improve our documentation! Please read our [Contributing Guide](.github/CONTRIBUTING.md) to get started.
