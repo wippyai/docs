@@ -91,20 +91,25 @@ To maintain consistency and quality, please adhere to the following standards:
     - Prefer **Markdown files** over XML format wherever possible.
     - Use **semantic tags** to enhance content structure and meaning.
 
-2. **Markdown Formatting**:
+2. **LLM Assistance**: If you're using AI language models to help with documentation:
+    - Review the [Writerside LLM Guide](../context/writerside-llm-guide.md) for best practices
+    - This guide covers Markdown-first approach with semantic XML integration
+    - Always review and validate AI-generated content before submitting
+
+3. **Markdown Formatting**:
     - Use proper heading levels (`#`, `##`, `###`, etc.).
     - Use code blocks for examples and commands.
     - Write clear and concise descriptions.
 
-3. **Style Guidelines**:
+4. **Style Guidelines**:
     - Follow the existing tone and style of the documentation.
     - Use American English for spelling and grammar.
 
-4. **Code Examples**:
+5. **Code Examples**:
     - Ensure all code examples are functional and tested.
     - Use proper syntax highlighting in code blocks (e.g., ` ```yaml `, ` ```bash `).
 
-5. **File Naming**:
+6. **File Naming**:
     - Use lowercase and hyphens for file names (e.g., `module-overview.md`).
 
 ---
