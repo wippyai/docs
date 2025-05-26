@@ -1,32 +1,39 @@
 # Dependency Management
 
-<!--
-TOC: Core Concepts > Configuration & Registry > Dependency Management
-Audience: All users
-Duration: 20 minutes
-Prerequisites: Component Types understanding
+<!-- Metadata -->
+<!-- 
+Topic: Component Dependencies
+Type: Conceptual Guide
+Audience: Developers building complex applications
+Estimated Reading Time: 18 minutes
+Prerequisites: Understanding of component types
+TOC: w.tree → core-concepts-deep → configuration-registry → dependency-management.md
 -->
 
-## Purpose
-
-Learn how to manage component dependencies, lifecycle ordering, and complex relationships in Wippy applications.
+**Purpose:** Master component dependency management including lifecycle ordering, circular dependency detection, and strategies for building reliable application startup sequences.
 
 ## Plan
 
-1. **Dependency types** - Hard dependencies vs. soft references
-2. **Lifecycle management** - Startup and shutdown ordering
-3. **Circular dependencies** - Detection and resolution
-4. **Dynamic dependencies** - Runtime component discovery
-5. **Health checking** - Ensuring dependency availability
+This guide will cover:
 
-This guide explains how to build complex applications with properly managed component relationships.
+1. **Dependency Concepts** - Why dependencies matter and common patterns
+2. **Explicit Dependencies** - Declaring component relationships
+3. **Lifecycle Management** - Startup ordering and shutdown sequences
+4. **Circular Dependencies** - Detection and resolution strategies
+5. **Conditional Dependencies** - Optional and environment-specific dependencies
+6. **Dependency Injection** - Providing dependencies to components
+7. **Troubleshooting** - Debugging dependency issues and failures
 
-<!--
-Implementation will cover:
-- depends_on metadata and lifecycle configuration
-- Component startup and shutdown ordering
-- Circular dependency detection and resolution
-- Dynamic component registration and discovery
-- Health checking and dependency monitoring
-- Error handling for missing dependencies
--->
+## Implementation Notes
+
+- Show dependency declaration syntax in component configurations
+- Demonstrate dependency resolution algorithms and ordering
+- Include lifecycle management with auto_start and depends_on
+- Provide circular dependency detection and resolution examples
+- Show conditional dependency patterns for different environments
+- Include dependency injection patterns for loose coupling
+- Provide debugging tools and techniques for dependency problems
+
+---
+
+*Content to be written: Complete guide to managing component dependencies, lifecycle ordering, and building reliable application startup sequences.*

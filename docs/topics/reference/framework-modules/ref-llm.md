@@ -1,34 +1,39 @@
-# ref-llm
+# llm module
 
-<!--
-TOC: Reference > Framework Modules > llm
-Audience: AI developers
-Duration: Reference
-Prerequisites: LLM concepts understanding
+<!-- Metadata -->
+<!-- 
+Topic: LLM Module Reference
+Type: API Reference
+Audience: Developers integrating with language models
+Estimated Reading Time: 25 minutes
+Prerequisites: Understanding of LLM concepts
+TOC: w.tree → reference → framework-modules → ref-llm.md
 -->
 
-## Purpose
-
-Complete API reference for the llm module that provides unified interface for working with large language models.
+**Purpose:** Complete API reference for the llm module, covering language model integration, text generation, tool calling, and embeddings functionality.
 
 ## Plan
 
-Comprehensive reference covering:
+This reference will cover:
 
-- Model discovery and capabilities
-- Text generation and completion
-- Tool calling and function execution
-- Structured output generation
-- Embedding and vector operations
-- Multi-provider support
+1. **Module Overview** - LLM integration capabilities and providers
+2. **Text Generation** - Completion and chat functionality
+3. **Tool Calling** - Function calling and structured outputs
+4. **Embeddings** - Vector generation and similarity operations
+5. **Model Discovery** - Available models and capabilities
+6. **Configuration** - Provider setup and authentication
+7. **Function Reference** - Complete API with examples
 
-<!--
-Content will include:
-- llm.* function signatures and options
-- Model provider configuration
-- Generation parameters and options
-- Tool calling protocols and formats
-- Embedding and vector operations
-- Error handling and retry strategies
-- Performance optimization guidelines
--->
+## Implementation Notes
+
+- Document all LLM module functions with provider compatibility
+- Include configuration examples for different LLM providers
+- Provide examples for chat, completion, and tool calling workflows
+- Show error handling for API failures and rate limiting
+- Include best practices for prompt engineering and token management
+- Cross-reference with agent framework integration
+- Provide performance optimization and cost management tips
+
+---
+
+*Content to be written: Complete API reference for LLM module with provider integration examples and usage patterns.*

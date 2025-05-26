@@ -1,32 +1,39 @@
 # Agent Architecture
 
-<!--
-TOC: Core Concepts > AI Agents Framework > Agent Architecture
-Audience: Developers familiar with LLMs
-Duration: 20 minutes
-Prerequisites: Basic LLM understanding
+<!-- Metadata -->
+<!-- 
+Topic: Agent System Design
+Type: Conceptual Guide
+Audience: Developers building AI agents
+Estimated Reading Time: 20 minutes
+Prerequisites: Understanding of actor model and LLMs
+TOC: w.tree → core-concepts-deep → ai-agents-framework → agent-architecture.md
 -->
 
-## Purpose
-
-Understand how Wippy's AI agents are structured, configured, and integrated with the actor model runtime for scalable AI applications.
+**Purpose:** Understand how Wippy agents integrate with the actor model, their internal architecture, and how configuration drives agent behavior and capabilities.
 
 ## Plan
 
-1. **Agent as process** - How agents run within Wippy's actor model
-2. **Configuration-driven design** - YAML-based agent definitions
-3. **Component integration** - Connecting agents to tools and data
-4. **Runtime behavior** - How agents process messages and generate responses
-5. **Scaling patterns** - Multiple agent instances and load distribution
+This guide will cover:
 
-This guide explains the architectural foundation that makes Wippy agents powerful and scalable.
+1. **Agent as Actor** - How agents operate within actor model processes
+2. **Configuration Structure** - YAML-based agent definitions and metadata
+3. **Runtime Architecture** - Agent lifecycle and message processing
+4. **LLM Integration** - Connection to language model providers
+5. **System Message Construction** - How prompts, traits, and memory combine
+6. **Tool Execution** - Agent capability extension through tools
+7. **State Management** - Conversation context and agent memory
 
-<!--
-Implementation will cover:
-- agent.gen1 registry entry structure
-- Agent process lifecycle and message handling
-- System message construction from prompts and traits
-- Tool integration and function calling
-- Memory management and context handling
-- Agent-to-agent communication patterns
--->
+## Implementation Notes
+
+- Show agent registry entry structure and required fields
+- Explain how agents inherit from base actor functionality
+- Demonstrate agent spawning and lifecycle management
+- Include LLM provider configuration and connection handling
+- Show system message assembly from multiple sources
+- Provide tool integration architecture and execution flow
+- Include debugging techniques for agent behavior and responses
+
+---
+
+*Content to be written: Detailed explanation of agent architecture, showing how AI capabilities integrate seamlessly with actor model processes and configuration-driven design.*

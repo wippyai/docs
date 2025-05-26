@@ -1,30 +1,40 @@
 # Basic Agent Creation
 
-<!--
-TOC: Getting Started > Your First Wippy Application > Basic Agent Creation
+<!-- Metadata -->
+<!-- 
+Topic: First AI Agent Tutorial
+Type: Hands-on Tutorial
 Audience: Beginners
-Duration: 20 minutes
+Estimated Reading Time: 20 minutes
 Prerequisites: Hello World Process completed
+TOC: w.tree → getting-started → first-application → basic-agent-creation.md
 -->
 
-## Purpose
-
-Create your first AI agent using Wippy's configuration-driven agent framework, demonstrating how agents interact with processes.
+**Purpose:** Create your first AI-powered agent using Wippy's agent framework, demonstrating how to integrate LLM capabilities with actor model processes.
 
 ## Plan
 
-1. **Agent configuration** - Define agent in YAML with basic prompt
-2. **Agent traits** - Apply conversational trait for natural interaction
-3. **Process integration** - Connect agent to message-handling process
-4. **Simple conversation** - Test agent responses to user input
+This tutorial will cover:
 
-This tutorial bridges the gap between Wippy's actor model and AI capabilities, showing how agents are processes with LLM-powered behavior.
+1. **Agent Configuration** - YAML-based agent definition
+2. **Agent Registry** - Registering agents in the system
+3. **Agent Spawning** - Creating agent processes
+4. **LLM Integration** - Connecting to language models
+5. **Message Processing** - How agents handle conversations
+6. **Testing Conversations** - Interacting with your agent
+7. **Debugging Agents** - Common issues and troubleshooting
 
-<!--
-Implementation will cover:
-- YAML agent definition with registry.entry
-- Basic prompt engineering for agents
-- Using built-in traits like "conversational"
-- agent_gen1 library for running agents
-- Connecting agents to the process messaging system
--->
+## Implementation Notes
+
+- Create agent configuration YAML with basic prompt
+- Set up registry entry for the agent
+- Demonstrate agent spawning and lifecycle
+- Show conversation flow through message passing
+- Include LLM provider configuration (mock or real)
+- Provide testing scripts for agent interaction
+- Add logging and debugging techniques
+- Explain agent vs regular process differences
+
+---
+
+*Content to be written: Step-by-step guide to creating your first AI agent with LLM integration and conversation capabilities.*
