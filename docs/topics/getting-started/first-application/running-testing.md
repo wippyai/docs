@@ -1,31 +1,40 @@
 # Running & Testing
 
-<!--
-TOC: Getting Started > Your First Wippy Application > Running & Testing
+<!-- Metadata -->
+<!-- 
+Topic: Development Workflow Tutorial
+Type: Hands-on Tutorial
 Audience: Beginners
-Duration: 10 minutes
+Estimated Reading Time: 15 minutes
 Prerequisites: Configuration Basics completed
+TOC: w.tree → getting-started → first-application → running-testing.md
 -->
 
-## Purpose
-
-Learn the development workflow for Wippy applications including running, debugging, and testing your first complete application.
+**Purpose:** Learn the development workflow for Wippy applications including running, testing, debugging, and monitoring your processes and agents.
 
 ## Plan
 
-1. **Starting the runtime** - Launch Wippy with your configuration
-2. **Process monitoring** - View running processes and their status
-3. **Message tracing** - Debug message flow between components
-4. **Testing strategies** - Validate behavior and handle errors
-5. **Development tips** - Hot reloading and iterative development
+This tutorial will cover:
 
-This tutorial completes your first Wippy application by showing how to run and verify everything works correctly.
+1. **Starting Applications** - Running Wippy applications and services
+2. **Process Monitoring** - Observing process status and health
+3. **Testing Strategies** - Unit tests and integration testing
+4. **Debugging Techniques** - Logging, tracing, and troubleshooting
+5. **Development Tools** - CLI commands and helpful utilities
+6. **Hot Reloading** - Updating code without full restarts
+7. **Production Readiness** - Preparing for deployment
 
-<!--
-Implementation will cover:
-- wippy run command with config files
-- Process registry and status monitoring
-- Message debugging and tracing tools
-- Error handling and troubleshooting
-- Development workflow best practices
--->
+## Implementation Notes
+
+- Show wippy run commands and configuration options
+- Demonstrate process monitoring and health checks
+- Include testing framework usage and examples
+- Provide debugging workflows and common issues
+- Show CLI tools for process management and inspection
+- Include development server setup with auto-reload
+- Add performance monitoring and profiling basics
+- Provide deployment preparation checklist
+
+---
+
+*Content to be written: Complete development workflow guide from running applications to testing and debugging in development environment.*

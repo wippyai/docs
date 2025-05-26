@@ -1,32 +1,40 @@
 # Demo: Customer Support Bot
 
-<!--
-TOC: Core Concepts > AI Agents Framework > Demo: Customer Support Bot
-Audience: Developers familiar with LLMs
-Duration: 60 minutes
-Prerequisites: Memory & Context understanding
+<!-- Metadata -->
+<!-- 
+Topic: AI Agents Practical Demo
+Type: Hands-on Tutorial
+Audience: Developers ready for practical AI agent application
+Estimated Reading Time: 50 minutes
+Prerequisites: Understanding of all AI agents framework concepts
+TOC: w.tree → core-concepts-deep → ai-agents-framework → support-bot-demo.md
 -->
 
-## Purpose
-
-Build a complete customer support bot that demonstrates agent architecture, tool integration, and context management in a real-world scenario.
+**Purpose:** Build a complete customer support bot that demonstrates agent architecture, tool integration, memory management, and practical AI agent patterns.
 
 ## Plan
 
-1. **Bot architecture** - Agent configuration with support-specific traits
-2. **Knowledge base tool** - Search functionality for support articles
-3. **Ticket creation tool** - Integration with ticketing system
-4. **Conversation flow** - Handling multi-turn support interactions
-5. **Escalation patterns** - Transferring to human agents when needed
+This tutorial will cover:
 
-This hands-on demo shows how to build practical AI agents that can handle real customer support scenarios.
+1. **Bot Architecture** - Agent configuration and component design
+2. **Knowledge Base Integration** - Tool for accessing help documentation
+3. **Memory Management** - Customer context and conversation history
+4. **Multi-turn Conversations** - Maintaining context across interactions
+5. **Tool Composition** - Combining multiple tools for complex workflows
+6. **Error Handling** - Graceful degradation and fallback strategies
+7. **Testing & Evaluation** - Validating bot behavior and responses
 
-<!--
-Implementation will cover:
-- Support agent configuration with appropriate traits
-- Knowledge base search tool implementation
-- Ticket creation and status tools
-- Conversation state management
-- Human handoff patterns and escalation logic
-- Integration with external support systems
--->
+## Implementation Notes
+
+- Create complete support bot with realistic business scenario
+- Implement knowledge base tool with document search capabilities
+- Design memory system for customer context and preferences
+- Build conversation management with context preservation
+- Include tool for ticket creation and status checking
+- Add fallback mechanisms for unknown queries and tool failures
+- Provide testing framework for conversational AI evaluation
+- Include deployment configuration and monitoring setup
+
+---
+
+*Content to be written: Complete hands-on tutorial building a production-ready customer support bot demonstrating all key AI agent framework capabilities.*

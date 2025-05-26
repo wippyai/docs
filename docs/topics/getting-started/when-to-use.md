@@ -2,27 +2,38 @@
 
 <!-- Metadata -->
 <!-- 
-Topic: Use Cases and Decision Guide
+Topic: Use Case Guide
 Type: Decision Guide
-Audience: Technical Decision Makers
-Estimated Reading Time: 15 minutes
-Prerequisites: Understanding of AI/LLM applications
+Audience: Evaluating Users
+Estimated Reading Time: 12 minutes
+Prerequisites: Understanding of Wippy basics
+TOC: w.tree → getting-started → when-to-use.md
 -->
 
-<!-- Content Plan -->
-<!--
-Guide for deciding when Wippy is the right choice:
-- Ideal use cases (AI agents, concurrent systems, microservices)
-- Project characteristics that benefit from Wippy
-- Team skills and requirements
-- Comparison with alternatives (when NOT to use Wippy)
-- Success criteria and project fit assessment
-- Migration considerations from other frameworks
-- Resource requirements and constraints
+**Purpose:** Help developers determine if Wippy is the right choice for their project by outlining ideal use cases, scenarios, and decision criteria.
 
-Should help teams make informed decisions about adopting Wippy.
--->
+## Plan
 
-## Is Wippy Right for Your Project?
+This guide will cover:
 
-*Content to be written: Decision guide covering ideal use cases, project characteristics, team requirements, and when Wippy is (or isn't) the best choice.*
+1. **Ideal Use Cases** - Scenarios where Wippy excels
+2. **Project Characteristics** - Size, complexity, and team considerations
+3. **Technical Requirements** - When actor model + AI agents provide value
+4. **Comparison Matrix** - Wippy vs alternatives for different scenarios
+5. **Decision Framework** - Questions to ask when evaluating
+6. **Migration Considerations** - Moving from existing solutions
+7. **Getting Buy-in** - Convincing stakeholders and teams
+
+## Implementation Notes
+
+- Create decision tree for "Should I use Wippy?"
+- Include real project examples with rationale
+- Provide comparison table with other frameworks
+- Add checklist of project characteristics that favor Wippy
+- Include performance and scalability considerations
+- Address common concerns about adopting new technology
+- Provide templates for technical proposals and evaluations
+
+---
+
+*Content to be written: Comprehensive guide to help developers determine when Wippy is the right choice for their AI application projects.*

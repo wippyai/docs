@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/xhtml-entities.dtd">
+<topic xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://resources.jetbrains.com/writerside/1.0/topic.v2.xsd"
+       title="Wippy Framework" id="overview">
+
+    <section-starting-page>
+        <title>Wippy Framework Documentation</title>
+        <description>
+            Build powerful AI-driven applications with actor model concurrency and intelligent agents.
+            Wippy combines a high-performance Golang runtime implementing the actor model with a 
+            flexible Lua-based framework for creating intelligent AI agents and scalable applications.
+        </description>
+
+        <spotlight>
+            <a href="what-is-wippy.md" type="start" summary="Learn about Wippy's unique architecture combining Golang runtime with Lua-based AI agents">What is Wippy?</a>
+            <a href="installation.md" type="install" summary="Get Wippy running on your system in minutes with step-by-step installation guide">Quick Start</a>
+        </spotlight>
+
+        <primary>
+            <title>Get started with Wippy</title>
+            <a href="first-application.md" type="academy" summary="Build your first Wippy application with processes and agents in 30 minutes">Your First Application</a>
+            <a href="actor-model.md" type="mixed" summary="Master the actor model with processes, messages, supervision trees, and concurrency patterns">Actor Model Guide</a>
+            <a href="ai-agents-framework.md" type="computer" summary="Create intelligent agents with LLMs, tools, delegation, and multi-agent workflows">AI Agents Framework</a>
+            <a href="techsupport-pro.md" type="presentation" summary="Complete tutorial building a production-ready multi-agent customer support system">TechSupport Pro Tutorial</a>
+        </primary>
+
+        <secondary>
+            <title>Build applications</title>
+            <a href="http-services-apis.md" summary="Create REST APIs and web services with HTTP components, routing, and middleware">HTTP Services &amp; APIs</a>
+            <a href="data-management.md" summary="Work with SQL databases, key-value stores, file systems, and cloud storage">Data Management</a>
+            <a href="agent-composition.md" summary="Build complex agent hierarchies with inheritance, delegation, and trait composition">Agent Composition</a>
+            <a href="distributed-systems.md" summary="Scale across multiple nodes with process distribution and fault tolerance">Distributed Systems</a>
+        </secondary>
+
+        <misc>
+            <cards>
+                <title>Reference Documentation</title>
+                <a href="framework-modules.md" summary="Complete reference for all 40+ framework modules including process, http, llm, and security">Framework Modules</a>
+                <a href="configuration-reference.md" summary="YAML configuration syntax and options for all component types">Configuration Reference</a>
+                <a href="api-reference.md" summary="Process, message, channel, registry, and agent APIs with examples">API Reference</a>
+            </cards>
+
+            <cards>
+                <title>Learning Paths</title>
+                <a href="first-application.md" summary="Perfect for developers new to actor model or AI agents (4-5 hours)">Beginner Path</a>
+                <a href="ai-agents-framework.md" summary="For developers experienced with LLMs and AI (3-4 hours)">LLM Developer Path</a>
+                <a href="http-services-apis.md" summary="For backend developers building web services (5-6 hours)">Backend Developer Path</a>
+            </cards>
+
+            <cards>
+                <title>Core Concepts</title>
+                <a href="processes-pids.md" summary="Understanding process lifecycle and identification">Processes &amp; PIDs</a>
+                <a href="message-passing.md" summary="Communication patterns and channel operations">Message Passing</a>
+                <a href="agent-architecture.md" summary="How AI agents are structured and configured">Agent Architecture</a>
+            </cards>
+
+            <cards>
+                <title>Quick Examples</title>
+                <a href="example-chat-bot.md" summary="Simple conversational AI agent">Chat Bot</a>
+                <a href="example-api-service.md" summary="REST API with agent-powered endpoints">API Service</a>
+                <a href="example-multi-agent.md" summary="Coordinated multi-agent workflow">Multi-Agent System</a>
+            </cards>
+
+            <cards>
+                <title>Advanced Topics</title>
+                <a href="custom-extensions.md" summary="Extend the framework with custom Go modules and Lua components">Custom Extensions</a>
+                <a href="production-deployment.md" summary="Deploy, monitor, secure, and scale Wippy applications in production">Production Deployment</a>
+                <a href="best-practices.md" summary="Design patterns and best practices for processes, agents, and configuration">Best Practices</a>
+            </cards>
+
+            <cards>
+                <title>Help &amp; Community</title>
+                <a href="troubleshooting.md" summary="Common issues, debugging techniques, and performance troubleshooting">Troubleshooting Guide</a>
+                <a href="examples.md" summary="Real-world examples and code samples for various use cases">Examples &amp; Tutorials</a>
+                <a href="contributing.md" summary="How to contribute code, documentation, and examples to the Wippy project">Contributing</a>
+            </cards>
+        </misc>
+    </section-starting-page>
+
+</topic>

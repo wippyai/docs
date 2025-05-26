@@ -1,30 +1,38 @@
 # Hello World Process
 
-<!--
-TOC: Getting Started > Your First Wippy Application > Hello World Process
+<!-- Metadata -->
+<!-- 
+Topic: First Process Tutorial
+Type: Hands-on Tutorial
 Audience: Beginners
-Duration: 15 minutes
+Estimated Reading Time: 15 minutes
 Prerequisites: Installation complete
+TOC: w.tree → getting-started → first-application → hello-world-process.md
 -->
 
-## Purpose
-
-Learn how to create your first Wippy process that demonstrates basic message passing and the actor model fundamentals.
+**Purpose:** Learn how to create your first Wippy process that demonstrates basic message passing and the actor model fundamentals.
 
 ## Plan
 
-1. **Create a simple process** - Basic Lua process with run function
-2. **Implement message handling** - Listen for messages and respond
-3. **Process spawning** - Start the process and send it messages
-4. **Testing the interaction** - Verify message passing works correctly
+This tutorial will cover:
 
-This tutorial introduces the core concept of processes in Wippy, showing how they communicate through message passing rather than shared state.
+1. **Process Structure** - Basic Lua process with run function
+2. **Message Handling** - Listen for messages and respond appropriately
+3. **Process Spawning** - Start the process and communicate with it
+4. **Testing Interaction** - Verify message passing works correctly
+5. **Understanding Output** - Interpreting process behavior and logs
+6. **Common Patterns** - Basic request-response communication
 
-<!--
-Implementation will cover:
-- Basic process.lua structure
-- Using process.listen() for message handling
-- Spawning processes with process.spawn()
-- Sending messages with process.send()
-- Simple request-response pattern
--->
+## Implementation Notes
+
+- Create basic process.lua file with proper structure
+- Demonstrate process.listen() for topic-based message handling
+- Show process.spawn() for creating new process instances
+- Use process.send() for inter-process communication
+- Include debugging tips and common error messages
+- Provide complete working example with test commands
+- Explain process lifecycle and cleanup
+
+---
+
+*Content to be written: Step-by-step tutorial for creating and testing your first Wippy process with message passing capabilities.*

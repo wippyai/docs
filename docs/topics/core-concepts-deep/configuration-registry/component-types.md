@@ -1,32 +1,39 @@
 # Component Types
 
-<!--
-TOC: Core Concepts > Configuration & Registry > Component Types
-Audience: All users
-Duration: 25 minutes
-Prerequisites: YAML Configuration understanding
+<!-- Metadata -->
+<!-- 
+Topic: Registry Component Types
+Type: Reference Guide
+Audience: Developers configuring applications
+Estimated Reading Time: 25 minutes
+Prerequisites: Understanding of registry system and YAML
+TOC: w.tree → core-concepts-deep → configuration-registry → component-types.md
 -->
 
-## Purpose
-
-Comprehensive overview of all component types available in Wippy, their purposes, and configuration options.
+**Purpose:** Learn about all available component types in Wippy's registry system, their configuration options, and when to use each type for building applications.
 
 ## Plan
 
-1. **Component categories** - Organization by functional area
-2. **Core components** - Processes, functions, and runtime elements
-3. **Infrastructure components** - HTTP, databases, storage, security
-4. **AI components** - Agents, tools, and LLM integrations
-5. **Custom components** - Extending Wippy with new types
+This guide will cover:
 
-This guide serves as a reference for all available component types and their use cases.
+1. **Component Overview** - Categories and common patterns
+2. **HTTP Components** - Services, routers, endpoints, static files
+3. **Process Components** - Hosts, services, and Lua processes
+4. **Data Components** - Databases, stores, filesystems, cloud storage
+5. **Security Components** - Authentication, authorization, token management
+6. **Template Components** - Template sets and rendering engines
+7. **Custom Components** - Extending with new component types
 
-<!--
-Implementation will cover:
-- Complete component type taxonomy
-- Configuration examples for each type
-- Common use cases and patterns
-- Integration between component types
-- Best practices for component selection
-- Custom component development guidelines
--->
+## Implementation Notes
+
+- Provide comprehensive catalog of all built-in component types
+- Show configuration examples for each component type
+- Include common configuration patterns and best practices
+- Demonstrate component relationships and dependencies
+- Provide troubleshooting guides for each component type
+- Include performance considerations and optimization tips
+- Show how to create custom component types when needed
+
+---
+
+*Content to be written: Comprehensive reference for all Wippy component types with configuration examples and usage guidance.*

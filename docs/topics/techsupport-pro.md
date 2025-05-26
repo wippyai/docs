@@ -1,27 +1,39 @@
-# TechSupport Pro Tutorial
+# Tutorial: TechSupport Pro
 
 <!-- Metadata -->
 <!-- 
 Topic: Complete Application Tutorial
-Type: Multi-Chapter Tutorial
-Audience: All Developers
-Estimated Reading Time: 8 hours total
-Prerequisites: Core concepts completed
+Type: Tutorial Hub
+Audience: Developers ready for comprehensive project
+Estimated Reading Time: 10 minutes
+Prerequisites: Core concepts and building applications knowledge
+TOC: w.tree → techsupport-pro.md
 -->
 
-<!-- Content Plan -->
-<!--
-Comprehensive tutorial building a complete customer support application:
-- Progressive implementation across 6 chapters
-- Demonstrates all major Wippy features
-- Real-world application architecture
-- Integration of Actor Model, AI Agents, HTTP services
-- Deployment and production considerations
-- Extensions and customization opportunities
+**Purpose:** Build a complete customer support system that demonstrates all major Wippy features through a realistic business application with progressive complexity.
 
-Should serve as the definitive practical guide to building Wippy applications.
--->
+## Plan
 
-## TechSupport Pro: Complete Tutorial
+This tutorial series will cover:
 
-*Content to be written: Multi-chapter tutorial for building a complete customer support application demonstrating all major Wippy features and patterns.*
+1. **Application Overview** - Complete system architecture and goals
+2. **Progressive Development** - Building from simple to complex features
+3. **Chapter Structure** - Six progressive implementation chapters
+4. **Key Technologies** - All major Wippy components in practice
+5. **Real-world Patterns** - Production-ready implementation strategies
+6. **Testing & Deployment** - Complete development workflow
+7. **Extension Opportunities** - Ways to expand and customize the system
+
+## Implementation Notes
+
+- Create complete multi-chapter tutorial with realistic business scenario
+- Each chapter builds incrementally on previous chapters
+- Include complete source code with git repository and checkpoints
+- Provide testing strategies and validation for each chapter
+- Include deployment configurations and production considerations
+- Show integration with real external services (LLM providers, databases)
+- Provide troubleshooting guides and common issue resolution
+
+---
+
+*Content to be written: Introduction to comprehensive TechSupport Pro tutorial demonstrating all Wippy capabilities through progressive implementation of complete customer support system.*

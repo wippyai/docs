@@ -1,32 +1,39 @@
 # YAML Configuration
 
-<!--
-TOC: Core Concepts > Configuration & Registry > YAML Configuration
-Audience: All users
-Duration: 20 minutes
-Prerequisites: Registry System understanding
+<!-- Metadata -->
+<!-- 
+Topic: Configuration File Structure
+Type: Reference Guide
+Audience: All developers writing configuration
+Estimated Reading Time: 20 minutes
+Prerequisites: Basic YAML knowledge
+TOC: w.tree → core-concepts-deep → configuration-registry → yaml-configuration.md
 -->
 
-## Purpose
-
-Master Wippy's YAML configuration format, best practices, and advanced features like environment variable interpolation.
+**Purpose:** Master YAML configuration syntax, structure, and best practices for Wippy applications including environment variable interpolation and file organization.
 
 ## Plan
 
-1. **YAML structure** - Standard format and required fields
-2. **Component definition** - Entry anatomy and metadata
-3. **Environment variables** - Dynamic configuration with interpolation
-4. **File organization** - Structuring large configurations
-5. **Validation** - Ensuring configuration correctness
+This guide will cover:
 
-This guide provides comprehensive coverage of Wippy's configuration system for maintainable applications.
+1. **YAML Structure** - Document format and required sections
+2. **Environment Variables** - Interpolation syntax and best practices
+3. **File Organization** - Structuring configurations for maintainability
+4. **Validation** - Syntax checking and error prevention
+5. **Templating** - Reusable configuration patterns
+6. **Environment-Specific Config** - Development, staging, production variations
+7. **Debugging** - Troubleshooting configuration issues
 
-<!--
-Implementation will cover:
-- YAML file structure with version and namespace
-- Registry entry format with kind and meta
-- Environment variable interpolation syntax
-- Configuration file splitting and organization
-- Common configuration patterns and anti-patterns
-- Configuration validation and error handling
--->
+## Implementation Notes
+
+- Show complete YAML document structure with version and namespace
+- Demonstrate environment variable interpolation with default values
+- Include file organization strategies for complex applications
+- Provide YAML validation tools and linting configurations
+- Show configuration templating and inheritance patterns
+- Include environment-specific configuration management
+- Provide debugging workflows for configuration problems
+
+---
+
+*Content to be written: Complete guide to YAML configuration syntax, structure, and organization patterns for building maintainable Wippy applications.*

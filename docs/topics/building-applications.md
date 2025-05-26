@@ -4,24 +4,36 @@
 <!-- 
 Topic: Application Development Hub
 Type: Section Landing Page
-Audience: Developers Ready to Build
+Audience: Developers ready to build real applications
 Estimated Reading Time: 5 minutes
 Prerequisites: Core concepts mastery
+TOC: w.tree → building-applications.md
 -->
 
-<!-- Content Plan -->
-<!--
-Landing page for application building section:
-- Overview of practical application development
-- HTTP services and web development
-- Data management and persistence
-- Agent composition and multi-agent systems
-- Links to major development topics
-- Project planning and architecture guidance
+**Purpose:** Guide developers through building complete Wippy applications including HTTP services, data management, and advanced agent composition patterns.
 
-Should transition from concepts to practical application development.
--->
+## Plan
 
-## Building Applications with Wippy
+This section will cover:
 
-*Content to be written: Introduction to building complete applications using HTTP services, data management, and advanced agent patterns.*
+1. **Application Architecture** - Structuring real-world Wippy applications
+2. **HTTP Services & APIs** - Building web services and REST APIs
+3. **Data Management** - Databases, storage, and data processing
+4. **Agent Composition** - Advanced patterns for multi-agent systems
+5. **Integration Patterns** - Connecting with external systems
+6. **Performance Optimization** - Scaling and optimization strategies
+7. **Production Considerations** - Deployment and operational concerns
+
+## Implementation Notes
+
+- Provide complete application examples with realistic requirements
+- Show progression from simple services to complex multi-component systems
+- Include testing strategies for different application types
+- Demonstrate monitoring and observability patterns
+- Provide performance benchmarking and optimization techniques
+- Include security considerations for production applications
+- Show deployment patterns and infrastructure requirements
+
+---
+
+*Content to be written: Comprehensive guide to building production-ready applications with Wippy, covering web services, data management, and advanced agent patterns.*

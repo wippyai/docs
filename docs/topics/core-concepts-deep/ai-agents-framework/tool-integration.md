@@ -1,32 +1,39 @@
 # Tool Integration
 
-<!--
-TOC: Core Concepts > AI Agents Framework > Tool Integration
-Audience: Developers familiar with LLMs
-Duration: 30 minutes
-Prerequisites: Prompts & Traits understanding
+<!-- Metadata -->
+<!-- 
+Topic: Agent Tool System
+Type: Conceptual Guide
+Audience: Developers extending agent capabilities
+Estimated Reading Time: 22 minutes
+Prerequisites: Understanding of agent architecture and prompts
+TOC: w.tree → core-concepts-deep → ai-agents-framework → tool-integration.md
 -->
 
-## Purpose
-
-Learn how to extend agent capabilities by integrating tools, enabling agents to perform actions beyond text generation.
+**Purpose:** Learn how to extend agent capabilities through tool integration, including tool definition, execution patterns, and building tool ecosystems.
 
 ## Plan
 
-1. **Tool architecture** - How tools work with agents
-2. **Built-in tools** - Wippy's standard tool library
-3. **Custom tool creation** - Building domain-specific tools
-4. **Tool calling flow** - Request, execution, and response cycle
-5. **Error handling** - Managing tool failures gracefully
+This guide will cover:
 
-This guide demonstrates how to make agents truly useful by connecting them to external systems and capabilities.
+1. **Tool Architecture** - How tools integrate with agents and LLMs
+2. **Tool Definition** - Creating tools as registry entries
+3. **Tool Discovery** - How agents find and access available tools
+4. **Execution Patterns** - Tool calling, parameter handling, and responses
+5. **Error Handling** - Managing tool failures and edge cases
+6. **Tool Composition** - Building complex capabilities from simple tools
+7. **Best Practices** - Design principles for effective tools
 
-<!--
-Implementation will cover:
-- Tool registry entries and function definitions
-- Agent tool configuration and wildcards
-- Tool calling protocols and message formats
-- Function.lua implementations for tools
-- Integration with external APIs and databases
-- Tool error handling and fallback strategies
--->
+## Implementation Notes
+
+- Show tool registry entry structure and configuration
+- Demonstrate tool calling flow from LLM through agent to tool
+- Include parameter validation and error handling patterns
+- Provide tool development templates and examples
+- Show tool testing strategies and mock implementations
+- Include performance considerations for tool execution
+- Provide security guidelines for tool access and permissions
+
+---
+
+*Content to be written: Complete guide to building and integrating tools that extend agent capabilities, with patterns for creating robust tool ecosystems.*
