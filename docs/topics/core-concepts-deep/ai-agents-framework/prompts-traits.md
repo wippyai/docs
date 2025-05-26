@@ -1,29 +1,32 @@
 # Prompts & Traits
 
-<!-- Metadata -->
-<!-- 
-Topic: Agent Behavior Configuration
-Type: Configuration Guide
-Audience: AI Developers and Prompt Engineers
-Estimated Reading Time: 45 minutes
-Prerequisites: Agent architecture understanding
--->
-
-<!-- Content Plan -->
 <!--
-Comprehensive guide to prompts and traits system:
-- System message composition and structure
-- Writing effective agent prompts
-- Trait system for reusable behaviors
-- Trait inheritance and composition
-- Prompt engineering best practices
-- Testing and validating agent behavior
-- Common prompt patterns and templates
-- Troubleshooting prompt issues
-
-Should enable creating well-behaved, reliable agents through effective prompting.
+TOC: Core Concepts > AI Agents Framework > Prompts & Traits
+Audience: Developers familiar with LLMs
+Duration: 25 minutes
+Prerequisites: Agent Architecture understanding
 -->
 
-## Agent Prompts and Traits
+## Purpose
 
-*Content to be written: Guide to creating effective agent prompts and using the traits system for composable, reusable agent behaviors.*
+Master Wippy's prompt composition system using traits for building reusable, maintainable agent behaviors and capabilities.
+
+## Plan
+
+1. **Base prompts** - Core agent instructions and personality
+2. **Trait system** - Reusable behavior components
+3. **Prompt composition** - How traits combine with base prompts
+4. **Built-in traits** - Standard traits provided by Wippy
+5. **Custom traits** - Creating domain-specific behaviors
+
+This guide shows how to build sophisticated agent behaviors through modular prompt engineering.
+
+<!--
+Implementation will cover:
+- Agent prompt structure and best practices
+- agent.trait registry entries and definitions
+- Trait inheritance and composition rules
+- Standard traits: conversational, thinking, artifact_handling
+- Creating custom traits for specific domains
+- System message construction process
+-->

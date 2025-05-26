@@ -1,28 +1,30 @@
 # Hello World Process
 
-<!-- Metadata -->
-<!-- 
-Topic: First Process Tutorial
-Type: Step-by-Step Tutorial
-Audience: New Users
-Estimated Reading Time: 45 minutes
-Prerequisites: Wippy installation completed
--->
-
-<!-- Content Plan -->
 <!--
-Hands-on tutorial for creating the first Wippy process:
-- Setting up project structure
-- Creating basic Lua process
-- Writing simple message handling
-- Process spawning and lifecycle
-- Basic debugging and logging
-- Running and testing the process
-- Understanding process output and behavior
-
-Should provide first successful experience with Wippy process creation.
+TOC: Getting Started > Your First Wippy Application > Hello World Process
+Audience: Beginners
+Duration: 15 minutes
+Prerequisites: Installation complete
 -->
 
-## Creating Your First Process
+## Purpose
 
-*Content to be written: Step-by-step tutorial for creating and running a simple Wippy process with message handling and basic lifecycle management.*
+Learn how to create your first Wippy process that demonstrates basic message passing and the actor model fundamentals.
+
+## Plan
+
+1. **Create a simple process** - Basic Lua process with run function
+2. **Implement message handling** - Listen for messages and respond
+3. **Process spawning** - Start the process and send it messages
+4. **Testing the interaction** - Verify message passing works correctly
+
+This tutorial introduces the core concept of processes in Wippy, showing how they communicate through message passing rather than shared state.
+
+<!--
+Implementation will cover:
+- Basic process.lua structure
+- Using process.listen() for message handling
+- Spawning processes with process.spawn()
+- Sending messages with process.send()
+- Simple request-response pattern
+-->

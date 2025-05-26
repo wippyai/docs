@@ -1,29 +1,20 @@
-# HTTP Module Reference
+# ref-http
 
-<!-- Metadata -->
-<!-- 
-Topic: HTTP Module API Reference
-Type: API Reference
-Audience: Web Developers
-Estimated Reading Time: 45 minutes
-Prerequisites: HTTP services understanding
--->
-
-<!-- Content Plan -->
 <!--
-Complete API reference for the HTTP module:
-- Request and response handling
-- Header manipulation and access
-- Query parameter and form data
-- File upload and download
-- Streaming responses
-- Error handling and status codes
-- Middleware integration
-- Security considerations
-
-Should serve as definitive reference for HTTP development in Wippy.
+TOC: Reference > Framework Modules > http
+Audience: Web developers
+Duration: Reference
+Prerequisites: HTTP concepts understanding
 -->
 
-## HTTP Module API Reference
+## Purpose
 
-*Content to be written: Complete API reference for the HTTP module including request/response handling, headers, forms, and streaming.*
+Complete API reference for the http module providing HTTP server request and response handling capabilities.
+
+## Plan
+
+Comprehensive reference covering request/response objects, header management, and HTTP utilities.
+
+<!--
+Content includes http.request(), http.response(), header operations, and HTTP status codes.
+-->

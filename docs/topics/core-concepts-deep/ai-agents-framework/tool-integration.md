@@ -1,29 +1,32 @@
 # Tool Integration
 
-<!-- Metadata -->
-<!-- 
-Topic: Agent Tool System
-Type: Integration Guide
-Audience: Developers Building Agent Tools
-Estimated Reading Time: 60 minutes
-Prerequisites: Prompts & traits understanding
--->
-
-<!-- Content Plan -->
 <!--
-Complete guide to agent tool integration:
-- Tool system architecture and design
-- Creating custom tools for agents
-- Tool configuration and registration
-- Function calling and tool execution
-- Error handling in tool operations
-- Security considerations for tools
-- Tool testing and validation
-- Building tool ecosystems and libraries
-
-Should enable extending agent capabilities through custom tools.
+TOC: Core Concepts > AI Agents Framework > Tool Integration
+Audience: Developers familiar with LLMs
+Duration: 30 minutes
+Prerequisites: Prompts & Traits understanding
 -->
 
-## Extending Agents with Tools
+## Purpose
 
-*Content to be written: Comprehensive guide to the agent tool system, creating custom tools, and integrating external capabilities into agents.*
+Learn how to extend agent capabilities by integrating tools, enabling agents to perform actions beyond text generation.
+
+## Plan
+
+1. **Tool architecture** - How tools work with agents
+2. **Built-in tools** - Wippy's standard tool library
+3. **Custom tool creation** - Building domain-specific tools
+4. **Tool calling flow** - Request, execution, and response cycle
+5. **Error handling** - Managing tool failures gracefully
+
+This guide demonstrates how to make agents truly useful by connecting them to external systems and capabilities.
+
+<!--
+Implementation will cover:
+- Tool registry entries and function definitions
+- Agent tool configuration and wildcards
+- Tool calling protocols and message formats
+- Function.lua implementations for tools
+- Integration with external APIs and databases
+- Tool error handling and fallback strategies
+-->

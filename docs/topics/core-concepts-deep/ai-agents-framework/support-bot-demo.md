@@ -1,29 +1,32 @@
 # Demo: Customer Support Bot
 
-<!-- Metadata -->
-<!-- 
-Topic: Practical Agent Development Demo
-Type: Hands-On Tutorial
-Audience: AI Developers
-Estimated Reading Time: 120 minutes
-Prerequisites: Memory & context understanding
--->
-
-<!-- Content Plan -->
 <!--
-Complete tutorial building a customer support bot:
-- Bot requirements and design
-- Agent configuration and prompt engineering
-- Knowledge base integration
-- Tool development for support functions
-- Conversation flow and context management
-- Testing and validation strategies
-- Deployment and monitoring
-- Enhancement and iteration
-
-Should demonstrate complete agent development workflow with real-world application.
+TOC: Core Concepts > AI Agents Framework > Demo: Customer Support Bot
+Audience: Developers familiar with LLMs
+Duration: 60 minutes
+Prerequisites: Memory & Context understanding
 -->
 
-## Building a Customer Support Bot
+## Purpose
 
-*Content to be written: Complete tutorial for building an intelligent customer support bot with knowledge base integration and support tools.*
+Build a complete customer support bot that demonstrates agent architecture, tool integration, and context management in a real-world scenario.
+
+## Plan
+
+1. **Bot architecture** - Agent configuration with support-specific traits
+2. **Knowledge base tool** - Search functionality for support articles
+3. **Ticket creation tool** - Integration with ticketing system
+4. **Conversation flow** - Handling multi-turn support interactions
+5. **Escalation patterns** - Transferring to human agents when needed
+
+This hands-on demo shows how to build practical AI agents that can handle real customer support scenarios.
+
+<!--
+Implementation will cover:
+- Support agent configuration with appropriate traits
+- Knowledge base search tool implementation
+- Ticket creation and status tools
+- Conversation state management
+- Human handoff patterns and escalation logic
+- Integration with external support systems
+-->
