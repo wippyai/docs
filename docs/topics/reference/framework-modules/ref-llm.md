@@ -1,29 +1,34 @@
-# LLM Module Reference
+# ref-llm
 
-<!-- Metadata -->
-<!-- 
-Topic: LLM Module API Reference
-Type: API Reference
-Audience: AI Developers
-Estimated Reading Time: 60 minutes
-Prerequisites: AI agent concepts
+<!--
+TOC: Reference > Framework Modules > llm
+Audience: AI developers
+Duration: Reference
+Prerequisites: LLM concepts understanding
 -->
 
-<!-- Content Plan -->
-<!--
-Complete API reference for the LLM module:
-- Model configuration and providers
+## Purpose
+
+Complete API reference for the llm module that provides unified interface for working with large language models.
+
+## Plan
+
+Comprehensive reference covering:
+
+- Model discovery and capabilities
 - Text generation and completion
 - Tool calling and function execution
-- Structured output and parsing
-- Embeddings and vector operations
-- Model discovery and capabilities
-- Error handling and rate limiting
-- Performance optimization and caching
+- Structured output generation
+- Embedding and vector operations
+- Multi-provider support
 
-Should serve as definitive reference for LLM integration in Wippy.
+<!--
+Content will include:
+- llm.* function signatures and options
+- Model provider configuration
+- Generation parameters and options
+- Tool calling protocols and formats
+- Embedding and vector operations
+- Error handling and retry strategies
+- Performance optimization guidelines
 -->
-
-## LLM Module API Reference
-
-*Content to be written: Complete API reference for the LLM module including model integration, text generation, tool calling, and embeddings.*

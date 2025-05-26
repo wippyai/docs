@@ -1,29 +1,31 @@
 # Supervision Trees
 
-<!-- Metadata -->
-<!-- 
-Topic: Fault Tolerance and Process Supervision
-Type: Advanced Conceptual Guide
-Audience: Developers Building Robust Systems
-Estimated Reading Time: 45 minutes
-Prerequisites: Message passing understanding
--->
-
-<!-- Content Plan -->
 <!--
-Advanced guide to supervision and fault tolerance:
-- Supervision tree concepts and patterns
-- Process linking and monitoring
-- Fault detection and recovery strategies
-- Restart policies and escalation
-- Supervisor design patterns
-- Error propagation and isolation
-- Building resilient system architectures
-- Real-world supervision examples
-
-Should enable building fault-tolerant systems with proper supervision.
+TOC: Core Concepts > Actor Model in Wippy > Supervision Trees
+Audience: Developers new to actor model
+Duration: 25 minutes
+Prerequisites: Message Passing understanding
 -->
 
-## Building Fault-Tolerant Systems
+## Purpose
 
-*Content to be written: Advanced guide to supervision trees, process monitoring, fault detection, and building resilient architectures in Wippy.*
+Learn how to build fault-tolerant systems using Wippy's supervision trees, process linking, monitoring, and failure recovery strategies.
+
+## Plan
+
+1. **Supervision principles** - Fault tolerance through process hierarchies
+2. **Process linking** - Bi-directional failure propagation
+3. **Process monitoring** - One-way failure notifications
+4. **Restart strategies** - Handling process failures gracefully
+5. **Tree architectures** - Designing supervision hierarchies
+
+This guide shows how to build resilient systems that can recover from failures automatically.
+
+<!--
+Implementation will cover:
+- spawn_linked() and spawn_monitored() functions
+- process.link() and process.monitor() operations
+- trap_links option for custom failure handling
+- System events: EXIT, CANCEL, LINK_DOWN
+- Supervisor process patterns and restart policies
+-->

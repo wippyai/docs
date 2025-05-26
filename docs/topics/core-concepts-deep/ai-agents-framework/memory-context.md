@@ -1,29 +1,32 @@
 # Memory & Context
 
-<!-- Metadata -->
-<!-- 
-Topic: Agent Memory and Context Management
-Type: Technical Guide
-Audience: AI Developers
-Estimated Reading Time: 45 minutes
-Prerequisites: Tool integration understanding
--->
-
-<!-- Content Plan -->
 <!--
-Guide to agent memory and context systems:
-- Memory architecture and types
-- Context management strategies
-- Conversation history handling
-- Long-term vs short-term memory
-- Memory persistence and retrieval
-- Context window optimization
-- Memory sharing between agents
-- Performance considerations for memory
-
-Should enable building agents with effective memory and context handling.
+TOC: Core Concepts > AI Agents Framework > Memory & Context
+Audience: Developers familiar with LLMs
+Duration: 20 minutes
+Prerequisites: Tool Integration understanding
 -->
 
-## Agent Memory and Context
+## Purpose
 
-*Content to be written: Guide to managing agent memory, context, conversation history, and building agents with effective information retention.*
+Understand how agents maintain context, manage memory, and handle conversation state for consistent, personalized interactions.
+
+## Plan
+
+1. **Memory types** - Static knowledge vs. dynamic conversation state
+2. **Context management** - Maintaining conversation history
+3. **Memory configuration** - Files, registry entries, and inline memory
+4. **State persistence** - Storing agent state across interactions
+5. **Context limits** - Managing token limits and memory optimization
+
+This guide explains how to build agents that remember and learn from interactions.
+
+<!--
+Implementation will cover:
+- Agent memory field configuration
+- Conversation history management
+- Memory file references and content
+- Context window management for LLMs
+- State storage using Wippy's store modules
+- Memory optimization strategies
+-->

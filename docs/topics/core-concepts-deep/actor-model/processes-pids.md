@@ -1,29 +1,31 @@
 # Processes & PIDs
 
-<!-- Metadata -->
-<!-- 
-Topic: Process Management Fundamentals
-Type: Conceptual Guide
-Audience: Developers Learning Actor Model
-Estimated Reading Time: 30 minutes
-Prerequisites: Actor Model introduction
--->
-
-<!-- Content Plan -->
 <!--
-Detailed guide to processes and process identification:
-- Process lifecycle (spawn, run, terminate)
-- PID structure and format
-- Process registration and discovery
-- Process hierarchy and relationships
-- Resource management and isolation
-- Process communication patterns
-- Error handling and recovery
-- Code examples and practical patterns
-
-Should provide complete understanding of process management in Wippy.
+TOC: Core Concepts > Actor Model in Wippy > Processes & PIDs
+Audience: Developers new to actor model
+Duration: 15 minutes
+Prerequisites: Basic understanding of concurrency
 -->
 
-## Process Management in Wippy
+## Purpose
 
-*Content to be written: Complete guide to Wippy processes, including lifecycle management, PID structure, registration, and communication patterns.*
+Deep dive into Wippy's process model, process identification, lifecycle management, and how PIDs work in distributed systems.
+
+## Plan
+
+1. **Process anatomy** - Structure and lifecycle of Wippy processes
+2. **PID format** - Understanding process identifiers and addressing
+3. **Process spawning** - Creating processes and managing relationships
+4. **Process states** - Running, stopped, failed, and transitions
+5. **Distributed PIDs** - Cross-node process identification
+
+This guide explains the fundamental unit of computation in Wippy's actor model and how processes are managed.
+
+<!--
+Implementation will cover:
+- Process lifecycle from spawn to termination
+- PID structure: {node@host|namespace:name|procname}
+- spawn(), spawn_monitored(), spawn_linked() functions
+- Process registry for name-based addressing
+- Node distribution and multi-host PIDs
+-->

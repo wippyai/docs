@@ -1,28 +1,30 @@
 # Basic Agent Creation
 
-<!-- Metadata -->
-<!-- 
-Topic: First AI Agent Tutorial
-Type: Step-by-Step Tutorial
-Audience: New Users
-Estimated Reading Time: 30 minutes
+<!--
+TOC: Getting Started > Your First Wippy Application > Basic Agent Creation
+Audience: Beginners
+Duration: 20 minutes
 Prerequisites: Hello World Process completed
 -->
 
-<!-- Content Plan -->
+## Purpose
+
+Create your first AI agent using Wippy's configuration-driven agent framework, demonstrating how agents interact with processes.
+
+## Plan
+
+1. **Agent configuration** - Define agent in YAML with basic prompt
+2. **Agent traits** - Apply conversational trait for natural interaction
+3. **Process integration** - Connect agent to message-handling process
+4. **Simple conversation** - Test agent responses to user input
+
+This tutorial bridges the gap between Wippy's actor model and AI capabilities, showing how agents are processes with LLM-powered behavior.
+
 <!--
-Tutorial for creating first AI agent:
-- Agent configuration basics (YAML structure)
-- Writing agent prompts and behavior
-- Setting up LLM model configuration
-- Basic agent-process integration
-- Testing agent responses
-- Understanding agent lifecycle
-- Simple conversation patterns
-
-Should demonstrate core agent functionality and configuration.
+Implementation will cover:
+- YAML agent definition with registry.entry
+- Basic prompt engineering for agents
+- Using built-in traits like "conversational"
+- agent_gen1 library for running agents
+- Connecting agents to the process messaging system
 -->
-
-## Creating Your First AI Agent
-
-*Content to be written: Tutorial for setting up a basic AI agent with configuration, prompts, and simple conversation capabilities.*

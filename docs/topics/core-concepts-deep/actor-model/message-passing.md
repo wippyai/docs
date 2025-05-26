@@ -1,29 +1,31 @@
 # Message Passing
 
-<!-- Metadata -->
-<!-- 
-Topic: Inter-Process Communication
-Type: Conceptual and Practical Guide
-Audience: Developers Learning Actor Model
-Estimated Reading Time: 45 minutes
+<!--
+TOC: Core Concepts > Actor Model in Wippy > Message Passing
+Audience: Developers new to actor model
+Duration: 20 minutes
 Prerequisites: Processes & PIDs understanding
 -->
 
-<!-- Content Plan -->
+## Purpose
+
+Master Wippy's message passing system including topics, channels, inbox patterns, and asynchronous communication strategies.
+
+## Plan
+
+1. **Message anatomy** - Structure and types of messages
+2. **Topic-based routing** - Organizing messages by topic
+3. **Channel operations** - Sending, receiving, and selecting
+4. **Inbox patterns** - Default message handling strategies
+5. **Asynchronous patterns** - Non-blocking communication
+
+This guide covers the core communication mechanism that enables actor model concurrency in Wippy.
+
 <!--
-Comprehensive guide to message passing in Wippy:
-- Message structure and topics
-- Synchronous vs asynchronous messaging
-- Channel-based communication
-- Inbox and topic-specific listeners
-- Message routing and delivery guarantees
-- Error handling in message passing
-- Performance considerations
-- Practical patterns and examples
-
-Should establish mastery of Wippy's communication mechanisms.
+Implementation will cover:
+- process.send() with topics and payloads
+- process.listen() for topic-specific channels
+- process.inbox() for catch-all messages
+- channel.select() for multi-channel operations
+- Message ordering and delivery guarantees
 -->
-
-## Message Passing in Wippy
-
-*Content to be written: Detailed guide to message passing, channels, topics, and communication patterns between Wippy processes.*

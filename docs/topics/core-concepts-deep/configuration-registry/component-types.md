@@ -1,29 +1,32 @@
 # Component Types
 
-<!-- Metadata -->
-<!-- 
-Topic: Wippy Component System
-Type: Reference Guide
-Audience: All Developers
-Estimated Reading Time: 60 minutes
-Prerequisites: YAML configuration understanding
--->
-
-<!-- Content Plan -->
 <!--
-Comprehensive overview of all component types:
-- Component architecture and lifecycle
-- HTTP components (services, routers, endpoints)
-- Data components (databases, stores, filesystems)
-- Process components (hosts, services)
-- Security components (auth, policies)
-- Template and rendering components
-- Custom component development
-- Component interaction patterns
-
-Should provide complete reference for all available component types.
+TOC: Core Concepts > Configuration & Registry > Component Types
+Audience: All users
+Duration: 25 minutes
+Prerequisites: YAML Configuration understanding
 -->
 
-## Wippy Component Types
+## Purpose
 
-*Content to be written: Comprehensive reference for all Wippy component types including HTTP, data, process, security, and template components.*
+Comprehensive overview of all component types available in Wippy, their purposes, and configuration options.
+
+## Plan
+
+1. **Component categories** - Organization by functional area
+2. **Core components** - Processes, functions, and runtime elements
+3. **Infrastructure components** - HTTP, databases, storage, security
+4. **AI components** - Agents, tools, and LLM integrations
+5. **Custom components** - Extending Wippy with new types
+
+This guide serves as a reference for all available component types and their use cases.
+
+<!--
+Implementation will cover:
+- Complete component type taxonomy
+- Configuration examples for each type
+- Common use cases and patterns
+- Integration between component types
+- Best practices for component selection
+- Custom component development guidelines
+-->

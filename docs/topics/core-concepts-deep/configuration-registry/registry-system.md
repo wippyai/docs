@@ -1,29 +1,32 @@
 # Registry System
 
-<!-- Metadata -->
-<!-- 
-Topic: Registry Architecture
-Type: Technical Guide
-Audience: All Developers
-Estimated Reading Time: 45 minutes
-Prerequisites: Configuration system introduction
--->
-
-<!-- Content Plan -->
 <!--
-Deep dive into the registry system:
-- Registry architecture and implementation
-- Entry types and metadata structure
-- Namespace organization and best practices
-- Versioning and history management
-- Query and discovery mechanisms
-- Registry operations (CRUD)
-- Distributed registry considerations
-- Performance and caching strategies
-
-Should provide complete understanding of the registry system's capabilities and usage.
+TOC: Core Concepts > Configuration & Registry > Registry System
+Audience: All users
+Duration: 15 minutes
+Prerequisites: Basic configuration understanding
 -->
 
-## Understanding the Registry System
+## Purpose
 
-*Content to be written: Detailed guide to Wippy's registry system, including architecture, entry management, namespaces, and versioning.*
+Deep dive into Wippy's registry system that manages components, versions, metadata, and relationships in distributed applications.
+
+## Plan
+
+1. **Registry concepts** - Centralized component management
+2. **Entry structure** - ID, kind, metadata, and data organization
+3. **Namespacing** - Organizing components by domain
+4. **Versioning** - Managing component evolution
+5. **Relationships** - Dependencies and references between components
+
+This guide explains the foundation of Wippy's configuration management and component discovery.
+
+<!--
+Implementation will cover:
+- Registry entry anatomy and best practices
+- Namespace design patterns
+- Version management and compatibility
+- Component dependency resolution
+- Registry queries and discovery mechanisms
+- Metadata usage for component organization
+-->

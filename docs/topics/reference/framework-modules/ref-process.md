@@ -1,29 +1,34 @@
-# Process Module Reference
+# ref-process
 
-<!-- Metadata -->
-<!-- 
-Topic: Process Module API Reference
-Type: API Reference
-Audience: Developers Using Actor Model
-Estimated Reading Time: 45 minutes
-Prerequisites: Actor model understanding
--->
-
-<!-- Content Plan -->
 <!--
-Complete API reference for the process module:
-- Process spawning and lifecycle functions
-- Message passing and communication
-- Registry operations for process names
-- Event handling and system events
-- Process options and configuration
-- Error handling and troubleshooting
-- Code examples for all functions
-- Performance considerations and best practices
-
-Should serve as definitive reference for process module usage.
+TOC: Reference > Framework Modules > process
+Audience: Developers
+Duration: Reference
+Prerequisites: Process concepts understanding
 -->
 
-## Process Module API Reference
+## Purpose
 
-*Content to be written: Complete API reference for the process module including all functions, parameters, return values, and usage examples.*
+Complete API reference for the process module that provides the core actor model implementation for Wippy Runtime.
+
+## Plan
+
+Comprehensive reference covering:
+
+- Process identification and PIDs
+- Message passing and communication
+- Process spawning and lifecycle
+- Supervision and monitoring
+- Registry and naming
+- System events and handling
+
+<!--
+Content will include:
+- All process.* function signatures
+- PID format and addressing
+- Message passing protocols
+- Spawning variants and options
+- Link and monitor operations
+- Registry operations
+- Event types and structures
+-->

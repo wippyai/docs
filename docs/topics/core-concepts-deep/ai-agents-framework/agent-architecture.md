@@ -1,29 +1,32 @@
 # Agent Architecture
 
-<!-- Metadata -->
-<!-- 
-Topic: Agent System Architecture
-Type: Architectural Guide
-Audience: AI Developers
-Estimated Reading Time: 30 minutes
-Prerequisites: AI Agents Framework introduction
--->
-
-<!-- Content Plan -->
 <!--
-Deep dive into agent architecture:
-- Agent lifecycle and state management
-- Configuration-driven behavior definition
-- Integration with LLM providers
-- Tool system architecture
-- Memory and context management
-- Message handling and communication
-- Agent-to-agent interaction patterns
-- Performance and scaling considerations
-
-Should provide complete understanding of how agents are structured and operate.
+TOC: Core Concepts > AI Agents Framework > Agent Architecture
+Audience: Developers familiar with LLMs
+Duration: 20 minutes
+Prerequisites: Basic LLM understanding
 -->
 
-## Agent System Architecture
+## Purpose
 
-*Content to be written: Detailed explanation of agent architecture, lifecycle, configuration system, and integration with LLM providers and tools.*
+Understand how Wippy's AI agents are structured, configured, and integrated with the actor model runtime for scalable AI applications.
+
+## Plan
+
+1. **Agent as process** - How agents run within Wippy's actor model
+2. **Configuration-driven design** - YAML-based agent definitions
+3. **Component integration** - Connecting agents to tools and data
+4. **Runtime behavior** - How agents process messages and generate responses
+5. **Scaling patterns** - Multiple agent instances and load distribution
+
+This guide explains the architectural foundation that makes Wippy agents powerful and scalable.
+
+<!--
+Implementation will cover:
+- agent.gen1 registry entry structure
+- Agent process lifecycle and message handling
+- System message construction from prompts and traits
+- Tool integration and function calling
+- Memory management and context handling
+- Agent-to-agent communication patterns
+-->

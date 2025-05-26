@@ -1,29 +1,32 @@
-# Actor Module Reference
+# ref-actor
 
-<!-- Metadata -->
-<!-- 
-Topic: Actor Library API Reference
-Type: API Reference
-Audience: Developers Using Actor Library
-Estimated Reading Time: 30 minutes
-Prerequisites: Actor concepts understanding
+<!--
+TOC: Reference > Framework Modules > actor
+Audience: Developers
+Duration: Reference
+Prerequisites: Actor model understanding
 -->
 
-<!-- Content Plan -->
-<!--
-Complete API reference for the actor library:
-- Actor creation and initialization
+## Purpose
+
+Reference documentation for the actor library that provides simplified process creation using the actor model pattern.
+
+## Plan
+
+Complete API reference for the actor module covering:
+
+- Actor creation and configuration
 - State management and handlers
 - Channel registration and management
-- Handler management (add/remove)
-- Process integration and lifecycle
-- Custom process implementations
-- Exit handling and cleanup
-- Code examples for all functions
+- Event handling and lifecycle
+- Exit patterns and error handling
 
-Should serve as definitive reference for actor library usage.
+<!--
+Content will include:
+- actor.new() function signature and options
+- Handler types and patterns
+- State object methods and properties
+- Channel registration and lifecycle
+- Built-in event types and handling
+- Performance considerations and best practices
 -->
-
-## Actor Library API Reference
-
-*Content to be written: Complete API reference for the actor library including state management, handlers, channel operations, and lifecycle management.*
