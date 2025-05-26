@@ -28,7 +28,7 @@
 
         <secondary>
             <title>Build applications</title>
-            <a href="http-services-apis.md" summary="Create REST APIs and web services with HTTP components, routing, and middleware">HTTP Services &amp; APIs</a>
+            <a href="http-services-apis.md" summary="Create REST APIs and web services with HTTP components, routing, and middleware">HTTP Services & APIs</a>
             <a href="data-management.md" summary="Work with SQL databases, key-value stores, file systems, and cloud storage">Data Management</a>
             <a href="agent-composition.md" summary="Build complex agent hierarchies with inheritance, delegation, and trait composition">Agent Composition</a>
             <a href="distributed-systems.md" summary="Scale across multiple nodes with process distribution and fault tolerance">Distributed Systems</a>
@@ -51,7 +51,7 @@
 
             <cards>
                 <title>Core Concepts</title>
-                <a href="processes-pids.md" summary="Understanding process lifecycle and identification">Processes &amp; PIDs</a>
+                <a href="processes-pids.md" summary="Understanding process lifecycle and identification">Processes & PIDs</a>
                 <a href="message-passing.md" summary="Communication patterns and channel operations">Message Passing</a>
                 <a href="agent-architecture.md" summary="How AI agents are structured and configured">Agent Architecture</a>
             </cards>
@@ -71,9 +71,9 @@
             </cards>
 
             <cards>
-                <title>Help &amp; Community</title>
+                <title>Help & Community</title>
                 <a href="troubleshooting.md" summary="Common issues, debugging techniques, and performance troubleshooting">Troubleshooting Guide</a>
-                <a href="examples.md" summary="Real-world examples and code samples for various use cases">Examples &amp; Tutorials</a>
+                <a href="examples.md" summary="Real-world examples and code samples for various use cases">Examples & Tutorials</a>
                 <a href="contributing.md" summary="How to contribute code, documentation, and examples to the Wippy project">Contributing</a>
             </cards>
         </misc>
