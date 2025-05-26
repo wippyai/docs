@@ -9,7 +9,7 @@
         <title>Wippy Framework Documentation</title>
         <description>
             Build powerful AI-driven applications with actor model concurrency and intelligent agents.
-            Wippy combines a high-performance Golang runtime implementing the actor model with a 
+            Wippy combines a high-performance Golang runtime implementing the actor model with a
             flexible Lua-based framework for creating intelligent AI agents and scalable applications.
         </description>
 
@@ -35,12 +35,12 @@
         </secondary>
 
         <misc>
-            <cards>
-                <title>Reference Documentation</title>
-                <a href="framework-modules.md" summary="Complete reference for all 40+ framework modules including process, http, llm, and security">Framework Modules</a>
-                <a href="configuration-reference.md" summary="YAML configuration syntax and options for all component types">Configuration Reference</a>
-                <a href="api-reference.md" summary="Process, message, channel, registry, and agent APIs with examples">API Reference</a>
-            </cards>
+<!--            <cards>-->
+<!--                <title>Reference Documentation</title>-->
+<!--                <a href="framework-modules.md" summary="Complete reference for all 40+ framework modules including process, http, llm, and security">Framework Modules</a>-->
+<!--                <a href="configuration-reference.md" summary="YAML configuration syntax and options for all component types">Configuration Reference</a>-->
+<!--                <a href="api-reference.md" summary="Process, message, channel, registry, and agent APIs with examples">API Reference</a>-->
+<!--            </cards>-->
 
             <cards>
                 <title>Learning Paths</title>
