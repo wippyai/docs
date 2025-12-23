@@ -393,14 +393,14 @@ res:write_json({
 
 Flushes buffered data to client.
 
-```lua
+<code-block lang="lua">
 -- Stream progress updates
 for i = 1, 100 do
     res:write(string.format("Progress: %d%%\n", i))
     res:flush()
     time.sleep("100ms")
 end
-```
+</code-block>
 
 ### set_transfer
 
