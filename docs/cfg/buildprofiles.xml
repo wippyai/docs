@@ -12,6 +12,11 @@
     <build-profile instance="w">
         <variables>
             <noindex-content>true</noindex-content>
+            <primary-color>#3b82f6</primary-color>
+            <color-preset>soft</color-preset>
+            <custom-css>styles.css</custom-css>
+            <favicon>wippy-icon.png</favicon>
+            <apple-touch-icon>wippy-icon.png</apple-touch-icon>
         </variables>
     </build-profile>
     <build-profile instance="r">

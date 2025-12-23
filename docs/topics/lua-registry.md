@@ -160,13 +160,13 @@ end
 
 ## Errors
 
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| Entry not found | `errors.NOT_FOUND` | no |
-| Version not found | `errors.NOT_FOUND` | no |
-| Permission denied | `errors.PERMISSION_DENIED` | no |
-| Invalid parameter | `errors.INVALID` | no |
-| No changes to apply | `errors.INVALID` | no |
-| Registry not available | `errors.INTERNAL` | no |
+| Condition | Kind |
+|-----------|------|
+| Entry not found | `errors.NOT_FOUND` |
+| Version not found | `errors.NOT_FOUND` |
+| Permission denied | `errors.PERMISSION_DENIED` |
+| Invalid parameter | `errors.INVALID` |
+| No changes to apply | `errors.INVALID` |
+| Registry not available | `errors.INTERNAL` |
 
 See [Error Handling](lua-errors.md) for working with errors.

@@ -13,6 +13,10 @@ Your Lua code runs inside **processes**—isolated execution contexts managed by
 - Can be monitored and supervised
 - Scales to thousands per machine
 
+<note>
+A typical Lua process has a baseline memory overhead of ~13 KB.
+</note>
+
 ```lua
 local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
@@ -106,26 +110,3 @@ See [Error Handling](lua-errors.md) for patterns.
 - [Channels](lua-channel.md) - Channel patterns
 - [Process Management](lua-process.md) - Spawning and supervision
 - [Functions](lua-funcs.md) - Cross-process calls
-
-## Performance Characteristics
-
-Numbers from benchmarks on AMD Ryzen 9 7950X3D. Subject to change as we optimize.
-
-| Metric | Value |
-|--------|-------|
-| Process overhead | ~11 KB + control structures |
-| 100,000 processes | ~1.3 GB |
-| Coroutine overhead | ~4 KB |
-| Process create (precompiled) | 2.6 µs |
-| Process create (cold) | 8.4 µs |
-| VM yield | 87 ns |
-| Spawn throughput | ~380K/sec |
-| Message passing | ~2M msg/sec (single process) |
-
-Coroutines are managed by the runtime scheduler. Each spawned coroutine adds memory overhead but shares the parent process's module bindings.
-
-<note>
-These are synthetic benchmarks. Actual performance and memory footprint depend heavily on usage patterns and application code.
-</note>
-
-Source: [runtime/lua/engine](https://github.com/wippyai/wippy/tree/main/runtime/lua/engine)
