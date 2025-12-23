@@ -16,7 +16,7 @@ local compress = require("compress")
 
 Most widely supported format (RFC 1952).
 
-### Compress
+### Compress {id="gzip-compress"}
 
 ```lua
 -- Compress for HTTP response
@@ -42,7 +42,7 @@ local fast = compress.gzip.encode(data, {level = 1})
 | `data` | string | Data to compress |
 | `options` | table? | Optional encoding options |
 
-#### Options
+#### Options {id="gzip-compress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -50,7 +50,7 @@ local fast = compress.gzip.encode(data, {level = 1})
 
 **Returns:** `string, error`
 
-### Decompress
+### Decompress {id="gzip-decompress"}
 
 ```lua
 -- Decompress HTTP request
@@ -76,7 +76,7 @@ end
 | `data` | string | GZIP compressed data |
 | `options` | table? | Optional decoding options |
 
-#### Options
+#### Options {id="gzip-decompress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -88,7 +88,7 @@ end
 
 Best compression ratio for text (RFC 7932).
 
-### Compress
+### Compress {id="brotli-compress"}
 
 ```lua
 -- Best for static assets and text content
@@ -106,7 +106,7 @@ local compressed = compress.brotli.encode(json_data, {level = 4})
 | `data` | string | Data to compress |
 | `options` | table? | Optional encoding options |
 
-#### Options
+#### Options {id="brotli-compress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -114,7 +114,7 @@ local compressed = compress.brotli.encode(json_data, {level = 4})
 
 **Returns:** `string, error`
 
-### Decompress
+### Decompress {id="brotli-decompress"}
 
 ```lua
 local decompressed, err = compress.brotli.decode(compressed_data)
@@ -131,7 +131,7 @@ local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 | `data` | string | Brotli compressed data |
 | `options` | table? | Optional decoding options |
 
-#### Options
+#### Options {id="brotli-decompress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -143,7 +143,7 @@ local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 
 Fast compression with good ratios (RFC 8878).
 
-### Compress
+### Compress {id="zstd-compress"}
 
 ```lua
 -- Good balance of speed and ratio
@@ -161,7 +161,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 | `data` | string | Data to compress |
 | `options` | table? | Optional encoding options |
 
-#### Options
+#### Options {id="zstd-compress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -169,7 +169,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 
 **Returns:** `string, error`
 
-### Decompress
+### Decompress {id="zstd-decompress"}
 
 ```lua
 local decompressed, err = compress.zstd.decode(compressed_data)
@@ -183,7 +183,7 @@ end
 | `data` | string | Zstandard compressed data |
 | `options` | table? | Optional decoding options |
 
-#### Options
+#### Options {id="zstd-decompress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -195,7 +195,7 @@ end
 
 Raw DEFLATE compression (RFC 1951). Used internally by other formats.
 
-### Compress
+### Compress {id="deflate-compress"}
 
 ```lua
 local compressed = compress.deflate.encode(data, {level = 6})
@@ -206,7 +206,7 @@ local compressed = compress.deflate.encode(data, {level = 6})
 | `data` | string | Data to compress |
 | `options` | table? | Optional encoding options |
 
-#### Options
+#### Options {id="deflate-compress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -214,7 +214,7 @@ local compressed = compress.deflate.encode(data, {level = 6})
 
 **Returns:** `string, error`
 
-### Decompress
+### Decompress {id="deflate-decompress"}
 
 ```lua
 local decompressed = compress.deflate.decode(compressed)
@@ -225,7 +225,7 @@ local decompressed = compress.deflate.decode(compressed)
 | `data` | string | DEFLATE compressed data |
 | `options` | table? | Optional decoding options |
 
-#### Options
+#### Options {id="deflate-decompress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -237,7 +237,7 @@ local decompressed = compress.deflate.decode(compressed)
 
 DEFLATE with header and checksum (RFC 1950).
 
-### Compress
+### Compress {id="zlib-compress"}
 
 ```lua
 local compressed = compress.zlib.encode(data, {level = 6})
@@ -248,7 +248,7 @@ local compressed = compress.zlib.encode(data, {level = 6})
 | `data` | string | Data to compress |
 | `options` | table? | Optional encoding options |
 
-#### Options
+#### Options {id="zlib-compress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -256,7 +256,7 @@ local compressed = compress.zlib.encode(data, {level = 6})
 
 **Returns:** `string, error`
 
-### Decompress
+### Decompress {id="zlib-decompress"}
 
 ```lua
 local decompressed = compress.zlib.decode(compressed)
@@ -267,7 +267,7 @@ local decompressed = compress.zlib.decode(compressed)
 | `data` | string | Zlib compressed data |
 | `options` | table? | Optional decoding options |
 
-#### Options
+#### Options {id="zlib-decompress-options"}
 
 | Field | Type | Description |
 |-------|------|-------------|

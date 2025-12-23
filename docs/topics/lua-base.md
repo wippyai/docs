@@ -176,7 +176,7 @@ Uppercase versions (`%A`, `%D`, etc.) match the complement.
 
 Mathematical functions and constants:
 
-### Constants
+### Constants {id="math-constants"}
 
 ```lua
 math.pi       -- 3.14159...
@@ -271,7 +271,7 @@ process_request()
 
 Structured error creation and classification. See [Error Handling](lua-errors.md) for full documentation:
 
-### Constants
+### Constants {id="error-constants"}
 
 ```lua
 errors.UNKNOWN           -- Unclassified error
@@ -287,7 +287,7 @@ errors.CONFLICT          -- Conflict (e.g., concurrent modification)
 errors.RATE_LIMITED      -- Rate limit exceeded
 ```
 
-### Functions
+### Functions {id="error-functions"}
 
 ```lua
 -- Create error from string
@@ -327,13 +327,13 @@ err:stack()      -- Get stack trace as string
 
 Unicode UTF-8 string handling:
 
-### Constants
+### Constants {id="utf8-constants"}
 
 ```lua
 utf8.charpattern  -- Pattern matching a single UTF-8 character
 ```
 
-### Functions
+### Functions {id="utf8-functions"}
 
 ```lua
 utf8.char(...)           -- Create string from Unicode codepoints

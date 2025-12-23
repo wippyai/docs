@@ -12,7 +12,7 @@ flowchart TB
 
     R1 --> E1[GET /users]
     R1 --> E2[POST /users]
-    R1 --> E3[GET /users/{id}]
+    R1 --> E3["GET /users/{id}"]
 
     R2 --> E4[GET /stats]
     R2 --> E5[POST /config]

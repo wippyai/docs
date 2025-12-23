@@ -78,7 +78,7 @@ local hex, err = crypto.hmac.sha512(key, data)
 
 ## Encryption
 
-### AES-GCM
+### AES-GCM {id="encrypt-aes-gcm"}
 
 ```lua
 local encrypted, err = crypto.encrypt.aes(data, key)
@@ -93,7 +93,7 @@ local encrypted, err = crypto.encrypt.aes(data, key, aad)
 
 **Returns:** `string, error` (nonce prepended)
 
-### ChaCha20-Poly1305
+### ChaCha20-Poly1305 {id="encrypt-chacha20"}
 
 ```lua
 local encrypted, err = crypto.encrypt.chacha20(data, key)
@@ -110,7 +110,7 @@ local encrypted, err = crypto.encrypt.chacha20(data, key, aad)
 
 ## Decryption
 
-### AES-GCM
+### AES-GCM {id="decrypt-aes-gcm"}
 
 ```lua
 local plaintext, err = crypto.decrypt.aes(encrypted, key)
@@ -125,7 +125,7 @@ local plaintext, err = crypto.decrypt.aes(encrypted, key, aad)
 
 **Returns:** `string, error`
 
-### ChaCha20-Poly1305
+### ChaCha20-Poly1305 {id="decrypt-chacha20"}
 
 ```lua
 local plaintext, err = crypto.decrypt.chacha20(encrypted, key)

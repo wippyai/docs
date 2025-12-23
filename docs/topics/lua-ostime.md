@@ -64,7 +64,7 @@ os.time({day = 1})  -- first of current month
 
 Format a timestamp as string or return a date table:
 
-```lua
+<code-block lang="lua">
 local now = os.time()
 
 -- Default format
@@ -80,7 +80,7 @@ os.date("!%Y-%m-%d %H:%M:%S", now)  -- UTC instead of local
 
 -- Date table
 local t = os.date("*t", now)
-```
+</code-block>
 
 **Signature:** `os.date([format], [timestamp]) -> string | table`
 
