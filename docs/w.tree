@@ -8,222 +8,151 @@
 
     <toc-element topic="overview.topic"/>
 
-    <!-- Phase 1: Foundation (Getting Started) -->
-    <toc-element topic="getting-started.md" toc-title="Getting Started">
-        <toc-element topic="what-is-wippy.md"/>
-        <toc-element topic="core-concepts.md"/>
-        <toc-element topic="when-to-use.md"/>
-        <toc-element topic="installation.md"/>
-        <toc-element topic="first-application.md">
-            <toc-element topic="hello-world-process.md"/>
-            <toc-element topic="basic-agent-creation.md"/>
-            <toc-element topic="configuration-basics.md"/>
-            <toc-element topic="running-testing.md"/>
+    <!-- Getting Started -->
+    <toc-element toc-title="Getting Started">
+        <toc-element topic="about-wippy.md" toc-title="What is Wippy"/>
+        <toc-element topic="getting-started-installation.md" toc-title="○ Installation"/>
+        <toc-element topic="getting-started-quickstart.md" toc-title="○ Quickstart"/>
+        <toc-element topic="getting-started-structure.md" toc-title="Project Structure"/>
+    </toc-element>
+
+    <!-- Guides -->
+    <toc-element toc-title="Guides">
+        <toc-element topic="guide-cli.md" toc-title="CLI"/>
+        <toc-element topic="guide-cluster.md" toc-title="○ Cluster"/>
+        <toc-element topic="guide-configuration.md" toc-title="Configuration"/>
+        <toc-element topic="guide-entry-kinds.md" toc-title="Entry Kinds"/>
+        <toc-element topic="guide-observability.md" toc-title="Observability"/>
+        <toc-element topic="guide-queue-consumers.md" toc-title="Queue Consumers"/>
+        <toc-element topic="guide-supervision.md" toc-title="Supervision"/>
+        <toc-element topic="guide-temporal.md" toc-title="○ Temporal"/>
+    </toc-element>
+
+    <!-- Core Concepts -->
+    <toc-element toc-title="Core Concepts">
+        <toc-element topic="concept-process-model.md" toc-title="Process Model"/>
+        <toc-element topic="concept-compute-units.md" toc-title="Compute Units"/>
+        <toc-element topic="concept-registry.md" toc-title="Registry"/>
+        <toc-element topic="concept-functions.md" toc-title="Functions"/>
+        <toc-element topic="concept-workflows.md" toc-title="Workflows"/>
+    </toc-element>
+
+    <!-- Lua Runtime -->
+    <toc-element toc-title="Lua Runtime">
+        <toc-element topic="lua-overview.md" toc-title="Overview"/>
+        <toc-element topic="lua-types.md" toc-title="○ Types"/>
+        <toc-element topic="lua-entries.md" toc-title="Entries"/>
+        <toc-element toc-title="Core">
+            <toc-element topic="lua-base.md" toc-title="Base"/>
+            <toc-element topic="lua-errors.md" toc-title="Errors"/>
+            <toc-element topic="lua-time.md" toc-title="Time"/>
+            <toc-element topic="lua-channel.md" toc-title="Channels"/>
+            <toc-element topic="lua-process.md" toc-title="Process"/>
+            <toc-element topic="lua-funcs.md" toc-title="Functions"/>
+            <toc-element topic="lua-future.md" toc-title="Future"/>
+            <toc-element topic="lua-stream.md" toc-title="Stream"/>
+            <toc-element topic="lua-ctx.md" toc-title="Context"/>
+            <toc-element topic="lua-events.md" toc-title="Events"/>
+            <toc-element topic="lua-registry.md" toc-title="Registry"/>
+            <toc-element topic="lua-contract.md" toc-title="Contract"/>
+        </toc-element>
+        <toc-element toc-title="Data Formats">
+            <toc-element topic="lua-json.md" toc-title="JSON"/>
+            <toc-element topic="lua-yaml.md" toc-title="YAML"/>
+            <toc-element topic="lua-base64.md" toc-title="Base64"/>
+            <toc-element topic="lua-compress.md" toc-title="Compress"/>
+            <toc-element topic="lua-payload.md" toc-title="Payload"/>
+            <toc-element topic="lua-excel.md" toc-title="Excel"/>
+        </toc-element>
+        <toc-element toc-title="HTTP &amp; Web">
+            <toc-element topic="lua-http.md" toc-title="HTTP"/>
+            <toc-element topic="lua-httpclient.md" toc-title="HTTP Client"/>
+            <toc-element topic="lua-websocket.md" toc-title="WebSocket"/>
+            <toc-element topic="lua-html.md" toc-title="HTML"/>
+        </toc-element>
+        <toc-element toc-title="Storage">
+            <toc-element topic="lua-sql.md" toc-title="SQL"/>
+            <toc-element topic="lua-store.md" toc-title="Store"/>
+            <toc-element topic="lua-fs.md" toc-title="Filesystem"/>
+            <toc-element topic="lua-cloudstorage.md" toc-title="Cloud Storage"/>
+            <toc-element topic="lua-queue.md" toc-title="Queue"/>
+        </toc-element>
+        <toc-element toc-title="System">
+            <toc-element topic="lua-system.md" toc-title="System"/>
+            <toc-element topic="lua-env.md" toc-title="Environment"/>
+            <toc-element topic="lua-logger.md" toc-title="Logger"/>
+            <toc-element topic="lua-io.md" toc-title="I/O"/>
+            <toc-element topic="lua-metrics.md" toc-title="Metrics"/>
+            <toc-element topic="lua-ostime.md" toc-title="OS Time"/>
+        </toc-element>
+        <toc-element toc-title="Text &amp; Templates">
+            <toc-element topic="lua-text.md" toc-title="Text"/>
+            <toc-element topic="lua-template.md" toc-title="Template"/>
+            <toc-element topic="lua-treesitter.md" toc-title="TreeSitter"/>
+        </toc-element>
+        <toc-element toc-title="Security">
+            <toc-element topic="lua-security.md" toc-title="Security"/>
+            <toc-element topic="lua-crypto.md" toc-title="Crypto"/>
+            <toc-element topic="lua-hash.md" toc-title="Hash"/>
+            <toc-element topic="lua-uuid.md" toc-title="UUID"/>
+        </toc-element>
+        <toc-element toc-title="Dynamic">
+            <toc-element topic="lua-eval.md" toc-title="○ Eval"/>
+            <toc-element topic="lua-exec.md" toc-title="Exec"/>
+            <toc-element topic="lua-expr.md" toc-title="Expression"/>
         </toc-element>
     </toc-element>
 
-    <!-- Phase 2: Core Concepts -->
-    <toc-element topic="core-concepts-deep.md" toc-title="Core Concepts">
-        <toc-element topic="actor-model.md">
-            <toc-element topic="processes-pids.md"/>
-            <toc-element topic="message-passing.md"/>
-            <toc-element topic="supervision-trees.md"/>
-            <toc-element topic="concurrency-patterns.md"/>
-            <toc-element topic="task-queue-demo.md"/>
-        </toc-element>
-
-        <toc-element topic="ai-agents-framework.md">
-            <toc-element topic="agent-architecture.md"/>
-            <toc-element topic="prompts-traits.md"/>
-            <toc-element topic="tool-integration.md"/>
-            <toc-element topic="memory-context.md"/>
-            <toc-element topic="support-bot-demo.md"/>
-        </toc-element>
-
-        <toc-element topic="configuration-registry.md">
-            <toc-element topic="registry-system.md"/>
-            <toc-element topic="yaml-configuration.md"/>
-            <toc-element topic="component-types.md"/>
-            <toc-element topic="dependency-management.md"/>
-        </toc-element>
+    <!-- System Components -->
+    <toc-element toc-title="System Components">
+        <toc-element topic="system-process-host.md" toc-title="Process Host"/>
+        <toc-element topic="system-terminal.md" toc-title="Terminal"/>
+        <toc-element topic="system-database.md" toc-title="Database"/>
+        <toc-element topic="system-store.md" toc-title="Store"/>
+        <toc-element topic="system-queue.md" toc-title="Queue"/>
+        <toc-element topic="system-filesystem.md" toc-title="Filesystem"/>
+        <toc-element topic="system-cloudstorage.md" toc-title="Cloud Storage"/>
+        <toc-element topic="system-env.md" toc-title="Environment"/>
+        <toc-element topic="system-template.md" toc-title="Template"/>
+        <toc-element topic="system-security.md" toc-title="Security"/>
+        <toc-element topic="system-exec.md" toc-title="Exec"/>
     </toc-element>
 
-    <!-- Phase 3: Building Applications -->
-    <toc-element topic="building-applications.md">
-        <toc-element topic="http-services-apis.md">
-            <toc-element topic="http-components.md"/>
-            <toc-element topic="request-handling.md"/>
-            <toc-element topic="api-design-patterns.md"/>
-            <toc-element topic="restful-api-demo.md"/>
-        </toc-element>
-
-        <toc-element topic="data-management.md">
-            <toc-element topic="database-integration.md"/>
-            <toc-element topic="key-value-storage.md"/>
-            <toc-element topic="file-systems.md"/>
-            <toc-element topic="document-management-demo.md"/>
-        </toc-element>
-
-        <toc-element topic="agent-composition.md">
-            <toc-element topic="agent-inheritance.md"/>
-            <toc-element topic="delegation-systems.md"/>
-            <toc-element topic="multi-agent-workflows.md"/>
-            <toc-element topic="tool-ecosystems.md"/>
-            <toc-element topic="multi-specialist-demo.md"/>
-        </toc-element>
+    <!-- HTTP -->
+    <toc-element toc-title="HTTP">
+        <toc-element topic="http-server.md" toc-title="Server"/>
+        <toc-element topic="http-router.md" toc-title="Router"/>
+        <toc-element topic="http-endpoint.md" toc-title="Endpoint"/>
+        <toc-element topic="http-middleware.md" toc-title="Middleware"/>
+        <toc-element topic="http-static.md" toc-title="Static Files"/>
+        <toc-element topic="http-websocket-relay.md" toc-title="WebSocket Relay"/>
     </toc-element>
 
-    <!-- Demo Application: TechSupport Pro -->
-    <toc-element topic="techsupport-pro.md">
-        <toc-element topic="demo-overview.md" toc-title="Application Overview"/>
-        <toc-element topic="demo-architecture.md" toc-title="System Architecture"/>
-        <toc-element topic="demo-chapter1.md"/>
-        <toc-element topic="demo-chapter2.md"/>
-        <toc-element topic="demo-chapter3.md"/>
-        <toc-element topic="demo-chapter4.md"/>
-        <toc-element topic="demo-chapter5.md"/>
-        <toc-element topic="demo-chapter6.md"/>
+    <!-- Tutorials -->
+    <toc-element toc-title="Tutorials">
+        <toc-element topic="hello-world.md" toc-title="Hello World"/>
+        <toc-element topic="cli.md" toc-title="CLI Applications"/>
+        <toc-element topic="echo-service.md" toc-title="Echo Service"/>
+        <toc-element topic="task-queue.md" toc-title="Task Queue"/>
+        <toc-element topic="testing.md" toc-title="○ Testing"/>
+        <toc-element topic="auth.md" toc-title="○ Crypto Ticker"/>
     </toc-element>
 
-    <!-- Phase 4: Advanced Patterns -->
-    <toc-element topic="advanced-patterns.md">
-        <toc-element topic="distributed-systems.md">
-            <toc-element topic="process-distribution.md"/>
-            <toc-element topic="message-routing.md"/>
-            <toc-element topic="fault-tolerance.md"/>
-            <toc-element topic="scaling-patterns.md"/>
-        </toc-element>
-
-        <toc-element topic="custom-extensions.md">
-            <toc-element topic="custom-modules.md"/>
-            <toc-element topic="custom-component-types.md"/>
-            <toc-element topic="middleware-development.md"/>
-            <toc-element topic="integration-patterns.md"/>
-        </toc-element>
-
-        <toc-element topic="production-deployment.md">
-            <toc-element topic="configuration-management.md"/>
-            <toc-element topic="monitoring-observability.md"/>
-            <toc-element topic="security-hardening.md"/>
-            <toc-element topic="performance-optimization.md"/>
-        </toc-element>
+    <!-- Internals -->
+    <toc-element toc-title="Internals">
+        <toc-element topic="internal-architecture.md" toc-title="○ Architecture"/>
+        <toc-element topic="internal-registry.md" toc-title="Registry"/>
+        <toc-element topic="internal-scheduler.md" toc-title="Scheduler"/>
+        <toc-element topic="internal-dispatch.md" toc-title="Dispatch"/>
+        <toc-element topic="internal-events.md" toc-title="Events"/>
+        <toc-element topic="internal-modules.md" toc-title="Modules"/>
+        <toc-element topic="internal-kinds.md" toc-title="Kinds"/>
     </toc-element>
 
-    <!-- Reference Documentation -->
-<!--    <toc-element topic="reference.md">-->
-<!--        <toc-element topic="framework-modules.md">-->
-<!--            &lt;!&ndash; Core Runtime Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-actor.md" toc-title="actor"/>-->
-<!--            <toc-element topic="ref-process.md" toc-title="process"/>-->
-<!--            <toc-element topic="ref-channel.md" toc-title="channel"/>-->
-<!--            <toc-element topic="ref-funcs.md" toc-title="funcs"/>-->
-<!--            <toc-element topic="ref-events.md" toc-title="events"/>-->
-<!--            <toc-element topic="ref-ctx.md" toc-title="ctx"/>-->
-<!--            <toc-element topic="ref-system.md" toc-title="system"/>-->
-
-<!--            &lt;!&ndash; AI &amp; Agent Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-llm.md" toc-title="llm"/>-->
-<!--            <toc-element topic="ref-agents.md" toc-title="agents"/>-->
-<!--            <toc-element topic="ref-agent-gen1.md" toc-title="agent_gen1"/>-->
-
-<!--            &lt;!&ndash; HTTP &amp; Web Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-http.md" toc-title="http"/>-->
-<!--            <toc-element topic="ref-http-client.md" toc-title="http_client"/>-->
-<!--            <toc-element topic="ref-websocket.md" toc-title="websocket"/>-->
-
-<!--            &lt;!&ndash; Data &amp; Storage Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-sql.md" toc-title="sql"/>-->
-<!--            <toc-element topic="ref-sql-semantic.md" toc-title="sql.semantic"/>-->
-<!--            <toc-element topic="ref-store.md" toc-title="store"/>-->
-<!--            <toc-element topic="ref-fs.md" toc-title="fs"/>-->
-<!--            <toc-element topic="ref-cloudstorage.md" toc-title="cloudstorage"/>-->
-
-<!--            &lt;!&ndash; Serialization &amp; Format Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-json.md" toc-title="json"/>-->
-<!--            <toc-element topic="ref-yaml.md" toc-title="yaml"/>-->
-<!--            <toc-element topic="ref-excel.md" toc-title="excel"/>-->
-<!--            <toc-element topic="ref-base64.md" toc-title="base64"/>-->
-
-<!--            &lt;!&ndash; Security &amp; Crypto Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-security.md" toc-title="security"/>-->
-<!--            <toc-element topic="ref-security-supervisor.md" toc-title="security_supervisor"/>-->
-<!--            <toc-element topic="ref-crypto.md" toc-title="crypto"/>-->
-<!--            <toc-element topic="ref-hash.md" toc-title="hash"/>-->
-
-<!--            &lt;!&ndash; Template &amp; Rendering Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-templates.md" toc-title="templates"/>-->
-<!--            <toc-element topic="ref-jet.md" toc-title="jet"/>-->
-
-<!--            &lt;!&ndash; Utility Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-time.md" toc-title="time"/>-->
-<!--            <toc-element topic="ref-uuid.md" toc-title="uuid"/>-->
-<!--            <toc-element topic="ref-env.md" toc-title="env"/>-->
-<!--            <toc-element topic="ref-logger.md" toc-title="logger"/>-->
-<!--            <toc-element topic="ref-exec.md" toc-title="exec"/>-->
-<!--            <toc-element topic="ref-stream.md" toc-title="stream"/>-->
-
-<!--            &lt;!&ndash; Registry &amp; Configuration Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-registry.md" toc-title="registry"/>-->
-<!--            <toc-element topic="ref-loader.md" toc-title="loader"/>-->
-<!--            <toc-element topic="ref-config.md" toc-title="config"/>-->
-
-<!--            &lt;!&ndash; Development &amp; Testing Modules &ndash;&gt;-->
-<!--            <toc-element topic="ref-test.md" toc-title="test"/>-->
-<!--            <toc-element topic="ref-migration.md" toc-title="migration"/>-->
-<!--        </toc-element>-->
-
-<!--        <toc-element topic="configuration-reference.md">-->
-<!--            <toc-element topic="config-filesystem.md"/>-->
-<!--            <toc-element topic="config-http.md" toc-title="HTTP Components"/>-->
-<!--            <toc-element topic="config-security.md" toc-title="Security Components"/>-->
-<!--            <toc-element topic="config-storage.md" toc-title="Data Storage Components"/>-->
-<!--            <toc-element topic="config-process.md" toc-title="Process Components"/>-->
-<!--            <toc-element topic="config-lua.md" toc-title="Lua Components"/>-->
-<!--            <toc-element topic="config-template.md" toc-title="Template Components"/>-->
-<!--            <toc-element topic="config-lifecycle.md" toc-title="Lifecycle Configuration"/>-->
-<!--        </toc-element>-->
-
-<!--        <toc-element topic="api-reference.md">-->
-<!--            <toc-element topic="api-process.md" toc-title="Process API"/>-->
-<!--            <toc-element topic="api-message.md" toc-title="Message API"/>-->
-<!--            <toc-element topic="api-channel.md"/>-->
-<!--            <toc-element topic="api-registry.md" toc-title="Registry API"/>-->
-<!--            <toc-element topic="api-agent.md" toc-title="Agent API"/>-->
-<!--        </toc-element>-->
-<!--    </toc-element>-->
-
-    <!-- User Guides -->
-    <toc-element topic="user-guides.md">
-        <toc-element topic="migration-guide.md"/>
-        <toc-element topic="troubleshooting.md" toc-title="Troubleshooting">
-            <toc-element topic="common-issues.md"/>
-            <toc-element topic="debugging-processes.md"/>
-            <toc-element topic="debugging-agents.md"/>
-            <toc-element topic="performance-troubleshooting.md"/>
-        </toc-element>
-        <toc-element topic="best-practices.md">
-            <toc-element topic="process-design.md"/>
-            <toc-element topic="agent-design.md"/>
-            <toc-element topic="configuration-best-practices.md" toc-title="Configuration"/>
-            <toc-element topic="security-best-practices.md" toc-title="Security"/>
-            <toc-element topic="performance-best-practices.md" toc-title="Performance"/>
-        </toc-element>
-        <toc-element topic="examples.md">
-            <toc-element topic="example-chat-bot.md" toc-title="Chat Bot"/>
-            <toc-element topic="example-api-service.md" toc-title="API Service"/>
-            <toc-element topic="example-data-processor.md" toc-title="Data Processor"/>
-            <toc-element topic="example-multi-agent.md" toc-title="Multi-Agent System"/>
-            <toc-element topic="example-distributed.md" toc-title="Distributed System"/>
-        </toc-element>
-    </toc-element>
-
-    <!-- Community & Contributing -->
-    <toc-element topic="community.md">
-        <toc-element topic="contributing.md"/>
-        <toc-element topic="code-of-conduct.md"/>
-        <toc-element topic="changelog.md"/>
-        <toc-element topic="roadmap.md"/>
-        <toc-element topic="faq.md" toc-title="FAQ"/>
+    <!-- About -->
+    <toc-element toc-title="About">
+        <toc-element topic="about-contributing.md" toc-title="Contributing"/>
+        <toc-element topic="about-license.md" toc-title="License"/>
     </toc-element>
 
 </instance-profile>
