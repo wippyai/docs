@@ -179,7 +179,7 @@ end
 return { main = main }
 ```
 
-### Key Patterns
+### Key Patterns {id="relay-key-patterns"}
 
 **Coroutine Spawning**
 
@@ -310,7 +310,7 @@ end
 return { main = main }
 ```
 
-### Key Patterns
+### Key Patterns {id="cli-key-patterns"}
 
 **Send by Name**
 

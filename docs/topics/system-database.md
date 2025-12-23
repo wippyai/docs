@@ -130,32 +130,32 @@ Set <code>max_idle</code> less than or equal to <code>max_open</code>. Connectio
 
 Each database type constructs a DSN from configuration:
 
-### PostgreSQL
+### PostgreSQL {id="dsn-postgresql"}
 
 ```
 postgres://username:password@host:port/database?sslmode=disable
 ```
 
-### MySQL
+### MySQL {id="dsn-mysql"}
 
 ```
 username:password@tcp(host:port)/database?charset=utf8mb4
 ```
 
-### SQLite
+### SQLite {id="dsn-sqlite"}
 
 ```
 file:/path/to/database.db?cache=shared
 :memory:?mode=memory
 ```
 
-### Microsoft SQL Server
+### Microsoft SQL Server {id="dsn-mssql"}
 
 ```
 sqlserver://username:password@host:port?database=dbname
 ```
 
-### Oracle
+### Oracle {id="dsn-oracle"}
 
 ```
 oracle://username:password@host:port/service_name
@@ -165,7 +165,7 @@ oracle://username:password@host:port/service_name
 
 Common database-specific options:
 
-### PostgreSQL
+### PostgreSQL {id="options-postgresql"}
 
 ```yaml
 options:
@@ -174,7 +174,7 @@ options:
   application_name: "myapp"
 ```
 
-### MySQL
+### MySQL {id="options-mysql"}
 
 ```yaml
 options:
@@ -183,7 +183,7 @@ options:
   loc: "Local"            # Timezone
 ```
 
-### SQLite
+### SQLite {id="options-sqlite"}
 
 ```yaml
 options:
@@ -192,7 +192,7 @@ options:
   _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
 ```
 
-### Microsoft SQL Server
+### Microsoft SQL Server {id="options-mssql"}
 
 ```yaml
 options:
@@ -200,7 +200,7 @@ options:
   TrustServerCertificate: "false"
 ```
 
-### Oracle
+### Oracle {id="options-oracle"}
 
 ```yaml
 options:

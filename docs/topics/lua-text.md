@@ -172,7 +172,7 @@ local diff, err = text.diff.new(options)
 
 **Returns:** `Differ, error`
 
-#### Options
+#### Options {id="diff-options"}
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -311,7 +311,7 @@ local chunks, err = splitter:split_text(long_text)
 
 **Returns:** `Splitter, error`
 
-#### Options
+#### Options {id="recursive-splitter-options"}
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -337,7 +337,7 @@ local chunks, err = splitter:split_text(readme)
 
 **Returns:** `Splitter, error`
 
-#### Options
+#### Options {id="markdown-splitter-options"}
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
