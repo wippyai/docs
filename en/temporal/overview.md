@@ -8,81 +8,42 @@ Wippy integrates with Temporal for:
 - Durable workflow execution
 - Activity orchestration
 - Automatic replay and recovery
+- Long-running processes that survive restarts
 
-Workflows and activities are auto-registered via entry metadata.
+## Configuration
 
-## Client Configuration
+### Worker Entry
 
-Define a Temporal client entry:
-
-```yaml
-- name: temporal_client
-  kind: temporal.client
-  address: localhost:7233
-  namespace: default
-  lifecycle:
-    auto_start: true
-```
-
-### Authentication
-
-**API Key:**
-
-```yaml
-- name: temporal_client
-  kind: temporal.client
-  address: temporal.example.com:7233
-  namespace: production
-  auth:
-    type: api_key
-    value_from_env: TEMPORAL_API_KEY
-```
-
-**mTLS:**
-
-```yaml
-- name: temporal_client
-  kind: temporal.client
-  address: temporal.example.com:7233
-  namespace: production
-  auth:
-    type: mtls
-    cert_file: /path/to/cert.pem
-    key_file: /path/to/key.pem
-  tls:
-    ca_file: /path/to/ca.pem
-```
-
-## Worker Configuration
-
-Define a worker to execute workflows and activities:
+Define a Temporal worker:
 
 ```yaml
 - name: worker
   kind: temporal.worker
-  client: app:temporal_client
-  task_queue: my-tasks
+  task_queue: my-app-queue
+  workflows: true
+  activities: true
   lifecycle:
     auto_start: true
-    depends_on:
-      - app:temporal_client
 ```
 
-### Worker Options
+### Connection
 
-| Field | Default | Description |
-|-------|---------|-------------|
-| `client` | required | Reference to temporal.client entry |
-| `task_queue` | required | Task queue name |
-| `worker_options.max_concurrent_workflow_task_execution_size` | 1000 | Max concurrent workflow tasks |
-| `worker_options.max_concurrent_activity_execution_size` | 1000 | Max concurrent activities |
-| `worker_options.max_concurrent_local_activity_execution_size` | 1000 | Max concurrent local activities |
-| `worker_options.workflow_task_poller_count` | 2 | Workflow task pollers |
-| `worker_options.activity_task_poller_count` | 2 | Activity task pollers |
+Configure in `.wippy.yaml`:
+
+```yaml
+temporal:
+  address: localhost:7233
+  namespace: default
+```
+
+Or via environment:
+- `TEMPORAL_ADDRESS`
+- `TEMPORAL_NAMESPACE`
+- `TEMPORAL_API_KEY` (for Temporal Cloud)
 
 ## Workflows
 
-Workflows are `workflow.lua` entries with temporal metadata:
+### Definition
 
 ```yaml
 - name: order_workflow
@@ -99,21 +60,15 @@ Workflows are `workflow.lua` entries with temporal metadata:
         worker: app:worker
 ```
 
+### Implementation
+
 ```lua
--- order_workflow.lua
 local funcs = require("funcs")
 local time = require("time")
-local workflow = require("workflow")
 
-local function main(input)
-    -- Get workflow info
-    local info = workflow.info()
-
-    -- Call activity (automatically routed through Temporal)
-    local payment, err = funcs.call("app:charge_payment", {
-        order_id = input.order_id,
-        amount = input.amount
-    })
+local function main(order)
+    -- Call activity
+    local payment, err = funcs.call("app:charge_payment", order.total)
     if err then
         return nil, err
     end
@@ -121,31 +76,48 @@ local function main(input)
     -- Durable sleep (survives restarts)
     time.sleep("24h")
 
-    -- Send notification
-    funcs.call("app:send_notification", {
-        user_id = input.user_id,
-        message = "Order shipped"
-    })
+    -- Another activity
+    local shipment = funcs.call("app:ship_order", order.id)
 
-    return { status = "completed", payment_id = payment.id }
+    return {
+        payment_id = payment.id,
+        tracking = shipment.tracking
+    }
 end
 
-return main
+return { main = main }
 ```
 
-### Workflow Module API
+### Workflow API
 
-| Function | Description |
-|----------|-------------|
-| `workflow.info()` | Returns workflow execution info (workflow_id, run_id, task_queue, attempt, etc.) |
-| `workflow.version(change_id, min, max)` | Deterministic versioning for code changes |
-| `workflow.history_length()` | Current event history length |
-| `workflow.history_size()` | Event history size in bytes |
-| `workflow.attrs({search={}, memo={}})` | Upsert search attributes and memo |
+```lua
+local workflow = require("workflow")
+
+-- Get execution info
+local info = workflow.info()
+print(info.workflow_id)
+print(info.run_id)
+
+-- Deterministic versioning for code changes
+local version = workflow.version("change-id", 1, 2)
+if version == 2 then
+    -- New code path
+end
+
+-- Monitor history size
+local length = workflow.history_length()
+local size = workflow.history_size()
+
+-- Set search attributes and memo
+workflow.attrs({
+    search = {status = "processing"},
+    memo = {customer_id = "123"}
+})
+```
 
 ## Activities
 
-Functions become activities via temporal metadata:
+### Definition
 
 ```yaml
 - name: charge_payment
@@ -161,107 +133,269 @@ Functions become activities via temporal metadata:
         worker: app:worker
 ```
 
-```lua
--- payment.lua
-local http_client = require("http_client")
-local json = require("json")
-
-local function charge(input)
-    local resp, err = http_client.post("https://api.stripe.com/charges", {
-        body = json.encode({
-            amount = input.amount,
-            order_id = input.order_id
-        })
-    })
-    if err then
-        return nil, err
-    end
-    return json.decode(resp.body)
-end
-
-return { charge = charge }
-```
-
 ### Local Activities
 
-For fast, in-process activities that don't need separate task queue routing:
+For fast, in-process execution:
 
 ```yaml
-- name: validate_input
-  kind: function.lua
-  source: file://validation.lua
-  method: validate
-  meta:
-    temporal:
-      activity:
-        worker: app:worker
-        local: true
+meta:
+  temporal:
+    activity:
+      worker: app:worker
+      local: true
 ```
 
-## Calling Activities from Workflows
-
-Use `funcs.call()` - the interception system routes calls through Temporal:
+### Calling Activities
 
 ```lua
 local funcs = require("funcs")
 
-local function main(input)
-    -- This call goes through Temporal when in workflow context
-    local result, err = funcs.call("app:charge_payment", {
-        amount = input.amount
-    })
+-- Simple call
+local result, err = funcs.call("app:charge_payment", amount)
+
+-- With options
+local executor = funcs.new()
+executor = executor:with_options({
+    task_queue = "payment-queue",
+    start_to_close_timeout = "30s",
+    retry_policy = {
+        max_attempts = 3,
+        initial_interval = "1s"
+    }
+})
+
+local result, err = executor:call("app:charge_payment", amount)
+```
+
+## Spawning Workflows
+
+Start workflows from anywhere:
+
+```lua
+local pid, err = process.spawn(
+    "app:order_workflow",      -- workflow entry
+    "temporal:my-app-queue",   -- host (temporal:task_queue)
+    order_data                 -- input
+)
+```
+
+From HTTP handlers:
+
+```lua
+local function handler()
+    local req = http.request()
+    local order = json.decode(req:body())
+
+    local pid, err = process.spawn(
+        "app:order_workflow",
+        "temporal:orders",
+        order
+    )
 
     if err then
-        return nil, err
+        return http.response():status(500):json({error = tostring(err)})
     end
 
-    return result
+    return http.response():json({
+        workflow_id = tostring(pid),
+        status = "started"
+    })
 end
 ```
 
-## Versioning
+## Signals
 
-Use `workflow.version()` when changing workflow logic:
+Send signals to running workflows:
 
 ```lua
-local workflow = require("workflow")
+process.send(workflow_pid, "approve", {approved_by = "admin"})
+```
 
-local function main(input)
-    local v = workflow.version("payment-v2", 1, 2)
+Receive in workflow:
 
-    if v == 1 then
-        -- Old payment logic
-        return old_payment(input)
-    else
-        -- New payment logic
-        return new_payment(input)
+```lua
+local inbox = process.inbox()
+
+while true do
+    local msg = inbox:receive()
+    if msg:topic() == "approve" then
+        local data = msg:payload():data()
+        -- Handle approval
+        break
+    end
+end
+```
+
+## Child Workflows
+
+Spawn child workflows:
+
+```lua
+local function main(order)
+    -- Spawn child workflow
+    local child_pid = process.spawn(
+        "app:payment_workflow",
+        "temporal:payments",
+        {order_id = order.id, amount = order.total}
+    )
+
+    -- Wait for completion
+    local events = process.events()
+    for event in events:iter() do
+        if event.pid == child_pid and event.type == "EXIT" then
+            if event.reason == "normal" then
+                -- Child completed successfully
+            else
+                -- Child failed
+            end
+            break
+        end
     end
 end
 ```
 
 ## Error Handling
 
-Activities return errors that workflows can handle:
-
 ```lua
 local function main(input)
     local result, err = funcs.call("app:risky_activity", input)
 
     if err then
-        -- Check if retryable
-        if err:retryable() then
-            return nil, err  -- Let Temporal retry
-        end
-        -- Non-retryable, handle gracefully
-        funcs.call("app:notify_failure", { error = err:message() })
-        return { status = "failed", error = err:message() }
+        -- Log and compensate
+        funcs.call("app:send_alert", {
+            error = tostring(err),
+            input = input
+        })
+        return nil, err
     end
 
     return result
 end
 ```
 
+### Retry Policies
+
+Configure in activity options:
+
+```lua
+executor:with_options({
+    retry_policy = {
+        max_attempts = 5,
+        initial_interval = "1s",
+        backoff_coefficient = 2.0,
+        max_interval = "1m"
+    }
+})
+```
+
+## Determinism
+
+Workflow code must be deterministic. Use:
+
+- `time.sleep()` instead of `os.sleep()`
+- `workflow.version()` for code changes
+- `funcs.call()` for non-deterministic operations
+
+Avoid:
+- Direct I/O operations
+- Random values (use activity)
+- Current time (use `workflow.info().start_time`)
+
+## Example: Order Processing
+
+**Entry definitions:**
+
+```yaml
+version: "1.0"
+namespace: app
+
+entries:
+  - name: worker
+    kind: temporal.worker
+    task_queue: orders
+    workflows: true
+    activities: true
+    lifecycle:
+      auto_start: true
+
+  - name: order_workflow
+    kind: workflow.lua
+    source: file://order_workflow.lua
+    method: main
+    modules:
+      - funcs
+      - time
+    meta:
+      temporal:
+        workflow:
+          worker: app:worker
+
+  - name: charge_payment
+    kind: function.lua
+    source: file://payment.lua
+    method: charge
+    modules:
+      - http_client
+      - json
+    meta:
+      temporal:
+        activity:
+          worker: app:worker
+
+  - name: ship_order
+    kind: function.lua
+    source: file://shipping.lua
+    method: ship
+    modules:
+      - http_client
+    meta:
+      temporal:
+        activity:
+          worker: app:worker
+```
+
+**order_workflow.lua:**
+
+```lua
+local funcs = require("funcs")
+local time = require("time")
+
+local function main(order)
+    -- Charge payment
+    local payment, err = funcs.call("app:charge_payment", {
+        amount = order.total,
+        customer = order.customer_id
+    })
+    if err then
+        return {status = "failed", error = tostring(err)}
+    end
+
+    -- Wait for fulfillment window
+    time.sleep("1h")
+
+    -- Ship order
+    local shipment, err = funcs.call("app:ship_order", {
+        order_id = order.id,
+        address = order.shipping_address
+    })
+    if err then
+        -- Refund on shipping failure
+        funcs.call("app:refund_payment", payment.id)
+        return {status = "failed", error = tostring(err)}
+    end
+
+    return {
+        status = "completed",
+        payment_id = payment.id,
+        tracking = shipment.tracking_number
+    }
+end
+
+return { main = main }
+```
+
 ## See Also
 
-- [Entry Kinds](guide-entry-kinds.md) - temporal.client and temporal.worker config
-- [Functions](concept-functions.md) - Function execution model
+- [Workflows](concepts/workflows.md) - Workflow concepts
+- [Functions](lua/core/funcs.md) - Function calls
+- [Process](lua/core/process.md) - Process management
