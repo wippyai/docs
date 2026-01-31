@@ -1,147 +1,278 @@
 # Dynamic Evaluation
-<secondary-label ref="process"/>
-<secondary-label ref="permissions"/>
 
-Execute Lua code dynamically at runtime. Compile and run untrusted code in sandboxed environments with controlled module access.
+Execute code dynamically at runtime with sandboxed environments and controlled module access.
 
-## Loading
+## Two Systems
+
+Wippy provides two evaluation systems:
+
+| System | Purpose | Use Case |
+|--------|---------|----------|
+| `expr` | Expression evaluation | Config, templates, simple calculations |
+| `eval_runner` | Full Lua execution | Plugins, user scripts, dynamic code |
+
+## expr Module
+
+Lightweight expression evaluation using the expr-lang syntax.
 
 ```lua
-local eval = require("eval_runner")
+local expr = require("expr")
+
+local result, err = expr.eval("x + y * 2", {x = 10, y = 5})
+-- result = 20
 ```
 
-## Running Code
+### Compiling Expressions
 
-Compile and execute Lua code in one operation. The code runs in an isolated environment with only specified modules available.
+Compile once, run many times:
 
 ```lua
--- Simple execution
-local result, err = eval.run({
-    source = [[
-        local function add(a, b)
-            return a + b
-        end
-        return { add = add }
-    ]],
-    method = "add",
-    args = {10, 20}
-})
--- result = 30
+local program, err = expr.compile("price * quantity")
 
--- With allowed modules
-local result, err = eval.run({
+local total1 = program:run({price = 10, quantity = 5})
+local total2 = program:run({price = 20, quantity = 3})
+```
+
+### Supported Syntax
+
+```lua
+-- Arithmetic
+expr.eval("1 + 2 * 3")           -- 7
+expr.eval("10 / 2 - 1")          -- 4
+expr.eval("10 % 3")              -- 1
+
+-- Comparison
+expr.eval("x > 5", {x = 10})     -- true
+expr.eval("x == y", {x = 1, y = 1}) -- true
+
+-- Boolean
+expr.eval("a && b", {a = true, b = false})  -- false
+expr.eval("a || b", {a = true, b = false})  -- true
+expr.eval("!a", {a = false})     -- true
+
+-- Ternary
+expr.eval("x > 0 ? 'positive' : 'negative'", {x = 5})
+
+-- Functions
+expr.eval("max(1, 5, 3)")        -- 5
+expr.eval("min(1, 5, 3)")        -- 1
+expr.eval("len([1, 2, 3])")      -- 3
+
+-- Arrays
+expr.eval("[1, 2, 3][0]")        -- 1
+
+-- String concatenation
+expr.eval("'hello' + ' ' + 'world'")
+```
+
+## eval_runner Module
+
+Full Lua execution with security controls.
+
+```lua
+local runner = require("eval_runner")
+
+local result, err = runner.run({
+    source = [[
+        local function double(x)
+            return x * 2
+        end
+        return double(input)
+    ]],
+    args = {21}
+})
+-- result = 42
+```
+
+### Configuration
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `source` | string | Lua source code (required) |
+| `method` | string | Function to call in returned table |
+| `args` | any[] | Arguments passed to function |
+| `modules` | string[] | Allowed builtin modules |
+| `imports` | table | Registry entries to import |
+| `context` | table | Values available as `ctx` |
+| `allow_classes` | string[] | Additional module classes |
+| `custom_modules` | table | Custom tables as modules |
+
+### Module Access
+
+Whitelist allowed modules:
+
+```lua
+runner.run({
     source = [[
         local json = require("json")
-        local function parse(data)
-            return json.decode(data)
-        end
-        return { parse = parse }
+        return json.encode({hello = "world"})
     ]],
-    method = "parse",
-    args = {'{"name": "test"}'},
     modules = {"json"}
 })
--- result = {name = "test"}
+```
 
--- With context values
-local result, err = eval.run({
-    source = [[
-        local function greet()
-            return "Hello, " .. ctx.user_name
-        end
-        return { greet = greet }
-    ]],
-    method = "greet",
-    context = {user_name = "Alice"}
-})
--- result = "Hello, Alice"
+Modules not in the list cannot be required.
 
--- With registry imports
-local result, err = eval.run({
+### Registry Imports
+
+Import entries from the registry:
+
+```lua
+runner.run({
     source = [[
         local utils = require("utils")
-        return utils.process(data)
+        return utils.format(data)
     ]],
-    method = "process",
-    args = {input_data},
     imports = {
-        utils = "myapp.libs:utilities"
+        utils = "app.lib:utilities"
+    },
+    args = {{key = "value"}}
+})
+```
+
+### Custom Modules
+
+Inject custom tables:
+
+```lua
+runner.run({
+    source = [[
+        return sdk.version
+    ]],
+    custom_modules = {
+        sdk = {version = "1.0.0", api_key = "xxx"}
     }
 })
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `config.source` | string | Lua source code to execute |
-| `config.method` | string | Method name to call (optional) |
-| `config.modules` | string[] | Module names allowed in code (optional) |
-| `config.imports` | table | Registry entries to import (alias = ID) (optional) |
-| `config.args` | any[] | Arguments passed to method (optional) |
-| `config.context` | table | Context values available as `ctx` (optional) |
+### Context Values
 
-**Returns:** `any, error`
-
-## Compiling Programs
-
-Compile Lua source code into a reusable Program. Use this when you need to execute the same code multiple times with different arguments.
+Pass data accessible as `ctx`:
 
 ```lua
-local program, err = eval.compile([[
-    local function process(data)
-        local result = {}
-        for k, v in pairs(data) do
-            result[k] = string.upper(tostring(v))
-        end
-        return result
-    end
-    return { process = process }
-]], "process", {modules = {}})
-
-if err then
-    return nil, err
-end
-
-print(program:method())   -- "process"
-print(program:modules())  -- {}
+runner.run({
+    source = [[
+        return "Hello, " .. ctx.user
+    ]],
+    context = {user = "Alice"}
+})
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `source` | string | Lua source code to compile |
-| `method` | string | Method name to call on execution (optional) |
-| `options.modules` | string[] | Module names allowed in sandboxed code (optional) |
-| `options.imports` | table | Registry entries to import (alias = ID) (optional) |
+### Compiling Programs
 
-**Returns:** `Program, error`
+Compile once for repeated execution:
 
-## Program Methods
+```lua
+local program, err = runner.compile([[
+    local function process(x)
+        return x * 2
+    end
+    return { process = process }
+]], "process", {modules = {"json"}})
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `method()` | string | Method name to call |
-| `modules()` | string[] | Allowed module names |
+local result = program:run({10})  -- 20
+```
 
-## Permissions
+## Security Model
 
-Dynamic code evaluation is subject to security policy evaluation.
+### Module Classes
 
-| Action | Resource | Meta | Description |
-|--------|----------|------|-------------|
-| `eval.compile` | - | - | Compile Lua source code |
-| `eval.run` | - | - | Execute compiled code |
-| `eval.module` | module name | `entry_id` | Load builtin module in sandbox |
-| `eval.import` | registry ID | `entry_id`, `alias` | Import registry entry |
+Modules are categorized by capability:
 
-The `eval.module` permission is checked for each builtin module in the `modules` list. The `eval.import` permission is checked for each registry entry in the `imports` table. Both include `entry_id` metadata containing the registry ID of the calling entry.
+| Class | Description | Default |
+|-------|-------------|---------|
+| `deterministic` | Pure functions | Allowed |
+| `encoding` | Data encoding | Allowed |
+| `time` | Time operations | Allowed |
+| `nondeterministic` | Random, etc. | Allowed |
+| `process` | Spawn, registry | Blocked |
+| `storage` | File, database | Blocked |
+| `network` | HTTP, sockets | Blocked |
 
-## Errors
+### Enabling Blocked Classes
 
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| Permission denied | `errors.PERMISSION_DENIED` | no |
-| No context available | `errors.INTERNAL` | no |
-| Source is required | `errors.INVALID` | no |
-| Compilation failed | `errors.INTERNAL` | no |
-| Execution failed | `errors.INTERNAL` | no |
+```lua
+runner.run({
+    source = [[
+        local http = require("http_client")
+        return http.get("https://api.example.com")
+    ]],
+    modules = {"http_client"},
+    allow_classes = {"network"}
+})
+```
 
-See [Error Handling](lua-errors.md) for working with errors.
+### Permission Checks
+
+The system checks permissions for:
+
+- `eval.compile` - Before compilation
+- `eval.run` - Before execution
+- `eval.module` - For each module in whitelist
+- `eval.import` - For each registry import
+- `eval.class` - For each allowed class
+
+Configure in security policies.
+
+## Error Handling
+
+```lua
+local result, err = runner.run({...})
+if err then
+    if err:kind() == errors.PERMISSION_DENIED then
+        -- Access denied by security policy
+    elseif err:kind() == errors.INVALID then
+        -- Invalid source or configuration
+    elseif err:kind() == errors.INTERNAL then
+        -- Execution or compilation error
+    end
+end
+```
+
+## Use Cases
+
+### Plugin System
+
+```lua
+local plugins = registry.find({meta = {type = "plugin"}})
+
+for _, plugin in ipairs(plugins) do
+    local source = plugin:data().source
+    runner.run({
+        source = source,
+        method = "init",
+        modules = {"json", "time"},
+        context = {config = app_config}
+    })
+end
+```
+
+### Template Evaluation
+
+```lua
+local template = "Hello, {{name}}! You have {{count}} messages."
+local compiled = expr.compile("name")
+
+-- Fast repeated evaluation
+for _, user in ipairs(users) do
+    local greeting = compiled:run({name = user.name})
+end
+```
+
+### User Scripts
+
+```lua
+local user_code = request:body()
+
+local result, err = runner.run({
+    source = user_code,
+    modules = {"json", "text"},  -- Safe modules only
+    context = {data = input_data}
+})
+```
+
+## See Also
+
+- [Expression](lua/dynamic/expression.md) - Expression language reference
+- [Exec](lua/dynamic/exec.md) - System command execution
+- [Security](lua/security/security.md) - Security policies

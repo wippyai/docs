@@ -15,13 +15,14 @@
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
       {"title": "Queue Consumers", "path": "guides/queue-consumers"},
-      {"title": "Supervision", "path": "guides/supervision"}
+      {"title": "Supervision", "path": "guides/supervision"},
+      {"title": "Publishing", "path": "guides/publishing"}
     ]
   },
   {
     "title": "Temporal",
     "children": [
-      {"title": "○ Overview", "path": "temporal/overview"}
+      {"title": "Overview", "path": "temporal/overview"}
     ]
   },
   {
@@ -158,14 +159,12 @@
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLI Applications", "path": "tutorials/cli"},
       {"title": "Echo Service", "path": "tutorials/echo-service"},
-      {"title": "Task Queue", "path": "tutorials/task-queue"},
-      {"title": "○ Testing", "path": "tutorials/testing"}
+      {"title": "Task Queue", "path": "tutorials/task-queue"}
     ]
   },
   {
     "title": "Internals",
     "children": [
-      {"title": "○ Architecture", "path": "internals/architecture"},
       {"title": "Registry", "path": "internals/registry"},
       {"title": "Scheduler", "path": "internals/scheduler"},
       {"title": "Dispatch", "path": "internals/dispatch"},
