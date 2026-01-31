@@ -1,6 +1,6 @@
 # About Wippy
 
-Wippy is an agentic platform for software that needs to change while it's running—automation systems, AI agents, plugin architectures, and similar applications where the core gets engineered once and then adapted repeatedly without rebuilding or redeploying.
+Wippy is an agentic platform and runtime for software that needs to change while it's running—automation systems, AI agents, plugin architectures, and similar applications where the core gets engineered once and then adapted repeatedly without rebuilding or redeploying.
 
 The foundation is the actor model. Code runs in isolated processes that communicate through messages, each managing its own state. When something fails, it fails in isolation. Supervision trees handle recovery automatically, restarting processes when they crash.
 
