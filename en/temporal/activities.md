@@ -1,8 +1,10 @@
 # Activities
 
-Activities are functions that execute non-deterministic operations (I/O, network calls, database access). They're defined as regular `function.lua` entries with Temporal metadata.
+Activities are functions that execute non-deterministic operations. Any `function.lua` or `process.lua` entry can be registered as a Temporal activity by adding metadata.
 
-## Definition
+## Registering Activities
+
+Add `meta.temporal.activity` to register a function as an activity:
 
 ```yaml
 - name: charge_payment
@@ -18,7 +20,12 @@ Activities are functions that execute non-deterministic operations (I/O, network
         worker: app:worker
 ```
 
-The `meta.temporal.activity.worker` field registers this function as an activity on the specified worker.
+### Metadata Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `worker` | Yes | Reference to `temporal.worker` entry |
+| `local` | No | Execute as local activity (default: false) |
 
 ## Implementation
 
@@ -69,11 +76,9 @@ local result, err = funcs.call("app:charge_payment", {
 if err then
     return nil, err
 end
-
-print(result.id)
 ```
 
-## Activity Options
+### Activity Options
 
 Configure timeouts and retry behavior:
 
@@ -96,26 +101,9 @@ executor = executor:with_options({
 local result, err = executor:call("app:charge_payment", input)
 ```
 
-### Timeout Options
-
-| Option | Description |
-|--------|-------------|
-| `start_to_close_timeout` | Max time from activity start to completion |
-| `schedule_to_close_timeout` | Max time from scheduling to completion |
-| `heartbeat_timeout` | Max time between heartbeats |
-
-### Retry Policy
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `max_attempts` | 3 | Maximum retry attempts |
-| `initial_interval` | 1s | Initial retry delay |
-| `backoff_coefficient` | 2.0 | Multiplier for subsequent delays |
-| `max_interval` | 1m | Maximum retry delay |
-
 ## Local Activities
 
-For fast, in-process execution without separate task queue overhead:
+Local activities execute in the workflow worker process without separate task queue polling. Use for fast, short operations:
 
 ```yaml
 - name: validate_input
@@ -131,47 +119,30 @@ For fast, in-process execution without separate task queue overhead:
         local: true
 ```
 
-Local activities:
-- Execute in the workflow worker process
-- No separate task queue polling
-- Lower latency for quick operations
+Characteristics:
+- Execute in workflow worker process
+- Lower latency
+- No separate task queue overhead
 - Limited to short execution times
+- No heartbeating
 
-## Task Queue Routing
+## Activity Naming
 
-Route activities to specific queues:
+Activities are registered with their full entry ID as the name:
 
 ```yaml
-# Worker for payment processing
-- name: payment_worker
-  kind: temporal.worker
-  client: app:temporal_client
-  task_queue: "payment-queue"
-
-# Activity registered on payment queue
-- name: process_payment
-  kind: function.lua
-  source: file://payment.lua
-  method: process
-  meta:
-    temporal:
-      activity:
-        worker: app:payment_worker
+namespace: app
+entries:
+  - name: charge_payment
+    kind: function.lua
+    # ...
 ```
 
-Override at call time:
-
-```lua
-executor = executor:with_options({
-    task_queue = "priority-queue"
-})
-
-local result = executor:call("app:process_payment", input)
-```
+Activity name: `app:charge_payment`
 
 ## Error Handling
 
-Activities return errors via the standard Lua pattern:
+Return errors via the standard Lua pattern:
 
 ```lua
 local function charge(input)
@@ -185,55 +156,32 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined: " .. response:body())
+        return nil, errors.new("FAILED", "payment declined")
     end
 
     return json.decode(response:body())
 end
 ```
 
-Errors propagate to the workflow:
+## Process Activities
 
-```lua
-local result, err = funcs.call("app:charge_payment", input)
-if err then
-    if err:kind() == errors.INVALID then
-        -- Bad input, don't retry
-        return {status = "rejected", reason = tostring(err)}
-    end
-    -- Other errors will be retried per retry policy
-    return nil, err
-end
-```
+`process.lua` entries can also be registered as activities:
 
-## Heartbeats
-
-For long-running activities, send heartbeats to indicate progress:
-
-```lua
-local activity = require("activity")
-
-local function process_large_file(input)
-    local file = fs.open(input.path)
-    local processed = 0
-
-    for chunk in file:chunks(1024 * 1024) do
-        process_chunk(chunk)
-        processed = processed + 1
-
-        -- Report progress
-        activity.heartbeat({
-            chunks_processed = processed,
-            percent = (processed / input.total_chunks) * 100
-        })
-    end
-
-    return {processed = processed}
-end
+```yaml
+- name: long_task
+  kind: process.lua
+  source: file://long_task.lua
+  method: main
+  modules:
+    - http_client
+  meta:
+    temporal:
+      activity:
+        worker: app:worker
 ```
 
 ## See Also
 
 - [Overview](temporal/overview.md) - Configuration
 - [Workflows](temporal/workflows.md) - Workflow implementation
-- [Functions](lua/core/funcs.md) - Function module reference
+- [Functions](lua/core/funcs.md) - Function module

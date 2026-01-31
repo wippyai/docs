@@ -1,6 +1,6 @@
 # Workflows
 
-Workflows are durable functions that orchestrate activities and maintain state across failures and restarts.
+Workflows are durable functions that orchestrate activities and maintain state across failures and restarts. They're defined using the `workflow.lua` entry kind.
 
 ## Definition
 
@@ -18,6 +18,13 @@ Workflows are durable functions that orchestrate activities and maintain state a
       workflow:
         worker: app:worker
 ```
+
+### Metadata Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `worker` | Yes | Reference to `temporal.worker` entry |
+| `name` | No | Custom workflow name (defaults to entry ID) |
 
 ## Basic Implementation
 
@@ -44,7 +51,6 @@ local function main(order)
         address = order.shipping_address
     })
     if err then
-        -- Compensate on failure
         funcs.call("app:refund_payment", payment.id)
         return {status = "failed", error = tostring(err)}
     end
@@ -61,23 +67,29 @@ return { main = main }
 
 ## Workflow Module
 
-The `workflow` module provides workflow-specific operations:
+The `workflow` module provides workflow-specific operations.
+
+### workflow.info()
+
+Get workflow execution information:
 
 ```lua
 local workflow = require("workflow")
 
--- Get execution information
 local info = workflow.info()
-print(info.workflow_id)
-print(info.run_id)
-print(info.task_queue)
-print(info.attempt)
-print(info.start_time)
+print(info.workflow_id)    -- Workflow execution ID
+print(info.run_id)         -- Current run ID
+print(info.workflow_type)  -- Workflow type name
+print(info.task_queue)     -- Task queue name
+print(info.namespace)      -- Temporal namespace
+print(info.attempt)        -- Current attempt number
+print(info.history_length) -- Number of history events
+print(info.history_size)   -- History size in bytes
 ```
 
-### Versioning
+### workflow.version()
 
-Handle code changes safely with versioning:
+Handle code changes with deterministic versioning:
 
 ```lua
 local version = workflow.version("payment-v2", 1, 2)
@@ -92,26 +104,13 @@ end
 ```
 
 Parameters:
-- `change_id` - Identifier for this change
-- `min_version` - Minimum supported version
-- `max_version` - Maximum (current) version
+- `change_id` - Unique identifier for this change
+- `min_supported` - Minimum supported version
+- `max_supported` - Maximum (current) version
 
-### History Monitoring
+### workflow.attrs()
 
-Monitor workflow history size:
-
-```lua
-local length = workflow.history_length()  -- Number of events
-local size = workflow.history_size()      -- Size in bytes
-
-if length > 10000 then
-    -- Consider continue-as-new for long-running workflows
-end
-```
-
-### Search Attributes and Memo
-
-Update searchable attributes and memo:
+Update search attributes and memo:
 
 ```lua
 workflow.attrs({
@@ -127,21 +126,43 @@ workflow.attrs({
 })
 ```
 
+### workflow.history_length()
+
+Get the number of events in workflow history:
+
+```lua
+local length = workflow.history_length()
+if length > 10000 then
+    -- Consider continue-as-new
+end
+```
+
+### workflow.history_size()
+
+Get workflow history size in bytes:
+
+```lua
+local size = workflow.history_size()
+```
+
+### workflow.call()
+
+Execute a child workflow:
+
+```lua
+local result, err = workflow.call("app:child_workflow", input_data)
+```
+
 ## Signals
 
-Send data to running workflows:
+Send data to running workflows using the process inbox.
 
 **Sending signals:**
 
 ```lua
--- From any process
 process.send(workflow_pid, "approve", {
     approved_by = "admin",
     comment = "Looks good"
-})
-
-process.send(workflow_pid, "cancel", {
-    reason = "Customer request"
 })
 ```
 
@@ -151,7 +172,6 @@ process.send(workflow_pid, "cancel", {
 local function main(order)
     local inbox = process.inbox()
 
-    -- Wait for approval
     while true do
         local msg = inbox:receive()
         local topic = msg:topic()
@@ -165,112 +185,20 @@ local function main(order)
         end
     end
 
-    -- Continue with approved order
     return process_order(order)
-end
-```
-
-### Non-blocking Signal Check
-
-```lua
-local msg = inbox:try_receive()
-if msg then
-    -- Handle message
-else
-    -- No message available
-end
-```
-
-### Signal with Timeout
-
-```lua
-local msg = inbox:receive_timeout("30s")
-if msg then
-    -- Handle message
-else
-    -- Timeout expired
-end
-```
-
-## Child Workflows
-
-Spawn and coordinate child workflows:
-
-```lua
-local function main(order)
-    -- Spawn child workflow
-    local payment_pid = process.spawn(
-        "app:payment_workflow",
-        "app:worker",
-        {order_id = order.id, amount = order.total}
-    )
-
-    local shipping_pid = process.spawn(
-        "app:shipping_workflow",
-        "app:worker",
-        {order_id = order.id, address = order.address}
-    )
-
-    -- Wait for both to complete
-    local results = {}
-    local events = process.events()
-
-    for event in events:iter() do
-        if event.type == "EXIT" then
-            if event.pid == payment_pid then
-                results.payment = event.result
-            elseif event.pid == shipping_pid then
-                results.shipping = event.result
-            end
-        end
-
-        if results.payment and results.shipping then
-            break
-        end
-    end
-
-    return {
-        status = "completed",
-        payment = results.payment,
-        shipping = results.shipping
-    }
 end
 ```
 
 ## Timers
 
-Durable timers that survive restarts:
+Durable timers survive restarts:
 
 ```lua
 local time = require("time")
 
--- Sleep for duration
 time.sleep("24h")
 time.sleep("5m")
 time.sleep("30s")
-
--- Sleep until specific time
-time.sleep_until(deadline_timestamp)
-```
-
-### Timer with Signal Race
-
-Wait for either a timer or signal:
-
-```lua
-local function wait_for_payment(timeout)
-    local inbox = process.inbox()
-    local deadline = time.now():add(timeout)
-
-    while time.now() < deadline do
-        local msg = inbox:receive_timeout("1m")
-        if msg and msg:topic() == "payment_received" then
-            return msg:payload():data()
-        end
-    end
-
-    return nil, errors.new("TIMEOUT", "payment not received")
-end
 ```
 
 ## Determinism
@@ -280,8 +208,8 @@ Workflow code must be deterministic. The same inputs must produce the same seque
 ### Do
 
 ```lua
--- Use deterministic time
-local start = workflow.info().start_time
+-- Use workflow info for current time context
+local info = workflow.info()
 
 -- Use durable sleep
 time.sleep("1h")
@@ -309,54 +237,27 @@ local file = io.open("data.txt")  -- Non-deterministic
 counter = counter + 1  -- Non-deterministic across replays
 ```
 
-### Moving Non-Deterministic Code to Activities
-
-```lua
--- Activity definition
-- name: generate_id
-  kind: function.lua
-  source: file://utils.lua
-  method: generate_id
-  meta:
-    temporal:
-      activity:
-        worker: app:worker
-        local: true  -- Fast local activity
-
--- utils.lua
-local uuid = require("uuid")
-local function generate_id()
-    return uuid.v4()
-end
-return { generate_id = generate_id }
-
--- In workflow
-local id = funcs.call("app:generate_id")
-```
-
 ## Error Handling
 
-### Activity Errors
-
 ```lua
-local result, err = funcs.call("app:risky_activity", input)
+local function main(order)
+    local result, err = funcs.call("app:risky_activity", order)
 
-if err then
-    -- Log error
-    funcs.call("app:log_error", {
-        workflow_id = workflow.info().workflow_id,
-        error = tostring(err),
-        input = input
-    })
+    if err then
+        -- Log and compensate
+        funcs.call("app:send_alert", {
+            error = tostring(err),
+            order_id = order.id
+        })
 
-    -- Compensate
-    funcs.call("app:rollback", {transaction_id = tx_id})
+        return {status = "failed", error = tostring(err)}
+    end
 
-    return {status = "failed", error = tostring(err)}
+    return {status = "completed", result = result}
 end
 ```
 
-### Compensation Pattern (Saga)
+## Compensation Pattern (Saga)
 
 ```lua
 local function main(order)
@@ -400,140 +301,40 @@ local function run_compensations(compensations)
 end
 ```
 
-## Complete Example
+## Spawning Workflows
 
-**Entry definitions:**
-
-```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: temporal_client
-    kind: temporal.client
-    address: "localhost:7233"
-    namespace: "default"
-    lifecycle:
-      auto_start: true
-
-  - name: worker
-    kind: temporal.worker
-    client: app:temporal_client
-    task_queue: "orders"
-    lifecycle:
-      auto_start: true
-      depends_on:
-        - app:temporal_client
-
-  - name: order_workflow
-    kind: workflow.lua
-    source: file://order_workflow.lua
-    method: main
-    modules:
-      - funcs
-      - time
-      - workflow
-      - errors
-    meta:
-      temporal:
-        workflow:
-          worker: app:worker
-
-  - name: validate_order
-    kind: function.lua
-    source: file://order.lua
-    method: validate
-    modules:
-      - errors
-    meta:
-      temporal:
-        activity:
-          worker: app:worker
-          local: true
-
-  - name: charge_payment
-    kind: function.lua
-    source: file://payment.lua
-    method: charge
-    modules:
-      - http_client
-      - json
-    meta:
-      temporal:
-        activity:
-          worker: app:worker
-
-  - name: ship_order
-    kind: function.lua
-    source: file://shipping.lua
-    method: ship
-    modules:
-      - http_client
-      - json
-    meta:
-      temporal:
-        activity:
-          worker: app:worker
-```
-
-**order_workflow.lua:**
+Start workflows from any code:
 
 ```lua
-local funcs = require("funcs")
-local time = require("time")
-local workflow = require("workflow")
-local errors = require("errors")
+local pid, err = process.spawn(
+    "app:order_workflow",    -- workflow entry
+    "app:worker",            -- temporal worker
+    {order_id = "123"}       -- input
+)
+```
 
-local function main(order)
-    -- Update search attributes
-    workflow.attrs({
-        search = {status = "validating", customer_id = order.customer_id}
-    })
+From HTTP handlers:
 
-    -- Validate order (local activity)
-    local valid, err = funcs.call("app:validate_order", order)
+```lua
+local function handler()
+    local req = http.request()
+    local order = json.decode(req:body())
+
+    local pid, err = process.spawn(
+        "app:order_workflow",
+        "app:worker",
+        order
+    )
+
     if err then
-        workflow.attrs({search = {status = "rejected"}})
-        return {status = "rejected", error = tostring(err)}
+        return http.response():status(500):json({error = tostring(err)})
     end
 
-    -- Charge payment
-    workflow.attrs({search = {status = "charging"}})
-    local payment, err = funcs.call("app:charge_payment", {
-        amount = order.total,
-        customer = order.customer_id
+    return http.response():json({
+        workflow_id = tostring(pid),
+        status = "started"
     })
-    if err then
-        workflow.attrs({search = {status = "payment_failed"}})
-        return {status = "payment_failed", error = tostring(err)}
-    end
-
-    -- Wait for fulfillment window
-    workflow.attrs({search = {status = "awaiting_fulfillment"}})
-    time.sleep("1h")
-
-    -- Ship order
-    workflow.attrs({search = {status = "shipping"}})
-    local shipment, err = funcs.call("app:ship_order", {
-        order_id = order.id,
-        address = order.shipping_address
-    })
-    if err then
-        -- Refund on shipping failure
-        funcs.call("app:refund_payment", payment.id)
-        workflow.attrs({search = {status = "shipping_failed"}})
-        return {status = "shipping_failed", error = tostring(err)}
-    end
-
-    workflow.attrs({search = {status = "completed"}})
-    return {
-        status = "completed",
-        payment_id = payment.id,
-        tracking = shipment.tracking_number
-    }
 end
-
-return { main = main }
 ```
 
 ## See Also
