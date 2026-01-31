@@ -3,8 +3,8 @@
     "title": "Getting Started",
     "children": [
       {"title": "What is Wippy", "path": "start/about"},
-      {"title": "Installation", "path": "start/installation"},
-      {"title": "Quickstart", "path": "start/quickstart"},
+      {"title": "○ Installation", "path": "start/installation"},
+      {"title": "○ Quickstart", "path": "start/quickstart"},
       {"title": "Project Structure", "path": "start/structure"}
     ]
   },
@@ -29,45 +29,6 @@
       {"title": "Registry", "path": "concepts/registry"},
       {"title": "Functions", "path": "concepts/functions"},
       {"title": "Workflows", "path": "concepts/workflows"}
-    ]
-  },
-  {
-    "title": "Tutorials",
-    "children": [
-      {"title": "Hello World", "path": "tutorials/hello-world"},
-      {"title": "Echo Service", "path": "tutorials/echo-service"},
-      {"title": "Authentication", "path": "tutorials/auth"},
-      {"title": "Channels", "path": "tutorials/channels"},
-      {"title": "Processes", "path": "tutorials/processes"},
-      {"title": "Task Queue", "path": "tutorials/task-queue"},
-      {"title": "Testing", "path": "tutorials/testing"}
-    ]
-  },
-  {
-    "title": "HTTP",
-    "children": [
-      {"title": "Server", "path": "http/server"},
-      {"title": "Router", "path": "http/router"},
-      {"title": "Endpoints", "path": "http/endpoint"},
-      {"title": "Middleware", "path": "http/middleware"},
-      {"title": "Static Files", "path": "http/static"},
-      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
-    ]
-  },
-  {
-    "title": "System Components",
-    "children": [
-      {"title": "Process Host", "path": "system/process-host"},
-      {"title": "Database", "path": "system/database"},
-      {"title": "Store", "path": "system/store"},
-      {"title": "Queue", "path": "system/queue"},
-      {"title": "Filesystem", "path": "system/filesystem"},
-      {"title": "Cloud Storage", "path": "system/cloudstorage"},
-      {"title": "Environment", "path": "system/env"},
-      {"title": "Security", "path": "system/security"},
-      {"title": "Templates", "path": "system/template"},
-      {"title": "Exec", "path": "system/exec"},
-      {"title": "Terminal", "path": "system/terminal"}
     ]
   },
   {
@@ -162,15 +123,53 @@
     ]
   },
   {
+    "title": "System Components",
+    "children": [
+      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "Database", "path": "system/database"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Queue", "path": "system/queue"},
+      {"title": "Filesystem", "path": "system/filesystem"},
+      {"title": "Cloud Storage", "path": "system/cloudstorage"},
+      {"title": "Environment", "path": "system/env"},
+      {"title": "Template", "path": "system/template"},
+      {"title": "Security", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
+    ]
+  },
+  {
+    "title": "HTTP",
+    "children": [
+      {"title": "Server", "path": "http/server"},
+      {"title": "Router", "path": "http/router"},
+      {"title": "Endpoint", "path": "http/endpoint"},
+      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "Static Files", "path": "http/static"},
+      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
+    ]
+  },
+  {
+    "title": "Tutorials",
+    "children": [
+      {"title": "Hello World", "path": "tutorials/hello-world"},
+      {"title": "CLI Applications", "path": "tutorials/cli"},
+      {"title": "Echo Service", "path": "tutorials/echo-service"},
+      {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "○ Testing", "path": "tutorials/testing"},
+      {"title": "○ Crypto Ticker", "path": "tutorials/crypto-ticker"}
+    ]
+  },
+  {
     "title": "Internals",
     "children": [
-      {"title": "Architecture", "path": "internals/architecture"},
+      {"title": "○ Architecture", "path": "internals/architecture"},
+      {"title": "Registry", "path": "internals/registry"},
       {"title": "Scheduler", "path": "internals/scheduler"},
       {"title": "Dispatch", "path": "internals/dispatch"},
-      {"title": "Registry", "path": "internals/registry"},
       {"title": "Events", "path": "internals/events"},
-      {"title": "Kinds", "path": "internals/kinds"},
-      {"title": "Modules", "path": "internals/modules"}
+      {"title": "Modules", "path": "internals/modules"},
+      {"title": "Kinds", "path": "internals/kinds"}
     ]
   },
   {
