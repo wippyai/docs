@@ -219,6 +219,173 @@ end
 print(value)
 ```
 
+## Non-Nil Assertion
+
+Use `!` to assert an expression is non-nil:
+
+```lua
+local user: User? = get_user()
+local name = user!.name              -- assert user is non-nil
+```
+
+If the value is nil at runtime, an error is raised. Use when you know a value cannot be nil but the type checker cannot prove it.
+
+## Type Casts
+
+### Safe Cast (Validation)
+
+Call a type as a function to validate and cast:
+
+```lua
+local data: any = get_json()
+local user = User(data)              -- validates and returns User
+local name = user.name               -- safe field access
+```
+
+Works with primitives and custom types:
+
+```lua
+local x: any = get_value()
+local s = string(x)                  -- cast to string
+local n = integer(x)                 -- cast to integer
+local b = boolean(x)                 -- cast to boolean
+
+type Point = {x: number, y: number}
+local p = Point(data)                -- validates record structure
+```
+
+### Type:is() Method
+
+Validate without throwing, returns `(value, nil)` or `(nil, error)`:
+
+```lua
+type Point = {x: number, y: number}
+local data: any = get_input()
+
+local p, err = Point:is(data)
+if p then
+    local sum = p.x + p.y            -- p is valid Point
+else
+    return nil, err                  -- validation failed
+end
+```
+
+The result narrows in conditionals:
+
+```lua
+if Point:is(data) then
+    local p: Point = data            -- data narrowed to Point
+end
+```
+
+### Unsafe Cast
+
+Use `::` or `as` for unchecked casts:
+
+```lua
+local data: any = get_data()
+local user = data :: User            -- no runtime check
+local user = data as User            -- same as ::
+```
+
+Use sparingly. Unsafe casts bypass validation and can cause runtime errors if the value doesn't match the type.
+
+## Type Reflection
+
+Types are first-class values with introspection methods.
+
+### Kind and Name
+
+```lua
+print(Number:kind())                 -- "number"
+print(Point:kind())                  -- "record"
+print(Point:name())                  -- "Point"
+```
+
+### Record Fields
+
+Iterate over record fields:
+
+```lua
+type User = {name: string, age: number}
+
+for name, typ in User:fields() do
+    print(name, typ:kind())
+end
+-- name    string
+-- age     number
+```
+
+Access individual field types:
+
+```lua
+local nameType = User.name           -- type of 'name' field
+print(nameType:kind())               -- "string"
+```
+
+### Collection Types
+
+```lua
+local arr: {number} = {1, 2, 3}
+local arrType = typeof(arr)
+print(arrType:elem():kind())         -- "number"
+
+local map: {[string]: number} = {}
+local mapType = typeof(map)
+print(mapType:key():kind())          -- "string"
+print(mapType:val():kind())          -- "number"
+```
+
+### Optional Types
+
+```lua
+local opt: number? = nil
+local optType = typeof(opt)
+print(optType:kind())                -- "optional"
+print(optType:inner():kind())        -- "number"
+```
+
+### Union Types
+
+```lua
+type Status = "pending" | "active" | "done"
+
+for variant in Status:variants() do
+    print(variant)
+end
+```
+
+### Function Types
+
+```lua
+local fn: (number, string) -> boolean
+
+local fnType = typeof(fn)
+for param in fnType:params() do
+    print(param:kind())
+end
+print(fnType:ret():kind())           -- "boolean"
+```
+
+### Type Comparison
+
+```lua
+print(Number == Number)              -- true
+print(Integer <= Number)             -- true (subtype)
+print(Integer < Number)              -- true (strict subtype)
+```
+
+### Types as Table Keys
+
+```lua
+local handlers = {}
+handlers[Number] = function() return "number handler" end
+handlers[String] = function() return "string handler" end
+
+local h = handlers[typeof(value)]
+if h then h() end
+```
+
 ## Type Annotations
 
 Add types to function signatures:
@@ -273,3 +440,13 @@ Start by adding types to:
 1. Function signatures at API boundaries
 2. HTTP handlers and queue consumers
 3. Critical business logic
+
+## Type Checking
+
+Run the type checker:
+
+```bash
+wippy lint
+```
+
+Reports type errors without executing code.
