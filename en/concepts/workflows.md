@@ -72,7 +72,6 @@ Wait for external events (approval decisions, webhooks, user actions):
 
 ```lua
 local funcs = require("funcs")
-local process = require("process")
 
 funcs.call("app.approvals:submit", request)
 
@@ -104,8 +103,6 @@ end
 Workflows are spawned the same way as processes - using `process.spawn()` with a different host:
 
 ```lua
-local process = require("process")
-
 -- Spawn workflow on temporal worker
 local pid = process.spawn("app.workflows:order_processor", "app:temporal_worker", order_data)
 
@@ -146,9 +143,7 @@ Workflows don't use supervision trees - they're automatically managed by the wor
 Processes can monitor workflows via events, but workflows cannot monitor processes:
 
 ```lua
-local process = require("process")
 local events = process.events()
-
 local pid = process.spawn("app.workflows:order", "app:temporal_worker", data)
 
 for event in events:iter() do

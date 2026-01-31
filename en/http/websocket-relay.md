@@ -76,7 +76,6 @@ The HTTP handler spawns a process and configures the relay:
 ```lua
 local http = require("http")
 local json = require("json")
-local process = require("process")
 
 local function handler()
     local req = http.request()
@@ -120,7 +119,6 @@ The relay sends these messages to the target process:
 ## Receiving Messages
 
 ```lua
-local process = require("process")
 local json = require("json")
 
 local function handler()

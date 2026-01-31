@@ -6,11 +6,7 @@
 
 Go-style channels for inter-coroutine communication. Create buffered or unbuffered channels, send and receive values, and coordinate between concurrent processes using select statements.
 
-## Loading
-
-```lua
-channel.new(...)  -- global, no require needed
-```
+The `channel` global is always available.
 
 ## Creating Channels
 
