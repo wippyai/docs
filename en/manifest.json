@@ -20,14 +20,6 @@
     ]
   },
   {
-    "title": "Temporal",
-    "children": [
-      {"title": "Overview", "path": "temporal/overview"},
-      {"title": "Activities", "path": "temporal/activities"},
-      {"title": "Workflows", "path": "temporal/workflows"}
-    ]
-  },
-  {
     "title": "Core Concepts",
     "children": [
       {"title": "Process Model", "path": "concepts/process-model"},
@@ -126,6 +118,14 @@
           {"title": "Expression", "path": "lua/dynamic/expression"}
         ]
       }
+    ]
+  },
+  {
+    "title": "Temporal",
+    "children": [
+      {"title": "Overview", "path": "temporal/overview"},
+      {"title": "Activities", "path": "temporal/activities"},
+      {"title": "Workflows", "path": "temporal/workflows"}
     ]
   },
   {
