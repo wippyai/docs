@@ -140,20 +140,6 @@ Processes can run as supervised services using `process.service`:
 
 Workflows don't use supervision trees - they're automatically managed by the workflow provider (Temporal). The provider handles persistence, retries, and recovery.
 
-Processes can monitor workflows via events, but workflows cannot monitor processes:
-
-```lua
-local events = process.events()
-local pid = process.spawn("app.workflows:order", "app:temporal_worker", data)
-
-for event in events:iter() do
-    if event.pid == pid and event.type == "EXIT" then
-        -- workflow completed or failed
-        break
-    end
-end
-```
-
 ## Configuration
 
 Process definition (spawned dynamically):
