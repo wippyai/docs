@@ -111,7 +111,6 @@ The relay registers itself, handles messages, spawns workers, and runs a stats c
 Create `src/relay.lua`:
 
 ```lua
-local process = require("process")
 local logger = require("logger")
 local time = require("time")
 
@@ -223,7 +222,6 @@ Workers receive arguments directly and send responses to the sender.
 Create `src/worker.lua`:
 
 ```lua
-local process = require("process")
 local time = require("time")
 
 local function main(sender_pid, data)
@@ -250,7 +248,6 @@ Create `src/cli.lua`:
 
 ```lua
 local io = require("io")
-local process = require("process")
 local time = require("time")
 
 local reset = "\027[0m"

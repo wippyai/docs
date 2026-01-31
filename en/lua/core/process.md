@@ -6,11 +6,7 @@
 
 Spawn, monitor, and communicate with child processes. Implements actor-model patterns with message passing, supervision, and lifecycle management.
 
-## Loading
-
-```lua
-local process = require("process")
-```
+The `process` global is always available.
 
 ## Process Information
 

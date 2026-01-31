@@ -73,6 +73,15 @@ else
 end
 ```
 
+## Globals
+
+These are always available without require:
+
+- `process` - process management and messaging
+- `channel` - Go-style channels
+- `os` - time and system functions
+- `coroutine` - lightweight concurrency
+
 ## Modules
 
 ```lua
