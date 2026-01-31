@@ -178,7 +178,6 @@
   {
     "title": "About",
     "children": [
-      {"title": "About Wippy", "path": "about/wippy"},
       {"title": "Contributing", "path": "about/contributing"},
       {"title": "License", "path": "about/license"}
     ]
