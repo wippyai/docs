@@ -11,13 +11,17 @@
     "title": "Guides",
     "children": [
       {"title": "CLI", "path": "guides/cli"},
-      {"title": "○ Cluster", "path": "guides/cluster"},
       {"title": "Configuration", "path": "guides/configuration"},
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
       {"title": "Queue Consumers", "path": "guides/queue-consumers"},
-      {"title": "Supervision", "path": "guides/supervision"},
-      {"title": "○ Temporal", "path": "guides/temporal"}
+      {"title": "Supervision", "path": "guides/supervision"}
+    ]
+  },
+  {
+    "title": "Temporal",
+    "children": [
+      {"title": "○ Overview", "path": "temporal/overview"}
     ]
   },
   {
