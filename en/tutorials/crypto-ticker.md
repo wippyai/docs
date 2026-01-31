@@ -1,3 +1,0 @@
-# Crypto Ticker
-
-Coming soon.
