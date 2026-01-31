@@ -76,6 +76,8 @@ Provide the API key via one of these methods:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
+Fields ending in `_env` reference environment variables that must be defined in the system. See [Environment System](system/env.md) for configuring environment storage and variables.
+
 #### mTLS
 
 ```yaml
@@ -184,10 +186,12 @@ Fine-tune worker behavior:
     # Versioning
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Read build ID from environment
+    build_id_env: "BUILD_ID"              # Read from environment variable
     use_versioning: false
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
+
+Fields ending in `_env` reference environment variables defined via [Environment System](system/env.md) entries.
 
 ### Concurrency Defaults
 
