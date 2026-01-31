@@ -4,7 +4,7 @@ Wippy integrates with [Temporal.io](https://temporal.io) for durable workflow ex
 
 ## Client Configuration
 
-Connect to Temporal server:
+The `temporal.client` entry kind defines a connection to a Temporal server.
 
 ```yaml
 - name: temporal_client
@@ -15,23 +15,68 @@ Connect to Temporal server:
     auto_start: true
 ```
 
+### Required Fields
+
+| Field | Description |
+|-------|-------------|
+| `address` | Temporal server address (host:port) |
+
+### Optional Fields
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `namespace` | "default" | Temporal namespace |
+| `tq_prefix` | "" | Task queue name prefix for all operations |
+| `connection_timeout` | "10s" | Connection timeout |
+| `keep_alive_time` | "30s" | Keep-alive interval |
+| `keep_alive_timeout` | "10s" | Keep-alive timeout |
+
 ### Authentication
 
-**API Key (Temporal Cloud):**
+#### No Authentication
 
 ```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  auth:
+    type: none
+```
+
+#### API Key (Temporal Cloud)
+
+Provide the API key via one of these methods:
+
+```yaml
+# Direct value
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
   namespace: "your-namespace"
   auth:
     type: api_key
-    value_from_env: "TEMPORAL_API_KEY"
-  lifecycle:
-    auto_start: true
+    api_key: "your-api-key"
+
+# From environment variable
+- name: temporal_client
+  kind: temporal.client
+  address: "your-namespace.tmprl.cloud:7233"
+  namespace: "your-namespace"
+  auth:
+    type: api_key
+    api_key_env: "TEMPORAL_API_KEY"
+
+# From file
+- name: temporal_client
+  kind: temporal.client
+  address: "your-namespace.tmprl.cloud:7233"
+  namespace: "your-namespace"
+  auth:
+    type: api_key
+    api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-**mTLS:**
+#### mTLS
 
 ```yaml
 - name: temporal_client
@@ -43,24 +88,43 @@ Connect to Temporal server:
     cert_file: "/path/to/client.pem"
     key_file: "/path/to/client.key"
   tls:
+    enabled: true
     ca_file: "/path/to/ca.pem"
-  lifecycle:
-    auto_start: true
 ```
 
-### Environment Variables
+Certificate and key can also be provided as PEM strings or from environment:
 
-Configuration can be overridden via environment:
+```yaml
+auth:
+  type: mtls
+  cert_pem: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+  key_pem_env: "TEMPORAL_CLIENT_KEY"
+```
 
-| Variable | Description |
-|----------|-------------|
-| `TEMPORAL_ADDRESS` | Server address |
-| `TEMPORAL_NAMESPACE` | Namespace |
-| `TEMPORAL_API_KEY` | API key for Temporal Cloud |
+### TLS Configuration
+
+```yaml
+tls:
+  enabled: true
+  ca_file: "/path/to/ca.pem"
+  server_name: "temporal.example.com"    # Override server name verification
+  insecure_skip_verify: false            # Skip verification (dev only)
+```
+
+### Health Checks
+
+```yaml
+health_check:
+  enabled: true
+  interval: "30s"
+```
 
 ## Worker Configuration
 
-Workers execute workflows and activities from a task queue:
+The `temporal.worker` entry kind defines a worker that executes workflows and activities.
 
 ```yaml
 - name: worker
@@ -73,6 +137,13 @@ Workers execute workflows and activities from a task queue:
       - app:temporal_client
 ```
 
+### Required Fields
+
+| Field | Description |
+|-------|-------------|
+| `client` | Reference to a `temporal.client` entry |
+| `task_queue` | Task queue name |
+
 ### Worker Options
 
 Fine-tune worker behavior:
@@ -83,28 +154,59 @@ Fine-tune worker behavior:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
-    max_concurrent_workflow_task_execution_size: 1000
+    # Concurrency
     max_concurrent_activity_execution_size: 1000
+    max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
-    workflow_task_poller_count: 2
-    activity_task_poller_count: 2
-  lifecycle:
-    auto_start: true
+    max_concurrent_session_execution_size: 1000
+
+    # Pollers
+    max_concurrent_activity_task_pollers: 20
+    max_concurrent_workflow_task_pollers: 20
+
+    # Rate limiting
+    worker_activities_per_second: 0        # 0 = unlimited
+    worker_local_activities_per_second: 0
+    task_queue_activities_per_second: 0
+
+    # Timeouts
+    sticky_schedule_to_start_timeout: "5s"
+    worker_stop_timeout: "0s"
+    deadlock_detection_timeout: "0s"
+
+    # Feature flags
+    enable_logging_in_replay: false
+    enable_session_worker: false
+    disable_workflow_worker: false
+    local_activity_worker_only: false
+    disable_eager_activities: false
+
+    # Versioning
+    deployment_name: ""
+    build_id: ""
+    build_id_env: "BUILD_ID"              # Read build ID from environment
+    use_versioning: false
+    default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `max_concurrent_workflow_task_execution_size` | 1000 | Max concurrent workflow tasks |
-| `max_concurrent_activity_execution_size` | 1000 | Max concurrent activities |
-| `max_concurrent_local_activity_execution_size` | 1000 | Max concurrent local activities |
-| `workflow_task_poller_count` | 2 | Workflow task pollers |
-| `activity_task_poller_count` | 2 | Activity task pollers |
+### Concurrency Defaults
 
-## Registering Workflows and Activities
+| Option | Default |
+|--------|---------|
+| `max_concurrent_activity_execution_size` | 1000 |
+| `max_concurrent_workflow_task_execution_size` | 1000 |
+| `max_concurrent_local_activity_execution_size` | 1000 |
+| `max_concurrent_session_execution_size` | 1000 |
+| `max_concurrent_activity_task_pollers` | 20 |
+| `max_concurrent_workflow_task_pollers` | 20 |
+| `sticky_schedule_to_start_timeout` | 5s |
 
-Workflows and activities are automatically registered with workers via metadata:
+## Complete Example
 
 ```yaml
+version: "1.0"
+namespace: app
+
 entries:
   - name: temporal_client
     kind: temporal.client
@@ -147,44 +249,7 @@ entries:
           worker: app:worker
 ```
 
-## Starting Workflows
-
-From Lua code:
-
-```lua
-local pid, err = process.spawn(
-    "app:order_workflow",    -- workflow entry
-    "app:worker",            -- temporal worker
-    {order_id = "123"}       -- input
-)
-```
-
-From HTTP handlers:
-
-```lua
-local function handler()
-    local req = http.request()
-    local order = json.decode(req:body())
-
-    local pid, err = process.spawn(
-        "app:order_workflow",
-        "app:worker",
-        order
-    )
-
-    if err then
-        return http.response():status(500):json({error = tostring(err)})
-    end
-
-    return http.response():json({
-        workflow_id = tostring(pid),
-        status = "started"
-    })
-end
-```
-
 ## See Also
 
 - [Activities](temporal/activities.md) - Activity definitions
 - [Workflows](temporal/workflows.md) - Workflow implementation
-- [Functions](lua/core/funcs.md) - Function calls
