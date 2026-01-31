@@ -1,322 +1,126 @@
 # Temporal Integration
 
-Run durable workflows with Temporal.io.
+Wippy integrates with [Temporal.io](https://temporal.io) for durable workflow execution, automatic replay, and long-running processes that survive restarts.
 
-## Overview
+## Client Configuration
 
-Wippy integrates with Temporal for:
-- Durable workflow execution
-- Activity orchestration
-- Automatic replay and recovery
-- Long-running processes that survive restarts
-
-## Configuration
-
-### Worker Entry
-
-Define a Temporal worker:
+Connect to Temporal server:
 
 ```yaml
-- name: worker
-  kind: temporal.worker
-  task_queue: my-app-queue
-  workflows: true
-  activities: true
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  namespace: "default"
   lifecycle:
     auto_start: true
 ```
 
-### Connection
+### Authentication
 
-Configure in `.wippy.yaml`:
-
-```yaml
-temporal:
-  address: localhost:7233
-  namespace: default
-```
-
-Or via environment:
-- `TEMPORAL_ADDRESS`
-- `TEMPORAL_NAMESPACE`
-- `TEMPORAL_API_KEY` (for Temporal Cloud)
-
-## Workflows
-
-### Definition
+**API Key (Temporal Cloud):**
 
 ```yaml
-- name: order_workflow
-  kind: workflow.lua
-  source: file://order_workflow.lua
-  method: main
-  modules:
-    - funcs
-    - time
-    - workflow
-  meta:
-    temporal:
-      workflow:
-        worker: app:worker
+- name: temporal_client
+  kind: temporal.client
+  address: "your-namespace.tmprl.cloud:7233"
+  namespace: "your-namespace"
+  auth:
+    type: api_key
+    value_from_env: "TEMPORAL_API_KEY"
+  lifecycle:
+    auto_start: true
 ```
 
-### Implementation
-
-```lua
-local funcs = require("funcs")
-local time = require("time")
-
-local function main(order)
-    -- Call activity
-    local payment, err = funcs.call("app:charge_payment", order.total)
-    if err then
-        return nil, err
-    end
-
-    -- Durable sleep (survives restarts)
-    time.sleep("24h")
-
-    -- Another activity
-    local shipment = funcs.call("app:ship_order", order.id)
-
-    return {
-        payment_id = payment.id,
-        tracking = shipment.tracking
-    }
-end
-
-return { main = main }
-```
-
-### Workflow API
-
-```lua
-local workflow = require("workflow")
-
--- Get execution info
-local info = workflow.info()
-print(info.workflow_id)
-print(info.run_id)
-
--- Deterministic versioning for code changes
-local version = workflow.version("change-id", 1, 2)
-if version == 2 then
-    -- New code path
-end
-
--- Monitor history size
-local length = workflow.history_length()
-local size = workflow.history_size()
-
--- Set search attributes and memo
-workflow.attrs({
-    search = {status = "processing"},
-    memo = {customer_id = "123"}
-})
-```
-
-## Activities
-
-### Definition
+**mTLS:**
 
 ```yaml
-- name: charge_payment
-  kind: function.lua
-  source: file://payment.lua
-  method: charge
-  modules:
-    - http_client
-    - json
-  meta:
-    temporal:
-      activity:
-        worker: app:worker
+- name: temporal_client
+  kind: temporal.client
+  address: "temporal.example.com:7233"
+  namespace: "production"
+  auth:
+    type: mtls
+    cert_file: "/path/to/client.pem"
+    key_file: "/path/to/client.key"
+  tls:
+    ca_file: "/path/to/ca.pem"
+  lifecycle:
+    auto_start: true
 ```
 
-### Local Activities
+### Environment Variables
 
-For fast, in-process execution:
+Configuration can be overridden via environment:
+
+| Variable | Description |
+|----------|-------------|
+| `TEMPORAL_ADDRESS` | Server address |
+| `TEMPORAL_NAMESPACE` | Namespace |
+| `TEMPORAL_API_KEY` | API key for Temporal Cloud |
+
+## Worker Configuration
+
+Workers execute workflows and activities from a task queue:
 
 ```yaml
-meta:
-  temporal:
-    activity:
-      worker: app:worker
-      local: true
+- name: worker
+  kind: temporal.worker
+  client: app:temporal_client
+  task_queue: "my-app-queue"
+  lifecycle:
+    auto_start: true
+    depends_on:
+      - app:temporal_client
 ```
 
-### Calling Activities
+### Worker Options
 
-```lua
-local funcs = require("funcs")
-
--- Simple call
-local result, err = funcs.call("app:charge_payment", amount)
-
--- With options
-local executor = funcs.new()
-executor = executor:with_options({
-    task_queue = "payment-queue",
-    start_to_close_timeout = "30s",
-    retry_policy = {
-        max_attempts = 3,
-        initial_interval = "1s"
-    }
-})
-
-local result, err = executor:call("app:charge_payment", amount)
-```
-
-## Spawning Workflows
-
-Start workflows from anywhere:
-
-```lua
-local pid, err = process.spawn(
-    "app:order_workflow",      -- workflow entry
-    "temporal:my-app-queue",   -- host (temporal:task_queue)
-    order_data                 -- input
-)
-```
-
-From HTTP handlers:
-
-```lua
-local function handler()
-    local req = http.request()
-    local order = json.decode(req:body())
-
-    local pid, err = process.spawn(
-        "app:order_workflow",
-        "temporal:orders",
-        order
-    )
-
-    if err then
-        return http.response():status(500):json({error = tostring(err)})
-    end
-
-    return http.response():json({
-        workflow_id = tostring(pid),
-        status = "started"
-    })
-end
-```
-
-## Signals
-
-Send signals to running workflows:
-
-```lua
-process.send(workflow_pid, "approve", {approved_by = "admin"})
-```
-
-Receive in workflow:
-
-```lua
-local inbox = process.inbox()
-
-while true do
-    local msg = inbox:receive()
-    if msg:topic() == "approve" then
-        local data = msg:payload():data()
-        -- Handle approval
-        break
-    end
-end
-```
-
-## Child Workflows
-
-Spawn child workflows:
-
-```lua
-local function main(order)
-    -- Spawn child workflow
-    local child_pid = process.spawn(
-        "app:payment_workflow",
-        "temporal:payments",
-        {order_id = order.id, amount = order.total}
-    )
-
-    -- Wait for completion
-    local events = process.events()
-    for event in events:iter() do
-        if event.pid == child_pid and event.type == "EXIT" then
-            if event.reason == "normal" then
-                -- Child completed successfully
-            else
-                -- Child failed
-            end
-            break
-        end
-    end
-end
-```
-
-## Error Handling
-
-```lua
-local function main(input)
-    local result, err = funcs.call("app:risky_activity", input)
-
-    if err then
-        -- Log and compensate
-        funcs.call("app:send_alert", {
-            error = tostring(err),
-            input = input
-        })
-        return nil, err
-    end
-
-    return result
-end
-```
-
-### Retry Policies
-
-Configure in activity options:
-
-```lua
-executor:with_options({
-    retry_policy = {
-        max_attempts = 5,
-        initial_interval = "1s",
-        backoff_coefficient = 2.0,
-        max_interval = "1m"
-    }
-})
-```
-
-## Determinism
-
-Workflow code must be deterministic. Use:
-
-- `time.sleep()` instead of `os.sleep()`
-- `workflow.version()` for code changes
-- `funcs.call()` for non-deterministic operations
-
-Avoid:
-- Direct I/O operations
-- Random values (use activity)
-- Current time (use `workflow.info().start_time`)
-
-## Example: Order Processing
-
-**Entry definitions:**
+Fine-tune worker behavior:
 
 ```yaml
-version: "1.0"
-namespace: app
+- name: worker
+  kind: temporal.worker
+  client: app:temporal_client
+  task_queue: "my-app-queue"
+  worker_options:
+    max_concurrent_workflow_task_execution_size: 1000
+    max_concurrent_activity_execution_size: 1000
+    max_concurrent_local_activity_execution_size: 1000
+    workflow_task_poller_count: 2
+    activity_task_poller_count: 2
+  lifecycle:
+    auto_start: true
+```
 
+| Option | Default | Description |
+|--------|---------|-------------|
+| `max_concurrent_workflow_task_execution_size` | 1000 | Max concurrent workflow tasks |
+| `max_concurrent_activity_execution_size` | 1000 | Max concurrent activities |
+| `max_concurrent_local_activity_execution_size` | 1000 | Max concurrent local activities |
+| `workflow_task_poller_count` | 2 | Workflow task pollers |
+| `activity_task_poller_count` | 2 | Activity task pollers |
+
+## Registering Workflows and Activities
+
+Workflows and activities are automatically registered with workers via metadata:
+
+```yaml
 entries:
-  - name: worker
-    kind: temporal.worker
-    task_queue: orders
-    workflows: true
-    activities: true
+  - name: temporal_client
+    kind: temporal.client
+    address: "localhost:7233"
+    namespace: "default"
     lifecycle:
       auto_start: true
+
+  - name: worker
+    kind: temporal.worker
+    client: app:temporal_client
+    task_queue: "orders"
+    lifecycle:
+      auto_start: true
+      depends_on:
+        - app:temporal_client
 
   - name: order_workflow
     kind: workflow.lua
@@ -341,61 +145,46 @@ entries:
       temporal:
         activity:
           worker: app:worker
-
-  - name: ship_order
-    kind: function.lua
-    source: file://shipping.lua
-    method: ship
-    modules:
-      - http_client
-    meta:
-      temporal:
-        activity:
-          worker: app:worker
 ```
 
-**order_workflow.lua:**
+## Starting Workflows
+
+From Lua code:
 
 ```lua
-local funcs = require("funcs")
-local time = require("time")
+local pid, err = process.spawn(
+    "app:order_workflow",    -- workflow entry
+    "app:worker",            -- temporal worker
+    {order_id = "123"}       -- input
+)
+```
 
-local function main(order)
-    -- Charge payment
-    local payment, err = funcs.call("app:charge_payment", {
-        amount = order.total,
-        customer = order.customer_id
-    })
+From HTTP handlers:
+
+```lua
+local function handler()
+    local req = http.request()
+    local order = json.decode(req:body())
+
+    local pid, err = process.spawn(
+        "app:order_workflow",
+        "app:worker",
+        order
+    )
+
     if err then
-        return {status = "failed", error = tostring(err)}
+        return http.response():status(500):json({error = tostring(err)})
     end
 
-    -- Wait for fulfillment window
-    time.sleep("1h")
-
-    -- Ship order
-    local shipment, err = funcs.call("app:ship_order", {
-        order_id = order.id,
-        address = order.shipping_address
+    return http.response():json({
+        workflow_id = tostring(pid),
+        status = "started"
     })
-    if err then
-        -- Refund on shipping failure
-        funcs.call("app:refund_payment", payment.id)
-        return {status = "failed", error = tostring(err)}
-    end
-
-    return {
-        status = "completed",
-        payment_id = payment.id,
-        tracking = shipment.tracking_number
-    }
 end
-
-return { main = main }
 ```
 
 ## See Also
 
-- [Workflows](concepts/workflows.md) - Workflow concepts
+- [Activities](temporal/activities.md) - Activity definitions
+- [Workflows](temporal/workflows.md) - Workflow implementation
 - [Functions](lua/core/funcs.md) - Function calls
-- [Process](lua/core/process.md) - Process management

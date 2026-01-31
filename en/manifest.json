@@ -22,7 +22,9 @@
   {
     "title": "Temporal",
     "children": [
-      {"title": "Overview", "path": "temporal/overview"}
+      {"title": "Overview", "path": "temporal/overview"},
+      {"title": "Activities", "path": "temporal/activities"},
+      {"title": "Workflows", "path": "temporal/workflows"}
     ]
   },
   {
@@ -119,7 +121,7 @@
       {
         "title": "Dynamic",
         "children": [
-          {"title": "○ Eval", "path": "lua/dynamic/eval"},
+          {"title": "Eval", "path": "lua/dynamic/eval"},
           {"title": "Exec", "path": "lua/dynamic/exec"},
           {"title": "Expression", "path": "lua/dynamic/expression"}
         ]
