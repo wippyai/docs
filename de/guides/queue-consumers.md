@@ -4,24 +4,14 @@ Queue-Konsumenten verarbeiten Nachrichten aus Queues mittels Worker-Pools.
 
 ## Übersicht
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Consumer                                │
-│                                                              │
-│  ┌─────────┐    ┌──────────────────┐    ┌───────────────┐  │
-│  │  Queue  │───►│ Delivery Channel │───►│ Worker Pool   │  │
-│  │ Driver  │    │ (prefetch=10)    │    │ (concurrency) │  │
-│  └─────────┘    └──────────────────┘    └───────┬───────┘  │
-│                                                  │          │
-│                                          ┌──────┴──────┐   │
-│                                          │  Function   │   │
-│                                          │  Handler    │   │
-│                                          └──────┬──────┘   │
-│                                                  │          │
-│                                          ┌──────┴──────┐   │
-│                                          │  Ack/Nack   │   │
-│                                          └─────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Consumer[Konsument]
+        QD[Queue-Treiber] --> DC[Zustellkanal<br/>prefetch=10]
+        DC --> WP[Worker-Pool<br/>concurrency]
+        WP --> FH[Funktions-Handler]
+        FH --> AN[Ack/Nack]
+    end
 ```
 
 ## Konfiguration

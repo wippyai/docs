@@ -2,26 +2,16 @@
 
 Los consumidores de cola procesan mensajes de colas usando pools de workers.
 
-## Vision General
+## Visión General
 
-```
-+-------------------------------------------------------------+
-|                      Consumer                                |
-|                                                              |
-|  +---------+    +------------------+    +---------------+   |
-|  |  Queue  |--->| Delivery Channel |--->| Worker Pool   |   |
-|  | Driver  |    | (prefetch=10)    |    | (concurrency) |   |
-|  +---------+    +------------------+    +-------+-------+   |
-|                                                  |           |
-|                                          +------+------+    |
-|                                          |  Function   |    |
-|                                          |  Handler    |    |
-|                                          +------+------+    |
-|                                                  |           |
-|                                          +------+------+    |
-|                                          |  Ack/Nack   |    |
-|                                          +-------------+    |
-+-------------------------------------------------------------+
+```mermaid
+flowchart LR
+    subgraph Consumer[Consumidor]
+        QD[Driver de Cola] --> DC[Canal de Entrega<br/>prefetch=10]
+        DC --> WP[Pool de Workers<br/>concurrency]
+        WP --> FH[Handler de Función]
+        FH --> AN[Ack/Nack]
+    end
 ```
 
 ## Configuracion
