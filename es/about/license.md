@@ -1,6 +1,6 @@
 # Licencia
 
-Wippy esta publicado bajo la Licencia Apache 2.0.
+Wippy está publicado bajo la Licencia Apache 2.0.
 
 ## Apache License 2.0
 
@@ -20,12 +20,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## Que Significa Esto
+## Qué Significa Esto
 
-Puede usar Wippy en proyectos comerciales, modificar el codigo fuente, y distribuir sus modificaciones. La licencia proporciona una concesion expresa de derechos de patente de los contribuidores.
+Puede usar Wippy en proyectos comerciales, modificar el código fuente, y distribuir sus modificaciones. La licencia proporciona una concesión expresa de derechos de patente de los contribuidores.
 
-Debe incluir el aviso de licencia en copias e indicar cualquier cambio que haya hecho al codigo.
+Debe incluir el aviso de licencia en copias e indicar cualquier cambio que haya hecho al código.
 
 ## Dependencias
 
-Wippy usa varias dependencias de codigo abierto, cada una con sus propias licencias. Todas las dependencias son compatibles con uso comercial.
+Wippy usa varias dependencias de código abierto, cada una con sus propias licencias. Todas las dependencias son compatibles con uso comercial.

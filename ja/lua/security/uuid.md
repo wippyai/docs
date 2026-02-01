@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-ユニバーサル一意識別子を生成。ワークフロー向けに適応 - ランダムUUIDはリプレイ時に一貫した値を返す。
+ユニバーサル一意識別子を生成します。ワークフロー向けに適応されており、ランダムUUIDはリプレイ時に一貫した値を返します。
 
 ## ロード
 
@@ -15,7 +15,7 @@ local uuid = require("uuid")
 
 ### バージョン1
 
-タイムスタンプとノードIDを持つ時間ベースUUID。
+タイムスタンプとノードIDを持つ時間ベースのUUIDです。
 
 ```lua
 local id, err = uuid.v1()
@@ -25,7 +25,7 @@ local id, err = uuid.v1()
 
 ### バージョン4
 
-ランダムUUID。
+ランダムなUUIDです。
 
 ```lua
 local id, err = uuid.v4()
@@ -35,7 +35,7 @@ local id, err = uuid.v4()
 
 ### バージョン7
 
-時間順序UUID。作成時刻でソート可能。
+時間順序UUIDです。作成時刻でソート可能です。
 
 ```lua
 local id, err = uuid.v7()
@@ -47,7 +47,7 @@ local id, err = uuid.v7()
 
 ### バージョン3
 
-MD5を使用した名前空間と名前からの決定論的UUID。
+MD5を使用して名前空間と名前から生成する決定論的UUIDです。
 
 ```lua
 local id, err = uuid.v3(namespace, name)
@@ -62,7 +62,7 @@ local id, err = uuid.v3(namespace, name)
 
 ### バージョン5
 
-SHA-1を使用した名前空間と名前からの決定論的UUID。
+SHA-1を使用して名前空間と名前から生成する決定論的UUIDです。
 
 ```lua
 local NS_URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8"

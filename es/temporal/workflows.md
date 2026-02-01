@@ -1,8 +1,8 @@
 # Workflows
 
-Los workflows son funciones durables que orquestan activities y mantienen estado a traves de fallos y reinicios. Se definen usando el tipo de entrada `workflow.lua`.
+Los workflows son funciones durables que orquestan activities y mantienen estado a través de fallos y reinicios. Se definen usando el tipo de entrada `workflow.lua`.
 
-## Definicion
+## Definición
 
 ```yaml
 - name: order_workflow
@@ -21,12 +21,12 @@ Los workflows son funciones durables que orquestan activities y mantienen estado
 
 ### Campos de Metadatos
 
-| Campo | Requerido | Descripcion |
+| Campo | Requerido | Descripción |
 |-------|-----------|-------------|
-| `worker` | Si | Referencia a entrada `temporal.worker` |
+| `worker` | Sí | Referencia a entrada `temporal.worker` |
 | `name` | No | Nombre personalizado del workflow (por defecto ID de entrada) |
 
-## Implementacion Basica
+## Implementación Básica
 
 ```lua
 local funcs = require("funcs")
@@ -65,31 +65,31 @@ end
 return { main = main }
 ```
 
-## Modulo Workflow
+## Módulo Workflow
 
-El modulo `workflow` proporciona operaciones especificas de workflow.
+El módulo `workflow` proporciona operaciones específicas de workflow.
 
 ### workflow.info()
 
-Obtener informacion de ejecucion del workflow:
+Obtener información de ejecución del workflow:
 
 ```lua
 local workflow = require("workflow")
 
 local info = workflow.info()
-print(info.workflow_id)    -- ID de ejecucion del workflow
-print(info.run_id)         -- ID de ejecucion actual
+print(info.workflow_id)    -- ID de ejecución del workflow
+print(info.run_id)         -- ID de ejecución actual
 print(info.workflow_type)  -- Nombre del tipo de workflow
 print(info.task_queue)     -- Nombre de cola de tareas
 print(info.namespace)      -- Namespace de Temporal
-print(info.attempt)        -- Numero de intento actual
-print(info.history_length) -- Numero de eventos en historial
-print(info.history_size)   -- Tamano del historial en bytes
+print(info.attempt)        -- Número de intento actual
+print(info.history_length) -- Número de eventos en historial
+print(info.history_size)   -- Tamaño del historial en bytes
 ```
 
 ### workflow.version()
 
-Manejar cambios de codigo con versionado deterministico:
+Manejar cambios de código con versionado determinístico:
 
 ```lua
 local version = workflow.version("payment-v2", 1, 2)
@@ -98,19 +98,19 @@ if version == 1 then
     -- Comportamiento anterior (para ejecuciones existentes)
     result = funcs.call("app:old_payment", input)
 else
-    -- Nuevo comportamiento (version 2)
+    -- Nuevo comportamiento (versión 2)
     result = funcs.call("app:new_payment", input)
 end
 ```
 
-Parametros:
-- `change_id` - Identificador unico para este cambio
-- `min_supported` - Version minima soportada
-- `max_supported` - Version maxima (actual)
+Parámetros:
+- `change_id` - Identificador único para este cambio
+- `min_supported` - Versión mínima soportada
+- `max_supported` - Versión máxima (actual)
 
 ### workflow.attrs()
 
-Actualizar atributos de busqueda y memo:
+Actualizar atributos de búsqueda y memo:
 
 ```lua
 workflow.attrs({
@@ -128,7 +128,7 @@ workflow.attrs({
 
 ### workflow.history_length()
 
-Obtener el numero de eventos en el historial del workflow:
+Obtener el número de eventos en el historial del workflow:
 
 ```lua
 local length = workflow.history_length()
@@ -139,7 +139,7 @@ end
 
 ### workflow.history_size()
 
-Obtener el tamano del historial del workflow en bytes:
+Obtener el tamaño del historial del workflow en bytes:
 
 ```lua
 local size = workflow.history_size()
@@ -155,7 +155,7 @@ local result, err = workflow.call("app:child_workflow", input_data)
 
 ## Signals
 
-Envie datos a workflows en ejecucion usando el inbox del proceso.
+Envíe datos a workflows en ejecución usando el inbox del proceso.
 
 **Enviar signals:**
 
@@ -203,7 +203,7 @@ time.sleep("30s")
 
 ## Determinismo
 
-El codigo del workflow debe ser deterministico. Las mismas entradas deben producir la misma secuencia de comandos.
+El código del workflow debe ser determinístico. Las mismas entradas deben producir la misma secuencia de comandos.
 
 ### Hacer
 
@@ -217,7 +217,7 @@ time.sleep("1h")
 -- Usar activities para I/O
 local data = funcs.call("app:fetch_data", id)
 
--- Usar versionado para cambios de codigo
+-- Usar versionado para cambios de código
 local v = workflow.version("change-1", 1, 2)
 ```
 
@@ -225,16 +225,16 @@ local v = workflow.version("change-1", 1, 2)
 
 ```lua
 -- No usar tiempo de reloj de pared
-local now = os.time()  -- No deterministico
+local now = os.time()  -- No determinístico
 
 -- No usar random directamente
-local r = math.random()  -- No deterministico
+local r = math.random()  -- No determinístico
 
--- No hacer I/O en codigo de workflow
-local file = io.open("data.txt")  -- No deterministico
+-- No hacer I/O en código de workflow
+local file = io.open("data.txt")  -- No determinístico
 
 -- No usar estado global mutable
-counter = counter + 1  -- No deterministico entre replays
+counter = counter + 1  -- No determinístico entre replays
 ```
 
 ## Manejo de Errores
@@ -257,7 +257,7 @@ local function main(order)
 end
 ```
 
-## Patron de Compensacion (Saga)
+## Patrón de Compensación (Saga)
 
 ```lua
 local function main(order)
@@ -303,7 +303,7 @@ end
 
 ## Iniciar Workflows
 
-Inicie workflows desde cualquier codigo:
+Inicie workflows desde cualquier código:
 
 ```lua
 local pid, err = process.spawn(
@@ -337,9 +337,9 @@ local function handler()
 end
 ```
 
-## Ver Tambien
+## Ver También
 
-- [Overview](temporal/overview.md) - Configuracion
+- [Overview](temporal/overview.md) - Configuración
 - [Activities](temporal/activities.md) - Definiciones de activities
-- [Procesos](lua/core/process.md) - Gestion de procesos
+- [Procesos](lua/core/process.md) - Gestión de procesos
 - [Funciones](lua/core/funcs.md) - Llamadas a funciones

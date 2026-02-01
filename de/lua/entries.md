@@ -1,13 +1,13 @@
 # Lua Entry-Arten
 
-Konfiguration fur Lua-basierte Entries: Funktionen, Prozesse, Workflows und Bibliotheken.
+Konfiguration für Lua-basierte Entries: Funktionen, Prozesse, Workflows und Bibliotheken.
 
 ## Entry-Arten
 
 | Art | Beschreibung |
 |------|-------------|
-| `function.lua` | Zustandslose Funktion, lauft bei Bedarf |
-| `process.lua` | Lang laufender Actor mit Zustand |
+| `function.lua` | Zustandslose Funktion, läuft bei Bedarf |
+| `process.lua` | Lang laufender Aktor mit Zustand |
 | `workflow.lua` | Dauerhafter Workflow (Temporal) |
 | `library.lua` | Gemeinsam genutzter Code, der von anderen Entries importiert wird |
 
@@ -21,13 +21,13 @@ Alle Lua-Entries teilen diese Felder:
 | `kind` | ja | Eine der oben genannten Lua-Arten |
 | `source` | ja | Lua-Dateipfad (`file://path.lua`) |
 | `method` | ja | Zu exportierende Funktion |
-| `modules` | nein | Erlaubte Module fur `require()` |
+| `modules` | nein | Erlaubte Module für `require()` |
 | `imports` | nein | Andere Entries als lokale Module |
 | `meta` | nein | Durchsuchbare Metadaten |
 
 ## function.lua
 
-Zustandslose Funktion, die bei Bedarf aufgerufen wird. Jeder Aufruf ist unabhangig.
+Zustandslose Funktion, die bei Bedarf aufgerufen wird. Jeder Aufruf ist unabhängig.
 
 ```yaml
 - name: handler
@@ -39,11 +39,11 @@ Zustandslose Funktion, die bei Bedarf aufgerufen wird. Jeder Aufruf ist unabhang
     - json
 ```
 
-Verwendung fur: HTTP-Handler, Datentransformationen, Hilfsfunktionen.
+Verwendung für: HTTP-Handler, Datentransformationen, Hilfsfunktionen.
 
 ## process.lua
 
-Lang laufender Actor, der Zustand uber Nachrichten hinweg beibehalt. Kommuniziert uber Nachrichtenubergabe.
+Lang laufender Aktor, der Zustand über Nachrichten hinweg beibehält. Kommuniziert über Nachrichtenübergabe.
 
 ```yaml
 - name: worker
@@ -56,9 +56,9 @@ Lang laufender Actor, der Zustand uber Nachrichten hinweg beibehalt. Kommunizier
     - sql
 ```
 
-Verwendung fur: Hintergrund-Worker, Service-Daemons, zustandsbehaftete Actors.
+Verwendung für: Hintergrund-Worker, Service-Daemons, zustandsbehaftete Aktoren.
 
-Um als uberwachter Service zu laufen:
+Um als überwachter Service zu laufen:
 
 ```yaml
 - name: worker_service
@@ -73,7 +73,7 @@ Um als uberwachter Service zu laufen:
 
 ## workflow.lua
 
-Dauerhafter Workflow, der Neustarts uberlebt. Zustand wird in Temporal persistiert.
+Dauerhafter Workflow, der Neustarts überlebt. Zustand wird in Temporal gespeichert.
 
 ```yaml
 - name: order_processor
@@ -85,7 +85,7 @@ Dauerhafter Workflow, der Neustarts uberlebt. Zustand wird in Temporal persistie
     - time
 ```
 
-Verwendung fur: Mehrstufige Geschaftsprozesse, lang laufende Orchestrierungen.
+Verwendung für: Mehrstufige Geschäftsprozesse, lang laufende Orchestrierungen.
 
 ## library.lua
 
@@ -121,7 +121,7 @@ helpers.format_date(timestamp)
 
 ## Module
 
-Das `modules`-Feld steuert, welche Module mit `require()` geladen werden konnen:
+Das `modules`-Feld steuert, welche Module mit `require()` geladen werden können:
 
 ```yaml
 modules:
@@ -132,9 +132,9 @@ modules:
   - channel
 ```
 
-Nur aufgelistete Module sind verfugbar. Dies bietet:
+Nur aufgelistete Module sind verfügbar. Dies bietet:
 - Sicherheit: Verhindert Zugriff auf Systemmodule
-- Explizite Abhangigkeiten: Klar, was der Code benotigt
+- Explizite Abhängigkeiten: Klar, was der Code benötigt
 - Determinismus: Workflows erhalten nur deterministische Module
 
 Siehe [Lua-Laufzeitumgebung](lua-overview.md) fur verfugbare Module.
@@ -149,11 +149,11 @@ imports:
   auth: app.auth:helpers     # require("auth")
 ```
 
-Der Schlussel wird zum Modulnamen im Lua-Code. Der Wert ist die Entry-ID (`namespace:name`).
+Der Schlüssel wird zum Modulnamen im Lua-Code. Der Wert ist die Entry-ID (`namespace:name`).
 
 ## Pool-Konfiguration
 
-Konfigurieren Sie den Ausfuhrungspool fur Funktionen:
+Konfigurieren Sie den Ausführungspool für Funktionen:
 
 ```yaml
 - name: handler
@@ -165,11 +165,11 @@ Konfigurieren Sie den Ausfuhrungspool fur Funktionen:
 ```
 
 Pool-Typen:
-- `inline` - Im Kontext des Aufrufers ausfuhren (Standard fur HTTP-Handler)
+- `inline` - Im Kontext des Aufrufers ausführen (Standard für HTTP-Handler)
 
 ## Metadaten
 
-Verwenden Sie `meta` fur Routing und Discovery:
+Verwenden Sie `meta` für Routing und Discovery:
 
 ```yaml
 - name: api_handler

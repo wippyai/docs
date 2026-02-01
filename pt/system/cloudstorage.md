@@ -1,15 +1,15 @@
 # Armazenamento em Nuvem
 
-Armazenamento de objetos compativel com S3 com URLs pre-assinadas.
+Armazenamento de objetos compatível com S3 com URLs pré-assinadas.
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `config.aws` | Configuracao de credenciais e regiao AWS |
-| `cloudstorage.s3` | Conexao com bucket S3 |
+| `config.aws` | Configuração de credenciais e região AWS |
+| `cloudstorage.s3` | Conexão com bucket S3 |
 
-## Configuracao AWS
+## Configuração AWS
 
 ```yaml
 - name: aws_config
@@ -19,16 +19,16 @@ Armazenamento de objetos compativel com S3 com URLs pre-assinadas.
   secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
 ```
 
-| Campo | Tipo | Obrigatorio | Descricao |
+| Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| `region` | string | Sim | Regiao AWS |
-| `access_key_id_env` | string | Nao | Nome da variavel de ambiente para chave de acesso |
-| `secret_access_key_env` | string | Nao | Nome da variavel de ambiente para chave secreta |
+| `region` | string | Sim | Região AWS |
+| `access_key_id_env` | string | Não | Nome da variável de ambiente para chave de acesso |
+| `secret_access_key_env` | string | Não | Nome da variável de ambiente para chave secreta |
 
-Credenciais carregam das variaveis de ambiente especificadas. Se omitido, usa cadeia de credenciais padrao do SDK AWS (roles IAM, perfis de instancia, etc.).
+Credenciais carregam das variáveis de ambiente especificadas. Se omitido, usa cadeia de credenciais padrão do SDK AWS (roles IAM, perfis de instância, etc.).
 
 <note>
-A configuracao AWS esta planejada para ser compartilhada com outros servicos AWS (SQS, etc.) em releases futuros.
+A configuração AWS está planejada para ser compartilhada com outros serviços AWS (SQS, etc.) em releases futuros.
 </note>
 
 ## Armazenamento S3
@@ -40,15 +40,15 @@ A configuracao AWS esta planejada para ser compartilhada com outros servicos AWS
   config: app.infra:aws_config
 ```
 
-| Campo | Tipo | Obrigatorio | Descricao |
+| Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
 | `bucket` | string | Sim | Nome do bucket S3 |
-| `config` | referencia | Sim | Referencia da entrada de configuracao AWS |
-| `endpoint` | string | Nao | Endpoint personalizado para servicos compativeis com S3 |
+| `config` | referência | Sim | Referência da entrada de configuração AWS |
+| `endpoint` | string | Não | Endpoint personalizado para serviços compatíveis com S3 |
 
-### Servicos Compativeis com S3
+### Serviços Compatíveis com S3
 
-Para MinIO ou outros servicos compativeis com S3, defina um endpoint personalizado:
+Para MinIO ou outros serviços compatíveis com S3, defina um endpoint personalizado:
 
 ```yaml
 - name: local_storage
@@ -58,8 +58,8 @@ Para MinIO ou outros servicos compativeis com S3, defina um endpoint personaliza
   endpoint: "http://localhost:9000"
 ```
 
-Quando um endpoint e fornecido, o acesso por estilo de caminho e habilitado automaticamente.
+Quando um endpoint é fornecido, o acesso por estilo de caminho é habilitado automaticamente.
 
 ## API Lua
 
-Veja [Modulo Cloud Storage](lua-cloudstorage.md) para operacoes (list, upload, download, delete, URLs pre-assinadas).
+Veja [Módulo Cloud Storage](lua-cloudstorage.md) para operações (list, upload, download, delete, URLs pré-assinadas).

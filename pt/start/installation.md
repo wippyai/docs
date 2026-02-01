@@ -1,6 +1,6 @@
-# Instalacao
+# Instalação
 
-## Instalacao Rapida
+## Instalação Rápida
 
 ```bash
 curl -fsSL https://hub.wippy.ai/install.sh | bash
@@ -14,14 +14,14 @@ Ou baixe diretamente de [hub.wippy.ai/releases](https://hub.wippy.ai/releases).
 wippy version
 ```
 
-## Inicio Rapido
+## Início Rápido
 
 ```bash
 # Criar um novo projeto
 mkdir myapp && cd myapp
 wippy init
 
-# Adicionar dependencias
+# Adicionar dependências
 wippy add wippy/http
 wippy install
 
@@ -29,26 +29,26 @@ wippy install
 wippy run
 ```
 
-## Visao Geral dos Comandos
+## Visão Geral dos Comandos
 
-| Comando | Descricao |
+| Comando | Descrição |
 |---------|-----------|
 | `wippy init` | Inicializa um novo projeto |
 | `wippy run` | Inicia o runtime |
-| `wippy lint` | Verifica o codigo em busca de erros |
-| `wippy add` | Adiciona uma dependencia |
-| `wippy install` | Instala dependencias |
-| `wippy update` | Atualiza dependencias |
+| `wippy lint` | Verifica o código em busca de erros |
+| `wippy add` | Adiciona uma dependência |
+| `wippy install` | Instala dependências |
+| `wippy update` | Atualiza dependências |
 | `wippy pack` | Cria um snapshot |
 | `wippy publish` | Publica no hub |
-| `wippy search` | Busca por modulos |
-| `wippy auth` | Gerencia autenticacao |
-| `wippy version` | Exibe informacoes de versao |
+| `wippy search` | Busca por módulos |
+| `wippy auth` | Gerencia autenticação |
+| `wippy version` | Exibe informações de versão |
 
-Consulte a [Referencia do CLI](guides/cli.md) para documentacao completa.
+Consulte a [Referência do CLI](guides/cli.md) para documentação completa.
 
-## Proximos Passos
+## Próximos Passos
 
 - [Hello World](tutorials/hello-world.md) - Crie seu primeiro projeto
 - [Estrutura do Projeto](start/structure.md) - Entenda o layout
-- [Referencia do CLI](guides/cli.md) - Todos os comandos e opcoes
+- [Referência do CLI](guides/cli.md) - Todos os comandos e opções

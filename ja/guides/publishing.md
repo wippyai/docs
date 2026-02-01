@@ -198,14 +198,6 @@ wippy publish --version 1.0.0
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### 保護されたバージョン
-
-本番リリースを保護済みとしてマーク（yankできない）：
-
-```bash
-wippy publish --version 1.0.0 --protected
-```
-
 ## 公開されたモジュールの使用
 
 ### 依存関係の追加

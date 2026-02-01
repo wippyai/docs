@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Veroffentlichen und abonnieren Sie Events in Ihrer Anwendung fur ereignisgesteuerte Architekturen.
+Veröffentlichen und abonnieren Sie Events in Ihrer Anwendung für ereignisgesteuerte Architekturen.
 
 ## Laden
 
@@ -45,10 +45,10 @@ end
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `system` | string | System-Muster (unterstutzt Wildcards wie "test.*") |
+| `system` | string | System-Muster (unterstützt Wildcards wie "test.*") |
 | `kind` | string | Event-Art-Filter (optional) |
 
-**Gibt zuruck:** `Subscription, error`
+**Gibt zurück:** `Subscription, error`
 
 ## Events senden
 
@@ -88,10 +88,10 @@ events.send("system", "heartbeat", "/health")
 |-----------|------|-------------|
 | `system` | string | System-Identifikator |
 | `kind` | string | Event-Art/-Typ |
-| `path` | string | Event-Pfad fur Routing |
+| `path` | string | Event-Pfad für Routing |
 | `data` | any | Event-Payload (optional) |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Subscription-Methoden
 
@@ -113,9 +113,9 @@ end
 
 Event-Felder: `system`, `kind`, `path`, `data`
 
-### Subscription schliessen
+### Subscription schließen
 
-Abonnement beenden und Channel schliessen:
+Abonnement beenden und Channel schließen:
 
 ```lua
 sub:close()
@@ -137,4 +137,4 @@ sub:close()
 | Leerer Pfad | `errors.INVALID` | nein |
 | Policy abgelehnt | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

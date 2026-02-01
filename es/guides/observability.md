@@ -1,20 +1,20 @@
 # Observabilidad
 
-Configure logging, metricas y trazado distribuido para aplicaciones Wippy.
+Configure logging, métricas y trazado distribuido para aplicaciones Wippy.
 
-## Vision General
+## Visión General
 
 Wippy proporciona tres pilares de observabilidad configurados al iniciar:
 
-| Pilar | Backend | Configuracion |
+| Pilar | Backend | Configuración |
 |--------|---------|---------------|
 | Logging | Zap (JSON estructurado) | `logger` y `logmanager` |
-| Metricas | Prometheus | `prometheus` |
+| Métricas | Prometheus | `prometheus` |
 | Trazado | OpenTelemetry | `otel` |
 
-## Configuracion del Logger
+## Configuración del Logger
 
-### Logger Basico
+### Logger Básico
 
 ```yaml
 logger:
@@ -25,7 +25,7 @@ logger:
 
 ### Gestor de Logs
 
-El gestor de logs controla la propagacion de logs y streaming de eventos:
+El gestor de logs controla la propagación de logs y streaming de eventos:
 
 ```yaml
 logmanager:
@@ -34,16 +34,16 @@ logmanager:
   min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
 ```
 
-Cuando `stream_to_events` esta habilitado, las entradas de log se convierten en eventos a los que los procesos pueden suscribirse via el bus de eventos.
+Cuando `stream_to_events` está habilitado, las entradas de log se convierten en eventos a los que los procesos pueden suscribirse vía el bus de eventos.
 
-### Contexto Automatico
+### Contexto Automático
 
 Todos los logs incluyen:
 
 - `pid` - ID de Proceso
-- `location` - ID de entrada y numero de linea (ej., `app.api:handler:45`)
+- `location` - ID de entrada y número de línea (ej., `app.api:handler:45`)
 
-## Metricas Prometheus
+## Métricas Prometheus
 
 ```yaml
 prometheus:
@@ -51,9 +51,9 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Las metricas se exponen en `/metrics` en la direccion configurada.
+Las métricas se exponen en `/metrics` en la dirección configurada.
 
-### Configuracion de Scrape
+### Configuración de Scrape
 
 ```yaml
 # prometheus.yml
@@ -64,13 +64,13 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-Para la API de metricas en Lua, consulte el [Modulo Metrics](lua-metrics.md).
+Para la API de métricas en Lua, consulte el [Módulo Metrics](lua-metrics.md).
 
 ## OpenTelemetry
 
-OTEL proporciona trazado distribuido y exportacion opcional de metricas.
+OTEL proporciona trazado distribuido y exportación opcional de métricas.
 
-### Configuracion Basica
+### Configuración Básica
 
 ```yaml
 otel:
@@ -90,7 +90,7 @@ otel:
 
 ### Fuentes de Trazas
 
-Habilite trazado para componentes especificos:
+Habilite trazado para componentes específicos:
 
 ```yaml
 otel:
@@ -116,7 +116,7 @@ otel:
   # Trazado de llamadas de funciones
   interceptor:
     enabled: true
-    order: 0                   # Orden de ejecucion del interceptor
+    order: 0                   # Orden de ejecución del interceptor
 ```
 
 ### Flujos de Trabajo Temporal
@@ -133,55 +133,55 @@ otel:
     enabled: true
 ```
 
-Cuando esta habilitado, el interceptor de trazado del SDK de Temporal se registra para operaciones de cliente y worker.
+Cuando está habilitado, el interceptor de trazado del SDK de Temporal se registra para operaciones de cliente y worker.
 
 Operaciones trazadas:
 - Inicios y completaciones de flujos de trabajo
 - Ejecuciones de actividades
 - Llamadas a flujos de trabajo hijos
-- Manejo de senales y consultas
+- Manejo de señales y consultas
 
-### Que Se Traza
+### Qué Se Traza
 
 | Componente | Nombre de Span | Atributos |
 |-----------|-----------|------------|
 | Solicitudes HTTP | `{METHOD} {route}` | http.method, http.url, http.host |
-| Llamadas de funciones | ID de Funcion | process.pid, frame.id |
+| Llamadas de funciones | ID de Función | process.pid, frame.id |
 | Ciclo de vida de procesos | `{source}.started/terminated` | process.pid |
 | Mensajes de cola | Topic del mensaje | Contexto de traza en headers |
 | Flujos de trabajo Temporal | Nombre de Workflow/Activity | workflow.id, run.id |
 
-### Propagacion de Contexto
+### Propagación de Contexto
 
-El contexto de traza se propaga automaticamente:
+El contexto de traza se propaga automáticamente:
 
-- **HTTP -> Funcion**: Headers W3C Trace Context
-- **Funcion -> Funcion**: Herencia de contexto de frame
+- **HTTP -> Función**: Headers W3C Trace Context
+- **Función -> Función**: Herencia de contexto de frame
 - **Proceso -> Proceso**: Contexto de spawn
 - **Cola publish -> consume**: Headers del mensaje
 
 ### Variables de Entorno
 
-OTEL puede configurarse via entorno:
+OTEL puede configurarse vía entorno:
 
-| Variable | Descripcion |
+| Variable | Descripción |
 |----------|-------------|
 | `OTEL_SDK_DISABLED` | Establecer a `true` para deshabilitar OTEL |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint del colector |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc` o `http/protobuf` |
 | `OTEL_SERVICE_NAME` | Nombre del servicio |
-| `OTEL_SERVICE_VERSION` | Version del servicio |
+| `OTEL_SERVICE_VERSION` | Versión del servicio |
 | `OTEL_TRACES_SAMPLER_ARG` | Tasa de muestreo (0.0-1.0) |
 | `OTEL_PROPAGATORS` | Lista de propagadores |
 
-## Estadisticas del Runtime
+## Estadísticas del Runtime
 
-El modulo `system` proporciona estadisticas internas del runtime:
+El módulo `system` proporciona estadísticas internas del runtime:
 
 ```lua
 local system = require("system")
 
--- Estadisticas de memoria
+-- Estadísticas de memoria
 local mem = system.memory.stats()
 -- mem.alloc, mem.heap_alloc, mem.heap_objects, etc.
 
@@ -192,8 +192,8 @@ local count = system.runtime.goroutines()
 local states = system.supervisor.states()
 ```
 
-## Ver Tambien
+## Ver También
 
-- [Modulo Logger](lua-logger.md) - API de logging en Lua
-- [Modulo Metrics](lua-metrics.md) - API de metricas en Lua
-- [Modulo System](lua-system.md) - Estadisticas del runtime
+- [Módulo Logger](lua-logger.md) - API de logging en Lua
+- [Módulo Metrics](lua-metrics.md) - API de métricas en Lua
+- [Módulo System](lua-system.md) - Estadísticas del runtime

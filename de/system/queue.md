@@ -157,9 +157,9 @@ queue.publish("app.queue:tasks", {
 
 Siehe [Queue-Modul](lua-queue.md) für vollständige API.
 
-## Graceful Shutdown
+## Kontrolliertes Herunterfahren
 
-Beim Consumer-Stop:
+Beim Stoppen des Consumers:
 
 1. Keine neuen Lieferungen mehr annehmen
 2. Worker-Kontexte abbrechen

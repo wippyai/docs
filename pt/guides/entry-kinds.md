@@ -1,21 +1,21 @@
-# Referencia de Tipos de Entradas
+# Referência de Tipos de Entradas
 
-Referencia completa de todos os tipos de entradas disponiveis no Wippy.
+Referência completa de todos os tipos de entradas disponíveis no Wippy.
 
-> Entradas referenciam umas as outras usando o formato `namespace:name`. O registro automaticamente conecta dependencias baseado nessas referencias, garantindo que recursos sejam inicializados na ordem correta.
+> Entradas referenciam umas às outras usando o formato `namespace:name`. O registro automaticamente conecta dependências baseado nessas referências, garantindo que recursos sejam inicializados na ordem correta.
 
-## Veja Tambem
+## Veja Também
 
-- [Registro](concept-registry.md) - Como entradas sao armazenadas e resolvidas
-- [Configuracao](guide-configuration.md) - Formato de configuracao YAML
+- [Registro](concept-registry.md) - Como entradas são armazenadas e resolvidas
+- [Configuração](guide-configuration.md) - Formato de configuração YAML
 
 ## Runtime Lua
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `function.lua` | Ponto de entrada de funcao Lua |
-| `process.lua` | Processo Lua de longa duracao |
-| `workflow.lua` | Workflow Temporal (deterministico) |
+| `function.lua` | Ponto de entrada de função Lua |
+| `process.lua` | Processo Lua de longa duração |
+| `workflow.lua` | Workflow Temporal (determinístico) |
 | `library.lua` | Biblioteca Lua compartilhada |
 
 ```yaml
@@ -27,21 +27,21 @@ Referencia completa de todos os tipos de entradas disponiveis no Wippy.
     - http
     - json
   imports:
-    utils: app.lib:helpers  # Importa outra entrada como modulo
+    utils: app.lib:helpers  # Importa outra entrada como módulo
 ```
 
 <tip>
-Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam disponiveis via <code>require("nome_alias")</code> no seu codigo.
+Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam disponíveis via <code>require("nome_alias")</code> no seu código.
 </tip>
 
-## Servicos HTTP
+## Serviços HTTP
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
 | `http.service` | Servidor HTTP (vincula porta) |
 | `http.router` | Prefixo de rota e middleware |
-| `http.endpoint` | Endpoint HTTP (metodo + caminho) |
-| `http.static` | Servico de arquivos estaticos |
+| `http.endpoint` | Endpoint HTTP (método + caminho) |
+| `http.static` | Serviço de arquivos estáticos |
 
 ```yaml
 # Servidor HTTP
@@ -71,7 +71,7 @@ Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam di
   func: list_handler
 ```
 
-**API Lua:** Veja [Modulo HTTP](lua-http.md)
+**API Lua:** Veja [Módulo HTTP](lua-http.md)
 
 ```lua
 local http = require("http")
@@ -83,7 +83,7 @@ resp:status(200):json({users = get_users()})
 
 ## Bancos de Dados
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
 | `db.sql.sqlite` | Banco de dados SQLite |
 | `db.sql.postgres` | Banco de dados PostgreSQL |
@@ -100,7 +100,7 @@ resp:status(200):json({users = get_users()})
   lifecycle:
     auto_start: true
 
-# Em memoria para testes
+# Em memória para testes
 - name: testdb
   kind: db.sql.sqlite
   file: ":memory:"
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**API Lua:** Veja [Modulo SQL](lua-sql.md)
+**API Lua:** Veja [Módulo SQL](lua-sql.md)
 
 ```lua
 local sql = require("sql")
@@ -153,13 +153,13 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 
 ## Armazenamentos Chave-Valor
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `store.memory` | Armazenamento chave-valor em memoria |
+| `store.memory` | Armazenamento chave-valor em memória |
 | `store.sql` | Armazenamento chave-valor com backend SQL |
 
 ```yaml
-# Armazenamento em memoria
+# Armazenamento em memória
 - name: cache
   kind: store.memory
   lifecycle:
@@ -174,7 +174,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**API Lua:** Veja [Modulo Store](lua-store.md)
+**API Lua:** Veja [Módulo Store](lua-store.md)
 
 ```lua
 local store = require("store")
@@ -186,10 +186,10 @@ local data = s:get("user:123")
 
 ## Filas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `queue.driver.memory` | Driver de fila em memoria |
-| `queue.queue` | Declaracao de fila |
+| `queue.driver.memory` | Driver de fila em memória |
+| `queue.queue` | Declaração de fila |
 | `queue.consumer` | Consumidor de fila |
 
 ```yaml
@@ -215,7 +215,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**API Lua:** Veja [Modulo Queue](lua-queue.md)
+**API Lua:** Veja [Módulo Queue](lua-queue.md)
 
 ```lua
 local queue = require("queue")
@@ -229,14 +229,14 @@ local data = msg:body_json()
 ```
 
 <note>
-O <code>func</code> do consumidor e invocado para cada mensagem. Use <code>queue.message()</code> dentro do handler para acessar a mensagem atual.
+O <code>func</code> do consumidor é invocado para cada mensagem. Use <code>queue.message()</code> dentro do handler para acessar a mensagem atual.
 </note>
 
 ## Gerenciamento de Processos
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `process.host` | Host de execucao de processos |
+| `process.host` | Host de execução de processos |
 | `process.service` | Processo supervisionado (encapsula process.lua) |
 | `terminal.host` | Host de terminal/CLI |
 
@@ -245,19 +245,19 @@ O <code>func</code> do consumidor e invocado para cada mensagem. Use <code>queue
 - name: processes
   kind: process.host
   host:
-    workers: 32             # Goroutines workers (padrao: NumCPU)
+    workers: 32             # Goroutines workers (padrão: NumCPU)
     queue_size: 1024        # Capacidade da fila global
     local_queue_size: 256   # Fila por worker
   lifecycle:
     auto_start: true
 
-# Definicao de processo
+# Definição de processo
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# Servico de processo supervisionado
+# Serviço de processo supervisionado
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -275,14 +275,14 @@ O <code>func</code> do consumidor e invocado para cada mensagem. Use <code>queue
 ```
 
 <tip>
-Use <code>process.service</code> quando precisar que um processo execute como servico supervisionado com reinicializacao automatica. O campo <code>process</code> referencia uma entrada <code>process.lua</code>.
+Use <code>process.service</code> quando precisar que um processo execute como serviço supervisionado com reinicialização automática. O campo <code>process</code> referencia uma entrada <code>process.lua</code>.
 </tip>
 
 ## Temporal (Workflows)
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `temporal.client` | Conexao com cliente Temporal |
+| `temporal.client` | Conexão com cliente Temporal |
 | `temporal.worker` | Worker Temporal |
 
 ```yaml
@@ -305,9 +305,9 @@ Use <code>process.service</code> quando precisar que um processo execute como se
 
 ## Armazenamento em Nuvem
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `config.aws` | Configuracao AWS |
+| `config.aws` | Configuração AWS |
 | `cloudstorage.s3` | Acesso a bucket S3 |
 
 ```yaml
@@ -321,10 +321,10 @@ Use <code>process.service</code> quando precisar que um processo execute como se
   kind: cloudstorage.s3
   config: app:aws
   bucket: "my-uploads"
-  endpoint: ""  # Opcional, para servicos compativeis com S3
+  endpoint: ""  # Opcional, para serviços compatíveis com S3
 ```
 
-**API Lua:** Veja [Modulo Cloud Storage](lua-cloudstorage.md)
+**API Lua:** Veja [Módulo Cloud Storage](lua-cloudstorage.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -335,24 +335,24 @@ local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
 ```
 
 <tip>
-Use <code>endpoint</code> para conectar a servicos compativeis com S3 como MinIO ou DigitalOcean Spaces.
+Use <code>endpoint</code> para conectar a serviços compatíveis com S3 como MinIO ou DigitalOcean Spaces.
 </tip>
 
 ## Sistemas de Arquivos
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `fs.directory` | Acesso a diretorio |
+| `fs.directory` | Acesso a diretório |
 
 ```yaml
 - name: data_dir
   kind: fs.directory
   directory: "./data"
-  auto_init: true   # Cria se nao existir
-  mode: "0755"      # Permissoes
+  auto_init: true   # Cria se não existir
+  mode: "0755"      # Permissões
 ```
 
-**API Lua:** Veja [Modulo Filesystem](lua-fs.md)
+**API Lua:** Veja [Módulo Filesystem](lua-fs.md)
 
 ```lua
 local fs = require("fs")
@@ -365,13 +365,13 @@ file:close()
 
 ## Ambiente
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `env.storage.memory` | Armazenamento de env em memoria |
+| `env.storage.memory` | Armazenamento de env em memória |
 | `env.storage.file` | Armazenamento de env baseado em arquivo |
 | `env.storage.os` | Ambiente do SO |
-| `env.storage.router` | Roteador de env (multiplos armazenamentos) |
-| `env.variable` | Variavel de ambiente |
+| `env.storage.router` | Roteador de env (múltiplos armazenamentos) |
+| `env.variable` | Variável de ambiente |
 
 ```yaml
 - name: os_env
@@ -389,7 +389,7 @@ file:close()
     - app:file_env
 ```
 
-**API Lua:** Veja [Modulo Env](lua-env.md)
+**API Lua:** Veja [Módulo Env](lua-env.md)
 
 ```lua
 local env = require("env")
@@ -399,18 +399,18 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; escritas vao para o primeiro armazenamento gravavel.
+O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; escritas vão para o primeiro armazenamento gravável.
 </note>
 
 ## Templates
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
 | `template.jet` | Template Jet individual |
-| `template.set` | Configuracao de conjunto de templates |
+| `template.set` | Configuração de conjunto de templates |
 
 ```yaml
-# Conjunto de templates com configuracao do motor
+# Conjunto de templates com configuração do motor
 - name: templates
   kind: template.set
   engine:
@@ -426,7 +426,7 @@ O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; es
   set: app:templates
 ```
 
-**API Lua:** Veja [Modulo Template](lua-template.md)
+**API Lua:** Veja [Módulo Template](lua-template.md)
 
 ```lua
 local templates = require("templates")
@@ -438,16 +438,16 @@ local html = set:render("email", {
 })
 ```
 
-## Seguranca
+## Segurança
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `security.policy` | Politica de seguranca com condicoes |
-| `security.policy.expr` | Politica baseada em expressao |
+| `security.policy` | Política de segurança com condições |
+| `security.policy.expr` | Política baseada em expressão |
 | `security.token_store` | Armazenamento de tokens |
 
 ```yaml
-# Politica baseada em condicoes
+# Política baseada em condições
 - name: admin_policy
   kind: security.policy
   policy:
@@ -459,7 +459,7 @@ local html = set:render("email", {
         operator: eq
         value: "admin"
 
-# Politica baseada em expressao
+# Política baseada em expressão
 - name: owner_policy
   kind: security.policy.expr
   policy:
@@ -469,30 +469,30 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**API Lua:** Veja [Modulo Security](lua-security.md)
+**API Lua:** Veja [Módulo Security](lua-security.md)
 
 ```lua
 local security = require("security")
 
--- Verifica permissao antes da acao
+-- Verifica permissão antes da ação
 if security.can("delete", "users", {user_id = id}) then
     delete_user(id)
 end
 
--- Obtem ator atual
+-- Obtém ator atual
 local actor = security.actor()
 ```
 
 <warning>
-Politicas sao avaliadas em ordem. A primeira politica correspondente determina o acesso. Coloque politicas mais especificas antes das gerais.
+Políticas são avaliadas em ordem. A primeira política correspondente determina o acesso. Coloque políticas mais específicas antes das gerais.
 </warning>
 
-## Contratos (Injecao de Dependencia)
+## Contratos (Injeção de Dependência)
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `contract.definition` | Interface com especificacoes de metodos |
-| `contract.binding` | Mapeia metodos de contrato para implementacoes de funcoes |
+| `contract.definition` | Interface com especificações de métodos |
+| `contract.binding` | Mapeia métodos de contrato para implementações de funções |
 
 ```yaml
 # Define a interface do contrato
@@ -500,9 +500,9 @@ Politicas sao avaliadas em ordem. A primeira politica correspondente determina o
   kind: contract.definition
   methods:
     - name: greet
-      description: Retorna uma mensagem de saudacao
+      description: Retorna uma mensagem de saudação
     - name: greet_with_name
-      description: Retorna uma saudacao personalizada
+      description: Retorna uma saudação personalizada
       input_schemas:
         - format: "application/schema+json"
           definition: {"type": "string"}
@@ -510,7 +510,7 @@ Politicas sao avaliadas em ordem. A primeira politica correspondente determina o
         - format: "application/schema+json"
           definition: {"type": "string"}
 
-# Funcoes de implementacao
+# Funções de implementação
 - name: greeter_greet
   kind: function.lua
   source: file://greeter_greet.lua
@@ -521,7 +521,7 @@ Politicas sao avaliadas em ordem. A primeira politica correspondente determina o
   source: file://greeter_greet_name.lua
   method: main
 
-# Vincula metodos do contrato a implementacoes
+# Vincula métodos do contrato a implementações
 - name: greeter_impl
   kind: contract.binding
   contracts:
@@ -540,26 +540,26 @@ local contract = require("contract")
 -- Abre binding pelo ID
 local greeter, err = contract.open("app:greeter_impl")
 
--- Chama metodos
+-- Chama métodos
 local result = greeter:greet()
 local personalized = greeter:greet_with_name("Alice")
 
--- Verifica se instancia implementa contrato
+-- Verifica se instância implementa contrato
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**API Lua:** Veja [Modulo Contract](lua-contract.md)
+**API Lua:** Veja [Módulo Contract](lua-contract.md)
 
 <tip>
-Marque um binding como <code>default: true</code> para usa-lo ao abrir um contrato sem especificar um ID de binding (funciona apenas quando nenhum campo <code>context_required</code> esta definido).
+Marque um binding como <code>default: true</code> para usá-lo ao abrir um contrato sem especificar um ID de binding (funciona apenas quando nenhum campo <code>context_required</code> está definido).
 </tip>
 
-## Execucao
+## Execução
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `exec.native` | Execucao de comando nativo |
-| `exec.docker` | Execucao em container Docker |
+| `exec.native` | Execução de comando nativo |
+| `exec.docker` | Execução em container Docker |
 
 ```yaml
 - name: native_exec
@@ -579,21 +579,21 @@ Marque um binding como <code>default: true</code> para usa-lo ao abrir um contra
     - "python"
 ```
 
-## Configuracao de Ciclo de Vida
+## Configuração de Ciclo de Vida
 
-A maioria das entradas suporta configuracao de ciclo de vida:
+A maioria das entradas suporta configuração de ciclo de vida:
 
 ```yaml
 - name: service
   kind: some.kind
   lifecycle:
     auto_start: true          # Inicia automaticamente
-    start_timeout: 10s        # Tempo maximo de inicializacao
-    stop_timeout: 10s         # Tempo maximo de encerramento
-    stable_threshold: 5s      # Tempo para considerar estavel
+    start_timeout: 10s        # Tempo máximo de inicialização
+    stop_timeout: 10s         # Tempo máximo de encerramento
+    stable_threshold: 5s      # Tempo para considerar estável
     depends_on:
       - app:database
-    restart:                  # Politica de retry
+    restart:                  # Política de retry
       initial_delay: 1s
       max_delay: 90s
       backoff_factor: 2.0
@@ -601,20 +601,20 @@ A maioria das entradas suporta configuracao de ciclo de vida:
 ```
 
 <note>
-Use <code>depends_on</code> para garantir que entradas iniciem na ordem correta. O supervisor aguarda dependencias se tornarem estaveis antes de iniciar entradas dependentes.
+Use <code>depends_on</code> para garantir que entradas iniciem na ordem correta. O supervisor aguarda dependências se tornarem estáveis antes de iniciar entradas dependentes.
 </note>
 
-## Formato de Referencia de Entradas
+## Formato de Referência de Entradas
 
-Entradas sao referenciadas usando o formato `namespace:name`:
+Entradas são referenciadas usando o formato `namespace:name`:
 
 ```yaml
-# Definicao
+# Definição
 namespace: app.users
 entries:
   - name: handler
     kind: function.lua
 
-# Referencia de outra entrada
+# Referência de outra entrada
 func: app.users:handler
 ```

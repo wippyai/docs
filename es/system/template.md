@@ -5,32 +5,32 @@ Renderizado de plantillas usando [CloudyKit Jet](https://github.com/CloudyKit/je
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `template.set` | Conjunto de plantillas con configuracion compartida |
+| `template.set` | Conjunto de plantillas con configuración compartida |
 | `template.jet` | Plantilla individual |
 
 ## Conjuntos de Plantillas
 
-Un conjunto es un namespace que contiene plantillas relacionadas. Las plantillas dentro de un conjunto comparten configuracion y pueden referenciarse entre si por nombre.
+Un conjunto es un namespace que contiene plantillas relacionadas. Las plantillas dentro de un conjunto comparten configuración y pueden referenciarse entre sí por nombre.
 
 ```yaml
 - name: views
   kind: template.set
 ```
 
-Toda la configuracion es opcional con valores por defecto sensatos:
+Toda la configuración es opcional con valores por defecto sensatos:
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `engine.development_mode` | bool | false | Deshabilitar cache de plantillas |
+| `engine.development_mode` | bool | false | Deshabilitar caché de plantillas |
 | `engine.delimiters.left` | string | `{{` | Delimitador de apertura de variable |
 | `engine.delimiters.right` | string | `}}` | Delimitador de cierre de variable |
 | `engine.globals` | map | - | Variables disponibles para todas las plantillas |
 
 ## Plantillas
 
-Las plantillas pertenecen a un conjunto y se identifican por nombre para resolucion interna.
+Las plantillas pertenecen a un conjunto y se identifican por nombre para resolución interna.
 
 ```yaml
 - name: layout
@@ -51,14 +51,14 @@ Las plantillas pertenecen a un conjunto y se identifican por nombre para resoluc
     {{ end }}
 ```
 
-| Campo | Tipo | Requerido | Descripcion |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `set` | referencia | Si | Conjunto de plantillas padre |
-| `source` | string | Si | Contenido de la plantilla |
+| `set` | referencia | Sí | Conjunto de plantillas padre |
+| `source` | string | Sí | Contenido de la plantilla |
 
-## Resolucion de Plantillas
+## Resolución de Plantillas
 
-Las plantillas se referencian entre si usando nombres, no IDs de registro. La resolucion funciona como un sistema de archivos virtual dentro del conjunto:
+Las plantillas se referencian entre sí usando nombres, no IDs de registro. La resolución funciona como un sistema de archivos virtual dentro del conjunto:
 
 1. Por defecto, el nombre de entrada del registro (`entry.ID.Name`) se convierte en el nombre de plantilla
 2. Sobrescriba con `meta.name` para nomenclatura personalizada:
@@ -74,7 +74,7 @@ Las plantillas se referencian entre si usando nombres, no IDs de registro. La re
     Hola {{ user }}!
 ```
 
-Esta plantilla se registra como `welcome` en el conjunto, asi que otras plantillas usan `{{ include "welcome" }}` o `{{ extends "welcome" }}`.
+Esta plantilla se registra como `welcome` en el conjunto, así que otras plantillas usan `{{ include "welcome" }}` o `{{ extends "welcome" }}`.
 
 ## Herencia
 
@@ -97,10 +97,10 @@ Las plantillas pueden extender plantillas padre y sobrescribir bloques:
   set: app.views:views
   source: |
     {{ extends "base" }}
-    {{ block title() }}Mi Pagina{{ end }}
-    {{ block body() }}<p>Contenido aqui</p>{{ end }}
+    {{ block title() }}Mi Página{{ end }}
+    {{ block body() }}<p>Contenido aquí</p>{{ end }}
 ```
 
 ## API Lua
 
-Ver [Modulo Template](lua-template.md) para operaciones de renderizado.
+Ver [Módulo Template](lua-template.md) para operaciones de renderizado.

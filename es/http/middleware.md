@@ -1,10 +1,10 @@
 # Middleware HTTP
 
-El middleware procesa solicitudes HTTP antes y despues del manejo de rutas.
+El middleware procesa solicitudes HTTP antes y después del manejo de rutas.
 
-## Como Funciona el Middleware
+## Cómo Funciona el Middleware
 
-El middleware envuelve manejadores HTTP para agregar logica de procesamiento. Cada middleware recibe un mapa de opciones y retorna un wrapper de manejador:
+El middleware envuelve manejadores HTTP para agregar lógica de procesamiento. Cada middleware recibe un mapa de opciones y retorna un wrapper de manejador:
 
 ```yaml
 middleware:
@@ -15,13 +15,13 @@ options:
   ratelimit.requests: "100"
 ```
 
-Las opciones usan notacion de punto: `nombre_middleware.opcion.nombre`. El formato heredado con guion bajo es soportado para compatibilidad hacia atras.
+Las opciones usan notación de punto: `nombre_middleware.opcion.nombre`. El formato heredado con guion bajo es soportado para compatibilidad hacia atrás.
 
 ## Pre-Match vs Post-Match
 
 <tip>
-<b>Pre-match</b> se ejecuta antes del matching de rutas—para concerns transversales como CORS y compresion.
-<b>Post-match</b> se ejecuta despues de que la ruta es matcheada—para autorizacion que necesita info de ruta.
+<b>Pre-match</b> se ejecuta antes del matching de rutas—para concerns transversales como CORS y compresión.
+<b>Post-match</b> se ejecuta después de que la ruta es matcheada—para autorización que necesita info de ruta.
 </tip>
 
 ```yaml
@@ -55,17 +55,17 @@ options:
   cors.allow.credentials: "true"
 ```
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|-------------|-------------|
-| `cors.allow.origins` | `*` | Origenes permitidos (separados por coma, soporta `*.example.com`) |
-| `cors.allow.methods` | `GET,POST,PUT,DELETE,OPTIONS,PATCH` | Metodos permitidos |
+| `cors.allow.origins` | `*` | Orígenes permitidos (separados por coma, soporta `*.example.com`) |
+| `cors.allow.methods` | `GET,POST,PUT,DELETE,OPTIONS,PATCH` | Métodos permitidos |
 | `cors.allow.headers` | `Origin,Content-Type,Accept,Authorization,X-Requested-With` | Headers de solicitud permitidos |
 | `cors.expose.headers` | - | Headers expuestos al cliente |
 | `cors.allow.credentials` | `false` | Permitir cookies/auth |
-| `cors.max.age` | `86400` | Cache de preflight (segundos) |
+| `cors.max.age` | `86400` | Caché de preflight (segundos) |
 | `cors.allow.private.network` | `false` | Acceso a red privada |
 
-Las solicitudes preflight OPTIONS son manejadas automaticamente.
+Las solicitudes preflight OPTIONS son manejadas automáticamente.
 
 ---
 
@@ -73,7 +73,7 @@ Las solicitudes preflight OPTIONS son manejadas automaticamente.
 
 <note>Pre-match</note>
 
-Limitacion de tasa con token bucket y tracking por clave.
+Limitación de tasa con token bucket y tracking por clave.
 
 ```yaml
 middleware:
@@ -84,15 +84,15 @@ options:
   ratelimit.key: "ip"
 ```
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|-------------|-------------|
 | `ratelimit.requests` | `100` | Solicitudes por ventana |
 | `ratelimit.window` | `1m` | Ventana de tiempo |
-| `ratelimit.burst` | `20` | Capacidad de rafaga |
+| `ratelimit.burst` | `20` | Capacidad de ráfaga |
 | `ratelimit.key` | `ip` | Estrategia de clave |
 | `ratelimit.cleanup_interval` | `5m` | Frecuencia de limpieza |
-| `ratelimit.entry_ttl` | `10m` | Expiracion de entrada |
-| `ratelimit.max_entries` | `100000` | Claves maximas rastreadas |
+| `ratelimit.entry_ttl` | `10m` | Expiración de entrada |
+| `ratelimit.max_entries` | `100000` | Claves máximas rastreadas |
 
 **Estrategias de clave:** `ip`, `header:X-API-Key`, `query:api_key`
 
@@ -100,11 +100,11 @@ Retorna `429 Too Many Requests` con headers: `X-RateLimit-Limit`, `X-RateLimit-R
 
 ---
 
-### Compresion {#compress}
+### Compresión {#compress}
 
 <note>Pre-match</note>
 
-Compresion Gzip para respuestas.
+Compresión Gzip para respuestas.
 
 ```yaml
 middleware:
@@ -114,12 +114,12 @@ options:
   compress.min.length: "1024"
 ```
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|-------------|-------------|
 | `compress.level` | `default` | `fastest`, `default`, o `best` |
-| `compress.min.length` | `1024` | Tamano minimo de respuesta (bytes) |
+| `compress.min.length` | `1024` | Tamaño mínimo de respuesta (bytes) |
 
-Solo comprime cuando el cliente envia `Accept-Encoding: gzip`.
+Solo comprime cuando el cliente envía `Accept-Encoding: gzip`.
 
 ---
 
@@ -136,7 +136,7 @@ options:
   real_ip.trusted.subnets: "10.0.0.0/8,172.16.0.0/12"
 ```
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|-------------|-------------|
 | `real_ip.trusted.subnets` | Redes privadas | CIDRs de proxy confiables |
 | `real_ip.trust_all` | `false` | Confiar en todas las fuentes (inseguro) |
@@ -149,7 +149,7 @@ options:
 
 <note>Pre-match</note>
 
-Autenticacion basada en token. Ver [Seguridad](system-security.md) para configuracion de almacen de tokens.
+Autenticación basada en token. Ver [Seguridad](system-security.md) para configuración de almacén de tokens.
 
 ```yaml
 middleware:
@@ -158,15 +158,15 @@ options:
   token_auth.store: "app:tokens"
 ```
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|-------------|-------------|
-| `token_auth.store` | requerido | ID de registro del almacen de tokens |
+| `token_auth.store` | requerido | ID de registro del almacén de tokens |
 | `token_auth.header.name` | `Authorization` | Nombre de header |
 | `token_auth.header.prefix` | `Bearer ` | Prefijo de header |
-| `token_auth.query.param` | `x-auth-token` | Parametro de query fallback |
+| `token_auth.query.param` | `x-auth-token` | Parámetro de query fallback |
 | `token_auth.cookie.name` | `x-auth-token` | Cookie fallback |
 
-Establece actor y scope de seguridad en contexto para middleware downstream. No bloquea solicitudes—la autorizacion ocurre en middleware firewall.
+Establece actor y scope de seguridad en contexto para middleware downstream. No bloquea solicitudes—la autorización ocurre en middleware firewall.
 
 ---
 
@@ -174,14 +174,14 @@ Establece actor y scope de seguridad en contexto para middleware downstream. No 
 
 <note>Pre-match</note>
 
-Metricas HTTP estilo Prometheus. Sin opciones de configuracion.
+Métricas HTTP estilo Prometheus. Sin opciones de configuración.
 
 ```yaml
 middleware:
   - metrics
 ```
 
-| Metrica | Tipo | Descripcion |
+| Métrica | Tipo | Descripción |
 |---------|------|-------------|
 | `wippy_http_requests_total` | Counter | Total de solicitudes |
 | `wippy_http_request_duration_seconds` | Histogram | Latencia de solicitud |
@@ -193,7 +193,7 @@ middleware:
 
 <warning>Post-match</warning>
 
-Autorizacion basada en endpoint matcheado. Requiere actor de `token_auth`.
+Autorización basada en endpoint matcheado. Requiere actor de `token_auth`.
 
 ```yaml
 post_middleware:
@@ -202,9 +202,9 @@ post_options:
   endpoint_firewall.action: "access"
 ```
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|-------------|-------------|
-| `endpoint_firewall.action` | `access` | Accion de permiso a verificar |
+| `endpoint_firewall.action` | `access` | Acción de permiso a verificar |
 
 Retorna `401 Unauthorized` (sin actor) o `403 Forbidden` (permiso denegado).
 
@@ -214,7 +214,7 @@ Retorna `401 Unauthorized` (sin actor) o `403 Forbidden` (permiso denegado).
 
 <warning>Post-match</warning>
 
-Proteger recursos especificos por ID. Util a nivel de router.
+Proteger recursos específicos por ID. Útil a nivel de router.
 
 ```yaml
 post_middleware:
@@ -224,9 +224,9 @@ post_options:
   resource_firewall.target: "app:admin-panel"
 ```
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|-------------|-------------|
-| `resource_firewall.action` | `access` | Accion de permiso |
+| `resource_firewall.action` | `access` | Acción de permiso |
 | `resource_firewall.target` | requerido | ID de registro del recurso |
 
 ---
@@ -235,7 +235,7 @@ post_options:
 
 <note>Pre-match</note>
 
-Servir archivos via header `X-Sendfile` desde handlers.
+Servir archivos vía header `X-Sendfile` desde handlers.
 
 ```yaml
 middleware:
@@ -246,7 +246,7 @@ options:
 
 El handler establece headers para activar el servicio de archivos:
 
-| Header | Descripcion |
+| Header | Descripción |
 |--------|-------------|
 | `X-Sendfile` | Ruta del archivo dentro del filesystem |
 | `X-File-Name` | Nombre de archivo para descarga |
@@ -278,18 +278,18 @@ El middleware se ejecuta en el orden listado. Secuencia recomendada:
 middleware:
   - real_ip       # 1. Extraer IP real primero
   - cors          # 2. Manejar preflight CORS
-  - compress      # 3. Configurar compresion de respuesta
-  - ratelimit     # 4. Verificar limites de tasa
-  - metrics       # 5. Registrar metricas
+  - compress      # 3. Configurar compresión de respuesta
+  - ratelimit     # 4. Verificar límites de tasa
+  - metrics       # 5. Registrar métricas
   - token_auth    # 6. Autenticar solicitudes
 
 post_middleware:
-  - endpoint_firewall  # Autorizar despues de match de ruta
+  - endpoint_firewall  # Autorizar después de match de ruta
 ```
 
-## Ver Tambien
+## Ver También
 
-- [Routing](http-router.md) - Configuracion de router
-- [Seguridad](system-security.md) - Almacenes de tokens y politicas
+- [Routing](http-router.md) - Configuración de router
+- [Seguridad](system-security.md) - Almacenes de tokens y políticas
 - [WebSocket Relay](http-websocket-relay.md) - Manejo de WebSocket
 - [Terminal](system-terminal.md) - Servicio de terminal

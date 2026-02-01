@@ -158,7 +158,6 @@ wippy publish --dry-run
 | `--dry-run` | 仅验证不发布 |
 | `--label` | 版本标签 |
 | `--release-notes` | 发布说明 |
-| `--protected` | 标记为受保护版本 |
 | `--registry` | 注册表 URL |
 
 ## wippy search

@@ -1,6 +1,6 @@
 # Typsystem
 
-Wippy enthalt ein graduelles Typsystem mit flusssensitiver Prufung. Typen sind standardmassig nicht-nullable.
+Wippy enthält ein graduelles Typsystem mit flusssensitiver Prüfung. Typen sind standardmäßig nicht-nullable.
 
 ## Primitive
 
@@ -16,11 +16,11 @@ local u: unknown = something  -- muss vor Verwendung eingeschrankt werden
 ### any vs unknown
 
 ```lua
--- any: opt-out der Typprufung
+-- any: Opt-out aus der Typprüfung
 local a: any = get_data()
-a.foo.bar.baz()              -- kein Fehler, kann zur Laufzeit absturzen
+a.foo.bar.baz()              -- kein Fehler, kann zur Laufzeit abstürzen
 
--- unknown: sicheres Unbekannt, muss vor Verwendung eingeschrankt werden
+-- unknown: sicheres Unbekannt, muss vor Verwendung eingeschränkt werden
 local u: unknown = get_data()
 u.foo                        -- FEHLER: kann auf Eigenschaft von unknown nicht zugreifen
 if type(u) == "table" then
@@ -30,7 +30,7 @@ end
 
 ## Nil-Sicherheit
 
-Typen sind standardmassig nicht-nullable. Verwenden Sie `?` fur optionale Werte:
+Typen sind standardmäßig nicht-nullable. Verwenden Sie `?` für optionale Werte:
 
 ```lua
 local x: number = nil         -- FEHLER: nil nicht an number zuweisbar
@@ -38,7 +38,7 @@ local y: number? = nil        -- OK: number? bedeutet "number oder nil"
 local z: number? = 42         -- OK
 ```
 
-### Kontrollfluss-Einschrankung
+### Kontrollfluss-Einschränkung
 
 Der Typchecker verfolgt den Kontrollfluss:
 
@@ -87,14 +87,14 @@ local function add(a: number, b: number): number
     return a + b
 end
 
--- Mehrere Ruckgaben
+-- Mehrere Rückgaben
 local function div_mod(a: number, b: number): (number, number)
     return math.floor(a / b), a % b
 end
 
--- Fehler-Ruckgaben (Lua-Idiom)
+-- Fehler-Rückgaben (Lua-Idiom)
 local function fetch(url: string): (string?, error?)
-    -- gibt (data, nil) oder (nil, error) zuruck
+    -- gibt (data, nil) oder (nil, error) zurück
 end
 
 -- Erstklassige Funktionstypen
@@ -147,7 +147,7 @@ local n: number = identity(42)
 local s: string = identity("hello")
 ```
 
-### Eingeschrankte Generics
+### Eingeschränkte Generics
 
 ```lua
 type HasName = {name: string}
@@ -228,7 +228,7 @@ local user: User? = get_user()
 local name = user!.name              -- behauptet, dass user non-nil ist
 ```
 
-Wenn der Wert zur Laufzeit nil ist, wird ein Fehler ausgelost. Verwenden Sie dies, wenn Sie wissen, dass ein Wert nicht nil sein kann, aber der Typchecker es nicht beweisen kann.
+Wenn der Wert zur Laufzeit nil ist, wird ein Fehler ausgelöst. Verwenden Sie dies, wenn Sie wissen, dass ein Wert nicht nil sein kann, aber der Typchecker es nicht beweisen kann.
 
 ## Typ-Casts
 
@@ -256,7 +256,7 @@ local p = Point(data)                -- validiert Record-Struktur
 
 ### Type:is()-Methode
 
-Validieren ohne zu werfen, gibt `(value, nil)` oder `(nil, error)` zuruck:
+Validieren ohne Fehler zu werfen, gibt `(value, nil)` oder `(nil, error)` zurück:
 
 ```lua
 type Point = {x: number, y: number}
@@ -264,7 +264,7 @@ local data: any = get_input()
 
 local p, err = Point:is(data)
 if p then
-    local sum = p.x + p.y            -- p ist gultiger Point
+    local sum = p.x + p.y            -- p ist gültiger Point
 else
     return nil, err                  -- Validierung fehlgeschlagen
 end
@@ -280,15 +280,15 @@ end
 
 ### Unsicherer Cast
 
-Verwenden Sie `::` oder `as` fur ungepruftes Casten:
+Verwenden Sie `::` oder `as` für ungeprüftes Casten:
 
 ```lua
 local data: any = get_data()
-local user = data :: User            -- keine Laufzeitprufung
+local user = data :: User            -- keine Laufzeitprüfung
 local user = data as User            -- gleich wie ::
 ```
 
-Sparsam verwenden. Unsichere Casts umgehen die Validierung und konnen Laufzeitfehler verursachen, wenn der Wert nicht zum Typ passt.
+Sparsam verwenden. Unsichere Casts umgehen die Validierung und können Laufzeitfehler verursachen, wenn der Wert nicht zum Typ passt.
 
 ## Typ-Reflektion
 
@@ -304,7 +304,7 @@ print(Point:name())                  -- "Point"
 
 ### Record-Felder
 
-Iterieren Sie uber Record-Felder:
+Iterieren Sie über Record-Felder:
 
 ```lua
 type User = {name: string, age: number}
@@ -388,10 +388,10 @@ if h then h() end
 
 ## Typannotationen
 
-Fugen Sie Typen zu Funktionssignaturen hinzu:
+Fügen Sie Typen zu Funktionssignaturen hinzu:
 
 ```lua
--- Parameter- und Ruckgabetypen
+-- Parameter- und Rückgabetypen
 local function process(input: string): number
     return #input
 end
@@ -409,9 +409,9 @@ type StringMap = {[string]: number}
 | Position | Varianz | Beschreibung |
 |----------|----------|-------------|
 | Readonly-Feld | Kovariant | Kann Subtyp verwenden |
-| Mutables Feld | Invariant | Muss exakt ubereinstimmen |
+| Mutables Feld | Invariant | Muss exakt übereinstimmen |
 | Funktionsparameter | Kontravariant | Kann Supertyp verwenden |
-| Funktionsruckgabe | Kovariant | Kann Subtyp verwenden |
+| Funktionsrückgabe | Kovariant | Kann Subtyp verwenden |
 
 ## Subtyping
 
@@ -422,31 +422,31 @@ type StringMap = {[string]: number}
 
 ## Graduelle Adoption
 
-Fugen Sie Typen inkrementell hinzu - untypisierter Code funktioniert weiterhin:
+Fügen Sie Typen inkrementell hinzu - untypisierter Code funktioniert weiterhin:
 
 ```lua
--- Bestehender Code funktioniert unverandert
+-- Bestehender Code funktioniert unverändert
 function old_function(x)
     return x + 1
 end
 
--- Neuer Code erhalt Typen
+-- Neuer Code erhält Typen
 function new_function(x: number): number
     return x + 1
 end
 ```
 
-Beginnen Sie mit dem Hinzufugen von Typen zu:
+Beginnen Sie mit dem Hinzufügen von Typen zu:
 1. Funktionssignaturen an API-Grenzen
 2. HTTP-Handler und Queue-Consumer
-3. Kritische Geschaftslogik
+3. Kritische Geschäftslogik
 
-## Typprufung
+## Typprüfung
 
-Fuhren Sie den Typchecker aus:
+Führen Sie den Typchecker aus:
 
 ```bash
 wippy lint
 ```
 
-Meldet Typfehler ohne Code auszufuhren.
+Meldet Typfehler ohne Code auszuführen.

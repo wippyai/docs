@@ -1,6 +1,6 @@
 # Supervision
 
-Der Supervisor verwaltet Dienst-Lebenszyklen, behandelt Startreihenfolge, automatische Neustarts und Graceful Shutdown. Dienste mit `auto_start: true` werden beim Anwendungsstart gestartet.
+Der Supervisor verwaltet Dienstlebenszyklen, behandelt die Startreihenfolge, automatische Neustarts und kontrolliertes Herunterfahren. Dienste mit `auto_start: true` werden beim Anwendungsstart gestartet.
 
 ## Lebenszyklus-Konfiguration
 
@@ -62,7 +62,7 @@ Sie müssen Infrastruktur-Einträge wie Datenbanken nicht in <code>depends_on</c
 
 ## Neustart-Richtlinie
 
-Wenn ein Dienst fehlschlägt, versucht der Supervisor es mit exponentiellem Backoff erneut:
+Wenn ein Dienst fehlschlägt, versucht der Supervisor es mit exponentiell steigender Wartezeit erneut:
 
 ```yaml
 lifecycle:
@@ -168,7 +168,7 @@ Der Supervisor überführt Dienste durch diese Zustände:
 | `Inactive` | Registriert aber nicht gestartet |
 | `Starting` | Start in Bearbeitung |
 | `Running` | Läuft normal |
-| `Stopping` | Graceful Shutdown in Bearbeitung |
+| `Stopping` | Kontrolliertes Herunterfahren in Bearbeitung |
 | `Stopped` | Sauber beendet |
 | `Failed` | Fehler aufgetreten, kann wiederholt werden |
 

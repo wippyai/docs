@@ -3,18 +3,18 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Strukturierte Fehlerbehandlung mit Kategorisierung und Retry-Metadaten. Die globale `errors`-Tabelle ist ohne require verfugbar.
+Strukturierte Fehlerbehandlung mit Kategorisierung und Retry-Metadaten. Die globale `errors`-Tabelle ist ohne require verfügbar.
 
 ## Fehler erstellen
 
 ```lua
--- Einfache Nachricht (Art standardmassig UNKNOWN)
+-- Einfache Nachricht (Art standardmäßig UNKNOWN)
 local err = errors.new("something went wrong")
 
 -- Mit Art
 local err = errors.new(errors.NOT_FOUND, "user not found")
 
--- Vollstandiger Konstruktor
+-- Vollständiger Konstruktor
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -25,7 +25,7 @@ local err = errors.new({
 
 ## Fehler wrappen
 
-Kontext hinzufugen und dabei Art, retryable und Details beibehalten:
+Kontext hinzufügen und dabei Art, retryable und Details beibehalten:
 
 ```lua
 local data, err = db.query("SELECT * FROM users")
@@ -36,20 +36,20 @@ end
 
 ## Fehlermethoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `err:kind()` | string | Fehlerkategorie |
 | `err:message()` | string | Fehlermeldung |
 | `err:retryable()` | boolean/nil | Ob die Operation wiederholt werden kann |
 | `err:details()` | table/nil | Strukturierte Metadaten |
 | `err:stack()` | string | Lua-Stack-Trace |
-| `tostring(err)` | string | Vollstandige Darstellung |
+| `tostring(err)` | string | Vollständige Darstellung |
 
-## Art prufen
+## Art prüfen
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- ungultige Eingabe behandeln
+    -- ungültige Eingabe behandeln
 end
 
 -- Oder direkt vergleichen
@@ -64,13 +64,13 @@ end
 |----------|----------|
 | `errors.NOT_FOUND` | Ressource existiert nicht |
 | `errors.ALREADY_EXISTS` | Ressource existiert bereits |
-| `errors.INVALID` | Ungultige Eingabe oder Argumente |
+| `errors.INVALID` | Ungültige Eingabe oder Argumente |
 | `errors.PERMISSION_DENIED` | Zugriff verweigert |
-| `errors.UNAVAILABLE` | Service vorubergehend nicht verfugbar |
+| `errors.UNAVAILABLE` | Service vorübergehend nicht verfügbar |
 | `errors.INTERNAL` | Interner Fehler |
 | `errors.CANCELED` | Operation wurde abgebrochen |
 | `errors.CONFLICT` | Ressourcenzustandskonflikt |
-| `errors.TIMEOUT` | Operation hat Zeitlimit uberschritten |
+| `errors.TIMEOUT` | Operation hat Zeitlimit überschritten |
 | `errors.RATE_LIMITED` | Zu viele Anfragen |
 | `errors.UNKNOWN` | Nicht spezifizierter Fehler |
 

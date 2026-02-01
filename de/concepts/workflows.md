@@ -1,14 +1,14 @@
 # Workflows
 
-Workflows sind dauerhafte, langlebige Operationen, die Abstürze und Neustarts überleben. Sie bieten Zuverlässigkeitsgarantien für kritische Geschäftsprozesse wie Zahlungen, Auftragsabwicklung und mehrstufige Genehmigungen.
+Workflows sind dauerhafte, langlebige Vorgänge, die Abstürze und Neustarts überleben. Sie bieten Zuverlässigkeitsgarantien für kritische Geschäftsprozesse wie Zahlungen, Auftragsabwicklung und mehrstufige Genehmigungen.
 
 ## Warum Workflows?
 
-Funktionen sind flüchtig - wenn der Host abstürzt, geht laufende Arbeit verloren. Workflows persistieren ihren Zustand:
+Funktionen sind flüchtig — wenn der Host abstürzt, geht laufende Arbeit verloren. Workflows speichern ihren Zustand dauerhaft:
 
 | Aspekt | Funktionen | Workflows |
 |--------|------------|-----------|
-| Zustand | Im Speicher | Persistiert |
+| Zustand | Im Speicher | Dauerhaft gespeichert |
 | Absturz | Verlorene Arbeit | Setzt fort |
 | Dauer | Sekunden bis Minuten | Stunden bis Monate |
 | Abschluss | Best Effort | Garantiert |
@@ -30,10 +30,10 @@ if status == "failed" then
 end
 ```
 
-Die Workflow-Engine fängt Aufrufe ab und zeichnet Ergebnisse auf. Wenn der Prozess abstürzt, wird die Ausführung aus der Historie replayed - gleicher Code, gleiche Ergebnisse.
+Die Workflow-Engine fängt Aufrufe ab und zeichnet Ergebnisse auf. Wenn der Prozess abstürzt, wird die Ausführung aus der Historie wiederholt — gleicher Code, gleiche Ergebnisse.
 
 <note>
-Wippy behandelt Determinismus automatisch. Operationen wie <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code> und <code>time.now()</code> werden abgefangen und ihre Ergebnisse aufgezeichnet. Beim Replay werden aufgezeichnete Werte zurückgegeben, anstatt sie erneut auszuführen.
+Wippy behandelt Determinismus automatisch. Operationen wie <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code> und <code>time.now()</code> werden abgefangen und ihre Ergebnisse aufgezeichnet. Beim Wiederholen werden aufgezeichnete Werte zurückgegeben, anstatt sie erneut auszuführen.
 </note>
 
 ## Workflow-Muster
@@ -68,7 +68,7 @@ return {inventory = inventory, payment = payment, shipping = shipping}
 
 ### Auf Signale warten
 
-Auf externe Events warten (Genehmigungsentscheidungen, Webhooks, Benutzeraktionen):
+Auf externe Ereignisse warten (Genehmigungsentscheidungen, Webhooks, Benutzeraktionen):
 
 ```lua
 local funcs = require("funcs")
@@ -110,10 +110,10 @@ local pid = process.spawn("app.workflows:order_processor", "app:temporal_worker"
 process.send(pid, "update", {status = "approved"})
 ```
 
-Aus Sicht des Aufrufers ist die API identisch. Der Unterschied ist der Host: Workflows laufen auf einem `temporal.worker` statt auf einem `process.host`.
+Aus Sicht des Aufrufers ist die API identisch. Der Unterschied liegt im Host: Workflows laufen auf einem `temporal.worker` statt auf einem `process.host`.
 
 <tip>
-Wenn ein Workflow Kinder über <code>process.spawn()</code> startet, werden sie zu Kind-Workflows beim selben Provider, wobei Dauerhaftigkeitsgarantien erhalten bleiben.
+Wenn ein Workflow über <code>process.spawn()</code> Kindprozesse startet, werden diese zu Kind-Workflows beim selben Anbieter, wobei die Beständigkeitsgarantien erhalten bleiben.
 </tip>
 
 ## Fehler und Supervision
@@ -138,7 +138,7 @@ Prozesse können als überwachte Dienste mit `process.service` laufen:
       max_attempts: 10
 ```
 
-Workflows verwenden keine Supervision-Bäume - sie werden automatisch vom Workflow-Provider (Temporal) verwaltet. Der Provider behandelt Persistenz, Retries und Wiederherstellung.
+Workflows verwenden keine Überwachungsbäume — sie werden automatisch vom Workflow-Anbieter (Temporal) verwaltet. Der Anbieter behandelt Persistenz, Wiederholungen und Wiederherstellung.
 
 ## Konfiguration
 
@@ -171,4 +171,4 @@ Siehe [Temporal](https://temporal.io) für Produktions-Workflow-Infrastruktur.
 
 - [Funktionen](concept-functions.md) - Zustandslose Request-Behandlung
 - [Prozessmodell](concept-process-model.md) - Zustandsbehaftete Hintergrundarbeit
-- [Supervision](guide-supervision.md) - Prozess-Neustart-Richtlinien
+- [Überwachung](guide-supervision.md) - Neustart-Richtlinien für Prozesse

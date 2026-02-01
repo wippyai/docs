@@ -33,7 +33,7 @@ type EntryListener interface {
 }
 ```
 
-Fehler-Rückgabe von `Add` lehnt den Eintrag ab.
+Wird von `Add` ein Fehler zurückgegeben, wird der Eintrag abgelehnt.
 
 ## Listener vs Observer
 

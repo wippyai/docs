@@ -57,9 +57,9 @@ local snap, err = registry.snapshot_at(5)       -- bei Version 5
 
 ### Snapshot-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
-| `snap:entries()` | `Entry[], error` | Alle zuganglichen Entries |
+| `snap:entries()` | `Entry[], error` | Alle zugänglichen Entries |
 | `snap:get(id)` | `Entry, error` | Einzelner Entry nach ID |
 | `snap:find(filter)` | `Entry[]` | Entries filtern |
 | `snap:namespace(ns)` | `Entry[]` | Entries im Namespace |
@@ -113,21 +113,21 @@ changes:delete("test:old_entry")
 local new_version, err = changes:apply()
 ```
 
-**Berechtigung:** `registry.apply` fur `changes:apply()`
+**Berechtigung:** `registry.apply` für `changes:apply()`
 
 ### Changes-Methoden
 
 | Methode | Beschreibung |
 |--------|-------------|
-| `changes:create(entry)` | Create-Operation hinzufugen |
-| `changes:update(entry)` | Update-Operation hinzufugen |
-| `changes:delete(id)` | Delete-Operation hinzufugen (String oder `{ns, name}`) |
+| `changes:create(entry)` | Create-Operation hinzufügen |
+| `changes:update(entry)` | Update-Operation hinzufügen |
+| `changes:delete(id)` | Delete-Operation hinzufügen (String oder `{ns, name}`) |
 | `changes:ops()` | Ausstehende Operationen abrufen |
-| `changes:apply()` | Anderungen anwenden, gibt neue Version zuruck |
+| `changes:apply()` | Änderungen anwenden, gibt neue Version zurück |
 
 ## Version anwenden
 
-Auf eine bestimmte Version vor- oder zuruckrollen:
+Auf eine bestimmte Version vor- oder zurückrollen:
 
 ```lua
 local prev = current_version:previous()
@@ -138,7 +138,7 @@ local ok, err = registry.apply_version(prev)
 
 ## Delta erstellen
 
-Operationen berechnen, um zwischen Zustanden zu wechseln:
+Operationen berechnen, um zwischen Zuständen zu wechseln:
 
 ```lua
 local from = {{id = "test:a", kind = "test", meta = {}, data = {}}}
@@ -156,7 +156,7 @@ end
 |------------|----------|-------------|
 | `registry.get` | Entry-ID | Entry lesen (filtert auch find/entries-Ergebnisse) |
 | `registry.apply` | - | Changeset anwenden |
-| `registry.apply_version` | - | Version anwenden/zuruckrollen |
+| `registry.apply_version` | - | Version anwenden/zurückrollen |
 
 ## Fehler
 
@@ -165,8 +165,8 @@ end
 | Entry nicht gefunden | `errors.NOT_FOUND` |
 | Version nicht gefunden | `errors.NOT_FOUND` |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
-| Ungultiger Parameter | `errors.INVALID` |
-| Keine Anderungen anzuwenden | `errors.INVALID` |
-| Registry nicht verfugbar | `errors.INTERNAL` |
+| Ungültiger Parameter | `errors.INVALID` |
+| Keine Änderungen anzuwenden | `errors.INVALID` |
+| Registry nicht verfügbar | `errors.INTERNAL` |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

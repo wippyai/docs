@@ -1,17 +1,17 @@
-# Modulos Lua
+# Módulos Lua
 
-Los modulos de runtime extienden el entorno Lua con nueva funcionalidad. Los modulos pueden proporcionar utilidades deterministicas, operaciones I/O, o comandos async que hacen yield a sistemas externos.
+Los módulos de runtime extienden el entorno Lua con nueva funcionalidad. Los módulos pueden proporcionar utilidades determinísticas, operaciones I/O, o comandos async que hacen yield a sistemas externos.
 
-> La implementacion del runtime Lua puede cambiar en futuras versiones.
+> La implementación del runtime Lua puede cambiar en futuras versiones.
 
-## Definicion de Modulo
+## Definición de Módulo
 
-Cada modulo usa `luaapi.ModuleDef`:
+Cada módulo usa `luaapi.ModuleDef`:
 
 ```go
 var Module = &luaapi.ModuleDef{
     Name:        "mymodule",
-    Description: "Mi modulo personalizado",
+    Description: "Mi módulo personalizado",
     Class:       []string{luaapi.ClassDeterministic},
     Types:       ModuleTypes,  // Definiciones de tipo para herramientas
     Build: func() (*lua.LTable, []luaapi.YieldType) {
@@ -24,30 +24,30 @@ var Module = &luaapi.ModuleDef{
 }
 ```
 
-La funcion `Build` retorna:
-- Tabla de modulo con funciones exportadas
+La función `Build` retorna:
+- Tabla de módulo con funciones exportadas
 - Lista de tipos de yield para operaciones async (o nil)
 
-Las tablas de modulo se construyen una vez y se cachean para reutilizacion en todos los estados Lua.
+Las tablas de módulo se construyen una vez y se cachean para reutilización en todos los estados Lua.
 
-## Clasificacion de Modulos
+## Clasificación de Módulos
 
-El campo `Class` determina donde puede usarse el modulo:
+El campo `Class` determina donde puede usarse el módulo:
 
-| Clase | Descripcion |
+| Clase | Descripción |
 |-------|-------------|
 | `ClassDeterministic` | La misma entrada siempre produce la misma salida |
-| `ClassNondeterministic` | La salida varia (tiempo, random) |
+| `ClassNondeterministic` | La salida varía (tiempo, random) |
 | `ClassIO` | Operaciones I/O externas |
 | `ClassNetwork` | Operaciones de red |
 | `ClassStorage` | Persistencia de datos |
 | `ClassWorkflow` | Operaciones seguras para workflow |
 
-Modulos marcados solo con `ClassDeterministic` son seguros para workflow. Agregar clases de I/O o network restringe el modulo a funciones y procesos.
+Módulos marcados solo con `ClassDeterministic` son seguros para workflow. Agregar clases de I/O o network restringe el módulo a funciones y procesos.
 
 ## Exponer Funciones
 
-Las funciones tienen signature `func(l *lua.LState) int` donde el valor de retorno es el numero de valores pusheados al stack:
+Las funciones tienen signature `func(l *lua.LState) int` donde el valor de retorno es el número de valores pusheados al stack:
 
 ```go
 func greetFunc(l *lua.LState) int {
@@ -59,18 +59,18 @@ func greetFunc(l *lua.LState) int {
 }
 ```
 
-| Metodo | Descripcion |
+| Método | Descripción |
 |--------|-------------|
-| `l.CheckString(n)` | String requerido en posicion n |
+| `l.CheckString(n)` | String requerido en posición n |
 | `l.CheckInt(n)` | Entero requerido |
-| `l.CheckNumber(n)` | Numero requerido |
+| `l.CheckNumber(n)` | Número requerido |
 | `l.CheckTable(n)` | Tabla requerida |
 | `l.OptString(n, def)` | String opcional con default |
 | `l.OptInt(n, def)` | Int opcional con default |
 
 ## Tablas
 
-Las tablas pasadas entre Go y Lua son mutables por defecto. Las tablas de exportacion de modulo deben marcarse como inmutables:
+Las tablas pasadas entre Go y Lua son mutables por defecto. Las tablas de exportación de módulo deben marcarse como inmutables:
 
 ```go
 mod := lua.CreateTable(0, 5)
@@ -89,11 +89,11 @@ l.Push(result)
 
 ## Sistema de Tipos
 
-Los modulos usan dos mecanismos de tipado separados pero complementarios.
+Los módulos usan dos mecanismos de tipado separados pero complementarios.
 
 ### Definiciones de Tipo (Herramientas)
 
-El campo `Types` proporciona signatures de tipo para soporte de IDE y documentacion:
+El campo `Types` proporciona signatures de tipo para soporte de IDE y documentación:
 
 ```go
 func ModuleTypes() *types.TypeManifest {
@@ -115,20 +115,20 @@ func ModuleTypes() *types.TypeManifest {
 
 **Constructos de tipo disponibles:**
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `types.String` | Primitivo string |
-| `types.Number` | Valor numerico |
+| `types.Number` | Valor numérico |
 | `types.Boolean` | Valor booleano |
 | `types.Any` | Cualquier valor Lua |
 | `types.LuaError` | Tipo de error |
 | `types.Optional(t)` | Valor opcional de tipo t |
-| `types.InterfaceType` | Objeto con metodos |
-| `types.FunctionType` | Signature de funcion con params/returns |
+| `types.InterfaceType` | Objeto con métodos |
+| `types.FunctionType` | Signature de función con params/returns |
 | `types.RecordType` | Tipo similar a struct con campos |
 | `types.TableType` | Tabla con tipos key/value |
 
-Signatures de funcion soportan parametros variadicos:
+Signatures de función soportan parámetros variádicos:
 
 ```go
 // (string, ...any) -> (string, error?)
@@ -152,19 +152,19 @@ func init() {
             "__tostring": objectToString,  // Metametodos
         },
         map[string]lua.LGoFunc{
-            "get_value": objectGetValue,   // Metodos regulares
+            "get_value": objectGetValue,   // Métodos regulares
             "set_value": objectSetValue,
         },
     )
 }
 ```
 
-Las metatables son inmutables y cacheadas globalmente para reutilizacion thread-safe.
+Las metatables son inmutables y cacheadas globalmente para reutilización thread-safe.
 
-| Sistema | Proposito | Define |
+| Sistema | Propósito | Define |
 |---------|-----------|--------|
 | Definiciones de Tipo | IDE, docs, type checking | Signatures |
-| Bindings UserData | Llamadas a metodos en runtime | Funciones ejecutables |
+| Bindings UserData | Llamadas a métodos en runtime | Funciones ejecutables |
 
 ## Operaciones Async
 
@@ -172,7 +172,7 @@ Para operaciones que esperan en sistemas externos, retorne un yield en lugar de 
 
 ### Definir Yields
 
-Declare tipos de yield en la funcion `Build` del modulo:
+Declare tipos de yield en la función `Build` del módulo:
 
 ```go
 Build: func() (*lua.LTable, []luaapi.YieldType) {
@@ -190,7 +190,7 @@ Build: func() (*lua.LTable, []luaapi.YieldType) {
 
 ### Crear un Yield
 
-Retorne -1 para senalar un yield en lugar de valores de retorno normales:
+Retorne -1 para señalar un yield en lugar de valores de retorno normales:
 
 ```go
 func fetchFunc(l *lua.LState) int {
@@ -200,11 +200,11 @@ func fetchFunc(l *lua.LState) int {
     yield.URL = url
 
     l.Push(yield)
-    return -1  // Senalar yield, no conteo de stack
+    return -1  // Señalar yield, no conteo de stack
 }
 ```
 
-### Implementacion de Yield
+### Implementación de Yield
 
 Los yields conectan valores Lua y comandos dispatcher:
 
@@ -266,11 +266,11 @@ func myFunc(l *lua.LState) int {
         return 2
     }
 
-    // Proceder con operacion
+    // Proceder con operación
 }
 ```
 
-## Ver Tambien
+## Ver También
 
 - [Command Dispatch](internal-dispatch.md) - Manejar comandos de yield
-- [Scheduler](internal-scheduler.md) - Ejecucion de procesos
+- [Scheduler](internal-scheduler.md) - Ejecución de procesos

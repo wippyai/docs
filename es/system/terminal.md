@@ -3,16 +3,16 @@
 Los hosts de terminal ejecutan scripts Lua con acceso a stdin/stdout/stderr.
 
 <note>
-Un host de terminal ejecuta exactamente un proceso a la vez. El proceso en si es un proceso Lua regular con acceso al contexto de I/O del terminal.
+Un host de terminal ejecuta exactamente un proceso a la vez. El proceso en sí es un proceso Lua regular con acceso al contexto de I/O del terminal.
 </note>
 
 ## Tipo de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `terminal.host` | Host de sesion de terminal |
+| `terminal.host` | Host de sesión de terminal |
 
-## Configuracion
+## Configuración
 
 ```yaml
 - name: cli_host
@@ -22,22 +22,22 @@ Un host de terminal ejecuta exactamente un proceso a la vez. El proceso en si es
     auto_start: true
 ```
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `hide_logs` | bool | false | Suprimir salida de logs al bus de eventos |
 
 ## Contexto del Terminal
 
-Los scripts ejecutandose en un host de terminal reciben un contexto de terminal con:
+Los scripts ejecutándose en un host de terminal reciben un contexto de terminal con:
 
-- **stdin** - Lector de entrada estandar
-- **stdout** - Escritor de salida estandar
-- **stderr** - Escritor de error estandar
-- **args** - Argumentos de linea de comandos
+- **stdin** - Lector de entrada estándar
+- **stdout** - Escritor de salida estándar
+- **stderr** - Escritor de error estándar
+- **args** - Argumentos de línea de comandos
 
 ## API Lua
 
-El [Modulo IO](lua-io.md) proporciona operaciones de terminal:
+El [Módulo IO](lua-io.md) proporciona operaciones de terminal:
 
 ```lua
 local io = require("io")

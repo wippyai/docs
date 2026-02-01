@@ -1,16 +1,16 @@
-# Referencia de Configuracion
+# Referencia de Configuración
 
 Wippy se configura mediante archivos `.wippy.yaml`. Todas las opciones tienen valores por defecto sensatos.
 
 ## Gestor de Logs
 
-Controla el enrutamiento de logs del runtime. La salida de consola se configura via [flags CLI](guide-cli.md) (`-v`, `-c`, `-s`).
+Controla el enrutamiento de logs del runtime. La salida de consola se configura vía [flags CLI](guide-cli.md) (`-v`, `-c`, `-s`).
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `propagate_downstream` | bool | true | Enviar logs a salida de consola/archivo |
-| `stream_to_events` | bool | false | Publicar logs al bus de eventos para acceso programatico |
-| `min_level` | int | -1 | Nivel minimo: -1=debug, 0=info, 1=warn, 2=error |
+| `stream_to_events` | bool | false | Publicar logs al bus de eventos para acceso programático |
+| `min_level` | int | -1 | Nivel mínimo: -1=debug, 0=info, 1=warn, 2=error |
 
 ```yaml
 logmanager:
@@ -19,16 +19,16 @@ logmanager:
   min_level: 0
 ```
 
-Ver: [Modulo Logger](lua-logger.md)
+Ver: [Módulo Logger](lua-logger.md)
 
 ## Profiler
 
-Servidor HTTP de pprof de Go para perfilado de CPU/memoria. Habilitar con flag `-p` o configuracion.
+Servidor HTTP de pprof de Go para perfilado de CPU/memoria. Habilitar con flag `-p` o configuración.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Iniciar servidor de profiler |
-| `address` | string | localhost:6060 | Direccion de escucha |
+| `address` | string | localhost:6060 | Dirección de escucha |
 | `read_timeout` | duration | 15s | Timeout de lectura HTTP |
 | `write_timeout` | duration | 15s | Timeout de escritura HTTP |
 | `idle_timeout` | duration | 60s | Timeout de keep-alive |
@@ -43,24 +43,24 @@ Acceder en `http://localhost:6060/debug/pprof/`
 
 ## Seguridad
 
-Comportamiento de seguridad global. Las politicas individuales se definen como [entradas security.policy](guide-entry-kinds.md).
+Comportamiento de seguridad global. Las políticas individuales se definen como [entradas security.policy](guide-entry-kinds.md).
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `strict_mode` | bool | false | Denegar acceso cuando el contexto de seguridad esta incompleto |
+| `strict_mode` | bool | false | Denegar acceso cuando el contexto de seguridad está incompleto |
 
 ```yaml
 security:
   strict_mode: true
 ```
 
-Ver: [Sistema de Seguridad](system-security.md), [Modulo Security](lua-security.md)
+Ver: [Sistema de Seguridad](system-security.md), [Módulo Security](lua-security.md)
 
 ## Registro
 
-Almacenamiento de entradas e historial de versiones. El registro contiene todas las entradas de configuracion.
+Almacenamiento de entradas e historial de versiones. El registro contiene todas las entradas de configuración.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `enable_history` | bool | true | Rastrear versiones de entradas |
 | `history_type` | string | memory | Almacenamiento: memory, sqlite, nil |
@@ -72,13 +72,13 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-Ver: [Concepto de Registro](concept-registry.md), [Modulo Registry](lua-registry.md)
+Ver: [Concepto de Registro](concept-registry.md), [Módulo Registry](lua-registry.md)
 
 ## Relay
 
-Enrutamiento de mensajes entre procesos a traves de nodos.
+Enrutamiento de mensajes entre procesos a través de nodos.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `node_name` | string | local | Identificador para este nodo relay |
 
@@ -91,9 +91,9 @@ Ver: [Modelo de Procesos](concept-process-model.md)
 
 ## Supervisor
 
-Gestion del ciclo de vida de servicios. Controla como las entradas supervisadas inician/detienen.
+Gestión del ciclo de vida de servicios. Controla cómo las entradas supervisadas inician/detienen.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `host.buffer_size` | int | 1024 | Capacidad de cola de mensajes |
 | `host.worker_count` | int | NumCPU | Workers concurrentes |
@@ -105,13 +105,13 @@ supervisor:
     worker_count: 32
 ```
 
-Ver: [Guia de Supervision](guide-supervision.md)
+Ver: [Guía de Supervisión](guide-supervision.md)
 
 ## Funciones
 
-Host de ejecucion de funciones. Ejecuta entradas `function.lua`.
+Host de ejecución de funciones. Ejecuta entradas `function.lua`.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `host.buffer_size` | int | 1024 | Capacidad de cola de tareas |
 | `host.worker_count` | int | NumCPU | Workers concurrentes |
@@ -123,20 +123,20 @@ functions:
     worker_count: 32
 ```
 
-Ver: [Concepto de Funciones](concept-functions.md), [Modulo Funcs](lua-funcs.md)
+Ver: [Concepto de Funciones](concept-functions.md), [Módulo Funcs](lua-funcs.md)
 
 ## Runtime de Lua
 
-Cache de VM Lua y evaluacion de expresiones.
+Caché de VM Lua y evaluación de expresiones.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `proto_cache_size` | int | 60000 | Cache de prototipos compilados |
-| `main_cache_size` | int | 10000 | Cache de chunks principales |
+| `proto_cache_size` | int | 60000 | Caché de prototipos compilados |
+| `main_cache_size` | int | 10000 | Caché de chunks principales |
 | `expr.cache_enabled` | bool | true | Cachear expresiones compiladas |
-| `expr.capacity` | int | 5000 | Tamano de cache de expresiones |
+| `expr.capacity` | int | 5000 | Tamaño de caché de expresiones |
 | `json.cache_enabled` | bool | true | Cachear esquemas JSON |
-| `json.capacity` | int | 1000 | Tamano de cache JSON |
+| `json.capacity` | int | 1000 | Tamaño de caché JSON |
 
 ```yaml
 lua:
@@ -146,13 +146,13 @@ lua:
     capacity: 5000
 ```
 
-Ver: [Vision General de Lua](lua-overview.md)
+Ver: [Visión General de Lua](lua-overview.md)
 
 ## Finder
 
-Cache de busqueda del registro. Usado internamente para busquedas de entradas.
+Caché de búsqueda del registro. Usado internamente para búsquedas de entradas.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `query_cache_size` | int | 1000 | Resultados de consultas cacheados |
 | `regex_cache_size` | int | 100 | Patrones regex compilados |
@@ -164,9 +164,9 @@ finder:
 
 ## OpenTelemetry
 
-Trazado distribuido y exportacion de metricas via OTLP.
+Trazado distribuido y exportación de métricas vía OTLP.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Habilitar OTEL |
 | `endpoint` | string | localhost:4318 | Endpoint OTLP |
@@ -174,7 +174,7 @@ Trazado distribuido y exportacion de metricas via OTLP.
 | `service_name` | string | wippy | Identificador de servicio |
 | `sample_rate` | float | 1.0 | Muestreo de trazas (0.0-1.0) |
 | `traces_enabled` | bool | false | Exportar trazas |
-| `metrics_enabled` | bool | false | Exportar metricas |
+| `metrics_enabled` | bool | false | Exportar métricas |
 | `http.enabled` | bool | true | Trazar solicitudes HTTP |
 | `process.enabled` | bool | true | Trazar ciclo de vida de procesos |
 | `interceptor.enabled` | bool | false | Trazar llamadas de funciones |
@@ -188,28 +188,28 @@ otel:
     trace_lifecycle: true
 ```
 
-Ver: [Guia de Observabilidad](guide-observability.md)
+Ver: [Guía de Observabilidad](guide-observability.md)
 
 ## Shutdown
 
 Comportamiento de apagado graceful.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `timeout` | duration | 30s | Espera maxima para que los componentes se detengan |
+| `timeout` | duration | 30s | Espera máxima para que los componentes se detengan |
 
 ```yaml
 shutdown:
   timeout: 60s
 ```
 
-## Metricas
+## Métricas
 
-Buffer de recoleccion de metricas internas.
+Buffer de recolección de métricas internas.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `buffer.size` | int | 10000 | Capacidad del buffer de metricas |
+| `buffer.size` | int | 10000 | Capacidad del buffer de métricas |
 | `interceptor.enabled` | bool | false | Auto-rastrear llamadas de funciones |
 
 ```yaml
@@ -220,16 +220,16 @@ metrics:
     enabled: true
 ```
 
-Ver: [Modulo Metrics](lua-metrics.md), [Guia de Observabilidad](guide-observability.md)
+Ver: [Módulo Metrics](lua-metrics.md), [Guía de Observabilidad](guide-observability.md)
 
 ## Prometheus
 
-Endpoint de metricas Prometheus.
+Endpoint de métricas Prometheus.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `enabled` | bool | false | Iniciar servidor de metricas |
-| `address` | string | localhost:9090 | Direccion de escucha |
+| `enabled` | bool | false | Iniciar servidor de métricas |
+| `address` | string | localhost:9090 | Dirección de escucha |
 
 ```yaml
 prometheus:
@@ -239,23 +239,23 @@ prometheus:
 
 Expone endpoint `/metrics` para scraping de Prometheus.
 
-Ver: [Guia de Observabilidad](guide-observability.md)
+Ver: [Guía de Observabilidad](guide-observability.md)
 
 ## Cluster
 
 Clustering multi-nodo con descubrimiento por gossip.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Habilitar clustering |
 | `name` | string | hostname | Identificador de nodo |
-| `internode.bind_addr` | string | 0.0.0.0 | Direccion de bind inter-nodo |
+| `internode.bind_addr` | string | 0.0.0.0 | Dirección de bind inter-nodo |
 | `internode.bind_port` | int | 0 | Puerto (0=auto 7950-7959) |
 | `membership.bind_port` | int | 7946 | Puerto de gossip |
 | `membership.join_addrs` | string | | Nodos semilla (separados por coma) |
-| `membership.secret_key` | string | | Clave de encriptacion (base64) |
+| `membership.secret_key` | string | | Clave de encriptación (base64) |
 | `membership.secret_file` | string | | Ruta del archivo de clave |
-| `membership.advertise_addr` | string | | Direccion publica para NAT |
+| `membership.advertise_addr` | string | | Dirección pública para NAT |
 
 ```yaml
 cluster:
@@ -267,17 +267,17 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-Ver: [Guia de Cluster](guide-cluster.md)
+Ver: [Guía de Cluster](guide-cluster.md)
 
 ## Variables de Entorno
 
-| Variable | Descripcion |
+| Variable | Descripción |
 |----------|-------------|
-| `GOMEMLIMIT` | Limite de memoria (sobrescribe flag `--memory-limit`) |
+| `GOMEMLIMIT` | Límite de memoria (sobrescribe flag `--memory-limit`) |
 
-## Ver Tambien
+## Ver También
 
-- [Referencia CLI](guide-cli.md) - Opciones de linea de comandos
+- [Referencia CLI](guide-cli.md) - Opciones de línea de comandos
 - [Tipos de Entrada](guide-entry-kinds.md) - Todos los tipos de entrada
-- [Guia de Cluster](guide-cluster.md) - Configuracion multi-nodo
-- [Guia de Observabilidad](guide-observability.md) - Logging, metricas, tracing
+- [Guía de Cluster](guide-cluster.md) - Configuración multi-nodo
+- [Guía de Observabilidad](guide-observability.md) - Logging, métricas, tracing

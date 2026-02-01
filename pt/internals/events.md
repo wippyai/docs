@@ -1,12 +1,12 @@
 # Event Bus
 
-O event bus e um sistema pub/sub usando uma unica goroutine de dispatcher. Publishers enfileiram acoes, o dispatcher as processa sequencialmente, e subscribers recebem eventos correspondentes em channels.
+O event bus é um sistema pub/sub usando uma única goroutine de dispatcher. Publishers enfileiram ações, o dispatcher as processa sequencialmente, e subscribers recebem eventos correspondentes em channels.
 
 ## Estrutura de Evento
 
 ```go
 type Event struct {
-    System string  // Componente/modulo (ex: "registry", "process")
+    System string  // Componente/módulo (ex: "registry", "process")
     Kind   string  // Tipo de evento (ex: "create", "update", "exit")
     Path   string  // Identificador da entidade
     Data   any     // Payload
@@ -55,24 +55,24 @@ type Bus struct {
 }
 ```
 
-Todas as mutacoes passam pela goroutine do dispatcher, eliminando race conditions sem locking complexo.
+Todas as mutações passam pela goroutine do dispatcher, eliminando race conditions sem locking complexo.
 
-## Acoes
+## Ações
 
-Quatro tipos de acao fluem pela fila:
+Quatro tipos de ação fluem pela fila:
 
-| Acao | Comportamento |
+| Ação | Comportamento |
 |------|---------------|
 | Subscribe | Adiciona subscriber ao map, responde no done channel |
 | Unsubscribe | Remove subscriber, responde no done channel |
 | Send | Entrega evento para subscribers correspondentes |
 | Stop | Limpa subscribers, drena fila, sai do loop |
 
-Subscribe e Unsubscribe bloqueiam ate o dispatcher confirmar. Send e fire-and-forget.
+Subscribe e Unsubscribe bloqueiam até o dispatcher confirmar. Send é fire-and-forget.
 
 ## Troca de Fila
 
-O dispatcher usa troca de slices para evitar alocacoes em estado estavel:
+O dispatcher usa troca de slices para evitar alocações em estado estável:
 
 ```go
 func (b *Bus) processActions() bool {
@@ -83,7 +83,7 @@ func (b *Bus) processActions() bool {
     b.actionMu.Unlock()
 
     for i := range actions {
-        // processar acao
+        // processar ação
     }
 
     clear(actions)
@@ -94,11 +94,11 @@ func (b *Bus) processActions() bool {
 }
 ```
 
-Dois slices alternam: um para processamento, um para novas chegadas. O channel `actionReady` tem buffer de 1, entao sinalizar nunca bloqueia e multiplos enqueues coalescem em um wakeup.
+Dois slices alternam: um para processamento, um para novas chegadas. O channel `actionReady` tem buffer de 1, então sinalizar nunca bloqueia e múltiplos enqueues coalescem em um wakeup.
 
 ## Pattern Matching
 
-Inscricoes compilam padroes uma vez no momento da inscricao:
+Inscrições compilam padrões uma vez no momento da inscrição:
 
 ```go
 type sub struct {
@@ -110,16 +110,16 @@ type sub struct {
 }
 ```
 
-O pacote wildcard suporta tres tipos de padrao:
+O pacote wildcard suporta três tipos de padrão:
 
-| Padrao | Corresponde |
+| Padrão | Corresponde |
 |--------|-------------|
 | `registry` | Apenas match exato |
-| `*` | Qualquer segmento unico |
+| `*` | Qualquer segmento único |
 | `**` | Zero ou mais segmentos |
-| `(a\|b)` | Alternacao dentro do segmento |
+| `(a\|b)` | Alternação dentro do segmento |
 
-Padroes dividem em `.` entao `registry.*` corresponde `registry.create` mas nao `registry.entry.create`. O padrao `registry.**` corresponde todos os tres de `registry`, `registry.create`, e `registry.entry.create`.
+Padrões dividem em `.` então `registry.*` corresponde `registry.create` mas não `registry.entry.create`. O padrão `registry.**` corresponde todos os três de `registry`, `registry.create`, e `registry.entry.create`.
 
 ## Entrega de Eventos
 
@@ -144,11 +144,11 @@ for id, s := range b.subscribers {
 }
 ```
 
-Se o contexto de um subscriber for cancelado, ele e marcado para remocao durante aquela passagem de entrega. O contexto do evento tambem pode cancelar entrega no meio da iteracao.
+Se o contexto de um subscriber for cancelado, ele é marcado para remoção durante aquela passagem de entrega. O contexto do evento também pode cancelar entrega no meio da iteração.
 
 ## Ponte de Processo Lua
 
-O dispatcher de eventos faz ponte de eventos Go para processos Lua. Ele se inscreve uma vez em todos os eventos (`"**"`) e roteia internamente baseado em inscricoes de processos:
+O dispatcher de eventos faz ponte de eventos Go para processos Lua. Ele se inscreve uma vez em todos os eventos (`"**"`) e roteia internamente baseado em inscrições de processos:
 
 ```go
 type Dispatcher struct {
@@ -158,11 +158,11 @@ type Dispatcher struct {
     eventC chan event.Event
 
     mu   sync.RWMutex
-    subs map[string]*subscription  // topico -> inscricao
+    subs map[string]*subscription  // tópico -> inscrição
 }
 ```
 
-Quando um processo Lua se inscreve via `events.subscribe()`, o dispatcher armazena o padrao e PID alvo. Eventos correspondentes sao empacotados e enviados via relay:
+Quando um processo Lua se inscreve via `events.subscribe()`, o dispatcher armazena o padrão e PID alvo. Eventos correspondentes são empacotados e enviados via relay:
 
 ```go
 func (d *Dispatcher) routeEvent(evt event.Event) {
@@ -196,7 +196,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 
 ### Subscriber
 
-Encapsula inscricao de channel com callback:
+Encapsula inscrição de channel com callback:
 
 ```go
 handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
@@ -206,11 +206,11 @@ handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
 defer handler.Close()
 ```
 
-Cria duas goroutines: uma le eventos e chama o handler, outra aguarda cancelamento de contexto para desinscricao.
+Cria duas goroutines: uma lê eventos e chama o handler, outra aguarda cancelamento de contexto para desinscrição.
 
 ### EventRouter
 
-Gerencia multiplos handlers com ciclo de vida centralizado:
+Gerencia múltiplos handlers com ciclo de vida centralizado:
 
 ```go
 router, err := eventbus.StartRouter(ctx, bus,
@@ -223,7 +223,7 @@ Cada handler implementa `Pattern()` e `Handle()`. O router cria um Subscriber pa
 
 ### Awaiter
 
-Espera sincrona por um evento especifico:
+Espera síncrona por um evento específico:
 
 ```go
 awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
@@ -232,22 +232,22 @@ defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // bloqueia ate match ou timeout
+result := waiter.Wait()  // bloqueia até match ou timeout
 ```
 
-O padrao Prepare-then-Wait evita race conditions: inscricao antes de acionar o evento que produz a resposta.
+O padrão Prepare-then-Wait evita race conditions: inscrição antes de acionar o evento que produz a resposta.
 
 ## Shutdown
 
-1. `Stop()` atomicamente define flag closed e enfileira acao Stop
+1. `Stop()` atomicamente define flag closed e enfileira ação Stop
 2. Dispatcher limpa mapa de subscribers
-3. Acoes restantes na fila sao drenadas:
-   - Requisicoes Subscribe recebem erro "bus is closed"
-   - Requisicoes Unsubscribe completam imediatamente
-   - Eventos Send sao descartados
+3. Ações restantes na fila são drenadas:
+   - Requisições Subscribe recebem erro "bus is closed"
+   - Requisições Unsubscribe completam imediatamente
+   - Eventos Send são descartados
 4. WaitGroup completa
 
-## Veja Tambem
+## Veja Também
 
 - [Registry](internal-registry.md) - Principal produtor de eventos
 - [Command Dispatch](internal-dispatch.md) - Roteamento processo-para-handler

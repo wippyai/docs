@@ -5,12 +5,12 @@ Almacenamiento de objetos compatible con S3 con URLs prefirmadas.
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `config.aws` | Configuracion de credenciales y region AWS |
-| `cloudstorage.s3` | Conexion a bucket S3 |
+| `config.aws` | Configuración de credenciales y región AWS |
+| `cloudstorage.s3` | Conexión a bucket S3 |
 
-## Configuracion AWS
+## Configuración AWS
 
 ```yaml
 - name: aws_config
@@ -20,16 +20,16 @@ Almacenamiento de objetos compatible con S3 con URLs prefirmadas.
   secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
 ```
 
-| Campo | Tipo | Requerido | Descripcion |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `region` | string | Si | Region AWS |
+| `region` | string | Sí | Región AWS |
 | `access_key_id_env` | string | No | Nombre de variable de entorno para access key |
 | `secret_access_key_env` | string | No | Nombre de variable de entorno para secret key |
 
 Las credenciales se cargan desde las variables de entorno especificadas. Si se omiten, recurre a la cadena de credenciales por defecto del SDK de AWS (roles IAM, perfiles de instancia, etc.).
 
 <note>
-La configuracion AWS esta planeada para compartirse con otros servicios AWS (SQS, etc.) en futuras versiones.
+La configuración AWS está planeada para compartirse con otros servicios AWS (SQS, etc.) en futuras versiones.
 </note>
 
 ## Almacenamiento S3
@@ -41,10 +41,10 @@ La configuracion AWS esta planeada para compartirse con otros servicios AWS (SQS
   config: app.infra:aws_config
 ```
 
-| Campo | Tipo | Requerido | Descripcion |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `bucket` | string | Si | Nombre del bucket S3 |
-| `config` | referencia | Si | Referencia a entrada de config AWS |
+| `bucket` | string | Sí | Nombre del bucket S3 |
+| `config` | referencia | Sí | Referencia a entrada de config AWS |
 | `endpoint` | string | No | Endpoint personalizado para servicios compatibles con S3 |
 
 ### Servicios Compatibles con S3
@@ -59,8 +59,8 @@ Para MinIO u otros servicios compatibles con S3, establezca un endpoint personal
   endpoint: "http://localhost:9000"
 ```
 
-Cuando se proporciona un endpoint, el acceso por estilo de ruta se habilita automaticamente.
+Cuando se proporciona un endpoint, el acceso por estilo de ruta se habilita automáticamente.
 
 ## API Lua
 
-Ver [Modulo Cloud Storage](lua-cloudstorage.md) para operaciones (list, upload, download, delete, URLs prefirmadas).
+Ver [Módulo Cloud Storage](lua-cloudstorage.md) para operaciones (list, upload, download, delete, URLs prefirmadas).

@@ -1,10 +1,10 @@
 # Sistema de Banco de Dados
 
-Pool de conexoes e configuracao de banco de dados SQL. Suporta PostgreSQL, MySQL, SQLite, Microsoft SQL Server e Oracle.
+Pool de conexões e configuração de banco de dados SQL. Suporta PostgreSQL, MySQL, SQLite, Microsoft SQL Server e Oracle.
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
 | `db.sql.postgres` | Banco de dados PostgreSQL |
 | `db.sql.mysql` | Banco de dados MySQL |
@@ -12,9 +12,9 @@ Pool de conexoes e configuracao de banco de dados SQL. Suporta PostgreSQL, MySQL
 | `db.sql.mssql` | Microsoft SQL Server |
 | `db.sql.oracle` | Banco de dados Oracle |
 
-## Configuracao
+## Configuração
 
-### Bancos de Dados Padrao (PostgreSQL, MySQL, MSSQL, Oracle)
+### Bancos de Dados Padrão (PostgreSQL, MySQL, MSSQL, Oracle)
 
 ```yaml
 # src/data/_index.yaml
@@ -44,7 +44,7 @@ entries:
 ```yaml
   - name: cache_db
     kind: db.sql.sqlite
-    file: "/var/data/cache.db"  # Use :memory: para em memoria
+    file: "/var/data/cache.db"  # Use :memory: para em memória
     pool:
       max_open: 1
       max_idle: 1
@@ -55,40 +55,40 @@ entries:
       auto_start: true
 ```
 
-## Campos de Conexao
+## Campos de Conexão
 
-### Campos de Banco de Dados Padrao
+### Campos de Banco de Dados Padrão
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `host` | string | Endereco do host do banco de dados |
-| `port` | int | Numero da porta do banco de dados |
+| `host` | string | Endereço do host do banco de dados |
+| `port` | int | Número da porta do banco de dados |
 | `database` | string | Nome do banco de dados |
-| `username` | string | Usuario do banco de dados |
+| `username` | string | Usuário do banco de dados |
 | `password` | string | Senha do banco de dados |
-| `pool` | object | Configuracoes de pool de conexoes |
-| `options` | map | Opcoes especificas do banco de dados |
-| `lifecycle` | object | Configuracao de ciclo de vida |
+| `pool` | object | Configurações de pool de conexões |
+| `options` | map | Opções específicas do banco de dados |
+| `lifecycle` | object | Configuração de ciclo de vida |
 
 ### Campos SQLite
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `file` | string | Caminho do arquivo de banco de dados ou `:memory:` |
-| `pool` | object | Configuracoes de pool de conexoes |
-| `options` | map | Opcoes especificas do SQLite |
-| `lifecycle` | object | Configuracao de ciclo de vida |
+| `pool` | object | Configurações de pool de conexões |
+| `options` | map | Opções específicas do SQLite |
+| `lifecycle` | object | Configuração de ciclo de vida |
 
-### Campos de Variaveis de Ambiente
+### Campos de Variáveis de Ambiente
 
-Use o sufixo `_env` para carregar valores de variaveis de ambiente ou entradas [env.variable](system-env.md):
+Use o sufixo `_env` para carregar valores de variáveis de ambiente ou entradas [env.variable](system-env.md):
 
-| Campo | Descricao |
+| Campo | Descrição |
 |-------|-----------|
-| `host_env` | Host de variavel de ambiente |
-| `port_env` | Porta de variavel de ambiente |
+| `host_env` | Host de variável de ambiente |
+| `port_env` | Porta de variável de ambiente |
 | `database_env` | Nome do banco de dados do ambiente |
-| `username_env` | Usuario do ambiente |
+| `username_env` | Usuário do ambiente |
 | `password_env` | Senha do ambiente |
 
 ```yaml
@@ -102,33 +102,33 @@ Use o sufixo `_env` para carregar valores de variaveis de ambiente ou entradas [
 ```
 
 <warning>
-Evite codificar senhas na configuracao. Use variaveis de ambiente ou entradas <code>env.variable</code> para credenciais. Veja <a href="system-env.md">Ambiente</a> para gerenciamento seguro de segredos.
+Evite codificar senhas na configuração. Use variáveis de ambiente ou entradas <code>env.variable</code> para credenciais. Veja <a href="system-env.md">Ambiente</a> para gerenciamento seguro de segredos.
 </warning>
 
-## Pool de Conexoes
+## Pool de Conexões
 
-Configure o comportamento de pool de conexoes. Configuracoes de pool mapeiam para o [pool de conexoes database/sql](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns) do Go.
+Configure o comportamento de pool de conexões. Configurações de pool mapeiam para o [pool de conexões database/sql](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns) do Go.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `max_open` | int | 0 | Maximo de conexoes abertas (0 = ilimitado) |
-| `max_idle` | int | 0 | Maximo de conexoes ociosas (0 = ilimitado) |
-| `max_lifetime` | duration | 1h | Tempo de vida maximo da conexao |
+| `max_open` | int | 0 | Máximo de conexões abertas (0 = ilimitado) |
+| `max_idle` | int | 0 | Máximo de conexões ociosas (0 = ilimitado) |
+| `max_lifetime` | duration | 1h | Tempo de vida máximo da conexão |
 
 ```yaml
 pool:
-  max_open: 25      # Limita conexoes concorrentes
-  max_idle: 5       # Mantem 5 conexoes prontas
-  max_lifetime: "30m"  # Recicla conexoes a cada 30 minutos
+  max_open: 25      # Limita conexões concorrentes
+  max_idle: 5       # Mantém 5 conexões prontas
+  max_lifetime: "30m"  # Recicla conexões a cada 30 minutos
 ```
 
 <tip>
-Defina <code>max_idle</code> menor ou igual a <code>max_open</code>. Conexoes excedendo <code>max_lifetime</code> sao fechadas e substituidas, ajudando a recuperar de conexoes obsoletas.
+Defina <code>max_idle</code> menor ou igual a <code>max_open</code>. Conexões excedendo <code>max_lifetime</code> são fechadas e substituídas, ajudando a recuperar de conexões obsoletas.
 </tip>
 
 ## Formatos DSN
 
-Cada tipo de banco de dados constroi um DSN a partir da configuracao:
+Cada tipo de banco de dados constrói um DSN a partir da configuração:
 
 ### PostgreSQL {id="dsn-postgresql"}
 
@@ -161,16 +161,16 @@ sqlserver://username:password@host:port?database=dbname
 oracle://username:password@host:port/service_name
 ```
 
-## Opcoes de Banco de Dados
+## Opções de Banco de Dados
 
-Opcoes comuns especificas de cada banco de dados:
+Opções comuns específicas de cada banco de dados:
 
 ### PostgreSQL {id="options-postgresql"}
 
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # Timeout de conexao em segundos
+  connect_timeout: "10"   # Timeout de conexão em segundos
   application_name: "myapp"
 ```
 
@@ -180,7 +180,7 @@ options:
 options:
   charset: "utf8mb4"
   parseTime: "true"       # Analisa valores de tempo para time.Time
-  loc: "Local"            # Fuso horario
+  loc: "Local"            # Fuso horário
 ```
 
 ### SQLite {id="options-sqlite"}
@@ -234,7 +234,7 @@ options:
     auto_start: true
 ```
 
-### Replica de Leitura MySQL
+### Réplica de Leitura MySQL
 
 ```yaml
 - name: mysql_replica
@@ -254,7 +254,7 @@ options:
     readTimeout: "30s"
 ```
 
-### SQLite Em Memoria
+### SQLite Em Memória
 
 ```yaml
 - name: test_db
@@ -268,7 +268,7 @@ options:
     mode: "memory"
 ```
 
-### Configuracao com Multiplos Bancos de Dados
+### Configuração com Múltiplos Bancos de Dados
 
 ```yaml
 entries:
@@ -302,10 +302,10 @@ entries:
       auto_start: true
 ```
 
-## Registro em Tempo de Execucao
+## Registro em Tempo de Execução
 
-Bancos de dados podem ser registrados em tempo de execucao usando o [modulo registry](lua-registry.md), permitindo configuracao dinamica de banco de dados baseada no estado da aplicacao ou configuracao externa.
+Bancos de dados podem ser registrados em tempo de execução usando o [módulo registry](lua-registry.md), permitindo configuração dinâmica de banco de dados baseada no estado da aplicação ou configuração externa.
 
 ## API Lua
 
-Veja [Modulo SQL](lua-sql.md) para API de operacoes de banco de dados.
+Veja [Módulo SQL](lua-sql.md) para API de operações de banco de dados.

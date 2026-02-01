@@ -1,10 +1,10 @@
-# Aplicacoes CLI
+# Aplicações CLI
 
-Construa ferramentas de linha de comando que leem entrada, escrevem saida e interagem com usuarios.
+Construa ferramentas de linha de comando que leem entrada, escrevem saída e interagem com usuários.
 
 ## O Que Vamos Construir
 
-Um CLI simples que sauda o usuario:
+Um CLI simples que saúda o usuário:
 
 ```
 $ wippy run -x app:cli
@@ -28,7 +28,7 @@ mkdir cli-app && cd cli-app
 mkdir src
 ```
 
-## Passo 2: Definicoes de Entradas
+## Passo 2: Definições de Entradas
 
 Crie `src/_index.yaml`:
 
@@ -53,10 +53,10 @@ entries:
 ```
 
 <tip>
-O <code>terminal.host</code> faz a ponte entre seu processo Lua e o terminal. Sem ele, <code>io.print()</code> nao tem para onde escrever.
+O <code>terminal.host</code> faz a ponte entre seu processo Lua e o terminal. Sem ele, <code>io.print()</code> não tem para onde escrever.
 </tip>
 
-## Passo 3: Codigo CLI
+## Passo 3: Código CLI
 
 Crie `src/cli.lua`:
 
@@ -78,16 +78,16 @@ wippy init
 wippy run -x app:cli
 ```
 
-Saida:
+Saída:
 ```
 Hello from CLI!
 ```
 
 <note>
-A flag <code>-x</code> auto-detecta seu <code>terminal.host</code> e executa em modo silencioso para saida limpa.
+A flag <code>-x</code> auto-detecta seu <code>terminal.host</code> e executa em modo silencioso para saída limpa.
 </note>
 
-## Lendo Entrada do Usuario
+## Lendo Entrada do Usuário
 
 ```lua
 local io = require("io")
@@ -108,9 +108,9 @@ end
 return { main = main }
 ```
 
-## Saida Colorida
+## Saída Colorida
 
-Use codigos de escape ANSI para cores:
+Use códigos de escape ANSI para cores:
 
 ```lua
 local io = require("io")
@@ -141,12 +141,12 @@ end
 return { main = main }
 ```
 
-## Informacoes do Sistema
+## Informações do Sistema
 
-Acesse estatisticas do runtime com o modulo `system`:
+Acesse estatísticas do runtime com o módulo `system`:
 
 ```yaml
-# Adicionar a definicao da entrada
+# Adicionar à definição da entrada
 modules:
   - io
   - system
@@ -170,9 +170,9 @@ end
 return { main = main }
 ```
 
-## Codigos de Saida
+## Códigos de Saída
 
-Retorne de `main()` para definir o codigo de saida:
+Retorne de `main()` para definir o código de saída:
 
 ```lua
 local function main()
@@ -183,26 +183,26 @@ local function main()
 end
 ```
 
-## Referencia de I/O
+## Referência de I/O
 
-| Funcao | Descricao |
+| Função | Descrição |
 |--------|-----------|
 | `io.print(...)` | Escrever em stdout com nova linha |
 | `io.write(...)` | Escrever em stdout sem nova linha |
 | `io.eprint(...)` | Escrever em stderr com nova linha |
 | `io.readline()` | Ler linha de stdin |
-| `io.flush()` | Descarregar buffer de saida |
+| `io.flush()` | Descarregar buffer de saída |
 
 ## Flags CLI
 
-| Flag | Descricao |
+| Flag | Descrição |
 |------|-----------|
 | `wippy run -x app:cli` | Executar processo CLI (auto-detecta terminal.host) |
-| `wippy run -x app:cli --host app:term` | Terminal host explicito |
+| `wippy run -x app:cli --host app:term` | Terminal host explícito |
 | `wippy run -x app:cli -v` | Com logging verbose |
 
-## Proximos Passos
+## Próximos Passos
 
-- [I/O Module](lua-io.md) - Referencia completa de I/O
-- [System Module](lua-system.md) - Informacoes do runtime e sistema
-- [Echo Service](echo-service.md) - Aplicacoes multi-processo
+- [I/O Module](lua-io.md) - Referência completa de I/O
+- [System Module](lua-system.md) - Informações do runtime e sistema
+- [Echo Service](echo-service.md) - Aplicações multi-processo

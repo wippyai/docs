@@ -18,11 +18,11 @@ flowchart TB
     R2 --> E5[POST /config]
 ```
 
-Las entradas referencian padres via metadatos:
+Las entradas referencian padres vía metadatos:
 - Routers: `meta.server: app:gateway`
 - Endpoints: `meta.router: app:api`
 
-## Configuracion del Router
+## Configuración del Router
 
 ```yaml
 - name: api
@@ -39,7 +39,7 @@ Las entradas referencian padres via metadatos:
     - endpoint_firewall
 ```
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `meta.server` | ID de Registro | Servidor HTTP padre |
 | `prefix` | string | Prefijo de URL para todas las rutas |
@@ -48,7 +48,7 @@ Las entradas referencian padres via metadatos:
 | `post_middleware` | []string | Middleware post-match |
 | `post_options` | map | Opciones de middleware post-match |
 
-## Configuracion de Endpoint
+## Configuración de Endpoint
 
 ```yaml
 - name: get_user
@@ -60,16 +60,16 @@ Las entradas referencian padres via metadatos:
   func: app.users:get_user
 ```
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `meta.router` | ID de Registro | Router padre |
-| `method` | string | Metodo HTTP (GET, POST, PUT, DELETE, PATCH, HEAD) |
-| `path` | string | Patron de ruta URL (comienza con `/`) |
-| `func` | ID de Registro | Funcion handler |
+| `method` | string | Método HTTP (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `path` | string | Patrón de ruta URL (comienza con `/`) |
+| `func` | ID de Registro | Función handler |
 
-## Parametros de Ruta
+## Parámetros de Ruta
 
-Use sintaxis `{param}` para parametros de URL:
+Use sintaxis `{param}` para parámetros de URL:
 
 ```yaml
 - name: get_post
@@ -95,7 +95,7 @@ local function handler()
 end
 ```
 
-### Rutas Comodin
+### Rutas Comodín
 
 Capture segmentos de ruta restantes con `{param...}`:
 
@@ -114,11 +114,11 @@ Capture segmentos de ruta restantes con `{param...}`:
 local file_path = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
-El comodin debe ser el ultimo segmento en la ruta.
+El comodín debe ser el último segmento en la ruta.
 
 ## Funciones Handler
 
-Los handlers de endpoint usan el modulo `http` para acceder a objetos de solicitud y respuesta. Ver [Modulo HTTP](lua-http.md) para la API completa.
+Los handlers de endpoint usan el módulo `http` para acceder a objetos de solicitud y respuesta. Ver [Módulo HTTP](lua-http.md) para la API completa.
 
 ```lua
 local http = require("http")
@@ -140,7 +140,7 @@ return { handler = handler }
 
 ## Opciones de Middleware
 
-Las opciones de middleware usan notacion de punto con el nombre del middleware como prefijo:
+Las opciones de middleware usan notación de punto con el nombre del middleware como prefijo:
 
 ```yaml
 middleware:
@@ -169,13 +169,13 @@ post_options:
 
 **Pre-match** (`middleware`) se ejecuta antes del matching de ruta:
 - CORS (maneja preflight OPTIONS)
-- Compresion
+- Compresión
 - Rate limiting
-- Deteccion de IP real
-- Autenticacion de token (enriquecimiento de contexto)
+- Detección de IP real
+- Autenticación de token (enriquecimiento de contexto)
 
-**Post-match** (`post_middleware`) se ejecuta despues de que la ruta es matcheada:
-- Firewall de endpoint (necesita info de ruta para autorizacion)
+**Post-match** (`post_middleware`) se ejecuta después de que la ruta es matcheada:
+- Firewall de endpoint (necesita info de ruta para autorización)
 - Firewall de recurso
 - WebSocket relay
 
@@ -190,7 +190,7 @@ post_middleware:   # Post-match: solo rutas matcheadas
 ```
 
 <tip>
-La autenticacion de token puede ser pre-match porque solo enriquece contexto: no bloquea solicitudes. La autorizacion ocurre en middleware post-match como <code>endpoint_firewall</code> que usa el actor establecido por <code>token_auth</code>.
+La autenticación de token puede ser pre-match porque solo enriquece contexto: no bloquea solicitudes. La autorización ocurre en middleware post-match como <code>endpoint_firewall</code> que usa el actor establecido por <code>token_auth</code>.
 </tip>
 
 ## Ejemplo Completo
@@ -222,7 +222,7 @@ entries:
       ratelimit.requests: "100"
       ratelimit.window: "1m"
 
-  # Funcion handler
+  # Función handler
   - name: get_users
     kind: function.lua
     source: file://handlers/users.lua
@@ -260,11 +260,11 @@ entries:
 
 ## Rutas Protegidas
 
-Patron comun con autenticacion:
+Patrón común con autenticación:
 
 ```yaml
 entries:
-  # Rutas publicas (sin auth)
+  # Rutas públicas (sin auth)
   - name: public
     kind: http.router
     meta:
@@ -288,9 +288,9 @@ entries:
       - endpoint_firewall
 ```
 
-## Ver Tambien
+## Ver También
 
-- [Servidor](http-server.md) - Configuracion del servidor HTTP
-- [Archivos Estaticos](http-static.md) - Servicio de archivos estaticos
+- [Servidor](http-server.md) - Configuración del servidor HTTP
+- [Archivos Estáticos](http-static.md) - Servicio de archivos estáticos
 - [Middleware](http-middleware.md) - Middleware disponible
-- [Modulo HTTP](lua-http.md) - API HTTP de Lua
+- [Módulo HTTP](lua-http.md) - API HTTP de Lua

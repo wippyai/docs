@@ -4,31 +4,31 @@
 <secondary-label ref="workflow"/>
 
 
-Channels estilo Go para comunicacao entre corrotinas. Crie channels com ou sem buffer, envie e receba valores, e coordene entre processos concorrentes usando instrucoes select.
+Channels estilo Go para comunicação entre corrotinas. Crie channels com ou sem buffer, envie e receba valores, e coordene entre processos concorrentes usando instruções select.
 
-O global `channel` esta sempre disponivel.
+O global `channel` está sempre disponível.
 
 ## Criando Channels
 
-Channels sem buffer (tamanho 0) requerem que remetente e receptor estejam prontos antes da transferencia completar. Channels com buffer permitem que envios completem imediatamente enquanto houver espaco disponivel:
+Channels sem buffer (tamanho 0) requerem que remetente e receptor estejam prontos antes da transferência completar. Channels com buffer permitem que envios completem imediatamente enquanto houver espaço disponível:
 
 ```lua
 -- Sem buffer: sincroniza remetente e receptor
 local sync_ch = channel.new()
 
--- Com buffer: enfileirar ate 10 mensagens
+-- Com buffer: enfileirar até 10 mensagens
 local work_queue = channel.new(10)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `size` | integer | Capacidade do buffer (padrao: 0 para sem buffer) |
+| `size` | integer | Capacidade do buffer (padrão: 0 para sem buffer) |
 
 **Retorna:** `channel`
 
 ## Enviando Valores
 
-Enviar um valor para o channel. Bloqueia ate um receptor estar pronto (sem buffer) ou espaco no buffer estar disponivel (com buffer):
+Enviar um valor para o channel. Bloqueia até um receptor estar pronto (sem buffer) ou espaço no buffer estar disponível (com buffer):
 
 ```lua
 -- Enviar trabalho para pool de workers
@@ -36,27 +36,27 @@ local jobs = channel.new(100)
 for i, task in ipairs(tasks) do
     jobs:send(task)  -- Bloqueia se buffer cheio
 end
-jobs:close()  -- Sinalizar que nao ha mais trabalho
+jobs:close()  -- Sinalizar que não há mais trabalho
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `value` | any | Valor a enviar |
 
 **Retorna:** `boolean`
 
-Lanca erro se channel estiver fechado.
+Lança erro se channel estiver fechado.
 
 ## Recebendo Valores
 
-Receber um valor do channel. Bloqueia ate um valor estar disponivel ou o channel estar fechado:
+Receber um valor do channel. Bloqueia até um valor estar disponível ou o channel estar fechado:
 
 ```lua
 -- Worker consumindo da fila de jobs
 while true do
     local job, ok = work:receive()
     if not ok then
-        break  -- Channel fechado, nao ha mais trabalho
+        break  -- Channel fechado, não há mais trabalho
     end
     process(job)
 end
@@ -69,7 +69,7 @@ end
 
 ## Fechando Channels
 
-Fechar o channel. Remetentes pendentes recebem erro, receptores pendentes recebem `nil, false`. Lanca erro se ja estiver fechado:
+Fechar o channel. Remetentes pendentes recebem erro, receptores pendentes recebem `nil, false`. Lança erro se já estiver fechado:
 
 ```lua
 local results = channel.new(10)
@@ -78,25 +78,25 @@ local results = channel.new(10)
 for _, item in ipairs(data) do
     results:send(process(item))
 end
-results:close()  -- Sinalizar conclusao
+results:close()  -- Sinalizar conclusão
 ```
 
-## Selecionando de Multiplos Channels
+## Selecionando de Múltiplos Channels
 
-Aguardar multiplas operacoes de channel simultaneamente. Essencial para tratar multiplas fontes de eventos, implementar timeouts e construir sistemas responsivos:
+Aguardar múltiplas operações de channel simultaneamente. Essencial para tratar múltiplas fontes de eventos, implementar timeouts e construir sistemas responsivos:
 
 ```lua
 local result = channel.select(cases)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `cases` | table | Array de casos select |
-| `default` | boolean | Se true, retorna imediatamente quando nenhum caso esta pronto |
+| `default` | boolean | Se true, retorna imediatamente quando nenhum caso está pronto |
 
 **Retorna:** `table` com campos: `channel`, `value`, `ok`, `default`
 
-### Padrao de Timeout
+### Padrão de Timeout
 
 Aguardar resultado com timeout usando `time.after()`.
 
@@ -117,9 +117,9 @@ end
 return r.value
 ```
 
-### Padrao Fan-in
+### Padrão Fan-in
 
-Mesclar multiplas fontes em um handler.
+Mesclar múltiplas fontes em um handler.
 
 ```lua
 local events = process.events()
@@ -143,9 +143,9 @@ while true do
 end
 ```
 
-### Verificacao Nao-Bloqueante
+### Verificação Não-Bloqueante
 
-Verificar se dados estao disponiveis sem bloquear.
+Verificar se dados estão disponíveis sem bloquear.
 
 ```lua
 local r = channel.select {
@@ -154,7 +154,7 @@ local r = channel.select {
 }
 
 if r.default then
-    -- Nada disponivel, fazer outra coisa
+    -- Nada disponível, fazer outra coisa
 else
     process(r.value)
 end
@@ -168,11 +168,11 @@ Criar casos para uso com `channel.select`:
 -- Caso send - completa quando channel pode aceitar valor
 ch:case_send(value)
 
--- Caso receive - completa quando valor disponivel
+-- Caso receive - completa quando valor disponível
 ch:case_receive()
 ```
 
-## Padrao Worker Pool
+## Padrão Worker Pool
 
 ```lua
 local work = channel.new(100)
@@ -200,14 +200,14 @@ end
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Send em channel fechado | erro runtime | nao |
-| Close de channel fechado | erro runtime | nao |
-| Caso invalido em select | erro runtime | nao |
+| Send em channel fechado | erro runtime | não |
+| Close de channel fechado | erro runtime | não |
+| Caso inválido em select | erro runtime | não |
 
-## Veja Tambem
+## Veja Também
 
-- [Process Management](lua/core/process.md) - Criacao e comunicacao de processos
+- [Process Management](lua/core/process.md) - Criação e comunicação de processos
 - [Message Queue](lua/storage/queue.md) - Mensagens baseadas em fila
-- [Functions](lua/core/funcs.md) - Invocacao de funcoes
+- [Functions](lua/core/funcs.md) - Invocação de funções

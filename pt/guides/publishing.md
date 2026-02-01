@@ -1,32 +1,32 @@
-# Publicando Modulos
+# Publicando Módulos
 
-Compartilhe codigo reutilizavel no Wippy Hub.
+Compartilhe código reutilizável no Wippy Hub.
 
-## Pre-requisitos
+## Pré-requisitos
 
 1. Crie uma conta em [hub.wippy.ai](https://hub.wippy.ai)
-2. Crie uma organizacao ou junte-se a uma
-3. Registre o nome do seu modulo sob sua organizacao
+2. Crie uma organização ou junte-se a uma
+3. Registre o nome do seu módulo sob sua organização
 
-## Estrutura do Modulo
+## Estrutura do Módulo
 
 ```
 mymodule/
-├── wippy.yaml      # Manifesto do modulo
+├── wippy.yaml      # Manifesto do módulo
 ├── src/
-│   ├── _index.yaml # Definicoes de entradas
+│   ├── _index.yaml # Definições de entradas
 │   └── *.lua       # Arquivos fonte
-└── README.md       # Documentacao (opcional)
+└── README.md       # Documentação (opcional)
 ```
 
 ## wippy.yaml
 
-Manifesto do modulo:
+Manifesto do módulo:
 
 ```yaml
 organization: acme
 module: http-utils
-description: Utilitarios e helpers HTTP
+description: Utilitários e helpers HTTP
 license: MIT
 repository: https://github.com/acme/http-utils
 homepage: https://acme.dev
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| Campo | Obrigatorio | Descricao |
+| Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
 | `organization` | Sim | Nome da sua org no hub |
-| `module` | Sim | Nome do modulo |
-| `description` | Sim | Descricao curta |
-| `license` | Nao | Identificador SPDX (MIT, Apache-2.0) |
-| `repository` | Nao | URL do repositorio fonte |
-| `homepage` | Nao | Homepage do projeto |
-| `keywords` | Nao | Palavras-chave de busca |
+| `module` | Sim | Nome do módulo |
+| `description` | Sim | Descrição curta |
+| `license` | Não | Identificador SPDX (MIT, Apache-2.0) |
+| `repository` | Não | URL do repositório fonte |
+| `homepage` | Não | Homepage do projeto |
+| `keywords` | Não | Palavras-chave de busca |
 
-## Definicoes de Entradas
+## Definições de Entradas
 
-Entradas sao definidas em `_index.yaml`:
+Entradas são definidas em `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -57,8 +57,8 @@ entries:
   - name: definition
     kind: ns.definition
     meta:
-      title: Utilitarios HTTP
-      description: Helpers para operacoes HTTP
+      title: Utilitários HTTP
+      description: Helpers para operações HTTP
 
   - name: client
     kind: library.lua
@@ -68,9 +68,9 @@ entries:
       - json
 ```
 
-## Dependencias
+## Dependências
 
-Declare dependencias em outros modulos:
+Declare dependências em outros módulos:
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-Restricoes de versao:
+Restrições de versão:
 
-| Restricao | Significado |
+| Restrição | Significado |
 |-----------|-------------|
-| `*` | Qualquer versao |
-| `1.0.0` | Versao exata |
-| `>=1.0.0` | Versao minima |
-| `^1.0.0` | Compativel (mesmo major) |
+| `*` | Qualquer versão |
+| `1.0.0` | Versão exata |
+| `>=1.0.0` | Versão mínima |
+| `^1.0.0` | Compatível (mesmo major) |
 
 ## Requisitos
 
-Defina configuracao que consumidores devem fornecer:
+Defina configuração que consumidores devem fornecer:
 
 ```yaml
 entries:
@@ -107,9 +107,9 @@ entries:
     default: "https://api.example.com"
 ```
 
-Targets especificam onde o valor e injetado:
+Targets especificam onde o valor é injetado:
 - `entry` - ID completo da entrada a configurar
-- `path` - JSONPath para injecao do valor
+- `path` - JSONPath para injeção do valor
 
 Consumidores configuram via override:
 
@@ -142,7 +142,7 @@ local utils = require("utils")
 
 ## Contratos
 
-Defina interfaces publicas:
+Defina interfaces públicas:
 
 ```yaml
 - name: http_contract
@@ -151,9 +151,9 @@ Defina interfaces publicas:
     name: Contrato de Cliente HTTP
   methods:
     - name: get
-      description: Executa requisicao GET
+      description: Executa requisição GET
     - name: post
-      description: Executa requisicao POST
+      description: Executa requisição POST
 
 - name: http_contract_binding
   kind: contract.binding
@@ -164,7 +164,7 @@ Defina interfaces publicas:
         post: acme.http:post_handler
 ```
 
-## Fluxo de Publicacao
+## Fluxo de Publicação
 
 ### 1. Autenticar
 
@@ -192,23 +192,15 @@ wippy publish --dry-run
 wippy publish --version 1.0.0
 ```
 
-Com notas de lancamento:
+Com notas de lançamento:
 
 ```bash
 wippy publish --version 1.0.0 --release-notes "Release inicial"
 ```
 
-### Versoes Protegidas
+## Usando Módulos Publicados
 
-Marque releases de producao como protegidos (nao podem ser removidos):
-
-```bash
-wippy publish --version 1.0.0 --protected
-```
-
-## Usando Modulos Publicados
-
-### Adicionar Dependencia
+### Adicionar Dependência
 
 ```bash
 wippy add acme/http-utils
@@ -218,7 +210,7 @@ wippy install
 
 ### Configurar Requisitos
 
-Sobrescreva valores em tempo de execucao:
+Sobrescreva valores em tempo de execução:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://my.api.com
@@ -231,7 +223,7 @@ override:
   acme.http:api_endpoint: "https://my.api.com"
 ```
 
-### Importar no Seu Codigo
+### Importar no Seu Código
 
 ```yaml
 # seu src/_index.yaml
@@ -254,7 +246,7 @@ entries:
 ```yaml
 organization: acme
 module: cache
-description: Cache em memoria com TTL
+description: Cache em memória com TTL
 license: MIT
 keywords:
   - cache
@@ -270,12 +262,12 @@ entries:
   - name: definition
     kind: ns.definition
     meta:
-      title: Modulo de Cache
+      title: Módulo de Cache
 
   - name: max_size
     kind: ns.requirement
     meta:
-      description: Maximo de entradas no cache
+      description: Máximo de entradas no cache
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
@@ -328,8 +320,8 @@ wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## Veja Tambem
+## Veja Também
 
-- [Referencia do CLI](guides/cli.md)
+- [Referência do CLI](guides/cli.md)
 - [Tipos de Entradas](guides/entry-kinds.md)
-- [Configuracao](guides/configuration.md)
+- [Configuração](guides/configuration.md)

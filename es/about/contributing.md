@@ -1,20 +1,20 @@
 # Contribuir
 
-Wippy es desarrollado por [Spiral Scout](https://spiralscout.com). Lo usamos en produccion para sistemas internos y proyectos de clientes. La version publica esta en alpha.
+Wippy es desarrollado por [Spiral Scout](https://spiralscout.com). Lo usamos en producción para sistemas internos y proyectos de clientes. La versión pública está en alpha.
 
 ## Estabilidad
 
 - **API Lua**: Estable
 - **Comportamiento externo**: Estable
-- **Definiciones de entradas de registry**: Estable, con excepciones menores. Ruta de migracion proporcionada si se requieren cambios.
+- **Definiciones de entradas de registry**: Estable, con excepciones menores. Ruta de migración proporcionada si se requieren cambios.
 - **APIs internas de runtime**: Pueden cambiar
-- **Mecanicas de nivel mas bajo**: Pueden cambiar
+- **Mecánicas de nivel más bajo**: Pueden cambiar
 
 ## Pull Requests
 
-Aceptamos pull requests para mejoras de modulos Lua, estabilizacion de API, y documentacion.
+Aceptamos pull requests para mejoras de módulos Lua, estabilización de API, y documentación.
 
-No estamos aceptando pull requests para cambios arquitecturales de alto nivel o decisiones de diseno core. Necesitamos mantener control sobre la direccion principal durante esta fase.
+No estamos aceptando pull requests para cambios arquitecturales de alto nivel o decisiones de diseño core. Necesitamos mantener control sobre la dirección principal durante esta fase.
 
 Issues y feedback son siempre bienvenidos.
 
@@ -24,7 +24,7 @@ Spiral Scout mantiene varios proyectos open source incluyendo [RoadRunner](https
 
 ## Seguridad
 
-Para vulnerabilidades de seguridad, envie email a security@wippy.dev directamente.
+Para vulnerabilidades de seguridad, envíe email a security@wippy.dev directamente.
 
 ## Soporte Comercial
 

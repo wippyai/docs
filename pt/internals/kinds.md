@@ -1,21 +1,21 @@
 # Entry Handlers
 
-Entry handlers processam entradas do registro por tipo. Quando entradas sao adicionadas, atualizadas ou deletadas, o registro despacha eventos para handlers correspondentes.
+Entry handlers processam entradas do registro por tipo. Quando entradas são adicionadas, atualizadas ou deletadas, o registro despacha eventos para handlers correspondentes.
 
 ## Como Funciona
 
-O registro mantem um mapa de padroes de tipo para handlers. Quando uma entrada muda:
+O registro mantém um mapa de padrões de tipo para handlers. Quando uma entrada muda:
 
 1. Registry emite evento (`entry.create`, `entry.update`, `entry.delete`)
-2. Registry de handlers faz match do tipo da entrada contra padroes registrados
+2. Registry de handlers faz match do tipo da entrada contra padrões registrados
 3. Handlers correspondentes recebem a entrada
 4. Handlers processam ou rejeitam a entrada
 
-## Padroes de Tipo
+## Padrões de Tipo
 
-Handlers se inscrevem usando padroes:
+Handlers se inscrevem usando padrões:
 
-| Padrao | Corresponde |
+| Padrão | Corresponde |
 |--------|-------------|
 | `http.service` | Apenas match exato |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
@@ -37,10 +37,10 @@ Retornar erro de `Add` rejeita a entrada.
 
 ## Listener vs Observer
 
-| Tipo | Proposito | Pode Rejeitar |
+| Tipo | Propósito | Pode Rejeitar |
 |------|-----------|---------------|
-| Listener | Handler primario | Sim |
-| Observer | Handler secundario (logging, metricas) | Nao |
+| Listener | Handler primário | Sim |
+| Observer | Handler secundário (logging, métricas) | Não |
 
 ```go
 handlers.RegisterListener("http.*", httpManager)
@@ -112,9 +112,9 @@ func (c *ComponentConfig) Validate() error {
 }
 ```
 
-## Suporte a Transacoes
+## Suporte a Transações
 
-Para operacoes atomicas atraves de multiplas entradas, implemente `TransactionListener`:
+Para operações atômicas através de múltiplas entradas, implemente `TransactionListener`:
 
 ```go
 type TransactionListener interface {
@@ -126,7 +126,7 @@ type TransactionListener interface {
 
 O registry chama `Begin` antes de processar um batch, depois `Commit` em sucesso ou `Discard` em falha.
 
-## Veja Tambem
+## Veja Também
 
 - [Registry](internal-registry.md) - Armazenamento de entradas
-- [Architecture](internal-architecture.md) - Sequencia de boot
+- [Architecture](internal-architecture.md) - Sequência de boot

@@ -3,9 +3,9 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-[Tree-sitter](https://tree-sitter.github.io/tree-sitter/)を使用してソースコードを具象構文木にパース。[go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter)バインディングベース。
+[Tree-sitter](https://tree-sitter.github.io/tree-sitter/)を使用してソースコードを具象構文木にパースします。[go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter)バインディングベースです。
 
-Tree-sitterは以下の特性を持つ構文木を生成:
+Tree-sitterは以下の特性を持つ構文木を生成します:
 - ソースコードの完全な構造を表現
 - コード変更時にインクリメンタルに更新
 - 構文エラーに対して堅牢（部分的なパース）
@@ -87,7 +87,7 @@ end
 
 ### シンプルパース
 
-ソースコードを構文木にパース。内部的に一時パーサーを作成。
+ソースコードを構文木にパースします。内部的に一時パーサーを作成します。
 
 ```lua
 local tree, err = treesitter.parse("go", code)
@@ -102,7 +102,7 @@ local tree, err = treesitter.parse("go", code)
 
 ### 再利用可能なパーサー
 
-繰り返しのパースまたはインクリメンタル更新用にパーサーを作成。
+繰り返しのパースまたはインクリメンタル更新用にパーサーを作成します。
 
 ```lua
 local parser = treesitter.parser()
@@ -159,7 +159,7 @@ print(root:text())  -- "package main"
 
 ### インクリメンタル編集
 
-ソースコードが変更されたときにツリーを更新:
+ソースコードが変更されたときにツリーを更新します:
 
 ```lua
 local code = "func main() { x := 1 }"
@@ -186,7 +186,7 @@ local new_tree = parser:parse("func main() { x := 100 }", tree)
 
 ## ノード
 
-ノードは構文木の要素を表現。
+ノードは構文木の要素を表現します。
 
 ### ノード型
 
@@ -263,7 +263,7 @@ local sexp = node:to_sexp()
 
 ## クエリ
 
-Tree-sitterのクエリ言語（S式）を使用したパターンマッチング。
+Tree-sitterのクエリ言語（S式）を使用したパターンマッチングです。
 
 ### クエリの作成
 
@@ -338,7 +338,7 @@ local id = query:capture_index_for_name("func_name")
 
 ## ツリーカーソル
 
-各ステップでノードオブジェクトを作成せずに効率的にトラバース。
+各ステップでノードオブジェクトを作成せずに効率的にトラバースできます。
 
 ### 基本的なトラバーサル
 
@@ -415,7 +415,7 @@ local field_id = lang:field_id_for_name("name")
 
 ## クエリ構文リファレンス
 
-Tree-sitterクエリはS式パターンを使用:
+Tree-sitterクエリはS式パターンを使用します:
 
 ```
 ; ノード型にマッチ

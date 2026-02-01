@@ -198,14 +198,6 @@ wippy publish --version 1.0.0
 wippy publish --version 1.0.0 --release-notes "최초 릴리스"
 ```
 
-### 보호된 버전
-
-프로덕션 릴리스를 보호됨으로 표시 (삭제 불가):
-
-```bash
-wippy publish --version 1.0.0 --protected
-```
-
 ## 퍼블리시된 모듈 사용
 
 ### 의존성 추가

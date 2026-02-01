@@ -190,7 +190,7 @@ post_middleware:   # 매칭 후: 매칭된 라우트만
 ```
 
 <tip>
-토큰 인증은 컨텍스트만 보강하고 요청을 차단하지 않으므로 매칭 전이 될 수 있습니다. 인가는 <code>token_auth</code>가 설정한 액터를 사용하는 <code>endpoint_firewall</code> 같은 매칭 후 미들웨어에서 발생합니다.
+토큰 인증은 컨텍스트만 보강하고 요청을 차단하지 않으므로 매칭 전에 실행할 수 있습니다. 인가는 <code>token_auth</code>가 설정한 액터를 사용하는 <code>endpoint_firewall</code> 같은 매칭 후 미들웨어에서 처리합니다.
 </tip>
 
 ## 전체 예제

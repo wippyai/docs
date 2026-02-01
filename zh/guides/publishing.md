@@ -198,14 +198,6 @@ wippy publish --version 1.0.0
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### 受保护版本
-
-将生产版本标记为受保护（无法撤回）：
-
-```bash
-wippy publish --version 1.0.0 --protected
-```
-
 ## 使用已发布的模块
 
 ### 添加依赖

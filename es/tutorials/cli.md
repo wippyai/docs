@@ -1,8 +1,8 @@
 # Aplicaciones CLI
 
-Construya herramientas de linea de comandos que leen entrada, escriben salida, e interactuan con usuarios.
+Construya herramientas de línea de comandos que leen entrada, escriben salida, e interactúan con usuarios.
 
-## Que Estamos Construyendo
+## Qué Estamos Construyendo
 
 Un CLI simple que saluda al usuario:
 
@@ -53,10 +53,10 @@ entries:
 ```
 
 <tip>
-El <code>terminal.host</code> conecta su proceso Lua a la terminal. Sin el, <code>io.print()</code> no tiene donde escribir.
+El <code>terminal.host</code> conecta su proceso Lua a la terminal. Sin él, <code>io.print()</code> no tiene donde escribir.
 </tip>
 
-## Paso 3: Codigo CLI
+## Paso 3: Código CLI
 
 Cree `src/cli.lua`:
 
@@ -110,7 +110,7 @@ return { main = main }
 
 ## Salida Colorida
 
-Use codigos de escape ANSI para colores:
+Use códigos de escape ANSI para colores:
 
 ```lua
 local io = require("io")
@@ -124,7 +124,7 @@ local function bold(s) return "\027[1m" .. s .. reset end
 
 local function main()
     io.print(bold(cyan("Bienvenido!")))
-    io.write(yellow("Ingrese un numero: "))
+    io.write(yellow("Ingrese un número: "))
 
     local input = io.readline()
     local n = tonumber(input)
@@ -133,7 +133,7 @@ local function main()
         io.print("Al cuadrado: " .. green(tostring(n * n)))
         return 0
     else
-        io.print(red("Error: ") .. "no es un numero")
+        io.print(red("Error: ") .. "no es un número")
         return 1
     end
 end
@@ -141,12 +141,12 @@ end
 return { main = main }
 ```
 
-## Informacion del Sistema
+## Información del Sistema
 
-Acceda a estadisticas del runtime con el modulo `system`:
+Acceda a estadísticas del runtime con el módulo `system`:
 
 ```yaml
-# Agregar a definicion de entrada
+# Agregar a definición de entrada
 modules:
   - io
   - system
@@ -170,39 +170,39 @@ end
 return { main = main }
 ```
 
-## Codigos de Salida
+## Códigos de Salida
 
-Retorne desde `main()` para establecer el codigo de salida:
+Retorne desde `main()` para establecer el código de salida:
 
 ```lua
 local function main()
     if error_occurred then
         return 1  -- Error
     end
-    return 0      -- Exito
+    return 0      -- Éxito
 end
 ```
 
 ## Referencia de I/O
 
-| Funcion | Descripcion |
+| Función | Descripción |
 |---------|-------------|
-| `io.print(...)` | Escribir a stdout con nueva linea |
-| `io.write(...)` | Escribir a stdout sin nueva linea |
-| `io.eprint(...)` | Escribir a stderr con nueva linea |
-| `io.readline()` | Leer linea desde stdin |
+| `io.print(...)` | Escribir a stdout con nueva línea |
+| `io.write(...)` | Escribir a stdout sin nueva línea |
+| `io.eprint(...)` | Escribir a stderr con nueva línea |
+| `io.readline()` | Leer línea desde stdin |
 | `io.flush()` | Vaciar buffer de salida |
 
 ## Flags CLI
 
-| Flag | Descripcion |
+| Flag | Descripción |
 |------|-------------|
 | `wippy run -x app:cli` | Ejecutar proceso CLI (auto-detecta terminal.host) |
-| `wippy run -x app:cli --host app:term` | Terminal host explicito |
+| `wippy run -x app:cli --host app:term` | Terminal host explícito |
 | `wippy run -x app:cli -v` | Con logging verboso |
 
 ## Siguientes Pasos
 
-- [Modulo I/O](lua-io.md) - Referencia completa de I/O
-- [Modulo System](lua-system.md) - Info de runtime y sistema
+- [Módulo I/O](lua-io.md) - Referencia completa de I/O
+- [Módulo System](lua-system.md) - Info de runtime y sistema
 - [Echo Service](echo-service.md) - Aplicaciones multi-proceso

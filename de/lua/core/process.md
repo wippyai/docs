@@ -4,9 +4,9 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Spawnen, uberwachen und kommunizieren Sie mit Kindprozessen. Implementiert Actor-Modell-Muster mit Nachrichtenubergabe, Supervision und Lebenszyklusverwaltung.
+Spawnen, überwachen und kommunizieren Sie mit Kindprozessen. Implementiert Actor-Modell-Muster mit Nachrichtenübergabe, Supervision und Lebenszyklusverwaltung.
 
-Die globale `process`-Variable ist immer verfugbar.
+Die globale `process`-Variable ist immer verfügbar.
 
 ## Prozessinformationen
 
@@ -39,13 +39,13 @@ local ok, err = process.send(destination, topic, ...)
 -- Einfaches Spawnen
 local pid, err = process.spawn(id, host, ...)
 
--- Mit Uberwachung (EXIT-Events empfangen)
+-- Mit Überwachung (EXIT-Events empfangen)
 local pid, err = process.spawn_monitored(id, host, ...)
 
 -- Mit Linking (LINK_DOWN bei abnormalem Exit empfangen)
 local pid, err = process.spawn_linked(id, host, ...)
 
--- Sowohl gelinkt als auch uberwacht
+-- Sowohl gelinkt als auch überwacht
 local pid, err = process.spawn_linked_monitored(id, host, ...)
 ```
 
@@ -53,13 +53,13 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 |-----------|------|-------------|
 | `id` | string | Prozessquellen-ID (z.B. `"app.workers:handler"`) |
 | `host` | string | Host-ID (z.B. `"app:processes"`) |
-| `...` | any | Argumente, die an gespawnten Prozess ubergeben werden |
+| `...` | any | Argumente, die an gespawnten Prozess übergeben werden |
 
 **Berechtigungen:**
 - `process.spawn` auf Prozess-ID
 - `process.host` auf Host-ID
-- `process.spawn.monitored` auf Prozess-ID (fur uberwachte Varianten)
-- `process.spawn.linked` auf Prozess-ID (fur gelinkte Varianten)
+- `process.spawn.monitored` auf Prozess-ID (für überwachte Varianten)
+- `process.spawn.linked` auf Prozess-ID (für gelinkte Varianten)
 
 ## Prozesssteuerung
 
@@ -67,7 +67,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 -- Prozess zwangsweise beenden
 local ok, err = process.terminate(destination)
 
--- Ordnungsgemasse Kanzellierung mit optionaler Deadline anfordern
+-- Ordnungsgemäße Kanzellierung mit optionaler Deadline anfordern
 local ok, err = process.cancel(destination, "5s")
 ```
 
@@ -78,12 +78,12 @@ local ok, err = process.cancel(destination, "5s")
 
 **Berechtigungen:** `process.terminate`, `process.cancel` auf Ziel-PID
 
-## Uberwachung und Linking
+## Überwachung und Linking
 
-Einen existierenden Prozess uberwachen oder linken:
+Einen existierenden Prozess überwachen oder linken:
 
 ```lua
--- Uberwachung: EXIT-Events empfangen, wenn Ziel beendet wird
+-- Überwachung: EXIT-Events empfangen, wenn Ziel beendet wird
 local ok, err = process.monitor(destination)
 local ok, err = process.unmonitor(destination)
 
@@ -159,7 +159,7 @@ msg:payload()  -- any: Payload-Daten
 
 ## Synchroner Aufruf
 
-Einen Prozess spawnen, auf sein Ergebnis warten und zuruckgeben:
+Einen Prozess spawnen, auf sein Ergebnis warten und zurückgeben:
 
 ```lua
 local result, err = process.call(id, host, ...)
@@ -172,16 +172,16 @@ local result, err = process.call(id, host, ...)
 Den aktuellen Prozess auf eine neue Definition upgraden und dabei PID beibehalten:
 
 ```lua
--- Auf neue Version upgraden, Zustand ubergeben
+-- Auf neue Version upgraden, Zustand übergeben
 process.upgrade(source, ...)
 
--- Gleiche Definition behalten, mit neuem Zustand erneut ausfuhren
+-- Gleiche Definition behalten, mit neuem Zustand erneut ausführen
 process.upgrade(nil, preserved_state)
 ```
 
 ## Kontext-Spawner
 
-Einen Spawner mit benutzerdefiniertem Kontext fur Kindprozesse erstellen:
+Einen Spawner mit benutzerdefiniertem Kontext für Kindprozesse erstellen:
 
 ```lua
 local spawner = process.with_context({request_id = "123"})
@@ -191,17 +191,17 @@ local spawner = process.with_context({request_id = "123"})
 
 ### SpawnBuilder-Methoden
 
-SpawnBuilder ist unveranderlich - jede Methode gibt eine neue Instanz zuruck:
+SpawnBuilder ist unveränderlich - jede Methode gibt eine neue Instanz zurück:
 
 ```lua
-spawner:with_context(values)      -- Kontextwerte hinzufugen
+spawner:with_context(values)      -- Kontextwerte hinzufügen
 spawner:with_actor(actor)         -- Sicherheits-Actor setzen
 spawner:with_scope(scope)         -- Sicherheits-Scope setzen
 spawner:with_name(name)           -- Prozessname setzen
 spawner:with_message(topic, ...)  -- Nachricht zum Senden nach Spawn einreihen
 ```
 
-**Berechtigung:** `process.security` auf "security" fur `:with_actor()` und `:with_scope()`
+**Berechtigung:** `process.security` auf "security" für `:with_actor()` und `:with_scope()`
 
 ### Spawner-Spawn-Methoden
 
@@ -219,7 +219,7 @@ Gleiche Berechtigungen wie Modul-Level-Spawn-Funktionen.
 Prozesse nach Namen registrieren und nachschlagen:
 
 ```lua
-local ok, err = process.registry.register(name, pid)  -- pid standardmassig self
+local ok, err = process.registry.register(name, pid)  -- pid standardmäßig self
 local pid, err = process.registry.lookup(name)
 local ok = process.registry.unregister(name)
 ```
@@ -228,15 +228,15 @@ local ok = process.registry.unregister(name)
 
 ## Berechtigungen
 
-Berechtigungen steuern, was ein aufrufender Prozess tun kann. Alle Prufungen verwenden den Sicherheitskontext des Aufrufers (Actor) gegen die Zielressource.
+Berechtigungen steuern, was ein aufrufender Prozess tun kann. Alle Prüfungen verwenden den Sicherheitskontext des Aufrufers (Actor) gegen die Zielressource.
 
 ### Richtlinienauswertung
 
-Richtlinien konnen basierend auf Folgendem erlauben/ablehnen:
+Richtlinien können basierend auf Folgendem erlauben/ablehnen:
 - **Actor**: Der Sicherheitsprinzipal, der die Anfrage stellt
-- **Aktion**: Die durchgefuhrte Operation (z.B. `process.send`)
+- **Aktion**: Die durchgeführte Operation (z.B. `process.send`)
 - **Ressource**: Das Ziel (PID, Prozess-ID, Host-ID oder Name)
-- **Attribute**: Zusatzlicher Kontext einschliesslich `pid` (Prozess-ID des Aufrufers)
+- **Attribute**: Zusätzlicher Kontext einschließlich `pid` (Prozess-ID des Aufrufers)
 
 ### Berechtigungsreferenz
 
@@ -279,13 +279,13 @@ Einige Operationen erfordern mehrere Berechtigungen:
 | Kein Kontext gefunden | `errors.INVALID` |
 | Frame-Kontext nicht gefunden | `errors.INVALID` |
 | Fehlende erforderliche Argumente | `errors.INVALID` |
-| Reserviertes Topic-Prafix (`@`) | `errors.INVALID` |
-| Ungultiges Dauerformat | `errors.INVALID` |
+| Reserviertes Topic-Präfix (`@`) | `errors.INVALID` |
+| Ungültiges Dauerformat | `errors.INVALID` |
 | Name nicht registriert | `errors.NOT_FOUND` |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
 | Name bereits registriert | `errors.ALREADY_EXISTS` |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 

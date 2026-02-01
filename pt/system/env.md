@@ -1,35 +1,35 @@
 # Sistema de Ambiente
 
-Gerencia variaveis de ambiente atraves de backends de armazenamento configuraveis.
+Gerencia variáveis de ambiente através de backends de armazenamento configuráveis.
 
-## Visao Geral
+## Visão Geral
 
 O sistema de ambiente separa armazenamento de acesso:
 
-- **Armazenamentos** - Onde valores sao armazenados (SO, arquivos, memoria)
-- **Variaveis** - Referencias nomeadas a valores em armazenamentos
+- **Armazenamentos** - Onde valores são armazenados (SO, arquivos, memória)
+- **Variáveis** - Referências nomeadas a valores em armazenamentos
 
-Variaveis podem ser referenciadas por:
-- **Nome publico** - O valor do campo `variable` (deve ser unico no sistema)
-- **ID de entrada** - Referencia completa `namespace:name`
+Variáveis podem ser referenciadas por:
+- **Nome público** - O valor do campo `variable` (deve ser único no sistema)
+- **ID de entrada** - Referência completa `namespace:name`
 
-Se voce nao quer que uma variavel seja publicamente acessivel pelo nome, omita o campo `variable`.
+Se você não quer que uma variável seja publicamente acessível pelo nome, omita o campo `variable`.
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `env.storage.memory` | Armazenamento chave-valor em memoria |
+| `env.storage.memory` | Armazenamento chave-valor em memória |
 | `env.storage.file` | Armazenamento baseado em arquivo (formato .env) |
 | `env.storage.os` | Acesso somente leitura ao ambiente do SO |
-| `env.storage.router` | Encadeia multiplos armazenamentos |
-| `env.variable` | Variavel nomeada referenciando um armazenamento |
+| `env.storage.router` | Encadeia múltiplos armazenamentos |
+| `env.variable` | Variável nomeada referenciando um armazenamento |
 
 ## Backends de Armazenamento
 
-### Armazenamento em Memoria
+### Armazenamento em Memória
 
-Armazenamento volatil em memoria.
+Armazenamento volátil em memória.
 
 ```yaml
 - name: runtime_env
@@ -38,7 +38,7 @@ Armazenamento volatil em memoria.
 
 ### Armazenamento em Arquivo
 
-Armazenamento persistente usando formato de arquivo `.env` (`KEY=VALUE` com comentarios `#`).
+Armazenamento persistente usando formato de arquivo `.env` (`KEY=VALUE` com comentários `#`).
 
 ```yaml
 - name: app_config
@@ -49,27 +49,27 @@ Armazenamento persistente usando formato de arquivo `.env` (`KEY=VALUE` com come
   dir_mode: 0700
 ```
 
-| Propriedade | Tipo | Padrao | Descricao |
+| Propriedade | Tipo | Padrão | Descrição |
 |-------------|------|--------|-----------|
-| `file_path` | string | obrigatorio | Caminho para arquivo .env |
+| `file_path` | string | obrigatório | Caminho para arquivo .env |
 | `auto_create` | boolean | false | Cria arquivo se ausente |
-| `file_mode` | integer | 0644 | Permissoes do arquivo |
-| `dir_mode` | integer | 0755 | Permissoes do diretorio |
+| `file_mode` | integer | 0644 | Permissões do arquivo |
+| `dir_mode` | integer | 0755 | Permissões do diretório |
 
 ### Armazenamento do SO
 
-Acesso somente leitura a variaveis de ambiente do sistema operacional.
+Acesso somente leitura a variáveis de ambiente do sistema operacional.
 
 ```yaml
 - name: os_env
   kind: env.storage.os
 ```
 
-Sempre somente leitura. Operacoes de escrita retornam `PERMISSION_DENIED`.
+Sempre somente leitura. Operações de escrita retornam `PERMISSION_DENIED`.
 
 ### Armazenamento Router
 
-Encadeia multiplos armazenamentos. Leituras buscam em ordem ate encontrar. Escritas vao para o primeiro armazenamento apenas.
+Encadeia múltiplos armazenamentos. Leituras buscam em ordem até encontrar. Escritas vão para o primeiro armazenamento apenas.
 
 ```yaml
 - name: config
@@ -80,13 +80,13 @@ Encadeia multiplos armazenamentos. Leituras buscam em ordem ate encontrar. Escri
     - app.config:os        # Fallback
 ```
 
-| Propriedade | Tipo | Descricao |
+| Propriedade | Tipo | Descrição |
 |-------------|------|-----------|
-| `storages` | array | Lista ordenada de referencias de armazenamento |
+| `storages` | array | Lista ordenada de referências de armazenamento |
 
-## Variaveis
+## Variáveis
 
-Variaveis fornecem acesso nomeado a valores de armazenamento.
+Variáveis fornecem acesso nomeado a valores de armazenamento.
 
 ```yaml
 - name: DATABASE_URL
@@ -97,28 +97,28 @@ Variaveis fornecem acesso nomeado a valores de armazenamento.
   read_only: false
 ```
 
-| Propriedade | Tipo | Descricao |
+| Propriedade | Tipo | Descrição |
 |-------------|------|-----------|
-| `variable` | string | Nome publico da variavel (opcional, deve ser unico) |
-| `storage` | string | Referencia de armazenamento (`namespace:name`) |
-| `default` | string | Valor padrao se nao encontrado |
-| `read_only` | boolean | Previne modificacoes |
+| `variable` | string | Nome público da variável (opcional, deve ser único) |
+| `storage` | string | Referência de armazenamento (`namespace:name`) |
+| `default` | string | Valor padrão se não encontrado |
+| `read_only` | boolean | Previne modificações |
 
-### Nomenclatura de Variaveis
+### Nomenclatura de Variáveis
 
-Nomes de variaveis devem conter apenas: `a-z`, `A-Z`, `0-9`, `_`
+Nomes de variáveis devem conter apenas: `a-z`, `A-Z`, `0-9`, `_`
 
-### Padroes de Acesso
+### Padrões de Acesso
 
 ```yaml
-# Variavel publica - acessivel pelo nome "PORT"
+# Variável pública - acessível pelo nome "PORT"
 - name: port_var
   kind: env.variable
   variable: PORT
   storage: app.config:os
   default: "8080"
 
-# Variavel privada - acessivel apenas pelo ID "app.config:internal_key"
+# Variável privada - acessível apenas pelo ID "app.config:internal_key"
 - name: internal_key
   kind: env.variable
   storage: app.config:secrets
@@ -126,19 +126,19 @@ Nomes de variaveis devem conter apenas: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Variavel nao encontrada | `errors.NOT_FOUND` | nao |
-| Armazenamento nao encontrado | `errors.NOT_FOUND` | nao |
-| Variavel e somente leitura | `errors.PERMISSION_DENIED` | nao |
-| Armazenamento e somente leitura | `errors.PERMISSION_DENIED` | nao |
-| Nome de variavel invalido | `errors.INVALID` | nao |
+| Variável não encontrada | `errors.NOT_FOUND` | não |
+| Armazenamento não encontrado | `errors.NOT_FOUND` | não |
+| Variável é somente leitura | `errors.PERMISSION_DENIED` | não |
+| Armazenamento é somente leitura | `errors.PERMISSION_DENIED` | não |
+| Nome de variável inválido | `errors.INVALID` | não |
 
-## Acesso em Tempo de Execucao
+## Acesso em Tempo de Execução
 
-- [modulo env](lua-env.md) - Acesso em tempo de execucao Lua
+- [módulo env](lua-env.md) - Acesso em tempo de execução Lua
 
-## Veja Tambem
+## Veja Também
 
-- [Modelo de Seguranca](system-security.md) - Controle de acesso para variaveis de ambiente
-- [Guia de Configuracao](guide-configuration.md) - Padroes de configuracao de aplicacao
+- [Modelo de Segurança](system-security.md) - Controle de acesso para variáveis de ambiente
+- [Guia de Configuração](guide-configuration.md) - Padrões de configuração de aplicação

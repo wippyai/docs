@@ -1,6 +1,6 @@
 # Über Wippy
 
-Wippy ist eine agentische Plattform und Runtime für Software, die sich während der Laufzeit ändern muss — Automatisierungssysteme, KI-Agenten, Plugin-Architekturen und ähnliche Anwendungen, bei denen der Kern einmal entwickelt und dann wiederholt angepasst wird, ohne neu zu bauen oder zu deployen.
+Wippy ist eine Plattform und Laufzeitumgebung für Software, die sich zur Laufzeit ändern muss — Automatisierungssysteme, KI-Agenten, Plugin-Architekturen und ähnliche Anwendungen, bei denen der Kern einmal entwickelt und anschließend wiederholt angepasst wird, ohne neu zu kompilieren oder bereitzustellen.
 
 Das Fundament ist das Actor-Modell. Code läuft in isolierten Prozessen, die über Nachrichten kommunizieren und jeweils ihren eigenen Zustand verwalten. Wenn etwas fehlschlägt, schlägt es isoliert fehl. Supervision-Bäume behandeln die Wiederherstellung automatisch und starten Prozesse neu, wenn sie abstürzen.
 
@@ -10,21 +10,21 @@ process.send(worker, "task", {id = 1, data = payload})
 process.monitor(worker)
 ```
 
-Die Konfiguration befindet sich in einer zentralen Registry, die Änderungen als Events propagiert. Aktualisieren Sie eine Konfigurationsdatei, und laufende Prozesse erhalten die Änderungen. Sie passen sich ohne Neustarts an — neue Verbindungen, aktualisiertes Verhalten, was auch immer Sie benötigen — während das System weiterläuft.
+Die Konfiguration liegt in einer zentralen Registry, die Änderungen als Ereignisse weitergibt. Sobald Sie eine Konfigurationsdatei aktualisieren, erhalten laufende Prozesse die Änderungen. Sie passen sich ohne Neustart an — neue Verbindungen, geändertes Verhalten, was auch immer erforderlich ist — während das System weiterläuft.
 
 ```lua
 local db = registry.get("app.db:postgres")
 local cache = registry.get("app.cache:redis")
 ```
 
-Für Operationen, die Infrastrukturausfälle überstehen müssen — Zahlungsabläufe, mehrstufige Workflows, langlebige Agenten-Tasks — persistiert die Runtime den Zustand automatisch. Server stirbt mitten in der Operation? Der Workflow setzt auf einer anderen Maschine fort, genau dort wo er aufgehört hat.
+Für Vorgänge, die Infrastrukturausfälle überstehen müssen — Zahlungsabläufe, mehrstufige Workflows, langlebige Agentenaufgaben — speichert die Laufzeitumgebung den Zustand automatisch dauerhaft. Fällt ein Server mitten im Vorgang aus? Der Workflow wird auf einer anderen Maschine genau dort fortgesetzt, wo er unterbrochen wurde.
 
-Das gesamte System läuft aus einer einzigen Datei. Keine Container zu orchestrieren, keine Dienste zu koordinieren. Eine Binary, eine Konfiguration, und die Runtime erledigt den Rest.
+Das gesamte System läuft aus einer einzigen Datei. Keine Container zu orchestrieren, keine Dienste zu koordinieren. Eine Programmdatei, eine Konfiguration, und die Laufzeitumgebung erledigt den Rest.
 
 ## Hintergrund
 
-Das Actor-Modell stammt aus Erlang, wo es seit den 1980er Jahren Telekommunikationsvermittlungen betreibt. Die "Let it crash"-Philosophie — Fehler isolieren, schnell neu starten — stammt ebenfalls von dort. Go zeigte, dass Channels und Message-Passing nebenläufigen Code lesbar machen können. Temporal bewies, dass dauerhafte Workflows nicht bedeuten müssen, gegen das Framework zu kämpfen.
+Das Aktorenmodell stammt aus Erlang, wo es seit den 1980er Jahren Telefonvermittlungen betreibt. Die Philosophie „Lass es abstürzen" — Fehler isolieren, schnell neu starten — stammt ebenfalls von dort. Go zeigte, dass Channels und Nachrichtenübermittlung nebenläufigen Code lesbar machen können. Temporal zeigte, dass dauerhafte Workflows nicht bedeuten müssen, gegen das Framework zu kämpfen.
 
-Wir haben Wippy gebaut, weil KI-Agenten Infrastruktur brauchen, die sich während der Laufzeit ändern kann. Neue Tools, aktualisierte Prompts, verschiedene Modelle — diese können nicht auf einen Deploy-Zyklus warten. Wenn ein Agent einen neuen Ansatz ausprobieren muss, sollte diese Änderung in Sekunden funktionieren, nicht erst nach einem Release.
+Wir haben Wippy entwickelt, weil KI-Agenten eine Infrastruktur benötigen, die sich zur Laufzeit ändern kann. Neue Werkzeuge, aktualisierte Prompts, verschiedene Modelle — diese können nicht auf einen Bereitstellungszyklus warten. Wenn ein Agent einen neuen Ansatz ausprobieren muss, sollte diese Änderung innerhalb von Sekunden wirksam sein, nicht erst nach einem Release.
 
-Da Agenten als Actors mit Registry-Zugriff laufen, können sie diese Änderungen selbst vornehmen — Code generieren, neue Komponenten registrieren, ihre eigenen Workflows anpassen. Mit ausreichenden Berechtigungen kann ein Agent verbessern, wie er arbeitet, ohne menschliches Eingreifen. Das System kann sich selbst schreiben.
+Da Agenten als Aktoren mit Registry-Zugriff laufen, können sie diese Änderungen selbst vornehmen — Code generieren, neue Komponenten registrieren, ihre eigenen Workflows anpassen. Mit ausreichenden Berechtigungen kann ein Agent seine Arbeitsweise verbessern, ohne menschliches Eingreifen. Das System kann sich selbst weiterentwickeln.

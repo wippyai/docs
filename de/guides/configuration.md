@@ -192,7 +192,7 @@ Siehe: [Observability-Anleitung](guide-observability.md)
 
 ## Shutdown
 
-Graceful-Shutdown-Verhalten.
+Verhalten beim kontrollierten Herunterfahren.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|

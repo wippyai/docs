@@ -3,14 +3,14 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Kern-Lua-Bibliotheken, die automatisch in allen Wippy-Prozessen verfugbar sind. Kein `require()` erforderlich.
+Kern-Lua-Bibliotheken, die automatisch in allen Wippy-Prozessen verfügbar sind. Kein `require()` erforderlich.
 
 ## Globale Funktionen
 
 ### Typ und Konvertierung
 
 ```lua
-type(value)         -- Gibt zuruck: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
+type(value)         -- Gibt zurück: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
 tonumber(s [,base]) -- Zu Zahl konvertieren, optionale Basis (2-36)
 tostring(value)     -- Zu String konvertieren, ruft __tostring-Metamethode auf
 ```
@@ -18,18 +18,18 @@ tostring(value)     -- Zu String konvertieren, ruft __tostring-Metamethode auf
 ### Assertions und Fehler
 
 ```lua
-assert(v [,msg])    -- Wirft Fehler wenn v false/nil ist, gibt sonst v zuruck
+assert(v [,msg])    -- Wirft Fehler wenn v false/nil ist, gibt sonst v zurück
 error(msg [,level]) -- Wirft Fehler auf angegebenem Stack-Level (Standard 1)
-pcall(fn, ...)      -- Geschutzter Aufruf, gibt ok, result_or_error zuruck
-xpcall(fn, errh)    -- Geschutzter Aufruf mit Fehlerhandler-Funktion
+pcall(fn, ...)      -- Geschützter Aufruf, gibt ok, result_or_error zurück
+xpcall(fn, errh)    -- Geschützter Aufruf mit Fehlerhandler-Funktion
 ```
 
 ### Tabelleniteration
 
 ```lua
-pairs(t)            -- Iteriert alle Schlussel-Wert-Paare
+pairs(t)            -- Iteriert alle Schlüssel-Wert-Paare
 ipairs(t)           -- Iteriert Array-Teil (1, 2, 3, ...)
-next(t [,index])    -- Holt nachstes Schlussel-Wert-Paar nach Index
+next(t [,index])    -- Holt nächstes Schlüssel-Wert-Paar nach Index
 ```
 
 ### Metatables
@@ -52,9 +52,9 @@ rawequal(a, b)      -- Vergleicht ohne __eq
 ### Hilfsfunktionen
 
 ```lua
-select(index, ...)  -- Gibt Argumente ab Index zuruck
-select("#", ...)    -- Gibt Anzahl der Argumente zuruck
-unpack(t [,i [,j]]) -- Gibt t[i] bis t[j] als mehrere Werte zuruck
+select(index, ...)  -- Gibt Argumente ab Index zurück
+select("#", ...)    -- Gibt Anzahl der Argumente zurück
+unpack(t [,i [,j]]) -- Gibt t[i] bis t[j] als mehrere Werte zurück
 print(...)          -- Gibt Werte aus (verwendet strukturiertes Logging in Wippy)
 ```
 
@@ -70,10 +70,10 @@ _VERSION  -- Lua-Versionsstring
 Funktionen zur Modifikation von Tabellen:
 
 ```lua
-table.insert(t, [pos,] value)  -- Fugt Wert an Position ein (Standard: Ende)
-table.remove(t [,pos])         -- Entfernt und gibt Element an Position zuruck (Standard: letztes)
+table.insert(t, [pos,] value)  -- Fügt Wert an Position ein (Standard: Ende)
+table.remove(t [,pos])         -- Entfernt und gibt Element an Position zurück (Standard: letztes)
 table.concat(t [,sep [,i [,j]]]) -- Verkettet Array-Elemente mit Trennzeichen
-table.sort(t [,comp])          -- Sortiert in-place, comp(a,b) gibt true zuruck wenn a < b
+table.sort(t [,comp])          -- Sortiert in-place, comp(a,b) gibt true zurück wenn a < b
 table.pack(...)                -- Packt varargs in Tabelle mit 'n'-Feld
 table.unpack(t [,i [,j]])      -- Entpackt Tabellen-Elemente als mehrere Werte
 ```
@@ -83,7 +83,7 @@ local items = {"a", "b", "c"}
 
 table.insert(items, "d")           -- {"a", "b", "c", "d"}
 table.insert(items, 2, "x")        -- {"a", "x", "b", "c", "d"}
-table.remove(items, 2)             -- {"a", "b", "c", "d"}, gibt "x" zuruck
+table.remove(items, 2)             -- {"a", "b", "c", "d"}, gibt "x" zurück
 
 local csv = table.concat(items, ",")  -- "a,b,c,d"
 
@@ -94,15 +94,15 @@ end)
 
 ## String-Operationen
 
-String-Manipulationsfunktionen. Auch als Methoden auf String-Werten verfugbar:
+String-Manipulationsfunktionen. Auch als Methoden auf String-Werten verfügbar:
 
 ### Musterabgleich
 
 ```lua
-string.find(s, pattern [,init [,plain]])   -- Findet Muster, gibt start, end, captures zuruck
+string.find(s, pattern [,init [,plain]])   -- Findet Muster, gibt start, end, captures zurück
 string.match(s, pattern [,init])           -- Extrahiert passenden Substring
-string.gmatch(s, pattern)                  -- Iterator uber alle Treffer
-string.gsub(s, pattern, repl [,n])         -- Ersetzt Treffer, gibt string, count zuruck
+string.gmatch(s, pattern)                  -- Iterator über alle Treffer
+string.gsub(s, pattern, repl [,n])         -- Ersetzt Treffer, gibt string, count zurück
 ```
 
 ### Gross-/Kleinschreibung
@@ -116,7 +116,7 @@ string.lower(s)   -- Zu Kleinbuchstaben konvertieren
 
 ```lua
 string.sub(s, i [,j])      -- Substring von i bis j (negative Indizes vom Ende)
-string.len(s)              -- String-Lange (oder #s verwenden)
+string.len(s)              -- String-Länge (oder #s verwenden)
 string.byte(s [,i [,j]])   -- Numerische Codes der Zeichen
 string.char(...)           -- Erstellt String aus Zeichencodes
 string.rep(s, n [,sep])    -- Wiederholt String n-mal mit Trennzeichen
@@ -170,7 +170,7 @@ local part = s:sub(1, 5)                      -- "Hello"
 | `%b()` | Ausbalanciertes Paar |
 | `(...)` | Capture-Gruppe |
 
-Grossbuchstaben-Versionen (`%A`, `%D`, etc.) treffen auf das Komplement.
+Großbuchstaben-Versionen (`%A`, `%D`, etc.) treffen auf das Komplement.
 
 ## Mathematische Funktionen
 
@@ -219,9 +219,9 @@ math.rad(d)   -- Grad zu Radiant
 ### Zufallszahlen
 
 ```lua
-math.random()         -- Zufalliger Float [0,1)
-math.random(n)        -- Zufalliger Integer [1,n]
-math.random(m, n)     -- Zufalliger Integer [m,n]
+math.random()         -- Zufälliger Float [0,1)
+math.random(n)        -- Zufälliger Integer [1,n]
+math.random(m, n)     -- Zufälliger Integer [m,n]
 math.randomseed(x)    -- Zufalls-Seed setzen
 ```
 
@@ -235,12 +235,12 @@ math.ult(m, n)        -- Unsigned Kleiner-als-Vergleich
 
 ## Coroutinen
 
-Coroutine-Erstellung und -Steuerung. Siehe [Channels und Coroutinen](lua-channel.md) fur Channels und Nebenlaufigkeitsmuster:
+Coroutine-Erstellung und -Steuerung. Siehe [Channels und Coroutinen](lua-channel.md) für Channels und Nebenläufigkeitsmuster:
 
 ```lua
 coroutine.create(fn)        -- Erstellt Coroutine aus Funktion
 coroutine.resume(co, ...)   -- Startet/setzt Coroutine fort
-coroutine.yield(...)        -- Unterbricht Coroutine, gibt Werte an resume zuruck
+coroutine.yield(...)        -- Unterbricht Coroutine, gibt Werte an resume zurück
 coroutine.status(co)        -- "running", "suspended", "normal", "dead"
 coroutine.running()         -- Aktuelle Coroutine (nil wenn Hauptthread)
 coroutine.wrap(fn)          -- Erstellt Coroutine als aufrufbare Funktion

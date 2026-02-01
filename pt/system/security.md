@@ -1,6 +1,6 @@
-# Modelo de Seguranca
+# Modelo de Segurança
 
-O Wippy implementa controle de acesso baseado em atributos. Toda requisicao carrega um ator (quem) e um escopo (quais politicas se aplicam). Politicas avaliam acesso baseado na acao, recurso e metadados tanto do ator quanto do recurso.
+O Wippy implementa controle de acesso baseado em atributos. Toda requisição carrega um ator (quem) e um escopo (quais políticas se aplicam). Políticas avaliam acesso baseado na ação, recurso e metadados tanto do ator quanto do recurso.
 
 ```mermaid
 flowchart LR
@@ -11,15 +11,15 @@ flowchart LR
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `security.policy` | Politica declarativa com condicoes |
-| `security.policy.expr` | Politica baseada em expressao |
-| `security.token_store` | Armazenamento e validacao de tokens |
+| `security.policy` | Política declarativa com condições |
+| `security.policy.expr` | Política baseada em expressão |
+| `security.token_store` | Armazenamento e validação de tokens |
 
 ## Atores
 
-Um ator representa quem esta executando uma acao.
+Um ator representa quem está executando uma ação.
 
 ```lua
 local security = require("security")
@@ -40,18 +40,18 @@ local meta = actor:meta()    -- {role="admin", ...}
 ### Ator no Contexto
 
 ```lua
--- Obtem ator atual do contexto
+-- Obtém ator atual do contexto
 local actor = security.actor()
 if not actor then
     return nil, errors.new("UNAUTHORIZED", "Sem ator no contexto")
 end
 ```
 
-## Politicas
+## Políticas
 
-Politicas definem regras de acesso com acoes, recursos, condicoes e efeitos.
+Políticas definem regras de acesso com ações, recursos, condições e efeitos.
 
-### Politica Declarativa
+### Política Declarativa
 
 ```yaml
 # src/security/_index.yaml
@@ -86,7 +86,7 @@ entries:
     groups:
       - default
 
-  # Acesso do proprietario do recurso
+  # Acesso do proprietário do recurso
   - name: owner_policy
     kind: security.policy
     policy:
@@ -103,7 +103,7 @@ entries:
     groups:
       - default
 
-  # Nega confidencial sem autorizacao
+  # Nega confidencial sem autorização
   - name: deny_confidential
     kind: security.policy
     policy:
@@ -121,7 +121,7 @@ entries:
       - security
 ```
 
-### Estrutura da Politica
+### Estrutura da Política
 
 ```yaml
 policy:
@@ -136,9 +136,9 @@ policy:
       value_from: "other.field.path"
 ```
 
-### Politica Baseada em Expressao
+### Política Baseada em Expressão
 
-Para logica complexa, use politicas de expressao:
+Para lógica complexa, use políticas de expressão:
 
 ```yaml
 - name: flexible_access
@@ -157,23 +157,23 @@ Para logica complexa, use politicas de expressao:
     - editors
 ```
 
-## Condicoes
+## Condições
 
-Condicoes permitem avaliacao dinamica de politicas baseada em ator, acao, recurso e metadados.
+Condições permitem avaliação dinâmica de políticas baseada em ator, ação, recurso e metadados.
 
 ### Caminhos de Campo
 
-| Caminho | Descricao |
+| Caminho | Descrição |
 |---------|-----------|
-| `actor.id` | Identificador unico do ator |
+| `actor.id` | Identificador único do ator |
 | `actor.meta.*` | Metadados do ator (suporta aninhamento) |
-| `action` | A acao sendo executada |
+| `action` | A ação sendo executada |
 | `resource` | O identificador do recurso |
 | `meta.*` | Metadados do recurso |
 
 ### Operadores
 
-| Operador | Descricao | Exemplo |
+| Operador | Descrição | Exemplo |
 |----------|-----------|---------|
 | `eq` | Igual | `actor.meta.role eq "admin"` |
 | `ne` | Diferente | `meta.status ne "deleted"` |
@@ -182,15 +182,15 @@ Condicoes permitem avaliacao dinamica de politicas baseada em ator, acao, recurs
 | `lte` | Menor ou igual | `meta.size lte 1000` |
 | `gte` | Maior ou igual | `actor.meta.level gte 3` |
 | `in` | Valor em array | `action in ["read", "write"]` |
-| `nin` | Valor nao em array | `meta.status nin ["deleted", "archived"]` |
+| `nin` | Valor não em array | `meta.status nin ["deleted", "archived"]` |
 | `exists` | Campo existe | `meta.owner exists true` |
-| `nexists` | Campo nao existe | `meta.deleted nexists true` |
-| `contains` | String contem | `resource contains "sensitive"` |
-| `ncontains` | String nao contem | `resource ncontains "public"` |
-| `matches` | Correspondencia regex | `resource matches "^doc:.*"` |
-| `nmatches` | Nao corresponde regex | `actor.id nmatches "^system:.*"` |
+| `nexists` | Campo não existe | `meta.deleted nexists true` |
+| `contains` | String contém | `resource contains "sensitive"` |
+| `ncontains` | String não contém | `resource ncontains "public"` |
+| `matches` | Correspondência regex | `resource matches "^doc:.*"` |
+| `nmatches` | Não corresponde regex | `actor.id nmatches "^system:.*"` |
 
-### Exemplos de Condicoes
+### Exemplos de Condições
 
 ```yaml
 # Corresponde role do ator
@@ -205,7 +205,7 @@ conditions:
     operator: eq
     value_from: actor.id
 
-# Comparacao numerica
+# Comparação numérica
 conditions:
   - field: actor.meta.clearance
     operator: gte
@@ -219,13 +219,13 @@ conditions:
       - admin
       - moderator
 
-# Correspondencia de padrao
+# Correspondência de padrão
 conditions:
   - field: resource
     operator: matches
     value: "^api:/v[0-9]+/admin/.*"
 
-# Multiplas condicoes (AND)
+# Múltiplas condições (AND)
 conditions:
   - field: actor.meta.department
     operator: eq
@@ -237,33 +237,33 @@ conditions:
 
 ## Escopos
 
-Escopos combinam multiplas politicas em um contexto de seguranca.
+Escopos combinam múltiplas políticas em um contexto de segurança.
 
 ```lua
 local security = require("security")
 
--- Obtem politicas
+-- Obtém políticas
 local admin_policy = security.policy("app.security:admin_policy")
 local readonly_policy = security.policy("app.security:readonly_policy")
 
--- Cria escopo com politicas
+-- Cria escopo com políticas
 local scope = security.new_scope()
 scope = scope:with(admin_policy)
 scope = scope:with(readonly_policy)
 
--- Escopos sao imutaveis - :with() retorna novo escopo
+-- Escopos são imutáveis - :with() retorna novo escopo
 ```
 
-### Escopos Nomeados (Grupos de Politicas)
+### Escopos Nomeados (Grupos de Políticas)
 
-Carrega todas as politicas de um grupo:
+Carrega todas as políticas de um grupo:
 
 ```lua
--- Carrega escopo com todas as politicas do grupo
+-- Carrega escopo com todas as políticas do grupo
 local scope, err = security.named_scope("app.security:admin")
 ```
 
-Politicas sao atribuidas a grupos via campo `groups`:
+Políticas são atribuídas a grupos via campo `groups`:
 
 ```yaml
 - name: admin_policy
@@ -271,44 +271,44 @@ Politicas sao atribuidas a grupos via campo `groups`:
   policy:
     # ...
   groups:
-    - admin      # Esta politica esta no grupo "admin"
-    - default    # Pode estar em multiplos grupos
+    - admin      # Esta política está no grupo "admin"
+    - default    # Pode estar em múltiplos grupos
 ```
 
-### Operacoes de Escopo
+### Operações de Escopo
 
 ```lua
--- Adiciona politica
+-- Adiciona política
 local new_scope = scope:with(policy)
 
--- Remove politica
+-- Remove política
 local new_scope = scope:without("app.security:temp_policy")
 
--- Verifica se politica esta no escopo
+-- Verifica se política está no escopo
 local has = scope:contains("app.security:admin_policy")
 
--- Obtem todas as politicas
+-- Obtém todas as políticas
 local policies = scope:policies()
 ```
 
-## Avaliacao de Politicas
+## Avaliação de Políticas
 
-### Fluxo de Avaliacao
+### Fluxo de Avaliação
 
 ```
-1. Verifica cada politica no escopo
-2. Se QUALQUER politica retorna Deny → Resultado e Deny
-3. Se pelo menos um Allow e nenhum Deny → Resultado e Allow
-4. Nenhuma politica aplicavel → Resultado e Undefined
+1. Verifica cada política no escopo
+2. Se QUALQUER política retorna Deny -> Resultado é Deny
+3. Se pelo menos um Allow e nenhum Deny -> Resultado é Allow
+4. Nenhuma política aplicável -> Resultado é Undefined
 ```
 
-### Resultados de Avaliacao
+### Resultados de Avaliação
 
 | Resultado | Significado |
 |-----------|-------------|
 | `allow` | Acesso concedido |
 | `deny` | Acesso explicitamente negado |
-| `undefined` | Nenhuma politica correspondeu |
+| `undefined` | Nenhuma política correspondeu |
 
 ```lua
 -- Avalia diretamente
@@ -320,11 +320,11 @@ local result = scope:evaluate(actor, "read", "document:123", {
 if result == "deny" then
     return nil, errors.new("FORBIDDEN", "Acesso negado")
 elseif result == "undefined" then
-    -- Nenhuma politica correspondeu - depende do modo estrito
+    -- Nenhuma política correspondeu - depende do modo estrito
 end
 ```
 
-### Verificacao Rapida de Permissao
+### Verificação Rápida de Permissão
 
 ```lua
 -- Verifica contra ator e escopo do contexto atual
@@ -339,9 +339,9 @@ end
 
 ## Token Stores
 
-Token stores fornecem criacao, validacao e revogacao seguras de tokens.
+Token stores fornecem criação, validação e revogação seguras de tokens.
 
-### Configuracao
+### Configuração
 
 ```yaml
 # src/auth/_index.yaml
@@ -349,7 +349,7 @@ version: "1.0"
 namespace: app.auth
 
 entries:
-  # Registra variavel de ambiente
+  # Registra variável de ambiente
   - name: os_env
     kind: env.storage.os
 
@@ -373,24 +373,24 @@ entries:
     token_key_env: "AUTH_SECRET_KEY"
 ```
 
-### Opcoes do Token Store
+### Opções do Token Store
 
-| Opcao | Padrao | Descricao |
+| Opção | Padrão | Descrição |
 |-------|--------|-----------|
-| `store` | obrigatorio | Referencia do store chave-valor de apoio |
+| `store` | obrigatório | Referência do store chave-valor de apoio |
 | `token_length` | 32 | Tamanho do token em bytes (256 bits) |
-| `default_expiration` | 24h | TTL padrao do token |
+| `default_expiration` | 24h | TTL padrão do token |
 | `token_key` | nenhum | Chave de assinatura HMAC-SHA256 (valor direto) |
-| `token_key_env` | nenhum | Nome da variavel de ambiente para chave de assinatura |
+| `token_key_env` | nenhum | Nome da variável de ambiente para chave de assinatura |
 
-Use `token_key_env` em producao para evitar embutir segredos em entradas. Veja [Sistema de Ambiente](system-env.md) para registrar variaveis de ambiente.
+Use `token_key_env` em produção para evitar embutir segredos em entradas. Veja [Sistema de Ambiente](system-env.md) para registrar variáveis de ambiente.
 
 ### Criando Tokens
 
 ```lua
 local security = require("security")
 
--- Obtem token store
+-- Obtém token store
 local store, err = security.token_store("app.auth:tokens")
 if err then
     return nil, err
@@ -406,7 +406,7 @@ local scope, _ = security.named_scope("app.security:default")
 
 -- Cria token
 local token, err = store:create(actor, scope, {
-    expiration = "7d",  -- Sobrescreve expiracao padrao
+    expiration = "7d",  -- Sobrescreve expiração padrão
     meta = {
         device = "mobile",
         ip = "192.168.1.1"
@@ -427,17 +427,17 @@ end
 -- Valida token
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Token invalido")
+    return nil, errors.new("UNAUTHORIZED", "Token inválido")
 end
 
--- Ator e escopo sao reconstruidos dos dados armazenados
+-- Ator e escopo são reconstruídos dos dados armazenados
 print(actor:id())  -- "user:123"
 ```
 
 ### Revogando Tokens
 
 ```lua
--- Revoga token unico
+-- Revoga token único
 local ok, err = store:revoke(token)
 
 -- Fecha store quando terminar
@@ -446,33 +446,33 @@ store:close()
 
 ## Fluxo de Contexto
 
-O contexto de seguranca se propaga atraves de chamadas de funcao.
+O contexto de segurança se propaga através de chamadas de função.
 
 ### Definindo Contexto
 
 ```lua
 local funcs = require("funcs")
 
--- Chama funcao com contexto de seguranca
+-- Chama função com contexto de segurança
 local result, err = funcs.new()
     :with_actor(actor)
     :with_scope(scope)
     :call("app.api:protected_endpoint", data)
 ```
 
-### Heranca de Contexto
+### Herança de Contexto
 
 | Componente | Herda |
 |------------|-------|
 | Ator | Sim - passa para chamadas filhas |
 | Escopo | Sim - passa para chamadas filhas |
-| Modo estrito | Nao - aplicacao-wide |
+| Modo estrito | Não - aplicação-wide |
 
-Funcoes herdam contexto de seguranca do chamador. Processos criados iniciam do zero.
+Funções herdam contexto de segurança do chamador. Processos criados iniciam do zero.
 
-## Seguranca em Nivel de Servico
+## Segurança em Nível de Serviço
 
-Configure seguranca padrao para servicos:
+Configure segurança padrão para serviços:
 
 ```yaml
 - name: worker_service
@@ -494,7 +494,7 @@ Configure seguranca padrao para servicos:
 
 ## Modo Estrito
 
-Habilite modo estrito para negar acesso quando contexto de seguranca esta ausente:
+Habilite modo estrito para negar acesso quando contexto de segurança está ausente:
 
 ```yaml
 # wippy.yaml
@@ -505,11 +505,11 @@ security:
 | Modo | Contexto Ausente | Comportamento |
 |------|------------------|---------------|
 | Normal | Sem ator/escopo | Permite (permissivo) |
-| Estrito | Sem ator/escopo | Nega (padrao seguro) |
+| Estrito | Sem ator/escopo | Nega (padrão seguro) |
 
-## Fluxo de Autenticacao
+## Fluxo de Autenticação
 
-Validacao de token em um handler HTTP:
+Validação de token em um handler HTTP:
 
 ```lua
 local http = require("http")
@@ -522,17 +522,17 @@ local function protected_handler()
     -- Extrai e valida token
     local auth = req:header("Authorization")
     if not auth then
-        return res:set_status(401):write_json({error = "Autorizacao ausente"})
+        return res:set_status(401):write_json({error = "Autorização ausente"})
     end
 
     local token = auth:gsub("^Bearer%s+", "")
     local store, _ = security.token_store("app.auth:tokens")
     local actor, scope, err = store:validate(token)
     if err then
-        return res:set_status(401):write_json({error = "Token invalido"})
+        return res:set_status(401):write_json({error = "Token inválido"})
     end
 
-    -- Verifica permissao
+    -- Verifica permissão
     if not security.can("api.users.read", "users") then
         return res:set_status(403):write_json({error = "Proibido"})
     end
@@ -543,7 +543,7 @@ end
 return { handler = protected_handler }
 ```
 
-Criacao de token durante login:
+Criação de token durante login:
 
 ```lua
 local actor = security.new_actor("user:" .. user.id, {role = user.role})
@@ -553,25 +553,25 @@ local store, _ = security.token_store("app.auth:tokens")
 local token, err = store:create(actor, scope, {expiration = "24h"})
 ```
 
-## Boas Praticas
+## Boas Práticas
 
-1. **Menor privilegio** - Conceda permissoes minimas necessarias
-2. **Negue por padrao** - Use politicas de allow explicitas, habilite modo estrito
-3. **Use grupos de politicas** - Organize politicas por role/funcao
-4. **Assine tokens** - Sempre defina `token_key_env` em producao
-5. **Expiracao curta** - Use tempos de vida de token mais curtos para operacoes sensiveis
-6. **Condicione no contexto** - Use condicoes dinamicas sobre politicas estaticas
-7. **Audite acoes sensiveis** - Registre operacoes relevantes para seguranca
+1. **Menor privilégio** - Conceda permissões mínimas necessárias
+2. **Negue por padrão** - Use políticas de allow explícitas, habilite modo estrito
+3. **Use grupos de políticas** - Organize políticas por role/função
+4. **Assine tokens** - Sempre defina `token_key_env` em produção
+5. **Expiração curta** - Use tempos de vida de token mais curtos para operações sensíveis
+6. **Condicione no contexto** - Use condições dinâmicas sobre políticas estáticas
+7. **Audite ações sensíveis** - Registre operações relevantes para segurança
 
-## Referencia do Modulo Security
+## Referência do Módulo Security
 
-| Funcao | Descricao |
+| Função | Descrição |
 |--------|-----------|
-| `security.actor()` | Obtem ator atual do contexto |
-| `security.scope()` | Obtem escopo atual do contexto |
-| `security.can(action, resource, meta?)` | Verifica permissao |
+| `security.actor()` | Obtém ator atual do contexto |
+| `security.scope()` | Obtém escopo atual do contexto |
+| `security.can(action, resource, meta?)` | Verifica permissão |
 | `security.new_actor(id, meta?)` | Cria novo ator |
 | `security.new_scope(policies?)` | Cria escopo vazio ou semeado |
-| `security.policy(id)` | Obtem politica por ID |
-| `security.named_scope(group_id)` | Obtem escopo com todas as politicas do grupo |
-| `security.token_store(id)` | Obtem token store |
+| `security.policy(id)` | Obtém política por ID |
+| `security.named_scope(group_id)` | Obtém escopo com todas as políticas do grupo |
+| `security.token_store(id)` | Obtém token store |

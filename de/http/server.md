@@ -104,7 +104,7 @@ lifecycle:
 |------|--------------|
 | `auto_start` | Beim Anwendungsstart starten |
 | `start_timeout` | Max Wartezeit für Server-Start |
-| `stop_timeout` | Max Zeit für Graceful Shutdown |
+| `stop_timeout` | Max Zeit für kontrolliertes Herunterfahren |
 | `depends_on` | Nach diesen Einträgen starten |
 
 ## Komponenten verbinden

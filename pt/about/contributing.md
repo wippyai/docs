@@ -1,30 +1,30 @@
 # Contribuindo
 
-O Wippy e desenvolvido pela [Spiral Scout](https://spiralscout.com). Nos o usamos em producao para sistemas internos e projetos de clientes. O lancamento publico esta em alfa.
+O Wippy é desenvolvido pela [Spiral Scout](https://spiralscout.com). Nós o usamos em produção para sistemas internos e projetos de clientes. O lançamento público está em alfa.
 
 ## Estabilidade
 
-- **API Lua**: Estavel
-- **Comportamento externo**: Estavel
-- **Definicoes de entradas do registro**: Estavel, com pequenas excecoes. Caminho de migracao fornecido se alteracoes forem necessarias.
+- **API Lua**: Estável
+- **Comportamento externo**: Estável
+- **Definições de entradas do registro**: Estável, com pequenas exceções. Caminho de migração fornecido se alterações forem necessárias.
 - **APIs internas do runtime**: Podem mudar
-- **Mecanismos de baixo nivel**: Podem mudar
+- **Mecanismos de baixo nível**: Podem mudar
 
 ## Pull Requests
 
-Aceitamos pull requests para melhorias de modulos Lua, estabilizacao de API e documentacao.
+Aceitamos pull requests para melhorias de módulos Lua, estabilização de API e documentação.
 
-Nao estamos aceitando pull requests para mudancas arquiteturais de alto nivel ou decisoes de design do nucleo. Precisamos manter controle sobre a direcao principal durante esta fase.
+Não estamos aceitando pull requests para mudanças arquiteturais de alto nível ou decisões de design do núcleo. Precisamos manter controle sobre a direção principal durante esta fase.
 
-Issues e feedback sao sempre bem-vindos.
+Issues e feedback são sempre bem-vindos.
 
 ## Outros Projetos
 
-A Spiral Scout mantem varios projetos open source incluindo [RoadRunner](https://github.com/roadrunner-server/roadrunner), [Spiral Framework](https://github.com/spiral/framework) e [Cycle ORM](https://github.com/cycle/orm).
+A Spiral Scout mantém vários projetos open source incluindo [RoadRunner](https://github.com/roadrunner-server/roadrunner), [Spiral Framework](https://github.com/spiral/framework) e [Cycle ORM](https://github.com/cycle/orm).
 
-## Seguranca
+## Segurança
 
-Para vulnerabilidades de seguranca, envie email diretamente para security@wippy.dev.
+Para vulnerabilidades de segurança, envie email diretamente para security@wippy.dev.
 
 ## Suporte Comercial
 

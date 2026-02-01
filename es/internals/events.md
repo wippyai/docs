@@ -6,7 +6,7 @@ El event bus es un sistema pub/sub usando una sola goroutine dispatcher. Los pub
 
 ```go
 type Event struct {
-    System string  // Componente/modulo (ej. "registry", "process")
+    System string  // Componente/módulo (ej. "registry", "process")
     Kind   string  // Tipo de evento (ej. "create", "update", "exit")
     Path   string  // Identificador de entidad
     Data   any     // Payload
@@ -59,9 +59,9 @@ Todas las mutaciones pasan por la goroutine dispatcher, eliminando condiciones d
 
 ## Acciones
 
-Cuatro tipos de acciones fluyen a traves de la cola:
+Cuatro tipos de acciones fluyen a través de la cola:
 
-| Accion | Comportamiento |
+| Acción | Comportamiento |
 |--------|----------------|
 | Subscribe | Agrega subscriber al mapa, responde en canal done |
 | Unsubscribe | Remueve subscriber, responde en canal done |
@@ -83,7 +83,7 @@ func (b *Bus) processActions() bool {
     b.actionMu.Unlock()
 
     for i := range actions {
-        // procesar accion
+        // procesar acción
     }
 
     clear(actions)
@@ -94,7 +94,7 @@ func (b *Bus) processActions() bool {
 }
 ```
 
-Dos slices alternan: uno para procesamiento, uno para nuevas llegadas. El canal `actionReady` tiene buffer de 1, asi que la senalizacion nunca bloquea y multiples encolas colapsan en un solo wakeup.
+Dos slices alternan: uno para procesamiento, uno para nuevas llegadas. El canal `actionReady` tiene buffer de 1, así que la señalización nunca bloquea y múltiples encolas colapsan en un solo wakeup.
 
 ## Pattern Matching
 
@@ -110,16 +110,16 @@ type sub struct {
 }
 ```
 
-El paquete wildcard soporta tres tipos de patron:
+El paquete wildcard soporta tres tipos de patrón:
 
-| Patron | Matchea |
+| Patrón | Matchea |
 |--------|---------|
 | `registry` | Solo match exacto |
-| `*` | Cualquier segmento unico |
-| `**` | Cero o mas segmentos |
-| `(a\|b)` | Alternacion dentro de segmento |
+| `*` | Cualquier segmento único |
+| `**` | Cero o más segmentos |
+| `(a\|b)` | Alternación dentro de segmento |
 
-Los patrones se dividen en `.` asi que `registry.*` matchea `registry.create` pero no `registry.entry.create`. El patron `registry.**` matchea los tres: `registry`, `registry.create`, y `registry.entry.create`.
+Los patrones se dividen en `.` así que `registry.*` matchea `registry.create` pero no `registry.entry.create`. El patrón `registry.**` matchea los tres: `registry`, `registry.create`, y `registry.entry.create`.
 
 ## Entrega de Eventos
 
@@ -144,7 +144,7 @@ for id, s := range b.subscribers {
 }
 ```
 
-Si el contexto de un subscriber es cancelado, se marca para remocion durante ese pase de entrega. El contexto del evento tambien puede cancelar entrega a mitad de iteracion.
+Si el contexto de un subscriber es cancelado, se marca para remoción durante ese pase de entrega. El contexto del evento también puede cancelar entrega a mitad de iteración.
 
 ## Bridge de Proceso Lua
 
@@ -162,7 +162,7 @@ type Dispatcher struct {
 }
 ```
 
-Cuando un proceso Lua se suscribe via `events.subscribe()`, el dispatcher almacena el patron y PID destino. Eventos matcheados son empaquetados y enviados via relay:
+Cuando un proceso Lua se suscribe vía `events.subscribe()`, el dispatcher almacena el patrón y PID destino. Eventos matcheados son empaquetados y enviados vía relay:
 
 ```go
 func (d *Dispatcher) routeEvent(evt event.Event) {
@@ -196,7 +196,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 
 ### Subscriber
 
-Envuelve suscripcion de canal con callback:
+Envuelve suscripción de canal con callback:
 
 ```go
 handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
@@ -206,11 +206,11 @@ handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
 defer handler.Close()
 ```
 
-Genera dos goroutines: una lee eventos y llama al handler, otra espera cancelacion de contexto para desuscribir.
+Genera dos goroutines: una lee eventos y llama al handler, otra espera cancelación de contexto para desuscribir.
 
 ### EventRouter
 
-Gestiona multiples handlers con ciclo de vida centralizado:
+Gestiona múltiples handlers con ciclo de vida centralizado:
 
 ```go
 router, err := eventbus.StartRouter(ctx, bus,
@@ -223,7 +223,7 @@ Cada handler implementa `Pattern()` y `Handle()`. El router crea un Subscriber p
 
 ### Awaiter
 
-Espera sincronica por un evento especifico:
+Espera sincrónica por un evento específico:
 
 ```go
 awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
@@ -235,11 +235,11 @@ bus.Send(ctx, triggeringEvent)
 result := waiter.Wait()  // bloquea hasta match o timeout
 ```
 
-El patron Prepare-then-Wait evita condiciones de carrera: suscribirse antes de disparar el evento que produce la respuesta.
+El patrón Prepare-then-Wait evita condiciones de carrera: suscribirse antes de disparar el evento que produce la respuesta.
 
 ## Shutdown
 
-1. `Stop()` atomicamente establece flag closed y encola accion Stop
+1. `Stop()` atómicamente establece flag closed y encola acción Stop
 2. Dispatcher limpia mapa de subscribers
 3. Acciones restantes en cola son drenadas:
    - Solicitudes Subscribe obtienen error "bus is closed"
@@ -247,7 +247,7 @@ El patron Prepare-then-Wait evita condiciones de carrera: suscribirse antes de d
    - Eventos Send son descartados
 4. WaitGroup completa
 
-## Ver Tambien
+## Ver También
 
 - [Registry](internal-registry.md) - Productor principal de eventos
 - [Command Dispatch](internal-dispatch.md) - Routing proceso-a-handler

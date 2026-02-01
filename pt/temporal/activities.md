@@ -1,10 +1,10 @@
 # Atividades
 
-Atividades sao funcoes que executam operacoes nao-deterministicas. Qualquer entrada `function.lua` ou `process.lua` pode ser registrada como uma atividade Temporal adicionando metadados.
+Atividades são funções que executam operações não-determinísticas. Qualquer entrada `function.lua` ou `process.lua` pode ser registrada como uma atividade Temporal adicionando metadados.
 
 ## Registrando Atividades
 
-Adicione `meta.temporal.activity` para registrar uma funcao como atividade:
+Adicione `meta.temporal.activity` para registrar uma função como atividade:
 
 ```yaml
 - name: charge_payment
@@ -22,14 +22,14 @@ Adicione `meta.temporal.activity` para registrar uma funcao como atividade:
 
 ### Campos de Metadados
 
-| Campo | Obrigatorio | Descricao |
+| Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
-| `worker` | Sim | Referencia a entrada `temporal.worker` |
-| `local` | Nao | Executa como atividade local (padrao: false) |
+| `worker` | Sim | Referência a entrada `temporal.worker` |
+| `local` | Não | Executa como atividade local (padrão: false) |
 
-## Implementacao
+## Implementação
 
-Atividades sao funcoes Lua regulares:
+Atividades são funções Lua regulares:
 
 ```lua
 -- payment.lua
@@ -61,7 +61,7 @@ return { charge = charge }
 
 ## Chamando Atividades
 
-De workflows, use o modulo `funcs`:
+De workflows, use o módulo `funcs`:
 
 ```lua
 local funcs = require("funcs")
@@ -78,7 +78,7 @@ if err then
 end
 ```
 
-### Opcoes de Atividade
+### Opções de Atividade
 
 Configure timeouts e comportamento de retry:
 
@@ -103,7 +103,7 @@ local result, err = executor:call("app:charge_payment", input)
 
 ## Atividades Locais
 
-Atividades locais executam no processo do worker de workflow sem polling de task queue separado. Use para operacoes rapidas e curtas:
+Atividades locais executam no processo do worker de workflow sem polling de task queue separado. Use para operações rápidas e curtas:
 
 ```yaml
 - name: validate_input
@@ -119,16 +119,16 @@ Atividades locais executam no processo do worker de workflow sem polling de task
         local: true
 ```
 
-Caracteristicas:
+Características:
 - Executam no processo do worker de workflow
-- Menor latencia
+- Menor latência
 - Sem overhead de task queue separado
-- Limitado a tempos de execucao curtos
+- Limitado a tempos de execução curtos
 - Sem heartbeating
 
 ## Nomenclatura de Atividades
 
-Atividades sao registradas com seu ID de entrada completo como nome:
+Atividades são registradas com seu ID de entrada completo como nome:
 
 ```yaml
 namespace: app
@@ -142,7 +142,7 @@ Nome da atividade: `app:charge_payment`
 
 ## Tratamento de Erros
 
-Retorne erros via padrao Lua padrao:
+Retorne erros via padrão Lua padrão:
 
 ```lua
 local function charge(input)
@@ -165,7 +165,7 @@ end
 
 ## Atividades de Processo
 
-Entradas `process.lua` tambem podem ser registradas como atividades:
+Entradas `process.lua` também podem ser registradas como atividades:
 
 ```yaml
 - name: long_task
@@ -180,8 +180,8 @@ Entradas `process.lua` tambem podem ser registradas como atividades:
         worker: app:worker
 ```
 
-## Veja Tambem
+## Veja Também
 
-- [Visao Geral](temporal/overview.md) - Configuracao
-- [Workflows](temporal/workflows.md) - Implementacao de workflows
-- [Funcoes](lua/core/funcs.md) - Modulo de funcoes
+- [Visão Geral](temporal/overview.md) - Configuração
+- [Workflows](temporal/workflows.md) - Implementação de workflows
+- [Funções](lua/core/funcs.md) - Módulo de funções

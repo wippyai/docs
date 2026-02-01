@@ -1,10 +1,10 @@
-# Integracao Temporal
+# Integração Temporal
 
-O Wippy integra com [Temporal.io](https://temporal.io) para execucao de workflow duravel, replay automatico e processos de longa duracao que sobrevivem a reinicializacoes.
+O Wippy integra com [Temporal.io](https://temporal.io) para execução de workflow durável, replay automático e processos de longa duração que sobrevivem a reinicializações.
 
-## Configuracao do Cliente
+## Configuração do Cliente
 
-O tipo de entrada `temporal.client` define uma conexao com um servidor Temporal.
+O tipo de entrada `temporal.client` define uma conexão com um servidor Temporal.
 
 ```yaml
 - name: temporal_client
@@ -15,25 +15,25 @@ O tipo de entrada `temporal.client` define uma conexao com um servidor Temporal.
     auto_start: true
 ```
 
-### Campos Obrigatorios
+### Campos Obrigatórios
 
-| Campo | Descricao |
+| Campo | Descrição |
 |-------|-----------|
-| `address` | Endereco do servidor Temporal (host:port) |
+| `address` | Endereço do servidor Temporal (host:port) |
 
 ### Campos Opcionais
 
-| Campo | Padrao | Descricao |
+| Campo | Padrão | Descrição |
 |-------|--------|-----------|
 | `namespace` | "default" | Namespace Temporal |
-| `tq_prefix` | "" | Prefixo de nome de task queue para todas as operacoes |
-| `connection_timeout` | "10s" | Timeout de conexao |
+| `tq_prefix` | "" | Prefixo de nome de task queue para todas as operações |
+| `connection_timeout` | "10s" | Timeout de conexão |
 | `keep_alive_time` | "30s" | Intervalo de keep-alive |
 | `keep_alive_timeout` | "10s" | Timeout de keep-alive |
 
-### Autenticacao
+### Autenticação
 
-#### Sem Autenticacao
+#### Sem Autenticação
 
 ```yaml
 - name: temporal_client
@@ -45,7 +45,7 @@ O tipo de entrada `temporal.client` define uma conexao com um servidor Temporal.
 
 #### Chave de API (Temporal Cloud)
 
-Forneca a chave de API via um destes metodos:
+Forneça a chave de API via um destes métodos:
 
 ```yaml
 # Valor direto
@@ -57,7 +57,7 @@ Forneca a chave de API via um destes metodos:
     type: api_key
     api_key: "your-api-key"
 
-# De variavel de ambiente
+# De variável de ambiente
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -76,7 +76,7 @@ Forneca a chave de API via um destes metodos:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Campos terminando em `_env` referenciam variaveis de ambiente que devem ser definidas no sistema. Veja [Sistema de Ambiente](system/env.md) para configurar armazenamento de ambiente e variaveis.
+Campos terminando em `_env` referenciam variáveis de ambiente que devem ser definidas no sistema. Veja [Sistema de Ambiente](system/env.md) para configurar armazenamento de ambiente e variáveis.
 
 #### mTLS
 
@@ -94,7 +94,7 @@ Campos terminando em `_env` referenciam variaveis de ambiente que devem ser defi
     ca_file: "/path/to/ca.pem"
 ```
 
-Certificado e chave tambem podem ser fornecidos como strings PEM ou do ambiente:
+Certificado e chave também podem ser fornecidos como strings PEM ou do ambiente:
 
 ```yaml
 auth:
@@ -106,17 +106,17 @@ auth:
   key_pem_env: "TEMPORAL_CLIENT_KEY"
 ```
 
-### Configuracao TLS
+### Configuração TLS
 
 ```yaml
 tls:
   enabled: true
   ca_file: "/path/to/ca.pem"
-  server_name: "temporal.example.com"    # Sobrescreve verificacao do nome do servidor
-  insecure_skip_verify: false            # Pula verificacao (apenas dev)
+  server_name: "temporal.example.com"    # Sobrescreve verificação do nome do servidor
+  insecure_skip_verify: false            # Pula verificação (apenas dev)
 ```
 
-### Verificacoes de Saude
+### Verificações de Saúde
 
 ```yaml
 health_check:
@@ -124,7 +124,7 @@ health_check:
   interval: "30s"
 ```
 
-## Configuracao do Worker
+## Configuração do Worker
 
 O tipo de entrada `temporal.worker` define um worker que executa workflows e atividades.
 
@@ -139,14 +139,14 @@ O tipo de entrada `temporal.worker` define um worker que executa workflows e ati
       - app:temporal_client
 ```
 
-### Campos Obrigatorios
+### Campos Obrigatórios
 
-| Campo | Descricao |
+| Campo | Descrição |
 |-------|-----------|
-| `client` | Referencia a uma entrada `temporal.client` |
+| `client` | Referência a uma entrada `temporal.client` |
 | `task_queue` | Nome da task queue |
 
-### Opcoes do Worker
+### Opções do Worker
 
 Ajuste fino do comportamento do worker:
 
@@ -156,7 +156,7 @@ Ajuste fino do comportamento do worker:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
-    # Concorrencia
+    # Concorrência
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
@@ -166,7 +166,7 @@ Ajuste fino do comportamento do worker:
     max_concurrent_activity_task_pollers: 20
     max_concurrent_workflow_task_pollers: 20
 
-    # Limitacao de taxa
+    # Limitação de taxa
     worker_activities_per_second: 0        # 0 = ilimitado
     worker_local_activities_per_second: 0
     task_queue_activities_per_second: 0
@@ -186,16 +186,16 @@ Ajuste fino do comportamento do worker:
     # Versionamento
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Le de variavel de ambiente
+    build_id_env: "BUILD_ID"              # Lê de variável de ambiente
     use_versioning: false
     default_versioning_behavior: "pinned" # ou "auto_upgrade"
 ```
 
-Campos terminando em `_env` referenciam variaveis de ambiente definidas via entradas do [Sistema de Ambiente](system/env.md).
+Campos terminando em `_env` referenciam variáveis de ambiente definidas via entradas do [Sistema de Ambiente](system/env.md).
 
-### Padroes de Concorrencia
+### Padrões de Concorrência
 
-| Opcao | Padrao |
+| Opção | Padrão |
 |-------|--------|
 | `max_concurrent_activity_execution_size` | 1000 |
 | `max_concurrent_workflow_task_execution_size` | 1000 |
@@ -253,7 +253,7 @@ entries:
           worker: app:worker
 ```
 
-## Veja Tambem
+## Veja Também
 
-- [Atividades](temporal/activities.md) - Definicoes de atividades
-- [Workflows](temporal/workflows.md) - Implementacao de workflows
+- [Atividades](temporal/activities.md) - Definições de atividades
+- [Workflows](temporal/workflows.md) - Implementação de workflows

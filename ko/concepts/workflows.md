@@ -30,10 +30,10 @@ if status == "failed" then
 end
 ```
 
-워크플로우 엔진은 호출을 가로채고 결과를 기록합니다. 프로세스가 크래시하면 히스토리에서 실행이 리플레이됩니다. 같은 코드, 같은 결과.
+워크플로우 엔진은 호출을 가로채고 결과를 기록합니다. 프로세스가 크래시하면 기록된 히스토리에서 실행이 리플레이됩니다. 같은 코드로 같은 결과를 얻습니다.
 
 <note>
-Wippy는 결정론을 자동으로 처리합니다. <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code>, <code>time.now()</code> 같은 작업이 가로채지고 결과가 기록됩니다. 리플레이 시 재실행 대신 기록된 값이 반환됩니다.
+Wippy는 결정론을 자동으로 처리합니다. <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code>, <code>time.now()</code> 같은 작업이 가로채져 결과가 기록됩니다. 리플레이 시에는 재실행하지 않고 기록된 값이 반환됩니다.
 </note>
 
 ## 워크플로우 패턴
@@ -110,15 +110,15 @@ local pid = process.spawn("app.workflows:order_processor", "app:temporal_worker"
 process.send(pid, "update", {status = "approved"})
 ```
 
-호출자 관점에서 API는 동일합니다. 차이점은 호스트입니다: 워크플로우는 `process.host` 대신 `temporal.worker`에서 실행됩니다.
+호출자 관점에서 API는 동일합니다. 차이점은 호스트입니다. 워크플로우는 `process.host` 대신 `temporal.worker`에서 실행됩니다.
 
 <tip>
-워크플로우가 <code>process.spawn()</code>을 통해 자식을 생성하면, 같은 프로바이더의 자식 워크플로우가 되어 내구성 보장을 유지합니다.
+워크플로우가 <code>process.spawn()</code>으로 자식을 생성하면, 같은 프로바이더의 자식 워크플로우가 되어 내구성 보장이 유지됩니다.
 </tip>
 
 ## 실패와 슈퍼비전
 
-프로세스는 `process.service`를 사용하여 슈퍼바이즈된 서비스로 실행될 수 있습니다:
+프로세스는 `process.service`를 사용하여 감독되는 서비스로 실행할 수 있습니다:
 
 ```yaml
 # 프로세스 정의
@@ -127,7 +127,7 @@ process.send(pid, "update", {status = "approved"})
   source: file://session_handler.lua
   method: main
 
-# 프로세스를 래핑하는 슈퍼바이즈된 서비스
+# 프로세스를 래핑하는 감독 서비스
 - name: session_manager
   kind: process.service
   process: app:session_handler
@@ -138,11 +138,11 @@ process.send(pid, "update", {status = "approved"})
       max_attempts: 10
 ```
 
-워크플로우는 슈퍼비전 트리를 사용하지 않습니다. 워크플로우 프로바이더(Temporal)가 자동으로 관리합니다. 프로바이더가 영속성, 재시도, 복구를 처리합니다.
+워크플로우는 슈퍼비전 트리를 사용하지 않습니다. 워크플로우 프로바이더(Temporal)가 자동으로 관리하며, 영속성, 재시도, 복구를 모두 처리합니다.
 
 ## 설정
 
-프로세스 정의 (동적으로 생성됨):
+워크플로우 정의 (동적으로 생성됨):
 
 ```yaml
 - name: order_processor

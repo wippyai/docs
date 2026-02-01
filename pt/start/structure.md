@@ -1,16 +1,16 @@
 # YAML e Estrutura do Projeto
 
-Layout do projeto, arquivos de definicao YAML e convencoes de nomenclatura.
+Layout do projeto, arquivos de definição YAML e convenções de nomenclatura.
 
-## Layout de Diretorios
+## Layout de Diretórios
 
 ```
 myapp/
-├── .wippy.yaml          # Configuracao do runtime
-├── wippy.lock           # Configuracao de diretorios fonte
-├── .wippy/              # Modulos instalados
-└── src/                 # Codigo fonte da aplicacao
-    ├── _index.yaml      # Definicoes de entradas
+├── .wippy.yaml          # Configuração do runtime
+├── wippy.lock           # Configuração de diretórios fonte
+├── .wippy/              # Módulos instalados
+└── src/                 # Código fonte da aplicação
+    ├── _index.yaml      # Definições de entradas
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -19,15 +19,15 @@ myapp/
         └── *.lua
 ```
 
-## Arquivos de Definicao YAML
+## Arquivos de Definição YAML
 
 <note>
-Definicoes YAML sao carregadas no registro na inicializacao. O registro e a fonte da verdade - arquivos YAML sao uma forma de popula-lo. Entradas tambem podem vir de outras fontes ou ser criadas programaticamente.
+Definições YAML são carregadas no registro na inicialização. O registro é a fonte da verdade — arquivos YAML são uma forma de populá-lo. Entradas também podem vir de outras fontes ou ser criadas programaticamente.
 </note>
 
 ### Estrutura do Arquivo
 
-Qualquer arquivo YAML com `version` e `namespace` e valido:
+Qualquer arquivo YAML com `version` e `namespace` é válido:
 
 ```yaml
 version: "1.0"
@@ -37,7 +37,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: Busca usuario por ID
+      comment: Busca usuário por ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -47,44 +47,44 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: Endpoint da API de usuarios
+      comment: Endpoint da API de usuários
     method: GET
     path: /users/{id}
     func: get_user
 ```
 
-| Campo | Obrigatorio | Descricao |
+| Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
-| `version` | sim | Versao do schema (atualmente `"1.0"`) |
+| `version` | sim | Versão do schema (atualmente `"1.0"`) |
 | `namespace` | sim | Namespace das entradas deste arquivo |
-| `entries` | sim | Array de definicoes de entradas |
+| `entries` | sim | Array de definições de entradas |
 
-### Convencao de Nomenclatura
+### Convenção de Nomenclatura
 
-Use pontos (`.`) para separacao semantica e underscores (`_`) para palavras:
+Use pontos (`.`) para separação semântica e underscores (`_`) para palavras:
 
 ```yaml
-# Funcao e seu endpoint
-- name: get_user              # A funcao
+# Função e seu endpoint
+- name: get_user              # A função
 - name: get_user.endpoint     # Seu endpoint HTTP
 
-# Multiplos endpoints para a mesma funcao
+# Múltiplos endpoints para a mesma função
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
 # Roteadores
-- name: api.public            # Roteador da API publica
+- name: api.public            # Roteador da API pública
 - name: api.admin             # Roteador da API admin
 ```
 
 <tip>
-Padrao: <code>nome_base.variante</code> - pontos separam partes semanticas, underscores separam palavras dentro de uma parte.
+Padrão: <code>nome_base.variante</code> — pontos separam partes semânticas, underscores separam palavras dentro de uma parte.
 </tip>
 
 ### Namespaces
 
-Namespaces sao identificadores separados por pontos:
+Namespaces são identificadores separados por pontos:
 
 ```
 app
@@ -95,9 +95,9 @@ app.workers
 
 O ID completo da entrada combina namespace e nome: `app.api:get_user`
 
-### Diretorios Fonte
+### Diretórios Fonte
 
-O arquivo `wippy.lock` define de onde o Wippy carrega as definicoes:
+O arquivo `wippy.lock` define de onde o Wippy carrega as definições:
 
 ```yaml
 directories:
@@ -105,11 +105,11 @@ directories:
   src: ./src
 ```
 
-O Wippy escaneia recursivamente esses diretorios em busca de arquivos YAML.
+O Wippy escaneia recursivamente esses diretórios em busca de arquivos YAML.
 
-## Definicoes de Entradas
+## Definições de Entradas
 
-Cada entrada no array `entries`. Propriedades estao no nivel raiz (sem wrapper `data:`):
+Cada entrada no array `entries`. Propriedades estão no nível raiz (sem wrapper `data:`):
 
 ```yaml
 entries:
@@ -134,7 +134,7 @@ entries:
 
 ### Metadados
 
-Use `meta` para informacoes amigaveis para interface:
+Use `meta` para informações amigáveis para interface:
 
 ```yaml
 - name: payment_handler
@@ -145,17 +145,17 @@ Use `meta` para informacoes amigaveis para interface:
   source: file://payment.lua
 ```
 
-Convencao: `meta.title` e `meta.comment` renderizam bem em interfaces de gerenciamento.
+Convenção: `meta.title` e `meta.comment` renderizam bem em interfaces de gerenciamento.
 
-### Entradas de Aplicacao
+### Entradas de Aplicação
 
-Use o kind `registry.entry` para configuracao em nivel de aplicacao:
+Use o kind `registry.entry` para configuração em nível de aplicação:
 
 ```yaml
 - name: config
   kind: registry.entry
   meta:
-    title: Configuracoes da Aplicacao
+    title: Configurações da Aplicação
     type: application
   environment: production
   features:
@@ -165,23 +165,23 @@ Use o kind `registry.entry` para configuracao em nivel de aplicacao:
 
 ## Tipos Comuns de Entradas
 
-| Tipo | Proposito |
+| Tipo | Propósito |
 |------|-----------|
-| `registry.entry` | Dados de proposito geral |
-| `function.lua` | Funcao Lua executavel |
-| `process.lua` | Processo de longa duracao |
+| `registry.entry` | Dados de propósito geral |
+| `function.lua` | Função Lua executável |
+| `process.lua` | Processo de longa duração |
 | `http.service` | Servidor HTTP |
 | `http.router` | Grupo de rotas |
 | `http.endpoint` | Handler HTTP |
 | `process.host` | Supervisor de processos |
 
-Consulte o [Guia de Tipos de Entradas](guide-entry-kinds.md) para referencia completa.
+Consulte o [Guia de Tipos de Entradas](guide-entry-kinds.md) para referência completa.
 
-## Arquivos de Configuracao
+## Arquivos de Configuração
 
 ### .wippy.yaml
 
-Configuracao do runtime na raiz do projeto:
+Configuração do runtime na raiz do projeto:
 
 ```yaml
 logger:
@@ -195,11 +195,11 @@ http:
   address: :8080
 ```
 
-Consulte o [Guia de Configuracao](guide-configuration.md) para todas as opcoes.
+Consulte o [Guia de Configuração](guide-configuration.md) para todas as opções.
 
 ### wippy.lock
 
-Define diretorios fonte:
+Define diretórios fonte:
 
 ```yaml
 directories:
@@ -219,7 +219,7 @@ Referencie entradas pelo ID completo ou nome relativo:
     - app.api:get_user.endpoint
     - app.api:list_orders.endpoint
 
-# Mesmo namespace - apenas use o nome
+# Mesmo namespace — apenas use o nome
 - name: get_user.endpoint
   kind: http.endpoint
   func: get_user
@@ -245,8 +245,8 @@ myapp/
         └── email_sender.lua
 ```
 
-## Veja Tambem
+## Veja Também
 
-- [Guia de Tipos de Entradas](guide-entry-kinds.md) - Tipos de entradas disponiveis
-- [Guia de Configuracao](guide-configuration.md) - Opcoes do runtime
-- [Tipos de Entradas Personalizados](internal-kinds.md) - Implementando handlers (avancado)
+- [Guia de Tipos de Entradas](guide-entry-kinds.md) - Tipos de entradas disponíveis
+- [Guia de Configuração](guide-configuration.md) - Opções do runtime
+- [Tipos de Entradas Personalizados](internal-kinds.md) - Implementando handlers (avançado)

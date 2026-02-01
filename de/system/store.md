@@ -62,7 +62,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## TTL-Verhalten
 
-Beide Stores unterstützen Time-to-Live. Abgelaufene Einträge bleiben kurz bestehen bis die Bereinigung bei `cleanup_interval` läuft. Auf `0` setzen um automatische Bereinigung zu deaktivieren.
+Beide Stores unterstützen Time-to-Live. Abgelaufene Einträge bleiben kurz bestehen, bis die Bereinigung im Intervall `cleanup_interval` läuft. Auf `0` setzen um automatische Bereinigung zu deaktivieren.
 
 ## Lua-API
 

@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-debug、info、warn、errorレベル付きの構造化ロギング。
+debug、info、warn、errorレベル付きの構造化ロギングを提供します。
 
 ## ロード
 
@@ -62,7 +62,7 @@ logger:error("message", {key = "value"})
 
 ### Withフィールド
 
-永続フィールド付きの子ロガーを作成。
+永続フィールド付きの子ロガーを作成します。
 
 ```lua
 local child = logger:with({request_id = id})
@@ -77,7 +77,7 @@ child:info("message")
 
 ### 名前付きロガー
 
-名前付きの子ロガーを作成。
+名前付きの子ロガーを作成します。
 
 ```lua
 local named = logger:named("auth")

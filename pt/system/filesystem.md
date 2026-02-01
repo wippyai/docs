@@ -1,15 +1,15 @@
 # Sistema de Arquivos
 
-Acesso a diretorios e sistemas de arquivos embutidos.
+Acesso a diretórios e sistemas de arquivos embutidos.
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `fs.directory` | Sistema de arquivos baseado em diretorio |
+| `fs.directory` | Sistema de arquivos baseado em diretório |
 | `fs.embed` | Sistema de arquivos embutido somente leitura |
 
-## Sistema de Arquivos de Diretorio
+## Sistema de Arquivos de Diretório
 
 ```yaml
 - name: uploads
@@ -19,16 +19,16 @@ Acesso a diretorios e sistemas de arquivos embutidos.
   mode: "0755"
 ```
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `directory` | string | obrigatorio | Caminho raiz |
-| `auto_init` | bool | false | Cria diretorio se ausente |
-| `mode` | string | 0755 | Modo de permissao Unix (octal) |
+| `directory` | string | obrigatório | Caminho raiz |
+| `auto_init` | bool | false | Cria diretório se ausente |
+| `mode` | string | 0755 | Modo de permissão Unix (octal) |
 
-O modo restringe todas as operacoes de arquivo. Bits de execucao sao adicionados automaticamente quando bits de leitura estao presentes.
+O modo restringe todas as operações de arquivo. Bits de execução são adicionados automaticamente quando bits de leitura estão presentes.
 
 <note>
-Caminhos sao normalizados e validados. Nao e possivel acessar arquivos fora do diretorio raiz configurado.
+Caminhos são normalizados e validados. Não é possível acessar arquivos fora do diretório raiz configurado.
 </note>
 
 ## Sistema de Arquivos Embutido
@@ -38,27 +38,27 @@ Caminhos sao normalizados e validados. Nao e possivel acessar arquivos fora do d
   kind: fs.embed
 ```
 
-Sistemas de arquivos embutidos carregam de recursos de pack usando o ID da entrada. Eles sao somente leitura.
+Sistemas de arquivos embutidos carregam de recursos de pack usando o ID da entrada. Eles são somente leitura.
 
 <warning>
-Sistemas de arquivos embutidos sao um mecanismo interno. Configuracao manual tipicamente nao e necessaria.
+Sistemas de arquivos embutidos são um mecanismo interno. Configuração manual tipicamente não é necessária.
 </warning>
 
-## Operacoes
+## Operações
 
 Ambos os tipos de sistema de arquivos implementam:
 
-| Operacao | Directory | Embed |
+| Operação | Directory | Embed |
 |----------|-----------|-------|
 | Open/Read | Sim | Sim |
 | Stat | Sim | Sim |
 | ReadDir | Sim | Sim |
-| OpenFile (escrita) | Sim | Nao |
-| Remove | Sim | Nao |
-| Mkdir | Sim | Nao |
+| OpenFile (escrita) | Sim | Não |
+| Remove | Sim | Não |
+| Mkdir | Sim | Não |
 
-Operacoes de escrita em sistemas de arquivos embutidos retornam um erro.
+Operações de escrita em sistemas de arquivos embutidos retornam um erro.
 
 ## API Lua
 
-Veja [Modulo Filesystem](lua-fs.md) para operacoes de arquivo.
+Veja [Módulo Filesystem](lua-fs.md) para operações de arquivo.

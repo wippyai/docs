@@ -158,7 +158,6 @@ wippy publish --dry-run
 | `--dry-run` | Проверить без публикации |
 | `--label` | Метка версии |
 | `--release-notes` | Заметки о релизе |
-| `--protected` | Пометить как защищённую |
 | `--registry` | URL реестра |
 
 ## wippy search

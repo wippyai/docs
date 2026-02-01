@@ -1,27 +1,27 @@
-# Publicacion de Modulos
+# Publicación de Módulos
 
-Comparta codigo reutilizable en el Hub de Wippy.
+Comparta código reutilizable en el Hub de Wippy.
 
 ## Prerequisitos
 
 1. Cree una cuenta en [hub.wippy.ai](https://hub.wippy.ai)
-2. Cree una organizacion o unase a una
-3. Registre el nombre de su modulo bajo su organizacion
+2. Cree una organización o únase a una
+3. Registre el nombre de su módulo bajo su organización
 
-## Estructura del Modulo
+## Estructura del Módulo
 
 ```
 mymodule/
-├── wippy.yaml      # Manifiesto del modulo
+├── wippy.yaml      # Manifiesto del módulo
 ├── src/
 │   ├── _index.yaml # Definiciones de entradas
 │   └── *.lua       # Archivos fuente
-└── README.md       # Documentacion (opcional)
+└── README.md       # Documentación (opcional)
 ```
 
 ## wippy.yaml
 
-Manifiesto del modulo:
+Manifiesto del módulo:
 
 ```yaml
 organization: acme
@@ -35,15 +35,15 @@ keywords:
   - utilities
 ```
 
-| Campo | Requerido | Descripcion |
+| Campo | Requerido | Descripción |
 |-------|----------|-------------|
-| `organization` | Si | Nombre de su org en el hub |
-| `module` | Si | Nombre del modulo |
-| `description` | Si | Descripcion corta |
+| `organization` | Sí | Nombre de su org en el hub |
+| `module` | Sí | Nombre del módulo |
+| `description` | Sí | Descripción corta |
 | `license` | No | Identificador SPDX (MIT, Apache-2.0) |
 | `repository` | No | URL del repositorio fuente |
-| `homepage` | No | Pagina del proyecto |
-| `keywords` | No | Palabras clave de busqueda |
+| `homepage` | No | Página del proyecto |
+| `keywords` | No | Palabras clave de búsqueda |
 
 ## Definiciones de Entrada
 
@@ -70,7 +70,7 @@ entries:
 
 ## Dependencias
 
-Declare dependencias de otros modulos:
+Declare dependencias de otros módulos:
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-Restricciones de version:
+Restricciones de versión:
 
-| Restriccion | Significado |
+| Restricción | Significado |
 |------------|---------|
-| `*` | Cualquier version |
-| `1.0.0` | Version exacta |
-| `>=1.0.0` | Version minima |
+| `*` | Cualquier versión |
+| `1.0.0` | Versión exacta |
+| `>=1.0.0` | Versión mínima |
 | `^1.0.0` | Compatible (mismo major) |
 
 ## Requerimientos
 
-Defina configuracion que los consumidores deben proporcionar:
+Defina configuración que los consumidores deben proporcionar:
 
 ```yaml
 entries:
@@ -107,11 +107,11 @@ entries:
     default: "https://api.example.com"
 ```
 
-Los targets especifican donde se inyecta el valor:
+Los targets especifican dónde se inyecta el valor:
 - `entry` - ID completo de entrada a configurar
-- `path` - JSONPath para inyeccion del valor
+- `path` - JSONPath para inyección del valor
 
-Los consumidores configuran via override:
+Los consumidores configuran vía override:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://custom.api.com
@@ -142,7 +142,7 @@ local utils = require("utils")
 
 ## Contratos
 
-Defina interfaces publicas:
+Defina interfaces públicas:
 
 ```yaml
 - name: http_contract
@@ -164,7 +164,7 @@ Defina interfaces publicas:
         post: acme.http:post_handler
 ```
 
-## Flujo de Trabajo de Publicacion
+## Flujo de Trabajo de Publicación
 
 ### 1. Autenticarse
 
@@ -198,15 +198,7 @@ Con notas de release:
 wippy publish --version 1.0.0 --release-notes "Release inicial"
 ```
 
-### Versiones Protegidas
-
-Marque releases de produccion como protegidos (no pueden revocarse):
-
-```bash
-wippy publish --version 1.0.0 --protected
-```
-
-## Usando Modulos Publicados
+## Usando Módulos Publicados
 
 ### Agregar Dependencia
 
@@ -218,7 +210,7 @@ wippy install
 
 ### Configurar Requerimientos
 
-Sobrescribir valores en tiempo de ejecucion:
+Sobrescribir valores en tiempo de ejecución:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://my.api.com
@@ -231,7 +223,7 @@ override:
   acme.http:api_endpoint: "https://my.api.com"
 ```
 
-### Importar en Su Codigo
+### Importar en Su Código
 
 ```yaml
 # su src/_index.yaml
@@ -270,12 +262,12 @@ entries:
   - name: definition
     kind: ns.definition
     meta:
-      title: Modulo Cache
+      title: Módulo Cache
 
   - name: max_size
     kind: ns.requirement
     meta:
-      description: Entradas maximas de cache
+      description: Entradas máximas de cache
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
@@ -328,8 +320,8 @@ wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## Ver Tambien
+## Ver También
 
 - [Referencia CLI](guides/cli.md)
 - [Tipos de Entrada](guides/entry-kinds.md)
-- [Configuracion](guides/configuration.md)
+- [Configuración](guides/configuration.md)

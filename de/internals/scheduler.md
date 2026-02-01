@@ -1,6 +1,6 @@
 # Scheduler
 
-Der Scheduler führt Prozesse mit einem Work-Stealing-Design aus. Worker pflegen lokale Deques und stehlen voneinander wenn sie idle sind.
+Der Scheduler führt Prozesse mit einem Work-Stealing-Design aus. Worker pflegen lokale Deques und stehlen voneinander, wenn sie untätig sind.
 
 ## Process-Interface
 
@@ -106,7 +106,7 @@ stateDiagram-v2
 | Idle | Wartet auf Nachrichten |
 | Complete | Ausführung beendet |
 
-Ein Wakeup-Flag behandelt Races: wenn ein Handler `CompleteYield` aufruft während der Worker noch den Prozess besitzt (Running), setzt er das Flag. Der Worker prüft das Flag nach dem Dispatchen und reiht bei gesetztem Flag neu ein.
+Ein Wakeup-Flag behandelt Race-Conditions: Wenn ein Handler `CompleteYield` aufruft, während der Worker noch den Prozess besitzt (Running), setzt er das Flag. Der Worker prüft das Flag nach dem Dispatchen und reiht bei gesetztem Flag neu ein.
 
 ## Event-Queue
 

@@ -3,16 +3,16 @@
 Hosts de terminal executam scripts Lua com acesso a stdin/stdout/stderr.
 
 <note>
-Um host de terminal executa exatamente um processo por vez. O processo em si e um processo Lua regular com acesso ao contexto de I/O do terminal.
+Um host de terminal executa exatamente um processo por vez. O processo em si é um processo Lua regular com acesso ao contexto de I/O do terminal.
 </note>
 
 ## Tipo de Entrada
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `terminal.host` | Host de sessao de terminal |
+| `terminal.host` | Host de sessão de terminal |
 
-## Configuracao
+## Configuração
 
 ```yaml
 - name: cli_host
@@ -22,31 +22,31 @@ Um host de terminal executa exatamente um processo por vez. O processo em si e u
     auto_start: true
 ```
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `hide_logs` | bool | false | Suprime saida de log para barramento de eventos |
+| `hide_logs` | bool | false | Suprime saída de log para barramento de eventos |
 
 ## Contexto de Terminal
 
 Scripts executando em um host de terminal recebem um contexto de terminal com:
 
-- **stdin** - Leitor de entrada padrao
-- **stdout** - Escritor de saida padrao
-- **stderr** - Escritor de erro padrao
+- **stdin** - Leitor de entrada padrão
+- **stdout** - Escritor de saída padrão
+- **stderr** - Escritor de erro padrão
 - **args** - Argumentos de linha de comando
 
 ## API Lua
 
-O [Modulo IO](lua-io.md) fornece operacoes de terminal:
+O [Módulo IO](lua-io.md) fornece operações de terminal:
 
 ```lua
 local io = require("io")
 
 io.write("Digite o nome: ")
 local name = io.readline()
-io.print("Ola, " .. name)
+io.print("Olá, " .. name)
 
 local args = io.args()
 ```
 
-Funcoes retornam erros se chamadas fora de um contexto de terminal.
+Funções retornam erros se chamadas fora de um contexto de terminal.

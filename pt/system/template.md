@@ -1,35 +1,35 @@
 # Motor de Templates
 
-Renderizacao de templates usando [CloudyKit Jet](https://github.com/CloudyKit/jet).
+Renderização de templates usando [CloudyKit Jet](https://github.com/CloudyKit/jet).
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `template.set` | Conjunto de templates com configuracao compartilhada |
+| `template.set` | Conjunto de templates com configuração compartilhada |
 | `template.jet` | Template individual |
 
 ## Conjuntos de Templates
 
-Um conjunto e um namespace contendo templates relacionados. Templates dentro de um conjunto compartilham configuracao e podem referenciar uns aos outros pelo nome.
+Um conjunto é um namespace contendo templates relacionados. Templates dentro de um conjunto compartilham configuração e podem referenciar uns aos outros pelo nome.
 
 ```yaml
 - name: views
   kind: template.set
 ```
 
-Toda configuracao e opcional com padroes sensiveis:
+Toda configuração é opcional com padrões sensíveis:
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `engine.development_mode` | bool | false | Desabilita cache de templates |
-| `engine.delimiters.left` | string | `{{` | Delimitador de abertura de variavel |
-| `engine.delimiters.right` | string | `}}` | Delimitador de fechamento de variavel |
-| `engine.globals` | map | - | Variaveis disponiveis para todos os templates |
+| `engine.delimiters.left` | string | `{{` | Delimitador de abertura de variável |
+| `engine.delimiters.right` | string | `}}` | Delimitador de fechamento de variável |
+| `engine.globals` | map | - | Variáveis disponíveis para todos os templates |
 
 ## Templates
 
-Templates pertencem a um conjunto e sao identificados pelo nome para resolucao interna.
+Templates pertencem a um conjunto e são identificados pelo nome para resolução interna.
 
 ```yaml
 - name: layout
@@ -50,16 +50,16 @@ Templates pertencem a um conjunto e sao identificados pelo nome para resolucao i
     {{ end }}
 ```
 
-| Campo | Tipo | Obrigatorio | Descricao |
+| Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| `set` | referencia | Sim | Conjunto de templates pai |
-| `source` | string | Sim | Conteudo do template |
+| `set` | referência | Sim | Conjunto de templates pai |
+| `source` | string | Sim | Conteúdo do template |
 
-## Resolucao de Templates
+## Resolução de Templates
 
-Templates referenciam uns aos outros usando nomes, nao IDs de registro. A resolucao funciona como um sistema de arquivos virtual dentro do conjunto:
+Templates referenciam uns aos outros usando nomes, não IDs de registro. A resolução funciona como um sistema de arquivos virtual dentro do conjunto:
 
-1. Por padrao, o nome da entrada do registro (`entry.ID.Name`) se torna o nome do template
+1. Por padrão, o nome da entrada do registro (`entry.ID.Name`) se torna o nome do template
 2. Sobrescreva com `meta.name` para nomenclatura personalizada:
 
 ```yaml
@@ -70,12 +70,12 @@ Templates referenciam uns aos outros usando nomes, nao IDs de registro. A resolu
     name: welcome
   source: |
     {{ include "header" }}
-    Ola {{ user }}!
+    Olá {{ user }}!
 ```
 
-Este template e registrado como `welcome` no conjunto, entao outros templates usam `{{ include "welcome" }}` ou `{{ extends "welcome" }}`.
+Este template é registrado como `welcome` no conjunto, então outros templates usam `{{ include "welcome" }}` ou `{{ extends "welcome" }}`.
 
-## Heranca
+## Herança
 
 Templates podem estender templates pai e sobrescrever blocos:
 
@@ -96,10 +96,10 @@ Templates podem estender templates pai e sobrescrever blocos:
   set: app.views:views
   source: |
     {{ extends "base" }}
-    {{ block title() }}Minha Pagina{{ end }}
-    {{ block body() }}<p>Conteudo aqui</p>{{ end }}
+    {{ block title() }}Minha Página{{ end }}
+    {{ block body() }}<p>Conteúdo aqui</p>{{ end }}
 ```
 
 ## API Lua
 
-Veja [Modulo Template](lua-template.md) para operacoes de renderizacao.
+Veja [Módulo Template](lua-template.md) para operações de renderização.

@@ -1,15 +1,15 @@
 # YAML y Estructura del Proyecto
 
-Organizacion del proyecto, archivos de definicion YAML y convenciones de nomenclatura.
+Organización del proyecto, archivos de definición YAML y convenciones de nomenclatura.
 
 ## Estructura de Directorios
 
 ```
 myapp/
-├── .wippy.yaml          # Configuracion del runtime
-├── wippy.lock           # Configuracion de directorios fuente
-├── .wippy/              # Modulos instalados
-└── src/                 # Codigo fuente de la aplicacion
+├── .wippy.yaml          # Configuración del runtime
+├── wippy.lock           # Configuración de directorios fuente
+├── .wippy/              # Módulos instalados
+└── src/                 # Código fuente de la aplicación
     ├── _index.yaml      # Definiciones de entradas
     ├── api/
     │   ├── _index.yaml
@@ -19,15 +19,15 @@ myapp/
         └── *.lua
 ```
 
-## Archivos de Definicion YAML
+## Archivos de Definición YAML
 
 <note>
-Las definiciones YAML se cargan en el registro al iniciar. El registro es la fuente de verdad - los archivos YAML son una forma de poblarlo. Las entradas tambien pueden provenir de otras fuentes o crearse programaticamente.
+Las definiciones YAML se cargan en el registro al iniciar. El registro es la fuente de verdad; los archivos YAML son una forma de poblarlo. Las entradas también pueden provenir de otras fuentes o crearse programáticamente.
 </note>
 
 ### Estructura del Archivo
 
-Cualquier archivo YAML con `version` y `namespace` es valido:
+Cualquier archivo YAML con `version` y `namespace` es válido:
 
 ```yaml
 version: "1.0"
@@ -53,33 +53,33 @@ entries:
     func: get_user
 ```
 
-| Campo | Requerido | Descripcion |
+| Campo | Requerido | Descripción |
 |-------|----------|-------------|
-| `version` | si | Version del esquema (actualmente `"1.0"`) |
-| `namespace` | si | Namespace de entradas para este archivo |
-| `entries` | si | Array de definiciones de entradas |
+| `version` | sí | Versión del esquema (actualmente `"1.0"`) |
+| `namespace` | sí | Namespace de entradas para este archivo |
+| `entries` | sí | Array de definiciones de entradas |
 
-### Convencion de Nomenclatura
+### Convención de Nomenclatura
 
-Use puntos (`.`) para separacion semantica y guiones bajos (`_`) para palabras:
+Use puntos (`.`) para separación semántica y guiones bajos (`_`) para palabras:
 
 ```yaml
-# Funcion y su endpoint
-- name: get_user              # La funcion
+# Función y su endpoint
+- name: get_user              # La función
 - name: get_user.endpoint     # Su endpoint HTTP
 
-# Multiples endpoints para la misma funcion
+# Múltiples endpoints para la misma función
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
 # Routers
-- name: api.public            # Router de API publica
+- name: api.public            # Router de API pública
 - name: api.admin             # Router de API admin
 ```
 
 <tip>
-Patron: <code>nombre_base.variante</code> - los puntos separan partes semanticas, los guiones bajos separan palabras dentro de una parte.
+Patrón: <code>nombre_base.variante</code> - los puntos separan partes semánticas, los guiones bajos separan palabras dentro de una parte.
 </tip>
 
 ### Namespaces
@@ -97,7 +97,7 @@ El ID completo de entrada combina namespace y nombre: `app.api:get_user`
 
 ### Directorios Fuente
 
-El archivo `wippy.lock` define de donde Wippy carga las definiciones:
+El archivo `wippy.lock` define de dónde Wippy carga las definiciones:
 
 ```yaml
 directories:
@@ -109,7 +109,7 @@ Wippy escanea estos directorios recursivamente buscando archivos YAML.
 
 ## Definiciones de Entrada
 
-Cada entrada en el array `entries`. Las propiedades estan al nivel raiz (sin envoltorio `data:`):
+Cada entrada en el array `entries`. Las propiedades están al nivel raíz (sin envoltorio `data:`):
 
 ```yaml
 entries:
@@ -134,7 +134,7 @@ entries:
 
 ### Metadatos
 
-Use `meta` para informacion amigable para UI:
+Use `meta` para información amigable para la UI:
 
 ```yaml
 - name: payment_handler
@@ -145,17 +145,17 @@ Use `meta` para informacion amigable para UI:
   source: file://payment.lua
 ```
 
-Convencion: `meta.title` y `meta.comment` se renderizan bien en interfaces de gestion.
+Convención: `meta.title` y `meta.comment` se renderizan bien en interfaces de gestión.
 
-### Entradas de Aplicacion
+### Entradas de Aplicación
 
-Use el kind `registry.entry` para configuracion a nivel de aplicacion:
+Use el kind `registry.entry` para configuración a nivel de aplicación:
 
 ```yaml
 - name: config
   kind: registry.entry
   meta:
-    title: Configuracion de Aplicacion
+    title: Configuración de Aplicación
     type: application
   environment: production
   features:
@@ -165,23 +165,23 @@ Use el kind `registry.entry` para configuracion a nivel de aplicacion:
 
 ## Tipos de Entrada Comunes
 
-| Tipo | Proposito |
+| Tipo | Propósito |
 |------|---------|
-| `registry.entry` | Datos de proposito general |
-| `function.lua` | Funcion Lua invocable |
-| `process.lua` | Proceso de larga duracion |
+| `registry.entry` | Datos de propósito general |
+| `function.lua` | Función Lua invocable |
+| `process.lua` | Proceso de larga duración |
 | `http.service` | Servidor HTTP |
 | `http.router` | Grupo de rutas |
 | `http.endpoint` | Manejador HTTP |
 | `process.host` | Supervisor de procesos |
 
-Consulte la [Guia de Tipos de Entrada](guide-entry-kinds.md) para referencia completa.
+Consulte la [Guía de Tipos de Entrada](guide-entry-kinds.md) para la referencia completa.
 
-## Archivos de Configuracion
+## Archivos de Configuración
 
 ### .wippy.yaml
 
-Configuracion del runtime en la raiz del proyecto:
+Configuración del runtime en la raíz del proyecto:
 
 ```yaml
 logger:
@@ -195,7 +195,7 @@ http:
   address: :8080
 ```
 
-Consulte la [Guia de Configuracion](guide-configuration.md) para todas las opciones.
+Consulte la [Guía de Configuración](guide-configuration.md) para todas las opciones.
 
 ### wippy.lock
 
@@ -245,8 +245,8 @@ myapp/
         └── email_sender.lua
 ```
 
-## Ver Tambien
+## Ver También
 
-- [Guia de Tipos de Entrada](guide-entry-kinds.md) - Tipos de entrada disponibles
-- [Guia de Configuracion](guide-configuration.md) - Opciones del runtime
+- [Guía de Tipos de Entrada](guide-entry-kinds.md) - Tipos de entrada disponibles
+- [Guía de Configuración](guide-configuration.md) - Opciones del runtime
 - [Tipos de Entrada Personalizados](internal-kinds.md) - Implementar manejadores (avanzado)

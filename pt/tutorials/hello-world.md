@@ -1,10 +1,10 @@
 # Hello World
 
-Sua primeira aplicacao Wippy - uma API HTTP simples que retorna JSON.
+Sua primeira aplicação Wippy - uma API HTTP simples que retorna JSON.
 
 ## O Que Vamos Construir
 
-Uma API web minima com um endpoint:
+Uma API web mínima com um endpoint:
 
 ```
 GET /hello → {"message": "hello world"}
@@ -16,18 +16,18 @@ GET /hello → {"message": "hello world"}
 hello-world/
 ├── wippy.lock           # Arquivo lock gerado
 └── src/
-    ├── _index.yaml      # Definicoes de entradas
-    └── hello.lua        # Codigo do handler
+    ├── _index.yaml      # Definições de entradas
+    └── hello.lua        # Código do handler
 ```
 
-## Passo 1: Criar Diretorio do Projeto
+## Passo 1: Criar Diretório do Projeto
 
 ```bash
 mkdir hello-world && cd hello-world
 mkdir src
 ```
 
-## Passo 2: Definicoes de Entradas
+## Passo 2: Definições de Entradas
 
 Crie `src/_index.yaml`:
 
@@ -50,7 +50,7 @@ entries:
       server: gateway
     prefix: /
 
-  # Funcao handler
+  # Função handler
   - name: hello
     kind: function.lua
     source: file://hello.lua
@@ -72,10 +72,10 @@ entries:
 
 1. `gateway` - Servidor HTTP escutando na porta 8080
 2. `api` - Router anexado ao gateway via `meta.server`
-3. `hello` - Funcao Lua que processa requisicoes
-4. `hello.endpoint` - Roteia `GET /hello` para a funcao
+3. `hello` - Função Lua que processa requisições
+4. `hello.endpoint` - Roteia `GET /hello` para a função
 
-## Passo 3: Codigo do Handler
+## Passo 3: Código do Handler
 
 Crie `src/hello.lua`:
 
@@ -95,7 +95,7 @@ return {
 }
 ```
 
-O modulo `http` fornece acesso aos objetos request/response. A funcao retorna uma tabela com o metodo `handler` exportado.
+O módulo `http` fornece acesso aos objetos request/response. A função retorna uma tabela com o método `handler` exportado.
 
 ## Passo 4: Inicializar e Executar
 
@@ -103,11 +103,11 @@ O modulo `http` fornece acesso aos objetos request/response. A funcao retorna um
 # Gerar arquivo lock a partir do source
 wippy init
 
-# Iniciar o runtime (-c para saida colorida no console)
+# Iniciar o runtime (-c para saída colorida no console)
 wippy run -c
 ```
 
-Voce vera uma saida como:
+Você verá uma saída como:
 
 ```
 ╦ ╦╦╔═╗╔═╗╦ ╦  Adaptive Application Runtime
@@ -132,23 +132,23 @@ Resposta:
 
 ## Como Funciona
 
-1. `gateway` aceita a conexao TCP na porta 8080
+1. `gateway` aceita a conexão TCP na porta 8080
 2. `api` router faz match do prefixo de caminho `/`
 3. `hello.endpoint` faz match de `GET /hello`
-4. funcao `hello` executa e escreve a resposta JSON
+4. função `hello` executa e escreve a resposta JSON
 
-## Referencia CLI
+## Referência CLI
 
-| Comando | Descricao |
+| Comando | Descrição |
 |---------|-----------|
 | `wippy init` | Gerar arquivo lock a partir de `src/` |
 | `wippy run` | Iniciar runtime a partir do arquivo lock |
-| `wippy run -c` | Iniciar com saida colorida no console |
+| `wippy run -c` | Iniciar com saída colorida no console |
 | `wippy run -v` | Iniciar com logging verbose de debug |
 | `wippy run -s` | Iniciar em modo silencioso (sem logs no console) |
 
-## Proximos Passos
+## Próximos Passos
 
-- [Echo Service](echo-service.md) - Tratar parametros de requisicao
+- [Echo Service](echo-service.md) - Tratar parâmetros de requisição
 - [Task Queue](task-queue.md) - REST API com processamento em background
-- [HTTP Router](http-router.md) - Padroes de roteamento
+- [HTTP Router](http-router.md) - Padrões de roteamento

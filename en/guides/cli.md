@@ -158,7 +158,6 @@ Reads from `wippy.yaml` in current directory.
 | `--dry-run` | Validate without publishing |
 | `--label` | Version label |
 | `--release-notes` | Release notes |
-| `--protected` | Mark as protected |
 | `--registry` | Registry URL |
 
 ## wippy search

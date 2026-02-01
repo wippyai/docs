@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-I/Oストリームを完全に制御して外部コマンドとシェルスクリプトを実行。
+I/Oストリームを完全に制御して外部コマンドとシェルスクリプトを実行します。
 
 エグゼキュータの設定については[エグゼキュータ](system-exec.md)を参照。
 
@@ -16,7 +16,7 @@ local exec = require("exec")
 
 ## エグゼキュータの取得
 
-IDでプロセスエグゼキュータリソースを取得:
+IDでプロセスエグゼキュータリソースを取得します:
 
 ```lua
 local executor, err = exec.get("app:exec")
@@ -40,7 +40,7 @@ executor:release()
 
 ## プロセスの作成
 
-指定されたコマンドで新しいプロセスを作成:
+指定されたコマンドで新しいプロセスを作成します:
 
 ```lua
 -- シンプルなコマンド
@@ -80,7 +80,7 @@ local proc = executor:exec("./deploy.sh production", {
 
 ## start / wait
 
-プロセスを開始して完了を待機。
+プロセスを開始して完了を待機します。
 
 ```lua
 local proc = executor:exec("./build.sh")
@@ -102,7 +102,7 @@ end
 
 ## stdout_stream / stderr_stream
 
-プロセス出力を読み取るストリームを取得。
+プロセス出力を読み取るストリームを取得します。
 
 ```lua
 local proc = executor:exec("./process-data.sh")
@@ -143,7 +143,7 @@ return result
 
 ## write_stdin
 
-プロセスのstdinにデータを書き込み。
+プロセスのstdinにデータを書き込みます。
 
 ```lua
 -- コマンドにデータをパイプ
@@ -166,7 +166,7 @@ stdout:close()
 
 ## signal / close
 
-シグナルを送信またはプロセスを閉じる。
+シグナルを送信またはプロセスを閉じます。
 
 ```lua
 local proc = executor:exec("./long-running-server.sh")
@@ -187,7 +187,7 @@ proc:signal(SIGINT)
 
 ## 権限
 
-Exec操作はセキュリティポリシー評価の対象。
+Exec操作はセキュリティポリシー評価の対象です。
 
 | アクション | リソース | 説明 |
 |--------|----------|-------------|

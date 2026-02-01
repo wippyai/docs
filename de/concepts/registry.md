@@ -1,6 +1,6 @@
 # Registry
 
-Die Registry ist Wippys zentraler Konfigurationsspeicher. Alle Definitionen — Entry Points, Dienste, Ressourcen — leben hier, und Änderungen propagieren reaktiv durch das System.
+Die Registry ist Wippys zentraler Konfigurationsspeicher. Alle Definitionen — Einstiegspunkte, Dienste, Ressourcen — befinden sich hier, und Änderungen werden reaktiv durch das System weitergegeben.
 
 ## Einträge
 
@@ -17,13 +17,13 @@ Jeder Eintrag hat eine `ID` (namespace:name-Format), einen `kind`, der seinen Ha
 
 ## Kind-Handler
 
-Wenn ein Eintrag übermittelt wird, bestimmt sein `kind`, welcher Handler ihn verarbeitet. Der Handler validiert die Konfiguration und erstellt Runtime-Ressourcen — ein `http.service`-Eintrag startet einen HTTP-Server, ein `function.lua`-Eintrag erstellt einen Funktionspool, ein `sql.database`-Eintrag stellt einen Connection-Pool her. Siehe [Entry-Typen-Anleitung](guide-entry-kinds.md) für verfügbare Kinds und [Benutzerdefinierte Entry-Typen](internal-kinds.md) für die Implementierung von Handlern.
+Wenn ein Eintrag übermittelt wird, bestimmt sein `kind`, welcher Handler ihn verarbeitet. Der Handler validiert die Konfiguration und erstellt Laufzeit-Ressourcen — ein `http.service`-Eintrag startet einen HTTP-Server, ein `function.lua`-Eintrag erstellt einen Funktionspool, ein `sql.database`-Eintrag richtet einen Verbindungspool ein. Siehe [Entry-Typen-Anleitung](guide-entry-kinds.md) für verfügbare Typen und [Benutzerdefinierte Entry-Typen](internal-kinds.md) für die Implementierung von Handlern.
 
 ## Live-Updates
 
-Die Registry unterstützt Laufzeitänderungen — Einträge hinzufügen, aktualisieren oder entfernen, während das System läuft. Änderungen fließen durch den Event-Bus, wo Listener sie validieren oder ablehnen können, und Transaktionen stellen Atomizität sicher. Versionshistorie ermöglicht Rollback.
+Die Registry unterstützt Änderungen zur Laufzeit — Einträge hinzufügen, aktualisieren oder entfernen, während das System läuft. Änderungen fließen durch den Ereignisbus, wo Listener sie validieren oder ablehnen können, und Transaktionen stellen Atomarität sicher. Die Versionshistorie ermöglicht das Zurücksetzen auf frühere Versionen.
 
-YAML-Definitionsdateien sind serialisierte Registry-Snapshots, die beim Start geladen werden. Siehe [Registry-Modul](lua-registry.md) für programmatischen Zugriff.
+YAML-Definitionsdateien sind serialisierte Registry-Momentaufnahmen, die beim Start geladen werden. Siehe [Registry-Modul](lua-registry.md) für programmatischen Zugriff.
 
 ## Siehe auch
 

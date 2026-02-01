@@ -1,20 +1,20 @@
 # Lua-Laufzeitumgebung
 
-Die primare Berechnungslaufzeitumgebung von Wippy, optimiert fur I/O-gebundene und Geschaftslogik-Workloads. Code lauft in isolierten Prozessen, die uber Nachrichtenubergabe kommunizieren - kein gemeinsamer Speicher, keine Locks.
+Die primäre Laufzeitumgebung von Wippy, optimiert für E/A-gebundene Workloads und Geschäftslogik. Code läuft in isolierten Prozessen, die über Nachrichtenübergabe kommunizieren - kein gemeinsamer Speicher, keine Sperren.
 
-Wippy ist als polyglotte Laufzeitumgebung konzipiert. Wahrend Lua die primare Sprache ist, werden zukunftige Versionen zusatzliche Sprachen uber WebAssembly und Temporal-Integration fur rechenintensive oder spezialisierte Workloads unterstutzen.
+Wippy ist als polyglotte Laufzeitumgebung konzipiert. Während Lua die primäre Sprache ist, werden zukünftige Versionen zusätzliche Sprachen über WebAssembly und Temporal-Integration für rechenintensive oder spezialisierte Workloads unterstützen.
 
 ## Prozesse
 
-Ihr Lua-Code lauft innerhalb von **Prozessen** - isolierten Ausfuhrungskontexten, die vom Scheduler verwaltet werden. Jeder Prozess:
+Ihr Lua-Code läuft innerhalb von **Prozessen** - isolierten Ausführungskontexten, die vom Scheduler verwaltet werden. Jeder Prozess:
 
 - Hat seinen eigenen Speicherbereich
-- Gibt bei blockierenden Operationen ab (I/O, Channels)
-- Kann uberwacht und beaufsichtigt werden
+- Gibt bei blockierenden Operationen ab (E/A, Channels)
+- Kann überwacht und beaufsichtigt werden
 - Skaliert auf Tausende pro Maschine
 
 <note>
-Ein typischer Lua-Prozess hat einen Basis-Speicheroverhead von ca. 13 KB.
+Ein typischer Lua-Prozess hat einen Basis-Speicher-Overhead von ca. 13 KB.
 </note>
 
 ```lua
@@ -22,11 +22,11 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-Siehe [Prozessverwaltung](lua-process.md) fur Spawning, Linking und Supervision.
+Siehe [Prozessverwaltung](lua-process.md) für Spawning, Linking und Überwachung.
 
 ## Channels
 
-Go-ahnliche Channels fur Kommunikation:
+Go-ähnliche Channels für Kommunikation:
 
 ```lua
 local ch = channel.new()        -- ungepuffert
@@ -36,11 +36,11 @@ ch:send(value)                  -- blockiert bis empfangen
 local val, ok = ch:receive()    -- blockiert bis bereit
 ```
 
-Siehe [Channels](lua-channel.md) fur Select und Muster.
+Siehe [Channels](lua-channel.md) für Select und Muster.
 
 ## Coroutinen
 
-Innerhalb eines Prozesses konnen Sie leichtgewichtige Coroutinen starten:
+Innerhalb eines Prozesses können Sie leichtgewichtige Coroutinen starten:
 
 ```lua
 coroutine.spawn(function()
@@ -51,7 +51,7 @@ end)
 do_other_work()  -- setzt sofort fort
 ```
 
-Gespawnte Coroutinen werden vom Scheduler verwaltet - kein manuelles yield/resume.
+Gespawnte Coroutinen werden vom Scheduler verwaltet - kein manuelles Yield/Resume.
 
 ## Select
 
@@ -75,12 +75,12 @@ end
 
 ## Globale Variablen
 
-Diese sind immer ohne require verfugbar:
+Diese sind immer ohne require verfügbar:
 
 - `process` - Prozessverwaltung und Nachrichtenaustausch
-- `channel` - Go-ahnliche Channels
+- `channel` - Go-ähnliche Channels
 - `os` - Zeit- und Systemfunktionen
-- `coroutine` - leichtgewichtige Nebenlaufigkeit
+- `coroutine` - leichtgewichtige Nebenläufigkeit
 
 ## Module
 
@@ -90,19 +90,19 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Verfugbare Module hangen von der Entry-Konfiguration ab. Siehe [Entry-Definitionen](lua-entries.md).
+Verfügbare Module hängen von der Entry-Konfiguration ab. Siehe [Entry-Definitionen](lua-entries.md).
 
 ## Externe Bibliotheken
 
-Wippy verwendet Lua 5.3-Syntax mit einem [graduellen Typsystem](lua-types.md), inspiriert von Luau. Typen sind erstklassige Laufzeitwerte - aufrufbar zur Validierung, als Argumente ubergebbar und introspektierbar - was den Bedarf an Schema-Bibliotheken wie Zod oder Pydantic ersetzt.
+Wippy verwendet Lua 5.3-Syntax mit einem [graduellen Typsystem](lua-types.md), inspiriert von Luau. Typen sind erstklassige Laufzeitwerte - aufrufbar zur Validierung, als Argumente übergebbar und introspektierbar - was den Bedarf an Schema-Bibliotheken wie Zod oder Pydantic ersetzt.
 
-Externe Lua-Bibliotheken (LuaRocks, etc.) werden nicht unterstutzt. Die Laufzeitumgebung stellt ihr eigenes Modulsystem mit integrierten Erweiterungen fur I/O, Netzwerk und Systemintegration bereit.
+Externe Lua-Bibliotheken (LuaRocks, etc.) werden nicht unterstützt. Die Laufzeitumgebung stellt ihr eigenes Modulsystem mit integrierten Erweiterungen für E/A, Netzwerk und Systemintegration bereit.
 
-Fur benutzerdefinierte Erweiterungen siehe [Module](internal-modules.md) in der Internals-Dokumentation.
+Für benutzerdefinierte Erweiterungen siehe [Module](internal-modules.md) in der Internals-Dokumentation.
 
 ## Fehlerbehandlung
 
-Funktionen geben `result, error`-Paare zuruck:
+Funktionen geben `result, error`-Paare zurück:
 
 ```lua
 local data, err = json.decode(input)
@@ -113,9 +113,9 @@ end
 
 Siehe [Fehlerbehandlung](lua-errors.md) fur Muster.
 
-## Nachste Schritte
+## Nächste Schritte
 
 - [Entry-Definitionen](lua-entries.md) - Einstiegspunkte konfigurieren
 - [Channels](lua-channel.md) - Channel-Muster
-- [Prozessverwaltung](lua-process.md) - Spawning und Supervision
-- [Funktionen](lua-funcs.md) - Prozessubergreifende Aufrufe
+- [Prozessverwaltung](lua-process.md) - Spawning und Überwachung
+- [Funktionen](lua-funcs.md) - Prozessübergreifende Aufrufe

@@ -1,10 +1,10 @@
 # Testes
 
-Escreva e execute testes para suas aplicacoes Wippy usando o framework de testes integrado.
+Escreva e execute testes para suas aplicações Wippy usando o framework de testes integrado.
 
 ## Descoberta de Testes
 
-Testes sao descobertos por metadados. O executor de testes encontra todas as entradas do registro com `meta.type = "test"` e as executa.
+Testes são descobertos por metadados. O executor de testes encontra todas as entradas do registro com `meta.type = "test"` e as executa.
 
 ```bash
 wippy run app:test_runner app:terminal
@@ -14,7 +14,7 @@ O executor usa `registry.find({["meta.type"] = "test"})` para localizar testes e
 
 ## Definindo Testes
 
-Registre funcoes de teste em `_index.yaml` com `meta.type = "test"`:
+Registre funções de teste em `_index.yaml` com `meta.type = "test"`:
 
 ```yaml
 version: "1.0"
@@ -37,12 +37,12 @@ entries:
 
 - `meta.type`: Deve ser `"test"` para descoberta de testes
 - `meta.suite`: Agrupa testes relacionados (ex: "errors", "json")
-- `meta.order`: Ordem de execucao dentro da suite (padrao: 0)
-- `meta.description`: Descricao do teste (exibida na saida)
+- `meta.order`: Ordem de execução dentro da suite (padrão: 0)
+- `meta.description`: Descrição do teste (exibida na saída)
 
-## Escrevendo Funcoes de Teste
+## Escrevendo Funções de Teste
 
-Funcoes de teste devem retornar `true` em caso de sucesso ou lancar um erro em caso de falha:
+Funções de teste devem retornar `true` em caso de sucesso ou lançar um erro em caso de falha:
 
 ```lua
 -- tests/test/errors/new.lua
@@ -76,7 +76,7 @@ return { main = main }
 
 ## Biblioteca de Assertions
 
-Crie um modulo de assertions reutilizavel em `tests/lib/assert.lua`:
+Crie um módulo de assertions reutilizável em `tests/lib/assert.lua`:
 
 ```lua
 local M = {}
@@ -226,7 +226,7 @@ entries:
 
 ## Testando Tratamento de Erros
 
-Funcoes Wippy retornam pares `(result, error)`. Teste tanto caminhos de sucesso quanto de erro:
+Funções Wippy retornam pares `(result, error)`. Teste tanto caminhos de sucesso quanto de erro:
 
 ```lua
 local assert = require("assert2")
@@ -249,7 +249,7 @@ end
 return { main = main }
 ```
 
-**Assertions de padrao de erro:**
+**Assertions de padrão de erro:**
 
 ```lua
 local function main()
@@ -259,12 +259,12 @@ local function main()
     assert.eq(err:kind(), errors.INVALID, "INVALID kind")
     assert.eq(err:retryable(), false, "not retryable")
 
-    -- Verificar se mensagem de erro contem texto
+    -- Verificar se mensagem de erro contém texto
     local _, compress_err = compress.gzip.encode("")
     assert.not_nil(compress_err, "error returned")
     assert.contains(tostring(compress_err), "empty", "error mentions empty")
 
-    -- Verificar se funcao lanca excecao
+    -- Verificar se função lança exceção
     assert.throws(function()
         error("something went wrong")
     end, "should throw")
@@ -316,11 +316,11 @@ entries:
       assert2: app.lib:assert
 ```
 
-Testes na mesma suite sao agrupados na saida e podem ser ordenados com `meta.order`.
+Testes na mesma suite são agrupados na saída e podem ser ordenados com `meta.order`.
 
-## Implementacao do Executor de Testes
+## Implementação do Executor de Testes
 
-O executor de testes e um processo que descobre e executa testes:
+O executor de testes é um processo que descobre e executa testes:
 
 ```yaml
 # src/_index.yaml
@@ -338,7 +338,7 @@ entries:
       - time
 ```
 
-Implementacao basica do executor:
+Implementação básica do executor:
 
 ```lua
 -- runner.lua
@@ -381,7 +381,7 @@ local function main()
         return 0
     end
 
-    -- Filtrar por padroes
+    -- Filtrar por padrões
     if #args > 0 then
         local filtered = {}
         for _, entry in ipairs(entries) do
@@ -446,12 +446,12 @@ return { main = main }
 
 O executor de testes real em `/home/wolfy-j/projects/wippy/tests/app/src/runner.lua` inclui:
 
-- Agrupamento e ordenacao de suites
-- Exibicao de progresso ao vivo com spinners
+- Agrupamento e ordenação de suites
+- Exibição de progresso ao vivo com spinners
 - Barras de progresso
-- Logica de retry para corridas de registro de pool
-- Saida colorida
-- Relatorios detalhados de falhas
+- Lógica de retry para corridas de registro de pool
+- Saída colorida
+- Relatórios detalhados de falhas
 
 ## Executando Testes
 
@@ -461,7 +461,7 @@ Executar todos os testes:
 wippy run app:test_runner app:terminal
 ```
 
-Filtrar testes por padrao:
+Filtrar testes por padrão:
 
 ```bash
 # Executar testes contendo "errors"
@@ -471,9 +471,9 @@ wippy run app:test_runner app:terminal -- errors
 wippy run app:test_runner app:terminal -- channel time
 ```
 
-O executor faz match de padroes contra IDs de entrada de teste usando `entry.id:find(pattern, 1, true)`.
+O executor faz match de padrões contra IDs de entrada de teste usando `entry.id:find(pattern, 1, true)`.
 
-## Exemplo de Saida de Teste
+## Exemplo de Saída de Teste
 
 ```
   Running Tests
@@ -495,9 +495,9 @@ O executor faz match de padroes contra IDs de entrada de teste usando `entry.id:
   22 passed  1 failed  50ms
 ```
 
-## Padroes de Teste
+## Padrões de Teste
 
-**Operacoes de channel:**
+**Operações de channel:**
 
 ```lua
 local function main()
@@ -510,7 +510,7 @@ local function main()
 end
 ```
 
-**Chamadas de funcao:**
+**Chamadas de função:**
 
 ```lua
 local function main()
@@ -547,36 +547,36 @@ myapp/
 ├── tests/
 │   ├── lib/
 │   │   ├── _index.yaml        # Registro da biblioteca assert
-│   │   └── assert.lua         # Funcoes de assertion
+│   │   └── assert.lua         # Funções de assertion
 │   ├── test/
 │   │   ├── errors/
 │   │   │   ├── _index.yaml    # Metadados dos testes de erro
-│   │   │   ├── new.lua        # Testar criacao de erros
-│   │   │   ├── patterns.lua   # Testar padroes de erro
+│   │   │   ├── new.lua        # Testar criação de erros
+│   │   │   ├── patterns.lua   # Testar padrões de erro
 │   │   │   └── wrap.lua       # Testar wrapping de erros
 │   │   ├── channel/
 │   │   │   ├── _index.yaml    # Metadados dos testes de channel
-│   │   │   ├── basic.lua      # Testar operacoes basicas
+│   │   │   ├── basic.lua      # Testar operações básicas
 │   │   │   └── buffered.lua   # Testar channels com buffer
 │   │   └── ...
 │   ├── _index.yaml            # Registro do executor de testes
-│   └── runner.lua             # Implementacao do executor de testes
+│   └── runner.lua             # Implementação do executor de testes
 └── src/
-    └── ...                     # Codigo da aplicacao
+    └── ...                     # Código da aplicação
 ```
 
 ## Pontos-Chave
 
-1. Testes sao descobertos via `meta.type = "test"` nas entradas do registro
-2. Funcoes de teste devem retornar `true` ou lancar erros
+1. Testes são descobertos via `meta.type = "test"` nas entradas do registro
+2. Funções de teste devem retornar `true` ou lançar erros
 3. Use `meta.suite` para agrupar testes relacionados
-4. Use `meta.order` para controlar ordem de execucao dentro de suites
-5. Teste tanto caminhos de sucesso quanto de erro com padroes de retorno `(result, error)`
-6. Filtre testes passando padroes como argumentos de linha de comando
+4. Use `meta.order` para controlar ordem de execução dentro de suites
+5. Teste tanto caminhos de sucesso quanto de erro com padrões de retorno `(result, error)`
+6. Filtre testes passando padrões como argumentos de linha de comando
 7. O executor de testes usa `registry.find()` e `funcs.call()` para executar testes
 
-## Proximos Passos
+## Próximos Passos
 
-- [Error Handling](lua-errors.md) - Padroes de erro e assertions
+- [Error Handling](lua-errors.md) - Padrões de erro e assertions
 - [Registry](lua-registry.md) - Consultas e filtragem de registro
-- [Functions](concept-functions.md) - Chamadas e execucao de funcoes
+- [Functions](concept-functions.md) - Chamadas e execução de funções
