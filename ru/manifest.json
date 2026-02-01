@@ -1,0 +1,185 @@
+[
+  {
+    "title": "Начало работы",
+    "children": [
+      {"title": "Что такое Wippy", "path": "start/about"},
+      {"title": "Установка", "path": "start/installation"},
+      {"title": "Структура проекта", "path": "start/structure"}
+    ]
+  },
+  {
+    "title": "Руководства",
+    "children": [
+      {"title": "CLI", "path": "guides/cli"},
+      {"title": "Конфигурация", "path": "guides/configuration"},
+      {"title": "Типы записей", "path": "guides/entry-kinds"},
+      {"title": "Наблюдаемость", "path": "guides/observability"},
+      {"title": "Потребители очередей", "path": "guides/queue-consumers"},
+      {"title": "Супервизия", "path": "guides/supervision"},
+      {"title": "Публикация", "path": "guides/publishing"}
+    ]
+  },
+  {
+    "title": "Основные концепции",
+    "children": [
+      {"title": "Модель процессов", "path": "concepts/process-model"},
+      {"title": "Вычислительные единицы", "path": "concepts/compute-units"},
+      {"title": "Реестр", "path": "concepts/registry"},
+      {"title": "Функции", "path": "concepts/functions"},
+      {"title": "Воркфлоу", "path": "concepts/workflows"}
+    ]
+  },
+  {
+    "title": "Lua Runtime",
+    "children": [
+      {"title": "Обзор", "path": "lua/overview"},
+      {"title": "Типы", "path": "lua/types"},
+      {"title": "Записи", "path": "lua/entries"},
+      {
+        "title": "Ядро",
+        "children": [
+          {"title": "Базовые функции", "path": "lua/core/base"},
+          {"title": "Ошибки", "path": "lua/core/errors"},
+          {"title": "Время", "path": "lua/core/time"},
+          {"title": "Каналы", "path": "lua/core/channel"},
+          {"title": "Процессы", "path": "lua/core/process"},
+          {"title": "Функции", "path": "lua/core/funcs"},
+          {"title": "Future", "path": "lua/core/future"},
+          {"title": "Потоки", "path": "lua/core/stream"},
+          {"title": "Контекст", "path": "lua/core/context"},
+          {"title": "События", "path": "lua/core/events"},
+          {"title": "Реестр", "path": "lua/core/registry"},
+          {"title": "Контракты", "path": "lua/core/contract"}
+        ]
+      },
+      {
+        "title": "Форматы данных",
+        "children": [
+          {"title": "JSON", "path": "lua/data/json"},
+          {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "Base64", "path": "lua/data/base64"},
+          {"title": "Сжатие", "path": "lua/data/compress"},
+          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "Excel", "path": "lua/data/excel"}
+        ]
+      },
+      {
+        "title": "HTTP и веб",
+        "children": [
+          {"title": "HTTP", "path": "lua/http/http"},
+          {"title": "HTTP клиент", "path": "lua/http/client"},
+          {"title": "WebSocket", "path": "lua/http/websocket"},
+          {"title": "HTML", "path": "lua/http/html"}
+        ]
+      },
+      {
+        "title": "Хранилища",
+        "children": [
+          {"title": "SQL", "path": "lua/storage/sql"},
+          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Файловая система", "path": "lua/storage/filesystem"},
+          {"title": "Облачное хранилище", "path": "lua/storage/cloud"},
+          {"title": "Очереди", "path": "lua/storage/queue"}
+        ]
+      },
+      {
+        "title": "Система",
+        "children": [
+          {"title": "Системные функции", "path": "lua/system/system"},
+          {"title": "Окружение", "path": "lua/system/env"},
+          {"title": "Логгер", "path": "lua/system/logger"},
+          {"title": "Ввод/вывод", "path": "lua/system/io"},
+          {"title": "Метрики", "path": "lua/system/metrics"},
+          {"title": "Системное время", "path": "lua/system/ostime"}
+        ]
+      },
+      {
+        "title": "Текст и шаблоны",
+        "children": [
+          {"title": "Текст", "path": "lua/text/text"},
+          {"title": "Шаблоны", "path": "lua/text/template"},
+          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+        ]
+      },
+      {
+        "title": "Безопасность",
+        "children": [
+          {"title": "Безопасность", "path": "lua/security/security"},
+          {"title": "Криптография", "path": "lua/security/crypto"},
+          {"title": "Хеширование", "path": "lua/security/hash"},
+          {"title": "UUID", "path": "lua/security/uuid"}
+        ]
+      },
+      {
+        "title": "Динамика",
+        "children": [
+          {"title": "Eval", "path": "lua/dynamic/eval"},
+          {"title": "Exec", "path": "lua/dynamic/exec"},
+          {"title": "Выражения", "path": "lua/dynamic/expression"}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Temporal",
+    "children": [
+      {"title": "Обзор", "path": "temporal/overview"},
+      {"title": "Активности", "path": "temporal/activities"},
+      {"title": "Воркфлоу", "path": "temporal/workflows"}
+    ]
+  },
+  {
+    "title": "Системные компоненты",
+    "children": [
+      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Терминал", "path": "system/terminal"},
+      {"title": "База данных", "path": "system/database"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Очередь", "path": "system/queue"},
+      {"title": "Файловая система", "path": "system/filesystem"},
+      {"title": "Облачное хранилище", "path": "system/cloudstorage"},
+      {"title": "Окружение", "path": "system/env"},
+      {"title": "Шаблоны", "path": "system/template"},
+      {"title": "Безопасность", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
+    ]
+  },
+  {
+    "title": "HTTP",
+    "children": [
+      {"title": "Сервер", "path": "http/server"},
+      {"title": "Роутер", "path": "http/router"},
+      {"title": "Эндпоинт", "path": "http/endpoint"},
+      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "Статические файлы", "path": "http/static"},
+      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
+    ]
+  },
+  {
+    "title": "Примеры",
+    "children": [
+      {"title": "Hello World", "path": "tutorials/hello-world"},
+      {"title": "CLI приложения", "path": "tutorials/cli"},
+      {"title": "Echo сервис", "path": "tutorials/echo-service"},
+      {"title": "Очередь задач", "path": "tutorials/task-queue"}
+    ]
+  },
+  {
+    "title": "Внутреннее устройство",
+    "children": [
+      {"title": "Реестр", "path": "internals/registry"},
+      {"title": "Планировщик", "path": "internals/scheduler"},
+      {"title": "Диспетчеризация", "path": "internals/dispatch"},
+      {"title": "События", "path": "internals/events"},
+      {"title": "Модули", "path": "internals/modules"},
+      {"title": "Kinds", "path": "internals/kinds"}
+    ]
+  },
+  {
+    "title": "О проекте",
+    "children": [
+      {"title": "Участие в разработке", "path": "about/contributing"},
+      {"title": "Лицензия", "path": "about/license"}
+    ]
+  }
+]
