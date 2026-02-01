@@ -168,5 +168,6 @@ On consumer stop:
 
 ## See Also
 
-- [Queue Module](lua-queue.md) - Lua API reference
-- [Supervision](guide-supervision.md) - Consumer lifecycle management
+- [Queue Module](lua/storage/queue.md) - Lua API reference
+- [Queue Consumers Guide](guides/queue-consumers.md) - Consumer patterns and worker pools
+- [Supervision](guides/supervision.md) - Consumer lifecycle management

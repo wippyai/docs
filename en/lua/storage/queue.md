@@ -127,4 +127,12 @@ Both permissions are checked: first the general permission, then the queue-speci
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 | Publish failed | `errors.INTERNAL` | yes |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
+
+## See Also
+
+- [Queue Configuration](system/queue.md) - Queue drivers and entry definitions
+- [Queue Consumers Guide](guides/queue-consumers.md) - Consumer patterns and worker pools
+- [Process Management](lua/core/process.md) - Process spawning and communication
+- [Channels](lua/core/channel.md) - Inter-process communication patterns
+- [Functions](lua/core/funcs.md) - Async function invocation
