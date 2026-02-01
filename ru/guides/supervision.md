@@ -185,6 +185,6 @@ stateDiagram-v2
 
 ## См. также
 
-- [Модель процессов](concept-process-model.md) — жизненный цикл процессов
-- [Конфигурация](guide-configuration.md) — формат YAML
-- [Модуль Security](lua-security.md) — проверка разрешений в Lua
+- [Модель процессов](concepts/process-model.md) — жизненный цикл процессов
+- [Конфигурация](guides/configuration.md) — формат YAML
+- [Модуль Security](lua/security/security.md) — проверка разрешений в Lua

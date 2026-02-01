@@ -137,7 +137,7 @@ modules:
 - Явные зависимости: понятно, что нужно коду
 - Детерминизм: workflows получают только детерминированные модули
 
-См. [Lua Runtime](lua-overview.md) для доступных модулей.
+См. [Lua Runtime](lua/overview.md) для доступных модулей.
 
 ## Импорты
 
@@ -194,6 +194,6 @@ local handlers = registry.find({type = "handler"})
 
 ## См. также
 
-- [Типы записей](guide-entry-kinds.md) — справочник всех типов
-- [Вычислительные единицы](concept-compute-units.md) — функции vs процессы vs workflows
-- [Lua Runtime](lua-overview.md) — доступные модули
+- [Типы записей](guides/entry-kinds.md) — справочник всех типов
+- [Вычислительные единицы](concepts/compute-units.md) — функции vs процессы vs workflows
+- [Lua Runtime](lua/overview.md) — доступные модули

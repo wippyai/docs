@@ -118,7 +118,7 @@ Wildcard должен быть последним сегментом пути.
 
 ## Функции-обработчики
 
-Обработчики эндпоинтов используют модуль `http` для доступа к объектам запроса и ответа. См. [Модуль HTTP](lua-http.md) для полного API.
+Обработчики эндпоинтов используют модуль `http` для доступа к объектам запроса и ответа. См. [Модуль HTTP](lua/http/http.md) для полного API.
 
 ```lua
 local http = require("http")
@@ -290,7 +290,7 @@ entries:
 
 ## См. также
 
-- [Сервер](http-server.md) — конфигурация HTTP-сервера
-- [Статические файлы](http-static.md) — раздача статики
-- [Middleware](http-middleware.md) — доступные middleware
-- [Модуль HTTP](lua-http.md) — Lua HTTP API
+- [Сервер](http/server.md) — конфигурация HTTP-сервера
+- [Статические файлы](http/static.md) — раздача статики
+- [Middleware](http/middleware.md) — доступные middleware
+- [Модуль HTTP](lua/http/http.md) — Lua HTTP API

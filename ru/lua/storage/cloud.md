@@ -7,7 +7,7 @@
 
 Доступ к S3-совместимому объектному хранилищу. Загрузка, скачивание, перечисление и управление файлами с поддержкой presigned URL.
 
-Настройку хранилища см. в [Cloud Storage](system-cloudstorage.md).
+Настройку хранилища см. в [Cloud Storage](system/cloudstorage.md).
 
 ## Загрузка
 
@@ -263,4 +263,4 @@ return {upload_url = url}
 | Доступ запрещён | `errors.PERMISSION_DENIED` | нет |
 | Операция не удалась | `errors.INTERNAL` | нет |
 
-См. [Обработка ошибок](lua-errors.md) для работы с ошибками.
+См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

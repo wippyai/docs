@@ -64,7 +64,7 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-Lua API для метрик см. в [модуле Metrics](lua-metrics.md).
+Lua API для метрик см. в [модуле Metrics](lua/system/metrics.md).
 
 ## OpenTelemetry
 
@@ -194,6 +194,6 @@ local states = system.supervisor.states()
 
 ## См. также
 
-- [Модуль Logger](lua-logger.md) — Lua API логирования
-- [Модуль Metrics](lua-metrics.md) — Lua API метрик
-- [Модуль System](lua-system.md) — статистика среды исполнения
+- [Модуль Logger](lua/system/logger.md) — Lua API логирования
+- [Модуль Metrics](lua/system/metrics.md) — Lua API метрик
+- [Модуль System](lua/system/system.md) — статистика среды исполнения

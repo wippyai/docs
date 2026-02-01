@@ -88,4 +88,4 @@ local payload = json.decode(base64.decode(parts[2]))
 | Недопустимые символы base64 | `errors.INVALID` | нет |
 | Повреждённый padding | `errors.INVALID` | нет |
 
-См. [Обработка ошибок](lua-errors.md) для работы с ошибками.
+См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

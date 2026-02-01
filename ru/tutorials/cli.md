@@ -203,6 +203,6 @@ end
 
 ## Следующие шаги
 
-- [Модуль I/O](lua-io.md) — полный справочник по I/O
-- [Модуль System](lua-system.md) — информация о рантайме и системе
-- [Echo Service](echo-service.md) — многопроцессные приложения
+- [Модуль I/O](lua/system/io.md) — полный справочник по I/O
+- [Модуль System](lua/system/system.md) — информация о рантайме и системе
+- [Echo Service](tutorials/echo-service.md) — многопроцессные приложения

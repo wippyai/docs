@@ -63,4 +63,4 @@ S3-совместимое объектное хранилище с presigned URL
 
 ## Lua API
 
-См. [Модуль Cloud Storage](lua-cloudstorage.md) для операций (list, upload, download, delete, presigned URLs).
+См. [Модуль Cloud Storage](lua/storage/cloud.md) для операций (list, upload, download, delete, presigned URLs).

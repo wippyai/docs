@@ -411,7 +411,7 @@ local field_id = lang:field_id_for_name("name")
 | Некорректные позиции | `errors.INVALID` | нет |
 | Ошибка парсинга | `errors.INTERNAL` | нет |
 
-Подробнее см. [Обработка ошибок](lua-errors.md).
+Подробнее см. [Обработка ошибок](lua/core/errors.md).
 
 ## Синтаксис запросов
 

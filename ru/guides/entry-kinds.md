@@ -6,8 +6,8 @@
 
 ## См. также
 
-- [Реестр](concept-registry.md) — хранение и разрешение записей
-- [Конфигурация](guide-configuration.md) — формат YAML
+- [Реестр](concepts/registry.md) — хранение и разрешение записей
+- [Конфигурация](guides/configuration.md) — формат YAML
 
 ## Lua Runtime
 
@@ -71,7 +71,7 @@
   func: list_handler
 ```
 
-**Lua API:** См. [Модуль HTTP](lua-http.md)
+**Lua API:** См. [Модуль HTTP](lua/http/http.md)
 
 ```lua
 local http = require("http")
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**Lua API:** См. [Модуль SQL](lua-sql.md)
+**Lua API:** См. [Модуль SQL](lua/storage/sql.md)
 
 ```lua
 local sql = require("sql")
@@ -174,7 +174,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**Lua API:** См. [Модуль Store](lua-store.md)
+**Lua API:** См. [Модуль Store](lua/storage/store.md)
 
 ```lua
 local store = require("store")
@@ -215,7 +215,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua API:** См. [Модуль Queue](lua-queue.md)
+**Lua API:** См. [Модуль Queue](lua/storage/queue.md)
 
 ```lua
 local queue = require("queue")
@@ -324,7 +324,7 @@ local data = msg:body_json()
   endpoint: ""  # Опционально, для S3-совместимых сервисов
 ```
 
-**Lua API:** См. [Модуль Cloud Storage](lua-cloudstorage.md)
+**Lua API:** См. [Модуль Cloud Storage](lua/storage/cloud.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -352,7 +352,7 @@ local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
   mode: "0755"      # Права доступа
 ```
 
-**Lua API:** См. [Модуль Filesystem](lua-fs.md)
+**Lua API:** См. [Модуль Filesystem](lua/storage/filesystem.md)
 
 ```lua
 local fs = require("fs")
@@ -389,7 +389,7 @@ file:close()
     - app:file_env
 ```
 
-**Lua API:** См. [Модуль Env](lua-env.md)
+**Lua API:** См. [Модуль Env](lua/system/env.md)
 
 ```lua
 local env = require("env")
@@ -426,7 +426,7 @@ env.set("CACHE_TTL", "3600")
   set: app:templates
 ```
 
-**Lua API:** См. [Модуль Template](lua-template.md)
+**Lua API:** См. [Модуль Template](lua/text/template.md)
 
 ```lua
 local templates = require("templates")
@@ -469,7 +469,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua API:** См. [Модуль Security](lua-security.md)
+**Lua API:** См. [Модуль Security](lua/security/security.md)
 
 ```lua
 local security = require("security")
@@ -548,7 +548,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua API:** См. [Модуль Contract](lua-contract.md)
+**Lua API:** См. [Модуль Contract](lua/core/contract.md)
 
 <tip>
 Пометьте один binding как <code>default: true</code>, чтобы использовать его при открытии контракта без указания binding ID (работает только если не заданы поля <code>context_required</code>).

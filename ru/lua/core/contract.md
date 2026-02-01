@@ -130,7 +130,7 @@ if ok then
 end
 ```
 
-См. [Futures](lua-future.md) для методов future.
+См. [Futures](lua/core/future.md) для методов future.
 
 ## Открытие через контракт
 

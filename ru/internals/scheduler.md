@@ -125,5 +125,5 @@ stateDiagram-v2
 
 ## См. также
 
-- [Диспатчинг команд](internal-dispatch.md) — как yield'ы достигают обработчиков
-- [Модель процессов](concept-process-model.md) — концепции высокого уровня
+- [Диспатчинг команд](internals/dispatch.md) — как yield'ы достигают обработчиков
+- [Модель процессов](concepts/process-model.md) — концепции высокого уровня

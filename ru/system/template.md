@@ -103,4 +103,4 @@
 
 ## Lua API
 
-См. [Модуль Template](lua-template.md) для операций рендеринга.
+См. [Модуль Template](lua/text/template.md) для операций рендеринга.

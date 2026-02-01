@@ -228,7 +228,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-Диспатчер маршрутизирует команду обработчику. См. [Диспатчинг команд](internal-dispatch.md) для реализации обработчиков.
+Диспатчер маршрутизирует команду обработчику. См. [Диспатчинг команд](internals/dispatch.md) для реализации обработчиков.
 
 ## Обработка ошибок
 
@@ -391,5 +391,5 @@ func TestMyModuleYields(t *testing.T) {
 
 ## См. также
 
-- [Диспатчинг команд](internal-dispatch.md) — обработка yield-команд
-- [Планировщик](internal-scheduler.md) — выполнение процессов
+- [Диспатчинг команд](internals/dispatch.md) — обработка yield-команд
+- [Планировщик](internals/scheduler.md) — выполнение процессов

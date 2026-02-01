@@ -30,7 +30,7 @@
     ]
   },
   {
-    "title": "Lua Runtime",
+    "title": "Lua-среда",
     "children": [
       {"title": "Обзор", "path": "lua/overview"},
       {"title": "Типы", "path": "lua/types"},
@@ -44,7 +44,7 @@
           {"title": "Каналы", "path": "lua/core/channel"},
           {"title": "Процессы", "path": "lua/core/process"},
           {"title": "Функции", "path": "lua/core/funcs"},
-          {"title": "Future", "path": "lua/core/future"},
+          {"title": "Фьючеры", "path": "lua/core/future"},
           {"title": "Потоки", "path": "lua/core/stream"},
           {"title": "Контекст", "path": "lua/core/context"},
           {"title": "События", "path": "lua/core/events"},
@@ -76,7 +76,7 @@
         "title": "Хранилища",
         "children": [
           {"title": "SQL", "path": "lua/storage/sql"},
-          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Хранилище", "path": "lua/storage/store"},
           {"title": "Файловая система", "path": "lua/storage/filesystem"},
           {"title": "Облачное хранилище", "path": "lua/storage/cloud"},
           {"title": "Очереди", "path": "lua/storage/queue"}
@@ -131,10 +131,10 @@
   {
     "title": "Системные компоненты",
     "children": [
-      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Хост процессов", "path": "system/process-host"},
       {"title": "Терминал", "path": "system/terminal"},
       {"title": "База данных", "path": "system/database"},
-      {"title": "Store", "path": "system/store"},
+      {"title": "Хранилище", "path": "system/store"},
       {"title": "Очередь", "path": "system/queue"},
       {"title": "Файловая система", "path": "system/filesystem"},
       {"title": "Облачное хранилище", "path": "system/cloudstorage"},
@@ -150,9 +150,9 @@
       {"title": "Сервер", "path": "http/server"},
       {"title": "Роутер", "path": "http/router"},
       {"title": "Эндпоинт", "path": "http/endpoint"},
-      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "Middleware-обработчики", "path": "http/middleware"},
       {"title": "Статические файлы", "path": "http/static"},
-      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
+      {"title": "WebSocket-ретранслятор", "path": "http/websocket-relay"}
     ]
   },
   {
@@ -172,7 +172,7 @@
       {"title": "Диспетчеризация", "path": "internals/dispatch"},
       {"title": "События", "path": "internals/events"},
       {"title": "Модули", "path": "internals/modules"},
-      {"title": "Kinds", "path": "internals/kinds"}
+      {"title": "Виды записей", "path": "internals/kinds"}
     ]
   },
   {
