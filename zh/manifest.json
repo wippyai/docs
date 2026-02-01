@@ -1,0 +1,185 @@
+[
+  {
+    "title": "快速入门",
+    "children": [
+      {"title": "关于 Wippy", "path": "start/about"},
+      {"title": "安装", "path": "start/installation"},
+      {"title": "项目结构", "path": "start/structure"}
+    ]
+  },
+  {
+    "title": "使用指南",
+    "children": [
+      {"title": "命令行工具", "path": "guides/cli"},
+      {"title": "配置", "path": "guides/configuration"},
+      {"title": "记录类型", "path": "guides/entry-kinds"},
+      {"title": "可观测性", "path": "guides/observability"},
+      {"title": "队列消费者", "path": "guides/queue-consumers"},
+      {"title": "进程监管", "path": "guides/supervision"},
+      {"title": "发布", "path": "guides/publishing"}
+    ]
+  },
+  {
+    "title": "核心概念",
+    "children": [
+      {"title": "进程模型", "path": "concepts/process-model"},
+      {"title": "计算单元", "path": "concepts/compute-units"},
+      {"title": "注册表", "path": "concepts/registry"},
+      {"title": "函数", "path": "concepts/functions"},
+      {"title": "工作流", "path": "concepts/workflows"}
+    ]
+  },
+  {
+    "title": "Lua 运行时",
+    "children": [
+      {"title": "概述", "path": "lua/overview"},
+      {"title": "类型系统", "path": "lua/types"},
+      {"title": "记录定义", "path": "lua/entries"},
+      {
+        "title": "核心模块",
+        "children": [
+          {"title": "标准库", "path": "lua/core/base"},
+          {"title": "错误处理", "path": "lua/core/errors"},
+          {"title": "时间", "path": "lua/core/time"},
+          {"title": "通道", "path": "lua/core/channel"},
+          {"title": "进程", "path": "lua/core/process"},
+          {"title": "函数调用", "path": "lua/core/funcs"},
+          {"title": "Future", "path": "lua/core/future"},
+          {"title": "流", "path": "lua/core/stream"},
+          {"title": "上下文", "path": "lua/core/context"},
+          {"title": "事件", "path": "lua/core/events"},
+          {"title": "注册表", "path": "lua/core/registry"},
+          {"title": "契约", "path": "lua/core/contract"}
+        ]
+      },
+      {
+        "title": "数据格式",
+        "children": [
+          {"title": "JSON", "path": "lua/data/json"},
+          {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "Base64", "path": "lua/data/base64"},
+          {"title": "压缩", "path": "lua/data/compress"},
+          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "Excel", "path": "lua/data/excel"}
+        ]
+      },
+      {
+        "title": "HTTP 与 Web",
+        "children": [
+          {"title": "HTTP", "path": "lua/http/http"},
+          {"title": "HTTP 客户端", "path": "lua/http/client"},
+          {"title": "WebSocket", "path": "lua/http/websocket"},
+          {"title": "HTML", "path": "lua/http/html"}
+        ]
+      },
+      {
+        "title": "存储",
+        "children": [
+          {"title": "SQL", "path": "lua/storage/sql"},
+          {"title": "键值存储", "path": "lua/storage/store"},
+          {"title": "文件系统", "path": "lua/storage/filesystem"},
+          {"title": "云存储", "path": "lua/storage/cloud"},
+          {"title": "消息队列", "path": "lua/storage/queue"}
+        ]
+      },
+      {
+        "title": "系统",
+        "children": [
+          {"title": "系统信息", "path": "lua/system/system"},
+          {"title": "环境变量", "path": "lua/system/env"},
+          {"title": "日志", "path": "lua/system/logger"},
+          {"title": "终端 I/O", "path": "lua/system/io"},
+          {"title": "指标", "path": "lua/system/metrics"},
+          {"title": "系统时间", "path": "lua/system/ostime"}
+        ]
+      },
+      {
+        "title": "文本与模板",
+        "children": [
+          {"title": "文本处理", "path": "lua/text/text"},
+          {"title": "模板", "path": "lua/text/template"},
+          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+        ]
+      },
+      {
+        "title": "安全",
+        "children": [
+          {"title": "安全模块", "path": "lua/security/security"},
+          {"title": "加密", "path": "lua/security/crypto"},
+          {"title": "哈希", "path": "lua/security/hash"},
+          {"title": "UUID", "path": "lua/security/uuid"}
+        ]
+      },
+      {
+        "title": "动态执行",
+        "children": [
+          {"title": "Eval", "path": "lua/dynamic/eval"},
+          {"title": "Exec", "path": "lua/dynamic/exec"},
+          {"title": "表达式", "path": "lua/dynamic/expression"}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Temporal",
+    "children": [
+      {"title": "概述", "path": "temporal/overview"},
+      {"title": "Activity", "path": "temporal/activities"},
+      {"title": "工作流", "path": "temporal/workflows"}
+    ]
+  },
+  {
+    "title": "系统组件",
+    "children": [
+      {"title": "进程宿主", "path": "system/process-host"},
+      {"title": "终端", "path": "system/terminal"},
+      {"title": "数据库", "path": "system/database"},
+      {"title": "键值存储", "path": "system/store"},
+      {"title": "消息队列", "path": "system/queue"},
+      {"title": "文件系统", "path": "system/filesystem"},
+      {"title": "云存储", "path": "system/cloudstorage"},
+      {"title": "环境变量", "path": "system/env"},
+      {"title": "模板", "path": "system/template"},
+      {"title": "安全", "path": "system/security"},
+      {"title": "命令执行", "path": "system/exec"}
+    ]
+  },
+  {
+    "title": "HTTP",
+    "children": [
+      {"title": "服务器", "path": "http/server"},
+      {"title": "路由器", "path": "http/router"},
+      {"title": "端点", "path": "http/endpoint"},
+      {"title": "中间件", "path": "http/middleware"},
+      {"title": "静态文件", "path": "http/static"},
+      {"title": "WebSocket 中继", "path": "http/websocket-relay"}
+    ]
+  },
+  {
+    "title": "示例教程",
+    "children": [
+      {"title": "Hello World", "path": "tutorials/hello-world"},
+      {"title": "CLI 应用", "path": "tutorials/cli"},
+      {"title": "Echo 服务", "path": "tutorials/echo-service"},
+      {"title": "任务队列", "path": "tutorials/task-queue"}
+    ]
+  },
+  {
+    "title": "内部机制",
+    "children": [
+      {"title": "注册表", "path": "internals/registry"},
+      {"title": "调度器", "path": "internals/scheduler"},
+      {"title": "命令分发", "path": "internals/dispatch"},
+      {"title": "事件系统", "path": "internals/events"},
+      {"title": "模块系统", "path": "internals/modules"},
+      {"title": "Kind 处理器", "path": "internals/kinds"}
+    ]
+  },
+  {
+    "title": "关于",
+    "children": [
+      {"title": "参与贡献", "path": "about/contributing"},
+      {"title": "许可证", "path": "about/license"}
+    ]
+  }
+]
