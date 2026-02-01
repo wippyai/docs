@@ -2,11 +2,11 @@
 
 Wippy implementa control de acceso basado en atributos. Cada solicitud lleva un actor (quien) y un scope (que politicas aplican). Las politicas evaluan el acceso basado en la accion, recurso, y metadatos tanto del actor como del recurso.
 
-```
-Actor + Scope --> Evaluacion de Politica --> Permitir/Denegar
-     |                   |
-  Identidad          Condiciones
-  Metadatos      (actor, recurso, accion)
+```mermaid
+flowchart LR
+    A[Actor + Scope] --> PE[Evaluación de Política] --> AD[Permitir/Denegar]
+    A -.->|Identidad<br/>Metadatos| PE
+    PE -.->|Condiciones<br/>actor, recurso, acción| AD
 ```
 
 ## Tipos de Entrada

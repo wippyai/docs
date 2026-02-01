@@ -2,11 +2,11 @@
 
 Wippy는 속성 기반 접근 제어를 구현합니다. 모든 요청은 액터(누가)와 스코프(어떤 정책이 적용되는지)를 전달합니다. 정책은 액션, 리소스, 액터와 리소스의 메타데이터를 기반으로 접근을 평가합니다.
 
-```
-Actor + Scope ──► Policy Evaluation ──► Allow/Deny
-     │                   │
-  Identity          Conditions
-  Metadata      (actor, resource, action)
+```mermaid
+flowchart LR
+    A[Actor + Scope] --> PE[정책 평가] --> AD[허용/거부]
+    A -.->|아이덴티티<br/>메타데이터| PE
+    PE -.->|조건<br/>actor, resource, action| AD
 ```
 
 ## 엔트리 종류

@@ -14,18 +14,17 @@ Monitoree y enlace procesos para construir sistemas tolerantes a fallos.
 - Si alguno falla, ambos terminan
 - A menos que `trap_links=true` este establecido
 
-```
-MONITOREO (unidireccional)        ENLACE (bidireccional)
-┌──────────┐                      ┌──────────┐
-│ Padre    │                      │ Padre    │
-│ monitorea│                      │ enlazado │
-└────┬─────┘                      └────┬─────┘
-     │ evento EXIT                     │ LINK_DOWN
-     │ (padre continua)                │ (ambos mueren)
-┌────▼─────┐                      ┌────▼─────┐
-│  Hijo    │                      │  Hijo    │
-│ termina  │                      │ termina  │
-└──────────┘                      └──────────┘
+```mermaid
+flowchart TB
+    subgraph Monitoring["MONITOREO (unidireccional)"]
+        direction TB
+        P1[Padre monitorea] -->|evento EXIT<br/>padre continúa| C1[Hijo termina]
+    end
+
+    subgraph Linking["ENLACE (bidireccional)"]
+        direction TB
+        P2[Padre enlazado] <-->|LINK_DOWN<br/>ambos mueren| C2[Hijo termina]
+    end
 ```
 
 ## Monitoreo de Procesos

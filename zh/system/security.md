@@ -2,11 +2,11 @@
 
 Wippy 实现基于属性的访问控制。每个请求携带一个 actor（谁）和一个 scope（应用哪些策略）。策略根据 action、resource 以及来自 actor 和 resource 的元数据评估访问权限。
 
-```
-Actor + Scope ──► Policy Evaluation ──► Allow/Deny
-     │                   │
-  Identity          Conditions
-  Metadata      (actor, resource, action)
+```mermaid
+flowchart LR
+    A[Actor + Scope] --> PE[策略评估] --> AD[允许/拒绝]
+    A -.->|身份<br/>元数据| PE
+    PE -.->|条件<br/>actor, resource, action| AD
 ```
 
 ## Entry 类型

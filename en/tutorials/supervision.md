@@ -14,18 +14,17 @@ Monitor and link processes to build fault-tolerant systems.
 - Either process fails, both terminate
 - Unless `trap_links=true` is set
 
-```
-MONITORING (one-way)              LINKING (bidirectional)
-┌──────────┐                      ┌──────────┐
-│ Parent   │                      │ Parent   │
-│ monitors │                      │ linked   │
-└────┬─────┘                      └────┬─────┘
-     │ EXIT event                      │ LINK_DOWN
-     │ (parent continues)               │ (both die)
-┌────▼─────┐                      ┌────▼─────┐
-│  Child   │                      │  Child   │
-│  exits   │                      │  exits   │
-└──────────┘                      └──────────┘
+```mermaid
+flowchart TB
+    subgraph Monitoring["MONITORING (one-way)"]
+        direction TB
+        P1[Parent monitors] -->|EXIT event<br/>parent continues| C1[Child exits]
+    end
+
+    subgraph Linking["LINKING (bidirectional)"]
+        direction TB
+        P2[Parent linked] <-->|LINK_DOWN<br/>both die| C2[Child exits]
+    end
 ```
 
 ## Process Monitoring

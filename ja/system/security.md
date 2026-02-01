@@ -2,11 +2,11 @@
 
 Wippyは属性ベースのアクセス制御を実装します。すべてのリクエストはアクター（誰が）とスコープ（どのポリシーが適用されるか）を持ちます。ポリシーはアクション、リソース、およびアクターとリソース両方からのメタデータに基づいてアクセスを評価します。
 
-```
-Actor + Scope ──► Policy Evaluation ──► Allow/Deny
-     │                   │
-  Identity          Conditions
-  Metadata      (actor, resource, action)
+```mermaid
+flowchart LR
+    A[Actor + Scope] --> PE[ポリシー評価] --> AD[許可/拒否]
+    A -.->|アイデンティティ<br/>メタデータ| PE
+    PE -.->|条件<br/>actor, resource, action| AD
 ```
 
 ## エントリ種別
