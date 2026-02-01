@@ -1,10 +1,10 @@
 # Internos del Registry
 
-El registry es un almacen de estado versionado y orientado a eventos. Mantiene historial de versiones completo, soporta transacciones, y propaga cambios a traves del event bus.
+El registry es un almacén de estado versionado y orientado a eventos. Mantiene historial de versiones completo, soporta transacciones, y propaga cambios a través del event bus.
 
 ## Almacenamiento de Entradas
 
-Las entradas se almacenan como un slice ordenado con un indice de hash map para lookups O(1):
+Las entradas se almacenan como un slice ordenado con un índice de hash map para lookups O(1):
 
 ```go
 type Entry struct {
@@ -15,11 +15,11 @@ type Entry struct {
 }
 ```
 
-Los IDs de entrada usan el paquete `unique` de Go para interning—IDs identicos comparten memoria.
+Los IDs de entrada usan el paquete `unique` de Go para interning—IDs idénticos comparten memoria.
 
 ## Cadena de Versiones
 
-Cada version apunta a su padre. El calculo de ruta usa un algoritmo de grafos para encontrar la ruta mas corta entre cualquier dos versiones:
+Cada versión apunta a su padre. El cálculo de ruta usa un algoritmo de grafos para encontrar la ruta más corta entre cualquier dos versiones:
 
 ```mermaid
 flowchart LR
@@ -30,17 +30,17 @@ flowchart LR
 
 Un changeset es una lista ordenada de operaciones que transforman un estado a otro:
 
-| Operacion | OriginalEntry | Proposito |
+| Operación | OriginalEntry | Propósito |
 |-----------|---------------|-----------|
 | Create | nil | Agregar nueva entrada |
 | Update | valor anterior | Modificar existente |
 | Delete | valor eliminado | Remover entrada |
 
-`OriginalEntry` permite reversion—updates almacenan el valor previo, deletes almacenan lo que fue removido.
+`OriginalEntry` permite reversión—updates almacenan el valor previo, deletes almacenan lo que fue removido.
 
 ### Construir Deltas
 
-`BuildDelta(oldState, newState)` genera operaciones minimas:
+`BuildDelta(oldState, newState)` genera operaciones mínimas:
 
 1. Comparar estados, identificar cambios
 2. Ordenar deletes en orden inverso de dependencias (dependientes primero)
@@ -48,7 +48,7 @@ Un changeset es una lista ordenada de operaciones que transforman un estado a ot
 
 ### Squashing
 
-Multiples changesets se fusionan rastreando estado final por entrada:
+Múltiples changesets se fusionan rastreando estado final por entrada:
 
 ```
 Create + Update = Create (con valor actualizado)
@@ -66,11 +66,11 @@ sequenceDiagram
     participant H as Handlers
 
     R->>B: registry.begin
-    loop Cada Operacion
+    loop Cada Operación
         R->>B: entry.create/update/delete
         B->>H: dispatch a listeners
         H-->>B: aceptar o rechazar
-        B-->>R: confirmacion
+        B-->>R: confirmación
     end
     alt Todo aceptado
         R->>B: registry.commit
@@ -80,18 +80,18 @@ sequenceDiagram
     end
 ```
 
-Los handlers tienen 30 segundos para aceptar o rechazar cada operacion. En rechazo, el registry hace rollback calculando y aplicando el delta inverso.
+Los handlers tienen 30 segundos para aceptar o rechazar cada operación. En rechazo, el registry hace rollback calculando y aplicando el delta inverso.
 
 ### Entradas No Propagantes
 
 Algunos kinds omiten el event bus completamente:
-- `registry.entry` - Configs de aplicacion
+- `registry.entry` - Configs de aplicación
 - `ns.requirement` - Requisitos de namespace
-- `ns.dependency` - Dependencias de modulos
+- `ns.dependency` - Dependencias de módulos
 
-## Resolucion de Dependencias
+## Resolución de Dependencias
 
-Las entradas pueden declarar dependencias en otras entradas. El resolver extrae dependencias via patrones registrados:
+Las entradas pueden declarar dependencias en otras entradas. El resolver extrae dependencias vía patrones registrados:
 
 ```go
 resolver.RegisterPattern(PathConfig{
@@ -100,30 +100,30 @@ resolver.RegisterPattern(PathConfig{
 })
 ```
 
-Las dependencias se extraen de campos Meta y Data de entradas, luego se usan para ordenamiento topologico durante transiciones de estado.
+Las dependencias se extraen de campos Meta y Data de entradas, luego se usan para ordenamiento topológico durante transiciones de estado.
 
 ## Historial de Versiones
 
 Backends de historial:
 
-| Implementacion | Caso de Uso |
+| Implementación | Caso de Uso |
 |----------------|-------------|
-| SQLite | Persistencia de produccion |
+| SQLite | Persistencia de producción |
 | Memory | Testing |
 | Nil | Sin historial |
 
 SQLite usa modo WAL con tablas para versiones, changesets (codificados MessagePack), y metadatos.
 
-### Navegacion
+### Navegación
 
-El calculo de ruta encuentra la ruta mas corta entre versiones:
+El cálculo de ruta encuentra la ruta más corta entre versiones:
 
 ```go
 Path(v0, v3) = [v1, v2, v3]  // Aplicar changesets hacia adelante
 Path(v3, v1) = [v2, v1]      // Aplicar changesets revertidos
 ```
 
-`LoadState()` reproduce historial desde una linea base sin crear nuevas versiones—usado durante boot.
+`LoadState()` reproduce historial desde una línea base sin crear nuevas versiones—usado durante boot.
 
 ## Finder
 
@@ -137,9 +137,9 @@ Motor de consultas con cache LRU para buscar entradas:
 | Prefix | `^` | `^meta.name=user` |
 | Suffix | `$` | `$meta.path=Handler` |
 
-Cache se invalida en cambio de version.
+Cache se invalida en cambio de versión.
 
-## Ver Tambien
+## Ver También
 
 - [Registry](concept-registry.md) - Conceptos de alto nivel
 - [Events](internal-events.md) - Detalles del event bus

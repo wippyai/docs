@@ -1,8 +1,8 @@
 # Sistema de Entorno
 
-Gestiona variables de entorno a traves de backends de almacenamiento configurables.
+Gestiona variables de entorno a través de backends de almacenamiento configurables.
 
-## Vision General
+## Visión General
 
 El sistema de entorno separa el almacenamiento del acceso:
 
@@ -10,33 +10,33 @@ El sistema de entorno separa el almacenamiento del acceso:
 - **Variables** - Referencias nombradas a valores en almacenes
 
 Las variables pueden referenciarse por:
-- **Nombre publico** - El valor del campo `variable` (debe ser unico en el sistema)
+- **Nombre público** - El valor del campo `variable` (debe ser único en el sistema)
 - **ID de Entrada** - Referencia completa `namespace:nombre`
 
-Si no desea que una variable sea accesible publicamente por nombre, omita el campo `variable`.
+Si no desea que una variable sea accesible públicamente por nombre, omita el campo `variable`.
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `env.storage.memory` | Almacenamiento clave-valor en memoria |
 | `env.storage.file` | Almacenamiento basado en archivo (formato .env) |
 | `env.storage.os` | Acceso de solo lectura al entorno del SO |
-| `env.storage.router` | Encadena multiples almacenes |
-| `env.variable` | Variable nombrada referenciando un almacen |
+| `env.storage.router` | Encadena múltiples almacenes |
+| `env.variable` | Variable nombrada referenciando un almacén |
 
 ## Backends de Almacenamiento
 
-### Almacen de Memoria
+### Almacén de Memoria
 
-Almacenamiento volatil en memoria.
+Almacenamiento volátil en memoria.
 
 ```yaml
 - name: runtime_env
   kind: env.storage.memory
 ```
 
-### Almacen de Archivo
+### Almacén de Archivo
 
 Almacenamiento persistente usando formato de archivo `.env` (`KEY=VALUE` con comentarios `#`).
 
@@ -49,14 +49,14 @@ Almacenamiento persistente usando formato de archivo `.env` (`KEY=VALUE` con com
   dir_mode: 0700
 ```
 
-| Propiedad | Tipo | Por Defecto | Descripcion |
+| Propiedad | Tipo | Por Defecto | Descripción |
 |----------|------|---------|-------------|
 | `file_path` | string | requerido | Ruta al archivo .env |
 | `auto_create` | boolean | false | Crear archivo si no existe |
 | `file_mode` | integer | 0644 | Permisos de archivo |
 | `dir_mode` | integer | 0755 | Permisos de directorio |
 
-### Almacen del SO
+### Almacén del SO
 
 Acceso de solo lectura a variables de entorno del sistema operativo.
 
@@ -67,20 +67,20 @@ Acceso de solo lectura a variables de entorno del sistema operativo.
 
 Siempre de solo lectura. Las operaciones de escritura retornan `PERMISSION_DENIED`.
 
-### Almacen Router
+### Almacén Router
 
-Encadena multiples almacenes. Las lecturas buscan en orden hasta encontrar. Las escrituras van solo al primer almacen.
+Encadena múltiples almacenes. Las lecturas buscan en orden hasta encontrar. Las escrituras van solo al primer almacén.
 
 ```yaml
 - name: config
   kind: env.storage.router
   storages:
-    - app.config:memory    # Primario (escribe aqui)
+    - app.config:memory    # Primario (escribe aquí)
     - app.config:file      # Respaldo
     - app.config:os        # Respaldo
 ```
 
-| Propiedad | Tipo | Descripcion |
+| Propiedad | Tipo | Descripción |
 |----------|------|-------------|
 | `storages` | array | Lista ordenada de referencias de almacenes |
 
@@ -97,10 +97,10 @@ Las variables proporcionan acceso nombrado a valores de almacenes.
   read_only: false
 ```
 
-| Propiedad | Tipo | Descripcion |
+| Propiedad | Tipo | Descripción |
 |----------|------|-------------|
-| `variable` | string | Nombre de variable publica (opcional, debe ser unico) |
-| `storage` | string | Referencia de almacen (`namespace:nombre`) |
+| `variable` | string | Nombre de variable pública (opcional, debe ser único) |
+| `storage` | string | Referencia de almacén (`namespace:nombre`) |
 | `default` | string | Valor por defecto si no se encuentra |
 | `read_only` | boolean | Prevenir modificaciones |
 
@@ -111,7 +111,7 @@ Los nombres de variables deben contener solo: `a-z`, `A-Z`, `0-9`, `_`
 ### Patrones de Acceso
 
 ```yaml
-# Variable publica - accesible por nombre "PORT"
+# Variable pública - accesible por nombre "PORT"
 - name: port_var
   kind: env.variable
   variable: PORT
@@ -126,19 +126,19 @@ Los nombres de variables deben contener solo: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|-----------|
 | Variable no encontrada | `errors.NOT_FOUND` | no |
-| Almacen no encontrado | `errors.NOT_FOUND` | no |
+| Almacén no encontrado | `errors.NOT_FOUND` | no |
 | Variable es de solo lectura | `errors.PERMISSION_DENIED` | no |
-| Almacen es de solo lectura | `errors.PERMISSION_DENIED` | no |
-| Nombre de variable invalido | `errors.INVALID` | no |
+| Almacén es de solo lectura | `errors.PERMISSION_DENIED` | no |
+| Nombre de variable inválido | `errors.INVALID` | no |
 
-## Acceso en Tiempo de Ejecucion
+## Acceso en Tiempo de Ejecución
 
-- [modulo env](lua-env.md) - Acceso en tiempo de ejecucion Lua
+- [módulo env](lua-env.md) - Acceso en tiempo de ejecución Lua
 
-## Ver Tambien
+## Ver También
 
 - [Modelo de Seguridad](system-security.md) - Control de acceso para variables de entorno
-- [Guia de Configuracion](guide-configuration.md) - Patrones de configuracion de aplicacion
+- [Guía de Configuración](guide-configuration.md) - Patrones de configuración de aplicación

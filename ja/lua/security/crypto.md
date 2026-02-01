@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-暗号化、HMAC、JWT、鍵導出を含む暗号操作。ワークフロー向けに適応。
+暗号化、HMAC、JWT、鍵導出を含む暗号操作を提供します。ワークフロー向けに適応されています。
 
 ## ロード
 

@@ -1,25 +1,25 @@
 # Registry Internals
 
-O registry e um armazenamento de estado versionado e orientado a eventos. Ele mantem historico completo de versoes, suporta transacoes e propaga mudancas atraves do event bus.
+O registry é um armazenamento de estado versionado e orientado a eventos. Ele mantém histórico completo de versões, suporta transações e propaga mudanças através do event bus.
 
 ## Armazenamento de Entradas
 
-Entradas sao armazenadas como um slice ordenado com um indice de hash map para lookups O(1):
+Entradas são armazenadas como um slice ordenado com um índice de hash map para lookups O(1):
 
 ```go
 type Entry struct {
     ID   ID              // namespace:name
     Kind Kind            // Tipo da entrada
     Meta attrs.Bag       // Metadados
-    Data payload.Payload // Conteudo
+    Data payload.Payload // Conteúdo
 }
 ```
 
-IDs de entrada usam o pacote `unique` do Go para interning - IDs identicos compartilham memoria.
+IDs de entrada usam o pacote `unique` do Go para interning - IDs idênticos compartilham memória.
 
-## Cadeia de Versoes
+## Cadeia de Versões
 
-Cada versao aponta para seu pai. Computacao de caminho usa um algoritmo de grafo para encontrar a rota mais curta entre quaisquer duas versoes:
+Cada versão aponta para seu pai. Computação de caminho usa um algoritmo de grafo para encontrar a rota mais curta entre quaisquer duas versões:
 
 ```mermaid
 flowchart LR
@@ -28,27 +28,27 @@ flowchart LR
 
 ## ChangeSets
 
-Um changeset e uma lista ordenada de operacoes transformando um estado em outro:
+Um changeset é uma lista ordenada de operações transformando um estado em outro:
 
-| Operacao | OriginalEntry | Proposito |
+| Operação | OriginalEntry | Propósito |
 |----------|---------------|-----------|
 | Create | nil | Adicionar nova entrada |
 | Update | valor antigo | Modificar existente |
 | Delete | valor deletado | Remover entrada |
 
-`OriginalEntry` permite reversao - updates armazenam o valor anterior, deletes armazenam o que foi removido.
+`OriginalEntry` permite reversão - updates armazenam o valor anterior, deletes armazenam o que foi removido.
 
 ### Construindo Deltas
 
-`BuildDelta(oldState, newState)` gera operacoes minimas:
+`BuildDelta(oldState, newState)` gera operações mínimas:
 
-1. Comparar estados, identificar mudancas
-2. Ordenar deletes em ordem reversa de dependencia (dependentes primeiro)
-3. Ordenar creates/updates em ordem direta de dependencia (dependencias primeiro)
+1. Comparar estados, identificar mudanças
+2. Ordenar deletes em ordem reversa de dependência (dependentes primeiro)
+3. Ordenar creates/updates em ordem direta de dependência (dependências primeiro)
 
 ### Squashing
 
-Multiplos changesets mesclam rastreando estado final por entrada:
+Múltiplos changesets mesclam rastreando estado final por entrada:
 
 ```
 Create + Update = Create (com valor atualizado)
@@ -57,7 +57,7 @@ Update + Delete = Delete
 Delete + Create = Update
 ```
 
-## Transacoes
+## Transações
 
 ```mermaid
 sequenceDiagram
@@ -66,11 +66,11 @@ sequenceDiagram
     participant H as Handlers
 
     R->>B: registry.begin
-    loop Cada Operacao
+    loop Cada Operação
         R->>B: entry.create/update/delete
         B->>H: despachar para listeners
         H-->>B: aceitar ou rejeitar
-        B-->>R: confirmacao
+        B-->>R: confirmação
     end
     alt Todos aceitos
         R->>B: registry.commit
@@ -80,18 +80,18 @@ sequenceDiagram
     end
 ```
 
-Handlers tem 30 segundos para aceitar ou rejeitar cada operacao. Em rejeicao, o registry faz rollback computando e aplicando o delta inverso.
+Handlers tem 30 segundos para aceitar ou rejeitar cada operação. Em rejeição, o registry faz rollback computando e aplicando o delta inverso.
 
-### Entradas que Nao Propagam
+### Entradas que Não Propagam
 
 Alguns tipos pulam o event bus completamente:
-- `registry.entry` - Configs de aplicacao
+- `registry.entry` - Configs de aplicação
 - `ns.requirement` - Requirements de namespace
-- `ns.dependency` - Dependencias de modulo
+- `ns.dependency` - Dependências de módulo
 
-## Resolucao de Dependencias
+## Resolução de Dependências
 
-Entradas podem declarar dependencias de outras entradas. O resolver extrai dependencias via padroes registrados:
+Entradas podem declarar dependências de outras entradas. O resolver extrai dependências via padrões registrados:
 
 ```go
 resolver.RegisterPattern(PathConfig{
@@ -100,30 +100,30 @@ resolver.RegisterPattern(PathConfig{
 })
 ```
 
-Dependencias sao extraidas dos campos Meta e Data da entrada, depois usadas para ordenacao topologica durante transicoes de estado.
+Dependências são extraídas dos campos Meta e Data da entrada, depois usadas para ordenação topológica durante transições de estado.
 
-## Historico de Versoes
+## Histórico de Versões
 
-Backends de historico:
+Backends de histórico:
 
-| Implementacao | Caso de Uso |
+| Implementação | Caso de Uso |
 |---------------|-------------|
-| SQLite | Persistencia de producao |
+| SQLite | Persistência de produção |
 | Memory | Testes |
-| Nil | Sem historico |
+| Nil | Sem histórico |
 
-SQLite usa modo WAL com tabelas para versoes, changesets (codificados em MessagePack) e metadados.
+SQLite usa modo WAL com tabelas para versões, changesets (codificados em MessagePack) e metadados.
 
-### Navegacao
+### Navegação
 
-Computacao de caminho encontra a rota mais curta entre versoes:
+Computação de caminho encontra a rota mais curta entre versões:
 
 ```go
 Path(v0, v3) = [v1, v2, v3]  // Aplicar changesets para frente
 Path(v3, v1) = [v2, v1]      // Aplicar changesets reversos
 ```
 
-`LoadState()` reproduz historico de um baseline sem criar novas versoes - usado durante boot.
+`LoadState()` reproduz histórico de um baseline sem criar novas versões - usado durante boot.
 
 ## Finder
 
@@ -137,9 +137,9 @@ Motor de busca com caching LRU para pesquisar entradas:
 | Prefix | `^` | `^meta.name=user` |
 | Suffix | `$` | `$meta.path=Handler` |
 
-Cache invalida em mudanca de versao.
+Cache invalida em mudança de versão.
 
-## Veja Tambem
+## Veja Também
 
-- [Registry](concept-registry.md) - Conceitos de alto nivel
+- [Registry](concept-registry.md) - Conceitos de alto nível
 - [Events](internal-events.md) - Detalhes do event bus

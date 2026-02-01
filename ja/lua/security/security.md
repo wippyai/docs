@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-認証アクター、認可スコープ、アクセスポリシーを管理。
+認証アクター、認可スコープ、アクセスポリシーを管理します。
 
 ## ロード
 
@@ -13,7 +13,7 @@ local security = require("security")
 
 ## actor
 
-実行コンテキストから現在のセキュリティアクターを返す。
+実行コンテキストから現在のセキュリティアクターを返します。
 
 ```lua
 local actor = security.actor()
@@ -32,7 +32,7 @@ end
 
 ## scope
 
-実行コンテキストから現在のセキュリティスコープを返す。
+実行コンテキストから現在のセキュリティスコープを返します。
 
 ```lua
 local scope = security.scope()
@@ -48,7 +48,7 @@ end
 
 ## can
 
-現在のコンテキストがリソースに対するアクションを許可するかチェック。
+現在のコンテキストがリソースに対するアクションを許可するかチェックします。
 
 ```lua
 -- 読み取り権限をチェック
@@ -78,7 +78,7 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 
 ## new_actor
 
-IDとメタデータで新しいアクターを作成。
+IDとメタデータで新しいアクターを作成します。
 
 ```lua
 -- ユーザーアクターを作成
@@ -104,7 +104,7 @@ local service_actor = security.new_actor("service:payment-processor", {
 
 ## new_scope
 
-新しいカスタムスコープを作成。
+新しいカスタムスコープを作成します。
 
 ```lua
 -- 空のスコープ
@@ -125,7 +125,7 @@ scope = scope:with(policy1):with(policy2)
 
 ## policy
 
-レジストリからポリシーを取得。
+レジストリからポリシーを取得します。
 
 ```lua
 local policy, err = security.policy("app:admin-access")
@@ -152,7 +152,7 @@ end
 
 ## named_scope
 
-事前定義されたポリシーグループを取得。
+事前定義されたポリシーグループを取得します。
 
 ```lua
 -- 管理者スコープを取得
@@ -173,7 +173,7 @@ local result = admin_scope:evaluate(actor, "delete", "user:123")
 
 ## token_store
 
-認証トークンを管理するためのトークンストアを取得。
+認証トークンを管理するためのトークンストアを取得します。
 
 ```lua
 local store, err = security.token_store("app:tokens")
@@ -202,7 +202,7 @@ store:close()
 
 ### with / without
 
-スコープにポリシーを追加または削除。
+スコープにポリシーを追加または削除します。
 
 ```lua
 local scope = security.new_scope()
@@ -217,7 +217,7 @@ scope = scope:without("app:read-only")
 
 ### evaluate
 
-スコープ内のすべてのポリシーを評価。
+スコープ内のすべてのポリシーを評価します。
 
 ```lua
 local result = scope:evaluate(actor, "read", "document:123")
@@ -230,7 +230,7 @@ end
 
 ### contains
 
-スコープにポリシーが含まれているかチェック。
+スコープにポリシーが含まれているかチェックします。
 
 ```lua
 if scope:contains("app:admin") then
@@ -240,7 +240,7 @@ end
 
 ### policies
 
-スコープ内のすべてのポリシーを返す。
+スコープ内のすべてのポリシーを返します。
 
 ```lua
 local policies = scope:policies()
@@ -262,7 +262,7 @@ end
 
 ### create
 
-認証トークンを作成。
+認証トークンを作成します。
 
 ```lua
 local actor = security.new_actor("user:123", {role = "user"})
@@ -288,7 +288,7 @@ local token, err = store:create(actor, scope, {
 
 ### validate
 
-トークンを検証してアクター/スコープを取得。
+トークンを検証してアクター/スコープを取得します。
 
 ```lua
 local actor, scope, err = store:validate(token)
@@ -301,7 +301,7 @@ end
 
 ### revoke
 
-トークンを無効化。
+トークンを無効化します。
 
 ```lua
 local ok, err = store:revoke(token)
@@ -311,7 +311,7 @@ local ok, err = store:revoke(token)
 
 ### close
 
-トークンストアリソースを解放。
+トークンストアリソースを解放します。
 
 ```lua
 store:close()
@@ -321,7 +321,7 @@ store:close()
 
 ## 権限
 
-セキュリティ操作はセキュリティポリシー評価の対象。
+セキュリティ操作はセキュリティポリシー評価の対象です。
 
 ### セキュリティアクション
 

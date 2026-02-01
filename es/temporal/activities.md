@@ -4,7 +4,7 @@ Las activities son funciones que ejecutan operaciones no deterministas. Cualquie
 
 ## Registrar Activities
 
-Agregue `meta.temporal.activity` para registrar una funcion como activity:
+Agregue `meta.temporal.activity` para registrar una función como activity:
 
 ```yaml
 - name: charge_payment
@@ -22,12 +22,12 @@ Agregue `meta.temporal.activity` para registrar una funcion como activity:
 
 ### Campos de Metadatos
 
-| Campo | Requerido | Descripcion |
+| Campo | Requerido | Descripción |
 |-------|-----------|-------------|
-| `worker` | Si | Referencia a entrada `temporal.worker` |
+| `worker` | Sí | Referencia a entrada `temporal.worker` |
 | `local` | No | Ejecutar como activity local (por defecto: false) |
 
-## Implementacion
+## Implementación
 
 Las activities son funciones Lua regulares:
 
@@ -61,7 +61,7 @@ return { charge = charge }
 
 ## Llamar Activities
 
-Desde workflows, use el modulo `funcs`:
+Desde workflows, use el módulo `funcs`:
 
 ```lua
 local funcs = require("funcs")
@@ -103,7 +103,7 @@ local result, err = executor:call("app:charge_payment", input)
 
 ## Activities Locales
 
-Las activities locales se ejecutan en el proceso del workflow worker sin polling de cola de tareas separado. Use para operaciones rapidas y cortas:
+Las activities locales se ejecutan en el proceso del workflow worker sin polling de cola de tareas separado. Use para operaciones rápidas y cortas:
 
 ```yaml
 - name: validate_input
@@ -119,11 +119,11 @@ Las activities locales se ejecutan en el proceso del workflow worker sin polling
         local: true
 ```
 
-Caracteristicas:
+Características:
 - Se ejecutan en el proceso del workflow worker
 - Menor latencia
 - Sin overhead de cola de tareas separada
-- Limitadas a tiempos de ejecucion cortos
+- Limitadas a tiempos de ejecución cortos
 - Sin heartbeating
 
 ## Nombrado de Activities
@@ -142,7 +142,7 @@ Nombre de activity: `app:charge_payment`
 
 ## Manejo de Errores
 
-Retorne errores via el patron estandar de Lua:
+Retorne errores vía el patrón estándar de Lua:
 
 ```lua
 local function charge(input)
@@ -152,7 +152,7 @@ local function charge(input)
 
     local response, err = http.post(url, options)
     if err then
-        return nil, errors.wrap(err, "API de pagos fallo")
+        return nil, errors.wrap(err, "API de pagos falló")
     end
 
     if response:status() >= 400 then
@@ -165,7 +165,7 @@ end
 
 ## Activities de Proceso
 
-Las entradas `process.lua` tambien pueden registrarse como activities:
+Las entradas `process.lua` también pueden registrarse como activities:
 
 ```yaml
 - name: long_task
@@ -180,8 +180,8 @@ Las entradas `process.lua` tambien pueden registrarse como activities:
         worker: app:worker
 ```
 
-## Ver Tambien
+## Ver También
 
-- [Overview](temporal/overview.md) - Configuracion
-- [Workflows](temporal/workflows.md) - Implementacion de workflows
-- [Funciones](lua/core/funcs.md) - Modulo de funciones
+- [Overview](temporal/overview.md) - Configuración
+- [Workflows](temporal/workflows.md) - Implementación de workflows
+- [Funciones](lua/core/funcs.md) - Módulo de funciones

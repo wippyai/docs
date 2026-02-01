@@ -198,14 +198,6 @@ With release notes:
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### Protected Versions
-
-Mark production releases as protected (cannot be yanked):
-
-```bash
-wippy publish --version 1.0.0 --protected
-```
-
 ## Using Published Modules
 
 ### Add Dependency

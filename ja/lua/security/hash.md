@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-暗号学的ハッシュ関数とHMACメッセージ認証。
+暗号学的ハッシュ関数とHMACメッセージ認証を提供します。
 
 ## ロード
 
@@ -136,7 +136,7 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 ### FNV-32
 
-ハッシュテーブルとパーティショニング用の高速ハッシュ。
+ハッシュテーブルとパーティショニング用の高速ハッシュです。
 
 ```lua
 local n = hash.fnv32("data")
@@ -150,7 +150,7 @@ local n = hash.fnv32("data")
 
 ### FNV-64
 
-衝突を減らすための大きな出力を持つ高速ハッシュ。
+衝突を減らすための大きな出力を持つ高速ハッシュです。
 
 ```lua
 local n = hash.fnv64("data")

@@ -1,10 +1,10 @@
 # Executor
 
-Executores de comandos executam processos externos com ambientes controlados. Dois tipos de executor estao disponiveis: processos nativos do SO e containers Docker.
+Executores de comandos executam processos externos com ambientes controlados. Dois tipos de executor estão disponíveis: processos nativos do SO e containers Docker.
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
 | `exec.native` | Executa comandos diretamente no SO host |
 | `exec.docker` | Executa comandos dentro de containers Docker |
@@ -26,14 +26,14 @@ Executa comandos diretamente no sistema operacional host.
     - npm run build
 ```
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `default_work_dir` | string | - | Diretorio de trabalho para todos os comandos |
-| `default_env` | map | - | Variaveis de ambiente (mescladas com env por comando) |
-| `command_whitelist` | string[] | - | Se definido, apenas estes comandos exatos sao permitidos |
+| `default_work_dir` | string | - | Diretório de trabalho para todos os comandos |
+| `default_env` | map | - | Variáveis de ambiente (mescladas com env por comando) |
+| `command_whitelist` | string[] | - | Se definido, apenas estes comandos exatos são permitidos |
 
 <note>
-Executores nativos usam um ambiente limpo por padrao. Apenas variaveis de ambiente explicitamente configuradas sao passadas para processos filhos.
+Executores nativos usam um ambiente limpo por padrão. Apenas variáveis de ambiente explicitamente configuradas são passadas para processos filhos.
 </note>
 
 ## Executor Docker
@@ -59,29 +59,29 @@ Executa comandos dentro de containers Docker isolados.
     - /app/data:/workspace/data:ro
 ```
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `image` | string | **obrigatorio** | Imagem Docker a usar |
+| `image` | string | **obrigatório** | Imagem Docker a usar |
 | `host` | string | unix socket | URL do daemon Docker |
-| `default_work_dir` | string | - | Diretorio de trabalho dentro do container |
-| `default_env` | map | - | Variaveis de ambiente |
-| `command_whitelist` | string[] | - | Comandos permitidos (correspondencia exata) |
+| `default_work_dir` | string | - | Diretório de trabalho dentro do container |
+| `default_env` | map | - | Variáveis de ambiente |
+| `command_whitelist` | string[] | - | Comandos permitidos (correspondência exata) |
 | `network_mode` | string | bridge | Modo de rede: `host`, `bridge`, `none` |
 | `volumes` | string[] | - | Montagens de volume: `host:container[:ro]` |
-| `user` | string | - | Usuario para executar dentro do container |
-| `memory_limit` | int | 0 | Limite de memoria em bytes (0 = ilimitado) |
+| `user` | string | - | Usuário para executar dentro do container |
+| `memory_limit` | int | 0 | Limite de memória em bytes (0 = ilimitado) |
 | `cpu_quota` | int | 0 | Cota de CPU (100000 = 1 CPU, 0 = ilimitado) |
-| `auto_remove` | bool | false | Remove container apos sair |
+| `auto_remove` | bool | false | Remove container após sair |
 | `read_only_rootfs` | bool | false | Torna sistema de arquivos raiz somente leitura |
-| `no_new_privileges` | bool | false | Previne escalacao de privilegios |
+| `no_new_privileges` | bool | false | Previne escalação de privilégios |
 | `cap_drop` | string[] | - | Capacidades Linux a remover |
 | `cap_add` | string[] | - | Capacidades Linux a adicionar |
 | `pids_limit` | int | 0 | Max processos (0 = ilimitado) |
-| `tmpfs` | map | - | Montagens tmpfs para caminhos gravaveis |
+| `tmpfs` | map | - | Montagens tmpfs para caminhos graváveis |
 
 ## Whitelist de Comandos
 
-Ambos os tipos de executor suportam whitelist de comandos. Quando configurado, apenas correspondencias exatas de comando sao permitidas:
+Ambos os tipos de executor suportam whitelist de comandos. Quando configurado, apenas correspondências exatas de comando são permitidas:
 
 ```yaml
 command_whitelist:
@@ -89,11 +89,11 @@ command_whitelist:
   - cat /etc/passwd
 ```
 
-Comandos nao na whitelist sao rejeitados com um erro.
+Comandos não na whitelist são rejeitados com um erro.
 
 ## API Lua
 
-O [Modulo Exec](lua-exec.md) fornece execucao de comandos:
+O [Módulo Exec](lua-exec.md) fornece execução de comandos:
 
 ```lua
 local exec = require("exec")

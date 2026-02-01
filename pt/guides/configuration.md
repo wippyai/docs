@@ -1,16 +1,16 @@
-# Referencia de Configuracao
+# Referência de Configuração
 
-O Wippy e configurado via arquivos `.wippy.yaml`. Todas as opcoes tem padroes sensiveis.
+O Wippy é configurado via arquivos `.wippy.yaml`. Todas as opções têm padrões sensíveis.
 
 ## Gerenciador de Log
 
-Controla o roteamento de logs do runtime. A saida do console e configurada via [flags do CLI](guide-cli.md) (`-v`, `-c`, `-s`).
+Controla o roteamento de logs do runtime. A saída do console é configurada via [flags do CLI](guide-cli.md) (`-v`, `-c`, `-s`).
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `propagate_downstream` | bool | true | Envia logs para saida console/arquivo |
-| `stream_to_events` | bool | false | Publica logs no barramento de eventos para acesso programatico |
-| `min_level` | int | -1 | Nivel minimo: -1=debug, 0=info, 1=warn, 2=error |
+| `propagate_downstream` | bool | true | Envia logs para saída console/arquivo |
+| `stream_to_events` | bool | false | Publica logs no barramento de eventos para acesso programático |
+| `min_level` | int | -1 | Nível mínimo: -1=debug, 0=info, 1=warn, 2=error |
 
 ```yaml
 logmanager:
@@ -19,16 +19,16 @@ logmanager:
   min_level: 0
 ```
 
-Veja: [Modulo Logger](lua-logger.md)
+Veja: [Módulo Logger](lua-logger.md)
 
 ## Profiler
 
-Servidor HTTP pprof do Go para profiling de CPU/memoria. Habilite com a flag `-p` ou configuracao.
+Servidor HTTP pprof do Go para profiling de CPU/memória. Habilite com a flag `-p` ou configuração.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `enabled` | bool | false | Inicia servidor do profiler |
-| `address` | string | localhost:6060 | Endereco de escuta |
+| `address` | string | localhost:6060 | Endereço de escuta |
 | `read_timeout` | duration | 15s | Timeout de leitura HTTP |
 | `write_timeout` | duration | 15s | Timeout de escrita HTTP |
 | `idle_timeout` | duration | 60s | Timeout de keep-alive |
@@ -41,28 +41,28 @@ profiler:
 
 Acesse em `http://localhost:6060/debug/pprof/`
 
-## Seguranca
+## Segurança
 
-Comportamento de seguranca global. Politicas individuais sao definidas como [entradas security.policy](guide-entry-kinds.md).
+Comportamento de segurança global. Políticas individuais são definidas como [entradas security.policy](guide-entry-kinds.md).
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `strict_mode` | bool | false | Nega acesso quando contexto de seguranca esta incompleto |
+| `strict_mode` | bool | false | Nega acesso quando contexto de segurança está incompleto |
 
 ```yaml
 security:
   strict_mode: true
 ```
 
-Veja: [Sistema de Seguranca](system-security.md), [Modulo Security](lua-security.md)
+Veja: [Sistema de Segurança](system-security.md), [Módulo Security](lua-security.md)
 
 ## Registro
 
-Armazenamento de entradas e historico de versoes. O registro armazena todas as entradas de configuracao.
+Armazenamento de entradas e histórico de versões. O registro armazena todas as entradas de configuração.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `enable_history` | bool | true | Rastreia versoes de entradas |
+| `enable_history` | bool | true | Rastreia versões de entradas |
 | `history_type` | string | memory | Armazenamento: memory, sqlite, nil |
 | `history_path` | string | .wippy/registry.db | Caminho do arquivo SQLite |
 
@@ -72,15 +72,15 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-Veja: [Conceito de Registro](concept-registry.md), [Modulo Registry](lua-registry.md)
+Veja: [Conceito de Registro](concept-registry.md), [Módulo Registry](lua-registry.md)
 
 ## Relay
 
-Roteamento de mensagens entre processos atraves de nos.
+Roteamento de mensagens entre processos através de nós.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `node_name` | string | local | Identificador para este no de relay |
+| `node_name` | string | local | Identificador para este nó de relay |
 
 ```yaml
 relay:
@@ -91,9 +91,9 @@ Veja: [Modelo de Processos](concept-process-model.md)
 
 ## Supervisor
 
-Gerenciamento de ciclo de vida de servicos. Controla como entradas supervisionadas iniciam/param.
+Gerenciamento de ciclo de vida de serviços. Controla como entradas supervisionadas iniciam/param.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `host.buffer_size` | int | 1024 | Capacidade da fila de mensagens |
 | `host.worker_count` | int | NumCPU | Workers concorrentes |
@@ -105,13 +105,13 @@ supervisor:
     worker_count: 32
 ```
 
-Veja: [Guia de Supervisao](guide-supervision.md)
+Veja: [Guia de Supervisão](guide-supervision.md)
 
-## Funcoes
+## Funções
 
-Host de execucao de funcoes. Executa entradas `function.lua`.
+Host de execução de funções. Executa entradas `function.lua`.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `host.buffer_size` | int | 1024 | Capacidade da fila de tarefas |
 | `host.worker_count` | int | NumCPU | Workers concorrentes |
@@ -123,18 +123,18 @@ functions:
     worker_count: 32
 ```
 
-Veja: [Conceito de Funcoes](concept-functions.md), [Modulo Funcs](lua-funcs.md)
+Veja: [Conceito de Funções](concept-functions.md), [Módulo Funcs](lua-funcs.md)
 
 ## Runtime Lua
 
-Cache de VM Lua e avaliacao de expressoes.
+Cache de VM Lua e avaliação de expressões.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `proto_cache_size` | int | 60000 | Cache de prototipos compilados |
+| `proto_cache_size` | int | 60000 | Cache de protótipos compilados |
 | `main_cache_size` | int | 10000 | Cache de chunks principais |
-| `expr.cache_enabled` | bool | true | Cache de expressoes compiladas |
-| `expr.capacity` | int | 5000 | Tamanho do cache de expressoes |
+| `expr.cache_enabled` | bool | true | Cache de expressões compiladas |
+| `expr.capacity` | int | 5000 | Tamanho do cache de expressões |
 | `json.cache_enabled` | bool | true | Cache de schemas JSON |
 | `json.capacity` | int | 1000 | Tamanho do cache JSON |
 
@@ -146,16 +146,16 @@ lua:
     capacity: 5000
 ```
 
-Veja: [Visao Geral Lua](lua-overview.md)
+Veja: [Visão Geral Lua](lua-overview.md)
 
 ## Finder
 
 Cache de busca do registro. Usado internamente para consultas de entradas.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `query_cache_size` | int | 1000 | Resultados de consulta em cache |
-| `regex_cache_size` | int | 100 | Padroes regex compilados |
+| `regex_cache_size` | int | 100 | Padrões regex compilados |
 
 ```yaml
 finder:
@@ -164,20 +164,20 @@ finder:
 
 ## OpenTelemetry
 
-Tracing distribuido e exportacao de metricas via OTLP.
+Tracing distribuído e exportação de métricas via OTLP.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `enabled` | bool | false | Habilita OTEL |
 | `endpoint` | string | localhost:4318 | Endpoint OTLP |
 | `protocol` | string | http/protobuf | Protocolo: grpc, http/protobuf |
-| `service_name` | string | wippy | Identificador do servico |
+| `service_name` | string | wippy | Identificador do serviço |
 | `sample_rate` | float | 1.0 | Amostragem de trace (0.0-1.0) |
 | `traces_enabled` | bool | false | Exporta traces |
-| `metrics_enabled` | bool | false | Exporta metricas |
-| `http.enabled` | bool | true | Rastreia requisicoes HTTP |
+| `metrics_enabled` | bool | false | Exporta métricas |
+| `http.enabled` | bool | true | Rastreia requisições HTTP |
 | `process.enabled` | bool | true | Rastreia ciclo de vida de processos |
-| `interceptor.enabled` | bool | false | Rastreia chamadas de funcoes |
+| `interceptor.enabled` | bool | false | Rastreia chamadas de funções |
 
 ```yaml
 otel:
@@ -194,23 +194,23 @@ Veja: [Guia de Observabilidade](guide-observability.md)
 
 Comportamento de encerramento gracioso.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `timeout` | duration | 30s | Tempo maximo de espera para componentes pararem |
+| `timeout` | duration | 30s | Tempo máximo de espera para componentes pararem |
 
 ```yaml
 shutdown:
   timeout: 60s
 ```
 
-## Metricas
+## Métricas
 
-Buffer de coleta de metricas internas.
+Buffer de coleta de métricas internas.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `buffer.size` | int | 10000 | Capacidade do buffer de metricas |
-| `interceptor.enabled` | bool | false | Rastreia chamadas de funcoes automaticamente |
+| `buffer.size` | int | 10000 | Capacidade do buffer de métricas |
+| `interceptor.enabled` | bool | false | Rastreia chamadas de funções automaticamente |
 
 ```yaml
 metrics:
@@ -220,16 +220,16 @@ metrics:
     enabled: true
 ```
 
-Veja: [Modulo Metrics](lua-metrics.md), [Guia de Observabilidade](guide-observability.md)
+Veja: [Módulo Metrics](lua-metrics.md), [Guia de Observabilidade](guide-observability.md)
 
 ## Prometheus
 
-Endpoint de metricas Prometheus.
+Endpoint de métricas Prometheus.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `enabled` | bool | false | Inicia servidor de metricas |
-| `address` | string | localhost:9090 | Endereco de escuta |
+| `enabled` | bool | false | Inicia servidor de métricas |
+| `address` | string | localhost:9090 | Endereço de escuta |
 
 ```yaml
 prometheus:
@@ -237,25 +237,25 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Expoe endpoint `/metrics` para scraping do Prometheus.
+Expõe endpoint `/metrics` para scraping do Prometheus.
 
 Veja: [Guia de Observabilidade](guide-observability.md)
 
 ## Cluster
 
-Clustering multi-no com descoberta gossip.
+Clustering multi-nó com descoberta gossip.
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `enabled` | bool | false | Habilita clustering |
-| `name` | string | hostname | Identificador do no |
-| `internode.bind_addr` | string | 0.0.0.0 | Endereco de bind entre nos |
+| `name` | string | hostname | Identificador do nó |
+| `internode.bind_addr` | string | 0.0.0.0 | Endereço de bind entre nós |
 | `internode.bind_port` | int | 0 | Porta (0=auto 7950-7959) |
 | `membership.bind_port` | int | 7946 | Porta gossip |
-| `membership.join_addrs` | string | | Nos seed (separados por virgula) |
+| `membership.join_addrs` | string | | Nós seed (separados por vírgula) |
 | `membership.secret_key` | string | | Chave de criptografia (base64) |
 | `membership.secret_file` | string | | Caminho do arquivo de chave |
-| `membership.advertise_addr` | string | | Endereco publico para NAT |
+| `membership.advertise_addr` | string | | Endereço público para NAT |
 
 ```yaml
 cluster:
@@ -269,15 +269,15 @@ cluster:
 
 Veja: [Guia de Cluster](guide-cluster.md)
 
-## Variaveis de Ambiente
+## Variáveis de Ambiente
 
-| Variavel | Descricao |
+| Variável | Descrição |
 |----------|-----------|
-| `GOMEMLIMIT` | Limite de memoria (sobrescreve flag `--memory-limit`) |
+| `GOMEMLIMIT` | Limite de memória (sobrescreve flag `--memory-limit`) |
 
-## Veja Tambem
+## Veja Também
 
-- [Referencia do CLI](guide-cli.md) - Opcoes de linha de comando
+- [Referência do CLI](guide-cli.md) - Opções de linha de comando
 - [Tipos de Entradas](guide-entry-kinds.md) - Todos os tipos de entradas
-- [Guia de Cluster](guide-cluster.md) - Configuracao multi-no
-- [Guia de Observabilidade](guide-observability.md) - Logging, metricas, tracing
+- [Guia de Cluster](guide-cluster.md) - Configuração multi-nó
+- [Guia de Observabilidade](guide-observability.md) - Logging, métricas, tracing

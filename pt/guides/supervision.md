@@ -1,19 +1,19 @@
-# Supervisao
+# Supervisão
 
-O supervisor gerencia ciclos de vida de servicos, tratando ordenacao de inicializacao, reinicializacoes automaticas e encerramento gracioso. Servicos com `auto_start: true` sao iniciados quando a aplicacao inicia.
+O supervisor gerencia ciclos de vida de serviços, tratando ordenação de inicialização, reinicializações automáticas e encerramento gracioso. Serviços com `auto_start: true` são iniciados quando a aplicação inicia.
 
-## Configuracao de Ciclo de Vida
+## Configuração de Ciclo de Vida
 
-Servicos se registram com o supervisor usando um bloco `lifecycle`. Para processos, use `process.service` para encapsular uma definicao de processo:
+Serviços se registram com o supervisor usando um bloco `lifecycle`. Para processos, use `process.service` para encapsular uma definição de processo:
 
 ```yaml
-# Definicao de processo (o codigo)
+# Definição de processo (o código)
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# Servico supervisionado (encapsula o processo com gerenciamento de ciclo de vida)
+# Serviço supervisionado (encapsula o processo com gerenciamento de ciclo de vida)
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -31,20 +31,20 @@ Servicos se registram com o supervisor usando um bloco `lifecycle`. Para process
       max_attempts: 10
 ```
 
-| Campo | Padrao | Descricao |
+| Campo | Padrão | Descrição |
 |-------|--------|-----------|
 | `auto_start` | `false` | Inicia automaticamente quando supervisor inicia |
-| `start_timeout` | `10s` | Tempo maximo permitido para inicializacao |
-| `stop_timeout` | `10s` | Tempo maximo para encerramento gracioso |
-| `stable_threshold` | `5s` | Tempo de execucao antes do servico ser considerado estavel |
-| `depends_on` | `[]` | Servicos que devem estar executando primeiro |
+| `start_timeout` | `10s` | Tempo máximo permitido para inicialização |
+| `stop_timeout` | `10s` | Tempo máximo para encerramento gracioso |
+| `stable_threshold` | `5s` | Tempo de execução antes do serviço ser considerado estável |
+| `depends_on` | `[]` | Serviços que devem estar executando primeiro |
 
-## Resolucao de Dependencias
+## Resolução de Dependências
 
-O supervisor resolve dependencias de duas fontes:
+O supervisor resolve dependências de duas fontes:
 
-1. **Dependencias explicitas** declaradas em `depends_on`
-2. **Dependencias extraidas do registro** de referencias de entradas (ex: `database: app:db` na sua configuracao)
+1. **Dependências explícitas** declaradas em `depends_on`
+2. **Dependências extraídas do registro** de referências de entradas (ex: `database: app:db` na sua configuração)
 
 ```mermaid
 graph LR
@@ -54,27 +54,27 @@ graph LR
     C --> E[Cache]
 ```
 
-Dependencias iniciam antes dos dependentes. Se o Servico C depende de A e B, ambos A e B devem alcancar o estado `Running` antes de C iniciar.
+Dependências iniciam antes dos dependentes. Se o Serviço C depende de A e B, ambos A e B devem alcançar o estado `Running` antes de C iniciar.
 
 <tip>
-Voce nao precisa declarar entradas de infraestrutura como bancos de dados em <code>depends_on</code>. O supervisor extrai automaticamente dependencias de referencias do registro na configuracao da sua entrada.
+Você não precisa declarar entradas de infraestrutura como bancos de dados em <code>depends_on</code>. O supervisor extrai automaticamente dependências de referências do registro na configuração da sua entrada.
 </tip>
 
-## Politica de Reinicializacao
+## Política de Reinicialização
 
-Quando um servico falha, o supervisor tenta novamente com backoff exponencial:
+Quando um serviço falha, o supervisor tenta novamente com backoff exponencial:
 
 ```yaml
 lifecycle:
   restart:
     initial_delay: 1s      # Espera da primeira tentativa
-    max_delay: 90s         # Limite maximo de delay
+    max_delay: 90s         # Limite máximo de delay
     backoff_factor: 2.0    # Multiplicador de delay por tentativa
-    jitter: 0.1            # ±10% de randomizacao
+    jitter: 0.1            # +/-10% de randomização
     max_attempts: 0        # 0 = tentativas infinitas
 ```
 
-| Tentativa | Delay Base | Com Jitter (±10%) |
+| Tentativa | Delay Base | Com Jitter (+/-10%) |
 |-----------|------------|-------------------|
 | 1 | 1s | 0.9s - 1.1s |
 | 2 | 2s | 1.8s - 2.2s |
@@ -83,28 +83,28 @@ lifecycle:
 | ... | ... | ... |
 | N | 90s | 81s - 99s (limitado) |
 
-Quando um servico executa por mais tempo que `stable_threshold`, o contador de tentativas reseta. Isso previne que falhas transitorias escalem delays permanentemente.
+Quando um serviço executa por mais tempo que `stable_threshold`, o contador de tentativas reseta. Isso previne que falhas transitórias escalem delays permanentemente.
 
 ### Erros Terminais
 
 Estes erros param tentativas de retry:
 
 - Cancelamento de contexto
-- Requisicao de terminacao explicita
-- Erros marcados como nao-retentaveis
+- Requisição de terminação explícita
+- Erros marcados como não-retentáveis
 
-## Contexto de Seguranca
+## Contexto de Segurança
 
-Servicos podem executar com uma identidade de seguranca especifica:
+Serviços podem executar com uma identidade de segurança específica:
 
 ```yaml
-# Definicao de processo
+# Definição de processo
 - name: admin_worker_process
   kind: process.lua
   source: file://admin_worker.lua
   method: main
 
-# Servico supervisionado com contexto de seguranca
+# Serviço supervisionado com contexto de segurança
 - name: admin_worker
   kind: process.service
   process: app:admin_worker_process
@@ -122,16 +122,16 @@ Servicos podem executar com uma identidade de seguranca especifica:
         - app:data_access
 ```
 
-O contexto de seguranca define:
+O contexto de segurança define:
 
-| Campo | Descricao |
+| Campo | Descrição |
 |-------|-----------|
-| `actor.id` | String de identidade para este servico |
-| `actor.meta` | Metadados chave-valor (role, permissoes, etc.) |
-| `groups` | Grupos de politicas a aplicar |
-| `policies` | Politicas individuais a aplicar |
+| `actor.id` | String de identidade para este serviço |
+| `actor.meta` | Metadados chave-valor (role, permissões, etc.) |
+| `groups` | Grupos de políticas a aplicar |
+| `policies` | Políticas individuais a aplicar |
 
-Codigo executando no servico herda este contexto de seguranca. O modulo `security` pode entao verificar permissoes:
+Código executando no serviço herda este contexto de segurança. O módulo `security` pode então verificar permissões:
 
 ```lua
 local security = require("security")
@@ -142,10 +142,10 @@ end
 ```
 
 <note>
-Quando nenhum contexto de seguranca esta configurado, o servico executa sem um ator. No modo estrito (padrao), verificacoes de seguranca falham. Configure um contexto de seguranca para servicos que precisam de autorizacao.
+Quando nenhum contexto de segurança está configurado, o serviço executa sem um ator. No modo estrito (padrão), verificações de segurança falham. Configure um contexto de segurança para serviços que precisam de autorização.
 </note>
 
-## Estados de Servico
+## Estados de Serviço
 
 ```mermaid
 stateDiagram-v2
@@ -161,30 +161,30 @@ stateDiagram-v2
     Failed --> Starting : retry
 ```
 
-O supervisor transiciona servicos atraves destes estados:
+O supervisor transiciona serviços através destes estados:
 
-| Estado | Descricao |
+| Estado | Descrição |
 |--------|-----------|
-| `Inactive` | Registrado mas nao iniciado |
-| `Starting` | Inicializacao em progresso |
+| `Inactive` | Registrado mas não iniciado |
+| `Starting` | Inicialização em progresso |
 | `Running` | Operando normalmente |
 | `Stopping` | Encerramento gracioso em progresso |
 | `Stopped` | Terminado de forma limpa |
 | `Failed` | Erro ocorreu, pode tentar novamente |
 
-## Ordem de Inicializacao e Encerramento
+## Ordem de Inicialização e Encerramento
 
-**Inicializacao**: Dependencias primeiro, depois dependentes. Servicos no mesmo nivel de dependencia podem iniciar em paralelo.
+**Inicialização**: Dependências primeiro, depois dependentes. Serviços no mesmo nível de dependência podem iniciar em paralelo.
 
-**Encerramento**: Dependentes primeiro, depois dependencias. Isso garante que servicos dependentes terminem antes de suas dependencias pararem.
+**Encerramento**: Dependentes primeiro, depois dependências. Isso garante que serviços dependentes terminem antes de suas dependências pararem.
 
 ```
-Inicializacao:  database → cache → handler → http_server
-Encerramento:   http_server → handler → cache → database
+Inicialização:  database -> cache -> handler -> http_server
+Encerramento:   http_server -> handler -> cache -> database
 ```
 
-## Veja Tambem
+## Veja Também
 
 - [Modelo de Processos](concept-process-model.md) - Ciclo de vida de processos
-- [Configuracao](guide-configuration.md) - Formato de configuracao YAML
-- [Modulo Security](lua-security.md) - Verificacoes de permissao em Lua
+- [Configuração](guide-configuration.md) - Formato de configuração YAML
+- [Módulo Security](lua-security.md) - Verificações de permissão em Lua

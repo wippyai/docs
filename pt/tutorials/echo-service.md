@@ -1,15 +1,15 @@
 # Echo Service
 
-Construa um servico de echo distribuido demonstrando processos, channels, corrotinas, passagem de mensagens e supervisao.
+Construa um serviço de echo distribuído demonstrando processos, channels, corrotinas, passagem de mensagens e supervisão.
 
-## Visao Geral
+## Visão Geral
 
-Este tutorial cria um cliente CLI que envia mensagens para um servico de relay, que cria workers para processar cada mensagem. Ele demonstra:
+Este tutorial cria um cliente CLI que envia mensagens para um serviço de relay, que cria workers para processar cada mensagem. Ele demonstra:
 
-- **Criacao de processos** - Criar processos filhos dinamicamente
-- **Passagem de mensagens** - Comunicacao entre processos via send/receive
-- **Channels e select** - Multiplexacao de multiplas fontes de eventos
-- **Corrotinas** - Execucao concorrente dentro de um processo
+- **Criação de processos** - Criar processos filhos dinamicamente
+- **Passagem de mensagens** - Comunicação entre processos via send/receive
+- **Channels e select** - Multiplexação de múltiplas fontes de eventos
+- **Corrotinas** - Execução concorrente dentro de um processo
 - **Registro de processos** - Encontrar processos por nome
 - **Monitoramento** - Rastrear ciclo de vida de processos filhos
 
@@ -49,7 +49,7 @@ echo-service/
     └── worker.lua
 ```
 
-## Definicoes de Entradas
+## Definições de Entradas
 
 Crie `src/_index.yaml`:
 
@@ -106,7 +106,7 @@ entries:
 
 ## O Processo Relay
 
-O relay se registra, trata mensagens, cria workers e executa uma corrotina de estatisticas.
+O relay se registra, trata mensagens, cria workers e executa uma corrotina de estatísticas.
 
 Crie `src/relay.lua`:
 
@@ -178,7 +178,7 @@ end
 return { main = main }
 ```
 
-### Padroes-Chave {id="relay-key-patterns"}
+### Padrões-Chave {id="relay-key-patterns"}
 
 **Spawn de Corrotina**
 
@@ -186,7 +186,7 @@ return { main = main }
 coroutine.spawn(stats_reporter)
 ```
 
-Cria uma corrotina concorrente compartilhando memoria com a funcao principal. Corrotinas cedem em operacoes de I/O como `time.sleep`.
+Cria uma corrotina concorrente compartilhando memória com a função principal. Corrotinas cedem em operações de I/O como `time.sleep`.
 
 **Channel Select**
 
@@ -197,15 +197,15 @@ local r = channel.select {
 }
 ```
 
-Aguarda multiplos channels. `r.channel` identifica qual disparou, `r.value` contem os dados.
+Aguarda múltiplos channels. `r.channel` identifica qual disparou, `r.value` contém os dados.
 
-**Extracao de Payload**
+**Extração de Payload**
 
 ```lua
 local echo = msg:payload():data()
 ```
 
-Mensagens tem `msg:topic()` para a string do topico e `msg:payload():data()` para o payload.
+Mensagens tem `msg:topic()` para a string do tópico e `msg:payload():data()` para o payload.
 
 **Spawn com Monitoramento**
 
@@ -307,7 +307,7 @@ end
 return { main = main }
 ```
 
-### Padroes-Chave {id="cli-key-patterns"}
+### Padrões-Chave {id="cli-key-patterns"}
 
 **Enviar por Nome**
 
@@ -315,9 +315,9 @@ return { main = main }
 process.send("relay", "echo", msg)
 ```
 
-`process.send` aceita nomes registrados diretamente. Retorna erro se nao encontrado.
+`process.send` aceita nomes registrados diretamente. Retorna erro se não encontrado.
 
-**Padrao de Timeout**
+**Padrão de Timeout**
 
 ```lua
 local timeout = time.after("2s")
@@ -337,7 +337,7 @@ wippy init
 wippy run -x app:terminal/app:cli
 ```
 
-Exemplo de saida:
+Exemplo de saída:
 
 ```
 Echo Client
@@ -352,7 +352,7 @@ Type messages to echo. Ctrl+C to exit.
 
 | Conceito | API |
 |----------|-----|
-| Criacao de processo | `process.spawn_monitored(entry, host, ...)` |
+| Criação de processo | `process.spawn_monitored(entry, host, ...)` |
 | Passagem de mensagens | `process.send(dest, topic, data)` |
 | Inbox | `process.inbox()` |
 | Eventos | `process.events()` |
@@ -361,7 +361,7 @@ Type messages to echo. Ctrl+C to exit.
 | Timeout | `time.after(duration)` |
 | Corrotinas | `coroutine.spawn(fn)` |
 
-## Proximos Passos
+## Próximos Passos
 
 - [Process Management](lua-process.md)
 - [Channels](lua-channel.md)

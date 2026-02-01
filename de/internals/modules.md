@@ -1,6 +1,6 @@
 # Lua-Module
 
-Runtime-Module erweitern die Lua-Umgebung mit neuer Funktionalität. Module können deterministische Utilities, I/O-Operationen oder asynchrone Commands bereitstellen, die an externe Systeme yielden.
+Laufzeitmodule erweitern die Lua-Umgebung um neue Funktionalität. Module können deterministische Hilfsfunktionen, E/A-Operationen oder asynchrone Befehle bereitstellen, die an externe Systeme abgeben.
 
 > Die Lua-Runtime-Implementierung kann sich in zukünftigen Versionen ändern.
 
@@ -38,12 +38,12 @@ Das `Class`-Feld bestimmt wo das Modul verwendet werden kann:
 |--------|--------------|
 | `ClassDeterministic` | Selbe Eingabe produziert immer selbe Ausgabe |
 | `ClassNondeterministic` | Ausgabe variiert (Zeit, Zufall) |
-| `ClassIO` | Externe I/O-Operationen |
+| `ClassIO` | Externe E/A-Operationen |
 | `ClassNetwork` | Netzwerkoperationen |
 | `ClassStorage` | Datenpersistenz |
 | `ClassWorkflow` | Workflow-sichere Operationen |
 
-Module nur mit `ClassDeterministic` getaggt sind workflow-sicher. Hinzufügen von I/O- oder Netzwerkklassen beschränkt das Modul auf Funktionen und Prozesse.
+Module, die nur mit `ClassDeterministic` gekennzeichnet sind, sind workflow-sicher. Das Hinzufügen von E/A- oder Netzwerkklassen beschränkt das Modul auf Funktionen und Prozesse.
 
 ## Funktionen exponieren
 

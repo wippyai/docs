@@ -22,7 +22,7 @@ myapp/
 ## YAML-Definitionsdateien
 
 <note>
-YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist die Quelle der Wahrheit - YAML-Dateien sind eine Möglichkeit, sie zu befüllen. Einträge können auch aus anderen Quellen stammen oder programmatisch erstellt werden.
+YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist die maßgebliche Datenquelle — YAML-Dateien sind eine Möglichkeit, sie zu befüllen. Einträge können auch aus anderen Quellen stammen oder programmatisch erstellt werden.
 </note>
 
 ### Dateistruktur
@@ -61,7 +61,7 @@ entries:
 
 ### Namenskonvention
 
-Verwenden Sie Punkte (`.`) für semantische Trennung und Unterstriche (`_`) für Wörter:
+Verwenden Sie Punkte (`.`) zur semantischen Trennung und Unterstriche (`_`) für Wörter:
 
 ```yaml
 # Funktion und ihr Endpunkt
@@ -79,7 +79,7 @@ Verwenden Sie Punkte (`.`) für semantische Trennung und Unterstriche (`_`) für
 ```
 
 <tip>
-Muster: <code>basis_name.variante</code> - Punkte trennen semantische Teile, Unterstriche trennen Wörter innerhalb eines Teils.
+Muster: <code>basis_name.variante</code> — Punkte trennen semantische Teile, Unterstriche trennen Wörter innerhalb eines Teils.
 </tip>
 
 ### Namespaces
@@ -109,7 +109,7 @@ Wippy scannt diese Verzeichnisse rekursiv nach YAML-Dateien.
 
 ## Entry-Definitionen
 
-Jeder Entry im `entries`-Array. Eigenschaften sind auf Root-Ebene (kein `data:`-Wrapper):
+Jeder Eintrag steht im `entries`-Array. Eigenschaften befinden sich auf oberster Ebene (kein `data:`-Wrapper):
 
 ```yaml
 entries:
@@ -145,7 +145,7 @@ Verwenden Sie `meta` für benutzerfreundliche Informationen:
   source: file://payment.lua
 ```
 
-Konvention: `meta.title` und `meta.comment` werden in Verwaltungs-UIs ansprechend dargestellt.
+Konvention: `meta.title` und `meta.comment` werden in Verwaltungsoberflächen ansprechend dargestellt.
 
 ### Anwendungseinträge
 

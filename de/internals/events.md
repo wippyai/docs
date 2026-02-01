@@ -55,7 +55,7 @@ type Bus struct {
 }
 ```
 
-Alle Mutationen laufen durch die Dispatcher-Goroutine, was Race-Conditions ohne komplexes Locking eliminiert.
+Alle Änderungen laufen durch die Dispatcher-Goroutine, wodurch Race-Conditions ohne komplexe Sperrmechanismen vermieden werden.
 
 ## Actions
 
@@ -235,7 +235,7 @@ bus.Send(ctx, triggeringEvent)
 result := waiter.Wait()  // blockiert bis Match oder Timeout
 ```
 
-Das Prepare-then-Wait-Pattern vermeidet Race-Conditions: subscriben bevor das Event ausgelöst wird, das die Antwort produziert.
+Das Vorbereiten-dann-Warten-Muster vermeidet Race-Conditions: Erst abonnieren, bevor das Ereignis ausgelöst wird, das die Antwort erzeugt.
 
 ## Shutdown
 

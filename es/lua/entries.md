@@ -1,33 +1,33 @@
 # Tipos de Entrada Lua
 
-Configuracion para entradas basadas en Lua: funciones, procesos, flujos de trabajo y bibliotecas.
+Configuración para entradas basadas en Lua: funciones, procesos, flujos de trabajo y bibliotecas.
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `function.lua` | Funcion sin estado, se ejecuta bajo demanda |
-| `process.lua` | Actor de larga duracion con estado |
+| `function.lua` | Función sin estado, se ejecuta bajo demanda |
+| `process.lua` | Actor de larga duración con estado |
 | `workflow.lua` | Flujo de trabajo durable (Temporal) |
-| `library.lua` | Codigo compartido importado por otras entradas |
+| `library.lua` | Código compartido importado por otras entradas |
 
 ## Campos Comunes
 
 Todas las entradas Lua comparten estos campos:
 
-| Campo | Requerido | Descripcion |
+| Campo | Requerido | Descripción |
 |-------|----------|-------------|
-| `name` | si | Nombre unico dentro del namespace |
-| `kind` | si | Uno de los tipos Lua anteriores |
-| `source` | si | Ruta del archivo Lua (`file://path.lua`) |
-| `method` | si | Funcion a exportar |
-| `modules` | no | Modulos permitidos para `require()` |
-| `imports` | no | Otras entradas como modulos locales |
+| `name` | sí | Nombre único dentro del namespace |
+| `kind` | sí | Uno de los tipos Lua anteriores |
+| `source` | sí | Ruta del archivo Lua (`file://path.lua`) |
+| `method` | sí | Función a exportar |
+| `modules` | no | Módulos permitidos para `require()` |
+| `imports` | no | Otras entradas como módulos locales |
 | `meta` | no | Metadatos buscables |
 
 ## function.lua
 
-Funcion sin estado llamada bajo demanda. Cada invocacion es independiente.
+Función sin estado llamada bajo demanda. Cada invocación es independiente.
 
 ```yaml
 - name: handler
@@ -43,7 +43,7 @@ Usar para: Manejadores HTTP, transformaciones de datos, utilidades.
 
 ## process.lua
 
-Actor de larga duracion que mantiene estado entre mensajes. Se comunica mediante paso de mensajes.
+Actor de larga duración que mantiene estado entre mensajes. Se comunica mediante paso de mensajes.
 
 ```yaml
 - name: worker
@@ -85,11 +85,11 @@ Flujo de trabajo durable que sobrevive a reinicios. El estado se persiste en Tem
     - time
 ```
 
-Usar para: Procesos de negocio de multiples pasos, orquestaciones de larga duracion.
+Usar para: Procesos de negocio de múltiples pasos, orquestaciones de larga duración.
 
 ## library.lua
 
-Codigo compartido que puede ser importado por otras entradas.
+Código compartido que puede ser importado por otras entradas.
 
 ```yaml
 - name: helpers
@@ -101,7 +101,7 @@ Codigo compartido que puede ser importado por otras entradas.
     - base64
 ```
 
-Otras entradas lo referencian via `imports`:
+Otras entradas lo referencian vía `imports`:
 
 ```yaml
 - name: handler
@@ -112,16 +112,16 @@ Otras entradas lo referencian via `imports`:
     helpers: app.lib:helpers
 ```
 
-En codigo Lua:
+En código Lua:
 
 ```lua
 local helpers = require("helpers")
 helpers.format_date(timestamp)
 ```
 
-## Modulos
+## Módulos
 
-El campo `modules` controla que modulos pueden cargarse con `require()`:
+El campo `modules` controla qué módulos pueden cargarse con `require()`:
 
 ```yaml
 modules:
@@ -132,16 +132,16 @@ modules:
   - channel
 ```
 
-Solo los modulos listados estan disponibles. Esto proporciona:
-- Seguridad: Prevenir acceso a modulos del sistema
-- Dependencias explicitas: Claro que necesita el codigo
-- Determinismo: Los flujos de trabajo solo obtienen modulos deterministicos
+Solo los módulos listados están disponibles. Esto proporciona:
+- Seguridad: Prevenir acceso a módulos del sistema
+- Dependencias explícitas: Claro qué necesita el código
+- Determinismo: Los flujos de trabajo solo obtienen módulos determinísticos
 
-Consulte [Runtime de Lua](lua-overview.md) para modulos disponibles.
+Consulte [Runtime de Lua](lua-overview.md) para módulos disponibles.
 
 ## Imports
 
-Importe otras entradas como modulos locales:
+Importe otras entradas como módulos locales:
 
 ```yaml
 imports:
@@ -149,11 +149,11 @@ imports:
   auth: app.auth:helpers     # require("auth")
 ```
 
-La clave se convierte en el nombre del modulo en codigo Lua. El valor es el ID de entrada (`namespace:name`).
+La clave se convierte en el nombre del módulo en código Lua. El valor es el ID de entrada (`namespace:name`).
 
-## Configuracion de Pool
+## Configuración de Pool
 
-Configure el pool de ejecucion para funciones:
+Configure el pool de ejecución para funciones:
 
 ```yaml
 - name: handler
@@ -185,15 +185,15 @@ Use `meta` para enrutamiento y descubrimiento:
     - json
 ```
 
-Los metadatos son buscables via el registro:
+Los metadatos son buscables vía el registro:
 
 ```lua
 local registry = require("registry")
 local handlers = registry.find({type = "handler"})
 ```
 
-## Vea Tambien
+## Vea También
 
 - [Tipos de Entrada](guide-entry-kinds.md) - Referencia de todos los tipos de entrada
-- [Unidades de Computo](concept-compute-units.md) - Funciones vs procesos vs flujos de trabajo
-- [Runtime de Lua](lua-overview.md) - Modulos disponibles
+- [Unidades de Cómputo](concept-compute-units.md) - Funciones vs procesos vs flujos de trabajo
+- [Runtime de Lua](lua-overview.md) - Módulos disponibles

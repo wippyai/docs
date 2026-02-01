@@ -2,28 +2,28 @@
 
 El middleware WebSocket relay actualiza conexiones HTTP a WebSocket y retransmite mensajes a un proceso destino.
 
-## Como Funciona
+## Cómo Funciona
 
 1. El manejador HTTP establece el header `X-WS-Relay` con el PID del proceso destino
-2. El middleware actualiza la conexion a WebSocket
+2. El middleware actualiza la conexión a WebSocket
 3. El relay se adjunta al proceso destino y lo monitorea
 4. Los mensajes fluyen bidireccionalmente entre cliente y proceso
 
 <warning>
-La conexion WebSocket esta vinculada al proceso destino. Si el proceso termina, la conexion se cierra automaticamente.
+La conexión WebSocket está vinculada al proceso destino. Si el proceso termina, la conexión se cierra automáticamente.
 </warning>
 
-## Semantica de Procesos
+## Semántica de Procesos
 
 Las conexiones WebSocket son procesos completos con su propio PID. Se integran con el sistema de procesos:
 
 - **Direccionable** - Cualquier proceso puede enviar mensajes a un PID de WebSocket
 - **Monitoreable** - Los procesos pueden monitorear conexiones WebSocket para eventos de salida
 - **Enlazable** - Las conexiones WebSocket pueden enlazarse a otros procesos
-- **Eventos EXIT** - Cuando la conexion se cierra, los monitores reciben notificaciones de salida
+- **Eventos EXIT** - Cuando la conexión se cierra, los monitores reciben notificaciones de salida
 
 ```lua
--- Monitorear una conexion WebSocket desde otro proceso
+-- Monitorear una conexión WebSocket desde otro proceso
 process.monitor(websocket_pid)
 
 -- Enviar mensaje a cliente WebSocket desde cualquier proceso
@@ -31,10 +31,10 @@ process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
 ```
 
 <tip>
-El relay monitorea el proceso destino. Si el destino termina, la conexion WebSocket se cierra automaticamente y el cliente recibe un frame de cierre.
+El relay monitorea el proceso destino. Si el destino termina, la conexión WebSocket se cierra automáticamente y el cliente recibe un frame de cierre.
 </tip>
 
-## Transferencia de Conexion
+## Transferencia de Conexión
 
 Las conexiones pueden transferirse a un proceso diferente enviando un mensaje de control:
 
@@ -45,7 +45,7 @@ process.send(websocket_pid, "ws.control", {
 })
 ```
 
-## Configuracion
+## Configuración
 
 Agregar como middleware post-match en un router:
 
@@ -61,15 +61,15 @@ Agregar como middleware post-match en un router:
     wsrelay.allowed.origins: "https://app.example.com"
 ```
 
-| Opcion | Descripcion |
+| Opción | Descripción |
 |--------|-------------|
-| `wsrelay.allowed.origins` | Origenes permitidos separados por coma |
+| `wsrelay.allowed.origins` | Orígenes permitidos separados por coma |
 
 <note>
-Si no se configuran origenes, solo se permiten solicitudes del mismo origen.
+Si no se configuran orígenes, solo se permiten solicitudes del mismo origen.
 </note>
 
-## Configuracion del Handler
+## Configuración del Handler
 
 El manejador HTTP genera un proceso y configura el relay:
 
@@ -96,24 +96,24 @@ local function handler()
 end
 ```
 
-### Campos de Configuracion del Relay
+### Campos de Configuración del Relay
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|-------------|-------------|
 | `target_pid` | string | requerido | PID del proceso que recibe mensajes |
-| `message_topic` | string | `ws.message` | Topico para mensajes del cliente |
+| `message_topic` | string | `ws.message` | Tópico para mensajes del cliente |
 | `heartbeat_interval` | duration | - | Frecuencia de heartbeat (ej. `30s`) |
 | `metadata` | object | - | Adjunto a todos los mensajes |
 
-## Topicos de Mensajes
+## Tópicos de Mensajes
 
-El relay envia estos mensajes al proceso destino:
+El relay envía estos mensajes al proceso destino:
 
-| Topico | Cuando | Payload |
+| Tópico | Cuándo | Payload |
 |--------|--------|---------|
 | `ws.join` | Cliente conecta | `client_pid`, `metadata` |
-| `ws.message` | Cliente envia mensaje | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | Periodico (si configurado) | `client_pid`, `uptime`, `message_count` |
+| `ws.message` | Cliente envía mensaje | `client_pid`, `type`, `data`, `metadata` |
+| `ws.heartbeat` | Periódico (si configurado) | `client_pid`, `uptime`, `message_count` |
 | `ws.leave` | Cliente desconecta | `client_pid`, `reason`, `metadata` |
 
 ## Recibir Mensajes
@@ -150,7 +150,7 @@ end
 
 ## Enviar al Cliente
 
-Envie mensajes de vuelta usando el PID del cliente:
+Envíe mensajes de vuelta usando el PID del cliente:
 
 ```lua
 -- Enviar mensaje de texto
@@ -165,16 +165,16 @@ process.send(client_pid, "ws.send", {
     data = binary_content
 })
 
--- Cerrar conexion
+-- Cerrar conexión
 process.send(client_pid, "ws.close", {
     code = 1000,
-    reason = "Sesion terminada"
+    reason = "Sesión terminada"
 })
 ```
 
 ## Broadcasting
 
-Rastree PIDs de clientes para hacer broadcast a multiples clientes:
+Rastree PIDs de clientes para hacer broadcast a múltiples clientes:
 
 ```lua
 local clients = {}
@@ -195,11 +195,11 @@ end
 ```
 
 <tip>
-Para escenarios complejos con multiples salas, genere un proceso manejador separado por sala o use un proceso administrador central que rastree membresias de salas.
+Para escenarios complejos con múltiples salas, genere un proceso manejador separado por sala o use un proceso administrador central que rastree membresías de salas.
 </tip>
 
-## Ver Tambien
+## Ver También
 
-- [Middleware](http-middleware.md) - Configuracion de middleware
-- [Procesos](lua-process.md) - Mensajeria de procesos
+- [Middleware](http-middleware.md) - Configuración de middleware
+- [Procesos](lua-process.md) - Mensajería de procesos
 - [Cliente WebSocket](lua-websocket.md) - Conexiones WebSocket salientes

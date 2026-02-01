@@ -2,7 +2,7 @@
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Asynchrone Operationsergebnisse. Futures werden von `funcs.async()` und asynchronen Contract-Aufrufen zuruckgegeben.
+Asynchrone Operationsergebnisse. Futures werden von `funcs.async()` und asynchronen Contract-Aufrufen zurückgegeben.
 
 ## Laden
 
@@ -25,11 +25,11 @@ if ok then
 end
 ```
 
-`channel()` ist ein Alias fur `response()`.
+`channel()` ist ein Alias für `response()`.
 
-## Abschlussprufung
+## Abschlussprüfung
 
-Nicht-blockierende Prufung, ob Future abgeschlossen ist:
+Nicht-blockierende Prüfung, ob Future abgeschlossen ist:
 
 ```lua
 if future:is_complete() then
@@ -37,9 +37,9 @@ if future:is_complete() then
 end
 ```
 
-## Abbruchprufung
+## Abbruchprüfung
 
-Prufen, ob `cancel()` aufgerufen wurde:
+Prüfen, ob `cancel()` aufgerufen wurde:
 
 ```lua
 if future:is_canceled() then
@@ -55,7 +55,7 @@ Zwischengespeichertes Ergebnis holen (nicht-blockierend):
 local val, err = future:result()
 ```
 
-**Gibt zuruck:**
+**Gibt zurück:**
 - Nicht abgeschlossen: `nil, nil`
 - Abgebrochen: `nil, error` (Art `CANCELED`)
 - Fehler: `nil, error`
@@ -72,7 +72,7 @@ if has_error then
 end
 ```
 
-**Gibt zuruck:** `error, boolean`
+**Gibt zurück:** `error, boolean`
 
 ## Abbrechen
 

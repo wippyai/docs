@@ -1,6 +1,6 @@
 # Funktionen
 
-Funktionen sind synchrone, zustandslose Entry Points. Sie rufen sie auf, sie werden ausgeführt, sie geben ein Ergebnis zurück. Wenn eine Funktion läuft, erbt sie den Kontext des Aufrufers — wenn der Aufrufer abbricht, wird auch die Funktion abgebrochen. Das macht Funktionen ideal für HTTP-Handler, API-Endpunkte und jede Operation, die innerhalb eines Request-Lebenszyklus abgeschlossen werden sollte.
+Funktionen sind synchrone, zustandslose Einstiegspunkte. Sie rufen sie auf, sie werden ausgeführt, sie geben ein Ergebnis zurück. Wenn eine Funktion läuft, erbt sie den Kontext des Aufrufers — wenn der Aufrufer abbricht, wird auch die Funktion abgebrochen. Das macht Funktionen ideal für HTTP-Handler, API-Endpunkte und jede Operation, die innerhalb eines Anfragelebenszyklus abgeschlossen werden sollte.
 
 ## Funktionen aufrufen
 
@@ -24,7 +24,7 @@ Siehe das [funcs-Modul](lua-funcs.md) für die vollständige API.
 
 ## Kontextpropagierung
 
-Jeder Aufruf erstellt einen Frame mit eigenem Kontextbereich. Kindfunktionen erben Elternkontext ohne explizite Übergabe:
+Jeder Aufruf erstellt einen Rahmen mit eigenem Kontextbereich. Kindfunktionen erben den Elternkontext ohne explizite Übergabe:
 
 ```lua
 local ctx = require("ctx")
@@ -41,7 +41,7 @@ local exec = funcs.new()
     :call("app.api:process", data)
 ```
 
-Sicherheitskontext propagiert auf dieselbe Weise. Aufgerufene Funktionen sehen den Actor des Aufrufers und können Berechtigungen prüfen. Siehe das [security-Modul](lua-security.md) für Zugriffskontroll-APIs.
+Der Sicherheitskontext wird auf dieselbe Weise weitergegeben. Aufgerufene Funktionen sehen den Aktor des Aufrufers und können Berechtigungen prüfen. Siehe das [security-Modul](lua-security.md) für Zugriffskontroll-APIs.
 
 ## Registry-Definition
 
@@ -57,15 +57,15 @@ Auf Registry-Ebene sieht ein Funktionseintrag so aus:
     max_size: 16
 ```
 
-Funktionen können von anderen Runtime-Komponenten aufgerufen werden — HTTP-Handlern, Queue-Konsumenten, geplanten Jobs — und unterliegen Berechtigungsprüfungen basierend auf dem Sicherheitskontext des Aufrufers.
+Funktionen können von anderen Laufzeitkomponenten aufgerufen werden — HTTP-Handlern, Warteschlangen-Konsumenten, geplanten Aufgaben — und unterliegen Berechtigungsprüfungen basierend auf dem Sicherheitskontext des Aufrufers.
 
 ## Pools
 
-Funktionen laufen auf Pools, die die Ausführung verwalten. Der Pool-Typ bestimmt das Skalierungsverhalten.
+Funktionen werden in Pools ausgeführt, die die Ausführung verwalten. Der Pool-Typ bestimmt das Skalierungsverhalten.
 
-**Inline** läuft in der Goroutine des Aufrufers. Keine Nebenläufigkeit, kein Allokations-Overhead. Wird für eingebettete Kontexte verwendet.
+**Inline** läuft in der Goroutine des Aufrufers. Keine Nebenläufigkeit, kein Speicher-Overhead. Wird für eingebettete Kontexte verwendet.
 
-**Static** hält eine feste Anzahl von Workern. Anfragen werden in eine Warteschlange gestellt, wenn alle Worker beschäftigt sind. Vorhersagbare Ressourcennutzung.
+**Static** hält eine feste Anzahl von Workern. Anfragen werden in die Warteschlange gestellt, wenn alle Worker beschäftigt sind. Vorhersagbare Ressourcennutzung.
 
 ```yaml
 pool:
@@ -82,7 +82,7 @@ pool:
   max_size: 32
 ```
 
-**Adaptive** skaliert automatisch basierend auf dem Durchsatz. Der Controller misst die Leistung und passt die Worker-Anzahl an, um für die aktuelle Last zu optimieren.
+**Adaptive** skaliert automatisch basierend auf dem Durchsatz. Der Controller misst die Leistung und passt die Anzahl der Worker an, um sie für die aktuelle Last zu optimieren.
 
 ```yaml
 pool:
@@ -91,12 +91,12 @@ pool:
 ```
 
 <tip>
-Wenn Sie keinen Pool-Typ angeben, wählt die Runtime einen basierend auf Ihrer Konfiguration. Setzen Sie <code>workers</code> für static, <code>max_size</code> für lazy, oder setzen Sie explizit <code>type</code> für volle Kontrolle.
+Wenn Sie keinen Pool-Typ angeben, wählt die Laufzeitumgebung einen basierend auf Ihrer Konfiguration. Setzen Sie <code>workers</code> für static, <code>max_size</code> für lazy, oder setzen Sie explizit <code>type</code> für volle Kontrolle.
 </tip>
 
 ## Interceptors
 
-Funktionsaufrufe durchlaufen eine Interceptor-Kette. Interceptors behandeln Querschnittsbelange, ohne die Geschäftslogik zu berühren.
+Funktionsaufrufe durchlaufen eine Abfangkette. Abfänger behandeln übergreifende Belange, ohne die Geschäftslogik zu berühren.
 
 ```yaml
 - name: my_function
@@ -111,13 +111,13 @@ Funktionsaufrufe durchlaufen eine Interceptor-Kette. Interceptors behandeln Quer
         backoff_factor: 2.0
 ```
 
-Eingebaute Interceptors umfassen Retry mit exponentiellem Backoff. Sie können benutzerdefinierte Interceptors für Logging, Metriken, Tracing, Autorisierung, Circuit Breaking oder Request-Transformation hinzufügen.
+Integrierte Abfänger umfassen Wiederholungen mit exponentiellem Anstieg der Wartezeit. Sie können benutzerdefinierte Abfänger für Protokollierung, Metriken, Ablaufverfolgung, Autorisierung, Schutzschalter oder Anfragetransformation hinzufügen.
 
-Die Kette läuft vor und nach jedem Aufruf. Jeder Interceptor kann den Request modifizieren, die Ausführung kurzschließen oder die Response wrappen.
+Die Kette läuft vor und nach jedem Aufruf. Jeder Abfänger kann die Anfrage modifizieren, die Ausführung kurzschließen oder die Antwort umhüllen.
 
 ## Contracts
 
-Funktionen können ihre Input/Output-Schemas als Contracts exponieren. Contracts definieren Methodensignaturen, die Runtime-Validierung und Dokumentationsgenerierung ermöglichen.
+Funktionen können ihre Eingabe-/Ausgabe-Schemata als Verträge bereitstellen. Verträge definieren Methodensignaturen, die Laufzeitvalidierung und Dokumentationsgenerierung ermöglichen.
 
 ```lua
 local contract = require("contract")
@@ -125,10 +125,10 @@ local email = contract.get("app.email:sender")
 email:send({to = "user@example.com", subject = "Hello"})
 ```
 
-Diese Abstraktion ermöglicht es Ihnen, Implementierungen auszutauschen, ohne aufrufenden Code zu ändern — nützlich für Tests, Multi-Tenant-Deployments oder graduelle Migrationen.
+Diese Abstraktion ermöglicht es Ihnen, Implementierungen auszutauschen, ohne aufrufenden Code zu ändern — nützlich für Tests, Mandantenfähigkeit oder schrittweise Migrationen.
 
 ## Funktionen vs Prozesse
 
-Funktionen erben Aufruferkontext und sind an den Aufrufer-Lebenszyklus gebunden. Wenn der Aufrufer abbricht, brechen Funktionen ab. Dies ermöglicht Edge-Ausführung — direkte Ausführung in HTTP-Handlern und Queue-Konsumenten.
+Funktionen erben den Aufruferkontext und sind an den Aufruferlebenszyklus gebunden. Wenn der Aufrufer abbricht, brechen Funktionen ab. Dies ermöglicht eine direkte Ausführung in HTTP-Handlern und Warteschlangen-Konsumenten.
 
-Prozesse laufen unabhängig mit Host-Kontext. Sie überleben ihren Ersteller und kommunizieren über Nachrichten. Verwenden Sie Prozesse für Hintergrundarbeit; verwenden Sie Funktionen für request-bezogene Operationen.
+Prozesse laufen unabhängig mit Host-Kontext. Sie überleben ihren Ersteller und kommunizieren über Nachrichten. Verwenden Sie Prozesse für Hintergrundarbeit; verwenden Sie Funktionen für anfragebezogene Operationen.

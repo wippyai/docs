@@ -1,10 +1,10 @@
-# Integracion Temporal
+# Integración Temporal
 
-Wippy se integra con [Temporal.io](https://temporal.io) para ejecucion de workflows durables, replay automatico, y procesos de larga duracion que sobreviven reinicios.
+Wippy se integra con [Temporal.io](https://temporal.io) para ejecución de workflows durables, replay automático, y procesos de larga duración que sobreviven reinicios.
 
-## Configuracion del Cliente
+## Configuración del Cliente
 
-El tipo de entrada `temporal.client` define una conexion a un servidor Temporal.
+El tipo de entrada `temporal.client` define una conexión a un servidor Temporal.
 
 ```yaml
 - name: temporal_client
@@ -17,23 +17,23 @@ El tipo de entrada `temporal.client` define una conexion a un servidor Temporal.
 
 ### Campos Requeridos
 
-| Campo | Descripcion |
+| Campo | Descripción |
 |-------|-------------|
-| `address` | Direccion del servidor Temporal (host:port) |
+| `address` | Dirección del servidor Temporal (host:port) |
 
 ### Campos Opcionales
 
-| Campo | Por Defecto | Descripcion |
+| Campo | Por Defecto | Descripción |
 |-------|-------------|-------------|
 | `namespace` | "default" | Namespace de Temporal |
 | `tq_prefix` | "" | Prefijo de nombre de cola de tareas para todas las operaciones |
-| `connection_timeout` | "10s" | Timeout de conexion |
+| `connection_timeout` | "10s" | Timeout de conexión |
 | `keep_alive_time` | "30s" | Intervalo de keep-alive |
 | `keep_alive_timeout` | "10s" | Timeout de keep-alive |
 
-### Autenticacion
+### Autenticación
 
-#### Sin Autenticacion
+#### Sin Autenticación
 
 ```yaml
 - name: temporal_client
@@ -45,7 +45,7 @@ El tipo de entrada `temporal.client` define una conexion a un servidor Temporal.
 
 #### API Key (Temporal Cloud)
 
-Proporcione la API key mediante uno de estos metodos:
+Proporcione la API key mediante uno de estos métodos:
 
 ```yaml
 # Valor directo
@@ -94,7 +94,7 @@ Los campos que terminan en `_env` referencian variables de entorno que deben est
     ca_file: "/path/to/ca.pem"
 ```
 
-El certificado y clave tambien pueden proporcionarse como strings PEM o desde entorno:
+El certificado y clave también pueden proporcionarse como strings PEM o desde entorno:
 
 ```yaml
 auth:
@@ -106,14 +106,14 @@ auth:
   key_pem_env: "TEMPORAL_CLIENT_KEY"
 ```
 
-### Configuracion TLS
+### Configuración TLS
 
 ```yaml
 tls:
   enabled: true
   ca_file: "/path/to/ca.pem"
-  server_name: "temporal.example.com"    # Sobrescribir verificacion de nombre de servidor
-  insecure_skip_verify: false            # Omitir verificacion (solo dev)
+  server_name: "temporal.example.com"    # Sobrescribir verificación de nombre de servidor
+  insecure_skip_verify: false            # Omitir verificación (solo dev)
 ```
 
 ### Health Checks
@@ -124,7 +124,7 @@ health_check:
   interval: "30s"
 ```
 
-## Configuracion del Worker
+## Configuración del Worker
 
 El tipo de entrada `temporal.worker` define un worker que ejecuta workflows y activities.
 
@@ -141,7 +141,7 @@ El tipo de entrada `temporal.worker` define un worker que ejecuta workflows y ac
 
 ### Campos Requeridos
 
-| Campo | Descripcion |
+| Campo | Descripción |
 |-------|-------------|
 | `client` | Referencia a entrada `temporal.client` |
 | `task_queue` | Nombre de cola de tareas |
@@ -166,7 +166,7 @@ Ajuste fino del comportamiento del worker:
     max_concurrent_activity_task_pollers: 20
     max_concurrent_workflow_task_pollers: 20
 
-    # Limitacion de tasa
+    # Limitación de tasa
     worker_activities_per_second: 0        # 0 = ilimitado
     worker_local_activities_per_second: 0
     task_queue_activities_per_second: 0
@@ -191,11 +191,11 @@ Ajuste fino del comportamiento del worker:
     default_versioning_behavior: "pinned" # o "auto_upgrade"
 ```
 
-Los campos que terminan en `_env` referencian variables de entorno definidas via entradas del [Sistema de Entorno](system/env.md).
+Los campos que terminan en `_env` referencian variables de entorno definidas vía entradas del [Sistema de Entorno](system/env.md).
 
 ### Valores por Defecto de Concurrencia
 
-| Opcion | Por Defecto |
+| Opción | Por Defecto |
 |--------|-------------|
 | `max_concurrent_activity_execution_size` | 1000 |
 | `max_concurrent_workflow_task_execution_size` | 1000 |
@@ -253,7 +253,7 @@ entries:
           worker: app:worker
 ```
 
-## Ver Tambien
+## Ver También
 
 - [Activities](temporal/activities.md) - Definiciones de activities
-- [Workflows](temporal/workflows.md) - Implementacion de workflows
+- [Workflows](temporal/workflows.md) - Implementación de workflows

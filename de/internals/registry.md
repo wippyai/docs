@@ -1,6 +1,6 @@
 # Registry-Interna
 
-Die Registry ist ein versionierter, ereignisgesteuerter Zustandsspeicher. Sie pflegt vollständige Versionshistorie, unterstützt Transaktionen und propagiert Änderungen über den Event-Bus.
+Die Registry ist ein versionierter, ereignisgesteuerter Zustandsspeicher. Sie pflegt eine vollständige Versionshistorie, unterstützt Transaktionen und verbreitet Änderungen über den Event-Bus.
 
 ## Entry-Speicherung
 
@@ -15,7 +15,7 @@ type Entry struct {
 }
 ```
 
-Entry-IDs verwenden Go's `unique`-Paket für Interning - identische IDs teilen sich Speicher.
+Entry-IDs verwenden Gos `unique`-Paket zum Internieren - identische IDs teilen sich denselben Speicher.
 
 ## Versionskette
 

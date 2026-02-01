@@ -22,7 +22,7 @@ Entradas referenciam pais via metadados:
 - Roteadores: `meta.server: app:gateway`
 - Endpoints: `meta.router: app:api`
 
-## Configuracao do Roteador
+## Configuração do Roteador
 
 ```yaml
 - name: api
@@ -39,16 +39,16 @@ Entradas referenciam pais via metadados:
     - endpoint_firewall
 ```
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `meta.server` | ID do Registro | Servidor HTTP pai |
 | `prefix` | string | Prefixo de URL para todas as rotas |
 | `middleware` | []string | Middleware pre-match |
-| `options` | map | Opcoes de middleware |
-| `post_middleware` | []string | Middleware pos-match |
-| `post_options` | map | Opcoes de middleware pos-match |
+| `options` | map | Opções de middleware |
+| `post_middleware` | []string | Middleware pós-match |
+| `post_options` | map | Opções de middleware pós-match |
 
-## Configuracao de Endpoint
+## Configuração de Endpoint
 
 ```yaml
 - name: get_user
@@ -60,16 +60,16 @@ Entradas referenciam pais via metadados:
   func: app.users:get_user
 ```
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `meta.router` | ID do Registro | Roteador pai |
-| `method` | string | Metodo HTTP (GET, POST, PUT, DELETE, PATCH, HEAD) |
-| `path` | string | Padrao de caminho URL (comeca com `/`) |
-| `func` | ID do Registro | Funcao handler |
+| `method` | string | Método HTTP (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `path` | string | Padrão de caminho URL (começa com `/`) |
+| `func` | ID do Registro | Função handler |
 
-## Parametros de Caminho
+## Parâmetros de Caminho
 
-Use sintaxe `{param}` para parametros de URL:
+Use sintaxe `{param}` para parâmetros de URL:
 
 ```yaml
 - name: get_post
@@ -110,15 +110,15 @@ Capture segmentos de caminho restantes com `{param...}`:
 ```
 
 ```lua
--- Requisicao: GET /api/v1/files/docs/guides/readme.md
+-- Requisição: GET /api/v1/files/docs/guides/readme.md
 local file_path = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
-O curinga deve ser o ultimo segmento no caminho.
+O curinga deve ser o último segmento no caminho.
 
-## Funcoes Handler
+## Funções Handler
 
-Handlers de endpoint usam o modulo `http` para acessar objetos de requisicao e resposta. Veja [Modulo HTTP](lua-http.md) para a API completa.
+Handlers de endpoint usam o módulo `http` para acessar objetos de requisição e resposta. Veja [Módulo HTTP](lua-http.md) para a API completa.
 
 ```lua
 local http = require("http")
@@ -138,9 +138,9 @@ end
 return { handler = handler }
 ```
 
-## Opcoes de Middleware
+## Opções de Middleware
 
-Opcoes de middleware usam notacao de ponto com o nome do middleware como prefixo:
+Opções de middleware usam notação de ponto com o nome do middleware como prefixo:
 
 ```yaml
 middleware:
@@ -156,7 +156,7 @@ options:
   token_auth.header.name: "Authorization"
 ```
 
-Middleware pos-match usa `post_options`:
+Middleware pós-match usa `post_options`:
 
 ```yaml
 post_middleware:
@@ -165,32 +165,32 @@ post_options:
   endpoint_firewall.default_policy: "deny"
 ```
 
-## Middleware Pre-Match vs Pos-Match
+## Middleware Pre-Match vs Pós-Match
 
 **Pre-match** (`middleware`) executa antes do match de rota:
 - CORS (trata preflight OPTIONS)
-- Compressao
+- Compressão
 - Rate limiting
-- Deteccao de IP real
-- Autenticacao por token (enriquecimento de contexto)
+- Detecção de IP real
+- Autenticação por token (enriquecimento de contexto)
 
-**Pos-match** (`post_middleware`) executa apos a rota ser correspondida:
-- Firewall de endpoint (precisa de info da rota para autorizacao)
+**Pós-match** (`post_middleware`) executa após a rota ser correspondida:
+- Firewall de endpoint (precisa de info da rota para autorização)
 - Firewall de recurso
 - Relay WebSocket
 
 ```yaml
-middleware:        # Pre-match: todas as requisicoes para este roteador
+middleware:        # Pre-match: todas as requisições para este roteador
   - cors
   - compress
   - token_auth     # Enriquece contexto com ator/escopo
 
-post_middleware:   # Pos-match: apenas rotas correspondidas
+post_middleware:   # Pós-match: apenas rotas correspondidas
   - endpoint_firewall  # Usa ator do token_auth
 ```
 
 <tip>
-Autenticacao por token pode ser pre-match porque apenas enriquece contexto - nao bloqueia requisicoes. Autorizacao acontece em middleware pos-match como <code>endpoint_firewall</code> que usa o ator definido por <code>token_auth</code>.
+Autenticação por token pode ser pre-match porque apenas enriquece contexto - não bloqueia requisições. Autorização acontece em middleware pós-match como <code>endpoint_firewall</code> que usa o ator definido por <code>token_auth</code>.
 </tip>
 
 ## Exemplo Completo
@@ -222,7 +222,7 @@ entries:
       ratelimit.requests: "100"
       ratelimit.window: "1m"
 
-  # Funcao handler
+  # Função handler
   - name: get_users
     kind: function.lua
     source: file://handlers/users.lua
@@ -260,11 +260,11 @@ entries:
 
 ## Rotas Protegidas
 
-Padrao comum com autenticacao:
+Padrão comum com autenticação:
 
 ```yaml
 entries:
-  # Rotas publicas (sem auth)
+  # Rotas públicas (sem auth)
   - name: public
     kind: http.router
     meta:
@@ -288,9 +288,9 @@ entries:
       - endpoint_firewall
 ```
 
-## Veja Tambem
+## Veja Também
 
-- [Servidor](http-server.md) - Configuracao do servidor HTTP
-- [Arquivos Estaticos](http-static.md) - Servindo arquivos estaticos
-- [Middleware](http-middleware.md) - Middleware disponivel
-- [Modulo HTTP](lua-http.md) - API HTTP Lua
+- [Servidor](http-server.md) - Configuração do servidor HTTP
+- [Arquivos Estáticos](http-static.md) - Servindo arquivos estáticos
+- [Middleware](http-middleware.md) - Middleware disponível
+- [Módulo HTTP](lua-http.md) - API HTTP Lua

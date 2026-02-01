@@ -2,20 +2,20 @@
 
 Referencia completa de todos los tipos de entrada disponibles en Wippy.
 
-> Las entradas se referencian entre si usando el formato `namespace:nombre`. El registro conecta automaticamente las dependencias basandose en estas referencias, asegurando que los recursos se inicialicen en el orden correcto.
+> Las entradas se referencian entre sí usando el formato `namespace:nombre`. El registro conecta automáticamente las dependencias basándose en estas referencias, asegurando que los recursos se inicialicen en el orden correcto.
 
-## Ver Tambien
+## Ver También
 
-- [Registro](concept-registry.md) - Como se almacenan y resuelven las entradas
-- [Configuracion](guide-configuration.md) - Formato de configuracion YAML
+- [Registro](concept-registry.md) - Cómo se almacenan y resuelven las entradas
+- [Configuración](guide-configuration.md) - Formato de configuración YAML
 
 ## Runtime de Lua
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `function.lua` | Punto de entrada de funcion Lua |
-| `process.lua` | Proceso Lua de larga duracion |
-| `workflow.lua` | Flujo de trabajo Temporal (deterministico) |
+| `function.lua` | Punto de entrada de función Lua |
+| `process.lua` | Proceso Lua de larga duración |
+| `workflow.lua` | Flujo de trabajo Temporal (determinístico) |
 | `library.lua` | Biblioteca Lua compartida |
 
 ```yaml
@@ -27,21 +27,21 @@ Referencia completa de todos los tipos de entrada disponibles en Wippy.
     - http
     - json
   imports:
-    utils: app.lib:helpers  # Importar otra entrada como modulo
+    utils: app.lib:helpers  # Importar otra entrada como módulo
 ```
 
 <tip>
-Use <code>imports</code> para referenciar otras entradas Lua. Se vuelven disponibles via <code>require("alias_name")</code> en su codigo.
+Use <code>imports</code> para referenciar otras entradas Lua. Se vuelven disponibles vía <code>require("alias_name")</code> en su código.
 </tip>
 
 ## Servicios HTTP
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `http.service` | Servidor HTTP (enlaza puerto) |
 | `http.router` | Prefijo de ruta y middleware |
-| `http.endpoint` | Endpoint HTTP (metodo + ruta) |
-| `http.static` | Servicio de archivos estaticos |
+| `http.endpoint` | Endpoint HTTP (método + ruta) |
+| `http.static` | Servicio de archivos estáticos |
 
 ```yaml
 # Servidor HTTP
@@ -71,7 +71,7 @@ Use <code>imports</code> para referenciar otras entradas Lua. Se vuelven disponi
   func: list_handler
 ```
 
-**API Lua:** Ver [Modulo HTTP](lua-http.md)
+**API Lua:** Ver [Módulo HTTP](lua-http.md)
 
 ```lua
 local http = require("http")
@@ -83,7 +83,7 @@ resp:status(200):json({users = get_users()})
 
 ## Bases de Datos
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `db.sql.sqlite` | Base de datos SQLite |
 | `db.sql.postgres` | Base de datos PostgreSQL |
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**API Lua:** Ver [Modulo SQL](lua-sql.md)
+**API Lua:** Ver [Módulo SQL](lua-sql.md)
 
 ```lua
 local sql = require("sql")
@@ -152,19 +152,19 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 
 ## Almacenes Clave-Valor
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `store.memory` | Almacen clave-valor en memoria |
-| `store.sql` | Almacen clave-valor respaldado por SQL |
+| `store.memory` | Almacén clave-valor en memoria |
+| `store.sql` | Almacén clave-valor respaldado por SQL |
 
 ```yaml
-# Almacen en memoria
+# Almacén en memoria
 - name: cache
   kind: store.memory
   lifecycle:
     auto_start: true
 
-# Almacen respaldado por SQL
+# Almacén respaldado por SQL
 - name: persistent_store
   kind: store.sql
   database: app:database
@@ -173,7 +173,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**API Lua:** Ver [Modulo Store](lua-store.md)
+**API Lua:** Ver [Módulo Store](lua-store.md)
 
 ```lua
 local store = require("store")
@@ -185,10 +185,10 @@ local data = s:get("user:123")
 
 ## Colas
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `queue.driver.memory` | Driver de cola en memoria |
-| `queue.queue` | Declaracion de cola |
+| `queue.queue` | Declaración de cola |
 | `queue.consumer` | Consumidor de cola |
 
 ```yaml
@@ -214,7 +214,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**API Lua:** Ver [Modulo Queue](lua-queue.md)
+**API Lua:** Ver [Módulo Queue](lua-queue.md)
 
 ```lua
 local queue = require("queue")
@@ -231,11 +231,11 @@ local data = msg:body_json()
 El <code>func</code> del consumidor se invoca para cada mensaje. Use <code>queue.message()</code> dentro del handler para acceder al mensaje actual.
 </note>
 
-## Gestion de Procesos
+## Gestión de Procesos
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `process.host` | Host de ejecucion de procesos |
+| `process.host` | Host de ejecución de procesos |
 | `process.service` | Proceso supervisado (envuelve process.lua) |
 | `terminal.host` | Host de terminal/CLI |
 
@@ -250,7 +250,7 @@ El <code>func</code> del consumidor se invoca para cada mensaje. Use <code>queue
   lifecycle:
     auto_start: true
 
-# Definicion de proceso
+# Definición de proceso
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
@@ -274,14 +274,14 @@ El <code>func</code> del consumidor se invoca para cada mensaje. Use <code>queue
 ```
 
 <tip>
-Use <code>process.service</code> cuando necesite que un proceso se ejecute como servicio supervisado con reinicio automatico. El campo <code>process</code> referencia una entrada <code>process.lua</code>.
+Use <code>process.service</code> cuando necesite que un proceso se ejecute como servicio supervisado con reinicio automático. El campo <code>process</code> referencia una entrada <code>process.lua</code>.
 </tip>
 
 ## Temporal (Flujos de Trabajo)
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `temporal.client` | Conexion de cliente Temporal |
+| `temporal.client` | Conexión de cliente Temporal |
 | `temporal.worker` | Worker Temporal |
 
 ```yaml
@@ -304,9 +304,9 @@ Use <code>process.service</code> cuando necesite que un proceso se ejecute como 
 
 ## Almacenamiento en la Nube
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `config.aws` | Configuracion AWS |
+| `config.aws` | Configuración AWS |
 | `cloudstorage.s3` | Acceso a bucket S3 |
 
 ```yaml
@@ -323,7 +323,7 @@ Use <code>process.service</code> cuando necesite que un proceso se ejecute como 
   endpoint: ""  # Opcional, para servicios compatibles con S3
 ```
 
-**API Lua:** Ver [Modulo Cloud Storage](lua-cloudstorage.md)
+**API Lua:** Ver [Módulo Cloud Storage](lua-cloudstorage.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -339,7 +339,7 @@ Use <code>endpoint</code> para conectarse a servicios compatibles con S3 como Mi
 
 ## Sistemas de Archivos
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `fs.directory` | Acceso a directorio |
 
@@ -351,7 +351,7 @@ Use <code>endpoint</code> para conectarse a servicios compatibles con S3 como Mi
   mode: "0755"      # Permisos
 ```
 
-**API Lua:** Ver [Modulo Filesystem](lua-fs.md)
+**API Lua:** Ver [Módulo Filesystem](lua-fs.md)
 
 ```lua
 local fs = require("fs")
@@ -364,12 +364,12 @@ file:close()
 
 ## Entorno
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `env.storage.memory` | Almacen de env en memoria |
-| `env.storage.file` | Almacen de env basado en archivo |
+| `env.storage.memory` | Almacén de env en memoria |
+| `env.storage.file` | Almacén de env basado en archivo |
 | `env.storage.os` | Entorno del SO |
-| `env.storage.router` | Router de env (multiples almacenes) |
+| `env.storage.router` | Router de env (múltiples almacenes) |
 | `env.variable` | Variable de entorno |
 
 ```yaml
@@ -388,7 +388,7 @@ file:close()
     - app:file_env
 ```
 
-**API Lua:** Ver [Modulo Env](lua-env.md)
+**API Lua:** Ver [Módulo Env](lua-env.md)
 
 ```lua
 local env = require("env")
@@ -398,18 +398,18 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-El router intenta los almacenes en orden. La primera coincidencia gana para lecturas; las escrituras van al primer almacen con escritura.
+El router intenta los almacenes en orden. La primera coincidencia gana para lecturas; las escrituras van al primer almacén con escritura.
 </note>
 
 ## Plantillas
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `template.jet` | Plantilla Jet individual |
-| `template.set` | Configuracion de conjunto de plantillas |
+| `template.set` | Configuración de conjunto de plantillas |
 
 ```yaml
-# Conjunto de plantillas con configuracion del motor
+# Conjunto de plantillas con configuración del motor
 - name: templates
   kind: template.set
   engine:
@@ -425,7 +425,7 @@ El router intenta los almacenes en orden. La primera coincidencia gana para lect
   set: app:templates
 ```
 
-**API Lua:** Ver [Modulo Template](lua-template.md)
+**API Lua:** Ver [Módulo Template](lua-template.md)
 
 ```lua
 local templates = require("templates")
@@ -439,14 +439,14 @@ local html = set:render("email", {
 
 ## Seguridad
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `security.policy` | Politica de seguridad con condiciones |
-| `security.policy.expr` | Politica basada en expresiones |
-| `security.token_store` | Almacen de tokens |
+| `security.policy` | Política de seguridad con condiciones |
+| `security.policy.expr` | Política basada en expresiones |
+| `security.token_store` | Almacén de tokens |
 
 ```yaml
-# Politica basada en condiciones
+# Política basada en condiciones
 - name: admin_policy
   kind: security.policy
   policy:
@@ -458,7 +458,7 @@ local html = set:render("email", {
         operator: eq
         value: "admin"
 
-# Politica basada en expresiones
+# Política basada en expresiones
 - name: owner_policy
   kind: security.policy.expr
   policy:
@@ -468,12 +468,12 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**API Lua:** Ver [Modulo Security](lua-security.md)
+**API Lua:** Ver [Módulo Security](lua-security.md)
 
 ```lua
 local security = require("security")
 
--- Verificar permiso antes de accion
+-- Verificar permiso antes de acción
 if security.can("delete", "users", {user_id = id}) then
     delete_user(id)
 end
@@ -483,15 +483,15 @@ local actor = security.actor()
 ```
 
 <warning>
-Las politicas se evaluan en orden. La primera politica que coincide determina el acceso. Coloque politicas mas especificas antes que las generales.
+Las políticas se evalúan en orden. La primera política que coincide determina el acceso. Coloque políticas más específicas antes que las generales.
 </warning>
 
-## Contratos (Inyeccion de Dependencias)
+## Contratos (Inyección de Dependencias)
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `contract.definition` | Interfaz con especificaciones de metodos |
-| `contract.binding` | Mapea metodos de contrato a implementaciones de funciones |
+| `contract.definition` | Interfaz con especificaciones de métodos |
+| `contract.binding` | Mapea métodos de contrato a implementaciones de funciones |
 
 ```yaml
 # Definir la interfaz del contrato
@@ -509,7 +509,7 @@ Las politicas se evaluan en orden. La primera politica que coincide determina el
         - format: "application/schema+json"
           definition: {"type": "string"}
 
-# Funciones de implementacion
+# Funciones de implementación
 - name: greeter_greet
   kind: function.lua
   source: file://greeter_greet.lua
@@ -520,7 +520,7 @@ Las politicas se evaluan en orden. La primera politica que coincide determina el
   source: file://greeter_greet_name.lua
   method: main
 
-# Enlazar metodos del contrato a implementaciones
+# Enlazar métodos del contrato a implementaciones
 - name: greeter_impl
   kind: contract.binding
   contracts:
@@ -539,7 +539,7 @@ local contract = require("contract")
 -- Abrir binding por ID
 local greeter, err = contract.open("app:greeter_impl")
 
--- Llamar metodos
+-- Llamar métodos
 local result = greeter:greet()
 local personalized = greeter:greet_with_name("Alice")
 
@@ -547,18 +547,18 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**API Lua:** Ver [Modulo Contract](lua-contract.md)
+**API Lua:** Ver [Módulo Contract](lua-contract.md)
 
 <tip>
 Marque un binding como <code>default: true</code> para usarlo cuando se abra un contrato sin especificar un ID de binding (solo funciona cuando no hay campos <code>context_required</code> establecidos).
 </tip>
 
-## Ejecucion
+## Ejecución
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `exec.native` | Ejecucion de comandos nativos |
-| `exec.docker` | Ejecucion de contenedores Docker |
+| `exec.native` | Ejecución de comandos nativos |
+| `exec.docker` | Ejecución de contenedores Docker |
 
 ```yaml
 - name: native_exec
@@ -578,21 +578,21 @@ Marque un binding como <code>default: true</code> para usarlo cuando se abra un 
     - "python"
 ```
 
-## Configuracion de Ciclo de Vida
+## Configuración de Ciclo de Vida
 
-La mayoria de las entradas soportan configuracion de ciclo de vida:
+La mayoría de las entradas soportan configuración de ciclo de vida:
 
 ```yaml
 - name: service
   kind: some.kind
   lifecycle:
-    auto_start: true          # Iniciar automaticamente
-    start_timeout: 10s        # Tiempo maximo de inicio
-    stop_timeout: 10s         # Tiempo maximo de apagado
+    auto_start: true          # Iniciar automáticamente
+    start_timeout: 10s        # Tiempo máximo de inicio
+    stop_timeout: 10s         # Tiempo máximo de apagado
     stable_threshold: 5s      # Tiempo para considerar estable
     depends_on:
       - app:database
-    restart:                  # Politica de reintento
+    restart:                  # Política de reintento
       initial_delay: 1s
       max_delay: 90s
       backoff_factor: 2.0
@@ -608,7 +608,7 @@ Use <code>depends_on</code> para asegurar que las entradas inicien en el orden c
 Las entradas se referencian usando el formato `namespace:nombre`:
 
 ```yaml
-# Definicion
+# Definición
 namespace: app.users
 entries:
   - name: handler

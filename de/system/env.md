@@ -69,7 +69,7 @@ Immer schreibgeschützt. Set-Operationen geben `PERMISSION_DENIED` zurück.
 
 ### Router-Speicher
 
-Verkettet mehrere Speicher. Lesevorgänge durchsuchen der Reihe nach bis gefunden. Schreibvorgänge gehen nur an den ersten Speicher.
+Verkettet mehrere Speicher. Lesevorgänge durchsuchen diese der Reihe nach, bis ein Wert gefunden wird. Schreibvorgänge gehen nur an den ersten Speicher.
 
 ```yaml
 - name: config

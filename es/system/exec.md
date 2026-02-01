@@ -1,10 +1,10 @@
 # Ejecutor
 
-Los ejecutores de comandos ejecutan procesos externos con entornos controlados. Dos tipos de ejecutores estan disponibles: procesos nativos del SO y contenedores Docker.
+Los ejecutores de comandos ejecutan procesos externos con entornos controlados. Dos tipos de ejecutores están disponibles: procesos nativos del SO y contenedores Docker.
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `exec.native` | Ejecutar comandos directamente en el SO host |
 | `exec.docker` | Ejecutar comandos dentro de contenedores Docker |
@@ -26,14 +26,14 @@ Ejecuta comandos directamente en el sistema operativo host.
     - npm run build
 ```
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `default_work_dir` | string | - | Directorio de trabajo para todos los comandos |
 | `default_env` | map | - | Variables de entorno (combinadas con env por comando) |
-| `command_whitelist` | string[] | - | Si se establece, solo estos comandos exactos estan permitidos |
+| `command_whitelist` | string[] | - | Si se establece, solo estos comandos exactos están permitidos |
 
 <note>
-Los ejecutores nativos usan un entorno limpio por defecto. Solo las variables de entorno configuradas explicitamente se pasan a los procesos hijos.
+Los ejecutores nativos usan un entorno limpio por defecto. Solo las variables de entorno configuradas explícitamente se pasan a los procesos hijos.
 </note>
 
 ## Ejecutor Docker
@@ -59,7 +59,7 @@ Ejecuta comandos dentro de contenedores Docker aislados.
     - /app/data:/workspace/data:ro
 ```
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `image` | string | **requerido** | Imagen Docker a usar |
 | `host` | string | socket unix | URL del demonio Docker |
@@ -69,19 +69,19 @@ Ejecuta comandos dentro de contenedores Docker aislados.
 | `network_mode` | string | bridge | Modo de red: `host`, `bridge`, `none` |
 | `volumes` | string[] | - | Montajes de volumen: `host:contenedor[:ro]` |
 | `user` | string | - | Usuario para ejecutar dentro del contenedor |
-| `memory_limit` | int | 0 | Limite de memoria en bytes (0 = ilimitado) |
+| `memory_limit` | int | 0 | Límite de memoria en bytes (0 = ilimitado) |
 | `cpu_quota` | int | 0 | Cuota de CPU (100000 = 1 CPU, 0 = ilimitado) |
-| `auto_remove` | bool | false | Remover contenedor despues de salir |
-| `read_only_rootfs` | bool | false | Hacer sistema de archivos raiz de solo lectura |
-| `no_new_privileges` | bool | false | Prevenir escalacion de privilegios |
+| `auto_remove` | bool | false | Remover contenedor después de salir |
+| `read_only_rootfs` | bool | false | Hacer sistema de archivos raíz de solo lectura |
+| `no_new_privileges` | bool | false | Prevenir escalación de privilegios |
 | `cap_drop` | string[] | - | Capacidades Linux a eliminar |
 | `cap_add` | string[] | - | Capacidades Linux a agregar |
-| `pids_limit` | int | 0 | Procesos maximos (0 = ilimitado) |
+| `pids_limit` | int | 0 | Procesos máximos (0 = ilimitado) |
 | `tmpfs` | map | - | Montajes tmpfs para rutas con escritura |
 
 ## Lista Blanca de Comandos
 
-Ambos tipos de ejecutores soportan lista blanca de comandos. Cuando se configura, solo coincidencias exactas de comando estan permitidas:
+Ambos tipos de ejecutores soportan lista blanca de comandos. Cuando se configura, solo coincidencias exactas de comando están permitidas:
 
 ```yaml
 command_whitelist:
@@ -89,11 +89,11 @@ command_whitelist:
   - cat /etc/passwd
 ```
 
-Los comandos que no estan en la lista blanca se rechazan con un error.
+Los comandos que no están en la lista blanca se rechazan con un error.
 
 ## API Lua
 
-El [Modulo Exec](lua-exec.md) proporciona ejecucion de comandos:
+El [Módulo Exec](lua-exec.md) proporciona ejecución de comandos:
 
 ```lua
 local exec = require("exec")

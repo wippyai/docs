@@ -4,10 +4,10 @@ Construya una API REST que encola tareas para procesamiento en background con pe
 
 ## Resumen
 
-Este tutorial crea una API de gestion de tareas demostrando:
+Este tutorial crea una API de gestión de tareas demostrando:
 
 - **Endpoints REST** - POST tareas, GET resultados
-- **Publicacion en cola** - Despacho asincrono de trabajos
+- **Publicación en cola** - Despacho asíncrono de trabajos
 - **Consumidores de cola** - Workers en background
 - **Persistencia en base de datos** - Almacenamiento SQLite
 - **Migraciones** - Proceso one-shot que termina
@@ -93,7 +93,7 @@ entries:
     meta:
       server: app:gateway
 
-  # Proceso de migracion (ejecuta una vez, termina)
+  # Proceso de migración (ejecuta una vez, termina)
   - name: migrate
     kind: process.lua
     source: file://migrate.lua
@@ -102,7 +102,7 @@ entries:
       - sql
       - logger
 
-  # Servicio de migracion (auto-inicia, termina al exito)
+  # Servicio de migración (auto-inicia, termina al éxito)
   - name: migrate-service
     kind: process.service
     process: app:migrate
@@ -174,7 +174,7 @@ entries:
       auto_start: true
 ```
 
-## Proceso de Migracion
+## Proceso de Migración
 
 Cree `src/migrate.lua`:
 
@@ -215,7 +215,7 @@ return { main = main }
 ```
 
 <tip>
-Retornar 0 senala exito. El supervisor no reiniciara un proceso que termina normalmente con codigo 0.
+Retornar 0 señala éxito. El supervisor no reiniciará un proceso que termina normalmente con código 0.
 </tip>
 
 ## Endpoint Crear Tarea
@@ -238,7 +238,7 @@ local function handler()
     local body, parse_err = req:body_json()
     if parse_err then
         res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "JSON invalido"})
+        res:write_json({error = "JSON inválido"})
         return
     end
 
@@ -259,7 +259,7 @@ local function handler()
     local ok, err = queue.publish("app:tasks_queue", task)
     if err then
         res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
-        res:write_json({error = "fallo al encolar tarea"})
+        res:write_json({error = "falló al encolar tarea"})
         return
     end
 
@@ -312,7 +312,7 @@ local function handler()
 
     if query_err then
         res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
-        res:write_json({error = "query fallo"})
+        res:write_json({error = "query falló"})
         return
     end
 
@@ -352,7 +352,7 @@ local function main(task)
     -- Simular trabajo
     time.sleep("100ms")
 
-    -- Procesar basado en accion
+    -- Procesar basado en acción
     local result
     if task.action == "uppercase" then
         result = {output = string.upper(task.data.text or "")}
@@ -442,19 +442,19 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## Conceptos Demostrados
 
-| Concepto | API | Descripcion |
+| Concepto | API | Descripción |
 |----------|-----|-------------|
 | Endpoints REST | `http.request()`, `http.response()` | Manejar solicitudes HTTP |
-| Publicacion en cola | `queue.publish(id, data)` | Enviar trabajos asincronos |
+| Publicación en cola | `queue.publish(id, data)` | Enviar trabajos asíncronos |
 | Consumo de cola | `queue.message()` | Acceder mensaje en handler |
 | Consultas de base de datos | `sql.get()`, `db:query()` | Leer datos |
 | Query builder | `sql.builder.insert()` | Construir SQL de forma segura |
-| Migraciones | Proceso retornando 0 | Tareas de configuracion one-shot |
+| Migraciones | Proceso retornando 0 | Tareas de configuración one-shot |
 | Concurrencia | `concurrency: 2` | Workers paralelos |
 
 ## Siguientes Pasos
 
-- [Modulo HTTP](lua-http.md) - Manejo de request/response
-- [Modulo Queue](lua-queue.md) - Operaciones de cola de mensajes
-- [Modulo SQL](lua-sql.md) - Acceso a base de datos
-- [Consumidores de Cola](guide-queue-consumers.md) - Configuracion de colas
+- [Módulo HTTP](lua-http.md) - Manejo de request/response
+- [Módulo Queue](lua-queue.md) - Operaciones de cola de mensajes
+- [Módulo SQL](lua-sql.md) - Acceso a base de datos
+- [Consumidores de Cola](guide-queue-consumers.md) - Configuración de colas

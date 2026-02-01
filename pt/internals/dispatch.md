@@ -1,6 +1,6 @@
 # Command Dispatch
 
-O sistema de despacho roteia comandos de processos para handlers. Processos cedem comandos com tags de correlacao, handlers executam trabalho assincrono, e resultados fluem de volta via filas de eventos.
+O sistema de despacho roteia comandos de processos para handlers. Processos cedem comandos com tags de correlação, handlers executam trabalho assíncrono, e resultados fluem de volta via filas de eventos.
 
 ## Fluxo
 
@@ -23,21 +23,21 @@ sequenceDiagram
 
 ## Registry de Comandos
 
-O registry armazena handlers em uma estrutura hibrida:
+O registry armazena handlers em uma estrutura híbrida:
 
 ```go
 type Registry struct {
     handlers [256]Handler         // Comandos de sistema: O(1) index
     extended map[CommandID]Handler // Comandos estendidos: lookup em map
-    frozen   atomic.Bool          // Sem lock apos boot
+    frozen   atomic.Bool          // Sem lock após boot
 }
 ```
 
-Comandos de sistema (0-255) usam indexacao de array. Comandos estendidos usam lookup em map. Apos `Freeze()`, todos os lookups sao sem lock.
+Comandos de sistema (0-255) usam indexação de array. Comandos estendidos usam lookup em map. Após `Freeze()`, todos os lookups são sem lock.
 
 ### Faixas de Command ID
 
-| Faixa | Modulo | Exemplos |
+| Faixa | Módulo | Exemplos |
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Monitor, Link |
 | 10-29 | clock | Sleep, Ticker, Timer |
@@ -54,13 +54,13 @@ Comandos de sistema (0-255) usam indexacao de array. Comandos estendidos usam lo
 | 170-179 | eval | Compile, Run, CreateProcess |
 | 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
-| 256+ | custom | Servicos definidos pelo usuario |
+| 256+ | custom | Serviços definidos pelo usuário |
 
-Registro acontece durante boot via `MustRegisterCommands()`. Colisoes causam panic na inicializacao.
+Registro acontece durante boot via `MustRegisterCommands()`. Colisões causam panic na inicialização.
 
 ## Definindo Comandos
 
-Comandos sao estruturas de dados com um `CommandID` unico:
+Comandos são estruturas de dados com um `CommandID` único:
 
 ```go
 const MyCommand dispatcher.CommandID = 200
@@ -81,7 +81,7 @@ func (c *MyCmd) Release() {
 }
 ```
 
-Reuso de pool elimina alocacao em hot paths. Registre no package init:
+Reuso de pool elimina alocação em hot paths. Registre no package init:
 
 ```go
 func init() {
@@ -91,7 +91,7 @@ func init() {
 
 ## Dispatchers
 
-Um dispatcher agrupa handlers relacionados. Ele implementa `RegisterAll` para registrar handlers e metodos de ciclo de vida para setup/teardown:
+Um dispatcher agrupa handlers relacionados. Ele implementa `RegisterAll` para registrar handlers e métodos de ciclo de vida para setup/teardown:
 
 ```go
 type Handler interface {
@@ -105,7 +105,7 @@ type ResultReceiver interface {
 
 ```go
 type Dispatcher struct {
-    // estado do servico
+    // estado do serviço
 }
 
 func (d *Dispatcher) RegisterAll(register func(id dispatcher.CommandID, h dispatcher.Handler)) {
@@ -141,21 +141,21 @@ func MyDispatcher() boot.Component {
 }
 ```
 
-## Yields e Correlacao
+## Yields e Correlação
 
-Quando um processo precisa de trabalho assincrono, ele cede um comando com uma tag de correlacao:
+Quando um processo precisa de trabalho assíncrono, ele cede um comando com uma tag de correlação:
 
 ```go
 type Yield struct {
     Cmd Command
-    Tag uint64    // Contador local do processo para correlacao
+    Tag uint64    // Contador local do processo para correlação
 }
 ```
 
-O worker extrai yields de `StepOutput` apos cada passo e os despacha para handlers. Cada tag identifica unicamente a requisicao para que resultados possam ser correspondidos de volta.
+O worker extrai yields de `StepOutput` após cada passo e os despacha para handlers. Cada tag identifica unicamente a requisição para que resultados possam ser correspondidos de volta.
 
-## Veja Tambem
+## Veja Também
 
-- [Scheduler](internal-scheduler.md) - Execucao de processos
-- [Modules](internal-modules.md) - Integracao de modulos Lua
-- [Process Model](concept-process-model.md) - Conceitos de alto nivel
+- [Scheduler](internal-scheduler.md) - Execução de processos
+- [Modules](internal-modules.md) - Integração de módulos Lua
+- [Process Model](concept-process-model.md) - Conceitos de alto nível

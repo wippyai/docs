@@ -158,7 +158,6 @@ wippy publish --dry-run
 | `--dry-run` | 公開せずに検証 |
 | `--label` | バージョンラベル |
 | `--release-notes` | リリースノート |
-| `--protected` | 保護済みとしてマーク |
 | `--registry` | レジストリURL |
 
 ## wippy search

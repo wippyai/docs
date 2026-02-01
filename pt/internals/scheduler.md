@@ -1,6 +1,6 @@
 # Scheduler
 
-O scheduler executa processos usando um design de work-stealing. Workers mantem deques locais e roubam uns dos outros quando ociosos.
+O scheduler executa processos usando um design de work-stealing. Workers mantêm deques locais e roubam uns dos outros quando ociosos.
 
 ## Interface Process
 
@@ -14,20 +14,20 @@ type Process interface {
 }
 ```
 
-| Metodo | Proposito |
+| Método | Propósito |
 |--------|-----------|
-| `Init` | Preparar processo com nome do metodo de entrada e argumentos de entrada |
-| `Step` | Avancar maquina de estado com eventos de entrada, escrever yields na saida |
+| `Init` | Preparar processo com nome do método de entrada e argumentos de entrada |
+| `Step` | Avançar máquina de estado com eventos de entrada, escrever yields na saída |
 | `Close` | Liberar recursos |
 
-O parametro `method` em `Init` especifica qual ponto de entrada invocar. Uma instancia de processo pode expor multiplos pontos de entrada, e o chamador seleciona qual executar. Isso tambem serve como verificacao de que o scheduler esta iniciando o processo corretamente.
+O parâmetro `method` em `Init` especifica qual ponto de entrada invocar. Uma instância de processo pode expor múltiplos pontos de entrada, e o chamador seleciona qual executar. Isso também serve como verificação de que o scheduler está iniciando o processo corretamente.
 
-O scheduler chama `Step()` repetidamente, passando eventos (completacoes de yield, mensagens) e coletando yields (comandos para despachar). O processo escreve seu status e quaisquer yields no buffer `StepOutput`.
+O scheduler chama `Step()` repetidamente, passando eventos (completações de yield, mensagens) e coletando yields (comandos para despachar). O processo escreve seu status e quaisquer yields no buffer `StepOutput`.
 
 ```go
 type Event struct {
     Type  EventType  // EventYieldComplete ou EventMessage
-    Tag   uint64     // Tag de correlacao para completacoes de yield
+    Tag   uint64     // Tag de correlação para completações de yield
     Data  any        // Dados de resultado ou payload de mensagem
     Error error      // Erro se yield falhou
 }
@@ -35,7 +35,7 @@ type Event struct {
 
 ## Estrutura
 
-O scheduler cria `GOMAXPROCS` workers por padrao. Cada worker tem um deque local para acesso LIFO amigavel ao cache. Uma fila global FIFO trata novas submissoes e transferencias entre workers. Processos sao rastreados por PID para roteamento de mensagens.
+O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker tem um deque local para acesso LIFO amigável ao cache. Uma fila global FIFO trata novas submissões e transferências entre workers. Processos são rastreados por PID para roteamento de mensagens.
 
 ## Busca de Trabalho
 
@@ -51,13 +51,13 @@ flowchart TD
 
 Workers verificam fontes em ordem de prioridade:
 
-| Prioridade | Fonte | Padrao |
+| Prioridade | Fonte | Padrão |
 |------------|-------|--------|
-| 1 | Deque local | LIFO pop, sem lock, amigavel ao cache |
-| 2 | Fila global | FIFO pop com transferencia em batch |
-| 3 | Outros workers | Roubar metade do deque da vitima |
+| 1 | Deque local | LIFO pop, sem lock, amigável ao cache |
+| 2 | Fila global | FIFO pop com transferência em batch |
+| 3 | Outros workers | Roubar metade do deque da vítima |
 
-Ao fazer pop da global, workers pegam um item e transferem em batch ate 16 mais para seu deque local.
+Ao fazer pop da global, workers pegam um item e transferem em batch até 16 mais para seu deque local.
 
 ## Deque Chase-Lev
 
@@ -66,24 +66,24 @@ Cada worker possui um deque de work-stealing Chase-Lev:
 ```go
 type Deque struct {
     buffer atomic.Pointer[dequeBuffer]
-    top    atomic.Int64  // Ladroes roubam daqui (CAS)
+    top    atomic.Int64  // Ladrões roubam daqui (CAS)
     bottom atomic.Int64  // Dono faz push/pop aqui
 }
 ```
 
-O dono faz push e pop do fundo (LIFO) sem sincronizacao. Ladroes roubam do topo (FIFO) usando CAS. Isso da ao dono acesso amigavel ao cache para itens recentemente empurrados enquanto distribui trabalho mais antigo para ladroes.
+O dono faz push e pop do fundo (LIFO) sem sincronização. Ladrões roubam do topo (FIFO) usando CAS. Isso dá ao dono acesso amigável ao cache para itens recentemente empurrados enquanto distribui trabalho mais antigo para ladrões.
 
-`StealHalfInto` pega metade dos itens em uma operacao CAS, reduzindo contencao.
+`StealHalfInto` pega metade dos itens em uma operação CAS, reduzindo contenção.
 
 ## Spinning Adaptativo
 
-Antes de bloquear na variavel de condicao, workers fazem spinning adaptativo:
+Antes de bloquear na variável de condição, workers fazem spinning adaptativo:
 
-| Contagem de Spin | Acao |
+| Contagem de Spin | Ação |
 |------------------|------|
 | < 4 | Loop tight |
 | 4-15 | Yield de thread (`runtime.Gosched`) |
-| >= 16 | Bloquear na variavel de condicao |
+| >= 16 | Bloquear na variável de condição |
 
 ## Estados de Processo
 
@@ -98,15 +98,15 @@ stateDiagram-v2
     Idle --> Ready: Send arrives
 ```
 
-| Estado | Descricao |
+| Estado | Descrição |
 |--------|-----------|
-| Ready | Enfileirado para execucao |
-| Running | Worker esta executando Step() |
-| Blocked | Aguardando completacao de yield |
+| Ready | Enfileirado para execução |
+| Running | Worker está executando Step() |
+| Blocked | Aguardando completação de yield |
 | Idle | Aguardando mensagens |
-| Complete | Execucao finalizada |
+| Complete | Execução finalizada |
 
-Uma flag de wakeup trata corridas: se um handler chama `CompleteYield` enquanto o worker ainda possui o processo (Running), ele define a flag. O worker verifica a flag apos despachar e re-enfileira se definida.
+Uma flag de wakeup trata corridas: se um handler chama `CompleteYield` enquanto o worker ainda possui o processo (Running), ele define a flag. O worker verifica a flag após despachar e re-enfileira se definida.
 
 ## Fila de Eventos
 
@@ -117,13 +117,13 @@ Cada processo tem uma fila de eventos MPSC (multi-producer, single-consumer):
 
 ## Roteamento de Mensagens
 
-O scheduler implementa `relay.Receiver` para rotear mensagens para processos. Quando `Send()` e chamado, ele busca o PID alvo no mapa `byPID`, empurra a mensagem como um evento na fila do processo, e acorda o processo se ocioso empurrando-o para a fila global.
+O scheduler implementa `relay.Receiver` para rotear mensagens para processos. Quando `Send()` é chamado, ele busca o PID alvo no mapa `byPID`, empurra a mensagem como um evento na fila do processo, e acorda o processo se ocioso empurrando-o para a fila global.
 
 ## Shutdown
 
-No shutdown, o scheduler envia eventos de cancelamento para todos os processos em execucao e aguarda eles completarem ou timeout. Workers saem quando nao ha mais trabalho.
+No shutdown, o scheduler envia eventos de cancelamento para todos os processos em execução e aguarda eles completarem ou timeout. Workers saem quando não há mais trabalho.
 
-## Veja Tambem
+## Veja Também
 
 - [Command Dispatch](internal-dispatch.md) - Como yields chegam aos handlers
-- [Process Model](concept-process-model.md) - Conceitos de alto nivel
+- [Process Model](concept-process-model.md) - Conceitos de alto nível

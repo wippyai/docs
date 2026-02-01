@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Die primare Methode zum Aufrufen anderer Funktionen in Wippy. Fuhren Sie registrierte Funktionen synchron oder asynchron uber Prozesse hinweg aus, mit voller Unterstutzung fur Kontextpropagierung, Sicherheitsanmeldedaten und Timeouts. Dieses Modul ist zentral fur den Aufbau verteilter Anwendungen, bei denen Komponenten kommunizieren mussen.
+Die primäre Methode zum Aufrufen anderer Funktionen in Wippy. Führen Sie registrierte Funktionen synchron oder asynchron uber Prozesse hinweg aus, mit voller Unterstützung für Kontextpropagierung, Sicherheitsanmeldedaten und Timeouts. Dieses Modul ist zentral für den Aufbau verteilter Anwendungen, bei denen Komponenten kommunizieren müssen.
 
 ## Laden
 
@@ -13,7 +13,7 @@ local funcs = require("funcs")
 
 ## call
 
-Ruft eine registrierte Funktion synchron auf. Verwenden Sie dies, wenn Sie ein sofortiges Ergebnis benotigen und darauf warten konnen.
+Ruft eine registrierte Funktion synchron auf. Verwenden Sie dies, wenn Sie ein sofortiges Ergebnis benötigen und darauf warten können.
 
 ```lua
 local result, err = funcs.call("app.api:get_user", user_id)
@@ -26,15 +26,15 @@ print(result.name)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `target` | string | Funktions-ID im Format "namespace:name" |
-| `...args` | any | Argumente, die an die Funktion ubergeben werden |
+| `...args` | any | Argumente, die an die Funktion übergeben werden |
 
-**Gibt zuruck:** `result, error`
+**Gibt zurück:** `result, error`
 
 Der Target-String folgt dem Muster `namespace:name`, wobei namespace das Modul und name die spezifische Funktion identifiziert.
 
 ## async
 
-Startet einen asynchronen Funktionsaufruf und gibt sofort ein Future zuruck. Verwenden Sie dies fur lang laufende Operationen, bei denen Sie nicht blockieren mochten, oder wenn Sie mehrere Operationen parallel ausfuhren mochten.
+Startet einen asynchronen Funktionsaufruf und gibt sofort ein Future zurück. Verwenden Sie dies für lang laufende Operationen, bei denen Sie nicht blockieren möchten, oder wenn Sie mehrere Operationen parallel ausführen möchten.
 
 ```lua
 -- Schwere Berechnung starten ohne zu blockieren
@@ -43,7 +43,7 @@ if err then
     return nil, err
 end
 
--- Andere Arbeit erledigen wahrend die Berechnung lauft...
+-- Andere Arbeit erledigen während die Berechnung läuft...
 
 -- Auf Ergebnis warten wenn bereit
 local ch = future:response()
@@ -56,27 +56,27 @@ end
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `target` | string | Funktions-ID im Format "namespace:name" |
-| `...args` | any | Argumente, die an die Funktion ubergeben werden |
+| `...args` | any | Argumente, die an die Funktion übergeben werden |
 
-**Gibt zuruck:** `Future, error`
+**Gibt zurück:** `Future, error`
 
 ## new
 
-Erstellt einen neuen Executor zum Aufbauen von Funktionsaufrufen mit benutzerdefiniertem Kontext. Verwenden Sie dies, wenn Sie Request-Kontext propagieren, Sicherheitsanmeldedaten setzen oder Timeouts konfigurieren mussen.
+Erstellt einen neuen Executor zum Aufbauen von Funktionsaufrufen mit benutzerdefiniertem Kontext. Verwenden Sie dies, wenn Sie Request-Kontext propagieren, Sicherheitsanmeldedaten setzen oder Timeouts konfigurieren müssen.
 
 ```lua
 local exec = funcs.new()
 ```
 
-**Gibt zuruck:** `Executor, error`
+**Gibt zurück:** `Executor, error`
 
 ## Executor
 
-Builder fur Funktionsaufrufe mit benutzerdefinierten Kontextoptionen. Methoden geben neue Executor-Instanzen zuruck (unveranderliche Verkettung), sodass Sie eine Basiskonfiguration wiederverwenden konnen.
+Builder für Funktionsaufrufe mit benutzerdefinierten Kontextoptionen. Methoden geben neue Executor-Instanzen zurück (unveränderliche Verkettung), sodass Sie eine Basiskonfiguration wiederverwenden können.
 
 ### with_context
 
-Fugt Kontextwerte hinzu, die der aufgerufenen Funktion zur Verfugung stehen. Verwenden Sie dies, um request-spezifische Daten wie Trace-IDs, Benutzersitzungen oder Feature-Flags zu propagieren.
+Fügt Kontextwerte hinzu, die der aufgerufenen Funktion zur Verfügung stehen. Verwenden Sie dies, um request-spezifische Daten wie Trace-IDs, Benutzersitzungen oder Feature-Flags zu propagieren.
 
 ```lua
 -- Request-Kontext an nachgelagerte Services propagieren
@@ -90,13 +90,13 @@ local user, err = exec:call("app.api:get_user", user_id)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `values` | table | Schlussel-Wert-Paare zum Hinzufugen zum Kontext |
+| `values` | table | Schlüssel-Wert-Paare zum Hinzufügen zum Kontext |
 
-**Gibt zuruck:** `Executor, error`
+**Gibt zurück:** `Executor, error`
 
 ### with_actor
 
-Setzt den Sicherheits-Actor fur Autorisierungsprufungen in der aufgerufenen Funktion. Verwenden Sie dies beim Aufrufen einer Funktion im Namen eines bestimmten Benutzers.
+Setzt den Sicherheits-Actor für Autorisierungsprüfungen in der aufgerufenen Funktion. Verwenden Sie dies beim Aufrufen einer Funktion im Namen eines bestimmten Benutzers.
 
 ```lua
 local security = require("security")
@@ -114,11 +114,11 @@ end
 |-----------|------|-------------|
 | `actor` | Actor | Sicherheits-Actor (vom Security-Modul) |
 
-**Gibt zuruck:** `Executor, error`
+**Gibt zurück:** `Executor, error`
 
 ### with_scope
 
-Setzt den Sicherheits-Scope fur aufgerufene Funktionen. Scopes definieren die verfugbaren Berechtigungen fur den Aufruf.
+Setzt den Sicherheits-Scope für aufgerufene Funktionen. Scopes definieren die verfügbaren Berechtigungen für den Aufruf.
 
 ```lua
 local security = require("security")
@@ -131,14 +131,14 @@ local exec = funcs.new():with_scope(scope)
 |-----------|------|-------------|
 | `scope` | Scope | Sicherheits-Scope (vom Security-Modul) |
 
-**Gibt zuruck:** `Executor, error`
+**Gibt zurück:** `Executor, error`
 
 ### with_options
 
-Setzt Aufrufoptionen wie Timeout und Prioritat. Verwenden Sie dies fur Operationen, die Zeitlimits benotigen.
+Setzt Aufrufoptionen wie Timeout und Priorität. Verwenden Sie dies für Operationen, die Zeitlimits benötigen.
 
 ```lua
--- 5 Sekunden Timeout fur externen API-Aufruf setzen
+-- 5 Sekunden Timeout für externen API-Aufruf setzen
 local exec = funcs.new():with_options({timeout = 5000})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
@@ -150,7 +150,7 @@ end
 |-----------|------|-------------|
 | `options` | table | Implementierungsspezifische Optionen |
 
-**Gibt zuruck:** `Executor, error`
+**Gibt zurück:** `Executor, error`
 
 ### call / async
 
@@ -169,11 +169,11 @@ local posts, _ = exec:call("app.api:list_posts")
 
 ## Future
 
-Wird von `async()`-Aufrufen zuruckgegeben. Reprasentiert eine laufende asynchrone Operation.
+Wird von `async()`-Aufrufen zurückgegeben. Repräsentiert eine laufende asynchrone Operation.
 
 ### response / channel
 
-Gibt den zugrunde liegenden Channel zum Empfangen des Ergebnisses zuruck.
+Gibt den zugrunde liegenden Channel zum Empfangen des Ergebnisses zurück.
 
 ```lua
 local future, _ = funcs.async("app.api:slow_operation", data)
@@ -185,11 +185,11 @@ local result = channel.select {
 }
 ```
 
-**Gibt zuruck:** `Channel`
+**Gibt zurück:** `Channel`
 
 ### is_complete
 
-Nicht-blockierende Prufung, ob das Future abgeschlossen ist.
+Nicht-blockierende Prüfung, ob das Future abgeschlossen ist.
 
 ```lua
 while not future:is_complete() do
@@ -199,11 +199,11 @@ end
 local result, err = future:result()
 ```
 
-**Gibt zuruck:** `boolean`
+**Gibt zurück:** `boolean`
 
 ### is_canceled
 
-Gibt true zuruck, wenn `cancel()` auf diesem Future aufgerufen wurde.
+Gibt true zurück, wenn `cancel()` auf diesem Future aufgerufen wurde.
 
 ```lua
 if future:is_canceled() then
@@ -211,11 +211,11 @@ if future:is_canceled() then
 end
 ```
 
-**Gibt zuruck:** `boolean`
+**Gibt zurück:** `boolean`
 
 ### result
 
-Gibt das zwischengespeicherte Ergebnis zuruck, wenn abgeschlossen, oder nil wenn noch ausstehend.
+Gibt das zwischengespeicherte Ergebnis zurück, wenn abgeschlossen, oder nil wenn noch ausstehend.
 
 ```lua
 local value, err = future:result()
@@ -226,11 +226,11 @@ elseif value then
 end
 ```
 
-**Gibt zuruck:** `Payload|nil, error|nil`
+**Gibt zurück:** `Payload|nil, error|nil`
 
 ### error
 
-Gibt den Fehler zuruck, wenn das Future fehlgeschlagen ist.
+Gibt den Fehler zurück, wenn das Future fehlgeschlagen ist.
 
 ```lua
 local err, has_error = future:error()
@@ -239,7 +239,7 @@ if has_error then
 end
 ```
 
-**Gibt zuruck:** `error|nil, boolean`
+**Gibt zurück:** `error|nil, boolean`
 
 ### cancel
 
@@ -251,7 +251,7 @@ future:cancel()
 
 ## Parallele Operationen
 
-Fuhren Sie mehrere Operationen gleichzeitig aus mit async und channel.select.
+Führen Sie mehrere Operationen gleichzeitig aus mit async und channel.select.
 
 ```lua
 -- Mehrere Operationen parallel starten
@@ -302,4 +302,4 @@ Funktionsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Abonnement fehlgeschlagen | `errors.INTERNAL` | nein |
 | Funktionsfehler | variiert | variiert |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

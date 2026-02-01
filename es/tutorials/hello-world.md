@@ -1,10 +1,10 @@
 # Hello World
 
-Su primera aplicacion Wippy - una API HTTP simple que retorna JSON.
+Su primera aplicación Wippy: una API HTTP simple que retorna JSON.
 
-## Que Estamos Construyendo
+## Qué Estamos Construyendo
 
-Una API web minima con un endpoint:
+Una API web mínima con un endpoint:
 
 ```
 GET /hello → {"message": "hello world"}
@@ -17,7 +17,7 @@ hello-world/
 ├── wippy.lock           # Archivo lock generado
 └── src/
     ├── _index.yaml      # Definiciones de entradas
-    └── hello.lua        # Codigo del handler
+    └── hello.lua        # Código del handler
 ```
 
 ## Paso 1: Crear Directorio del Proyecto
@@ -50,7 +50,7 @@ entries:
       server: gateway
     prefix: /
 
-  # Funcion handler
+  # Función handler
   - name: hello
     kind: function.lua
     source: file://hello.lua
@@ -71,11 +71,11 @@ entries:
 **Cuatro entradas trabajan juntas:**
 
 1. `gateway` - Servidor HTTP escuchando en puerto 8080
-2. `api` - Router adjunto a gateway via `meta.server`
-3. `hello` - Funcion Lua que maneja solicitudes
-4. `hello.endpoint` - Enruta `GET /hello` a la funcion
+2. `api` - Router adjunto a gateway vía `meta.server`
+3. `hello` - Función Lua que maneja solicitudes
+4. `hello.endpoint` - Enruta `GET /hello` a la función
 
-## Paso 3: Codigo del Handler
+## Paso 3: Código del Handler
 
 Cree `src/hello.lua`:
 
@@ -95,7 +95,7 @@ return {
 }
 ```
 
-El modulo `http` proporciona acceso a objetos de request/response. La funcion retorna una tabla con el metodo `handler` exportado.
+El módulo `http` proporciona acceso a objetos de request/response. La función retorna una tabla con el método `handler` exportado.
 
 ## Paso 4: Inicializar y Ejecutar
 
@@ -107,7 +107,7 @@ wippy init
 wippy run -c
 ```
 
-Vera salida como:
+Verá salida como:
 
 ```
 ╦ ╦╦╔═╗╔═╗╦ ╦  Adaptive Application Runtime
@@ -130,16 +130,16 @@ Respuesta:
 {"message":"hello world"}
 ```
 
-## Como Funciona
+## Cómo Funciona
 
-1. `gateway` acepta la conexion TCP en puerto 8080
+1. `gateway` acepta la conexión TCP en puerto 8080
 2. `api` router matchea el prefijo de ruta `/`
 3. `hello.endpoint` matchea `GET /hello`
-4. La funcion `hello` se ejecuta y escribe respuesta JSON
+4. La función `hello` se ejecuta y escribe respuesta JSON
 
 ## Referencia CLI
 
-| Comando | Descripcion |
+| Comando | Descripción |
 |---------|-------------|
 | `wippy init` | Generar archivo lock desde `src/` |
 | `wippy run` | Iniciar runtime desde archivo lock |
@@ -149,6 +149,6 @@ Respuesta:
 
 ## Siguientes Pasos
 
-- [Echo Service](echo-service.md) - Manejar parametros de solicitud
+- [Echo Service](echo-service.md) - Manejar parámetros de solicitud
 - [Task Queue](task-queue.md) - API REST con procesamiento en background
 - [HTTP Router](http-router.md) - Patrones de routing

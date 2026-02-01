@@ -2,7 +2,7 @@
 
 Los endpoints (`http.endpoint`) definen manejadores de rutas HTTP que ejecutan funciones Lua.
 
-## Definicion
+## Definición
 
 ```yaml
 - name: get_user
@@ -13,32 +13,32 @@ Los endpoints (`http.endpoint`) definen manejadores de rutas HTTP que ejecutan f
   func: app.users:get_user
 ```
 
-## Configuracion
+## Configuración
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `router` | registry.ID | Router padre (opcional si solo hay un router) |
-| `method` | string | Metodo HTTP |
-| `path` | string | Patron de ruta URL |
-| `func` | registry.ID | Funcion a ejecutar |
+| `method` | string | Método HTTP |
+| `path` | string | Patrón de ruta URL |
+| `func` | registry.ID | Función a ejecutar |
 
-## Metodos HTTP
+## Métodos HTTP
 
-Metodos soportados:
+Métodos soportados:
 
-| Metodo | Caso de Uso |
+| Método | Caso de Uso |
 |--------|----------|
 | `GET` | Recuperar recursos |
 | `POST` | Crear recursos |
 | `PUT` | Reemplazar recursos |
-| `PATCH` | Actualizacion parcial |
+| `PATCH` | Actualización parcial |
 | `DELETE` | Eliminar recursos |
 | `HEAD` | Solo headers |
 | `OPTIONS` | Preflight CORS (auto-manejado) |
 
-## Parametros de Ruta
+## Parámetros de Ruta
 
-Use sintaxis `{param}` para parametros de URL:
+Use sintaxis `{param}` para parámetros de URL:
 
 ```yaml
 - name: get_user
@@ -63,7 +63,7 @@ function(req, res)
 end
 ```
 
-## Rutas Comodin
+## Rutas Comodín
 
 Capture la ruta restante con `{path...}`:
 
@@ -82,7 +82,7 @@ function(req, res)
 end
 ```
 
-## Funcion Handler
+## Función Handler
 
 Las funciones de endpoint reciben objetos de solicitud y respuesta:
 
@@ -106,21 +106,21 @@ end
 
 ### Objeto Request
 
-| Metodo | Retorna | Descripcion |
+| Método | Retorna | Descripción |
 |--------|---------|-------------|
-| `req:method()` | string | Metodo HTTP |
+| `req:method()` | string | Método HTTP |
 | `req:path()` | string | Ruta de solicitud |
-| `req:param(name)` | string | Parametro de URL |
-| `req:query(name)` | string | Parametro de query |
+| `req:param(name)` | string | Parámetro de URL |
+| `req:query(name)` | string | Parámetro de query |
 | `req:header(name)` | string | Header de solicitud |
 | `req:headers()` | table | Todos los headers |
 | `req:body()` | string | Cuerpo de solicitud |
 | `req:cookie(name)` | string | Valor de cookie |
-| `req:remote_addr()` | string | Direccion IP del cliente |
+| `req:remote_addr()` | string | Dirección IP del cliente |
 
 ### Objeto Response
 
-| Metodo | Descripcion |
+| Método | Descripción |
 |--------|-------------|
 | `res:set_status(code)` | Establecer status HTTP |
 | `res:set_header(name, value)` | Establecer header |
@@ -128,9 +128,9 @@ end
 | `res:write(data)` | Escribir cuerpo |
 | `res:redirect(url, code?)` | Redirigir (por defecto 302) |
 
-## Patron de API JSON
+## Patrón de API JSON
 
-Patron comun para APIs JSON:
+Patrón común para APIs JSON:
 
 ```lua
 local json = require("json")
@@ -141,7 +141,7 @@ function(req, res)
     if err then
         res:set_status(400)
         res:set_header("Content-Type", "application/json")
-        res:write(json.encode({error = "JSON invalido"}))
+        res:write(json.encode({error = "JSON inválido"}))
         return
     end
 
@@ -250,8 +250,8 @@ entries:
     endpoint_firewall.action: "admin"
 ```
 
-## Ver Tambien
+## Ver También
 
-- [Router](http-router.md) - Agrupacion de rutas
-- [Modulo HTTP](lua-http.md) - API de request/response
+- [Router](http-router.md) - Agrupación de rutas
+- [Módulo HTTP](lua-http.md) - API de request/response
 - [Middleware](http-middleware.md) - Procesamiento de solicitudes

@@ -3,12 +3,12 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Tratamento de erros estruturados com categorizacao e metadados de retry. Tabela global `errors` disponivel sem require.
+Tratamento de erros estruturados com categorização e metadados de retry. Tabela global `errors` disponível sem require.
 
 ## Criando Erros
 
 ```lua
--- Mensagem simples (tipo padrao UNKNOWN)
+-- Mensagem simples (tipo padrão UNKNOWN)
 local err = errors.new("something went wrong")
 
 -- Com tipo
@@ -34,22 +34,22 @@ if err then
 end
 ```
 
-## Metodos de Erro
+## Métodos de Erro
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `err:kind()` | string | Categoria do erro |
 | `err:message()` | string | Mensagem de erro |
-| `err:retryable()` | boolean/nil | Se operacao pode ser retentada |
+| `err:retryable()` | boolean/nil | Se operação pode ser retentada |
 | `err:details()` | table/nil | Metadados estruturados |
 | `err:stack()` | string | Stack trace Lua |
-| `tostring(err)` | string | Representacao completa |
+| `tostring(err)` | string | Representação completa |
 
 ## Verificando Tipo
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- tratar entrada invalida
+    -- tratar entrada inválida
 end
 
 -- Ou comparar diretamente
@@ -62,17 +62,17 @@ end
 
 | Constante | Caso de Uso |
 |-----------|-------------|
-| `errors.NOT_FOUND` | Recurso nao existe |
-| `errors.ALREADY_EXISTS` | Recurso ja existe |
-| `errors.INVALID` | Entrada ou argumentos invalidos |
+| `errors.NOT_FOUND` | Recurso não existe |
+| `errors.ALREADY_EXISTS` | Recurso já existe |
+| `errors.INVALID` | Entrada ou argumentos inválidos |
 | `errors.PERMISSION_DENIED` | Acesso negado |
-| `errors.UNAVAILABLE` | Servico temporariamente fora |
+| `errors.UNAVAILABLE` | Serviço temporariamente fora |
 | `errors.INTERNAL` | Erro interno |
-| `errors.CANCELED` | Operacao foi cancelada |
+| `errors.CANCELED` | Operação foi cancelada |
 | `errors.CONFLICT` | Conflito de estado de recurso |
-| `errors.TIMEOUT` | Operacao expirou |
-| `errors.RATE_LIMITED` | Muitas requisicoes |
-| `errors.UNKNOWN` | Erro nao especificado |
+| `errors.TIMEOUT` | Operação expirou |
+| `errors.RATE_LIMITED` | Muitas requisições |
+| `errors.UNKNOWN` | Erro não especificado |
 
 ## Call Stack
 
@@ -88,9 +88,9 @@ if stack then
 end
 ```
 
-## Erros Retentaveis
+## Erros Retentáveis
 
-| Tipicamente Retentavel | Nao Retentavel |
+| Tipicamente Retentável | Não Retentável |
 |------------------------|----------------|
 | `TIMEOUT` | `INVALID` |
 | `UNAVAILABLE` | `NOT_FOUND` |

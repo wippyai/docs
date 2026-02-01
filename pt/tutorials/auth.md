@@ -1,6 +1,6 @@
 # Crypto Ticker
 
-Construa um ticker de criptomoedas em tempo real com autenticacao por API key e streaming WebSocket. Este tutorial demonstra seguranca baseada em token, configuracao de middleware e tratamento de WebSocket baseado em processos.
+Construa um ticker de criptomoedas em tempo real com autenticação por API key e streaming WebSocket. Este tutorial demonstra segurança baseada em token, configuração de middleware e tratamento de WebSocket baseado em processos.
 
 ## Arquitetura
 
@@ -83,17 +83,17 @@ flowchart TB
     Ticker -->|fetch prices| CryptoAPI
 ```
 
-## Fluxo de Seguranca
+## Fluxo de Segurança
 
 1. **Troca de API Key**: Cliente faz POST da API key para `/auth/token`. Handler valida contra banco de dados, cria um ator com a `user_policy` e emite um token assinado com HMAC.
 
-2. **Autenticacao por Token**: Conexoes WebSocket passam pelo middleware `token_auth` que valida o Bearer token e restaura o contexto de seguranca (ator + politicas).
+2. **Autenticação por Token**: Conexões WebSocket passam pelo middleware `token_auth` que valida o Bearer token e restaura o contexto de segurança (ator + políticas).
 
-3. **Criacao de Processo**: O endpoint WebSocket cria um processo handler. Como o token inclui a `user_policy`, o spawn e autorizado.
+3. **Criação de Processo**: O endpoint WebSocket cria um processo handler. Como o token inclui a `user_policy`, o spawn é autorizado.
 
 4. **Roteamento de Mensagens**: O middleware `websocket_relay` roteia frames WebSocket para o processo handler como mensagens.
 
-## Configuracao
+## Configuração
 
 `_index.yaml` completo:
 
@@ -123,7 +123,7 @@ entries:
     default_expiration: "1h"
     token_key: "demo-secret-key-change-in-production"
 
-  # Politica de seguranca para usuarios autenticados
+  # Política de segurança para usuários autenticados
   - name: user_policy
     kind: security.policy
     policy:
@@ -139,7 +139,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Migracao do banco de dados
+  # Migração do banco de dados
   - name: migrate
     kind: process.lua
     source: file://migrate.lua
@@ -167,7 +167,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Handler WebSocket (criado por conexao)
+  # Handler WebSocket (criado por conexão)
   - name: ws_handler
     kind: process.lua
     source: file://ws_handler.lua
@@ -181,7 +181,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Router publico (sem auth)
+  # Router público (sem auth)
   - name: public_router
     kind: http.router
     meta:
@@ -208,7 +208,7 @@ entries:
     post_options:
       wsrelay.allowed.origins: "*"
 
-  # Arquivos estaticos
+  # Arquivos estáticos
   - name: public_fs
     kind: fs.directory
     directory: ./public
@@ -254,7 +254,7 @@ entries:
     func: app:ws_ticker
 ```
 
-Para producao, use `token_key_env` para ler a chave HMAC de uma variavel de ambiente em vez de codifica-la. Veja [Environment System](system-env.md).
+Para produção, use `token_key_env` para ler a chave HMAC de uma variável de ambiente em vez de codificá-la. Veja [Environment System](system-env.md).
 
 ## Troca de Token
 
@@ -304,7 +304,7 @@ local function handler()
 
     local user = rows[1]
 
-    -- Criar ator com identidade do usuario
+    -- Criar ator com identidade do usuário
     local actor = security.new_actor("user:" .. user.user_id, {
         role = user.role,
         user_id = user.user_id
@@ -347,7 +347,7 @@ return { handler = handler }
 
 ## Endpoint WebSocket
 
-`ws_ticker.lua` - cria um processo handler para cada conexao autenticada:
+`ws_ticker.lua` - cria um processo handler para cada conexão autenticada:
 
 ```lua
 local http = require("http")
@@ -365,7 +365,7 @@ local function handler()
         return
     end
 
-    -- Ator e definido pelo middleware token_auth
+    -- Ator é definido pelo middleware token_auth
     local actor = security.actor()
     if not actor then
         res:set_status(http.STATUS.UNAUTHORIZED)
@@ -394,12 +394,12 @@ end
 return { handler = handler }
 ```
 
-## Handler de Conexao
+## Handler de Conexão
 
 O middleware `websocket_relay` automaticamente envia mensagens de ciclo de vida para o processo handler:
-- `ws.join` - Conexao estabelecida, inclui `client_pid` para enviar respostas
+- `ws.join` - Conexão estabelecida, inclui `client_pid` para enviar respostas
 - `ws.message` - Cliente enviou uma mensagem
-- `ws.leave` - Conexao fechada (enviado automaticamente na desconexao)
+- `ws.leave` - Conexão fechada (enviado automaticamente na desconexão)
 
 `ws_handler.lua` - trata essas mensagens de ciclo de vida:
 
@@ -449,7 +449,7 @@ local function main(user_id)
             end
 
         elseif topic == "ws.leave" then
-            -- Relay envia isso automaticamente na desconexao
+            -- Relay envia isso automaticamente na desconexão
             logger:info("client left", {user_id = user_id, reason = data.reason})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
@@ -466,7 +466,7 @@ return { main = main }
 
 ## Broadcasting
 
-`ticker.lua` - mantem inscricoes e faz broadcast de atualizacoes de preco:
+`ticker.lua` - mantém inscrições e faz broadcast de atualizações de preço:
 
 ```lua
 local logger = require("logger")
@@ -538,7 +538,7 @@ local function main()
         elseif r.channel == events then
             local event = r.value
             if event.kind == process.event.EXIT then
-                -- Handler saiu, remover inscricao
+                -- Handler saiu, remover inscrição
                 if subscriptions[event.from] then
                     logger:info("handler exited", {handler_pid = event.from})
                     subscriptions[event.from] = nil
@@ -575,7 +575,7 @@ end
 return { main = main }
 ```
 
-## Migracao do Banco de Dados
+## Migração do Banco de Dados
 
 `migrate.lua` - cria a tabela de API keys e gera uma key demo:
 
@@ -643,17 +643,17 @@ Abra http://localhost:8081 e insira a API key demo mostrada nos logs.
 
 ## Pontos-Chave
 
-| Conceito | Implementacao |
+| Conceito | Implementação |
 |----------|---------------|
 | Assinatura de token | `security.token_store` com chave HMAC |
-| Validacao de token | middleware `token_auth` no router |
-| Autorizacao | `security.policy` anexada ao escopo do token |
+| Validação de token | middleware `token_auth` no router |
+| Autorização | `security.policy` anexada ao escopo do token |
 | Ciclo de vida WebSocket | `websocket_relay` envia ws.join/ws.leave automaticamente |
 | Limpeza do handler | `process.monitor(handler_pid)` detecta crashes |
-| Mapa de inscricoes | `subscriptions[handler_pid] = client_pid` |
+| Mapa de inscrições | `subscriptions[handler_pid] = client_pid` |
 
-## Veja Tambem
+## Veja Também
 
-- [WebSocket Relay](http-websocket-relay.md) - Configuracao de middleware
-- [Security Module](lua-security.md) - Atores, politicas, token stores
-- [Process Management](lua-process.md) - Criacao e mensagens de processos
+- [WebSocket Relay](http-websocket-relay.md) - Configuração de middleware
+- [Security Module](lua-security.md) - Atores, políticas, token stores
+- [Process Management](lua-process.md) - Criação e mensagens de processos

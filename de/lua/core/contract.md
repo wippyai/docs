@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Rufen Sie Services uber typisierte Contracts auf. Rufen Sie Remote-APIs, Workflows und Funktionen mit Schema-Validierung und Unterstutzung fur asynchrone Ausfuhrung auf.
+Rufen Sie Services über typisierte Contracts auf. Rufen Sie Remote-APIs, Workflows und Funktionen mit Schema-Validierung und Unterstützung für asynchrone Ausführung auf.
 
 ## Laden
 
@@ -12,9 +12,9 @@ Rufen Sie Services uber typisierte Contracts auf. Rufen Sie Remote-APIs, Workflo
 local contract = require("contract")
 ```
 
-## Ein Binding offnen
+## Ein Binding öffnen
 
-Offnen Sie ein Binding direkt per ID:
+Öffnen Sie ein Binding direkt per ID:
 
 ```lua
 local greeter, err = contract.open("app.services:greeter")
@@ -40,10 +40,10 @@ local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `binding_id` | string | Binding-ID, unterstutzt Query-Parameter |
-| `scope` | table | Kontextwerte (optional, uberschreibt Query-Parameter) |
+| `binding_id` | string | Binding-ID, unterstützt Query-Parameter |
+| `scope` | table | Kontextwerte (optional, überschreibt Query-Parameter) |
 
-**Gibt zuruck:** `Instance, error`
+**Gibt zurück:** `Instance, error`
 
 ## Einen Contract abrufen
 
@@ -83,16 +83,16 @@ for _, binding_id in ipairs(bindings) do
 end
 ```
 
-Oder uber das Contract-Objekt:
+Oder über das Contract-Objekt:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
 local bindings, err = c:implementations()
 ```
 
-## Implementierung prufen
+## Implementierung prüfen
 
-Prufen Sie, ob eine Instanz einen Contract implementiert:
+Prüfen Sie, ob eine Instanz einen Contract implementiert:
 
 ```lua
 if contract.is(instance, "app.services:greeter") then
@@ -113,7 +113,7 @@ local product, err = calc:multiply(5, 6)
 
 ## Asynchrone Aufrufe
 
-Fugen Sie das Suffix `_async` fur asynchrone Ausfuhrung hinzu:
+Fügen Sie das Suffix `_async` für asynchrone Ausführung hinzu:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
@@ -130,11 +130,11 @@ if ok then
 end
 ```
 
-Siehe [Futures](lua-future.md) fur Future-Methoden.
+Siehe [Futures](lua-future.md) für Future-Methoden.
 
-## Via Contract offnen
+## Via Contract öffnen
 
-Offnen Sie ein Binding uber das Contract-Objekt:
+Öffnen Sie ein Binding über das Contract-Objekt:
 
 ```lua
 local c, err = contract.get("app.services:user")
@@ -150,7 +150,7 @@ local instance, err = c:open(nil, {user_id = 123})
 local instance, err = c:open("app.services:user_impl", {user_id = 123})
 ```
 
-## Kontext hinzufugen
+## Kontext hinzufügen
 
 Erstellen Sie einen Wrapper mit vorkonfiguriertem Kontext:
 
@@ -167,7 +167,7 @@ local instance, err = wrapped:open()
 
 ## Sicherheitskontext
 
-Setzen Sie Actor und Scope fur die Autorisierung:
+Setzen Sie Actor und Scope für die Autorisierung:
 
 ```lua
 local security = require("security")
@@ -193,7 +193,7 @@ local admin, err = secured:open()
 
 | Bedingung | Art |
 |-----------|------|
-| Ungultiges Binding-ID-Format | `errors.INVALID` |
+| Ungültiges Binding-ID-Format | `errors.INVALID` |
 | Contract nicht gefunden | `errors.NOT_FOUND` |
 | Binding nicht gefunden | `errors.NOT_FOUND` |
 | Methode nicht gefunden | `errors.NOT_FOUND` |

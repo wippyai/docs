@@ -1,10 +1,10 @@
 # Sistema de Base de Datos
 
-Pool de conexiones y configuracion de bases de datos SQL. Soporta PostgreSQL, MySQL, SQLite, Microsoft SQL Server y Oracle.
+Pool de conexiones y configuración de bases de datos SQL. Soporta PostgreSQL, MySQL, SQLite, Microsoft SQL Server y Oracle.
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `db.sql.postgres` | Base de datos PostgreSQL |
 | `db.sql.mysql` | Base de datos MySQL |
@@ -12,9 +12,9 @@ Pool de conexiones y configuracion de bases de datos SQL. Soporta PostgreSQL, My
 | `db.sql.mssql` | Microsoft SQL Server |
 | `db.sql.oracle` | Base de datos Oracle |
 
-## Configuracion
+## Configuración
 
-### Bases de Datos Estandar (PostgreSQL, MySQL, MSSQL, Oracle)
+### Bases de Datos Estándar (PostgreSQL, MySQL, MSSQL, Oracle)
 
 ```yaml
 # src/data/_index.yaml
@@ -55,41 +55,41 @@ entries:
       auto_start: true
 ```
 
-## Campos de Conexion
+## Campos de Conexión
 
-### Campos de Base de Datos Estandar
+### Campos de Base de Datos Estándar
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `host` | string | Direccion del host de base de datos |
-| `port` | int | Numero de puerto de base de datos |
+| `host` | string | Dirección del host de base de datos |
+| `port` | int | Número de puerto de base de datos |
 | `database` | string | Nombre de base de datos |
 | `username` | string | Usuario de base de datos |
-| `password` | string | Contrasena de base de datos |
-| `pool` | object | Configuracion del pool de conexiones |
-| `options` | map | Opciones especificas de la base de datos |
-| `lifecycle` | object | Configuracion de ciclo de vida |
+| `password` | string | Contraseña de base de datos |
+| `pool` | object | Configuración del pool de conexiones |
+| `options` | map | Opciones específicas de la base de datos |
+| `lifecycle` | object | Configuración de ciclo de vida |
 
 ### Campos de SQLite
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `file` | string | Ruta del archivo de base de datos o `:memory:` |
-| `pool` | object | Configuracion del pool de conexiones |
-| `options` | map | Opciones especificas de SQLite |
-| `lifecycle` | object | Configuracion de ciclo de vida |
+| `pool` | object | Configuración del pool de conexiones |
+| `options` | map | Opciones específicas de SQLite |
+| `lifecycle` | object | Configuración de ciclo de vida |
 
 ### Campos de Variables de Entorno
 
 Use el sufijo `_env` para cargar valores desde variables de entorno o entradas [env.variable](system-env.md):
 
-| Campo | Descripcion |
+| Campo | Descripción |
 |-------|-------------|
 | `host_env` | Host desde variable de entorno |
 | `port_env` | Puerto desde variable de entorno |
 | `database_env` | Nombre de base de datos desde entorno |
 | `username_env` | Usuario desde entorno |
-| `password_env` | Contrasena desde entorno |
+| `password_env` | Contraseña desde entorno |
 
 ```yaml
 - name: prod_db
@@ -102,18 +102,18 @@ Use el sufijo `_env` para cargar valores desde variables de entorno o entradas [
 ```
 
 <warning>
-Evite codificar contrasenas en la configuracion. Use variables de entorno o entradas <code>env.variable</code> para credenciales. Consulte <a href="system-env.md">Entorno</a> para gestion segura de secretos.
+Evite codificar contraseñas en la configuración. Use variables de entorno o entradas <code>env.variable</code> para credenciales. Consulte <a href="system-env.md">Entorno</a> para gestión segura de secretos.
 </warning>
 
 ## Pool de Conexiones
 
-Configure el comportamiento del pool de conexiones. La configuracion del pool se mapea al [pool de conexiones de database/sql](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns) de Go.
+Configure el comportamiento del pool de conexiones. La configuración del pool se mapea al [pool de conexiones de database/sql](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns) de Go.
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `max_open` | int | 0 | Conexiones maximas abiertas (0 = ilimitado) |
-| `max_idle` | int | 0 | Conexiones maximas inactivas (0 = ilimitado) |
-| `max_lifetime` | duration | 1h | Tiempo de vida maximo de conexion |
+| `max_open` | int | 0 | Conexiones máximas abiertas (0 = ilimitado) |
+| `max_idle` | int | 0 | Conexiones máximas inactivas (0 = ilimitado) |
+| `max_lifetime` | duration | 1h | Tiempo de vida máximo de conexión |
 
 ```yaml
 pool:
@@ -128,7 +128,7 @@ Establezca <code>max_idle</code> menor o igual a <code>max_open</code>. Las cone
 
 ## Formatos DSN
 
-Cada tipo de base de datos construye un DSN desde la configuracion:
+Cada tipo de base de datos construye un DSN desde la configuración:
 
 ### PostgreSQL {id="dsn-postgresql"}
 
@@ -163,14 +163,14 @@ oracle://username:password@host:port/service_name
 
 ## Opciones de Base de Datos
 
-Opciones comunes especificas de base de datos:
+Opciones comunes específicas de base de datos:
 
 ### PostgreSQL {id="options-postgresql"}
 
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # Timeout de conexion en segundos
+  connect_timeout: "10"   # Timeout de conexión en segundos
   application_name: "myapp"
 ```
 
@@ -234,7 +234,7 @@ options:
     auto_start: true
 ```
 
-### Replica de Lectura MySQL
+### Réplica de Lectura MySQL
 
 ```yaml
 - name: mysql_replica
@@ -268,7 +268,7 @@ options:
     mode: "memory"
 ```
 
-### Configuracion de Multiples Bases de Datos
+### Configuración de Múltiples Bases de Datos
 
 ```yaml
 entries:
@@ -283,7 +283,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Base de datos de analiticas
+  # Base de datos de analíticas
   - name: analytics_db
     kind: db.sql.mysql
     host_env: "ANALYTICS_DB_HOST"
@@ -302,10 +302,10 @@ entries:
       auto_start: true
 ```
 
-## Registro en Tiempo de Ejecucion
+## Registro en Tiempo de Ejecución
 
-Las bases de datos pueden registrarse en tiempo de ejecucion usando el [modulo registry](lua-registry.md), habilitando configuracion dinamica de base de datos basada en el estado de la aplicacion o configuracion externa.
+Las bases de datos pueden registrarse en tiempo de ejecución usando el [módulo registry](lua-registry.md), habilitando configuración dinámica de base de datos basada en el estado de la aplicación o configuración externa.
 
 ## API Lua
 
-Consulte el [Modulo SQL](lua-sql.md) para la API de operaciones de base de datos.
+Consulte el [Módulo SQL](lua-sql.md) para la API de operaciones de base de datos.

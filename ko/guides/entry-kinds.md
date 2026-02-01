@@ -1,8 +1,8 @@
 # 엔트리 종류 참조
 
-Wippy에서 사용 가능한 모든 엔트리 종류의 전체 참조입니다.
+Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입니다.
 
-> 엔트리는 `namespace:name` 형식을 사용하여 서로 참조합니다. 레지스트리는 이러한 참조를 기반으로 의존성을 자동으로 연결하여 리소스가 올바른 순서로 초기화되도록 합니다.
+> 엔트리는 `namespace:name` 형식으로 서로 참조합니다. 레지스트리는 이 참조를 기반으로 의존성을 자동으로 연결하여 리소스가 올바른 순서로 초기화되도록 합니다.
 
 ## 참고
 
@@ -229,7 +229,7 @@ local data = msg:body_json()
 ```
 
 <note>
-컨슈머의 <code>func</code>는 각 메시지에 대해 호출됩니다. 핸들러 내에서 <code>queue.message()</code>를 사용하여 현재 메시지에 접근하세요.
+컨슈머의 <code>func</code>는 각 메시지마다 호출됩니다. 핸들러 내에서 <code>queue.message()</code>로 현재 메시지에 접근합니다.
 </note>
 
 ## 프로세스 관리
@@ -275,7 +275,7 @@ local data = msg:body_json()
 ```
 
 <tip>
-자동 재시작이 있는 슈퍼바이즈드 서비스로 프로세스를 실행해야 할 때 <code>process.service</code>를 사용하세요. <code>process</code> 필드는 <code>process.lua</code> 엔트리를 참조합니다.
+자동 재시작이 필요한 감독 서비스로 프로세스를 실행할 때 <code>process.service</code>를 사용하세요. <code>process</code> 필드는 <code>process.lua</code> 엔트리를 참조합니다.
 </tip>
 
 ## Temporal (워크플로우)
@@ -399,7 +399,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-라우터는 순서대로 스토리지를 시도합니다. 읽기 시 첫 번째 일치가 우선이고, 쓰기는 첫 번째 쓰기 가능한 스토리지로 갑니다.
+라우터는 순서대로 스토리지를 확인합니다. 읽기 시 첫 번째로 일치하는 값이 사용되고, 쓰기는 첫 번째 쓰기 가능한 스토리지에 저장됩니다.
 </note>
 
 ## 템플릿
@@ -484,7 +484,7 @@ local actor = security.actor()
 ```
 
 <warning>
-정책은 순서대로 평가됩니다. 첫 번째 일치하는 정책이 접근을 결정합니다. 더 구체적인 정책을 일반적인 정책보다 먼저 배치하세요.
+정책은 순서대로 평가됩니다. 첫 번째로 일치하는 정책이 접근 여부를 결정합니다. 구체적인 정책을 일반적인 정책보다 먼저 배치하세요.
 </warning>
 
 ## 계약 (의존성 주입)
@@ -551,7 +551,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** [계약 모듈](lua-contract.md) 참조
 
 <tip>
-바인딩 ID를 지정하지 않고 계약을 열 때 사용하려면 하나의 바인딩을 <code>default: true</code>로 표시하세요 (<code>context_required</code> 필드가 설정되지 않은 경우에만 작동).
+바인딩 ID 없이 계약을 열 때 기본으로 사용하려면 하나의 바인딩에 <code>default: true</code>를 설정하세요(<code>context_required</code> 필드가 설정되지 않은 경우에만 작동).
 </tip>
 
 ## 실행
@@ -601,7 +601,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
 <note>
-<code>depends_on</code>을 사용하여 엔트리가 올바른 순서로 시작되도록 하세요. 슈퍼바이저는 의존 엔트리를 시작하기 전에 의존성이 안정 상태가 될 때까지 기다립니다.
+<code>depends_on</code>을 사용하면 엔트리가 올바른 순서로 시작됩니다. 슈퍼바이저는 의존성이 안정 상태가 될 때까지 기다린 후 해당 엔트리를 시작합니다.
 </note>
 
 ## 엔트리 참조 형식

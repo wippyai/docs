@@ -4,12 +4,12 @@ Almacenes clave-valor en memoria y respaldados por SQL con soporte TTL.
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `store.memory` | Almacen en memoria con limpieza automatica |
-| `store.sql` | Almacen respaldado por SQL con persistencia |
+| `store.memory` | Almacén en memoria con limpieza automática |
+| `store.sql` | Almacén respaldado por SQL con persistencia |
 
-## Almacen en Memoria
+## Almacén en Memoria
 
 ```yaml
 - name: sessions
@@ -20,14 +20,14 @@ Almacenes clave-valor en memoria y respaldados por SQL con soporte TTL.
     auto_start: true
 ```
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `max_size` | int | 10000 | Entradas maximas (0 = ilimitado) |
+| `max_size` | int | 10000 | Entradas máximas (0 = ilimitado) |
 | `cleanup_interval` | duration | 5m | Intervalo de limpieza de entradas expiradas |
 
 Cuando se alcanza `max_size`, se rechazan nuevas entradas. Los datos se pierden al reiniciar.
 
-## Almacen SQL
+## Almacén SQL
 
 ```yaml
 - name: cache
@@ -39,16 +39,16 @@ Cuando se alcanza `max_size`, se rechazan nuevas entradas. Los datos se pierden 
     auto_start: true
 ```
 
-| Campo | Tipo | Por Defecto | Descripcion |
+| Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `database` | referencia | requerido | Referencia de entrada de base de datos |
 | `table_name` | string | requerido | Nombre de tabla para almacenamiento |
 | `id_column_name` | string | key | Columna para claves |
 | `payload_column_name` | string | value | Columna para valores |
-| `expire_column_name` | string | expires_at | Columna para expiracion |
+| `expire_column_name` | string | expires_at | Columna para expiración |
 | `cleanup_interval` | duration | 0 | Intervalo de limpieza de entradas expiradas |
 
-Los nombres de columna se validan contra inyeccion SQL. Cree la tabla antes de usar:
+Los nombres de columna se validan contra inyección SQL. Cree la tabla antes de usar:
 
 ```sql
 CREATE TABLE kv_store (
@@ -62,8 +62,8 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Comportamiento TTL
 
-Ambos almacenes soportan tiempo de vida. Las entradas expiradas persisten brevemente hasta que la limpieza se ejecuta en `cleanup_interval`. Establezca a `0` para deshabilitar la limpieza automatica.
+Ambos almacenes soportan tiempo de vida. Las entradas expiradas persisten brevemente hasta que la limpieza se ejecuta en `cleanup_interval`. Establezca a `0` para deshabilitar la limpieza automática.
 
 ## API Lua
 
-Consulte el [Modulo Store](lua-store.md) para operaciones (get, set, delete, exists, clear).
+Consulte el [Módulo Store](lua-store.md) para operaciones (get, set, delete, exists, clear).

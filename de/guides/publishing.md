@@ -198,14 +198,6 @@ Mit Release-Notizen:
 wippy publish --version 1.0.0 --release-notes "Erste Veröffentlichung"
 ```
 
-### Geschützte Versionen
-
-Produktions-Releases als geschützt markieren (können nicht zurückgezogen werden):
-
-```bash
-wippy publish --version 1.0.0 --protected
-```
-
 ## Veröffentlichte Module verwenden
 
 ### Abhängigkeit hinzufügen

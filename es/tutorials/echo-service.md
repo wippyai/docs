@@ -1,15 +1,15 @@
 # Echo Service
 
-Construya un servicio de eco distribuido demostrando procesos, canales, coroutines, paso de mensajes y supervision.
+Construya un servicio de eco distribuido demostrando procesos, canales, coroutines, paso de mensajes y supervisión.
 
 ## Resumen
 
-Este tutorial crea un cliente CLI que envia mensajes a un servicio relay, que genera workers para procesar cada mensaje. Demuestra:
+Este tutorial crea un cliente CLI que envía mensajes a un servicio relay, que genera workers para procesar cada mensaje. Demuestra:
 
-- **Generacion de procesos** - Crear procesos hijos dinamicamente
-- **Paso de mensajes** - Comunicacion entre procesos via send/receive
-- **Canales y select** - Multiplexar multiples fuentes de eventos
-- **Coroutines** - Ejecucion concurrente dentro de un proceso
+- **Generación de procesos** - Crear procesos hijos dinámicamente
+- **Paso de mensajes** - Comunicación entre procesos vía send/receive
+- **Canales y select** - Multiplexar múltiples fuentes de eventos
+- **Coroutines** - Ejecución concurrente dentro de un proceso
 - **Registro de procesos** - Encontrar procesos por nombre
 - **Monitoreo** - Rastrear ciclo de vida de procesos hijos
 
@@ -106,7 +106,7 @@ entries:
 
 ## El Proceso Relay
 
-El relay se registra a si mismo, maneja mensajes, genera workers, y ejecuta una coroutine de estadisticas.
+El relay se registra a sí mismo, maneja mensajes, genera workers, y ejecuta una coroutine de estadísticas.
 
 Cree `src/relay.lua`:
 
@@ -180,13 +180,13 @@ return { main = main }
 
 ### Patrones Clave {id="relay-key-patterns"}
 
-**Generacion de Coroutines**
+**Generación de Coroutines**
 
 ```lua
 coroutine.spawn(stats_reporter)
 ```
 
-Crea una coroutine concurrente compartiendo memoria con la funcion principal. Las coroutines ceden en operaciones I/O como `time.sleep`.
+Crea una coroutine concurrente compartiendo memoria con la función principal. Las coroutines ceden en operaciones I/O como `time.sleep`.
 
 **Channel Select**
 
@@ -197,15 +197,15 @@ local r = channel.select {
 }
 ```
 
-Espera en multiples canales. `r.channel` identifica cual se activo, `r.value` contiene los datos.
+Espera en múltiples canales. `r.channel` identifica cuál se activó, `r.value` contiene los datos.
 
-**Extraccion de Payload**
+**Extracción de Payload**
 
 ```lua
 local echo = msg:payload():data()
 ```
 
-Los mensajes tienen `msg:topic()` para el string del topico y `msg:payload():data()` para el payload.
+Los mensajes tienen `msg:topic()` para el string del tópico y `msg:payload():data()` para el payload.
 
 **Spawn con Monitoreo**
 
@@ -217,7 +217,7 @@ Combina spawn y monitor. Cuando el worker termina, recibimos un evento EXIT.
 
 ## El Proceso Worker
 
-Los workers reciben argumentos directamente y envian respuestas al remitente.
+Los workers reciben argumentos directamente y envían respuestas al remitente.
 
 Cree `src/worker.lua`:
 
@@ -242,7 +242,7 @@ return { main = main }
 
 ## El Proceso CLI
 
-El CLI envia mensajes por nombre registrado y espera respuestas con timeout.
+El CLI envía mensajes por nombre registrado y espera respuestas con timeout.
 
 Cree `src/cli.lua`:
 
@@ -300,7 +300,7 @@ local function main()
         end
     end
 
-    io.print("\nAdios!")
+    io.print("\nAdiós!")
     return 0
 end
 
@@ -317,7 +317,7 @@ process.send("relay", "echo", msg)
 
 `process.send` acepta nombres registrados directamente. Retorna error si no se encuentra.
 
-**Patron de Timeout**
+**Patrón de Timeout**
 
 ```lua
 local timeout = time.after("2s")
@@ -330,7 +330,7 @@ if r.channel == timeout then
 end
 ```
 
-## Ejecucion
+## Ejecución
 
 ```bash
 wippy init
@@ -352,7 +352,7 @@ Escriba mensajes para eco. Ctrl+C para salir.
 
 | Concepto | API |
 |----------|-----|
-| Generacion de procesos | `process.spawn_monitored(entry, host, ...)` |
+| Generación de procesos | `process.spawn_monitored(entry, host, ...)` |
 | Paso de mensajes | `process.send(dest, topic, data)` |
 | Inbox | `process.inbox()` |
 | Eventos | `process.events()` |
@@ -363,6 +363,6 @@ Escriba mensajes para eco. Ctrl+C para salir.
 
 ## Siguientes Pasos
 
-- [Gestion de Procesos](lua-process.md)
+- [Gestión de Procesos](lua-process.md)
 - [Canales](lua-channel.md)
-- [Tiempo y Duracion](lua-time.md)
+- [Tiempo y Duración](lua-time.md)

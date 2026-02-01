@@ -1,6 +1,6 @@
 # Fila
 
-O Wippy fornece um sistema de filas para processamento assincrono de mensagens com drivers e consumidores configuraveis.
+O Wippy fornece um sistema de filas para processamento assíncrono de mensagens com drivers e consumidores configuráveis.
 
 ## Arquitetura
 
@@ -13,26 +13,26 @@ flowchart LR
     W --> F[Function]
 ```
 
-- **Driver** - Implementacao de backend (memoria, AMQP, Redis)
-- **Queue** - Fila logica vinculada a um driver
-- **Consumer** - Conecta fila ao handler com configuracoes de concorrencia
+- **Driver** - Implementação de backend (memória, AMQP, Redis)
+- **Queue** - Fila lógica vinculada a um driver
+- **Consumer** - Conecta fila ao handler com configurações de concorrência
 - **Worker Pool** - Processadores de mensagens concorrentes
 
-Multiplas filas podem compartilhar um driver. Multiplos consumidores podem processar da mesma fila.
+Múltiplas filas podem compartilhar um driver. Múltiplos consumidores podem processar da mesma fila.
 
 ## Tipos de Entradas
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `queue.driver.memory` | Driver de fila em memoria |
-| `queue.queue` | Declaracao de fila com referencia ao driver |
+| `queue.driver.memory` | Driver de fila em memória |
+| `queue.queue` | Declaração de fila com referência ao driver |
 | `queue.consumer` | Consumidor que processa mensagens |
 
-## Configuracao do Driver
+## Configuração do Driver
 
-### Driver de Memoria
+### Driver de Memória
 
-Driver em memoria para desenvolvimento e testes.
+Driver em memória para desenvolvimento e testes.
 
 ```yaml
 - name: memory_driver
@@ -42,10 +42,10 @@ Driver em memoria para desenvolvimento e testes.
 ```
 
 <note>
-Drivers adicionais (AMQP, Redis, SQS) estao planejados. A interface de driver permite trocar backends sem mudar configuracao de fila ou consumidor.
+Drivers adicionais (AMQP, Redis, SQS) estão planejados. A interface de driver permite trocar backends sem mudar configuração de fila ou consumidor.
 </note>
 
-## Configuracao de Fila
+## Configuração de Fila
 
 ```yaml
 - name: tasks
@@ -53,16 +53,16 @@ Drivers adicionais (AMQP, Redis, SQS) estao planejados. A interface de driver pe
   driver: app.queue:memory_driver
 ```
 
-| Campo | Tipo | Obrigatorio | Descricao |
+| Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| `driver` | ID do Registro | Sim | Referencia ao driver de fila |
-| `options` | Map | Nao | Opcoes especificas do driver |
+| `driver` | ID do Registro | Sim | Referência ao driver de fila |
+| `options` | Map | Não | Opções específicas do driver |
 
 <note>
-O driver de memoria nao tem opcoes de configuracao. Drivers externos (AMQP, Redis, SQS) definem suas proprias opcoes para comportamento de fila como durabilidade, tamanho maximo e TTL.
+O driver de memória não tem opções de configuração. Drivers externos (AMQP, Redis, SQS) definem suas próprias opções para comportamento de fila como durabilidade, tamanho máximo e TTL.
 </note>
 
-## Configuracao do Consumidor
+## Configuração do Consumidor
 
 ```yaml
 - name: task_consumer
@@ -77,15 +77,15 @@ O driver de memoria nao tem opcoes de configuracao. Drivers externos (AMQP, Redi
       - app.queue:tasks
 ```
 
-| Campo | Padrao | Max | Descricao |
+| Campo | Padrão | Max | Descrição |
 |-------|--------|-----|-----------|
-| `queue` | Obrigatorio | - | ID do registro da fila |
-| `func` | Obrigatorio | - | ID do registro da funcao handler |
+| `queue` | Obrigatório | - | ID do registro da fila |
+| `func` | Obrigatório | - | ID do registro da função handler |
 | `concurrency` | 1 | 1000 | Contagem de workers paralelos |
 | `prefetch` | 10 | 10000 | Tamanho do buffer de mensagens |
 
 <tip>
-Consumidores respeitam contexto de chamada e podem estar sujeitos a politicas de seguranca. Configure ator e politicas no nivel de ciclo de vida. Veja <a href="system-security.md">Seguranca</a>.
+Consumidores respeitam contexto de chamada e podem estar sujeitos a políticas de segurança. Configure ator e políticas no nível de ciclo de vida. Veja <a href="system-security.md">Segurança</a>.
 </tip>
 
 ### Pool de Workers
@@ -95,15 +95,15 @@ Workers executam como goroutines concorrentes:
 ```
 concurrency: 3, prefetch: 10
 
-1. Driver entrega ate 10 mensagens para o buffer
+1. Driver entrega até 10 mensagens para o buffer
 2. 3 workers pegam do buffer concorrentemente
 3. Conforme workers terminam, buffer reabastece
-4. Contrapressao quando todos workers ocupados e buffer cheio
+4. Contrapressão quando todos workers ocupados e buffer cheio
 ```
 
-## Funcao Handler
+## Função Handler
 
-Funcoes de consumidor recebem dados da mensagem e retornam sucesso ou erro:
+Funções de consumidor recebem dados da mensagem e retornam sucesso ou erro:
 
 ```lua
 local json = require("json")
@@ -136,14 +136,14 @@ return handler
 
 ### Reconhecimento
 
-| Resultado do Handler | Acao | Efeito |
+| Resultado do Handler | Ação | Efeito |
 |----------------------|------|--------|
 | Valor de retorno | Ack | Mensagem removida da fila |
 | Retorna erro | Nack | Mensagem reenfileirada (dependente do driver) |
 
 ## Publicando Mensagens
 
-A partir de codigo Lua:
+A partir de código Lua:
 
 ```lua
 local queue = require("queue")
@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-Veja [Modulo Queue](lua-queue.md) para API completa.
+Veja [Módulo Queue](lua-queue.md) para API completa.
 
 ## Encerramento Gracioso
 
@@ -164,10 +164,10 @@ Ao parar consumidor:
 1. Para de aceitar novas entregas
 2. Cancela contextos de workers
 3. Aguarda mensagens em voo (com timeout)
-4. Retorna erro se workers nao terminarem a tempo
+4. Retorna erro se workers não terminarem a tempo
 
-## Veja Tambem
+## Veja Também
 
-- [Modulo Queue](lua/storage/queue.md) - Referencia da API Lua
-- [Guia de Consumidores de Filas](guides/queue-consumers.md) - Padroes de consumidor e pools de workers
-- [Supervisao](guides/supervision.md) - Gerenciamento de ciclo de vida do consumidor
+- [Módulo Queue](lua/storage/queue.md) - Referência da API Lua
+- [Guia de Consumidores de Filas](guides/queue-consumers.md) - Padrões de consumidor e pools de workers
+- [Supervisão](guides/supervision.md) - Gerenciamento de ciclo de vida do consumidor

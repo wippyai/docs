@@ -1,10 +1,10 @@
-# Channels e Concorrencia
+# Channels e Concorrência
 
-Channels estilo Go para programacao concorrente dentro de processos.
+Channels estilo Go para programação concorrente dentro de processos.
 
 ## Criando Channels
 
-Channels sao canais de comunicacao para corrotinas. Crie com `channel.new(capacity)`:
+Channels são canais de comunicação para corrotinas. Crie com `channel.new(capacity)`:
 
 ```lua
 local ch = channel.new(1)  -- channel com buffer, capacidade 1
@@ -12,7 +12,7 @@ local ch = channel.new(1)  -- channel com buffer, capacidade 1
 
 ### Channels com Buffer
 
-Channels com buffer permitem envios sem bloquear ate que o buffer esteja cheio:
+Channels com buffer permitem envios sem bloquear até que o buffer esteja cheio:
 
 ```lua
 local ch = channel.new(3)  -- buffer comporta 3 itens
@@ -37,7 +37,7 @@ local ch = channel.new(0)  -- sem buffer
 local done = channel.new(1)
 
 coroutine.spawn(function()
-    ch:send("from spawn")  -- bloqueia ate receptor estar pronto
+    ch:send("from spawn")  -- bloqueia até receptor estar pronto
     done:send(true)
 end)
 
@@ -47,7 +47,7 @@ local completed = done:receive()
 
 ## Channel Select
 
-`channel.select` aguarda multiplos channels, retorna a primeira operacao pronta:
+`channel.select` aguarda múltiplos channels, retorna a primeira operação pronta:
 
 ```lua
 local ch1 = channel.new(1)
@@ -60,7 +60,7 @@ local result = channel.select{
     ch2:case_receive()
 }
 
--- result e uma tabela com: channel, value, ok
+-- result é uma tabela com: channel, value, ok
 result.channel == ch1  -- true
 result.value           -- "ch1_value"
 result.ok              -- true
@@ -68,7 +68,7 @@ result.ok              -- true
 
 ### Select com Send
 
-Use `case_send` para tentar envios nao-bloqueantes:
+Use `case_send` para tentar envios não-bloqueantes:
 
 ```lua
 local ch = channel.new(1)
@@ -82,9 +82,9 @@ result.ok  -- true (envio bem-sucedido)
 local v = ch:receive()  -- "sent"
 ```
 
-## Padrao Produtor-Consumidor
+## Padrão Produtor-Consumidor
 
-Produtor unico, consumidor unico:
+Produtor único, consumidor único:
 
 ```lua
 local ch = channel.new(5)
@@ -110,7 +110,7 @@ ch:close()
 local total = done:receive()  -- 10
 ```
 
-### Padrao Ping-Pong
+### Padrão Ping-Pong
 
 Sincronizar duas corrotinas:
 
@@ -135,9 +135,9 @@ end
 local completed = rounds_done:receive()
 ```
 
-## Padrao Fan-Out
+## Padrão Fan-Out
 
-Um produtor, multiplos consumidores:
+Um produtor, múltiplos consumidores:
 
 ```lua
 local work = channel.new(10)
@@ -169,9 +169,9 @@ end
 -- sum = (1+2+3+4+5+6)*2 = 42
 ```
 
-## Padrao Fan-In
+## Padrão Fan-In
 
-Multiplos produtores, consumidor unico:
+Múltiplos produtores, consumidor único:
 
 ```lua
 local output = channel.new(10)
@@ -203,7 +203,7 @@ end
 
 ## Fechando Channels
 
-Feche channels para sinalizar conclusao. Receptores recebem `ok = false` quando o channel esta fechado e vazio:
+Feche channels para sinalizar conclusão. Receptores recebem `ok = false` quando o channel está fechado e vazio:
 
 ```lua
 local ch = channel.new(5)
@@ -222,24 +222,24 @@ end)
 for i = 1, 10 do
     ch:send(i)
 end
-ch:close()  -- sinalizar que nao ha mais valores
+ch:close()  -- sinalizar que não há mais valores
 
 local total = done:receive()
 ```
 
-## Metodos de Channel
+## Métodos de Channel
 
-Operacoes disponiveis:
+Operações disponíveis:
 
 - `channel.new(capacity)` - Criar channel com tamanho de buffer
 - `ch:send(value)` - Enviar valor (bloqueia se buffer cheio)
 - `ch:receive()` - Receber valor, retorna `value, ok`
 - `ch:close()` - Fechar channel
 - `ch:case_send(value)` - Criar caso de envio para select
-- `ch:case_receive()` - Criar caso de recepcao para select
-- `channel.select{cases...}` - Aguardar multiplas operacoes
+- `ch:case_receive()` - Criar caso de recepção para select
+- `channel.select{cases...}` - Aguardar múltiplas operações
 
-## Proximos Passos
+## Próximos Passos
 
-- [Channel Module Reference](lua-channel.md) - Documentacao completa da API
-- [Processes](processes.md) - Comunicacao inter-processo
+- [Channel Module Reference](lua-channel.md) - Documentação completa da API
+- [Processes](processes.md) - Comunicação inter-processo

@@ -1,16 +1,16 @@
 # Task Queue
 
-Construa uma REST API que enfileira tarefas para processamento em background com persistencia em banco de dados.
+Construa uma REST API que enfileira tarefas para processamento em background com persistência em banco de dados.
 
-## Visao Geral
+## Visão Geral
 
 Este tutorial cria uma API de gerenciamento de tarefas demonstrando:
 
 - **Endpoints REST** - POST tarefas, GET resultados
-- **Publicacao em fila** - Despacho assincrono de jobs
+- **Publicação em fila** - Despacho assíncrono de jobs
 - **Consumidores de fila** - Workers em background
-- **Persistencia em banco** - Armazenamento SQLite
-- **Migracoes** - Processo unico que termina
+- **Persistência em banco** - Armazenamento SQLite
+- **Migrações** - Processo único que termina
 
 ```mermaid
 flowchart LR
@@ -53,7 +53,7 @@ task-queue/
     └── process_task.lua
 ```
 
-## Definicoes de Entradas
+## Definições de Entradas
 
 Crie `src/_index.yaml`:
 
@@ -69,7 +69,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Driver de fila em memoria
+  # Driver de fila em memória
   - name: queue_driver
     kind: queue.driver.memory
     lifecycle:
@@ -93,7 +93,7 @@ entries:
     meta:
       server: app:gateway
 
-  # Processo de migracao (executa uma vez, termina)
+  # Processo de migração (executa uma vez, termina)
   - name: migrate
     kind: process.lua
     source: file://migrate.lua
@@ -102,7 +102,7 @@ entries:
       - sql
       - logger
 
-  # Servico de migracao (auto-inicia, termina em sucesso)
+  # Serviço de migração (auto-inicia, termina em sucesso)
   - name: migrate-service
     kind: process.service
     process: app:migrate
@@ -174,7 +174,7 @@ entries:
       auto_start: true
 ```
 
-## Processo de Migracao
+## Processo de Migração
 
 Crie `src/migrate.lua`:
 
@@ -215,10 +215,10 @@ return { main = main }
 ```
 
 <tip>
-Retornar 0 sinaliza sucesso. O supervisor nao reiniciara um processo que termina normalmente com codigo 0.
+Retornar 0 sinaliza sucesso. O supervisor não reiniciará um processo que termina normalmente com código 0.
 </tip>
 
-## Endpoint de Criacao de Tarefa
+## Endpoint de Criação de Tarefa
 
 Crie `src/create_task.lua`:
 
@@ -352,7 +352,7 @@ local function main(task)
     -- Simular trabalho
     time.sleep("100ms")
 
-    -- Processar baseado na acao
+    -- Processar baseado na ação
     local result
     if task.action == "uppercase" then
         result = {output = string.upper(task.data.text or "")}
@@ -404,7 +404,7 @@ return { main = main }
 Retornar `true` confirma a mensagem. Retornar `false` faz com que a mensagem seja reenfileirada ou enviada para uma fila de dead-letter.
 </note>
 
-## Executando o Servico
+## Executando o Serviço
 
 Inicialize e execute:
 
@@ -435,26 +435,26 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## Fluxo de Mensagens
 
-1. **POST /tasks** recebe requisicao, gera UUID, publica na fila
+1. **POST /tasks** recebe requisição, gera UUID, publica na fila
 2. **Consumidor da fila** pega a mensagem (2 workers concorrentes)
 3. **Worker** processa tarefa, escreve resultado no SQLite
-4. **GET /tasks** le tarefas completadas do banco de dados
+4. **GET /tasks** lê tarefas completadas do banco de dados
 
 ## Conceitos Demonstrados
 
-| Conceito | API | Descricao |
+| Conceito | API | Descrição |
 |----------|-----|-----------|
-| Endpoints REST | `http.request()`, `http.response()` | Tratar requisicoes HTTP |
-| Publicacao em fila | `queue.publish(id, data)` | Enviar jobs assincronos |
+| Endpoints REST | `http.request()`, `http.response()` | Tratar requisições HTTP |
+| Publicação em fila | `queue.publish(id, data)` | Enviar jobs assíncronos |
 | Consumo de fila | `queue.message()` | Acessar mensagem no handler |
 | Consultas ao banco | `sql.get()`, `db:query()` | Ler dados |
-| Query builder | `sql.builder.insert()` | Construir SQL com seguranca |
-| Migracoes | Processo retornando 0 | Tarefas de setup unicas |
-| Concorrencia | `concurrency: 2` | Workers paralelos |
+| Query builder | `sql.builder.insert()` | Construir SQL com segurança |
+| Migrações | Processo retornando 0 | Tarefas de setup únicas |
+| Concorrência | `concurrency: 2` | Workers paralelos |
 
-## Proximos Passos
+## Próximos Passos
 
 - [HTTP Module](lua-http.md) - Tratamento de request/response
-- [Queue Module](lua-queue.md) - Operacoes de fila de mensagens
+- [Queue Module](lua-queue.md) - Operações de fila de mensagens
 - [SQL Module](lua-sql.md) - Acesso a banco de dados
-- [Queue Consumers](guide-queue-consumers.md) - Configuracao de filas
+- [Queue Consumers](guide-queue-consumers.md) - Configuração de filas

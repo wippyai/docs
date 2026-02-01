@@ -1,6 +1,6 @@
 # Cola
 
-Wippy proporciona un sistema de colas para procesamiento asincrono de mensajes con drivers y consumidores configurables.
+Wippy proporciona un sistema de colas para procesamiento asíncrono de mensajes con drivers y consumidores configurables.
 
 ## Arquitectura
 
@@ -10,25 +10,25 @@ flowchart LR
     D --> Q[Cola]
     Q --> C[Consumidor]
     C --> W[Pool de Workers]
-    W --> F[Funcion]
+    W --> F[Función]
 ```
 
-- **Driver** - Implementacion de backend (memory, AMQP, Redis)
-- **Cola** - Cola logica vinculada a un driver
-- **Consumidor** - Conecta cola a handler con configuracion de concurrencia
+- **Driver** - Implementación de backend (memory, AMQP, Redis)
+- **Cola** - Cola lógica vinculada a un driver
+- **Consumidor** - Conecta cola a handler con configuración de concurrencia
 - **Pool de Workers** - Procesadores de mensajes concurrentes
 
-Multiples colas pueden compartir un driver. Multiples consumidores pueden procesar de la misma cola.
+Múltiples colas pueden compartir un driver. Múltiples consumidores pueden procesar de la misma cola.
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
 | `queue.driver.memory` | Driver de cola en memoria |
-| `queue.queue` | Declaracion de cola con referencia a driver |
+| `queue.queue` | Declaración de cola con referencia a driver |
 | `queue.consumer` | Consumidor que procesa mensajes |
 
-## Configuracion de Driver
+## Configuración de Driver
 
 ### Driver de Memoria
 
@@ -42,10 +42,10 @@ Driver en memoria para desarrollo y pruebas.
 ```
 
 <note>
-Drivers adicionales (AMQP, Redis, SQS) estan planeados. La interfaz del driver permite intercambiar backends sin cambiar la configuracion de cola o consumidor.
+Drivers adicionales (AMQP, Redis, SQS) están planeados. La interfaz del driver permite intercambiar backends sin cambiar la configuración de cola o consumidor.
 </note>
 
-## Configuracion de Cola
+## Configuración de Cola
 
 ```yaml
 - name: tasks
@@ -53,16 +53,16 @@ Drivers adicionales (AMQP, Redis, SQS) estan planeados. La interfaz del driver p
   driver: app.queue:memory_driver
 ```
 
-| Campo | Tipo | Requerido | Descripcion |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `driver` | ID de Registro | Si | Referencia al driver de cola |
-| `options` | Map | No | Opciones especificas del driver |
+| `driver` | ID de Registro | Sí | Referencia al driver de cola |
+| `options` | Map | No | Opciones específicas del driver |
 
 <note>
-El driver de memoria no tiene opciones de configuracion. Los drivers externos (AMQP, Redis, SQS) definen sus propias opciones para comportamiento de cola como durabilidad, longitud maxima, y TTL.
+El driver de memoria no tiene opciones de configuración. Los drivers externos (AMQP, Redis, SQS) definen sus propias opciones para comportamiento de cola como durabilidad, longitud máxima, y TTL.
 </note>
 
-## Configuracion de Consumidor
+## Configuración de Consumidor
 
 ```yaml
 - name: task_consumer
@@ -77,15 +77,15 @@ El driver de memoria no tiene opciones de configuracion. Los drivers externos (A
       - app.queue:tasks
 ```
 
-| Campo | Por Defecto | Max | Descripcion |
+| Campo | Por Defecto | Máx | Descripción |
 |-------|---------|-----|-------------|
 | `queue` | Requerido | - | ID de registro de la cola |
-| `func` | Requerido | - | ID de registro de la funcion handler |
+| `func` | Requerido | - | ID de registro de la función handler |
 | `concurrency` | 1 | 1000 | Conteo de workers paralelos |
-| `prefetch` | 10 | 10000 | Tamano del buffer de mensajes |
+| `prefetch` | 10 | 10000 | Tamaño del buffer de mensajes |
 
 <tip>
-Los consumidores respetan el contexto de llamada y pueden estar sujetos a politicas de seguridad. Configure actor y politicas a nivel de ciclo de vida. Ver <a href="system-security.md">Seguridad</a>.
+Los consumidores respetan el contexto de llamada y pueden estar sujetos a políticas de seguridad. Configure actor y políticas a nivel de ciclo de vida. Ver <a href="system-security.md">Seguridad</a>.
 </tip>
 
 ### Pool de Workers
@@ -98,12 +98,12 @@ concurrency: 3, prefetch: 10
 1. El driver entrega hasta 10 mensajes al buffer
 2. 3 workers extraen del buffer concurrentemente
 3. A medida que los workers terminan, el buffer se rellena
-4. Backpressure cuando todos los workers estan ocupados y el buffer lleno
+4. Backpressure cuando todos los workers están ocupados y el buffer lleno
 ```
 
-## Funcion Handler
+## Función Handler
 
-Las funciones del consumidor reciben datos del mensaje y retornan exito o error:
+Las funciones del consumidor reciben datos del mensaje y retornan éxito o error:
 
 ```lua
 local json = require("json")
@@ -136,14 +136,14 @@ return handler
 
 ### Reconocimiento
 
-| Resultado del Handler | Accion | Efecto |
+| Resultado del Handler | Acción | Efecto |
 |----------------|--------|--------|
 | Valor de retorno | Ack | Mensaje removido de la cola |
 | Retornar error | Nack | Mensaje reencolado (dependiente del driver) |
 
 ## Publicando Mensajes
 
-Desde codigo Lua:
+Desde código Lua:
 
 ```lua
 local queue = require("queue")
@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-Ver [Modulo Queue](lua-queue.md) para la API completa.
+Ver [Módulo Queue](lua-queue.md) para la API completa.
 
 ## Apagado Graceful
 
@@ -166,8 +166,8 @@ Al detener el consumidor:
 3. Esperar mensajes en vuelo (con timeout)
 4. Retornar error si los workers no terminan a tiempo
 
-## Ver Tambien
+## Ver También
 
-- [Modulo Queue](lua/storage/queue.md) - Referencia de API Lua
-- [Guia de Consumidores de Cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
-- [Supervision](guides/supervision.md) - Gestion del ciclo de vida del consumidor
+- [Módulo Queue](lua/storage/queue.md) - Referencia de API Lua
+- [Guía de Consumidores de Cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
+- [Supervisión](guides/supervision.md) - Gestión del ciclo de vida del consumidor

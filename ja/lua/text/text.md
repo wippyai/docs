@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-正規表現、テキスト差分、セマンティックテキスト分割。
+正規表現、テキスト差分、セマンティックテキスト分割を提供します。
 
 ## ロード
 
@@ -185,7 +185,7 @@ local diff, err = text.diff.new(options)
 
 ### 比較
 
-2つのテキスト間の差分を検出。text1をtext2に変換する操作を記述した配列を返す。
+2つのテキスト間の差分を検出します。text1をtext2に変換する操作を記述した配列を返します。
 
 ```lua
 local diff, _ = text.diff.new()
@@ -208,7 +208,7 @@ local diffs, err = diff:compare("hello world", "hello there")
 
 ### 要約
 
-バージョン間で変更された文字数をカウント。
+バージョン間で変更された文字数をカウントします。
 
 ```lua
 local diffs, _ = diff:compare("hello world", "hello there")
@@ -227,7 +227,7 @@ local summary = diff:summarize(diffs)
 
 ### プリティテキスト
 
-ターミナル表示用にANSIカラーで差分をフォーマット。
+ターミナル表示用にANSIカラーで差分をフォーマットします。
 
 ```lua
 local formatted, err = diff:pretty_text(diffs)
@@ -242,7 +242,7 @@ print(formatted)
 
 ### プリティHTML
 
-`<del>`と`<ins>`タグでHTMLとして差分をフォーマット。
+`<del>`と`<ins>`タグでHTMLとして差分をフォーマットします。
 
 ```lua
 local html, err = diff:pretty_html(diffs)
@@ -257,7 +257,7 @@ local html, err = diff:pretty_html(diffs)
 
 ### パッチの作成
 
-テキストを別のテキストに変換するためのパッチを生成。パッチはシリアライズして後で適用可能。
+テキストを別のテキストに変換するためのパッチを生成します。パッチはシリアライズして後で適用できます。
 
 ```lua
 local text1 = "The quick brown fox jumps over the lazy dog"
@@ -275,7 +275,7 @@ local patches, err = diff:patch_make(text1, text2)
 
 ### パッチの適用
 
-テキストを変換するためにパッチを適用。結果とすべてのパッチが正常に適用されたかどうかを返す。
+テキストを変換するためにパッチを適用します。結果とすべてのパッチが正常に適用されたかどうかを返します。
 
 ```lua
 local result, success = diff:patch_apply(patches, text1)
@@ -292,11 +292,11 @@ local result, success = diff:patch_apply(patches, text1)
 
 ## テキスト分割
 
-セマンティック境界を保持しながら大きなドキュメントを小さなチャンクに分割。[langchaingo](https://github.com/tmc/langchaingo)テキストスプリッターベース。
+セマンティック境界を保持しながら大きなドキュメントを小さなチャンクに分割します。[langchaingo](https://github.com/tmc/langchaingo)テキストスプリッターベースです。
 
 ### 再帰スプリッター
 
-セパレータの階層を使用してテキストを分割。まず二重改行（段落）で分割を試み、次に単一改行、次にスペース、次に文字で分割。チャンクがサイズ制限を超えると、より小さなセパレータにフォールバック。
+セパレータの階層を使用してテキストを分割します。まず二重改行（段落）で分割を試み、次に単一改行、次にスペース、次に文字で分割します。チャンクがサイズ制限を超えると、より小さなセパレータにフォールバックします。
 
 ```lua
 local splitter, err = text.splitter.recursive({
@@ -322,7 +322,7 @@ local chunks, err = splitter:split_text(long_text)
 
 ### Markdownスプリッター
 
-構造を尊重しながらmarkdownドキュメントを分割。見出しとそのコンテンツをまとめ、コードブロックを維持し、テーブル行をまとめる。
+構造を尊重しながらmarkdownドキュメントを分割します。見出しとそのコンテンツをまとめ、コードブロックを維持し、テーブル行をまとめます。
 
 ```lua
 local splitter, err = text.splitter.markdown({
@@ -350,7 +350,7 @@ local chunks, err = splitter:split_text(readme)
 
 ### テキストの分割
 
-単一のドキュメントをチャンクの配列に分割。
+単一のドキュメントをチャンクの配列に分割します。
 
 ```lua
 local chunks, err = splitter:split_text(document)
@@ -369,7 +369,7 @@ end
 
 ### バッチ分割
 
-メタデータを保持しながら複数のドキュメントを分割。各入力ドキュメントは複数の出力チャンクを生成可能。すべてのチャンクはソースドキュメントからメタデータを継承。
+メタデータを保持しながら複数のドキュメントを分割します。各入力ドキュメントは複数の出力チャンクを生成できます。すべてのチャンクはソースドキュメントからメタデータを継承します。
 
 ```lua
 -- 入力: ページ番号付きのPDFページ

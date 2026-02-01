@@ -10,7 +10,7 @@ Los tests se descubren por metadatos. El test runner encuentra todas las entrada
 wippy run app:test_runner app:terminal
 ```
 
-El runner usa `registry.find({["meta.type"] = "test"})` para localizar tests y los llama via `funcs.call(entry.id)`.
+El runner usa `registry.find({["meta.type"] = "test"})` para localizar tests y los llama vía `funcs.call(entry.id)`.
 
 ## Definir Tests
 
@@ -37,12 +37,12 @@ entries:
 
 - `meta.type`: Debe ser `"test"` para descubrimiento de tests
 - `meta.suite`: Agrupa tests relacionados (ej. "errors", "json")
-- `meta.order`: Orden de ejecucion dentro del suite (por defecto: 0)
-- `meta.description`: Descripcion del test (mostrada en salida)
+- `meta.order`: Orden de ejecución dentro del suite (por defecto: 0)
+- `meta.description`: Descripción del test (mostrada en salida)
 
 ## Escribir Funciones de Test
 
-Las funciones de test deben retornar `true` en exito o lanzar un error en fallo:
+Las funciones de test deben retornar `true` en éxito o lanzar un error en fallo:
 
 ```lua
 -- tests/test/errors/new.lua
@@ -52,7 +52,7 @@ local function main()
     local e1 = errors.new("simple error")
     assert.ok(e1, "errors.new retorna error")
     assert.eq(e1:message(), "simple error", "message coincide")
-    assert.eq(e1:kind(), "", "kind por defecto es vacio")
+    assert.eq(e1:kind(), "", "kind por defecto es vacío")
     assert.is_nil(e1:retryable(), "retryable por defecto es nil")
 
     local e2 = errors.new({
@@ -74,9 +74,9 @@ end
 return { main = main }
 ```
 
-## Libreria de Assertions
+## Librería de Assertions
 
-Cree un modulo de assertion reutilizable en `tests/lib/assert.lua`:
+Cree un módulo de assertion reutilizable en `tests/lib/assert.lua`:
 
 ```lua
 local M = {}
@@ -178,7 +178,7 @@ end
 return M
 ```
 
-Registre la libreria de assertion:
+Registre la librería de assertion:
 
 ```yaml
 # tests/lib/_index.yaml
@@ -193,22 +193,22 @@ entries:
 
 ## Testeando Manejo de Errores
 
-Las funciones Wippy retornan pares `(result, error)`. Testee tanto caminos de exito como de error:
+Las funciones Wippy retornan pares `(result, error)`. Testee tanto caminos de éxito como de error:
 
 ```lua
 local assert = require("assert2")
 
 local function main()
-    -- Testear camino de exito
+    -- Testear camino de éxito
     local t, err = time.parse("2006-01-02 15:04:05", "2024-12-29 15:04:05")
     assert.is_nil(err, "parse exitoso")
     assert.not_nil(t, "parse retorna time")
-    assert.eq(t:year(), 2024, "ano parseado")
+    assert.eq(t:year(), 2024, "año parseado")
 
     -- Testear camino de error
     local bad_t, bad_err = time.parse("2006-01-02", "invalid-date")
-    assert.is_nil(bad_t, "parse invalido retorna nil")
-    assert.not_nil(bad_err, "parse invalido retorna error")
+    assert.is_nil(bad_t, "parse inválido retorna nil")
+    assert.not_nil(bad_err, "parse inválido retorna error")
 
     return true
 end
@@ -269,7 +269,7 @@ Ejecutar todos los tests:
 wippy run app:test_runner app:terminal
 ```
 
-Filtrar tests por patron:
+Filtrar tests por patrón:
 
 ```bash
 # Ejecutar tests que contienen "errors"
@@ -303,16 +303,16 @@ wippy run app:test_runner app:terminal -- channel time
 
 ## Puntos Clave
 
-1. Los tests se descubren via `meta.type = "test"` en entradas de registro
+1. Los tests se descubren vía `meta.type = "test"` en entradas de registro
 2. Las funciones de test deben retornar `true` o lanzar errores
 3. Use `meta.suite` para agrupar tests relacionados
-4. Use `meta.order` para controlar orden de ejecucion dentro de suites
-5. Testee tanto caminos de exito como de error con patrones de retorno `(result, error)`
-6. Filtre tests pasando patrones como argumentos de linea de comandos
+4. Use `meta.order` para controlar orden de ejecución dentro de suites
+5. Testee tanto caminos de éxito como de error con patrones de retorno `(result, error)`
+6. Filtre tests pasando patrones como argumentos de línea de comandos
 7. El test runner usa `registry.find()` y `funcs.call()` para ejecutar tests
 
 ## Siguientes Pasos
 
 - [Manejo de Errores](lua-errors.md) - Patrones de error y assertions
 - [Registry](lua-registry.md) - Consultas y filtrado de registry
-- [Funciones](concept-functions.md) - Llamadas y ejecucion de funciones
+- [Funciones](concept-functions.md) - Llamadas y ejecución de funciones

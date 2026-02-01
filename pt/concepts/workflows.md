@@ -1,21 +1,21 @@
 # Workflows
 
-Workflows sao operacoes duraveis e de longa duracao que sobrevivem a crashes e reinicializacoes. Eles fornecem garantias de confiabilidade para processos de negocio criticos como pagamentos, cumprimento de pedidos e aprovacoes de multiplas etapas.
+Workflows são operações duráveis e de longa duração que sobrevivem a crashes e reinicializações. Eles fornecem garantias de confiabilidade para processos de negócio críticos como pagamentos, cumprimento de pedidos e aprovações de múltiplas etapas.
 
 ## Por que Workflows?
 
-Funcoes sao efemeras - se o host falha, o trabalho em andamento e perdido. Workflows persistem seu estado:
+Funções são efêmeras — se o host falha, o trabalho em andamento é perdido. Workflows persistem seu estado:
 
-| Aspecto | Funcoes | Workflows |
+| Aspecto | Funções | Workflows |
 |---------|---------|-----------|
-| Estado | Em memoria | Persistido |
+| Estado | Em memória | Persistido |
 | Crash | Trabalho perdido | Retoma |
-| Duracao | Segundos a minutos | Horas a meses |
-| Conclusao | Melhor esforco | Garantida |
+| Duração | Segundos a minutos | Horas a meses |
+| Conclusão | Melhor esforço | Garantida |
 
 ## Como Workflows Funcionam
 
-O codigo de workflow se parece com codigo Lua regular:
+O código de workflow se parece com código Lua regular:
 
 ```lua
 local funcs = require("funcs")
@@ -30,15 +30,15 @@ if status == "failed" then
 end
 ```
 
-O motor de workflow intercepta chamadas e registra resultados. Se o processo falha, a execucao e reproduzida do historico - mesmo codigo, mesmos resultados.
+O motor de workflow intercepta chamadas e registra resultados. Se o processo falha, a execução é reproduzida do histórico — mesmo código, mesmos resultados.
 
 <note>
-O Wippy trata o determinismo automaticamente. Operacoes como <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code>, e <code>time.now()</code> sao interceptadas e seus resultados registrados. No replay, valores registrados sao retornados ao inves de re-executar.
+O Wippy trata o determinismo automaticamente. Operações como <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code>, e <code>time.now()</code> são interceptadas e seus resultados registrados. No replay, valores registrados são retornados ao invés de re-executar.
 </note>
 
-## Padroes de Workflow
+## Padrões de Workflow
 
-### Padrao Saga
+### Padrão Saga
 
 Compense em caso de falha:
 
@@ -68,7 +68,7 @@ return {inventory = inventory, payment = payment, shipping = shipping}
 
 ### Aguardando Sinais
 
-Aguarde eventos externos (decisoes de aprovacao, webhooks, acoes do usuario):
+Aguarde eventos externos (decisões de aprovação, webhooks, ações do usuário):
 
 ```lua
 local funcs = require("funcs")
@@ -76,7 +76,7 @@ local funcs = require("funcs")
 funcs.call("app.approvals:submit", request)
 
 local inbox = process.inbox()
-local msg = inbox:receive()  -- bloqueia ate o sinal chegar
+local msg = inbox:receive()  -- bloqueia até o sinal chegar
 
 if msg.approved then
     funcs.call("app.orders:fulfill", request.order_id)
@@ -85,22 +85,22 @@ else
 end
 ```
 
-## Quando Usar o Que
+## Quando Usar o Quê
 
 | Caso de Uso | Escolha |
 |-------------|---------|
-| Tratamento de requisicao HTTP | Funcoes |
-| Transformacao de dados | Funcoes |
+| Tratamento de requisição HTTP | Funções |
+| Transformação de dados | Funções |
 | Jobs em segundo plano | Processos |
-| Estado de sessao de usuario | Processos |
+| Estado de sessão de usuário | Processos |
 | Mensagens em tempo real | Processos |
 | Processamento de pagamento | Workflows |
 | Cumprimento de pedidos | Workflows |
-| Aprovacoes de multiplos dias | Workflows |
+| Aprovações de múltiplos dias | Workflows |
 
 ## Iniciando Workflows
 
-Workflows sao criados da mesma forma que processos - usando `process.spawn()` com um host diferente:
+Workflows são criados da mesma forma que processos — usando `process.spawn()` com um host diferente:
 
 ```lua
 -- Criar workflow no worker temporal
@@ -110,24 +110,24 @@ local pid = process.spawn("app.workflows:order_processor", "app:temporal_worker"
 process.send(pid, "update", {status = "approved"})
 ```
 
-Da perspectiva do chamador, a API e identica. A diferenca e o host: workflows executam em um `temporal.worker` ao inves de um `process.host`.
+Da perspectiva do chamador, a API é idêntica. A diferença é o host: workflows executam em um `temporal.worker` ao invés de um `process.host`.
 
 <tip>
 Quando um workflow cria filhos via <code>process.spawn()</code>, eles se tornam workflows filhos no mesmo provedor, mantendo as garantias de durabilidade.
 </tip>
 
-## Falha e Supervisao
+## Falha e Supervisão
 
-Processos podem executar como servicos supervisionados usando `process.service`:
+Processos podem executar como serviços supervisionados usando `process.service`:
 
 ```yaml
-# Definicao do processo
+# Definição do processo
 - name: session_handler
   kind: process.lua
   source: file://session_handler.lua
   method: main
 
-# Servico supervisionado encapsulando o processo
+# Serviço supervisionado encapsulando o processo
 - name: session_manager
   kind: process.service
   process: app:session_handler
@@ -138,11 +138,11 @@ Processos podem executar como servicos supervisionados usando `process.service`:
       max_attempts: 10
 ```
 
-Workflows nao usam arvores de supervisao - eles sao automaticamente gerenciados pelo provedor de workflow (Temporal). O provedor trata persistencia, retries e recuperacao.
+Workflows não usam árvores de supervisão — eles são automaticamente gerenciados pelo provedor de workflow (Temporal). O provedor trata persistência, retries e recuperação.
 
-## Configuracao
+## Configuração
 
-Definicao de processo (criado dinamicamente):
+Definição de processo (criado dinamicamente):
 
 ```yaml
 - name: order_processor
@@ -165,10 +165,10 @@ Provedor de workflow:
     auto_start: true
 ```
 
-Veja [Temporal](https://temporal.io) para infraestrutura de workflow em producao.
+Veja [Temporal](https://temporal.io) para infraestrutura de workflow em produção.
 
-## Veja Tambem
+## Veja Também
 
-- [Funcoes](concept-functions.md) - Tratamento de requisicao sem estado
+- [Funções](concept-functions.md) - Tratamento de requisição sem estado
 - [Modelo de Processos](concept-process-model.md) - Trabalho em segundo plano com estado
-- [Supervisao](guide-supervision.md) - Politicas de reinicializacao de processos
+- [Supervisão](guide-supervision.md) - Políticas de reinicialização de processos

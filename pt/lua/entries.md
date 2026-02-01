@@ -1,33 +1,33 @@
 # Tipos de Entrada Lua
 
-Configuracao para entradas baseadas em Lua: funcoes, processos, workflows e bibliotecas.
+Configuração para entradas baseadas em Lua: funções, processos, workflows e bibliotecas.
 
 ## Tipos de Entrada
 
-| Tipo | Descricao |
+| Tipo | Descrição |
 |------|-----------|
-| `function.lua` | Funcao stateless, executa sob demanda |
-| `process.lua` | Ator de longa duracao com estado |
-| `workflow.lua` | Workflow duravel (Temporal) |
-| `library.lua` | Codigo compartilhado importado por outras entradas |
+| `function.lua` | Função stateless, executa sob demanda |
+| `process.lua` | Ator de longa duração com estado |
+| `workflow.lua` | Workflow durável (Temporal) |
+| `library.lua` | Código compartilhado importado por outras entradas |
 
 ## Campos Comuns
 
 Todas as entradas Lua compartilham estes campos:
 
-| Campo | Obrigatorio | Descricao |
+| Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
-| `name` | sim | Nome unico dentro do namespace |
+| `name` | sim | Nome único dentro do namespace |
 | `kind` | sim | Um dos tipos Lua acima |
 | `source` | sim | Caminho do arquivo Lua (`file://path.lua`) |
-| `method` | sim | Funcao a exportar |
-| `modules` | nao | Modulos permitidos para `require()` |
-| `imports` | nao | Outras entradas como modulos locais |
-| `meta` | nao | Metadados pesquisaveis |
+| `method` | sim | Função a exportar |
+| `modules` | não | Módulos permitidos para `require()` |
+| `imports` | não | Outras entradas como módulos locais |
+| `meta` | não | Metadados pesquisáveis |
 
 ## function.lua
 
-Funcao stateless chamada sob demanda. Cada invocacao e independente.
+Função stateless chamada sob demanda. Cada invocação é independente.
 
 ```yaml
 - name: handler
@@ -39,11 +39,11 @@ Funcao stateless chamada sob demanda. Cada invocacao e independente.
     - json
 ```
 
-Use para: HTTP handlers, transformacoes de dados, utilitarios.
+Use para: HTTP handlers, transformações de dados, utilitários.
 
 ## process.lua
 
-Ator de longa duracao que mantem estado entre mensagens. Comunica via passagem de mensagens.
+Ator de longa duração que mantém estado entre mensagens. Comunica via passagem de mensagens.
 
 ```yaml
 - name: worker
@@ -56,9 +56,9 @@ Ator de longa duracao que mantem estado entre mensagens. Comunica via passagem d
     - sql
 ```
 
-Use para: Workers em background, daemons de servico, atores com estado.
+Use para: Workers em background, daemons de serviço, atores com estado.
 
-Para executar como servico supervisionado:
+Para executar como serviço supervisionado:
 
 ```yaml
 - name: worker_service
@@ -73,7 +73,7 @@ Para executar como servico supervisionado:
 
 ## workflow.lua
 
-Workflow duravel que sobrevive a reinicializacoes. Estado e persistido no Temporal.
+Workflow durável que sobrevive a reinicializações. Estado é persistido no Temporal.
 
 ```yaml
 - name: order_processor
@@ -85,11 +85,11 @@ Workflow duravel que sobrevive a reinicializacoes. Estado e persistido no Tempor
     - time
 ```
 
-Use para: Processos de negocio multi-etapa, orquestracoes de longa duracao.
+Use para: Processos de negócio multi-etapa, orquestrações de longa duração.
 
 ## library.lua
 
-Codigo compartilhado que pode ser importado por outras entradas.
+Código compartilhado que pode ser importado por outras entradas.
 
 ```yaml
 - name: helpers
@@ -112,7 +112,7 @@ Outras entradas referenciam via `imports`:
     helpers: app.lib:helpers
 ```
 
-No codigo Lua:
+No código Lua:
 
 ```lua
 local helpers = require("helpers")
@@ -121,7 +121,7 @@ helpers.format_date(timestamp)
 
 ## Modules
 
-O campo `modules` controla quais modulos podem ser carregados com `require()`:
+O campo `modules` controla quais módulos podem ser carregados com `require()`:
 
 ```yaml
 modules:
@@ -132,16 +132,16 @@ modules:
   - channel
 ```
 
-Apenas modulos listados estao disponiveis. Isso fornece:
-- Seguranca: Prevenir acesso a modulos de sistema
-- Dependencias explicitas: Claro o que o codigo precisa
-- Determinismo: Workflows so recebem modulos deterministicos
+Apenas módulos listados estão disponíveis. Isso fornece:
+- Segurança: Prevenir acesso a módulos de sistema
+- Dependências explícitas: Claro o que o código precisa
+- Determinismo: Workflows só recebem módulos determinísticos
 
-Veja [Lua Runtime](lua-overview.md) para modulos disponiveis.
+Veja [Lua Runtime](lua-overview.md) para módulos disponíveis.
 
 ## Imports
 
-Importe outras entradas como modulos locais:
+Importe outras entradas como módulos locais:
 
 ```yaml
 imports:
@@ -149,11 +149,11 @@ imports:
   auth: app.auth:helpers     # require("auth")
 ```
 
-A chave se torna o nome do modulo no codigo Lua. O valor e o ID da entrada (`namespace:name`).
+A chave se torna o nome do módulo no código Lua. O valor é o ID da entrada (`namespace:name`).
 
-## Configuracao de Pool
+## Configuração de Pool
 
-Configure pool de execucao para funcoes:
+Configure pool de execução para funções:
 
 ```yaml
 - name: handler
@@ -165,7 +165,7 @@ Configure pool de execucao para funcoes:
 ```
 
 Tipos de pool:
-- `inline` - Executar no contexto do chamador (padrao para HTTP handlers)
+- `inline` - Executar no contexto do chamador (padrão para HTTP handlers)
 
 ## Metadados
 
@@ -185,15 +185,15 @@ Use `meta` para roteamento e descoberta:
     - json
 ```
 
-Metadados sao pesquisaveis via registro:
+Metadados são pesquisáveis via registro:
 
 ```lua
 local registry = require("registry")
 local handlers = registry.find({type = "handler"})
 ```
 
-## Veja Tambem
+## Veja Também
 
-- [Entry Kinds](guide-entry-kinds.md) - Referencia de todos os tipos de entrada
-- [Compute Units](concept-compute-units.md) - Funcoes vs processos vs workflows
-- [Lua Runtime](lua-overview.md) - Modulos disponiveis
+- [Entry Kinds](guide-entry-kinds.md) - Referência de todos os tipos de entrada
+- [Compute Units](concept-compute-units.md) - Funções vs processos vs workflows
+- [Lua Runtime](lua-overview.md) - Módulos disponíveis

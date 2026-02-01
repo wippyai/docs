@@ -1,10 +1,10 @@
 # Canales y Concurrencia
 
-Canales estilo Go para programacion concurrente dentro de procesos.
+Canales estilo Go para programación concurrente dentro de procesos.
 
 ## Crear Canales
 
-Los canales son tuberias de comunicacion para coroutines. Cree con `channel.new(capacity)`:
+Los canales son tuberías de comunicación para coroutines. Cree con `channel.new(capacity)`:
 
 ```lua
 local ch = channel.new(1)  -- canal con buffer, capacidad 1
@@ -12,7 +12,7 @@ local ch = channel.new(1)  -- canal con buffer, capacidad 1
 
 ### Canales con Buffer
 
-Los canales con buffer permiten enviar sin bloquear hasta que el buffer esta lleno:
+Los canales con buffer permiten enviar sin bloquear hasta que el buffer está lleno:
 
 ```lua
 local ch = channel.new(3)  -- buffer contiene 3 items
@@ -37,7 +37,7 @@ local ch = channel.new(0)  -- sin buffer
 local done = channel.new(1)
 
 coroutine.spawn(function()
-    ch:send("from spawn")  -- bloquea hasta que receptor este listo
+    ch:send("from spawn")  -- bloquea hasta que receptor esté listo
     done:send(true)
 end)
 
@@ -47,7 +47,7 @@ local completed = done:receive()
 
 ## Channel Select
 
-`channel.select` espera en multiples canales, retorna la primera operacion lista:
+`channel.select` espera en múltiples canales, retorna la primera operación lista:
 
 ```lua
 local ch1 = channel.new(1)
@@ -68,7 +68,7 @@ result.ok              -- true
 
 ### Select con Send
 
-Use `case_send` para intentar envios no bloqueantes:
+Use `case_send` para intentar envíos no bloqueantes:
 
 ```lua
 local ch = channel.new(1)
@@ -77,12 +77,12 @@ local result = channel.select{
     ch:case_send("sent")
 }
 
-result.ok  -- true (envio exitoso)
+result.ok  -- true (envío exitoso)
 
 local v = ch:receive()  -- "sent"
 ```
 
-## Patron Productor-Consumidor
+## Patrón Productor-Consumidor
 
 Un productor, un consumidor:
 
@@ -110,7 +110,7 @@ ch:close()
 local total = done:receive()  -- 10
 ```
 
-### Patron Ping-Pong
+### Patrón Ping-Pong
 
 Sincronizar dos coroutines:
 
@@ -135,9 +135,9 @@ end
 local completed = rounds_done:receive()
 ```
 
-## Patron Fan-Out
+## Patrón Fan-Out
 
-Un productor, multiples consumidores:
+Un productor, múltiples consumidores:
 
 ```lua
 local work = channel.new(10)
@@ -169,9 +169,9 @@ end
 -- sum = (1+2+3+4+5+6)*2 = 42
 ```
 
-## Patron Fan-In
+## Patrón Fan-In
 
-Multiples productores, un consumidor:
+Múltiples productores, un consumidor:
 
 ```lua
 local output = channel.new(10)
@@ -203,7 +203,7 @@ end
 
 ## Cerrar Canales
 
-Cierre canales para senalar completacion. Los receptores obtienen `ok = false` cuando el canal esta cerrado y vacio:
+Cierre canales para señalar completación. Los receptores obtienen `ok = false` cuando el canal está cerrado y vacío:
 
 ```lua
 local ch = channel.new(5)
@@ -222,24 +222,24 @@ end)
 for i = 1, 10 do
     ch:send(i)
 end
-ch:close()  -- senalar no mas valores
+ch:close()  -- señalar no más valores
 
 local total = done:receive()
 ```
 
-## Metodos de Canal
+## Métodos de Canal
 
 Operaciones disponibles:
 
-- `channel.new(capacity)` - Crear canal con tamano de buffer
+- `channel.new(capacity)` - Crear canal con tamaño de buffer
 - `ch:send(value)` - Enviar valor (bloquea si buffer lleno)
 - `ch:receive()` - Recibir valor, retorna `value, ok`
 - `ch:close()` - Cerrar canal
-- `ch:case_send(value)` - Crear caso de envio para select
-- `ch:case_receive()` - Crear caso de recepcion para select
-- `channel.select{cases...}` - Esperar en multiples operaciones
+- `ch:case_send(value)` - Crear caso de envío para select
+- `ch:case_receive()` - Crear caso de recepción para select
+- `channel.select{cases...}` - Esperar en múltiples operaciones
 
 ## Siguientes Pasos
 
-- [Referencia del Modulo Channel](lua-channel.md) - Documentacion completa de API
-- [Procesos](processes.md) - Comunicacion entre procesos
+- [Referencia del Módulo Channel](lua-channel.md) - Documentación completa de API
+- [Procesos](processes.md) - Comunicación entre procesos

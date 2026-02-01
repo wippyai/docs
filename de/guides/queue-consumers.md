@@ -98,7 +98,7 @@ Ablauf:
 4. Gegendruck wenn alle Worker beschäftigt und Puffer voll
 ```
 
-## Graceful Shutdown
+## Kontrolliertes Herunterfahren
 
 Beim Stoppen:
 1. Keine neuen Lieferungen mehr annehmen

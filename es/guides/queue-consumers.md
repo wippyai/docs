@@ -14,16 +14,16 @@ flowchart LR
     end
 ```
 
-## Configuracion
+## Configuración
 
-| Opcion | Por Defecto | Max | Descripcion |
+| Opción | Por Defecto | Máx | Descripción |
 |--------|---------|-----|-------------|
 | `queue` | Requerido | - | ID de registro de la cola |
-| `func` | Requerido | - | ID de registro de la funcion handler |
+| `func` | Requerido | - | ID de registro de la función handler |
 | `concurrency` | 1 | 1000 | Cantidad de workers |
-| `prefetch` | 10 | 10000 | Tamano del buffer de mensajes |
+| `prefetch` | 10 | 10000 | Tamaño del buffer de mensajes |
 
-## Definicion de Entrada
+## Definición de Entrada
 
 ```yaml
 - name: order_consumer
@@ -38,9 +38,9 @@ flowchart LR
       - app:orders
 ```
 
-## Funcion Handler
+## Función Handler
 
-La funcion handler recibe el cuerpo del mensaje:
+La función handler recibe el cuerpo del mensaje:
 
 ```lua
 -- process_order.lua
@@ -56,7 +56,7 @@ local function handler(body)
         return nil, err
     end
 
-    -- Exito dispara Ack
+    -- Éxito dispara Ack
     return result
 end
 
@@ -73,9 +73,9 @@ return handler
 
 ## Reconocimiento
 
-| Resultado | Accion | Efecto |
+| Resultado | Acción | Efecto |
 |--------|--------|--------|
-| Exito | Ack | Mensaje removido de la cola |
+| Éxito | Ack | Mensaje removido de la cola |
 | Error | Nack | Mensaje reencolado (dependiente del driver) |
 
 ## Pool de Workers
@@ -95,7 +95,7 @@ Flujo:
 1. El driver entrega hasta 10 mensajes al buffer
 2. 3 workers extraen del buffer concurrentemente
 3. A medida que los workers terminan, el buffer se rellena
-4. Backpressure cuando todos los workers estan ocupados y el buffer lleno
+4. Backpressure cuando todos los workers están ocupados y el buffer lleno
 ```
 
 ## Apagado Graceful
@@ -106,7 +106,7 @@ Al detener:
 3. Esperar mensajes en vuelo (con timeout)
 4. Retornar error de timeout si los workers no terminan
 
-## Declaracion de Cola
+## Declaración de Cola
 
 ```yaml
 # Driver de cola (memoria para dev/test)
@@ -115,20 +115,20 @@ Al detener:
   lifecycle:
     auto_start: true
 
-# Definicion de cola
+# Definición de cola
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
   options:
     queue_name: orders      # Sobrescribir nombre (por defecto: nombre de entrada)
-    max_length: 10000       # Tamano maximo de cola
+    max_length: 10000       # Tamaño máximo de cola
     durable: true           # Sobrevivir reinicios
 ```
 
-| Opcion | Descripcion |
+| Opción | Descripción |
 |--------|-------------|
 | `queue_name` | Sobrescribir nombre de cola (por defecto: nombre del ID de entrada) |
-| `max_length` | Tamano maximo de cola |
+| `max_length` | Tamaño máximo de cola |
 | `durable` | Sobrevivir reinicios (dependiente del driver) |
 
 ## Driver de Memoria
@@ -138,11 +138,11 @@ Cola en memoria incorporada para desarrollo/pruebas:
 - Tipo: `queue.driver.memory`
 - Mensajes almacenados en memoria
 - Nack reencola mensaje al frente de la cola
-- Sin persistencia a traves de reinicios
+- Sin persistencia a través de reinicios
 
-## Ver Tambien
+## Ver También
 
-- [Cola de Mensajes](lua/storage/queue.md) - Referencia del modulo Queue
-- [Configuracion de Cola](system/queue.md) - Drivers de cola y definiciones de entrada
-- [Arboles de Supervision](guides/supervision.md) - Ciclo de vida del consumidor
-- [Gestion de Procesos](lua/core/process.md) - Creacion de procesos y comunicacion
+- [Cola de Mensajes](lua/storage/queue.md) - Referencia del módulo Queue
+- [Configuración de Cola](system/queue.md) - Drivers de cola y definiciones de entrada
+- [Árboles de Supervisión](guides/supervision.md) - Ciclo de vida del consumidor
+- [Gestión de Procesos](lua/core/process.md) - Creación de procesos y comunicación

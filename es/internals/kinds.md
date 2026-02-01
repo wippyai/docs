@@ -2,7 +2,7 @@
 
 Los entry handlers procesan entradas de registry por kind. Cuando las entradas son agregadas, actualizadas, o eliminadas, el registry despacha eventos a handlers matcheados.
 
-## Como Funciona
+## Cómo Funciona
 
 El registry mantiene un mapa de patrones de kind a handlers. Cuando una entrada cambia:
 
@@ -15,7 +15,7 @@ El registry mantiene un mapa de patrones de kind a handlers. Cuando una entrada 
 
 Los handlers se suscriben usando patrones:
 
-| Patron | Matchea |
+| Patrón | Matchea |
 |--------|---------|
 | `http.service` | Solo match exacto |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
@@ -37,10 +37,10 @@ Retornar un error desde `Add` rechaza la entrada.
 
 ## Listener vs Observer
 
-| Tipo | Proposito | Puede Rechazar |
+| Tipo | Propósito | Puede Rechazar |
 |------|-----------|----------------|
-| Listener | Handler primario | Si |
-| Observer | Handler secundario (logging, metricas) | No |
+| Listener | Handler primario | Sí |
+| Observer | Handler secundario (logging, métricas) | No |
 
 ```go
 handlers.RegisterListener("http.*", httpManager)
@@ -83,12 +83,12 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 El decoder:
 1. Deserializa `entry.Data` en su struct de config
 2. Completa `ID` y `Meta` desde la entrada
-3. Llama `InitDefaults()` si esta implementado
-4. Llama `Validate()` si esta implementado
+3. Llama `InitDefaults()` si está implementado
+4. Llama `Validate()` si está implementado
 
 ## Estructura de Config
 
-Los configs de entrada tipicamente incluyen:
+Los configs de entrada típicamente incluyen:
 
 ```go
 type ComponentConfig struct {
@@ -114,7 +114,7 @@ func (c *ComponentConfig) Validate() error {
 
 ## Soporte de Transacciones
 
-Para operaciones atomicas a traves de multiples entradas, implemente `TransactionListener`:
+Para operaciones atómicas a través de múltiples entradas, implemente `TransactionListener`:
 
 ```go
 type TransactionListener interface {
@@ -124,9 +124,9 @@ type TransactionListener interface {
 }
 ```
 
-El registry llama `Begin` antes de procesar un batch, luego `Commit` en exito o `Discard` en fallo.
+El registry llama `Begin` antes de procesar un batch, luego `Commit` en éxito o `Discard` en fallo.
 
-## Ver Tambien
+## Ver También
 
 - [Registry](internal-registry.md) - Almacenamiento de entradas
 - [Architecture](internal-architecture.md) - Secuencia de boot

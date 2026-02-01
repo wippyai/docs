@@ -1,20 +1,20 @@
 # Lua Runtime
 
-Runtime de computacao principal do Wippy otimizado para workloads I/O-bound e logica de negocios. Codigo executa em processos isolados que comunicam atraves de passagem de mensagens - sem memoria compartilhada, sem locks.
+Runtime de computação principal do Wippy otimizado para workloads I/O-bound e lógica de negócios. Código executa em processos isolados que comunicam através de passagem de mensagens - sem memória compartilhada, sem locks.
 
-Wippy e projetado como um runtime poliglota. Enquanto Lua e a linguagem principal, versoes futuras suportarao linguagens adicionais atraves de WebAssembly e integracao Temporal para workloads intensivas em computacao ou especializadas.
+Wippy é projetado como um runtime poliglota. Enquanto Lua é a linguagem principal, versões futuras suportarão linguagens adicionais através de WebAssembly e integração Temporal para workloads intensivas em computação ou especializadas.
 
 ## Processos
 
-Seu codigo Lua executa dentro de **processos** - contextos de execucao isolados gerenciados pelo scheduler. Cada processo:
+Seu código Lua executa dentro de **processos** - contextos de execução isolados gerenciados pelo scheduler. Cada processo:
 
-- Tem seu proprio espaco de memoria
-- Cede em operacoes bloqueantes (I/O, channels)
+- Tem seu próprio espaço de memória
+- Cede em operações bloqueantes (I/O, channels)
 - Pode ser monitorado e supervisionado
-- Escala para milhares por maquina
+- Escala para milhares por máquina
 
 <note>
-Um processo Lua tipico tem um overhead de memoria base de ~13 KB.
+Um processo Lua típico tem um overhead de memória base de ~13 KB.
 </note>
 
 ```lua
@@ -22,21 +22,21 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-Veja [Process Management](lua-process.md) para criacao, vinculacao e supervisao.
+Veja [Process Management](lua-process.md) para criação, vinculação e supervisão.
 
 ## Channels
 
-Channels estilo Go para comunicacao:
+Channels estilo Go para comunicação:
 
 ```lua
 local ch = channel.new()        -- sem buffer
 local buffered = channel.new(10)
 
-ch:send(value)                  -- bloqueia ate receber
-local val, ok = ch:receive()    -- bloqueia ate pronto
+ch:send(value)                  -- bloqueia até receber
+local val, ok = ch:receive()    -- bloqueia até pronto
 ```
 
-Veja [Channels](lua-channel.md) para select e padroes.
+Veja [Channels](lua-channel.md) para select e padrões.
 
 ## Corrotinas
 
@@ -51,11 +51,11 @@ end)
 do_other_work()  -- continua imediatamente
 ```
 
-Corrotinas criadas sao gerenciadas pelo scheduler - sem yield/resume manual.
+Corrotinas criadas são gerenciadas pelo scheduler - sem yield/resume manual.
 
 ## Select
 
-Trate multiplas fontes de eventos:
+Trate múltiplas fontes de eventos:
 
 ```lua
 local r = channel.select {
@@ -75,14 +75,14 @@ end
 
 ## Globais
 
-Estes estao sempre disponiveis sem require:
+Estes estão sempre disponíveis sem require:
 
 - `process` - gerenciamento de processos e mensagens
 - `channel` - channels estilo Go
-- `os` - funcoes de tempo e sistema
-- `coroutine` - concorrencia leve
+- `os` - funções de tempo e sistema
+- `coroutine` - concorrência leve
 
-## Modulos
+## Módulos
 
 ```lua
 local json = require("json")
@@ -90,19 +90,19 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Modulos disponiveis dependem da configuracao da entrada. Veja [Entry Definitions](lua-entries.md).
+Módulos disponíveis dependem da configuração da entrada. Veja [Entry Definitions](lua-entries.md).
 
 ## Bibliotecas Externas
 
-Wippy usa sintaxe Lua 5.3 com um [sistema de tipos gradual](lua-types.md) inspirado por Luau. Tipos sao valores de runtime de primeira classe - chamaveis para validacao, passaveis como argumentos e inspecionaveis - substituindo a necessidade de bibliotecas de schema como Zod ou Pydantic.
+Wippy usa sintaxe Lua 5.3 com um [sistema de tipos gradual](lua-types.md) inspirado por Luau. Tipos são valores de runtime de primeira classe - chamáveis para validação, passáveis como argumentos e inspecionáveis - substituindo a necessidade de bibliotecas de schema como Zod ou Pydantic.
 
-Bibliotecas Lua externas (LuaRocks, etc.) nao sao suportadas. O runtime fornece seu proprio sistema de modulos com extensoes integradas para I/O, rede e integracao de sistema.
+Bibliotecas Lua externas (LuaRocks, etc.) não são suportadas. O runtime fornece seu próprio sistema de módulos com extensões integradas para I/O, rede e integração de sistema.
 
-Para extensoes customizadas, veja [Modules](internal-modules.md) na documentacao de internals.
+Para extensões customizadas, veja [Modules](internal-modules.md) na documentação de internals.
 
 ## Tratamento de Erros
 
-Funcoes retornam pares `result, error`:
+Funções retornam pares `result, error`:
 
 ```lua
 local data, err = json.decode(input)
@@ -111,11 +111,11 @@ if err then
 end
 ```
 
-Veja [Error Handling](lua-errors.md) para padroes.
+Veja [Error Handling](lua-errors.md) para padrões.
 
-## Proximos Passos
+## Próximos Passos
 
 - [Entry Definitions](lua-entries.md) - Configurar pontos de entrada
-- [Channels](lua-channel.md) - Padroes de channel
-- [Process Management](lua-process.md) - Criacao e supervisao
+- [Channels](lua-channel.md) - Padrões de channel
+- [Process Management](lua-process.md) - Criação e supervisão
 - [Functions](lua-funcs.md) - Chamadas entre processos

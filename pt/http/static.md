@@ -1,8 +1,8 @@
-# Arquivos Estaticos
+# Arquivos Estáticos
 
-Serve arquivos estaticos de qualquer sistema de arquivos usando `http.static`. Handlers estaticos montam diretamente no servidor e podem servir SPAs, assets ou uploads de usuario de qualquer caminho.
+Serve arquivos estáticos de qualquer sistema de arquivos usando `http.static`. Handlers estáticos montam diretamente no servidor e podem servir SPAs, assets ou uploads de usuário de qualquer caminho.
 
-## Configuracao
+## Configuração
 
 ```yaml
 - name: static
@@ -18,34 +18,34 @@ Serve arquivos estaticos de qualquer sistema de arquivos usando `http.static`. H
     cache: "public, max-age=3600"
 ```
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `meta.server` | ID do Registro | Servidor HTTP pai |
-| `path` | string | Caminho de montagem URL (deve comecar com `/`) |
+| `path` | string | Caminho de montagem URL (deve começar com `/`) |
 | `fs` | ID do Registro | Entrada de sistema de arquivos para servir |
-| `directory` | string | Subdiretorio dentro do sistema de arquivos |
-| `static_options.spa` | bool | Modo SPA - serve index para caminhos nao correspondidos |
-| `static_options.index` | string | Arquivo index (obrigatorio quando spa=true) |
+| `directory` | string | Subdiretório dentro do sistema de arquivos |
+| `static_options.spa` | bool | Modo SPA - serve index para caminhos não correspondidos |
+| `static_options.index` | string | Arquivo index (obrigatório quando spa=true) |
 | `static_options.cache` | string | Valor do header Cache-Control |
 | `middleware` | []string | Cadeia de middleware |
-| `options` | map | Opcoes de middleware (notacao de ponto) |
+| `options` | map | Opções de middleware (notação de ponto) |
 
 <tip>
-Handlers estaticos podem ser montados em qualquer caminho no servidor. Multiplos handlers podem coexistir - monte assets em <code>/static</code> e uma SPA em <code>/</code>.
+Handlers estáticos podem ser montados em qualquer caminho no servidor. Múltiplos handlers podem coexistir - monte assets em <code>/static</code> e uma SPA em <code>/</code>.
 </tip>
 
-## Integracao com Sistema de Arquivos
+## Integração com Sistema de Arquivos
 
-Arquivos estaticos sao servidos de entradas de sistema de arquivos. Qualquer tipo de sistema de arquivos funciona:
+Arquivos estáticos são servidos de entradas de sistema de arquivos. Qualquer tipo de sistema de arquivos funciona:
 
 ```yaml
 entries:
-  # Diretorio local
+  # Diretório local
   - name: public
     kind: fs.directory
     directory: ./public
 
-  # Handler estatico
+  # Handler estático
   - name: static
     kind: http.static
     meta:
@@ -54,9 +54,9 @@ entries:
     fs: public
 ```
 
-Requisicao `/static/css/style.css` serve `./public/css/style.css`.
+Requisição `/static/css/style.css` serve `./public/css/style.css`.
 
-O campo `directory` seleciona um subdiretorio dentro do sistema de arquivos:
+O campo `directory` seleciona um subdiretório dentro do sistema de arquivos:
 
 ```yaml
 - name: docs
@@ -84,14 +84,14 @@ Single Page Applications precisam que todas as rotas sirvam o mesmo arquivo inde
     index: index.html
 ```
 
-| Requisicao | Resposta |
+| Requisição | Resposta |
 |------------|----------|
 | `/app.js` | Serve `app.js` (arquivo existe) |
 | `/users/123` | Serve `index.html` (fallback SPA) |
 | `/api/data` | Serve `index.html` (fallback SPA) |
 
 <note>
-Quando <code>spa: true</code>, o arquivo <code>index</code> e obrigatorio. Arquivos existentes sao servidos diretamente; todos os outros caminhos retornam o arquivo index.
+Quando <code>spa: true</code>, o arquivo <code>index</code> é obrigatório. Arquivos existentes são servidos diretamente; todos os outros caminhos retornam o arquivo index.
 </note>
 
 ## Controle de Cache
@@ -128,14 +128,14 @@ entries:
       cache: "public, max-age=0, must-revalidate"
 ```
 
-Padroes comuns de cache:
+Padrões comuns de cache:
 - **Assets versionados**: `public, max-age=31536000, immutable`
 - **HTML/index**: `public, max-age=0, must-revalidate`
-- **Uploads de usuario**: `private, max-age=3600`
+- **Uploads de usuário**: `private, max-age=3600`
 
 ## Middleware
 
-Aplique middleware para compressao, CORS ou outro processamento:
+Aplique middleware para compressão, CORS ou outro processamento:
 
 ```yaml
 - name: static
@@ -152,15 +152,15 @@ Aplique middleware para compressao, CORS ou outro processamento:
     cors.allow.origins: "*"
 ```
 
-Middleware encapsula o handler estatico em ordem - requisicoes passam por cada middleware antes de alcancar o servidor de arquivos.
+Middleware encapsula o handler estático em ordem - requisições passam por cada middleware antes de alcançar o servidor de arquivos.
 
 <warning>
-Match de caminho e baseado em prefixo. Um handler em <code>/</code> captura todas as requisicoes nao correspondidas. Use roteadores para endpoints de API para evitar conflitos.
+Match de caminho é baseado em prefixo. Um handler em <code>/</code> captura todas as requisições não correspondidas. Use roteadores para endpoints de API para evitar conflitos.
 </warning>
 
-## Veja Tambem
+## Veja Também
 
-- [Servidor](http-server.md) - Configuracao do servidor HTTP
+- [Servidor](http-server.md) - Configuração do servidor HTTP
 - [Roteamento](http-router.md) - Roteadores e endpoints
-- [Sistema de Arquivos](lua-fs.md) - Modulo de sistema de arquivos
-- [Middleware](http-middleware.md) - Middleware disponivel
+- [Sistema de Arquivos](lua-fs.md) - Módulo de sistema de arquivos
+- [Middleware](http-middleware.md) - Middleware disponível

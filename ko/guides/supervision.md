@@ -1,10 +1,10 @@
 # 슈퍼비전
 
-슈퍼바이저는 서비스 라이프사이클을 관리하며, 시작 순서, 자동 재시작, 그레이스풀 셧다운을 처리합니다. `auto_start: true`인 서비스는 애플리케이션 부팅 시 시작됩니다.
+슈퍼바이저는 서비스 수명 주기를 관리하며, 시작 순서, 자동 재시작, 정상 종료를 처리합니다. `auto_start: true`로 설정된 서비스는 애플리케이션 부팅 시 시작됩니다.
 
 ## 라이프사이클 설정
 
-서비스는 `lifecycle` 블록을 사용하여 슈퍼바이저에 등록합니다. 프로세스의 경우 `process.service`를 사용하여 프로세스 정의를 래핑합니다:
+서비스는 `lifecycle` 블록으로 슈퍼바이저에 등록합니다. 프로세스의 경우 `process.service`로 프로세스 정의를 래핑합니다:
 
 ```yaml
 # 프로세스 정의 (코드)
@@ -13,7 +13,7 @@
   source: file://worker.lua
   method: main
 
-# 슈퍼바이즈드 서비스 (라이프사이클 관리로 프로세스 래핑)
+# 감독 서비스 (수명 주기 관리로 프로세스 래핑)
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -35,7 +35,7 @@
 |-------|---------|-------------|
 | `auto_start` | `false` | 슈퍼바이저 시작 시 자동으로 시작 |
 | `start_timeout` | `10s` | 시작에 허용된 최대 시간 |
-| `stop_timeout` | `10s` | 그레이스풀 셧다운 최대 시간 |
+| `stop_timeout` | `10s` | 정상 종료 최대 시간 |
 | `stable_threshold` | `5s` | 서비스가 안정적으로 간주되기 전 실행 시간 |
 | `depends_on` | `[]` | 먼저 실행되어야 하는 서비스 |
 
@@ -57,12 +57,12 @@ graph LR
 의존성은 의존 항목보다 먼저 시작됩니다. 서비스 C가 A와 B에 의존하면, C가 시작되기 전에 A와 B 모두 `Running` 상태에 도달해야 합니다.
 
 <tip>
-<code>depends_on</code>에 데이터베이스 같은 인프라 엔트리를 선언할 필요가 없습니다. 슈퍼바이저는 엔트리 설정의 레지스트리 참조에서 의존성을 자동으로 추출합니다.
+데이터베이스 같은 인프라 엔트리는 <code>depends_on</code>에 명시하지 않아도 됩니다. 슈퍼바이저가 엔트리 설정의 레지스트리 참조에서 의존성을 자동으로 추출합니다.
 </tip>
 
 ## 재시작 정책
 
-서비스 실패 시 슈퍼바이저는 지수 백오프로 재시도합니다:
+서비스 실패 시 슈퍼바이저는 지수 백오프를 적용하여 재시도합니다:
 
 ```yaml
 lifecycle:
@@ -104,7 +104,7 @@ lifecycle:
   source: file://admin_worker.lua
   method: main
 
-# 보안 컨텍스트가 있는 슈퍼바이즈드 서비스
+# 보안 컨텍스트가 있는 감독 서비스
 - name: admin_worker
   kind: process.service
   process: app:admin_worker_process
@@ -131,7 +131,7 @@ lifecycle:
 | `groups` | 적용할 정책 그룹 |
 | `policies` | 적용할 개별 정책 |
 
-서비스에서 실행되는 코드는 이 보안 컨텍스트를 상속합니다. `security` 모듈로 권한을 확인할 수 있습니다:
+서비스에서 실행되는 코드는 이 보안 컨텍스트를 상속받습니다. `security` 모듈로 권한을 확인할 수 있습니다:
 
 ```lua
 local security = require("security")
@@ -168,7 +168,7 @@ stateDiagram-v2
 | `Inactive` | 등록되었지만 시작되지 않음 |
 | `Starting` | 시작 진행 중 |
 | `Running` | 정상 작동 중 |
-| `Stopping` | 그레이스풀 셧다운 진행 중 |
+| `Stopping` | 정상 종료 진행 중 |
 | `Stopped` | 정상 종료됨 |
 | `Failed` | 에러 발생, 재시도 가능 |
 
@@ -176,7 +176,7 @@ stateDiagram-v2
 
 **시작**: 의존성 먼저, 그 다음 의존 항목. 같은 의존성 레벨의 서비스는 병렬로 시작할 수 있습니다.
 
-**종료**: 의존 항목 먼저, 그 다음 의존성. 이는 의존성이 중지되기 전에 의존 서비스가 종료되도록 합니다.
+**종료**: 의존하는 항목 먼저, 그 다음 의존성. 의존성이 중지되기 전에 의존하는 서비스가 먼저 종료됩니다.
 
 ```
 시작:  database → cache → handler → http_server

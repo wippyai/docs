@@ -1,29 +1,29 @@
 # Relay WebSocket
 
-O middleware de relay WebSocket atualiza conexoes HTTP para WebSocket e retransmite mensagens para um processo alvo.
+O middleware de relay WebSocket atualiza conexões HTTP para WebSocket e retransmite mensagens para um processo alvo.
 
 ## Como Funciona
 
 1. Handler HTTP define header `X-WS-Relay` com PID do processo alvo
-2. Middleware atualiza conexao para WebSocket
+2. Middleware atualiza conexão para WebSocket
 3. Relay anexa ao processo alvo e o monitora
 4. Mensagens fluem bidirecionalmente entre cliente e processo
 
 <warning>
-A conexao WebSocket esta vinculada ao processo alvo. Se o processo sair, a conexao fecha automaticamente.
+A conexão WebSocket está vinculada ao processo alvo. Se o processo sair, a conexão fecha automaticamente.
 </warning>
 
-## Semantica de Processo
+## Semântica de Processo
 
-Conexoes WebSocket sao processos completos com seu proprio PID. Elas se integram com o sistema de processos:
+Conexões WebSocket são processos completos com seu próprio PID. Elas se integram com o sistema de processos:
 
-- **Enderecavel** - Qualquer processo pode enviar mensagens para um PID WebSocket
-- **Monitoravel** - Processos podem monitorar conexoes WebSocket para eventos de saida
-- **Linkavel** - Conexoes WebSocket podem ser vinculadas a outros processos
-- **Eventos EXIT** - Quando a conexao fecha, monitores recebem notificacoes de saida
+- **Endereçável** - Qualquer processo pode enviar mensagens para um PID WebSocket
+- **Monitorável** - Processos podem monitorar conexões WebSocket para eventos de saída
+- **Linkável** - Conexões WebSocket podem ser vinculadas a outros processos
+- **Eventos EXIT** - Quando a conexão fecha, monitores recebem notificações de saída
 
 ```lua
--- Monitora uma conexao WebSocket de outro processo
+-- Monitora uma conexão WebSocket de outro processo
 process.monitor(websocket_pid)
 
 -- Envia mensagem para cliente WebSocket de qualquer processo
@@ -31,12 +31,12 @@ process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
 ```
 
 <tip>
-O relay monitora o processo alvo. Se o alvo sair, a conexao WebSocket fecha automaticamente e o cliente recebe um frame de fechamento.
+O relay monitora o processo alvo. Se o alvo sair, a conexão WebSocket fecha automaticamente e o cliente recebe um frame de fechamento.
 </tip>
 
-## Transferencia de Conexao
+## Transferência de Conexão
 
-Conexoes podem ser transferidas para um processo diferente enviando uma mensagem de controle:
+Conexões podem ser transferidas para um processo diferente enviando uma mensagem de controle:
 
 ```lua
 process.send(websocket_pid, "ws.control", {
@@ -45,9 +45,9 @@ process.send(websocket_pid, "ws.control", {
 })
 ```
 
-## Configuracao
+## Configuração
 
-Adicione como middleware pos-match em um roteador:
+Adicione como middleware pós-match em um roteador:
 
 ```yaml
 - name: ws_router
@@ -61,15 +61,15 @@ Adicione como middleware pos-match em um roteador:
     wsrelay.allowed.origins: "https://app.example.com"
 ```
 
-| Opcao | Descricao |
+| Opção | Descrição |
 |-------|-----------|
-| `wsrelay.allowed.origins` | Origens permitidas separadas por virgula |
+| `wsrelay.allowed.origins` | Origens permitidas separadas por vírgula |
 
 <note>
-Se nenhuma origem configurada, apenas requisicoes same-origin sao permitidas.
+Se nenhuma origem configurada, apenas requisições same-origin são permitidas.
 </note>
 
-## Configuracao do Handler
+## Configuração do Handler
 
 O handler HTTP cria um processo e configura o relay:
 
@@ -96,24 +96,24 @@ local function handler()
 end
 ```
 
-### Campos de Configuracao do Relay
+### Campos de Configuração do Relay
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `target_pid` | string | obrigatorio | PID do processo para receber mensagens |
-| `message_topic` | string | `ws.message` | Topico para mensagens do cliente |
-| `heartbeat_interval` | duration | - | Frequencia de heartbeat (ex: `30s`) |
+| `target_pid` | string | obrigatório | PID do processo para receber mensagens |
+| `message_topic` | string | `ws.message` | Tópico para mensagens do cliente |
+| `heartbeat_interval` | duration | - | Frequência de heartbeat (ex: `30s`) |
 | `metadata` | object | - | Anexado a todas as mensagens |
 
-## Topicos de Mensagens
+## Tópicos de Mensagens
 
 O relay envia estas mensagens para o processo alvo:
 
-| Topico | Quando | Payload |
+| Tópico | Quando | Payload |
 |--------|--------|---------|
 | `ws.join` | Cliente conecta | `client_pid`, `metadata` |
 | `ws.message` | Cliente envia mensagem | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | Periodico (se configurado) | `client_pid`, `uptime`, `message_count` |
+| `ws.heartbeat` | Periódico (se configurado) | `client_pid`, `uptime`, `message_count` |
 | `ws.leave` | Cliente desconecta | `client_pid`, `reason`, `metadata` |
 
 ## Recebendo Mensagens
@@ -159,22 +159,22 @@ process.send(client_pid, "ws.send", {
     data = json.encode({event = "update", value = 42})
 })
 
--- Envia binario
+-- Envia binário
 process.send(client_pid, "ws.send", {
     type = "binary",
     data = binary_content
 })
 
--- Fecha conexao
+-- Fecha conexão
 process.send(client_pid, "ws.close", {
     code = 1000,
-    reason = "Sessao encerrada"
+    reason = "Sessão encerrada"
 })
 ```
 
 ## Broadcast
 
-Rastreie PIDs de clientes para broadcast para multiplos clientes:
+Rastreie PIDs de clientes para broadcast para múltiplos clientes:
 
 ```lua
 local clients = {}
@@ -195,11 +195,11 @@ end
 ```
 
 <tip>
-Para cenarios complexos de multiplas salas, crie um processo handler separado por sala ou use um processo gerenciador central que rastreia membros de salas.
+Para cenários complexos de múltiplas salas, crie um processo handler separado por sala ou use um processo gerenciador central que rastreia membros de salas.
 </tip>
 
-## Veja Tambem
+## Veja Também
 
-- [Middleware](http-middleware.md) - Configuracao de middleware
+- [Middleware](http-middleware.md) - Configuração de middleware
 - [Processo](lua-process.md) - Mensagens de processo
-- [Cliente WebSocket](lua-websocket.md) - Conexoes WebSocket de saida
+- [Cliente WebSocket](lua-websocket.md) - Conexões WebSocket de saída

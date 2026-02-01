@@ -79,7 +79,7 @@ Komponenten sind Go-Services, die am Anwendungslebenszyklus teilnehmen.
 |-------|---------|-------|
 | Load | `Load(ctx) (ctx, error)` | Initialisieren und an Kontext anhängen |
 | Start | `Start(ctx) error` | Aktiven Betrieb beginnen |
-| Stop | `Stop(ctx) error` | Graceful Shutdown |
+| Stop | `Stop(ctx) error` | Kontrolliertes Herunterfahren |
 
 Komponenten deklarieren Abhängigkeiten. Der Loader baut einen gerichteten azyklischen Graphen und führt in topologischer Reihenfolge aus. Shutdown erfolgt in umgekehrter Reihenfolge.
 
@@ -209,7 +209,7 @@ Komponenten hängen Services während der Load-Phase an. Nach Boot-Abschluss wir
 
 ## Shutdown
 
-Graceful Shutdown erfolgt in umgekehrter Abhängigkeitsreihenfolge:
+Das kontrollierte Herunterfahren erfolgt in umgekehrter Abhängigkeitsreihenfolge:
 
 1. SIGINT/SIGTERM löst Shutdown aus
 2. Supervisor stoppt verwaltete Services

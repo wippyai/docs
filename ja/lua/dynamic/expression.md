@@ -3,11 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-[expr-lang](https://expr-lang.org/)構文を使用して動的式を評価。完全なLua実行なしでフィルタリング、検証、ルール評価のための安全な式をコンパイルして実行。
+[expr-lang](https://expr-lang.org/)構文を使用して動的式を評価します。完全なLua実行なしで、フィルタリング、検証、ルール評価のための安全な式をコンパイルして実行できます。
 
 ## 設定
 
-式キャッシュは起動時に設定:
+式キャッシュは起動時に設定します:
 
 ```yaml
 lua:
@@ -24,7 +24,7 @@ local expr = require("expr")
 
 ## 式の評価
 
-式文字列を評価して結果を返す。コンパイル済み式に内部LRUキャッシュを使用:
+式文字列を評価して結果を返します。コンパイル済み式には内部LRUキャッシュを使用します:
 
 ```lua
 -- シンプルな計算
@@ -65,7 +65,7 @@ local has_admin = expr.eval('"admin" in roles', {
 
 ## 式のコンパイル
 
-繰り返しの評価用に再利用可能なProgramオブジェクトに式をコンパイル:
+繰り返しの評価用に、再利用可能なProgramオブジェクトに式をコンパイルします:
 
 ```lua
 -- 繰り返し使用のために一度コンパイル
@@ -89,7 +89,7 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 
 ## コンパイル済みプログラムの実行
 
-提供された環境でコンパイル済み式を実行:
+提供された環境でコンパイル済み式を実行します:
 
 ```lua
 -- 検証ルール
@@ -119,7 +119,7 @@ local order_total = pricer:run({
 
 ## 組み込み関数
 
-Expr-langは多くの組み込み関数を提供:
+Expr-langは多くの組み込み関数を提供しています:
 
 ```lua
 -- 数学関数

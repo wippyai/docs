@@ -102,7 +102,7 @@ entries:
 ```
 
 <warning>
-설정에 비밀번호를 하드코딩하지 마세요. 자격 증명에는 환경 변수나 <code>env.variable</code> 엔트리를 사용하세요. 안전한 시크릿 관리는 <a href="system-env.md">환경</a>을 참조하세요.
+설정에 비밀번호를 직접 입력하지 마세요. 자격 증명에는 환경 변수나 <code>env.variable</code> 엔트리를 사용하세요. 안전한 시크릿 관리는 <a href="system-env.md">환경</a>을 참조하세요.
 </warning>
 
 ## 연결 풀

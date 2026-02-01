@@ -1,8 +1,8 @@
 # Sobre o Wippy
 
-Wippy e uma plataforma e runtime agentico para software que precisa mudar enquanto esta em execucao - sistemas de automacao, agentes de IA, arquiteturas de plugins e aplicacoes similares onde o nucleo e projetado uma vez e depois adaptado repetidamente sem reconstruir ou reimplantar.
+Wippy é uma plataforma e runtime agêntico para software que precisa mudar enquanto está em execução — sistemas de automação, agentes de IA, arquiteturas de plugins e aplicações similares onde o núcleo é projetado uma vez e depois adaptado repetidamente sem reconstruir ou reimplantar.
 
-A base e o modelo de atores. O codigo executa em processos isolados que se comunicam atraves de mensagens, cada um gerenciando seu proprio estado. Quando algo falha, falha de forma isolada. Arvores de supervisao tratam a recuperacao automaticamente, reiniciando processos quando eles travam.
+A base é o modelo de atores. O código executa em processos isolados que se comunicam através de mensagens, cada um gerenciando seu próprio estado. Quando algo falha, falha de forma isolada. Árvores de supervisão tratam a recuperação automaticamente, reiniciando processos quando eles travam.
 
 ```lua
 local worker = process.spawn("app.workers:handler", "app:processes")
@@ -10,21 +10,21 @@ process.send(worker, "task", {id = 1, data = payload})
 process.monitor(worker)
 ```
 
-A configuracao reside em um registro central que propaga mudancas como eventos. Atualize um arquivo de configuracao, e os processos em execucao recebem as alteracoes. Eles se adaptam sem reiniciar - novas conexoes, comportamento atualizado, o que voce precisar - enquanto o sistema continua rodando.
+A configuração reside em um registro central que propaga mudanças como eventos. Atualize um arquivo de configuração, e os processos em execução recebem as alterações. Eles se adaptam sem reiniciar — novas conexões, comportamento atualizado, o que você precisar — enquanto o sistema continua rodando.
 
 ```lua
 local db = registry.get("app.db:postgres")
 local cache = registry.get("app.cache:redis")
 ```
 
-Para operacoes que devem sobreviver a falhas de infraestrutura - fluxos de pagamento, workflows de multiplas etapas, tarefas de agentes de longa duracao - o runtime persiste o estado automaticamente. O servidor morre no meio da operacao? O workflow retoma em outra maquina, exatamente de onde parou.
+Para operações que devem sobreviver a falhas de infraestrutura — fluxos de pagamento, workflows de múltiplas etapas, tarefas de agentes de longa duração — o runtime persiste o estado automaticamente. O servidor morre no meio da operação? O workflow retoma em outra máquina, exatamente de onde parou.
 
-O sistema inteiro roda a partir de um unico arquivo. Sem containers para orquestrar, sem servicos para coordenar. Um binario, uma configuracao, e o runtime cuida do resto.
+O sistema inteiro roda a partir de um único arquivo. Sem containers para orquestrar, sem serviços para coordenar. Um binário, uma configuração, e o runtime cuida do resto.
 
 ## Contexto
 
-O modelo de atores vem do Erlang, onde tem rodado switches de telecomunicacoes desde os anos 1980. A filosofia "deixe falhar" - isolar falhas, reiniciar rapido - tambem vem de la. Go mostrou que canais e passagem de mensagens podem tornar o codigo concorrente legivel. Temporal provou que workflows duraveis nao precisam significar lutar contra o framework.
+O modelo de atores vem do Erlang, onde tem rodado switches de telecomunicações desde os anos 1980. A filosofia "deixe falhar" — isolar falhas, reiniciar rápido — também vem de lá. Go mostrou que canais e passagem de mensagens podem tornar o código concorrente legível. Temporal provou que workflows duráveis não precisam significar lutar contra o framework.
 
-Construimos o Wippy porque agentes de IA precisam de infraestrutura que pode mudar enquanto estao em execucao. Novas ferramentas, prompts atualizados, modelos diferentes - estes nao podem esperar por um ciclo de deploy. Quando um agente precisa tentar uma nova abordagem, essa mudanca deve funcionar em segundos, nao apos um release.
+Construímos o Wippy porque agentes de IA precisam de infraestrutura que pode mudar enquanto estão em execução. Novas ferramentas, prompts atualizados, modelos diferentes — estes não podem esperar por um ciclo de deploy. Quando um agente precisa tentar uma nova abordagem, essa mudança deve funcionar em segundos, não após um release.
 
-Como os agentes rodam como atores com acesso ao registro, eles podem fazer essas mudancas por conta propria - gerando codigo, registrando novos componentes, ajustando seus proprios workflows. Com permissoes suficientes, um agente pode melhorar como funciona sem intervencao humana. O sistema pode escrever a si mesmo.
+Como os agentes rodam como atores com acesso ao registro, eles podem fazer essas mudanças por conta própria — gerando código, registrando novos componentes, ajustando seus próprios workflows. Com permissões suficientes, um agente pode melhorar como funciona sem intervenção humana. O sistema pode escrever a si mesmo.

@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Zugriff auf request-spezifische Kontextwerte. Der Kontext wird uber [Funcs](lua-funcs.md) oder [Process](lua-process.md) gesetzt.
+Zugriff auf anfragespezifische Kontextwerte. Der Kontext wird über [Funcs](lua-funcs.md) oder [Process](lua-process.md) gesetzt.
 
 ## Laden
 
@@ -21,9 +21,9 @@ local value, err = ctx.get("key")
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Kontextschlussel |
+| `key` | string | Kontextschlüssel |
 
-**Gibt zuruck:** `any, error`
+**Gibt zurück:** `any, error`
 
 ### Alle Werte abrufen
 
@@ -31,14 +31,14 @@ local value, err = ctx.get("key")
 local values, err = ctx.all()
 ```
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Leerer Schlussel | `errors.INVALID` | nein |
-| Schlussel nicht gefunden | `errors.NOT_FOUND` | nein |
-| Kein Kontext verfugbar | `errors.INTERNAL` | nein |
+| Leerer Schlüssel | `errors.INVALID` | nein |
+| Schlüssel nicht gefunden | `errors.NOT_FOUND` | nein |
+| Kein Kontext verfügbar | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-자식 프로세스를 스폰, 모니터링, 통신합니다. 메시지 전달, 슈퍼비전, 라이프사이클 관리를 갖춘 액터 모델 패턴을 구현합니다.
+자식 프로세스를 스폰하고 모니터링하며 통신합니다. 메시지 전달, 슈퍼비전, 수명 주기 관리를 갖춘 액터 모델 패턴을 구현합니다.
 
 `process` 전역은 항상 사용 가능합니다.
 
@@ -67,7 +67,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 -- 프로세스 강제 종료
 local ok, err = process.terminate(destination)
 
--- 선택적 데드라인과 함께 우아한 취소 요청
+-- 선택적 데드라인과 함께 정상 취소 요청
 local ok, err = process.cancel(destination, "5s")
 ```
 
@@ -191,7 +191,7 @@ local spawner = process.with_context({request_id = "123"})
 
 ### SpawnBuilder 메서드
 
-SpawnBuilder는 불변 - 각 메서드는 새 인스턴스 반환:
+SpawnBuilder는 불변이며, 각 메서드는 새 인스턴스를 반환합니다:
 
 ```lua
 spawner:with_context(values)      -- 컨텍스트 값 추가

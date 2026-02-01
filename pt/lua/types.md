@@ -1,15 +1,15 @@
 # Sistema de Tipos
 
-Wippy inclui um sistema de tipos gradual com checagem sensivel ao fluxo. Tipos sao nao-nulaveis por padrao.
+Wippy inclui um sistema de tipos gradual com checagem sensível ao fluxo. Tipos são não-nuláveis por padrão.
 
 ## Primitivos
 
 ```lua
 local n: number = 3.14
-local i: integer = 42         -- integer e subtipo de number
+local i: integer = 42         -- integer é subtipo de number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- dinamico explicito (opt-out de checagem)
+local a: any = "anything"     -- dinâmico explícito (opt-out de checagem)
 local u: unknown = something  -- deve estreitar antes de usar
 ```
 
@@ -22,18 +22,18 @@ a.foo.bar.baz()              -- sem erro, pode crashar em runtime
 
 -- unknown: desconhecido seguro, deve estreitar antes de usar
 local u: unknown = get_data()
-u.foo                        -- ERRO: nao pode acessar propriedade de unknown
+u.foo                        -- ERRO: não pode acessar propriedade de unknown
 if type(u) == "table" then
     -- u estreitado para table aqui
 end
 ```
 
-## Seguranca de Nil
+## Segurança de Nil
 
-Tipos sao nao-nulaveis por padrao. Use `?` para valores opcionais:
+Tipos são não-nuláveis por padrão. Use `?` para valores opcionais:
 
 ```lua
-local x: number = nil         -- ERRO: nil nao atribuivel a number
+local x: number = nil         -- ERRO: nil não atribuível a number
 local y: number? = nil        -- OK: number? significa "number ou nil"
 local z: number? = 42         -- OK
 ```
@@ -45,17 +45,17 @@ O checador de tipos rastreia fluxo de controle:
 ```lua
 local function process(x: number?): number
     if x ~= nil then
-        return x              -- x e number aqui
+        return x              -- x é number aqui
     end
     return 0
 end
 
--- Padrao de retorno antecipado
+-- Padrão de retorno antecipado
 local user, err = get_user(123)
 if err then return nil, err end
 -- user estreitado para non-nil aqui
 
--- Ou padrao
+-- Ou padrão
 local val = get_value() or 0  -- val: number
 ```
 
@@ -80,14 +80,14 @@ local s: Status = "pending"   -- OK
 local s: Status = "invalid"   -- ERRO
 ```
 
-## Tipos de Funcao
+## Tipos de Função
 
 ```lua
 local function add(a: number, b: number): number
     return a + b
 end
 
--- Multiplos retornos
+-- Múltiplos retornos
 local function div_mod(a: number, b: number): (number, number)
     return math.floor(a / b), a % b
 end
@@ -97,13 +97,13 @@ local function fetch(url: string): (string?, error?)
     -- retorna (data, nil) ou (nil, error)
 end
 
--- Tipos de funcao de primeira classe
+-- Tipos de função de primeira classe
 local double: (number) -> number = function(x: number): number
     return x * 2
 end
 ```
 
-### Funcoes Variadicas
+### Funções Variádicas
 
 ```lua
 local function sum(...: number): number
@@ -147,7 +147,7 @@ local n: number = identity(42)
 local s: string = identity("hello")
 ```
 
-### Generics com Restricoes
+### Generics com Restrições
 
 ```lua
 type HasName = {name: string}
@@ -162,7 +162,7 @@ greet({age = 30})             -- ERRO: faltando 'name'
 
 ## Tipos Intersection
 
-Combine multiplos tipos:
+Combine múltiplos tipos:
 
 ```lua
 type Named = {name: string}
@@ -197,7 +197,7 @@ end
 
 ## O Tipo never
 
-`never` e o tipo bottom - nenhum valor existe:
+`never` é o tipo bottom - nenhum valor existe:
 
 ```lua
 function fail(msg: string): never
@@ -205,36 +205,36 @@ function fail(msg: string): never
 end
 ```
 
-## Padrao de Tratamento de Erros
+## Padrão de Tratamento de Erros
 
 O checador entende o idioma de erro Lua:
 
 ```lua
 local value, err = call()
 if err then
-    -- value e nil aqui
+    -- value é nil aqui
     return nil, err
 end
--- value e non-nil aqui, err e nil
+-- value é non-nil aqui, err é nil
 print(value)
 ```
 
 ## Assertion Non-Nil
 
-Use `!` para assertar que uma expressao e non-nil:
+Use `!` para assertar que uma expressão é non-nil:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- assertar user e non-nil
+local name = user!.name              -- assertar user é non-nil
 ```
 
-Se o valor for nil em runtime, um erro e lancado. Use quando voce sabe que um valor nao pode ser nil mas o checador de tipos nao pode provar.
+Se o valor for nil em runtime, um erro é lançado. Use quando você sabe que um valor não pode ser nil mas o checador de tipos não pode provar.
 
 ## Type Casts
 
-### Cast Seguro (Validacao)
+### Cast Seguro (Validação)
 
-Chame um tipo como funcao para validar e fazer cast:
+Chame um tipo como função para validar e fazer cast:
 
 ```lua
 local data: any = get_json()
@@ -254,9 +254,9 @@ type Point = {x: number, y: number}
 local p = Point(data)                -- valida estrutura record
 ```
 
-### Metodo Type:is()
+### Método Type:is()
 
-Validar sem lancar, retorna `(value, nil)` ou `(nil, error)`:
+Validar sem lançar, retorna `(value, nil)` ou `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -264,9 +264,9 @@ local data: any = get_input()
 
 local p, err = Point:is(data)
 if p then
-    local sum = p.x + p.y            -- p e Point valido
+    local sum = p.x + p.y            -- p é Point válido
 else
-    return nil, err                  -- validacao falhou
+    return nil, err                  -- validação falhou
 end
 ```
 
@@ -288,11 +288,11 @@ local user = data :: User            -- sem checagem runtime
 local user = data as User            -- mesmo que ::
 ```
 
-Use com moderacao. Casts inseguros bypassam validacao e podem causar erros runtime se o valor nao corresponder ao tipo.
+Use com moderação. Casts inseguros bypassam validação e podem causar erros runtime se o valor não corresponder ao tipo.
 
-## Reflexao de Tipos
+## Reflexão de Tipos
 
-Tipos sao valores de primeira classe com metodos de introspeccao.
+Tipos são valores de primeira classe com métodos de introspecção.
 
 ### Kind e Name
 
@@ -323,7 +323,7 @@ local nameType = User.name           -- tipo do campo 'name'
 print(nameType:kind())               -- "string"
 ```
 
-### Tipos de Colecao
+### Tipos de Coleção
 
 ```lua
 local arr: {number} = {1, 2, 3}
@@ -355,7 +355,7 @@ for variant in Status:variants() do
 end
 ```
 
-### Tipos de Funcao
+### Tipos de Função
 
 ```lua
 local fn: (number, string) -> boolean
@@ -367,7 +367,7 @@ end
 print(fnType:ret():kind())           -- "boolean"
 ```
 
-### Comparacao de Tipos
+### Comparação de Tipos
 
 ```lua
 print(Number == Number)              -- true
@@ -386,17 +386,17 @@ local h = handlers[typeof(value)]
 if h then h() end
 ```
 
-## Anotacoes de Tipo
+## Anotações de Tipo
 
-Adicione tipos a assinaturas de funcao:
+Adicione tipos a assinaturas de função:
 
 ```lua
--- Tipos de parametro e retorno
+-- Tipos de parâmetro e retorno
 local function process(input: string): number
     return #input
 end
 
--- Tipos de variavel local
+-- Tipos de variável local
 local count: number = 0
 
 -- Aliases de tipo
@@ -404,42 +404,42 @@ type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
-## Regras de Variancia
+## Regras de Variância
 
-| Posicao | Variancia | Descricao |
+| Posição | Variância | Descrição |
 |---------|-----------|-----------|
 | Campo readonly | Covariante | Pode usar subtipo |
-| Campo mutavel | Invariante | Deve corresponder exatamente |
-| Parametro de funcao | Contravariante | Pode usar supertipo |
-| Retorno de funcao | Covariante | Pode usar subtipo |
+| Campo mutável | Invariante | Deve corresponder exatamente |
+| Parâmetro de função | Contravariante | Pode usar supertipo |
+| Retorno de função | Covariante | Pode usar subtipo |
 
 ## Subtipagem
 
-- `integer` e subtipo de `number`
-- `never` e subtipo de todos os tipos
-- Todos os tipos sao subtipos de `any`
-- Subtipagem de union: `A` e subtipo de `A | B`
+- `integer` é subtipo de `number`
+- `never` é subtipo de todos os tipos
+- Todos os tipos são subtipos de `any`
+- Subtipagem de union: `A` é subtipo de `A | B`
 
-## Adocao Gradual
+## Adoção Gradual
 
-Adicione tipos incrementalmente - codigo sem tipos continua funcionando:
+Adicione tipos incrementalmente - código sem tipos continua funcionando:
 
 ```lua
--- Codigo existente funciona sem alteracoes
+-- Código existente funciona sem alterações
 function old_function(x)
     return x + 1
 end
 
--- Novo codigo recebe tipos
+-- Novo código recebe tipos
 function new_function(x: number): number
     return x + 1
 end
 ```
 
 Comece adicionando tipos a:
-1. Assinaturas de funcao em limites de API
+1. Assinaturas de função em limites de API
 2. HTTP handlers e consumidores de fila
-3. Logica de negocios critica
+3. Lógica de negócios crítica
 
 ## Checagem de Tipos
 
@@ -449,4 +449,4 @@ Execute o checador de tipos:
 wippy lint
 ```
 
-Reporta erros de tipo sem executar codigo.
+Reporta erros de tipo sem executar código.

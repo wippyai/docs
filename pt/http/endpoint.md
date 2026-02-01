@@ -1,8 +1,8 @@
 # Endpoints HTTP
 
-Endpoints (`http.endpoint`) definem handlers de rota HTTP que executam funcoes Lua.
+Endpoints (`http.endpoint`) definem handlers de rota HTTP que executam funções Lua.
 
-## Definicao
+## Definição
 
 ```yaml
 - name: get_user
@@ -13,32 +13,32 @@ Endpoints (`http.endpoint`) definem handlers de rota HTTP que executam funcoes L
   func: app.users:get_user
 ```
 
-## Configuracao
+## Configuração
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `router` | registry.ID | Roteador pai (opcional se apenas um roteador) |
-| `method` | string | Metodo HTTP |
-| `path` | string | Padrao de caminho URL |
-| `func` | registry.ID | Funcao a executar |
+| `method` | string | Método HTTP |
+| `path` | string | Padrão de caminho URL |
+| `func` | registry.ID | Função a executar |
 
-## Metodos HTTP
+## Métodos HTTP
 
-Metodos suportados:
+Métodos suportados:
 
-| Metodo | Caso de Uso |
+| Método | Caso de Uso |
 |--------|-------------|
 | `GET` | Recuperar recursos |
 | `POST` | Criar recursos |
 | `PUT` | Substituir recursos |
-| `PATCH` | Atualizacao parcial |
+| `PATCH` | Atualização parcial |
 | `DELETE` | Remover recursos |
 | `HEAD` | Apenas headers |
 | `OPTIONS` | Preflight CORS (tratado automaticamente) |
 
-## Parametros de Caminho
+## Parâmetros de Caminho
 
-Use sintaxe `{param}` para parametros de URL:
+Use sintaxe `{param}` para parâmetros de URL:
 
 ```yaml
 - name: get_user
@@ -82,13 +82,13 @@ function(req, res)
 end
 ```
 
-## Funcao Handler
+## Função Handler
 
-Funcoes de endpoint recebem objetos de requisicao e resposta:
+Funções de endpoint recebem objetos de requisição e resposta:
 
 ```lua
 function(req, res)
-    -- Le requisicao
+    -- Lê requisição
     local body = req:body()
     local user_id = req:param("id")
     local page = req:query("page")
@@ -106,31 +106,31 @@ end
 
 ### Objeto Request
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
-| `req:method()` | string | Metodo HTTP |
-| `req:path()` | string | Caminho da requisicao |
-| `req:param(name)` | string | Parametro de URL |
-| `req:query(name)` | string | Parametro de query |
-| `req:header(name)` | string | Header da requisicao |
+| `req:method()` | string | Método HTTP |
+| `req:path()` | string | Caminho da requisição |
+| `req:param(name)` | string | Parâmetro de URL |
+| `req:query(name)` | string | Parâmetro de query |
+| `req:header(name)` | string | Header da requisição |
 | `req:headers()` | table | Todos os headers |
-| `req:body()` | string | Corpo da requisicao |
+| `req:body()` | string | Corpo da requisição |
 | `req:cookie(name)` | string | Valor do cookie |
-| `req:remote_addr()` | string | Endereco IP do cliente |
+| `req:remote_addr()` | string | Endereço IP do cliente |
 
 ### Objeto Response
 
-| Metodo | Descricao |
+| Método | Descrição |
 |--------|-----------|
 | `res:set_status(code)` | Define status HTTP |
 | `res:set_header(name, value)` | Define header |
 | `res:set_cookie(name, value, opts)` | Define cookie |
 | `res:write(data)` | Escreve corpo |
-| `res:redirect(url, code?)` | Redireciona (padrao 302) |
+| `res:redirect(url, code?)` | Redireciona (padrão 302) |
 
-## Padrao de API JSON
+## Padrão de API JSON
 
-Padrao comum para APIs JSON:
+Padrão comum para APIs JSON:
 
 ```lua
 local json = require("json")
@@ -141,11 +141,11 @@ function(req, res)
     if err then
         res:set_status(400)
         res:set_header("Content-Type", "application/json")
-        res:write(json.encode({error = "JSON invalido"}))
+        res:write(json.encode({error = "JSON inválido"}))
         return
     end
 
-    -- Processa requisicao
+    -- Processa requisição
     local result = process(data)
 
     -- Retorna resposta JSON
@@ -175,7 +175,7 @@ function(req, res)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
-            return api_error(res, 404, "USER_NOT_FOUND", "Usuario nao encontrado")
+            return api_error(res, 404, "USER_NOT_FOUND", "Usuário não encontrado")
         end
         return api_error(res, 500, "INTERNAL_ERROR", "Erro do servidor")
     end
@@ -250,8 +250,8 @@ entries:
     endpoint_firewall.action: "admin"
 ```
 
-## Veja Tambem
+## Veja Também
 
 - [Roteador](http-router.md) - Agrupamento de rotas
-- [Modulo HTTP](lua-http.md) - API de requisicao/resposta
-- [Middleware](http-middleware.md) - Processamento de requisicao
+- [Módulo HTTP](lua-http.md) - API de requisição/resposta
+- [Middleware](http-middleware.md) - Processamento de requisição

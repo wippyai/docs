@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="external"/>
 
-[Jetテンプレートエンジン](https://github.com/CloudyKit/jet)を使用して動的コンテンツをレンダリング。テンプレート継承とインクルードでHTMLページ、メール、ドキュメントを構築。
+[Jetテンプレートエンジン](https://github.com/CloudyKit/jet)を使用して動的コンテンツをレンダリングします。テンプレート継承とインクルードでHTMLページ、メール、ドキュメントを構築できます。
 
 テンプレートセットの設定については[テンプレートエンジン](system-template.md)を参照。
 
@@ -15,7 +15,7 @@ local templates = require("templates")
 
 ## テンプレートセットの取得
 
-レンダリングを開始するためにレジストリIDでテンプレートセットを取得:
+レンダリングを開始するためにレジストリIDでテンプレートセットを取得します:
 
 ```lua
 local set, err = templates.get("app.views:emails")
@@ -36,7 +36,7 @@ set:release()
 
 ## テンプレートのレンダリング
 
-データを使用して名前でテンプレートをレンダリング:
+データを使用して名前でテンプレートをレンダリングします:
 
 ```lua
 local set = templates.get("app.views:emails")
@@ -71,7 +71,7 @@ return html
 
 ## Jet構文リファレンス
 
-Jetは式と制御構造に`{{ }}`を使用し、コメントには`{* *}`を使用。
+Jetは式と制御構造に`{{ }}`を使用し、コメントには`{* *}`を使用します。
 
 ### 変数
 

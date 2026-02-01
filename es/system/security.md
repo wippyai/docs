@@ -1,6 +1,6 @@
 # Modelo de Seguridad
 
-Wippy implementa control de acceso basado en atributos. Cada solicitud lleva un actor (quien) y un scope (que politicas aplican). Las politicas evaluan el acceso basado en la accion, recurso, y metadatos tanto del actor como del recurso.
+Wippy implementa control de acceso basado en atributos. Cada solicitud lleva un actor (quién) y un scope (qué políticas aplican). Las políticas evalúan el acceso basado en la acción, recurso, y metadatos tanto del actor como del recurso.
 
 ```mermaid
 flowchart LR
@@ -11,15 +11,15 @@ flowchart LR
 
 ## Tipos de Entrada
 
-| Tipo | Descripcion |
+| Tipo | Descripción |
 |------|-------------|
-| `security.policy` | Politica declarativa con condiciones |
-| `security.policy.expr` | Politica basada en expresiones |
-| `security.token_store` | Almacenamiento y validacion de tokens |
+| `security.policy` | Política declarativa con condiciones |
+| `security.policy.expr` | Política basada en expresiones |
+| `security.token_store` | Almacenamiento y validación de tokens |
 
 ## Actores
 
-Un actor representa quien esta realizando una accion.
+Un actor representa quién está realizando una acción.
 
 ```lua
 local security = require("security")
@@ -47,11 +47,11 @@ if not actor then
 end
 ```
 
-## Politicas
+## Políticas
 
-Las politicas definen reglas de acceso con acciones, recursos, condiciones y efectos.
+Las políticas definen reglas de acceso con acciones, recursos, condiciones y efectos.
 
-### Politica Declarativa
+### Política Declarativa
 
 ```yaml
 # src/security/_index.yaml
@@ -103,7 +103,7 @@ entries:
     groups:
       - default
 
-  # Denegar confidencial sin autorizacion
+  # Denegar confidencial sin autorización
   - name: deny_confidential
     kind: security.policy
     policy:
@@ -121,7 +121,7 @@ entries:
       - security
 ```
 
-### Estructura de Politica
+### Estructura de Política
 
 ```yaml
 policy:
@@ -136,9 +136,9 @@ policy:
       value_from: "otra.ruta.campo"
 ```
 
-### Politica Basada en Expresiones
+### Política Basada en Expresiones
 
-Para logica compleja, use politicas de expresiones:
+Para lógica compleja, use políticas de expresiones:
 
 ```yaml
 - name: flexible_access
@@ -159,21 +159,21 @@ Para logica compleja, use politicas de expresiones:
 
 ## Condiciones
 
-Las condiciones permiten evaluacion dinamica de politicas basada en actor, accion, recurso y metadatos.
+Las condiciones permiten evaluación dinámica de políticas basada en actor, acción, recurso y metadatos.
 
 ### Rutas de Campo
 
-| Ruta | Descripcion |
+| Ruta | Descripción |
 |------|-------------|
-| `actor.id` | Identificador unico del actor |
+| `actor.id` | Identificador único del actor |
 | `actor.meta.*` | Metadatos del actor (soporta anidamiento) |
-| `action` | La accion que se esta realizando |
+| `action` | La acción que se está realizando |
 | `resource` | El identificador del recurso |
 | `meta.*` | Metadatos del recurso |
 
 ### Operadores
 
-| Operador | Descripcion | Ejemplo |
+| Operador | Descripción | Ejemplo |
 |----------|-------------|---------|
 | `eq` | Igual | `actor.meta.role eq "admin"` |
 | `ne` | No igual | `meta.status ne "deleted"` |
@@ -192,16 +192,16 @@ Las condiciones permiten evaluacion dinamica de politicas basada en actor, accio
 
 ## Scopes
 
-Los scopes combinan multiples politicas en un contexto de seguridad.
+Los scopes combinan múltiples políticas en un contexto de seguridad.
 
 ```lua
 local security = require("security")
 
--- Obtener politicas
+-- Obtener políticas
 local admin_policy = security.policy("app.security:admin_policy")
 local readonly_policy = security.policy("app.security:readonly_policy")
 
--- Crear scope con politicas
+-- Crear scope con políticas
 local scope = security.new_scope()
 scope = scope:with(admin_policy)
 scope = scope:with(readonly_policy)
@@ -209,39 +209,39 @@ scope = scope:with(readonly_policy)
 -- Los scopes son inmutables - :with() retorna nuevo scope
 ```
 
-### Scopes Nombrados (Grupos de Politicas)
+### Scopes Nombrados (Grupos de Políticas)
 
-Cargar todas las politicas de un grupo:
+Cargar todas las políticas de un grupo:
 
 ```lua
--- Cargar scope con todas las politicas del grupo
+-- Cargar scope con todas las políticas del grupo
 local scope, err = security.named_scope("app.security:admin")
 ```
 
-## Evaluacion de Politicas
+## Evaluación de Políticas
 
-### Flujo de Evaluacion
+### Flujo de Evaluación
 
 ```
-1. Verificar cada politica en scope
-2. Si ALGUNA politica retorna Deny -> Resultado es Deny
-3. Si al menos un Allow y ningun Deny -> Resultado es Allow
-4. Sin politicas aplicables -> Resultado es Undefined
+1. Verificar cada política en scope
+2. Si ALGUNA política retorna Deny -> Resultado es Deny
+3. Si al menos un Allow y ningún Deny -> Resultado es Allow
+4. Sin políticas aplicables -> Resultado es Undefined
 ```
 
-### Resultados de Evaluacion
+### Resultados de Evaluación
 
 | Resultado | Significado |
 |--------|---------|
 | `allow` | Acceso concedido |
-| `deny` | Acceso explicitamente denegado |
-| `undefined` | Ninguna politica coincidio |
+| `deny` | Acceso explícitamente denegado |
+| `undefined` | Ninguna política coincidió |
 
 ## Almacenes de Tokens
 
-Los almacenes de tokens proporcionan creacion, validacion y revocacion segura de tokens.
+Los almacenes de tokens proporcionan creación, validación y revocación segura de tokens.
 
-### Configuracion
+### Configuración
 
 ```yaml
 # src/auth/_index.yaml
@@ -258,13 +258,13 @@ entries:
     variable: AUTH_SECRET_KEY
     storage: app.auth:os_env
 
-  # Almacen respaldo para tokens
+  # Almacén respaldo para tokens
   - name: token_data
     kind: store.memory
     lifecycle:
       auto_start: true
 
-  # Almacen de tokens
+  # Almacén de tokens
   - name: tokens
     kind: security.token_store
     store: app.auth:token_data
@@ -273,19 +273,19 @@ entries:
     token_key_env: "AUTH_SECRET_KEY"
 ```
 
-### Opciones del Almacen de Tokens
+### Opciones del Almacén de Tokens
 
-| Opcion | Por Defecto | Descripcion |
+| Opción | Por Defecto | Descripción |
 |--------|---------|-------------|
-| `store` | requerido | Referencia al almacen clave-valor respaldo |
-| `token_length` | 32 | Tamano del token en bytes (256 bits) |
+| `store` | requerido | Referencia al almacén clave-valor respaldo |
+| `token_length` | 32 | Tamaño del token en bytes (256 bits) |
 | `default_expiration` | 24h | TTL por defecto del token |
 | `token_key` | ninguno | Clave de firma HMAC-SHA256 (valor directo) |
 | `token_key_env` | ninguno | Nombre de variable de entorno para clave de firma |
 
-Use `token_key_env` en produccion para evitar embeber secretos en entradas.
+Use `token_key_env` en producción para evitar embeber secretos en entradas.
 
-## Verificacion Rapida de Permisos
+## Verificación Rápida de Permisos
 
 ```lua
 -- Verificar contra actor y scope del contexto actual
@@ -300,14 +300,14 @@ end
 
 ## Flujo de Contexto
 
-El contexto de seguridad se propaga a traves de llamadas de funciones.
+El contexto de seguridad se propaga a través de llamadas de funciones.
 
 ### Estableciendo Contexto
 
 ```lua
 local funcs = require("funcs")
 
--- Llamar funcion con contexto de seguridad
+-- Llamar función con contexto de seguridad
 local result, err = funcs.new()
     :with_actor(actor)
     :with_scope(scope)
@@ -338,7 +338,7 @@ Configure seguridad por defecto para servicios:
 
 ## Modo Estricto
 
-Habilite modo estricto para denegar acceso cuando el contexto de seguridad esta ausente:
+Habilite modo estricto para denegar acceso cuando el contexto de seguridad está ausente:
 
 ```yaml
 # wippy.yaml
@@ -351,6 +351,6 @@ security:
 | Normal | Sin actor/scope | Allow (permisivo) |
 | Estricto | Sin actor/scope | Deny (seguro por defecto) |
 
-## Ver Tambien
+## Ver También
 
-- [Modulo Security](lua-security.md) - API de seguridad en Lua
+- [Módulo Security](lua-security.md) - API de seguridad en Lua

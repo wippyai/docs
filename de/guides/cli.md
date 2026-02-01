@@ -17,7 +17,7 @@ Verfügbar für alle Befehle:
 | `--profiler` | `-p` | pprof auf localhost:6060 aktivieren |
 | `--memory-limit` | `-m` | Speicherlimit (z.B. 1G, 512M) |
 
-Speicherlimit-Priorität: `--memory-limit` Flag > `GOMEMLIMIT` Umgebungsvariable > 1GB Standard.
+Speicherlimit-Priorität: Flag `--memory-limit` > Umgebungsvariable `GOMEMLIMIT` > 1 GB Standard.
 
 ## wippy init
 
@@ -158,7 +158,6 @@ Liest aus `wippy.yaml` im aktuellen Verzeichnis.
 | `--dry-run` | Validieren ohne zu veröffentlichen |
 | `--label` | Versions-Label |
 | `--release-notes` | Release-Notizen |
-| `--protected` | Als geschützt markieren |
 | `--registry` | Registry-URL |
 
 ## wippy search

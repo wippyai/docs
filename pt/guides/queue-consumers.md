@@ -14,16 +14,16 @@ flowchart LR
     end
 ```
 
-## Configuracao
+## Configuração
 
-| Opcao | Padrao | Max | Descricao |
+| Opção | Padrão | Max | Descrição |
 |-------|--------|-----|-----------|
-| `queue` | Obrigatorio | - | ID do registro da fila |
-| `func` | Obrigatorio | - | ID do registro da funcao handler |
+| `queue` | Obrigatório | - | ID do registro da fila |
+| `func` | Obrigatório | - | ID do registro da função handler |
 | `concurrency` | 1 | 1000 | Quantidade de workers |
 | `prefetch` | 10 | 10000 | Tamanho do buffer de mensagens |
 
-## Definicao de Entrada
+## Definição de Entrada
 
 ```yaml
 - name: order_consumer
@@ -38,9 +38,9 @@ flowchart LR
       - app:orders
 ```
 
-## Funcao Handler
+## Função Handler
 
-A funcao handler recebe o corpo da mensagem:
+A função handler recebe o corpo da mensagem:
 
 ```lua
 -- process_order.lua
@@ -73,7 +73,7 @@ return handler
 
 ## Reconhecimento
 
-| Resultado | Acao | Efeito |
+| Resultado | Ação | Efeito |
 |-----------|------|--------|
 | Sucesso | Ack | Mensagem removida da fila |
 | Erro | Nack | Mensagem reenfileirada (dependente do driver) |
@@ -82,7 +82,7 @@ return handler
 
 - Workers executam como goroutines concorrentes
 - Cada worker processa uma mensagem por vez
-- Mensagens distribuidas round-robin do canal de entrega
+- Mensagens distribuídas round-robin do canal de entrega
 - Buffer de prefetch permite driver entregar antecipadamente
 
 ### Exemplo
@@ -92,10 +92,10 @@ concurrency: 3
 prefetch: 10
 
 Fluxo:
-1. Driver entrega ate 10 mensagens para o buffer
+1. Driver entrega até 10 mensagens para o buffer
 2. 3 workers pegam do buffer concorrentemente
 3. Conforme workers terminam, buffer reabastece
-4. Contrapressao quando todos workers ocupados e buffer cheio
+4. Contrapressão quando todos workers ocupados e buffer cheio
 ```
 
 ## Encerramento Gracioso
@@ -104,45 +104,45 @@ Ao parar:
 1. Para de aceitar novas entregas
 2. Cancela contextos de workers
 3. Aguarda mensagens em voo (com timeout)
-4. Retorna erro de timeout se workers nao terminarem
+4. Retorna erro de timeout se workers não terminarem
 
-## Declaracao de Fila
+## Declaração de Fila
 
 ```yaml
-# Driver de fila (memoria para dev/teste)
+# Driver de fila (memória para dev/teste)
 - name: queue_driver
   kind: queue.driver.memory
   lifecycle:
     auto_start: true
 
-# Definicao de fila
+# Definição de fila
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
   options:
-    queue_name: orders      # Sobrescreve nome (padrao: nome da entrada)
-    max_length: 10000       # Tamanho maximo da fila
-    durable: true           # Sobrevive a reinicializacoes
+    queue_name: orders      # Sobrescreve nome (padrão: nome da entrada)
+    max_length: 10000       # Tamanho máximo da fila
+    durable: true           # Sobrevive a reinicializações
 ```
 
-| Opcao | Descricao |
+| Opção | Descrição |
 |-------|-----------|
-| `queue_name` | Sobrescreve nome da fila (padrao: nome do ID da entrada) |
-| `max_length` | Tamanho maximo da fila |
-| `durable` | Sobrevive a reinicializacoes (dependente do driver) |
+| `queue_name` | Sobrescreve nome da fila (padrão: nome do ID da entrada) |
+| `max_length` | Tamanho máximo da fila |
+| `durable` | Sobrevive a reinicializações (dependente do driver) |
 
-## Driver de Memoria
+## Driver de Memória
 
-Fila em memoria embutida para desenvolvimento/testes:
+Fila em memória embutida para desenvolvimento/testes:
 
 - Tipo: `queue.driver.memory`
-- Mensagens armazenadas em memoria
-- Nack reenfileira mensagem no inicio da fila
-- Sem persistencia entre reinicializacoes
+- Mensagens armazenadas em memória
+- Nack reenfileira mensagem no início da fila
+- Sem persistência entre reinicializações
 
-## Veja Tambem
+## Veja Também
 
-- [Fila de Mensagens](lua/storage/queue.md) - Referencia do modulo de filas
-- [Configuracao de Filas](system/queue.md) - Drivers de fila e definicoes de entrada
-- [Arvores de Supervisao](guides/supervision.md) - Ciclo de vida do consumidor
-- [Gerenciamento de Processos](lua/core/process.md) - Criacao e comunicacao de processos
+- [Fila de Mensagens](lua/storage/queue.md) - Referência do módulo de filas
+- [Configuração de Filas](system/queue.md) - Drivers de fila e definições de entrada
+- [Árvores de Supervisão](guides/supervision.md) - Ciclo de vida do consumidor
+- [Gerenciamento de Processos](lua/core/process.md) - Criação e comunicação de processos
