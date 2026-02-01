@@ -1,0 +1,185 @@
+[
+  {
+    "title": "Erste Schritte",
+    "children": [
+      {"title": "Was ist Wippy", "path": "start/about"},
+      {"title": "Installation", "path": "start/installation"},
+      {"title": "Projektstruktur", "path": "start/structure"}
+    ]
+  },
+  {
+    "title": "Anleitungen",
+    "children": [
+      {"title": "CLI", "path": "guides/cli"},
+      {"title": "Konfiguration", "path": "guides/configuration"},
+      {"title": "Entry-Typen", "path": "guides/entry-kinds"},
+      {"title": "Observability", "path": "guides/observability"},
+      {"title": "Queue-Konsumenten", "path": "guides/queue-consumers"},
+      {"title": "Supervision", "path": "guides/supervision"},
+      {"title": "Veröffentlichung", "path": "guides/publishing"}
+    ]
+  },
+  {
+    "title": "Kernkonzepte",
+    "children": [
+      {"title": "Prozessmodell", "path": "concepts/process-model"},
+      {"title": "Compute Units", "path": "concepts/compute-units"},
+      {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Funktionen", "path": "concepts/functions"},
+      {"title": "Workflows", "path": "concepts/workflows"}
+    ]
+  },
+  {
+    "title": "Lua-Runtime",
+    "children": [
+      {"title": "Übersicht", "path": "lua/overview"},
+      {"title": "Typen", "path": "lua/types"},
+      {"title": "Einträge", "path": "lua/entries"},
+      {
+        "title": "Kern",
+        "children": [
+          {"title": "Basis", "path": "lua/core/base"},
+          {"title": "Fehler", "path": "lua/core/errors"},
+          {"title": "Zeit", "path": "lua/core/time"},
+          {"title": "Channels", "path": "lua/core/channel"},
+          {"title": "Prozess", "path": "lua/core/process"},
+          {"title": "Funktionen", "path": "lua/core/funcs"},
+          {"title": "Future", "path": "lua/core/future"},
+          {"title": "Stream", "path": "lua/core/stream"},
+          {"title": "Context", "path": "lua/core/context"},
+          {"title": "Events", "path": "lua/core/events"},
+          {"title": "Registry", "path": "lua/core/registry"},
+          {"title": "Contract", "path": "lua/core/contract"}
+        ]
+      },
+      {
+        "title": "Datenformate",
+        "children": [
+          {"title": "JSON", "path": "lua/data/json"},
+          {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "Base64", "path": "lua/data/base64"},
+          {"title": "Komprimierung", "path": "lua/data/compress"},
+          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "Excel", "path": "lua/data/excel"}
+        ]
+      },
+      {
+        "title": "HTTP & Web",
+        "children": [
+          {"title": "HTTP", "path": "lua/http/http"},
+          {"title": "HTTP-Client", "path": "lua/http/client"},
+          {"title": "WebSocket", "path": "lua/http/websocket"},
+          {"title": "HTML", "path": "lua/http/html"}
+        ]
+      },
+      {
+        "title": "Speicher",
+        "children": [
+          {"title": "SQL", "path": "lua/storage/sql"},
+          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Dateisystem", "path": "lua/storage/filesystem"},
+          {"title": "Cloud-Speicher", "path": "lua/storage/cloud"},
+          {"title": "Queue", "path": "lua/storage/queue"}
+        ]
+      },
+      {
+        "title": "System",
+        "children": [
+          {"title": "System", "path": "lua/system/system"},
+          {"title": "Umgebung", "path": "lua/system/env"},
+          {"title": "Logger", "path": "lua/system/logger"},
+          {"title": "I/O", "path": "lua/system/io"},
+          {"title": "Metriken", "path": "lua/system/metrics"},
+          {"title": "Betriebssystemzeit", "path": "lua/system/ostime"}
+        ]
+      },
+      {
+        "title": "Text & Vorlagen",
+        "children": [
+          {"title": "Text", "path": "lua/text/text"},
+          {"title": "Vorlage", "path": "lua/text/template"},
+          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+        ]
+      },
+      {
+        "title": "Sicherheit",
+        "children": [
+          {"title": "Sicherheit", "path": "lua/security/security"},
+          {"title": "Kryptografie", "path": "lua/security/crypto"},
+          {"title": "Hash", "path": "lua/security/hash"},
+          {"title": "UUID", "path": "lua/security/uuid"}
+        ]
+      },
+      {
+        "title": "Dynamisch",
+        "children": [
+          {"title": "Eval", "path": "lua/dynamic/eval"},
+          {"title": "Exec", "path": "lua/dynamic/exec"},
+          {"title": "Expression", "path": "lua/dynamic/expression"}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Temporal",
+    "children": [
+      {"title": "Übersicht", "path": "temporal/overview"},
+      {"title": "Activities", "path": "temporal/activities"},
+      {"title": "Workflows", "path": "temporal/workflows"}
+    ]
+  },
+  {
+    "title": "Systemkomponenten",
+    "children": [
+      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "Datenbank", "path": "system/database"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Queue", "path": "system/queue"},
+      {"title": "Dateisystem", "path": "system/filesystem"},
+      {"title": "Cloud-Speicher", "path": "system/cloudstorage"},
+      {"title": "Umgebung", "path": "system/env"},
+      {"title": "Vorlage", "path": "system/template"},
+      {"title": "Sicherheit", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
+    ]
+  },
+  {
+    "title": "HTTP",
+    "children": [
+      {"title": "Server", "path": "http/server"},
+      {"title": "Router", "path": "http/router"},
+      {"title": "Endpoint", "path": "http/endpoint"},
+      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "Statische Dateien", "path": "http/static"},
+      {"title": "WebSocket-Relay", "path": "http/websocket-relay"}
+    ]
+  },
+  {
+    "title": "Tutorials",
+    "children": [
+      {"title": "Hello World", "path": "tutorials/hello-world"},
+      {"title": "CLI-Anwendungen", "path": "tutorials/cli"},
+      {"title": "Echo-Dienst", "path": "tutorials/echo-service"},
+      {"title": "Task-Queue", "path": "tutorials/task-queue"}
+    ]
+  },
+  {
+    "title": "Interna",
+    "children": [
+      {"title": "Registry", "path": "internals/registry"},
+      {"title": "Scheduler", "path": "internals/scheduler"},
+      {"title": "Dispatch", "path": "internals/dispatch"},
+      {"title": "Events", "path": "internals/events"},
+      {"title": "Module", "path": "internals/modules"},
+      {"title": "Kinds", "path": "internals/kinds"}
+    ]
+  },
+  {
+    "title": "Über",
+    "children": [
+      {"title": "Mitwirken", "path": "about/contributing"},
+      {"title": "Lizenz", "path": "about/license"}
+    ]
+  }
+]

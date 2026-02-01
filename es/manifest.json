@@ -1,0 +1,185 @@
+[
+  {
+    "title": "Primeros Pasos",
+    "children": [
+      {"title": "Acerca de Wippy", "path": "start/about"},
+      {"title": "Instalacion", "path": "start/installation"},
+      {"title": "Estructura del Proyecto", "path": "start/structure"}
+    ]
+  },
+  {
+    "title": "Guias",
+    "children": [
+      {"title": "CLI", "path": "guides/cli"},
+      {"title": "Configuracion", "path": "guides/configuration"},
+      {"title": "Tipos de Entradas", "path": "guides/entry-kinds"},
+      {"title": "Observabilidad", "path": "guides/observability"},
+      {"title": "Consumidores de Colas", "path": "guides/queue-consumers"},
+      {"title": "Supervision", "path": "guides/supervision"},
+      {"title": "Publicacion", "path": "guides/publishing"}
+    ]
+  },
+  {
+    "title": "Conceptos Fundamentales",
+    "children": [
+      {"title": "Modelo de Procesos", "path": "concepts/process-model"},
+      {"title": "Unidades de Computo", "path": "concepts/compute-units"},
+      {"title": "Registro", "path": "concepts/registry"},
+      {"title": "Funciones", "path": "concepts/functions"},
+      {"title": "Flujos de Trabajo", "path": "concepts/workflows"}
+    ]
+  },
+  {
+    "title": "Runtime de Lua",
+    "children": [
+      {"title": "Vision General", "path": "lua/overview"},
+      {"title": "Tipos", "path": "lua/types"},
+      {"title": "Entradas", "path": "lua/entries"},
+      {
+        "title": "Core",
+        "children": [
+          {"title": "Base", "path": "lua/core/base"},
+          {"title": "Errores", "path": "lua/core/errors"},
+          {"title": "Tiempo", "path": "lua/core/time"},
+          {"title": "Canales", "path": "lua/core/channel"},
+          {"title": "Proceso", "path": "lua/core/process"},
+          {"title": "Funciones", "path": "lua/core/funcs"},
+          {"title": "Future", "path": "lua/core/future"},
+          {"title": "Stream", "path": "lua/core/stream"},
+          {"title": "Contexto", "path": "lua/core/context"},
+          {"title": "Eventos", "path": "lua/core/events"},
+          {"title": "Registro", "path": "lua/core/registry"},
+          {"title": "Contrato", "path": "lua/core/contract"}
+        ]
+      },
+      {
+        "title": "Formatos de Datos",
+        "children": [
+          {"title": "JSON", "path": "lua/data/json"},
+          {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "Base64", "path": "lua/data/base64"},
+          {"title": "Compresion", "path": "lua/data/compress"},
+          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "Excel", "path": "lua/data/excel"}
+        ]
+      },
+      {
+        "title": "HTTP y Web",
+        "children": [
+          {"title": "HTTP", "path": "lua/http/http"},
+          {"title": "Cliente HTTP", "path": "lua/http/client"},
+          {"title": "WebSocket", "path": "lua/http/websocket"},
+          {"title": "HTML", "path": "lua/http/html"}
+        ]
+      },
+      {
+        "title": "Almacenamiento",
+        "children": [
+          {"title": "SQL", "path": "lua/storage/sql"},
+          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Sistema de Archivos", "path": "lua/storage/filesystem"},
+          {"title": "Almacenamiento en la Nube", "path": "lua/storage/cloud"},
+          {"title": "Cola", "path": "lua/storage/queue"}
+        ]
+      },
+      {
+        "title": "Sistema",
+        "children": [
+          {"title": "Sistema", "path": "lua/system/system"},
+          {"title": "Entorno", "path": "lua/system/env"},
+          {"title": "Logger", "path": "lua/system/logger"},
+          {"title": "E/S", "path": "lua/system/io"},
+          {"title": "Metricas", "path": "lua/system/metrics"},
+          {"title": "Tiempo del SO", "path": "lua/system/ostime"}
+        ]
+      },
+      {
+        "title": "Texto y Plantillas",
+        "children": [
+          {"title": "Texto", "path": "lua/text/text"},
+          {"title": "Plantilla", "path": "lua/text/template"},
+          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+        ]
+      },
+      {
+        "title": "Seguridad",
+        "children": [
+          {"title": "Seguridad", "path": "lua/security/security"},
+          {"title": "Criptografia", "path": "lua/security/crypto"},
+          {"title": "Hash", "path": "lua/security/hash"},
+          {"title": "UUID", "path": "lua/security/uuid"}
+        ]
+      },
+      {
+        "title": "Dinamico",
+        "children": [
+          {"title": "Eval", "path": "lua/dynamic/eval"},
+          {"title": "Exec", "path": "lua/dynamic/exec"},
+          {"title": "Expresion", "path": "lua/dynamic/expression"}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Temporal",
+    "children": [
+      {"title": "Vision General", "path": "temporal/overview"},
+      {"title": "Actividades", "path": "temporal/activities"},
+      {"title": "Flujos de Trabajo", "path": "temporal/workflows"}
+    ]
+  },
+  {
+    "title": "Componentes del Sistema",
+    "children": [
+      {"title": "Host de Procesos", "path": "system/process-host"},
+      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "Base de Datos", "path": "system/database"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Cola", "path": "system/queue"},
+      {"title": "Sistema de Archivos", "path": "system/filesystem"},
+      {"title": "Almacenamiento en la Nube", "path": "system/cloudstorage"},
+      {"title": "Entorno", "path": "system/env"},
+      {"title": "Plantilla", "path": "system/template"},
+      {"title": "Seguridad", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
+    ]
+  },
+  {
+    "title": "HTTP",
+    "children": [
+      {"title": "Servidor", "path": "http/server"},
+      {"title": "Router", "path": "http/router"},
+      {"title": "Endpoint", "path": "http/endpoint"},
+      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "Archivos Estaticos", "path": "http/static"},
+      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
+    ]
+  },
+  {
+    "title": "Tutoriales",
+    "children": [
+      {"title": "Hola Mundo", "path": "tutorials/hello-world"},
+      {"title": "Aplicaciones CLI", "path": "tutorials/cli"},
+      {"title": "Servicio Echo", "path": "tutorials/echo-service"},
+      {"title": "Cola de Tareas", "path": "tutorials/task-queue"}
+    ]
+  },
+  {
+    "title": "Internos",
+    "children": [
+      {"title": "Registro", "path": "internals/registry"},
+      {"title": "Planificador", "path": "internals/scheduler"},
+      {"title": "Dispatch", "path": "internals/dispatch"},
+      {"title": "Eventos", "path": "internals/events"},
+      {"title": "Modulos", "path": "internals/modules"},
+      {"title": "Kinds", "path": "internals/kinds"}
+    ]
+  },
+  {
+    "title": "Acerca de",
+    "children": [
+      {"title": "Contribuir", "path": "about/contributing"},
+      {"title": "Licencia", "path": "about/license"}
+    ]
+  }
+]
