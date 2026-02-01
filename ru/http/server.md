@@ -85,7 +85,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Это задаёт базового актёра и политики для всех запросов. Для аутентифицированных запросов [middleware token_auth](http-middleware.md) переопределяет актёра на основе валидированного токена, позволяя применять политики безопасности для каждого пользователя.
+Это задаёт базового актёра и политики для всех запросов. Для аутентифицированных запросов [middleware token_auth](http/middleware.md) переопределяет актёра на основе валидированного токена, позволяя применять политики безопасности для каждого пользователя.
 
 ## Lifecycle
 
@@ -158,8 +158,8 @@ TLS-терминация обычно выполняется reverse proxy (Ngin
 
 ## См. также
 
-- [Маршрутизация](http-router.md) — роутеры и эндпоинты
-- [Статические файлы](http-static.md) — раздача статики
-- [Middleware](http-middleware.md) — доступные middleware
-- [Безопасность](system-security.md) — политики безопасности
-- [WebSocket Relay](http-websocket-relay.md) — WebSocket-сообщения
+- [Маршрутизация](http/router.md) — роутеры и эндпоинты
+- [Статические файлы](http/static.md) — раздача статики
+- [Middleware](http/middleware.md) — доступные middleware
+- [Безопасность](system/security.md) — политики безопасности
+- [WebSocket Relay](http/websocket-relay.md) — WebSocket-сообщения

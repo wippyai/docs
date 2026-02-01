@@ -336,7 +336,7 @@ store:close()
 | `security.token.create` | ID хранилища | Создание токенов |
 | `security.token.revoke` | ID хранилища | Отзыв токенов |
 
-Настройка политик описана в разделе [Модель безопасности](system-security.md).
+Настройка политик описана в разделе [Модель безопасности](system/security.md).
 
 ## Ошибки
 
@@ -361,9 +361,9 @@ if err then
 end
 ```
 
-Подробнее см. [Обработка ошибок](lua-errors.md).
+Подробнее см. [Обработка ошибок](lua/core/errors.md).
 
 ## См. также
 
-- [Модель безопасности](system-security.md) — настройка актёров, политик и областей
-- [HTTP Middleware](http-middleware.md) — файрвол эндпоинтов и ресурсов
+- [Модель безопасности](system/security.md) — настройка актёров, политик и областей
+- [HTTP Middleware](http/middleware.md) — файрвол эндпоинтов и ресурсов

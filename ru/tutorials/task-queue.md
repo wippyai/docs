@@ -454,7 +454,7 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## Следующие шаги
 
-- [Модуль HTTP](lua-http.md) — обработка запросов/ответов
-- [Модуль Queue](lua-queue.md) — операции с очередями
-- [Модуль SQL](lua-sql.md) — доступ к базе данных
-- [Консьюмеры очередей](guide-queue-consumers.md) — конфигурация очередей
+- [Модуль HTTP](lua/http/http.md) — обработка запросов/ответов
+- [Модуль Queue](lua/storage/queue.md) — операции с очередями
+- [Модуль SQL](lua/storage/sql.md) — доступ к базе данных
+- [Консьюмеры очередей](guides/queue-consumers.md) — конфигурация очередей

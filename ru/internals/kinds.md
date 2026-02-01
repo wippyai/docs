@@ -128,5 +128,5 @@ type TransactionListener interface {
 
 ## См. также
 
-- [Реестр](internal-registry.md) — хранение записей
-- [Архитектура](internal-architecture.md) — последовательность загрузки
+- [Реестр](internals/registry.md) — хранение записей
+- [Архитектура](internals/architecture.md) — последовательность загрузки

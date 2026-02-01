@@ -169,4 +169,4 @@ local n = hash.fnv64("data")
 | Вход не является строкой | `errors.INVALID` | нет |
 | Секрет не является строкой (HMAC) | `errors.INVALID` | нет |
 
-Подробнее см. [Обработка ошибок](lua-errors.md).
+Подробнее см. [Обработка ошибок](lua/core/errors.md).

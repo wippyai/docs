@@ -156,6 +156,6 @@ type Yield struct {
 
 ## См. также
 
-- [Планировщик](internal-scheduler.md) — выполнение процессов
-- [Модули](internal-modules.md) — интеграция Lua-модулей
-- [Модель процессов](concept-process-model.md) — концепции высокого уровня
+- [Планировщик](internals/scheduler.md) — выполнение процессов
+- [Модули](internals/modules.md) — интеграция Lua-модулей
+- [Модель процессов](concepts/process-model.md) — концепции высокого уровня

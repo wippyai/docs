@@ -154,4 +154,4 @@ print(type(data.tags))     -- "table"
 | Пустая строка (decode) | `errors.INVALID` | нет |
 | Неверный синтаксис YAML | `errors.INTERNAL` | нет |
 
-См. [Обработка ошибок](lua-errors.md) для работы с ошибками.
+См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

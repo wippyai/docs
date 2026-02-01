@@ -352,5 +352,5 @@ override:
 
 ## См. также
 
-- [Конфигурация](guide-configuration.md) — справочник по конфигурации
-- [Наблюдаемость](guide-observability.md) — мониторинг и логирование
+- [Конфигурация](guides/configuration.md) — справочник по конфигурации
+- [Наблюдаемость](guides/observability.md) — мониторинг и логирование

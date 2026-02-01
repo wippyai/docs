@@ -104,4 +104,4 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 |---------|------|------------|
 | Коллектор недоступен | `errors.INTERNAL` | нет |
 
-См. [Обработка ошибок](lua-errors.md) для работы с ошибками.
+См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

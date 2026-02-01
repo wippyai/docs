@@ -200,6 +200,6 @@ end
 
 ## См. также
 
-- [Middleware](http-middleware.md) — конфигурация middleware
-- [Процессы](lua-process.md) — обмен сообщениями между процессами
-- [WebSocket-клиент](lua-websocket.md) — исходящие WebSocket-соединения
+- [Middleware](http/middleware.md) — конфигурация middleware
+- [Процессы](lua/core/process.md) — обмен сообщениями между процессами
+- [WebSocket-клиент](lua/http/websocket.md) — исходящие WebSocket-соединения

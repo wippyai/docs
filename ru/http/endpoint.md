@@ -252,6 +252,6 @@ entries:
 
 ## См. также
 
-- [Роутер](http-router.md) — группировка маршрутов
-- [Модуль HTTP](lua-http.md) — API запроса/ответа
-- [Middleware](http-middleware.md) — обработка запросов
+- [Роутер](http/router.md) — группировка маршрутов
+- [Модуль HTTP](lua/http/http.md) — API запроса/ответа
+- [Middleware](http/middleware.md) — обработка запросов

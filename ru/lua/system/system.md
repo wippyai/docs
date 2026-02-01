@@ -276,4 +276,4 @@ local states, err = system.supervisor.states()
 | Информация о сервисе недоступна | `errors.INTERNAL` | нет |
 | Ошибка ОС при получении имени хоста | `errors.INTERNAL` | нет |
 
-См. [Обработка ошибок](lua-errors.md) для работы с ошибками.
+См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

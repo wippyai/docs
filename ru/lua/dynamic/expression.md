@@ -150,4 +150,4 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Ошибка вычисления | `errors.INTERNAL` | нет |
 | Ошибка преобразования результата | `errors.INTERNAL` | нет |
 
-Подробнее см. [Обработка ошибок](lua-errors.md).
+Подробнее см. [Обработка ошибок](lua/core/errors.md).

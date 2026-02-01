@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-См. [Модуль Queue](lua-queue.md) для полного API.
+См. [Модуль Queue](lua/storage/queue.md) для полного API.
 
 ## Корректное завершение
 

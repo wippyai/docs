@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Доступ к значениям контекста уровня запроса. Контекст устанавливается через [Funcs](lua-funcs.md) или [Process](lua-process.md).
+Доступ к значениям контекста уровня запроса. Контекст устанавливается через [Funcs](lua/core/funcs.md) или [Process](lua/core/process.md).
 
 ## Загрузка
 
@@ -41,4 +41,4 @@ local values, err = ctx.all()
 | Ключ не найден | `errors.NOT_FOUND` | нет |
 | Контекст недоступен | `errors.INTERNAL` | нет |
 
-См. [Обработка ошибок](lua-errors.md) для работы с ошибками.
+См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

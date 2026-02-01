@@ -149,7 +149,7 @@ options:
 
 <note>Pre-match</note>
 
-Аутентификация на основе токенов. См. [Безопасность](system-security.md) для настройки хранилища токенов.
+Аутентификация на основе токенов. См. [Безопасность](system/security.md) для настройки хранилища токенов.
 
 ```yaml
 middleware:
@@ -259,7 +259,7 @@ options:
 
 <warning>Post-match</warning>
 
-Проксирование WebSocket-соединений в процессы. См. [WebSocket Relay](http-websocket-relay.md).
+Проксирование WebSocket-соединений в процессы. См. [WebSocket Relay](http/websocket-relay.md).
 
 ```yaml
 post_middleware:
@@ -289,7 +289,7 @@ post_middleware:
 
 ## См. также
 
-- [Маршрутизация](http-router.md) — конфигурация роутера
-- [Безопасность](system-security.md) — хранилища токенов и политики
-- [WebSocket Relay](http-websocket-relay.md) — обработка WebSocket
-- [Терминал](system-terminal.md) — терминальный сервис
+- [Маршрутизация](http/router.md) — конфигурация роутера
+- [Безопасность](system/security.md) — хранилища токенов и политики
+- [WebSocket Relay](http/websocket-relay.md) — обработка WebSocket
+- [Терминал](system/terminal.md) — терминальный сервис

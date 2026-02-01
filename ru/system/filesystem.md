@@ -61,4 +61,4 @@
 
 ## Lua API
 
-См. [Модуль Filesystem](lua-fs.md) для файловых операций.
+См. [Модуль Filesystem](lua/storage/filesystem.md) для файловых операций.

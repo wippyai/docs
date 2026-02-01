@@ -219,4 +219,4 @@ local equal = crypto.constant_time_compare(a, b)
 | Ошибка расшифрования | `errors.INTERNAL` | нет |
 | Токен просрочен | `errors.INTERNAL` | нет |
 
-Подробнее см. [Обработка ошибок](lua-errors.md).
+Подробнее см. [Обработка ошибок](lua/core/errors.md).

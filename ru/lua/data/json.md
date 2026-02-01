@@ -203,4 +203,4 @@ local request = json.decode(body)
 | Ошибка компиляции схемы | `errors.INVALID` | нет |
 | Ошибка валидации | `errors.INVALID` | нет |
 
-См. [Обработка ошибок](lua-errors.md) для работы с ошибками.
+См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

@@ -149,6 +149,6 @@ curl http://localhost:8080/hello
 
 ## Следующие шаги
 
-- [Echo Service](echo-service.md) — обработка параметров запроса
-- [Task Queue](task-queue.md) — REST API с фоновой обработкой
-- [HTTP-роутер](http-router.md) — паттерны маршрутизации
+- [Echo Service](tutorials/echo-service.md) — обработка параметров запроса
+- [Task Queue](tutorials/task-queue.md) — REST API с фоновой обработкой
+- [HTTP-роутер](http/router.md) — паттерны маршрутизации
