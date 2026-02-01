@@ -285,4 +285,11 @@ Some operations require multiple permissions:
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Name already registered | `errors.ALREADY_EXISTS` |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
+
+## See Also
+
+- [Channels](lua/core/channel.md) - Inter-process communication
+- [Message Queue](lua/storage/queue.md) - Queue-based messaging
+- [Functions](lua/core/funcs.md) - Function invocation
+- [Supervision](guides/supervision.md) - Process lifecycle management

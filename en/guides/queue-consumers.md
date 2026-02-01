@@ -152,5 +152,7 @@ Built-in in-memory queue for development/testing:
 
 ## See Also
 
-- [Message Queue](lua-queue.md) - Queue module reference
-- [Supervision Trees](guide-supervision.md) - Consumer lifecycle
+- [Message Queue](lua/storage/queue.md) - Queue module reference
+- [Queue Configuration](system/queue.md) - Queue drivers and entry definitions
+- [Supervision Trees](guides/supervision.md) - Consumer lifecycle
+- [Process Management](lua/core/process.md) - Process spawning and communication

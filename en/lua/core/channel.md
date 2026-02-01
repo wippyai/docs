@@ -205,3 +205,9 @@ end
 | Send on closed channel | runtime error | no |
 | Close of closed channel | runtime error | no |
 | Invalid case in select | runtime error | no |
+
+## See Also
+
+- [Process Management](lua/core/process.md) - Process spawning and communication
+- [Message Queue](lua/storage/queue.md) - Queue-based messaging
+- [Functions](lua/core/funcs.md) - Function invocation
