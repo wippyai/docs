@@ -2,11 +2,11 @@
 
 Wippy implements attribute-based access control. Every request carries an actor (who) and a scope (what policies apply). Policies evaluate access based on the action, resource, and metadata from both actor and resource.
 
-```
-Actor + Scope ──► Policy Evaluation ──► Allow/Deny
-     │                   │
-  Identity          Conditions
-  Metadata      (actor, resource, action)
+```mermaid
+flowchart LR
+    A[Actor + Scope] --> PE[Policy Evaluation] --> AD[Allow/Deny]
+    A -.->|Identity<br/>Metadata| PE
+    PE -.->|Conditions<br/>actor, resource, action| AD
 ```
 
 ## Entry Kinds

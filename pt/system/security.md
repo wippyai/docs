@@ -2,11 +2,11 @@
 
 O Wippy implementa controle de acesso baseado em atributos. Toda requisicao carrega um ator (quem) e um escopo (quais politicas se aplicam). Politicas avaliam acesso baseado na acao, recurso e metadados tanto do ator quanto do recurso.
 
-```
-Ator + Escopo ──► Avaliacao de Politica ──► Permitir/Negar
-     │                   │
-  Identidade          Condicoes
-  Metadados      (ator, recurso, acao)
+```mermaid
+flowchart LR
+    A[Ator + Escopo] --> PE[Avaliação de Política] --> AD[Permitir/Negar]
+    A -.->|Identidade<br/>Metadados| PE
+    PE -.->|Condições<br/>ator, recurso, ação| AD
 ```
 
 ## Tipos de Entradas

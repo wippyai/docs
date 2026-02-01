@@ -14,18 +14,17 @@
 - Einer der Prozesse schlägt fehl, beide terminieren
 - Außer `trap_links=true` ist gesetzt
 
-```
-MONITORING (einseitig)                LINKING (bidirektional)
-┌──────────┐                      ┌──────────┐
-│ Eltern   │                      │ Eltern   │
-│ monitors │                      │ linked   │
-└────┬─────┘                      └────┬─────┘
-     │ EXIT event                      │ LINK_DOWN
-     │ (Eltern läuft weiter)           │ (beide sterben)
-┌────▼─────┐                      ┌────▼─────┐
-│  Kind    │                      │  Kind    │
-│  exits   │                      │  exits   │
-└──────────┘                      └──────────┘
+```mermaid
+flowchart TB
+    subgraph Monitoring["MONITORING (einseitig)"]
+        direction TB
+        P1[Eltern überwacht] -->|EXIT event<br/>Eltern läuft weiter| C1[Kind beendet]
+    end
+
+    subgraph Linking["LINKING (bidirektional)"]
+        direction TB
+        P2[Eltern verlinkt] <-->|LINK_DOWN<br/>beide sterben| C2[Kind beendet]
+    end
 ```
 
 ## Prozess-Monitoring

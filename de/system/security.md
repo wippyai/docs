@@ -2,11 +2,11 @@
 
 Wippy implementiert attributbasierte Zugriffskontrolle. Jede Anfrage trägt einen Actor (wer) und einen Scope (welche Richtlinien gelten). Richtlinien evaluieren Zugriff basierend auf Aktion, Ressource und Metadaten von Actor und Ressource.
 
-```
-Actor + Scope ──► Richtlinien-Evaluierung ──► Erlauben/Verweigern
-     │                   │
-  Identität          Bedingungen
-  Metadaten      (actor, resource, action)
+```mermaid
+flowchart LR
+    A[Actor + Scope] --> PE[Richtlinien-Evaluierung] --> AD[Erlauben/Verweigern]
+    A -.->|Identität<br/>Metadaten| PE
+    PE -.->|Bedingungen<br/>actor, resource, action| AD
 ```
 
 ## Entry-Typen
