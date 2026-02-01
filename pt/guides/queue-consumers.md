@@ -2,26 +2,16 @@
 
 Consumidores de filas processam mensagens de filas usando pools de workers.
 
-## Visao Geral
+## Visão Geral
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Consumer                                │
-│                                                              │
-│  ┌─────────┐    ┌──────────────────┐    ┌───────────────┐  │
-│  │  Queue  │───►│ Delivery Channel │───►│ Worker Pool   │  │
-│  │ Driver  │    │ (prefetch=10)    │    │ (concurrency) │  │
-│  └─────────┘    └──────────────────┘    └───────┬───────┘  │
-│                                                  │          │
-│                                          ┌──────┴──────┐   │
-│                                          │  Function   │   │
-│                                          │  Handler    │   │
-│                                          └──────┬──────┘   │
-│                                                  │          │
-│                                          ┌──────┴──────┐   │
-│                                          │  Ack/Nack   │   │
-│                                          └─────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Consumer[Consumidor]
+        QD[Driver de Fila] --> DC[Canal de Entrega<br/>prefetch=10]
+        DC --> WP[Pool de Workers<br/>concurrency]
+        WP --> FH[Handler de Função]
+        FH --> AN[Ack/Nack]
+    end
 ```
 
 ## Configuracao
