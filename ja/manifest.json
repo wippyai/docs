@@ -1,0 +1,185 @@
+[
+  {
+    "title": "はじめに",
+    "children": [
+      {"title": "Wippyとは", "path": "start/about"},
+      {"title": "インストール", "path": "start/installation"},
+      {"title": "プロジェクト構造", "path": "start/structure"}
+    ]
+  },
+  {
+    "title": "ガイド",
+    "children": [
+      {"title": "CLI", "path": "guides/cli"},
+      {"title": "設定", "path": "guides/configuration"},
+      {"title": "エントリ種別", "path": "guides/entry-kinds"},
+      {"title": "可観測性", "path": "guides/observability"},
+      {"title": "キューコンシューマ", "path": "guides/queue-consumers"},
+      {"title": "スーパービジョン", "path": "guides/supervision"},
+      {"title": "パブリッシング", "path": "guides/publishing"}
+    ]
+  },
+  {
+    "title": "コアコンセプト",
+    "children": [
+      {"title": "プロセスモデル", "path": "concepts/process-model"},
+      {"title": "コンピュートユニット", "path": "concepts/compute-units"},
+      {"title": "レジストリ", "path": "concepts/registry"},
+      {"title": "関数", "path": "concepts/functions"},
+      {"title": "ワークフロー", "path": "concepts/workflows"}
+    ]
+  },
+  {
+    "title": "Luaランタイム",
+    "children": [
+      {"title": "概要", "path": "lua/overview"},
+      {"title": "型", "path": "lua/types"},
+      {"title": "エントリ", "path": "lua/entries"},
+      {
+        "title": "コア",
+        "children": [
+          {"title": "基本", "path": "lua/core/base"},
+          {"title": "エラー", "path": "lua/core/errors"},
+          {"title": "時間", "path": "lua/core/time"},
+          {"title": "チャネル", "path": "lua/core/channel"},
+          {"title": "プロセス", "path": "lua/core/process"},
+          {"title": "関数", "path": "lua/core/funcs"},
+          {"title": "Future", "path": "lua/core/future"},
+          {"title": "Stream", "path": "lua/core/stream"},
+          {"title": "コンテキスト", "path": "lua/core/context"},
+          {"title": "イベント", "path": "lua/core/events"},
+          {"title": "レジストリ", "path": "lua/core/registry"},
+          {"title": "コントラクト", "path": "lua/core/contract"}
+        ]
+      },
+      {
+        "title": "データフォーマット",
+        "children": [
+          {"title": "JSON", "path": "lua/data/json"},
+          {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "Base64", "path": "lua/data/base64"},
+          {"title": "圧縮", "path": "lua/data/compress"},
+          {"title": "ペイロード", "path": "lua/data/payload"},
+          {"title": "Excel", "path": "lua/data/excel"}
+        ]
+      },
+      {
+        "title": "HTTP & Web",
+        "children": [
+          {"title": "HTTP", "path": "lua/http/http"},
+          {"title": "HTTPクライアント", "path": "lua/http/client"},
+          {"title": "WebSocket", "path": "lua/http/websocket"},
+          {"title": "HTML", "path": "lua/http/html"}
+        ]
+      },
+      {
+        "title": "ストレージ",
+        "children": [
+          {"title": "SQL", "path": "lua/storage/sql"},
+          {"title": "ストア", "path": "lua/storage/store"},
+          {"title": "ファイルシステム", "path": "lua/storage/filesystem"},
+          {"title": "クラウドストレージ", "path": "lua/storage/cloud"},
+          {"title": "キュー", "path": "lua/storage/queue"}
+        ]
+      },
+      {
+        "title": "システム",
+        "children": [
+          {"title": "システム", "path": "lua/system/system"},
+          {"title": "環境変数", "path": "lua/system/env"},
+          {"title": "ロガー", "path": "lua/system/logger"},
+          {"title": "I/O", "path": "lua/system/io"},
+          {"title": "メトリクス", "path": "lua/system/metrics"},
+          {"title": "OS時刻", "path": "lua/system/ostime"}
+        ]
+      },
+      {
+        "title": "テキスト & テンプレート",
+        "children": [
+          {"title": "テキスト", "path": "lua/text/text"},
+          {"title": "テンプレート", "path": "lua/text/template"},
+          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+        ]
+      },
+      {
+        "title": "セキュリティ",
+        "children": [
+          {"title": "セキュリティ", "path": "lua/security/security"},
+          {"title": "暗号化", "path": "lua/security/crypto"},
+          {"title": "ハッシュ", "path": "lua/security/hash"},
+          {"title": "UUID", "path": "lua/security/uuid"}
+        ]
+      },
+      {
+        "title": "動的実行",
+        "children": [
+          {"title": "Eval", "path": "lua/dynamic/eval"},
+          {"title": "Exec", "path": "lua/dynamic/exec"},
+          {"title": "式", "path": "lua/dynamic/expression"}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Temporal",
+    "children": [
+      {"title": "概要", "path": "temporal/overview"},
+      {"title": "アクティビティ", "path": "temporal/activities"},
+      {"title": "ワークフロー", "path": "temporal/workflows"}
+    ]
+  },
+  {
+    "title": "システムコンポーネント",
+    "children": [
+      {"title": "プロセスホスト", "path": "system/process-host"},
+      {"title": "ターミナル", "path": "system/terminal"},
+      {"title": "データベース", "path": "system/database"},
+      {"title": "ストア", "path": "system/store"},
+      {"title": "キュー", "path": "system/queue"},
+      {"title": "ファイルシステム", "path": "system/filesystem"},
+      {"title": "クラウドストレージ", "path": "system/cloudstorage"},
+      {"title": "環境変数", "path": "system/env"},
+      {"title": "テンプレート", "path": "system/template"},
+      {"title": "セキュリティ", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
+    ]
+  },
+  {
+    "title": "HTTP",
+    "children": [
+      {"title": "サーバー", "path": "http/server"},
+      {"title": "ルーター", "path": "http/router"},
+      {"title": "エンドポイント", "path": "http/endpoint"},
+      {"title": "ミドルウェア", "path": "http/middleware"},
+      {"title": "静的ファイル", "path": "http/static"},
+      {"title": "WebSocketリレー", "path": "http/websocket-relay"}
+    ]
+  },
+  {
+    "title": "チュートリアル",
+    "children": [
+      {"title": "Hello World", "path": "tutorials/hello-world"},
+      {"title": "CLIアプリケーション", "path": "tutorials/cli"},
+      {"title": "Echoサービス", "path": "tutorials/echo-service"},
+      {"title": "タスクキュー", "path": "tutorials/task-queue"}
+    ]
+  },
+  {
+    "title": "内部構造",
+    "children": [
+      {"title": "レジストリ", "path": "internals/registry"},
+      {"title": "スケジューラ", "path": "internals/scheduler"},
+      {"title": "ディスパッチ", "path": "internals/dispatch"},
+      {"title": "イベント", "path": "internals/events"},
+      {"title": "モジュール", "path": "internals/modules"},
+      {"title": "種別", "path": "internals/kinds"}
+    ]
+  },
+  {
+    "title": "その他",
+    "children": [
+      {"title": "コントリビューション", "path": "about/contributing"},
+      {"title": "ライセンス", "path": "about/license"}
+    ]
+  }
+]
