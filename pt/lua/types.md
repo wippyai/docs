@@ -404,6 +404,55 @@ type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
+## Validadores de Tipo
+
+Adicione restrições de validação em runtime a tipos usando anotações:
+
+```lua
+-- Validador único
+local x: number @min(0) = 1
+
+-- Múltiplos validadores
+local x: number @min(0) @max(100) = 50
+
+-- Padrão de string
+local email: string @pattern("^.+@.+$") = "test@example.com"
+
+-- Validador sem argumentos
+local x: number @integer = 42
+```
+
+### Validadores Incorporados
+
+| Validador | Aplica-se a | Exemplo |
+|-----------|-------------|---------|
+| `@min(n)` | number | `local x: number @min(0) = 1` |
+| `@max(n)` | number | `local x: number @max(100) = 50` |
+| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
+| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
+| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+
+### Validadores de Campo de Record
+
+```lua
+type User = {
+    age: number @min(0) @max(150),
+    name: string @min_len(1) @max_len(100)
+}
+```
+
+### Validadores de Elemento de Array
+
+```lua
+local scores: {number @min(0) @max(100)} = {85, 90}
+```
+
+### Validadores de Membro de Union
+
+```lua
+local id: number @min(1) | string @min_len(1) = 1
+```
+
 ## Regras de Variância
 
 | Posição | Variância | Descrição |
