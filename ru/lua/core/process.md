@@ -173,7 +173,7 @@ local result, err = process.call(id, host, ...)
 
 ```lua
 -- Обновить на новую версию, передать состояние
-process.upgrade(source, ...)
+process.upgrade(id, ...)
 
 -- Оставить то же определение, перезапустить с новым состоянием
 process.upgrade(nil, preserved_state)

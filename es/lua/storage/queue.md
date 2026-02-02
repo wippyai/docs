@@ -6,7 +6,7 @@
 
 Publicar y consumir mensajes de colas distribuidas. Soporta multiples backends incluyendo RabbitMQ y otros brokers compatibles con AMQP.
 
-Para configuracion de colas, consulte [Cola](system-queue.md).
+Para configuración de colas, consulte [Cola](system-queue.md).
 
 ## Carga
 
@@ -29,7 +29,7 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `queue_id` | string | Identificador de cola (formato: "namespace:name") |
 | `data` | any | Datos del mensaje (tablas, strings, numeros, booleanos) |
@@ -72,13 +72,13 @@ Solo disponible cuando se procesan mensajes de cola en contexto de consumidor.
 
 ## Metodos de Message
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
-| `id()` | `string, error` | Identificador unico de mensaje |
+| `id()` | `string, error` | Identificador único de mensaje |
 | `header(key)` | `any, error` | Valor de cabecera individual (nil si falta) |
 | `headers()` | `table, error` | Todas las cabeceras del mensaje |
 
-## Patron de Consumidor
+## Patrón de Consumidor
 
 Los consumidores de cola se definen como puntos de entrada que reciben el payload directamente:
 
@@ -110,16 +110,16 @@ end
 
 Las operaciones de cola estan sujetas a evaluacion de politica de seguridad.
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `queue.publish` | - | Permiso general para publicar mensajes |
 | `queue.publish.queue` | ID de Cola | Publicar a cola especifica |
 
-Ambos permisos se verifican: primero el permiso general, luego el especifico de cola.
+Ambos permisos se verifican: primero el permiso general, luego el específico de cola.
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID de cola vacio | `errors.INVALID` | no |
 | Datos de mensaje vacios | `errors.INVALID` | no |
@@ -129,10 +129,10 @@ Ambos permisos se verifican: primero el permiso general, luego el especifico de 
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 
-## Vea Tambien
+## Vea También
 
-- [Configuracion de Cola](system/queue.md) - Drivers de cola y definiciones de entrada
+- [Configuración de Cola](system/queue.md) - Drivers de cola y definiciones de entrada
 - [Guia de Consumidores de Cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
-- [Gestion de Procesos](lua/core/process.md) - Creacion y comunicacion de procesos
-- [Canales](lua/core/channel.md) - Patrones de comunicacion entre procesos
+- [Gestión de Procesos](lua/core/process.md) - Creacion y comunicación de procesos
+- [Canales](lua/core/channel.md) - Patrones de comunicación entre procesos
 - [Funciones](lua/core/funcs.md) - Invocacion asincrona de funciones

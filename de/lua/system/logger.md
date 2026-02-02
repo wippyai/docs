@@ -23,7 +23,7 @@ logger:debug("message", {key = "value"})
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `message` | string | Log-Nachricht |
-| `fields` | table? | Kontextuelle Schlussel-Wert-Paare |
+| `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
 
 ### Info
 
@@ -34,7 +34,7 @@ logger:info("message", {key = "value"})
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `message` | string | Log-Nachricht |
-| `fields` | table? | Kontextuelle Schlussel-Wert-Paare |
+| `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
 
 ### Warn
 
@@ -45,7 +45,7 @@ logger:warn("message", {key = "value"})
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `message` | string | Log-Nachricht |
-| `fields` | table? | Kontextuelle Schlussel-Wert-Paare |
+| `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
 
 ### Error
 
@@ -56,7 +56,7 @@ logger:error("message", {key = "value"})
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `message` | string | Log-Nachricht |
-| `fields` | table? | Kontextuelle Schlussel-Wert-Paare |
+| `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
 
 ## Logger-Anpassung
 
@@ -73,7 +73,7 @@ child:info("message")
 |-----------|------|-------------|
 | `fields` | table | Felder, die an alle Logs angehangt werden |
 
-**Gibt zuruck:** `Logger`
+**Gibt zurück:** `Logger`
 
 ### Benannter Logger
 
@@ -88,7 +88,7 @@ named:info("message")
 |-----------|------|-------------|
 | `name` | string | Logger-Name |
 
-**Gibt zuruck:** `Logger`
+**Gibt zurück:** `Logger`
 
 ## Fehler
 
@@ -96,4 +96,4 @@ named:info("message")
 |-----------|------|-----------|
 | Leerer Name-String | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

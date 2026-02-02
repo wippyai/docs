@@ -6,7 +6,7 @@
 
 Almacenamiento clave-valor rapido con soporte de TTL. Ideal para cache, sesiones y estado temporal.
 
-Para configuracion del almacen, consulte [Almacen](system-store.md).
+Para configuración del almacen, consulte [Almacen](system-store.md).
 
 ## Carga
 
@@ -30,7 +30,7 @@ local user = cache:get("user:123")
 cache:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de recurso del almacen |
 
@@ -50,7 +50,7 @@ cache:set("user:123:name", "Alice")
 cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave |
 | `value` | any | Valor (tablas, strings, numeros, booleanos) |
@@ -69,7 +69,7 @@ if not user then
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave a recuperar |
 
@@ -87,7 +87,7 @@ if cache:has("lock:" .. resource_id) then
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave a verificar |
 
@@ -101,7 +101,7 @@ Eliminar una clave del almacen:
 cache:delete("session:" .. session_id)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave a eliminar |
 
@@ -111,7 +111,7 @@ Devuelve `true` si se elimino, `false` si la clave no existia.
 
 ## Metodos de Store
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `get(key)` | `any, error` | Recuperar valor por clave |
 | `set(key, value, ttl?)` | `boolean, error` | Almacenar valor con TTL opcional |
@@ -123,7 +123,7 @@ Devuelve `true` si se elimino, `false` si la clave no existia.
 
 Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 
-| Accion | Recurso | Atributos | Descripcion |
+| Accion | Recurso | Atributos | Descripción |
 |--------|---------|-----------|-------------|
 | `store.get` | ID de Store | - | Adquirir un recurso de almacen |
 | `store.key.get` | ID de Store | `key` | Leer valor de una clave |
@@ -133,7 +133,7 @@ Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID de recurso vacio | `errors.INVALID` | no |
 | Recurso no encontrado | `errors.NOT_FOUND` | no |

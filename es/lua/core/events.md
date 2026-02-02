@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publicar y suscribirse a eventos a traves de su aplicacion para arquitecturas dirigidas por eventos.
+Publicar y suscribirse a eventos a traves de su aplicación para arquitecturas dirigidas por eventos.
 
 ## Carga
 
@@ -22,7 +22,7 @@ if err then
     return nil, err
 end
 
--- Suscribirse a tipo de evento especifico
+-- Suscribirse a tipo de evento específico
 local sub = events.subscribe("users", "user.created")
 
 -- Suscribirse a todos los eventos de un sistema
@@ -43,9 +43,9 @@ while true do
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `system` | string | Patron de sistema (soporta comodines como "test.*") |
+| `system` | string | Patrón de sistema (soporta comodines como "test.*") |
 | `kind` | string | Filtro de tipo de evento (opcional) |
 
 **Devuelve:** `Subscription, error`
@@ -84,7 +84,7 @@ events.send("payments", "payment.completed", "/payments/" .. payment.id, {
 events.send("system", "heartbeat", "/health")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `system` | string | Identificador del sistema |
 | `kind` | string | Tipo/clase del evento |
@@ -123,14 +123,14 @@ sub:close()
 
 ## Permisos
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `events.subscribe` | sistema | Suscribirse a eventos de un sistema |
 | `events.send` | sistema | Enviar eventos a un sistema |
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Sistema vacio | `errors.INVALID` | no |
 | Tipo vacio | `errors.INVALID` | no |

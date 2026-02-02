@@ -21,9 +21,9 @@ local stream = fs.get("app:data"):open("/file.txt", "r")
 local chunk, err = stream:read(size)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `size` | integer | Bytes para ler (0 = ler tudo disponivel) |
+| `size` | integer | Bytes para ler (0 = ler tudo disponível) |
 
 **Retorna:** `string, error` - nil em EOF
 
@@ -38,7 +38,7 @@ local data, err = stream:read_all()
 local bytes, err = stream:write(data)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para escrever |
 
@@ -50,7 +50,7 @@ local bytes, err = stream:write(data)
 local pos, err = stream:seek(whence, offset)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `whence` | string | `"set"`, `"cur"` ou `"end"` |
 | `offset` | integer | Offset em bytes |
@@ -71,7 +71,7 @@ Flush de dados em buffer para armazenamento subjacente.
 local info, err = stream:stat()
 ```
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `size` | integer | Tamanho total (-1 se desconhecido) |
 | `position` | integer | Posicao atual |
@@ -95,7 +95,7 @@ Criar um tokenizador para conteudo do stream:
 local scanner, err = stream:scanner(split)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `split` | string | `"lines"`, `"words"`, `"bytes"`, `"runes"` |
 
@@ -119,9 +119,9 @@ end
 
 ## Erros
 
-| Condicao | Tipo |
+| Condição | Tipo |
 |----------|------|
 | Tipo whence/split invalido | `INVALID` |
 | Stream fechado | `INTERNAL` |
-| Nao legivel/gravavel | `INTERNAL` |
+| Não legivel/gravavel | `INTERNAL` |
 | Falha de leitura/escrita | `INTERNAL` |

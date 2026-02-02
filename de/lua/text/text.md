@@ -23,7 +23,7 @@ local re, err = text.regexp.compile("[0-9]+")
 |-----------|------|-------------|
 | `pattern` | string | RE2-kompatibles Regex-Muster |
 
-**Gibt zuruck:** `Regexp, error`
+**Gibt zurück:** `Regexp, error`
 
 ### Match
 
@@ -35,7 +35,7 @@ local ok = re:match_string("abc123")
 |-----------|------|-------------|
 | `s` | string | Zu matchender String |
 
-**Gibt zuruck:** `boolean`
+**Gibt zurück:** `boolean`
 
 ### Find
 
@@ -47,7 +47,7 @@ local match = re:find_string("abc123def")
 |-----------|------|-------------|
 | `s` | string | Zu durchsuchender String |
 
-**Gibt zuruck:** `string | nil`
+**Gibt zurück:** `string | nil`
 
 ### Find All
 
@@ -59,7 +59,7 @@ local matches = re:find_all_string("a1b2c3")
 |-----------|------|-------------|
 | `s` | string | Zu durchsuchender String |
 
-**Gibt zuruck:** `string[]`
+**Gibt zurück:** `string[]`
 
 ### Find mit Gruppen
 
@@ -71,7 +71,7 @@ local match = re:find_string_submatch("user@example.com")
 |-----------|------|-------------|
 | `s` | string | Zu durchsuchender String |
 
-**Gibt zuruck:** `string[] | nil` (vollstandiger Match + Capture-Gruppen)
+**Gibt zurück:** `string[] | nil` (vollstandiger Match + Capture-Gruppen)
 
 ### Find All mit Gruppen
 
@@ -83,7 +83,7 @@ local matches = re:find_all_string_submatch("a=1 b=2")
 |-----------|------|-------------|
 | `s` | string | Zu durchsuchender String |
 
-**Gibt zuruck:** `string[][]`
+**Gibt zurück:** `string[][]`
 
 ### Find Index
 
@@ -95,7 +95,7 @@ local pos = re:find_string_index("abc123")
 |-----------|------|-------------|
 | `s` | string | Zu durchsuchender String |
 
-**Gibt zuruck:** `table | nil` ({start, end}, 1-basiert)
+**Gibt zurück:** `table | nil` ({start, end}, 1-basiert)
 
 ### Find All Index
 
@@ -107,7 +107,7 @@ local positions = re:find_all_string_index("a1b2c3")
 |-----------|------|-------------|
 | `s` | string | Zu durchsuchender String |
 
-**Gibt zuruck:** `table[]`
+**Gibt zurück:** `table[]`
 
 ### Ersetzen
 
@@ -120,7 +120,7 @@ local result = re:replace_all_string("a1b2", "X")
 | `s` | string | Eingabe-String |
 | `repl` | string | Ersetzungs-String |
 
-**Gibt zuruck:** `string`
+**Gibt zurück:** `string`
 
 ### Split
 
@@ -131,9 +131,9 @@ local parts = re:split("a,b,c", -1)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `s` | string | Zu teilender String |
-| `n` | integer | Max Teile, -1 fur alle |
+| `n` | integer | Max Teile, -1 für alle |
 
-**Gibt zuruck:** `string[]`
+**Gibt zurück:** `string[]`
 
 ### Unterausdrucks-Anzahl
 
@@ -141,7 +141,7 @@ local parts = re:split("a,b,c", -1)
 local count = re:num_subexp()
 ```
 
-**Gibt zuruck:** `number`
+**Gibt zurück:** `number`
 
 ### Unterausdrucks-Namen
 
@@ -149,7 +149,7 @@ local count = re:num_subexp()
 local names = re:subexp_names()
 ```
 
-**Gibt zuruck:** `string[]`
+**Gibt zurück:** `string[]`
 
 ### Muster-String
 
@@ -157,7 +157,7 @@ local names = re:subexp_names()
 local pattern = re:string()
 ```
 
-**Gibt zuruck:** `string`
+**Gibt zurück:** `string`
 
 ## Text-Diffing
 
@@ -170,7 +170,7 @@ local diff, err = text.diff.new()
 local diff, err = text.diff.new(options)
 ```
 
-**Gibt zuruck:** `Differ, error`
+**Gibt zurück:** `Differ, error`
 
 #### Optionen {id="diff-options"}
 
@@ -185,7 +185,7 @@ local diff, err = text.diff.new(options)
 
 ### Vergleichen
 
-Unterschiede zwischen zwei Texten finden. Gibt ein Array von Operationen zuruck, die beschreiben, wie text1 in text2 transformiert wird.
+Unterschiede zwischen zwei Texten finden. Gibt ein Array von Operationen zurück, die beschreiben, wie text1 in text2 transformiert wird.
 
 ```lua
 local diff, _ = text.diff.new()
@@ -202,7 +202,7 @@ local diffs, err = diff:compare("hello world", "hello there")
 | `text1` | string | Original-Text |
 | `text2` | string | Modifizierter Text |
 
-**Gibt zuruck:** `table, error` (Array von {operation, text})
+**Gibt zurück:** `table, error` (Array von {operation, text})
 
 Operationen: `"equal"`, `"delete"`, `"insert"`
 
@@ -223,11 +223,11 @@ local summary = diff:summarize(diffs)
 |-----------|------|-------------|
 | `diffs` | table | Diff-Array von compare |
 
-**Gibt zuruck:** `table` ({insertions, deletions, equals})
+**Gibt zurück:** `table` ({insertions, deletions, equals})
 
 ### Pretty Text
 
-Diff mit ANSI-Farben fur Terminal-Anzeige formatieren.
+Diff mit ANSI-Farben für Terminal-Anzeige formatieren.
 
 ```lua
 local formatted, err = diff:pretty_text(diffs)
@@ -238,7 +238,7 @@ print(formatted)
 |-----------|------|-------------|
 | `diffs` | table | Diff-Array von compare |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Pretty HTML
 
@@ -246,18 +246,18 @@ Diff als HTML mit `<del>`- und `<ins>`-Tags formatieren.
 
 ```lua
 local html, err = diff:pretty_html(diffs)
--- Gibt zuruck: "hello <del>world</del><ins>there</ins>"
+-- Gibt zurück: "hello <del>world</del><ins>there</ins>"
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `diffs` | table | Diff-Array von compare |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Patches erstellen
 
-Patches generieren, die angewendet werden konnen, um einen Text in einen anderen zu transformieren. Patches konnen serialisiert und spater angewendet werden.
+Patches generieren, die angewendet werden können, um einen Text in einen anderen zu transformieren. Patches können serialisiert und spater angewendet werden.
 
 ```lua
 local text1 = "The quick brown fox jumps over the lazy dog"
@@ -271,11 +271,11 @@ local patches, err = diff:patch_make(text1, text2)
 | `text1` | string | Original-Text |
 | `text2` | string | Modifizierter Text |
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
 ### Patches anwenden
 
-Patches anwenden, um Text zu transformieren. Gibt das Ergebnis und ob alle Patches erfolgreich angewendet wurden zuruck.
+Patches anwenden, um Text zu transformieren. Gibt das Ergebnis und ob alle Patches erfolgreich angewendet wurden zurück.
 
 ```lua
 local result, success = diff:patch_apply(patches, text1)
@@ -288,15 +288,15 @@ local result, success = diff:patch_apply(patches, text1)
 | `patches` | table | Patches von patch_make |
 | `text` | string | Text, auf den Patches angewendet werden |
 
-**Gibt zuruck:** `string, boolean`
+**Gibt zurück:** `string, boolean`
 
 ## Text-Splitting
 
-Grosse Dokumente in kleinere Chunks aufteilen, wahrend semantische Grenzen erhalten bleiben. Basiert auf [langchaingo](https://github.com/tmc/langchaingo) Text-Splitter.
+Größe Dokumente in kleinere Chunks aufteilen, wahrend semantische Grenzen erhalten bleiben. Basiert auf [langchaingo](https://github.com/tmc/langchaingo) Text-Splitter.
 
 ### Rekursiver Splitter
 
-Teilt Text mit einer Hierarchie von Trennzeichen. Versucht zuerst bei doppelten Zeilenumbruchen (Absatze) zu teilen, dann einzelne Zeilenumbruche, dann Leerzeichen, dann Zeichen. Fallt auf kleinere Trennzeichen zuruck, wenn Chunks die Grossenbegrenzung uberschreiten.
+Teilt Text mit einer Hierarchie von Trennzeichen. Versucht zuerst bei doppelten Zeilenumbruchen (Absatze) zu teilen, dann einzelne Zeilenumbruche, dann Leerzeichen, dann Zeichen. Fallt auf kleinere Trennzeichen zurück, wenn Chunks die Größenbegrenzung uberschreiten.
 
 ```lua
 local splitter, err = text.splitter.recursive({
@@ -309,7 +309,7 @@ local chunks, err = splitter:split_text(long_text)
 -- chunks = {"This is a long...", "...text that needs...", "...splitting..."}
 ```
 
-**Gibt zuruck:** `Splitter, error`
+**Gibt zurück:** `Splitter, error`
 
 #### Optionen {id="recursive-splitter-options"}
 
@@ -335,7 +335,7 @@ local readme = fs.read("README.md")
 local chunks, err = splitter:split_text(readme)
 ```
 
-**Gibt zuruck:** `Splitter, error`
+**Gibt zurück:** `Splitter, error`
 
 #### Optionen {id="markdown-splitter-options"}
 
@@ -365,7 +365,7 @@ end
 |-----------|------|-------------|
 | `text` | string | Zu teilender Text |
 
-**Gibt zuruck:** `string[], error`
+**Gibt zurück:** `string[], error`
 
 ### Batch teilen
 
@@ -390,7 +390,7 @@ end
 |-----------|------|-------------|
 | `pages` | table | Array von {content, metadata} |
 
-**Gibt zuruck:** `table, error` (Array von {content, metadata})
+**Gibt zurück:** `table, error` (Array von {content, metadata})
 
 ## Fehler
 
@@ -399,4 +399,4 @@ end
 | Ungultige Muster-Syntax | `errors.INVALID` | nein |
 | Interner Fehler | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

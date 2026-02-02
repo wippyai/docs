@@ -19,7 +19,7 @@ Am weitesten verbreitetes Format (RFC 1952).
 ### Komprimieren {id="gzip-compress"}
 
 ```lua
--- Fur HTTP-Response komprimieren
+-- Für HTTP-Response komprimieren
 local body = json.encode(large_response)
 local compressed, err = compress.gzip.encode(body)
 if err then
@@ -30,10 +30,10 @@ end
 res:set_header("Content-Encoding", "gzip")
 res:write(compressed)
 
--- Maximale Komprimierung fur Speicherung
+-- Maximale Komprimierung für Speicherung
 local archived = compress.gzip.encode(data, {level = 9})
 
--- Schnelle Komprimierung fur Echtzeit
+-- Schnelle Komprimierung für Echtzeit
 local fast = compress.gzip.encode(data, {level = 1})
 ```
 
@@ -48,7 +48,7 @@ local fast = compress.gzip.encode(data, {level = 1})
 |-------|------|-------------|
 | `level` | integer | Komprimierungsstufe 1-9 (Standard: 6) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Dekomprimieren {id="gzip-decompress"}
 
@@ -64,7 +64,7 @@ if content_encoding == "gzip" then
     body = decompressed
 end
 
--- Dekomprimieren mit Grossenbegrenzung (Zip-Bomben verhindern)
+-- Dekomprimieren mit Größenbegrenzung (Zip-Bomben verhindern)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
     return nil, errors.new("INVALID", "Decompressed size exceeds 10MB limit")
@@ -80,24 +80,24 @@ end
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `max_size` | integer | Max. dekomprimierte Grosse in Bytes (Standard: 128MB, Max: 1GB) |
+| `max_size` | integer | Max. dekomprimierte Größe in Bytes (Standard: 128MB, Max: 1GB) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Brotli
 
-Beste Komprimierungsrate fur Text (RFC 7932).
+Beste Komprimierungsrate für Text (RFC 7932).
 
 ### Komprimieren {id="brotli-compress"}
 
 ```lua
--- Am besten fur statische Assets und Textinhalte
+-- Am besten für statische Assets und Textinhalte
 local compressed = compress.brotli.encode(html_content, {level = 11})
 
 -- Komprimierte Assets cachen
 cache:set("static:" .. hash, compressed)
 
--- Moderate Komprimierung fur API-Responses
+-- Moderate Komprimierung für API-Responses
 local compressed = compress.brotli.encode(json_data, {level = 4})
 ```
 
@@ -112,7 +112,7 @@ local compressed = compress.brotli.encode(json_data, {level = 4})
 |-------|------|-------------|
 | `level` | integer | Komprimierungsstufe 0-11 (Standard: 6) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Dekomprimieren {id="brotli-decompress"}
 
@@ -122,7 +122,7 @@ if err then
     return nil, err
 end
 
--- Mit Grossenbegrenzung
+-- Mit Größenbegrenzung
 local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 ```
 
@@ -135,9 +135,9 @@ local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `max_size` | integer | Max. dekomprimierte Grosse in Bytes (Standard: 128MB, Max: 1GB) |
+| `max_size` | integer | Max. dekomprimierte Größe in Bytes (Standard: 128MB, Max: 1GB) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Zstandard
 
@@ -149,10 +149,10 @@ Schnelle Komprimierung mit guten Raten (RFC 8878).
 -- Gute Balance zwischen Geschwindigkeit und Rate
 local compressed = compress.zstd.encode(binary_data)
 
--- Hohere Komprimierung fur Archivierung
+-- Hohere Komprimierung für Archivierung
 local archived = compress.zstd.encode(data, {level = 19})
 
--- Schnellmodus fur Echtzeit-Streaming
+-- Schnellmodus für Echtzeit-Streaming
 local fast = compress.zstd.encode(data, {level = 1})
 ```
 
@@ -167,7 +167,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 |-------|------|-------------|
 | `level` | integer | Komprimierungsstufe 1-22 (Standard: 3) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Dekomprimieren {id="zstd-decompress"}
 
@@ -187,9 +187,9 @@ end
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `max_size` | integer | Max. dekomprimierte Grosse in Bytes (Standard: 128MB, Max: 1GB) |
+| `max_size` | integer | Max. dekomprimierte Größe in Bytes (Standard: 128MB, Max: 1GB) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Deflate
 
@@ -212,7 +212,7 @@ local compressed = compress.deflate.encode(data, {level = 6})
 |-------|------|-------------|
 | `level` | integer | Komprimierungsstufe 1-9 (Standard: 6) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Dekomprimieren {id="deflate-decompress"}
 
@@ -229,9 +229,9 @@ local decompressed = compress.deflate.decode(compressed)
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `max_size` | integer | Max. dekomprimierte Grosse in Bytes (Standard: 128MB, Max: 1GB) |
+| `max_size` | integer | Max. dekomprimierte Größe in Bytes (Standard: 128MB, Max: 1GB) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Zlib
 
@@ -254,7 +254,7 @@ local compressed = compress.zlib.encode(data, {level = 6})
 |-------|------|-------------|
 | `level` | integer | Komprimierungsstufe 1-9 (Standard: 6) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Dekomprimieren {id="zlib-decompress"}
 
@@ -271,17 +271,17 @@ local decompressed = compress.zlib.decode(compressed)
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `max_size` | integer | Max. dekomprimierte Grosse in Bytes (Standard: 128MB, Max: 1GB) |
+| `max_size` | integer | Max. dekomprimierte Größe in Bytes (Standard: 128MB, Max: 1GB) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Algorithmus auswahlen
 
-| Algorithmus | Am besten fur | Geschwindigkeit | Rate | Stufenbereich |
+| Algorithmus | Am besten für | Geschwindigkeit | Rate | Stufenbereich |
 |-----------|----------|-------|-------|-------------|
 | gzip | HTTP, breite Kompatibilitat | Mittel | Gut | 1-9 |
 | brotli | Statische Assets, Text | Langsam | Beste | 0-11 |
-| zstd | Grosse Dateien, Streaming | Schnell | Gut | 1-22 |
+| zstd | Größe Dateien, Streaming | Schnell | Gut | 1-22 |
 | deflate/zlib | Low-Level, spezifische Protokolle | Mittel | Gut | 1-9 |
 
 ```lua
@@ -307,6 +307,6 @@ end
 | Leere Eingabe | `errors.INVALID` | nein |
 | Stufe ausserhalb des Bereichs | `errors.INVALID` | nein |
 | Ungultige komprimierte Daten | `errors.INVALID` | nein |
-| Dekomprimierte Grosse uberschreitet Limit | `errors.INTERNAL` | nein |
+| Dekomprimierte Größe uberschreitet Limit | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

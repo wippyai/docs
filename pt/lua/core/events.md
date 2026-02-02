@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publique e inscreva-se em eventos em toda sua aplicacao para arquiteturas orientadas a eventos.
+Publique e inscreva-se em eventos em toda sua aplicação para arquiteturas orientadas a eventos.
 
 ## Carregamento
 
@@ -43,9 +43,9 @@ while true do
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `system` | string | Padrao do sistema (suporta wildcards como "test.*") |
+| `system` | string | Padrão do sistema (suporta wildcards como "test.*") |
 | `kind` | string | Filtro de tipo de evento (opcional) |
 
 **Retorna:** `Subscription, error`
@@ -84,7 +84,7 @@ events.send("payments", "payment.completed", "/payments/" .. payment.id, {
 events.send("system", "heartbeat", "/health")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `system` | string | Identificador do sistema |
 | `kind` | string | Tipo do evento |
@@ -123,19 +123,19 @@ sub:close()
 
 ## Permissoes
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `events.subscribe` | sistema | Inscrever-se em eventos de um sistema |
 | `events.send` | sistema | Enviar eventos para um sistema |
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Sistema vazio | `errors.INVALID` | nao |
-| Tipo vazio | `errors.INVALID` | nao |
-| Caminho vazio | `errors.INVALID` | nao |
-| Politica negou | `errors.INVALID` | nao |
+| Sistema vazio | `errors.INVALID` | não |
+| Tipo vazio | `errors.INVALID` | não |
+| Caminho vazio | `errors.INVALID` | não |
+| Politica negou | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 

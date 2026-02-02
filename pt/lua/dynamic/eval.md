@@ -1,6 +1,6 @@
 # Avaliacao Dinamica
 
-Execute codigo dinamicamente em tempo de execucao com ambientes sandboxed e acesso controlado a modulos.
+Execute código dinamicamente em tempo de execução com ambientes sandboxed e acesso controlado a modulos.
 
 ## Dois Sistemas
 
@@ -9,9 +9,9 @@ Wippy fornece dois sistemas de avaliacao:
 | Sistema | Proposito | Caso de Uso |
 |---------|-----------|-------------|
 | `expr` | Avaliacao de expressao | Config, templates, calculos simples |
-| `eval_runner` | Execucao Lua completa | Plugins, scripts de usuario, codigo dinamico |
+| `eval_runner` | Execução Lua completa | Plugins, scripts de usuario, código dinamico |
 
-## Modulo expr
+## Módulo expr
 
 Avaliacao leve de expressoes usando a sintaxe expr-lang.
 
@@ -65,9 +65,9 @@ expr.eval("[1, 2, 3][0]")        -- 1
 expr.eval("'hello' + ' ' + 'world'")
 ```
 
-## Modulo eval_runner
+## Módulo eval_runner
 
-Execucao Lua completa com controles de seguranca.
+Execução Lua completa com controles de seguranca.
 
 ```lua
 local runner = require("eval_runner")
@@ -86,15 +86,15 @@ local result, err = runner.run({
 
 ### Configuracao
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `source` | string | Codigo fonte Lua (obrigatorio) |
-| `method` | string | Funcao para chamar na tabela retornada |
-| `args` | any[] | Argumentos passados para funcao |
+| `source` | string | Código fonte Lua (obrigatorio) |
+| `method` | string | Função para chamar na tabela retornada |
+| `args` | any[] | Argumentos passados para função |
 | `modules` | string[] | Modulos builtin permitidos |
 | `imports` | table | Entradas do registry para importar |
 | `context` | table | Valores disponiveis como `ctx` |
-| `allow_classes` | string[] | Classes de modulo adicionais |
+| `allow_classes` | string[] | Classes de módulo adicionais |
 | `custom_modules` | table | Tabelas customizadas como modulos |
 
 ### Acesso a Modulos
@@ -111,7 +111,7 @@ runner.run({
 })
 ```
 
-Modulos fora da lista nao podem ser requeridos.
+Modulos fora da lista não podem ser requeridos.
 
 ### Imports do Registry
 
@@ -160,7 +160,7 @@ runner.run({
 
 ### Compilando Programas
 
-Compilar uma vez para execucao repetida:
+Compilar uma vez para execução repetida:
 
 ```lua
 local program, err = runner.compile([[
@@ -179,7 +179,7 @@ local result = program:run({10})  -- 20
 
 Modulos sao categorizados por capacidade:
 
-| Classe | Descricao | Padrao |
+| Classe | Descrição | Padrão |
 |--------|-----------|--------|
 | `deterministic` | Funcoes puras | Permitido |
 | `encoding` | Encoding de dados | Permitido |
@@ -207,8 +207,8 @@ runner.run({
 O sistema verifica permissoes para:
 
 - `eval.compile` - Antes da compilacao
-- `eval.run` - Antes da execucao
-- `eval.module` - Para cada modulo na whitelist
+- `eval.run` - Antes da execução
+- `eval.module` - Para cada módulo na whitelist
 - `eval.import` - Para cada import do registry
 - `eval.class` - Para cada classe permitida
 
@@ -224,7 +224,7 @@ if err then
     elseif err:kind() == errors.INVALID then
         -- Source ou configuracao invalida
     elseif err:kind() == errors.INTERNAL then
-        -- Erro de execucao ou compilacao
+        -- Erro de execução ou compilacao
     end
 end
 ```
@@ -271,8 +271,8 @@ local result, err = runner.run({
 })
 ```
 
-## Veja Tambem
+## Veja Também
 
 - [Expression](lua/dynamic/expression.md) - Referencia da linguagem de expressao
-- [Exec](lua/dynamic/exec.md) - Execucao de comandos de sistema
+- [Exec](lua/dynamic/exec.md) - Execução de comandos de sistema
 - [Security](lua/security/security.md) - Politicas de seguranca

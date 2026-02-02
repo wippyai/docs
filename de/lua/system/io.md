@@ -3,10 +3,10 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Lesen von stdin und Schreiben zu stdout/stderr fur CLI-Anwendungen.
+Lesen von stdin und Schreiben zu stdout/stderr für CLI-Anwendungen.
 
 <note>
-Dieses Modul funktioniert nur im Terminal-Kontext. Sie konnen es nicht aus regularen Funktionen verwenden—nur aus Prozessen, die auf einem <a href="system-terminal.md">Terminal-Host</a> laufen.
+Dieses Modul funktioniert nur im Terminal-Kontext. Sie können es nicht aus regularen Funktionen verwenden—nur aus Prozessen, die auf einem <a href="system-terminal.md">Terminal-Host</a> laufen.
 </note>
 
 ## Laden
@@ -27,7 +27,7 @@ local ok, err = io.write("text", "more")
 |-----------|------|-------------|
 | `...` | string | Variable Anzahl von Strings zum Schreiben |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Print mit Zeilenumbruch
 
@@ -41,7 +41,7 @@ io.print("value1", "value2", 123)
 |-----------|------|-------------|
 | `...` | any | Variable Anzahl von Werten zum Ausgeben |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Schreiben zu Stderr
 
@@ -55,7 +55,7 @@ io.eprint("Error:", message)
 |-----------|------|-------------|
 | `...` | any | Variable Anzahl von Werten zum Ausgeben |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Bytes lesen
 
@@ -69,7 +69,7 @@ local data, err = io.read(1024)
 |-----------|------|-------------|
 | `n` | integer | Anzahl der zu lesenden Bytes (Standard: 1024, Werte <= 0 werden zu 1024) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Zeile lesen
 
@@ -79,7 +79,7 @@ Liest eine Zeile von stdin bis zum Zeilenumbruch:
 local line, err = io.readline()
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Ausgabe flushen
 
@@ -89,7 +89,7 @@ Flusht den stdout-Puffer:
 local ok, err = io.flush()
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Kommandozeilenargumente
 
@@ -99,7 +99,7 @@ Holt Kommandozeilenargumente:
 local args = io.args()
 ```
 
-**Gibt zuruck:** `string[]`
+**Gibt zurück:** `string[]`
 
 ## Fehler
 
@@ -110,4 +110,4 @@ local args = io.args()
 | Leseoperation fehlgeschlagen | `errors.INTERNAL` | nein |
 | Flush-Operation fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

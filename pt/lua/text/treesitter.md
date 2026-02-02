@@ -3,11 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Parse codigo fonte em arvores de sintaxe concretas usando [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Baseado nos bindings [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter).
+Parse código fonte em arvores de sintaxe concretas usando [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Baseado nos bindings [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter).
 
 Tree-sitter produz arvores de sintaxe que:
-- Representam a estrutura completa do codigo fonte
-- Atualizam incrementalmente conforme o codigo muda
+- Representam a estrutura completa do código fonte
+- Atualizam incrementalmente conforme o código muda
 - Sao robustas a erros de sintaxe (parsing parcial)
 - Suportam queries baseadas em padroes usando S-expressions
 
@@ -40,7 +40,7 @@ local langs = treesitter.supported_languages()
 
 ## Quick Start
 
-### Parse de Codigo
+### Parse de Código
 
 ```lua
 local code = [[
@@ -70,7 +70,7 @@ func world() {}
 local tree = treesitter.parse("go", code)
 local root = tree:root_node()
 
--- Encontrar todos os nomes de funcao
+-- Encontrar todos os nomes de função
 local query = treesitter.query("go", [[
     (function_declaration name: (identifier) @func_name)
 ]])
@@ -87,16 +87,16 @@ end
 
 ### Parse Simples
 
-Parse de codigo fonte em uma arvore de sintaxe. Cria um parser temporario internamente.
+Parse de código fonte em uma arvore de sintaxe. Cria um parser temporario internamente.
 
 ```lua
 local tree, err = treesitter.parse("go", code)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `language` | string | Nome ou alias da linguagem |
-| `code` | string | Codigo fonte |
+| `code` | string | Código fonte |
 
 **Retorna:** `Tree, error`
 
@@ -120,11 +120,11 @@ parser:close()
 
 ### Metodos do Parser
 
-| Metodo | Descricao |
+| Método | Descrição |
 |--------|-----------|
 | `set_language(lang)` | Definir linguagem do parser, retorna `boolean, error` |
 | `get_language()` | Obter nome da linguagem atual |
-| `parse(code, old_tree?)` | Parse de codigo, opcionalmente com arvore antiga para parsing incremental |
+| `parse(code, old_tree?)` | Parse de código, opcionalmente com arvore antiga para parsing incremental |
 | `set_timeout(duration)` | Definir timeout de parse (string como `"1s"` ou nanossegundos) |
 | `set_ranges(ranges)` | Definir ranges de bytes para parse |
 | `reset()` | Resetar estado do parser |
@@ -144,7 +144,7 @@ print(root:text())  -- "package main"
 
 ### Metodos da Tree
 
-| Metodo | Descricao |
+| Método | Descrição |
 |--------|-----------|
 | `root_node()` | Obter no raiz da arvore |
 | `root_node_with_offset(bytes, point)` | Obter raiz com offset aplicado |
@@ -159,7 +159,7 @@ print(root:text())  -- "package main"
 
 ### Edicao Incremental
 
-Atualizar a arvore quando o codigo fonte muda:
+Atualizar a arvore quando o código fonte muda:
 
 ```lua
 local code = "func main() { x := 1 }"
@@ -193,7 +193,7 @@ Nos representam elementos na arvore de sintaxe.
 ```lua
 local node = root:child(0)
 
--- Informacao de tipo
+-- Informação de tipo
 print(node:kind())        -- "package_clause"
 print(node:type())        -- igual a kind()
 print(node:is_named())    -- true para nos significativos
@@ -223,7 +223,7 @@ local name_node = func_decl:child_by_field_name("name")
 local field = node:field_name_for_child(0)
 ```
 
-### Informacao de Posicao
+### Informação de Posicao
 
 ```lua
 -- Offsets em bytes
@@ -276,10 +276,10 @@ local query, err = treesitter.query("go", [[
 ]])
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `language` | string | Nome da linguagem |
-| `pattern` | string | Padrao de query em sintaxe S-expression |
+| `pattern` | string | Padrão de query em sintaxe S-expression |
 
 **Retorna:** `Query, error`
 
@@ -295,7 +295,7 @@ for _, capture in ipairs(captures) do
     -- capture.node e o objeto Node
 end
 
--- Obter matches (agrupados por padrao)
+-- Obter matches (agrupados por padrão)
 local matches = query:matches(root, source_code)
 for _, match in ipairs(matches) do
     print(match.id, match.pattern)
@@ -366,7 +366,7 @@ cursor:close()
 
 ### Metodos do Cursor
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `current_node()` | `Node` | No na posicao do cursor |
 | `current_depth()` | `integer` | Profundidade (0 = raiz) |
@@ -387,7 +387,7 @@ cursor:close()
 ```lua
 local lang = treesitter.language("go")
 
-print(lang:version())           -- versao ABI
+print(lang:version())           -- versão ABI
 print(lang:node_kind_count())   -- numero de tipos de no
 print(lang:field_count())       -- numero de campos
 
@@ -403,13 +403,13 @@ local field_id = lang:field_id_for_name("name")
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Linguagem nao suportada | `errors.INVALID` | nao |
-| Linguagem sem binding | `errors.INVALID` | nao |
-| Padrao de query invalido | `errors.INVALID` | nao |
-| Posicoes invalidas | `errors.INVALID` | nao |
-| Parse falhou | `errors.INTERNAL` | nao |
+| Linguagem não suportada | `errors.INVALID` | não |
+| Linguagem sem binding | `errors.INVALID` | não |
+| Padrão de query invalido | `errors.INVALID` | não |
+| Posicoes invalidas | `errors.INVALID` | não |
+| Parse falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 

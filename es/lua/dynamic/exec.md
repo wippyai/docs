@@ -1,4 +1,4 @@
-# Ejecucion de Comandos
+# Ejecución de Comandos
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
@@ -6,7 +6,7 @@
 
 Ejecutar comandos externos y scripts de shell con control total sobre streams de E/S.
 
-Para configuracion del ejecutor, consulte [Ejecutor](system-exec.md).
+Para configuración del ejecutor, consulte [Ejecutor](system-exec.md).
 
 ## Carga
 
@@ -32,7 +32,7 @@ local proc = executor:exec("ls -la")
 executor:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de recurso |
 
@@ -70,7 +70,7 @@ local proc = executor:exec("./deploy.sh production", {
 })
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `cmd` | string | Comando a ejecutar |
 | `options.work_dir` | string | Directorio de trabajo |
@@ -189,14 +189,14 @@ proc:signal(SIGINT)
 
 Las operaciones de exec estan sujetas a evaluacion de politica de seguridad.
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `exec.get` | ID de Executor | Adquirir un recurso ejecutor |
-| `exec.run` | Command | Ejecutar un comando especifico |
+| `exec.run` | Command | Ejecutar un comando específico |
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID invalido | `errors.INVALID` | no |
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |

@@ -5,7 +5,7 @@
 
 Rendern Sie dynamische Inhalte mit der [Jet Template Engine](https://github.com/CloudyKit/jet). Erstellen Sie HTML-Seiten, E-Mails und Dokumente mit Template-Vererbung und Includes.
 
-Fur Template-Set-Konfiguration siehe [Template-Engine](system-template.md).
+Für Template-Set-Konfiguration siehe [Template-Engine](system-template.md).
 
 ## Laden
 
@@ -32,7 +32,7 @@ set:release()
 |-----------|------|-------------|
 | `id` | string | Template-Set-Registry-ID |
 
-**Gibt zuruck:** `Set, error`
+**Gibt zurück:** `Set, error`
 
 ## Templates rendern
 
@@ -60,18 +60,18 @@ return html
 | `name` | string | Template-Name innerhalb des Sets |
 | `data` | table | An Template zu ubergebende Variablen (optional) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Set-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `render(name, data?)` | `string, error` | Template mit Daten rendern |
 | `release()` | `boolean` | Set an Pool zuruckgeben |
 
 ## Jet-Syntax-Referenz
 
-Jet verwendet `{{ }}` fur Ausdrucke und Kontrollstrukturen, `{* *}` fur Kommentare.
+Jet verwendet `{{ }}` für Ausdrucke und Kontrollstrukturen, `{* *}` für Kommentare.
 
 ### Variablen
 
@@ -139,4 +139,4 @@ Jet verwendet `{{ }}` fur Ausdrucke und Kontrollstrukturen, `{* *}` fur Kommenta
 | Render-Fehler | `errors.INTERNAL` | nein |
 | Set bereits freigegeben | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

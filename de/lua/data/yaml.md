@@ -19,7 +19,7 @@ local yaml = require("yaml")
 Kodiert eine Lua-Tabelle ins YAML-Format.
 
 ```lua
--- Einfache Schlussel-Wert-Paare
+-- Einfache Schlüssel-Wert-Paare
 local config = {
     name = "myapp",
     port = 8080,
@@ -90,7 +90,7 @@ yaml.encode(entry, {sort_unordered = true})
 -- zebra: 1
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Dekodierung
 
@@ -143,7 +143,7 @@ print(type(data.tags))     -- "table"
 |-----------|------|-------------|
 | `data` | string | Zu parsender YAML-String |
 
-**Gibt zuruck:** `any, error` - Gibt table, array, string, number oder boolean zuruck, abhangig vom YAML-Inhalt
+**Gibt zurück:** `any, error` - Gibt table, array, string, number oder boolean zurück, abhangig vom YAML-Inhalt
 
 ## Fehler
 
@@ -154,4 +154,4 @@ print(type(data.tags))     -- "table"
 | Leerer String (decode) | `errors.INVALID` | nein |
 | Ungultige YAML-Syntax | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

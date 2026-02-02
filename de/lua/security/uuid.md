@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Generieren Sie universell eindeutige Identifikatoren. Angepasst fur Workflows - zufallige UUIDs geben bei Replay konsistente Werte zuruck.
+Generieren Sie universell eindeutige Identifikatoren. Angepasst für Workflows - zufallige UUIDs geben bei Replay konsistente Werte zurück.
 
 ## Laden
 
@@ -21,7 +21,7 @@ Zeitbasierte UUID mit Zeitstempel und Knoten-ID.
 local id, err = uuid.v1()
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Version 4
 
@@ -31,7 +31,7 @@ Zufallige UUID.
 local id, err = uuid.v4()
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Version 7
 
@@ -41,7 +41,7 @@ Zeitgeordnete UUID. Nach Erstellungszeit sortierbar.
 local id, err = uuid.v7()
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Deterministische UUIDs
 
@@ -58,7 +58,7 @@ local id, err = uuid.v3(namespace, name)
 | `namespace` | string | Gultiger UUID-String |
 | `name` | string | Zu hashender Wert |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### Version 5
 
@@ -74,7 +74,7 @@ local id, err = uuid.v5(NS_URL, "https://example.com/resource")
 | `namespace` | string | Gultiger UUID-String |
 | `name` | string | Zu hashender Wert |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Inspektion
 
@@ -88,7 +88,7 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | Zu prufender Wert |
 
-**Gibt zuruck:** `boolean`
+**Gibt zurück:** `boolean`
 
 ### Version abrufen
 
@@ -100,7 +100,7 @@ local ver, err = uuid.version(id)
 |-----------|------|-------------|
 | `uuid` | string | Gultiger UUID-String |
 
-**Gibt zuruck:** `integer, error`
+**Gibt zurück:** `integer, error`
 
 ### Variante abrufen
 
@@ -112,7 +112,7 @@ local var, err = uuid.variant(id)
 |-----------|------|-------------|
 | `uuid` | string | Gultiger UUID-String |
 
-**Gibt zuruck:** `string, error` (RFC4122, Microsoft, NCS oder Invalid)
+**Gibt zurück:** `string, error` (RFC4122, Microsoft, NCS oder Invalid)
 
 ### Parsen
 
@@ -124,7 +124,7 @@ local info, err = uuid.parse(id)
 |-----------|------|-------------|
 | `uuid` | string | Gultiger UUID-String |
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
 Zuruckgegebene Tabellenfelder:
 - `version` (integer): UUID-Version (1, 3, 4, 5 oder 7)
@@ -145,7 +145,7 @@ local formatted, err = uuid.format(id, "urn")
 | `uuid` | string | Gultiger UUID-String |
 | `format` | string? | standard (Standard), simple oder urn |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Fehler
 
@@ -156,4 +156,4 @@ local formatted, err = uuid.format(id, "urn")
 | Nicht unterstutzter Formattyp | `errors.INVALID` | nein |
 | Generierung fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

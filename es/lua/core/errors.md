@@ -36,11 +36,11 @@ end
 
 ## Metodos de Error
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `err:kind()` | string | Categoria de error |
 | `err:message()` | string | Mensaje de error |
-| `err:retryable()` | boolean/nil | Si la operacion puede reintentarse |
+| `err:retryable()` | boolean/nil | Si la operación puede reintentarse |
 | `err:details()` | table/nil | Metadatos estructurados |
 | `err:stack()` | string | Traza de pila Lua |
 | `tostring(err)` | string | Representacion completa |
@@ -68,9 +68,9 @@ end
 | `errors.PERMISSION_DENIED` | Acceso denegado |
 | `errors.UNAVAILABLE` | Servicio temporalmente caido |
 | `errors.INTERNAL` | Error interno |
-| `errors.CANCELED` | Operacion cancelada |
+| `errors.CANCELED` | Operación cancelada |
 | `errors.CONFLICT` | Conflicto de estado de recurso |
-| `errors.TIMEOUT` | Operacion agoto tiempo |
+| `errors.TIMEOUT` | Operación agoto tiempo |
 | `errors.RATE_LIMITED` | Demasiadas solicitudes |
 | `errors.UNKNOWN` | Error no especificado |
 

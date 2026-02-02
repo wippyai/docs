@@ -24,7 +24,7 @@ local result, err = expr.eval("x + y * 2", {x = 10, y = 5})
 
 ### Ausdrucke kompilieren
 
-Einmal kompilieren, mehrfach ausfuhren:
+Einmal kompilieren, mehrfach ausführen:
 
 ```lua
 local program, err = expr.compile("price * quantity")
@@ -111,7 +111,7 @@ runner.run({
 })
 ```
 
-Module, die nicht in der Liste sind, konnen nicht mit require geladen werden.
+Module, die nicht in der Liste sind, können nicht mit require geladen werden.
 
 ### Registry-Imports
 
@@ -160,7 +160,7 @@ runner.run({
 
 ### Programme kompilieren
 
-Einmal kompilieren fur wiederholte Ausfuhrung:
+Einmal kompilieren für wiederholte Ausfuhrung:
 
 ```lua
 local program, err = runner.compile([[
@@ -204,13 +204,13 @@ runner.run({
 
 ### Berechtigungsprufungen
 
-Das System pruft Berechtigungen fur:
+Das System pruft Berechtigungen für:
 
 - `eval.compile` - Vor Kompilierung
 - `eval.run` - Vor Ausfuhrung
-- `eval.module` - Fur jedes Modul in Whitelist
-- `eval.import` - Fur jeden Registry-Import
-- `eval.class` - Fur jede erlaubte Klasse
+- `eval.module` - Für jedes Modul in Whitelist
+- `eval.import` - Für jeden Registry-Import
+- `eval.class` - Für jede erlaubte Klasse
 
 In Sicherheitsrichtlinien konfigurieren.
 

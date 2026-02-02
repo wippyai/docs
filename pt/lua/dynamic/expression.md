@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Avalie expressoes dinamicas usando a sintaxe [expr-lang](https://expr-lang.org/). Compile e execute expressoes seguras para filtragem, validacao e avaliacao de regras sem execucao Lua completa.
+Avalie expressoes dinamicas usando a sintaxe [expr-lang](https://expr-lang.org/). Compile e execute expressoes seguras para filtragem, validacao e avaliacao de regras sem execução Lua completa.
 
 ## Configuracao
 
@@ -56,7 +56,7 @@ local has_admin = expr.eval('"admin" in roles', {
 })  -- true
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `expression` | string | Expressao em sintaxe expr-lang |
 | `env` | table | Ambiente de variaveis para expressao (opcional) |
@@ -80,7 +80,7 @@ local price2 = discount_calc:run({price = 50, discount_rate = 0.2})   -- 40
 local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `expression` | string | Expressao em sintaxe expr-lang |
 | `env` | table | Ambiente de tipos para compilacao (opcional) |
@@ -111,7 +111,7 @@ local order_total = pricer:run({
 })  -- 225.00
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `env` | table | Ambiente de variaveis para expressao (opcional) |
 
@@ -143,11 +143,11 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Expressao vazia | `errors.INVALID` | nao |
-| Sintaxe de expressao invalida | `errors.INTERNAL` | nao |
-| Avaliacao de expressao falhou | `errors.INTERNAL` | nao |
-| Conversao de resultado falhou | `errors.INTERNAL` | nao |
+| Expressao vazia | `errors.INVALID` | não |
+| Sintaxe de expressao invalida | `errors.INTERNAL` | não |
+| Avaliacao de expressao falhou | `errors.INTERNAL` | não |
+| Conversao de resultado falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

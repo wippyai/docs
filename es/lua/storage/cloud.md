@@ -7,7 +7,7 @@
 
 Acceder a almacenamiento de objetos compatible con S3. Cargar, descargar, listar y gestionar archivos con soporte de URL prefirmadas.
 
-Para configuracion de almacenamiento, consulte [Almacenamiento en la Nube](system-cloudstorage.md).
+Para configuración de almacenamiento, consulte [Almacenamiento en la Nube](system-cloudstorage.md).
 
 ## Carga
 
@@ -29,7 +29,7 @@ storage:upload_object("data/file.txt", "content")
 storage:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de recurso de almacenamiento |
 
@@ -59,7 +59,7 @@ file:close()
 storage:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave/ruta del objeto |
 | `content` | string o Reader | Contenido como string o lector de archivo |
@@ -89,7 +89,7 @@ partial:close()
 storage:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave del objeto a descargar |
 | `writer` | Writer | Escritor de archivo destino |
@@ -130,7 +130,7 @@ until not result.is_truncated
 storage:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `options.prefix` | string | Filtrar por prefijo de clave |
 | `options.max_keys` | integer | Objetos maximos a devolver |
@@ -156,7 +156,7 @@ storage:delete_objects({
 storage:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `keys` | string[] | Array de claves de objeto a eliminar |
 
@@ -164,7 +164,7 @@ storage:release()
 
 ## URLs de Descarga
 
-Crear una URL temporal que permite descargar un objeto sin credenciales. Util para compartir archivos con usuarios externos o servir contenido a traves de su aplicacion.
+Crear una URL temporal que permite descargar un objeto sin credenciales. Util para compartir archivos con usuarios externos o servir contenido a traves de su aplicación.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -186,7 +186,7 @@ end
 return {download_url = url}
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave del objeto |
 | `options.expiration` | integer | Segundos hasta que expire la URL (predeterminado: 3600) |
@@ -219,7 +219,7 @@ end
 return {upload_url = url}
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave del objeto |
 | `options.expiration` | integer | Segundos hasta que expire la URL (predeterminado: 3600) |
@@ -230,7 +230,7 @@ return {upload_url = url}
 
 ## Metodos de Storage
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `upload_object(key, content)` | `boolean, error` | Cargar contenido string o archivo |
 | `download_object(key, writer, opts?)` | `boolean, error` | Descargar a escritor de archivo |
@@ -244,13 +244,13 @@ return {upload_url = url}
 
 Las operaciones de almacenamiento en la nube estan sujetas a evaluacion de politica de seguridad.
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `cloudstorage.get` | ID de Storage | Adquirir un recurso de almacenamiento |
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID de recurso vacio | `errors.INVALID` | no |
 | Recurso no encontrado | `errors.NOT_FOUND` | no |
@@ -261,6 +261,6 @@ Las operaciones de almacenamiento en la nube estan sujetas a evaluacion de polit
 | Writer no valido | `errors.INVALID` | no |
 | Objeto no encontrado | `errors.NOT_FOUND` | no |
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
-| Operacion fallida | `errors.INTERNAL` | no |
+| Operación fallida | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.

@@ -25,7 +25,7 @@ local chunk, err = stream:read(size)
 |-----------|------|-------------|
 | `size` | integer | Zu lesende Bytes (0 = alle verfugbaren lesen) |
 
-**Gibt zuruck:** `string, error` — nil bei EOF
+**Gibt zurück:** `string, error` — nil bei EOF
 
 ```lua
 -- Alle verbleibenden Daten lesen
@@ -42,7 +42,7 @@ local bytes, err = stream:write(data)
 |-----------|------|-------------|
 | `data` | string | Zu schreibende Daten |
 
-**Gibt zuruck:** `integer, error` — geschriebene Bytes
+**Gibt zurück:** `integer, error` — geschriebene Bytes
 
 ## Positionieren
 
@@ -55,7 +55,7 @@ local pos, err = stream:seek(whence, offset)
 | `whence` | string | `"set"`, `"cur"` oder `"end"` |
 | `offset` | integer | Offset in Bytes |
 
-**Gibt zuruck:** `integer, error` — neue Position
+**Gibt zurück:** `integer, error` — neue Position
 
 ## Flushen
 
@@ -73,23 +73,23 @@ local info, err = stream:stat()
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `size` | integer | Gesamtgrosse (-1 wenn unbekannt) |
+| `size` | integer | Gesamtgröße (-1 wenn unbekannt) |
 | `position` | integer | Aktuelle Position |
 | `readable` | boolean | Kann gelesen werden |
 | `writable` | boolean | Kann geschrieben werden |
 | `seekable` | boolean | Kann positioniert werden |
 
-## Schliessen
+## Schließen
 
 ```lua
 local ok, err = stream:close()
 ```
 
-Stream schliessen und Ressourcen freigeben. Sicher mehrfach aufzurufen.
+Stream schließen und Ressourcen freigeben. Sicher mehrfach aufzurufen.
 
 ## Scanner
 
-Tokenizer fur Stream-Inhalt erstellen:
+Tokenizer für Stream-Inhalt erstellen:
 
 ```lua
 local scanner, err = stream:scanner(split)

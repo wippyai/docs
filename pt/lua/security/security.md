@@ -13,7 +13,7 @@ local security = require("security")
 
 ## actor
 
-Retorna o actor de seguranca atual do contexto de execucao.
+Retorna o actor de seguranca atual do contexto de execução.
 
 ```lua
 local actor = security.actor()
@@ -32,7 +32,7 @@ end
 
 ## scope
 
-Retorna o escopo de seguranca atual do contexto de execucao.
+Retorna o escopo de seguranca atual do contexto de execução.
 
 ```lua
 local scope = security.scope()
@@ -53,12 +53,12 @@ Verifica se o contexto atual permite uma acao em um recurso.
 ```lua
 -- Verificar permissao de leitura
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Nao pode ler dados do usuario")
+    return nil, errors.new("PERMISSION_DENIED", "Não pode ler dados do usuario")
 end
 
 -- Verificar permissao de escrita
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Nao pode modificar pedido")
+    return nil, errors.new("PERMISSION_DENIED", "Não pode modificar pedido")
 end
 
 -- Verificar com metadados
@@ -68,7 +68,7 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `action` | string | Acao a verificar |
 | `resource` | string | Identificador do recurso |
@@ -95,9 +95,9 @@ local service_actor = security.new_actor("service:payment-processor", {
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `id` | string | Identificador unico do actor |
+| `id` | string | Identificador único do actor |
 | `meta` | table | Pares chave-valor de metadados |
 
 **Retorna:** `Actor`
@@ -144,7 +144,7 @@ else
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID da politica "namespace:nome" |
 
@@ -165,7 +165,7 @@ end
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do grupo de politicas |
 
@@ -185,7 +185,7 @@ end
 store:close()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do token store "namespace:nome" |
 
@@ -193,7 +193,7 @@ store:close()
 
 ## Metodos do Actor
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `actor:id()` | string | Identificador do actor |
 | `actor:meta()` | table | Metadados do actor |
@@ -253,7 +253,7 @@ end
 
 ## Metodos da Policy
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `policy:id()` | string | Identificador da politica |
 | `policy:evaluate(actor, action, resource, meta?)` | string | `"allow"`, `"deny"`, ou `"undefined"` |
@@ -277,7 +277,7 @@ local token, err = store:create(actor, scope, {
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `actor` | Actor | Actor para o token |
 | `scope` | Scope | Escopo de permissoes |
@@ -325,7 +325,7 @@ Operacoes de seguranca estao sujeitas a avaliacao de politica de seguranca.
 
 ### Acoes de Seguranca
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `security.policy.get` | ID da Policy | Acessar definicoes de politica |
 | `security.policy_group.get` | ID do Grupo | Acessar escopos nomeados |
@@ -340,16 +340,16 @@ Veja [Security Model](system-security.md) para configuracao de politicas.
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Sem contexto | `errors.INTERNAL` | nao |
-| ID de token store vazio | `errors.INVALID` | nao |
-| Permissao negada | `errors.INVALID` | nao |
-| Politica nao encontrada | `errors.INTERNAL` | nao |
-| Token store nao encontrado | `errors.INTERNAL` | nao |
-| Token store fechado | `errors.INTERNAL` | nao |
-| Formato de expiracao invalido | `errors.INVALID` | nao |
-| Validacao de token falhou | `errors.INTERNAL` | nao |
+| Sem contexto | `errors.INTERNAL` | não |
+| ID de token store vazio | `errors.INVALID` | não |
+| Permissao negada | `errors.INVALID` | não |
+| Politica não encontrada | `errors.INTERNAL` | não |
+| Token store não encontrado | `errors.INTERNAL` | não |
+| Token store fechado | `errors.INTERNAL` | não |
+| Formato de expiracao invalido | `errors.INVALID` | não |
+| Validacao de token falhou | `errors.INTERNAL` | não |
 
 ```lua
 local store, err = security.token_store("app:tokens")
@@ -363,7 +363,7 @@ end
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 
-## Veja Tambem
+## Veja Também
 
 - [Security Model](system-security.md) - Configuracao de actors, politicas, escopos
 - [HTTP Middleware](http-middleware.md) - Endpoint e resource firewall

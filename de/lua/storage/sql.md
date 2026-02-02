@@ -6,7 +6,7 @@
 
 Fuhren Sie SQL-Abfragen gegen PostgreSQL-, MySQL-, SQLite-, MSSQL- und Oracle-Datenbanken aus. Features umfassen parametrisierte Abfragen, Transaktionen, Prepared Statements und einen Fluent Query Builder.
 
-Fur Datenbankkonfiguration siehe [Datenbank](system-database.md).
+Für Datenbankkonfiguration siehe [Datenbank](system-database.md).
 
 ## Laden
 
@@ -33,10 +33,10 @@ db:release()
 |-----------|------|-------------|
 | `id` | string | Ressourcen-ID (z.B. "app.db:main") |
 
-**Gibt zuruck:** `DB, error`
+**Gibt zurück:** `DB, error`
 
 <note>
-Verbindungen werden automatisch an den Pool zuruckgegeben, wenn die Funktion beendet wird, aber explizites Aufrufen von `db:release()` wird fur lang laufende Operationen empfohlen.
+Verbindungen werden automatisch an den Pool zuruckgegeben, wenn die Funktion beendet wird, aber explizites Aufrufen von `db:release()` wird für lang laufende Operationen empfohlen.
 </note>
 
 ## Konstanten
@@ -79,7 +79,7 @@ local insert = sql.builder.insert("users")
 local value = sql.as.int(42)
 ```
 
-**Gibt zuruck:** `userdata`
+**Gibt zurück:** `userdata`
 
 ## as.float
 
@@ -89,7 +89,7 @@ Konvertiert Wert zu SQL-Float-Typ.
 local value = sql.as.float(19.99)
 ```
 
-**Gibt zuruck:** `userdata`
+**Gibt zurück:** `userdata`
 
 ## as.text
 
@@ -99,7 +99,7 @@ Konvertiert Wert zu SQL-Text-Typ.
 local value = sql.as.text("hello")
 ```
 
-**Gibt zuruck:** `userdata`
+**Gibt zurück:** `userdata`
 
 ## as.binary
 
@@ -109,17 +109,17 @@ Konvertiert Wert zu SQL-Binary-Typ.
 local value = sql.as.binary("binary data")
 ```
 
-**Gibt zuruck:** `userdata`
+**Gibt zurück:** `userdata`
 
 ## as.null
 
-Gibt SQL-NULL-Marker zuruck.
+Gibt SQL-NULL-Marker zurück.
 
 ```lua
 local value = sql.as.null()
 ```
 
-**Gibt zuruck:** `userdata`
+**Gibt zurück:** `userdata`
 
 ## Query Builder
 
@@ -135,7 +135,7 @@ local query = sql.builder.select("id", "name")
 |-----------|------|-------------|
 | `columns` | ...string | Spaltennamen (optional) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ## builder.insert
 
@@ -151,7 +151,7 @@ local query = sql.builder.insert("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname (optional) |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ## builder.update
 
@@ -167,7 +167,7 @@ local query = sql.builder.update("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname (optional) |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ## builder.delete
 
@@ -183,7 +183,7 @@ local query = sql.builder.delete("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname (optional) |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ## builder.expr
 
@@ -198,7 +198,7 @@ local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 | `sql` | string | SQL-Ausdruck mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.eq
 
@@ -212,7 +212,7 @@ local cond = sql.builder.eq({active = 1, status = "open"})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.not_eq
 
@@ -226,7 +226,7 @@ local cond = sql.builder.not_eq({status = "closed"})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.lt
 
@@ -240,7 +240,7 @@ local cond = sql.builder.lt({age = 18})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.lte
 
@@ -254,11 +254,11 @@ local cond = sql.builder.lte({price = 100})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.gt
 
-Erstellt Grosser-als-Bedingung aus Table.
+Erstellt Größer-als-Bedingung aus Table.
 
 ```lua
 local cond = sql.builder.gt({score = 80})
@@ -268,11 +268,11 @@ local cond = sql.builder.gt({score = 80})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.gte
 
-Erstellt Grosser-gleich-Bedingung aus Table.
+Erstellt Größer-gleich-Bedingung aus Table.
 
 ```lua
 local cond = sql.builder.gte({age = 21})
@@ -282,7 +282,7 @@ local cond = sql.builder.gte({age = 21})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.like
 
@@ -296,7 +296,7 @@ local cond = sql.builder.like({name = "john%"})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.not_like
 
@@ -310,7 +310,7 @@ local cond = sql.builder.not_like({email = "%@spam.com"})
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.and_
 
@@ -327,7 +327,7 @@ local cond = sql.builder.and_({
 |-----------|------|-------------|
 | `conditions` | table | Array von Sqlizer- oder Table-Bedingungen |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.or_
 
@@ -344,11 +344,11 @@ local cond = sql.builder.or_({
 |-----------|------|-------------|
 | `conditions` | table | Array von Sqlizer- oder Table-Bedingungen |
 
-**Gibt zuruck:** `Sqlizer`
+**Gibt zurück:** `Sqlizer`
 
 ## builder.question
 
-Platzhalterformat fur ?-Platzhalter (Standard).
+Platzhalterformat für ?-Platzhalter (Standard).
 
 ```lua
 local query = sql.builder.select("*")
@@ -358,7 +358,7 @@ local query = sql.builder.select("*")
 
 ## builder.dollar
 
-Platzhalterformat fur $1, $2, ...-Platzhalter.
+Platzhalterformat für $1, $2, ...-Platzhalter.
 
 ```lua
 local query = sql.builder.select("*")
@@ -368,7 +368,7 @@ local query = sql.builder.select("*")
 
 ## builder.at
 
-Platzhalterformat fur @p1, @p2, ...-Platzhalter.
+Platzhalterformat für @p1, @p2, ...-Platzhalter.
 
 ```lua
 local query = sql.builder.select("*")
@@ -378,7 +378,7 @@ local query = sql.builder.select("*")
 
 ## builder.colon
 
-Platzhalterformat fur :1, :2, ...-Platzhalter.
+Platzhalterformat für :1, :2, ...-Platzhalter.
 
 ```lua
 local query = sql.builder.select("*")
@@ -392,17 +392,17 @@ Datenbankverbindungs-Handle zuruckgegeben von `sql.get()`.
 
 ### db:type
 
-Gibt Datenbanktyp-Konstante zuruck.
+Gibt Datenbanktyp-Konstante zurück.
 
 ```lua
 local dbtype, err = db:type()
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### db:query
 
-Fuhrt SELECT-Abfrage aus und gibt Zeilen zuruck.
+Fuhrt SELECT-Abfrage aus und gibt Zeilen zurück.
 
 ```lua
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -413,7 +413,7 @@ local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 | `sql` | string | SQL-Abfrage mit ?-Platzhaltern |
 | `params` | table | Array von Bind-Parametern (optional) |
 
-**Gibt zuruck:** `table[], error`
+**Gibt zurück:** `table[], error`
 
 ### db:execute
 
@@ -428,15 +428,15 @@ local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 | `sql` | string | SQL-Anweisung mit ?-Platzhaltern |
 | `params` | table | Array von Bind-Parametern (optional) |
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
-Gibt Table mit Feldern zuruck:
+Gibt Table mit Feldern zurück:
 - `last_insert_id` - Zuletzt eingefugte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
 ### db:prepare
 
-Erstellt Prepared Statement fur wiederholte Ausfuhrung.
+Erstellt Prepared Statement für wiederholte Ausfuhrung.
 
 ```lua
 local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
@@ -446,7 +446,7 @@ local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
 |-----------|------|-------------|
 | `sql` | string | SQL mit ?-Platzhaltern |
 
-**Gibt zuruck:** `Statement, error`
+**Gibt zurück:** `Statement, error`
 
 ### db:begin
 
@@ -467,29 +467,29 @@ Options-Table-Felder:
 - `isolation` - Isolationsebene aus sql.isolation.* (Standard: DEFAULT)
 - `read_only` - Nur-Lesen-Transaktions-Flag (Standard: false)
 
-**Gibt zuruck:** `Transaction, error`
+**Gibt zurück:** `Transaction, error`
 
 ### db:release
 
-Gibt Datenbankressource an Pool zuruck.
+Gibt Datenbankressource an Pool zurück.
 
 ```lua
 local ok, err = db:release()
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### db:stats
 
-Gibt Verbindungspool-Statistiken zuruck.
+Gibt Verbindungspool-Statistiken zurück.
 
 ```lua
 local stats, err = db:stats()
 ```
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
-Gibt Table mit Feldern zuruck:
+Gibt Table mit Feldern zurück:
 - `max_open_connections` - Max. erlaubte offene Verbindungen
 - `open_connections` - Aktuelle offene Verbindungen
 - `in_use` - Aktuell verwendete Verbindungen
@@ -516,7 +516,7 @@ local rows, err = stmt:query({123})
 |-----------|------|-------------|
 | `params` | table | Array von Bind-Parametern (optional) |
 
-**Gibt zuruck:** `table[], error`
+**Gibt zurück:** `table[], error`
 
 ### stmt:execute
 
@@ -530,9 +530,9 @@ local result, err = stmt:execute({"alice"})
 |-----------|------|-------------|
 | `params` | table | Array von Bind-Parametern (optional) |
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
-Gibt Table mit Feldern zuruck:
+Gibt Table mit Feldern zurück:
 - `last_insert_id` - Zuletzt eingefugte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
@@ -544,7 +544,7 @@ Schliesst Prepared Statement.
 local ok, err = stmt:close()
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Transaktionen
 
@@ -552,13 +552,13 @@ Datenbanktransaktion zuruckgegeben von `db:begin()`.
 
 ### tx:db_type
 
-Gibt Datenbanktyp-Konstante zuruck.
+Gibt Datenbanktyp-Konstante zurück.
 
 ```lua
 local dbtype, err = tx:db_type()
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### tx:query
 
@@ -573,7 +573,7 @@ local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 | `sql` | string | SQL-Abfrage mit ?-Platzhaltern |
 | `params` | table | Array von Bind-Parametern (optional) |
 
-**Gibt zuruck:** `table[], error`
+**Gibt zurück:** `table[], error`
 
 ### tx:execute
 
@@ -588,9 +588,9 @@ local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 | `sql` | string | SQL-Anweisung mit ?-Platzhaltern |
 | `params` | table | Array von Bind-Parametern (optional) |
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
-Gibt Table mit Feldern zuruck:
+Gibt Table mit Feldern zurück:
 - `last_insert_id` - Zuletzt eingefugte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
@@ -606,7 +606,7 @@ local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
 |-----------|------|-------------|
 | `sql` | string | SQL mit ?-Platzhaltern |
 
-**Gibt zuruck:** `Statement, error`
+**Gibt zurück:** `Statement, error`
 
 ### tx:commit
 
@@ -616,17 +616,17 @@ Committet die Transaktion.
 local ok, err = tx:commit()
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### tx:rollback
 
-Rollt die Transaktion zuruck.
+Rollt die Transaktion zurück.
 
 ```lua
 local ok, err = tx:rollback()
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### tx:savepoint
 
@@ -640,11 +640,11 @@ local ok, err = tx:savepoint("sp1")
 |-----------|------|-------------|
 | `name` | string | Savepoint-Name (nur alphanumerisch und Unterstrich) |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### tx:rollback_to
 
-Rollt zum benannten Savepoint zuruck.
+Rollt zum benannten Savepoint zurück.
 
 ```lua
 local ok, err = tx:rollback_to("sp1")
@@ -654,7 +654,7 @@ local ok, err = tx:rollback_to("sp1")
 |-----------|------|-------------|
 | `name` | string | Savepoint-Name |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### tx:release
 
@@ -668,7 +668,7 @@ local ok, err = tx:release("sp1")
 |-----------|------|-------------|
 | `name` | string | Savepoint-Name |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## SELECT Builder
 
@@ -686,7 +686,7 @@ local query = sql.builder.select("id", "name"):from("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:join
 
@@ -703,7 +703,7 @@ local query = sql.builder.select("*")
 | `join` | string | JOIN-Klausel mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:left_join
 
@@ -720,7 +720,7 @@ local query = sql.builder.select("*")
 | `join` | string | JOIN-Klausel mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:right_join
 
@@ -737,7 +737,7 @@ local query = sql.builder.select("*")
 | `join` | string | JOIN-Klausel mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:inner_join
 
@@ -754,7 +754,7 @@ local query = sql.builder.select("*")
 | `join` | string | JOIN-Klausel mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:where
 
@@ -776,7 +776,7 @@ Unterstutzt drei Formate:
 - Table: `where({status = "active"})`
 - Sqlizer: `where(sql.builder.gt({score = 80}))`
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:order_by
 
@@ -792,7 +792,7 @@ local query = sql.builder.select("*")
 |-----------|------|-------------|
 | `columns` | ...string | Spaltennamen mit optionalem ASC/DESC |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:group_by
 
@@ -808,7 +808,7 @@ local query = sql.builder.select("status", "COUNT(*)")
 |-----------|------|-------------|
 | `columns` | ...string | Spaltennamen |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:having
 
@@ -826,7 +826,7 @@ local query = sql.builder.select("status", "COUNT(*) as cnt")
 | `condition` | string\|table\|Sqlizer | HAVING-Bedingung |
 | `args` | ...any | Bind-Argumente (optional, bei String-Verwendung) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:limit
 
@@ -842,7 +842,7 @@ local query = sql.builder.select("*")
 |-----------|------|-------------|
 | `n` | integer | Limit-Wert |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:offset
 
@@ -858,7 +858,7 @@ local query = sql.builder.select("*")
 |-----------|------|-------------|
 | `n` | integer | Offset-Wert |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:columns
 
@@ -872,7 +872,7 @@ local query = sql.builder.select():columns("id", "name", "email")
 |-----------|------|-------------|
 | `columns` | ...string | Spaltennamen |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:distinct
 
@@ -884,7 +884,7 @@ local query = sql.builder.select("status")
     :distinct()
 ```
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:suffix
 
@@ -901,7 +901,7 @@ local query = sql.builder.select("*")
 | `sql` | string | SQL-Suffix mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:placeholder_format
 
@@ -917,7 +917,7 @@ local query = sql.builder.select("*")
 |-----------|------|-------------|
 | `format` | userdata | Platzhalterformat (sql.builder.*) |
 
-**Gibt zuruck:** `SelectBuilder`
+**Gibt zurück:** `SelectBuilder`
 
 ### select:to_sql
 
@@ -927,11 +927,11 @@ Generiert SQL-String und Bind-Argumente.
 local sql_str, args = query:to_sql()
 ```
 
-**Gibt zuruck:** `string, table`
+**Gibt zurück:** `string, table`
 
 ### select:run_with
 
-Erstellt Executor fur Abfrage.
+Erstellt Executor für Abfrage.
 
 ```lua
 local executor = query:run_with(db)
@@ -942,7 +942,7 @@ local rows, err = executor:query()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Datenbank- oder Transaktions-Handle |
 
-**Gibt zuruck:** `QueryExecutor`
+**Gibt zurück:** `QueryExecutor`
 
 ## INSERT Builder
 
@@ -960,7 +960,7 @@ local query = sql.builder.insert():into("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:columns
 
@@ -974,7 +974,7 @@ local query = sql.builder.insert("users"):columns("name", "email")
 |-----------|------|-------------|
 | `columns` | ...string | Spaltennamen |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:values
 
@@ -990,7 +990,7 @@ local query = sql.builder.insert("users")
 |-----------|------|-------------|
 | `values` | ...any | Zeilenwerte |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:set_map
 
@@ -1005,7 +1005,7 @@ local query = sql.builder.insert("users")
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:select
 
@@ -1022,7 +1022,7 @@ local query = sql.builder.insert("users")
 |-----------|------|-------------|
 | `query` | SelectBuilder | SELECT-Abfrage |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:prefix
 
@@ -1038,7 +1038,7 @@ local query = sql.builder.insert("users")
 | `sql` | string | SQL-Prafix mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:suffix
 
@@ -1056,7 +1056,7 @@ local query = sql.builder.insert("users")
 | `sql` | string | SQL-Suffix mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:options
 
@@ -1071,7 +1071,7 @@ local query = sql.builder.insert("users")
 |-----------|------|-------------|
 | `options` | ...string | INSERT-Optionen |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:placeholder_format
 
@@ -1086,7 +1086,7 @@ local query = sql.builder.insert("users")
 |-----------|------|-------------|
 | `format` | userdata | Platzhalterformat (sql.builder.*) |
 
-**Gibt zuruck:** `InsertBuilder`
+**Gibt zurück:** `InsertBuilder`
 
 ### insert:to_sql
 
@@ -1096,11 +1096,11 @@ Generiert SQL-String und Bind-Argumente.
 local sql_str, args = query:to_sql()
 ```
 
-**Gibt zuruck:** `string, table`
+**Gibt zurück:** `string, table`
 
 ### insert:run_with
 
-Erstellt Executor fur Abfrage.
+Erstellt Executor für Abfrage.
 
 ```lua
 local executor = query:run_with(db)
@@ -1111,7 +1111,7 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Datenbank- oder Transaktions-Handle |
 
-**Gibt zuruck:** `QueryExecutor`
+**Gibt zurück:** `QueryExecutor`
 
 ## UPDATE Builder
 
@@ -1129,7 +1129,7 @@ local query = sql.builder.update():table("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:set
 
@@ -1146,7 +1146,7 @@ local query = sql.builder.update("users")
 | `column` | string | Spaltenname |
 | `value` | any | Spaltenwert |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:set_map
 
@@ -1161,7 +1161,7 @@ local query = sql.builder.update("users")
 |-----------|------|-------------|
 | `map` | table | {spalte = wert}-Paare |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:where
 
@@ -1178,7 +1178,7 @@ local query = sql.builder.update("users")
 | `condition` | string\|table\|Sqlizer | WHERE-Bedingung |
 | `args` | ...any | Bind-Argumente (optional, bei String-Verwendung) |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:order_by
 
@@ -1194,7 +1194,7 @@ local query = sql.builder.update("users")
 |-----------|------|-------------|
 | `columns` | ...string | Spaltennamen mit optionalem ASC/DESC |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:limit
 
@@ -1210,7 +1210,7 @@ local query = sql.builder.update("users")
 |-----------|------|-------------|
 | `n` | integer | Limit-Wert |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:offset
 
@@ -1226,7 +1226,7 @@ local query = sql.builder.update("users")
 |-----------|------|-------------|
 | `n` | integer | Offset-Wert |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:suffix
 
@@ -1243,7 +1243,7 @@ local query = sql.builder.update("users")
 | `sql` | string | SQL-Suffix mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:from
 
@@ -1259,7 +1259,7 @@ local query = sql.builder.update("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:from_select
 
@@ -1277,7 +1277,7 @@ local query = sql.builder.update("users")
 | `query` | SelectBuilder | SELECT-Abfrage |
 | `alias` | string | Tabellen-Alias |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:placeholder_format
 
@@ -1292,7 +1292,7 @@ local query = sql.builder.update("users")
 |-----------|------|-------------|
 | `format` | userdata | Platzhalterformat (sql.builder.*) |
 
-**Gibt zuruck:** `UpdateBuilder`
+**Gibt zurück:** `UpdateBuilder`
 
 ### update:to_sql
 
@@ -1302,11 +1302,11 @@ Generiert SQL-String und Bind-Argumente.
 local sql_str, args = query:to_sql()
 ```
 
-**Gibt zuruck:** `string, table`
+**Gibt zurück:** `string, table`
 
 ### update:run_with
 
-Erstellt Executor fur Abfrage.
+Erstellt Executor für Abfrage.
 
 ```lua
 local executor = query:run_with(db)
@@ -1317,7 +1317,7 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Datenbank- oder Transaktions-Handle |
 
-**Gibt zuruck:** `QueryExecutor`
+**Gibt zurück:** `QueryExecutor`
 
 ## DELETE Builder
 
@@ -1335,7 +1335,7 @@ local query = sql.builder.delete():from("users")
 |-----------|------|-------------|
 | `table` | string | Tabellenname |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ### delete:where
 
@@ -1351,7 +1351,7 @@ local query = sql.builder.delete("users")
 | `condition` | string\|table\|Sqlizer | WHERE-Bedingung |
 | `args` | ...any | Bind-Argumente (optional, bei String-Verwendung) |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ### delete:order_by
 
@@ -1367,7 +1367,7 @@ local query = sql.builder.delete("users")
 |-----------|------|-------------|
 | `columns` | ...string | Spaltennamen mit optionalem ASC/DESC |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ### delete:limit
 
@@ -1383,7 +1383,7 @@ local query = sql.builder.delete("users")
 |-----------|------|-------------|
 | `n` | integer | Limit-Wert |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ### delete:offset
 
@@ -1399,7 +1399,7 @@ local query = sql.builder.delete("users")
 |-----------|------|-------------|
 | `n` | integer | Offset-Wert |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ### delete:suffix
 
@@ -1416,7 +1416,7 @@ local query = sql.builder.delete("users")
 | `sql` | string | SQL-Suffix mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ### delete:placeholder_format
 
@@ -1431,7 +1431,7 @@ local query = sql.builder.delete("users")
 |-----------|------|-------------|
 | `format` | userdata | Platzhalterformat (sql.builder.*) |
 
-**Gibt zuruck:** `DeleteBuilder`
+**Gibt zurück:** `DeleteBuilder`
 
 ### delete:to_sql
 
@@ -1441,11 +1441,11 @@ Generiert SQL-String und Bind-Argumente.
 local sql_str, args = query:to_sql()
 ```
 
-**Gibt zuruck:** `string, table`
+**Gibt zurück:** `string, table`
 
 ### delete:run_with
 
-Erstellt Executor fur Abfrage.
+Erstellt Executor für Abfrage.
 
 ```lua
 local executor = query:run_with(db)
@@ -1456,45 +1456,45 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Datenbank- oder Transaktions-Handle |
 
-**Gibt zuruck:** `QueryExecutor`
+**Gibt zurück:** `QueryExecutor`
 
-## Abfragen ausfuhren
+## Abfragen ausführen
 
 Der Query-Executor fuhrt vom Builder generierte Abfragen aus.
 
 ### executor:query
 
-Fuhrt Abfrage aus und gibt Zeilen zuruck (fur SELECT).
+Fuhrt Abfrage aus und gibt Zeilen zurück (für SELECT).
 
 ```lua
 local rows, err = executor:query()
 ```
 
-**Gibt zuruck:** `table[], error`
+**Gibt zurück:** `table[], error`
 
 ### executor:exec
 
-Fuhrt Abfrage aus und gibt Ergebnis zuruck (fur INSERT/UPDATE/DELETE).
+Fuhrt Abfrage aus und gibt Ergebnis zurück (für INSERT/UPDATE/DELETE).
 
 ```lua
 local result, err = executor:exec()
 ```
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
-Gibt Table mit Feldern zuruck:
+Gibt Table mit Feldern zurück:
 - `last_insert_id` - Zuletzt eingefugte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
 ### executor:to_sql
 
-Gibt generierten SQL und Argumente ohne Ausfuhrung zuruck.
+Gibt generierten SQL und Argumente ohne Ausfuhrung zurück.
 
 ```lua
 local sql_str, args = executor:to_sql()
 ```
 
-**Gibt zuruck:** `string, table`
+**Gibt zurück:** `string, table`
 
 ## Berechtigungen
 
@@ -1519,7 +1519,7 @@ Datenbankzugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | Ungultiger Savepoint-Name | `errors.INVALID` | nein |
 | Abfrageausfuhrungsfehler | variiert | variiert |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
 
 ## Beispiel
 

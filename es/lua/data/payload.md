@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Convertir datos entre formatos incluyendo JSON, MessagePack y binario. Manejar payloads tipados para comunicacion entre servicios y paso de datos en flujos de trabajo.
+Convertir datos entre formatos incluyendo JSON, MessagePack y binario. Manejar payloads tipados para comunicación entre servicios y paso de datos en flujos de trabajo.
 
 ## Carga
 
@@ -43,7 +43,7 @@ local p = payload.new({
 -- Desde string
 local str_p = payload.new("Hello, World!")
 
--- Desde numero
+-- Desde número
 local num_p = payload.new(42.5)
 
 -- Desde boolean
@@ -56,7 +56,7 @@ local nil_p = payload.new(nil)
 local err_p = payload.new(errors.new("something failed"))
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `value` | any | Valor Lua (string, number, boolean, table, nil o error) |
 
@@ -127,7 +127,7 @@ end
 local yaml_p, err = p:transcode(payload.format.YAML)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `format` | string | Formato objetivo de `payload.format.*` |
 
@@ -135,7 +135,7 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 ## Resultados Async
 
-Los payloads se reciben comunmente de llamadas de funcion async:
+Los payloads se reciben comunmente de llamadas de función async:
 
 ```lua
 local funcs = require("funcs")
@@ -163,7 +163,7 @@ print(result.computed_value)
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Fallo de transcodificacion | `errors.INTERNAL` | no |
 | Resultado no es valor Lua valido | `errors.INTERNAL` | no |

@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Gestionar actores de autenticacion, alcances de autorizacion y politicas de acceso.
+Gestionar actores de autenticación, alcances de autorizacion y politicas de acceso.
 
 ## Carga
 
@@ -13,7 +13,7 @@ local security = require("security")
 
 ## actor
 
-Devuelve el actor de seguridad actual del contexto de ejecucion.
+Devuelve el actor de seguridad actual del contexto de ejecución.
 
 ```lua
 local actor = security.actor()
@@ -32,7 +32,7 @@ end
 
 ## scope
 
-Devuelve el alcance de seguridad actual del contexto de ejecucion.
+Devuelve el alcance de seguridad actual del contexto de ejecución.
 
 ```lua
 local scope = security.scope()
@@ -68,7 +68,7 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 })
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `action` | string | Accion a verificar |
 | `resource` | string | Identificador de recurso |
@@ -91,13 +91,13 @@ local actor = security.new_actor("user:" .. user.id, {
 -- Crear actor de servicio
 local service_actor = security.new_actor("service:payment-processor", {
     type = "service",
-    version = "1.0.0"
+    versión = "1.0.0"
 })
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `id` | string | Identificador unico del actor |
+| `id` | string | Identificador único del actor |
 | `meta` | table | Pares clave-valor de metadatos |
 
 **Devuelve:** `Actor`
@@ -144,7 +144,7 @@ else
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de politica "namespace:name" |
 
@@ -165,7 +165,7 @@ end
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de grupo de politicas |
 
@@ -173,7 +173,7 @@ local result = admin_scope:evaluate(actor, "delete", "user:123")
 
 ## token_store
 
-Adquiere un almacen de tokens para gestionar tokens de autenticacion.
+Adquiere un almacen de tokens para gestionar tokens de autenticación.
 
 ```lua
 local store, err = security.token_store("app:tokens")
@@ -185,7 +185,7 @@ end
 store:close()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de almacen de tokens "namespace:name" |
 
@@ -193,7 +193,7 @@ store:close()
 
 ## Metodos de Actor
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `actor:id()` | string | Identificador del actor |
 | `actor:meta()` | table | Metadatos del actor |
@@ -253,7 +253,7 @@ end
 
 ## Metodos de Policy
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `policy:id()` | string | Identificador de politica |
 | `policy:evaluate(actor, action, resource, meta?)` | string | `"allow"`, `"deny"`, o `"undefined"` |
@@ -262,7 +262,7 @@ end
 
 ### create
 
-Crear token de autenticacion.
+Crear token de autenticación.
 
 ```lua
 local actor = security.new_actor("user:123", {role = "user"})
@@ -277,11 +277,11 @@ local token, err = store:create(actor, scope, {
 })
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `actor` | Actor | Actor para el token |
 | `scope` | Scope | Alcance de permisos |
-| `options.expiration` | string/number | String de duracion o ms |
+| `options.expiration` | string/number | String de duración o ms |
 | `options.meta` | table | Metadatos del token |
 
 **Devuelve:** `string, error`
@@ -325,7 +325,7 @@ Las operaciones de seguridad estan sujetas a evaluacion de politica de seguridad
 
 ### Acciones de Seguridad
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `security.policy.get` | ID de Policy | Acceder a definiciones de politica |
 | `security.policy_group.get` | ID de Group | Acceder a alcances nombrados |
@@ -336,11 +336,11 @@ Las operaciones de seguridad estan sujetas a evaluacion de politica de seguridad
 | `security.token.create` | ID de Store | Crear tokens |
 | `security.token.revoke` | ID de Store | Revocar tokens |
 
-Consulte [Modelo de Seguridad](system-security.md) para configuracion de politicas.
+Consulte [Modelo de Seguridad](system-security.md) para configuración de politicas.
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Sin contexto | `errors.INTERNAL` | no |
 | ID de almacen de tokens vacio | `errors.INVALID` | no |
@@ -363,7 +363,7 @@ end
 
 Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
 
-## Vea Tambien
+## Vea También
 
-- [Modelo de Seguridad](system-security.md) - Configuracion de actores, politicas, alcances
+- [Modelo de Seguridad](system-security.md) - Configuración de actores, politicas, alcances
 - [Middleware HTTP](http-middleware.md) - Firewall de endpoint y recursos

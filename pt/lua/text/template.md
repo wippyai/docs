@@ -28,7 +28,7 @@ end
 set:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do template set no registry |
 
@@ -55,7 +55,7 @@ set:release()
 return html
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome do template dentro do set |
 | `data` | table | Variaveis para passar ao template (opcional) |
@@ -64,7 +64,7 @@ return html
 
 ## Metodos do Set
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `render(name, data?)` | `string, error` | Renderizar template com dados |
 | `release()` | `boolean` | Liberar set de volta ao pool |
@@ -130,13 +130,13 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| ID vazio | `errors.INVALID` | nao |
-| Nome de template vazio | `errors.INVALID` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
-| Template nao encontrado | `errors.NOT_FOUND` | nao |
-| Erro de renderizacao | `errors.INTERNAL` | nao |
-| Set ja liberado | `errors.INTERNAL` | nao |
+| ID vazio | `errors.INVALID` | não |
+| Nome de template vazio | `errors.INVALID` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Template não encontrado | `errors.NOT_FOUND` | não |
+| Erro de renderizacao | `errors.INTERNAL` | não |
+| Set ja liberado | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

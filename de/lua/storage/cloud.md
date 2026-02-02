@@ -5,9 +5,9 @@
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-Zugriff auf S3-kompatiblen Objektspeicher. Hochladen, Herunterladen, Auflisten und Verwalten von Dateien mit Unterstutzung fur vorsignierte URLs.
+Zugriff auf S3-kompatiblen Objektspeicher. Hochladen, Herunterladen, Auflisten und Verwalten von Dateien mit Unterstutzung für vorsignierte URLs.
 
-Fur Speicherkonfiguration siehe [Cloud-Speicher](system-cloudstorage.md).
+Für Speicherkonfiguration siehe [Cloud-Speicher](system-cloudstorage.md).
 
 ## Laden
 
@@ -33,7 +33,7 @@ storage:release()
 |-----------|------|-------------|
 | `id` | string | Speicherressourcen-ID |
 
-**Gibt zuruck:** `Storage, error`
+**Gibt zurück:** `Storage, error`
 
 ## Objekte hochladen
 
@@ -61,10 +61,10 @@ storage:release()
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Objektschlussel/Pfad |
+| `key` | string | Objektschlüssel/Pfad |
 | `content` | string oder Reader | Inhalt als String oder Datei-Reader |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Objekte herunterladen
 
@@ -91,11 +91,11 @@ storage:release()
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Herunterzuladender Objektschlussel |
+| `key` | string | Herunterzuladender Objektschlüssel |
 | `writer` | Writer | Ziel-Datei-Writer |
 | `options.range` | string | Byte-Bereich (z.B. "bytes=0-1023") |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Objekte auflisten
 
@@ -113,7 +113,7 @@ for _, obj in ipairs(result.objects) do
     print(obj.key, obj.size, obj.content_type)
 end
 
--- Durch grosse Ergebnisse paginieren
+-- Durch größe Ergebnisse paginieren
 local token = nil
 repeat
     local result = storage:list_objects({
@@ -132,15 +132,15 @@ storage:release()
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `options.prefix` | string | Nach Schlussel-Prafix filtern |
+| `options.prefix` | string | Nach Schlüssel-Prafix filtern |
 | `options.max_keys` | integer | Maximale Anzahl zuruckzugebender Objekte |
 | `options.continuation_token` | string | Paginierungs-Token |
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
 Ergebnis enthalt `objects`, `is_truncated`, `next_continuation_token`.
 
-## Objekte loschen
+## Objekte löschen
 
 Mehrere Objekte entfernen:
 
@@ -158,13 +158,13 @@ storage:release()
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `keys` | string[] | Array von zu loschenden Objektschlusseln |
+| `keys` | string[] | Array von zu löschenden Objektschlüsseln |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Download-URLs
 
-Erstellen Sie eine temporare URL, die das Herunterladen eines Objekts ohne Anmeldeinformationen ermoglicht. Nutzlich zum Teilen von Dateien mit externen Benutzern oder zum Bereitstellen von Inhalten uber Ihre Anwendung.
+Erstellen Sie eine temporare URL, die das Herunterladen eines Objekts ohne Anmeldeinformationen ermoglicht. Nutzlich zum Teilen von Dateien mit externen Benutzern oder zum Bereitstellen von Inhalten über Ihre Anwendung.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -182,20 +182,20 @@ if err then
     return nil, err
 end
 
--- URL an Client fur direkten Download zuruckgeben
+-- URL an Client für direkten Download zuruckgeben
 return {download_url = url}
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Objektschlussel |
+| `key` | string | Objektschlüssel |
 | `options.expiration` | integer | Sekunden bis URL ablauft (Standard: 3600) |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Upload-URLs
 
-Erstellen Sie eine temporare URL, die das Hochladen eines Objekts ohne Anmeldeinformationen ermoglicht. Ermoglicht Clients, Dateien direkt in den Speicher hochzuladen, ohne uber Ihren Server zu proxyen.
+Erstellen Sie eine temporare URL, die das Hochladen eines Objekts ohne Anmeldeinformationen ermoglicht. Ermoglicht Clients, Dateien direkt in den Speicher hochzuladen, ohne über Ihren Server zu proxyen.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -215,27 +215,27 @@ if err then
     return nil, err
 end
 
--- URL an Client fur direkten Upload zuruckgeben
+-- URL an Client für direkten Upload zuruckgeben
 return {upload_url = url}
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Objektschlussel |
+| `key` | string | Objektschlüssel |
 | `options.expiration` | integer | Sekunden bis URL ablauft (Standard: 3600) |
-| `options.content_type` | string | Erforderlicher Content-Type fur Upload |
-| `options.content_length` | integer | Maximale Upload-Grosse in Bytes |
+| `options.content_type` | string | Erforderlicher Content-Type für Upload |
+| `options.content_length` | integer | Maximale Upload-Größe in Bytes |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Storage-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `upload_object(key, content)` | `boolean, error` | String- oder Dateiinhalt hochladen |
 | `download_object(key, writer, opts?)` | `boolean, error` | In Datei-Writer herunterladen |
 | `list_objects(opts?)` | `table, error` | Objekte mit Prafix-Filter auflisten |
-| `delete_objects(keys)` | `boolean, error` | Mehrere Objekte loschen |
+| `delete_objects(keys)` | `boolean, error` | Mehrere Objekte löschen |
 | `presigned_get_url(key, opts?)` | `string, error` | Temporare Download-URL generieren |
 | `presigned_put_url(key, opts?)` | `string, error` | Temporare Upload-URL generieren |
 | `release()` | `boolean` | Speicherressource freigeben |
@@ -256,11 +256,11 @@ Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Ressource nicht gefunden | `errors.NOT_FOUND` | nein |
 | Keine Cloud-Speicherressource | `errors.INVALID` | nein |
 | Speicher freigegeben | `errors.INVALID` | nein |
-| Leerer Schlussel | `errors.INVALID` | nein |
+| Leerer Schlüssel | `errors.INVALID` | nein |
 | Inhalt nil | `errors.INVALID` | nein |
 | Writer nicht gultig | `errors.INVALID` | nein |
 | Objekt nicht gefunden | `errors.NOT_FOUND` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Operation fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

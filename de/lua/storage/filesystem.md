@@ -6,7 +6,7 @@
 
 Lesen, Schreiben und Verwalten von Dateien innerhalb von Sandbox-Dateisystem-Volumes.
 
-Fur Dateisystemkonfiguration siehe [Dateisystem](system-filesystem.md).
+Für Dateisystemkonfiguration siehe [Dateisystem](system-filesystem.md).
 
 ## Laden
 
@@ -31,10 +31,10 @@ local content = vol:readfile("/config.json")
 |-----------|------|-------------|
 | `name` | string | Volume-Registry-ID |
 
-**Gibt zuruck:** `FS, error`
+**Gibt zurück:** `FS, error`
 
 <note>
-Volumes erfordern keine explizite Freigabe. Sie werden auf Systemebene verwaltet und werden nicht mehr verfugbar, wenn das Dateisystem von der Registry getrennt wird.
+Volumes erfordern keine explizite Freigabe. Sie werden auf Systemebene verwaltet und werden nicht mehr verfügbar, wenn das Dateisystem von der Registry getrennt wird.
 </note>
 
 ## Dateien lesen
@@ -52,7 +52,7 @@ end
 local config = json.decode(data)
 ```
 
-Fur grosse Dateien verwenden Sie Streaming mit `open()`:
+Für größe Dateien verwenden Sie Streaming mit `open()`:
 
 ```lua
 local file = vol:open("/data/large.csv", "r")
@@ -89,7 +89,7 @@ local ok, err = vol:writefile("/lock.pid", tostring(pid), "wx")
 | `"a"` | Anhangen |
 | `"wx"` | Exklusives Schreiben (schlagt fehl wenn Datei existiert) |
 
-Fur Streaming-Schreibvorgange:
+Für Streaming-Schreibvorgange:
 
 ```lua
 local file = vol:open("/output/report.txt", "w")
@@ -142,7 +142,7 @@ Eintrag-Felder: `name`, `type` ("file" oder "directory")
 
 ## Datei-Handle-Methoden
 
-Bei Verwendung von `vol:open()` fur Streaming:
+Bei Verwendung von `vol:open()` für Streaming:
 
 | Methode | Beschreibung |
 |--------|-------------|
@@ -157,7 +157,7 @@ Rufen Sie immer `close()` auf, wenn Sie mit einem Datei-Handle fertig sind.
 
 ## Scanner
 
-Fur zeilenweise Verarbeitung:
+Für zeilenweise Verarbeitung:
 
 ```lua
 local file = vol:open("/data/users.csv", "r")
@@ -188,7 +188,7 @@ fs.seek.END       -- vom Ende
 
 ## FS-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `readfile(path)` | `string, error` | Gesamte Datei lesen |
 | `writefile(path, data, mode?)` | `boolean, error` | Datei schreiben |
@@ -221,4 +221,4 @@ Dateisystemzugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | Pfad existiert bereits | `errors.ALREADY_EXISTS` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

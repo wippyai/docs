@@ -18,7 +18,7 @@ local env = require("env")
 Obtem um valor de variavel de ambiente.
 
 ```lua
--- Obter string de conexao do banco
+-- Obter string de conexão do banco
 local db_url = env.get("DATABASE_URL")
 if not db_url then
     return nil, errors.new("INVALID", "DATABASE_URL not configured")
@@ -37,13 +37,13 @@ local log_level = env.get("LOG_LEVEL") or "info"
 local debug_mode = env.get("DEBUG") == "true"
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Nome da variavel |
 
 **Retorna:** `string, error`
 
-Retorna `nil, error` se variavel nao existe.
+Retorna `nil, error` se variavel não existe.
 
 ## set
 
@@ -62,7 +62,7 @@ if is_development then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Nome da variavel |
 | `value` | string | Valor a definir |
@@ -76,7 +76,7 @@ Obtem todas as variaveis de ambiente acessiveis.
 ```lua
 local vars = env.get_all()
 
--- Logar configuracao (cuidado para nao logar secrets)
+-- Logar configuracao (cuidado para não logar secrets)
 for key, value in pairs(vars) do
     if not key:match("SECRET") and not key:match("KEY") then
         logger.debug("env", {[key] = value})
@@ -96,11 +96,11 @@ end
 
 ## Permissoes
 
-Acesso a ambiente esta sujeito a avaliacao de politica de seguranca.
+Acesso a ambiente está sujeito a avaliacao de politica de seguranca.
 
 ### Acoes de Seguranca
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `env.get` | Nome da variavel | Ler variavel de ambiente |
 | `env.set` | Nome da variavel | Escrever variavel de ambiente |
@@ -120,14 +120,14 @@ Veja [Security Model](system-security.md) para configuracao de politicas.
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Chave vazia | `errors.INVALID` | nao |
-| Variavel nao encontrada | `errors.NOT_FOUND` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
+| Chave vazia | `errors.INVALID` | não |
+| Variavel não encontrada | `errors.NOT_FOUND` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 
-## Veja Tambem
+## Veja Também
 
 - [Environment System](system-env.md) - Configurar backends de armazenamento e definicoes de variaveis

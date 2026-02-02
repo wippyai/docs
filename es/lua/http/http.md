@@ -5,7 +5,7 @@
 
 Manejar solicitudes HTTP y construir respuestas. Acceder a datos de solicitud, parametros de ruta, cabeceras y contenido del cuerpo. Construir respuestas con codigos de estado, cabeceras y soporte de streaming.
 
-Para configuracion del servidor, consulte [Servidor HTTP](http-server.md).
+Para configuración del servidor, consulte [Servidor HTTP](http-server.md).
 
 ## Carga
 
@@ -27,7 +27,7 @@ local req = http.request({
 })
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `options.timeout` | integer | Timeout de lectura de cuerpo en ms (predeterminado: 300000 / 5 min) |
 | `options.max_body` | integer | Tamano maximo de cuerpo en bytes (predeterminado: 120MB) |
@@ -130,7 +130,7 @@ local ct = req:content_type()  -- "application/json; charset=utf-8" o nil
 Obtiene el valor de la cabecera Content-Length.
 
 ```lua
-local length = req:content_length()  -- numero de bytes
+local length = req:content_length()  -- número de bytes
 ```
 
 ### host
@@ -515,7 +515,7 @@ http.TRANSFER.SSE       -- "sse"
 
 ### Tipos de Error
 
-Constantes de tipo de error especificas del modulo para manejo preciso de errores.
+Constantes de tipo de error especificas del módulo para manejo preciso de errores.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Error de parseo de formulario/multipart
@@ -526,7 +526,7 @@ http.ERROR.STREAM_ERROR   -- Error de stream de cuerpo
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Sin contexto HTTP | `errors.INTERNAL` | no |
 | Cuerpo muy grande | `errors.INVALID` | no |

@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Codifique dados binarios para strings base64 e decodifique base64 de volta para binario. Usa codificacao base64 padrao conforme RFC 4648.
+Codifique dados binarios para strings base64 e decodifique base64 de volta para binario. Usa codificacao base64 padrão conforme RFC 4648.
 
 ## Carregamento
 
@@ -37,7 +37,7 @@ local credentials = base64.encode("username:password")
 local auth_header = "Basic " .. credentials
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para codificar (texto ou binario) |
 
@@ -74,7 +74,7 @@ local header = json.decode(base64.decode(parts[1]))
 local payload = json.decode(base64.decode(parts[2]))
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | String codificada em base64 |
 
@@ -82,10 +82,10 @@ local payload = json.decode(base64.decode(parts[2]))
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Entrada nao e string | `errors.INVALID` | nao |
-| Caracteres base64 invalidos | `errors.INVALID` | nao |
-| Padding corrompido | `errors.INVALID` | nao |
+| Entrada não e string | `errors.INVALID` | não |
+| Caracteres base64 invalidos | `errors.INVALID` | não |
+| Padding corrompido | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

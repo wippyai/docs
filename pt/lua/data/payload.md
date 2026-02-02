@@ -56,7 +56,7 @@ local nil_p = payload.new(nil)
 local err_p = payload.new(errors.new("something failed"))
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `value` | any | Valor Lua (string, numero, boolean, tabela, nil ou erro) |
 
@@ -127,7 +127,7 @@ end
 local yaml_p, err = p:transcode(payload.format.YAML)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `format` | string | Formato alvo de `payload.format.*` |
 
@@ -135,7 +135,7 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 ## Resultados Assincronos
 
-Payloads sao comumente recebidos de chamadas de funcao assincronas:
+Payloads sao comumente recebidos de chamadas de função assincronas:
 
 ```lua
 local funcs = require("funcs")
@@ -163,10 +163,10 @@ print(result.computed_value)
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Falha de transcodificacao | `errors.INTERNAL` | nao |
-| Resultado nao e valor Lua valido | `errors.INTERNAL` | nao |
+| Falha de transcodificacao | `errors.INTERNAL` | não |
+| Resultado não e valor Lua valido | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 

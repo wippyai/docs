@@ -13,7 +13,7 @@ local uuid = require("uuid")
 
 ## UUIDs Aleatorios
 
-### Version 1
+### Versión 1
 
 UUID basado en tiempo con marca de tiempo e ID de nodo.
 
@@ -23,7 +23,7 @@ local id, err = uuid.v1()
 
 **Devuelve:** `string, error`
 
-### Version 4
+### Versión 4
 
 UUID aleatorio.
 
@@ -33,7 +33,7 @@ local id, err = uuid.v4()
 
 **Devuelve:** `string, error`
 
-### Version 7
+### Versión 7
 
 UUID ordenado por tiempo. Ordenable por tiempo de creacion.
 
@@ -45,7 +45,7 @@ local id, err = uuid.v7()
 
 ## UUIDs Deterministicos
 
-### Version 3
+### Versión 3
 
 UUID deterministico desde namespace y nombre usando MD5.
 
@@ -53,14 +53,14 @@ UUID deterministico desde namespace y nombre usando MD5.
 local id, err = uuid.v3(namespace, name)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `namespace` | string | String UUID valido |
 | `name` | string | Valor a hashear |
 
 **Devuelve:** `string, error`
 
-### Version 5
+### Versión 5
 
 UUID deterministico desde namespace y nombre usando SHA-1.
 
@@ -69,7 +69,7 @@ local NS_URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
 local id, err = uuid.v5(NS_URL, "https://example.com/resource")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `namespace` | string | String UUID valido |
 | `name` | string | Valor a hashear |
@@ -84,19 +84,19 @@ local id, err = uuid.v5(NS_URL, "https://example.com/resource")
 local valid = uuid.validate(input)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `input` | any | Valor a verificar |
 
 **Devuelve:** `boolean`
 
-### Obtener Version
+### Obtener Versión
 
 ```lua
-local ver, err = uuid.version(id)
+local ver, err = uuid.versión(id)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `uuid` | string | String UUID valido |
 
@@ -108,7 +108,7 @@ local ver, err = uuid.version(id)
 local var, err = uuid.variant(id)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `uuid` | string | String UUID valido |
 
@@ -120,14 +120,14 @@ local var, err = uuid.variant(id)
 local info, err = uuid.parse(id)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `uuid` | string | String UUID valido |
 
 **Devuelve:** `table, error`
 
 Campos de tabla devuelta:
-- `version` (integer): Version UUID (1, 3, 4, 5, o 7)
+- `versión` (integer): Versión UUID (1, 3, 4, 5, o 7)
 - `variant` (string): RFC4122, Microsoft, NCS, o Invalid
 - `timestamp` (integer): Marca de tiempo Unix (solo v1 y v7)
 - `node` (string): ID de nodo (solo v1)
@@ -140,7 +140,7 @@ local formatted, err = uuid.format(id, "simple")
 local formatted, err = uuid.format(id, "urn")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `uuid` | string | String UUID valido |
 | `format` | string? | standard (predeterminado), simple, o urn |
@@ -149,7 +149,7 @@ local formatted, err = uuid.format(id, "urn")
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Tipo de entrada invalido | `errors.INVALID` | no |
 | Formato UUID invalido | `errors.INVALID` | no |

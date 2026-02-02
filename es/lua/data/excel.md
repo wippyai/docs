@@ -66,7 +66,7 @@ wb:close()
 file:close()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `reader` | File | Debe implementar io.Reader (ej., fs.File) |
 
@@ -90,7 +90,7 @@ local idx3 = wb:new_sheet("Charts")
 local existing = wb:new_sheet("Summary")  -- devuelve igual que idx1
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de hoja |
 
@@ -132,7 +132,7 @@ wb:set_cell_value("Data", "B1", "Price")         -- string
 wb:set_cell_value("Data", "C1", "In Stock")      -- string
 
 wb:set_cell_value("Data", "A2", "Widget")
-wb:set_cell_value("Data", "B2", 29.99)           -- numero
+wb:set_cell_value("Data", "B2", 29.99)           -- número
 wb:set_cell_value("Data", "C2", true)            -- boolean
 
 wb:set_cell_value("Data", "A3", "Gadget")
@@ -144,7 +144,7 @@ wb:set_cell_value("Data", "AA1", "Extended Column")
 wb:set_cell_value("Data", "AB100", "Far cell")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `sheet` | string | Nombre de hoja |
 | `cell` | string | Referencia de celda ("A1", "B2", "AA100") |
@@ -184,7 +184,7 @@ for i, row in ipairs(rows) do
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `sheet` | string | Nombre de hoja |
 
@@ -233,7 +233,7 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `writer` | File | Debe implementar io.Writer (ej., fs.File) |
 
@@ -256,7 +256,7 @@ wb:close()
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Sin contexto | `errors.INTERNAL` | no |
 | Libro de trabajo invalido | `errors.INVALID` | no |
@@ -269,6 +269,6 @@ wb:close()
 
 Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
 
-## Vea Tambien
+## Vea También
 
 - [Sistema de Archivos](lua-fs.md) - Operaciones de archivo para leer/escribir archivos Excel

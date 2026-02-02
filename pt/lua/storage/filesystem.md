@@ -27,14 +27,14 @@ end
 local content = vol:readfile("/config.json")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | ID do volume no registro |
 
 **Retorna:** `FS, error`
 
 <note>
-Volumes nao requerem liberacao explicita. Sao gerenciados no nivel do sistema e se tornam indisponiveis se o filesystem for desanexado do registro.
+Volumes não requerem liberacao explicita. Sao gerenciados no nivel do sistema e se tornam indisponiveis se o filesystem for desanexado do registro.
 </note>
 
 ## Lendo Arquivos
@@ -73,7 +73,7 @@ Escrever dados em um arquivo:
 ```lua
 local vol = fs.get("app:data")
 
--- Sobrescrever (padrao)
+-- Sobrescrever (padrão)
 vol:writefile("/config.json", json.encode(config))
 
 -- Anexar
@@ -83,9 +83,9 @@ vol:writefile("/logs/app.log", message .. "\n", "a")
 local ok, err = vol:writefile("/lock.pid", tostring(pid), "wx")
 ```
 
-| Modo | Descricao |
+| Modo | Descrição |
 |------|-----------|
-| `"w"` | Sobrescrever (padrao) |
+| `"w"` | Sobrescrever (padrão) |
 | `"a"` | Anexar |
 | `"wx"` | Escrita exclusiva (falha se arquivo existe) |
 
@@ -144,9 +144,9 @@ Campos de entrada: `name`, `type` ("file" ou "directory")
 
 Ao usar `vol:open()` para streaming:
 
-| Metodo | Descricao |
+| Método | Descrição |
 |--------|-----------|
-| `read(size?)` | Ler bytes (padrao: 4096) |
+| `read(size?)` | Ler bytes (padrão: 4096) |
 | `write(data)` | Escrever dados string |
 | `seek(whence, offset)` | Definir posicao ("set", "cur", "end") |
 | `sync()` | Flush para armazenamento |
@@ -173,7 +173,7 @@ end
 file:close()
 ```
 
-Modos de split: `"lines"` (padrao), `"words"`, `"bytes"`, `"runes"`
+Modos de split: `"lines"` (padrão), `"words"`, `"bytes"`, `"runes"`
 
 ## Constantes
 
@@ -188,7 +188,7 @@ fs.seek.END       -- do fim
 
 ## Metodos FS
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `readfile(path)` | `string, error` | Ler arquivo inteiro |
 | `writefile(path, data, mode?)` | `boolean, error` | Escrever arquivo |
@@ -204,21 +204,21 @@ fs.seek.END       -- do fim
 
 ## Permissoes
 
-Acesso ao filesystem esta sujeito a avaliacao de politica de seguranca.
+Acesso ao filesystem está sujeito a avaliacao de politica de seguranca.
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `fs.get` | ID do Volume | Adquirir volume de filesystem |
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Caminho vazio | `errors.INVALID` | nao |
-| Modo invalido | `errors.INVALID` | nao |
-| Arquivo fechado | `errors.INVALID` | nao |
-| Caminho nao encontrado | `errors.NOT_FOUND` | nao |
-| Caminho ja existe | `errors.ALREADY_EXISTS` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
+| Caminho vazio | `errors.INVALID` | não |
+| Modo invalido | `errors.INVALID` | não |
+| Arquivo fechado | `errors.INVALID` | não |
+| Caminho não encontrado | `errors.NOT_FOUND` | não |
+| Caminho ja existe | `errors.ALREADY_EXISTS` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

@@ -6,7 +6,7 @@ Resultados de operaciones asincronas. Los futures son devueltos por `funcs.async
 
 ## Carga
 
-No es un modulo cargable. Los futures son creados por operaciones asincronas:
+No es un módulo cargable. Los futures son creados por operaciones asincronas:
 
 ```lua
 local funcs = require("funcs")
@@ -76,15 +76,15 @@ end
 
 ## Cancelar
 
-Cancelar operacion asincrona (mejor esfuerzo):
+Cancelar operación asincrona (mejor esfuerzo):
 
 ```lua
 future:cancel()
 ```
 
-La operacion puede aun completarse si ya esta en progreso.
+La operación puede aun completarse si ya esta en progreso.
 
-## Patron de Timeout
+## Patrón de Timeout
 
 ```lua
 local future = funcs.async("app.compute:slow", data)
@@ -126,7 +126,7 @@ return r.value:data()
 
 ## Errores
 
-| Condicion | Tipo |
+| Condición | Tipo |
 |-----------|------|
-| Operacion cancelada | `CANCELED` |
-| Operacion asincrona fallida | varia |
+| Operación cancelada | `CANCELED` |
+| Operación asincrona fallida | varia |

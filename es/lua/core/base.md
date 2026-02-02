@@ -11,7 +11,7 @@ Bibliotecas principales de Lua disponibles automaticamente en todos los procesos
 
 ```lua
 type(value)         -- Devuelve: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
-tonumber(s [,base]) -- Convertir a numero, base opcional (2-36)
+tonumber(s [,base]) -- Convertir a número, base opcional (2-36)
 tostring(value)     -- Convertir a string, llama metametodo __tostring
 ```
 
@@ -21,7 +21,7 @@ tostring(value)     -- Convertir a string, llama metametodo __tostring
 assert(v [,msg])    -- Genera error si v es false/nil, devuelve v de lo contrario
 error(msg [,level]) -- Genera error en el nivel de pila especificado (por defecto 1)
 pcall(fn, ...)      -- Llamada protegida, devuelve ok, resultado_o_error
-xpcall(fn, errh)    -- Llamada protegida con funcion manejadora de error
+xpcall(fn, errh)    -- Llamada protegida con función manejadora de error
 ```
 
 ### Iteracion de Tablas
@@ -53,7 +53,7 @@ rawequal(a, b)      -- Comparar sin __eq
 
 ```lua
 select(index, ...)  -- Devuelve args desde index en adelante
-select("#", ...)    -- Devuelve numero de args
+select("#", ...)    -- Devuelve número de args
 unpack(t [,i [,j]]) -- Devuelve t[i] hasta t[j] como multiples valores
 print(...)          -- Imprimir valores (usa logging estructurado en Wippy)
 ```
@@ -62,7 +62,7 @@ print(...)          -- Imprimir valores (usa logging estructurado en Wippy)
 
 ```lua
 _G        -- La tabla de entorno global
-_VERSION  -- Cadena de version de Lua
+_VERSION  -- Cadena de versión de Lua
 ```
 
 ## Manipulacion de Tablas
@@ -94,12 +94,12 @@ end)
 
 ## Operaciones de String
 
-Funciones de manipulacion de strings. Tambien disponibles como metodos en valores string:
+Funciones de manipulacion de strings. También disponibles como metodos en valores string:
 
 ### Coincidencia de Patrones
 
 ```lua
-string.find(s, pattern [,init [,plain]])   -- Encontrar patron, devuelve inicio, fin, capturas
+string.find(s, pattern [,init [,plain]])   -- Encontrar patrón, devuelve inicio, fin, capturas
 string.match(s, pattern [,init])           -- Extraer subcadena coincidente
 string.gmatch(s, pattern)                  -- Iterador sobre todas las coincidencias
 string.gsub(s, pattern, repl [,n])         -- Reemplazar coincidencias, devuelve string, conteo
@@ -141,14 +141,14 @@ local word = string.match(s, "%w+")          -- "Hello"
 -- Sustitucion
 local new = string.gsub(s, "World", "Wippy") -- "Hello, Wippy!"
 
--- Sintaxis de metodo
+-- Sintaxis de método
 local upper = s:upper()                       -- "HELLO, WORLD!"
 local part = s:sub(1, 5)                      -- "Hello"
 ```
 
 ### Patrones
 
-| Patron | Coincide |
+| Patrón | Coincide |
 |--------|----------|
 | `.` | Cualquier caracter |
 | `%a` | Letras |
@@ -238,20 +238,20 @@ math.ult(m, n)        -- Comparacion menor-que sin signo
 Creacion y control de corrutinas. Consulte [Canales y Corrutinas](lua-channel.md) para canales y patrones concurrentes:
 
 ```lua
-coroutine.create(fn)        -- Crear corrutina desde funcion
+coroutine.create(fn)        -- Crear corrutina desde función
 coroutine.resume(co, ...)   -- Iniciar/continuar corrutina
 coroutine.yield(...)        -- Suspender corrutina, devolver valores a resume
 coroutine.status(co)        -- "running", "suspended", "normal", "dead"
 coroutine.running()         -- Corrutina actual (nil si hilo principal)
-coroutine.wrap(fn)          -- Crear corrutina como funcion invocable
+coroutine.wrap(fn)          -- Crear corrutina como función invocable
 ```
 
 ### Crear Corrutinas Concurrentes
 
-Crear una corrutina concurrente que se ejecuta independientemente (especifico de Wippy):
+Crear una corrutina concurrente que se ejecuta independientemente (específico de Wippy):
 
 ```lua
-coroutine.spawn(fn)         -- Crear funcion como corrutina concurrente
+coroutine.spawn(fn)         -- Crear función como corrutina concurrente
 ```
 
 ```lua
@@ -263,7 +263,7 @@ coroutine.spawn(function()
     end
 end)
 
--- Continuar ejecucion principal inmediatamente
+-- Continuar ejecución principal inmediatamente
 process_request()
 ```
 
@@ -279,8 +279,8 @@ errors.INVALID           -- Argumento o entrada invalida
 errors.NOT_FOUND         -- Recurso no encontrado
 errors.ALREADY_EXISTS    -- Recurso ya existe
 errors.PERMISSION_DENIED -- Permiso denegado
-errors.TIMEOUT           -- Operacion agoto tiempo
-errors.CANCELED          -- Operacion cancelada
+errors.TIMEOUT           -- Operación agoto tiempo
+errors.CANCELED          -- Operación cancelada
 errors.UNAVAILABLE       -- Servicio no disponible
 errors.INTERNAL          -- Error interno
 errors.CONFLICT          -- Conflicto (ej., modificacion concurrente)
@@ -330,7 +330,7 @@ Manejo de strings Unicode UTF-8:
 ### Constantes {id="utf8-constants"}
 
 ```lua
-utf8.charpattern  -- Patron que coincide con un solo caracter UTF-8
+utf8.charpattern  -- Patrón que coincide con un solo caracter UTF-8
 ```
 
 ### Funciones {id="utf8-functions"}
@@ -367,15 +367,15 @@ Las siguientes caracteristicas estandar de Lua NO estan disponibles por segurida
 
 | Caracteristica | Alternativa |
 |----------------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Usar modulo [Evaluacion Dinamica](lua-eval.md) |
+| `load`, `loadstring`, `loadfile`, `dofile` | Usar módulo [Evaluacion Dinamica](lua-eval.md) |
 | `collectgarbage` | GC automatico |
 | `rawlen` | Usar operador `#` |
-| `io.*` | Usar modulo [Sistema de Archivos](lua-fs.md) |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Usar modulos [Ejecucion de Comandos](lua-exec.md), [Entorno](lua-env.md) |
+| `io.*` | Usar módulo [Sistema de Archivos](lua-fs.md) |
+| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Usar modulos [Ejecución de Comandos](lua-exec.md), [Entorno](lua-env.md) |
 | `debug.*` (excepto traceback) | No disponible |
 | `package.loadlib` | Bibliotecas nativas no soportadas |
 
-## Vea Tambien
+## Vea También
 
 - [Canales y Corrutinas](lua-channel.md) - Canales estilo Go para concurrencia
 - [Manejo de Errores](lua-errors.md) - Crear y manejar errores estructurados

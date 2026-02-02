@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 
 
-Canales estilo Go para comunicacion entre corrutinas. Crear canales con o sin buffer, enviar y recibir valores, y coordinar entre procesos concurrentes usando sentencias select.
+Canales estilo Go para comunicación entre corrutinas. Crear canales con o sin buffer, enviar y recibir valores, y coordinar entre procesos concurrentes usando sentencias select.
 
 El global `channel` siempre esta disponible.
 
@@ -20,7 +20,7 @@ local sync_ch = channel.new()
 local work_queue = channel.new(10)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `size` | integer | Capacidad del buffer (por defecto: 0 para sin buffer) |
 
@@ -39,7 +39,7 @@ end
 jobs:close()  -- Senalar que no hay mas trabajo
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `value` | any | Valor a enviar |
 
@@ -89,14 +89,14 @@ Esperar en multiples operaciones de canal simultaneamente. Esencial para manejar
 local result = channel.select(cases)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `cases` | table | Array de casos select |
 | `default` | boolean | Si true, devuelve inmediatamente cuando ningun caso este listo |
 
 **Devuelve:** `table` con campos: `channel`, `value`, `ok`, `default`
 
-### Patron de Timeout
+### Patrón de Timeout
 
 Esperar resultado con timeout usando `time.after()`.
 
@@ -117,7 +117,7 @@ end
 return r.value
 ```
 
-### Patron Fan-in
+### Patrón Fan-in
 
 Fusionar multiples fuentes en un manejador.
 
@@ -172,7 +172,7 @@ ch:case_send(value)
 ch:case_receive()
 ```
 
-## Patron de Pool de Trabajadores
+## Patrón de Pool de Trabajadores
 
 ```lua
 local work = channel.new(100)
@@ -200,14 +200,14 @@ end
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Enviar en canal cerrado | error de runtime | no |
 | Cerrar canal cerrado | error de runtime | no |
 | Caso invalido en select | error de runtime | no |
 
-## Vea Tambien
+## Vea También
 
-- [Gestion de Procesos](lua/core/process.md) - Creacion de procesos y comunicacion
+- [Gestión de Procesos](lua/core/process.md) - Creacion de procesos y comunicación
 - [Cola de Mensajes](lua/storage/queue.md) - Mensajeria basada en colas
 - [Funciones](lua/core/funcs.md) - Invocacion de funciones

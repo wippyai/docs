@@ -19,7 +19,7 @@ local ctx = require("ctx")
 local value, err = ctx.get("key")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave do contexto |
 
@@ -35,10 +35,10 @@ local values, err = ctx.all()
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Chave vazia | `errors.INVALID` | nao |
-| Chave nao encontrada | `errors.NOT_FOUND` | nao |
-| Nenhum contexto disponivel | `errors.INTERNAL` | nao |
+| Chave vazia | `errors.INVALID` | não |
+| Chave não encontrada | `errors.NOT_FOUND` | não |
+| Nenhum contexto disponível | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

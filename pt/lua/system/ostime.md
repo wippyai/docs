@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Funcoes de tempo padrao Lua `os`. Fornece tempo de relogio de parede real para timestamps, formatacao de datas e calculos de tempo.
+Funcoes de tempo padrão Lua `os`. Fornece tempo de relogio de parede real para timestamps, formatacao de datas e calculos de tempo.
 
 ## Carregamento
 
@@ -39,7 +39,7 @@ local t = os.time({
 
 **Parametros:**
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `year` | integer | ano atual | Ano de 4 digitos (ex: 2024) |
 | `month` | integer | mes atual | Mes 1-12 |
@@ -50,10 +50,10 @@ local t = os.time({
 
 Quando chamado sem argumentos, retorna timestamp Unix atual.
 
-Quando chamado com uma tabela, qualquer campo ausente usa os padroes mostrados acima. Os campos `year`, `month` e `day` usam a data atual se nao especificados.
+Quando chamado com uma tabela, qualquer campo ausente usa os padroes mostrados acima. Os campos `year`, `month` e `day` usam a data atual se não especificados.
 
 ```lua
--- Apenas data (hora padrao e meia-noite)
+-- Apenas data (hora padrão e meia-noite)
 os.time({year = 2024, month = 6, day = 15})
 
 -- Parcial (preenche ano/mes atual)
@@ -67,7 +67,7 @@ Formatar um timestamp como string ou retornar uma tabela de data:
 <code-block lang="lua">
 local now = os.time()
 
--- Formato padrao
+-- Formato padrão
 os.date()  -- "Sat Jun 15 14:30:45 2024"
 
 -- Formato customizado
@@ -84,14 +84,14 @@ local t = os.date("*t", now)
 
 **Assinatura:** `os.date([format], [timestamp]) -> string | table`
 
-| Parametro | Tipo | Padrao | Descricao |
+| Parâmetro | Tipo | Padrão | Descrição |
 |-----------|------|--------|-----------|
 | `format` | string | `"%c"` | String de formato, `"*t"` para tabela |
 | `timestamp` | integer | hora atual | Timestamp Unix para formatar |
 
 ### Especificadores de Formato
 
-| Codigo | Saida | Exemplo |
+| Código | Saida | Exemplo |
 |--------|-------|---------|
 | `%Y` | Ano 4 digitos | 2024 |
 | `%y` | Ano 2 digitos | 24 |
@@ -124,7 +124,7 @@ Quando formato e `"*t"`, retorna uma tabela:
 local t = os.date("*t")
 ```
 
-| Campo | Tipo | Descricao | Exemplo |
+| Campo | Tipo | Descrição | Exemplo |
 |-------|------|-----------|---------|
 | `year` | integer | Ano 4 digitos | 2024 |
 | `month` | integer | Mes (1-12) | 6 |
@@ -169,7 +169,7 @@ print(days)  -- 365
 
 **Assinatura:** `os.difftime(t2, t1) -> number`
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `t2` | integer | Timestamp posterior |
 | `t1` | integer | Timestamp anterior |

@@ -20,9 +20,9 @@ local crypto = require("crypto")
 local bytes, err = crypto.random.bytes(32)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `length` | integer | Numero de bytes (1 a 1,048,576) |
+| `length` | integer | Número de bytes (1 a 1,048,576) |
 
 **Devuelve:** `string, error`
 
@@ -33,7 +33,7 @@ local str, err = crypto.random.string(32)
 local str, err = crypto.random.string(32, "0123456789abcdef")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `length` | integer | Longitud del string (1 a 1,048,576) |
 | `charset` | string? | Caracteres a usar (predeterminado: alfanumerico) |
@@ -56,7 +56,7 @@ local id, err = crypto.random.uuid()
 local hex, err = crypto.hmac.sha256(key, data)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave HMAC |
 | `data` | string | Datos a autenticar |
@@ -69,7 +69,7 @@ local hex, err = crypto.hmac.sha256(key, data)
 local hex, err = crypto.hmac.sha512(key, data)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave HMAC |
 | `data` | string | Datos a autenticar |
@@ -85,7 +85,7 @@ local encrypted, err = crypto.encrypt.aes(data, key)
 local encrypted, err = crypto.encrypt.aes(data, key, aad)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | Texto plano a cifrar |
 | `key` | string | 16, 24, o 32 bytes (AES-128/192/256) |
@@ -100,7 +100,7 @@ local encrypted, err = crypto.encrypt.chacha20(data, key)
 local encrypted, err = crypto.encrypt.chacha20(data, key, aad)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | Texto plano a cifrar |
 | `key` | string | Debe ser 32 bytes |
@@ -117,7 +117,7 @@ local plaintext, err = crypto.decrypt.aes(encrypted, key)
 local plaintext, err = crypto.decrypt.aes(encrypted, key, aad)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | Datos cifrados de encrypt.aes |
 | `key` | string | Misma clave usada para cifrado |
@@ -132,7 +132,7 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key)
 local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | Datos cifrados de encrypt.chacha20 |
 | `key` | string | Misma clave usada para cifrado |
@@ -150,7 +150,7 @@ local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `payload` | table | Claims JWT (`_header` para cabecera personalizada) |
 | `key` | string | Secreto (HMAC) o clave privada PEM (RSA) |
@@ -166,7 +166,7 @@ local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `token` | string | Token JWT a verificar |
 | `key` | string | Secreto (HMAC) o clave publica PEM (RSA) |
@@ -184,7 +184,7 @@ local key, err = crypto.pbkdf2(password, salt, iterations, key_length)
 local key, err = crypto.pbkdf2(password, salt, iterations, key_length, "sha512")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `password` | string | Contrasena/frase de paso |
 | `salt` | string | Valor de sal |
@@ -202,7 +202,7 @@ local key, err = crypto.pbkdf2(password, salt, iterations, key_length, "sha512")
 local equal = crypto.constant_time_compare(a, b)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `a` | string | Primer string |
 | `b` | string | Segundo string |
@@ -211,7 +211,7 @@ local equal = crypto.constant_time_compare(a, b)
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Longitud invalida | `errors.INVALID` | no |
 | Clave vacia | `errors.INVALID` | no |

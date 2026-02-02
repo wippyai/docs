@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Consultar informacion del sistema en tiempo de ejecucion incluyendo uso de memoria, estadisticas de recoleccion de basura, detalles de CPU y metadatos de proceso.
+Consultar información del sistema en tiempo de ejecución incluyendo uso de memoria, estadisticas de recoleccion de basura, detalles de CPU y metadatos de proceso.
 
 ## Carga
 
@@ -13,15 +13,15 @@ local system = require("system")
 
 ## Apagado
 
-Activar apagado del sistema con codigo de salida. Util para aplicaciones de terminal; llamar desde actores en ejecucion terminara todo el sistema:
+Activar apagado del sistema con código de salida. Util para aplicaciones de terminal; llamar desde actores en ejecución terminara todo el sistema:
 
 ```lua
 local ok, err = system.exit(0)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `code` | integer | Codigo de salida (0 = exito), predeterminado 0 |
+| `code` | integer | Código de salida (0 = exito), predeterminado 0 |
 
 **Devuelve:** `boolean, error`
 
@@ -35,13 +35,13 @@ local mods, err = system.modules()
 
 **Devuelve:** `table[], error`
 
-Cada tabla de modulo contiene:
+Cada tabla de módulo contiene:
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `name` | string | Nombre del modulo |
-| `description` | string | Descripcion del modulo |
-| `class` | string[] | Tags de clasificacion del modulo |
+| `name` | string | Nombre del módulo |
+| `description` | string | Descripción del módulo |
+| `class` | string[] | Tags de clasificacion del módulo |
 
 ## Estadisticas de Memoria
 
@@ -55,7 +55,7 @@ local stats, err = system.memory.stats()
 
 La tabla de stats contiene:
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `alloc` | number | Bytes asignados y en uso |
 | `total_alloc` | number | Bytes asignados acumulativos |
@@ -65,12 +65,12 @@ La tabla de stats contiene:
 | `heap_idle` | number | Bytes en spans inactivos |
 | `heap_in_use` | number | Bytes en spans activos |
 | `heap_released` | number | Bytes liberados al OS |
-| `heap_objects` | number | Numero de objetos de heap asignados |
+| `heap_objects` | number | Número de objetos de heap asignados |
 | `stack_in_use` | number | Bytes usados por asignador de stack |
 | `stack_sys` | number | Bytes obtenidos para stack del sistema |
 | `mspan_in_use` | number | Bytes de estructuras mspan en uso |
 | `mspan_sys` | number | Bytes obtenidos para mspan del sistema |
-| `num_gc` | number | Numero de ciclos GC completados |
+| `num_gc` | number | Número de ciclos GC completados |
 | `next_gc` | number | Tamano objetivo de heap para proximo GC |
 
 ## Asignacion Actual
@@ -85,7 +85,7 @@ local bytes, err = system.memory.allocated()
 
 ## Objetos de Heap
 
-Obtener numero de objetos de heap asignados:
+Obtener número de objetos de heap asignados:
 
 ```lua
 local count, err = system.memory.heap_objects()
@@ -101,7 +101,7 @@ Establecer limite de memoria (devuelve valor anterior):
 local prev, err = system.memory.set_limit(1024 * 1024 * 100)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `limit` | integer | Limite de memoria en bytes, -1 para ilimitado |
 
@@ -133,7 +133,7 @@ Establecer porcentaje objetivo de GC (devuelve valor anterior). Un valor de 100 
 local prev, err = system.gc.set_percent(200)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `percent` | integer | Porcentaje objetivo de GC |
 
@@ -149,7 +149,7 @@ local percent, err = system.gc.get_percent()
 
 ## Conteo de Goroutines
 
-Obtener numero de goroutines activas:
+Obtener número de goroutines activas:
 
 ```lua
 local count, err = system.runtime.goroutines()
@@ -169,7 +169,7 @@ local current, err = system.runtime.max_procs()
 local prev, err = system.runtime.max_procs(4)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `n` | integer | Si se proporciona, establece GOMAXPROCS (debe ser > 0) |
 
@@ -177,7 +177,7 @@ local prev, err = system.runtime.max_procs(4)
 
 ## Conteo de CPU
 
-Obtener numero de CPUs logicas:
+Obtener número de CPUs logicas:
 
 ```lua
 local cpus, err = system.runtime.cpu_count()
@@ -207,13 +207,13 @@ local hostname, err = system.process.hostname()
 
 ## Estado de Servicio
 
-Obtener estado para un servicio supervisado especifico:
+Obtener estado para un servicio supervisado específico:
 
 ```lua
 local state, err = system.supervisor.state("namespace:service")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `service_id` | string | ID de servicio (ej., "namespace:service") |
 
@@ -221,12 +221,12 @@ local state, err = system.supervisor.state("namespace:service")
 
 La tabla de estado contiene:
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `id` | string | ID de servicio |
 | `status` | string | Estado actual |
 | `desired` | string | Estado deseado |
-| `retry_count` | number | Numero de reintentos |
+| `retry_count` | number | Número de reintentos |
 | `last_update` | number | Marca de tiempo de ultima actualizacion (nanosegundos) |
 | `started_at` | number | Marca de tiempo de inicio (nanosegundos) |
 | `details` | string | Detalles opcionales (formateados) |
@@ -247,7 +247,7 @@ Cada tabla de estado tiene el mismo formato que `system.supervisor.state()`.
 
 Las operaciones de sistema estan sujetas a evaluacion de politica de seguridad.
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `system.read` | `memory` | Leer estadisticas de memoria |
 | `system.read` | `memory_limit` | Leer limite de memoria |
@@ -267,13 +267,13 @@ Las operaciones de sistema estan sujetas a evaluacion de politica de seguridad.
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
 | Argumento invalido | `errors.INVALID` | no |
 | Argumento requerido faltante | `errors.INVALID` | no |
-| Gestor de codigo no disponible | `errors.INTERNAL` | no |
-| Informacion de servicio no disponible | `errors.INTERNAL` | no |
+| Gestor de código no disponible | `errors.INTERNAL` | no |
+| Información de servicio no disponible | `errors.INTERNAL` | no |
 | Error de OS obteniendo hostname | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.

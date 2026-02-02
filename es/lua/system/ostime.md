@@ -39,7 +39,7 @@ local t = os.time({
 
 **Parametros:**
 
-| Campo | Tipo | Predeterminado | Descripcion |
+| Campo | Tipo | Predeterminado | Descripción |
 |-------|------|----------------|-------------|
 | `year` | integer | ano actual | Ano de cuatro digitos (ej., 2024) |
 | `month` | integer | mes actual | Mes 1-12 |
@@ -84,14 +84,14 @@ local t = os.date("*t", now)
 
 **Firma:** `os.date([format], [timestamp]) -> string | table`
 
-| Parametro | Tipo | Predeterminado | Descripcion |
+| Parámetro | Tipo | Predeterminado | Descripción |
 |-----------|------|----------------|-------------|
 | `format` | string | `"%c"` | String de formato, `"*t"` para tabla |
 | `timestamp` | integer | tiempo actual | Marca de tiempo Unix a formatear |
 
 ### Especificadores de Formato
 
-| Codigo | Salida | Ejemplo |
+| Código | Salida | Ejemplo |
 |--------|--------|---------|
 | `%Y` | Ano de 4 digitos | 2024 |
 | `%y` | Ano de 2 digitos | 24 |
@@ -108,7 +108,7 @@ local t = os.date("*t", now)
 | `%b` | Mes corto | Jun |
 | `%w` | Dia de semana (0-6, Domingo=0) | 6 |
 | `%j` | Dia del ano (001-366) | 167 |
-| `%U` | Numero de semana (00-53) | 24 |
+| `%U` | Número de semana (00-53) | 24 |
 | `%z` | Offset de zona horaria | -0700 |
 | `%Z` | Nombre de zona horaria | PDT |
 | `%c` | Fecha/hora completa | Sat Jun 15 14:30:45 2024 |
@@ -124,7 +124,7 @@ Cuando el formato es `"*t"`, devuelve una tabla:
 local t = os.date("*t")
 ```
 
-| Campo | Tipo | Descripcion | Ejemplo |
+| Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
 | `year` | integer | Ano de cuatro digitos | 2024 |
 | `month` | integer | Mes (1-12) | 6 |
@@ -169,7 +169,7 @@ print(days)  -- 365
 
 **Firma:** `os.difftime(t2, t1) -> number`
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `t2` | integer | Marca de tiempo posterior |
 | `t1` | integer | Marca de tiempo anterior |

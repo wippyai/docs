@@ -3,9 +3,9 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Sanitize HTML nao confiavel para prevenir ataques XSS. Baseado em [bluemonday](https://github.com/microcosm-cc/bluemonday).
+Sanitize HTML não confiavel para prevenir ataques XSS. Baseado em [bluemonday](https://github.com/microcosm-cc/bluemonday).
 
-A sanitizacao funciona parseando HTML e filtrando atraves de uma politica de whitelist. Elementos e atributos nao explicitamente permitidos sao removidos. A saida e sempre HTML bem formado.
+A sanitizacao funciona parseando HTML e filtrando atraves de uma politica de whitelist. Elementos e atributos não explicitamente permitidos sao removidos. A saida e sempre HTML bem formado.
 
 ## Carregamento
 
@@ -25,7 +25,7 @@ Tres politicas embutidas para casos de uso comuns:
 
 ### Politica Vazia
 
-Cria uma politica que nao permite nada. Use para construir uma whitelist customizada do zero.
+Cria uma politica que não permite nada. Use para construir uma whitelist customizada do zero.
 
 ```lua
 local policy, err = html.sanitize.new_policy()
@@ -83,7 +83,7 @@ local result = policy:sanitize('<p>Hello <strong>world</strong></p>')
 -- '<p>Hello <strong>world</strong></p>'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `...` | string | Nomes de tags de elementos |
 
@@ -101,7 +101,7 @@ policy:allow_attrs("src", "alt"):on_elements("img")
 policy:allow_attrs("class", "id"):globally()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `...` | string | Nomes de atributos |
 
@@ -117,7 +117,7 @@ policy:allow_attrs("href", "target"):on_elements("a")
 policy:allow_attrs("src", "alt", "width", "height"):on_elements("img")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `...` | string | Nomes de tags de elementos |
 
@@ -136,7 +136,7 @@ policy:allow_attrs("id"):globally()
 
 ### Com Pattern Matching
 
-Validar valores de atributo contra padrao regex.
+Validar valores de atributo contra padrão regex.
 
 ```lua
 -- Permitir apenas cores hex no style
@@ -153,15 +153,15 @@ policy:sanitize('<span style="background:red">Bad</span>')
 -- '<span>Bad</span>'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `pattern` | string | Padrao regex |
+| `pattern` | string | Padrão regex |
 
 **Retorna:** `AttrBuilder, error`
 
 ## Seguranca de URL
 
-### URLs Padrao
+### URLs Padrão
 
 Habilitar tratamento de URL com padroes de seguranca.
 
@@ -187,7 +187,7 @@ policy:sanitize('<a href="javascript:alert(1)">XSS</a>')
 -- '<a>XSS</a>'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `...` | string | Esquemas permitidos |
 
@@ -204,7 +204,7 @@ policy:sanitize('<a href="/page">Link</a>')
 -- '<a href="/page">Link</a>'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `allow` | boolean | Permitir URLs relativas |
 
@@ -222,7 +222,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 -- '<a href="https://example.com" rel="nofollow">Link</a>'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `require` | boolean | Adicionar nofollow |
 
@@ -236,7 +236,7 @@ Adicionar `rel="noreferrer"` a todos os links. Previne vazamento de referrer.
 policy:require_noreferrer_on_links(true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `require` | boolean | Adicionar noreferrer |
 
@@ -254,7 +254,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 -- '<a href="https://example.com" target="_blank">Link</a>'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `add` | boolean | Adicionar target blank |
 
@@ -264,7 +264,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 ### Permitir Imagens
 
-Permitir `<img>` com atributos padrao.
+Permitir `<img>` com atributos padrão.
 
 ```lua
 policy:allow_images()
@@ -316,7 +316,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 **Retorna:** `Policy`
 
-### Permitir Atributos Padrao
+### Permitir Atributos Padrão
 
 Permitir atributos comuns: `id`, `class`, `title`, `dir`, `lang`.
 
@@ -343,7 +343,7 @@ local clean = policy:sanitize(dirty)
 -- '<p>Hello</p>'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `html` | string | HTML para sanitizar |
 
@@ -351,8 +351,8 @@ local clean = policy:sanitize(dirty)
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Padrao regex invalido | `errors.INVALID` | nao |
+| Padrão regex invalido | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

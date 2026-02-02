@@ -14,9 +14,9 @@ Para configuracao de banco de dados, veja [Database](system-database.md).
 local sql = require("sql")
 ```
 
-## Obtendo uma Conexao
+## Obtendo uma Conexão
 
-Obter uma conexao de banco de dados do registry de recursos:
+Obter uma conexão de banco de dados do registry de recursos:
 
 ```lua
 local db, err = sql.get("app.db:main")
@@ -29,14 +29,14 @@ local rows = db:query("SELECT * FROM users WHERE active = ?", {1})
 db:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do recurso (ex: "app.db:main") |
 
 **Retorna:** `DB, error`
 
 <note>
-Conexoes sao automaticamente retornadas ao pool quando a funcao termina, mas chamar `db:release()` explicitamente e recomendado para operacoes de longa duracao.
+Conexoes sao automaticamente retornadas ao pool quando a função termina, mas chamar `db:release()` explicitamente e recomendado para operacoes de longa duracao.
 </note>
 
 ## Constantes
@@ -131,7 +131,7 @@ local query = sql.builder.select("id", "name")
     :where({active = 1})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `columns` | ...string | Nomes das colunas (opcional) |
 
@@ -147,7 +147,7 @@ local query = sql.builder.insert("users")
     :values("alice", "alice@example.com")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela (opcional) |
 
@@ -163,7 +163,7 @@ local query = sql.builder.update("users")
     :where({id = 123})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela (opcional) |
 
@@ -179,7 +179,7 @@ local query = sql.builder.delete("users")
     :limit(100)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela (opcional) |
 
@@ -193,7 +193,7 @@ Cria expressao SQL raw para uso em clausulas where/having.
 local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Expressao SQL com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -202,13 +202,13 @@ local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 
 ## builder.eq
 
-Cria condicao de igualdade de tabela.
+Cria condição de igualdade de tabela.
 
 ```lua
 local cond = sql.builder.eq({active = 1, status = "open"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -216,13 +216,13 @@ local cond = sql.builder.eq({active = 1, status = "open"})
 
 ## builder.not_eq
 
-Cria condicao de desigualdade de tabela.
+Cria condição de desigualdade de tabela.
 
 ```lua
 local cond = sql.builder.not_eq({status = "closed"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -230,13 +230,13 @@ local cond = sql.builder.not_eq({status = "closed"})
 
 ## builder.lt
 
-Cria condicao menor-que de tabela.
+Cria condição menor-que de tabela.
 
 ```lua
 local cond = sql.builder.lt({age = 18})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -244,13 +244,13 @@ local cond = sql.builder.lt({age = 18})
 
 ## builder.lte
 
-Cria condicao menor-ou-igual de tabela.
+Cria condição menor-ou-igual de tabela.
 
 ```lua
 local cond = sql.builder.lte({price = 100})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -258,13 +258,13 @@ local cond = sql.builder.lte({price = 100})
 
 ## builder.gt
 
-Cria condicao maior-que de tabela.
+Cria condição maior-que de tabela.
 
 ```lua
 local cond = sql.builder.gt({score = 80})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -272,13 +272,13 @@ local cond = sql.builder.gt({score = 80})
 
 ## builder.gte
 
-Cria condicao maior-ou-igual de tabela.
+Cria condição maior-ou-igual de tabela.
 
 ```lua
 local cond = sql.builder.gte({age = 21})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -286,13 +286,13 @@ local cond = sql.builder.gte({age = 21})
 
 ## builder.like
 
-Cria condicao LIKE de tabela.
+Cria condição LIKE de tabela.
 
 ```lua
 local cond = sql.builder.like({name = "john%"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -300,13 +300,13 @@ local cond = sql.builder.like({name = "john%"})
 
 ## builder.not_like
 
-Cria condicao NOT LIKE de tabela.
+Cria condição NOT LIKE de tabela.
 
 ```lua
 local cond = sql.builder.not_like({email = "%@spam.com"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -323,7 +323,7 @@ local cond = sql.builder.and_({
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `conditions` | table | Array de condicoes Sqlizer ou table |
 
@@ -340,7 +340,7 @@ local cond = sql.builder.or_({
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `conditions` | table | Array de condicoes Sqlizer ou table |
 
@@ -348,7 +348,7 @@ local cond = sql.builder.or_({
 
 ## builder.question
 
-Formato de placeholder para placeholders ? (padrao).
+Formato de placeholder para placeholders ? (padrão).
 
 ```lua
 local query = sql.builder.select("*")
@@ -386,9 +386,9 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.colon)
 ```
 
-## Metodos de Conexao
+## Metodos de Conexão
 
-Handle de conexao de banco de dados retornado por `sql.get()`.
+Handle de conexão de banco de dados retornado por `sql.get()`.
 
 ### db:type
 
@@ -408,7 +408,7 @@ Executa query SELECT e retorna linhas.
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Query SQL com placeholders ? |
 | `params` | table | Array de parametros de bind (opcional) |
@@ -423,7 +423,7 @@ Executa query INSERT/UPDATE/DELETE.
 local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Statement SQL com placeholders ? |
 | `params` | table | Array de parametros de bind (opcional) |
@@ -436,13 +436,13 @@ Retorna tabela com campos:
 
 ### db:prepare
 
-Cria prepared statement para execucao repetida.
+Cria prepared statement para execução repetida.
 
 ```lua
 local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | SQL com placeholders ? |
 
@@ -459,13 +459,13 @@ local tx, err = db:begin({
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `options` | table | Opcoes de transacao (opcional) |
 
 Campos da tabela de opcoes:
-- `isolation` - Nivel de isolamento de sql.isolation.* (padrao: DEFAULT)
-- `read_only` - Flag de transacao somente leitura (padrao: false)
+- `isolation` - Nivel de isolamento de sql.isolation.* (padrão: DEFAULT)
+- `read_only` - Flag de transacao somente leitura (padrão: false)
 
 **Retorna:** `Transaction, error`
 
@@ -494,7 +494,7 @@ Retorna tabela com campos:
 - `open_connections` - Conexoes abertas atuais
 - `in_use` - Conexoes em uso atualmente
 - `idle` - Conexoes ociosas no pool
-- `wait_count` - Contagem total de espera por conexao
+- `wait_count` - Contagem total de espera por conexão
 - `wait_duration` - Duracao total de espera
 - `max_idle_closed` - Conexoes fechadas por max idle
 - `max_idle_time_closed` - Conexoes fechadas por timeout de idle
@@ -512,7 +512,7 @@ Executa prepared statement como SELECT.
 local rows, err = stmt:query({123})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `params` | table | Array de parametros de bind (opcional) |
 
@@ -526,7 +526,7 @@ Executa prepared statement como INSERT/UPDATE/DELETE.
 local result, err = stmt:execute({"alice"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `params` | table | Array de parametros de bind (opcional) |
 
@@ -568,7 +568,7 @@ Executa query SELECT dentro da transacao.
 local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Query SQL com placeholders ? |
 | `params` | table | Array de parametros de bind (opcional) |
@@ -583,7 +583,7 @@ Executa INSERT/UPDATE/DELETE dentro da transacao.
 local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Statement SQL com placeholders ? |
 | `params` | table | Array de parametros de bind (opcional) |
@@ -602,7 +602,7 @@ Cria prepared statement dentro da transacao.
 local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | SQL com placeholders ? |
 
@@ -636,7 +636,7 @@ Cria savepoint nomeado dentro da transacao.
 local ok, err = tx:savepoint("sp1")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome do savepoint (apenas alfanumerico e underscore) |
 
@@ -650,7 +650,7 @@ Faz rollback para savepoint nomeado.
 local ok, err = tx:rollback_to("sp1")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome do savepoint |
 
@@ -664,7 +664,7 @@ Libera savepoint.
 local ok, err = tx:release("sp1")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome do savepoint |
 
@@ -682,7 +682,7 @@ Define clausula FROM.
 local query = sql.builder.select("id", "name"):from("users")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela |
 
@@ -698,7 +698,7 @@ local query = sql.builder.select("*")
     :join("orders ON orders.user_id = users.id")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `join` | string | Clausula JOIN com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -715,7 +715,7 @@ local query = sql.builder.select("*")
     :left_join("orders ON orders.user_id = users.id")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `join` | string | Clausula JOIN com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -732,7 +732,7 @@ local query = sql.builder.select("*")
     :right_join("orders ON orders.user_id = users.id")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `join` | string | Clausula JOIN com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -749,7 +749,7 @@ local query = sql.builder.select("*")
     :inner_join("orders ON orders.user_id = users.id")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `join` | string | Clausula JOIN com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -758,7 +758,7 @@ local query = sql.builder.select("*")
 
 ### select:where
 
-Adiciona condicao WHERE.
+Adiciona condição WHERE.
 
 ```lua
 local query = sql.builder.select("*")
@@ -766,9 +766,9 @@ local query = sql.builder.select("*")
     :where({active = 1})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `condition` | string\|table\|Sqlizer | Condicao WHERE |
+| `condition` | string\|table\|Sqlizer | Condição WHERE |
 | `args` | ...any | Argumentos de bind (opcional, quando usando string) |
 
 Suporta tres formatos:
@@ -788,7 +788,7 @@ local query = sql.builder.select("*")
     :order_by("name ASC", "created_at DESC")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `columns` | ...string | Nomes de colunas com ASC/DESC opcional |
 
@@ -804,7 +804,7 @@ local query = sql.builder.select("status", "COUNT(*)")
     :group_by("status")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `columns` | ...string | Nomes das colunas |
 
@@ -812,7 +812,7 @@ local query = sql.builder.select("status", "COUNT(*)")
 
 ### select:having
 
-Adiciona condicao HAVING.
+Adiciona condição HAVING.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*) as cnt")
@@ -821,9 +821,9 @@ local query = sql.builder.select("status", "COUNT(*) as cnt")
     :having(sql.builder.gt({cnt = 10}))
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `condition` | string\|table\|Sqlizer | Condicao HAVING |
+| `condition` | string\|table\|Sqlizer | Condição HAVING |
 | `args` | ...any | Argumentos de bind (opcional, quando usando string) |
 
 **Retorna:** `SelectBuilder`
@@ -838,7 +838,7 @@ local query = sql.builder.select("*")
     :limit(10)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `n` | integer | Valor de limit |
 
@@ -854,7 +854,7 @@ local query = sql.builder.select("*")
     :offset(20)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `n` | integer | Valor de offset |
 
@@ -868,7 +868,7 @@ Adiciona colunas ao SELECT.
 local query = sql.builder.select():columns("id", "name", "email")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `columns` | ...string | Nomes das colunas |
 
@@ -896,7 +896,7 @@ local query = sql.builder.select("*")
     :suffix("FOR UPDATE")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Sufixo SQL com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -913,7 +913,7 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `format` | userdata | Formato de placeholder (sql.builder.*) |
 
@@ -938,7 +938,7 @@ local executor = query:run_with(db)
 local rows, err = executor:query()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `db` | DB\|Transaction | Handle de banco de dados ou transacao |
 
@@ -956,7 +956,7 @@ Define nome da tabela.
 local query = sql.builder.insert():into("users")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela |
 
@@ -970,7 +970,7 @@ Define nomes das colunas.
 local query = sql.builder.insert("users"):columns("name", "email")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `columns` | ...string | Nomes das colunas |
 
@@ -986,7 +986,7 @@ local query = sql.builder.insert("users")
     :values("alice", "alice@example.com")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `values` | ...any | Valores da linha |
 
@@ -1001,7 +1001,7 @@ local query = sql.builder.insert("users")
     :set_map({name = "alice", email = "alice@example.com"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -1018,7 +1018,7 @@ local query = sql.builder.insert("users")
     :select(select_query)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `query` | SelectBuilder | Query SELECT |
 
@@ -1033,7 +1033,7 @@ local query = sql.builder.insert("users")
     :prefix("INSERT IGNORE INTO")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Prefixo SQL com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -1051,7 +1051,7 @@ local query = sql.builder.insert("users")
     :suffix("RETURNING id")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Sufixo SQL com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -1067,7 +1067,7 @@ local query = sql.builder.insert("users")
     :options("DELAYED", "IGNORE")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `options` | ...string | Opcoes de INSERT |
 
@@ -1082,7 +1082,7 @@ local query = sql.builder.insert("users")
     :placeholder_format(sql.builder.dollar)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `format` | userdata | Formato de placeholder (sql.builder.*) |
 
@@ -1107,7 +1107,7 @@ local executor = query:run_with(db)
 local result, err = executor:exec()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `db` | DB\|Transaction | Handle de banco de dados ou transacao |
 
@@ -1125,7 +1125,7 @@ Define nome da tabela.
 local query = sql.builder.update():table("users")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela |
 
@@ -1141,7 +1141,7 @@ local query = sql.builder.update("users")
     :set("updated_at", sql.builder.expr("NOW()"))
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `column` | string | Nome da coluna |
 | `value` | any | Valor da coluna |
@@ -1157,7 +1157,7 @@ local query = sql.builder.update("users")
     :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `map` | table | Pares {coluna = valor} |
 
@@ -1165,7 +1165,7 @@ local query = sql.builder.update("users")
 
 ### update:where
 
-Adiciona condicao WHERE.
+Adiciona condição WHERE.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1173,9 +1173,9 @@ local query = sql.builder.update("users")
     :where({id = 123})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `condition` | string\|table\|Sqlizer | Condicao WHERE |
+| `condition` | string\|table\|Sqlizer | Condição WHERE |
 | `args` | ...any | Argumentos de bind (opcional, quando usando string) |
 
 **Retorna:** `UpdateBuilder`
@@ -1190,7 +1190,7 @@ local query = sql.builder.update("users")
     :order_by("score DESC")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `columns` | ...string | Nomes de colunas com ASC/DESC opcional |
 
@@ -1206,7 +1206,7 @@ local query = sql.builder.update("users")
     :limit(10)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `n` | integer | Valor de limit |
 
@@ -1222,7 +1222,7 @@ local query = sql.builder.update("users")
     :offset(5)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `n` | integer | Valor de offset |
 
@@ -1238,7 +1238,7 @@ local query = sql.builder.update("users")
     :suffix("RETURNING id")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Sufixo SQL com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -1255,7 +1255,7 @@ local query = sql.builder.update("users")
     :from("other_table")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela |
 
@@ -1272,7 +1272,7 @@ local query = sql.builder.update("users")
     :from_select(select_query, "t")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `query` | SelectBuilder | Query SELECT |
 | `alias` | string | Alias da tabela |
@@ -1288,7 +1288,7 @@ local query = sql.builder.update("users")
     :placeholder_format(sql.builder.dollar)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `format` | userdata | Formato de placeholder (sql.builder.*) |
 
@@ -1313,7 +1313,7 @@ local executor = query:run_with(db)
 local result, err = executor:exec()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `db` | DB\|Transaction | Handle de banco de dados ou transacao |
 
@@ -1331,7 +1331,7 @@ Define nome da tabela.
 local query = sql.builder.delete():from("users")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `table` | string | Nome da tabela |
 
@@ -1339,16 +1339,16 @@ local query = sql.builder.delete():from("users")
 
 ### delete:where
 
-Adiciona condicao WHERE.
+Adiciona condição WHERE.
 
 ```lua
 local query = sql.builder.delete("users")
     :where({active = 0})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `condition` | string\|table\|Sqlizer | Condicao WHERE |
+| `condition` | string\|table\|Sqlizer | Condição WHERE |
 | `args` | ...any | Argumentos de bind (opcional, quando usando string) |
 
 **Retorna:** `DeleteBuilder`
@@ -1363,7 +1363,7 @@ local query = sql.builder.delete("users")
     :order_by("created_at ASC")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `columns` | ...string | Nomes de colunas com ASC/DESC opcional |
 
@@ -1379,7 +1379,7 @@ local query = sql.builder.delete("users")
     :limit(100)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `n` | integer | Valor de limit |
 
@@ -1395,7 +1395,7 @@ local query = sql.builder.delete("users")
     :offset(10)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `n` | integer | Valor de offset |
 
@@ -1411,7 +1411,7 @@ local query = sql.builder.delete("users")
     :suffix("RETURNING id")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sql` | string | Sufixo SQL com placeholders ? |
 | `args` | ...any | Argumentos de bind (opcional) |
@@ -1427,7 +1427,7 @@ local query = sql.builder.delete("users")
     :placeholder_format(sql.builder.dollar)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `format` | userdata | Formato de placeholder (sql.builder.*) |
 
@@ -1452,7 +1452,7 @@ local executor = query:run_with(db)
 local result, err = executor:exec()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `db` | DB\|Transaction | Handle de banco de dados ou transacao |
 
@@ -1498,26 +1498,26 @@ local sql_str, args = executor:to_sql()
 
 ## Permissoes
 
-Acesso a banco de dados esta sujeito a avaliacao de politica de seguranca.
+Acesso a banco de dados está sujeito a avaliacao de politica de seguranca.
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
-| `db.get` | ID do Database | Obter conexao de banco de dados |
+| `db.get` | ID do Database | Obter conexão de banco de dados |
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| ID de recurso vazio | `errors.INVALID` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
-| Recurso nao encontrado | `errors.NOT_FOUND` | nao |
-| Recurso nao e database | `errors.INVALID` | nao |
-| Parametros invalidos | `errors.INVALID` | nao |
-| Erro de sintaxe SQL | `errors.INVALID` | nao |
-| Statement fechado | `errors.INVALID` | nao |
-| Transacao nao ativa | `errors.INVALID` | nao |
-| Nome de savepoint invalido | `errors.INVALID` | nao |
-| Erro de execucao de query | varia | varia |
+| ID de recurso vazio | `errors.INVALID` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Recurso não encontrado | `errors.NOT_FOUND` | não |
+| Recurso não e database | `errors.INVALID` | não |
+| Parametros invalidos | `errors.INVALID` | não |
+| Erro de sintaxe SQL | `errors.INVALID` | não |
+| Statement fechado | `errors.INVALID` | não |
+| Transacao não ativa | `errors.INVALID` | não |
+| Nome de savepoint invalido | `errors.INVALID` | não |
+| Erro de execução de query | varia | varia |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 
@@ -1526,7 +1526,7 @@ Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 ```lua
 local sql = require("sql")
 
--- Obter conexao de banco de dados
+-- Obter conexão de banco de dados
 local db, err = sql.get("app.db:main")
 if err then error(err) end
 
@@ -1542,7 +1542,7 @@ for _, user in ipairs(users) do
     print(user.id, user.name)
 end
 
--- Padrao builder
+-- Padrão builder
 local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :from("users u")
     :left_join("orders o ON o.user_id = u.id")

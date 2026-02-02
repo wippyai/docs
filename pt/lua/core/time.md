@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Trabalhe com valores de tempo, duracoes, fusos horarios e agendamento. Crie timers, pause execucao por periodos especificos, parse e formate timestamps.
+Trabalhe com valores de tempo, duracoes, fusos horarios e agendamento. Crie timers, pause execução por periodos especificos, parse e formate timestamps.
 
 Em workflows, `time.now()` retorna uma referencia de tempo gravada para replay deterministico.
 
@@ -45,11 +45,11 @@ print(t:format_rfc3339())  -- "2024-12-25T10:30:00Z"
 local ny, _ = time.load_location("America/New_York")
 local meeting = time.date(2024, time.JANUARY, 15, 14, 0, 0, 0, ny)
 
--- Padrao e fuso horario local se nao especificado
+-- Padrão e fuso horario local se não especificado
 local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `year` | number | Ano |
 | `month` | number | Mes (1-12 ou `time.JANUARY` etc) |
@@ -58,7 +58,7 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 | `minute` | number | Minuto (0-59) |
 | `second` | number | Segundo (0-59) |
 | `nanosecond` | number | Nanossegundo (0-999999999) |
-| `location` | Location | Fuso horario (opcional, padrao e local) |
+| `location` | Location | Fuso horario (opcional, padrão e local) |
 
 **Retorna:** `Time`
 
@@ -77,7 +77,7 @@ local js_timestamp = 1703862245000
 local t = time.unix(js_timestamp // 1000, (js_timestamp % 1000) * 1000000)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sec` | number | Segundos Unix |
 | `nsec` | number | Offset em nanossegundos |
@@ -105,11 +105,11 @@ local ny, _ = time.load_location("America/New_York")
 local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `layout` | string | Layout de formato de tempo Go |
 | `value` | string | String para parse |
-| `location` | Location | Fuso horario padrao (opcional) |
+| `location` | Location | Fuso horario padrão (opcional) |
 
 **Retorna:** `Time, error`
 
@@ -136,7 +136,7 @@ local next_year = t:add_date(1, 0, 0)    -- adicionar 1 ano
 local last_week = t:add_date(0, 0, -7)   -- subtrair 7 dias
 ```
 
-| Metodo | Parametros | Retorna | Descricao |
+| Método | Parametros | Retorna | Descrição |
 |--------|------------|---------|-----------|
 | `add(duration)` | number/string/Duration | Time | Adicionar duracao |
 | `sub(time)` | Time | Duration | Diferenca entre tempos |
@@ -153,7 +153,7 @@ t2:after(t1)    -- true
 t1:equal(t1)    -- true
 ```
 
-| Metodo | Parametros | Retorna | Descricao |
+| Método | Parametros | Retorna | Descrição |
 |--------|------------|---------|-----------|
 | `before(time)` | Time | boolean | Este tempo e anterior ao outro? |
 | `after(time)` | Time | boolean | Este tempo e posterior ao outro? |
@@ -170,7 +170,7 @@ t:format(time.TIME_ONLY)        -- "15:04:05"
 t:format("Mon Jan 2, 2006")     -- "Sun Dec 29, 2024"
 ```
 
-| Metodo | Parametros | Retorna | Descricao |
+| Método | Parametros | Retorna | Descrição |
 |--------|------------|---------|-----------|
 | `format(layout)` | string | string | Formatar usando layout Go |
 | `format_rfc3339()` | - | string | Formatar como RFC3339 |
@@ -220,7 +220,7 @@ t:location()               -- obter Location atual
 t:location():string()      -- obter nome do fuso horario
 ```
 
-| Metodo | Parametros | Retorna | Descricao |
+| Método | Parametros | Retorna | Descrição |
 |--------|------------|---------|-----------|
 | `utc()` | - | Time | Converter para UTC |
 | `in_local()` | - | Time | Converter para fuso horario local |
@@ -229,7 +229,7 @@ t:location():string()      -- obter nome do fuso horario
 
 ### Arredondamento
 
-Arredondar ou truncar para limites de duracao. **Requer userdata Duration** (nao number ou string).
+Arredondar ou truncar para limites de duracao. **Requer userdata Duration** (não number ou string).
 
 ```lua
 local t = time.now()
@@ -240,7 +240,7 @@ t:round(hour_duration)       -- arredondar para hora mais proxima
 t:truncate(minute_duration)  -- truncar para limite de 15 minutos
 ```
 
-| Metodo | Parametros | Retorna | Descricao |
+| Método | Parametros | Retorna | Descrição |
 |--------|------------|---------|-----------|
 | `round(duration)` | Duration | Time | Arredondar para multiplo mais proximo |
 | `truncate(duration)` | Duration | Time | Truncar para multiplo |
@@ -262,7 +262,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 -- Unidades validas: ns, us, ms, s, m, h
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `value` | number/string/Duration | Duracao para parse |
 
@@ -303,7 +303,7 @@ print("New York:", t:in_location(ny):format(time.TIME_ONLY))
 print("Tokyo:", t:in_location(tokyo):format(time.TIME_ONLY))
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome do fuso horario IANA |
 
@@ -323,7 +323,7 @@ local pst = time.fixed_zone("PST", -8*3600)
 local t = time.date(2024, 1, 15, 12, 0, 0, 0, ist)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da zona |
 | `offset` | number | Offset UTC em segundos |
@@ -341,13 +341,13 @@ time.localtz  -- Fuso horario local do sistema
 
 ### sleep
 
-Pausar execucao pela duracao especificada. Em workflows, gravado e reproduzido corretamente.
+Pausar execução pela duracao especificada. Em workflows, gravado e reproduzido corretamente.
 
 ```lua
 time.sleep("5s")
 time.sleep(500 * time.MILLISECOND)
 
--- Padrao de backoff
+-- Padrão de backoff
 for attempt = 1, 3 do
     local ok = try_operation()
     if ok then break end
@@ -355,7 +355,7 @@ for attempt = 1, 3 do
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `duration` | number/string/Duration | Tempo de sleep |
 
@@ -382,7 +382,7 @@ if result.channel == timeout_ch then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `duration` | number/string/Duration | Tempo de espera |
 
@@ -390,7 +390,7 @@ end
 
 ### timer
 
-Timer de disparo unico que dispara apos duracao. Pode ser parado ou resetado.
+Timer de disparo único que dispara apos duracao. Pode ser parado ou resetado.
 
 ```lua
 local timer = time.timer("5s")
@@ -417,13 +417,13 @@ end
 timer:stop()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `duration` | number/string/Duration | Tempo ate disparar |
 
 **Retorna:** `Timer, error`
 
-| Metodo Timer | Parametros | Retorna | Descricao |
+| Método Timer | Parametros | Retorna | Descrição |
 |--------------|------------|---------|-----------|
 | `response()` | - | Channel | Obter channel do timer |
 | `channel()` | - | Channel | Alias para response() |
@@ -453,13 +453,13 @@ end
 ticker:stop()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `duration` | number/string/Duration | Intervalo entre ticks |
 
 **Retorna:** `Ticker, error`
 
-| Metodo Ticker | Parametros | Retorna | Descricao |
+| Método Ticker | Parametros | Retorna | Descrição |
 |---------------|------------|---------|-----------|
 | `response()` | - | Channel | Obter channel do ticker |
 | `channel()` | - | Channel | Alias para response() |
@@ -535,13 +535,13 @@ time.SATURDAY   -- 6
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Formato de duracao invalido | `errors.INVALID` | nao |
-| Parse falhou | `errors.INVALID` | nao |
-| Nome de location vazio | `errors.INVALID` | nao |
-| Location nao encontrada | `errors.NOT_FOUND` | nao |
-| Duracao <= 0 (timer/ticker) | `errors.INVALID` | nao |
+| Formato de duracao invalido | `errors.INVALID` | não |
+| Parse falhou | `errors.INVALID` | não |
+| Nome de location vazio | `errors.INVALID` | não |
+| Location não encontrada | `errors.NOT_FOUND` | não |
+| Duracao <= 0 (timer/ticker) | `errors.INVALID` | não |
 
 ```lua
 local t, err = time.parse(time.RFC3339, "invalid")
@@ -555,7 +555,7 @@ end
 local loc, err = time.load_location("Unknown/Zone")
 if err then
     if errors.is(err, errors.NOT_FOUND) then
-        print("Location nao encontrada:", err:message())
+        print("Location não encontrada:", err:message())
     end
     return nil, err
 end

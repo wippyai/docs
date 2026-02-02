@@ -6,7 +6,7 @@ Resultados de operacoes assincronas. Futures sao retornados por `funcs.async()` 
 
 ## Carregamento
 
-Nao e um modulo carregavel. Futures sao criados por operacoes assincronas:
+Não e um módulo carregavel. Futures sao criados por operacoes assincronas:
 
 ```lua
 local funcs = require("funcs")
@@ -29,7 +29,7 @@ end
 
 ## Verificacao de Conclusao
 
-Verificacao nao-bloqueante se future completou:
+Verificacao não-bloqueante se future completou:
 
 ```lua
 if future:is_complete() then
@@ -49,14 +49,14 @@ end
 
 ## Obtendo Resultado
 
-Obter resultado em cache (nao-bloqueante):
+Obter resultado em cache (não-bloqueante):
 
 ```lua
 local val, err = future:result()
 ```
 
 **Retorna:**
-- Nao completo: `nil, nil`
+- Não completo: `nil, nil`
 - Cancelado: `nil, error` (tipo `CANCELED`)
 - Erro: `nil, error`
 - Sucesso: `Payload, nil` ou `table, nil` (multiplos payloads)
@@ -76,15 +76,15 @@ end
 
 ## Cancelando
 
-Cancelar operacao assincrona (best-effort):
+Cancelar operação assincrona (best-effort):
 
 ```lua
 future:cancel()
 ```
 
-A operacao ainda pode completar se ja estiver em andamento.
+A operação ainda pode completar se ja estiver em andamento.
 
-## Padrao de Timeout
+## Padrão de Timeout
 
 ```lua
 local future = funcs.async("app.compute:slow", data)
@@ -126,7 +126,7 @@ return r.value:data()
 
 ## Erros
 
-| Condicao | Tipo |
+| Condição | Tipo |
 |----------|------|
-| Operacao cancelada | `CANCELED` |
-| Operacao async falhou | varia |
+| Operação cancelada | `CANCELED` |
+| Operação async falhou | varia |

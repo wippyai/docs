@@ -3,9 +3,9 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Zugriff auf Umgebungsvariablen fur Konfigurationswerte, Secrets und Laufzeiteinstellungen.
+Zugriff auf Umgebungsvariablen für Konfigurationswerte, Secrets und Laufzeiteinstellungen.
 
-Variablen mussen im [Umgebungssystem](system-env.md) definiert werden, bevor auf sie zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschutzt sind.
+Variablen müssen im [Umgebungssystem](system-env.md) definiert werden, bevor auf sie zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschutzt sind.
 
 ## Laden
 
@@ -41,9 +41,9 @@ local debug_mode = env.get("DEBUG") == "true"
 |-----------|------|-------------|
 | `key` | string | Variablenname |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
-Gibt `nil, error` zuruck, wenn Variable nicht existiert.
+Gibt `nil, error` zurück, wenn Variable nicht existiert.
 
 ## set
 
@@ -53,7 +53,7 @@ Setzt eine Umgebungsvariable.
 -- Laufzeitkonfiguration setzen
 env.set("APP_MODE", "production")
 
--- Fur Tests uberschreiben
+-- Für Tests uberschreiben
 env.set("API_URL", "http://localhost:8080")
 
 -- Basierend auf Bedingungen setzen
@@ -67,7 +67,7 @@ end
 | `key` | string | Variablenname |
 | `value` | string | Zu setzender Wert |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## get_all
 
@@ -92,7 +92,7 @@ for _, key in ipairs(required) do
 end
 ```
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
 ## Berechtigungen
 
@@ -116,17 +116,17 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Siehe [Sicherheitsmodell](system-security.md) fur Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Leerer Schlussel | `errors.INVALID` | nein |
+| Leerer Schlüssel | `errors.INVALID` | nein |
 | Variable nicht gefunden | `errors.NOT_FOUND` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 

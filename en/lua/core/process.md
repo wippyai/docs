@@ -173,7 +173,7 @@ Upgrade the current process to a new definition while preserving PID:
 
 ```lua
 -- Upgrade to new version, passing state
-process.upgrade(source, ...)
+process.upgrade(id, ...)
 
 -- Keep same definition, re-run with new state
 process.upgrade(nil, preserved_state)

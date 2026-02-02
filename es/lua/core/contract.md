@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Invocar servicios a traves de contratos tipados. Llamar APIs remotas, flujos de trabajo y funciones con validacion de esquema y soporte de ejecucion asincrona.
+Invocar servicios a traves de contratos tipados. Llamar APIs remotas, flujos de trabajo y funciones con validacion de esquema y soporte de ejecución asincrona.
 
 ## Carga
 
@@ -38,7 +38,7 @@ local svc, err = contract.open("app.services:user", {
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `binding_id` | string | ID de binding, soporta parametros de consulta |
 | `scope` | table | Valores de contexto (opcional, sobrescribe parametros de consulta) |
@@ -62,12 +62,12 @@ end
 local method, err = c:method("say_hello")
 ```
 
-### Definicion de Metodo
+### Definicion de Método
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `name` | string | Nombre del metodo |
-| `description` | string | Descripcion del metodo |
+| `name` | string | Nombre del método |
+| `description` | string | Descripción del método |
 | `input_schemas` | table[] | Definiciones de esquema de entrada |
 | `output_schemas` | table[] | Definiciones de esquema de salida |
 
@@ -113,7 +113,7 @@ local product, err = calc:multiply(5, 6)
 
 ## Llamadas Asincronas
 
-Agregar sufijo `_async` para ejecucion asincrona:
+Agregar sufijo `_async` para ejecución asincrona:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
@@ -142,7 +142,7 @@ local c, err = contract.get("app.services:user")
 -- Binding por defecto
 local instance, err = c:open()
 
--- Binding especifico
+-- Binding específico
 local instance, err = c:open("app.services:user_impl")
 
 -- Con alcance
@@ -185,18 +185,18 @@ local admin, err = secured:open()
 | `contract.get` | id de contrato | `get()` |
 | `contract.open` | id de binding | `open()`, `Contract:open()` |
 | `contract.implementations` | id de contrato | `find_implementations()`, `Contract:implementations()` |
-| `contract.call` | nombre de metodo | llamadas de metodo sync y async |
+| `contract.call` | nombre de método | llamadas de método sync y async |
 | `contract.context` | "context" | `Contract:with_context()` |
 | `contract.security` | "security" | `Contract:with_actor()`, `Contract:with_scope()` |
 
 ## Errores
 
-| Condicion | Tipo |
+| Condición | Tipo |
 |-----------|------|
 | Formato de ID de binding invalido | `errors.INVALID` |
 | Contrato no encontrado | `errors.NOT_FOUND` |
 | Binding no encontrado | `errors.NOT_FOUND` |
-| Metodo no encontrado | `errors.NOT_FOUND` |
+| Método no encontrado | `errors.NOT_FOUND` |
 | Sin binding por defecto | `errors.NOT_FOUND` |
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Llamada fallida | `errors.INTERNAL` |

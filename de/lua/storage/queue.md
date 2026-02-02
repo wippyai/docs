@@ -6,7 +6,7 @@
 
 Veroffentlichen und Konsumieren von Nachrichten aus verteilten Queues. Unterstutzt mehrere Backends einschliesslich RabbitMQ und andere AMQP-kompatible Broker.
 
-Fur Queue-Konfiguration siehe [Queue](system-queue.md).
+Für Queue-Konfiguration siehe [Queue](system-queue.md).
 
 ## Laden
 
@@ -35,7 +35,7 @@ end
 | `data` | any | Nachrichtendaten (Tables, Strings, Zahlen, Booleans) |
 | `headers` | table | Optionale Nachrichten-Header |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### Nachrichten-Header
 
@@ -66,13 +66,13 @@ local priority = msg:header("priority")
 local all_headers = msg:headers()
 ```
 
-**Gibt zuruck:** `Message, error`
+**Gibt zurück:** `Message, error`
 
-Nur verfugbar beim Verarbeiten von Queue-Nachrichten im Consumer-Kontext.
+Nur verfügbar beim Verarbeiten von Queue-Nachrichten im Consumer-Kontext.
 
 ## Nachrichten-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `id()` | `string, error` | Eindeutiger Nachrichten-Identifikator |
 | `header(key)` | `any, error` | Einzelner Header-Wert (nil wenn fehlend) |
@@ -127,7 +127,7 @@ Beide Berechtigungen werden gepruft: zuerst die allgemeine Berechtigung, dann di
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Veroffentlichung fehlgeschlagen | `errors.INTERNAL` | ja |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 

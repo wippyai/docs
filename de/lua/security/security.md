@@ -13,7 +13,7 @@ local security = require("security")
 
 ## actor
 
-Gibt den aktuellen Sicherheits-Actor aus dem Ausfuhrungskontext zuruck.
+Gibt den aktuellen Sicherheits-Actor aus dem Ausfuhrungskontext zurück.
 
 ```lua
 local actor = security.actor()
@@ -28,11 +28,11 @@ if actor then
 end
 ```
 
-**Gibt zuruck:** `Actor|nil`
+**Gibt zurück:** `Actor|nil`
 
 ## scope
 
-Gibt den aktuellen Sicherheits-Scope aus dem Ausfuhrungskontext zuruck.
+Gibt den aktuellen Sicherheits-Scope aus dem Ausfuhrungskontext zurück.
 
 ```lua
 local scope = security.scope()
@@ -44,7 +44,7 @@ if scope then
 end
 ```
 
-**Gibt zuruck:** `Scope|nil`
+**Gibt zurück:** `Scope|nil`
 
 ## can
 
@@ -74,7 +74,7 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 | `resource` | string | Ressourcenidentifikator |
 | `meta` | table | Zusatzliche Metadaten (optional) |
 
-**Gibt zuruck:** `boolean`
+**Gibt zurück:** `boolean`
 
 ## new_actor
 
@@ -98,9 +98,9 @@ local service_actor = security.new_actor("service:payment-processor", {
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `id` | string | Eindeutiger Actor-Identifikator |
-| `meta` | table | Metadaten-Schlussel-Wert-Paare |
+| `meta` | table | Metadaten-Schlüssel-Wert-Paare |
 
-**Gibt zuruck:** `Actor`
+**Gibt zurück:** `Actor`
 
 ## new_scope
 
@@ -121,7 +121,7 @@ local policy2 = security.policy("app:write")
 scope = scope:with(policy1):with(policy2)
 ```
 
-**Gibt zuruck:** `Scope`
+**Gibt zurück:** `Scope`
 
 ## policy
 
@@ -148,7 +148,7 @@ end
 |-----------|------|-------------|
 | `id` | string | Richtlinien-ID "namespace:name" |
 
-**Gibt zuruck:** `Policy, error`
+**Gibt zurück:** `Policy, error`
 
 ## named_scope
 
@@ -161,7 +161,7 @@ if err then
     return nil, err
 end
 
--- Fur erhohte Operationen verwenden
+-- Für erhohte Operationen verwenden
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
@@ -169,7 +169,7 @@ local result = admin_scope:evaluate(actor, "delete", "user:123")
 |-----------|------|-------------|
 | `id` | string | Richtliniengruppen-ID |
 
-**Gibt zuruck:** `Scope, error`
+**Gibt zurück:** `Scope, error`
 
 ## token_store
 
@@ -189,11 +189,11 @@ store:close()
 |-----------|------|-------------|
 | `id` | string | Token-Store-ID "namespace:name" |
 
-**Gibt zuruck:** `TokenStore, error`
+**Gibt zurück:** `TokenStore, error`
 
 ## Actor-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `actor:id()` | string | Actor-Identifikator |
 | `actor:meta()` | table | Actor-Metadaten |
@@ -202,12 +202,12 @@ store:close()
 
 ### with / without
 
-Richtlinien zum Scope hinzufugen oder entfernen.
+Richtlinien zum Scope hinzufügen oder entfernen.
 
 ```lua
 local scope = security.new_scope()
 
--- Richtlinie hinzufugen
+-- Richtlinie hinzufügen
 local write_policy = security.policy("app:write")
 scope = scope:with(write_policy)
 
@@ -240,7 +240,7 @@ end
 
 ### policies
 
-Gibt alle Richtlinien im Scope zuruck.
+Gibt alle Richtlinien im Scope zurück.
 
 ```lua
 local policies = scope:policies()
@@ -249,11 +249,11 @@ for _, policy in ipairs(policies) do
 end
 ```
 
-**Gibt zuruck:** `Policy[]`
+**Gibt zurück:** `Policy[]`
 
 ## Policy-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `policy:id()` | string | Richtlinien-Identifikator |
 | `policy:evaluate(actor, action, resource, meta?)` | string | `"allow"`, `"deny"` oder `"undefined"` |
@@ -279,12 +279,12 @@ local token, err = store:create(actor, scope, {
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `actor` | Actor | Actor fur den Token |
+| `actor` | Actor | Actor für den Token |
 | `scope` | Scope | Berechtigungs-Scope |
 | `options.expiration` | string/number | Dauer-String oder ms |
 | `options.meta` | table | Token-Metadaten |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### validate
 
@@ -297,17 +297,17 @@ if err then
 end
 ```
 
-**Gibt zuruck:** `Actor, Scope, error`
+**Gibt zurück:** `Actor, Scope, error`
 
 ### revoke
 
-Token ungultig machen.
+Token ungültig machen.
 
 ```lua
 local ok, err = store:revoke(token)
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### close
 
@@ -317,7 +317,7 @@ Token-Store-Ressource freigeben.
 store:close()
 ```
 
-**Gibt zuruck:** `boolean`
+**Gibt zurück:** `boolean`
 
 ## Berechtigungen
 
@@ -336,7 +336,7 @@ Sicherheitsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `security.token.create` | Store-ID | Tokens erstellen |
 | `security.token.revoke` | Store-ID | Tokens widerrufen |
 
-Siehe [Sicherheitsmodell](system-security.md) fur Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -361,7 +361,7 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
