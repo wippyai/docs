@@ -22,9 +22,9 @@
   {
     "title": "Core Concepts",
     "children": [
-      {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "Functions", "path": "concepts/functions"},
       {"title": "Workflows", "path": "concepts/workflows"}
     ]
