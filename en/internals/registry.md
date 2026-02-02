@@ -141,5 +141,5 @@ Cache invalidates on version change.
 
 ## See Also
 
-- [Registry](concept-registry.md) - High-level concepts
-- [Events](internal-events.md) - Event bus details
+- [Registry](concepts/registry.md) - High-level concepts
+- [Events](internals/events.md) - Event bus details

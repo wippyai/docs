@@ -454,7 +454,7 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## Siguientes Pasos
 
-- [Módulo HTTP](lua-http.md) - Manejo de request/response
-- [Módulo Queue](lua-queue.md) - Operaciones de cola de mensajes
-- [Módulo SQL](lua-sql.md) - Acceso a base de datos
-- [Consumidores de Cola](guide-queue-consumers.md) - Configuración de colas
+- [Módulo HTTP](lua/http/http.md) - Manejo de request/response
+- [Módulo Queue](lua/storage/queue.md) - Operaciones de cola de mensajes
+- [Módulo SQL](lua/storage/sql.md) - Acceso a base de datos
+- [Consumidores de Cola](guides/queue-consumers.md) - Configuración de colas

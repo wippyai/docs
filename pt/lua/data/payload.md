@@ -168,5 +168,5 @@ print(result.computed_value)
 | Falha de transcodificação | `errors.INTERNAL` | não |
 | Resultado não e valor Lua valido | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 

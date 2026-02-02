@@ -200,6 +200,6 @@ end
 
 ## 참고
 
-- [미들웨어](http-middleware.md) - 미들웨어 설정
-- [프로세스](lua-process.md) - 프로세스 메시징
-- [WebSocket 클라이언트](lua-websocket.md) - 아웃바운드 WebSocket 연결
+- [미들웨어](http/middleware.md) - 미들웨어 설정
+- [프로세스](lua/core/process.md) - 프로세스 메시징
+- [WebSocket 클라이언트](lua/http/websocket.md) - 아웃바운드 WebSocket 연결

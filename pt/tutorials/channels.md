@@ -241,5 +241,5 @@ Operações disponíveis:
 
 ## Próximos Passos
 
-- [Channel Module Reference](lua-channel.md) - Documentação completa da API
+- [Channel Module Reference](lua/core/channel.md) - Documentação completa da API
 - [Processes](processes.md) - Comunicação inter-processo

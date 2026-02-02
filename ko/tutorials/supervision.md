@@ -678,4 +678,4 @@ entries:
 
 - [프로세스](processes.md) - 프로세스 기초
 - [채널](channels.md) - 메시지 전달 패턴
-- [프로세스 모듈](lua-process.md) - API 참조
+- [프로세스 모듈](lua/core/process.md) - API 참조

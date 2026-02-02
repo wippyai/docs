@@ -303,7 +303,7 @@ Conexoes WebSocket estao sujeitas a avaliação de política de segurança.
 | `websocket.connect` | - | Permitir/negar conexoes WebSocket |
 | `websocket.connect.url` | URL | Permitir/negar conexoes para URLs específicas |
 
-Veja [Security Model](system-security.md) para configuração de políticas.
+Veja [Security Model](system/security.md) para configuração de políticas.
 
 ## Erros
 
@@ -327,4 +327,4 @@ if err then
 end
 ```
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

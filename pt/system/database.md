@@ -81,7 +81,7 @@ entries:
 
 ### Campos de Variáveis de Ambiente
 
-Use o sufixo `_env` para carregar valores de variáveis de ambiente ou entradas [env.variable](system-env.md):
+Use o sufixo `_env` para carregar valores de variáveis de ambiente ou entradas [env.variable](system/env.md):
 
 | Campo | Descrição |
 |-------|-----------|
@@ -102,7 +102,7 @@ Use o sufixo `_env` para carregar valores de variáveis de ambiente ou entradas 
 ```
 
 <warning>
-Evite codificar senhas na configuração. Use variáveis de ambiente ou entradas <code>env.variable</code> para credenciais. Veja <a href="system-env.md">Ambiente</a> para gerenciamento seguro de segredos.
+Evite codificar senhas na configuração. Use variáveis de ambiente ou entradas <code>env.variable</code> para credenciais. Veja <a href="system/env.md">Ambiente</a> para gerenciamento seguro de segredos.
 </warning>
 
 ## Pool de Conexões
@@ -304,8 +304,8 @@ entries:
 
 ## Registro em Tempo de Execução
 
-Bancos de dados podem ser registrados em tempo de execução usando o [módulo registry](lua-registry.md), permitindo configuração dinâmica de banco de dados baseada no estado da aplicação ou configuração externa.
+Bancos de dados podem ser registrados em tempo de execução usando o [módulo registry](lua/core/registry.md), permitindo configuração dinâmica de banco de dados baseada no estado da aplicação ou configuração externa.
 
 ## API Lua
 
-Veja [Módulo SQL](lua-sql.md) para API de operações de banco de dados.
+Veja [Módulo SQL](lua/storage/sql.md) para API de operações de banco de dados.

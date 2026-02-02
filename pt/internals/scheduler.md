@@ -125,5 +125,5 @@ No shutdown, o scheduler envia eventos de cancelamento para todos os processos e
 
 ## Veja Também
 
-- [Command Dispatch](internal-dispatch.md) - Como yields chegam aos handlers
-- [Process Model](concept-process-model.md) - Conceitos de alto nível
+- [Command Dispatch](internals/dispatch.md) - Como yields chegam aos handlers
+- [Process Model](concepts/process-model.md) - Conceitos de alto nível

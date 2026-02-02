@@ -5,7 +5,7 @@
 
 Access environment variables for configuration values, secrets, and runtime settings.
 
-Variables must be defined in the [Environment System](system-env.md) before they can be accessed. The system controls which storage backends (OS, file, memory) provide values and whether variables are read-only.
+Variables must be defined in the [Environment System](system/env.md) before they can be accessed. The system controls which storage backends (OS, file, memory) provide values and whether variables are read-only.
 
 ## Loading
 
@@ -116,7 +116,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-See [Security Model](system-security.md) for policy configuration.
+See [Security Model](system/security.md) for policy configuration.
 
 ## Errors
 
@@ -126,8 +126,8 @@ See [Security Model](system-security.md) for policy configuration.
 | Variable not found | `errors.NOT_FOUND` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Environment System](system-env.md) - Configure storage backends and variable definitions
+- [Environment System](system/env.md) - Configure storage backends and variable definitions

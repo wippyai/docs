@@ -411,7 +411,7 @@ local field_id = lang:field_id_for_name("name")
 | 無効な位置 | `errors.INVALID` | no |
 | パース失敗 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ## クエリ構文リファレンス
 

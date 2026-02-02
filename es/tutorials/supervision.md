@@ -473,4 +473,4 @@ Configuración de workers:
 
 - [Procesos](processes.md) - Fundamentos de procesos
 - [Canales](channels.md) - Patrones de paso de mensajes
-- [Módulo Process](lua-process.md) - Referencia de API
+- [Módulo Process](lua/core/process.md) - Referencia de API

@@ -6,7 +6,7 @@
 
 Veröffentlichen und Konsumieren von Nachrichten aus verteilten Queues. Unterstützt mehrere Backends einschließlich RabbitMQ und andere AMQP-kompatible Broker.
 
-Für Queue-Konfiguration siehe [Queue](system-queue.md).
+Für Queue-Konfiguration siehe [Queue](system/queue.md).
 
 ## Laden
 

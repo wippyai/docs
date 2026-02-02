@@ -411,7 +411,7 @@ local field_id = lang:field_id_for_name("name")
 | Posicoes invalidas | `errors.INVALID` | não |
 | Parse falhou | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 
 ## Referência de Sintaxe de Query
 

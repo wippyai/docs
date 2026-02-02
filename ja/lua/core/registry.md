@@ -169,5 +169,5 @@ end
 | 適用する変更がない | `errors.INVALID` |
 | レジストリが利用不可 | `errors.INTERNAL` |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

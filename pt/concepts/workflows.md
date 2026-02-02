@@ -169,6 +169,6 @@ Veja [Temporal](https://temporal.io) para infraestrutura de workflow em produç�
 
 ## Veja Também
 
-- [Funções](concept-functions.md) - Tratamento de requisição sem estado
-- [Modelo de Processos](concept-process-model.md) - Trabalho em segundo plano com estado
-- [Supervisão](guide-supervision.md) - Políticas de reinicialização de processos
+- [Funções](concepts/functions.md) - Tratamento de requisição sem estado
+- [Modelo de Processos](concepts/process-model.md) - Trabalho em segundo plano com estado
+- [Supervisão](guides/supervision.md) - Políticas de reinicialização de processos

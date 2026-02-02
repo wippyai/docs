@@ -7,7 +7,7 @@
 
 Zugriff auf S3-kompatiblen Objektspeicher. Hochladen, Herunterladen, Auflisten und Verwalten von Dateien mit Unterstützung für vorsignierte URLs.
 
-Für Speicherkonfiguration siehe [Cloud-Speicher](system-cloudstorage.md).
+Für Speicherkonfiguration siehe [Cloud-Speicher](system/cloudstorage.md).
 
 ## Laden
 
@@ -263,4 +263,4 @@ Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Operation fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

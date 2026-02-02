@@ -137,5 +137,5 @@ sub:close()
 | Empty path | `errors.INVALID` | no |
 | Policy denied | `errors.INVALID` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 

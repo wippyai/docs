@@ -6,7 +6,7 @@
 
 Execute queries SQL em bancos de dados PostgreSQL, MySQL, SQLite, MSSQL e Oracle. Recursos incluem queries parametrizadas, transacoes, prepared statements e um query builder fluente.
 
-Para configuração de banco de dados, veja [Database](system-database.md).
+Para configuração de banco de dados, veja [Database](system/database.md).
 
 ## Carregamento
 
@@ -1519,7 +1519,7 @@ Acesso a banco de dados está sujeito a avaliação de política de segurança.
 | Nome de savepoint inválido | `errors.INVALID` | não |
 | Erro de execução de query | varia | varia |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 
 ## Exemplo
 

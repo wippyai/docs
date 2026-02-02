@@ -411,7 +411,7 @@ local field_id = lang:field_id_for_name("name")
 | Invalid positions | `errors.INVALID` | no |
 | Parse failed | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## Query Syntax Reference
 

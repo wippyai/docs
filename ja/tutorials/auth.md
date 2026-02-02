@@ -247,7 +247,7 @@ entries:
     func: app:ws_ticker
 ```
 
-本番環境では、HMACキーをハードコードする代わりに`token_key_env`を使用して環境変数から読み取ります。[環境システム](system-env.md)を参照。
+本番環境では、HMACキーをハードコードする代わりに`token_key_env`を使用して環境変数から読み取ります。[環境システム](system/env.md)を参照。
 
 ## トークン交換
 
@@ -647,7 +647,7 @@ http://localhost:8081 を開き、ログに表示されるデモAPIキーを入�
 
 ## 関連項目
 
-- [WebSocketリレー](http-websocket-relay.md) - ミドルウェア設定
-- [セキュリティモジュール](lua-security.md) - アクター、ポリシー、トークンストア
-- [プロセス管理](lua-process.md) - 生成とメッセージング
+- [WebSocketリレー](http/websocket-relay.md) - ミドルウェア設定
+- [セキュリティモジュール](lua/security/security.md) - アクター、ポリシー、トークンストア
+- [プロセス管理](lua/core/process.md) - 生成とメッセージング
 

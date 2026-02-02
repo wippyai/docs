@@ -6,7 +6,7 @@
 
 Leer, escribir y gestionar archivos dentro de volumenes de sistema de archivos aislados.
 
-Para configuración del sistema de archivos, consulte [Sistema de Archivos](system-filesystem.md).
+Para configuración del sistema de archivos, consulte [Sistema de Archivos](system/filesystem.md).
 
 ## Carga
 
@@ -221,4 +221,4 @@ El acceso al sistema de archivos esta sujeto a evaluacion de politica de segurid
 | Ruta ya existe | `errors.ALREADY_EXISTS` | no |
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

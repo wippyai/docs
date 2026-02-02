@@ -399,5 +399,5 @@ end
 | 無効なパターン構文 | `errors.INVALID` | no |
 | 内部エラー | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

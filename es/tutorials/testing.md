@@ -313,6 +313,6 @@ wippy run app:test_runner app:terminal -- channel time
 
 ## Siguientes Pasos
 
-- [Manejo de Errores](lua-errors.md) - Patrones de error y assertions
-- [Registry](lua-registry.md) - Consultas y filtrado de registry
-- [Funciones](concept-functions.md) - Llamadas y ejecución de funciones
+- [Manejo de Errores](lua/core/errors.md) - Patrones de error y assertions
+- [Registry](lua/core/registry.md) - Consultas y filtrado de registry
+- [Funciones](concepts/functions.md) - Llamadas y ejecución de funciones

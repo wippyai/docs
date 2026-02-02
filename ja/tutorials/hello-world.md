@@ -151,5 +151,5 @@ curl http://localhost:8080/hello
 
 - [Echoサービス](echo-service.md) - リクエストパラメータの処理
 - [タスクキュー](task-queue.md) - バックグラウンド処理付きREST API
-- [HTTPルーター](http-router.md) - ルーティングパターン
+- [HTTPルーター](http/router.md) - ルーティングパターン
 

@@ -149,7 +149,7 @@ options:
 
 <note>マッチ前</note>
 
-トークンベースの認証。トークンストア設定については[セキュリティ](system-security.md)を参照。
+トークンベースの認証。トークンストア設定については[セキュリティ](system/security.md)を参照。
 
 ```yaml
 middleware:
@@ -259,7 +259,7 @@ options:
 
 <warning>マッチ後</warning>
 
-WebSocket接続をプロセスにリレー。[WebSocketリレー](http-websocket-relay.md)を参照。
+WebSocket接続をプロセスにリレー。[WebSocketリレー](http/websocket-relay.md)を参照。
 
 ```yaml
 post_middleware:
@@ -289,7 +289,7 @@ post_middleware:
 
 ## 関連項目
 
-- [ルーティング](http-router.md) - ルーター設定
-- [セキュリティ](system-security.md) - トークンストアとポリシー
-- [WebSocketリレー](http-websocket-relay.md) - WebSocket処理
-- [ターミナル](system-terminal.md) - ターミナルサービス
+- [ルーティング](http/router.md) - ルーター設定
+- [セキュリティ](system/security.md) - トークンストアとポリシー
+- [WebSocketリレー](http/websocket-relay.md) - WebSocket処理
+- [ターミナル](system/terminal.md) - ターミナルサービス

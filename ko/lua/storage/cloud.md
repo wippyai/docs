@@ -7,7 +7,7 @@
 
 S3 호환 오브젝트 스토리지에 접근합니다. presigned URL 지원으로 업로드, 다운로드, 목록 조회, 파일 관리를 수행합니다.
 
-스토리지 설정은 [클라우드 스토리지](system-cloudstorage.md)를 참조하세요.
+스토리지 설정은 [클라우드 스토리지](system/cloudstorage.md)를 참조하세요.
 
 ## 로딩
 
@@ -263,4 +263,4 @@ return {upload_url = url}
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
 | 작업 실패 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

@@ -103,4 +103,4 @@ Las plantillas pueden extender plantillas padre y sobrescribir bloques:
 
 ## API Lua
 
-Ver [Módulo Template](lua-template.md) para operaciones de renderizado.
+Ver [Módulo Template](lua/text/template.md) para operaciones de renderizado.

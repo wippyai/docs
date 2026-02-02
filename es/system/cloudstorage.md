@@ -63,4 +63,4 @@ Cuando se proporciona un endpoint, el acceso por estilo de ruta se habilita auto
 
 ## API Lua
 
-Ver [Módulo Cloud Storage](lua-cloudstorage.md) para operaciones (list, upload, download, delete, URLs prefirmadas).
+Ver [Módulo Cloud Storage](lua/storage/cloud.md) para operaciones (list, upload, download, delete, URLs prefirmadas).

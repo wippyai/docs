@@ -85,7 +85,7 @@ Der Memory-Driver hat keine Konfigurationsoptionen. Externe Driver (AMQP, Redis,
 | `prefetch` | 10 | 10000 | Nachrichtenpuffer-Größe |
 
 <tip>
-Consumer respektieren Aufrufkontext und können Sicherheitsrichtlinien unterliegen. Konfigurieren Sie Actor und Richtlinien auf Lebenszyklus-Ebene. Siehe <a href="system-security.md">Sicherheit</a>.
+Consumer respektieren Aufrufkontext und können Sicherheitsrichtlinien unterliegen. Konfigurieren Sie Actor und Richtlinien auf Lebenszyklus-Ebene. Siehe <a href="system/security.md">Sicherheit</a>.
 </tip>
 
 ### Worker-Pool
@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-Siehe [Queue-Modul](lua-queue.md) für vollständige API.
+Siehe [Queue-Modul](lua/storage/queue.md) für vollständige API.
 
 ## Kontrolliertes Herunterfahren
 

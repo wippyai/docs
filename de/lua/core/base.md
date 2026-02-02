@@ -235,7 +235,7 @@ math.ult(m, n)        -- Unsigned Kleiner-als-Vergleich
 
 ## Coroutinen
 
-Coroutine-Erstellung und -Steuerung. Siehe [Channels und Coroutinen](lua-channel.md) für Channels und Nebenläufigkeitsmuster:
+Coroutine-Erstellung und -Steuerung. Siehe [Channels und Coroutinen](lua/core/channel.md) für Channels und Nebenläufigkeitsmuster:
 
 ```lua
 coroutine.create(fn)        -- Erstellt Coroutine aus Funktion
@@ -269,7 +269,7 @@ process_request()
 
 ## Fehlerbehandlung
 
-Strukturierte Fehlererstellung und -klassifizierung. Siehe [Fehlerbehandlung](lua-errors.md) für vollständige Dokumentation:
+Strukturierte Fehlererstellung und -klassifizierung. Siehe [Fehlerbehandlung](lua/core/errors.md) für vollständige Dokumentation:
 
 ### Konstanten {id="error-constants"}
 
@@ -367,16 +367,16 @@ Die folgenden Standard-Lua-Features sind aus Sicherheitsgründen NICHT verfügba
 
 | Feature | Alternative |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | [Dynamische Auswertung](lua-eval.md)-Modul verwenden |
+| `load`, `loadstring`, `loadfile`, `dofile` | [Dynamische Auswertung](lua/dynamic/eval.md)-Modul verwenden |
 | `collectgarbage` | Automatische GC |
 | `rawlen` | `#`-Operator verwenden |
-| `io.*` | [Dateisystem](lua-fs.md)-Modul verwenden |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [Befehlsausführung](lua-exec.md), [Umgebung](lua-env.md)-Module verwenden |
+| `io.*` | [Dateisystem](lua/storage/filesystem.md)-Modul verwenden |
+| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [Befehlsausführung](lua/dynamic/exec.md), [Umgebung](lua/system/env.md)-Module verwenden |
 | `debug.*` (außer traceback) | Nicht verfügbar |
 | `package.loadlib` | Native Bibliotheken nicht unterstützt |
 
 ## Siehe auch
 
-- [Channels und Coroutinen](lua-channel.md) - Go-artige Channels für Nebenläufigkeit
-- [Fehlerbehandlung](lua-errors.md) - Strukturierte Fehler erstellen und behandeln
-- [OS-Zeit](lua-ostime.md) - Systemzeit-Funktionen
+- [Channels und Coroutinen](lua/core/channel.md) - Go-artige Channels für Nebenläufigkeit
+- [Fehlerbehandlung](lua/core/errors.md) - Strukturierte Fehler erstellen und behandeln
+- [OS-Zeit](lua/system/ostime.md) - Systemzeit-Funktionen

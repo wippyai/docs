@@ -302,4 +302,4 @@ end
 | 구독 실패 | `errors.INTERNAL` | 아니오 |
 | 함수 에러 | 다양함 | 다양함 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

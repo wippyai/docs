@@ -6,7 +6,7 @@
 
 Execute external commands and shell scripts with full control over I/O streams.
 
-For executor configuration, see [Executor](system-exec.md).
+For executor configuration, see [Executor](system/exec.md).
 
 ## Loading
 
@@ -204,5 +204,5 @@ Exec operations are subject to security policy evaluation.
 | Process not started | `errors.INVALID` | no |
 | Already started | `errors.INVALID` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 

@@ -102,4 +102,4 @@ Templates podem estender templates pai e sobrescrever blocos:
 
 ## API Lua
 
-Veja [Módulo Template](lua-template.md) para operações de renderização.
+Veja [Módulo Template](lua/text/template.md) para operações de renderização.

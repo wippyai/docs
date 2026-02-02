@@ -235,7 +235,7 @@ math.ult(m, n)        -- 符号なし小なり比較
 
 ## コルーチン
 
-コルーチンの作成と制御。チャネルと並行パターンについては[チャネルとコルーチン](lua-channel.md)を参照：
+コルーチンの作成と制御。チャネルと並行パターンについては[チャネルとコルーチン](lua/core/channel.md)を参照：
 
 ```lua
 coroutine.create(fn)        -- 関数からコルーチンを作成
@@ -269,7 +269,7 @@ process_request()
 
 ## エラー処理
 
-構造化エラーの作成と分類。完全なドキュメントについては[エラー処理](lua-errors.md)を参照：
+構造化エラーの作成と分類。完全なドキュメントについては[エラー処理](lua/core/errors.md)を参照：
 
 ### 定数 {id="error-constants"}
 
@@ -367,17 +367,17 @@ local emoji = utf8.char(0x1F600)  -- 笑顔
 
 | 機能 | 代替 |
 |---------|-------------|
-| `load`、`loadstring`、`loadfile`、`dofile` | [動的評価](lua-eval.md)モジュールを使用 |
+| `load`、`loadstring`、`loadfile`、`dofile` | [動的評価](lua/dynamic/eval.md)モジュールを使用 |
 | `collectgarbage` | 自動GC |
 | `rawlen` | `#`演算子を使用 |
-| `io.*` | [ファイルシステム](lua-fs.md)モジュールを使用 |
-| `os.execute`、`os.exit`、`os.remove`、`os.rename`、`os.tmpname` | [コマンド実行](lua-exec.md)、[環境](lua-env.md)モジュールを使用 |
+| `io.*` | [ファイルシステム](lua/storage/filesystem.md)モジュールを使用 |
+| `os.execute`、`os.exit`、`os.remove`、`os.rename`、`os.tmpname` | [コマンド実行](lua/dynamic/exec.md)、[環境](lua/system/env.md)モジュールを使用 |
 | `debug.*`（tracebackを除く） | 利用不可 |
 | `package.loadlib` | ネイティブライブラリはサポートされていない |
 
 ## 関連項目
 
-- [チャネルとコルーチン](lua-channel.md) - 並行処理のためのGo形式チャネル
-- [エラー処理](lua-errors.md) - 構造化エラーの作成と処理
-- [OS Time](lua-ostime.md) - システム時間関数
+- [チャネルとコルーチン](lua/core/channel.md) - 並行処理のためのGo形式チャネル
+- [エラー処理](lua/core/errors.md) - 構造化エラーの作成と処理
+- [OS Time](lua/system/ostime.md) - システム時間関数
 

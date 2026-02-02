@@ -81,7 +81,7 @@ entries:
 
 ### Environment Variable Fields
 
-Use `_env` suffix to load values from environment variables or [env.variable](system-env.md) entries:
+Use `_env` suffix to load values from environment variables or [env.variable](system/env.md) entries:
 
 | Field | Description |
 |-------|-------------|
@@ -102,7 +102,7 @@ Use `_env` suffix to load values from environment variables or [env.variable](sy
 ```
 
 <warning>
-Avoid hardcoding passwords in configuration. Use environment variables or <code>env.variable</code> entries for credentials. See <a href="system-env.md">Environment</a> for secure secret management.
+Avoid hardcoding passwords in configuration. Use environment variables or <code>env.variable</code> entries for credentials. See <a href="system/env.md">Environment</a> for secure secret management.
 </warning>
 
 ## Connection Pool
@@ -304,8 +304,8 @@ entries:
 
 ## Runtime Registration
 
-Databases can be registered at runtime using the [registry module](lua-registry.md), enabling dynamic database configuration based on application state or external configuration.
+Databases can be registered at runtime using the [registry module](lua/core/registry.md), enabling dynamic database configuration based on application state or external configuration.
 
 ## Lua API
 
-See [SQL Module](lua-sql.md) for database operations API.
+See [SQL Module](lua/storage/sql.md) for database operations API.

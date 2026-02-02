@@ -103,4 +103,4 @@ Templates können Eltern-Templates erweitern und Blöcke überschreiben:
 
 ## Lua-API
 
-Siehe [Template-Modul](lua-template.md) für Rendering-Operationen.
+Siehe [Template-Modul](lua/text/template.md) für Rendering-Operationen.

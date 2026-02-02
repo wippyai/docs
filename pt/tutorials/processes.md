@@ -440,5 +440,5 @@ Registro:
 
 ## Veja Também
 
-- [Process Module Reference](lua-process.md) - Documentação completa da API
+- [Process Module Reference](lua/core/process.md) - Documentação completa da API
 - [Channels](channels.md) - Operações de channel para tratamento de mensagens

@@ -169,4 +169,4 @@ end
 | 적용할 변경 없음 | `errors.INVALID` |
 | 레지스트리 사용 불가 | `errors.INTERNAL` |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

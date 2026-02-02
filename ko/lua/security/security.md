@@ -336,7 +336,7 @@ store:close()
 | `security.token.create` | 스토어 ID | 토큰 생성 |
 | `security.token.revoke` | 스토어 ID | 토큰 폐기 |
 
-정책 설정은 [보안 모델](system-security.md)을 참조하세요.
+정책 설정은 [보안 모델](system/security.md)을 참조하세요.
 
 ## 에러
 
@@ -361,9 +361,9 @@ if err then
 end
 ```
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 참고
 
-- [보안 모델](system-security.md) - 액터, 정책, 스코프 설정
-- [HTTP 미들웨어](http-middleware.md) - 엔드포인트 및 리소스 방화벽
+- [보안 모델](system/security.md) - 액터, 정책, 스코프 설정
+- [HTTP 미들웨어](http/middleware.md) - 엔드포인트 및 리소스 방화벽

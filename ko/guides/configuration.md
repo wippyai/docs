@@ -4,7 +4,7 @@ Wippy는 `.wippy.yaml` 파일로 설정됩니다. 모든 옵션에는 합리적�
 
 ## 로그 매니저
 
-런타임 로그 라우팅 제어. 콘솔 출력은 [CLI 플래그](guide-cli.md) (`-v`, `-c`, `-s`)로 설정됩니다.
+런타임 로그 라우팅 제어. 콘솔 출력은 [CLI 플래그](guides/cli.md) (`-v`, `-c`, `-s`)로 설정됩니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
@@ -19,7 +19,7 @@ logmanager:
   min_level: 0
 ```
 
-참조: [Logger 모듈](lua-logger.md)
+참조: [Logger 모듈](lua/system/logger.md)
 
 ## 프로파일러
 
@@ -43,7 +43,7 @@ profiler:
 
 ## 보안
 
-전역 보안 동작. 개별 정책은 [security.policy 엔트리](guide-entry-kinds.md)로 정의됩니다.
+전역 보안 동작. 개별 정책은 [security.policy 엔트리](guides/entry-kinds.md)로 정의됩니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
@@ -54,7 +54,7 @@ security:
   strict_mode: true
 ```
 
-참조: [보안 시스템](system-security.md), [보안 모듈](lua-security.md)
+참조: [보안 시스템](system/security.md), [보안 모듈](lua/security/security.md)
 
 ## 레지스트리
 
@@ -72,7 +72,7 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-참조: [레지스트리 개념](concept-registry.md), [레지스트리 모듈](lua-registry.md)
+참조: [레지스트리 개념](concepts/registry.md), [레지스트리 모듈](lua/core/registry.md)
 
 ## 릴레이
 
@@ -87,7 +87,7 @@ relay:
   node_name: worker-1
 ```
 
-참조: [프로세스 모델](concept-process-model.md)
+참조: [프로세스 모델](concepts/process-model.md)
 
 ## 슈퍼바이저
 
@@ -105,7 +105,7 @@ supervisor:
     worker_count: 32
 ```
 
-참조: [슈퍼비전 가이드](guide-supervision.md)
+참조: [슈퍼비전 가이드](guides/supervision.md)
 
 ## 함수
 
@@ -123,7 +123,7 @@ functions:
     worker_count: 32
 ```
 
-참조: [함수 개념](concept-functions.md), [Funcs 모듈](lua-funcs.md)
+참조: [함수 개념](concepts/functions.md), [Funcs 모듈](lua/core/funcs.md)
 
 ## Lua 런타임
 
@@ -146,7 +146,7 @@ lua:
     capacity: 5000
 ```
 
-참조: [Lua 개요](lua-overview.md)
+참조: [Lua 개요](lua/overview.md)
 
 ## Finder
 
@@ -188,7 +188,7 @@ otel:
     trace_lifecycle: true
 ```
 
-참조: [관측성 가이드](guide-observability.md)
+참조: [관측성 가이드](guides/observability.md)
 
 ## 셧다운
 
@@ -220,7 +220,7 @@ metrics:
     enabled: true
 ```
 
-참조: [메트릭 모듈](lua-metrics.md), [관측성 가이드](guide-observability.md)
+참조: [메트릭 모듈](lua/system/metrics.md), [관측성 가이드](guides/observability.md)
 
 ## Prometheus
 
@@ -239,7 +239,7 @@ prometheus:
 
 Prometheus 스크레이핑을 위해 `/metrics` 엔드포인트 노출.
 
-참조: [관측성 가이드](guide-observability.md)
+참조: [관측성 가이드](guides/observability.md)
 
 ## 클러스터
 
@@ -267,7 +267,7 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-참조: [클러스터 가이드](guide-cluster.md)
+참조: [클러스터 가이드](guides/cluster.md)
 
 ## 환경 변수
 
@@ -277,7 +277,7 @@ cluster:
 
 ## 참고
 
-- [CLI 레퍼런스](guide-cli.md) - 커맨드라인 옵션
-- [엔트리 종류](guide-entry-kinds.md) - 모든 엔트리 타입
-- [클러스터 가이드](guide-cluster.md) - 멀티 노드 설정
-- [관측성 가이드](guide-observability.md) - 로깅, 메트릭, 트레이싱
+- [CLI 레퍼런스](guides/cli.md) - 커맨드라인 옵션
+- [엔트리 종류](guides/entry-kinds.md) - 모든 엔트리 타입
+- [클러스터 가이드](guides/cluster.md) - 멀티 노드 설정
+- [관측성 가이드](guides/observability.md) - 로깅, 메트릭, 트레이싱

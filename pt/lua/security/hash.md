@@ -169,4 +169,4 @@ local n = hash.fnv64("data")
 | Input não e string | `errors.INVALID` | não |
 | Secret não e string (HMAC) | `errors.INVALID` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

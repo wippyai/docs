@@ -141,5 +141,5 @@ Path(v3, v1) = [v2, v1]      // 역전된 체인지셋 적용
 
 ## 참고
 
-- [레지스트리](concept-registry.md) - 상위 수준 개념
-- [이벤트](internal-events.md) - 이벤트 버스 세부사항
+- [레지스트리](concepts/registry.md) - 상위 수준 개념
+- [이벤트](internals/events.md) - 이벤트 버스 세부사항

@@ -136,9 +136,9 @@ Los nombres de variables deben contener solo: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Acceso en Tiempo de Ejecución
 
-- [módulo env](lua-env.md) - Acceso en tiempo de ejecución Lua
+- [módulo env](lua/system/env.md) - Acceso en tiempo de ejecución Lua
 
 ## Ver También
 
-- [Modelo de Seguridad](system-security.md) - Control de acceso para variables de entorno
-- [Guía de Configuración](guide-configuration.md) - Patrones de configuración de aplicación
+- [Modelo de Seguridad](system/security.md) - Control de acceso para variables de entorno
+- [Guía de Configuración](guides/configuration.md) - Patrones de configuración de aplicación

@@ -63,4 +63,4 @@ MinIO 또는 기타 S3 호환 서비스의 경우 커스텀 엔드포인트를 �
 
 ## Lua API
 
-작업(list, upload, download, delete, 사전 서명 URL)은 [클라우드 스토리지 모듈](lua-cloudstorage.md)을 참조하세요.
+작업(list, upload, download, delete, 사전 서명 URL)은 [클라우드 스토리지 모듈](lua/storage/cloud.md)을 참조하세요.

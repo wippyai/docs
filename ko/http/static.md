@@ -160,7 +160,7 @@ entries:
 
 ## 참고
 
-- [서버](http-server.md) - HTTP 서버 설정
-- [라우팅](http-router.md) - 라우터와 엔드포인트
-- [파일시스템](lua-fs.md) - 파일시스템 모듈
-- [미들웨어](http-middleware.md) - 사용 가능한 미들웨어
+- [서버](http/server.md) - HTTP 서버 설정
+- [라우팅](http/router.md) - 라우터와 엔드포인트
+- [파일시스템](lua/storage/filesystem.md) - 파일시스템 모듈
+- [미들웨어](http/middleware.md) - 사용 가능한 미들웨어

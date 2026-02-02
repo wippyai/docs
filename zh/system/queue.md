@@ -85,7 +85,7 @@ flowchart LR
 | `prefetch` | 10 | 10000 | 消息缓冲区大小 |
 
 <tip>
-消费者遵循调用上下文，可以受安全策略约束。在 lifecycle 级别配置 actor 和策略。参见 <a href="system-security.md">Security</a>。
+消费者遵循调用上下文，可以受安全策略约束。在 lifecycle 级别配置 actor 和策略。参见 <a href="system/security.md">Security</a>。
 </tip>
 
 ### Worker Pool

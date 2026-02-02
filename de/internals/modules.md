@@ -228,7 +228,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-Der Dispatcher routet den Command an einen Handler. Siehe [Command-Dispatch](internal-dispatch.md) für Handler-Implementierung.
+Der Dispatcher routet den Command an einen Handler. Siehe [Command-Dispatch](internals/dispatch.md) für Handler-Implementierung.
 
 ## Fehlerbehandlung
 
@@ -391,5 +391,5 @@ Siehe `runtime/lua/modules/time/integration_test.go` für ein vollständiges Bei
 
 ## Siehe auch
 
-- [Command-Dispatch](internal-dispatch.md) - Yield-Commands behandeln
-- [Scheduler](internal-scheduler.md) - Prozessausführung
+- [Command-Dispatch](internals/dispatch.md) - Yield-Commands behandeln
+- [Scheduler](internals/scheduler.md) - Prozessausführung

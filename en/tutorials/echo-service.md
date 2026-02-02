@@ -363,6 +363,6 @@ Type messages to echo. Ctrl+C to exit.
 
 ## Next Steps
 
-- [Process Management](lua-process.md)
-- [Channels](lua-channel.md)
-- [Time and Duration](lua-time.md)
+- [Process Management](lua/core/process.md)
+- [Channels](lua/core/channel.md)
+- [Time and Duration](lua/core/time.md)

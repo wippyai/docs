@@ -219,5 +219,5 @@ local equal = crypto.constant_time_compare(a, b)
 | 復号失敗 | `errors.INTERNAL` | no |
 | トークン期限切れ | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

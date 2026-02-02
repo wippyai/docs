@@ -175,7 +175,7 @@ UI向けの情報には`meta`を使用します：
 | `http.endpoint` | HTTPハンドラ |
 | `process.host` | プロセススーパーバイザ |
 
-完全なリファレンスは[エントリ種別ガイド](guide-entry-kinds.md)を参照してください。
+完全なリファレンスは[エントリ種別ガイド](guides/entry-kinds.md)を参照してください。
 
 ## 設定ファイル
 
@@ -195,7 +195,7 @@ http:
   address: :8080
 ```
 
-すべてのオプションについては[設定ガイド](guide-configuration.md)を参照してください。
+すべてのオプションについては[設定ガイド](guides/configuration.md)を参照してください。
 
 ### wippy.lock
 
@@ -247,6 +247,6 @@ myapp/
 
 ## 関連項目
 
-- [エントリ種別ガイド](guide-entry-kinds.md) - 利用可能なエントリ種別
-- [設定ガイド](guide-configuration.md) - ランタイムオプション
-- [カスタムエントリ種別](internal-kinds.md) - ハンドラの実装（上級）
+- [エントリ種別ガイド](guides/entry-kinds.md) - 利用可能なエントリ種別
+- [設定ガイド](guides/configuration.md) - ランタイムオプション
+- [カスタムエントリ種別](internals/kinds.md) - ハンドラの実装（上級）

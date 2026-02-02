@@ -85,7 +85,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-This sets a baseline actor and policies for all requests. For authenticated requests, the [token_auth middleware](http-middleware.md) overrides the actor based on the validated token, allowing per-user security policies.
+This sets a baseline actor and policies for all requests. For authenticated requests, the [token_auth middleware](http/middleware.md) overrides the actor based on the validated token, allowing per-user security policies.
 
 ## Lifecycle
 
@@ -158,8 +158,8 @@ TLS termination is typically handled by a reverse proxy (Nginx, Caddy, load bala
 
 ## See Also
 
-- [Routing](http-router.md) - Routers and endpoints
-- [Static Files](http-static.md) - Static file serving
-- [Middleware](http-middleware.md) - Available middleware
-- [Security](system-security.md) - Security policies
-- [WebSocket Relay](http-websocket-relay.md) - WebSocket messaging
+- [Routing](http/router.md) - Routers and endpoints
+- [Static Files](http/static.md) - Static file serving
+- [Middleware](http/middleware.md) - Available middleware
+- [Security](system/security.md) - Security policies
+- [WebSocket Relay](http/websocket-relay.md) - WebSocket messaging

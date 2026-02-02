@@ -160,7 +160,7 @@ Pfad-Matching ist präfixbasiert. Ein Handler auf <code>/</code> fängt alle nic
 
 ## Siehe auch
 
-- [Server](http-server.md) - HTTP-Server-Konfiguration
-- [Routing](http-router.md) - Router und Endpunkte
-- [Dateisystem](lua-fs.md) - Dateisystem-Modul
-- [Middleware](http-middleware.md) - Verfügbare Middleware
+- [Server](http/server.md) - HTTP-Server-Konfiguration
+- [Routing](http/router.md) - Router und Endpunkte
+- [Dateisystem](lua/storage/filesystem.md) - Dateisystem-Modul
+- [Middleware](http/middleware.md) - Verfügbare Middleware

@@ -22,7 +22,7 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-スポーン、リンク、スーパービジョンについては[プロセス管理](lua-process.md)を参照。
+スポーン、リンク、スーパービジョンについては[プロセス管理](lua/core/process.md)を参照。
 
 ## チャネル
 
@@ -36,7 +36,7 @@ ch:send(value)                  -- 受信されるまでブロック
 local val, ok = ch:receive()    -- 準備できるまでブロック
 ```
 
-selectとパターンについては[チャネル](lua-channel.md)を参照。
+selectとパターンについては[チャネル](lua/core/channel.md)を参照。
 
 ## コルーチン
 
@@ -90,15 +90,15 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-利用可能なモジュールはエントリ設定に依存します。[エントリ定義](lua-entries.md)を参照。
+利用可能なモジュールはエントリ設定に依存します。[エントリ定義](lua/entries.md)を参照。
 
 ## 外部ライブラリ
 
-Wippyは[漸進的型システム](lua-types.md)を持つLua 5.3構文を使用し、Luauにインスパイアされています。型はファーストクラスのランタイム値—検証のために呼び出し可能、引数として渡すことが可能、イントロスペクション可能—ZodやPydanticのようなスキーマライブラリの必要性を置き換えます。
+Wippyは[漸進的型システム](lua/types.md)を持つLua 5.3構文を使用し、Luauにインスパイアされています。型はファーストクラスのランタイム値—検証のために呼び出し可能、引数として渡すことが可能、イントロスペクション可能—ZodやPydanticのようなスキーマライブラリの必要性を置き換えます。
 
 外部Luaライブラリ（LuaRocksなど）はサポートされていません。ランタイムはI/O、ネットワーキング、システム統合のための組み込み拡張を持つ独自のモジュールシステムを提供します。
 
-カスタム拡張については、internalsドキュメントの[モジュール](internal-modules.md)を参照。
+カスタム拡張については、internalsドキュメントの[モジュール](internals/modules.md)を参照。
 
 ## エラー処理
 
@@ -111,12 +111,12 @@ if err then
 end
 ```
 
-パターンについては[エラー処理](lua-errors.md)を参照。
+パターンについては[エラー処理](lua/core/errors.md)を参照。
 
 ## 次のステップ
 
-- [エントリ定義](lua-entries.md) - エントリポイントを設定
-- [チャネル](lua-channel.md) - チャネルパターン
-- [プロセス管理](lua-process.md) - スポーンとスーパービジョン
-- [関数](lua-funcs.md) - クロスプロセス呼び出し
+- [エントリ定義](lua/entries.md) - エントリポイントを設定
+- [チャネル](lua/core/channel.md) - チャネルパターン
+- [プロセス管理](lua/core/process.md) - スポーンとスーパービジョン
+- [関数](lua/core/funcs.md) - クロスプロセス呼び出し
 

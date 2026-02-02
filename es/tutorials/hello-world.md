@@ -151,4 +151,4 @@ Respuesta:
 
 - [Echo Service](echo-service.md) - Manejar parámetros de solicitud
 - [Task Queue](task-queue.md) - API REST con procesamiento en background
-- [HTTP Router](http-router.md) - Patrones de routing
+- [HTTP Router](http/router.md) - Patrones de routing

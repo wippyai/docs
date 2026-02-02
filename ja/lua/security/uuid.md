@@ -156,5 +156,5 @@ local formatted, err = uuid.format(id, "urn")
 | サポートされていないフォーマットタイプ | `errors.INVALID` | no |
 | 生成失敗 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

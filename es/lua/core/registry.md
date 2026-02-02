@@ -169,4 +169,4 @@ end
 | Sin cambios para aplicar | `errors.INVALID` |
 | Registro no disponible | `errors.INTERNAL` |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

@@ -252,6 +252,6 @@ entries:
 
 ## Siehe auch
 
-- [Router](http-router.md) - Routen-Gruppierung
-- [HTTP-Modul](lua-http.md) - Request/Response-API
-- [Middleware](http-middleware.md) - Request-Verarbeitung
+- [Router](http/router.md) - Routen-Gruppierung
+- [HTTP-Modul](lua/http/http.md) - Request/Response-API
+- [Middleware](http/middleware.md) - Request-Verarbeitung

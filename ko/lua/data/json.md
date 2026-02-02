@@ -203,4 +203,4 @@ local request = json.decode(body)
 | 스키마 컴파일 실패 | `errors.INVALID` | 아니오 |
 | 검증 실패 | `errors.INVALID` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

@@ -252,6 +252,6 @@ entries:
 
 ## 참고
 
-- [라우터](http-router.md) - 라우트 그룹화
-- [HTTP 모듈](lua-http.md) - 요청/응답 API
-- [미들웨어](http-middleware.md) - 요청 처리
+- [라우터](http/router.md) - 라우트 그룹화
+- [HTTP 모듈](lua/http/http.md) - 요청/응답 API
+- [미들웨어](http/middleware.md) - 요청 처리

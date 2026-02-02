@@ -103,4 +103,4 @@
 
 ## Lua API
 
-렌더링 작업은 [템플릿 모듈](lua-template.md)을 참조하세요.
+렌더링 작업은 [템플릿 모듈](lua/text/template.md)을 참조하세요.

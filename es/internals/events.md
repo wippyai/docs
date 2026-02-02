@@ -249,5 +249,5 @@ El patrón Prepare-then-Wait evita condiciones de carrera: suscribirse antes de 
 
 ## Ver También
 
-- [Registry](internal-registry.md) - Productor principal de eventos
-- [Command Dispatch](internal-dispatch.md) - Routing proceso-a-handler
+- [Registry](internals/registry.md) - Productor principal de eventos
+- [Command Dispatch](internals/dispatch.md) - Routing proceso-a-handler

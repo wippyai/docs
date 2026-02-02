@@ -220,8 +220,8 @@ flowchart LR
 
 ## 関連項目
 
-- [スケジューラ](internal-scheduler.md) - プロセス実行
-- [イベントバス](internal-events.md) - Pub/Subシステム
-- [レジストリ](internal-registry.md) - 状態管理
-- [コマンドディスパッチ](internal-dispatch.md) - Yield処理
+- [スケジューラ](internals/scheduler.md) - プロセス実行
+- [イベントバス](internals/events.md) - Pub/Subシステム
+- [レジストリ](internals/registry.md) - 状態管理
+- [コマンドディスパッチ](internals/dispatch.md) - Yield処理
 

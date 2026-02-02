@@ -137,7 +137,7 @@ Only listed modules are available. This provides:
 - Explicit dependencies: Clear what code needs
 - Determinism: Workflows only get deterministic modules
 
-See [Lua Runtime](lua-overview.md) for available modules.
+See [Lua Runtime](lua/overview.md) for available modules.
 
 ## Imports
 
@@ -194,6 +194,6 @@ local handlers = registry.find({type = "handler"})
 
 ## See Also
 
-- [Entry Kinds](guide-entry-kinds.md) - All entry kinds reference
-- [Compute Units](concept-compute-units.md) - Functions vs processes vs workflows
-- [Lua Runtime](lua-overview.md) - Available modules
+- [Entry Kinds](guides/entry-kinds.md) - All entry kinds reference
+- [Compute Units](concepts/compute-units.md) - Functions vs processes vs workflows
+- [Lua Runtime](lua/overview.md) - Available modules

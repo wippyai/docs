@@ -336,7 +336,7 @@ store:close()
 | `security.token.create` | ストアID | トークンの作成 |
 | `security.token.revoke` | ストアID | トークンの取り消し |
 
-ポリシー設定については[セキュリティモデル](system-security.md)を参照。
+ポリシー設定については[セキュリティモデル](system/security.md)を参照。
 
 ## エラー
 
@@ -361,10 +361,10 @@ if err then
 end
 ```
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ## 関連項目
 
-- [セキュリティモデル](system-security.md) - アクター、ポリシー、スコープの設定
-- [HTTPミドルウェア](http-middleware.md) - エンドポイントとリソースファイアウォール
+- [セキュリティモデル](system/security.md) - アクター、ポリシー、スコープの設定
+- [HTTPミドルウェア](http/middleware.md) - エンドポイントとリソースファイアウォール
 

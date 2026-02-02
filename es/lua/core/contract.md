@@ -130,7 +130,7 @@ if ok then
 end
 ```
 
-Consulte [Futures](lua-future.md) para metodos de future.
+Consulte [Futures](lua/core/future.md) para metodos de future.
 
 ## Abrir via Contrato
 

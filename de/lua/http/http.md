@@ -5,7 +5,7 @@
 
 Behandeln Sie HTTP-Anfragen und erstellen Sie Responses. Zugriff auf Anfragedaten, Route-Parameter, Header und Body-Inhalt. Erstellen Sie Responses mit Statuscodes, Headern und Streaming-Unterstützung.
 
-Für Server-Konfiguration siehe [HTTP-Server](http-server.md).
+Für Server-Konfiguration siehe [HTTP-Server](http/server.md).
 
 ## Laden
 
@@ -536,4 +536,4 @@ http.ERROR.STREAM_ERROR   -- Body-Stream-Fehler
 | Header bereits gesendet | `errors.INVALID` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

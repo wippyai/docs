@@ -5,7 +5,7 @@
 
 Acceder a variables de entorno para valores de configuración, secretos y ajustes de tiempo de ejecución.
 
-Las variables deben definirse en el [Sistema de Entorno](system-env.md) antes de poder acceder a ellas. El sistema controla que backends de almacenamiento (OS, archivo, memoria) proporcionan valores y si las variables son de solo lectura.
+Las variables deben definirse en el [Sistema de Entorno](system/env.md) antes de poder acceder a ellas. El sistema controla que backends de almacenamiento (OS, archivo, memoria) proporcionan valores y si las variables son de solo lectura.
 
 ## Carga
 
@@ -116,7 +116,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Consulte [Modelo de Seguridad](system-security.md) para configuración de politicas.
+Consulte [Modelo de Seguridad](system/security.md) para configuración de politicas.
 
 ## Errores
 
@@ -126,8 +126,8 @@ Consulte [Modelo de Seguridad](system-security.md) para configuración de politi
 | Variable no encontrada | `errors.NOT_FOUND` | no |
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 
 ## Vea También
 
-- [Sistema de Entorno](system-env.md) - Configurar backends de almacenamiento y definiciones de variables
+- [Sistema de Entorno](system/env.md) - Configurar backends de almacenamiento y definiciones de variables

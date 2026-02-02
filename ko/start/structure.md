@@ -175,7 +175,7 @@ UI 표시용 정보는 `meta`에 지정합니다:
 | `http.endpoint` | HTTP 핸들러 |
 | `process.host` | 프로세스 슈퍼바이저 |
 
-전체 레퍼런스는 [엔트리 종류 가이드](guide-entry-kinds.md)를 참조하세요.
+전체 레퍼런스는 [엔트리 종류 가이드](guides/entry-kinds.md)를 참조하세요.
 
 ## 설정 파일
 
@@ -195,7 +195,7 @@ http:
   address: :8080
 ```
 
-모든 옵션은 [설정 가이드](guide-configuration.md)를 참조하세요.
+모든 옵션은 [설정 가이드](guides/configuration.md)를 참조하세요.
 
 ### wippy.lock
 
@@ -247,6 +247,6 @@ myapp/
 
 ## 참고
 
-- [엔트리 종류 가이드](guide-entry-kinds.md) - 사용 가능한 엔트리 종류
-- [설정 가이드](guide-configuration.md) - 런타임 옵션
-- [커스텀 엔트리 종류](internal-kinds.md) - 핸들러 구현 (고급)
+- [엔트리 종류 가이드](guides/entry-kinds.md) - 사용 가능한 엔트리 종류
+- [설정 가이드](guides/configuration.md) - 런타임 옵션
+- [커스텀 엔트리 종류](internals/kinds.md) - 핸들러 구현 (고급)

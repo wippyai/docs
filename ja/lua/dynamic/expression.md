@@ -150,5 +150,5 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | 式の評価が失敗 | `errors.INTERNAL` | no |
 | 結果の変換が失敗 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

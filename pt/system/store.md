@@ -66,4 +66,4 @@ Ambos os armazenamentos suportam time-to-live. Entradas expiradas persistem brev
 
 ## API Lua
 
-Veja [Módulo Store](lua-store.md) para operações (get, set, delete, exists, clear).
+Veja [Módulo Store](lua/storage/store.md) para operações (get, set, delete, exists, clear).

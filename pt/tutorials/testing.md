@@ -577,6 +577,6 @@ myapp/
 
 ## Próximos Passos
 
-- [Error Handling](lua-errors.md) - Padrões de erro e assertions
-- [Registry](lua-registry.md) - Consultas e filtragem de registro
-- [Functions](concept-functions.md) - Chamadas e execução de funções
+- [Error Handling](lua/core/errors.md) - Padrões de erro e assertions
+- [Registry](lua/core/registry.md) - Consultas e filtragem de registro
+- [Functions](concepts/functions.md) - Chamadas e execução de funções

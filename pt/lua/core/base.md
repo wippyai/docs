@@ -235,7 +235,7 @@ math.ult(m, n)        -- Comparação unsigned less-than
 
 ## Corrotinas
 
-Criação e controle de corrotinas. Veja [Channels and Coroutines](lua-channel.md) para channels e padrões concorrentes:
+Criação e controle de corrotinas. Veja [Channels and Coroutines](lua/core/channel.md) para channels e padrões concorrentes:
 
 ```lua
 coroutine.create(fn)        -- Criar corrotina de função
@@ -269,7 +269,7 @@ process_request()
 
 ## Tratamento de Erros
 
-Criação e classificação de erros estruturados. Veja [Error Handling](lua-errors.md) para documentação completa:
+Criação e classificação de erros estruturados. Veja [Error Handling](lua/core/errors.md) para documentação completa:
 
 ### Constantes {id="error-constants"}
 
@@ -367,16 +367,16 @@ Os seguintes recursos Lua padrão NÃO estão disponíveis por segurança:
 
 | Recurso | Alternativa |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Use módulo [Dynamic Evaluation](lua-eval.md) |
+| `load`, `loadstring`, `loadfile`, `dofile` | Use módulo [Dynamic Evaluation](lua/dynamic/eval.md) |
 | `collectgarbage` | GC automático |
 | `rawlen` | Use operador `#` |
-| `io.*` | Use módulo [File System](lua-fs.md) |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use módulos [Command Execution](lua-exec.md), [Environment](lua-env.md) |
+| `io.*` | Use módulo [File System](lua/storage/filesystem.md) |
+| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use módulos [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) |
 | `debug.*` (exceto traceback) | Não disponível |
 | `package.loadlib` | Bibliotecas nativas não suportadas |
 
 ## Veja Também
 
-- [Channels and Coroutines](lua-channel.md) - Channels estilo Go para concorrência
-- [Error Handling](lua-errors.md) - Criação e tratamento de erros estruturados
-- [OS Time](lua-ostime.md) - Funções de tempo do sistema
+- [Channels and Coroutines](lua/core/channel.md) - Channels estilo Go para concorrência
+- [Error Handling](lua/core/errors.md) - Criação e tratamento de erros estruturados
+- [OS Time](lua/system/ostime.md) - Funções de tempo do sistema

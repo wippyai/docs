@@ -336,7 +336,7 @@ Las operaciones de seguridad estan sujetas a evaluacion de politica de seguridad
 | `security.token.create` | ID de Store | Crear tokens |
 | `security.token.revoke` | ID de Store | Revocar tokens |
 
-Consulte [Modelo de Seguridad](system-security.md) para configuración de politicas.
+Consulte [Modelo de Seguridad](system/security.md) para configuración de politicas.
 
 ## Errores
 
@@ -361,9 +361,9 @@ if err then
 end
 ```
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 
 ## Vea También
 
-- [Modelo de Seguridad](system-security.md) - Configuración de actores, politicas, alcances
-- [Middleware HTTP](http-middleware.md) - Firewall de endpoint y recursos
+- [Modelo de Seguridad](system/security.md) - Configuración de actores, politicas, alcances
+- [Middleware HTTP](http/middleware.md) - Firewall de endpoint y recursos

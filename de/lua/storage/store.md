@@ -6,7 +6,7 @@
 
 Schneller Key-Value-Speicher mit TTL-Unterstützung. Ideal für Caching, Sessions und temporäre Zustände.
 
-Für Speicherkonfiguration siehe [Store](system-store.md).
+Für Speicherkonfiguration siehe [Store](system/store.md).
 
 ## Laden
 
@@ -140,4 +140,4 @@ Store-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Store freigegeben | `errors.INVALID` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

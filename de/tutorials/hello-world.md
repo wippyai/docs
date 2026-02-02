@@ -151,4 +151,4 @@ Antwort:
 
 - [Echo-Service](echo-service.md) - Anfrageparameter behandeln
 - [Task-Queue](task-queue.md) - REST-API mit Hintergrundverarbeitung
-- [HTTP-Router](http-router.md) - Routing-Muster
+- [HTTP-Router](http/router.md) - Routing-Muster

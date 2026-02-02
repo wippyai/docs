@@ -136,9 +136,9 @@
 
 ## ランタイムアクセス
 
-- [envモジュール](lua-env.md) - Luaランタイムアクセス
+- [envモジュール](lua/system/env.md) - Luaランタイムアクセス
 
 ## 関連項目
 
-- [セキュリティモデル](system-security.md) - 環境変数のアクセス制御
-- [設定ガイド](guide-configuration.md) - アプリケーション設定パターン
+- [セキュリティモデル](system/security.md) - 環境変数のアクセス制御
+- [設定ガイド](guides/configuration.md) - アプリケーション設定パターン

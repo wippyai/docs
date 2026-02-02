@@ -151,4 +151,4 @@ curl http://localhost:8080/hello
 
 - [에코 서비스](echo-service.md) - 요청 파라미터 처리
 - [태스크 큐](task-queue.md) - 백그라운드 처리가 있는 REST API
-- [HTTP 라우터](http-router.md) - 라우팅 패턴
+- [HTTP 라우터](http/router.md) - 라우팅 패턴

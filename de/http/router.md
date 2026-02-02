@@ -118,7 +118,7 @@ Der Wildcard muss das letzte Segment im Pfad sein.
 
 ## Handler-Funktionen
 
-Endpunkt-Handler verwenden das `http`-Modul für Zugriff auf Request- und Response-Objekte. Siehe [HTTP-Modul](lua-http.md) für die vollständige API.
+Endpunkt-Handler verwenden das `http`-Modul für Zugriff auf Request- und Response-Objekte. Siehe [HTTP-Modul](lua/http/http.md) für die vollständige API.
 
 ```lua
 local http = require("http")
@@ -290,7 +290,7 @@ entries:
 
 ## Siehe auch
 
-- [Server](http-server.md) - HTTP-Server-Konfiguration
-- [Statische Dateien](http-static.md) - Statische Datei-Bereitstellung
-- [Middleware](http-middleware.md) - Verfügbare Middleware
-- [HTTP-Modul](lua-http.md) - Lua-HTTP-API
+- [Server](http/server.md) - HTTP-Server-Konfiguration
+- [Statische Dateien](http/static.md) - Statische Datei-Bereitstellung
+- [Middleware](http/middleware.md) - Verfügbare Middleware
+- [HTTP-Modul](lua/http/http.md) - Lua-HTTP-API

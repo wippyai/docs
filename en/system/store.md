@@ -66,4 +66,4 @@ Both stores support time-to-live. Expired entries persist briefly until cleanup 
 
 ## Lua API
 
-See [Store Module](lua-store.md) for operations (get, set, delete, exists, clear).
+See [Store Module](lua/storage/store.md) for operations (get, set, delete, exists, clear).

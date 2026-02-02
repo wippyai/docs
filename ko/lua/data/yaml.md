@@ -154,4 +154,4 @@ print(type(data.tags))     -- "table"
 | 빈 문자열 (디코딩) | `errors.INVALID` | 아니오 |
 | 잘못된 YAML 구문 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

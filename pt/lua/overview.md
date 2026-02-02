@@ -22,7 +22,7 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-Veja [Process Management](lua-process.md) para criação, vinculação e supervisão.
+Veja [Process Management](lua/core/process.md) para criação, vinculação e supervisão.
 
 ## Channels
 
@@ -36,7 +36,7 @@ ch:send(value)                  -- bloqueia até receber
 local val, ok = ch:receive()    -- bloqueia até pronto
 ```
 
-Veja [Channels](lua-channel.md) para select e padrões.
+Veja [Channels](lua/core/channel.md) para select e padrões.
 
 ## Corrotinas
 
@@ -90,15 +90,15 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Módulos disponíveis dependem da configuração da entrada. Veja [Entry Definitions](lua-entries.md).
+Módulos disponíveis dependem da configuração da entrada. Veja [Entry Definitions](lua/entries.md).
 
 ## Bibliotecas Externas
 
-Wippy usa sintaxe Lua 5.3 com um [sistema de tipos gradual](lua-types.md) inspirado por Luau. Tipos são valores de runtime de primeira classe - chamáveis para validação, passáveis como argumentos e inspecionáveis - substituindo a necessidade de bibliotecas de schema como Zod ou Pydantic.
+Wippy usa sintaxe Lua 5.3 com um [sistema de tipos gradual](lua/types.md) inspirado por Luau. Tipos são valores de runtime de primeira classe - chamáveis para validação, passáveis como argumentos e inspecionáveis - substituindo a necessidade de bibliotecas de schema como Zod ou Pydantic.
 
 Bibliotecas Lua externas (LuaRocks, etc.) não são suportadas. O runtime fornece seu próprio sistema de módulos com extensões integradas para I/O, rede e integração de sistema.
 
-Para extensões customizadas, veja [Modules](internal-modules.md) na documentação de internals.
+Para extensões customizadas, veja [Modules](internals/modules.md) na documentação de internals.
 
 ## Tratamento de Erros
 
@@ -111,11 +111,11 @@ if err then
 end
 ```
 
-Veja [Error Handling](lua-errors.md) para padrões.
+Veja [Error Handling](lua/core/errors.md) para padrões.
 
 ## Próximos Passos
 
-- [Entry Definitions](lua-entries.md) - Configurar pontos de entrada
-- [Channels](lua-channel.md) - Padrões de channel
-- [Process Management](lua-process.md) - Criação e supervisão
-- [Functions](lua-funcs.md) - Chamadas entre processos
+- [Entry Definitions](lua/entries.md) - Configurar pontos de entrada
+- [Channels](lua/core/channel.md) - Padrões de channel
+- [Process Management](lua/core/process.md) - Criação e supervisão
+- [Functions](lua/core/funcs.md) - Chamadas entre processos

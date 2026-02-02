@@ -93,7 +93,7 @@ Comandos não na whitelist são rejeitados com um erro.
 
 ## API Lua
 
-O [Módulo Exec](lua-exec.md) fornece execução de comandos:
+O [Módulo Exec](lua/dynamic/exec.md) fornece execução de comandos:
 
 ```lua
 local exec = require("exec")

@@ -150,4 +150,4 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Ausdrucksauswertung schlägt fehl | `errors.INTERNAL` | nein |
 | Ergebniskonvertierung schlägt fehl | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

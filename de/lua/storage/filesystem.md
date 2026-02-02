@@ -6,7 +6,7 @@
 
 Lesen, Schreiben und Verwalten von Dateien innerhalb von Sandbox-Dateisystem-Volumes.
 
-Für Dateisystemkonfiguration siehe [Dateisystem](system-filesystem.md).
+Für Dateisystemkonfiguration siehe [Dateisystem](system/filesystem.md).
 
 ## Laden
 
@@ -221,4 +221,4 @@ Dateisystemzugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | Pfad existiert bereits | `errors.ALREADY_EXISTS` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

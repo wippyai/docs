@@ -351,5 +351,5 @@ Registry:
 
 ## Ver También
 
-- [Referencia del Módulo Process](lua-process.md) - Documentación completa de API
+- [Referencia del Módulo Process](lua/core/process.md) - Documentación completa de API
 - [Canales](channels.md) - Operaciones de canal para manejo de mensajes

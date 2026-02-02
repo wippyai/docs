@@ -309,4 +309,4 @@ end
 | Datos comprimidos invalidos | `errors.INVALID` | no |
 | Tamano descomprimido excede limite | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

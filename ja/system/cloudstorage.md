@@ -62,4 +62,4 @@ MinIOまたは他のS3互換サービスの場合、カスタムエンドポイ�
 
 ## Lua API
 
-操作（list、upload、download、delete、署名付きURL）については[クラウドストレージモジュール](lua-cloudstorage.md)を参照してください。
+操作（list、upload、download、delete、署名付きURL）については[クラウドストレージモジュール](lua/storage/cloud.md)を参照してください。

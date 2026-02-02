@@ -22,7 +22,7 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-See [Process Management](lua-process.md) for spawning, linking, and supervision.
+See [Process Management](lua/core/process.md) for spawning, linking, and supervision.
 
 ## Channels
 
@@ -36,7 +36,7 @@ ch:send(value)                  -- blocks until received
 local val, ok = ch:receive()    -- blocks until ready
 ```
 
-See [Channels](lua-channel.md) for select and patterns.
+See [Channels](lua/core/channel.md) for select and patterns.
 
 ## Coroutines
 
@@ -90,15 +90,15 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Available modules depend on entry configuration. See [Entry Definitions](lua-entries.md).
+Available modules depend on entry configuration. See [Entry Definitions](lua/entries.md).
 
 ## External Libraries
 
-Wippy uses Lua 5.3 syntax with a [gradual type system](lua-types.md) inspired by Luau. Types are first-class runtime values—callable for validation, passable as arguments, and introspectable—replacing the need for schema libraries like Zod or Pydantic.
+Wippy uses Lua 5.3 syntax with a [gradual type system](lua/types.md) inspired by Luau. Types are first-class runtime values—callable for validation, passable as arguments, and introspectable—replacing the need for schema libraries like Zod or Pydantic.
 
 External Lua libraries (LuaRocks, etc.) are not supported. The runtime provides its own module system with built-in extensions for I/O, networking, and system integration.
 
-For custom extensions, see [Modules](internal-modules.md) in the internals documentation.
+For custom extensions, see [Modules](internals/modules.md) in the internals documentation.
 
 ## Error Handling
 
@@ -111,11 +111,11 @@ if err then
 end
 ```
 
-See [Error Handling](lua-errors.md) for patterns.
+See [Error Handling](lua/core/errors.md) for patterns.
 
 ## What's Next
 
-- [Entry Definitions](lua-entries.md) - Configure entry points
-- [Channels](lua-channel.md) - Channel patterns
-- [Process Management](lua-process.md) - Spawning and supervision
-- [Functions](lua-funcs.md) - Cross-process calls
+- [Entry Definitions](lua/entries.md) - Configure entry points
+- [Channels](lua/core/channel.md) - Channel patterns
+- [Process Management](lua/core/process.md) - Spawning and supervision
+- [Functions](lua/core/funcs.md) - Cross-process calls

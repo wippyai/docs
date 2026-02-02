@@ -249,5 +249,5 @@ O padrão Prepare-then-Wait evita race conditions: inscrição antes de acionar 
 
 ## Veja Também
 
-- [Registry](internal-registry.md) - Principal produtor de eventos
-- [Command Dispatch](internal-dispatch.md) - Roteamento processo-para-handler
+- [Registry](internals/registry.md) - Principal produtor de eventos
+- [Command Dispatch](internals/dispatch.md) - Roteamento processo-para-handler

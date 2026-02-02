@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Zugriff auf anfragespezifische Kontextwerte. Der Kontext wird über [Funcs](lua-funcs.md) oder [Process](lua-process.md) gesetzt.
+Zugriff auf anfragespezifische Kontextwerte. Der Kontext wird über [Funcs](lua/core/funcs.md) oder [Process](lua/core/process.md) gesetzt.
 
 ## Laden
 
@@ -41,4 +41,4 @@ local values, err = ctx.all()
 | Schlüssel nicht gefunden | `errors.NOT_FOUND` | nein |
 | Kein Kontext verfügbar | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

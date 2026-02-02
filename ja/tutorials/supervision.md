@@ -678,5 +678,5 @@ entries:
 
 - [プロセス](processes.md) - プロセスの基礎
 - [チャネル](channels.md) - メッセージパッシングパターン
-- [プロセスモジュール](lua-process.md) - APIリファレンス
+- [プロセスモジュール](lua/core/process.md) - APIリファレンス
 

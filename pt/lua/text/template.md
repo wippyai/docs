@@ -5,7 +5,7 @@
 
 Renderize conteudo dinamico usando o [Jet template engine](https://github.com/CloudyKit/jet). Construa paginas HTML, emails e documentos com heranca de templates e includes.
 
-Para configuração de template sets, veja [Template Engine](system-template.md).
+Para configuração de template sets, veja [Template Engine](system/template.md).
 
 ## Carregamento
 
@@ -139,4 +139,4 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 | Erro de renderização | `errors.INTERNAL` | não |
 | Set ja liberado | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

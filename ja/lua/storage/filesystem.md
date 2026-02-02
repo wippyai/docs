@@ -6,7 +6,7 @@
 
 サンドボックス化されたファイルシステムボリューム内でファイルを読み取り、書き込み、管理。
 
-ファイルシステム設定については[ファイルシステム](system-filesystem.md)を参照。
+ファイルシステム設定については[ファイルシステム](system/filesystem.md)を参照。
 
 ## ロード
 
@@ -221,5 +221,5 @@ fs.seek.END       -- 末尾から
 | パスが既に存在 | `errors.ALREADY_EXISTS` | no |
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

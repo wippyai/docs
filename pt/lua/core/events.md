@@ -137,5 +137,5 @@ sub:close()
 | Caminho vazio | `errors.INVALID` | não |
 | Política negou | `errors.INVALID` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 

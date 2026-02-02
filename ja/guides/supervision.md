@@ -185,6 +185,6 @@ stateDiagram-v2
 
 ## 関連項目
 
-- [プロセスモデル](concept-process-model.md) - プロセスライフサイクル
-- [設定](guide-configuration.md) - YAML設定形式
-- [セキュリティモジュール](lua-security.md) - Luaでの権限チェック
+- [プロセスモデル](concepts/process-model.md) - プロセスライフサイクル
+- [設定](guides/configuration.md) - YAML設定形式
+- [セキュリティモジュール](lua/security/security.md) - Luaでの権限チェック

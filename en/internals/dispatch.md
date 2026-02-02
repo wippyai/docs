@@ -156,6 +156,6 @@ The worker extracts yields from `StepOutput` after each step and dispatches them
 
 ## See Also
 
-- [Scheduler](internal-scheduler.md) - Process execution
-- [Modules](internal-modules.md) - Lua module integration
-- [Process Model](concept-process-model.md) - High-level concepts
+- [Scheduler](internals/scheduler.md) - Process execution
+- [Modules](internals/modules.md) - Lua module integration
+- [Process Model](concepts/process-model.md) - High-level concepts

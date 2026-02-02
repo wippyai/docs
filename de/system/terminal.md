@@ -37,7 +37,7 @@ Skripte, die auf einem Terminal-Host laufen, erhalten einen Terminal-Kontext mit
 
 ## Lua-API
 
-Das [IO-Modul](lua-io.md) bietet Terminal-Operationen:
+Das [IO-Modul](lua/system/io.md) bietet Terminal-Operationen:
 
 ```lua
 local io = require("io")

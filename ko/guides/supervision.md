@@ -185,6 +185,6 @@ stateDiagram-v2
 
 ## 참고
 
-- [프로세스 모델](concept-process-model.md) - 프로세스 라이프사이클
-- [설정](guide-configuration.md) - YAML 설정 형식
-- [보안 모듈](lua-security.md) - Lua에서 권한 검사
+- [프로세스 모델](concepts/process-model.md) - 프로세스 라이프사이클
+- [설정](guides/configuration.md) - YAML 설정 형식
+- [보안 모듈](lua/security/security.md) - Lua에서 권한 검사

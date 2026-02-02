@@ -118,7 +118,7 @@ The wildcard must be the last segment in the path.
 
 ## Handler Functions
 
-Endpoint handlers use the `http` module to access request and response objects. See [HTTP Module](lua-http.md) for the complete API.
+Endpoint handlers use the `http` module to access request and response objects. See [HTTP Module](lua/http/http.md) for the complete API.
 
 ```lua
 local http = require("http")
@@ -290,7 +290,7 @@ entries:
 
 ## See Also
 
-- [Server](http-server.md) - HTTP server configuration
-- [Static Files](http-static.md) - Static file serving
-- [Middleware](http-middleware.md) - Available middleware
-- [HTTP Module](lua-http.md) - Lua HTTP API
+- [Server](http/server.md) - HTTP server configuration
+- [Static Files](http/static.md) - Static file serving
+- [Middleware](http/middleware.md) - Available middleware
+- [HTTP Module](lua/http/http.md) - Lua HTTP API

@@ -85,7 +85,7 @@ El driver de memoria no tiene opciones de configuración. Los drivers externos (
 | `prefetch` | 10 | 10000 | Tamaño del buffer de mensajes |
 
 <tip>
-Los consumidores respetan el contexto de llamada y pueden estar sujetos a políticas de seguridad. Configure actor y políticas a nivel de ciclo de vida. Ver <a href="system-security.md">Seguridad</a>.
+Los consumidores respetan el contexto de llamada y pueden estar sujetos a políticas de seguridad. Configure actor y políticas a nivel de ciclo de vida. Ver <a href="system/security.md">Seguridad</a>.
 </tip>
 
 ### Pool de Workers
@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-Ver [Módulo Queue](lua-queue.md) para la API completa.
+Ver [Módulo Queue](lua/storage/queue.md) para la API completa.
 
 ## Apagado Graceful
 

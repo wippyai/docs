@@ -156,4 +156,4 @@ local formatted, err = uuid.format(id, "urn")
 | Tipo de formato no soportado | `errors.INVALID` | no |
 | Generacion fallida | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

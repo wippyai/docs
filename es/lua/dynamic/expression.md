@@ -150,4 +150,4 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Evaluacion de expresion falla | `errors.INTERNAL` | no |
 | Conversion de resultado falla | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

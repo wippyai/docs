@@ -309,4 +309,4 @@ end
 | Invalid compressed data | `errors.INVALID` | no |
 | Decompressed size exceeds limit | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

@@ -7,7 +7,7 @@
 
 Acceder a almacenamiento de objetos compatible con S3. Cargar, descargar, listar y gestionar archivos con soporte de URL prefirmadas.
 
-Para configuración de almacenamiento, consulte [Almacenamiento en la Nube](system-cloudstorage.md).
+Para configuración de almacenamiento, consulte [Almacenamiento en la Nube](system/cloudstorage.md).
 
 ## Carga
 
@@ -263,4 +263,4 @@ Las operaciones de almacenamiento en la nube estan sujetas a evaluacion de polit
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
 | Operación fallida | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

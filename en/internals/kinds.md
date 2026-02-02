@@ -128,5 +128,5 @@ The registry calls `Begin` before processing a batch, then `Commit` on success o
 
 ## See Also
 
-- [Registry](internal-registry.md) - Entry storage
-- [Architecture](internal-architecture.md) - Boot sequence
+- [Registry](internals/registry.md) - Entry storage
+- [Architecture](internals/architecture.md) - Boot sequence

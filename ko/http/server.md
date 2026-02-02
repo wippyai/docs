@@ -85,7 +85,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-이 설정은 모든 요청에 대한 기본 액터와 정책을 지정합니다. 인증된 요청의 경우 [token_auth 미들웨어](http-middleware.md)가 검증된 토큰을 기반으로 액터를 재정의하여 사용자별 보안 정책을 적용할 수 있습니다.
+이 설정은 모든 요청에 대한 기본 액터와 정책을 지정합니다. 인증된 요청의 경우 [token_auth 미들웨어](http/middleware.md)가 검증된 토큰을 기반으로 액터를 재정의하여 사용자별 보안 정책을 적용할 수 있습니다.
 
 ## 라이프사이클
 
@@ -158,8 +158,8 @@ TLS 종료는 일반적으로 리버스 프록시(Nginx, Caddy, 로드 밸런서
 
 ## 참고
 
-- [라우팅](http-router.md) - 라우터와 엔드포인트
-- [정적 파일](http-static.md) - 정적 파일 서빙
-- [미들웨어](http-middleware.md) - 사용 가능한 미들웨어
-- [보안](system-security.md) - 보안 정책
-- [WebSocket Relay](http-websocket-relay.md) - WebSocket 메시징
+- [라우팅](http/router.md) - 라우터와 엔드포인트
+- [정적 파일](http/static.md) - 정적 파일 서빙
+- [미들웨어](http/middleware.md) - 사용 가능한 미들웨어
+- [보안](system/security.md) - 보안 정책
+- [WebSocket Relay](http/websocket-relay.md) - WebSocket 메시징

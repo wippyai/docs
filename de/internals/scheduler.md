@@ -125,5 +125,5 @@ Bei Shutdown sendet der Scheduler Cancel-Events an alle laufenden Prozesse und w
 
 ## Siehe auch
 
-- [Command-Dispatch](internal-dispatch.md) - Wie Yields Handler erreichen
-- [Prozessmodell](concept-process-model.md) - High-Level-Konzepte
+- [Command-Dispatch](internals/dispatch.md) - Wie Yields Handler erreichen
+- [Prozessmodell](concepts/process-model.md) - High-Level-Konzepte

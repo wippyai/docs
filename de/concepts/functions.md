@@ -20,7 +20,7 @@ local ch = future:response()
 local result, ok = ch:receive()
 ```
 
-Siehe das [funcs-Modul](lua-funcs.md) für die vollständige API.
+Siehe das [funcs-Modul](lua/core/funcs.md) für die vollständige API.
 
 ## Kontextpropagierung
 
@@ -41,7 +41,7 @@ local exec = funcs.new()
     :call("app.api:process", data)
 ```
 
-Der Sicherheitskontext wird auf dieselbe Weise weitergegeben. Aufgerufene Funktionen sehen den Aktor des Aufrufers und können Berechtigungen prüfen. Siehe das [security-Modul](lua-security.md) für Zugriffskontroll-APIs.
+Der Sicherheitskontext wird auf dieselbe Weise weitergegeben. Aufgerufene Funktionen sehen den Aktor des Aufrufers und können Berechtigungen prüfen. Siehe das [security-Modul](lua/security/security.md) für Zugriffskontroll-APIs.
 
 ## Registry-Definition
 

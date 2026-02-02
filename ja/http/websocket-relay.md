@@ -200,6 +200,6 @@ end
 
 ## 関連項目
 
-- [ミドルウェア](http-middleware.md) - ミドルウェア設定
-- [プロセス](lua-process.md) - プロセスメッセージング
-- [WebSocketクライアント](lua-websocket.md) - アウトバウンドWebSocket接続
+- [ミドルウェア](http/middleware.md) - ミドルウェア設定
+- [プロセス](lua/core/process.md) - プロセスメッセージング
+- [WebSocketクライアント](lua/http/websocket.md) - アウトバウンドWebSocket接続

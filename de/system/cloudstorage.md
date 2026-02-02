@@ -63,4 +63,4 @@ Wenn ein Endpunkt angegeben wird, wird Pfadstil-Zugriff automatisch aktiviert.
 
 ## Lua-API
 
-Siehe [Cloud-Storage-Modul](lua-cloudstorage.md) für Operationen (list, upload, download, delete, vorsignierte URLs).
+Siehe [Cloud-Storage-Modul](lua/storage/cloud.md) für Operationen (list, upload, download, delete, vorsignierte URLs).

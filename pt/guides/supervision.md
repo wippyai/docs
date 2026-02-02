@@ -185,6 +185,6 @@ Encerramento:   http_server -> handler -> cache -> database
 
 ## Veja Também
 
-- [Modelo de Processos](concept-process-model.md) - Ciclo de vida de processos
-- [Configuração](guide-configuration.md) - Formato de configuração YAML
-- [Módulo Security](lua-security.md) - Verificações de permissão em Lua
+- [Modelo de Processos](concepts/process-model.md) - Ciclo de vida de processos
+- [Configuração](guides/configuration.md) - Formato de configuração YAML
+- [Módulo Security](lua/security/security.md) - Verificações de permissão em Lua

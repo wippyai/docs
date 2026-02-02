@@ -137,4 +137,4 @@ sub:close()
 | 빈 path | `errors.INVALID` | 아니오 |
 | 정책 거부됨 | `errors.INVALID` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

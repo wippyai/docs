@@ -137,7 +137,7 @@ Apenas módulos listados estão disponíveis. Isso fornece:
 - Dependências explícitas: Claro o que o código precisa
 - Determinismo: Workflows só recebem módulos determinísticos
 
-Veja [Lua Runtime](lua-overview.md) para módulos disponíveis.
+Veja [Lua Runtime](lua/overview.md) para módulos disponíveis.
 
 ## Imports
 
@@ -194,6 +194,6 @@ local handlers = registry.find({type = "handler"})
 
 ## Veja Também
 
-- [Entry Kinds](guide-entry-kinds.md) - Referência de todos os tipos de entrada
-- [Compute Units](concept-compute-units.md) - Funções vs processos vs workflows
-- [Lua Runtime](lua-overview.md) - Módulos disponíveis
+- [Entry Kinds](guides/entry-kinds.md) - Referência de todos os tipos de entrada
+- [Compute Units](concepts/compute-units.md) - Funções vs processos vs workflows
+- [Lua Runtime](lua/overview.md) - Módulos disponíveis

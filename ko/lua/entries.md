@@ -137,7 +137,7 @@ modules:
 - 명시적 의존성: 코드에 필요한 것이 명확함
 - 결정론: 워크플로우는 결정론적 모듈만 사용
 
-사용 가능한 모듈은 [Lua 런타임](lua-overview.md)을 참조하세요.
+사용 가능한 모듈은 [Lua 런타임](lua/overview.md)을 참조하세요.
 
 ## 임포트
 
@@ -194,6 +194,6 @@ local handlers = registry.find({type = "handler"})
 
 ## 참고
 
-- [엔트리 종류](guide-entry-kinds.md) - 모든 엔트리 종류 참조
-- [컴퓨팅 단위](concept-compute-units.md) - 함수 vs 프로세스 vs 워크플로우
-- [Lua 런타임](lua-overview.md) - 사용 가능한 모듈
+- [엔트리 종류](guides/entry-kinds.md) - 모든 엔트리 종류 참조
+- [컴퓨팅 단위](concepts/compute-units.md) - 함수 vs 프로세스 vs 워크플로우
+- [Lua 런타임](lua/overview.md) - 사용 가능한 모듈

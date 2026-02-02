@@ -6,7 +6,7 @@
 
 Leia, escreva e gerencie arquivos dentro de volumes de filesystem em sandbox.
 
-Para configuração de filesystem, veja [Filesystem](system-filesystem.md).
+Para configuração de filesystem, veja [Filesystem](system/filesystem.md).
 
 ## Carregamento
 
@@ -221,4 +221,4 @@ Acesso ao filesystem está sujeito a avaliação de política de segurança.
 | Caminho ja existe | `errors.ALREADY_EXISTS` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

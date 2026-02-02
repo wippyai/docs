@@ -168,4 +168,4 @@ print(result.computed_value)
 | 트랜스코딩 실패 | `errors.INTERNAL` | 아니오 |
 | 결과가 유효한 Lua 값이 아님 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

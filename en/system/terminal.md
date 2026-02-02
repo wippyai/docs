@@ -37,7 +37,7 @@ Scripts running on a terminal host receive a terminal context with:
 
 ## Lua API
 
-The [IO Module](lua-io.md) provides terminal operations:
+The [IO Module](lua/system/io.md) provides terminal operations:
 
 ```lua
 local io = require("io")

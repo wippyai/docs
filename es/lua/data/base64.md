@@ -88,4 +88,4 @@ local payload = json.decode(base64.decode(parts[2]))
 | Caracteres base64 invalidos | `errors.INVALID` | no |
 | Padding corrupto | `errors.INVALID` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

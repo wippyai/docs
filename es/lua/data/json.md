@@ -203,4 +203,4 @@ local request = json.decode(body)
 | Compilacion de schema fallida | `errors.INVALID` | no |
 | Validacion fallida | `errors.INVALID` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

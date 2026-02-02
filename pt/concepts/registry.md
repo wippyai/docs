@@ -17,16 +17,16 @@ Cada entrada tem um `ID` (formato namespace:nome), um `kind` que determina seu h
 
 ## Handlers de Kind
 
-Quando uma entrada é submetida, seu `kind` determina qual handler a processa. O handler valida a configuração e cria recursos de runtime — uma entrada `http.service` inicia um servidor HTTP, uma entrada `function.lua` cria um pool de funções, uma entrada `sql.database` estabelece um pool de conexões. Veja o [Guia de Tipos de Entradas](guide-entry-kinds.md) para kinds disponíveis e [Tipos de Entradas Personalizados](internal-kinds.md) para implementar handlers.
+Quando uma entrada é submetida, seu `kind` determina qual handler a processa. O handler valida a configuração e cria recursos de runtime — uma entrada `http.service` inicia um servidor HTTP, uma entrada `function.lua` cria um pool de funções, uma entrada `sql.database` estabelece um pool de conexões. Veja o [Guia de Tipos de Entradas](guides/entry-kinds.md) para kinds disponíveis e [Tipos de Entradas Personalizados](internals/kinds.md) para implementar handlers.
 
 ## Atualizações ao Vivo
 
 O registro suporta mudanças em tempo de execução — adicionar, atualizar ou remover entradas enquanto o sistema executa. Mudanças fluem através do barramento de eventos onde listeners podem validar ou rejeitá-las, e transações garantem atomicidade. O histórico de versões permite rollback.
 
-Arquivos de definição YAML são snapshots serializados do registro carregados na inicialização. Veja o [módulo Registry](lua-registry.md) para acesso programático.
+Arquivos de definição YAML são snapshots serializados do registro carregados na inicialização. Veja o [módulo Registry](lua/core/registry.md) para acesso programático.
 
 ## Veja Também
 
-- [YAML e Estrutura do Projeto](getting-started-structure.md) - Arquivos de definição
-- [Tipos de Entradas Personalizados](internal-kinds.md) - Implementando handlers de kind
-- [Modelo de Processos](concept-process-model.md) - Como processos funcionam
+- [YAML e Estrutura do Projeto](start/structure.md) - Arquivos de definição
+- [Tipos de Entradas Personalizados](internals/kinds.md) - Implementando handlers de kind
+- [Modelo de Processos](concepts/process-model.md) - Como processos funcionam

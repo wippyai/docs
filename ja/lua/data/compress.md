@@ -309,5 +309,5 @@ end
 | 無効な圧縮データ | `errors.INVALID` | no |
 | 解凍サイズが制限を超過 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

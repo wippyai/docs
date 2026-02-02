@@ -6,8 +6,8 @@ Vollständige Referenz aller in Wippy verfügbaren Entry-Typen.
 
 ## Siehe auch
 
-- [Registry](concept-registry.md) - Wie Einträge gespeichert und aufgelöst werden
-- [Konfiguration](guide-configuration.md) - YAML-Konfigurationsformat
+- [Registry](concepts/registry.md) - Wie Einträge gespeichert und aufgelöst werden
+- [Konfiguration](guides/configuration.md) - YAML-Konfigurationsformat
 
 ## Lua-Runtime
 
@@ -71,7 +71,7 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
   func: list_handler
 ```
 
-**Lua-API:** Siehe [HTTP-Modul](lua-http.md)
+**Lua-API:** Siehe [HTTP-Modul](lua/http/http.md)
 
 ```lua
 local http = require("http")
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**Lua-API:** Siehe [SQL-Modul](lua-sql.md)
+**Lua-API:** Siehe [SQL-Modul](lua/storage/sql.md)
 
 ```lua
 local sql = require("sql")
@@ -174,7 +174,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**Lua-API:** Siehe [Store-Modul](lua-store.md)
+**Lua-API:** Siehe [Store-Modul](lua/storage/store.md)
 
 ```lua
 local store = require("store")
@@ -215,7 +215,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua-API:** Siehe [Queue-Modul](lua-queue.md)
+**Lua-API:** Siehe [Queue-Modul](lua/storage/queue.md)
 
 ```lua
 local queue = require("queue")
@@ -324,7 +324,7 @@ Verwenden Sie <code>process.service</code> wenn ein Prozess als überwachter Die
   endpoint: ""  # Optional, für S3-kompatible Dienste
 ```
 
-**Lua-API:** Siehe [Cloud-Storage-Modul](lua-cloudstorage.md)
+**Lua-API:** Siehe [Cloud-Storage-Modul](lua/storage/cloud.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -352,7 +352,7 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
   mode: "0755"      # Berechtigungen
 ```
 
-**Lua-API:** Siehe [Dateisystem-Modul](lua-fs.md)
+**Lua-API:** Siehe [Dateisystem-Modul](lua/storage/filesystem.md)
 
 ```lua
 local fs = require("fs")
@@ -389,7 +389,7 @@ file:close()
     - app:file_env
 ```
 
-**Lua-API:** Siehe [Env-Modul](lua-env.md)
+**Lua-API:** Siehe [Env-Modul](lua/system/env.md)
 
 ```lua
 local env = require("env")
@@ -426,7 +426,7 @@ Der Router versucht Speicher der Reihe nach. Der erste Treffer gewinnt beim Lese
   set: app:templates
 ```
 
-**Lua-API:** Siehe [Template-Modul](lua-template.md)
+**Lua-API:** Siehe [Template-Modul](lua/text/template.md)
 
 ```lua
 local templates = require("templates")
@@ -469,7 +469,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua-API:** Siehe [Sicherheitsmodul](lua-security.md)
+**Lua-API:** Siehe [Sicherheitsmodul](lua/security/security.md)
 
 ```lua
 local security = require("security")
@@ -548,7 +548,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua-API:** Siehe [Contract-Modul](lua-contract.md)
+**Lua-API:** Siehe [Contract-Modul](lua/core/contract.md)
 
 <tip>
 Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn ein Contract ohne Angabe einer Binding-ID geöffnet wird (funktioniert nur wenn keine <code>context_required</code>-Felder gesetzt sind).

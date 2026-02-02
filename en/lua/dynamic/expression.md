@@ -150,5 +150,5 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Expression evaluation fails | `errors.INTERNAL` | no |
 | Result conversion fails | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 

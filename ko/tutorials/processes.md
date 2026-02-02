@@ -440,5 +440,5 @@ return { main = main }
 
 ## 참고
 
-- [프로세스 모듈 참조](lua-process.md) - 전체 API 문서
+- [프로세스 모듈 참조](lua/core/process.md) - 전체 API 문서
 - [채널](channels.md) - 메시지 처리를 위한 채널 작업

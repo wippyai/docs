@@ -175,7 +175,7 @@ Verwenden Sie `registry.entry`-Kind für Konfiguration auf Anwendungsebene:
 | `http.endpoint` | HTTP-Handler |
 | `process.host` | Prozess-Supervisor |
 
-Siehe [Entry-Typen-Anleitung](guide-entry-kinds.md) für vollständige Referenz.
+Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für vollständige Referenz.
 
 ## Konfigurationsdateien
 
@@ -195,7 +195,7 @@ http:
   address: :8080
 ```
 
-Siehe [Konfigurationsanleitung](guide-configuration.md) für alle Optionen.
+Siehe [Konfigurationsanleitung](guides/configuration.md) für alle Optionen.
 
 ### wippy.lock
 
@@ -247,6 +247,6 @@ myapp/
 
 ## Siehe auch
 
-- [Entry-Typen-Anleitung](guide-entry-kinds.md) - Verfügbare Entry-Typen
-- [Konfigurationsanleitung](guide-configuration.md) - Runtime-Optionen
-- [Benutzerdefinierte Entry-Typen](internal-kinds.md) - Handler implementieren (fortgeschritten)
+- [Entry-Typen-Anleitung](guides/entry-kinds.md) - Verfügbare Entry-Typen
+- [Konfigurationsanleitung](guides/configuration.md) - Runtime-Optionen
+- [Benutzerdefinierte Entry-Typen](internals/kinds.md) - Handler implementieren (fortgeschritten)

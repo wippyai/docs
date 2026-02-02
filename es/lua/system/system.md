@@ -276,4 +276,4 @@ Las operaciones de sistema estan sujetas a evaluacion de politica de seguridad.
 | Información de servicio no disponible | `errors.INTERNAL` | no |
 | Error de OS obteniendo hostname | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

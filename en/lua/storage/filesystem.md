@@ -6,7 +6,7 @@
 
 Read, write, and manage files within sandboxed filesystem volumes.
 
-For filesystem configuration, see [Filesystem](system-filesystem.md).
+For filesystem configuration, see [Filesystem](system/filesystem.md).
 
 ## Loading
 
@@ -221,4 +221,4 @@ Filesystem access is subject to security policy evaluation.
 | Path already exists | `errors.ALREADY_EXISTS` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

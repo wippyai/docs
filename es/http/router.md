@@ -118,7 +118,7 @@ El comodín debe ser el último segmento en la ruta.
 
 ## Funciones Handler
 
-Los handlers de endpoint usan el módulo `http` para acceder a objetos de solicitud y respuesta. Ver [Módulo HTTP](lua-http.md) para la API completa.
+Los handlers de endpoint usan el módulo `http` para acceder a objetos de solicitud y respuesta. Ver [Módulo HTTP](lua/http/http.md) para la API completa.
 
 ```lua
 local http = require("http")
@@ -290,7 +290,7 @@ entries:
 
 ## Ver También
 
-- [Servidor](http-server.md) - Configuración del servidor HTTP
-- [Archivos Estáticos](http-static.md) - Servicio de archivos estáticos
-- [Middleware](http-middleware.md) - Middleware disponible
-- [Módulo HTTP](lua-http.md) - API HTTP de Lua
+- [Servidor](http/server.md) - Configuración del servidor HTTP
+- [Archivos Estáticos](http/static.md) - Servicio de archivos estáticos
+- [Middleware](http/middleware.md) - Middleware disponible
+- [Módulo HTTP](lua/http/http.md) - API HTTP de Lua

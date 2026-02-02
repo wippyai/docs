@@ -141,5 +141,5 @@ Cache invalida em mudança de versão.
 
 ## Veja Também
 
-- [Registry](concept-registry.md) - Conceitos de alto nível
-- [Events](internal-events.md) - Detalhes do event bus
+- [Registry](concepts/registry.md) - Conceitos de alto nível
+- [Events](internals/events.md) - Detalhes do event bus

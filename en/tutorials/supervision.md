@@ -678,4 +678,4 @@ Workers setting:
 
 - [Processes](processes.md) - Process fundamentals
 - [Channels](channels.md) - Message passing patterns
-- [Process Module](lua-process.md) - API reference
+- [Process Module](lua/core/process.md) - API reference

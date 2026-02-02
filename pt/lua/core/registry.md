@@ -169,4 +169,4 @@ end
 | Sem mudancas para aplicar | `errors.INVALID` |
 | Registry não disponível | `errors.INTERNAL` |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

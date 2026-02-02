@@ -200,6 +200,6 @@ Para escenarios complejos con múltiples salas, genere un proceso manejador sepa
 
 ## Ver También
 
-- [Middleware](http-middleware.md) - Configuración de middleware
-- [Procesos](lua-process.md) - Mensajería de procesos
-- [Cliente WebSocket](lua-websocket.md) - Conexiones WebSocket salientes
+- [Middleware](http/middleware.md) - Configuración de middleware
+- [Procesos](lua/core/process.md) - Mensajería de procesos
+- [Cliente WebSocket](lua/http/websocket.md) - Conexiones WebSocket salientes

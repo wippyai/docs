@@ -276,5 +276,5 @@ local states, err = system.supervisor.states()
 | サービス情報が利用不可 | `errors.INTERNAL` | no |
 | ホスト名取得のOSエラー | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

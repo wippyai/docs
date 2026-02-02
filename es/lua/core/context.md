@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Acceder a valores de contexto con alcance de solicitud. El contexto se establece via [Funcs](lua-funcs.md) o [Process](lua-process.md).
+Acceder a valores de contexto con alcance de solicitud. El contexto se establece via [Funcs](lua/core/funcs.md) o [Process](lua/core/process.md).
 
 ## Carga
 
@@ -41,4 +41,4 @@ local values, err = ctx.all()
 | Clave no encontrada | `errors.NOT_FOUND` | no |
 | Contexto no disponible | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

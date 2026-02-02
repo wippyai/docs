@@ -6,7 +6,7 @@
 
 Publish and consume messages from distributed queues. Supports multiple backends including RabbitMQ and other AMQP-compatible brokers.
 
-For queue configuration, see [Queue](system-queue.md).
+For queue configuration, see [Queue](system/queue.md).
 
 ## Loading
 

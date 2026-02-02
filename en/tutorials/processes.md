@@ -440,5 +440,5 @@ Registry:
 
 ## See Also
 
-- [Process Module Reference](lua-process.md) - Full API documentation
+- [Process Module Reference](lua/core/process.md) - Full API documentation
 - [Channels](channels.md) - Channel operations for message handling

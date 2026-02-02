@@ -302,4 +302,4 @@ Las operaciones de función estan sujetas a evaluacion de politica de seguridad.
 | Suscripcion fallida | `errors.INTERNAL` | no |
 | Error de función | varia | varia |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

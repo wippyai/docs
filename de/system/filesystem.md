@@ -61,4 +61,4 @@ Schreiboperationen auf eingebetteten Dateisystemen geben einen Fehler zurück.
 
 ## Lua-API
 
-Siehe [Dateisystem-Modul](lua-fs.md) für Dateioperationen.
+Siehe [Dateisystem-Modul](lua/storage/filesystem.md) für Dateioperationen.

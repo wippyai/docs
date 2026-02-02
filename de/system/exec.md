@@ -93,7 +93,7 @@ Befehle, die nicht in der Whitelist sind, werden mit einem Fehler abgelehnt.
 
 ## Lua-API
 
-Das [Exec-Modul](lua-exec.md) bietet Befehlsausführung:
+Das [Exec-Modul](lua/dynamic/exec.md) bietet Befehlsausführung:
 
 ```lua
 local exec = require("exec")

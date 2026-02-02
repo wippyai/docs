@@ -6,7 +6,7 @@
 CLI 애플리케이션을 위해 stdin에서 읽고 stdout/stderr에 씁니다.
 
 <note>
-이 모듈은 터미널 컨텍스트 내에서만 작동합니다. 일반 함수에서는 사용할 수 없습니다. <a href="system-terminal.md">터미널 호스트</a>에서 실행되는 프로세스에서만 사용할 수 있습니다.
+이 모듈은 터미널 컨텍스트 내에서만 작동합니다. 일반 함수에서는 사용할 수 없습니다. <a href="system/terminal.md">터미널 호스트</a>에서 실행되는 프로세스에서만 사용할 수 있습니다.
 </note>
 
 ## 로딩
@@ -110,4 +110,4 @@ local args = io.args()
 | 읽기 작업 실패 | `errors.INTERNAL` | 아니오 |
 | 플러시 작업 실패 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

@@ -440,6 +440,6 @@ return { main = main }
 
 ## 関連項目
 
-- [プロセスモジュールリファレンス](lua-process.md) - 完全なAPIドキュメント
+- [プロセスモジュールリファレンス](lua/core/process.md) - 完全なAPIドキュメント
 - [チャネル](channels.md) - メッセージ処理のためのチャネル操作
 

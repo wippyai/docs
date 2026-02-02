@@ -160,7 +160,7 @@ Match de caminho é baseado em prefixo. Um handler em <code>/</code> captura tod
 
 ## Veja Também
 
-- [Servidor](http-server.md) - Configuração do servidor HTTP
-- [Roteamento](http-router.md) - Roteadores e endpoints
-- [Sistema de Arquivos](lua-fs.md) - Módulo de sistema de arquivos
-- [Middleware](http-middleware.md) - Middleware disponível
+- [Servidor](http/server.md) - Configuração do servidor HTTP
+- [Roteamento](http/router.md) - Roteadores e endpoints
+- [Sistema de Arquivos](lua/storage/filesystem.md) - Módulo de sistema de arquivos
+- [Middleware](http/middleware.md) - Middleware disponível

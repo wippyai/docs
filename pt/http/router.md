@@ -118,7 +118,7 @@ O curinga deve ser o último segmento no caminho.
 
 ## Funções Handler
 
-Handlers de endpoint usam o módulo `http` para acessar objetos de requisição e resposta. Veja [Módulo HTTP](lua-http.md) para a API completa.
+Handlers de endpoint usam o módulo `http` para acessar objetos de requisição e resposta. Veja [Módulo HTTP](lua/http/http.md) para a API completa.
 
 ```lua
 local http = require("http")
@@ -290,7 +290,7 @@ entries:
 
 ## Veja Também
 
-- [Servidor](http-server.md) - Configuração do servidor HTTP
-- [Arquivos Estáticos](http-static.md) - Servindo arquivos estáticos
-- [Middleware](http-middleware.md) - Middleware disponível
-- [Módulo HTTP](lua-http.md) - API HTTP Lua
+- [Servidor](http/server.md) - Configuração do servidor HTTP
+- [Arquivos Estáticos](http/static.md) - Servindo arquivos estáticos
+- [Middleware](http/middleware.md) - Middleware disponível
+- [Módulo HTTP](lua/http/http.md) - API HTTP Lua

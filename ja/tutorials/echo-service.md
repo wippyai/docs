@@ -363,7 +363,7 @@ Type messages to echo. Ctrl+C to exit.
 
 ## 次のステップ
 
-- [プロセス管理](lua-process.md)
-- [チャネル](lua-channel.md)
-- [時間とDuration](lua-time.md)
+- [プロセス管理](lua/core/process.md)
+- [チャネル](lua/core/channel.md)
+- [時間とDuration](lua/core/time.md)
 

@@ -160,7 +160,7 @@ El matching de rutas es basado en prefijo. Un manejador en <code>/</code> captur
 
 ## Ver También
 
-- [Servidor](http-server.md) - Configuración del servidor HTTP
-- [Routing](http-router.md) - Routers y endpoints
-- [Filesystem](lua-fs.md) - Módulo Filesystem
-- [Middleware](http-middleware.md) - Middleware disponible
+- [Servidor](http/server.md) - Configuración del servidor HTTP
+- [Routing](http/router.md) - Routers y endpoints
+- [Filesystem](lua/storage/filesystem.md) - Módulo Filesystem
+- [Middleware](http/middleware.md) - Middleware disponible

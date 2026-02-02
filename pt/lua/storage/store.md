@@ -6,7 +6,7 @@
 
 Armazenamento key-value rapido com suporte a TTL. Ideal para cache, sessoes e estado temporario.
 
-Para configuração de store, veja [Store](system-store.md).
+Para configuração de store, veja [Store](system/store.md).
 
 ## Carregamento
 
@@ -140,4 +140,4 @@ Operações de store estao sujeitas a avaliação de política de segurança.
 | Store liberado | `errors.INVALID` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

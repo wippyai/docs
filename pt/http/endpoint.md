@@ -252,6 +252,6 @@ entries:
 
 ## Veja Também
 
-- [Roteador](http-router.md) - Agrupamento de rotas
-- [Módulo HTTP](lua-http.md) - API de requisição/resposta
-- [Middleware](http-middleware.md) - Processamento de requisição
+- [Roteador](http/router.md) - Agrupamento de rotas
+- [Módulo HTTP](lua/http/http.md) - API de requisição/resposta
+- [Middleware](http/middleware.md) - Processamento de requisição

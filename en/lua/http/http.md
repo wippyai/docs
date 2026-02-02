@@ -5,7 +5,7 @@
 
 Handle HTTP requests and build responses. Access request data, route parameters, headers, and body content. Build responses with status codes, headers, and streaming support.
 
-For server configuration, see [HTTP Server](http-server.md).
+For server configuration, see [HTTP Server](http/server.md).
 
 ## Loading
 
@@ -536,4 +536,4 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | Headers already sent | `errors.INVALID` | no |
 | Write failed | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

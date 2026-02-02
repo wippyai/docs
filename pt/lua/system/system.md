@@ -276,4 +276,4 @@ Operações de sistema estao sujeitas a avaliação de política de segurança.
 | Info de servico indisponivel | `errors.INTERNAL` | não |
 | Erro de OS obtendo hostname | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

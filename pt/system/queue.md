@@ -85,7 +85,7 @@ O driver de memória não tem opções de configuração. Drivers externos (AMQP
 | `prefetch` | 10 | 10000 | Tamanho do buffer de mensagens |
 
 <tip>
-Consumidores respeitam contexto de chamada e podem estar sujeitos a políticas de segurança. Configure ator e políticas no nível de ciclo de vida. Veja <a href="system-security.md">Segurança</a>.
+Consumidores respeitam contexto de chamada e podem estar sujeitos a políticas de segurança. Configure ator e políticas no nível de ciclo de vida. Veja <a href="system/security.md">Segurança</a>.
 </tip>
 
 ### Pool de Workers
@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-Veja [Módulo Queue](lua-queue.md) para API completa.
+Veja [Módulo Queue](lua/storage/queue.md) para API completa.
 
 ## Encerramento Gracioso
 

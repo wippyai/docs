@@ -267,8 +267,8 @@ wb:close()
 | 잘못된 셀 참조 | `errors.INTERNAL` | 아니오 |
 | 쓰기 실패 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 참고
 
-- [파일시스템](lua-fs.md) - Excel 파일 읽기/쓰기를 위한 파일 작업
+- [파일시스템](lua/storage/filesystem.md) - Excel 파일 읽기/쓰기를 위한 파일 작업

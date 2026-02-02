@@ -276,4 +276,4 @@ local states, err = system.supervisor.states()
 | 서비스 정보 사용 불가 | `errors.INTERNAL` | 아니오 |
 | 호스트명 가져오기 OS 에러 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

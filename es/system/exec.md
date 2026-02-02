@@ -93,7 +93,7 @@ Los comandos que no están en la lista blanca se rechazan con un error.
 
 ## API Lua
 
-El [Módulo Exec](lua-exec.md) proporciona ejecución de comandos:
+El [Módulo Exec](lua/dynamic/exec.md) proporciona ejecución de comandos:
 
 ```lua
 local exec = require("exec")

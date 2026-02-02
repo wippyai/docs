@@ -219,4 +219,4 @@ local equal = crypto.constant_time_compare(a, b)
 | Descifrado fallido | `errors.INTERNAL` | no |
 | Token expirado | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

@@ -235,7 +235,7 @@ math.ult(m, n)        -- Comparacion menor-que sin signo
 
 ## Corrutinas
 
-Creacion y control de corrutinas. Consulte [Canales y Corrutinas](lua-channel.md) para canales y patrones concurrentes:
+Creacion y control de corrutinas. Consulte [Canales y Corrutinas](lua/core/channel.md) para canales y patrones concurrentes:
 
 ```lua
 coroutine.create(fn)        -- Crear corrutina desde función
@@ -269,7 +269,7 @@ process_request()
 
 ## Manejo de Errores
 
-Creacion y clasificacion de errores estructurados. Consulte [Manejo de Errores](lua-errors.md) para documentacion completa:
+Creacion y clasificacion de errores estructurados. Consulte [Manejo de Errores](lua/core/errors.md) para documentacion completa:
 
 ### Constantes {id="error-constants"}
 
@@ -367,16 +367,16 @@ Las siguientes caracteristicas estandar de Lua NO estan disponibles por segurida
 
 | Caracteristica | Alternativa |
 |----------------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Usar módulo [Evaluacion Dinamica](lua-eval.md) |
+| `load`, `loadstring`, `loadfile`, `dofile` | Usar módulo [Evaluacion Dinamica](lua/dynamic/eval.md) |
 | `collectgarbage` | GC automatico |
 | `rawlen` | Usar operador `#` |
-| `io.*` | Usar módulo [Sistema de Archivos](lua-fs.md) |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Usar modulos [Ejecución de Comandos](lua-exec.md), [Entorno](lua-env.md) |
+| `io.*` | Usar módulo [Sistema de Archivos](lua/storage/filesystem.md) |
+| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Usar modulos [Ejecución de Comandos](lua/dynamic/exec.md), [Entorno](lua/system/env.md) |
 | `debug.*` (excepto traceback) | No disponible |
 | `package.loadlib` | Bibliotecas nativas no soportadas |
 
 ## Vea También
 
-- [Canales y Corrutinas](lua-channel.md) - Canales estilo Go para concurrencia
-- [Manejo de Errores](lua-errors.md) - Crear y manejar errores estructurados
-- [OS Time](lua-ostime.md) - Funciones de tiempo del sistema
+- [Canales y Corrutinas](lua/core/channel.md) - Canales estilo Go para concurrencia
+- [Manejo de Errores](lua/core/errors.md) - Crear y manejar errores estructurados
+- [OS Time](lua/system/ostime.md) - Funciones de tiempo del sistema

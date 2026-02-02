@@ -149,7 +149,7 @@ options:
 
 <note>매칭 전</note>
 
-토큰 기반 인증. 토큰 스토어 설정은 [보안](system-security.md) 참조.
+토큰 기반 인증. 토큰 스토어 설정은 [보안](system/security.md) 참조.
 
 ```yaml
 middleware:
@@ -259,7 +259,7 @@ options:
 
 <warning>매칭 후</warning>
 
-프로세스로 WebSocket 연결 릴레이. [WebSocket 릴레이](http-websocket-relay.md) 참조.
+프로세스로 WebSocket 연결 릴레이. [WebSocket 릴레이](http/websocket-relay.md) 참조.
 
 ```yaml
 post_middleware:
@@ -289,7 +289,7 @@ post_middleware:
 
 ## 참고
 
-- [라우팅](http-router.md) - 라우터 설정
-- [보안](system-security.md) - 토큰 스토어 및 정책
-- [WebSocket 릴레이](http-websocket-relay.md) - WebSocket 처리
-- [터미널](system-terminal.md) - 터미널 서비스
+- [라우팅](http/router.md) - 라우터 설정
+- [보안](system/security.md) - 토큰 스토어 및 정책
+- [WebSocket 릴레이](http/websocket-relay.md) - WebSocket 처리
+- [터미널](system/terminal.md) - 터미널 서비스

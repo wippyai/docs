@@ -149,7 +149,7 @@ options:
 
 <note>Pre-Match</note>
 
-Token-basierte Authentifizierung. Siehe [Sicherheit](system-security.md) für Token-Store-Konfiguration.
+Token-basierte Authentifizierung. Siehe [Sicherheit](system/security.md) für Token-Store-Konfiguration.
 
 ```yaml
 middleware:
@@ -259,7 +259,7 @@ Unterstützt Range-Requests für fortsetzbare Downloads.
 
 <warning>Post-Match</warning>
 
-WebSocket-Verbindungen an Prozesse weiterleiten. Siehe [WebSocket-Relay](http-websocket-relay.md).
+WebSocket-Verbindungen an Prozesse weiterleiten. Siehe [WebSocket-Relay](http/websocket-relay.md).
 
 ```yaml
 post_middleware:
@@ -289,7 +289,7 @@ post_middleware:
 
 ## Siehe auch
 
-- [Routing](http-router.md) - Router-Konfiguration
-- [Sicherheit](system-security.md) - Token-Stores und Richtlinien
-- [WebSocket-Relay](http-websocket-relay.md) - WebSocket-Behandlung
-- [Terminal](system-terminal.md) - Terminal-Dienst
+- [Routing](http/router.md) - Router-Konfiguration
+- [Sicherheit](system/security.md) - Token-Stores und Richtlinien
+- [WebSocket-Relay](http/websocket-relay.md) - WebSocket-Behandlung
+- [Terminal](system/terminal.md) - Terminal-Dienst
