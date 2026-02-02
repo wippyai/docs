@@ -404,6 +404,55 @@ type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
+## 타입 검증기
+
+어노테이션을 사용하여 타입에 런타임 검증 제약을 추가합니다:
+
+```lua
+-- 단일 검증기
+local x: number @min(0) = 1
+
+-- 다중 검증기
+local x: number @min(0) @max(100) = 50
+
+-- 문자열 패턴
+local email: string @pattern("^.+@.+$") = "test@example.com"
+
+-- 인자 없는 검증기
+local x: number @integer = 42
+```
+
+### 내장 검증기
+
+| 검증기 | 적용 대상 | 예제 |
+|--------|----------|------|
+| `@min(n)` | number | `local x: number @min(0) = 1` |
+| `@max(n)` | number | `local x: number @max(100) = 50` |
+| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
+| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
+| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+
+### 레코드 필드 검증기
+
+```lua
+type User = {
+    age: number @min(0) @max(150),
+    name: string @min_len(1) @max_len(100)
+}
+```
+
+### 배열 요소 검증기
+
+```lua
+local scores: {number @min(0) @max(100)} = {85, 90}
+```
+
+### 유니온 멤버 검증기
+
+```lua
+local id: number @min(1) | string @min_len(1) = 1
+```
+
 ## 분산 규칙
 
 | 위치 | 분산 | 설명 |

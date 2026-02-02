@@ -404,6 +404,55 @@ type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
+## 类型验证器
+
+使用注解为类型添加运行时验证约束：
+
+```lua
+-- 单个验证器
+local x: number @min(0) = 1
+
+-- 多个验证器
+local x: number @min(0) @max(100) = 50
+
+-- 字符串模式
+local email: string @pattern("^.+@.+$") = "test@example.com"
+
+-- 无参数验证器
+local x: number @integer = 42
+```
+
+### 内置验证器
+
+| 验证器 | 适用于 | 示例 |
+|--------|--------|------|
+| `@min(n)` | number | `local x: number @min(0) = 1` |
+| `@max(n)` | number | `local x: number @max(100) = 50` |
+| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
+| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
+| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+
+### 记录字段验证器
+
+```lua
+type User = {
+    age: number @min(0) @max(150),
+    name: string @min_len(1) @max_len(100)
+}
+```
+
+### 数组元素验证器
+
+```lua
+local scores: {number @min(0) @max(100)} = {85, 90}
+```
+
+### 联合成员验证器
+
+```lua
+local id: number @min(1) | string @min_len(1) = 1
+```
+
 ## 协变规则
 
 | 位置 | 协变性 | 描述 |

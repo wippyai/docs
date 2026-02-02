@@ -404,6 +404,55 @@ type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
+## Type Validators
+
+Add runtime validation constraints to types using annotations:
+
+```lua
+-- Single validator
+local x: number @min(0) = 1
+
+-- Multiple validators
+local x: number @min(0) @max(100) = 50
+
+-- String pattern
+local email: string @pattern("^.+@.+$") = "test@example.com"
+
+-- No-arg validator
+local x: number @integer = 42
+```
+
+### Built-in Validators
+
+| Validator | Applies to | Example |
+|-----------|------------|---------|
+| `@min(n)` | number | `local x: number @min(0) = 1` |
+| `@max(n)` | number | `local x: number @max(100) = 50` |
+| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
+| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
+| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+
+### Record Field Validators
+
+```lua
+type User = {
+    age: number @min(0) @max(150),
+    name: string @min_len(1) @max_len(100)
+}
+```
+
+### Array Element Validators
+
+```lua
+local scores: {number @min(0) @max(100)} = {85, 90}
+```
+
+### Union Member Validators
+
+```lua
+local id: number @min(1) | string @min_len(1) = 1
+```
+
 ## Variance Rules
 
 | Position | Variance | Description |

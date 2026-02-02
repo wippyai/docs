@@ -404,6 +404,55 @@ type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
+## 型バリデータ
+
+アノテーションを使用して型にランタイム検証制約を追加します：
+
+```lua
+-- 単一バリデータ
+local x: number @min(0) = 1
+
+-- 複数バリデータ
+local x: number @min(0) @max(100) = 50
+
+-- 文字列パターン
+local email: string @pattern("^.+@.+$") = "test@example.com"
+
+-- 引数なしバリデータ
+local x: number @integer = 42
+```
+
+### 組み込みバリデータ
+
+| バリデータ | 適用対象 | 例 |
+|-----------|----------|-----|
+| `@min(n)` | number | `local x: number @min(0) = 1` |
+| `@max(n)` | number | `local x: number @max(100) = 50` |
+| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
+| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
+| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+
+### レコードフィールドバリデータ
+
+```lua
+type User = {
+    age: number @min(0) @max(150),
+    name: string @min_len(1) @max_len(100)
+}
+```
+
+### 配列要素バリデータ
+
+```lua
+local scores: {number @min(0) @max(100)} = {85, 90}
+```
+
+### Union メンバーバリデータ
+
+```lua
+local id: number @min(1) | string @min_len(1) = 1
+```
+
 ## 変性規則
 
 | ポジション | 変性 | 説明 |
