@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Kodieren Sie binare Daten zu Base64-Strings und dekodieren Sie Base64 zurück zu Binardaten. Verwendet Standard-Base64-Kodierung nach RFC 4648.
+Kodieren Sie binäre Daten zu Base64-Strings und dekodieren Sie Base64 zurück zu Binärdaten. Verwendet Standard-Base64-Kodierung nach RFC 4648.
 
 ## Laden
 
@@ -16,14 +16,14 @@ local base64 = require("base64")
 
 ### Daten kodieren
 
-Kodiert einen String (einschliesslich Binardaten) zu Base64.
+Kodiert einen String (einschließlich Binärdaten) zu Base64.
 
 ```lua
 -- Text kodieren
 local encoded = base64.encode("Hello, World!")
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
--- Binardaten kodieren (z.B. aus Datei)
+-- Binärdaten kodieren (z.B. aus Datei)
 local image_data = fs.read_binary("photo.jpg")
 local image_b64 = base64.encode(image_data)
 
@@ -39,7 +39,7 @@ local auth_header = "Basic " .. credentials
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `data` | string | Zu kodierende Daten (Text oder Binar) |
+| `data` | string | Zu kodierende Daten (Text oder binär) |
 
 **Gibt zurück:** `string, error` - Leere Eingabe gibt leeren String zurück.
 
@@ -60,7 +60,7 @@ if err then
     return nil, errors.new("INVALID", "Invalid base64 data")
 end
 
--- Binardaten dekodieren
+-- Binärdaten dekodieren
 local image_b64 = request.body
 local image_data, err = base64.decode(image_b64)
 if err then
@@ -85,7 +85,7 @@ local payload = json.decode(base64.decode(parts[2]))
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Eingabe ist kein String | `errors.INVALID` | nein |
-| Ungultige Base64-Zeichen | `errors.INVALID` | nein |
-| Beschadigtes Padding | `errors.INVALID` | nein |
+| Ungültige Base64-Zeichen | `errors.INVALID` | nein |
+| Beschädigtes Padding | `errors.INVALID` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

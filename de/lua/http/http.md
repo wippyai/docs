@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Behandeln Sie HTTP-Anfragen und erstellen Sie Responses. Zugriff auf Anfragedaten, Route-Parameter, Header und Body-Inhalt. Erstellen Sie Responses mit Statuscodes, Headern und Streaming-Unterstutzung.
+Behandeln Sie HTTP-Anfragen und erstellen Sie Responses. Zugriff auf Anfragedaten, Route-Parameter, Header und Body-Inhalt. Erstellen Sie Responses mit Statuscodes, Headern und Streaming-Unterstützung.
 
 Für Server-Konfiguration siehe [HTTP-Server](http-server.md).
 
@@ -172,7 +172,7 @@ local issue = get_issue(p.org, p.repo, p.issue)
 
 ### body
 
-Liest den vollstandigen Anfrage-Body als String.
+Liest den vollständigen Anfrage-Body als String.
 
 ```lua
 local body = req:body()
@@ -297,7 +297,7 @@ end
 
 ### stream
 
-Holt Anfrage-Body als Stream für größe Dateien.
+Holt Anfrage-Body als Stream für große Dateien.
 
 ```lua
 local stream = req:stream()
@@ -319,7 +319,7 @@ stream:close()
 res:set_status(200)
 res:set_status(http.STATUS.CREATED)
 
--- Gangige Muster
+-- Gängige Muster
 res:set_status(201)  -- Created
 res:set_status(204)  -- No Content (für DELETE)
 res:set_status(400)  -- Bad Request
@@ -515,11 +515,11 @@ http.TRANSFER.SSE       -- "sse"
 
 ### Fehlertypen
 
-Modulspezifische Fehlertyp-Konstanten für prazise Fehlerbehandlung.
+Modulspezifische Fehlertyp-Konstanten für präzise Fehlerbehandlung.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Formular/Multipart-Parse-Fehler
-http.ERROR.INVALID_STATE  -- Ungultiger Response-Zustand
+http.ERROR.INVALID_STATE  -- Ungültiger Response-Zustand
 http.ERROR.WRITE_FAILED   -- Response-Schreibfehler
 http.ERROR.STREAM_ERROR   -- Body-Stream-Fehler
 ```
@@ -529,9 +529,9 @@ http.ERROR.STREAM_ERROR   -- Body-Stream-Fehler
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Kein HTTP-Kontext | `errors.INTERNAL` | nein |
-| Body zu gross | `errors.INVALID` | nein |
+| Body zu groß | `errors.INVALID` | nein |
 | Lese-Timeout | `errors.INTERNAL` | nein |
-| Ungultiges JSON | `errors.INVALID` | nein |
+| Ungültiges JSON | `errors.INVALID` | nein |
 | Nicht Multipart | `errors.INVALID` | nein |
 | Header bereits gesendet | `errors.INVALID` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |

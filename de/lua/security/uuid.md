@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Generieren Sie universell eindeutige Identifikatoren. Angepasst für Workflows - zufallige UUIDs geben bei Replay konsistente Werte zurück.
+Generieren Sie universell eindeutige Identifikatoren. Angepasst für Workflows - zufällige UUIDs geben bei Replay konsistente Werte zurück.
 
 ## Laden
 
@@ -11,7 +11,7 @@ Generieren Sie universell eindeutige Identifikatoren. Angepasst für Workflows -
 local uuid = require("uuid")
 ```
 
-## Zufallige UUIDs
+## Zufällige UUIDs
 
 ### Version 1
 
@@ -25,7 +25,7 @@ local id, err = uuid.v1()
 
 ### Version 4
 
-Zufallige UUID.
+Zufällige UUID.
 
 ```lua
 local id, err = uuid.v4()
@@ -55,7 +55,7 @@ local id, err = uuid.v3(namespace, name)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `namespace` | string | Gultiger UUID-String |
+| `namespace` | string | Gültiger UUID-String |
 | `name` | string | Zu hashender Wert |
 
 **Gibt zurück:** `string, error`
@@ -71,7 +71,7 @@ local id, err = uuid.v5(NS_URL, "https://example.com/resource")
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `namespace` | string | Gultiger UUID-String |
+| `namespace` | string | Gültiger UUID-String |
 | `name` | string | Zu hashender Wert |
 
 **Gibt zurück:** `string, error`
@@ -86,7 +86,7 @@ local valid = uuid.validate(input)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `input` | any | Zu prufender Wert |
+| `input` | any | Zu prüfender Wert |
 
 **Gibt zurück:** `boolean`
 
@@ -98,7 +98,7 @@ local ver, err = uuid.version(id)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `uuid` | string | Gultiger UUID-String |
+| `uuid` | string | Gültiger UUID-String |
 
 **Gibt zurück:** `integer, error`
 
@@ -110,7 +110,7 @@ local var, err = uuid.variant(id)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `uuid` | string | Gultiger UUID-String |
+| `uuid` | string | Gültiger UUID-String |
 
 **Gibt zurück:** `string, error` (RFC4122, Microsoft, NCS oder Invalid)
 
@@ -122,11 +122,11 @@ local info, err = uuid.parse(id)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `uuid` | string | Gultiger UUID-String |
+| `uuid` | string | Gültiger UUID-String |
 
 **Gibt zurück:** `table, error`
 
-Zuruckgegebene Tabellenfelder:
+Zurückgegebene Tabellenfelder:
 - `version` (integer): UUID-Version (1, 3, 4, 5 oder 7)
 - `variant` (string): RFC4122, Microsoft, NCS oder Invalid
 - `timestamp` (integer): Unix-Zeitstempel (nur v1 und v7)
@@ -142,7 +142,7 @@ local formatted, err = uuid.format(id, "urn")
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `uuid` | string | Gultiger UUID-String |
+| `uuid` | string | Gültiger UUID-String |
 | `format` | string? | standard (Standard), simple oder urn |
 
 **Gibt zurück:** `string, error`
@@ -151,9 +151,9 @@ local formatted, err = uuid.format(id, "urn")
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Ungultiger Eingabetyp | `errors.INVALID` | nein |
-| Ungultiges UUID-Format | `errors.INVALID` | nein |
-| Nicht unterstutzter Formattyp | `errors.INVALID` | nein |
+| Ungültiger Eingabetyp | `errors.INVALID` | nein |
+| Ungültiges UUID-Format | `errors.INVALID` | nein |
+| Nicht unterstützter Formattyp | `errors.INVALID` | nein |
 | Generierung fehlgeschlagen | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

@@ -162,10 +162,10 @@ msg:payload()  -- any: payload data
 Spawn a process, wait for its result, and return:
 
 ```lua
-local result, err = process.call(id, host, ...)
+local result, err = process.exec(id, host, ...)
 ```
 
-**Permissions:** `process.call` on process id, `process.host` on host id
+**Permissions:** `process.exec` on process id, `process.host` on host id
 
 ## Process Upgrade
 
@@ -247,7 +247,7 @@ Policies can allow/deny based on:
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | process id |
 | `process.host` | `spawn*()`, `call()` | host id |
 | `process.send` | `send()` | target PID |
-| `process.call` | `call()` | process id |
+| `process.exec` | `call()` | process id |
 | `process.terminate` | `terminate()` | target PID |
 | `process.cancel` | `cancel()` | target PID |
 | `process.monitor` | `monitor()` | target PID |
@@ -269,7 +269,7 @@ Some operations require multiple permissions:
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.call` + `process.host` |
+| `call()` | `process.exec` + `process.host` |
 | spawn with custom actor/scope | spawn permissions + `process.security` |
 
 ## Errors

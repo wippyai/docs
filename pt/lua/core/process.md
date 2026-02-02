@@ -162,10 +162,10 @@ msg:payload()  -- any: dados do payload
 Criar um processo, aguardar seu resultado e retornar:
 
 ```lua
-local result, err = process.call(id, host, ...)
+local result, err = process.exec(id, host, ...)
 ```
 
-**Permissões:** `process.call` no id do processo, `process.host` no id do host
+**Permissões:** `process.exec` no id do processo, `process.host` no id do host
 
 ## Upgrade de Processo
 
@@ -247,7 +247,7 @@ Políticas podem permitir/negar baseado em:
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | id do processo |
 | `process.host` | `spawn*()`, `call()` | id do host |
 | `process.send` | `send()` | PID de destino |
-| `process.call` | `call()` | id do processo |
+| `process.exec` | `call()` | id do processo |
 | `process.terminate` | `terminate()` | PID de destino |
 | `process.cancel` | `cancel()` | PID de destino |
 | `process.monitor` | `monitor()` | PID de destino |
@@ -269,7 +269,7 @@ Algumas operações requerem múltiplas permissões:
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.call` + `process.host` |
+| `call()` | `process.exec` + `process.host` |
 | spawn com ator/escopo customizado | permissões de spawn + `process.security` |
 
 ## Erros

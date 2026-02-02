@@ -101,7 +101,7 @@ Gemeinsam genutzter Code, der von anderen Entries importiert werden kann.
     - base64
 ```
 
-Andere Entries referenzieren sie uber `imports`:
+Andere Entries referenzieren sie über `imports`:
 
 ```yaml
 - name: handler
@@ -137,7 +137,7 @@ Nur aufgelistete Module sind verfügbar. Dies bietet:
 - Explizite Abhängigkeiten: Klar, was der Code benötigt
 - Determinismus: Workflows erhalten nur deterministische Module
 
-Siehe [Lua-Laufzeitumgebung](lua-overview.md) fur verfugbare Module.
+Siehe [Lua-Laufzeitumgebung](lua-overview.md) für verfügbare Module.
 
 ## Imports
 
@@ -161,7 +161,7 @@ Konfigurieren Sie den Ausführungspool für Funktionen:
   source: file://handler.lua
   method: main
   pool:
-    type: inline    # Im Kontext des Aufrufers ausfuhren
+    type: inline    # Im Kontext des Aufrufers ausführen
 ```
 
 Pool-Typen:
@@ -185,7 +185,7 @@ Verwenden Sie `meta` für Routing und Discovery:
     - json
 ```
 
-Metadaten sind uber die Registry durchsuchbar:
+Metadaten sind über die Registry durchsuchbar:
 
 ```lua
 local registry = require("registry")
@@ -196,4 +196,4 @@ local handlers = registry.find({type = "handler"})
 
 - [Entry-Arten](guide-entry-kinds.md) - Referenz aller Entry-Arten
 - [Compute Units](concept-compute-units.md) - Funktionen vs. Prozesse vs. Workflows
-- [Lua-Laufzeitumgebung](lua-overview.md) - Verfugbare Module
+- [Lua-Laufzeitumgebung](lua-overview.md) - Verfügbare Module

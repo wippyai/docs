@@ -3,13 +3,13 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Parsen Sie Quellcode in konkrete Syntaxbaume mit [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Basiert auf [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter) Bindings.
+Parsen Sie Quellcode in konkrete Syntaxbäume mit [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Basiert auf [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter) Bindings.
 
-Tree-sitter produziert Syntaxbaume, die:
-- Die vollstandige Struktur des Quellcodes reprasentieren
-- Inkrementell aktualisiert werden, wenn sich Code andert
-- Robust gegenuber Syntaxfehlern sind (partielles Parsing)
-- Musterbasierte Abfragen mit S-Ausdrucken unterstutzen
+Tree-sitter produziert Syntaxbäume, die:
+- Die vollständige Struktur des Quellcodes repräsentieren
+- Inkrementell aktualisiert werden, wenn sich Code ändert
+- Robust gegenüber Syntaxfehlern sind (partielles Parsing)
+- Musterbasierte Abfragen mit S-Ausdrücken unterstützen
 
 ## Laden
 
@@ -17,7 +17,7 @@ Tree-sitter produziert Syntaxbaume, die:
 local treesitter = require("treesitter")
 ```
 
-## Unterstutzte Sprachen
+## Unterstützte Sprachen
 
 | Sprache | Aliase | Root-Node |
 |----------|---------|-----------|
@@ -87,7 +87,7 @@ end
 
 ### Einfaches Parsing
 
-Quellcode in einen Syntaxbaum parsen. Erstellt intern einen temporaren Parser.
+Quellcode in einen Syntaxbaum parsen. Erstellt intern einen temporären Parser.
 
 ```lua
 local tree, err = treesitter.parse("go", code)
@@ -127,10 +127,10 @@ parser:close()
 | `parse(code, old_tree?)` | Code parsen, optional mit altem Baum für inkrementelles Parsing |
 | `set_timeout(duration)` | Parse-Timeout setzen (String wie `"1s"` oder Nanosekunden) |
 | `set_ranges(ranges)` | Byte-Bereiche zum Parsen setzen |
-| `reset()` | Parser-Zustand zurucksetzen |
+| `reset()` | Parser-Zustand zurücksetzen |
 | `close()` | Parser-Ressourcen freigeben |
 
-## Syntaxbaume
+## Syntaxbäume
 
 ### Root-Node abrufen
 
@@ -152,20 +152,20 @@ print(root:text())  -- "package main"
 | `copy()` | Tiefe Kopie des Baums erstellen |
 | `walk()` | Cursor für Traversierung erstellen |
 | `edit(edit_table)` | Inkrementelle Bearbeitung anwenden |
-| `changed_ranges(other_tree)` | Geanderte Bereiche abrufen |
+| `changed_ranges(other_tree)` | Geänderte Bereiche abrufen |
 | `included_ranges()` | Beim Parsing eingeschlossene Bereiche abrufen |
-| `dot_graph()` | DOT-Graph-Reprasentation abrufen |
+| `dot_graph()` | DOT-Graph-Repräsentation abrufen |
 | `close()` | Tree-Ressourcen freigeben |
 
 ### Inkrementelles Bearbeiten
 
-Aktualisieren Sie den Baum, wenn sich Quellcode andert:
+Aktualisieren Sie den Baum, wenn sich Quellcode ändert:
 
 ```lua
 local code = "func main() { x := 1 }"
 local tree = treesitter.parse("go", code)
 
--- Bearbeitung markieren: "1" zu "100" geandert bei Byte 19
+-- Bearbeitung markieren: "1" zu "100" geändert bei Byte 19
 tree:edit({
     start_byte = 19,
     old_end_byte = 20,
@@ -178,7 +178,7 @@ tree:edit({
     new_end_column = 22
 })
 
--- Mit bearbeitetem Baum neu parsen (schneller als vollstandiges Parsing)
+-- Mit bearbeitetem Baum neu parsen (schneller als vollständiges Parsing)
 local parser = treesitter.parser()
 parser:set_language("go")
 local new_tree = parser:parse("func main() { x := 100 }", tree)
@@ -186,7 +186,7 @@ local new_tree = parser:parse("func main() { x := 100 }", tree)
 
 ## Nodes
 
-Nodes reprasentieren Elemente im Syntaxbaum.
+Nodes repräsentieren Elemente im Syntaxbaum.
 
 ### Node-Typen
 
@@ -242,7 +242,7 @@ local text = node:text()
 
 ```lua
 if root:has_error() then
-    -- Baum enthalt Syntaxfehler
+    -- Baum enthält Syntaxfehler
 end
 
 if node:is_error() then
@@ -250,7 +250,7 @@ if node:is_error() then
 end
 
 if node:is_missing() then
-    -- Parser hat diesen zur Fehlerwiederherstellung eingefugt
+    -- Parser hat diesen zur Fehlerwiederherstellung eingefügt
 end
 ```
 
@@ -263,7 +263,7 @@ local sexp = node:to_sexp()
 
 ## Queries
 
-Musterabgleich mit Tree-sitters Abfragesprache (S-Ausdrucke).
+Musterabgleich mit Tree-sitters Abfragesprache (S-Ausdrücke).
 
 ### Query erstellen
 
@@ -290,7 +290,7 @@ local query, err = treesitter.query("go", [[
 local captures = query:captures(root, source_code)
 for _, capture in ipairs(captures) do
     print(capture.name)   -- "@func_name"
-    print(capture.text)   -- tatsachlicher Text
+    print(capture.text)   -- tatsächlicher Text
     print(capture.index)  -- Capture-Index
     -- capture.node ist das Node-Objekt
 end
@@ -356,7 +356,7 @@ if cursor:goto_first_child() then
 end
 
 if cursor:goto_next_sibling() then
-    -- zum nachsten Geschwister gewechselt
+    -- zum nächsten Geschwister gewechselt
 end
 
 cursor:goto_parent()  -- zurück zum Eltern
@@ -374,11 +374,11 @@ cursor:close()
 | `goto_parent()` | `boolean` | Zum Eltern wechseln |
 | `goto_first_child()` | `boolean` | Zum ersten Kind wechseln |
 | `goto_last_child()` | `boolean` | Zum letzten Kind wechseln |
-| `goto_next_sibling()` | `boolean` | Zum nachsten Geschwister wechseln |
+| `goto_next_sibling()` | `boolean` | Zum nächsten Geschwister wechseln |
 | `goto_previous_sibling()` | `boolean` | Zum vorherigen Geschwister wechseln |
-| `goto_first_child_for_byte(n)` | `integer?` | Zum Kind wechseln, das Byte enthalt |
-| `goto_first_child_for_point(pt)` | `integer?` | Zum Kind wechseln, das Punkt enthalt |
-| `reset(node)` | - | Cursor auf Node zurucksetzen |
+| `goto_first_child_for_byte(n)` | `integer?` | Zum Kind wechseln, das Byte enthält |
+| `goto_first_child_for_point(pt)` | `integer?` | Zum Kind wechseln, das Punkt enthält |
+| `reset(node)` | - | Cursor auf Node zurücksetzen |
 | `copy()` | `Cursor` | Kopie des Cursors erstellen |
 | `close()` | - | Ressourcen freigeben |
 
@@ -405,10 +405,10 @@ local field_id = lang:field_id_for_name("name")
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Sprache nicht unterstutzt | `errors.INVALID` | nein |
+| Sprache nicht unterstützt | `errors.INVALID` | nein |
 | Sprache hat kein Binding | `errors.INVALID` | nein |
-| Ungultiges Query-Muster | `errors.INVALID` | nein |
-| Ungultige Positionen | `errors.INVALID` | nein |
+| Ungültiges Query-Muster | `errors.INVALID` | nein |
+| Ungültige Positionen | `errors.INVALID` | nein |
 | Parsing fehlgeschlagen | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
@@ -439,9 +439,9 @@ Tree-sitter-Queries verwenden S-Ausdruck-Muster:
 (identifier)* ; null oder mehr
 (identifier)? ; optional
 
-; Pradikate
+; Prädikate
 ((identifier) @var
   (#match? @var "^_"))  ; Regex-Match
 ```
 
-Siehe [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) für vollstandige Dokumentation.
+Siehe [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) für vollständige Dokumentation.

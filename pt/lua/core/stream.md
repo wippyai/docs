@@ -2,12 +2,12 @@
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Operacoes de leitura/escrita de stream para manipular dados eficientemente. Objetos stream sao obtidos de outros modulos (HTTP, filesystem, etc.).
+Operações de leitura/escrita de stream para manipular dados eficientemente. Objetos stream sao obtidos de outros modulos (HTTP, filesystem, etc.).
 
 ## Carregamento
 
 ```lua
--- De corpo de requisicao HTTP
+-- De corpo de requisição HTTP
 local stream = req:stream()
 
 -- De filesystem
@@ -99,7 +99,7 @@ local scanner, err = stream:scanner(split)
 |-----------|------|-----------|
 | `split` | string | `"lines"`, `"words"`, `"bytes"`, `"runes"` |
 
-### Metodos do Scanner
+### Métodos do Scanner
 
 ```lua
 local has_more = scanner:scan()  -- Avancar para proximo token
@@ -121,7 +121,7 @@ end
 
 | Condição | Tipo |
 |----------|------|
-| Tipo whence/split invalido | `INVALID` |
+| Tipo whence/split inválido | `INVALID` |
 | Stream fechado | `INTERNAL` |
 | Não legivel/gravavel | `INTERNAL` |
 | Falha de leitura/escrita | `INTERNAL` |

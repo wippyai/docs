@@ -162,10 +162,10 @@ msg:payload()  -- any: datos de carga
 Crear un proceso, esperar su resultado y retornar:
 
 ```lua
-local result, err = process.call(id, host, ...)
+local result, err = process.exec(id, host, ...)
 ```
 
-**Permisos:** `process.call` en id de proceso, `process.host` en id de host
+**Permisos:** `process.exec` en id de proceso, `process.host` en id de host
 
 ## Actualizacion de Proceso
 
@@ -247,7 +247,7 @@ Las politicas pueden permitir/denegar basado en:
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | id de proceso |
 | `process.host` | `spawn*()`, `call()` | id de host |
 | `process.send` | `send()` | PID objetivo |
-| `process.call` | `call()` | id de proceso |
+| `process.exec` | `call()` | id de proceso |
 | `process.terminate` | `terminate()` | PID objetivo |
 | `process.cancel` | `cancel()` | PID objetivo |
 | `process.monitor` | `monitor()` | PID objetivo |
@@ -269,7 +269,7 @@ Algunas operaciones requieren multiples permisos:
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.call` + `process.host` |
+| `call()` | `process.exec` + `process.host` |
 | crear con actor/scope personalizado | permisos spawn + `process.security` |
 
 ## Errores

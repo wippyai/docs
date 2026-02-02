@@ -24,7 +24,7 @@ local raw = hash.md5("data", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu hashende Daten |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 
@@ -38,7 +38,7 @@ local raw = hash.sha1("data", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu hashende Daten |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 
@@ -52,7 +52,7 @@ local raw = hash.sha256("data", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu hashende Daten |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 
@@ -66,7 +66,7 @@ local raw = hash.sha512("data", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu hashende Daten |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 
@@ -83,7 +83,7 @@ local raw = hash.hmac_md5("message", "secret", true)
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
 | `secret` | string | Geheimer Schlüssel |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 
@@ -98,7 +98,7 @@ local raw = hash.hmac_sha1("message", "secret", true)
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
 | `secret` | string | Geheimer Schlüssel |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 
@@ -113,7 +113,7 @@ local raw = hash.hmac_sha256("message", "secret", true)
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
 | `secret` | string | Geheimer Schlüssel |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 
@@ -128,7 +128,7 @@ local raw = hash.hmac_sha512("message", "secret", true)
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
 | `secret` | string | Geheimer Schlüssel |
-| `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
+| `raw` | boolean? | Rohe Bytes statt Hex zurückgeben |
 
 **Gibt zurück:** `string, error`
 

@@ -5,7 +5,7 @@
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-Zugriff auf S3-kompatiblen Objektspeicher. Hochladen, Herunterladen, Auflisten und Verwalten von Dateien mit Unterstutzung für vorsignierte URLs.
+Zugriff auf S3-kompatiblen Objektspeicher. Hochladen, Herunterladen, Auflisten und Verwalten von Dateien mit Unterstützung für vorsignierte URLs.
 
 Für Speicherkonfiguration siehe [Cloud-Speicher](system-cloudstorage.md).
 
@@ -99,7 +99,7 @@ storage:release()
 
 ## Objekte auflisten
 
-Objekte mit optionaler Prafix-Filterung auflisten:
+Objekte mit optionaler Präfix-Filterung auflisten:
 
 ```lua
 local storage = cloudstorage.get("app.infra:files")
@@ -113,7 +113,7 @@ for _, obj in ipairs(result.objects) do
     print(obj.key, obj.size, obj.content_type)
 end
 
--- Durch größe Ergebnisse paginieren
+-- Durch große Ergebnisse paginieren
 local token = nil
 repeat
     local result = storage:list_objects({
@@ -132,13 +132,13 @@ storage:release()
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `options.prefix` | string | Nach Schlüssel-Prafix filtern |
-| `options.max_keys` | integer | Maximale Anzahl zuruckzugebender Objekte |
+| `options.prefix` | string | Nach Schlüssel-Präfix filtern |
+| `options.max_keys` | integer | Maximale Anzahl zurückzugebender Objekte |
 | `options.continuation_token` | string | Paginierungs-Token |
 
 **Gibt zurück:** `table, error`
 
-Ergebnis enthalt `objects`, `is_truncated`, `next_continuation_token`.
+Ergebnis enthält `objects`, `is_truncated`, `next_continuation_token`.
 
 ## Objekte löschen
 
@@ -164,7 +164,7 @@ storage:release()
 
 ## Download-URLs
 
-Erstellen Sie eine temporare URL, die das Herunterladen eines Objekts ohne Anmeldeinformationen ermoglicht. Nutzlich zum Teilen von Dateien mit externen Benutzern oder zum Bereitstellen von Inhalten über Ihre Anwendung.
+Erstellen Sie eine temporäre URL, die das Herunterladen eines Objekts ohne Anmeldeinformationen ermöglicht. Nützlich zum Teilen von Dateien mit externen Benutzern oder zum Bereitstellen von Inhalten über Ihre Anwendung.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -182,20 +182,20 @@ if err then
     return nil, err
 end
 
--- URL an Client für direkten Download zuruckgeben
+-- URL an Client für direkten Download zurückgeben
 return {download_url = url}
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `key` | string | Objektschlüssel |
-| `options.expiration` | integer | Sekunden bis URL ablauft (Standard: 3600) |
+| `options.expiration` | integer | Sekunden bis URL abläuft (Standard: 3600) |
 
 **Gibt zurück:** `string, error`
 
 ## Upload-URLs
 
-Erstellen Sie eine temporare URL, die das Hochladen eines Objekts ohne Anmeldeinformationen ermoglicht. Ermoglicht Clients, Dateien direkt in den Speicher hochzuladen, ohne über Ihren Server zu proxyen.
+Erstellen Sie eine temporäre URL, die das Hochladen eines Objekts ohne Anmeldeinformationen ermöglicht. Ermöglicht Clients, Dateien direkt in den Speicher hochzuladen, ohne über Ihren Server zu proxyen.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -215,14 +215,14 @@ if err then
     return nil, err
 end
 
--- URL an Client für direkten Upload zuruckgeben
+-- URL an Client für direkten Upload zurückgeben
 return {upload_url = url}
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `key` | string | Objektschlüssel |
-| `options.expiration` | integer | Sekunden bis URL ablauft (Standard: 3600) |
+| `options.expiration` | integer | Sekunden bis URL abläuft (Standard: 3600) |
 | `options.content_type` | string | Erforderlicher Content-Type für Upload |
 | `options.content_length` | integer | Maximale Upload-Größe in Bytes |
 
@@ -234,10 +234,10 @@ return {upload_url = url}
 |--------|---------|-------------|
 | `upload_object(key, content)` | `boolean, error` | String- oder Dateiinhalt hochladen |
 | `download_object(key, writer, opts?)` | `boolean, error` | In Datei-Writer herunterladen |
-| `list_objects(opts?)` | `table, error` | Objekte mit Prafix-Filter auflisten |
+| `list_objects(opts?)` | `table, error` | Objekte mit Präfix-Filter auflisten |
 | `delete_objects(keys)` | `boolean, error` | Mehrere Objekte löschen |
-| `presigned_get_url(key, opts?)` | `string, error` | Temporare Download-URL generieren |
-| `presigned_put_url(key, opts?)` | `string, error` | Temporare Upload-URL generieren |
+| `presigned_get_url(key, opts?)` | `string, error` | Temporäre Download-URL generieren |
+| `presigned_put_url(key, opts?)` | `string, error` | Temporäre Upload-URL generieren |
 | `release()` | `boolean` | Speicherressource freigeben |
 
 ## Berechtigungen
@@ -258,7 +258,7 @@ Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Speicher freigegeben | `errors.INVALID` | nein |
 | Leerer Schlüssel | `errors.INVALID` | nein |
 | Inhalt nil | `errors.INVALID` | nein |
-| Writer nicht gultig | `errors.INVALID` | nein |
+| Writer nicht gültig | `errors.INVALID` | nein |
 | Objekt nicht gefunden | `errors.NOT_FOUND` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Operation fehlgeschlagen | `errors.INTERNAL` | nein |

@@ -56,13 +56,13 @@ Mit einer Tabelle aufgerufen, verwendet jedes fehlende Feld die oben gezeigten S
 -- Nur Datum (Uhrzeit standardmäßig Mitternacht)
 os.time({year = 2024, month = 6, day = 15})
 
--- Teilweise (fullt aktuelles Jahr/Monat aus)
+-- Teilweise (füllt aktuelles Jahr/Monat aus)
 os.time({day = 1})  -- erster des aktuellen Monats
 ```
 
 ## Datum formatieren
 
-Zeitstempel als String formatieren oder Datums-Tabelle zuruckgeben:
+Zeitstempel als String formatieren oder Datums-Tabelle zurückgeben:
 
 <code-block lang="lua">
 local now = os.time()
@@ -171,8 +171,8 @@ print(days)  -- 365
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `t2` | integer | Spaterer Zeitstempel |
-| `t1` | integer | Fruherer Zeitstempel |
+| `t2` | integer | Späterer Zeitstempel |
+| `t1` | integer | Früherer Zeitstempel |
 
 Gibt `t2 - t1` in Sekunden zurück. Kann negativ sein wenn `t1 > t2`.
 

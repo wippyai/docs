@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="external"/>
 
-Leia e escreva arquivos Microsoft Excel (.xlsx). Crie workbooks, gerencie planilhas, leia valores de celulas e gere relatorios com suporte a formatacao.
+Leia e escreva arquivos Microsoft Excel (.xlsx). Crie workbooks, gerencie planilhas, leia valores de celulas e gere relatorios com suporte a formatação.
 
 ## Carregamento
 
@@ -72,7 +72,7 @@ file:close()
 
 **Retorna:** `Workbook, error`
 
-## Operacoes de Planilha
+## Operações de Planilha
 
 ### Criar Planilha
 
@@ -116,7 +116,7 @@ end
 
 **Retorna:** `string[], error`
 
-## Operacoes de Celula
+## Operações de Celula
 
 ### Definir Valor de Celula
 
@@ -139,7 +139,7 @@ wb:set_cell_value("Data", "A3", "Gadget")
 wb:set_cell_value("Data", "B3", 49.99)
 wb:set_cell_value("Data", "C3", false)
 
--- Referencias de celula suportam colunas alem de Z
+-- Referências de celula suportam colunas alem de Z
 wb:set_cell_value("Data", "AA1", "Extended Column")
 wb:set_cell_value("Data", "AB100", "Far cell")
 ```
@@ -147,7 +147,7 @@ wb:set_cell_value("Data", "AB100", "Far cell")
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sheet` | string | Nome da planilha |
-| `cell` | string | Referencia da celula ("A1", "B2", "AA100") |
+| `cell` | string | Referência da celula ("A1", "B2", "AA100") |
 | `value` | any | string, integer, numero ou boolean |
 
 **Retorna:** `error`
@@ -190,9 +190,9 @@ end
 
 **Retorna:** `string[][], error`
 
-Todos os valores de celula retornados como strings. Booleans como "TRUE" ou "FALSE", numeros como representacao string.
+Todos os valores de celula retornados como strings. Booleans como "TRUE" ou "FALSE", numeros como representação string.
 
-## Operacoes de Arquivo
+## Operações de Arquivo
 
 ### Escrever em Arquivo
 
@@ -256,19 +256,19 @@ wb:close()
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Sem contexto | `errors.INTERNAL` | não |
-| Workbook invalido | `errors.INVALID` | não |
+| Workbook inválido | `errors.INVALID` | não |
 | Workbook fechado | `errors.INTERNAL` | não |
 | Não e reader/writer | `errors.INTERNAL` | não |
-| Arquivo Excel invalido | `errors.INTERNAL` | não |
+| Arquivo Excel inválido | `errors.INTERNAL` | não |
 | Planilha inexistente | `errors.INTERNAL` | não |
-| Referencia de celula invalida | `errors.INTERNAL` | não |
+| Referência de celula invalida | `errors.INTERNAL` | não |
 | Escrita falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Filesystem](lua-fs.md) - Operacoes de arquivo para leitura/escrita de arquivos Excel
+- [Filesystem](lua-fs.md) - Operações de arquivo para leitura/escrita de arquivos Excel

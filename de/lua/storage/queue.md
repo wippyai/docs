@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Veroffentlichen und Konsumieren von Nachrichten aus verteilten Queues. Unterstutzt mehrere Backends einschliesslich RabbitMQ und andere AMQP-kompatible Broker.
+Veröffentlichen und Konsumieren von Nachrichten aus verteilten Queues. Unterstützt mehrere Backends einschließlich RabbitMQ und andere AMQP-kompatible Broker.
 
 Für Queue-Konfiguration siehe [Queue](system-queue.md).
 
@@ -14,7 +14,7 @@ Für Queue-Konfiguration siehe [Queue](system-queue.md).
 local queue = require("queue")
 ```
 
-## Nachrichten veroffentlichen
+## Nachrichten veröffentlichen
 
 Senden Sie Nachrichten an eine Queue per ID:
 
@@ -39,7 +39,7 @@ end
 
 ### Nachrichten-Header
 
-Header ermoglichen Routing, Priorisierung und Tracing:
+Header ermöglichen Routing, Priorisierung und Tracing:
 
 ```lua
 queue.publish("app:notifications", {
@@ -112,10 +112,10 @@ Queue-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 | Aktion | Ressource | Beschreibung |
 |--------|----------|-------------|
-| `queue.publish` | - | Allgemeine Berechtigung zum Veroffentlichen von Nachrichten |
-| `queue.publish.queue` | Queue-ID | Zu spezifischer Queue veroffentlichen |
+| `queue.publish` | - | Allgemeine Berechtigung zum Veröffentlichen von Nachrichten |
+| `queue.publish.queue` | Queue-ID | Zu spezifischer Queue veröffentlichen |
 
-Beide Berechtigungen werden gepruft: zuerst die allgemeine Berechtigung, dann die queue-spezifische.
+Beide Berechtigungen werden geprüft: zuerst die allgemeine Berechtigung, dann die queue-spezifische.
 
 ## Fehler
 
@@ -125,7 +125,7 @@ Beide Berechtigungen werden gepruft: zuerst die allgemeine Berechtigung, dann di
 | Nachrichtendaten leer | `errors.INVALID` | nein |
 | Kein Zustellungskontext | `errors.INVALID` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
-| Veroffentlichung fehlgeschlagen | `errors.INTERNAL` | ja |
+| Veröffentlichung fehlgeschlagen | `errors.INTERNAL` | ja |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 

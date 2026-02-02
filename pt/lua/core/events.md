@@ -13,16 +13,16 @@ local events = require("events")
 
 ## Inscrevendo-se em Eventos
 
-Inscrever-se em eventos do event bus:
+Inscreva-se em eventos do event bus:
 
 ```lua
--- Inscrever em todos os eventos de pedidos
+-- Inscreva-se em todos os eventos de pedidos
 local sub, err = events.subscribe("orders.*")
 if err then
     return nil, err
 end
 
--- Inscrever em tipo de evento especifico
+-- Inscreva-se em tipo de evento específico
 local sub = events.subscribe("users", "user.created")
 
 -- Inscrever em todos os eventos de um sistema
@@ -65,7 +65,7 @@ if err then
     return nil, err
 end
 
--- Enviar evento de usuario
+-- Enviar evento de usuário
 events.send("users", "user.registered", "/users/" .. user.id, {
     user_id = user.id,
     email = user.email,
@@ -93,7 +93,7 @@ events.send("system", "heartbeat", "/health")
 
 **Retorna:** `boolean, error`
 
-## Metodos de Subscription
+## Métodos de Subscription
 
 ### Obtendo o Channel
 
@@ -115,27 +115,27 @@ Campos do evento: `system`, `kind`, `path`, `data`
 
 ### Fechando Subscription
 
-Cancelar inscricao e fechar o channel:
+Cancelar inscrição e fechar o channel:
 
 ```lua
 sub:close()
 ```
 
-## Permissoes
+## Permissões
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `events.subscribe` | sistema | Inscrever-se em eventos de um sistema |
 | `events.send` | sistema | Enviar eventos para um sistema |
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Sistema vazio | `errors.INVALID` | não |
 | Tipo vazio | `errors.INVALID` | não |
 | Caminho vazio | `errors.INVALID` | não |
-| Politica negou | `errors.INVALID` | não |
+| Política negou | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 

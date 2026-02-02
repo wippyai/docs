@@ -5,7 +5,7 @@
 
 Zugriff auf Umgebungsvariablen für Konfigurationswerte, Secrets und Laufzeiteinstellungen.
 
-Variablen müssen im [Umgebungssystem](system-env.md) definiert werden, bevor auf sie zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschutzt sind.
+Variablen müssen im [Umgebungssystem](system-env.md) definiert werden, bevor auf sie zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschützt sind.
 
 ## Laden
 
@@ -53,7 +53,7 @@ Setzt eine Umgebungsvariable.
 -- Laufzeitkonfiguration setzen
 env.set("APP_MODE", "production")
 
--- Für Tests uberschreiben
+-- Für Tests überschreiben
 env.set("API_URL", "http://localhost:8080")
 
 -- Basierend auf Bedingungen setzen
@@ -71,7 +71,7 @@ end
 
 ## get_all
 
-Holt alle zuganglichen Umgebungsvariablen.
+Holt alle zugänglichen Umgebungsvariablen.
 
 ```lua
 local vars = env.get_all()
@@ -83,7 +83,7 @@ for key, value in pairs(vars) do
     end
 end
 
--- Erforderliche Variablen prufen
+-- Erforderliche Variablen prüfen
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
@@ -106,7 +106,7 @@ Umgebungszugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | `env.set` | Variablenname | Umgebungsvariable schreiben |
 | `env.get_all` | `*` | Alle Variablen auflisten |
 
-### Zugriff prufen
+### Zugriff prüfen
 
 ```lua
 local security = require("security")

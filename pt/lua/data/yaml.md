@@ -1,10 +1,10 @@
-# Codificacao YAML
+# Codificação YAML
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Parse de documentos YAML para tabelas Lua e serializacao de valores Lua para strings YAML.
+Parse de documentos YAML para tabelas Lua e serialização de valores Lua para strings YAML.
 
 ## Carregamento
 
@@ -12,7 +12,7 @@ Parse de documentos YAML para tabelas Lua e serializacao de valores Lua para str
 local yaml = require("yaml")
 ```
 
-## Codificacao
+## Codificação
 
 ### Codificar Valor
 
@@ -54,13 +54,13 @@ yaml.encode(server)
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | table | Tabela Lua para codificar |
-| `options` | table? | Opcoes de codificacao opcionais |
+| `options` | table? | Opções de codificação opcionais |
 
-#### Opcoes
+#### Opções
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `field_order` | string[] | Ordenacao customizada de campos - campos aparecem nesta ordem |
+| `field_order` | string[] | Ordenação customizada de campos - campos aparecem nesta ordem |
 | `sort_unordered` | boolean | Ordenar campos não em `field_order` alfabeticamente |
 
 ```lua
@@ -72,7 +72,7 @@ local entry = {
     kind = "demo"
 }
 
--- Campos aparecem na ordem especificada, restantes ordenados alfabeticamente
+-- Campos aparecem na ordem específicada, restantes ordenados alfabeticamente
 local result = yaml.encode(entry, {
     field_order = {"name", "kind"},
     sort_unordered = true
@@ -92,14 +92,14 @@ yaml.encode(entry, {sort_unordered = true})
 
 **Retorna:** `string, error`
 
-## Decodificacao
+## Decodificação
 
 ### Decodificar String
 
 Parse de uma string YAML para uma tabela Lua.
 
 ```lua
--- Parse de configuracao
+-- Parse de configuração
 local config, err = yaml.decode([[
 server:
   host: localhost
@@ -147,7 +147,7 @@ print(type(data.tags))     -- "table"
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Entrada não e tabela (encode) | `errors.INVALID` | não |
 | Entrada não e string (decode) | `errors.INVALID` | não |

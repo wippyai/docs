@@ -1,19 +1,19 @@
-# Avaliacao Dinamica
+# Avaliação Dinamica
 
 Execute código dinamicamente em tempo de execução com ambientes sandboxed e acesso controlado a modulos.
 
 ## Dois Sistemas
 
-Wippy fornece dois sistemas de avaliacao:
+Wippy fornece dois sistemas de avaliação:
 
 | Sistema | Proposito | Caso de Uso |
 |---------|-----------|-------------|
-| `expr` | Avaliacao de expressao | Config, templates, calculos simples |
-| `eval_runner` | Execução Lua completa | Plugins, scripts de usuario, código dinamico |
+| `expr` | Avaliação de expressao | Config, templates, calculos simples |
+| `eval_runner` | Execução Lua completa | Plugins, scripts de usuário, código dinamico |
 
 ## Módulo expr
 
-Avaliacao leve de expressoes usando a sintaxe expr-lang.
+Avaliação leve de expressoes usando a sintaxe expr-lang.
 
 ```lua
 local expr = require("expr")
@@ -41,7 +41,7 @@ expr.eval("1 + 2 * 3")           -- 7
 expr.eval("10 / 2 - 1")          -- 4
 expr.eval("10 % 3")              -- 1
 
--- Comparacao
+-- Comparação
 expr.eval("x > 5", {x = 10})     -- true
 expr.eval("x == y", {x = 1, y = 1}) -- true
 
@@ -53,7 +53,7 @@ expr.eval("!a", {a = false})     -- true
 -- Ternario
 expr.eval("x > 0 ? 'positive' : 'negative'", {x = 5})
 
--- Funcoes
+-- Funções
 expr.eval("max(1, 5, 3)")        -- 5
 expr.eval("min(1, 5, 3)")        -- 1
 expr.eval("len([1, 2, 3])")      -- 3
@@ -61,13 +61,13 @@ expr.eval("len([1, 2, 3])")      -- 3
 -- Arrays
 expr.eval("[1, 2, 3][0]")        -- 1
 
--- Concatenacao de string
+-- Concatenação de string
 expr.eval("'hello' + ' ' + 'world'")
 ```
 
 ## Módulo eval_runner
 
-Execução Lua completa com controles de seguranca.
+Execução Lua completa com controles de segurança.
 
 ```lua
 local runner = require("eval_runner")
@@ -84,7 +84,7 @@ local result, err = runner.run({
 -- result = 42
 ```
 
-### Configuracao
+### Configuração
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
@@ -93,7 +93,7 @@ local result, err = runner.run({
 | `args` | any[] | Argumentos passados para função |
 | `modules` | string[] | Modulos builtin permitidos |
 | `imports` | table | Entradas do registry para importar |
-| `context` | table | Valores disponiveis como `ctx` |
+| `context` | table | Valores disponíveis como `ctx` |
 | `allow_classes` | string[] | Classes de módulo adicionais |
 | `custom_modules` | table | Tabelas customizadas como modulos |
 
@@ -173,7 +173,7 @@ local program, err = runner.compile([[
 local result = program:run({10})  -- 20
 ```
 
-## Modelo de Seguranca
+## Modelo de Segurança
 
 ### Classes de Modulos
 
@@ -181,9 +181,9 @@ Modulos sao categorizados por capacidade:
 
 | Classe | Descrição | Padrão |
 |--------|-----------|--------|
-| `deterministic` | Funcoes puras | Permitido |
+| `deterministic` | Funções puras | Permitido |
 | `encoding` | Encoding de dados | Permitido |
-| `time` | Operacoes de tempo | Permitido |
+| `time` | Operações de tempo | Permitido |
 | `nondeterministic` | Random, etc. | Permitido |
 | `process` | Spawn, registry | Bloqueado |
 | `storage` | Arquivo, banco de dados | Bloqueado |
@@ -202,17 +202,17 @@ runner.run({
 })
 ```
 
-### Verificacoes de Permissao
+### Verificacoes de Permissão
 
-O sistema verifica permissoes para:
+O sistema verifica permissões para:
 
-- `eval.compile` - Antes da compilacao
+- `eval.compile` - Antes da compilação
 - `eval.run` - Antes da execução
 - `eval.module` - Para cada módulo na whitelist
 - `eval.import` - Para cada import do registry
 - `eval.class` - Para cada classe permitida
 
-Configure em politicas de seguranca.
+Configure em políticas de segurança.
 
 ## Tratamento de Erros
 
@@ -220,11 +220,11 @@ Configure em politicas de seguranca.
 local result, err = runner.run({...})
 if err then
     if err:kind() == errors.PERMISSION_DENIED then
-        -- Acesso negado por politica de seguranca
+        -- Acesso negado por política de segurança
     elseif err:kind() == errors.INVALID then
-        -- Source ou configuracao invalida
+        -- Source ou configuração invalida
     elseif err:kind() == errors.INTERNAL then
-        -- Erro de execução ou compilacao
+        -- Erro de execução ou compilação
     end
 end
 ```
@@ -247,19 +247,19 @@ for _, plugin in ipairs(plugins) do
 end
 ```
 
-### Avaliacao de Template
+### Avaliação de Template
 
 ```lua
 local template = "Ola, {{name}}! Voce tem {{count}} mensagens."
 local compiled = expr.compile("name")
 
--- Avaliacao rapida repetida
+-- Avaliação rapida repetida
 for _, user in ipairs(users) do
     local greeting = compiled:run({name = user.name})
 end
 ```
 
-### Scripts de Usuario
+### Scripts de Usuário
 
 ```lua
 local user_code = request:body()
@@ -273,6 +273,6 @@ local result, err = runner.run({
 
 ## Veja Também
 
-- [Expression](lua/dynamic/expression.md) - Referencia da linguagem de expressao
+- [Expression](lua/dynamic/expression.md) - Referência da linguagem de expressao
 - [Exec](lua/dynamic/exec.md) - Execução de comandos de sistema
-- [Security](lua/security/security.md) - Politicas de seguranca
+- [Security](lua/security/security.md) - Políticas de segurança

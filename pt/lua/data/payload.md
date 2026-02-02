@@ -1,9 +1,9 @@
-# Codificacao de Payload
+# Codificação de Payload
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Converta dados entre formatos incluindo JSON, MessagePack e binario. Manipule payloads tipados para comunicacao entre servicos e passagem de dados em workflows.
+Converta dados entre formatos incluindo JSON, MessagePack e binario. Manipule payloads tipados para comunicação entre serviços e passagem de dados em workflows.
 
 ## Carregamento
 
@@ -135,7 +135,7 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 ## Resultados Assincronos
 
-Payloads sao comumente recebidos de chamadas de função assincronas:
+Payloads sao comumente recebidos de chamadas de função assíncronas:
 
 ```lua
 local funcs = require("funcs")
@@ -163,9 +163,9 @@ print(result.computed_value)
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Falha de transcodificacao | `errors.INTERNAL` | não |
+| Falha de transcodificação | `errors.INTERNAL` | não |
 | Resultado não e valor Lua valido | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

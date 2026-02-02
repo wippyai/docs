@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Fuhren Sie SQL-Abfragen gegen PostgreSQL-, MySQL-, SQLite-, MSSQL- und Oracle-Datenbanken aus. Features umfassen parametrisierte Abfragen, Transaktionen, Prepared Statements und einen Fluent Query Builder.
+Führen Sie SQL-Abfragen gegen PostgreSQL-, MySQL-, SQLite-, MSSQL- und Oracle-Datenbanken aus. Features umfassen parametrisierte Abfragen, Transaktionen, Prepared Statements und einen Fluent Query Builder.
 
 Für Datenbankkonfiguration siehe [Datenbank](system-database.md).
 
@@ -36,7 +36,7 @@ db:release()
 **Gibt zurück:** `DB, error`
 
 <note>
-Verbindungen werden automatisch an den Pool zuruckgegeben, wenn die Funktion beendet wird, aber explizites Aufrufen von `db:release()` wird für lang laufende Operationen empfohlen.
+Verbindungen werden automatisch an den Pool zurückgegeben, wenn die Funktion beendet wird, aber explizites Aufrufen von `db:release()` wird für lang laufende Operationen empfohlen.
 </note>
 
 ## Konstanten
@@ -388,7 +388,7 @@ local query = sql.builder.select("*")
 
 ## Verbindungsmethoden
 
-Datenbankverbindungs-Handle zuruckgegeben von `sql.get()`.
+Datenbankverbindungs-Handle zurückgegeben von `sql.get()`.
 
 ### db:type
 
@@ -402,7 +402,7 @@ local dbtype, err = db:type()
 
 ### db:query
 
-Fuhrt SELECT-Abfrage aus und gibt Zeilen zurück.
+Führt SELECT-Abfrage aus und gibt Zeilen zurück.
 
 ```lua
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -417,7 +417,7 @@ local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 ### db:execute
 
-Fuhrt INSERT/UPDATE/DELETE-Abfrage aus.
+Führt INSERT/UPDATE/DELETE-Abfrage aus.
 
 ```lua
 local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -431,12 +431,12 @@ local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 **Gibt zurück:** `table, error`
 
 Gibt Table mit Feldern zurück:
-- `last_insert_id` - Zuletzt eingefugte ID
+- `last_insert_id` - Zuletzt eingefügte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
 ### db:prepare
 
-Erstellt Prepared Statement für wiederholte Ausfuhrung.
+Erstellt Prepared Statement für wiederholte Ausführung.
 
 ```lua
 local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
@@ -502,11 +502,11 @@ Gibt Table mit Feldern zurück:
 
 ## Prepared Statements
 
-Prepared Statement zuruckgegeben von `db:prepare()`.
+Prepared Statement zurückgegeben von `db:prepare()`.
 
 ### stmt:query
 
-Fuhrt Prepared Statement als SELECT aus.
+Führt Prepared Statement als SELECT aus.
 
 ```lua
 local rows, err = stmt:query({123})
@@ -520,7 +520,7 @@ local rows, err = stmt:query({123})
 
 ### stmt:execute
 
-Fuhrt Prepared Statement als INSERT/UPDATE/DELETE aus.
+Führt Prepared Statement als INSERT/UPDATE/DELETE aus.
 
 ```lua
 local result, err = stmt:execute({"alice"})
@@ -533,12 +533,12 @@ local result, err = stmt:execute({"alice"})
 **Gibt zurück:** `table, error`
 
 Gibt Table mit Feldern zurück:
-- `last_insert_id` - Zuletzt eingefugte ID
+- `last_insert_id` - Zuletzt eingefügte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
 ### stmt:close
 
-Schliesst Prepared Statement.
+Schließt Prepared Statement.
 
 ```lua
 local ok, err = stmt:close()
@@ -548,7 +548,7 @@ local ok, err = stmt:close()
 
 ## Transaktionen
 
-Datenbanktransaktion zuruckgegeben von `db:begin()`.
+Datenbanktransaktion zurückgegeben von `db:begin()`.
 
 ### tx:db_type
 
@@ -562,7 +562,7 @@ local dbtype, err = tx:db_type()
 
 ### tx:query
 
-Fuhrt SELECT-Abfrage innerhalb der Transaktion aus.
+Führt SELECT-Abfrage innerhalb der Transaktion aus.
 
 ```lua
 local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -577,7 +577,7 @@ local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 ### tx:execute
 
-Fuhrt INSERT/UPDATE/DELETE innerhalb der Transaktion aus.
+Führt INSERT/UPDATE/DELETE innerhalb der Transaktion aus.
 
 ```lua
 local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -591,7 +591,7 @@ local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 **Gibt zurück:** `table, error`
 
 Gibt Table mit Feldern zurück:
-- `last_insert_id` - Zuletzt eingefugte ID
+- `last_insert_id` - Zuletzt eingefügte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
 ### tx:prepare
@@ -690,7 +690,7 @@ local query = sql.builder.select("id", "name"):from("users")
 
 ### select:join
 
-Fugt JOIN-Klausel hinzu.
+Fügt JOIN-Klausel hinzu.
 
 ```lua
 local query = sql.builder.select("*")
@@ -707,7 +707,7 @@ local query = sql.builder.select("*")
 
 ### select:left_join
 
-Fugt LEFT JOIN-Klausel hinzu.
+Fügt LEFT JOIN-Klausel hinzu.
 
 ```lua
 local query = sql.builder.select("*")
@@ -724,7 +724,7 @@ local query = sql.builder.select("*")
 
 ### select:right_join
 
-Fugt RIGHT JOIN-Klausel hinzu.
+Fügt RIGHT JOIN-Klausel hinzu.
 
 ```lua
 local query = sql.builder.select("*")
@@ -741,7 +741,7 @@ local query = sql.builder.select("*")
 
 ### select:inner_join
 
-Fugt INNER JOIN-Klausel hinzu.
+Fügt INNER JOIN-Klausel hinzu.
 
 ```lua
 local query = sql.builder.select("*")
@@ -758,7 +758,7 @@ local query = sql.builder.select("*")
 
 ### select:where
 
-Fugt WHERE-Bedingung hinzu.
+Fügt WHERE-Bedingung hinzu.
 
 ```lua
 local query = sql.builder.select("*")
@@ -771,7 +771,7 @@ local query = sql.builder.select("*")
 | `condition` | string\|table\|Sqlizer | WHERE-Bedingung |
 | `args` | ...any | Bind-Argumente (optional, bei String-Verwendung) |
 
-Unterstutzt drei Formate:
+Unterstützt drei Formate:
 - String: `where("status = ?", "active")`
 - Table: `where({status = "active"})`
 - Sqlizer: `where(sql.builder.gt({score = 80}))`
@@ -780,7 +780,7 @@ Unterstutzt drei Formate:
 
 ### select:order_by
 
-Fugt ORDER BY-Klausel hinzu.
+Fügt ORDER BY-Klausel hinzu.
 
 ```lua
 local query = sql.builder.select("*")
@@ -796,7 +796,7 @@ local query = sql.builder.select("*")
 
 ### select:group_by
 
-Fugt GROUP BY-Klausel hinzu.
+Fügt GROUP BY-Klausel hinzu.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*)")
@@ -812,7 +812,7 @@ local query = sql.builder.select("status", "COUNT(*)")
 
 ### select:having
 
-Fugt HAVING-Bedingung hinzu.
+Fügt HAVING-Bedingung hinzu.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*) as cnt")
@@ -862,7 +862,7 @@ local query = sql.builder.select("*")
 
 ### select:columns
 
-Fugt Spalten zu SELECT hinzu.
+Fügt Spalten zu SELECT hinzu.
 
 ```lua
 local query = sql.builder.select():columns("id", "name", "email")
@@ -876,7 +876,7 @@ local query = sql.builder.select():columns("id", "name", "email")
 
 ### select:distinct
 
-Fugt DISTINCT-Modifikator hinzu.
+Fügt DISTINCT-Modifikator hinzu.
 
 ```lua
 local query = sql.builder.select("status")
@@ -888,7 +888,7 @@ local query = sql.builder.select("status")
 
 ### select:suffix
 
-Fugt SQL-Suffix hinzu.
+Fügt SQL-Suffix hinzu.
 
 ```lua
 local query = sql.builder.select("*")
@@ -978,7 +978,7 @@ local query = sql.builder.insert("users"):columns("name", "email")
 
 ### insert:values
 
-Fugt Zeilenwerte hinzu.
+Fügt Zeilenwerte hinzu.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1009,7 +1009,7 @@ local query = sql.builder.insert("users")
 
 ### insert:select
 
-Fugt aus SELECT-Abfrage ein.
+Fügt aus SELECT-Abfrage ein.
 
 ```lua
 local select_query = sql.builder.select("name", "email"):from("temp_users")
@@ -1026,7 +1026,7 @@ local query = sql.builder.insert("users")
 
 ### insert:prefix
 
-Fugt SQL-Prafix hinzu.
+Fügt SQL-Präfix hinzu.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1035,14 +1035,14 @@ local query = sql.builder.insert("users")
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `sql` | string | SQL-Prafix mit ?-Platzhaltern |
+| `sql` | string | SQL-Präfix mit ?-Platzhaltern |
 | `args` | ...any | Bind-Argumente (optional) |
 
 **Gibt zurück:** `InsertBuilder`
 
 ### insert:suffix
 
-Fugt SQL-Suffix hinzu.
+Fügt SQL-Suffix hinzu.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1060,7 +1060,7 @@ local query = sql.builder.insert("users")
 
 ### insert:options
 
-Fugt INSERT-Optionen hinzu.
+Fügt INSERT-Optionen hinzu.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1165,7 +1165,7 @@ local query = sql.builder.update("users")
 
 ### update:where
 
-Fugt WHERE-Bedingung hinzu.
+Fügt WHERE-Bedingung hinzu.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1182,7 +1182,7 @@ local query = sql.builder.update("users")
 
 ### update:order_by
 
-Fugt ORDER BY-Klausel hinzu.
+Fügt ORDER BY-Klausel hinzu.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1230,7 +1230,7 @@ local query = sql.builder.update("users")
 
 ### update:suffix
 
-Fugt SQL-Suffix hinzu.
+Fügt SQL-Suffix hinzu.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1247,7 +1247,7 @@ local query = sql.builder.update("users")
 
 ### update:from
 
-Fugt FROM-Klausel hinzu.
+Fügt FROM-Klausel hinzu.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1339,7 +1339,7 @@ local query = sql.builder.delete():from("users")
 
 ### delete:where
 
-Fugt WHERE-Bedingung hinzu.
+Fügt WHERE-Bedingung hinzu.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1355,7 +1355,7 @@ local query = sql.builder.delete("users")
 
 ### delete:order_by
 
-Fugt ORDER BY-Klausel hinzu.
+Fügt ORDER BY-Klausel hinzu.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1403,7 +1403,7 @@ local query = sql.builder.delete("users")
 
 ### delete:suffix
 
-Fugt SQL-Suffix hinzu.
+Fügt SQL-Suffix hinzu.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1460,11 +1460,11 @@ local result, err = executor:exec()
 
 ## Abfragen ausführen
 
-Der Query-Executor fuhrt vom Builder generierte Abfragen aus.
+Der Query-Executor führt vom Builder generierte Abfragen aus.
 
 ### executor:query
 
-Fuhrt Abfrage aus und gibt Zeilen zurück (für SELECT).
+Führt Abfrage aus und gibt Zeilen zurück (für SELECT).
 
 ```lua
 local rows, err = executor:query()
@@ -1474,7 +1474,7 @@ local rows, err = executor:query()
 
 ### executor:exec
 
-Fuhrt Abfrage aus und gibt Ergebnis zurück (für INSERT/UPDATE/DELETE).
+Führt Abfrage aus und gibt Ergebnis zurück (für INSERT/UPDATE/DELETE).
 
 ```lua
 local result, err = executor:exec()
@@ -1483,12 +1483,12 @@ local result, err = executor:exec()
 **Gibt zurück:** `table, error`
 
 Gibt Table mit Feldern zurück:
-- `last_insert_id` - Zuletzt eingefugte ID
+- `last_insert_id` - Zuletzt eingefügte ID
 - `rows_affected` - Anzahl betroffener Zeilen
 
 ### executor:to_sql
 
-Gibt generierten SQL und Argumente ohne Ausfuhrung zurück.
+Gibt generierten SQL und Argumente ohne Ausführung zurück.
 
 ```lua
 local sql_str, args = executor:to_sql()
@@ -1512,12 +1512,12 @@ Datenbankzugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Ressource nicht gefunden | `errors.NOT_FOUND` | nein |
 | Ressource keine Datenbank | `errors.INVALID` | nein |
-| Ungultige Parameter | `errors.INVALID` | nein |
+| Ungültige Parameter | `errors.INVALID` | nein |
 | SQL-Syntaxfehler | `errors.INVALID` | nein |
 | Statement geschlossen | `errors.INVALID` | nein |
 | Transaktion nicht aktiv | `errors.INVALID` | nein |
-| Ungultiger Savepoint-Name | `errors.INVALID` | nein |
-| Abfrageausfuhrungsfehler | variiert | variiert |
+| Ungültiger Savepoint-Name | `errors.INVALID` | nein |
+| Abfrageausführungsfehler | variiert | variiert |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
 
@@ -1530,7 +1530,7 @@ local sql = require("sql")
 local db, err = sql.get("app.db:main")
 if err then error(err) end
 
--- Datenbanktyp prufen
+-- Datenbanktyp prüfen
 local dbtype, _ = db:type()
 print("Database type:", dbtype)
 

@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-Operacoes criptograficas incluindo criptografia, HMAC, JWT e derivacao de chaves. Adaptado para workflows.
+Operações criptograficas incluindo criptografia, HMAC, JWT e derivação de chaves. Adaptado para workflows.
 
 ## Carregamento
 
@@ -12,7 +12,7 @@ Operacoes criptograficas incluindo criptografia, HMAC, JWT e derivacao de chaves
 local crypto = require("crypto")
 ```
 
-## Geracao Aleatoria
+## Geração Aleatoria
 
 ### Bytes Aleatorios
 
@@ -171,11 +171,11 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | Token JWT para verificar |
 | `key` | string | Secret (HMAC) ou chave publica PEM (RSA) |
 | `alg` | string? | Algoritmo esperado (padrão: HS256) |
-| `require_exp` | boolean? | Validar expiracao (padrão: true) |
+| `require_exp` | boolean? | Validar expiração (padrão: true) |
 
 **Retorna:** `table, error`
 
-## Derivacao de Chaves
+## Derivação de Chaves
 
 ### PBKDF2
 
@@ -196,7 +196,7 @@ local key, err = crypto.pbkdf2(password, salt, iterations, key_length, "sha512")
 
 ## Utilitarios
 
-### Comparacao em Tempo Constante
+### Comparação em Tempo Constante
 
 ```lua
 local equal = crypto.constant_time_compare(a, b)
@@ -211,11 +211,11 @@ local equal = crypto.constant_time_compare(a, b)
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Tamanho invalido | `errors.INVALID` | não |
+| Tamanho inválido | `errors.INVALID` | não |
 | Chave vazia | `errors.INVALID` | não |
-| Tamanho de chave invalido | `errors.INVALID` | não |
+| Tamanho de chave inválido | `errors.INVALID` | não |
 | Descriptografia falhou | `errors.INTERNAL` | não |
 | Token expirado | `errors.INTERNAL` | não |
 

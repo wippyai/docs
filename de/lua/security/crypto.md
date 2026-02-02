@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-Kryptografische Operationen einschliesslich Verschlüsselung, HMAC, JWT und Schlüsselableitung. Angepasst für Workflows.
+Kryptografische Operationen einschließlich Verschlüsselung, HMAC, JWT und Schlüsselableitung. Angepasst für Workflows.
 
 ## Laden
 
@@ -35,7 +35,7 @@ local str, err = crypto.random.string(32, "0123456789abcdef")
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `length` | integer | String-Lange (1 bis 1.048.576) |
+| `length` | integer | String-Länge (1 bis 1.048.576) |
 | `charset` | string? | Zu verwendende Zeichen (Standard: alphanumerisch) |
 
 **Gibt zurück:** `string, error`
@@ -89,7 +89,7 @@ local encrypted, err = crypto.encrypt.aes(data, key, aad)
 |-----------|------|-------------|
 | `data` | string | Zu verschlüsselnder Klartext |
 | `key` | string | 16, 24 oder 32 Bytes (AES-128/192/256) |
-| `aad` | string? | Zusatzliche authentifizierte Daten |
+| `aad` | string? | Zusätzliche authentifizierte Daten |
 
 **Gibt zurück:** `string, error` (Nonce vorangestellt)
 
@@ -104,7 +104,7 @@ local encrypted, err = crypto.encrypt.chacha20(data, key, aad)
 |-----------|------|-------------|
 | `data` | string | Zu verschlüsselnder Klartext |
 | `key` | string | Muss 32 Bytes sein |
-| `aad` | string? | Zusatzliche authentifizierte Daten |
+| `aad` | string? | Zusätzliche authentifizierte Daten |
 
 **Gibt zurück:** `string, error`
 
@@ -121,7 +121,7 @@ local plaintext, err = crypto.decrypt.aes(encrypted, key, aad)
 |-----------|------|-------------|
 | `data` | string | Verschlüsselte Daten von encrypt.aes |
 | `key` | string | Gleicher Schlüssel wie bei Verschlüsselung |
-| `aad` | string? | Muss mit AAD bei Verschlüsselung ubereinstimmen |
+| `aad` | string? | Muss mit AAD bei Verschlüsselung übereinstimmen |
 
 **Gibt zurück:** `string, error`
 
@@ -136,7 +136,7 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 |-----------|------|-------------|
 | `data` | string | Verschlüsselte Daten von encrypt.chacha20 |
 | `key` | string | Gleicher Schlüssel wie bei Verschlüsselung |
-| `aad` | string? | Muss mit AAD bei Verschlüsselung ubereinstimmen |
+| `aad` | string? | Muss mit AAD bei Verschlüsselung übereinstimmen |
 
 **Gibt zurück:** `string, error`
 
@@ -169,7 +169,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `token` | string | Zu verifizierender JWT-Token |
-| `key` | string | Secret (HMAC) oder PEM-offentlicher Schlüssel (RSA) |
+| `key` | string | Secret (HMAC) oder PEM-öffentlicher Schlüssel (RSA) |
 | `alg` | string? | Erwarteter Algorithmus (Standard: HS256) |
 | `require_exp` | boolean? | Ablauf validieren (Standard: true) |
 
@@ -189,7 +189,7 @@ local key, err = crypto.pbkdf2(password, salt, iterations, key_length, "sha512")
 | `password` | string | Passwort/Passphrase |
 | `salt` | string | Salt-Wert |
 | `iterations` | integer | Iterationsanzahl (max. 10.000.000) |
-| `key_length` | integer | Gewunschte Schlüssellange in Bytes |
+| `key_length` | integer | Gewünschte Schlüssellänge in Bytes |
 | `hash` | string? | sha256 oder sha512 (Standard: sha256) |
 
 **Gibt zurück:** `string, error`
@@ -213,9 +213,9 @@ local equal = crypto.constant_time_compare(a, b)
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Ungultige Lange | `errors.INVALID` | nein |
+| Ungültige Länge | `errors.INVALID` | nein |
 | Leerer Schlüssel | `errors.INVALID` | nein |
-| Ungultige Schlüsselgröße | `errors.INVALID` | nein |
+| Ungültige Schlüsselgröße | `errors.INVALID` | nein |
 | Entschlüsselung fehlgeschlagen | `errors.INTERNAL` | nein |
 | Token abgelaufen | `errors.INTERNAL` | nein |
 

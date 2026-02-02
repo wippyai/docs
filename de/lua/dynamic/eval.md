@@ -1,6 +1,6 @@
 # Dynamische Auswertung
 
-Fuhren Sie Code dynamisch zur Laufzeit mit Sandbox-Umgebungen und kontrolliertem Modulzugriff aus.
+Führen Sie Code dynamisch zur Laufzeit mit Sandbox-Umgebungen und kontrolliertem Modulzugriff aus.
 
 ## Zwei Systeme
 
@@ -9,7 +9,7 @@ Wippy bietet zwei Auswertungssysteme:
 | System | Zweck | Anwendungsfall |
 |--------|---------|----------|
 | `expr` | Ausdrucksauswertung | Konfiguration, Templates, einfache Berechnungen |
-| `eval_runner` | Vollstandige Lua-Ausfuhrung | Plugins, Benutzerskripte, dynamischer Code |
+| `eval_runner` | Vollständige Lua-Ausführung | Plugins, Benutzerskripte, dynamischer Code |
 
 ## expr-Modul
 
@@ -22,7 +22,7 @@ local result, err = expr.eval("x + y * 2", {x = 10, y = 5})
 -- result = 20
 ```
 
-### Ausdrucke kompilieren
+### Ausdrücke kompilieren
 
 Einmal kompilieren, mehrfach ausführen:
 
@@ -33,7 +33,7 @@ local total1 = program:run({price = 10, quantity = 5})
 local total2 = program:run({price = 20, quantity = 3})
 ```
 
-### Unterstutzte Syntax
+### Unterstützte Syntax
 
 ```lua
 -- Arithmetik
@@ -50,7 +50,7 @@ expr.eval("a && b", {a = true, b = false})  -- false
 expr.eval("a || b", {a = true, b = false})  -- true
 expr.eval("!a", {a = false})     -- true
 
--- Ternar
+-- Ternär
 expr.eval("x > 0 ? 'positive' : 'negative'", {x = 5})
 
 -- Funktionen
@@ -67,7 +67,7 @@ expr.eval("'hello' + ' ' + 'world'")
 
 ## eval_runner-Modul
 
-Vollstandige Lua-Ausfuhrung mit Sicherheitskontrollen.
+Vollständige Lua-Ausführung mit Sicherheitskontrollen.
 
 ```lua
 local runner = require("eval_runner")
@@ -89,12 +89,12 @@ local result, err = runner.run({
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `source` | string | Lua-Quellcode (erforderlich) |
-| `method` | string | Aufzurufende Funktion in zuruckgegebener Tabelle |
-| `args` | any[] | An Funktion ubergebene Argumente |
+| `method` | string | Aufzurufende Funktion in zurückgegebener Tabelle |
+| `args` | any[] | An Funktion übergebene Argumente |
 | `modules` | string[] | Erlaubte eingebaute Module |
-| `imports` | table | Registry-Eintrage zum Importieren |
-| `context` | table | Als `ctx` verfugbare Werte |
-| `allow_classes` | string[] | Zusatzliche Modulklassen |
+| `imports` | table | Registry-Einträge zum Importieren |
+| `context` | table | Als `ctx` verfügbare Werte |
+| `allow_classes` | string[] | Zusätzliche Modulklassen |
 | `custom_modules` | table | Benutzerdefinierte Tabellen als Module |
 
 ### Modulzugriff
@@ -115,7 +115,7 @@ Module, die nicht in der Liste sind, können nicht mit require geladen werden.
 
 ### Registry-Imports
 
-Eintrage aus der Registry importieren:
+Einträge aus der Registry importieren:
 
 ```lua
 runner.run({
@@ -147,7 +147,7 @@ runner.run({
 
 ### Kontextwerte
 
-Daten ubergeben, die als `ctx` zuganglich sind:
+Daten übergeben, die als `ctx` zugänglich sind:
 
 ```lua
 runner.run({
@@ -160,7 +160,7 @@ runner.run({
 
 ### Programme kompilieren
 
-Einmal kompilieren für wiederholte Ausfuhrung:
+Einmal kompilieren für wiederholte Ausführung:
 
 ```lua
 local program, err = runner.compile([[
@@ -177,7 +177,7 @@ local result = program:run({10})  -- 20
 
 ### Modulklassen
 
-Module werden nach Fahigkeiten kategorisiert:
+Module werden nach Fähigkeiten kategorisiert:
 
 | Klasse | Beschreibung | Standard |
 |-------|-------------|---------|
@@ -202,12 +202,12 @@ runner.run({
 })
 ```
 
-### Berechtigungsprufungen
+### Berechtigungsprüfungen
 
-Das System pruft Berechtigungen für:
+Das System prüft Berechtigungen für:
 
 - `eval.compile` - Vor Kompilierung
-- `eval.run` - Vor Ausfuhrung
+- `eval.run` - Vor Ausführung
 - `eval.module` - Für jedes Modul in Whitelist
 - `eval.import` - Für jeden Registry-Import
 - `eval.class` - Für jede erlaubte Klasse
@@ -222,14 +222,14 @@ if err then
     if err:kind() == errors.PERMISSION_DENIED then
         -- Zugriff durch Sicherheitsrichtlinie verweigert
     elseif err:kind() == errors.INVALID then
-        -- Ungultige Quelle oder Konfiguration
+        -- Ungültige Quelle oder Konfiguration
     elseif err:kind() == errors.INTERNAL then
-        -- Ausfuhrungs- oder Kompilierungsfehler
+        -- Ausführungs- oder Kompilierungsfehler
     end
 end
 ```
 
-## Anwendungsfalle
+## Anwendungsfälle
 
 ### Plugin-System
 
@@ -274,5 +274,5 @@ local result, err = runner.run({
 ## Siehe auch
 
 - [Expression](lua/dynamic/expression.md) - Ausdruckssprachen-Referenz
-- [Exec](lua/dynamic/exec.md) - Systembefehlsausfuhrung
+- [Exec](lua/dynamic/exec.md) - Systembefehlsausführung
 - [Security](lua/security/security.md) - Sicherheitsrichtlinien

@@ -19,7 +19,7 @@ tostring(value)     -- Converter para string, chama metamétodo __tostring
 
 ```lua
 assert(v [,msg])    -- Lança erro se v for false/nil, retorna v caso contrário
-error(msg [,level]) -- Lança erro no nível de stack especificado (padrão 1)
+error(msg [,level]) -- Lança erro no nível de stack específicado (padrão 1)
 pcall(fn, ...)      -- Chamada protegida, retorna ok, resultado_ou_erro
 xpcall(fn, errh)    -- Chamada protegida com função handler de erro
 ```
@@ -129,7 +129,7 @@ string.reverse(s)          -- Inverter string
 string.format(fmt, ...)    -- Formatação estilo printf
 ```
 
-Especificadores de formato: `%d` (inteiro), `%f` (float), `%s` (string), `%q` (quoted), `%x` (hex), `%o` (octal), `%e` (científico), `%%` (% literal)
+Específicadores de formato: `%d` (inteiro), `%f` (float), `%s` (string), `%q` (quoted), `%x` (hex), `%o` (octal), `%e` (científico), `%%` (% literal)
 
 ```lua
 local s = "Hello, World!"

@@ -52,7 +52,7 @@ end
 local config = json.decode(data)
 ```
 
-Für größe Dateien verwenden Sie Streaming mit `open()`:
+Für große Dateien verwenden Sie Streaming mit `open()`:
 
 ```lua
 local file = vol:open("/data/large.csv", "r")
@@ -73,23 +73,23 @@ Daten in eine Datei schreiben:
 ```lua
 local vol = fs.get("app:data")
 
--- Uberschreiben (Standard)
+-- Überschreiben (Standard)
 vol:writefile("/config.json", json.encode(config))
 
--- Anhangen
+-- Anhängen
 vol:writefile("/logs/app.log", message .. "\n", "a")
 
--- Exklusives Schreiben (schlagt fehl wenn vorhanden)
+-- Exklusives Schreiben (schlägt fehl wenn vorhanden)
 local ok, err = vol:writefile("/lock.pid", tostring(pid), "wx")
 ```
 
 | Modus | Beschreibung |
 |------|-------------|
-| `"w"` | Uberschreiben (Standard) |
-| `"a"` | Anhangen |
-| `"wx"` | Exklusives Schreiben (schlagt fehl wenn Datei existiert) |
+| `"w"` | Überschreiben (Standard) |
+| `"a"` | Anhängen |
+| `"wx"` | Exklusives Schreiben (schlägt fehl wenn Datei existiert) |
 
-Für Streaming-Schreibvorgange:
+Für Streaming-Schreibvorgänge:
 
 ```lua
 local file = vol:open("/output/report.txt", "w")
@@ -99,17 +99,17 @@ file:sync()
 file:close()
 ```
 
-## Pfade prufen
+## Pfade prüfen
 
 ```lua
 local vol = fs.get("app:data")
 
--- Existenz prufen
+-- Existenz prüfen
 if vol:exists("/cache/results.json") then
     return vol:readfile("/cache/results.json")
 end
 
--- Prufen ob Verzeichnis
+-- Prüfen ob Verzeichnis
 if vol:isdir(path) then
     process_directory(path)
 end
@@ -163,7 +163,7 @@ Für zeilenweise Verarbeitung:
 local file = vol:open("/data/users.csv", "r")
 local scanner = file:scanner("lines")
 
-scanner:scan()  -- Header uberspringen
+scanner:scan()  -- Header überspringen
 
 while scanner:scan() do
     local line = scanner:text()
@@ -192,13 +192,13 @@ fs.seek.END       -- vom Ende
 |--------|---------|-------------|
 | `readfile(path)` | `string, error` | Gesamte Datei lesen |
 | `writefile(path, data, mode?)` | `boolean, error` | Datei schreiben |
-| `exists(path)` | `boolean, error` | Prufen ob Pfad existiert |
+| `exists(path)` | `boolean, error` | Prüfen ob Pfad existiert |
 | `stat(path)` | `table, error` | Dateiinfo abrufen |
-| `isdir(path)` | `boolean, error` | Prufen ob Verzeichnis |
+| `isdir(path)` | `boolean, error` | Prüfen ob Verzeichnis |
 | `mkdir(path)` | `boolean, error` | Verzeichnis erstellen |
 | `remove(path)` | `boolean, error` | Datei/leeres Verzeichnis entfernen |
 | `readdir(path)` | `iterator` | Verzeichnis auflisten |
-| `open(path, mode)` | `File, error` | Datei-Handle offnen |
+| `open(path, mode)` | `File, error` | Datei-Handle öffnen |
 | `chdir(path)` | `boolean, error` | Arbeitsverzeichnis wechseln |
 | `pwd()` | `string` | Arbeitsverzeichnis abrufen |
 
@@ -215,7 +215,7 @@ Dateisystemzugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Leerer Pfad | `errors.INVALID` | nein |
-| Ungultiger Modus | `errors.INVALID` | nein |
+| Ungültiger Modus | `errors.INVALID` | nein |
 | Datei ist geschlossen | `errors.INVALID` | nein |
 | Pfad nicht gefunden | `errors.NOT_FOUND` | nein |
 | Pfad existiert bereits | `errors.ALREADY_EXISTS` | nein |

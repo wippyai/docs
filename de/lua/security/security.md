@@ -13,7 +13,7 @@ local security = require("security")
 
 ## actor
 
-Gibt den aktuellen Sicherheits-Actor aus dem Ausfuhrungskontext zurück.
+Gibt den aktuellen Sicherheits-Actor aus dem Ausführungskontext zurück.
 
 ```lua
 local actor = security.actor()
@@ -32,7 +32,7 @@ end
 
 ## scope
 
-Gibt den aktuellen Sicherheits-Scope aus dem Ausfuhrungskontext zurück.
+Gibt den aktuellen Sicherheits-Scope aus dem Ausführungskontext zurück.
 
 ```lua
 local scope = security.scope()
@@ -48,20 +48,20 @@ end
 
 ## can
 
-Pruft, ob der aktuelle Kontext eine Aktion auf einer Ressource erlaubt.
+Prüft, ob der aktuelle Kontext eine Aktion auf einer Ressource erlaubt.
 
 ```lua
--- Leseberechtigung prufen
+-- Leseberechtigung prüfen
 if not security.can("read", "user:" .. user_id) then
     return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
 end
 
--- Schreibberechtigung prufen
+-- Schreibberechtigung prüfen
 if not security.can("write", "order:" .. order_id) then
     return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
 end
 
--- Mit Metadaten prufen
+-- Mit Metadaten prüfen
 local allowed = security.can("delete", "document:" .. doc_id, {
     owner_id = doc.owner_id,
     department = doc.department
@@ -70,9 +70,9 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `action` | string | Zu prufende Aktion |
+| `action` | string | Zu prüfende Aktion |
 | `resource` | string | Ressourcenidentifikator |
-| `meta` | table | Zusatzliche Metadaten (optional) |
+| `meta` | table | Zusätzliche Metadaten (optional) |
 
 **Gibt zurück:** `boolean`
 
@@ -140,7 +140,7 @@ if result == "allow" then
 elseif result == "deny" then
     -- verboten
 else
-    -- undefiniert, andere Richtlinien prufen
+    -- undefiniert, andere Richtlinien prüfen
 end
 ```
 
@@ -161,7 +161,7 @@ if err then
     return nil, err
 end
 
--- Für erhohte Operationen verwenden
+-- Für erhöhte Operationen verwenden
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
@@ -230,7 +230,7 @@ end
 
 ### contains
 
-Prufen, ob Scope eine Richtlinie enthalt.
+Prüfen, ob Scope eine Richtlinie enthält.
 
 ```lua
 if scope:contains("app:admin") then
@@ -348,7 +348,7 @@ Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
 | Richtlinie nicht gefunden | `errors.INTERNAL` | nein |
 | Token-Store nicht gefunden | `errors.INTERNAL` | nein |
 | Token-Store geschlossen | `errors.INTERNAL` | nein |
-| Ungultiges Ablaufformat | `errors.INVALID` | nein |
+| Ungültiges Ablaufformat | `errors.INVALID` | nein |
 | Token-Validierung fehlgeschlagen | `errors.INTERNAL` | nein |
 
 ```lua

@@ -1,10 +1,10 @@
-# Funcoes de Hash
+# Funções de Hash
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Funcoes de hash criptograficas e autenticacao de mensagens HMAC.
+Funções de hash criptograficas e autenticação de mensagens HMAC.
 
 ## Carregamento
 
@@ -70,7 +70,7 @@ local raw = hash.sha512("data", true)
 
 **Retorna:** `string, error`
 
-## Autenticacao HMAC
+## Autenticação HMAC
 
 ### HMAC-MD5
 
@@ -164,7 +164,7 @@ local n = hash.fnv64("data")
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Input não e string | `errors.INVALID` | não |
 | Secret não e string (HMAC) | `errors.INVALID` | não |

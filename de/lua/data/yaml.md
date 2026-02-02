@@ -143,7 +143,7 @@ print(type(data.tags))     -- "table"
 |-----------|------|-------------|
 | `data` | string | Zu parsender YAML-String |
 
-**Gibt zurück:** `any, error` - Gibt table, array, string, number oder boolean zurück, abhangig vom YAML-Inhalt
+**Gibt zurück:** `any, error` - Gibt table, array, string, number oder boolean zurück, abhängig vom YAML-Inhalt
 
 ## Fehler
 
@@ -152,6 +152,6 @@ print(type(data.tags))     -- "table"
 | Eingabe ist keine Tabelle (encode) | `errors.INVALID` | nein |
 | Eingabe ist kein String (decode) | `errors.INVALID` | nein |
 | Leerer String (decode) | `errors.INVALID` | nein |
-| Ungultige YAML-Syntax | `errors.INTERNAL` | nein |
+| Ungültige YAML-Syntax | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

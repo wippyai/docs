@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="external"/>
 
-Lesen und schreiben Sie Microsoft Excel-Dateien (.xlsx). Erstellen Sie Arbeitsmappen, verwalten Sie Tabellenblatter, lesen Sie Zellwerte und generieren Sie Berichte mit Formatierungsunterstutzung.
+Lesen und schreiben Sie Microsoft Excel-Dateien (.xlsx). Erstellen Sie Arbeitsmappen, verwalten Sie Tabellenblätter, lesen Sie Zellwerte und generieren Sie Berichte mit Formatierungsunterstützung.
 
 ## Laden
 
@@ -24,7 +24,7 @@ if err then
     return nil, err
 end
 
--- Tabellenblatter erstellen und Daten hinzufügen
+-- Tabellenblätter erstellen und Daten hinzufügen
 wb:new_sheet("Report")
 wb:set_cell_value("Report", "A1", "Title")
 
@@ -33,9 +33,9 @@ wb:close()
 
 **Gibt zurück:** `Workbook, error`
 
-### Arbeitsmappe offnen
+### Arbeitsmappe öffnen
 
-Offnet eine Excel-Arbeitsmappe von einem Reader-Objekt.
+Öffnet eine Excel-Arbeitsmappe von einem Reader-Objekt.
 
 ```lua
 local fs = require("fs")
@@ -81,7 +81,7 @@ Erstellt ein neues Tabellenblatt oder gibt den Index eines existierenden zurück
 ```lua
 local wb = excel.new()
 
--- Tabellenblatter erstellen
+-- Tabellenblätter erstellen
 local idx1 = wb:new_sheet("Summary")
 local idx2 = wb:new_sheet("Details")
 local idx3 = wb:new_sheet("Charts")
@@ -96,7 +96,7 @@ local existing = wb:new_sheet("Summary")  -- gibt gleichen Wert wie idx1 zurück
 
 **Gibt zurück:** `integer, error`
 
-### Tabellenblatter auflisten
+### Tabellenblätter auflisten
 
 Gibt Liste aller Tabellenblattnamen in der Arbeitsmappe zurück.
 
@@ -139,7 +139,7 @@ wb:set_cell_value("Data", "A3", "Gadget")
 wb:set_cell_value("Data", "B3", 49.99)
 wb:set_cell_value("Data", "C3", false)
 
--- Zellreferenzen unterstutzen Spalten über Z hinaus
+-- Zellreferenzen unterstützen Spalten über Z hinaus
 wb:set_cell_value("Data", "AA1", "Extended Column")
 wb:set_cell_value("Data", "AB100", "Far cell")
 ```
@@ -190,7 +190,7 @@ end
 
 **Gibt zurück:** `string[][], error`
 
-Alle Zellwerte werden als Strings zuruckgegeben. Booleans als "TRUE" oder "FALSE", Zahlen als String-Darstellung.
+Alle Zellwerte werden als Strings zurückgegeben. Booleans als "TRUE" oder "FALSE", Zahlen als String-Darstellung.
 
 ## Datei-Operationen
 
@@ -241,7 +241,7 @@ end
 
 ### Arbeitsmappe schließen
 
-Schliesst Arbeitsmappe und gibt Ressourcen frei.
+Schließt Arbeitsmappe und gibt Ressourcen frei.
 
 ```lua
 local wb = excel.new()
@@ -259,12 +259,12 @@ wb:close()
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Kein Kontext | `errors.INTERNAL` | nein |
-| Ungultige Arbeitsmappe | `errors.INVALID` | nein |
+| Ungültige Arbeitsmappe | `errors.INVALID` | nein |
 | Arbeitsmappe geschlossen | `errors.INTERNAL` | nein |
 | Kein Reader/Writer | `errors.INTERNAL` | nein |
-| Ungultige Excel-Datei | `errors.INTERNAL` | nein |
+| Ungültige Excel-Datei | `errors.INTERNAL` | nein |
 | Nicht existierendes Tabellenblatt | `errors.INTERNAL` | nein |
-| Ungultige Zellreferenz | `errors.INTERNAL` | nein |
+| Ungültige Zellreferenz | `errors.INTERNAL` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

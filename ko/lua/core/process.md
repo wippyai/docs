@@ -162,10 +162,10 @@ msg:payload()  -- any: 페이로드 데이터
 프로세스를 스폰하고 결과를 기다려서 반환:
 
 ```lua
-local result, err = process.call(id, host, ...)
+local result, err = process.exec(id, host, ...)
 ```
 
-**권한:** 프로세스 id에 대해 `process.call`, 호스트 id에 대해 `process.host`
+**권한:** 프로세스 id에 대해 `process.exec`, 호스트 id에 대해 `process.host`
 
 ## 프로세스 업그레이드
 
@@ -247,7 +247,7 @@ local ok = process.registry.unregister(name)
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | 프로세스 id |
 | `process.host` | `spawn*()`, `call()` | 호스트 id |
 | `process.send` | `send()` | 대상 PID |
-| `process.call` | `call()` | 프로세스 id |
+| `process.exec` | `call()` | 프로세스 id |
 | `process.terminate` | `terminate()` | 대상 PID |
 | `process.cancel` | `cancel()` | 대상 PID |
 | `process.monitor` | `monitor()` | 대상 PID |
@@ -269,7 +269,7 @@ local ok = process.registry.unregister(name)
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.call` + `process.host` |
+| `call()` | `process.exec` + `process.host` |
 | 커스텀 액터/스코프로 스폰 | 스폰 권한 + `process.security` |
 
 ## 에러

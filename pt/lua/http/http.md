@@ -3,9 +3,9 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Trate requisicoes HTTP e construa respostas. Acesse dados da requisicao, parametros de rota, headers e conteudo do corpo. Construa respostas com codigos de status, headers e suporte a streaming.
+Trate requisicoes HTTP e construa respostas. Acesse dados da requisição, parametros de rota, headers e conteudo do corpo. Construa respostas com codigos de status, headers e suporte a streaming.
 
-Para configuracao de servidor, veja [HTTP Server](http-server.md).
+Para configuração de servidor, veja [HTTP Server](http-server.md).
 
 ## Carregamento
 
@@ -13,14 +13,14 @@ Para configuracao de servidor, veja [HTTP Server](http-server.md).
 local http = require("http")
 ```
 
-## Acessando a Requisicao
+## Acessando a Requisição
 
-Obter o contexto da requisicao HTTP atual:
+Obter o contexto da requisição HTTP atual:
 
 ```lua
 local req = http.request()
 
--- Com opcoes
+-- Com opções
 local req = http.request({
     timeout = 5000,        -- 5 segundos de timeout para leitura do corpo
     max_body = 10485760    -- 10MB corpo maximo
@@ -44,7 +44,7 @@ local res = http.response()
 
 **Retorna:** `Response, error`
 
-## Metodos de Request
+## Métodos de Request
 
 ### method
 
@@ -172,7 +172,7 @@ local issue = get_issue(p.org, p.repo, p.issue)
 
 ### body
 
-Le o corpo completo da requisicao como string.
+Le o corpo completo da requisição como string.
 
 ```lua
 local body = req:body()
@@ -297,7 +297,7 @@ end
 
 ### stream
 
-Obtem corpo da requisicao como stream para arquivos grandes.
+Obtem corpo da requisição como stream para arquivos grandes.
 
 ```lua
 local stream = req:stream()
@@ -311,7 +311,7 @@ end
 stream:close()
 ```
 
-## Metodos de Response
+## Métodos de Response
 
 ### set_status
 
@@ -404,7 +404,7 @@ end
 
 ### set_transfer
 
-Define codificacao de transferencia para streaming.
+Define codificação de transferencia para streaming.
 
 ```lua
 -- Transferencia chunked
@@ -444,7 +444,7 @@ res:write_event({name = "message", data = {
 
 ## Constantes
 
-### Metodos HTTP
+### Métodos HTTP
 
 ```lua
 http.METHOD.GET
@@ -515,23 +515,23 @@ http.TRANSFER.SSE       -- "sse"
 
 ### Tipos de Erro
 
-Constantes de tipo de erro especificas do módulo para tratamento preciso de erros.
+Constantes de tipo de erro específicas do módulo para tratamento preciso de erros.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Erro de parse de formulario/multipart
-http.ERROR.INVALID_STATE  -- Estado de resposta invalido
+http.ERROR.INVALID_STATE  -- Estado de resposta inválido
 http.ERROR.WRITE_FAILED   -- Erro de escrita de resposta
 http.ERROR.STREAM_ERROR   -- Erro de stream do corpo
 ```
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Sem contexto HTTP | `errors.INTERNAL` | não |
 | Corpo muito grande | `errors.INVALID` | não |
 | Timeout de leitura | `errors.INTERNAL` | não |
-| JSON invalido | `errors.INVALID` | não |
+| JSON inválido | `errors.INVALID` | não |
 | Não e multipart | `errors.INVALID` | não |
 | Headers ja enviados | `errors.INVALID` | não |
 | Escrita falhou | `errors.INTERNAL` | não |

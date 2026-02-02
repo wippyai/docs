@@ -3,9 +3,9 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Avalie expressoes dinamicas usando a sintaxe [expr-lang](https://expr-lang.org/). Compile e execute expressoes seguras para filtragem, validacao e avaliacao de regras sem execução Lua completa.
+Avalie expressoes dinamicas usando a sintaxe [expr-lang](https://expr-lang.org/). Compile e execute expressoes seguras para filtragem, validação e avaliação de regras sem execução Lua completa.
 
-## Configuracao
+## Configuração
 
 O cache de expressoes e configurado no boot:
 
@@ -39,7 +39,7 @@ local total = expr.eval("price * quantity", {
 -- Expressoes booleanas
 local is_adult = expr.eval("age >= 18", {age = 21})  -- true
 
--- Operacoes com string
+-- Operações com string
 local greeting = expr.eval('name + " is " + status', {
     name = "Alice",
     status = "online"
@@ -50,7 +50,7 @@ local label = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
     score = 85
 })  -- "B"
 
--- Operacoes com array
+-- Operações com array
 local has_admin = expr.eval('"admin" in roles', {
     roles = {"user", "admin", "viewer"}
 })  -- true
@@ -65,7 +65,7 @@ local has_admin = expr.eval('"admin" in roles', {
 
 ## Compilando Expressoes
 
-Compilar uma expressao em um objeto Program reutilizavel para avaliacao repetida:
+Compilar uma expressao em um objeto Program reutilizavel para avaliação repetida:
 
 ```lua
 -- Compilar uma vez para uso repetido
@@ -83,7 +83,7 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `expression` | string | Expressao em sintaxe expr-lang |
-| `env` | table | Ambiente de tipos para compilacao (opcional) |
+| `env` | table | Ambiente de tipos para compilação (opcional) |
 
 **Retorna:** `Program, error`
 
@@ -92,13 +92,13 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 Executar uma expressao compilada com ambiente fornecido:
 
 ```lua
--- Regra de validacao
+-- Regra de validação
 local validator, _ = expr.compile("len(password) >= 8 and len(password) <= 128")
 
 local valid1 = validator:run({password = "short"})       -- false
 local valid2 = validator:run({password = "securepass123"}) -- true
 
--- Regra de precificacao
+-- Regra de precificação
 local pricer, _ = expr.compile([[
     base_price * quantity * (1 - bulk_discount) + shipping
 ]])
@@ -117,37 +117,37 @@ local order_total = pricer:run({
 
 **Retorna:** `any, error`
 
-## Funcoes Built-in
+## Funções Built-in
 
-Expr-lang fornece muitas funcoes built-in:
+Expr-lang fornece muitas funções built-in:
 
 ```lua
--- Funcoes matematicas
+-- Funções matematicas
 expr.eval("max(1, 5, 3)")        -- 5
 expr.eval("min(10, 2, 8)")       -- 2
 expr.eval("abs(-42)")            -- 42
 expr.eval("ceil(3.2)")           -- 4
 expr.eval("floor(3.8)")          -- 3
 
--- Funcoes de string
+-- Funções de string
 expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
 expr.eval('contains("hello", "ell")')  -- true
 
--- Funcoes de array
+-- Funções de array
 expr.eval("len(items)", {items = {1,2,3}})  -- 3
 expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 ```
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Expressao vazia | `errors.INVALID` | não |
 | Sintaxe de expressao invalida | `errors.INTERNAL` | não |
-| Avaliacao de expressao falhou | `errors.INTERNAL` | não |
+| Avaliação de expressao falhou | `errors.INTERNAL` | não |
 | Conversao de resultado falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

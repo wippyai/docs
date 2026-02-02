@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Acesse variaveis de ambiente para valores de configuracao, secrets e configuracoes de runtime.
+Acesse variaveis de ambiente para valores de configuração, secrets e configuracoes de runtime.
 
 Variaveis devem ser definidas no [Environment System](system-env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (OS, arquivo, memoria) fornecem valores e se variaveis sao somente leitura.
 
@@ -32,7 +32,7 @@ local host = env.get("HOST") or "localhost"
 local api_key = env.get("API_SECRET_KEY")
 local jwt_secret = env.get("JWT_SECRET")
 
--- Configuracao
+-- Configuração
 local log_level = env.get("LOG_LEVEL") or "info"
 local debug_mode = env.get("DEBUG") == "true"
 ```
@@ -50,7 +50,7 @@ Retorna `nil, error` se variavel não existe.
 Define uma variavel de ambiente.
 
 ```lua
--- Definir configuracao de runtime
+-- Definir configuração de runtime
 env.set("APP_MODE", "production")
 
 -- Sobrescrever para testes
@@ -76,7 +76,7 @@ Obtem todas as variaveis de ambiente acessiveis.
 ```lua
 local vars = env.get_all()
 
--- Logar configuracao (cuidado para não logar secrets)
+-- Logar configuração (cuidado para não logar secrets)
 for key, value in pairs(vars) do
     if not key:match("SECRET") and not key:match("KEY") then
         logger.debug("env", {[key] = value})
@@ -94,13 +94,13 @@ end
 
 **Retorna:** `table, error`
 
-## Permissoes
+## Permissões
 
-Acesso a ambiente está sujeito a avaliacao de politica de seguranca.
+Acesso a ambiente está sujeito a avaliação de política de segurança.
 
-### Acoes de Seguranca
+### Acoes de Segurança
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `env.get` | Nome da variavel | Ler variavel de ambiente |
 | `env.set` | Nome da variavel | Escrever variavel de ambiente |
@@ -116,15 +116,15 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Veja [Security Model](system-security.md) para configuracao de politicas.
+Veja [Security Model](system-security.md) para configuração de políticas.
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Chave vazia | `errors.INVALID` | não |
 | Variavel não encontrada | `errors.NOT_FOUND` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 

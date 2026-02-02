@@ -41,7 +41,7 @@ Cada tabela de módulo contem:
 |-------|------|-----------|
 | `name` | string | Nome do módulo |
 | `description` | string | Descrição do módulo |
-| `class` | string[] | Tags de classificacao do módulo |
+| `class` | string[] | Tags de classificação do módulo |
 
 ## Estatisticas de Memoria
 
@@ -73,7 +73,7 @@ Tabela de stats contem:
 | `num_gc` | number | Numero de ciclos GC completados |
 | `next_gc` | number | Tamanho alvo do heap para proximo GC |
 
-## Alocacao Atual
+## Alocação Atual
 
 Obter bytes atualmente alocados:
 
@@ -227,13 +227,13 @@ Tabela de estado contem:
 | `status` | string | Status atual |
 | `desired` | string | Status desejado |
 | `retry_count` | number | Numero de retries |
-| `last_update` | number | Timestamp da ultima atualizacao (nanossegundos) |
+| `last_update` | number | Timestamp da ultima atualização (nanossegundos) |
 | `started_at` | number | Timestamp de inicio (nanossegundos) |
 | `details` | string | Detalhes opcionais (formatados) |
 
 ## Todos os Estados de Servico
 
-Obter estados para todos os servicos supervisionados:
+Obter estados para todos os serviços supervisionados:
 
 ```lua
 local states, err = system.supervisor.states()
@@ -243,11 +243,11 @@ local states, err = system.supervisor.states()
 
 Cada tabela de estado tem o mesmo formato que `system.supervisor.state()`.
 
-## Permissoes
+## Permissões
 
-Operacoes de sistema estao sujeitas a avaliacao de politica de seguranca.
+Operações de sistema estao sujeitas a avaliação de política de segurança.
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `system.read` | `memory` | Ler estatisticas de memoria |
 | `system.read` | `memory_limit` | Ler limite de memoria |
@@ -267,10 +267,10 @@ Operacoes de sistema estao sujeitas a avaliacao de politica de seguranca.
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
-| Argumento invalido | `errors.INVALID` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Argumento inválido | `errors.INVALID` | não |
 | Argumento obrigatorio ausente | `errors.INVALID` | não |
 | Code manager indisponivel | `errors.INTERNAL` | não |
 | Info de servico indisponivel | `errors.INTERNAL` | não |

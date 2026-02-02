@@ -172,7 +172,7 @@ local diff, err = text.diff.new(options)
 
 **Retorna:** `Differ, error`
 
-#### Opcoes {id="diff-options"}
+#### Opções {id="diff-options"}
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -185,7 +185,7 @@ local diff, err = text.diff.new(options)
 
 ### Compare
 
-Encontra diferencas entre dois textos. Retorna um array de operacoes descrevendo como transformar text1 em text2.
+Encontra diferencas entre dois textos. Retorna um array de operações descrevendo como transformar text1 em text2.
 
 ```lua
 local diff, _ = text.diff.new()
@@ -204,7 +204,7 @@ local diffs, err = diff:compare("hello world", "hello there")
 
 **Retorna:** `table, error` (array de {operation, text})
 
-Operacoes: `"equal"`, `"delete"`, `"insert"`
+Operações: `"equal"`, `"delete"`, `"insert"`
 
 ### Summarize
 
@@ -311,7 +311,7 @@ local chunks, err = splitter:split_text(long_text)
 
 **Retorna:** `Splitter, error`
 
-#### Opcoes {id="recursive-splitter-options"}
+#### Opções {id="recursive-splitter-options"}
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -337,14 +337,14 @@ local chunks, err = splitter:split_text(readme)
 
 **Retorna:** `Splitter, error`
 
-#### Opcoes {id="markdown-splitter-options"}
+#### Opções {id="markdown-splitter-options"}
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `chunk_size` | integer | 4000 | Max caracteres por chunk |
 | `chunk_overlap` | integer | 200 | Caracteres repetidos entre chunks adjacentes |
 | `code_blocks` | boolean | false | Manter blocos de código juntos |
-| `reference_links` | boolean | false | Preservar links de referencia |
+| `reference_links` | boolean | false | Preservar links de referência |
 | `heading_hierarchy` | boolean | false | Respeitar niveis de heading |
 | `join_table_rows` | boolean | false | Manter linhas de tabela juntas |
 
@@ -394,7 +394,7 @@ end
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Sintaxe de padrão invalida | `errors.INVALID` | não |
 | Erro interno | `errors.INTERNAL` | não |

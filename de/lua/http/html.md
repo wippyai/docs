@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Bereinigen Sie nicht vertrauenswurdiges HTML, um XSS-Angriffe zu verhindern. Basiert auf [bluemonday](https://github.com/microcosm-cc/bluemonday).
+Bereinigen Sie nicht vertrauenswürdiges HTML, um XSS-Angriffe zu verhindern. Basiert auf [bluemonday](https://github.com/microcosm-cc/bluemonday).
 
 Bereinigung funktioniert durch Parsen von HTML und Filtern durch eine Whitelist-Richtlinie. Elemente und Attribute, die nicht explizit erlaubt sind, werden entfernt. Die Ausgabe ist immer wohlgeformtes HTML.
 
@@ -15,12 +15,12 @@ local html = require("html")
 
 ## Vordefinierte Richtlinien
 
-Drei eingebaute Richtlinien für haufige Anwendungsfalle:
+Drei eingebaute Richtlinien für häufige Anwendungsfälle:
 
 | Richtlinie | Anwendungsfall | Erlaubt |
 |--------|----------|--------|
 | `new_policy` | Benutzerdefinierte Bereinigung | Nichts (von Grund auf aufbauen) |
-| `ugc_policy` | Benutzerkommentare, Foren | Gangige Formatierung (`p`, `b`, `i`, `a`, Listen, etc.) |
+| `ugc_policy` | Benutzerkommentare, Foren | Gängige Formatierung (`p`, `b`, `i`, `a`, Listen, etc.) |
 | `strict_policy` | Reintext-Extraktion | Nichts (entfernt alles HTML) |
 
 ### Leere Richtlinie
@@ -40,7 +40,7 @@ local clean = policy:sanitize(user_input)
 
 ### Benutzerinhalt-Richtlinie
 
-Vorkonfiguriert für benutzergenerierten Inhalt. Erlaubt gangige Formatierungselemente.
+Vorkonfiguriert für benutzergenerierten Inhalt. Erlaubt gängige Formatierungselemente.
 
 ```lua
 local policy = html.sanitize.ugc_policy()
@@ -175,7 +175,7 @@ policy:allow_standard_urls()
 
 ### URL-Schemata
 
-Einschranken, welche URL-Schemata erlaubt sind.
+Einschränken, welche URL-Schemata erlaubt sind.
 
 ```lua
 policy:allow_url_schemes("https", "mailto")
@@ -318,7 +318,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### Standardattribute erlauben
 
-Gangige Attribute erlauben: `id`, `class`, `title`, `dir`, `lang`.
+Gängige Attribute erlauben: `id`, `class`, `title`, `dir`, `lang`.
 
 ```lua
 policy:allow_elements("p")
@@ -353,6 +353,6 @@ local clean = policy:sanitize(dirty)
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Ungultiges Regex-Muster | `errors.INVALID` | nein |
+| Ungültiges Regex-Muster | `errors.INVALID` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

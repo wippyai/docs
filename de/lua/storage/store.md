@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Schneller Key-Value-Speicher mit TTL-Unterstutzung. Ideal für Caching, Sessions und temporare Zustande.
+Schneller Key-Value-Speicher mit TTL-Unterstützung. Ideal für Caching, Sessions und temporäre Zustände.
 
 Für Speicherkonfiguration siehe [Store](system-store.md).
 
@@ -46,7 +46,7 @@ local cache = store.get("app:cache")
 -- Einfaches Setzen
 cache:set("user:123:name", "Alice")
 
--- Setzen mit TTL (lauft in 300 Sekunden ab)
+-- Setzen mit TTL (läuft in 300 Sekunden ab)
 cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 ```
 
@@ -77,9 +77,9 @@ end
 
 Gibt `nil` zurück, wenn der Schlüssel nicht existiert.
 
-## Existenz prufen
+## Existenz prüfen
 
-Prufen Sie, ob ein Schlüssel existiert, ohne ihn abzurufen:
+Prüfen Sie, ob ein Schlüssel existiert, ohne ihn abzurufen:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
@@ -89,7 +89,7 @@ end
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Zu prufender Schlüssel |
+| `key` | string | Zu prüfender Schlüssel |
 
 **Gibt zurück:** `boolean, error`
 
@@ -107,7 +107,7 @@ cache:delete("session:" .. session_id)
 
 **Gibt zurück:** `boolean, error`
 
-Gibt `true` zurück wenn geloscht, `false` wenn Schlüssel nicht existierte.
+Gibt `true` zurück wenn gelöscht, `false` wenn Schlüssel nicht existierte.
 
 ## Store-Methoden
 
@@ -115,9 +115,9 @@ Gibt `true` zurück wenn geloscht, `false` wenn Schlüssel nicht existierte.
 |--------|---------|-------------|
 | `get(key)` | `any, error` | Wert nach Schlüssel abrufen |
 | `set(key, value, ttl?)` | `boolean, error` | Wert mit optionaler TTL speichern |
-| `has(key)` | `boolean, error` | Prufen ob Schlüssel existiert |
+| `has(key)` | `boolean, error` | Prüfen ob Schlüssel existiert |
 | `delete(key)` | `boolean, error` | Schlüssel entfernen |
-| `release()` | `boolean` | Store an Pool zuruckgeben |
+| `release()` | `boolean` | Store an Pool zurückgeben |
 
 ## Berechtigungen
 
@@ -129,7 +129,7 @@ Store-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `store.key.get` | Store-ID | `key` | Schlüsselwert lesen |
 | `store.key.set` | Store-ID | `key` | Schlüsselwert schreiben |
 | `store.key.delete` | Store-ID | `key` | Schlüssel löschen |
-| `store.key.has` | Store-ID | `key` | Schlüsselexistenz prufen |
+| `store.key.has` | Store-ID | `key` | Schlüsselexistenz prüfen |
 
 ## Fehler
 

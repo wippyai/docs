@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Regulare Ausdrucke, Text-Diffing und semantisches Text-Splitting.
+Reguläre Ausdrücke, Text-Diffing und semantisches Text-Splitting.
 
 ## Laden
 
@@ -11,7 +11,7 @@ Regulare Ausdrucke, Text-Diffing und semantisches Text-Splitting.
 local text = require("text")
 ```
 
-## Regulare Ausdrucke
+## Reguläre Ausdrücke
 
 ### Kompilieren
 
@@ -71,7 +71,7 @@ local match = re:find_string_submatch("user@example.com")
 |-----------|------|-------------|
 | `s` | string | Zu durchsuchender String |
 
-**Gibt zurück:** `string[] | nil` (vollstandiger Match + Capture-Gruppen)
+**Gibt zurück:** `string[] | nil` (vollständiger Match + Capture-Gruppen)
 
 ### Find All mit Gruppen
 
@@ -180,7 +180,7 @@ local diff, err = text.diff.new(options)
 | `diff_edit_cost` | integer | 4 | Kosten einer leeren Bearbeitung |
 | `match_threshold` | number | 0.5 | Match-Toleranz 0-1 |
 | `match_distance` | integer | 1000 | Distanz zur Match-Suche |
-| `patch_delete_threshold` | number | 0.5 | Losch-Schwelle |
+| `patch_delete_threshold` | number | 0.5 | Lösch-Schwelle |
 | `patch_margin` | integer | 4 | Kontext-Rand |
 
 ### Vergleichen
@@ -191,7 +191,7 @@ Unterschiede zwischen zwei Texten finden. Gibt ein Array von Operationen zurück
 local diff, _ = text.diff.new()
 local diffs, err = diff:compare("hello world", "hello there")
 
--- diffs enthalt:
+-- diffs enthält:
 -- {operation = "equal", text = "hello "}
 -- {operation = "delete", text = "world"}
 -- {operation = "insert", text = "there"}
@@ -208,15 +208,15 @@ Operationen: `"equal"`, `"delete"`, `"insert"`
 
 ### Zusammenfassen
 
-Geanderte Zeichen zwischen Versionen zahlen.
+Geänderte Zeichen zwischen Versionen zählen.
 
 ```lua
 local diffs, _ = diff:compare("hello world", "hello there")
 local summary = diff:summarize(diffs)
 
--- summary.equals = 6 (unveranderte Zeichen)
+-- summary.equals = 6 (unveränderte Zeichen)
 -- summary.deletions = 5 (entfernte Zeichen)
--- summary.insertions = 5 (hinzugefugte Zeichen)
+-- summary.insertions = 5 (hinzugefügte Zeichen)
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -257,7 +257,7 @@ local html, err = diff:pretty_html(diffs)
 
 ### Patches erstellen
 
-Patches generieren, die angewendet werden können, um einen Text in einen anderen zu transformieren. Patches können serialisiert und spater angewendet werden.
+Patches generieren, die angewendet werden können, um einen Text in einen anderen zu transformieren. Patches können serialisiert und später angewendet werden.
 
 ```lua
 local text1 = "The quick brown fox jumps over the lazy dog"
@@ -292,11 +292,11 @@ local result, success = diff:patch_apply(patches, text1)
 
 ## Text-Splitting
 
-Größe Dokumente in kleinere Chunks aufteilen, wahrend semantische Grenzen erhalten bleiben. Basiert auf [langchaingo](https://github.com/tmc/langchaingo) Text-Splitter.
+Große Dokumente in kleinere Chunks aufteilen, während semantische Grenzen erhalten bleiben. Basiert auf [langchaingo](https://github.com/tmc/langchaingo) Text-Splitter.
 
 ### Rekursiver Splitter
 
-Teilt Text mit einer Hierarchie von Trennzeichen. Versucht zuerst bei doppelten Zeilenumbruchen (Absatze) zu teilen, dann einzelne Zeilenumbruche, dann Leerzeichen, dann Zeichen. Fallt auf kleinere Trennzeichen zurück, wenn Chunks die Größenbegrenzung uberschreiten.
+Teilt Text mit einer Hierarchie von Trennzeichen. Versucht zuerst bei doppelten Zeilenumbrüchen (Absätze) zu teilen, dann einzelne Zeilenumbrüche, dann Leerzeichen, dann Zeichen. Fällt auf kleinere Trennzeichen zurück, wenn Chunks die Größenbegrenzung überschreiten.
 
 ```lua
 local splitter, err = text.splitter.recursive({
@@ -322,7 +322,7 @@ local chunks, err = splitter:split_text(long_text)
 
 ### Markdown-Splitter
 
-Teilt Markdown-Dokumente unter Beachtung der Struktur. Versucht Uberschriften mit ihrem Inhalt zusammenzuhalten, Code-Blocke intakt zu lassen und Tabellenzeilen zusammenzuhalten.
+Teilt Markdown-Dokumente unter Beachtung der Struktur. Versucht Überschriften mit ihrem Inhalt zusammenzuhalten, Code-Blöcke intakt zu lassen und Tabellenzeilen zusammenzuhalten.
 
 ```lua
 local splitter, err = text.splitter.markdown({
@@ -343,9 +343,9 @@ local chunks, err = splitter:split_text(readme)
 |-------|------|---------|-------------|
 | `chunk_size` | integer | 4000 | Max Zeichen pro Chunk |
 | `chunk_overlap` | integer | 200 | Zeichen wiederholt zwischen benachbarten Chunks |
-| `code_blocks` | boolean | false | Code-Blocke zusammenhalten |
+| `code_blocks` | boolean | false | Code-Blöcke zusammenhalten |
 | `reference_links` | boolean | false | Referenz-Links erhalten |
-| `heading_hierarchy` | boolean | false | Uberschriftenebenen beachten |
+| `heading_hierarchy` | boolean | false | Überschriftenebenen beachten |
 | `join_table_rows` | boolean | false | Tabellenzeilen zusammenhalten |
 
 ### Text teilen
@@ -369,7 +369,7 @@ end
 
 ### Batch teilen
 
-Mehrere Dokumente teilen, wahrend ihre Metadaten erhalten bleiben. Jedes Eingabedokument kann mehrere Ausgabe-Chunks produzieren. Alle Chunks erben die Metadaten ihres Quelldokuments.
+Mehrere Dokumente teilen, während ihre Metadaten erhalten bleiben. Jedes Eingabedokument kann mehrere Ausgabe-Chunks produzieren. Alle Chunks erben die Metadaten ihres Quelldokuments.
 
 ```lua
 -- Eingabe: Seiten aus einem PDF mit Seitennummern
@@ -380,7 +380,7 @@ local pages = {
 
 local chunks, err = splitter:split_batch(pages)
 
--- Ausgabe: Jeder Chunk weiss, von welcher Seite er stammt
+-- Ausgabe: Jeder Chunk weiß, von welcher Seite er stammt
 for _, chunk in ipairs(chunks) do
     print("Page " .. chunk.metadata.page .. ": " .. chunk.content:sub(1, 50))
 end
@@ -396,7 +396,7 @@ end
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Ungultige Muster-Syntax | `errors.INVALID` | nein |
+| Ungültige Muster-Syntax | `errors.INVALID` | nein |
 | Interner Fehler | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

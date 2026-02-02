@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Abfragen von Laufzeit-Systeminformationen einschliesslich Speicherverbrauch, Garbage-Collection-Statistiken, CPU-Details und Prozess-Metadaten.
+Abfragen von Laufzeit-Systeminformationen einschließlich Speicherverbrauch, Garbage-Collection-Statistiken, CPU-Details und Prozess-Metadaten.
 
 ## Laden
 
@@ -13,7 +13,7 @@ local system = require("system")
 
 ## Shutdown
 
-Systemshutdown mit Exit-Code auslosen. Nutzlich für Terminal-Apps; Aufruf aus laufenden Actors beendet das gesamte System:
+Systemshutdown mit Exit-Code auslösen. Nützlich für Terminal-Apps; Aufruf aus laufenden Actors beendet das gesamte System:
 
 ```lua
 local ok, err = system.exit(0)
@@ -35,7 +35,7 @@ local mods, err = system.modules()
 
 **Gibt zurück:** `table[], error`
 
-Jede Modul-Tabelle enthalt:
+Jede Modul-Tabelle enthält:
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
@@ -53,7 +53,7 @@ local stats, err = system.memory.stats()
 
 **Gibt zurück:** `table, error`
 
-Stats-Tabelle enthalt:
+Stats-Tabelle enthält:
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
@@ -71,7 +71,7 @@ Stats-Tabelle enthalt:
 | `mspan_in_use` | number | Bytes von mspan-Strukturen in Verwendung |
 | `mspan_sys` | number | Für mspan vom System erhaltene Bytes |
 | `num_gc` | number | Anzahl abgeschlossener GC-Zyklen |
-| `next_gc` | number | Ziel-Heap-Größe für nachsten GC |
+| `next_gc` | number | Ziel-Heap-Größe für nächsten GC |
 
 ## Aktuelle Zuweisung
 
@@ -127,7 +127,7 @@ local ok, err = system.gc.collect()
 
 ## GC-Zielprozentsatz
 
-GC-Zielprozentsatz setzen (gibt vorherigen Wert zurück). Ein Wert von 100 bedeutet, dass GC ausgelost wird, wenn sich der Heap verdoppelt:
+GC-Zielprozentsatz setzen (gibt vorherigen Wert zurück). Ein Wert von 100 bedeutet, dass GC ausgelöst wird, wenn sich der Heap verdoppelt:
 
 ```lua
 local prev, err = system.gc.set_percent(200)
@@ -207,7 +207,7 @@ local hostname, err = system.process.hostname()
 
 ## Service-Status
 
-Status für einen spezifischen uberwachten Service abrufen:
+Status für einen spezifischen überwachten Service abrufen:
 
 ```lua
 local state, err = system.supervisor.state("namespace:service")
@@ -219,13 +219,13 @@ local state, err = system.supervisor.state("namespace:service")
 
 **Gibt zurück:** `table, error`
 
-Status-Tabelle enthalt:
+Status-Tabelle enthält:
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
 | `id` | string | Service-ID |
 | `status` | string | Aktueller Status |
-| `desired` | string | Gewunschter Status |
+| `desired` | string | Gewünschter Status |
 | `retry_count` | number | Anzahl der Wiederholungen |
 | `last_update` | number | Letzter Aktualisierungszeitstempel (Nanosekunden) |
 | `started_at` | number | Start-Zeitstempel (Nanosekunden) |
@@ -233,7 +233,7 @@ Status-Tabelle enthalt:
 
 ## Alle Service-Status
 
-Status für alle uberwachten Services abrufen:
+Status für alle überwachten Services abrufen:
 
 ```lua
 local states, err = system.supervisor.states()
@@ -263,14 +263,14 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `system.read` | `hostname` | Hostname lesen |
 | `system.read` | `modules` | Geladene Module auflisten |
 | `system.read` | `supervisor` | Supervisor-Status lesen |
-| `system.exit` | - | System-Shutdown auslosen |
+| `system.exit` | - | System-Shutdown auslösen |
 
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
-| Ungultiges Argument | `errors.INVALID` | nein |
+| Ungültiges Argument | `errors.INVALID` | nein |
 | Fehlendes erforderliches Argument | `errors.INVALID` | nein |
 | Code-Manager nicht verfügbar | `errors.INTERNAL` | nein |
 | Service-Info nicht verfügbar | `errors.INTERNAL` | nein |

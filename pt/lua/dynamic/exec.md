@@ -6,7 +6,7 @@
 
 Execute comandos externos e scripts shell com controle total sobre streams de I/O.
 
-Para configuracao de executor, veja [Executor](system-exec.md).
+Para configuração de executor, veja [Executor](system-exec.md).
 
 ## Carregamento
 
@@ -40,7 +40,7 @@ executor:release()
 
 ## Criando um Processo
 
-Criar um novo processo com o comando especificado:
+Criar um novo processo com o comando específicado:
 
 ```lua
 -- Comando simples
@@ -185,21 +185,21 @@ local SIGINT = 2
 proc:signal(SIGINT)
 ```
 
-## Permissoes
+## Permissões
 
-Operacoes de exec estao sujeitas a avaliacao de politica de seguranca.
+Operações de exec estao sujeitas a avaliação de política de segurança.
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `exec.get` | ID do Executor | Obter um recurso de executor |
 | `exec.run` | Comando | Executar um comando especifico |
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| ID invalido | `errors.INVALID` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| ID inválido | `errors.INVALID` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Processo fechado | `errors.INVALID` | não |
 | Processo não iniciado | `errors.INVALID` | não |
 | Ja iniciado | `errors.INVALID` | não |

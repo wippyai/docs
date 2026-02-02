@@ -3,7 +3,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Faca requisicoes HTTP para servicos externos. Suporta todos os metodos HTTP, headers, parametros de query, dados de formulario, uploads de arquivo, respostas em streaming e requisicoes em lote concorrentes.
+Faca requisicoes HTTP para serviços externos. Suporta todos os métodos HTTP, headers, parametros de query, dados de formulario, uploads de arquivo, respostas em streaming e requisicoes em lote concorrentes.
 
 ## Carregamento
 
@@ -11,11 +11,11 @@ Faca requisicoes HTTP para servicos externos. Suporta todos os metodos HTTP, hea
 local http_client = require("http_client")
 ```
 
-## Metodos HTTP
+## Métodos HTTP
 
-Todos os metodos compartilham a mesma assinatura: `method(url, options?)` retornando `Response, error`.
+Todos os métodos compartilham a mesma assinatura: `method(url, options?)` retornando `Response, error`.
 
-### Requisicao GET
+### Requisição GET
 
 ```lua
 local resp, err = http_client.get("https://api.example.com/users")
@@ -27,7 +27,7 @@ print(resp.status_code)  -- 200
 print(resp.body)         -- corpo da resposta
 ```
 
-### Requisicao POST
+### Requisição POST
 
 ```lua
 local resp, err = http_client.post("https://api.example.com/users", {
@@ -36,7 +36,7 @@ local resp, err = http_client.post("https://api.example.com/users", {
 })
 ```
 
-### Requisicao PUT
+### Requisição PUT
 
 ```lua
 local resp, err = http_client.put("https://api.example.com/users/123", {
@@ -45,7 +45,7 @@ local resp, err = http_client.put("https://api.example.com/users/123", {
 })
 ```
 
-### Requisicao PATCH
+### Requisição PATCH
 
 ```lua
 local resp, err = http_client.patch("https://api.example.com/users/123", {
@@ -53,7 +53,7 @@ local resp, err = http_client.patch("https://api.example.com/users/123", {
 })
 ```
 
-### Requisicao DELETE
+### Requisição DELETE
 
 ```lua
 local resp, err = http_client.delete("https://api.example.com/users/123", {
@@ -61,7 +61,7 @@ local resp, err = http_client.delete("https://api.example.com/users/123", {
 })
 ```
 
-### Requisicao HEAD
+### Requisição HEAD
 
 Retorna apenas headers, sem corpo.
 
@@ -81,19 +81,19 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `method` | string | Método HTTP |
-| `url` | string | URL da requisicao |
-| `options` | table | Opcoes da requisicao (opcional) |
+| `url` | string | URL da requisição |
+| `options` | table | Opções da requisição (opcional) |
 
-## Opcoes de Requisicao
+## Opções de Requisição
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `headers` | table | Headers da requisicao `{["Name"] = "value"}` |
-| `body` | string | Corpo da requisicao |
+| `headers` | table | Headers da requisição `{["Name"] = "value"}` |
+| `body` | string | Corpo da requisição |
 | `query` | table | Parametros de query `{key = "value"}` |
 | `form` | table | Dados de formulario (define Content-Type automaticamente) |
 | `files` | table | Uploads de arquivo (array de definicoes de arquivo) |
-| `cookies` | table | Cookies da requisicao `{name = "value"}` |
+| `cookies` | table | Cookies da requisição `{name = "value"}` |
 | `auth` | table | Basic auth `{user = "name", pass = "secret"}` |
 | `timeout` | number/string | Timeout: numero em segundos, ou string como `"30s"`, `"1m"` |
 | `stream` | boolean | Streaming do corpo da resposta ao inves de buffer |
@@ -112,7 +112,7 @@ local resp, err = http_client.get("https://api.example.com/search", {
 })
 ```
 
-### Headers e Autenticacao
+### Headers e Autenticação
 
 ```lua
 local resp, err = http_client.get("https://api.example.com/data", {
@@ -171,7 +171,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 -- Numero: segundos
 local resp, err = http_client.get(url, {timeout = 30})
 
--- String: formato de duracao Go
+-- String: formato de duração Go
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
@@ -224,7 +224,7 @@ resp.stream:close()
 
 | Método Stream | Retorna | Descrição |
 |---------------|---------|-----------|
-| `read(size)` | string, error | Ler ate `size` bytes |
+| `read(size)` | string, error | Ler até `size` bytes |
 | `close()` | - | Fechar o stream |
 
 ## Requisicoes em Lote
@@ -256,14 +256,14 @@ end
 |-----------|------|-----------|
 | `requests` | table | Array de `{method, url, options?}` |
 
-**Retorna:** `responses, errors` - arrays indexados pela posicao da requisicao
+**Retorna:** `responses, errors` - arrays indexados pela posicao da requisição
 
 **Notas:**
 - Requisicoes executam concorrentemente
 - Streaming (`stream = true`) não e suportado em lote
 - Arrays de resultado correspondem a ordem das requisicoes (indexados a partir de 1)
 
-## Codificacao de URL
+## Codificação de URL
 
 ### Codificar
 
@@ -281,15 +281,15 @@ local decoded, err = http_client.decode_uri("hello+world")
 -- "hello world"
 ```
 
-## Permissoes
+## Permissões
 
-Requisicoes HTTP estao sujeitas a avaliacao de politica de seguranca.
+Requisicoes HTTP estao sujeitas a avaliação de política de segurança.
 
-### Acoes de Seguranca
+### Acoes de Segurança
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
-| `http_client.request` | URL | Permitir/negar requisicoes para URLs especificas |
+| `http_client.request` | URL | Permitir/negar requisicoes para URLs específicas |
 | `http_client.unix_socket` | Caminho do socket | Permitir/negar conexoes Unix socket |
 | `http_client.private_ip` | Endereco IP | Permitir/negar acesso a faixas de IP privado |
 
@@ -305,23 +305,23 @@ end
 
 ### Protecao SSRF
 
-Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas por padrão. Acesso requer a permissao `http_client.private_ip`.
+Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas por padrão. Acesso requer a permissão `http_client.private_ip`.
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Erro: not allowed: private IP 192.168.1.1
 ```
 
-Veja [Security Model](system-security.md) para configuracao de politicas.
+Veja [Security Model](system-security.md) para configuração de políticas.
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Politica de seguranca negou | `errors.PERMISSION_DENIED` | não |
+| Política de segurança negou | `errors.PERMISSION_DENIED` | não |
 | IP privado bloqueado | `errors.PERMISSION_DENIED` | não |
 | Socket Unix negado | `errors.PERMISSION_DENIED` | não |
-| URL ou opcoes invalidas | `errors.INVALID` | não |
+| URL ou opções invalidas | `errors.INVALID` | não |
 | Sem contexto | `errors.INTERNAL` | não |
 | Falha de rede | `errors.INTERNAL` | sim |
 | Timeout | `errors.INTERNAL` | sim |

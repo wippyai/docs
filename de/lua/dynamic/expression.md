@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Werten Sie dynamische Ausdrucke mit [expr-lang](https://expr-lang.org/)-Syntax aus. Kompilieren und fuhren Sie sichere Ausdrucke für Filterung, Validierung und Regelauswertung ohne vollstandige Lua-Ausfuhrung aus.
+Werten Sie dynamische Ausdrücke mit [expr-lang](https://expr-lang.org/)-Syntax aus. Kompilieren und führen Sie sichere Ausdrücke für Filterung, Validierung und Regelauswertung ohne vollständige Lua-Ausführung aus.
 
 ## Konfiguration
 
@@ -13,7 +13,7 @@ Ausdruck-Cache wird beim Start konfiguriert:
 lua:
   expr:
     cache_enabled: true   # Ausdruck-Caching aktivieren
-    capacity: 5000        # Cache-Kapazitat
+    capacity: 5000        # Cache-Kapazität
 ```
 
 ## Laden
@@ -22,9 +22,9 @@ lua:
 local expr = require("expr")
 ```
 
-## Ausdrucke auswerten
+## Ausdrücke auswerten
 
-Werten Sie einen Ausdruck-String aus und geben Sie das Ergebnis zurück. Verwendet internen LRU-Cache für kompilierte Ausdrucke:
+Werten Sie einen Ausdruck-String aus und geben Sie das Ergebnis zurück. Verwendet internen LRU-Cache für kompilierte Ausdrücke:
 
 ```lua
 -- Einfache Mathematik
@@ -36,7 +36,7 @@ local total = expr.eval("price * quantity", {
     quantity = 3
 })  -- 89.97
 
--- Boolesche Ausdrucke
+-- Boolesche Ausdrücke
 local is_adult = expr.eval("age >= 18", {age = 21})  -- true
 
 -- String-Operationen
@@ -45,7 +45,7 @@ local greeting = expr.eval('name + " is " + status', {
     status = "online"
 })  -- "Alice is online"
 
--- Ternarer Operator
+-- Ternärer Operator
 local label = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
     score = 85
 })  -- "B"
@@ -63,7 +63,7 @@ local has_admin = expr.eval('"admin" in roles', {
 
 **Gibt zurück:** `any, error`
 
-## Ausdrucke kompilieren
+## Ausdrücke kompilieren
 
 Kompilieren Sie einen Ausdruck in ein wiederverwendbares Program-Objekt für wiederholte Auswertung:
 
@@ -89,7 +89,7 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 
 ## Kompilierte Programme ausführen
 
-Fuhren Sie einen kompilierten Ausdruck mit bereitgestellter Umgebung aus:
+Führen Sie einen kompilierten Ausdruck mit bereitgestellter Umgebung aus:
 
 ```lua
 -- Validierungsregel
@@ -147,7 +147,7 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 |-----------|------|-----------|
 | Ausdruck ist leer | `errors.INVALID` | nein |
 | Ausdruck-Syntax ungültig | `errors.INTERNAL` | nein |
-| Ausdrucksauswertung schlagt fehl | `errors.INTERNAL` | nein |
-| Ergebniskonvertierung schlagt fehl | `errors.INTERNAL` | nein |
+| Ausdrucksauswertung schlägt fehl | `errors.INTERNAL` | nein |
+| Ergebniskonvertierung schlägt fehl | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

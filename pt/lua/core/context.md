@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Acessa valores de contexto com escopo de requisicao. Contexto e definido via [Funcs](lua-funcs.md) ou [Process](lua-process.md).
+Acessa valores de contexto com escopo de requisição. Contexto é definido via [Funcs](lua-funcs.md) ou [Process](lua-process.md).
 
 ## Carregamento
 
@@ -35,7 +35,7 @@ local values, err = ctx.all()
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Chave vazia | `errors.INVALID` | não |
 | Chave não encontrada | `errors.NOT_FOUND` | não |

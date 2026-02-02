@@ -175,8 +175,8 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `code` | number | Schliess-Code (1000-4999), Standard 1000 |
-| `reason` | string | Schliessgrund (optional) |
+| `code` | number | Schließ-Code (1000-4999), Standard 1000 |
+| `reason` | string | Schließgrund (optional) |
 
 **Gibt zurück:** `boolean, error`
 
@@ -205,22 +205,22 @@ websocket.COMPRESSION.CONTEXT_TAKEOVER -- 1 (gleitendes Fenster)
 websocket.COMPRESSION.NO_CONTEXT       -- 2 (pro Nachricht)
 ```
 
-### Schliess-Codes
+### Schließ-Codes
 
 | Konstante | Code | Beschreibung |
 |----------|------|-------------|
 | `NORMAL` | 1000 | Normales Schließen |
-| `GOING_AWAY` | 1001 | Server fahrt herunter |
+| `GOING_AWAY` | 1001 | Server fährt herunter |
 | `PROTOCOL_ERROR` | 1002 | Protokollfehler |
-| `UNSUPPORTED_DATA` | 1003 | Nicht unterstutzter Datentyp |
+| `UNSUPPORTED_DATA` | 1003 | Nicht unterstützter Datentyp |
 | `NO_STATUS` | 1005 | Kein Status empfangen |
 | `ABNORMAL_CLOSURE` | 1006 | Verbindung verloren |
-| `INVALID_PAYLOAD` | 1007 | Ungultiger Frame-Payload |
+| `INVALID_PAYLOAD` | 1007 | Ungültiger Frame-Payload |
 | `POLICY_VIOLATION` | 1008 | Richtlinienverletzung |
-| `MESSAGE_TOO_BIG` | 1009 | Nachricht zu gross |
+| `MESSAGE_TOO_BIG` | 1009 | Nachricht zu groß |
 | `INTERNAL_ERROR` | 1011 | Serverfehler |
 | `SERVICE_RESTART` | 1012 | Server startet neu |
-| `TRY_AGAIN_LATER` | 1013 | Server uberlastet |
+| `TRY_AGAIN_LATER` | 1013 | Server überlastet |
 
 ```lua
 client:close(websocket.CLOSE_CODES.NORMAL, "Done")
@@ -313,7 +313,7 @@ Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
 | URL nicht erlaubt | `errors.PERMISSION_DENIED` | nein |
 | Kein Kontext | `errors.INTERNAL` | nein |
 | Verbindung fehlgeschlagen | `errors.INTERNAL` | ja |
-| Ungultige Verbindungs-ID | `errors.INTERNAL` | nein |
+| Ungültige Verbindungs-ID | `errors.INTERNAL` | nein |
 
 ```lua
 local client, err = websocket.connect(url)
