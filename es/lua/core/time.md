@@ -1,4 +1,4 @@
-# Tiempo y Duracion
+# Tiempo y Duración
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
@@ -49,7 +49,7 @@ local meeting = time.date(2024, time.JANUARY, 15, 14, 0, 0, 0, ny)
 local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `year` | number | Ano |
 | `month` | number | Mes (1-12 o `time.JANUARY` etc) |
@@ -77,7 +77,7 @@ local js_timestamp = 1703862245000
 local t = time.unix(js_timestamp // 1000, (js_timestamp % 1000) * 1000000)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `sec` | number | Segundos Unix |
 | `nsec` | number | Desplazamiento en nanosegundos |
@@ -105,7 +105,7 @@ local ny, _ = time.load_location("America/New_York")
 local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `layout` | string | Layout de formato de tiempo Go |
 | `value` | string | String a parsear |
@@ -120,13 +120,13 @@ local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 ```lua
 local t = time.now()
 
--- Agregar duracion (acepta numero, string o Duration)
+-- Agregar duración (acepta número, string o Duration)
 local tomorrow = t:add("24h")
 local later = t:add(5 * time.MINUTE)
 local d, _ = time.parse_duration("1h30m")
 local future = t:add(d)
 
--- Restar tiempo para obtener duracion
+-- Restar tiempo para obtener duración
 local diff = tomorrow:sub(t)  -- devuelve Duration
 print(diff:hours())           -- 24
 
@@ -136,9 +136,9 @@ local next_year = t:add_date(1, 0, 0)    -- agregar 1 ano
 local last_week = t:add_date(0, 0, -7)   -- restar 7 dias
 ```
 
-| Metodo | Parametros | Devuelve | Descripcion |
+| Método | Parametros | Devuelve | Descripción |
 |--------|------------|----------|-------------|
-| `add(duration)` | number/string/Duration | Time | Agregar duracion |
+| `add(duration)` | number/string/Duration | Time | Agregar duración |
 | `sub(time)` | Time | Duration | Diferencia entre tiempos |
 | `add_date(years, months, days)` | numbers | Time | Agregar unidades de calendario |
 
@@ -153,7 +153,7 @@ t2:after(t1)    -- true
 t1:equal(t1)    -- true
 ```
 
-| Metodo | Parametros | Devuelve | Descripcion |
+| Método | Parametros | Devuelve | Descripción |
 |--------|------------|----------|-------------|
 | `before(time)` | Time | boolean | Es este tiempo antes del otro? |
 | `after(time)` | Time | boolean | Es este tiempo despues del otro? |
@@ -170,7 +170,7 @@ t:format(time.TIME_ONLY)        -- "15:04:05"
 t:format("Mon Jan 2, 2006")     -- "Sun Dec 29, 2024"
 ```
 
-| Metodo | Parametros | Devuelve | Descripcion |
+| Método | Parametros | Devuelve | Descripción |
 |--------|------------|----------|-------------|
 | `format(layout)` | string | string | Formatear usando layout Go |
 | `format_rfc3339()` | - | string | Formatear como RFC3339 |
@@ -220,7 +220,7 @@ t:location()               -- obtener Location actual
 t:location():string()      -- obtener nombre de zona horaria
 ```
 
-| Metodo | Parametros | Devuelve | Descripcion |
+| Método | Parametros | Devuelve | Descripción |
 |--------|------------|----------|-------------|
 | `utc()` | - | Time | Convertir a UTC |
 | `in_local()` | - | Time | Convertir a zona horaria local |
@@ -229,7 +229,7 @@ t:location():string()      -- obtener nombre de zona horaria
 
 ### Redondeo
 
-Redondear o truncar a limites de duracion. **Requiere userdata Duration** (no numero o string).
+Redondear o truncar a limites de duración. **Requiere userdata Duration** (no número o string).
 
 ```lua
 local t = time.now()
@@ -240,12 +240,12 @@ t:round(hour_duration)       -- redondear a hora mas cercana
 t:truncate(minute_duration)  -- truncar a limite de 15 minutos
 ```
 
-| Metodo | Parametros | Devuelve | Descripcion |
+| Método | Parametros | Devuelve | Descripción |
 |--------|------------|----------|-------------|
 | `round(duration)` | Duration | Time | Redondear a multiplo mas cercano |
 | `truncate(duration)` | Duration | Time | Truncar a multiplo |
 
-## Duracion
+## Duración
 
 ### Crear Duraciones
 
@@ -255,16 +255,16 @@ local d, err = time.parse_duration("1h30m45s")
 local d, err = time.parse_duration("500ms")
 local d, err = time.parse_duration("2h30m45s500ms")
 
--- Desde numero (nanosegundos)
+-- Desde número (nanosegundos)
 local d, err = time.parse_duration(time.SECOND)
 local d, err = time.parse_duration(5 * time.MINUTE)
 
 -- Unidades validas: ns, us, ms, s, m, h
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `value` | number/string/Duration | Duracion a parsear |
+| `value` | number/string/Duration | Duración a parsear |
 
 **Devuelve:** `Duration, error`
 
@@ -303,7 +303,7 @@ print("New York:", t:in_location(ny):format(time.TIME_ONLY))
 print("Tokyo:", t:in_location(tokyo):format(time.TIME_ONLY))
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de zona horaria IANA |
 
@@ -323,7 +323,7 @@ local pst = time.fixed_zone("PST", -8*3600)
 local t = time.date(2024, 1, 15, 12, 0, 0, 0, ist)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de zona |
 | `offset` | number | Desplazamiento UTC en segundos |
@@ -341,13 +341,13 @@ time.localtz  -- Zona horaria local del sistema
 
 ### sleep
 
-Pausar ejecucion por duracion especificada. En flujos de trabajo, grabado y reproducido correctamente.
+Pausar ejecución por duración especificada. En flujos de trabajo, grabado y reproducido correctamente.
 
 ```lua
 time.sleep("5s")
 time.sleep(500 * time.MILLISECOND)
 
--- Patron de backoff
+-- Patrón de backoff
 for attempt = 1, 3 do
     local ok = try_operation()
     if ok then break end
@@ -355,13 +355,13 @@ for attempt = 1, 3 do
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Tiempo de dormir |
 
 ### after
 
-Devuelve un canal que recibe una vez despues de la duracion. Funciona con `channel.select`.
+Devuelve un canal que recibe una vez despues de la duración. Funciona con `channel.select`.
 
 ```lua
 -- Timeout simple
@@ -382,7 +382,7 @@ if result.channel == timeout_ch then
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Tiempo a esperar |
 
@@ -390,7 +390,7 @@ end
 
 ### timer
 
-Temporizador de disparo unico que se activa despues de duracion. Puede detenerse o reiniciarse.
+Temporizador de disparo único que se activa despues de duración. Puede detenerse o reiniciarse.
 
 ```lua
 local timer = time.timer("5s")
@@ -417,18 +417,18 @@ end
 timer:stop()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Tiempo hasta disparo |
 
 **Devuelve:** `Timer, error`
 
-| Metodo Timer | Parametros | Devuelve | Descripcion |
+| Método Timer | Parametros | Devuelve | Descripción |
 |--------------|------------|----------|-------------|
 | `response()` | - | Channel | Obtener canal de temporizador |
 | `channel()` | - | Channel | Alias para response() |
 | `stop()` | - | boolean | Cancelar temporizador |
-| `reset(duration)` | number/string/Duration | boolean | Reiniciar con nueva duracion |
+| `reset(duration)` | number/string/Duration | boolean | Reiniciar con nueva duración |
 
 ### ticker
 
@@ -453,13 +453,13 @@ end
 ticker:stop()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Intervalo entre ticks |
 
 **Devuelve:** `Ticker, error`
 
-| Metodo Ticker | Parametros | Devuelve | Descripcion |
+| Método Ticker | Parametros | Devuelve | Descripción |
 |---------------|------------|----------|-------------|
 | `response()` | - | Channel | Obtener canal de ticker |
 | `channel()` | - | Channel | Alias para response() |
@@ -467,9 +467,9 @@ ticker:stop()
 
 ## Constantes
 
-### Unidades de Duracion
+### Unidades de Duración
 
-Las constantes de duracion estan en nanosegundos. Usar con aritmetica.
+Las constantes de duración estan en nanosegundos. Usar con aritmetica.
 
 ```lua
 time.NANOSECOND    -- 1
@@ -535,13 +535,13 @@ time.SATURDAY   -- 6
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Formato de duracion invalido | `errors.INVALID` | no |
+| Formato de duración invalido | `errors.INVALID` | no |
 | Parseo fallido | `errors.INVALID` | no |
 | Nombre de ubicacion vacio | `errors.INVALID` | no |
 | Ubicacion no encontrada | `errors.NOT_FOUND` | no |
-| Duracion <= 0 (timer/ticker) | `errors.INVALID` | no |
+| Duración <= 0 (timer/ticker) | `errors.INVALID` | no |
 
 ```lua
 local t, err = time.parse(time.RFC3339, "invalid")

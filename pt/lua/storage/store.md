@@ -30,7 +30,7 @@ local user = cache:get("user:123")
 cache:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do recurso store |
 
@@ -50,7 +50,7 @@ cache:set("user:123:name", "Alice")
 cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave |
 | `value` | any | Valor (tabelas, strings, numeros, booleans) |
@@ -65,17 +65,17 @@ Obter um valor por chave:
 ```lua
 local user = cache:get("user:123")
 if not user then
-    -- Chave nao encontrada ou expirada
+    -- Chave não encontrada ou expirada
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave para recuperar |
 
 **Retorna:** `any, error`
 
-Retorna `nil` se chave nao existe.
+Retorna `nil` se chave não existe.
 
 ## Verificando Existencia
 
@@ -87,7 +87,7 @@ if cache:has("lock:" .. resource_id) then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave para verificar |
 
@@ -101,17 +101,17 @@ Remover uma chave do store:
 cache:delete("session:" .. session_id)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave para deletar |
 
 **Retorna:** `boolean, error`
 
-Retorna `true` se deletado, `false` se chave nao existia.
+Retorna `true` se deletado, `false` se chave não existia.
 
 ## Metodos do Store
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `get(key)` | `any, error` | Recuperar valor por chave |
 | `set(key, value, ttl?)` | `boolean, error` | Armazenar valor com TTL opcional |
@@ -123,7 +123,7 @@ Retorna `true` se deletado, `false` se chave nao existia.
 
 Operacoes de store estao sujeitas a avaliacao de politica de seguranca.
 
-| Acao | Recurso | Atributos | Descricao |
+| Acao | Recurso | Atributos | Descrição |
 |------|---------|-----------|-----------|
 | `store.get` | ID do Store | - | Adquirir um recurso store |
 | `store.key.get` | ID do Store | `key` | Ler valor de uma chave |
@@ -133,11 +133,11 @@ Operacoes de store estao sujeitas a avaliacao de politica de seguranca.
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| ID de recurso vazio | `errors.INVALID` | nao |
-| Recurso nao encontrado | `errors.NOT_FOUND` | nao |
-| Store liberado | `errors.INVALID` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
+| ID de recurso vazio | `errors.INVALID` | não |
+| Recurso não encontrado | `errors.NOT_FOUND` | não |
+| Store liberado | `errors.INVALID` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

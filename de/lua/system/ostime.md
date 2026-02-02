@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Standard-Lua-`os`-Zeitfunktionen. Liefert echte Wanduhrzeit fur Zeitstempel, Datumsformatierung und Zeitberechnungen.
+Standard-Lua-`os`-Zeitfunktionen. Liefert echte Wanduhrzeit für Zeitstempel, Datumsformatierung und Zeitberechnungen.
 
 ## Laden
 
@@ -48,12 +48,12 @@ local t = os.time({
 | `min` | integer | 0 | Minute 0-59 |
 | `sec` | integer | 0 | Sekunde 0-59 |
 
-Ohne Argumente aufgerufen, gibt den aktuellen Unix-Zeitstempel zuruck.
+Ohne Argumente aufgerufen, gibt den aktuellen Unix-Zeitstempel zurück.
 
-Mit einer Tabelle aufgerufen, verwendet jedes fehlende Feld die oben gezeigten Standards. Die Felder `year`, `month` und `day` verwenden standardmassig das aktuelle Datum, wenn nicht angegeben.
+Mit einer Tabelle aufgerufen, verwendet jedes fehlende Feld die oben gezeigten Standards. Die Felder `year`, `month` und `day` verwenden standardmäßig das aktuelle Datum, wenn nicht angegeben.
 
 ```lua
--- Nur Datum (Uhrzeit standardmassig Mitternacht)
+-- Nur Datum (Uhrzeit standardmäßig Mitternacht)
 os.time({year = 2024, month = 6, day = 15})
 
 -- Teilweise (fullt aktuelles Jahr/Monat aus)
@@ -86,7 +86,7 @@ local t = os.date("*t", now)
 
 | Parameter | Typ | Standard | Beschreibung |
 |-----------|------|---------|-------------|
-| `format` | string | `"%c"` | Format-String, `"*t"` fur Tabelle |
+| `format` | string | `"%c"` | Format-String, `"*t"` für Tabelle |
 | `timestamp` | integer | aktuelle Zeit | Unix-Zeitstempel zum Formatieren |
 
 ### Format-Spezifikatoren
@@ -118,7 +118,7 @@ local t = os.date("*t", now)
 
 ### Datums-Tabelle
 
-Wenn Format `"*t"` ist, gibt eine Tabelle zuruck:
+Wenn Format `"*t"` ist, gibt eine Tabelle zurück:
 
 ```lua
 local t = os.date("*t")
@@ -136,7 +136,7 @@ local t = os.date("*t")
 | `yday` | integer | Tag des Jahres (1-366) | 167 |
 | `isdst` | boolean | Sommerzeit | false |
 
-Verwenden Sie `"!*t"` fur UTC-Datums-Tabelle.
+Verwenden Sie `"!*t"` für UTC-Datums-Tabelle.
 
 ## Verstrichene Zeit messen
 
@@ -145,7 +145,7 @@ Sekunden seit Lua-Runtime-Start abrufen:
 ```lua
 local start = os.clock()
 
--- Arbeit ausfuhren
+-- Arbeit ausführen
 for i = 1, 1000000 do end
 
 local elapsed = os.clock() - start
@@ -174,7 +174,7 @@ print(days)  -- 365
 | `t2` | integer | Spaterer Zeitstempel |
 | `t1` | integer | Fruherer Zeitstempel |
 
-Gibt `t2 - t1` in Sekunden zuruck. Kann negativ sein wenn `t1 > t2`.
+Gibt `t2 - t1` in Sekunden zurück. Kann negativ sein wenn `t1 > t2`.
 
 ## Plattform-Konstante
 

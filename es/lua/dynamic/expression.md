@@ -3,9 +3,9 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Evaluar expresiones dinamicas usando sintaxis [expr-lang](https://expr-lang.org/). Compilar y ejecutar expresiones seguras para filtrado, validacion y evaluacion de reglas sin ejecucion completa de Lua.
+Evaluar expresiones dinamicas usando sintaxis [expr-lang](https://expr-lang.org/). Compilar y ejecutar expresiones seguras para filtrado, validacion y evaluacion de reglas sin ejecución completa de Lua.
 
-## Configuracion
+## Configuración
 
 El cache de expresiones se configura al inicio:
 
@@ -56,7 +56,7 @@ local has_admin = expr.eval('"admin" in roles', {
 })  -- true
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `expression` | string | Expresion en sintaxis expr-lang |
 | `env` | table | Entorno de variables para expresion (opcional) |
@@ -80,7 +80,7 @@ local price2 = discount_calc:run({price = 50, discount_rate = 0.2})   -- 40
 local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `expression` | string | Expresion en sintaxis expr-lang |
 | `env` | table | Entorno de pista de tipo para compilacion (opcional) |
@@ -111,7 +111,7 @@ local order_total = pricer:run({
 })  -- 225.00
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `env` | table | Entorno de variables para expresion (opcional) |
 
@@ -143,7 +143,7 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Expresion vacia | `errors.INVALID` | no |
 | Sintaxis de expresion invalida | `errors.INTERNAL` | no |

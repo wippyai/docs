@@ -29,7 +29,7 @@ storage:upload_object("data/file.txt", "content")
 storage:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do recurso de armazenamento |
 
@@ -59,7 +59,7 @@ file:close()
 storage:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave/caminho do objeto |
 | `content` | string ou Reader | Conteudo como string ou file reader |
@@ -89,7 +89,7 @@ partial:close()
 storage:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave do objeto para baixar |
 | `writer` | Writer | File writer de destino |
@@ -130,7 +130,7 @@ until not result.is_truncated
 storage:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `options.prefix` | string | Filtrar por prefixo de chave |
 | `options.max_keys` | integer | Maximo de objetos a retornar |
@@ -156,7 +156,7 @@ storage:delete_objects({
 storage:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `keys` | string[] | Array de chaves de objetos para deletar |
 
@@ -164,7 +164,7 @@ storage:release()
 
 ## URLs de Download
 
-Criar uma URL temporaria que permite baixar um objeto sem credenciais. Util para compartilhar arquivos com usuarios externos ou servir conteudo atraves da sua aplicacao.
+Criar uma URL temporaria que permite baixar um objeto sem credenciais. Util para compartilhar arquivos com usuarios externos ou servir conteudo atraves da sua aplicação.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -186,10 +186,10 @@ end
 return {download_url = url}
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave do objeto |
-| `options.expiration` | integer | Segundos ate URL expirar (padrao: 3600) |
+| `options.expiration` | integer | Segundos ate URL expirar (padrão: 3600) |
 
 **Retorna:** `string, error`
 
@@ -219,10 +219,10 @@ end
 return {upload_url = url}
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave do objeto |
-| `options.expiration` | integer | Segundos ate URL expirar (padrao: 3600) |
+| `options.expiration` | integer | Segundos ate URL expirar (padrão: 3600) |
 | `options.content_type` | string | Content type obrigatorio para upload |
 | `options.content_length` | integer | Tamanho maximo de upload em bytes |
 
@@ -230,7 +230,7 @@ return {upload_url = url}
 
 ## Metodos de Storage
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `upload_object(key, content)` | `boolean, error` | Upload de string ou conteudo de arquivo |
 | `download_object(key, writer, opts?)` | `boolean, error` | Download para file writer |
@@ -244,23 +244,23 @@ return {upload_url = url}
 
 Operacoes de cloud storage estao sujeitas a avaliacao de politica de seguranca.
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `cloudstorage.get` | ID do Storage | Adquirir um recurso de storage |
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| ID de recurso vazio | `errors.INVALID` | nao |
-| Recurso nao encontrado | `errors.NOT_FOUND` | nao |
-| Nao e recurso cloud storage | `errors.INVALID` | nao |
-| Storage liberado | `errors.INVALID` | nao |
-| Chave vazia | `errors.INVALID` | nao |
-| Conteudo nil | `errors.INVALID` | nao |
-| Writer nao valido | `errors.INVALID` | nao |
-| Objeto nao encontrado | `errors.NOT_FOUND` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
-| Operacao falhou | `errors.INTERNAL` | nao |
+| ID de recurso vazio | `errors.INVALID` | não |
+| Recurso não encontrado | `errors.NOT_FOUND` | não |
+| Não e recurso cloud storage | `errors.INVALID` | não |
+| Storage liberado | `errors.INVALID` | não |
+| Chave vazia | `errors.INVALID` | não |
+| Conteudo nil | `errors.INVALID` | não |
+| Writer não valido | `errors.INVALID` | não |
+| Objeto não encontrado | `errors.NOT_FOUND` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Operação falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

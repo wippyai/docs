@@ -173,7 +173,7 @@ Atualizar o processo atual para uma nova definição preservando o PID:
 
 ```lua
 -- Upgrade para nova versão, passando estado
-process.upgrade(source, ...)
+process.upgrade(id, ...)
 
 -- Manter mesma definição, re-executar com novo estado
 process.upgrade(nil, preserved_state)

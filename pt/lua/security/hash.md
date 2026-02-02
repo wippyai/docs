@@ -21,7 +21,7 @@ local hex = hash.md5("data")
 local raw = hash.md5("data", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para hash |
 | `raw` | boolean? | Retornar bytes raw ao inves de hex |
@@ -35,7 +35,7 @@ local hex = hash.sha1("data")
 local raw = hash.sha1("data", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para hash |
 | `raw` | boolean? | Retornar bytes raw ao inves de hex |
@@ -49,7 +49,7 @@ local hex = hash.sha256("data")
 local raw = hash.sha256("data", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para hash |
 | `raw` | boolean? | Retornar bytes raw ao inves de hex |
@@ -63,7 +63,7 @@ local hex = hash.sha512("data")
 local raw = hash.sha512("data", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para hash |
 | `raw` | boolean? | Retornar bytes raw ao inves de hex |
@@ -79,7 +79,7 @@ local hex = hash.hmac_md5("message", "secret")
 local raw = hash.hmac_md5("message", "secret", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Mensagem para autenticar |
 | `secret` | string | Chave secreta |
@@ -94,7 +94,7 @@ local hex = hash.hmac_sha1("message", "secret")
 local raw = hash.hmac_sha1("message", "secret", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Mensagem para autenticar |
 | `secret` | string | Chave secreta |
@@ -109,7 +109,7 @@ local hex = hash.hmac_sha256("message", "secret")
 local raw = hash.hmac_sha256("message", "secret", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Mensagem para autenticar |
 | `secret` | string | Chave secreta |
@@ -124,7 +124,7 @@ local hex = hash.hmac_sha512("message", "secret")
 local raw = hash.hmac_sha512("message", "secret", true)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Mensagem para autenticar |
 | `secret` | string | Chave secreta |
@@ -132,7 +132,7 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 **Retorna:** `string, error`
 
-## Hashes Nao-Criptograficos
+## Hashes Não-Criptograficos
 
 ### FNV-32
 
@@ -142,7 +142,7 @@ Hash rapido para hash tables e particionamento.
 local n = hash.fnv32("data")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para hash |
 
@@ -156,7 +156,7 @@ Hash rapido com saida maior para menos colisoes.
 local n = hash.fnv64("data")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para hash |
 
@@ -164,9 +164,9 @@ local n = hash.fnv64("data")
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Input nao e string | `errors.INVALID` | nao |
-| Secret nao e string (HMAC) | `errors.INVALID` | nao |
+| Input não e string | `errors.INVALID` | não |
+| Secret não e string (HMAC) | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

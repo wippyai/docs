@@ -4,9 +4,9 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Schneller Key-Value-Speicher mit TTL-Unterstutzung. Ideal fur Caching, Sessions und temporare Zustande.
+Schneller Key-Value-Speicher mit TTL-Unterstutzung. Ideal für Caching, Sessions und temporare Zustande.
 
-Fur Speicherkonfiguration siehe [Store](system-store.md).
+Für Speicherkonfiguration siehe [Store](system-store.md).
 
 ## Laden
 
@@ -34,7 +34,7 @@ cache:release()
 |-----------|------|-------------|
 | `id` | string | Store-Ressourcen-ID |
 
-**Gibt zuruck:** `Store, error`
+**Gibt zurück:** `Store, error`
 
 ## Werte speichern
 
@@ -52,34 +52,34 @@ cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Schlussel |
+| `key` | string | Schlüssel |
 | `value` | any | Wert (Tables, Strings, Zahlen, Booleans) |
 | `ttl` | number | TTL in Sekunden (optional, 0 = kein Ablauf) |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Werte abrufen
 
-Holen Sie einen Wert anhand des Schlussels:
+Holen Sie einen Wert anhand des Schlüssels:
 
 ```lua
 local user = cache:get("user:123")
 if not user then
-    -- Schlussel nicht gefunden oder abgelaufen
+    -- Schlüssel nicht gefunden oder abgelaufen
 end
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Abzurufender Schlussel |
+| `key` | string | Abzurufender Schlüssel |
 
-**Gibt zuruck:** `any, error`
+**Gibt zurück:** `any, error`
 
-Gibt `nil` zuruck, wenn der Schlussel nicht existiert.
+Gibt `nil` zurück, wenn der Schlüssel nicht existiert.
 
 ## Existenz prufen
 
-Prufen Sie, ob ein Schlussel existiert, ohne ihn abzurufen:
+Prufen Sie, ob ein Schlüssel existiert, ohne ihn abzurufen:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
@@ -89,13 +89,13 @@ end
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Zu prufender Schlussel |
+| `key` | string | Zu prufender Schlüssel |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
-## Schlussel loschen
+## Schlüssel löschen
 
-Entfernen Sie einen Schlussel aus dem Store:
+Entfernen Sie einen Schlüssel aus dem Store:
 
 ```lua
 cache:delete("session:" .. session_id)
@@ -103,20 +103,20 @@ cache:delete("session:" .. session_id)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `key` | string | Zu loschender Schlussel |
+| `key` | string | Zu löschender Schlüssel |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
-Gibt `true` zuruck wenn geloscht, `false` wenn Schlussel nicht existierte.
+Gibt `true` zurück wenn geloscht, `false` wenn Schlüssel nicht existierte.
 
 ## Store-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
-| `get(key)` | `any, error` | Wert nach Schlussel abrufen |
+| `get(key)` | `any, error` | Wert nach Schlüssel abrufen |
 | `set(key, value, ttl?)` | `boolean, error` | Wert mit optionaler TTL speichern |
-| `has(key)` | `boolean, error` | Prufen ob Schlussel existiert |
-| `delete(key)` | `boolean, error` | Schlussel entfernen |
+| `has(key)` | `boolean, error` | Prufen ob Schlüssel existiert |
+| `delete(key)` | `boolean, error` | Schlüssel entfernen |
 | `release()` | `boolean` | Store an Pool zuruckgeben |
 
 ## Berechtigungen
@@ -126,10 +126,10 @@ Store-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Aktion | Ressource | Attribute | Beschreibung |
 |--------|----------|------------|-------------|
 | `store.get` | Store-ID | - | Store-Ressource abrufen |
-| `store.key.get` | Store-ID | `key` | Schlusselwert lesen |
-| `store.key.set` | Store-ID | `key` | Schlusselwert schreiben |
-| `store.key.delete` | Store-ID | `key` | Schlussel loschen |
-| `store.key.has` | Store-ID | `key` | Schlusselexistenz prufen |
+| `store.key.get` | Store-ID | `key` | Schlüsselwert lesen |
+| `store.key.set` | Store-ID | `key` | Schlüsselwert schreiben |
+| `store.key.delete` | Store-ID | `key` | Schlüssel löschen |
+| `store.key.has` | Store-ID | `key` | Schlüsselexistenz prufen |
 
 ## Fehler
 
@@ -140,4 +140,4 @@ Store-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Store freigegeben | `errors.INVALID` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

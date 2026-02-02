@@ -29,7 +29,7 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `queue_id` | string | Identificador da fila (formato: "namespace:name") |
 | `data` | any | Dados da mensagem (tabelas, strings, numeros, booleans) |
@@ -68,17 +68,17 @@ local all_headers = msg:headers()
 
 **Retorna:** `Message, error`
 
-Disponivel apenas ao processar mensagens de fila em contexto de consumer.
+Disponível apenas ao processar mensagens de fila em contexto de consumer.
 
 ## Metodos de Message
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
-| `id()` | `string, error` | Identificador unico da mensagem |
-| `header(key)` | `any, error` | Valor de header unico (nil se ausente) |
+| `id()` | `string, error` | Identificador único da mensagem |
+| `header(key)` | `any, error` | Valor de header único (nil se ausente) |
 | `headers()` | `table, error` | Todos os headers da mensagem |
 
-## Padrao de Consumer
+## Padrão de Consumer
 
 Consumers de fila sao definidos como entry points que recebem o payload diretamente:
 
@@ -110,7 +110,7 @@ end
 
 Operacoes de fila estao sujeitas a avaliacao de politica de seguranca.
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `queue.publish` | - | Permissao geral para publicar mensagens |
 | `queue.publish.queue` | ID da Fila | Publicar em fila especifica |
@@ -119,17 +119,17 @@ Ambas as permissoes sao verificadas: primeiro a permissao geral, depois a especi
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| ID da fila vazio | `errors.INVALID` | nao |
-| Dados da mensagem vazios | `errors.INVALID` | nao |
-| Sem contexto de entrega | `errors.INVALID` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
+| ID da fila vazio | `errors.INVALID` | não |
+| Dados da mensagem vazios | `errors.INVALID` | não |
+| Sem contexto de entrega | `errors.INVALID` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
 | Publicacao falhou | `errors.INTERNAL` | sim |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 
-## Veja Tambem
+## Veja Também
 
 - [Queue Configuration](system/queue.md) - Drivers de fila e definicoes de entrada
 - [Queue Consumers Guide](guides/queue-consumers.md) - Padroes de consumer e pools de workers

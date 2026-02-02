@@ -20,7 +20,7 @@ local logger = require("logger")
 logger:debug("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `message` | string | Mensaje de log |
 | `fields` | table? | Pares clave-valor contextuales |
@@ -31,7 +31,7 @@ logger:debug("message", {key = "value"})
 logger:info("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `message` | string | Mensaje de log |
 | `fields` | table? | Pares clave-valor contextuales |
@@ -42,7 +42,7 @@ logger:info("message", {key = "value"})
 logger:warn("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `message` | string | Mensaje de log |
 | `fields` | table? | Pares clave-valor contextuales |
@@ -53,7 +53,7 @@ logger:warn("message", {key = "value"})
 logger:error("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `message` | string | Mensaje de log |
 | `fields` | table? | Pares clave-valor contextuales |
@@ -69,7 +69,7 @@ local child = logger:with({request_id = id})
 child:info("message")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `fields` | table | Campos a adjuntar a todos los logs |
 
@@ -84,7 +84,7 @@ local named = logger:named("auth")
 named:info("message")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre del logger |
 
@@ -92,7 +92,7 @@ named:info("message")
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | String de nombre vacio | `errors.INVALID` | no |
 

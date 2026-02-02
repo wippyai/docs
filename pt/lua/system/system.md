@@ -13,15 +13,15 @@ local system = require("system")
 
 ## Shutdown
 
-Acionar shutdown do sistema com codigo de saida. Util para apps de terminal; chamar de actors em execucao terminara o sistema inteiro:
+Acionar shutdown do sistema com código de saida. Util para apps de terminal; chamar de actors em execução terminara o sistema inteiro:
 
 ```lua
 local ok, err = system.exit(0)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `code` | integer | Codigo de saida (0 = sucesso), padrao 0 |
+| `code` | integer | Código de saida (0 = sucesso), padrão 0 |
 
 **Retorna:** `boolean, error`
 
@@ -35,13 +35,13 @@ local mods, err = system.modules()
 
 **Retorna:** `table[], error`
 
-Cada tabela de modulo contem:
+Cada tabela de módulo contem:
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `name` | string | Nome do modulo |
-| `description` | string | Descricao do modulo |
-| `class` | string[] | Tags de classificacao do modulo |
+| `name` | string | Nome do módulo |
+| `description` | string | Descrição do módulo |
+| `class` | string[] | Tags de classificacao do módulo |
 
 ## Estatisticas de Memoria
 
@@ -55,7 +55,7 @@ local stats, err = system.memory.stats()
 
 Tabela de stats contem:
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `alloc` | number | Bytes alocados e em uso |
 | `total_alloc` | number | Bytes cumulativos alocados |
@@ -63,7 +63,7 @@ Tabela de stats contem:
 | `heap_alloc` | number | Bytes alocados no heap |
 | `heap_sys` | number | Bytes obtidos para heap do sistema |
 | `heap_idle` | number | Bytes em spans ociosos |
-| `heap_in_use` | number | Bytes em spans nao-ociosos |
+| `heap_in_use` | number | Bytes em spans não-ociosos |
 | `heap_released` | number | Bytes liberados para o OS |
 | `heap_objects` | number | Numero de objetos heap alocados |
 | `stack_in_use` | number | Bytes usados pelo alocador de stack |
@@ -101,7 +101,7 @@ Definir limite de memoria (retorna valor anterior):
 local prev, err = system.memory.set_limit(1024 * 1024 * 100)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `limit` | integer | Limite de memoria em bytes, -1 para ilimitado |
 
@@ -133,7 +133,7 @@ Definir percentual alvo de GC (retorna valor anterior). Um valor de 100 signific
 local prev, err = system.gc.set_percent(200)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `percent` | integer | Percentual alvo de GC |
 
@@ -169,7 +169,7 @@ local current, err = system.runtime.max_procs()
 local prev, err = system.runtime.max_procs(4)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `n` | integer | Se fornecido, define GOMAXPROCS (deve ser > 0) |
 
@@ -213,7 +213,7 @@ Obter estado para um servico supervisionado especifico:
 local state, err = system.supervisor.state("namespace:service")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `service_id` | string | ID do servico (ex: "namespace:service") |
 
@@ -221,7 +221,7 @@ local state, err = system.supervisor.state("namespace:service")
 
 Tabela de estado contem:
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `id` | string | ID do servico |
 | `status` | string | Status atual |
@@ -247,7 +247,7 @@ Cada tabela de estado tem o mesmo formato que `system.supervisor.state()`.
 
 Operacoes de sistema estao sujeitas a avaliacao de politica de seguranca.
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `system.read` | `memory` | Ler estatisticas de memoria |
 | `system.read` | `memory_limit` | Ler limite de memoria |
@@ -267,13 +267,13 @@ Operacoes de sistema estao sujeitas a avaliacao de politica de seguranca.
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
-| Argumento invalido | `errors.INVALID` | nao |
-| Argumento obrigatorio ausente | `errors.INVALID` | nao |
-| Code manager indisponivel | `errors.INTERNAL` | nao |
-| Info de servico indisponivel | `errors.INTERNAL` | nao |
-| Erro de OS obtendo hostname | `errors.INTERNAL` | nao |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Argumento invalido | `errors.INVALID` | não |
+| Argumento obrigatorio ausente | `errors.INVALID` | não |
+| Code manager indisponivel | `errors.INTERNAL` | não |
+| Info de servico indisponivel | `errors.INTERNAL` | não |
+| Erro de OS obtendo hostname | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

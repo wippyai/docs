@@ -3,7 +3,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-WebSocket-Client fur bidirektionale Echtzeit-Kommunikation mit Servern.
+WebSocket-Client für bidirektionale Echtzeit-Kommunikation mit Servern.
 
 ## Laden
 
@@ -41,20 +41,20 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `url` | string | WebSocket-URL (ws:// oder wss://) |
 | `options` | table | Verbindungsoptionen (optional) |
 
-**Gibt zuruck:** `Client, error`
+**Gibt zurück:** `Client, error`
 
 ### Verbindungsoptionen
 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
-| `headers` | table | HTTP-Header fur Handshake |
+| `headers` | table | HTTP-Header für Handshake |
 | `protocols` | table | WebSocket-Subprotokolle |
 | `dial_timeout` | number/string | Verbindungs-Timeout (ms oder "5s") |
 | `read_timeout` | number/string | Lese-Timeout |
 | `write_timeout` | number/string | Schreib-Timeout |
 | `compression` | number | Komprimierungsmodus (siehe Konstanten) |
-| `compression_threshold` | number | Min. Grosse zum Komprimieren (0-100MB) |
-| `read_limit` | number | Max. Nachrichtengrosse (0-128MB) |
+| `compression_threshold` | number | Min. Größe zum Komprimieren (0-100MB) |
+| `read_limit` | number | Max. Nachrichtengröße (0-128MB) |
 | `channel_capacity` | number | Empfangs-Channel-Puffer (1-10000) |
 
 **Timeout-Format:** Zahlen sind Millisekunden, Strings verwenden Go-Dauerformat ("5s", "1m").
@@ -87,7 +87,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Nachrichteninhalt |
 | `type` | number | `websocket.TEXT` (1) oder `websocket.BINARY` (2) |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ### Ping
 
@@ -95,11 +95,11 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Nachrichten empfangen
 
-Die `channel()`-Methode gibt einen Channel zum Empfangen von Nachrichten zuruck. Funktioniert mit `channel.select` fur Multiplexing.
+Die `channel()`-Methode gibt einen Channel zum Empfangen von Nachrichten zurück. Funktioniert mit `channel.select` für Multiplexing.
 
 ### Einfaches Empfangen
 
@@ -160,16 +160,16 @@ end
 | `type` | string | `"text"` oder `"binary"` |
 | `data` | string | Nachrichteninhalt |
 
-## Verbindung schliessen
+## Verbindung schließen
 
 ```lua
--- Normales Schliessen (Code 1000)
+-- Normales Schließen (Code 1000)
 client:close()
 
 -- Mit Code und Grund
 client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
 
--- Fehler-Schliessen
+-- Fehler-Schließen
 client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 ```
 
@@ -178,14 +178,14 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Schliess-Code (1000-4999), Standard 1000 |
 | `reason` | string | Schliessgrund (optional) |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Konstanten
 
 ### Nachrichtentypen
 
 ```lua
--- Numerisch (fur send)
+-- Numerisch (für send)
 websocket.TEXT    -- 1
 websocket.BINARY  -- 2
 
@@ -209,7 +209,7 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (pro Nachricht)
 
 | Konstante | Code | Beschreibung |
 |----------|------|-------------|
-| `NORMAL` | 1000 | Normales Schliessen |
+| `NORMAL` | 1000 | Normales Schließen |
 | `GOING_AWAY` | 1001 | Server fahrt herunter |
 | `PROTOCOL_ERROR` | 1002 | Protokollfehler |
 | `UNSUPPORTED_DATA` | 1003 | Nicht unterstutzter Datentyp |
@@ -303,7 +303,7 @@ WebSocket-Verbindungen unterliegen der Sicherheitsrichtlinienauswertung.
 | `websocket.connect` | - | WebSocket-Verbindungen erlauben/verweigern |
 | `websocket.connect.url` | URL | Verbindungen zu bestimmten URLs erlauben/verweigern |
 
-Siehe [Sicherheitsmodell](system-security.md) fur Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -327,4 +327,4 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

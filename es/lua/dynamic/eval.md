@@ -1,6 +1,6 @@
 # Evaluacion Dinamica
 
-Ejecutar codigo dinamicamente en tiempo de ejecucion con entornos aislados y acceso controlado a modulos.
+Ejecutar código dinamicamente en tiempo de ejecución con entornos aislados y acceso controlado a modulos.
 
 ## Dos Sistemas
 
@@ -9,9 +9,9 @@ Wippy proporciona dos sistemas de evaluacion:
 | Sistema | Proposito | Caso de Uso |
 |---------|-----------|-------------|
 | `expr` | Evaluacion de expresiones | Config, plantillas, calculos simples |
-| `eval_runner` | Ejecucion completa de Lua | Plugins, scripts de usuario, codigo dinamico |
+| `eval_runner` | Ejecución completa de Lua | Plugins, scripts de usuario, código dinamico |
 
-## Modulo expr
+## Módulo expr
 
 Evaluacion de expresiones ligera usando sintaxis expr-lang.
 
@@ -65,9 +65,9 @@ expr.eval("[1, 2, 3][0]")        -- 1
 expr.eval("'hello' + ' ' + 'world'")
 ```
 
-## Modulo eval_runner
+## Módulo eval_runner
 
-Ejecucion completa de Lua con controles de seguridad.
+Ejecución completa de Lua con controles de seguridad.
 
 ```lua
 local runner = require("eval_runner")
@@ -84,17 +84,17 @@ local result, err = runner.run({
 -- result = 42
 ```
 
-### Configuracion
+### Configuración
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `source` | string | Codigo fuente Lua (requerido) |
-| `method` | string | Funcion a llamar en tabla devuelta |
-| `args` | any[] | Argumentos pasados a la funcion |
+| `source` | string | Código fuente Lua (requerido) |
+| `method` | string | Función a llamar en tabla devuelta |
+| `args` | any[] | Argumentos pasados a la función |
 | `modules` | string[] | Modulos integrados permitidos |
 | `imports` | table | Entradas de registro a importar |
 | `context` | table | Valores disponibles como `ctx` |
-| `allow_classes` | string[] | Clases de modulo adicionales |
+| `allow_classes` | string[] | Clases de módulo adicionales |
 | `custom_modules` | table | Tablas personalizadas como modulos |
 
 ### Acceso a Modulos
@@ -137,10 +137,10 @@ Inyectar tablas personalizadas:
 ```lua
 runner.run({
     source = [[
-        return sdk.version
+        return sdk.versión
     ]],
     custom_modules = {
-        sdk = {version = "1.0.0", api_key = "xxx"}
+        sdk = {versión = "1.0.0", api_key = "xxx"}
     }
 })
 ```
@@ -160,7 +160,7 @@ runner.run({
 
 ### Compilar Programas
 
-Compilar una vez para ejecucion repetida:
+Compilar una vez para ejecución repetida:
 
 ```lua
 local program, err = runner.compile([[
@@ -179,7 +179,7 @@ local result = program:run({10})  -- 20
 
 Los modulos se categorizan por capacidad:
 
-| Clase | Descripcion | Predeterminado |
+| Clase | Descripción | Predeterminado |
 |-------|-------------|----------------|
 | `deterministic` | Funciones puras | Permitido |
 | `encoding` | Codificacion de datos | Permitido |
@@ -207,8 +207,8 @@ runner.run({
 El sistema verifica permisos para:
 
 - `eval.compile` - Antes de compilacion
-- `eval.run` - Antes de ejecucion
-- `eval.module` - Para cada modulo en lista blanca
+- `eval.run` - Antes de ejecución
+- `eval.module` - Para cada módulo en lista blanca
 - `eval.import` - Para cada importacion de registro
 - `eval.class` - Para cada clase permitida
 
@@ -222,9 +222,9 @@ if err then
     if err:kind() == errors.PERMISSION_DENIED then
         -- Acceso denegado por politica de seguridad
     elseif err:kind() == errors.INVALID then
-        -- Fuente o configuracion invalida
+        -- Fuente o configuración invalida
     elseif err:kind() == errors.INTERNAL then
-        -- Error de ejecucion o compilacion
+        -- Error de ejecución o compilacion
     end
 end
 ```
@@ -271,8 +271,8 @@ local result, err = runner.run({
 })
 ```
 
-## Vea Tambien
+## Vea También
 
 - [Expression](lua/dynamic/expression.md) - Referencia del lenguaje de expresiones
-- [Exec](lua/dynamic/exec.md) - Ejecucion de comandos del sistema
+- [Exec](lua/dynamic/exec.md) - Ejecución de comandos del sistema
 - [Security](lua/security/security.md) - Politicas de seguridad

@@ -13,7 +13,7 @@ local http_client = require("http_client")
 
 ## HTTP-Methoden
 
-Alle Methoden teilen dieselbe Signatur: `method(url, options?)` gibt `Response, error` zuruck.
+Alle Methoden teilen dieselbe Signatur: `method(url, options?)` gibt `Response, error` zurück.
 
 ### GET-Anfrage
 
@@ -63,7 +63,7 @@ local resp, err = http_client.delete("https://api.example.com/users/123", {
 
 ### HEAD-Anfrage
 
-Gibt nur Header zuruck, keinen Body.
+Gibt nur Header zurück, keinen Body.
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
@@ -97,8 +97,8 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `auth` | table | Basic Auth `{user = "name", pass = "secret"}` |
 | `timeout` | number/string | Timeout: Zahl in Sekunden oder String wie `"30s"`, `"1m"` |
 | `stream` | boolean | Response-Body streamen statt puffern |
-| `max_response_body` | number | Max. Response-Grosse in Bytes (0 = Standard) |
-| `unix_socket` | string | Uber Unix-Socket-Pfad verbinden |
+| `max_response_body` | number | Max. Response-Größe in Bytes (0 = Standard) |
+| `unix_socket` | string | Über Unix-Socket-Pfad verbinden |
 
 ### Query-Parameter
 
@@ -160,7 +160,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `name` | string | ja | Formularfeldname |
 | `filename` | string | nein | Originaler Dateiname |
 | `content` | string | ja* | Dateiinhalt |
-| `reader` | userdata | ja* | Alternative: io.Reader fur Inhalt |
+| `reader` | userdata | ja* | Alternative: io.Reader für Inhalt |
 | `content_type` | string | nein | MIME-Typ (Standard: `application/octet-stream`) |
 
 *Entweder `content` oder `reader` ist erforderlich.
@@ -183,7 +183,7 @@ local resp, err = http_client.get(url, {timeout = "1h"})
 |-------|------|-------------|
 | `status_code` | number | HTTP-Statuscode |
 | `body` | string | Response-Body (wenn nicht streaming) |
-| `body_size` | number | Body-Grosse in Bytes (-1 wenn streaming) |
+| `body_size` | number | Body-Größe in Bytes (-1 wenn streaming) |
 | `headers` | table | Response-Header |
 | `cookies` | table | Response-Cookies |
 | `url` | string | Finale URL (nach Weiterleitungen) |
@@ -203,7 +203,7 @@ end
 
 ## Streaming-Responses
 
-Fur grosse Responses verwenden Sie Streaming, um zu vermeiden, dass der gesamte Body in den Speicher geladen wird.
+Für größe Responses verwenden Sie Streaming, um zu vermeiden, dass der gesamte Body in den Speicher geladen wird.
 
 ```lua
 local resp, err = http_client.get("https://cdn.example.com/large-file.zip", {
@@ -222,10 +222,10 @@ end
 resp.stream:close()
 ```
 
-| Stream-Methode | Gibt zuruck | Beschreibung |
+| Stream-Methode | Gibt zurück | Beschreibung |
 |---------------|---------|-------------|
 | `read(size)` | string, error | Bis zu `size` Bytes lesen |
-| `close()` | - | Stream schliessen |
+| `close()` | - | Stream schließen |
 
 ## Batch-Anfragen
 
@@ -256,7 +256,7 @@ end
 |-----------|------|-------------|
 | `requests` | table | Array von `{method, url, options?}` |
 
-**Gibt zuruck:** `responses, errors` - Arrays indiziert nach Anfrageposition
+**Gibt zurück:** `responses, errors` - Arrays indiziert nach Anfrageposition
 
 **Hinweise:**
 - Anfragen werden gleichzeitig ausgefuhrt
@@ -305,14 +305,14 @@ end
 
 ### SSRF-Schutz
 
-Private IP-Bereiche (10.x, 192.168.x, 172.16-31.x, localhost) sind standardmassig blockiert. Zugriff erfordert die `http_client.private_ip`-Berechtigung.
+Private IP-Bereiche (10.x, 192.168.x, 172.16-31.x, localhost) sind standardmäßig blockiert. Zugriff erfordert die `http_client.private_ip`-Berechtigung.
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Siehe [Sicherheitsmodell](system-security.md) fur Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -338,4 +338,4 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

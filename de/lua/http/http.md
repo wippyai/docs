@@ -5,7 +5,7 @@
 
 Behandeln Sie HTTP-Anfragen und erstellen Sie Responses. Zugriff auf Anfragedaten, Route-Parameter, Header und Body-Inhalt. Erstellen Sie Responses mit Statuscodes, Headern und Streaming-Unterstutzung.
 
-Fur Server-Konfiguration siehe [HTTP-Server](http-server.md).
+Für Server-Konfiguration siehe [HTTP-Server](http-server.md).
 
 ## Laden
 
@@ -30,9 +30,9 @@ local req = http.request({
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `options.timeout` | integer | Body-Lese-Timeout in ms (Standard: 300000 / 5 min) |
-| `options.max_body` | integer | Max. Body-Grosse in Bytes (Standard: 120MB) |
+| `options.max_body` | integer | Max. Body-Größe in Bytes (Standard: 120MB) |
 
-**Gibt zuruck:** `Request, error`
+**Gibt zurück:** `Request, error`
 
 ## Auf die Response zugreifen
 
@@ -42,7 +42,7 @@ Holen Sie den aktuellen HTTP-Response-Kontext:
 local res = http.response()
 ```
 
-**Gibt zuruck:** `Response, error`
+**Gibt zurück:** `Response, error`
 
 ## Request-Methoden
 
@@ -92,7 +92,7 @@ local sort = req:query("sort") or "created_at"
 
 ### query_params
 
-Holt alle Query-Parameter. Mehrere Werte fur denselben Schlussel werden mit Kommas verbunden.
+Holt alle Query-Parameter. Mehrere Werte für denselben Schlüssel werden mit Kommas verbunden.
 
 ```lua
 -- GET /search?tags=lua&tags=go&active=true
@@ -182,7 +182,7 @@ if req:is_content_type("application/xml") then
     local data = parse_xml(body)
 end
 
--- Rohen Body fur Debugging loggen
+-- Rohen Body für Debugging loggen
 logger.debug("Request body", {body = body, length = #body})
 ```
 
@@ -297,7 +297,7 @@ end
 
 ### stream
 
-Holt Anfrage-Body als Stream fur grosse Dateien.
+Holt Anfrage-Body als Stream für größe Dateien.
 
 ```lua
 local stream = req:stream()
@@ -321,7 +321,7 @@ res:set_status(http.STATUS.CREATED)
 
 -- Gangige Muster
 res:set_status(201)  -- Created
-res:set_status(204)  -- No Content (fur DELETE)
+res:set_status(204)  -- No Content (für DELETE)
 res:set_status(400)  -- Bad Request
 res:set_status(401)  -- Unauthorized
 res:set_status(403)  -- Forbidden
@@ -404,7 +404,7 @@ end
 
 ### set_transfer
 
-Setzt Transfer-Kodierung fur Streaming.
+Setzt Transfer-Kodierung für Streaming.
 
 ```lua
 -- Chunked Transfer
@@ -515,7 +515,7 @@ http.TRANSFER.SSE       -- "sse"
 
 ### Fehlertypen
 
-Modulspezifische Fehlertyp-Konstanten fur prazise Fehlerbehandlung.
+Modulspezifische Fehlertyp-Konstanten für prazise Fehlerbehandlung.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Formular/Multipart-Parse-Fehler
@@ -536,4 +536,4 @@ http.ERROR.STREAM_ERROR   -- Body-Stream-Fehler
 | Header bereits gesendet | `errors.INVALID` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

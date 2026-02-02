@@ -3,11 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Parsear codigo fuente en arboles de sintaxis concretos usando [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Basado en bindings de [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter).
+Parsear código fuente en arboles de sintaxis concretos usando [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Basado en bindings de [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter).
 
 Tree-sitter produce arboles de sintaxis que:
-- Representan la estructura completa del codigo fuente
-- Se actualizan incrementalmente cuando el codigo cambia
+- Representan la estructura completa del código fuente
+- Se actualizan incrementalmente cuando el código cambia
 - Son robustos ante errores de sintaxis (parsing parcial)
 - Soportan consultas basadas en patrones usando S-expressions
 
@@ -40,7 +40,7 @@ local langs = treesitter.supported_languages()
 
 ## Inicio Rapido
 
-### Parsear Codigo
+### Parsear Código
 
 ```lua
 local code = [[
@@ -56,7 +56,7 @@ end
 
 local root = tree:root_node()
 print(root:kind())        -- "source_file"
-print(root:child_count()) -- numero de declaraciones de nivel superior
+print(root:child_count()) -- número de declaraciones de nivel superior
 ```
 
 ### Consultar Arbol de Sintaxis
@@ -70,7 +70,7 @@ func world() {}
 local tree = treesitter.parse("go", code)
 local root = tree:root_node()
 
--- Encontrar todos los nombres de funcion
+-- Encontrar todos los nombres de función
 local query = treesitter.query("go", [[
     (function_declaration name: (identifier) @func_name)
 ]])
@@ -87,16 +87,16 @@ end
 
 ### Parse Simple
 
-Parsear codigo fuente en un arbol de sintaxis. Crea un parser temporal internamente.
+Parsear código fuente en un arbol de sintaxis. Crea un parser temporal internamente.
 
 ```lua
 local tree, err = treesitter.parse("go", code)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `language` | string | Nombre o alias de lenguaje |
-| `code` | string | Codigo fuente |
+| `code` | string | Código fuente |
 
 **Devuelve:** `Tree, error`
 
@@ -120,11 +120,11 @@ parser:close()
 
 ### Metodos de Parser
 
-| Metodo | Descripcion |
+| Método | Descripción |
 |--------|-------------|
 | `set_language(lang)` | Establecer lenguaje del parser, devuelve `boolean, error` |
 | `get_language()` | Obtener nombre de lenguaje actual |
-| `parse(code, old_tree?)` | Parsear codigo, opcionalmente con arbol anterior para parsing incremental |
+| `parse(code, old_tree?)` | Parsear código, opcionalmente con arbol anterior para parsing incremental |
 | `set_timeout(duration)` | Establecer timeout de parsing (string como `"1s"` o nanosegundos) |
 | `set_ranges(ranges)` | Establecer rangos de bytes a parsear |
 | `reset()` | Reiniciar estado del parser |
@@ -144,7 +144,7 @@ print(root:text())  -- "package main"
 
 ### Metodos de Tree
 
-| Metodo | Descripcion |
+| Método | Descripción |
 |--------|-------------|
 | `root_node()` | Obtener nodo raiz del arbol |
 | `root_node_with_offset(bytes, point)` | Obtener raiz con offset aplicado |
@@ -159,7 +159,7 @@ print(root:text())  -- "package main"
 
 ### Edicion Incremental
 
-Actualizar el arbol cuando el codigo fuente cambia:
+Actualizar el arbol cuando el código fuente cambia:
 
 ```lua
 local code = "func main() { x := 1 }"
@@ -193,7 +193,7 @@ Los nodos representan elementos en el arbol de sintaxis.
 ```lua
 local node = root:child(0)
 
--- Informacion de tipo
+-- Información de tipo
 print(node:kind())        -- "package_clause"
 print(node:type())        -- igual que kind()
 print(node:is_named())    -- true para nodos significativos
@@ -223,7 +223,7 @@ local name_node = func_decl:child_by_field_name("name")
 local field = node:field_name_for_child(0)
 ```
 
-### Informacion de Posicion
+### Información de Posicion
 
 ```lua
 -- Offsets de byte
@@ -246,7 +246,7 @@ if root:has_error() then
 end
 
 if node:is_error() then
-    -- Este nodo especifico es un error
+    -- Este nodo específico es un error
 end
 
 if node:is_missing() then
@@ -276,10 +276,10 @@ local query, err = treesitter.query("go", [[
 ]])
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `language` | string | Nombre de lenguaje |
-| `pattern` | string | Patron de consulta en sintaxis S-expression |
+| `pattern` | string | Patrón de consulta en sintaxis S-expression |
 
 **Devuelve:** `Query, error`
 
@@ -295,7 +295,7 @@ for _, capture in ipairs(captures) do
     -- capture.node es el objeto Node
 end
 
--- Obtener coincidencias (agrupadas por patron)
+-- Obtener coincidencias (agrupadas por patrón)
 local matches = query:matches(root, source_code)
 for _, match in ipairs(matches) do
     print(match.id, match.pattern)
@@ -318,7 +318,7 @@ if query:did_exceed_match_limit() then
     -- Existen mas coincidencias
 end
 
--- Timeout (string de duracion o nanosegundos)
+-- Timeout (string de duración o nanosegundos)
 query:set_timeout("500ms")
 query:set_timeout(1000000000)  -- 1 segundo en nanosegundos
 
@@ -340,7 +340,7 @@ local id = query:capture_index_for_name("func_name")
 
 Recorrido eficiente sin crear objetos nodo en cada paso.
 
-### Recorrido Basico
+### Recorrido Básico
 
 ```lua
 local cursor = tree:walk()
@@ -366,7 +366,7 @@ cursor:close()
 
 ### Metodos de Cursor
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `current_node()` | `Node` | Nodo en posicion del cursor |
 | `current_depth()` | `integer` | Profundidad (0 = raiz) |
@@ -387,9 +387,9 @@ cursor:close()
 ```lua
 local lang = treesitter.language("go")
 
-print(lang:version())           -- version ABI
-print(lang:node_kind_count())   -- numero de tipos de nodo
-print(lang:field_count())       -- numero de campos
+print(lang:versión())           -- versión ABI
+print(lang:node_kind_count())   -- número de tipos de nodo
+print(lang:field_count())       -- número de campos
 
 -- Busqueda de tipo de nodo
 local kind = lang:node_kind_for_id(1)
@@ -403,11 +403,11 @@ local field_id = lang:field_id_for_name("name")
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Lenguaje no soportado | `errors.INVALID` | no |
 | Lenguaje sin binding | `errors.INVALID` | no |
-| Patron de consulta invalido | `errors.INVALID` | no |
+| Patrón de consulta invalido | `errors.INVALID` | no |
 | Posiciones invalidas | `errors.INVALID` | no |
 | Parse fallido | `errors.INTERNAL` | no |
 

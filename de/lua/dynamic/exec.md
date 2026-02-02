@@ -4,9 +4,9 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Fuhren Sie externe Befehle und Shell-Skripte mit voller Kontrolle uber I/O-Streams aus.
+Fuhren Sie externe Befehle und Shell-Skripte mit voller Kontrolle über I/O-Streams aus.
 
-Fur Executor-Konfiguration siehe [Executor](system-exec.md).
+Für Executor-Konfiguration siehe [Executor](system-exec.md).
 
 ## Laden
 
@@ -36,7 +36,7 @@ executor:release()
 |-----------|------|-------------|
 | `id` | string | Ressourcen-ID |
 
-**Gibt zuruck:** `Executor, error`
+**Gibt zurück:** `Executor, error`
 
 ## Einen Prozess erstellen
 
@@ -61,7 +61,7 @@ local proc = executor:exec("python script.py", {
     }
 })
 
--- Shell-Skript ausfuhren
+-- Shell-Skript ausführen
 local proc = executor:exec("./deploy.sh production", {
     work_dir = "/app/scripts",
     env = {
@@ -76,7 +76,7 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | Arbeitsverzeichnis |
 | `options.env` | table | Umgebungsvariablen |
 
-**Gibt zuruck:** `Process, error`
+**Gibt zurück:** `Process, error`
 
 ## start / wait
 
@@ -166,7 +166,7 @@ stdout:close()
 
 ## signal / close
 
-Senden Sie Signale oder schliessen Sie den Prozess.
+Senden Sie Signale oder schließen Sie den Prozess.
 
 ```lua
 local proc = executor:exec("./long-running-server.sh")
@@ -192,7 +192,7 @@ Exec-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Aktion | Ressource | Beschreibung |
 |--------|----------|-------------|
 | `exec.get` | Executor-ID | Executor-Ressource beschaffen |
-| `exec.run` | Befehl | Einen bestimmten Befehl ausfuhren |
+| `exec.run` | Befehl | Einen bestimmten Befehl ausführen |
 
 ## Fehler
 
@@ -204,4 +204,4 @@ Exec-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Prozess nicht gestartet | `errors.INVALID` | nein |
 | Bereits gestartet | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

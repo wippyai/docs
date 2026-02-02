@@ -13,7 +13,7 @@ local system = require("system")
 
 ## Shutdown
 
-Systemshutdown mit Exit-Code auslosen. Nutzlich fur Terminal-Apps; Aufruf aus laufenden Actors beendet das gesamte System:
+Systemshutdown mit Exit-Code auslosen. Nutzlich für Terminal-Apps; Aufruf aus laufenden Actors beendet das gesamte System:
 
 ```lua
 local ok, err = system.exit(0)
@@ -23,7 +23,7 @@ local ok, err = system.exit(0)
 |-----------|------|-------------|
 | `code` | integer | Exit-Code (0 = Erfolg), Standard ist 0 |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Module auflisten
 
@@ -33,7 +33,7 @@ Alle geladenen Lua-Module mit Metadaten abrufen:
 local mods, err = system.modules()
 ```
 
-**Gibt zuruck:** `table[], error`
+**Gibt zurück:** `table[], error`
 
 Jede Modul-Tabelle enthalt:
 
@@ -51,7 +51,7 @@ Detaillierte Speicherstatistiken abrufen:
 local stats, err = system.memory.stats()
 ```
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
 Stats-Tabelle enthalt:
 
@@ -61,17 +61,17 @@ Stats-Tabelle enthalt:
 | `total_alloc` | number | Kumulativ zugewiesene Bytes |
 | `sys` | number | Vom System erhaltene Bytes |
 | `heap_alloc` | number | Auf Heap zugewiesene Bytes |
-| `heap_sys` | number | Fur Heap vom System erhaltene Bytes |
+| `heap_sys` | number | Für Heap vom System erhaltene Bytes |
 | `heap_idle` | number | Bytes in ungenutzten Spans |
 | `heap_in_use` | number | Bytes in genutzten Spans |
 | `heap_released` | number | An OS freigegebene Bytes |
 | `heap_objects` | number | Anzahl zugewiesener Heap-Objekte |
 | `stack_in_use` | number | Vom Stack-Allocator verwendete Bytes |
-| `stack_sys` | number | Fur Stack vom System erhaltene Bytes |
+| `stack_sys` | number | Für Stack vom System erhaltene Bytes |
 | `mspan_in_use` | number | Bytes von mspan-Strukturen in Verwendung |
-| `mspan_sys` | number | Fur mspan vom System erhaltene Bytes |
+| `mspan_sys` | number | Für mspan vom System erhaltene Bytes |
 | `num_gc` | number | Anzahl abgeschlossener GC-Zyklen |
-| `next_gc` | number | Ziel-Heap-Grosse fur nachsten GC |
+| `next_gc` | number | Ziel-Heap-Größe für nachsten GC |
 
 ## Aktuelle Zuweisung
 
@@ -81,7 +81,7 @@ Aktuell zugewiesene Bytes abrufen:
 local bytes, err = system.memory.allocated()
 ```
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## Heap-Objekte
 
@@ -91,11 +91,11 @@ Anzahl zugewiesener Heap-Objekte abrufen:
 local count, err = system.memory.heap_objects()
 ```
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## Speicherlimit
 
-Speicherlimit setzen (gibt vorherigen Wert zuruck):
+Speicherlimit setzen (gibt vorherigen Wert zurück):
 
 ```lua
 local prev, err = system.memory.set_limit(1024 * 1024 * 100)
@@ -103,9 +103,9 @@ local prev, err = system.memory.set_limit(1024 * 1024 * 100)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `limit` | integer | Speicherlimit in Bytes, -1 fur unbegrenzt |
+| `limit` | integer | Speicherlimit in Bytes, -1 für unbegrenzt |
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 Aktuelles Speicherlimit abrufen:
 
@@ -113,7 +113,7 @@ Aktuelles Speicherlimit abrufen:
 local limit, err = system.memory.get_limit()
 ```
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## GC erzwingen
 
@@ -123,11 +123,11 @@ Garbage Collection erzwingen:
 local ok, err = system.gc.collect()
 ```
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## GC-Zielprozentsatz
 
-GC-Zielprozentsatz setzen (gibt vorherigen Wert zuruck). Ein Wert von 100 bedeutet, dass GC ausgelost wird, wenn sich der Heap verdoppelt:
+GC-Zielprozentsatz setzen (gibt vorherigen Wert zurück). Ein Wert von 100 bedeutet, dass GC ausgelost wird, wenn sich der Heap verdoppelt:
 
 ```lua
 local prev, err = system.gc.set_percent(200)
@@ -137,7 +137,7 @@ local prev, err = system.gc.set_percent(200)
 |-----------|------|-------------|
 | `percent` | integer | GC-Zielprozentsatz |
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 Aktuellen GC-Zielprozentsatz abrufen:
 
@@ -145,7 +145,7 @@ Aktuellen GC-Zielprozentsatz abrufen:
 local percent, err = system.gc.get_percent()
 ```
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## Goroutine-Anzahl
 
@@ -155,7 +155,7 @@ Anzahl aktiver Goroutines abrufen:
 local count, err = system.runtime.goroutines()
 ```
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## GOMAXPROCS
 
@@ -173,7 +173,7 @@ local prev, err = system.runtime.max_procs(4)
 |-----------|------|-------------|
 | `n` | integer | Falls angegeben, setzt GOMAXPROCS (muss > 0 sein) |
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## CPU-Anzahl
 
@@ -183,7 +183,7 @@ Anzahl logischer CPUs abrufen:
 local cpus, err = system.runtime.cpu_count()
 ```
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## Prozess-ID
 
@@ -193,7 +193,7 @@ Aktuelle Prozess-ID abrufen:
 local pid, err = system.process.pid()
 ```
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## Hostname
 
@@ -203,11 +203,11 @@ System-Hostname abrufen:
 local hostname, err = system.process.hostname()
 ```
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Service-Status
 
-Status fur einen spezifischen uberwachten Service abrufen:
+Status für einen spezifischen uberwachten Service abrufen:
 
 ```lua
 local state, err = system.supervisor.state("namespace:service")
@@ -217,7 +217,7 @@ local state, err = system.supervisor.state("namespace:service")
 |-----------|------|-------------|
 | `service_id` | string | Service-ID (z.B. "namespace:service") |
 
-**Gibt zuruck:** `table, error`
+**Gibt zurück:** `table, error`
 
 Status-Tabelle enthalt:
 
@@ -233,13 +233,13 @@ Status-Tabelle enthalt:
 
 ## Alle Service-Status
 
-Status fur alle uberwachten Services abrufen:
+Status für alle uberwachten Services abrufen:
 
 ```lua
 local states, err = system.supervisor.states()
 ```
 
-**Gibt zuruck:** `table[], error`
+**Gibt zurück:** `table[], error`
 
 Jede Status-Tabelle hat das gleiche Format wie `system.supervisor.state()`.
 
@@ -272,8 +272,8 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Ungultiges Argument | `errors.INVALID` | nein |
 | Fehlendes erforderliches Argument | `errors.INVALID` | nein |
-| Code-Manager nicht verfugbar | `errors.INTERNAL` | nein |
-| Service-Info nicht verfugbar | `errors.INTERNAL` | nein |
+| Code-Manager nicht verfügbar | `errors.INTERNAL` | nein |
+| Service-Info nicht verfügbar | `errors.INTERNAL` | nein |
 | OS-Fehler beim Hostname abrufen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

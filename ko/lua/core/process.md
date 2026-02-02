@@ -173,7 +173,7 @@ PID를 보존하면서 현재 프로세스를 새 정의로 업그레이드:
 
 ```lua
 -- 상태를 전달하면서 새 버전으로 업그레이드
-process.upgrade(source, ...)
+process.upgrade(id, ...)
 
 -- 같은 정의 유지, 새 상태로 재실행
 process.upgrade(nil, preserved_state)

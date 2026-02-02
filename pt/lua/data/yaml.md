@@ -51,17 +51,17 @@ local server = {
 yaml.encode(server)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | table | Tabela Lua para codificar |
 | `options` | table? | Opcoes de codificacao opcionais |
 
 #### Opcoes
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `field_order` | string[] | Ordenacao customizada de campos - campos aparecem nesta ordem |
-| `sort_unordered` | boolean | Ordenar campos nao em `field_order` alfabeticamente |
+| `sort_unordered` | boolean | Ordenar campos não em `field_order` alfabeticamente |
 
 ```lua
 -- Controlar ordem dos campos na saida
@@ -139,7 +139,7 @@ print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | String YAML para parse |
 
@@ -147,11 +147,11 @@ print(type(data.tags))     -- "table"
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Entrada nao e tabela (encode) | `errors.INVALID` | nao |
-| Entrada nao e string (decode) | `errors.INVALID` | nao |
-| String vazia (decode) | `errors.INVALID` | nao |
-| Sintaxe YAML invalida | `errors.INTERNAL` | nao |
+| Entrada não e tabela (encode) | `errors.INVALID` | não |
+| Entrada não e string (decode) | `errors.INVALID` | não |
+| String vazia (decode) | `errors.INVALID` | não |
+| Sintaxe YAML invalida | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

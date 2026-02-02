@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Konvertieren Sie Daten zwischen Formaten einschliesslich JSON, MessagePack und Binar. Behandeln Sie typisierte Payloads fur Inter-Service-Kommunikation und Workflow-Datenubergabe.
+Konvertieren Sie Daten zwischen Formaten einschliesslich JSON, MessagePack und Binar. Behandeln Sie typisierte Payloads für Inter-Service-Kommunikation und Workflow-Datenubergabe.
 
 ## Laden
 
@@ -15,7 +15,7 @@ payload.new(...)  -- direkter Zugriff
 
 ## Format-Konstanten
 
-Format-Identifikatoren fur Payload-Typen:
+Format-Identifikatoren für Payload-Typen:
 
 ```lua
 payload.format.JSON     -- "json/plain"
@@ -60,7 +60,7 @@ local err_p = payload.new(errors.new("something failed"))
 |-----------|------|-------------|
 | `value` | any | Lua-Wert (string, number, boolean, table, nil oder error) |
 
-**Gibt zuruck:** `Payload, nil`
+**Gibt zurück:** `Payload, nil`
 
 ## Format abrufen
 
@@ -77,7 +77,7 @@ local err_p = payload.new(errors.new("failed"))
 local format3 = err_p:get_format()  -- "golang/error"
 ```
 
-**Gibt zuruck:** `string, nil` - eine der `payload.format.*` Konstanten
+**Gibt zurück:** `string, nil` - eine der `payload.format.*` Konstanten
 
 ## Daten extrahieren
 
@@ -98,7 +98,7 @@ print(data.total)        -- 100
 print(data.items[1])     -- 1
 ```
 
-**Gibt zuruck:** `any, error`
+**Gibt zurück:** `any, error`
 
 ## Payloads transkodieren
 
@@ -131,7 +131,7 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 |-----------|------|-------------|
 | `format` | string | Zielformat aus `payload.format.*` |
 
-**Gibt zuruck:** `Payload, error`
+**Gibt zurück:** `Payload, error`
 
 ## Async-Ergebnisse
 
@@ -168,4 +168,4 @@ print(result.computed_value)
 | Transkodierung fehlgeschlagen | `errors.INTERNAL` | nein |
 | Ergebnis ist kein gultiger Lua-Wert | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

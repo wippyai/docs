@@ -6,7 +6,7 @@
 Leer desde stdin y escribir a stdout/stderr para aplicaciones CLI.
 
 <note>
-Este modulo solo funciona dentro de contexto de terminal. No puede usarlo desde funciones regulares, solo desde procesos ejecutandose en un <a href="system-terminal.md">Terminal Host</a>.
+Este módulo solo funciona dentro de contexto de terminal. No puede usarlo desde funciones regulares, solo desde procesos ejecutandose en un <a href="system-terminal.md">Terminal Host</a>.
 </note>
 
 ## Carga
@@ -23,9 +23,9 @@ Escribir strings a stdout sin nueva linea:
 local ok, err = io.write("text", "more")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `...` | string | Numero variable de strings a escribir |
+| `...` | string | Número variable de strings a escribir |
 
 **Devuelve:** `boolean, error`
 
@@ -37,9 +37,9 @@ Escribir valores a stdout con tabs entre ellos y nueva linea al final:
 io.print("value1", "value2", 123)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `...` | any | Numero variable de valores a imprimir |
+| `...` | any | Número variable de valores a imprimir |
 
 **Devuelve:** `boolean, error`
 
@@ -51,9 +51,9 @@ Escribir valores a stderr con tabs entre ellos y nueva linea al final:
 io.eprint("Error:", message)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `...` | any | Numero variable de valores a imprimir |
+| `...` | any | Número variable de valores a imprimir |
 
 **Devuelve:** `boolean, error`
 
@@ -65,9 +65,9 @@ Leer hasta n bytes desde stdin:
 local data, err = io.read(1024)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `n` | integer | Numero de bytes a leer (predeterminado: 1024, valores <= 0 se convierten en 1024) |
+| `n` | integer | Número de bytes a leer (predeterminado: 1024, valores <= 0 se convierten en 1024) |
 
 **Devuelve:** `string, error`
 
@@ -103,11 +103,11 @@ local args = io.args()
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Sin contexto de terminal | `errors.UNAVAILABLE` | no |
-| Operacion de escritura fallida | `errors.INTERNAL` | no |
-| Operacion de lectura fallida | `errors.INTERNAL` | no |
-| Operacion de flush fallida | `errors.INTERNAL` | no |
+| Operación de escritura fallida | `errors.INTERNAL` | no |
+| Operación de lectura fallida | `errors.INTERNAL` | no |
+| Operación de flush fallida | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.

@@ -19,9 +19,9 @@ local text = require("text")
 local re, err = text.regexp.compile("[0-9]+")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `pattern` | string | Patron regex compatible con RE2 |
+| `pattern` | string | Patrón regex compatible con RE2 |
 
 **Devuelve:** `Regexp, error`
 
@@ -31,7 +31,7 @@ local re, err = text.regexp.compile("[0-9]+")
 local ok = re:match_string("abc123")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a comparar |
 
@@ -43,7 +43,7 @@ local ok = re:match_string("abc123")
 local match = re:find_string("abc123def")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a buscar |
 
@@ -55,7 +55,7 @@ local match = re:find_string("abc123def")
 local matches = re:find_all_string("a1b2c3")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a buscar |
 
@@ -67,7 +67,7 @@ local matches = re:find_all_string("a1b2c3")
 local match = re:find_string_submatch("user@example.com")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a buscar |
 
@@ -79,7 +79,7 @@ local match = re:find_string_submatch("user@example.com")
 local matches = re:find_all_string_submatch("a=1 b=2")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a buscar |
 
@@ -91,7 +91,7 @@ local matches = re:find_all_string_submatch("a=1 b=2")
 local pos = re:find_string_index("abc123")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a buscar |
 
@@ -103,7 +103,7 @@ local pos = re:find_string_index("abc123")
 local positions = re:find_all_string_index("a1b2c3")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a buscar |
 
@@ -115,7 +115,7 @@ local positions = re:find_all_string_index("a1b2c3")
 local result = re:replace_all_string("a1b2", "X")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String de entrada |
 | `repl` | string | String de reemplazo |
@@ -128,7 +128,7 @@ local result = re:replace_all_string("a1b2", "X")
 local parts = re:split("a,b,c", -1)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `s` | string | String a dividir |
 | `n` | integer | Partes maximas, -1 para todas |
@@ -151,7 +151,7 @@ local names = re:subexp_names()
 
 **Devuelve:** `string[]`
 
-### String de Patron
+### String de Patrón
 
 ```lua
 local pattern = re:string()
@@ -174,7 +174,7 @@ local diff, err = text.diff.new(options)
 
 #### Opciones {id="diff-options"}
 
-| Campo | Tipo | Predeterminado | Descripcion |
+| Campo | Tipo | Predeterminado | Descripción |
 |-------|------|----------------|-------------|
 | `diff_timeout` | number | 1.0 | Timeout en segundos |
 | `diff_edit_cost` | integer | 4 | Costo de una edicion vacia |
@@ -197,7 +197,7 @@ local diffs, err = diff:compare("hello world", "hello there")
 -- {operation = "insert", text = "there"}
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `text1` | string | Texto original |
 | `text2` | string | Texto modificado |
@@ -219,7 +219,7 @@ local summary = diff:summarize(diffs)
 -- summary.insertions = 5 (caracteres agregados)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `diffs` | table | Array de diff de compare |
 
@@ -234,7 +234,7 @@ local formatted, err = diff:pretty_text(diffs)
 print(formatted)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `diffs` | table | Array de diff de compare |
 
@@ -249,7 +249,7 @@ local html, err = diff:pretty_html(diffs)
 -- Devuelve: "hello <del>world</del><ins>there</ins>"
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `diffs` | table | Array de diff de compare |
 
@@ -266,7 +266,7 @@ local text2 = "The quick red fox jumps over the lazy cat"
 local patches, err = diff:patch_make(text1, text2)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `text1` | string | Texto original |
 | `text2` | string | Texto modificado |
@@ -283,7 +283,7 @@ local result, success = diff:patch_apply(patches, text1)
 -- success = true
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `patches` | table | Parches de patch_make |
 | `text` | string | Texto al cual aplicar parches |
@@ -313,7 +313,7 @@ local chunks, err = splitter:split_text(long_text)
 
 #### Opciones {id="recursive-splitter-options"}
 
-| Campo | Tipo | Predeterminado | Descripcion |
+| Campo | Tipo | Predeterminado | Descripción |
 |-------|------|----------------|-------------|
 | `chunk_size` | integer | 4000 | Caracteres maximos por fragmento |
 | `chunk_overlap` | integer | 200 | Caracteres repetidos entre fragmentos adyacentes |
@@ -322,7 +322,7 @@ local chunks, err = splitter:split_text(long_text)
 
 ### Divisor de Markdown
 
-Divide documentos markdown respetando la estructura. Intenta mantener encabezados con su contenido, bloques de codigo intactos y filas de tabla juntas.
+Divide documentos markdown respetando la estructura. Intenta mantener encabezados con su contenido, bloques de código intactos y filas de tabla juntas.
 
 ```lua
 local splitter, err = text.splitter.markdown({
@@ -339,11 +339,11 @@ local chunks, err = splitter:split_text(readme)
 
 #### Opciones {id="markdown-splitter-options"}
 
-| Campo | Tipo | Predeterminado | Descripcion |
+| Campo | Tipo | Predeterminado | Descripción |
 |-------|------|----------------|-------------|
 | `chunk_size` | integer | 4000 | Caracteres maximos por fragmento |
 | `chunk_overlap` | integer | 200 | Caracteres repetidos entre fragmentos adyacentes |
-| `code_blocks` | boolean | false | Mantener bloques de codigo juntos |
+| `code_blocks` | boolean | false | Mantener bloques de código juntos |
 | `reference_links` | boolean | false | Preservar enlaces de referencia |
 | `heading_hierarchy` | boolean | false | Respetar niveles de encabezado |
 | `join_table_rows` | boolean | false | Mantener filas de tabla juntas |
@@ -361,7 +361,7 @@ for i, chunk in ipairs(chunks) do
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `text` | string | Texto a dividir |
 
@@ -386,7 +386,7 @@ for _, chunk in ipairs(chunks) do
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `pages` | table | Array de {content, metadata} |
 
@@ -394,9 +394,9 @@ end
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Sintaxis de patron invalida | `errors.INVALID` | no |
+| Sintaxis de patrón invalida | `errors.INVALID` | no |
 | Error interno | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.

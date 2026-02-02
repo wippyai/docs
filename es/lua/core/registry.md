@@ -52,29 +52,29 @@ Vista punto en el tiempo del registro:
 
 ```lua
 local snap, err = registry.snapshot()           -- estado actual
-local snap, err = registry.snapshot_at(5)       -- en version 5
+local snap, err = registry.snapshot_at(5)       -- en versión 5
 ```
 
 ### Metodos de Instantanea
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `snap:entries()` | `Entry[], error` | Todas las entradas accesibles |
 | `snap:get(id)` | `Entry, error` | Entrada unica por ID |
 | `snap:find(filter)` | `Entry[]` | Filtrar entradas |
 | `snap:namespace(ns)` | `Entry[]` | Entradas en namespace |
-| `snap:version()` | `Version` | Version de instantanea |
+| `snap:versión()` | `Versión` | Versión de instantanea |
 | `snap:changes()` | `Changes` | Crear conjunto de cambios |
 
 ## Versiones
 
 ```lua
-local version, err = registry.current_version()
+local versión, err = registry.current_version()
 local versions, err = registry.versions()
 
-print(version:id())       -- ID numerico
-print(version:string())   -- cadena de visualizacion
-local prev = version:previous()  -- version anterior o nil
+print(versión:id())       -- ID numerico
+print(versión:string())   -- cadena de visualizacion
+local prev = versión:previous()  -- versión anterior o nil
 ```
 
 ## Historial
@@ -82,8 +82,8 @@ local prev = version:previous()  -- version anterior o nil
 ```lua
 local hist, err = registry.history()
 local versions, err = hist:versions()
-local version, err = hist:get_version(5)
-local snap, err = hist:snapshot_at(version)
+local versión, err = hist:get_version(5)
+local snap, err = hist:snapshot_at(versión)
 ```
 
 ## Conjuntos de Cambios
@@ -117,17 +117,17 @@ local new_version, err = changes:apply()
 
 ### Metodos de Changes
 
-| Metodo | Descripcion |
+| Método | Descripción |
 |--------|-------------|
-| `changes:create(entry)` | Agregar operacion de creacion |
-| `changes:update(entry)` | Agregar operacion de actualizacion |
-| `changes:delete(id)` | Agregar operacion de eliminacion (string o `{ns, name}`) |
+| `changes:create(entry)` | Agregar operación de creacion |
+| `changes:update(entry)` | Agregar operación de actualizacion |
+| `changes:delete(id)` | Agregar operación de eliminacion (string o `{ns, name}`) |
 | `changes:ops()` | Obtener operaciones pendientes |
-| `changes:apply()` | Aplicar cambios, devuelve nueva Version |
+| `changes:apply()` | Aplicar cambios, devuelve nueva Versión |
 
-## Aplicar Version
+## Aplicar Versión
 
-Retroceder o avanzar a una version especifica:
+Retroceder o avanzar a una versión especifica:
 
 ```lua
 local prev = current_version:previous()
@@ -152,20 +152,20 @@ end
 
 ## Permisos
 
-| Permiso | Recurso | Descripcion |
+| Permiso | Recurso | Descripción |
 |---------|---------|-------------|
-| `registry.get` | ID de entrada | Leer entrada (tambien filtra resultados de find/entries) |
+| `registry.get` | ID de entrada | Leer entrada (también filtra resultados de find/entries) |
 | `registry.apply` | - | Aplicar conjunto de cambios |
-| `registry.apply_version` | - | Aplicar/revertir version |
+| `registry.apply_version` | - | Aplicar/revertir versión |
 
 ## Errores
 
-| Condicion | Tipo |
+| Condición | Tipo |
 |-----------|------|
 | Entrada no encontrada | `errors.NOT_FOUND` |
-| Version no encontrada | `errors.NOT_FOUND` |
+| Versión no encontrada | `errors.NOT_FOUND` |
 | Permiso denegado | `errors.PERMISSION_DENIED` |
-| Parametro invalido | `errors.INVALID` |
+| Parámetro invalido | `errors.INVALID` |
 | Sin cambios para aplicar | `errors.INVALID` |
 | Registro no disponible | `errors.INTERNAL` |
 

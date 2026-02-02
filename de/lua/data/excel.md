@@ -24,14 +24,14 @@ if err then
     return nil, err
 end
 
--- Tabellenblatter erstellen und Daten hinzufugen
+-- Tabellenblatter erstellen und Daten hinzufügen
 wb:new_sheet("Report")
 wb:set_cell_value("Report", "A1", "Title")
 
 wb:close()
 ```
 
-**Gibt zuruck:** `Workbook, error`
+**Gibt zurück:** `Workbook, error`
 
 ### Arbeitsmappe offnen
 
@@ -70,13 +70,13 @@ file:close()
 |-----------|------|-------------|
 | `reader` | File | Muss io.Reader implementieren (z.B. fs.File) |
 
-**Gibt zuruck:** `Workbook, error`
+**Gibt zurück:** `Workbook, error`
 
 ## Tabellenblatt-Operationen
 
 ### Tabellenblatt erstellen
 
-Erstellt ein neues Tabellenblatt oder gibt den Index eines existierenden zuruck.
+Erstellt ein neues Tabellenblatt oder gibt den Index eines existierenden zurück.
 
 ```lua
 local wb = excel.new()
@@ -86,19 +86,19 @@ local idx1 = wb:new_sheet("Summary")
 local idx2 = wb:new_sheet("Details")
 local idx3 = wb:new_sheet("Charts")
 
--- Wenn Tabellenblatt existiert, gibt seinen Index zuruck
-local existing = wb:new_sheet("Summary")  -- gibt gleichen Wert wie idx1 zuruck
+-- Wenn Tabellenblatt existiert, gibt seinen Index zurück
+local existing = wb:new_sheet("Summary")  -- gibt gleichen Wert wie idx1 zurück
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `name` | string | Tabellenblattname |
 
-**Gibt zuruck:** `integer, error`
+**Gibt zurück:** `integer, error`
 
 ### Tabellenblatter auflisten
 
-Gibt Liste aller Tabellenblattnamen in der Arbeitsmappe zuruck.
+Gibt Liste aller Tabellenblattnamen in der Arbeitsmappe zurück.
 
 ```lua
 local wb = excel.new()
@@ -114,7 +114,7 @@ for _, name in ipairs(sheets) do
 end
 ```
 
-**Gibt zuruck:** `string[], error`
+**Gibt zurück:** `string[], error`
 
 ## Zellen-Operationen
 
@@ -139,7 +139,7 @@ wb:set_cell_value("Data", "A3", "Gadget")
 wb:set_cell_value("Data", "B3", 49.99)
 wb:set_cell_value("Data", "C3", false)
 
--- Zellreferenzen unterstutzen Spalten uber Z hinaus
+-- Zellreferenzen unterstutzen Spalten über Z hinaus
 wb:set_cell_value("Data", "AA1", "Extended Column")
 wb:set_cell_value("Data", "AB100", "Far cell")
 ```
@@ -150,7 +150,7 @@ wb:set_cell_value("Data", "AB100", "Far cell")
 | `cell` | string | Zellreferenz ("A1", "B2", "AA100") |
 | `value` | any | string, integer, number oder boolean |
 
-**Gibt zuruck:** `error`
+**Gibt zurück:** `error`
 
 ### Alle Zeilen abrufen
 
@@ -188,7 +188,7 @@ end
 |-----------|------|-------------|
 | `sheet` | string | Tabellenblattname |
 
-**Gibt zuruck:** `string[][], error`
+**Gibt zurück:** `string[][], error`
 
 Alle Zellwerte werden als Strings zuruckgegeben. Booleans als "TRUE" oder "FALSE", Zahlen als String-Darstellung.
 
@@ -237,9 +237,9 @@ end
 |-----------|------|-------------|
 | `writer` | File | Muss io.Writer implementieren (z.B. fs.File) |
 
-**Gibt zuruck:** `error`
+**Gibt zurück:** `error`
 
-### Arbeitsmappe schliessen
+### Arbeitsmappe schließen
 
 Schliesst Arbeitsmappe und gibt Ressourcen frei.
 
@@ -252,7 +252,7 @@ wb:close()
 wb:close()
 ```
 
-**Gibt zuruck:** `error`
+**Gibt zurück:** `error`
 
 ## Fehler
 
@@ -267,7 +267,7 @@ wb:close()
 | Ungultige Zellreferenz | `errors.INTERNAL` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 

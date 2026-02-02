@@ -27,10 +27,10 @@ local req = http.request({
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `options.timeout` | integer | Timeout de leitura do corpo em ms (padrao: 300000 / 5 min) |
-| `options.max_body` | integer | Tamanho maximo do corpo em bytes (padrao: 120MB) |
+| `options.timeout` | integer | Timeout de leitura do corpo em ms (padrão: 300000 / 5 min) |
+| `options.max_body` | integer | Tamanho maximo do corpo em bytes (padrão: 120MB) |
 
 **Retorna:** `Request, error`
 
@@ -76,7 +76,7 @@ end
 
 ### query
 
-Obtem um unico parametro de query.
+Obtem um único parametro de query.
 
 ```lua
 -- GET /search?q=hello&page=2&limit=10
@@ -84,7 +84,7 @@ local query = req:query("q")        -- "hello"
 local page = req:query("page")      -- "2"
 local missing = req:query("foo")    -- nil
 
--- Com valores padrao
+-- Com valores padrão
 local page = tonumber(req:query("page")) or 1
 local limit = tonumber(req:query("limit")) or 20
 local sort = req:query("sort") or "created_at"
@@ -515,7 +515,7 @@ http.TRANSFER.SSE       -- "sse"
 
 ### Tipos de Erro
 
-Constantes de tipo de erro especificas do modulo para tratamento preciso de erros.
+Constantes de tipo de erro especificas do módulo para tratamento preciso de erros.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Erro de parse de formulario/multipart
@@ -526,14 +526,14 @@ http.ERROR.STREAM_ERROR   -- Erro de stream do corpo
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Sem contexto HTTP | `errors.INTERNAL` | nao |
-| Corpo muito grande | `errors.INVALID` | nao |
-| Timeout de leitura | `errors.INTERNAL` | nao |
-| JSON invalido | `errors.INVALID` | nao |
-| Nao e multipart | `errors.INVALID` | nao |
-| Headers ja enviados | `errors.INVALID` | nao |
-| Escrita falhou | `errors.INTERNAL` | nao |
+| Sem contexto HTTP | `errors.INTERNAL` | não |
+| Corpo muito grande | `errors.INVALID` | não |
+| Timeout de leitura | `errors.INTERNAL` | não |
+| JSON invalido | `errors.INVALID` | não |
+| Não e multipart | `errors.INVALID` | não |
+| Headers ja enviados | `errors.INVALID` | não |
+| Escrita falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

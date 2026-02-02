@@ -20,7 +20,7 @@ local logger = require("logger")
 logger:debug("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `message` | string | Mensagem de log |
 | `fields` | table? | Pares chave-valor contextuais |
@@ -31,7 +31,7 @@ logger:debug("message", {key = "value"})
 logger:info("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `message` | string | Mensagem de log |
 | `fields` | table? | Pares chave-valor contextuais |
@@ -42,7 +42,7 @@ logger:info("message", {key = "value"})
 logger:warn("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `message` | string | Mensagem de log |
 | `fields` | table? | Pares chave-valor contextuais |
@@ -53,7 +53,7 @@ logger:warn("message", {key = "value"})
 logger:error("message", {key = "value"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `message` | string | Mensagem de log |
 | `fields` | table? | Pares chave-valor contextuais |
@@ -69,7 +69,7 @@ local child = logger:with({request_id = id})
 child:info("message")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `fields` | table | Campos para anexar a todos os logs |
 
@@ -84,7 +84,7 @@ local named = logger:named("auth")
 named:info("message")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome do logger |
 
@@ -92,8 +92,8 @@ named:info("message")
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| String de nome vazia | `errors.INVALID` | nao |
+| String de nome vazia | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

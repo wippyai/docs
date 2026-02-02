@@ -46,7 +46,7 @@ json.encode(order)
 -- '{"id":"ord-123","items":[{"sku":"ABC","qty":2},{"sku":"XYZ","qty":1}],"total":99.5}'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `value` | any | Valor Lua a codificar |
 
@@ -105,7 +105,7 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `str` | string | String JSON a decodificar |
 
@@ -146,12 +146,12 @@ if not valid then
     print(err:message())  -- detalles de error de validacion
 end
 
--- Schema tambien puede ser string JSON
+-- Schema también puede ser string JSON
 local schema_json = '{"type":"number","minimum":0}'
 local valid = json.validate(schema_json, 42)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `schema` | table o string | Definicion de JSON Schema |
 | `data` | any | Valor a validar |
@@ -184,7 +184,7 @@ end
 local request = json.decode(body)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `schema` | table o string | Definicion de JSON Schema |
 | `json_str` | string | String JSON a validar |
@@ -193,7 +193,7 @@ local request = json.decode(body)
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Referencia de tabla recursiva | `errors.INTERNAL` | no |
 | Array disperso (huecos en indices) | `errors.INTERNAL` | no |

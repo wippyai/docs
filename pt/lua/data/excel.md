@@ -66,7 +66,7 @@ wb:close()
 file:close()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `reader` | File | Deve implementar io.Reader (ex: fs.File) |
 
@@ -90,7 +90,7 @@ local idx3 = wb:new_sheet("Charts")
 local existing = wb:new_sheet("Summary")  -- retorna mesmo que idx1
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da planilha |
 
@@ -144,7 +144,7 @@ wb:set_cell_value("Data", "AA1", "Extended Column")
 wb:set_cell_value("Data", "AB100", "Far cell")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sheet` | string | Nome da planilha |
 | `cell` | string | Referencia da celula ("A1", "B2", "AA100") |
@@ -184,7 +184,7 @@ for i, row in ipairs(rows) do
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `sheet` | string | Nome da planilha |
 
@@ -233,7 +233,7 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `writer` | File | Deve implementar io.Writer (ex: fs.File) |
 
@@ -256,19 +256,19 @@ wb:close()
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Sem contexto | `errors.INTERNAL` | nao |
-| Workbook invalido | `errors.INVALID` | nao |
-| Workbook fechado | `errors.INTERNAL` | nao |
-| Nao e reader/writer | `errors.INTERNAL` | nao |
-| Arquivo Excel invalido | `errors.INTERNAL` | nao |
-| Planilha inexistente | `errors.INTERNAL` | nao |
-| Referencia de celula invalida | `errors.INTERNAL` | nao |
-| Escrita falhou | `errors.INTERNAL` | nao |
+| Sem contexto | `errors.INTERNAL` | não |
+| Workbook invalido | `errors.INVALID` | não |
+| Workbook fechado | `errors.INTERNAL` | não |
+| Não e reader/writer | `errors.INTERNAL` | não |
+| Arquivo Excel invalido | `errors.INTERNAL` | não |
+| Planilha inexistente | `errors.INTERNAL` | não |
+| Referencia de celula invalida | `errors.INTERNAL` | não |
+| Escrita falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 
-## Veja Tambem
+## Veja Também
 
 - [Filesystem](lua-fs.md) - Operacoes de arquivo para leitura/escrita de arquivos Excel

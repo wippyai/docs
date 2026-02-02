@@ -173,7 +173,7 @@ local result, err = process.call(id, host, ...)
 
 ```lua
 -- 升级到新版本，传递状态
-process.upgrade(source, ...)
+process.upgrade(id, ...)
 
 -- 保持相同定义，用新状态重新运行
 process.upgrade(nil, preserved_state)

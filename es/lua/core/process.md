@@ -1,14 +1,14 @@
-# Gestion de Procesos
+# Gestión de Procesos
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Crear, monitorear y comunicarse con procesos hijos. Implementa patrones de modelo de actores con paso de mensajes, supervision y gestion de ciclo de vida.
+Crear, monitorear y comunicarse con procesos hijos. Implementa patrones de modelo de actores con paso de mensajes, supervision y gestión de ciclo de vida.
 
 El global `process` siempre esta disponible.
 
-## Informacion de Proceso
+## Información de Proceso
 
 Obtener el ID de frame actual o ID de proceso:
 
@@ -25,7 +25,7 @@ Enviar mensaje(s) a un proceso por PID o nombre registrado:
 local ok, err = process.send(destination, topic, ...)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `destination` | string | PID o nombre registrado |
 | `topic` | string | Nombre de topico (no puede comenzar con `@`) |
@@ -49,7 +49,7 @@ local pid, err = process.spawn_linked(id, host, ...)
 local pid, err = process.spawn_linked_monitored(id, host, ...)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de fuente de proceso (ej., `"app.workers:handler"`) |
 | `host` | string | ID de host (ej., `"app:processes"`) |
@@ -71,10 +71,10 @@ local ok, err = process.terminate(destination)
 local ok, err = process.cancel(destination, "5s")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `destination` | string | PID o nombre registrado |
-| `deadline` | string\|integer | Cadena de duracion o milisegundos |
+| `deadline` | string\|integer | Cadena de duración o milisegundos |
 
 **Permisos:** `process.terminate`, `process.cancel` en PID objetivo
 
@@ -101,7 +101,7 @@ local options = process.get_options()
 local ok, err = process.set_options({trap_links = true})
 ```
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `trap_links` | boolean | Si los eventos LINK_DOWN se entregan al canal de eventos |
 
@@ -116,7 +116,7 @@ local events = process.events()  -- Eventos de ciclo de vida del topico @events
 
 ### Tipos de Evento
 
-| Constante | Descripcion |
+| Constante | Descripción |
 |-----------|-------------|
 | `process.event.CANCEL` | Cancelacion solicitada |
 | `process.event.EXIT` | Proceso monitoreado termino |
@@ -124,7 +124,7 @@ local events = process.events()  -- Eventos de ciclo de vida del topico @events
 
 ### Campos de Evento
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `kind` | string | Constante de tipo de evento |
 | `from` | string | PID de origen |
@@ -140,7 +140,7 @@ local ch = process.listen(topic, options)
 process.unlisten(ch)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `topic` | string | Nombre de topico (no puede comenzar con `@`) |
 | `options.message` | boolean | Si true, recibe objetos Message; si false, cargas crudas |
@@ -172,8 +172,8 @@ local result, err = process.call(id, host, ...)
 Actualizar el proceso actual a una nueva definicion mientras preserva PID:
 
 ```lua
--- Actualizar a nueva version, pasando estado
-process.upgrade(source, ...)
+-- Actualizar a nueva versión, pasando estado
+process.upgrade(id, ...)
 
 -- Mantener misma definicion, re-ejecutar con nuevo estado
 process.upgrade(nil, preserved_state)
@@ -191,7 +191,7 @@ local spawner = process.with_context({request_id = "123"})
 
 ### Metodos de SpawnBuilder
 
-SpawnBuilder es inmutable - cada metodo devuelve una nueva instancia:
+SpawnBuilder es inmutable - cada método devuelve una nueva instancia:
 
 ```lua
 spawner:with_context(values)      -- Agregar valores de contexto
@@ -212,7 +212,7 @@ spawner:spawn_linked(id, host, ...)
 spawner:spawn_linked_monitored(id, host, ...)
 ```
 
-Mismos permisos que funciones spawn a nivel de modulo.
+Mismos permisos que funciones spawn a nivel de módulo.
 
 ## Registro de Nombres
 
@@ -234,7 +234,7 @@ Los permisos controlan lo que un proceso llamador puede hacer. Todas las verific
 
 Las politicas pueden permitir/denegar basado en:
 - **Actor**: El principal de seguridad haciendo la solicitud
-- **Accion**: La operacion siendo realizada (ej., `process.send`)
+- **Accion**: La operación siendo realizada (ej., `process.send`)
 - **Recurso**: El objetivo (PID, id de proceso, id de host o nombre)
 - **Atributos**: Contexto adicional incluyendo `pid` (ID de proceso del llamador)
 
@@ -263,7 +263,7 @@ Las politicas pueden permitir/denegar basado en:
 
 Algunas operaciones requieren multiples permisos:
 
-| Operacion | Permisos Requeridos |
+| Operación | Permisos Requeridos |
 |-----------|---------------------|
 | `spawn()` | `process.spawn` + `process.host` |
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
@@ -274,22 +274,22 @@ Algunas operaciones requieren multiples permisos:
 
 ## Errores
 
-| Condicion | Tipo |
+| Condición | Tipo |
 |-----------|------|
 | Contexto no encontrado | `errors.INVALID` |
 | Contexto de frame no encontrado | `errors.INVALID` |
 | Argumentos requeridos faltantes | `errors.INVALID` |
 | Prefijo de topico reservado (`@`) | `errors.INVALID` |
-| Formato de duracion invalido | `errors.INVALID` |
+| Formato de duración invalido | `errors.INVALID` |
 | Nombre no registrado | `errors.NOT_FOUND` |
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Nombre ya registrado | `errors.ALREADY_EXISTS` |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 
-## Vea Tambien
+## Vea También
 
-- [Canales](lua/core/channel.md) - Comunicacion entre procesos
+- [Canales](lua/core/channel.md) - Comunicación entre procesos
 - [Cola de Mensajes](lua/storage/queue.md) - Mensajeria basada en colas
 - [Funciones](lua/core/funcs.md) - Invocacion de funciones
-- [Supervision](guides/supervision.md) - Gestion de ciclo de vida de procesos
+- [Supervision](guides/supervision.md) - Gestión de ciclo de vida de procesos

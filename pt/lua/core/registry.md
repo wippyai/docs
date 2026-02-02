@@ -52,18 +52,18 @@ Visao point-in-time do registry:
 
 ```lua
 local snap, err = registry.snapshot()           -- estado atual
-local snap, err = registry.snapshot_at(5)       -- na versao 5
+local snap, err = registry.snapshot_at(5)       -- na versão 5
 ```
 
 ### Metodos de Snapshot
 
-| Metodo | Retorna | Descricao |
+| Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `snap:entries()` | `Entry[], error` | Todas as entradas acessiveis |
 | `snap:get(id)` | `Entry, error` | Entrada unica por ID |
 | `snap:find(filter)` | `Entry[]` | Filtrar entradas |
 | `snap:namespace(ns)` | `Entry[]` | Entradas no namespace |
-| `snap:version()` | `Version` | Versao do snapshot |
+| `snap:version()` | `Version` | Versão do snapshot |
 | `snap:changes()` | `Changes` | Criar changeset |
 
 ## Versoes
@@ -74,7 +74,7 @@ local versions, err = registry.versions()
 
 print(version:id())       -- ID numerico
 print(version:string())   -- string de exibicao
-local prev = version:previous()  -- versao anterior ou nil
+local prev = version:previous()  -- versão anterior ou nil
 ```
 
 ## Historico
@@ -117,17 +117,17 @@ local new_version, err = changes:apply()
 
 ### Metodos de Changes
 
-| Metodo | Descricao |
+| Método | Descrição |
 |--------|-----------|
-| `changes:create(entry)` | Adicionar operacao create |
-| `changes:update(entry)` | Adicionar operacao update |
-| `changes:delete(id)` | Adicionar operacao delete (string ou `{ns, name}`) |
+| `changes:create(entry)` | Adicionar operação create |
+| `changes:update(entry)` | Adicionar operação update |
+| `changes:delete(id)` | Adicionar operação delete (string ou `{ns, name}`) |
 | `changes:ops()` | Obter operacoes pendentes |
 | `changes:apply()` | Aplicar mudancas, retorna nova Version |
 
-## Aplicar Versao
+## Aplicar Versão
 
-Rollback ou forward para uma versao especifica:
+Rollback ou forward para uma versão especifica:
 
 ```lua
 local prev = current_version:previous()
@@ -152,21 +152,21 @@ end
 
 ## Permissoes
 
-| Permissao | Recurso | Descricao |
+| Permissao | Recurso | Descrição |
 |-----------|---------|-----------|
-| `registry.get` | ID da entrada | Ler entrada (tambem filtra resultados de find/entries) |
+| `registry.get` | ID da entrada | Ler entrada (também filtra resultados de find/entries) |
 | `registry.apply` | - | Aplicar changeset |
-| `registry.apply_version` | - | Aplicar/rollback versao |
+| `registry.apply_version` | - | Aplicar/rollback versão |
 
 ## Erros
 
-| Condicao | Tipo |
+| Condição | Tipo |
 |----------|------|
-| Entrada nao encontrada | `errors.NOT_FOUND` |
-| Versao nao encontrada | `errors.NOT_FOUND` |
+| Entrada não encontrada | `errors.NOT_FOUND` |
+| Versão não encontrada | `errors.NOT_FOUND` |
 | Permissao negada | `errors.PERMISSION_DENIED` |
-| Parametro invalido | `errors.INVALID` |
+| Parâmetro invalido | `errors.INVALID` |
 | Sem mudancas para aplicar | `errors.INVALID` |
-| Registry nao disponivel | `errors.INTERNAL` |
+| Registry não disponível | `errors.INTERNAL` |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

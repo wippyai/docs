@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Registre metricas de aplicacao usando contadores, gauges e histogramas.
+Registre metricas de aplicação usando contadores, gauges e histogramas.
 
 ## Carregamento
 
@@ -19,7 +19,7 @@ local metrics = require("metrics")
 metrics.counter_inc("requests_total", {method = "POST"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da metrica |
 | `labels` | table? | Pares chave-valor de labels |
@@ -32,7 +32,7 @@ metrics.counter_inc("requests_total", {method = "POST"})
 metrics.counter_add("bytes_total", 1024, {direction = "out"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da metrica |
 | `value` | number | Valor a adicionar |
@@ -48,7 +48,7 @@ metrics.counter_add("bytes_total", 1024, {direction = "out"})
 metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da metrica |
 | `value` | number | Valor atual |
@@ -62,7 +62,7 @@ metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 metrics.gauge_inc("connections", {pool = "db"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da metrica |
 | `labels` | table? | Pares chave-valor de labels |
@@ -75,7 +75,7 @@ metrics.gauge_inc("connections", {pool = "db"})
 metrics.gauge_dec("connections", {pool = "db"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da metrica |
 | `labels` | table? | Pares chave-valor de labels |
@@ -90,7 +90,7 @@ metrics.gauge_dec("connections", {pool = "db"})
 metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome da metrica |
 | `value` | number | Valor observado |
@@ -100,8 +100,8 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Coletor nao disponivel | `errors.INTERNAL` | nao |
+| Coletor não disponível | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

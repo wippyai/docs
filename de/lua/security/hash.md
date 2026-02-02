@@ -26,7 +26,7 @@ local raw = hash.md5("data", true)
 | `data` | string | Zu hashende Daten |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### SHA-1
 
@@ -40,7 +40,7 @@ local raw = hash.sha1("data", true)
 | `data` | string | Zu hashende Daten |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### SHA-256
 
@@ -54,7 +54,7 @@ local raw = hash.sha256("data", true)
 | `data` | string | Zu hashende Daten |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### SHA-512
 
@@ -68,7 +68,7 @@ local raw = hash.sha512("data", true)
 | `data` | string | Zu hashende Daten |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## HMAC-Authentifizierung
 
@@ -82,10 +82,10 @@ local raw = hash.hmac_md5("message", "secret", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
-| `secret` | string | Geheimer Schlussel |
+| `secret` | string | Geheimer Schlüssel |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### HMAC-SHA1
 
@@ -97,10 +97,10 @@ local raw = hash.hmac_sha1("message", "secret", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
-| `secret` | string | Geheimer Schlussel |
+| `secret` | string | Geheimer Schlüssel |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### HMAC-SHA256
 
@@ -112,10 +112,10 @@ local raw = hash.hmac_sha256("message", "secret", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
-| `secret` | string | Geheimer Schlussel |
+| `secret` | string | Geheimer Schlüssel |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ### HMAC-SHA512
 
@@ -127,16 +127,16 @@ local raw = hash.hmac_sha512("message", "secret", true)
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `data` | string | Zu authentifizierende Nachricht |
-| `secret` | string | Geheimer Schlussel |
+| `secret` | string | Geheimer Schlüssel |
 | `raw` | boolean? | Rohe Bytes statt Hex zuruckgeben |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 ## Nicht-kryptografische Hashes
 
 ### FNV-32
 
-Schneller Hash fur Hash-Tabellen und Partitionierung.
+Schneller Hash für Hash-Tabellen und Partitionierung.
 
 ```lua
 local n = hash.fnv32("data")
@@ -146,11 +146,11 @@ local n = hash.fnv32("data")
 |-----------|------|-------------|
 | `data` | string | Zu hashende Daten |
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ### FNV-64
 
-Schneller Hash mit grosserer Ausgabe fur reduzierte Kollisionen.
+Schneller Hash mit größerer Ausgabe für reduzierte Kollisionen.
 
 ```lua
 local n = hash.fnv64("data")
@@ -160,7 +160,7 @@ local n = hash.fnv64("data")
 |-----------|------|-------------|
 | `data` | string | Zu hashende Daten |
 
-**Gibt zuruck:** `number, error`
+**Gibt zurück:** `number, error`
 
 ## Fehler
 
@@ -169,4 +169,4 @@ local n = hash.fnv64("data")
 | Eingabe ist kein String | `errors.INVALID` | nein |
 | Secret ist kein String (HMAC) | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

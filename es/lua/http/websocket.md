@@ -3,7 +3,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Cliente WebSocket para comunicacion bidireccional en tiempo real con servidores.
+Cliente WebSocket para comunicación bidireccional en tiempo real con servidores.
 
 ## Carga
 
@@ -11,9 +11,9 @@ Cliente WebSocket para comunicacion bidireccional en tiempo real con servidores.
 local websocket = require("websocket")
 ```
 
-## Conexion
+## Conexión
 
-### Conexion Basica
+### Conexión Basica
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws")
@@ -36,20 +36,20 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 })
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `url` | string | URL WebSocket (ws:// o wss://) |
-| `options` | table | Opciones de conexion (opcional) |
+| `options` | table | Opciones de conexión (opcional) |
 
 **Devuelve:** `Client, error`
 
-### Opciones de Conexion
+### Opciones de Conexión
 
-| Opcion | Tipo | Descripcion |
+| Opcion | Tipo | Descripción |
 |--------|------|-------------|
 | `headers` | table | Cabeceras HTTP para handshake |
 | `protocols` | table | Subprotocolos WebSocket |
-| `dial_timeout` | number/string | Timeout de conexion (ms o "5s") |
+| `dial_timeout` | number/string | Timeout de conexión (ms o "5s") |
 | `read_timeout` | number/string | Timeout de lectura |
 | `write_timeout` | number/string | Timeout de escritura |
 | `compression` | number | Modo de compresion (ver Constantes) |
@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `read_limit` | number | Tamano maximo de mensaje (0-128MB) |
 | `channel_capacity` | number | Buffer de canal de recepcion (1-10000) |
 
-**Formato de timeout:** Numeros son milisegundos, strings usan formato de duracion Go ("5s", "1m").
+**Formato de timeout:** Numeros son milisegundos, strings usan formato de duración Go ("5s", "1m").
 
 ## Enviar Mensajes
 
@@ -82,7 +82,7 @@ client:send(json.encode({
 client:send(binary_data, websocket.BINARY)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | Contenido del mensaje |
 | `type` | number | `websocket.TEXT` (1) o `websocket.BINARY` (2) |
@@ -99,7 +99,7 @@ client:ping()
 
 ## Recibir Mensajes
 
-El metodo `channel()` devuelve un canal para recibir mensajes. Funciona con `channel.select` para multiplexado.
+El método `channel()` devuelve un canal para recibir mensajes. Funciona con `channel.select` para multiplexado.
 
 ### Recepcion Basica
 
@@ -121,7 +121,7 @@ local ch = client:channel()
 while true do
     local msg, ok = ch:receive()
     if not ok then
-        break  -- Conexion cerrada
+        break  -- Conexión cerrada
     end
 
     if msg.type == "text" then
@@ -155,27 +155,27 @@ end
 
 ### Objeto Message
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `type` | string | `"text"` o `"binary"` |
 | `data` | string | Contenido del mensaje |
 
-## Cerrar Conexion
+## Cerrar Conexión
 
 ```lua
--- Cierre normal (codigo 1000)
+-- Cierre normal (código 1000)
 client:close()
 
--- Con codigo y razon
+-- Con código y razon
 client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
 
 -- Cierre de error
 client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `code` | number | Codigo de cierre (1000-4999), predeterminado 1000 |
+| `code` | number | Código de cierre (1000-4999), predeterminado 1000 |
 | `reason` | string | Razon de cierre (opcional) |
 
 **Devuelve:** `boolean, error`
@@ -207,14 +207,14 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (por mensaje)
 
 ### Codigos de Cierre
 
-| Constante | Codigo | Descripcion |
+| Constante | Código | Descripción |
 |-----------|--------|-------------|
 | `NORMAL` | 1000 | Cierre normal |
 | `GOING_AWAY` | 1001 | Servidor apagandose |
 | `PROTOCOL_ERROR` | 1002 | Error de protocolo |
 | `UNSUPPORTED_DATA` | 1003 | Tipo de datos no soportado |
 | `NO_STATUS` | 1005 | Sin estado recibido |
-| `ABNORMAL_CLOSURE` | 1006 | Conexion perdida |
+| `ABNORMAL_CLOSURE` | 1006 | Conexión perdida |
 | `INVALID_PAYLOAD` | 1007 | Payload de frame invalido |
 | `POLICY_VIOLATION` | 1008 | Violacion de politica |
 | `MESSAGE_TOO_BIG` | 1009 | Mensaje muy grande |
@@ -282,7 +282,7 @@ while true do
         client:ping()
         heartbeat = time.after("30s")
     elseif not r.ok then
-        break  -- Conexion cerrada
+        break  -- Conexión cerrada
     else
         local price = json.decode(r.value.data)
         update_price(price.symbol, price.value)
@@ -298,22 +298,22 @@ Las conexiones WebSocket estan sujetas a evaluacion de politica de seguridad.
 
 ### Acciones de Seguridad
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `websocket.connect` | - | Permitir/denegar conexiones WebSocket |
 | `websocket.connect.url` | URL | Permitir/denegar conexiones a URLs especificas |
 
-Consulte [Modelo de Seguridad](system-security.md) para configuracion de politicas.
+Consulte [Modelo de Seguridad](system-security.md) para configuración de politicas.
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Conexiones deshabilitadas | `errors.PERMISSION_DENIED` | no |
 | URL no permitida | `errors.PERMISSION_DENIED` | no |
 | Sin contexto | `errors.INTERNAL` | no |
-| Conexion fallida | `errors.INTERNAL` | si |
-| ID de conexion invalido | `errors.INTERNAL` | no |
+| Conexión fallida | `errors.INTERNAL` | si |
+| ID de conexión invalido | `errors.INTERNAL` | no |
 
 ```lua
 local client, err = websocket.connect(url)

@@ -70,7 +70,7 @@ local resp, err = http_client.head("https://cdn.example.com/file.zip")
 local size = resp.headers["Content-Length"]
 ```
 
-### Metodo Customizado
+### Método Customizado
 
 ```lua
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
@@ -78,15 +78,15 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `method` | string | Metodo HTTP |
+| `method` | string | Método HTTP |
 | `url` | string | URL da requisicao |
 | `options` | table | Opcoes da requisicao (opcional) |
 
 ## Opcoes de Requisicao
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `headers` | table | Headers da requisicao `{["Name"] = "value"}` |
 | `body` | string | Corpo da requisicao |
@@ -97,7 +97,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `auth` | table | Basic auth `{user = "name", pass = "secret"}` |
 | `timeout` | number/string | Timeout: numero em segundos, ou string como `"30s"`, `"1m"` |
 | `stream` | boolean | Streaming do corpo da resposta ao inves de buffer |
-| `max_response_body` | number | Tamanho maximo da resposta em bytes (0 = padrao) |
+| `max_response_body` | number | Tamanho maximo da resposta em bytes (0 = padrão) |
 | `unix_socket` | string | Conectar via caminho de socket Unix |
 
 ### Parametros de Query
@@ -155,13 +155,13 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 })
 ```
 
-| Campo de Arquivo | Tipo | Obrigatorio | Descricao |
+| Campo de Arquivo | Tipo | Obrigatorio | Descrição |
 |------------------|------|-------------|-----------|
 | `name` | string | sim | Nome do campo do formulario |
-| `filename` | string | nao | Nome original do arquivo |
+| `filename` | string | não | Nome original do arquivo |
 | `content` | string | sim* | Conteudo do arquivo |
 | `reader` | userdata | sim* | Alternativa: io.Reader para conteudo |
-| `content_type` | string | nao | Tipo MIME (padrao: `application/octet-stream`) |
+| `content_type` | string | não | Tipo MIME (padrão: `application/octet-stream`) |
 
 *`content` ou `reader` e obrigatorio.
 
@@ -179,10 +179,10 @@ local resp, err = http_client.get(url, {timeout = "1h"})
 
 ## Objeto Response
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `status_code` | number | Codigo de status HTTP |
-| `body` | string | Corpo da resposta (se nao streaming) |
+| `status_code` | number | Código de status HTTP |
+| `body` | string | Corpo da resposta (se não streaming) |
 | `body_size` | number | Tamanho do corpo em bytes (-1 se streaming) |
 | `headers` | table | Headers da resposta |
 | `cookies` | table | Cookies da resposta |
@@ -222,7 +222,7 @@ end
 resp.stream:close()
 ```
 
-| Metodo Stream | Retorna | Descricao |
+| Método Stream | Retorna | Descrição |
 |---------------|---------|-----------|
 | `read(size)` | string, error | Ler ate `size` bytes |
 | `close()` | - | Fechar o stream |
@@ -252,7 +252,7 @@ else
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `requests` | table | Array de `{method, url, options?}` |
 
@@ -260,7 +260,7 @@ end
 
 **Notas:**
 - Requisicoes executam concorrentemente
-- Streaming (`stream = true`) nao e suportado em lote
+- Streaming (`stream = true`) não e suportado em lote
 - Arrays de resultado correspondem a ordem das requisicoes (indexados a partir de 1)
 
 ## Codificacao de URL
@@ -287,7 +287,7 @@ Requisicoes HTTP estao sujeitas a avaliacao de politica de seguranca.
 
 ### Acoes de Seguranca
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `http_client.request` | URL | Permitir/negar requisicoes para URLs especificas |
 | `http_client.unix_socket` | Caminho do socket | Permitir/negar conexoes Unix socket |
@@ -305,7 +305,7 @@ end
 
 ### Protecao SSRF
 
-Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas por padrao. Acesso requer a permissao `http_client.private_ip`.
+Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas por padrão. Acesso requer a permissao `http_client.private_ip`.
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
@@ -316,13 +316,13 @@ Veja [Security Model](system-security.md) para configuracao de politicas.
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Politica de seguranca negou | `errors.PERMISSION_DENIED` | nao |
-| IP privado bloqueado | `errors.PERMISSION_DENIED` | nao |
-| Socket Unix negado | `errors.PERMISSION_DENIED` | nao |
-| URL ou opcoes invalidas | `errors.INVALID` | nao |
-| Sem contexto | `errors.INTERNAL` | nao |
+| Politica de seguranca negou | `errors.PERMISSION_DENIED` | não |
+| IP privado bloqueado | `errors.PERMISSION_DENIED` | não |
+| Socket Unix negado | `errors.PERMISSION_DENIED` | não |
+| URL ou opcoes invalidas | `errors.INVALID` | não |
+| Sem contexto | `errors.INTERNAL` | não |
 | Falha de rede | `errors.INTERNAL` | sim |
 | Timeout | `errors.INTERNAL` | sim |
 

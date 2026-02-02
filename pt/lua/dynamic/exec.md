@@ -1,4 +1,4 @@
-# Execucao de Comandos
+# Execução de Comandos
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
@@ -32,7 +32,7 @@ local proc = executor:exec("ls -la")
 executor:release()
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do recurso |
 
@@ -70,7 +70,7 @@ local proc = executor:exec("./deploy.sh production", {
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `cmd` | string | Comando para executar |
 | `options.work_dir` | string | Diretorio de trabalho |
@@ -96,7 +96,7 @@ if err then
 end
 
 if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", "Build falhou com codigo de saida: " .. exit_code)
+    return nil, errors.new("INTERNAL", "Build falhou com código de saida: " .. exit_code)
 end
 ```
 
@@ -189,19 +189,19 @@ proc:signal(SIGINT)
 
 Operacoes de exec estao sujeitas a avaliacao de politica de seguranca.
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `exec.get` | ID do Executor | Obter um recurso de executor |
 | `exec.run` | Comando | Executar um comando especifico |
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| ID invalido | `errors.INVALID` | nao |
-| Permissao negada | `errors.PERMISSION_DENIED` | nao |
-| Processo fechado | `errors.INVALID` | nao |
-| Processo nao iniciado | `errors.INVALID` | nao |
-| Ja iniciado | `errors.INVALID` | nao |
+| ID invalido | `errors.INVALID` | não |
+| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Processo fechado | `errors.INVALID` | não |
+| Processo não iniciado | `errors.INVALID` | não |
+| Ja iniciado | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

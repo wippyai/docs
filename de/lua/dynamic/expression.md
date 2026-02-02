@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Werten Sie dynamische Ausdrucke mit [expr-lang](https://expr-lang.org/)-Syntax aus. Kompilieren und fuhren Sie sichere Ausdrucke fur Filterung, Validierung und Regelauswertung ohne vollstandige Lua-Ausfuhrung aus.
+Werten Sie dynamische Ausdrucke mit [expr-lang](https://expr-lang.org/)-Syntax aus. Kompilieren und fuhren Sie sichere Ausdrucke für Filterung, Validierung und Regelauswertung ohne vollstandige Lua-Ausfuhrung aus.
 
 ## Konfiguration
 
@@ -24,7 +24,7 @@ local expr = require("expr")
 
 ## Ausdrucke auswerten
 
-Werten Sie einen Ausdruck-String aus und geben Sie das Ergebnis zuruck. Verwendet internen LRU-Cache fur kompilierte Ausdrucke:
+Werten Sie einen Ausdruck-String aus und geben Sie das Ergebnis zurück. Verwendet internen LRU-Cache für kompilierte Ausdrucke:
 
 ```lua
 -- Einfache Mathematik
@@ -59,16 +59,16 @@ local has_admin = expr.eval('"admin" in roles', {
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `expression` | string | Ausdruck in expr-lang-Syntax |
-| `env` | table | Variablenumgebung fur Ausdruck (optional) |
+| `env` | table | Variablenumgebung für Ausdruck (optional) |
 
-**Gibt zuruck:** `any, error`
+**Gibt zurück:** `any, error`
 
 ## Ausdrucke kompilieren
 
-Kompilieren Sie einen Ausdruck in ein wiederverwendbares Program-Objekt fur wiederholte Auswertung:
+Kompilieren Sie einen Ausdruck in ein wiederverwendbares Program-Objekt für wiederholte Auswertung:
 
 ```lua
--- Einmal kompilieren fur wiederholte Verwendung
+-- Einmal kompilieren für wiederholte Verwendung
 local discount_calc, err = expr.compile("price * (1 - discount_rate)")
 if err then
     return nil, err
@@ -83,11 +83,11 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `expression` | string | Ausdruck in expr-lang-Syntax |
-| `env` | table | Typhinweis-Umgebung fur Kompilierung (optional) |
+| `env` | table | Typhinweis-Umgebung für Kompilierung (optional) |
 
-**Gibt zuruck:** `Program, error`
+**Gibt zurück:** `Program, error`
 
-## Kompilierte Programme ausfuhren
+## Kompilierte Programme ausführen
 
 Fuhren Sie einen kompilierten Ausdruck mit bereitgestellter Umgebung aus:
 
@@ -113,9 +113,9 @@ local order_total = pricer:run({
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `env` | table | Variablenumgebung fur Ausdruck (optional) |
+| `env` | table | Variablenumgebung für Ausdruck (optional) |
 
-**Gibt zuruck:** `any, error`
+**Gibt zurück:** `any, error`
 
 ## Eingebaute Funktionen
 
@@ -146,8 +146,8 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Ausdruck ist leer | `errors.INVALID` | nein |
-| Ausdruck-Syntax ungultig | `errors.INTERNAL` | nein |
+| Ausdruck-Syntax ungültig | `errors.INTERNAL` | nein |
 | Ausdrucksauswertung schlagt fehl | `errors.INTERNAL` | nein |
 | Ergebniskonvertierung schlagt fehl | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

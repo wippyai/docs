@@ -70,7 +70,7 @@ local resp, err = http_client.head("https://cdn.example.com/file.zip")
 local size = resp.headers["Content-Length"]
 ```
 
-### Metodo Personalizado
+### Método Personalizado
 
 ```lua
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
@@ -78,15 +78,15 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 })
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `method` | string | Metodo HTTP |
+| `method` | string | Método HTTP |
 | `url` | string | URL de solicitud |
 | `options` | table | Opciones de solicitud (opcional) |
 
 ## Opciones de Solicitud
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `headers` | table | Cabeceras de solicitud `{["Name"] = "value"}` |
 | `body` | string | Cuerpo de solicitud |
@@ -94,8 +94,8 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `form` | table | Datos de formulario (establece Content-Type automaticamente) |
 | `files` | table | Carga de archivos (array de definiciones de archivo) |
 | `cookies` | table | Cookies de solicitud `{name = "value"}` |
-| `auth` | table | Autenticacion basica `{user = "name", pass = "secret"}` |
-| `timeout` | number/string | Timeout: numero en segundos, o string como `"30s"`, `"1m"` |
+| `auth` | table | Autenticación basica `{user = "name", pass = "secret"}` |
+| `timeout` | number/string | Timeout: número en segundos, o string como `"30s"`, `"1m"` |
 | `stream` | boolean | Transmitir cuerpo de respuesta en lugar de almacenar en buffer |
 | `max_response_body` | number | Tamano maximo de respuesta en bytes (0 = predeterminado) |
 | `unix_socket` | string | Conectar via ruta de socket Unix |
@@ -112,7 +112,7 @@ local resp, err = http_client.get("https://api.example.com/search", {
 })
 ```
 
-### Cabeceras y Autenticacion
+### Cabeceras y Autenticación
 
 ```lua
 local resp, err = http_client.get("https://api.example.com/data", {
@@ -122,7 +122,7 @@ local resp, err = http_client.get("https://api.example.com/data", {
     }
 })
 
--- O usar autenticacion basica
+-- O usar autenticación basica
 local resp, err = http_client.get("https://api.example.com/data", {
     auth = {user = "admin", pass = "secret"}
 })
@@ -155,7 +155,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 })
 ```
 
-| Campo de Archivo | Tipo | Requerido | Descripcion |
+| Campo de Archivo | Tipo | Requerido | Descripción |
 |------------------|------|-----------|-------------|
 | `name` | string | si | Nombre de campo de formulario |
 | `filename` | string | no | Nombre de archivo original |
@@ -168,10 +168,10 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 ### Timeout
 
 ```lua
--- Numero: segundos
+-- Número: segundos
 local resp, err = http_client.get(url, {timeout = 30})
 
--- String: formato de duracion Go
+-- String: formato de duración Go
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
@@ -179,9 +179,9 @@ local resp, err = http_client.get(url, {timeout = "1h"})
 
 ## Objeto Response
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `status_code` | number | Codigo de estado HTTP |
+| `status_code` | number | Código de estado HTTP |
 | `body` | string | Cuerpo de respuesta (si no es streaming) |
 | `body_size` | number | Tamano del cuerpo en bytes (-1 si es streaming) |
 | `headers` | table | Cabeceras de respuesta |
@@ -222,7 +222,7 @@ end
 resp.stream:close()
 ```
 
-| Metodo de Stream | Devuelve | Descripcion |
+| Método de Stream | Devuelve | Descripción |
 |------------------|----------|-------------|
 | `read(size)` | string, error | Leer hasta `size` bytes |
 | `close()` | - | Cerrar el stream |
@@ -252,7 +252,7 @@ else
 end
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `requests` | table | Array de `{method, url, options?}` |
 
@@ -287,7 +287,7 @@ Las solicitudes HTTP estan sujetas a evaluacion de politica de seguridad.
 
 ### Acciones de Seguridad
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `http_client.request` | URL | Permitir/denegar solicitudes a URLs especificas |
 | `http_client.unix_socket` | Ruta de socket | Permitir/denegar conexiones de socket Unix |
@@ -312,11 +312,11 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: no permitido: IP privada 192.168.1.1
 ```
 
-Consulte [Modelo de Seguridad](system-security.md) para configuracion de politicas.
+Consulte [Modelo de Seguridad](system-security.md) para configuración de politicas.
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Politica de seguridad denegada | `errors.PERMISSION_DENIED` | no |
 | IP privada bloqueada | `errors.PERMISSION_DENIED` | no |

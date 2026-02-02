@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Invoque servicos atraves de contracts tipados. Chame APIs remotas, workflows e funcoes com validacao de schema e suporte a execucao assincrona.
+Invoque servicos atraves de contracts tipados. Chame APIs remotas, workflows e funcoes com validacao de schema e suporte a execução assincrona.
 
 ## Carregamento
 
@@ -38,7 +38,7 @@ local svc, err = contract.open("app.services:user", {
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `binding_id` | string | ID do binding, suporta parametros de query |
 | `scope` | table | Valores de contexto (opcional, sobrescreve parametros de query) |
@@ -47,7 +47,7 @@ local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
 ## Obtendo um Contract
 
-Recuperar definicao de contract para introspeccao:
+Recuperar definição de contract para introspeccao:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
@@ -62,12 +62,12 @@ end
 local method, err = c:method("say_hello")
 ```
 
-### Definicao de Method
+### Definição de Method
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `name` | string | Nome do metodo |
-| `description` | string | Descricao do metodo |
+| `name` | string | Nome do método |
+| `description` | string | Descrição do método |
 | `input_schemas` | table[] | Definicoes de schema de entrada |
 | `output_schemas` | table[] | Definicoes de schema de saida |
 
@@ -113,7 +113,7 @@ local product, err = calc:multiply(5, 6)
 
 ## Chamadas Assincronas
 
-Adicione sufixo `_async` para execucao assincrona:
+Adicione sufixo `_async` para execução assincrona:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
@@ -139,7 +139,7 @@ Abrir binding atraves de objeto contract:
 ```lua
 local c, err = contract.get("app.services:user")
 
--- Binding padrao
+-- Binding padrão
 local instance, err = c:open()
 
 -- Binding especifico
@@ -185,18 +185,18 @@ local admin, err = secured:open()
 | `contract.get` | id do contract | `get()` |
 | `contract.open` | id do binding | `open()`, `Contract:open()` |
 | `contract.implementations` | id do contract | `find_implementations()`, `Contract:implementations()` |
-| `contract.call` | nome do metodo | chamadas de metodo sync e async |
+| `contract.call` | nome do método | chamadas de método sync e async |
 | `contract.context` | "context" | `Contract:with_context()` |
 | `contract.security` | "security" | `Contract:with_actor()`, `Contract:with_scope()` |
 
 ## Erros
 
-| Condicao | Tipo |
+| Condição | Tipo |
 |----------|------|
 | Formato de ID de binding invalido | `errors.INVALID` |
-| Contract nao encontrado | `errors.NOT_FOUND` |
-| Binding nao encontrado | `errors.NOT_FOUND` |
-| Metodo nao encontrado | `errors.NOT_FOUND` |
-| Sem binding padrao | `errors.NOT_FOUND` |
+| Contract não encontrado | `errors.NOT_FOUND` |
+| Binding não encontrado | `errors.NOT_FOUND` |
+| Método não encontrado | `errors.NOT_FOUND` |
+| Sem binding padrão | `errors.NOT_FOUND` |
 | Permissao negada | `errors.PERMISSION_DENIED` |
 | Chamada falhou | `errors.INTERNAL` |

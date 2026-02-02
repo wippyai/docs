@@ -98,11 +98,11 @@ local tree, err = treesitter.parse("go", code)
 | `language` | string | Sprachname oder Alias |
 | `code` | string | Quellcode |
 
-**Gibt zuruck:** `Tree, error`
+**Gibt zurück:** `Tree, error`
 
 ### Wiederverwendbarer Parser
 
-Erstellen Sie einen Parser fur wiederholtes Parsing oder inkrementelle Updates.
+Erstellen Sie einen Parser für wiederholtes Parsing oder inkrementelle Updates.
 
 ```lua
 local parser = treesitter.parser()
@@ -116,15 +116,15 @@ local tree2 = parser:parse("package main\nfunc foo() {}", tree1)
 parser:close()
 ```
 
-**Gibt zuruck:** `Parser`
+**Gibt zurück:** `Parser`
 
 ### Parser-Methoden
 
 | Methode | Beschreibung |
 |--------|-------------|
-| `set_language(lang)` | Parser-Sprache setzen, gibt `boolean, error` zuruck |
+| `set_language(lang)` | Parser-Sprache setzen, gibt `boolean, error` zurück |
 | `get_language()` | Aktuellen Sprachnamen abrufen |
-| `parse(code, old_tree?)` | Code parsen, optional mit altem Baum fur inkrementelles Parsing |
+| `parse(code, old_tree?)` | Code parsen, optional mit altem Baum für inkrementelles Parsing |
 | `set_timeout(duration)` | Parse-Timeout setzen (String wie `"1s"` oder Nanosekunden) |
 | `set_ranges(ranges)` | Byte-Bereiche zum Parsen setzen |
 | `reset()` | Parser-Zustand zurucksetzen |
@@ -150,7 +150,7 @@ print(root:text())  -- "package main"
 | `root_node_with_offset(bytes, point)` | Root mit angewendetem Offset abrufen |
 | `language()` | Sprachobjekt des Baums abrufen |
 | `copy()` | Tiefe Kopie des Baums erstellen |
-| `walk()` | Cursor fur Traversierung erstellen |
+| `walk()` | Cursor für Traversierung erstellen |
 | `edit(edit_table)` | Inkrementelle Bearbeitung anwenden |
 | `changed_ranges(other_tree)` | Geanderte Bereiche abrufen |
 | `included_ranges()` | Beim Parsing eingeschlossene Bereiche abrufen |
@@ -196,7 +196,7 @@ local node = root:child(0)
 -- Typinformationen
 print(node:kind())        -- "package_clause"
 print(node:type())        -- gleich wie kind()
-print(node:is_named())    -- true fur signifikante Nodes
+print(node:is_named())    -- true für signifikante Nodes
 print(node:grammar_name()) -- Grammatik-Regelname
 ```
 
@@ -281,9 +281,9 @@ local query, err = treesitter.query("go", [[
 | `language` | string | Sprachname |
 | `pattern` | string | Query-Muster in S-Ausdruck-Syntax |
 
-**Gibt zuruck:** `Query, error`
+**Gibt zurück:** `Query, error`
 
-### Query ausfuhren
+### Query ausführen
 
 ```lua
 -- Alle Captures abrufen (flach)
@@ -359,14 +359,14 @@ if cursor:goto_next_sibling() then
     -- zum nachsten Geschwister gewechselt
 end
 
-cursor:goto_parent()  -- zuruck zum Eltern
+cursor:goto_parent()  -- zurück zum Eltern
 
 cursor:close()
 ```
 
 ### Cursor-Methoden
 
-| Methode | Gibt zuruck | Beschreibung |
+| Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `current_node()` | `Node` | Node an Cursor-Position |
 | `current_depth()` | `integer` | Tiefe (0 = Root) |
@@ -411,7 +411,7 @@ local field_id = lang:field_id_for_name("name")
 | Ungultige Positionen | `errors.INVALID` | nein |
 | Parsing fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
 
 ## Query-Syntax-Referenz
 
@@ -444,4 +444,4 @@ Tree-sitter-Queries verwenden S-Ausdruck-Muster:
   (#match? @var "^_"))  ; Regex-Match
 ```
 
-Siehe [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) fur vollstandige Dokumentation.
+Siehe [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) für vollstandige Dokumentation.

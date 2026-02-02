@@ -19,7 +19,7 @@ local ctx = require("ctx")
 local value, err = ctx.get("key")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave de contexto |
 
@@ -35,7 +35,7 @@ local values, err = ctx.all()
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Clave vacia | `errors.INVALID` | no |
 | Clave no encontrada | `errors.NOT_FOUND` | no |

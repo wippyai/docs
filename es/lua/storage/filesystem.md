@@ -6,7 +6,7 @@
 
 Leer, escribir y gestionar archivos dentro de volumenes de sistema de archivos aislados.
 
-Para configuracion del sistema de archivos, consulte [Sistema de Archivos](system-filesystem.md).
+Para configuración del sistema de archivos, consulte [Sistema de Archivos](system-filesystem.md).
 
 ## Carga
 
@@ -27,7 +27,7 @@ end
 local content = vol:readfile("/config.json")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | ID de registro del volumen |
 
@@ -83,7 +83,7 @@ vol:writefile("/logs/app.log", message .. "\n", "a")
 local ok, err = vol:writefile("/lock.pid", tostring(pid), "wx")
 ```
 
-| Modo | Descripcion |
+| Modo | Descripción |
 |------|-------------|
 | `"w"` | Sobrescribir (predeterminado) |
 | `"a"` | Agregar |
@@ -114,7 +114,7 @@ if vol:isdir(path) then
     process_directory(path)
 end
 
--- Obtener informacion de archivo
+-- Obtener información de archivo
 local info = vol:stat("/documents/report.pdf")
 print(info.size, info.modified, info.type)
 ```
@@ -144,7 +144,7 @@ Campos de entrada: `name`, `type` ("file" o "directory")
 
 Cuando se usa `vol:open()` para streaming:
 
-| Metodo | Descripcion |
+| Método | Descripción |
 |--------|-------------|
 | `read(size?)` | Leer bytes (predeterminado: 4096) |
 | `write(data)` | Escribir datos string |
@@ -188,12 +188,12 @@ fs.seek.END       -- desde final
 
 ## Metodos de FS
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `readfile(path)` | `string, error` | Leer archivo completo |
 | `writefile(path, data, mode?)` | `boolean, error` | Escribir archivo |
 | `exists(path)` | `boolean, error` | Verificar si ruta existe |
-| `stat(path)` | `table, error` | Obtener informacion de archivo |
+| `stat(path)` | `table, error` | Obtener información de archivo |
 | `isdir(path)` | `boolean, error` | Verificar si es directorio |
 | `mkdir(path)` | `boolean, error` | Crear directorio |
 | `remove(path)` | `boolean, error` | Eliminar archivo/directorio vacio |
@@ -206,13 +206,13 @@ fs.seek.END       -- desde final
 
 El acceso al sistema de archivos esta sujeto a evaluacion de politica de seguridad.
 
-| Accion | Recurso | Descripcion |
+| Accion | Recurso | Descripción |
 |--------|---------|-------------|
 | `fs.get` | ID de Volumen | Adquirir volumen de sistema de archivos |
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Ruta vacia | `errors.INVALID` | no |
 | Modo invalido | `errors.INVALID` | no |

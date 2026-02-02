@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Codifique tabelas Lua para JSON e decodifique strings JSON para valores Lua. Inclui validacao JSON Schema para verificacao de dados e aplicacao de contratos de API.
+Codifique tabelas Lua para JSON e decodifique strings JSON para valores Lua. Inclui validacao JSON Schema para verificacao de dados e aplicação de contratos de API.
 
 ## Carregamento
 
@@ -46,7 +46,7 @@ json.encode(order)
 -- '{"id":"ord-123","items":[{"sku":"ABC","qty":2},{"sku":"XYZ","qty":1}],"total":99.5}'
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `value` | any | Valor Lua para codificar |
 
@@ -105,7 +105,7 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `str` | string | String JSON para decodificar |
 
@@ -146,14 +146,14 @@ if not valid then
     print(err:message())  -- detalhes do erro de validacao
 end
 
--- Schema tambem pode ser uma string JSON
+-- Schema também pode ser uma string JSON
 local schema_json = '{"type":"number","minimum":0}'
 local valid = json.validate(schema_json, 42)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `schema` | table ou string | Definicao de JSON Schema |
+| `schema` | table ou string | Definição de JSON Schema |
 | `data` | any | Valor para validar |
 
 **Retorna:** `boolean, error`
@@ -184,23 +184,23 @@ end
 local request = json.decode(body)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `schema` | table ou string | Definicao de JSON Schema |
+| `schema` | table ou string | Definição de JSON Schema |
 | `json_str` | string | String JSON para validar |
 
 **Retorna:** `boolean, error`
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Referencia recursiva de tabela | `errors.INTERNAL` | nao |
-| Array esparso (gaps nos indices) | `errors.INTERNAL` | nao |
-| Tipos de chave mistos na tabela | `errors.INTERNAL` | nao |
-| Aninhamento excede 128 niveis | `errors.INTERNAL` | nao |
-| Sintaxe JSON invalida | `errors.INTERNAL` | nao |
-| Compilacao de schema falhou | `errors.INVALID` | nao |
-| Validacao falhou | `errors.INVALID` | nao |
+| Referencia recursiva de tabela | `errors.INTERNAL` | não |
+| Array esparso (gaps nos indices) | `errors.INTERNAL` | não |
+| Tipos de chave mistos na tabela | `errors.INTERNAL` | não |
+| Aninhamento excede 128 niveis | `errors.INTERNAL` | não |
+| Sintaxe JSON invalida | `errors.INTERNAL` | não |
+| Compilacao de schema falhou | `errors.INVALID` | não |
+| Validacao falhou | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

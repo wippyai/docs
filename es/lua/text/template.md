@@ -5,7 +5,7 @@
 
 Renderizar contenido dinamico usando el [motor de plantillas Jet](https://github.com/CloudyKit/jet). Construir paginas HTML, emails y documentos con herencia e inclusiones de plantillas.
 
-Para configuracion de conjunto de plantillas, consulte [Motor de Plantillas](system-template.md).
+Para configuración de conjunto de plantillas, consulte [Motor de Plantillas](system-template.md).
 
 ## Carga
 
@@ -28,7 +28,7 @@ end
 set:release()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `id` | string | ID de registro del conjunto de plantillas |
 
@@ -55,7 +55,7 @@ set:release()
 return html
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de plantilla dentro del conjunto |
 | `data` | table | Variables a pasar a la plantilla (opcional) |
@@ -64,7 +64,7 @@ return html
 
 ## Metodos de Set
 
-| Metodo | Devuelve | Descripcion |
+| Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `render(name, data?)` | `string, error` | Renderizar plantilla con datos |
 | `release()` | `boolean` | Liberar conjunto de vuelta al pool |
@@ -130,7 +130,7 @@ Jet usa `{{ }}` para expresiones y estructuras de control, `{* *}` para comentar
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID vacio | `errors.INVALID` | no |
 | Nombre de plantilla vacio | `errors.INVALID` | no |

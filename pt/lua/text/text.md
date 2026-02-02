@@ -19,9 +19,9 @@ local text = require("text")
 local re, err = text.regexp.compile("[0-9]+")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `pattern` | string | Padrao regex compativel com RE2 |
+| `pattern` | string | Padrão regex compativel com RE2 |
 
 **Retorna:** `Regexp, error`
 
@@ -31,7 +31,7 @@ local re, err = text.regexp.compile("[0-9]+")
 local ok = re:match_string("abc123")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para match |
 
@@ -43,7 +43,7 @@ local ok = re:match_string("abc123")
 local match = re:find_string("abc123def")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para buscar |
 
@@ -55,7 +55,7 @@ local match = re:find_string("abc123def")
 local matches = re:find_all_string("a1b2c3")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para buscar |
 
@@ -67,7 +67,7 @@ local matches = re:find_all_string("a1b2c3")
 local match = re:find_string_submatch("user@example.com")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para buscar |
 
@@ -79,7 +79,7 @@ local match = re:find_string_submatch("user@example.com")
 local matches = re:find_all_string_submatch("a=1 b=2")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para buscar |
 
@@ -91,7 +91,7 @@ local matches = re:find_all_string_submatch("a=1 b=2")
 local pos = re:find_string_index("abc123")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para buscar |
 
@@ -103,7 +103,7 @@ local pos = re:find_string_index("abc123")
 local positions = re:find_all_string_index("a1b2c3")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para buscar |
 
@@ -115,7 +115,7 @@ local positions = re:find_all_string_index("a1b2c3")
 local result = re:replace_all_string("a1b2", "X")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String de entrada |
 | `repl` | string | String de substituicao |
@@ -128,7 +128,7 @@ local result = re:replace_all_string("a1b2", "X")
 local parts = re:split("a,b,c", -1)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `s` | string | String para dividir |
 | `n` | integer | Max partes, -1 para todas |
@@ -151,7 +151,7 @@ local names = re:subexp_names()
 
 **Retorna:** `string[]`
 
-### String do Padrao
+### String do Padrão
 
 ```lua
 local pattern = re:string()
@@ -174,7 +174,7 @@ local diff, err = text.diff.new(options)
 
 #### Opcoes {id="diff-options"}
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `diff_timeout` | number | 1.0 | Timeout em segundos |
 | `diff_edit_cost` | integer | 4 | Custo de uma edicao vazia |
@@ -197,7 +197,7 @@ local diffs, err = diff:compare("hello world", "hello there")
 -- {operation = "insert", text = "there"}
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `text1` | string | Texto original |
 | `text2` | string | Texto modificado |
@@ -219,7 +219,7 @@ local summary = diff:summarize(diffs)
 -- summary.insertions = 5 (caracteres adicionados)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `diffs` | table | Array de diff do compare |
 
@@ -234,7 +234,7 @@ local formatted, err = diff:pretty_text(diffs)
 print(formatted)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `diffs` | table | Array de diff do compare |
 
@@ -249,7 +249,7 @@ local html, err = diff:pretty_html(diffs)
 -- Retorna: "hello <del>world</del><ins>there</ins>"
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `diffs` | table | Array de diff do compare |
 
@@ -266,7 +266,7 @@ local text2 = "The quick red fox jumps over the lazy cat"
 local patches, err = diff:patch_make(text1, text2)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `text1` | string | Texto original |
 | `text2` | string | Texto modificado |
@@ -283,7 +283,7 @@ local result, success = diff:patch_apply(patches, text1)
 -- success = true
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `patches` | table | Patches de patch_make |
 | `text` | string | Texto para aplicar patches |
@@ -313,7 +313,7 @@ local chunks, err = splitter:split_text(long_text)
 
 #### Opcoes {id="recursive-splitter-options"}
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `chunk_size` | integer | 4000 | Max caracteres por chunk |
 | `chunk_overlap` | integer | 200 | Caracteres repetidos entre chunks adjacentes |
@@ -322,7 +322,7 @@ local chunks, err = splitter:split_text(long_text)
 
 ### Splitter Markdown
 
-Divide documentos markdown respeitando a estrutura. Tenta manter headings com seu conteudo, blocos de codigo intactos e linhas de tabela juntas.
+Divide documentos markdown respeitando a estrutura. Tenta manter headings com seu conteudo, blocos de código intactos e linhas de tabela juntas.
 
 ```lua
 local splitter, err = text.splitter.markdown({
@@ -339,18 +339,18 @@ local chunks, err = splitter:split_text(readme)
 
 #### Opcoes {id="markdown-splitter-options"}
 
-| Campo | Tipo | Padrao | Descricao |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `chunk_size` | integer | 4000 | Max caracteres por chunk |
 | `chunk_overlap` | integer | 200 | Caracteres repetidos entre chunks adjacentes |
-| `code_blocks` | boolean | false | Manter blocos de codigo juntos |
+| `code_blocks` | boolean | false | Manter blocos de código juntos |
 | `reference_links` | boolean | false | Preservar links de referencia |
 | `heading_hierarchy` | boolean | false | Respeitar niveis de heading |
 | `join_table_rows` | boolean | false | Manter linhas de tabela juntas |
 
 ### Split Text
 
-Divide um unico documento em um array de chunks.
+Divide um único documento em um array de chunks.
 
 ```lua
 local chunks, err = splitter:split_text(document)
@@ -361,7 +361,7 @@ for i, chunk in ipairs(chunks) do
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `text` | string | Texto para dividir |
 
@@ -386,7 +386,7 @@ for _, chunk in ipairs(chunks) do
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `pages` | table | Array de {content, metadata} |
 
@@ -394,9 +394,9 @@ end
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Sintaxe de padrao invalida | `errors.INVALID` | nao |
-| Erro interno | `errors.INTERNAL` | nao |
+| Sintaxe de padrão invalida | `errors.INVALID` | não |
+| Erro interno | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

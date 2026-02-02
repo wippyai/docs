@@ -3,9 +3,9 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Arbeiten Sie mit Zeitwerten, Dauern, Zeitzonen und Scheduling. Erstellen Sie Timer, pausieren Sie fur bestimmte Zeitraume, parsen und formatieren Sie Zeitstempel.
+Arbeiten Sie mit Zeitwerten, Dauern, Zeitzonen und Scheduling. Erstellen Sie Timer, pausieren Sie für bestimmte Zeitraume, parsen und formatieren Sie Zeitstempel.
 
-In Workflows gibt `time.now()` eine aufgezeichnete Zeitreferenz fur deterministisches Replay zuruck.
+In Workflows gibt `time.now()` eine aufgezeichnete Zeitreferenz für deterministisches Replay zurück.
 
 ## Laden
 
@@ -17,7 +17,7 @@ local time = require("time")
 
 ### now
 
-Gibt die aktuelle Zeit zuruck. In Workflows wird die aufgezeichnete Zeit aus der Zeitreferenz des Workflows fur deterministisches Replay zuruckgegeben.
+Gibt die aktuelle Zeit zurück. In Workflows wird die aufgezeichnete Zeit aus der Zeitreferenz des Workflows für deterministisches Replay zuruckgegeben.
 
 ```lua
 local t = time.now()
@@ -30,7 +30,7 @@ local elapsed = time.now():sub(start)
 print("Took " .. elapsed:milliseconds() .. "ms")
 ```
 
-**Gibt zuruck:** `Time`
+**Gibt zurück:** `Time`
 
 ## Zeitwerte erstellen
 
@@ -45,7 +45,7 @@ print(t:format_rfc3339())  -- "2024-12-25T10:30:00Z"
 local ny, _ = time.load_location("America/New_York")
 local meeting = time.date(2024, time.JANUARY, 15, 14, 0, 0, 0, ny)
 
--- Standardmassig lokale Zeitzone wenn nicht angegeben
+-- Standardmäßig lokale Zeitzone wenn nicht angegeben
 local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 ```
 
@@ -60,7 +60,7 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 | `nanosecond` | number | Nanosekunde (0-999999999) |
 | `location` | Location | Zeitzone (optional, Standard ist lokal) |
 
-**Gibt zuruck:** `Time`
+**Gibt zurück:** `Time`
 
 ### Aus Unix-Zeitstempel
 
@@ -82,7 +82,7 @@ local t = time.unix(js_timestamp // 1000, (js_timestamp % 1000) * 1000000)
 | `sec` | number | Unix-Sekunden |
 | `nsec` | number | Nanosekunden-Offset |
 
-**Gibt zuruck:** `Time`
+**Gibt zurück:** `Time`
 
 ### Aus String
 
@@ -111,7 +111,7 @@ local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 | `value` | string | Zu parsender String |
 | `location` | Location | Standard-Zeitzone (optional) |
 
-**Gibt zuruck:** `Time, error`
+**Gibt zurück:** `Time, error`
 
 ## Zeit-Methoden
 
@@ -127,7 +127,7 @@ local d, _ = time.parse_duration("1h30m")
 local future = t:add(d)
 
 -- Zeit subtrahieren um Dauer zu erhalten
-local diff = tomorrow:sub(t)  -- gibt Duration zuruck
+local diff = tomorrow:sub(t)  -- gibt Duration zurück
 print(diff:hours())           -- 24
 
 -- Kalendereinheiten addieren (behandelt Monatsgrenzen korrekt)
@@ -136,7 +136,7 @@ local next_year = t:add_date(1, 0, 0)    -- 1 Jahr addieren
 local last_week = t:add_date(0, 0, -7)   -- 7 Tage subtrahieren
 ```
 
-| Methode | Parameter | Gibt zuruck | Beschreibung |
+| Methode | Parameter | Gibt zurück | Beschreibung |
 |--------|------------|---------|-------------|
 | `add(duration)` | number/string/Duration | Time | Dauer addieren |
 | `sub(time)` | Time | Duration | Differenz zwischen Zeiten |
@@ -153,7 +153,7 @@ t2:after(t1)    -- true
 t1:equal(t1)    -- true
 ```
 
-| Methode | Parameter | Gibt zuruck | Beschreibung |
+| Methode | Parameter | Gibt zurück | Beschreibung |
 |--------|------------|---------|-------------|
 | `before(time)` | Time | boolean | Ist diese Zeit vor der anderen? |
 | `after(time)` | Time | boolean | Ist diese Zeit nach der anderen? |
@@ -170,7 +170,7 @@ t:format(time.TIME_ONLY)        -- "15:04:05"
 t:format("Mon Jan 2, 2006")     -- "Sun Dec 29, 2024"
 ```
 
-| Methode | Parameter | Gibt zuruck | Beschreibung |
+| Methode | Parameter | Gibt zurück | Beschreibung |
 |--------|------------|---------|-------------|
 | `format(layout)` | string | string | Mit Go-Layout formatieren |
 | `format_rfc3339()` | - | string | Als RFC3339 formatieren |
@@ -220,7 +220,7 @@ t:location()               -- aktuelle Location holen
 t:location():string()      -- Zeitzonennamen holen
 ```
 
-| Methode | Parameter | Gibt zuruck | Beschreibung |
+| Methode | Parameter | Gibt zurück | Beschreibung |
 |--------|------------|---------|-------------|
 | `utc()` | - | Time | Zu UTC konvertieren |
 | `in_local()` | - | Time | Zur lokalen Zeitzone konvertieren |
@@ -240,7 +240,7 @@ t:round(hour_duration)       -- auf nachste Stunde runden
 t:truncate(minute_duration)  -- auf 15-Minuten-Grenze abschneiden
 ```
 
-| Methode | Parameter | Gibt zuruck | Beschreibung |
+| Methode | Parameter | Gibt zurück | Beschreibung |
 |--------|------------|---------|-------------|
 | `round(duration)` | Duration | Time | Auf nachstes Vielfaches runden |
 | `truncate(duration)` | Duration | Time | Auf Vielfaches abschneiden |
@@ -266,7 +266,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 |-----------|------|-------------|
 | `value` | number/string/Duration | Zu parsende Dauer |
 
-**Gibt zuruck:** `Duration, error`
+**Gibt zurück:** `Duration, error`
 
 ### Dauer-Methoden
 
@@ -307,7 +307,7 @@ print("Tokyo:", t:in_location(tokyo):format(time.TIME_ONLY))
 |-----------|------|-------------|
 | `name` | string | IANA-Zeitzonenname |
 
-**Gibt zuruck:** `Location, error`
+**Gibt zurück:** `Location, error`
 
 ### Fester Offset
 
@@ -328,7 +328,7 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0, ist)
 | `name` | string | Zonenname |
 | `offset` | number | UTC-Offset in Sekunden |
 
-**Gibt zuruck:** `Location`
+**Gibt zurück:** `Location`
 
 ### Eingebaute Locations
 
@@ -341,7 +341,7 @@ time.localtz  -- Lokale System-Zeitzone
 
 ### sleep
 
-Ausfuhrung fur angegebene Dauer pausieren. In Workflows korrekt aufgezeichnet und wiedergegeben.
+Ausfuhrung für angegebene Dauer pausieren. In Workflows korrekt aufgezeichnet und wiedergegeben.
 
 ```lua
 time.sleep("5s")
@@ -361,12 +361,12 @@ end
 
 ### after
 
-Gibt einen Channel zuruck, der einmal nach der Dauer empfangt. Funktioniert mit `channel.select`.
+Gibt einen Channel zurück, der einmal nach der Dauer empfangt. Funktioniert mit `channel.select`.
 
 ```lua
 -- Einfaches Timeout
 local timeout = time.after("5s")
-timeout:receive()  -- blockiert fur 5 Sekunden
+timeout:receive()  -- blockiert für 5 Sekunden
 
 -- Timeout mit select
 local response_ch = make_request()
@@ -386,7 +386,7 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Wartezeit |
 
-**Gibt zuruck:** `Channel`
+**Gibt zurück:** `Channel`
 
 ### timer
 
@@ -421,12 +421,12 @@ timer:stop()
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Zeit bis zum Auslosen |
 
-**Gibt zuruck:** `Timer, error`
+**Gibt zurück:** `Timer, error`
 
-| Timer-Methode | Parameter | Gibt zuruck | Beschreibung |
+| Timer-Methode | Parameter | Gibt zurück | Beschreibung |
 |--------------|------------|---------|-------------|
 | `response()` | - | Channel | Timer-Channel holen |
-| `channel()` | - | Channel | Alias fur response() |
+| `channel()` | - | Channel | Alias für response() |
 | `stop()` | - | boolean | Timer abbrechen |
 | `reset(duration)` | number/string/Duration | boolean | Mit neuer Dauer zurucksetzen |
 
@@ -457,12 +457,12 @@ ticker:stop()
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Intervall zwischen Ticks |
 
-**Gibt zuruck:** `Ticker, error`
+**Gibt zurück:** `Ticker, error`
 
-| Ticker-Methode | Parameter | Gibt zuruck | Beschreibung |
+| Ticker-Methode | Parameter | Gibt zurück | Beschreibung |
 |---------------|------------|---------|-------------|
 | `response()` | - | Channel | Ticker-Channel holen |
-| `channel()` | - | Channel | Alias fur response() |
+| `channel()` | - | Channel | Alias für response() |
 | `stop()` | - | boolean | Ticker stoppen |
 
 ## Konstanten
@@ -561,4 +561,4 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

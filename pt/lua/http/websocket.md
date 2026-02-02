@@ -13,7 +13,7 @@ local websocket = require("websocket")
 
 ## Conectando
 
-### Conexao Basica
+### Conexão Basica
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws")
@@ -36,20 +36,20 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 })
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `url` | string | URL WebSocket (ws:// ou wss://) |
-| `options` | table | Opcoes de conexao (opcional) |
+| `options` | table | Opcoes de conexão (opcional) |
 
 **Retorna:** `Client, error`
 
-### Opcoes de Conexao
+### Opcoes de Conexão
 
-| Opcao | Tipo | Descricao |
+| Opcao | Tipo | Descrição |
 |-------|------|-----------|
 | `headers` | table | Headers HTTP para handshake |
 | `protocols` | table | Subprotocolos WebSocket |
-| `dial_timeout` | number/string | Timeout de conexao (ms ou "5s") |
+| `dial_timeout` | number/string | Timeout de conexão (ms ou "5s") |
 | `read_timeout` | number/string | Timeout de leitura |
 | `write_timeout` | number/string | Timeout de escrita |
 | `compression` | number | Modo de compressao (veja Constantes) |
@@ -82,7 +82,7 @@ client:send(json.encode({
 client:send(binary_data, websocket.BINARY)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Conteudo da mensagem |
 | `type` | number | `websocket.TEXT` (1) ou `websocket.BINARY` (2) |
@@ -99,7 +99,7 @@ client:ping()
 
 ## Recebendo Mensagens
 
-O metodo `channel()` retorna um channel para receber mensagens. Funciona com `channel.select` para multiplexacao.
+O método `channel()` retorna um channel para receber mensagens. Funciona com `channel.select` para multiplexacao.
 
 ### Recepcao Basica
 
@@ -121,7 +121,7 @@ local ch = client:channel()
 while true do
     local msg, ok = ch:receive()
     if not ok then
-        break  -- Conexao fechada
+        break  -- Conexão fechada
     end
 
     if msg.type == "text" then
@@ -155,27 +155,27 @@ end
 
 ### Objeto Message
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `type` | string | `"text"` ou `"binary"` |
 | `data` | string | Conteudo da mensagem |
 
-## Fechando Conexao
+## Fechando Conexão
 
 ```lua
--- Fechamento normal (codigo 1000)
+-- Fechamento normal (código 1000)
 client:close()
 
--- Com codigo e motivo
+-- Com código e motivo
 client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
 
 -- Fechamento por erro
 client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `code` | number | Codigo de fechamento (1000-4999), padrao 1000 |
+| `code` | number | Código de fechamento (1000-4999), padrão 1000 |
 | `reason` | string | Motivo do fechamento (opcional) |
 
 **Retorna:** `boolean, error`
@@ -207,14 +207,14 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (por mensagem)
 
 ### Codigos de Fechamento
 
-| Constante | Codigo | Descricao |
+| Constante | Código | Descrição |
 |-----------|--------|-----------|
 | `NORMAL` | 1000 | Fechamento normal |
 | `GOING_AWAY` | 1001 | Servidor desligando |
 | `PROTOCOL_ERROR` | 1002 | Erro de protocolo |
-| `UNSUPPORTED_DATA` | 1003 | Tipo de dados nao suportado |
+| `UNSUPPORTED_DATA` | 1003 | Tipo de dados não suportado |
 | `NO_STATUS` | 1005 | Nenhum status recebido |
-| `ABNORMAL_CLOSURE` | 1006 | Conexao perdida |
+| `ABNORMAL_CLOSURE` | 1006 | Conexão perdida |
 | `INVALID_PAYLOAD` | 1007 | Payload de frame invalido |
 | `POLICY_VIOLATION` | 1008 | Violacao de politica |
 | `MESSAGE_TOO_BIG` | 1009 | Mensagem muito grande |
@@ -282,7 +282,7 @@ while true do
         client:ping()
         heartbeat = time.after("30s")
     elseif not r.ok then
-        break  -- Conexao fechada
+        break  -- Conexão fechada
     else
         local price = json.decode(r.value.data)
         update_price(price.symbol, price.value)
@@ -298,7 +298,7 @@ Conexoes WebSocket estao sujeitas a avaliacao de politica de seguranca.
 
 ### Acoes de Seguranca
 
-| Acao | Recurso | Descricao |
+| Acao | Recurso | Descrição |
 |------|---------|-----------|
 | `websocket.connect` | - | Permitir/negar conexoes WebSocket |
 | `websocket.connect.url` | URL | Permitir/negar conexoes para URLs especificas |
@@ -307,13 +307,13 @@ Veja [Security Model](system-security.md) para configuracao de politicas.
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Conexoes desabilitadas | `errors.PERMISSION_DENIED` | nao |
-| URL nao permitida | `errors.PERMISSION_DENIED` | nao |
-| Sem contexto | `errors.INTERNAL` | nao |
-| Conexao falhou | `errors.INTERNAL` | sim |
-| ID de conexao invalido | `errors.INTERNAL` | nao |
+| Conexoes desabilitadas | `errors.PERMISSION_DENIED` | não |
+| URL não permitida | `errors.PERMISSION_DENIED` | não |
+| Sem contexto | `errors.INTERNAL` | não |
+| Conexão falhou | `errors.INTERNAL` | sim |
+| ID de conexão invalido | `errors.INTERNAL` | não |
 
 ```lua
 local client, err = websocket.connect(url)

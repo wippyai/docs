@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Registrar metricas de aplicacion usando contadores, gauges e histogramas.
+Registrar metricas de aplicación usando contadores, gauges e histogramas.
 
 ## Carga
 
@@ -19,7 +19,7 @@ local metrics = require("metrics")
 metrics.counter_inc("requests_total", {method = "POST"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de metrica |
 | `labels` | table? | Pares clave-valor de etiquetas |
@@ -32,7 +32,7 @@ metrics.counter_inc("requests_total", {method = "POST"})
 metrics.counter_add("bytes_total", 1024, {direction = "out"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de metrica |
 | `value` | number | Valor a agregar |
@@ -48,7 +48,7 @@ metrics.counter_add("bytes_total", 1024, {direction = "out"})
 metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de metrica |
 | `value` | number | Valor actual |
@@ -62,7 +62,7 @@ metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 metrics.gauge_inc("connections", {pool = "db"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de metrica |
 | `labels` | table? | Pares clave-valor de etiquetas |
@@ -75,7 +75,7 @@ metrics.gauge_inc("connections", {pool = "db"})
 metrics.gauge_dec("connections", {pool = "db"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de metrica |
 | `labels` | table? | Pares clave-valor de etiquetas |
@@ -90,7 +90,7 @@ metrics.gauge_dec("connections", {pool = "db"})
 metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de metrica |
 | `value` | number | Valor observado |
@@ -100,7 +100,7 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Colector no disponible | `errors.INTERNAL` | no |
 

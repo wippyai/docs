@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten. Enthalt JSON-Schema-Validierung fur Datenverifizierung und API-Vertragserzwingung.
+Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten. Enthalt JSON-Schema-Validierung für Datenverifizierung und API-Vertragserzwingung.
 
 ## Laden
 
@@ -25,11 +25,11 @@ json.encode(42)             -- '42'
 json.encode(true)           -- 'true'
 json.encode(nil)            -- 'null'
 
--- Arrays (sequentielle numerische Schlussel)
+-- Arrays (sequentielle numerische Schlüssel)
 json.encode({1, 2, 3})      -- '[1,2,3]'
 json.encode({"a", "b"})     -- '["a","b"]'
 
--- Objekte (String-Schlussel)
+-- Objekte (String-Schlüssel)
 local user = {name = "Alice", age = 30}
 json.encode(user)           -- '{"name":"Alice","age":30}'
 
@@ -50,14 +50,14 @@ json.encode(order)
 |-----------|------|-------------|
 | `value` | any | Zu kodierender Lua-Wert |
 
-**Gibt zuruck:** `string, error`
+**Gibt zurück:** `string, error`
 
 Kodierungsregeln:
 - `nil` wird zu `null`
-- Leere Tabellen werden zu `[]` (oder `{}` wenn mit String-Schlusseln erstellt)
-- Tabellen mit sequentiellen 1-basierten Schlusseln werden zu Arrays
-- Tabellen mit String-Schlusseln werden zu Objekten
-- Gemischte numerische und String-Schlussel verursachen einen Fehler
+- Leere Tabellen werden zu `[]` (oder `{}` wenn mit String-Schlüsseln erstellt)
+- Tabellen mit sequentiellen 1-basierten Schlüsseln werden zu Arrays
+- Tabellen mit String-Schlüsseln werden zu Objekten
+- Gemischte numerische und String-Schlüssel verursachen einen Fehler
 - Sparse-Arrays (Lucken in Indizes) verursachen einen Fehler
 - Inf/NaN-Zahlen werden zu `null`
 - Rekursive Tabellenreferenzen verursachen einen Fehler
@@ -109,7 +109,7 @@ end
 |-----------|------|-------------|
 | `str` | string | Zu dekodierender JSON-String |
 
-**Gibt zuruck:** `any, error`
+**Gibt zurück:** `any, error`
 
 ## Schema-Validierung
 
@@ -156,13 +156,13 @@ local valid = json.validate(schema_json, 42)
 | `schema` | table oder string | JSON-Schema-Definition |
 | `data` | any | Zu validierender Wert |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
-Schemas werden nach Inhalts-Hash fur bessere Performance gecacht.
+Schemas werden nach Inhalts-Hash für bessere Performance gecacht.
 
 ### JSON-String validieren
 
-Validiert einen JSON-String gegen ein Schema ohne vorher zu dekodieren. Nutzlich, wenn Sie vor dem Parsen validieren mussen.
+Validiert einen JSON-String gegen ein Schema ohne vorher zu dekodieren. Nutzlich, wenn Sie vor dem Parsen validieren müssen.
 
 ```lua
 local schema = {
@@ -189,7 +189,7 @@ local request = json.decode(body)
 | `schema` | table oder string | JSON-Schema-Definition |
 | `json_str` | string | Zu validierender JSON-String |
 
-**Gibt zuruck:** `boolean, error`
+**Gibt zurück:** `boolean, error`
 
 ## Fehler
 
@@ -197,10 +197,10 @@ local request = json.decode(body)
 |-----------|------|-----------|
 | Rekursive Tabellenreferenz | `errors.INTERNAL` | nein |
 | Sparse-Array (Lucken in Indizes) | `errors.INTERNAL` | nein |
-| Gemischte Schlusseltypen in Tabelle | `errors.INTERNAL` | nein |
+| Gemischte Schlüsseltypen in Tabelle | `errors.INTERNAL` | nein |
 | Verschachtelung uberschreitet 128 Ebenen | `errors.INTERNAL` | nein |
 | Ungultige JSON-Syntax | `errors.INTERNAL` | nein |
 | Schema-Kompilierung fehlgeschlagen | `errors.INVALID` | nein |
 | Validierung fehlgeschlagen | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

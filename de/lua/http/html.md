@@ -15,7 +15,7 @@ local html = require("html")
 
 ## Vordefinierte Richtlinien
 
-Drei eingebaute Richtlinien fur haufige Anwendungsfalle:
+Drei eingebaute Richtlinien für haufige Anwendungsfalle:
 
 | Richtlinie | Anwendungsfall | Erlaubt |
 |--------|----------|--------|
@@ -36,11 +36,11 @@ policy:allow_attrs("class"):globally()
 local clean = policy:sanitize(user_input)
 ```
 
-**Gibt zuruck:** `Policy, error`
+**Gibt zurück:** `Policy, error`
 
 ### Benutzerinhalt-Richtlinie
 
-Vorkonfiguriert fur benutzergenerierten Inhalt. Erlaubt gangige Formatierungselemente.
+Vorkonfiguriert für benutzergenerierten Inhalt. Erlaubt gangige Formatierungselemente.
 
 ```lua
 local policy = html.sanitize.ugc_policy()
@@ -52,11 +52,11 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 -- '<p>Hello </p>'
 ```
 
-**Gibt zuruck:** `Policy, error`
+**Gibt zurück:** `Policy, error`
 
 ### Strikte Richtlinie
 
-Entfernt alles HTML, gibt nur Reintext zuruck.
+Entfernt alles HTML, gibt nur Reintext zurück.
 
 ```lua
 local policy = html.sanitize.strict_policy()
@@ -65,7 +65,7 @@ local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 -- 'Hello world!'
 ```
 
-**Gibt zuruck:** `Policy, error`
+**Gibt zurück:** `Policy, error`
 
 ## Element-Kontrolle
 
@@ -87,7 +87,7 @@ local result = policy:sanitize('<p>Hello <strong>world</strong></p>')
 |-----------|------|-------------|
 | `...` | string | Element-Tag-Namen |
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ## Attribut-Kontrolle
 
@@ -105,7 +105,7 @@ policy:allow_attrs("class", "id"):globally()
 |-----------|------|-------------|
 | `...` | string | Attributnamen |
 
-**Gibt zuruck:** `AttrBuilder`
+**Gibt zurück:** `AttrBuilder`
 
 ### Auf bestimmten Elementen
 
@@ -121,7 +121,7 @@ policy:allow_attrs("src", "alt", "width", "height"):on_elements("img")
 |-----------|------|-------------|
 | `...` | string | Element-Tag-Namen |
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Auf allen Elementen
 
@@ -132,7 +132,7 @@ policy:allow_attrs("class"):globally()
 policy:allow_attrs("id"):globally()
 ```
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Mit Musterabgleich
 
@@ -157,7 +157,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 |-----------|------|-------------|
 | `pattern` | string | Regex-Muster |
 
-**Gibt zuruck:** `AttrBuilder, error`
+**Gibt zurück:** `AttrBuilder, error`
 
 ## URL-Sicherheit
 
@@ -171,7 +171,7 @@ policy:allow_attrs("href"):on_elements("a")
 policy:allow_standard_urls()
 ```
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### URL-Schemata
 
@@ -191,7 +191,7 @@ policy:sanitize('<a href="javascript:alert(1)">XSS</a>')
 |-----------|------|-------------|
 | `...` | string | Erlaubte Schemata |
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Relative URLs
 
@@ -208,11 +208,11 @@ policy:sanitize('<a href="/page">Link</a>')
 |-----------|------|-------------|
 | `allow` | boolean | Relative URLs erlauben |
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Nofollow-Links
 
-`rel="nofollow"` zu allen Links hinzufugen. Verhindert SEO-Spam.
+`rel="nofollow"` zu allen Links hinzufügen. Verhindert SEO-Spam.
 
 ```lua
 policy:allow_attrs("href", "rel"):on_elements("a")
@@ -224,13 +224,13 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `require` | boolean | Nofollow hinzufugen |
+| `require` | boolean | Nofollow hinzufügen |
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Noreferrer-Links
 
-`rel="noreferrer"` zu allen Links hinzufugen. Verhindert Referrer-Lecks.
+`rel="noreferrer"` zu allen Links hinzufügen. Verhindert Referrer-Lecks.
 
 ```lua
 policy:require_noreferrer_on_links(true)
@@ -238,13 +238,13 @@ policy:require_noreferrer_on_links(true)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `require` | boolean | Noreferrer hinzufugen |
+| `require` | boolean | Noreferrer hinzufügen |
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Externe Links in neuem Tab
 
-`target="_blank"` zu vollqualifizierten URLs hinzufugen.
+`target="_blank"` zu vollqualifizierten URLs hinzufügen.
 
 ```lua
 policy:allow_attrs("href", "target"):on_elements("a")
@@ -256,9 +256,9 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `add` | boolean | Target blank hinzufugen |
+| `add` | boolean | Target blank hinzufügen |
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ## Komfortmethoden
 
@@ -273,7 +273,7 @@ policy:sanitize('<img src="photo.jpg" alt="Photo">')
 -- '<img src="photo.jpg" alt="Photo">'
 ```
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Data-URI-Bilder erlauben
 
@@ -288,7 +288,7 @@ policy:sanitize('<img src="data:image/png;base64,iVBORw...">')
 -- '<img src="data:image/png;base64,iVBORw...">'
 ```
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Listen erlauben
 
@@ -301,7 +301,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 -- '<ul><li>Item 1</li><li>Item 2</li></ul>'
 ```
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Tabellen erlauben
 
@@ -314,7 +314,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 -- '<table><tr><td>Cell</td></tr></table>'
 ```
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ### Standardattribute erlauben
 
@@ -328,7 +328,7 @@ policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
 -- '<p id="intro" class="text" title="Introduction">Hello</p>'
 ```
 
-**Gibt zuruck:** `Policy`
+**Gibt zurück:** `Policy`
 
 ## Bereinigen
 
@@ -347,7 +347,7 @@ local clean = policy:sanitize(dirty)
 |-----------|------|-------------|
 | `html` | string | Zu bereinigendes HTML |
 
-**Gibt zuruck:** `string`
+**Gibt zurück:** `string`
 
 ## Fehler
 
@@ -355,4 +355,4 @@ local clean = policy:sanitize(dirty)
 |-----------|------|-----------|
 | Ungultiges Regex-Muster | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

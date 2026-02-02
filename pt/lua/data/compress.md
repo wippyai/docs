@@ -37,16 +37,16 @@ local archived = compress.gzip.encode(data, {level = 9})
 local fast = compress.gzip.encode(data, {level = 1})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
 | `options` | table? | Opcoes de codificacao opcionais |
 
 #### Opcoes {id="gzip-compress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `level` | integer | Nivel de compressao 1-9 (padrao: 6) |
+| `level` | integer | Nivel de compressao 1-9 (padrão: 6) |
 
 **Retorna:** `string, error`
 
@@ -71,16 +71,16 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos GZIP |
 | `options` | table? | Opcoes de decodificacao opcionais |
 
 #### Opcoes {id="gzip-decompress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrao: 128MB, max: 1GB) |
+| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrão: 128MB, max: 1GB) |
 
 **Retorna:** `string, error`
 
@@ -101,16 +101,16 @@ cache:set("static:" .. hash, compressed)
 local compressed = compress.brotli.encode(json_data, {level = 4})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
 | `options` | table? | Opcoes de codificacao opcionais |
 
 #### Opcoes {id="brotli-compress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `level` | integer | Nivel de compressao 0-11 (padrao: 6) |
+| `level` | integer | Nivel de compressao 0-11 (padrão: 6) |
 
 **Retorna:** `string, error`
 
@@ -126,16 +126,16 @@ end
 local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos Brotli |
 | `options` | table? | Opcoes de decodificacao opcionais |
 
 #### Opcoes {id="brotli-decompress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrao: 128MB, max: 1GB) |
+| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrão: 128MB, max: 1GB) |
 
 **Retorna:** `string, error`
 
@@ -156,16 +156,16 @@ local archived = compress.zstd.encode(data, {level = 19})
 local fast = compress.zstd.encode(data, {level = 1})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
 | `options` | table? | Opcoes de codificacao opcionais |
 
 #### Opcoes {id="zstd-compress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `level` | integer | Nivel de compressao 1-22 (padrao: 3) |
+| `level` | integer | Nivel de compressao 1-22 (padrão: 3) |
 
 **Retorna:** `string, error`
 
@@ -178,16 +178,16 @@ if err then
 end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos Zstandard |
 | `options` | table? | Opcoes de decodificacao opcionais |
 
 #### Opcoes {id="zstd-decompress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrao: 128MB, max: 1GB) |
+| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrão: 128MB, max: 1GB) |
 
 **Retorna:** `string, error`
 
@@ -201,16 +201,16 @@ Compressao DEFLATE raw (RFC 1951). Usado internamente por outros formatos.
 local compressed = compress.deflate.encode(data, {level = 6})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
 | `options` | table? | Opcoes de codificacao opcionais |
 
 #### Opcoes {id="deflate-compress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `level` | integer | Nivel de compressao 1-9 (padrao: 6) |
+| `level` | integer | Nivel de compressao 1-9 (padrão: 6) |
 
 **Retorna:** `string, error`
 
@@ -220,16 +220,16 @@ local compressed = compress.deflate.encode(data, {level = 6})
 local decompressed = compress.deflate.decode(compressed)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos DEFLATE |
 | `options` | table? | Opcoes de decodificacao opcionais |
 
 #### Opcoes {id="deflate-decompress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrao: 128MB, max: 1GB) |
+| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrão: 128MB, max: 1GB) |
 
 **Retorna:** `string, error`
 
@@ -243,16 +243,16 @@ DEFLATE com header e checksum (RFC 1950).
 local compressed = compress.zlib.encode(data, {level = 6})
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
 | `options` | table? | Opcoes de codificacao opcionais |
 
 #### Opcoes {id="zlib-compress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `level` | integer | Nivel de compressao 1-9 (padrao: 6) |
+| `level` | integer | Nivel de compressao 1-9 (padrão: 6) |
 
 **Retorna:** `string, error`
 
@@ -262,16 +262,16 @@ local compressed = compress.zlib.encode(data, {level = 6})
 local decompressed = compress.zlib.decode(compressed)
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos Zlib |
 | `options` | table? | Opcoes de decodificacao opcionais |
 
 #### Opcoes {id="zlib-decompress-options"}
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrao: 128MB, max: 1GB) |
+| `max_size` | integer | Tamanho maximo descomprimido em bytes (padrão: 128MB, max: 1GB) |
 
 **Retorna:** `string, error`
 
@@ -302,11 +302,11 @@ end
 
 ## Erros
 
-| Condicao | Tipo | Retentavel |
+| Condição | Tipo | Retentavel |
 |----------|------|------------|
-| Entrada vazia | `errors.INVALID` | nao |
-| Nivel fora da faixa | `errors.INVALID` | nao |
-| Dados comprimidos invalidos | `errors.INVALID` | nao |
-| Tamanho descomprimido excede limite | `errors.INTERNAL` | nao |
+| Entrada vazia | `errors.INVALID` | não |
+| Nivel fora da faixa | `errors.INVALID` | não |
+| Dados comprimidos invalidos | `errors.INVALID` | não |
+| Tamanho descomprimido excede limite | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

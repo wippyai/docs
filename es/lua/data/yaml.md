@@ -51,14 +51,14 @@ local server = {
 yaml.encode(server)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | table | Tabla Lua a codificar |
 | `options` | table? | Opciones de codificacion opcionales |
 
 #### Opciones
 
-| Campo | Tipo | Descripcion |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `field_order` | string[] | Orden de campos personalizado - campos aparecen en este orden |
 | `sort_unordered` | boolean | Ordenar campos no en `field_order` alfabeticamente |
@@ -99,7 +99,7 @@ yaml.encode(entry, {sort_unordered = true})
 Parsea un string YAML a una tabla Lua.
 
 ```lua
--- Parsear configuracion
+-- Parsear configuración
 local config, err = yaml.decode([[
 server:
   host: localhost
@@ -139,7 +139,7 @@ print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | String YAML a parsear |
 
@@ -147,7 +147,7 @@ print(type(data.tags))     -- "table"
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Entrada no es tabla (encode) | `errors.INVALID` | no |
 | Entrada no es string (decode) | `errors.INVALID` | no |

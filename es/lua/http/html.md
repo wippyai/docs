@@ -83,7 +83,7 @@ local result = policy:sanitize('<p>Hello <strong>world</strong></p>')
 -- '<p>Hello <strong>world</strong></p>'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `...` | string | Nombres de etiquetas de elementos |
 
@@ -101,7 +101,7 @@ policy:allow_attrs("src", "alt"):on_elements("img")
 policy:allow_attrs("class", "id"):globally()
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `...` | string | Nombres de atributos |
 
@@ -117,7 +117,7 @@ policy:allow_attrs("href", "target"):on_elements("a")
 policy:allow_attrs("src", "alt", "width", "height"):on_elements("img")
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `...` | string | Nombres de etiquetas de elementos |
 
@@ -134,9 +134,9 @@ policy:allow_attrs("id"):globally()
 
 **Devuelve:** `Policy`
 
-### Con Coincidencia de Patron
+### Con Coincidencia de Patrón
 
-Validar valores de atributos contra patron regex.
+Validar valores de atributos contra patrón regex.
 
 ```lua
 -- Solo permitir colores hex en style
@@ -153,9 +153,9 @@ policy:sanitize('<span style="background:red">Bad</span>')
 -- '<span>Bad</span>'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `pattern` | string | Patron regex |
+| `pattern` | string | Patrón regex |
 
 **Devuelve:** `AttrBuilder, error`
 
@@ -187,7 +187,7 @@ policy:sanitize('<a href="javascript:alert(1)">XSS</a>')
 -- '<a>XSS</a>'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `...` | string | Esquemas permitidos |
 
@@ -204,7 +204,7 @@ policy:sanitize('<a href="/page">Link</a>')
 -- '<a href="/page">Link</a>'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `allow` | boolean | Permitir URLs relativas |
 
@@ -222,7 +222,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 -- '<a href="https://example.com" rel="nofollow">Link</a>'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `require` | boolean | Agregar nofollow |
 
@@ -236,7 +236,7 @@ Agregar `rel="noreferrer"` a todos los enlaces. Previene fuga de referrer.
 policy:require_noreferrer_on_links(true)
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `require` | boolean | Agregar noreferrer |
 
@@ -254,7 +254,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 -- '<a href="https://example.com" target="_blank">Link</a>'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `add` | boolean | Agregar target blank |
 
@@ -343,7 +343,7 @@ local clean = policy:sanitize(dirty)
 -- '<p>Hello</p>'
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `html` | string | HTML a sanitizar |
 
@@ -351,8 +351,8 @@ local clean = policy:sanitize(dirty)
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Patron regex invalido | `errors.INVALID` | no |
+| Patrón regex invalido | `errors.INVALID` | no |
 
 Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.

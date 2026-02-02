@@ -37,7 +37,7 @@ local credentials = base64.encode("username:password")
 local auth_header = "Basic " .. credentials
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | Datos a codificar (texto o binario) |
 
@@ -74,7 +74,7 @@ local header = json.decode(base64.decode(parts[1]))
 local payload = json.decode(base64.decode(parts[2]))
 ```
 
-| Parametro | Tipo | Descripcion |
+| Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | string | String codificado base64 |
 
@@ -82,7 +82,7 @@ local payload = json.decode(base64.decode(parts[2]))
 
 ## Errores
 
-| Condicion | Tipo | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Entrada no es string | `errors.INVALID` | no |
 | Caracteres base64 invalidos | `errors.INVALID` | no |
