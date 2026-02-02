@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Invoque servicos atraves de contracts tipados. Chame APIs remotas, workflows e funcoes com validacao de schema e suporte a execução assincrona.
+Invoque serviços através de contracts tipados. Chame APIs remotas, workflows e funções com validação de schema e suporte a execução assíncrona.
 
 ## Carregamento
 
@@ -47,7 +47,7 @@ local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
 ## Obtendo um Contract
 
-Recuperar definição de contract para introspeccao:
+Recuperar definição de contract para introspecção:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
@@ -68,10 +68,10 @@ local method, err = c:method("say_hello")
 |-------|------|-----------|
 | `name` | string | Nome do método |
 | `description` | string | Descrição do método |
-| `input_schemas` | table[] | Definicoes de schema de entrada |
-| `output_schemas` | table[] | Definicoes de schema de saida |
+| `input_schemas` | table[] | Definições de schema de entrada |
+| `output_schemas` | table[] | Definições de schema de saída |
 
-## Encontrando Implementacoes
+## Encontrando Implementações
 
 Listar todos os bindings que implementam um contract:
 
@@ -90,9 +90,9 @@ local c, err = contract.get("app.services:greeter")
 local bindings, err = c:implementations()
 ```
 
-## Verificando Implementacao
+## Verificando Implementação
 
-Verificar se instancia implementa um contract:
+Verificar se instância implementa um contract:
 
 ```lua
 if contract.is(instance, "app.services:greeter") then
@@ -100,9 +100,9 @@ if contract.is(instance, "app.services:greeter") then
 end
 ```
 
-## Chamando Metodos
+## Chamando Métodos
 
-Chamada sincrona - bloqueia ate completar:
+Chamada síncrona - bloqueia até completar:
 
 ```lua
 local calc, err = contract.open("app.services:calculator")
@@ -111,9 +111,9 @@ local sum, err = calc:add(10, 20)
 local product, err = calc:multiply(5, 6)
 ```
 
-## Chamadas Assincronas
+## Chamadas Assíncronas
 
-Adicione sufixo `_async` para execução assincrona:
+Adicione sufixo `_async` para execução assíncrona:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
@@ -130,11 +130,11 @@ if ok then
 end
 ```
 
-Veja [Futures](lua-future.md) para metodos de future.
+Veja [Futures](lua-future.md) para métodos de future.
 
 ## Abrindo via Contract
 
-Abrir binding atraves de objeto contract:
+Abrir binding através de objeto contract:
 
 ```lua
 local c, err = contract.get("app.services:user")
@@ -165,9 +165,9 @@ local wrapped = c:with_context({
 local instance, err = wrapped:open()
 ```
 
-## Contexto de Seguranca
+## Contexto de Segurança
 
-Definir ator e escopo para autorizacao:
+Definir ator e escopo para autorização:
 
 ```lua
 local security = require("security")
@@ -178,9 +178,9 @@ local secured = c:with_actor(security.actor()):with_scope(security.scope())
 local admin, err = secured:open()
 ```
 
-## Permissoes
+## Permissões
 
-| Permissao | Recurso | Funcoes |
+| Permissão | Recurso | Funções |
 |-----------|---------|---------|
 | `contract.get` | id do contract | `get()` |
 | `contract.open` | id do binding | `open()`, `Contract:open()` |
@@ -193,10 +193,10 @@ local admin, err = secured:open()
 
 | Condição | Tipo |
 |----------|------|
-| Formato de ID de binding invalido | `errors.INVALID` |
+| Formato de ID de binding inválido | `errors.INVALID` |
 | Contract não encontrado | `errors.NOT_FOUND` |
 | Binding não encontrado | `errors.NOT_FOUND` |
 | Método não encontrado | `errors.NOT_FOUND` |
 | Sem binding padrão | `errors.NOT_FOUND` |
-| Permissao negada | `errors.PERMISSION_DENIED` |
+| Permissão negada | `errors.PERMISSION_DENIED` |
 | Chamada falhou | `errors.INTERNAL` |

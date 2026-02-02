@@ -162,10 +162,10 @@ msg:payload()  -- any: Payload-Daten
 Einen Prozess spawnen, auf sein Ergebnis warten und zurückgeben:
 
 ```lua
-local result, err = process.call(id, host, ...)
+local result, err = process.exec(id, host, ...)
 ```
 
-**Berechtigungen:** `process.call` auf Prozess-ID, `process.host` auf Host-ID
+**Berechtigungen:** `process.exec` auf Prozess-ID, `process.host` auf Host-ID
 
 ## Prozess-Upgrade
 
@@ -247,7 +247,7 @@ Richtlinien können basierend auf Folgendem erlauben/ablehnen:
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | Prozess-ID |
 | `process.host` | `spawn*()`, `call()` | Host-ID |
 | `process.send` | `send()` | Ziel-PID |
-| `process.call` | `call()` | Prozess-ID |
+| `process.exec` | `call()` | Prozess-ID |
 | `process.terminate` | `terminate()` | Ziel-PID |
 | `process.cancel` | `cancel()` | Ziel-PID |
 | `process.monitor` | `monitor()` | Ziel-PID |
@@ -269,7 +269,7 @@ Einige Operationen erfordern mehrere Berechtigungen:
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.call` + `process.host` |
+| `call()` | `process.exec` + `process.host` |
 | Spawn mit benutzerdefiniertem Actor/Scope | Spawn-Berechtigungen + `process.security` |
 
 ## Fehler

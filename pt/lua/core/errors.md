@@ -72,7 +72,7 @@ end
 | `errors.CONFLICT` | Conflito de estado de recurso |
 | `errors.TIMEOUT` | Operação expirou |
 | `errors.RATE_LIMITED` | Muitas requisições |
-| `errors.UNKNOWN` | Erro não especificado |
+| `errors.UNKNOWN` | Erro não específicado |
 
 ## Call Stack
 

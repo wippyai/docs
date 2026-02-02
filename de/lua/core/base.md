@@ -35,13 +35,13 @@ next(t [,index])    -- Holt nächstes Schlüssel-Wert-Paar nach Index
 ### Metatables
 
 ```lua
-getmetatable(obj)       -- Holt Metatable (oder __metatable-Feld wenn geschutzt)
-setmetatable(t, mt)     -- Setzt Metatable, gibt t zuruck
+getmetatable(obj)       -- Holt Metatable (oder __metatable-Feld wenn geschützt)
+setmetatable(t, mt)     -- Setzt Metatable, gibt t zurück
 ```
 
 ### Roher Tabellenzugriff
 
-Umgeht Metamethoden fur direkten Tabellenzugriff:
+Umgeht Metamethoden für direkten Tabellenzugriff:
 
 ```lua
 rawget(t, k)        -- Holt t[k] ohne __index
@@ -108,7 +108,7 @@ string.gsub(s, pattern, repl [,n])         -- Ersetzt Treffer, gibt string, coun
 ### Gross-/Kleinschreibung
 
 ```lua
-string.upper(s)   -- Zu Grossbuchstaben konvertieren
+string.upper(s)   -- Zu Großbuchstaben konvertieren
 string.lower(s)   -- Zu Kleinbuchstaben konvertieren
 ```
 
@@ -203,7 +203,7 @@ math.fmod(x, y)       -- Gleitkomma-Rest
 math.sqrt(x)          -- Quadratwurzel
 math.pow(x, y)        -- x^y (oder x^y-Operator verwenden)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Naturlicher Log (oder Log zur Basis n)
+math.log(x [,base])   -- Natürlicher Log (oder Log zur Basis n)
 ```
 
 ### Trigonometrie

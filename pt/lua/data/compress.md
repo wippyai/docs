@@ -40,9 +40,9 @@ local fast = compress.gzip.encode(data, {level = 1})
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
-| `options` | table? | Opcoes de codificacao opcionais |
+| `options` | table? | Opções de codificação opcionais |
 
-#### Opcoes {id="gzip-compress-options"}
+#### Opções {id="gzip-compress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -53,7 +53,7 @@ local fast = compress.gzip.encode(data, {level = 1})
 ### Descomprimir {id="gzip-decompress"}
 
 ```lua
--- Descomprimir requisicao HTTP
+-- Descomprimir requisição HTTP
 local content_encoding = req:header("Content-Encoding")
 if content_encoding == "gzip" then
     local body = req:body()
@@ -74,9 +74,9 @@ end
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos GZIP |
-| `options` | table? | Opcoes de decodificacao opcionais |
+| `options` | table? | Opções de decodificação opcionais |
 
-#### Opcoes {id="gzip-decompress-options"}
+#### Opções {id="gzip-decompress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -104,9 +104,9 @@ local compressed = compress.brotli.encode(json_data, {level = 4})
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
-| `options` | table? | Opcoes de codificacao opcionais |
+| `options` | table? | Opções de codificação opcionais |
 
-#### Opcoes {id="brotli-compress-options"}
+#### Opções {id="brotli-compress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -129,9 +129,9 @@ local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos Brotli |
-| `options` | table? | Opcoes de decodificacao opcionais |
+| `options` | table? | Opções de decodificação opcionais |
 
-#### Opcoes {id="brotli-decompress-options"}
+#### Opções {id="brotli-decompress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -159,9 +159,9 @@ local fast = compress.zstd.encode(data, {level = 1})
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
-| `options` | table? | Opcoes de codificacao opcionais |
+| `options` | table? | Opções de codificação opcionais |
 
-#### Opcoes {id="zstd-compress-options"}
+#### Opções {id="zstd-compress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -181,9 +181,9 @@ end
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos Zstandard |
-| `options` | table? | Opcoes de decodificacao opcionais |
+| `options` | table? | Opções de decodificação opcionais |
 
-#### Opcoes {id="zstd-decompress-options"}
+#### Opções {id="zstd-decompress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -204,9 +204,9 @@ local compressed = compress.deflate.encode(data, {level = 6})
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
-| `options` | table? | Opcoes de codificacao opcionais |
+| `options` | table? | Opções de codificação opcionais |
 
-#### Opcoes {id="deflate-compress-options"}
+#### Opções {id="deflate-compress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -223,9 +223,9 @@ local decompressed = compress.deflate.decode(compressed)
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos DEFLATE |
-| `options` | table? | Opcoes de decodificacao opcionais |
+| `options` | table? | Opções de decodificação opcionais |
 
-#### Opcoes {id="deflate-decompress-options"}
+#### Opções {id="deflate-decompress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -246,9 +246,9 @@ local compressed = compress.zlib.encode(data, {level = 6})
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados para comprimir |
-| `options` | table? | Opcoes de codificacao opcionais |
+| `options` | table? | Opções de codificação opcionais |
 
-#### Opcoes {id="zlib-compress-options"}
+#### Opções {id="zlib-compress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -265,9 +265,9 @@ local decompressed = compress.zlib.decode(compressed)
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `data` | string | Dados comprimidos Zlib |
-| `options` | table? | Opcoes de decodificacao opcionais |
+| `options` | table? | Opções de decodificação opcionais |
 
-#### Opcoes {id="zlib-decompress-options"}
+#### Opções {id="zlib-decompress-options"}
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -302,11 +302,11 @@ end
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Entrada vazia | `errors.INVALID` | não |
 | Nivel fora da faixa | `errors.INVALID` | não |
-| Dados comprimidos invalidos | `errors.INVALID` | não |
+| Dados comprimidos inválidos | `errors.INVALID` | não |
 | Tamanho descomprimido excede limite | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

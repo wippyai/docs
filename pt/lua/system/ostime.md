@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Funcoes de tempo padrão Lua `os`. Fornece tempo de relogio de parede real para timestamps, formatacao de datas e calculos de tempo.
+Funções de tempo padrão Lua `os`. Fornece tempo de relogio de parede real para timestamps, formatação de datas e calculos de tempo.
 
 ## Carregamento
 
@@ -24,7 +24,7 @@ Obter timestamp Unix (segundos desde 1 de Jan, 1970 UTC):
 -- Timestamp atual
 local now = os.time()  -- 1718462445
 
--- Data/hora especifica
+-- Data/hora específica
 local t = os.time({
     year = 2024,
     month = 12,
@@ -50,7 +50,7 @@ local t = os.time({
 
 Quando chamado sem argumentos, retorna timestamp Unix atual.
 
-Quando chamado com uma tabela, qualquer campo ausente usa os padroes mostrados acima. Os campos `year`, `month` e `day` usam a data atual se não especificados.
+Quando chamado com uma tabela, qualquer campo ausente usa os padroes mostrados acima. Os campos `year`, `month` e `day` usam a data atual se não específicados.
 
 ```lua
 -- Apenas data (hora padrão e meia-noite)
@@ -89,7 +89,7 @@ local t = os.date("*t", now)
 | `format` | string | `"%c"` | String de formato, `"*t"` para tabela |
 | `timestamp` | integer | hora atual | Timestamp Unix para formatar |
 
-### Especificadores de Formato
+### Específicadores de Formato
 
 | Código | Saida | Exemplo |
 |--------|-------|---------|

@@ -6,7 +6,7 @@
 
 Execute queries SQL em bancos de dados PostgreSQL, MySQL, SQLite, MSSQL e Oracle. Recursos incluem queries parametrizadas, transacoes, prepared statements e um query builder fluente.
 
-Para configuracao de banco de dados, veja [Database](system-database.md).
+Para configuração de banco de dados, veja [Database](system-database.md).
 
 ## Carregamento
 
@@ -36,7 +36,7 @@ db:release()
 **Retorna:** `DB, error`
 
 <note>
-Conexoes sao automaticamente retornadas ao pool quando a função termina, mas chamar `db:release()` explicitamente e recomendado para operacoes de longa duracao.
+Conexoes sao automaticamente retornadas ao pool quando a função termina, mas chamar `db:release()` explicitamente e recomendado para operações de longa duração.
 </note>
 
 ## Constantes
@@ -386,7 +386,7 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.colon)
 ```
 
-## Metodos de Conexão
+## Métodos de Conexão
 
 Handle de conexão de banco de dados retornado por `sql.get()`.
 
@@ -450,7 +450,7 @@ local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
 
 ### db:begin
 
-Inicia transacao de banco de dados.
+Inicia transação de banco de dados.
 
 ```lua
 local tx, err = db:begin({
@@ -461,11 +461,11 @@ local tx, err = db:begin({
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `options` | table | Opcoes de transacao (opcional) |
+| `options` | table | Opções de transação (opcional) |
 
-Campos da tabela de opcoes:
+Campos da tabela de opções:
 - `isolation` - Nivel de isolamento de sql.isolation.* (padrão: DEFAULT)
-- `read_only` - Flag de transacao somente leitura (padrão: false)
+- `read_only` - Flag de transação somente leitura (padrão: false)
 
 **Retorna:** `Transaction, error`
 
@@ -495,7 +495,7 @@ Retorna tabela com campos:
 - `in_use` - Conexoes em uso atualmente
 - `idle` - Conexoes ociosas no pool
 - `wait_count` - Contagem total de espera por conexão
-- `wait_duration` - Duracao total de espera
+- `wait_duration` - Duração total de espera
 - `max_idle_closed` - Conexoes fechadas por max idle
 - `max_idle_time_closed` - Conexoes fechadas por timeout de idle
 - `max_lifetime_closed` - Conexoes fechadas por max lifetime
@@ -548,7 +548,7 @@ local ok, err = stmt:close()
 
 ## Transacoes
 
-Transacao de banco de dados retornada por `db:begin()`.
+Transação de banco de dados retornada por `db:begin()`.
 
 ### tx:db_type
 
@@ -562,7 +562,7 @@ local dbtype, err = tx:db_type()
 
 ### tx:query
 
-Executa query SELECT dentro da transacao.
+Executa query SELECT dentro da transação.
 
 ```lua
 local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -577,7 +577,7 @@ local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 ### tx:execute
 
-Executa INSERT/UPDATE/DELETE dentro da transacao.
+Executa INSERT/UPDATE/DELETE dentro da transação.
 
 ```lua
 local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -596,7 +596,7 @@ Retorna tabela com campos:
 
 ### tx:prepare
 
-Cria prepared statement dentro da transacao.
+Cria prepared statement dentro da transação.
 
 ```lua
 local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
@@ -610,7 +610,7 @@ local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
 
 ### tx:commit
 
-Commita transacao.
+Commita transação.
 
 ```lua
 local ok, err = tx:commit()
@@ -620,7 +620,7 @@ local ok, err = tx:commit()
 
 ### tx:rollback
 
-Faz rollback da transacao.
+Faz rollback da transação.
 
 ```lua
 local ok, err = tx:rollback()
@@ -630,7 +630,7 @@ local ok, err = tx:rollback()
 
 ### tx:savepoint
 
-Cria savepoint nomeado dentro da transacao.
+Cria savepoint nomeado dentro da transação.
 
 ```lua
 local ok, err = tx:savepoint("sp1")
@@ -940,7 +940,7 @@ local rows, err = executor:query()
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `db` | DB\|Transaction | Handle de banco de dados ou transacao |
+| `db` | DB\|Transaction | Handle de banco de dados ou transação |
 
 **Retorna:** `QueryExecutor`
 
@@ -1060,7 +1060,7 @@ local query = sql.builder.insert("users")
 
 ### insert:options
 
-Adiciona opcoes de INSERT.
+Adiciona opções de INSERT.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1069,7 +1069,7 @@ local query = sql.builder.insert("users")
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `options` | ...string | Opcoes de INSERT |
+| `options` | ...string | Opções de INSERT |
 
 **Retorna:** `InsertBuilder`
 
@@ -1109,7 +1109,7 @@ local result, err = executor:exec()
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `db` | DB\|Transaction | Handle de banco de dados ou transacao |
+| `db` | DB\|Transaction | Handle de banco de dados ou transação |
 
 **Retorna:** `QueryExecutor`
 
@@ -1315,7 +1315,7 @@ local result, err = executor:exec()
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `db` | DB\|Transaction | Handle de banco de dados ou transacao |
+| `db` | DB\|Transaction | Handle de banco de dados ou transação |
 
 **Retorna:** `QueryExecutor`
 
@@ -1454,7 +1454,7 @@ local result, err = executor:exec()
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `db` | DB\|Transaction | Handle de banco de dados ou transacao |
+| `db` | DB\|Transaction | Handle de banco de dados ou transação |
 
 **Retorna:** `QueryExecutor`
 
@@ -1496,27 +1496,27 @@ local sql_str, args = executor:to_sql()
 
 **Retorna:** `string, table`
 
-## Permissoes
+## Permissões
 
-Acesso a banco de dados está sujeito a avaliacao de politica de seguranca.
+Acesso a banco de dados está sujeito a avaliação de política de segurança.
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `db.get` | ID do Database | Obter conexão de banco de dados |
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID de recurso vazio | `errors.INVALID` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Recurso não encontrado | `errors.NOT_FOUND` | não |
 | Recurso não e database | `errors.INVALID` | não |
-| Parametros invalidos | `errors.INVALID` | não |
+| Parametros inválidos | `errors.INVALID` | não |
 | Erro de sintaxe SQL | `errors.INVALID` | não |
 | Statement fechado | `errors.INVALID` | não |
-| Transacao não ativa | `errors.INVALID` | não |
-| Nome de savepoint invalido | `errors.INVALID` | não |
+| Transação não ativa | `errors.INVALID` | não |
+| Nome de savepoint inválido | `errors.INVALID` | não |
 | Erro de execução de query | varia | varia |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
@@ -1559,7 +1559,7 @@ local executor = query:run_with(db)
 local results, err = executor:query()
 if err then error(err) end
 
--- Transacao com savepoints
+-- Transação com savepoints
 local tx, err = db:begin({isolation = sql.isolation.SERIALIZABLE})
 if err then error(err) end
 

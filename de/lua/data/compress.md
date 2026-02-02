@@ -149,7 +149,7 @@ Schnelle Komprimierung mit guten Raten (RFC 8878).
 -- Gute Balance zwischen Geschwindigkeit und Rate
 local compressed = compress.zstd.encode(binary_data)
 
--- Hohere Komprimierung für Archivierung
+-- Höhere Komprimierung für Archivierung
 local archived = compress.zstd.encode(data, {level = 19})
 
 -- Schnellmodus für Echtzeit-Streaming
@@ -235,7 +235,7 @@ local decompressed = compress.deflate.decode(compressed)
 
 ## Zlib
 
-DEFLATE mit Header und Prufsumme (RFC 1950).
+DEFLATE mit Header und Prüfsumme (RFC 1950).
 
 ### Komprimieren {id="zlib-compress"}
 
@@ -275,11 +275,11 @@ local decompressed = compress.zlib.decode(compressed)
 
 **Gibt zurück:** `string, error`
 
-## Algorithmus auswahlen
+## Algorithmus auswählen
 
 | Algorithmus | Am besten für | Geschwindigkeit | Rate | Stufenbereich |
 |-----------|----------|-------|-------|-------------|
-| gzip | HTTP, breite Kompatibilitat | Mittel | Gut | 1-9 |
+| gzip | HTTP, breite Kompatibilität | Mittel | Gut | 1-9 |
 | brotli | Statische Assets, Text | Langsam | Beste | 0-11 |
 | zstd | Größe Dateien, Streaming | Schnell | Gut | 1-22 |
 | deflate/zlib | Low-Level, spezifische Protokolle | Mittel | Gut | 1-9 |
@@ -305,8 +305,8 @@ end
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Leere Eingabe | `errors.INVALID` | nein |
-| Stufe ausserhalb des Bereichs | `errors.INVALID` | nein |
-| Ungultige komprimierte Daten | `errors.INVALID` | nein |
-| Dekomprimierte Größe uberschreitet Limit | `errors.INTERNAL` | nein |
+| Stufe außerhalb des Bereichs | `errors.INVALID` | nein |
+| Ungültige komprimierte Daten | `errors.INVALID` | nein |
+| Dekomprimierte Größe überschreitet Limit | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

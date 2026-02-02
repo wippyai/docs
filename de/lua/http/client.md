@@ -3,7 +3,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Fuhren Sie HTTP-Anfragen an externe Services durch. Unterstutzt alle HTTP-Methoden, Header, Query-Parameter, Formulardaten, Datei-Uploads, Streaming-Responses und gleichzeitige Batch-Anfragen.
+Führen Sie HTTP-Anfragen an externe Services durch. Unterstützt alle HTTP-Methoden, Header, Query-Parameter, Formulardaten, Datei-Uploads, Streaming-Responses und gleichzeitige Batch-Anfragen.
 
 ## Laden
 
@@ -203,7 +203,7 @@ end
 
 ## Streaming-Responses
 
-Für größe Responses verwenden Sie Streaming, um zu vermeiden, dass der gesamte Body in den Speicher geladen wird.
+Für große Responses verwenden Sie Streaming, um zu vermeiden, dass der gesamte Body in den Speicher geladen wird.
 
 ```lua
 local resp, err = http_client.get("https://cdn.example.com/large-file.zip", {
@@ -229,7 +229,7 @@ resp.stream:close()
 
 ## Batch-Anfragen
 
-Fuhren Sie mehrere Anfragen gleichzeitig aus.
+Führen Sie mehrere Anfragen gleichzeitig aus.
 
 ```lua
 local responses, errors = http_client.request_batch({
@@ -259,8 +259,8 @@ end
 **Gibt zurück:** `responses, errors` - Arrays indiziert nach Anfrageposition
 
 **Hinweise:**
-- Anfragen werden gleichzeitig ausgefuhrt
-- Streaming (`stream = true`) wird in Batch nicht unterstutzt
+- Anfragen werden gleichzeitig ausgeführt
+- Streaming (`stream = true`) wird in Batch nicht unterstützt
 - Ergebnis-Arrays entsprechen der Anfragereihenfolge (1-indiziert)
 
 ## URL-Kodierung
@@ -293,7 +293,7 @@ HTTP-Anfragen unterliegen der Sicherheitsrichtlinienauswertung.
 | `http_client.unix_socket` | Socket-Pfad | Unix-Socket-Verbindungen erlauben/verweigern |
 | `http_client.private_ip` | IP-Adresse | Zugriff auf private IP-Bereiche erlauben/verweigern |
 
-### Zugriff prufen
+### Zugriff prüfen
 
 ```lua
 local security = require("security")
@@ -321,7 +321,7 @@ Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
 | Sicherheitsrichtlinie verweigert | `errors.PERMISSION_DENIED` | nein |
 | Private IP blockiert | `errors.PERMISSION_DENIED` | nein |
 | Unix-Socket verweigert | `errors.PERMISSION_DENIED` | nein |
-| Ungultige URL oder Optionen | `errors.INVALID` | nein |
+| Ungültige URL oder Optionen | `errors.INVALID` | nein |
 | Kein Kontext | `errors.INTERNAL` | nein |
 | Netzwerkfehler | `errors.INTERNAL` | ja |
 | Timeout | `errors.INTERNAL` | ja |

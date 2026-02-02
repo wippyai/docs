@@ -3,7 +3,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Cliente WebSocket para comunicacao bidirecional em tempo real com servidores.
+Cliente WebSocket para comunicação bidirecional em tempo real com servidores.
 
 ## Carregamento
 
@@ -22,7 +22,7 @@ if err then
 end
 ```
 
-### Com Opcoes
+### Com Opções
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws", {
@@ -39,13 +39,13 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `url` | string | URL WebSocket (ws:// ou wss://) |
-| `options` | table | Opcoes de conexão (opcional) |
+| `options` | table | Opções de conexão (opcional) |
 
 **Retorna:** `Client, error`
 
-### Opcoes de Conexão
+### Opções de Conexão
 
-| Opcao | Tipo | Descrição |
+| Opção | Tipo | Descrição |
 |-------|------|-----------|
 | `headers` | table | Headers HTTP para handshake |
 | `protocols` | table | Subprotocolos WebSocket |
@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `read_limit` | number | Tamanho maximo de mensagem (0-128MB) |
 | `channel_capacity` | number | Buffer do channel de recepcao (1-10000) |
 
-**Formato de timeout:** Numeros sao milissegundos, strings usam formato de duracao Go ("5s", "1m").
+**Formato de timeout:** Numeros sao milissegundos, strings usam formato de duração Go ("5s", "1m").
 
 ## Enviando Mensagens
 
@@ -99,7 +99,7 @@ client:ping()
 
 ## Recebendo Mensagens
 
-O método `channel()` retorna um channel para receber mensagens. Funciona com `channel.select` para multiplexacao.
+O método `channel()` retorna um channel para receber mensagens. Funciona com `channel.select` para multiplexação.
 
 ### Recepcao Basica
 
@@ -215,8 +215,8 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (por mensagem)
 | `UNSUPPORTED_DATA` | 1003 | Tipo de dados não suportado |
 | `NO_STATUS` | 1005 | Nenhum status recebido |
 | `ABNORMAL_CLOSURE` | 1006 | Conexão perdida |
-| `INVALID_PAYLOAD` | 1007 | Payload de frame invalido |
-| `POLICY_VIOLATION` | 1008 | Violacao de politica |
+| `INVALID_PAYLOAD` | 1007 | Payload de frame inválido |
+| `POLICY_VIOLATION` | 1008 | Violação de política |
 | `MESSAGE_TOO_BIG` | 1009 | Mensagem muito grande |
 | `INTERNAL_ERROR` | 1011 | Erro do servidor |
 | `SERVICE_RESTART` | 1012 | Servidor reiniciando |
@@ -292,28 +292,28 @@ end
 client:close()
 ```
 
-## Permissoes
+## Permissões
 
-Conexoes WebSocket estao sujeitas a avaliacao de politica de seguranca.
+Conexoes WebSocket estao sujeitas a avaliação de política de segurança.
 
-### Acoes de Seguranca
+### Acoes de Segurança
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `websocket.connect` | - | Permitir/negar conexoes WebSocket |
-| `websocket.connect.url` | URL | Permitir/negar conexoes para URLs especificas |
+| `websocket.connect.url` | URL | Permitir/negar conexoes para URLs específicas |
 
-Veja [Security Model](system-security.md) para configuracao de politicas.
+Veja [Security Model](system-security.md) para configuração de políticas.
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Conexoes desabilitadas | `errors.PERMISSION_DENIED` | não |
 | URL não permitida | `errors.PERMISSION_DENIED` | não |
 | Sem contexto | `errors.INTERNAL` | não |
 | Conexão falhou | `errors.INTERNAL` | sim |
-| ID de conexão invalido | `errors.INTERNAL` | não |
+| ID de conexão inválido | `errors.INTERNAL` | não |
 
 ```lua
 local client, err = websocket.connect(url)

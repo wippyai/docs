@@ -6,7 +6,7 @@
 
 Publique e consuma mensagens de filas distribuidas. Suporta multiplos backends incluindo RabbitMQ e outros brokers compativeis com AMQP.
 
-Para configuracao de fila, veja [Queue](system-queue.md).
+Para configuração de fila, veja [Queue](system-queue.md).
 
 ## Carregamento
 
@@ -70,7 +70,7 @@ local all_headers = msg:headers()
 
 Disponível apenas ao processar mensagens de fila em contexto de consumer.
 
-## Metodos de Message
+## Métodos de Message
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
@@ -106,26 +106,26 @@ function handle_email(payload)
 end
 ```
 
-## Permissoes
+## Permissões
 
-Operacoes de fila estao sujeitas a avaliacao de politica de seguranca.
+Operações de fila estao sujeitas a avaliação de política de segurança.
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
-| `queue.publish` | - | Permissao geral para publicar mensagens |
-| `queue.publish.queue` | ID da Fila | Publicar em fila especifica |
+| `queue.publish` | - | Permissão geral para publicar mensagens |
+| `queue.publish.queue` | ID da Fila | Publicar em fila específica |
 
-Ambas as permissoes sao verificadas: primeiro a permissao geral, depois a especifica da fila.
+Ambas as permissões sao verificadas: primeiro a permissão geral, depois a específica da fila.
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID da fila vazio | `errors.INVALID` | não |
 | Dados da mensagem vazios | `errors.INVALID` | não |
 | Sem contexto de entrega | `errors.INVALID` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
-| Publicacao falhou | `errors.INTERNAL` | sim |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Publicação falhou | `errors.INTERNAL` | sim |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 
@@ -133,6 +133,6 @@ Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 
 - [Queue Configuration](system/queue.md) - Drivers de fila e definicoes de entrada
 - [Queue Consumers Guide](guides/queue-consumers.md) - Padroes de consumer e pools de workers
-- [Process Management](lua/core/process.md) - Criacao de processos e comunicacao
-- [Channels](lua/core/channel.md) - Padroes de comunicacao entre processos
-- [Functions](lua/core/funcs.md) - Invocacao de funcoes assincronas
+- [Process Management](lua/core/process.md) - Criação de processos e comunicação
+- [Channels](lua/core/channel.md) - Padroes de comunicação entre processos
+- [Functions](lua/core/funcs.md) - Invocação de funções assíncronas

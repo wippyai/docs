@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Arbeiten Sie mit Zeitwerten, Dauern, Zeitzonen und Scheduling. Erstellen Sie Timer, pausieren Sie für bestimmte Zeitraume, parsen und formatieren Sie Zeitstempel.
+Arbeiten Sie mit Zeitwerten, Dauern, Zeitzonen und Scheduling. Erstellen Sie Timer, pausieren Sie für bestimmte Zeiträume, parsen und formatieren Sie Zeitstempel.
 
 In Workflows gibt `time.now()` eine aufgezeichnete Zeitreferenz für deterministisches Replay zurück.
 
@@ -17,7 +17,7 @@ local time = require("time")
 
 ### now
 
-Gibt die aktuelle Zeit zurück. In Workflows wird die aufgezeichnete Zeit aus der Zeitreferenz des Workflows für deterministisches Replay zuruckgegeben.
+Gibt die aktuelle Zeit zurück. In Workflows wird die aufgezeichnete Zeit aus der Zeitreferenz des Workflows für deterministisches Replay zurückgegeben.
 
 ```lua
 local t = time.now()
@@ -229,20 +229,20 @@ t:location():string()      -- Zeitzonennamen holen
 
 ### Runden
 
-Auf Dauergrenzen runden oder abschneiden. **Benotigt Duration userdata** (nicht Zahl oder String).
+Auf Dauergrenzen runden oder abschneiden. **Benötigt Duration userdata** (nicht Zahl oder String).
 
 ```lua
 local t = time.now()
 local hour_duration, _ = time.parse_duration("1h")
 local minute_duration, _ = time.parse_duration("15m")
 
-t:round(hour_duration)       -- auf nachste Stunde runden
+t:round(hour_duration)       -- auf nächste Stunde runden
 t:truncate(minute_duration)  -- auf 15-Minuten-Grenze abschneiden
 ```
 
 | Methode | Parameter | Gibt zurück | Beschreibung |
 |--------|------------|---------|-------------|
-| `round(duration)` | Duration | Time | Auf nachstes Vielfaches runden |
+| `round(duration)` | Duration | Time | Auf nächstes Vielfaches runden |
 | `truncate(duration)` | Duration | Time | Auf Vielfaches abschneiden |
 
 ## Dauer
@@ -259,7 +259,7 @@ local d, err = time.parse_duration("2h30m45s500ms")
 local d, err = time.parse_duration(time.SECOND)
 local d, err = time.parse_duration(5 * time.MINUTE)
 
--- Gultige Einheiten: ns, us, ms, s, m, h
+-- Gültige Einheiten: ns, us, ms, s, m, h
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -341,7 +341,7 @@ time.localtz  -- Lokale System-Zeitzone
 
 ### sleep
 
-Ausfuhrung für angegebene Dauer pausieren. In Workflows korrekt aufgezeichnet und wiedergegeben.
+Ausführung für angegebene Dauer pausieren. In Workflows korrekt aufgezeichnet und wiedergegeben.
 
 ```lua
 time.sleep("5s")
@@ -361,7 +361,7 @@ end
 
 ### after
 
-Gibt einen Channel zurück, der einmal nach der Dauer empfangt. Funktioniert mit `channel.select`.
+Gibt einen Channel zurück, der einmal nach der Dauer empfängt. Funktioniert mit `channel.select`.
 
 ```lua
 -- Einfaches Timeout
@@ -390,7 +390,7 @@ end
 
 ### timer
 
-Einmaliger Timer, der nach der Dauer auslost. Kann gestoppt oder zuruckgesetzt werden.
+Einmaliger Timer, der nach der Dauer auslöst. Kann gestoppt oder zurückgesetzt werden.
 
 ```lua
 local timer = time.timer("5s")
@@ -399,7 +399,7 @@ local timer = time.timer("5s")
 timer:response():receive()
 send_reminder()
 
--- Bei Aktivitat zurucksetzen
+-- Bei Aktivität zurücksetzen
 local idle_timer = time.timer("5m")
 while true do
     local r = channel.select{
@@ -428,11 +428,11 @@ timer:stop()
 | `response()` | - | Channel | Timer-Channel holen |
 | `channel()` | - | Channel | Alias für response() |
 | `stop()` | - | boolean | Timer abbrechen |
-| `reset(duration)` | number/string/Duration | boolean | Mit neuer Dauer zurucksetzen |
+| `reset(duration)` | number/string/Duration | boolean | Mit neuer Dauer zurücksetzen |
 
 ### ticker
 
-Wiederholender Timer, der in regelmassigen Intervallen auslost.
+Wiederholender Timer, der in regelmäßigen Intervallen auslöst.
 
 ```lua
 -- Periodische Aufgabe
@@ -537,7 +537,7 @@ time.SATURDAY   -- 6
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Ungultiges Dauerformat | `errors.INVALID` | nein |
+| Ungültiges Dauerformat | `errors.INVALID` | nein |
 | Parsen fehlgeschlagen | `errors.INVALID` | nein |
 | Leerer Location-Name | `errors.INVALID` | nein |
 | Location nicht gefunden | `errors.NOT_FOUND` | nein |

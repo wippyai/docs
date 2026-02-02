@@ -1,10 +1,10 @@
-# Codificacao Base64
+# Codificação Base64
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Codifique dados binarios para strings base64 e decodifique base64 de volta para binario. Usa codificacao base64 padrão conforme RFC 4648.
+Codifique dados binarios para strings base64 e decodifique base64 de volta para binario. Usa codificação base64 padrão conforme RFC 4648.
 
 ## Carregamento
 
@@ -12,7 +12,7 @@ Codifique dados binarios para strings base64 e decodifique base64 de volta para 
 local base64 = require("base64")
 ```
 
-## Codificacao
+## Codificação
 
 ### Codificar Dados
 
@@ -43,7 +43,7 @@ local auth_header = "Basic " .. credentials
 
 **Retorna:** `string, error` - Entrada de string vazia retorna string vazia.
 
-## Decodificacao
+## Decodificação
 
 ### Decodificar Dados
 
@@ -82,10 +82,10 @@ local payload = json.decode(base64.decode(parts[2]))
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Entrada não e string | `errors.INVALID` | não |
-| Caracteres base64 invalidos | `errors.INVALID` | não |
+| Caracteres base64 inválidos | `errors.INVALID` | não |
 | Padding corrompido | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

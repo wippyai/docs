@@ -162,10 +162,10 @@ msg:payload()  -- any: данные payload
 Создать процесс, дождаться результата и вернуть:
 
 ```lua
-local result, err = process.call(id, host, ...)
+local result, err = process.exec(id, host, ...)
 ```
 
-**Разрешения:** `process.call` на id процесса, `process.host` на id хоста
+**Разрешения:** `process.exec` на id процесса, `process.host` на id хоста
 
 ## Обновление процесса
 
@@ -247,7 +247,7 @@ local ok = process.registry.unregister(name)
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | id процесса |
 | `process.host` | `spawn*()`, `call()` | id хоста |
 | `process.send` | `send()` | целевой PID |
-| `process.call` | `call()` | id процесса |
+| `process.exec` | `call()` | id процесса |
 | `process.terminate` | `terminate()` | целевой PID |
 | `process.cancel` | `cancel()` | целевой PID |
 | `process.monitor` | `monitor()` | целевой PID |
@@ -269,7 +269,7 @@ local ok = process.registry.unregister(name)
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.call` + `process.host` |
+| `call()` | `process.exec` + `process.host` |
 | spawn с пользовательским actor/scope | разрешения spawn + `process.security` |
 
 ## Ошибки

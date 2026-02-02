@@ -58,7 +58,7 @@ return html
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `name` | string | Template-Name innerhalb des Sets |
-| `data` | table | An Template zu ubergebende Variablen (optional) |
+| `data` | table | An Template zu übergebende Variablen (optional) |
 
 **Gibt zurück:** `string, error`
 
@@ -67,11 +67,11 @@ return html
 | Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `render(name, data?)` | `string, error` | Template mit Daten rendern |
-| `release()` | `boolean` | Set an Pool zuruckgeben |
+| `release()` | `boolean` | Set an Pool zurückgeben |
 
 ## Jet-Syntax-Referenz
 
-Jet verwendet `{{ }}` für Ausdrucke und Kontrollstrukturen, `{* *}` für Kommentare.
+Jet verwendet `{{ }}` für Ausdrücke und Kontrollstrukturen, `{* *}` für Kommentare.
 
 ### Variablen
 

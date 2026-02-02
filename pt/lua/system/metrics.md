@@ -84,7 +84,7 @@ metrics.gauge_dec("connections", {pool = "db"})
 
 ## Histogramas
 
-### Registrar Observacao
+### Registrar Observação
 
 ```lua
 metrics.histogram("duration_seconds", 0.123, {method = "GET"})
@@ -100,7 +100,7 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Coletor não disponível | `errors.INTERNAL` | não |
 

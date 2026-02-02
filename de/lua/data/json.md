@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten. Enthalt JSON-Schema-Validierung für Datenverifizierung und API-Vertragserzwingung.
+Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten. Enthält JSON-Schema-Validierung für Datenverifizierung und API-Vertragserzwingung.
 
 ## Laden
 
@@ -58,7 +58,7 @@ Kodierungsregeln:
 - Tabellen mit sequentiellen 1-basierten Schlüsseln werden zu Arrays
 - Tabellen mit String-Schlüsseln werden zu Objekten
 - Gemischte numerische und String-Schlüssel verursachen einen Fehler
-- Sparse-Arrays (Lucken in Indizes) verursachen einen Fehler
+- Sparse-Arrays (Lücken in Indizes) verursachen einen Fehler
 - Inf/NaN-Zahlen werden zu `null`
 - Rekursive Tabellenreferenzen verursachen einen Fehler
 - Maximale Verschachtelungstiefe ist 128 Ebenen
@@ -115,7 +115,7 @@ end
 
 ### Wert validieren
 
-Validiert einen Lua-Wert gegen ein JSON-Schema. Verwenden Sie dies, um API-Vertrage durchzusetzen oder Benutzereingaben zu validieren.
+Validiert einen Lua-Wert gegen ein JSON-Schema. Verwenden Sie dies, um API-Verträge durchzusetzen oder Benutzereingaben zu validieren.
 
 ```lua
 -- Schema definieren
@@ -129,7 +129,7 @@ local user_schema = {
     required = {"name", "email"}
 }
 
--- Gultige Daten bestehen
+-- Gültige Daten bestehen
 local valid, err = json.validate(user_schema, {
     name = "Alice",
     email = "alice@example.com",
@@ -137,7 +137,7 @@ local valid, err = json.validate(user_schema, {
 })
 print(valid)  -- true
 
--- Ungultige Daten scheitern mit Details
+-- Ungültige Daten scheitern mit Details
 local valid, err = json.validate(user_schema, {
     name = "",
     email = "not-an-email"
@@ -162,7 +162,7 @@ Schemas werden nach Inhalts-Hash für bessere Performance gecacht.
 
 ### JSON-String validieren
 
-Validiert einen JSON-String gegen ein Schema ohne vorher zu dekodieren. Nutzlich, wenn Sie vor dem Parsen validieren müssen.
+Validiert einen JSON-String gegen ein Schema ohne vorher zu dekodieren. Nützlich, wenn Sie vor dem Parsen validieren müssen.
 
 ```lua
 local schema = {
@@ -196,10 +196,10 @@ local request = json.decode(body)
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Rekursive Tabellenreferenz | `errors.INTERNAL` | nein |
-| Sparse-Array (Lucken in Indizes) | `errors.INTERNAL` | nein |
+| Sparse-Array (Lücken in Indizes) | `errors.INTERNAL` | nein |
 | Gemischte Schlüsseltypen in Tabelle | `errors.INTERNAL` | nein |
-| Verschachtelung uberschreitet 128 Ebenen | `errors.INTERNAL` | nein |
-| Ungultige JSON-Syntax | `errors.INTERNAL` | nein |
+| Verschachtelung überschreitet 128 Ebenen | `errors.INTERNAL` | nein |
+| Ungültige JSON-Syntax | `errors.INTERNAL` | nein |
 | Schema-Kompilierung fehlgeschlagen | `errors.INVALID` | nein |
 | Validierung fehlgeschlagen | `errors.INVALID` | nein |
 

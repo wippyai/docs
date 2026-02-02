@@ -7,7 +7,7 @@
 
 Acesse armazenamento de objetos compativel com S3. Upload, download, listagem e gerenciamento de arquivos com suporte a URLs pre-assinadas.
 
-Para configuracao de armazenamento, veja [Cloud Storage](system-cloudstorage.md).
+Para configuração de armazenamento, veja [Cloud Storage](system-cloudstorage.md).
 
 ## Carregamento
 
@@ -113,7 +113,7 @@ for _, obj in ipairs(result.objects) do
     print(obj.key, obj.size, obj.content_type)
 end
 
--- Paginar atraves de resultados grandes
+-- Paginar através de resultados grandes
 local token = nil
 repeat
     local result = storage:list_objects({
@@ -134,7 +134,7 @@ storage:release()
 |-----------|------|-----------|
 | `options.prefix` | string | Filtrar por prefixo de chave |
 | `options.max_keys` | integer | Maximo de objetos a retornar |
-| `options.continuation_token` | string | Token de paginacao |
+| `options.continuation_token` | string | Token de paginação |
 
 **Retorna:** `table, error`
 
@@ -164,7 +164,7 @@ storage:release()
 
 ## URLs de Download
 
-Criar uma URL temporaria que permite baixar um objeto sem credenciais. Util para compartilhar arquivos com usuarios externos ou servir conteudo atraves da sua aplicação.
+Criar uma URL temporaria que permite baixar um objeto sem credenciais. Util para compartilhar arquivos com usuários externos ou servir conteudo através da sua aplicação.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -189,7 +189,7 @@ return {download_url = url}
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave do objeto |
-| `options.expiration` | integer | Segundos ate URL expirar (padrão: 3600) |
+| `options.expiration` | integer | Segundos até URL expirar (padrão: 3600) |
 
 **Retorna:** `string, error`
 
@@ -222,13 +222,13 @@ return {upload_url = url}
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `key` | string | Chave do objeto |
-| `options.expiration` | integer | Segundos ate URL expirar (padrão: 3600) |
+| `options.expiration` | integer | Segundos até URL expirar (padrão: 3600) |
 | `options.content_type` | string | Content type obrigatorio para upload |
 | `options.content_length` | integer | Tamanho maximo de upload em bytes |
 
 **Retorna:** `string, error`
 
-## Metodos de Storage
+## Métodos de Storage
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
@@ -240,17 +240,17 @@ return {upload_url = url}
 | `presigned_put_url(key, opts?)` | `string, error` | Gerar URL temporaria de upload |
 | `release()` | `boolean` | Liberar recurso de storage |
 
-## Permissoes
+## Permissões
 
-Operacoes de cloud storage estao sujeitas a avaliacao de politica de seguranca.
+Operações de cloud storage estao sujeitas a avaliação de política de segurança.
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `cloudstorage.get` | ID do Storage | Adquirir um recurso de storage |
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID de recurso vazio | `errors.INVALID` | não |
 | Recurso não encontrado | `errors.NOT_FOUND` | não |
@@ -260,7 +260,7 @@ Operacoes de cloud storage estao sujeitas a avaliacao de politica de seguranca.
 | Conteudo nil | `errors.INVALID` | não |
 | Writer não valido | `errors.INVALID` | não |
 | Objeto não encontrado | `errors.NOT_FOUND` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Operação falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

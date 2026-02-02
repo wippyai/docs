@@ -111,7 +111,7 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) fur Muster.
+Siehe [Fehlerbehandlung](lua-errors.md) für Muster.
 
 ## Nächste Schritte
 

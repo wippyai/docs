@@ -12,15 +12,15 @@ Wippy разрабатывается [Spiral Scout](https://spiralscout.com). М
 
 ## Pull Requests
 
-Мы принимаем pull request'ы для улучшений Lua-модулей, стабилизации API и документации.
+Мы принимаем pull request для улучшений Lua-модулей, стабилизации API и документации.
 
-Мы не принимаем pull request'ы для высокоуровневых архитектурных изменений или основных дизайнерских решений. На данном этапе нам нужно сохранять контроль над основным направлением развития.
+Мы не принимаем pull request для высокоуровневых архитектурных изменений или основных проектных решений. На данном этапе нам нужно сохранять контроль над основным направлением развития.
 
 Issues и обратная связь всегда приветствуются.
 
 ## Другие проекты
 
-Spiral Scout поддерживает несколько open source проектов, включая [RoadRunner](https://github.com/roadrunner-server/roadrunner), [Spiral Framework](https://github.com/spiral/framework) и [Cycle ORM](https://github.com/cycle/orm).
+Spiral Scout поддерживает несколько проектов с открытым исходным кодом, включая [RoadRunner](https://github.com/roadrunner-server/roadrunner), [Spiral Framework](https://github.com/spiral/framework) и [Cycle ORM](https://github.com/cycle/orm).
 
 ## Безопасность
 

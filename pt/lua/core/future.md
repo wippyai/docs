@@ -2,11 +2,11 @@
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Resultados de operacoes assincronas. Futures sao retornados por `funcs.async()` e chamadas async de contract.
+Resultados de operações assíncronas. Futures sao retornados por `funcs.async()` e chamadas async de contract.
 
 ## Carregamento
 
-Não e um módulo carregavel. Futures sao criados por operacoes assincronas:
+Não e um módulo carregavel. Futures sao criados por operações assíncronas:
 
 ```lua
 local funcs = require("funcs")
@@ -27,9 +27,9 @@ end
 
 `channel()` e um alias para `response()`.
 
-## Verificacao de Conclusao
+## Verificação de Conclusao
 
-Verificacao não-bloqueante se future completou:
+Verificação não-bloqueante se future completou:
 
 ```lua
 if future:is_complete() then
@@ -37,7 +37,7 @@ if future:is_complete() then
 end
 ```
 
-## Verificacao de Cancelamento
+## Verificação de Cancelamento
 
 Verificar se `cancel()` foi chamado:
 
@@ -76,7 +76,7 @@ end
 
 ## Cancelando
 
-Cancelar operação assincrona (best-effort):
+Cancelar operação assíncrona (best-effort):
 
 ```lua
 future:cancel()

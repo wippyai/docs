@@ -28,7 +28,7 @@ local registry = require("registry")
 local entry, err = registry.get("app.lib:assert")
 ```
 
-**Permissao:** `registry.get` no ID da entrada
+**Permissão:** `registry.get` no ID da entrada
 
 ## Encontrar Entries
 
@@ -55,7 +55,7 @@ local snap, err = registry.snapshot()           -- estado atual
 local snap, err = registry.snapshot_at(5)       -- na versão 5
 ```
 
-### Metodos de Snapshot
+### Métodos de Snapshot
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
@@ -113,32 +113,32 @@ changes:delete("test:old_entry")
 local new_version, err = changes:apply()
 ```
 
-**Permissao:** `registry.apply` para `changes:apply()`
+**Permissão:** `registry.apply` para `changes:apply()`
 
-### Metodos de Changes
+### Métodos de Changes
 
 | Método | Descrição |
 |--------|-----------|
 | `changes:create(entry)` | Adicionar operação create |
 | `changes:update(entry)` | Adicionar operação update |
 | `changes:delete(id)` | Adicionar operação delete (string ou `{ns, name}`) |
-| `changes:ops()` | Obter operacoes pendentes |
+| `changes:ops()` | Obter operações pendentes |
 | `changes:apply()` | Aplicar mudancas, retorna nova Version |
 
 ## Aplicar Versão
 
-Rollback ou forward para uma versão especifica:
+Rollback ou forward para uma versão específica:
 
 ```lua
 local prev = current_version:previous()
 local ok, err = registry.apply_version(prev)
 ```
 
-**Permissao:** `registry.apply_version`
+**Permissão:** `registry.apply_version`
 
 ## Construir Delta
 
-Computar operacoes para transicao entre estados:
+Computar operações para transicao entre estados:
 
 ```lua
 local from = {{id = "test:a", kind = "test", meta = {}, data = {}}}
@@ -150,9 +150,9 @@ for _, op in ipairs(ops) do
 end
 ```
 
-## Permissoes
+## Permissões
 
-| Permissao | Recurso | Descrição |
+| Permissão | Recurso | Descrição |
 |-----------|---------|-----------|
 | `registry.get` | ID da entrada | Ler entrada (também filtra resultados de find/entries) |
 | `registry.apply` | - | Aplicar changeset |
@@ -164,8 +164,8 @@ end
 |----------|------|
 | Entrada não encontrada | `errors.NOT_FOUND` |
 | Versão não encontrada | `errors.NOT_FOUND` |
-| Permissao negada | `errors.PERMISSION_DENIED` |
-| Parâmetro invalido | `errors.INVALID` |
+| Permissão negada | `errors.PERMISSION_DENIED` |
+| Parâmetro inválido | `errors.INVALID` |
 | Sem mudancas para aplicar | `errors.INVALID` |
 | Registry não disponível | `errors.INTERNAL` |
 

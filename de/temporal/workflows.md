@@ -145,12 +145,12 @@ Workflow-History-Größe in Bytes abrufen:
 local size = workflow.history_size()
 ```
 
-### workflow.call()
+### workflow.exec()
 
 Kind-Workflow ausführen:
 
 ```lua
-local result, err = workflow.call("app:child_workflow", input_data)
+local result, err = workflow.exec("app:child_workflow", input_data)
 ```
 
 ## Signale

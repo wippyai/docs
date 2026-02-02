@@ -9,8 +9,8 @@ local n: number = 3.14
 local i: integer = 42         -- integer ist Subtyp von number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- explizit dynamisch (opt-out der Prufung)
-local u: unknown = something  -- muss vor Verwendung eingeschrankt werden
+local a: any = "anything"     -- explizit dynamisch (opt-out der Prüfung)
+local u: unknown = something  -- muss vor Verwendung eingeschränkt werden
 ```
 
 ### any vs unknown
@@ -24,7 +24,7 @@ a.foo.bar.baz()              -- kein Fehler, kann zur Laufzeit abstürzen
 local u: unknown = get_data()
 u.foo                        -- FEHLER: kann auf Eigenschaft von unknown nicht zugreifen
 if type(u) == "table" then
-    -- u hier auf table eingeschrankt
+    -- u hier auf table eingeschränkt
 end
 ```
 
@@ -53,7 +53,7 @@ end
 -- Early-Return-Muster
 local user, err = get_user(123)
 if err then return nil, err end
--- user hier auf non-nil eingeschrankt
+-- user hier auf non-nil eingeschränkt
 
 -- Oder Standard
 local val = get_value() or 0  -- val: number
@@ -238,7 +238,7 @@ Rufen Sie einen Typ als Funktion auf, um zu validieren und zu casten:
 
 ```lua
 local data: any = get_json()
-local user = User(data)              -- validiert und gibt User zuruck
+local user = User(data)              -- validiert und gibt User zurück
 local name = user.name               -- sicherer Feldzugriff
 ```
 
@@ -270,11 +270,11 @@ else
 end
 ```
 
-Das Ergebnis schrankt in Bedingungen ein:
+Das Ergebnis schränkt in Bedingungen ein:
 
 ```lua
 if Point:is(data) then
-    local p: Point = data            -- data auf Point eingeschrankt
+    local p: Point = data            -- data auf Point eingeschränkt
 end
 ```
 

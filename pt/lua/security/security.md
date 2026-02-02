@@ -1,9 +1,9 @@
-# Seguranca & Controle de Acesso
+# Segurança & Controle de Acesso
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Gerencie actors de autenticacao, escopos de autorizacao e politicas de acesso.
+Gerencie actors de autenticação, escopos de autorização e políticas de acesso.
 
 ## Carregamento
 
@@ -13,7 +13,7 @@ local security = require("security")
 
 ## actor
 
-Retorna o actor de seguranca atual do contexto de execução.
+Retorna o actor de segurança atual do contexto de execução.
 
 ```lua
 local actor = security.actor()
@@ -32,14 +32,14 @@ end
 
 ## scope
 
-Retorna o escopo de seguranca atual do contexto de execução.
+Retorna o escopo de segurança atual do contexto de execução.
 
 ```lua
 local scope = security.scope()
 if scope then
     local policies = scope:policies()
     for _, policy in ipairs(policies) do
-        print("Politica ativa:", policy:id())
+        print("Política ativa:", policy:id())
     end
 end
 ```
@@ -48,15 +48,15 @@ end
 
 ## can
 
-Verifica se o contexto atual permite uma acao em um recurso.
+Verifica se o contexto atual permite uma ação em um recurso.
 
 ```lua
--- Verificar permissao de leitura
+-- Verificar permissão de leitura
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Não pode ler dados do usuario")
+    return nil, errors.new("PERMISSION_DENIED", "Não pode ler dados do usuário")
 end
 
--- Verificar permissao de escrita
+-- Verificar permissão de escrita
 if not security.can("write", "order:" .. order_id) then
     return nil, errors.new("PERMISSION_DENIED", "Não pode modificar pedido")
 end
@@ -70,7 +70,7 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `action` | string | Acao a verificar |
+| `action` | string | Ação a verificar |
 | `resource` | string | Identificador do recurso |
 | `meta` | table | Metadados adicionais (opcional) |
 
@@ -81,7 +81,7 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 Cria um novo actor com ID e metadados.
 
 ```lua
--- Criar actor de usuario
+-- Criar actor de usuário
 local actor = security.new_actor("user:" .. user.id, {
     role = user.role,
     department = user.department,
@@ -110,7 +110,7 @@ Cria um novo escopo customizado.
 -- Escopo vazio
 local scope = security.new_scope()
 
--- Escopo com politicas
+-- Escopo com políticas
 local read_policy = security.policy("app:read-only")
 local scope = security.new_scope({read_policy})
 
@@ -125,7 +125,7 @@ scope = scope:with(policy1):with(policy2)
 
 ## policy
 
-Obtem uma politica do registry.
+Obtem uma política do registry.
 
 ```lua
 local policy, err = security.policy("app:admin-access")
@@ -133,26 +133,26 @@ if err then
     return nil, err
 end
 
--- Avaliar politica
+-- Avaliar política
 local result = policy:evaluate(actor, "delete", "user:123")
 if result == "allow" then
     -- permitido
 elseif result == "deny" then
     -- proibido
 else
-    -- undefined, verificar outras politicas
+    -- undefined, verificar outras políticas
 end
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `id` | string | ID da politica "namespace:nome" |
+| `id` | string | ID da política "namespace:nome" |
 
 **Retorna:** `Policy, error`
 
 ## named_scope
 
-Obtem um grupo de politicas pre-definido.
+Obtem um grupo de políticas pre-definido.
 
 ```lua
 -- Obter escopo admin
@@ -161,19 +161,19 @@ if err then
     return nil, err
 end
 
--- Usar para operacoes elevadas
+-- Usar para operações elevadas
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `id` | string | ID do grupo de politicas |
+| `id` | string | ID do grupo de políticas |
 
 **Retorna:** `Scope, error`
 
 ## token_store
 
-Obtem um token store para gerenciar tokens de autenticacao.
+Obtem um token store para gerenciar tokens de autenticação.
 
 ```lua
 local store, err = security.token_store("app:tokens")
@@ -191,33 +191,33 @@ store:close()
 
 **Retorna:** `TokenStore, error`
 
-## Metodos do Actor
+## Métodos do Actor
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `actor:id()` | string | Identificador do actor |
 | `actor:meta()` | table | Metadados do actor |
 
-## Metodos do Scope
+## Métodos do Scope
 
 ### with / without
 
-Adiciona ou remove politicas do escopo.
+Adiciona ou remove políticas do escopo.
 
 ```lua
 local scope = security.new_scope()
 
--- Adicionar politica
+-- Adicionar política
 local write_policy = security.policy("app:write")
 scope = scope:with(write_policy)
 
--- Remover politica
+-- Remover política
 scope = scope:without("app:read-only")
 ```
 
 ### evaluate
 
-Avalia todas as politicas no escopo.
+Avalia todas as políticas no escopo.
 
 ```lua
 local result = scope:evaluate(actor, "read", "document:123")
@@ -230,7 +230,7 @@ end
 
 ### contains
 
-Verifica se o escopo contem uma politica.
+Verifica se o escopo contem uma política.
 
 ```lua
 if scope:contains("app:admin") then
@@ -240,7 +240,7 @@ end
 
 ### policies
 
-Retorna todas as politicas no escopo.
+Retorna todas as políticas no escopo.
 
 ```lua
 local policies = scope:policies()
@@ -251,18 +251,18 @@ end
 
 **Retorna:** `Policy[]`
 
-## Metodos da Policy
+## Métodos da Policy
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
-| `policy:id()` | string | Identificador da politica |
+| `policy:id()` | string | Identificador da política |
 | `policy:evaluate(actor, action, resource, meta?)` | string | `"allow"`, `"deny"`, ou `"undefined"` |
 
-## Metodos do TokenStore
+## Métodos do TokenStore
 
 ### create
 
-Criar token de autenticacao.
+Criar token de autenticação.
 
 ```lua
 local actor = security.new_actor("user:123", {role = "user"})
@@ -280,8 +280,8 @@ local token, err = store:create(actor, scope, {
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `actor` | Actor | Actor para o token |
-| `scope` | Scope | Escopo de permissoes |
-| `options.expiration` | string/number | String de duracao ou ms |
+| `scope` | Scope | Escopo de permissões |
+| `options.expiration` | string/number | String de duração ou ms |
 | `options.meta` | table | Metadados do token |
 
 **Retorna:** `string, error`
@@ -293,7 +293,7 @@ Validar token e obter actor/scope.
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Token invalido")
+    return nil, errors.new("UNAUTHENTICATED", "Token inválido")
 end
 ```
 
@@ -319,15 +319,15 @@ store:close()
 
 **Retorna:** `boolean`
 
-## Permissoes
+## Permissões
 
-Operacoes de seguranca estao sujeitas a avaliacao de politica de seguranca.
+Operações de segurança estao sujeitas a avaliação de política de segurança.
 
-### Acoes de Seguranca
+### Acoes de Segurança
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
-| `security.policy.get` | ID da Policy | Acessar definicoes de politica |
+| `security.policy.get` | ID da Policy | Acessar definicoes de política |
 | `security.policy_group.get` | ID do Grupo | Acessar escopos nomeados |
 | `security.scope.create` | `custom` | Criar escopos customizados |
 | `security.actor.create` | ID do Actor | Criar actors |
@@ -336,26 +336,26 @@ Operacoes de seguranca estao sujeitas a avaliacao de politica de seguranca.
 | `security.token.create` | ID da Store | Criar tokens |
 | `security.token.revoke` | ID da Store | Revogar tokens |
 
-Veja [Security Model](system-security.md) para configuracao de politicas.
+Veja [Security Model](system-security.md) para configuração de políticas.
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Sem contexto | `errors.INTERNAL` | não |
 | ID de token store vazio | `errors.INVALID` | não |
-| Permissao negada | `errors.INVALID` | não |
-| Politica não encontrada | `errors.INTERNAL` | não |
+| Permissão negada | `errors.INVALID` | não |
+| Política não encontrada | `errors.INTERNAL` | não |
 | Token store não encontrado | `errors.INTERNAL` | não |
 | Token store fechado | `errors.INTERNAL` | não |
-| Formato de expiracao invalido | `errors.INVALID` | não |
-| Validacao de token falhou | `errors.INTERNAL` | não |
+| Formato de expiração inválido | `errors.INVALID` | não |
+| Validação de token falhou | `errors.INTERNAL` | não |
 
 ```lua
 local store, err = security.token_store("app:tokens")
 if err then
     if errors.is(err, errors.INVALID) then
-        print("Requisicao invalida:", err:message())
+        print("Requisição invalida:", err:message())
     end
     return nil, err
 end
@@ -365,5 +365,5 @@ Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Security Model](system-security.md) - Configuracao de actors, politicas, escopos
+- [Security Model](system-security.md) - Configuração de actors, políticas, escopos
 - [HTTP Middleware](http-middleware.md) - Endpoint e resource firewall

@@ -1,11 +1,11 @@
-# Sanitizacao HTML
+# Sanitização HTML
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
 Sanitize HTML não confiavel para prevenir ataques XSS. Baseado em [bluemonday](https://github.com/microcosm-cc/bluemonday).
 
-A sanitizacao funciona parseando HTML e filtrando atraves de uma politica de whitelist. Elementos e atributos não explicitamente permitidos sao removidos. A saida e sempre HTML bem formado.
+A sanitização funciona parseando HTML e filtrando através de uma política de whitelist. Elementos e atributos não explicitamente permitidos sao removidos. A saida e sempre HTML bem formado.
 
 ## Carregamento
 
@@ -13,19 +13,19 @@ A sanitizacao funciona parseando HTML e filtrando atraves de uma politica de whi
 local html = require("html")
 ```
 
-## Politicas Predefinidas
+## Políticas Predefinidas
 
-Tres politicas embutidas para casos de uso comuns:
+Tres políticas embutidas para casos de uso comuns:
 
-| Politica | Caso de Uso | Permite |
+| Política | Caso de Uso | Permite |
 |----------|-------------|---------|
-| `new_policy` | Sanitizacao customizada | Nada (construir do zero) |
-| `ugc_policy` | Comentarios de usuarios, foruns | Formatacao comum (`p`, `b`, `i`, `a`, listas, etc.) |
-| `strict_policy` | Extracao de texto puro | Nada (remove todo HTML) |
+| `new_policy` | Sanitização customizada | Nada (construir do zero) |
+| `ugc_policy` | Comentarios de usuários, foruns | Formatação comum (`p`, `b`, `i`, `a`, listas, etc.) |
+| `strict_policy` | Extração de texto puro | Nada (remove todo HTML) |
 
-### Politica Vazia
+### Política Vazia
 
-Cria uma politica que não permite nada. Use para construir uma whitelist customizada do zero.
+Cria uma política que não permite nada. Use para construir uma whitelist customizada do zero.
 
 ```lua
 local policy, err = html.sanitize.new_policy()
@@ -38,9 +38,9 @@ local clean = policy:sanitize(user_input)
 
 **Retorna:** `Policy, error`
 
-### Politica de Conteudo de Usuario
+### Política de Conteudo de Usuário
 
-Pre-configurada para conteudo gerado por usuarios. Permite elementos de formatacao comuns.
+Pre-configurada para conteudo gerado por usuários. Permite elementos de formatação comuns.
 
 ```lua
 local policy = html.sanitize.ugc_policy()
@@ -54,7 +54,7 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 
 **Retorna:** `Policy, error`
 
-### Politica Restrita
+### Política Restrita
 
 Remove todo HTML, retorna apenas texto puro.
 
@@ -93,7 +93,7 @@ local result = policy:sanitize('<p>Hello <strong>world</strong></p>')
 
 ### Permitir Atributos
 
-Iniciar permissao de atributo. Encadear com `on_elements()` ou `globally()`.
+Iniciar permissão de atributo. Encadear com `on_elements()` ou `globally()`.
 
 ```lua
 policy:allow_attrs("href"):on_elements("a")
@@ -159,11 +159,11 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 **Retorna:** `AttrBuilder, error`
 
-## Seguranca de URL
+## Segurança de URL
 
 ### URLs Padrão
 
-Habilitar tratamento de URL com padroes de seguranca.
+Habilitar tratamento de URL com padroes de segurança.
 
 ```lua
 policy:allow_elements("a")
@@ -260,7 +260,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 **Retorna:** `Policy`
 
-## Metodos de Conveniencia
+## Métodos de Conveniencia
 
 ### Permitir Imagens
 
@@ -332,7 +332,7 @@ policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
 
 ## Sanitize
 
-Aplicar politica a string HTML.
+Aplicar política a string HTML.
 
 ```lua
 local policy = html.sanitize.ugc_policy()
@@ -351,8 +351,8 @@ local clean = policy:sanitize(dirty)
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Padrão regex invalido | `errors.INVALID` | não |
+| Padrão regex inválido | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

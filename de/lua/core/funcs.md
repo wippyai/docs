@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Die primäre Methode zum Aufrufen anderer Funktionen in Wippy. Führen Sie registrierte Funktionen synchron oder asynchron uber Prozesse hinweg aus, mit voller Unterstützung für Kontextpropagierung, Sicherheitsanmeldedaten und Timeouts. Dieses Modul ist zentral für den Aufbau verteilter Anwendungen, bei denen Komponenten kommunizieren müssen.
+Die primäre Methode zum Aufrufen anderer Funktionen in Wippy. Führen Sie registrierte Funktionen synchron oder asynchron über Prozesse hinweg aus, mit voller Unterstützung für Kontextpropagierung, Sicherheitsanmeldedaten und Timeouts. Dieses Modul ist zentral für den Aufbau verteilter Anwendungen, bei denen Komponenten kommunizieren müssen.
 
 ## Laden
 

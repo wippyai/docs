@@ -1,11 +1,11 @@
-# Time e Duracao
+# Time e Duração
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
 Trabalhe com valores de tempo, duracoes, fusos horarios e agendamento. Crie timers, pause execução por periodos especificos, parse e formate timestamps.
 
-Em workflows, `time.now()` retorna uma referencia de tempo gravada para replay deterministico.
+Em workflows, `time.now()` retorna uma referência de tempo gravada para replay deterministico.
 
 ## Carregamento
 
@@ -17,7 +17,7 @@ local time = require("time")
 
 ### now
 
-Retorna o tempo atual. Em workflows, retorna o tempo gravado da referencia de tempo do workflow para replay deterministico.
+Retorna o tempo atual. Em workflows, retorna o tempo gravado da referência de tempo do workflow para replay deterministico.
 
 ```lua
 local t = time.now()
@@ -37,7 +37,7 @@ print("Levou " .. elapsed:milliseconds() .. "ms")
 ### De Componentes
 
 ```lua
--- Criar data/hora especifica em UTC
+-- Criar data/hora específica em UTC
 local t = time.date(2024, time.DECEMBER, 25, 10, 30, 0, 0, time.utc)
 print(t:format_rfc3339())  -- "2024-12-25T10:30:00Z"
 
@@ -45,7 +45,7 @@ print(t:format_rfc3339())  -- "2024-12-25T10:30:00Z"
 local ny, _ = time.load_location("America/New_York")
 local meeting = time.date(2024, time.JANUARY, 15, 14, 0, 0, 0, ny)
 
--- Padrão e fuso horario local se não especificado
+-- Padrão e fuso horario local se não específicado
 local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 ```
 
@@ -86,7 +86,7 @@ local t = time.unix(js_timestamp // 1000, (js_timestamp % 1000) * 1000000)
 
 ### De String
 
-Parse strings de tempo usando formato de tempo de referencia do Go: `Mon Jan 2 15:04:05 MST 2006`.
+Parse strings de tempo usando formato de tempo de referência do Go: `Mon Jan 2 15:04:05 MST 2006`.
 
 ```lua
 -- Parse RFC3339
@@ -113,20 +113,20 @@ local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 
 **Retorna:** `Time, error`
 
-## Metodos de Time
+## Métodos de Time
 
 ### Aritmetica
 
 ```lua
 local t = time.now()
 
--- Adicionar duracao (aceita number, string ou Duration)
+-- Adicionar duração (aceita number, string ou Duration)
 local tomorrow = t:add("24h")
 local later = t:add(5 * time.MINUTE)
 local d, _ = time.parse_duration("1h30m")
 local future = t:add(d)
 
--- Subtrair tempo para obter duracao
+-- Subtrair tempo para obter duração
 local diff = tomorrow:sub(t)  -- retorna Duration
 print(diff:hours())           -- 24
 
@@ -138,11 +138,11 @@ local last_week = t:add_date(0, 0, -7)   -- subtrair 7 dias
 
 | Método | Parametros | Retorna | Descrição |
 |--------|------------|---------|-----------|
-| `add(duration)` | number/string/Duration | Time | Adicionar duracao |
+| `add(duration)` | number/string/Duration | Time | Adicionar duração |
 | `sub(time)` | Time | Duration | Diferenca entre tempos |
 | `add_date(years, months, days)` | numbers | Time | Adicionar unidades de calendario |
 
-### Comparacao
+### Comparação
 
 ```lua
 local t1 = time.date(2024, 1, 1, 0, 0, 0, 0, time.utc)
@@ -159,7 +159,7 @@ t1:equal(t1)    -- true
 | `after(time)` | Time | boolean | Este tempo e posterior ao outro? |
 | `equal(time)` | Time | boolean | Os tempos sao iguais? |
 
-### Formatacao
+### Formatação
 
 ```lua
 local t = time.now()
@@ -229,7 +229,7 @@ t:location():string()      -- obter nome do fuso horario
 
 ### Arredondamento
 
-Arredondar ou truncar para limites de duracao. **Requer userdata Duration** (não number ou string).
+Arredondar ou truncar para limites de duração. **Requer userdata Duration** (não number ou string).
 
 ```lua
 local t = time.now()
@@ -264,11 +264,11 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `value` | number/string/Duration | Duracao para parse |
+| `value` | number/string/Duration | Duração para parse |
 
 **Retorna:** `Duration, error`
 
-### Metodos de Duration
+### Métodos de Duration
 
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
@@ -341,7 +341,7 @@ time.localtz  -- Fuso horario local do sistema
 
 ### sleep
 
-Pausar execução pela duracao especificada. Em workflows, gravado e reproduzido corretamente.
+Pausar execução pela duração específicada. Em workflows, gravado e reproduzido corretamente.
 
 ```lua
 time.sleep("5s")
@@ -361,7 +361,7 @@ end
 
 ### after
 
-Retorna um channel que recebe uma vez apos a duracao. Funciona com `channel.select`.
+Retorna um channel que recebe uma vez apos a duração. Funciona com `channel.select`.
 
 ```lua
 -- Timeout simples
@@ -390,7 +390,7 @@ end
 
 ### timer
 
-Timer de disparo único que dispara apos duracao. Pode ser parado ou resetado.
+Timer de disparo único que dispara apos duração. Pode ser parado ou resetado.
 
 ```lua
 local timer = time.timer("5s")
@@ -419,7 +419,7 @@ timer:stop()
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `duration` | number/string/Duration | Tempo ate disparar |
+| `duration` | number/string/Duration | Tempo até disparar |
 
 **Retorna:** `Timer, error`
 
@@ -428,7 +428,7 @@ timer:stop()
 | `response()` | - | Channel | Obter channel do timer |
 | `channel()` | - | Channel | Alias para response() |
 | `stop()` | - | boolean | Cancelar timer |
-| `reset(duration)` | number/string/Duration | boolean | Resetar com nova duracao |
+| `reset(duration)` | number/string/Duration | boolean | Resetar com nova duração |
 
 ### ticker
 
@@ -467,9 +467,9 @@ ticker:stop()
 
 ## Constantes
 
-### Unidades de Duracao
+### Unidades de Duração
 
-Constantes de duracao estao em nanossegundos. Use com aritmetica.
+Constantes de duração estao em nanossegundos. Use com aritmetica.
 
 ```lua
 time.NANOSECOND    -- 1
@@ -535,19 +535,19 @@ time.SATURDAY   -- 6
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Formato de duracao invalido | `errors.INVALID` | não |
+| Formato de duração inválido | `errors.INVALID` | não |
 | Parse falhou | `errors.INVALID` | não |
 | Nome de location vazio | `errors.INVALID` | não |
 | Location não encontrada | `errors.NOT_FOUND` | não |
-| Duracao <= 0 (timer/ticker) | `errors.INVALID` | não |
+| Duração <= 0 (timer/ticker) | `errors.INVALID` | não |
 
 ```lua
 local t, err = time.parse(time.RFC3339, "invalid")
 if err then
     if errors.is(err, errors.INVALID) then
-        print("Formato invalido:", err:message())
+        print("Formato inválido:", err:message())
     end
     return nil, err
 end

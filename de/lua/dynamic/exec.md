@@ -1,10 +1,10 @@
-# Befehlsausfuhrung
+# Befehlsausführung
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Fuhren Sie externe Befehle und Shell-Skripte mit voller Kontrolle über I/O-Streams aus.
+Führen Sie externe Befehle und Shell-Skripte mit voller Kontrolle über I/O-Streams aus.
 
 Für Executor-Konfiguration siehe [Executor](system-exec.md).
 
@@ -72,7 +72,7 @@ local proc = executor:exec("./deploy.sh production", {
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `cmd` | string | Auszufuhrender Befehl |
+| `cmd` | string | Auszuführender Befehl |
 | `options.work_dir` | string | Arbeitsverzeichnis |
 | `options.env` | table | Umgebungsvariablen |
 
@@ -121,7 +121,7 @@ while true do
 end
 local result = table.concat(output)
 
--- Auf Fehler prufen
+-- Auf Fehler prüfen
 local err_output = {}
 while true do
     local chunk = stderr:read(4096)
@@ -172,7 +172,7 @@ Senden Sie Signale oder schließen Sie den Prozess.
 local proc = executor:exec("./long-running-server.sh")
 proc:start()
 
--- ... spater, muss gestoppt werden ...
+-- ... später, muss gestoppt werden ...
 
 -- Graceful Shutdown (SIGTERM)
 proc:close()
@@ -198,7 +198,7 @@ Exec-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Ungultige ID | `errors.INVALID` | nein |
+| Ungültige ID | `errors.INVALID` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Prozess geschlossen | `errors.INVALID` | nein |
 | Prozess nicht gestartet | `errors.INVALID` | nein |

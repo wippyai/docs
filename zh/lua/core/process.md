@@ -162,10 +162,10 @@ msg:payload()  -- any: 负载数据
 启动进程，等待其结果并返回：
 
 ```lua
-local result, err = process.call(id, host, ...)
+local result, err = process.exec(id, host, ...)
 ```
 
-**权限:** 进程 id 上的 `process.call`，主机 id 上的 `process.host`
+**权限:** 进程 id 上的 `process.exec`，主机 id 上的 `process.host`
 
 ## 进程升级
 
@@ -247,7 +247,7 @@ local ok = process.registry.unregister(name)
 | `process.spawn.linked` | `spawn_linked()`、`spawn_linked_monitored()` | 进程 id |
 | `process.host` | `spawn*()`、`call()` | 主机 id |
 | `process.send` | `send()` | 目标 PID |
-| `process.call` | `call()` | 进程 id |
+| `process.exec` | `call()` | 进程 id |
 | `process.terminate` | `terminate()` | 目标 PID |
 | `process.cancel` | `cancel()` | 目标 PID |
 | `process.monitor` | `monitor()` | 目标 PID |
@@ -269,7 +269,7 @@ local ok = process.registry.unregister(name)
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.call` + `process.host` |
+| `call()` | `process.exec` + `process.host` |
 | 使用自定义 actor/scope 启动 | spawn 权限 + `process.security` |
 
 ## 错误

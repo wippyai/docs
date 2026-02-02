@@ -145,12 +145,12 @@ end
 local size = workflow.history_size()
 ```
 
-### workflow.call()
+### workflow.exec()
 
 子ワークフローを実行：
 
 ```lua
-local result, err = workflow.call("app:child_workflow", input_data)
+local result, err = workflow.exec("app:child_workflow", input_data)
 ```
 
 ## シグナル

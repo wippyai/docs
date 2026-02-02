@@ -6,7 +6,7 @@
 
 Leia, escreva e gerencie arquivos dentro de volumes de filesystem em sandbox.
 
-Para configuracao de filesystem, veja [Filesystem](system-filesystem.md).
+Para configuração de filesystem, veja [Filesystem](system-filesystem.md).
 
 ## Carregamento
 
@@ -34,7 +34,7 @@ local content = vol:readfile("/config.json")
 **Retorna:** `FS, error`
 
 <note>
-Volumes não requerem liberacao explicita. Sao gerenciados no nivel do sistema e se tornam indisponiveis se o filesystem for desanexado do registro.
+Volumes não requerem liberação explicita. Sao gerenciados no nivel do sistema e se tornam indisponíveis se o filesystem for desanexado do registro.
 </note>
 
 ## Lendo Arquivos
@@ -121,7 +121,7 @@ print(info.size, info.modified, info.type)
 
 **Campos de stat:** `name`, `size`, `mode`, `modified`, `is_dir`, `type`
 
-## Operacoes de Diretorio
+## Operações de Diretorio
 
 ```lua
 local vol = fs.get("app:data")
@@ -140,7 +140,7 @@ vol:remove("/temp/file.txt")
 
 Campos de entrada: `name`, `type` ("file" ou "directory")
 
-## Metodos de File Handle
+## Métodos de File Handle
 
 Ao usar `vol:open()` para streaming:
 
@@ -186,7 +186,7 @@ fs.seek.CUR       -- do atual
 fs.seek.END       -- do fim
 ```
 
-## Metodos FS
+## Métodos FS
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
@@ -202,23 +202,23 @@ fs.seek.END       -- do fim
 | `chdir(path)` | `boolean, error` | Mudar diretorio de trabalho |
 | `pwd()` | `string` | Obter diretorio de trabalho |
 
-## Permissoes
+## Permissões
 
-Acesso ao filesystem está sujeito a avaliacao de politica de seguranca.
+Acesso ao filesystem está sujeito a avaliação de política de segurança.
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
 | `fs.get` | ID do Volume | Adquirir volume de filesystem |
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Caminho vazio | `errors.INVALID` | não |
-| Modo invalido | `errors.INVALID` | não |
+| Modo inválido | `errors.INVALID` | não |
 | Arquivo fechado | `errors.INVALID` | não |
 | Caminho não encontrado | `errors.NOT_FOUND` | não |
 | Caminho ja existe | `errors.ALREADY_EXISTS` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

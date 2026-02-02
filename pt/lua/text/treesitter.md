@@ -118,7 +118,7 @@ parser:close()
 
 **Retorna:** `Parser`
 
-### Metodos do Parser
+### Métodos do Parser
 
 | Método | Descrição |
 |--------|-----------|
@@ -142,7 +142,7 @@ print(root:kind())  -- "source_file"
 print(root:text())  -- "package main"
 ```
 
-### Metodos da Tree
+### Métodos da Tree
 
 | Método | Descrição |
 |--------|-----------|
@@ -154,7 +154,7 @@ print(root:text())  -- "package main"
 | `edit(edit_table)` | Aplicar edicao incremental |
 | `changed_ranges(other_tree)` | Obter ranges que mudaram |
 | `included_ranges()` | Obter ranges incluidos durante parsing |
-| `dot_graph()` | Obter representacao em grafo DOT |
+| `dot_graph()` | Obter representação em grafo DOT |
 | `close()` | Liberar recursos da arvore |
 
 ### Edicao Incremental
@@ -200,7 +200,7 @@ print(node:is_named())    -- true para nos significativos
 print(node:grammar_name()) -- nome da regra gramatical
 ```
 
-### Navegacao
+### Navegação
 
 ```lua
 -- Filhos
@@ -318,7 +318,7 @@ if query:did_exceed_match_limit() then
     -- Existem mais matches
 end
 
--- Timeout (string de duracao ou nanossegundos)
+-- Timeout (string de duração ou nanossegundos)
 query:set_timeout("500ms")
 query:set_timeout(1000000000)  -- 1 segundo em nanossegundos
 
@@ -364,7 +364,7 @@ cursor:goto_parent()  -- voltar ao pai
 cursor:close()
 ```
 
-### Metodos do Cursor
+### Métodos do Cursor
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
@@ -403,17 +403,17 @@ local field_id = lang:field_id_for_name("name")
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Linguagem não suportada | `errors.INVALID` | não |
 | Linguagem sem binding | `errors.INVALID` | não |
-| Padrão de query invalido | `errors.INVALID` | não |
+| Padrão de query inválido | `errors.INVALID` | não |
 | Posicoes invalidas | `errors.INVALID` | não |
 | Parse falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.
 
-## Referencia de Sintaxe de Query
+## Referência de Sintaxe de Query
 
 Queries Tree-sitter usam padroes S-expression:
 
@@ -444,4 +444,4 @@ Queries Tree-sitter usam padroes S-expression:
   (#match? @var "^_"))  ; regex match
 ```
 
-Veja [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) para documentacao completa.
+Veja [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) para documentação completa.

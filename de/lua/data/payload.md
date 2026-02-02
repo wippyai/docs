@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Konvertieren Sie Daten zwischen Formaten einschliesslich JSON, MessagePack und Binar. Behandeln Sie typisierte Payloads für Inter-Service-Kommunikation und Workflow-Datenubergabe.
+Konvertieren Sie Daten zwischen Formaten einschließlich JSON, MessagePack und Binär. Behandeln Sie typisierte Payloads für Inter-Service-Kommunikation und Workflow-Datenübergabe.
 
 ## Laden
 
@@ -135,7 +135,7 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 ## Async-Ergebnisse
 
-Payloads werden haufig von asynchronen Funktionsaufrufen empfangen:
+Payloads werden häufig von asynchronen Funktionsaufrufen empfangen:
 
 ```lua
 local funcs = require("funcs")
@@ -166,6 +166,6 @@ print(result.computed_value)
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Transkodierung fehlgeschlagen | `errors.INTERNAL` | nein |
-| Ergebnis ist kein gultiger Lua-Wert | `errors.INTERNAL` | nein |
+| Ergebnis ist kein gültiger Lua-Wert | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.

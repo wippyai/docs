@@ -1,9 +1,9 @@
-# Invocacao de Funcoes
+# Invocação de Funções
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-A forma principal de chamar outras funcoes no Wippy. Execute funcoes registradas sincronamente ou assincronamente entre processos, com suporte completo para propagacao de contexto, credenciais de seguranca e timeouts. Este módulo e central para construir aplicacoes distribuidas onde componentes precisam comunicar.
+A forma principal de chamar outras funções no Wippy. Execute funções registradas síncronamente ou assíncronamente entre processos, com suporte completo para propagação de contexto, credenciais de segurança e timeouts. Este módulo é central para construir aplicações distribuídas onde componentes precisam comunicar.
 
 ## Carregamento
 
@@ -13,7 +13,7 @@ local funcs = require("funcs")
 
 ## call
 
-Chama uma função registrada sincronamente. Use quando precisar de um resultado imediato e puder aguardar por ele.
+Chama uma função registrada síncronamente. Use quando precisar de um resultado imediato e puder aguardar por ele.
 
 ```lua
 local result, err = funcs.call("app.api:get_user", user_id)
@@ -30,20 +30,20 @@ print(result.name)
 
 **Retorna:** `result, error`
 
-A string target segue o padrão `namespace:name` onde namespace identifica o módulo e name identifica a função especifica.
+A string target segue o padrão `namespace:name` onde namespace identifica o módulo e name identifica a função específica.
 
 ## async
 
-Inicia uma chamada de função assincrona e retorna imediatamente com um Future. Use para operacoes de longa duracao onde voce não quer bloquear, ou quando quer executar multiplas operacoes em paralelo.
+Inicia uma chamada de função assíncrona e retorna imediatamente com um Future. Use para operações de longa duração onde você não quer bloquear, ou quando quer executar múltiplas operações em paralelo.
 
 ```lua
--- Iniciar computacao pesada sem bloquear
+-- Iniciar computação pesada sem bloquear
 local future, err = funcs.async("app.process:analyze_data", large_dataset)
 if err then
     return nil, err
 end
 
--- Fazer outro trabalho enquanto computacao executa...
+-- Fazer outro trabalho enquanto computação executa...
 
 -- Aguardar resultado quando pronto
 local ch = future:response()
@@ -62,7 +62,7 @@ end
 
 ## new
 
-Cria um novo Executor para construir chamadas de função com contexto customizado. Use quando precisar propagar contexto de requisicao, definir credenciais de seguranca ou configurar timeouts.
+Cria um novo Executor para construir chamadas de função com contexto customizado. Use quando precisar propagar contexto de requisição, definir credenciais de segurança ou configurar timeouts.
 
 ```lua
 local exec = funcs.new()
@@ -72,14 +72,14 @@ local exec = funcs.new()
 
 ## Executor
 
-Builder para chamadas de função com opcoes de contexto customizado. Metodos retornam novas instancias de Executor (encadeamento imutavel), entao voce pode reutilizar uma configuracao base.
+Builder para chamadas de função com opções de contexto customizado. Métodos retornam novas instâncias de Executor (encadeamento imutável), então você pode reutilizar uma configuração base.
 
 ### with_context
 
-Adiciona valores de contexto que estarao disponiveis para a função chamada. Use para propagar dados com escopo de requisicao como trace IDs, sessoes de usuario ou feature flags.
+Adiciona valores de contexto que estarão disponíveis para a função chamada. Use para propagar dados com escopo de requisição como trace IDs, sessões de usuário ou feature flags.
 
 ```lua
--- Propagar contexto de requisicao para servicos downstream
+-- Propagar contexto de requisição para serviços downstream
 local exec = funcs.new():with_context({
     request_id = ctx.get("request_id"),
     feature_flags = {dark_mode = true}
@@ -96,13 +96,13 @@ local user, err = exec:call("app.api:get_user", user_id)
 
 ### with_actor
 
-Define o ator de seguranca para verificacoes de autorizacao na função chamada. Use ao chamar uma função em nome de um usuario especifico.
+Define o ator de segurança para verificações de autorização na função chamada. Use ao chamar uma função em nome de um usuário específico.
 
 ```lua
 local security = require("security")
-local actor = security.actor()  -- Obter ator do usuario atual
+local actor = security.actor()  -- Obter ator do usuário atual
 
--- Chamar função admin com credenciais do usuario
+-- Chamar função admin com credenciais do usuário
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == "PERMISSION_DENIED" then
@@ -112,13 +112,13 @@ end
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `actor` | Actor | Ator de seguranca (do módulo security) |
+| `actor` | Actor | Ator de segurança (do módulo security) |
 
 **Retorna:** `Executor, error`
 
 ### with_scope
 
-Define o escopo de seguranca para funcoes chamadas. Escopos definem as permissoes disponiveis para a chamada.
+Define o escopo de segurança para funções chamadas. Escopos definem as permissões disponíveis para a chamada.
 
 ```lua
 local security = require("security")
@@ -129,13 +129,13 @@ local exec = funcs.new():with_scope(scope)
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `scope` | Scope | Escopo de seguranca (do módulo security) |
+| `scope` | Scope | Escopo de segurança (do módulo security) |
 
 **Retorna:** `Executor, error`
 
 ### with_options
 
-Define opcoes de chamada como timeout e prioridade. Use para operacoes que precisam de limites de tempo.
+Define opções de chamada como timeout e prioridade. Use para operações que precisam de limites de tempo.
 
 ```lua
 -- Definir timeout de 5 segundos para chamada de API externa
@@ -148,16 +148,16 @@ end
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `options` | table | Opcoes especificas da implementacao |
+| `options` | table | Opções específicas da implementação |
 
 **Retorna:** `Executor, error`
 
 ### call / async
 
-Versoes Executor de call e async que usam o contexto configurado.
+Versões Executor de call e async que usam o contexto configurado.
 
 ```lua
--- Construir executor reutilizavel com contexto
+-- Construir executor reutilizável com contexto
 local exec = funcs.new()
     :with_context({trace_id = "abc-123"})
     :with_options({timeout = 10000})
@@ -169,7 +169,7 @@ local posts, _ = exec:call("app.api:list_posts")
 
 ## Future
 
-Retornado por chamadas `async()`. Representa uma operação assincrona em andamento.
+Retornado por chamadas `async()`. Representa uma operação assíncrona em andamento.
 
 ### response / channel
 
@@ -189,7 +189,7 @@ local result = channel.select {
 
 ### is_complete
 
-Verificacao não-bloqueante se o future completou.
+Verificação não-bloqueante se o future completou.
 
 ```lua
 while not future:is_complete() do
@@ -243,18 +243,18 @@ end
 
 ### cancel
 
-Cancela a operação assincrona.
+Cancela a operação assíncrona.
 
 ```lua
 future:cancel()
 ```
 
-## Operacoes Paralelas
+## Operações Paralelas
 
-Execute multiplas operacoes concorrentemente usando async e channel.select.
+Execute múltiplas operações concorrentemente usando async e channel.select.
 
 ```lua
--- Iniciar multiplas operacoes em paralelo
+-- Iniciar múltiplas operações em paralelo
 local f1, _ = funcs.async("app.api:get_user", user_id)
 local f2, _ = funcs.async("app.api:get_orders", user_id)
 local f3, _ = funcs.async("app.api:get_preferences", user_id)
@@ -281,25 +281,25 @@ for i = 1, 3 do
 end
 ```
 
-## Permissoes
+## Permissões
 
-Operacoes de função estao sujeitas a avaliacao de politica de seguranca.
+Operações de função estão sujeitas a avaliação de política de segurança.
 
-| Acao | Recurso | Descrição |
+| Ação | Recurso | Descrição |
 |------|---------|-----------|
-| `funcs.call` | ID da Função | Chamar uma função especifica |
+| `funcs.call` | ID da Função | Chamar uma função específica |
 | `funcs.context` | `context` | Usar `with_context()` para definir contexto customizado |
 | `funcs.security` | `security` | Usar `with_actor()` ou `with_scope()` |
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Target vazio | `errors.INVALID` | não |
 | Namespace ausente | `errors.INVALID` | não |
 | Nome ausente | `errors.INVALID` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
-| Falha de inscricao | `errors.INTERNAL` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Falha de inscrição | `errors.INTERNAL` | não |
 | Erro da função | varia | varia |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

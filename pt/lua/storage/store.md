@@ -6,7 +6,7 @@
 
 Armazenamento key-value rapido com suporte a TTL. Ideal para cache, sessoes e estado temporario.
 
-Para configuracao de store, veja [Store](system-store.md).
+Para configuração de store, veja [Store](system-store.md).
 
 ## Carregamento
 
@@ -54,7 +54,7 @@ cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 |-----------|------|-----------|
 | `key` | string | Chave |
 | `value` | any | Valor (tabelas, strings, numeros, booleans) |
-| `ttl` | number | TTL em segundos (opcional, 0 = sem expiracao) |
+| `ttl` | number | TTL em segundos (opcional, 0 = sem expiração) |
 
 **Retorna:** `boolean, error`
 
@@ -109,7 +109,7 @@ cache:delete("session:" .. session_id)
 
 Retorna `true` se deletado, `false` se chave não existia.
 
-## Metodos do Store
+## Métodos do Store
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
@@ -119,11 +119,11 @@ Retorna `true` se deletado, `false` se chave não existia.
 | `delete(key)` | `boolean, error` | Remover chave |
 | `release()` | `boolean` | Liberar store de volta ao pool |
 
-## Permissoes
+## Permissões
 
-Operacoes de store estao sujeitas a avaliacao de politica de seguranca.
+Operações de store estao sujeitas a avaliação de política de segurança.
 
-| Acao | Recurso | Atributos | Descrição |
+| Ação | Recurso | Atributos | Descrição |
 |------|---------|-----------|-----------|
 | `store.get` | ID do Store | - | Adquirir um recurso store |
 | `store.key.get` | ID do Store | `key` | Ler valor de uma chave |
@@ -133,11 +133,11 @@ Operacoes de store estao sujeitas a avaliacao de politica de seguranca.
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID de recurso vazio | `errors.INVALID` | não |
 | Recurso não encontrado | `errors.NOT_FOUND` | não |
 | Store liberado | `errors.INVALID` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

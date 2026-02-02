@@ -1,10 +1,10 @@
-# Codificacao JSON
+# Codificação JSON
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Codifique tabelas Lua para JSON e decodifique strings JSON para valores Lua. Inclui validacao JSON Schema para verificacao de dados e aplicação de contratos de API.
+Codifique tabelas Lua para JSON e decodifique strings JSON para valores Lua. Inclui validação JSON Schema para verificação de dados e aplicação de contratos de API.
 
 ## Carregamento
 
@@ -12,7 +12,7 @@ Codifique tabelas Lua para JSON e decodifique strings JSON para valores Lua. Inc
 local json = require("json")
 ```
 
-## Codificacao
+## Codificação
 
 ### Codificar Valor
 
@@ -52,7 +52,7 @@ json.encode(order)
 
 **Retorna:** `string, error`
 
-Regras de codificacao:
+Regras de codificação:
 - `nil` se torna `null`
 - Tabelas vazias se tornam `[]` (ou `{}` se criadas com chaves string)
 - Tabelas com chaves sequenciais baseadas em 1 se tornam arrays
@@ -60,10 +60,10 @@ Regras de codificacao:
 - Chaves mistas numericas e string causam erro
 - Arrays esparsos (gaps nos indices) causam erro
 - Numeros Inf/NaN se tornam `null`
-- Referencias recursivas de tabela causam erro
+- Referências recursivas de tabela causam erro
 - Profundidade maxima de aninhamento e 128 niveis
 
-## Decodificacao
+## Decodificação
 
 ### Decodificar String
 
@@ -111,11 +111,11 @@ end
 
 **Retorna:** `any, error`
 
-## Validacao de Schema
+## Validação de Schema
 
 ### Validar Valor
 
-Valida um valor Lua contra um JSON Schema. Use para aplicar contratos de API ou validar entrada do usuario.
+Valida um valor Lua contra um JSON Schema. Use para aplicar contratos de API ou validar entrada do usuário.
 
 ```lua
 -- Definir um schema
@@ -137,13 +137,13 @@ local valid, err = json.validate(user_schema, {
 })
 print(valid)  -- true
 
--- Dados invalidos falham com detalhes
+-- Dados inválidos falham com detalhes
 local valid, err = json.validate(user_schema, {
     name = "",
     email = "not-an-email"
 })
 if not valid then
-    print(err:message())  -- detalhes do erro de validacao
+    print(err:message())  -- detalhes do erro de validação
 end
 
 -- Schema também pode ser uma string JSON
@@ -173,7 +173,7 @@ local schema = {
     required = {"action"}
 }
 
--- Validar JSON raw do corpo da requisicao
+-- Validar JSON raw do corpo da requisição
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
@@ -193,14 +193,14 @@ local request = json.decode(body)
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Referencia recursiva de tabela | `errors.INTERNAL` | não |
+| Referência recursiva de tabela | `errors.INTERNAL` | não |
 | Array esparso (gaps nos indices) | `errors.INTERNAL` | não |
 | Tipos de chave mistos na tabela | `errors.INTERNAL` | não |
 | Aninhamento excede 128 niveis | `errors.INTERNAL` | não |
 | Sintaxe JSON invalida | `errors.INTERNAL` | não |
-| Compilacao de schema falhou | `errors.INVALID` | não |
-| Validacao falhou | `errors.INVALID` | não |
+| Compilação de schema falhou | `errors.INVALID` | não |
+| Validação falhou | `errors.INVALID` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

@@ -5,7 +5,7 @@
 
 Renderize conteudo dinamico usando o [Jet template engine](https://github.com/CloudyKit/jet). Construa paginas HTML, emails e documentos com heranca de templates e includes.
 
-Para configuracao de template sets, veja [Template Engine](system-template.md).
+Para configuração de template sets, veja [Template Engine](system-template.md).
 
 ## Carregamento
 
@@ -62,14 +62,14 @@ return html
 
 **Retorna:** `string, error`
 
-## Metodos do Set
+## Métodos do Set
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `render(name, data?)` | `string, error` | Renderizar template com dados |
 | `release()` | `boolean` | Liberar set de volta ao pool |
 
-## Referencia da Sintaxe Jet
+## Referência da Sintaxe Jet
 
 Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentarios.
 
@@ -130,13 +130,13 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID vazio | `errors.INVALID` | não |
 | Nome de template vazio | `errors.INVALID` | não |
-| Permissao negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Template não encontrado | `errors.NOT_FOUND` | não |
-| Erro de renderizacao | `errors.INTERNAL` | não |
+| Erro de renderização | `errors.INTERNAL` | não |
 | Set ja liberado | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

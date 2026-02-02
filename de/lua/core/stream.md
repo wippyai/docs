@@ -23,7 +23,7 @@ local chunk, err = stream:read(size)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `size` | integer | Zu lesende Bytes (0 = alle verfugbaren lesen) |
+| `size` | integer | Zu lesende Bytes (0 = alle verfügbaren lesen) |
 
 **Gibt zurück:** `string, error` — nil bei EOF
 
@@ -102,7 +102,7 @@ local scanner, err = stream:scanner(split)
 ### Scanner-Methoden
 
 ```lua
-local has_more = scanner:scan()  -- Zum nachsten Token vorrucken
+local has_more = scanner:scan()  -- Zum nächsten Token vorrücken
 local token = scanner:text()      -- Aktuelles Token abrufen
 local err_msg = scanner:err()     -- Fehler abrufen falls vorhanden
 ```
@@ -121,7 +121,7 @@ end
 
 | Bedingung | Art |
 |-----------|------|
-| Ungultiger whence/split-Typ | `INVALID` |
+| Ungültiger whence/split-Typ | `INVALID` |
 | Stream geschlossen | `INTERNAL` |
 | Nicht lesbar/schreibbar | `INTERNAL` |
 | Lese-/Schreibfehler | `INTERNAL` |

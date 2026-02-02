@@ -6,7 +6,7 @@
 Leia de stdin e escreva para stdout/stderr para aplicacoes CLI.
 
 <note>
-Este módulo so funciona dentro de contexto de terminal. Voce não pode usa-lo de funcoes regulares - apenas de processos rodando em um <a href="system-terminal.md">Terminal Host</a>.
+Este módulo so funciona dentro de contexto de terminal. Voce não pode usa-lo de funções regulares - apenas de processos rodando em um <a href="system-terminal.md">Terminal Host</a>.
 </note>
 
 ## Carregamento
@@ -59,7 +59,7 @@ io.eprint("Error:", message)
 
 ## Lendo Bytes
 
-Ler ate n bytes de stdin:
+Ler até n bytes de stdin:
 
 ```lua
 local data, err = io.read(1024)
@@ -73,7 +73,7 @@ local data, err = io.read(1024)
 
 ## Lendo uma Linha
 
-Ler uma linha de stdin ate newline:
+Ler uma linha de stdin até newline:
 
 ```lua
 local line, err = io.readline()
@@ -103,7 +103,7 @@ local args = io.args()
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Sem contexto de terminal | `errors.UNAVAILABLE` | não |
 | Operação de escrita falhou | `errors.INTERNAL` | não |

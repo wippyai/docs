@@ -58,7 +58,7 @@ logger:error("message", {key = "value"})
 | `message` | string | Mensagem de log |
 | `fields` | table? | Pares chave-valor contextuais |
 
-## Customizacao do Logger
+## Customização do Logger
 
 ### Com Campos
 
@@ -92,7 +92,7 @@ named:info("message")
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | String de nome vazia | `errors.INVALID` | não |
 

@@ -1,4 +1,4 @@
-# Geracao de UUID
+# Geração de UUID
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
@@ -35,7 +35,7 @@ local id, err = uuid.v4()
 
 ### Versão 7
 
-UUID ordenado por tempo. Ordenavel por tempo de criacao.
+UUID ordenado por tempo. Ordenavel por tempo de criação.
 
 ```lua
 local id, err = uuid.v7()
@@ -149,11 +149,11 @@ local formatted, err = uuid.format(id, "urn")
 
 ## Erros
 
-| Condição | Tipo | Retentavel |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
-| Tipo de input invalido | `errors.INVALID` | não |
-| Formato de UUID invalido | `errors.INVALID` | não |
+| Tipo de input inválido | `errors.INVALID` | não |
+| Formato de UUID inválido | `errors.INVALID` | não |
 | Tipo de formato não suportado | `errors.INVALID` | não |
-| Geracao falhou | `errors.INTERNAL` | não |
+| Geração falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua-errors.md) para trabalhar com erros.

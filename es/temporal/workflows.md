@@ -145,12 +145,12 @@ Obtener el tamaño del historial del workflow en bytes:
 local size = workflow.history_size()
 ```
 
-### workflow.call()
+### workflow.exec()
 
 Ejecutar un workflow hijo:
 
 ```lua
-local result, err = workflow.call("app:child_workflow", input_data)
+local result, err = workflow.exec("app:child_workflow", input_data)
 ```
 
 ## Signals
