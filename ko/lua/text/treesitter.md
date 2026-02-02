@@ -411,7 +411,7 @@ local field_id = lang:field_id_for_name("name")
 | 잘못된 위치 | `errors.INVALID` | 아니오 |
 | 파싱 실패 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 쿼리 구문 참조
 

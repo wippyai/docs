@@ -168,6 +168,6 @@ print(result.computed_value)
 | 変換失敗 | `errors.INTERNAL` | no |
 | 結果が有効なLua値ではない | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 

@@ -104,5 +104,5 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 |-----------|------|-----------|
 | コレクターが利用不可 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

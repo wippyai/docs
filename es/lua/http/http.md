@@ -5,7 +5,7 @@
 
 Manejar solicitudes HTTP y construir respuestas. Acceder a datos de solicitud, parametros de ruta, cabeceras y contenido del cuerpo. Construir respuestas con codigos de estado, cabeceras y soporte de streaming.
 
-Para configuración del servidor, consulte [Servidor HTTP](http-server.md).
+Para configuración del servidor, consulte [Servidor HTTP](http/server.md).
 
 ## Carga
 
@@ -536,4 +536,4 @@ http.ERROR.STREAM_ERROR   -- Error de stream de cuerpo
 | Cabeceras ya enviadas | `errors.INVALID` | no |
 | Escritura fallida | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

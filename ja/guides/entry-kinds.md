@@ -6,8 +6,8 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
 
 ## 関連項目
 
-- [レジストリ](concept-registry.md) - エントリの保存と解決方法
-- [設定](guide-configuration.md) - YAML設定形式
+- [レジストリ](concepts/registry.md) - エントリの保存と解決方法
+- [設定](guides/configuration.md) - YAML設定形式
 
 ## Luaランタイム
 
@@ -71,7 +71,7 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
   func: list_handler
 ```
 
-**Lua API:** [HTTPモジュール](lua-http.md)を参照
+**Lua API:** [HTTPモジュール](lua/http/http.md)を参照
 
 ```lua
 local http = require("http")
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**Lua API:** [SQLモジュール](lua-sql.md)を参照
+**Lua API:** [SQLモジュール](lua/storage/sql.md)を参照
 
 ```lua
 local sql = require("sql")
@@ -174,7 +174,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**Lua API:** [ストアモジュール](lua-store.md)を参照
+**Lua API:** [ストアモジュール](lua/storage/store.md)を参照
 
 ```lua
 local store = require("store")
@@ -215,7 +215,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua API:** [キューモジュール](lua-queue.md)を参照
+**Lua API:** [キューモジュール](lua/storage/queue.md)を参照
 
 ```lua
 local queue = require("queue")
@@ -324,7 +324,7 @@ local data = msg:body_json()
   endpoint: ""  # オプション、S3互換サービス用
 ```
 
-**Lua API:** [クラウドストレージモジュール](lua-cloudstorage.md)を参照
+**Lua API:** [クラウドストレージモジュール](lua/storage/cloud.md)を参照
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -352,7 +352,7 @@ MinIOやDigitalOcean SpacesなどのS3互換サービスに接続するには<co
   mode: "0755"      # パーミッション
 ```
 
-**Lua API:** [ファイルシステムモジュール](lua-fs.md)を参照
+**Lua API:** [ファイルシステムモジュール](lua/storage/filesystem.md)を参照
 
 ```lua
 local fs = require("fs")
@@ -389,7 +389,7 @@ file:close()
     - app:file_env
 ```
 
-**Lua API:** [Envモジュール](lua-env.md)を参照
+**Lua API:** [Envモジュール](lua/system/env.md)を参照
 
 ```lua
 local env = require("env")
@@ -426,7 +426,7 @@ env.set("CACHE_TTL", "3600")
   set: app:templates
 ```
 
-**Lua API:** [テンプレートモジュール](lua-template.md)を参照
+**Lua API:** [テンプレートモジュール](lua/text/template.md)を参照
 
 ```lua
 local templates = require("templates")
@@ -469,7 +469,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua API:** [セキュリティモジュール](lua-security.md)を参照
+**Lua API:** [セキュリティモジュール](lua/security/security.md)を参照
 
 ```lua
 local security = require("security")
@@ -548,7 +548,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua API:** [コントラクトモジュール](lua-contract.md)を参照
+**Lua API:** [コントラクトモジュール](lua/core/contract.md)を参照
 
 <tip>
 1つのバインディングを<code>default: true</code>としてマークすると、バインディングIDを指定せずにコントラクトを開くときに使用されます（<code>context_required</code>フィールドが設定されていない場合のみ動作）。

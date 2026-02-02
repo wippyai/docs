@@ -6,7 +6,7 @@
 
 Führen Sie externe Befehle und Shell-Skripte mit voller Kontrolle über I/O-Streams aus.
 
-Für Executor-Konfiguration siehe [Executor](system-exec.md).
+Für Executor-Konfiguration siehe [Executor](system/exec.md).
 
 ## Laden
 
@@ -204,4 +204,4 @@ Exec-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Prozess nicht gestartet | `errors.INVALID` | nein |
 | Bereits gestartet | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

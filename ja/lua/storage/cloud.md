@@ -7,7 +7,7 @@
 
 S3互換オブジェクトストレージへのアクセス。署名付きURLサポート付きでファイルをアップロード、ダウンロード、一覧表示、管理。
 
-ストレージ設定については[クラウドストレージ](system-cloudstorage.md)を参照。
+ストレージ設定については[クラウドストレージ](system/cloudstorage.md)を参照。
 
 ## ロード
 
@@ -263,5 +263,5 @@ return {upload_url = url}
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
 | 操作失敗 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

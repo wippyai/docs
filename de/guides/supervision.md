@@ -185,6 +185,6 @@ Shutdown: http_server → handler → cache → database
 
 ## Siehe auch
 
-- [Prozessmodell](concept-process-model.md) - Prozess-Lebenszyklus
-- [Konfiguration](guide-configuration.md) - YAML-Konfigurationsformat
-- [Sicherheitsmodul](lua-security.md) - Berechtigungsprüfungen in Lua
+- [Prozessmodell](concepts/process-model.md) - Prozess-Lebenszyklus
+- [Konfiguration](guides/configuration.md) - YAML-Konfigurationsformat
+- [Sicherheitsmodul](lua/security/security.md) - Berechtigungsprüfungen in Lua

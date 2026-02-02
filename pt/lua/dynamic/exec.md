@@ -6,7 +6,7 @@
 
 Execute comandos externos e scripts shell com controle total sobre streams de I/O.
 
-Para configuração de executor, veja [Executor](system-exec.md).
+Para configuração de executor, veja [Executor](system/exec.md).
 
 ## Carregamento
 
@@ -204,4 +204,4 @@ Operações de exec estao sujeitas a avaliação de política de segurança.
 | Processo não iniciado | `errors.INVALID` | não |
 | Ja iniciado | `errors.INVALID` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

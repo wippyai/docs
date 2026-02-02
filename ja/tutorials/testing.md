@@ -567,7 +567,7 @@ myapp/
 
 ## 次のステップ
 
-- [エラー処理](lua-errors.md) - エラーパターンとアサーション
-- [レジストリ](lua-registry.md) - レジストリクエリとフィルタリング
-- [関数](concept-functions.md) - 関数呼び出しと実行
+- [エラー処理](lua/core/errors.md) - エラーパターンとアサーション
+- [レジストリ](lua/core/registry.md) - レジストリクエリとフィルタリング
+- [関数](concepts/functions.md) - 関数呼び出しと実行
 

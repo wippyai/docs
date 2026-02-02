@@ -336,7 +336,7 @@ Security operations are subject to security policy evaluation.
 | `security.token.create` | Store ID | Create tokens |
 | `security.token.revoke` | Store ID | Revoke tokens |
 
-See [Security Model](system-security.md) for policy configuration.
+See [Security Model](system/security.md) for policy configuration.
 
 ## Errors
 
@@ -361,9 +361,9 @@ if err then
 end
 ```
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Security Model](system-security.md) - Actors, policies, scopes configuration
-- [HTTP Middleware](http-middleware.md) - Endpoint and resource firewall
+- [Security Model](system/security.md) - Actors, policies, scopes configuration
+- [HTTP Middleware](http/middleware.md) - Endpoint and resource firewall

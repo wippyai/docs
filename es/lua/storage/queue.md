@@ -6,7 +6,7 @@
 
 Publicar y consumir mensajes de colas distribuidas. Soporta multiples backends incluyendo RabbitMQ y otros brokers compatibles con AMQP.
 
-Para configuración de colas, consulte [Cola](system-queue.md).
+Para configuración de colas, consulte [Cola](system/queue.md).
 
 ## Carga
 

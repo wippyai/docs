@@ -61,4 +61,4 @@ Write operations on embedded filesystems return an error.
 
 ## Lua API
 
-See [Filesystem Module](lua-fs.md) for file operations.
+See [Filesystem Module](lua/storage/filesystem.md) for file operations.

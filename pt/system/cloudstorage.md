@@ -62,4 +62,4 @@ Quando um endpoint é fornecido, o acesso por estilo de caminho é habilitado au
 
 ## API Lua
 
-Veja [Módulo Cloud Storage](lua-cloudstorage.md) para operações (list, upload, download, delete, URLs pré-assinadas).
+Veja [Módulo Cloud Storage](lua/storage/cloud.md) para operações (list, upload, download, delete, URLs pré-assinadas).

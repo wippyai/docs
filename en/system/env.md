@@ -136,9 +136,9 @@ Variable names must contain only: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Runtime Access
 
-- [env module](lua-env.md) - Lua runtime access
+- [env module](lua/system/env.md) - Lua runtime access
 
 ## See Also
 
-- [Security Model](system-security.md) - Access control for environment variables
-- [Configuration Guide](guide-configuration.md) - Application configuration patterns
+- [Security Model](system/security.md) - Access control for environment variables
+- [Configuration Guide](guides/configuration.md) - Application configuration patterns

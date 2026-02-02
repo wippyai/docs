@@ -20,7 +20,7 @@ local ch = future:response()
 local result, ok = ch:receive()
 ```
 
-Veja o [módulo funcs](lua-funcs.md) para a API completa.
+Veja o [módulo funcs](lua/core/funcs.md) para a API completa.
 
 ## Propagação de Contexto
 
@@ -41,7 +41,7 @@ local exec = funcs.new()
     :call("app.api:process", data)
 ```
 
-O contexto de segurança se propaga da mesma forma. Funções chamadas veem o ator do chamador e podem verificar permissões. Veja o [módulo security](lua-security.md) para APIs de controle de acesso.
+O contexto de segurança se propaga da mesma forma. Funções chamadas veem o ator do chamador e podem verificar permissões. Veja o [módulo security](lua/security/security.md) para APIs de controle de acesso.
 
 ## Definição no Registro
 

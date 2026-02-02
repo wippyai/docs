@@ -267,9 +267,9 @@ wb:close()
 | 無効なセル参照 | `errors.INTERNAL` | no |
 | 書き込み失敗 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ## 関連項目
 
-- [ファイルシステム](lua-fs.md) - Excelファイルの読み書き用ファイル操作
+- [ファイルシステム](lua/storage/filesystem.md) - Excelファイルの読み書き用ファイル操作
 

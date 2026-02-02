@@ -399,4 +399,4 @@ end
 | Invalid pattern syntax | `errors.INVALID` | no |
 | Internal error | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

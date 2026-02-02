@@ -169,6 +169,6 @@ Consulte [Temporal](https://temporal.io) para infraestructura de flujos de traba
 
 ## Ver También
 
-- [Funciones](concept-functions.md) - Manejo de solicitudes sin estado
-- [Modelo de Procesos](concept-process-model.md) - Trabajo en segundo plano con estado
-- [Supervisión](guide-supervision.md) - Políticas de reinicio de procesos
+- [Funciones](concepts/functions.md) - Manejo de solicitudes sin estado
+- [Modelo de Procesos](concepts/process-model.md) - Trabajo en segundo plano con estado
+- [Supervisión](guides/supervision.md) - Políticas de reinicio de procesos

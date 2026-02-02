@@ -363,6 +363,6 @@ Nachrichten zum Echo eingeben. Ctrl+C zum Beenden.
 
 ## Nächste Schritte
 
-- [Prozess-Verwaltung](lua-process.md)
-- [Channels](lua-channel.md)
-- [Zeit und Dauer](lua-time.md)
+- [Prozess-Verwaltung](lua/core/process.md)
+- [Channels](lua/core/channel.md)
+- [Zeit und Dauer](lua/core/time.md)

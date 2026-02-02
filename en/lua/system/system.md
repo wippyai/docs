@@ -276,4 +276,4 @@ System operations are subject to security policy evaluation.
 | Service info unavailable | `errors.INTERNAL` | no |
 | OS error getting hostname | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

@@ -6,7 +6,7 @@
 
 Ejecutar comandos externos y scripts de shell con control total sobre streams de E/S.
 
-Para configuración del ejecutor, consulte [Ejecutor](system-exec.md).
+Para configuración del ejecutor, consulte [Ejecutor](system/exec.md).
 
 ## Carga
 
@@ -204,4 +204,4 @@ Las operaciones de exec estan sujetas a evaluacion de politica de seguridad.
 | Proceso no iniciado | `errors.INVALID` | no |
 | Ya iniciado | `errors.INVALID` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

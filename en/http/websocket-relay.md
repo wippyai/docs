@@ -200,6 +200,6 @@ For complex multi-room scenarios, spawn a separate handler process per room or u
 
 ## See Also
 
-- [Middleware](http-middleware.md) - Middleware configuration
-- [Process](lua-process.md) - Process messaging
-- [WebSocket Client](lua-websocket.md) - Outbound WebSocket connections
+- [Middleware](http/middleware.md) - Middleware configuration
+- [Process](lua/core/process.md) - Process messaging
+- [WebSocket Client](lua/http/websocket.md) - Outbound WebSocket connections

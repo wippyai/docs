@@ -85,7 +85,7 @@ The memory driver has no configuration options. External drivers (AMQP, Redis, S
 | `prefetch` | 10 | 10000 | Message buffer size |
 
 <tip>
-Consumers respect call context and can be subject to security policies. Configure actor and policies at the lifecycle level. See <a href="system-security.md">Security</a>.
+Consumers respect call context and can be subject to security policies. Configure actor and policies at the lifecycle level. See <a href="system/security.md">Security</a>.
 </tip>
 
 ### Worker Pool
@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-See [Queue Module](lua-queue.md) for full API.
+See [Queue Module](lua/storage/queue.md) for full API.
 
 ## Graceful Shutdown
 

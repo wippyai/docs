@@ -351,5 +351,5 @@ override:
 
 ## Ver También
 
-- [Configuración](guide-configuration.md) - Referencia del archivo de configuración
-- [Observabilidad](guide-observability.md) - Monitoreo y logging
+- [Configuración](guides/configuration.md) - Referencia del archivo de configuración
+- [Observabilidad](guides/observability.md) - Monitoreo y logging

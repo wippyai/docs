@@ -267,8 +267,8 @@ wb:close()
 | Invalid cell reference | `errors.INTERNAL` | no |
 | Write failed | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Filesystem](lua-fs.md) - File operations for reading/writing Excel files
+- [Filesystem](lua/storage/filesystem.md) - File operations for reading/writing Excel files

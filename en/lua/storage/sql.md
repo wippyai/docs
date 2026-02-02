@@ -6,7 +6,7 @@
 
 Execute SQL queries against PostgreSQL, MySQL, SQLite, MSSQL, and Oracle databases. Features include parameterized queries, transactions, prepared statements, and a fluent query builder.
 
-For database configuration, see [Database](system-database.md).
+For database configuration, see [Database](system/database.md).
 
 ## Loading
 
@@ -1519,7 +1519,7 @@ Database access is subject to security policy evaluation.
 | Invalid savepoint name | `errors.INVALID` | no |
 | Query execution error | varies | varies |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## Example
 

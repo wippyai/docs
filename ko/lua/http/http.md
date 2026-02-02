@@ -5,7 +5,7 @@
 
 HTTP 요청을 처리하고 응답을 빌드합니다. 요청 데이터, 라우트 파라미터, 헤더, 본문 내용에 접근합니다. 상태 코드, 헤더, 스트리밍 지원으로 응답을 빌드합니다.
 
-서버 설정은 [HTTP 서버](http-server.md)를 참조하세요.
+서버 설정은 [HTTP 서버](http/server.md)를 참조하세요.
 
 ## 로딩
 
@@ -536,4 +536,4 @@ http.ERROR.STREAM_ERROR   -- 본문 스트림 에러
 | 헤더 이미 전송됨 | `errors.INVALID` | 아니오 |
 | 쓰기 실패 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

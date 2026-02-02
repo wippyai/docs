@@ -66,4 +66,4 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Lua API
 
-操作（get、set、delete、exists、clear）については[ストアモジュール](lua-store.md)を参照してください。
+操作（get、set、delete、exists、clear）については[ストアモジュール](lua/storage/store.md)を参照してください。

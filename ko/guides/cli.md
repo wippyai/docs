@@ -351,5 +351,5 @@ override:
 
 ## 참고
 
-- [설정](guide-configuration.md) - 설정 파일 레퍼런스
-- [관측성](guide-observability.md) - 모니터링 및 로깅
+- [설정](guides/configuration.md) - 설정 파일 레퍼런스
+- [관측성](guides/observability.md) - 모니터링 및 로깅

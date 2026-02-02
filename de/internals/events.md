@@ -249,5 +249,5 @@ Das Vorbereiten-dann-Warten-Muster vermeidet Race-Conditions: Erst abonnieren, b
 
 ## Siehe auch
 
-- [Registry](internal-registry.md) - Primärer Event-Producer
-- [Command-Dispatch](internal-dispatch.md) - Prozess-zu-Handler-Routing
+- [Registry](internals/registry.md) - Primärer Event-Producer
+- [Command-Dispatch](internals/dispatch.md) - Prozess-zu-Handler-Routing

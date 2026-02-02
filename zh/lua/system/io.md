@@ -6,7 +6,7 @@
 为 CLI 应用程序读取 stdin 和写入 stdout/stderr。
 
 <note>
-此模块仅在终端上下文中工作。不能在常规函数中使用——只能在 <a href="system-terminal.md">终端主机</a> 上运行的进程中使用。
+此模块仅在终端上下文中工作。不能在常规函数中使用——只能在 <a href="system/terminal.md">终端主机</a> 上运行的进程中使用。
 </note>
 
 ## 加载

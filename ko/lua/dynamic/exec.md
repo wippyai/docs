@@ -6,7 +6,7 @@
 
 I/O 스트림에 대한 완전한 제어와 함께 외부 명령과 셸 스크립트를 실행합니다.
 
-실행기 설정은 [실행기](system-exec.md)를 참조하세요.
+실행기 설정은 [실행기](system/exec.md)를 참조하세요.
 
 ## 로딩
 
@@ -204,4 +204,4 @@ proc:signal(SIGINT)
 | 프로세스 시작되지 않음 | `errors.INVALID` | 아니오 |
 | 이미 시작됨 | `errors.INVALID` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

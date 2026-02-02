@@ -203,4 +203,4 @@ local request = json.decode(body)
 | Schema-Kompilierung fehlgeschlagen | `errors.INVALID` | nein |
 | Validierung fehlgeschlagen | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

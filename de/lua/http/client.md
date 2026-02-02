@@ -312,7 +312,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -338,4 +338,4 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

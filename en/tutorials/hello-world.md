@@ -151,4 +151,4 @@ Response:
 
 - [Echo Service](echo-service.md) - Handle request parameters
 - [Task Queue](task-queue.md) - REST API with background processing
-- [HTTP Router](http-router.md) - Routing patterns
+- [HTTP Router](http/router.md) - Routing patterns

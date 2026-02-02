@@ -355,4 +355,4 @@ local clean = policy:sanitize(dirty)
 |------|------|-------------|
 | 잘못된 정규식 패턴 | `errors.INVALID` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

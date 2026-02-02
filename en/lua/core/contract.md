@@ -130,7 +130,7 @@ if ok then
 end
 ```
 
-See [Futures](lua-future.md) for future methods.
+See [Futures](lua/core/future.md) for future methods.
 
 ## Opening via Contract
 

@@ -136,9 +136,9 @@
 
 ## 런타임 접근
 
-- [env 모듈](lua-env.md) - Lua 런타임 접근
+- [env 모듈](lua/system/env.md) - Lua 런타임 접근
 
 ## 참고
 
-- [보안 모델](system-security.md) - 환경 변수에 대한 접근 제어
-- [설정 가이드](guide-configuration.md) - 애플리케이션 설정 패턴
+- [보안 모델](system/security.md) - 환경 변수에 대한 접근 제어
+- [설정 가이드](guides/configuration.md) - 애플리케이션 설정 패턴

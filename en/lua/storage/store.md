@@ -6,7 +6,7 @@
 
 Fast key-value storage with TTL support. Ideal for caching, sessions, and temporary state.
 
-For store configuration, see [Store](system-store.md).
+For store configuration, see [Store](system/store.md).
 
 ## Loading
 
@@ -140,4 +140,4 @@ Store operations are subject to security policy evaluation.
 | Store released | `errors.INVALID` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

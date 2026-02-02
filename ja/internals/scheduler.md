@@ -125,6 +125,6 @@ stateDiagram-v2
 
 ## 関連項目
 
-- [コマンドディスパッチ](internal-dispatch.md) - yieldがハンドラに到達する方法
-- [プロセスモデル](concept-process-model.md) - 高レベルコンセプト
+- [コマンドディスパッチ](internals/dispatch.md) - yieldがハンドラに到達する方法
+- [プロセスモデル](concepts/process-model.md) - 高レベルコンセプト
 

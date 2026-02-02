@@ -137,7 +137,7 @@ modules:
 - 明示的な依存関係：コードが必要とするものが明確
 - 決定論性：ワークフローは決定論的モジュールのみ取得
 
-利用可能なモジュールについては[Luaランタイム](lua-overview.md)を参照。
+利用可能なモジュールについては[Luaランタイム](lua/overview.md)を参照。
 
 ## インポート
 
@@ -194,7 +194,7 @@ local handlers = registry.find({type = "handler"})
 
 ## 関連項目
 
-- [エントリ種別](guide-entry-kinds.md) - 全エントリ種別リファレンス
-- [コンピュートユニット](concept-compute-units.md) - 関数 vs プロセス vs ワークフロー
-- [Luaランタイム](lua-overview.md) - 利用可能なモジュール
+- [エントリ種別](guides/entry-kinds.md) - 全エントリ種別リファレンス
+- [コンピュートユニット](concepts/compute-units.md) - 関数 vs プロセス vs ワークフロー
+- [Luaランタイム](lua/overview.md) - 利用可能なモジュール
 

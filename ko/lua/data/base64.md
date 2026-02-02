@@ -88,4 +88,4 @@ local payload = json.decode(base64.decode(parts[2]))
 | 잘못된 base64 문자 | `errors.INVALID` | 아니오 |
 | 손상된 패딩 | `errors.INVALID` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

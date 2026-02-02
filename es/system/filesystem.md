@@ -61,4 +61,4 @@ Las operaciones de escritura en sistemas de archivos embebidos retornan un error
 
 ## API Lua
 
-Ver [Módulo Filesystem](lua-fs.md) para operaciones de archivo.
+Ver [Módulo Filesystem](lua/storage/filesystem.md) para operaciones de archivo.

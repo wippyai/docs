@@ -37,7 +37,7 @@
 
 ## Lua API
 
-[IOモジュール](lua-io.md)がターミナル操作を提供します：
+[IOモジュール](lua/system/io.md)がターミナル操作を提供します：
 
 ```lua
 local io = require("io")

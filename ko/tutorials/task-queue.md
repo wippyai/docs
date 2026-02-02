@@ -454,7 +454,7 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## 다음 단계
 
-- [HTTP 모듈](lua-http.md) - 요청/응답 처리
-- [Queue 모듈](lua-queue.md) - 메시지 큐 작업
-- [SQL 모듈](lua-sql.md) - 데이터베이스 접근
-- [큐 컨슈머](guide-queue-consumers.md) - 큐 설정
+- [HTTP 모듈](lua/http/http.md) - 요청/응답 처리
+- [Queue 모듈](lua/storage/queue.md) - 메시지 큐 작업
+- [SQL 모듈](lua/storage/sql.md) - 데이터베이스 접근
+- [큐 컨슈머](guides/queue-consumers.md) - 큐 설정

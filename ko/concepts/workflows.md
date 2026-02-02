@@ -169,6 +169,6 @@ process.send(pid, "update", {status = "approved"})
 
 ## 참고
 
-- [함수](concept-functions.md) - 상태 비저장 요청 처리
-- [프로세스 모델](concept-process-model.md) - 상태 저장 백그라운드 작업
-- [슈퍼비전](guide-supervision.md) - 프로세스 재시작 정책
+- [함수](concepts/functions.md) - 상태 비저장 요청 처리
+- [프로세스 모델](concepts/process-model.md) - 상태 저장 백그라운드 작업
+- [슈퍼비전](guides/supervision.md) - 프로세스 재시작 정책

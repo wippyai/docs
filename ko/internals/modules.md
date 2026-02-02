@@ -228,7 +228,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-디스패처는 명령을 핸들러로 라우팅합니다. 핸들러 구현은 [명령 디스패치](internal-dispatch.md)를 참조하세요.
+디스패처는 명령을 핸들러로 라우팅합니다. 핸들러 구현은 [명령 디스패치](internals/dispatch.md)를 참조하세요.
 
 ## 에러 처리
 
@@ -391,5 +391,5 @@ func TestMyModuleYields(t *testing.T) {
 
 ## 참고
 
-- [명령 디스패치](internal-dispatch.md) - yield 명령 처리
-- [스케줄러](internal-scheduler.md) - 프로세스 실행
+- [명령 디스패치](internals/dispatch.md) - yield 명령 처리
+- [스케줄러](internals/scheduler.md) - 프로세스 실행

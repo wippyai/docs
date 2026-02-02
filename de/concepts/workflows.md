@@ -169,6 +169,6 @@ Siehe [Temporal](https://temporal.io) für Produktions-Workflow-Infrastruktur.
 
 ## Siehe auch
 
-- [Funktionen](concept-functions.md) - Zustandslose Request-Behandlung
-- [Prozessmodell](concept-process-model.md) - Zustandsbehaftete Hintergrundarbeit
-- [Überwachung](guide-supervision.md) - Neustart-Richtlinien für Prozesse
+- [Funktionen](concepts/functions.md) - Zustandslose Request-Behandlung
+- [Prozessmodell](concepts/process-model.md) - Zustandsbehaftete Hintergrundarbeit
+- [Überwachung](guides/supervision.md) - Neustart-Richtlinien für Prozesse

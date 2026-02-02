@@ -125,5 +125,5 @@ stateDiagram-v2
 
 ## 참고
 
-- [명령 디스패치](internal-dispatch.md) - yield가 핸들러에 도달하는 방법
-- [프로세스 모델](concept-process-model.md) - 상위 수준 개념
+- [명령 디스패치](internals/dispatch.md) - yield가 핸들러에 도달하는 방법
+- [프로세스 모델](concepts/process-model.md) - 상위 수준 개념

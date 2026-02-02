@@ -383,7 +383,7 @@ entries:
 | `token_key` | none | HMAC-SHA256 signing key (direct value) |
 | `token_key_env` | none | Environment variable name for signing key |
 
-Use `token_key_env` in production to avoid embedding secrets in entries. See [Environment System](system-env.md) for registering environment variables.
+Use `token_key_env` in production to avoid embedding secrets in entries. See [Environment System](system/env.md) for registering environment variables.
 
 ### Creating Tokens
 

@@ -6,7 +6,7 @@
 
 Almacenamiento clave-valor rapido con soporte de TTL. Ideal para cache, sesiones y estado temporal.
 
-Para configuración del almacen, consulte [Almacen](system-store.md).
+Para configuración del almacen, consulte [Almacen](system/store.md).
 
 ## Carga
 
@@ -140,4 +140,4 @@ Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 | Almacen liberado | `errors.INVALID` | no |
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

@@ -136,9 +136,9 @@ Variablennamen dürfen nur enthalten: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Laufzeitzugriff
 
-- [env-Modul](lua-env.md) - Lua-Laufzeitzugriff
+- [env-Modul](lua/system/env.md) - Lua-Laufzeitzugriff
 
 ## Siehe auch
 
-- [Sicherheitsmodell](system-security.md) - Zugriffskontrolle für Umgebungsvariablen
-- [Konfigurationsanleitung](guide-configuration.md) - Anwendungskonfigurationsmuster
+- [Sicherheitsmodell](system/security.md) - Zugriffskontrolle für Umgebungsvariablen
+- [Konfigurationsanleitung](guides/configuration.md) - Anwendungskonfigurationsmuster

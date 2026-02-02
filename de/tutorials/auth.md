@@ -254,7 +254,7 @@ entries:
     func: app:ws_ticker
 ```
 
-Für Produktion verwenden Sie `token_key_env` um den HMAC-Schlüssel aus einer Umgebungsvariable zu lesen statt ihn hartzukodieren. Siehe [Umgebungssystem](system-env.md).
+Für Produktion verwenden Sie `token_key_env` um den HMAC-Schlüssel aus einer Umgebungsvariable zu lesen statt ihn hartzukodieren. Siehe [Umgebungssystem](system/env.md).
 
 ## Token-Austausch
 
@@ -654,6 +654,6 @@ wippy run
 
 ## Siehe auch
 
-- [WebSocket-Relay](http-websocket-relay.md) - Middleware-Konfiguration
-- [Sicherheits-Modul](lua-security.md) - Actors, Policies, Token-Stores
-- [Prozess-Verwaltung](lua-process.md) - Spawning und Messaging
+- [WebSocket-Relay](http/websocket-relay.md) - Middleware-Konfiguration
+- [Sicherheits-Modul](lua/security/security.md) - Actors, Policies, Token-Stores
+- [Prozess-Verwaltung](lua/core/process.md) - Spawning und Messaging

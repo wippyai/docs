@@ -151,4 +151,4 @@ Resposta:
 
 - [Echo Service](echo-service.md) - Tratar parâmetros de requisição
 - [Task Queue](task-queue.md) - REST API com processamento em background
-- [HTTP Router](http-router.md) - Padrões de roteamento
+- [HTTP Router](http/router.md) - Padrões de roteamento

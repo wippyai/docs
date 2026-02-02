@@ -399,4 +399,4 @@ end
 | 잘못된 패턴 구문 | `errors.INVALID` | 아니오 |
 | 내부 에러 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

@@ -6,7 +6,7 @@
 
 Führen Sie SQL-Abfragen gegen PostgreSQL-, MySQL-, SQLite-, MSSQL- und Oracle-Datenbanken aus. Features umfassen parametrisierte Abfragen, Transaktionen, Prepared Statements und einen Fluent Query Builder.
 
-Für Datenbankkonfiguration siehe [Datenbank](system-database.md).
+Für Datenbankkonfiguration siehe [Datenbank](system/database.md).
 
 ## Laden
 
@@ -1519,7 +1519,7 @@ Datenbankzugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | Ungültiger Savepoint-Name | `errors.INVALID` | nein |
 | Abfrageausführungsfehler | variiert | variiert |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Beispiel
 

@@ -6,8 +6,8 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
 
 ## 참고
 
-- [레지스트리](concept-registry.md) - 엔트리 저장 및 해결 방법
-- [설정](guide-configuration.md) - YAML 설정 형식
+- [레지스트리](concepts/registry.md) - 엔트리 저장 및 해결 방법
+- [설정](guides/configuration.md) - YAML 설정 형식
 
 ## Lua 런타임
 
@@ -71,7 +71,7 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
   func: list_handler
 ```
 
-**Lua API:** [HTTP 모듈](lua-http.md) 참조
+**Lua API:** [HTTP 모듈](lua/http/http.md) 참조
 
 ```lua
 local http = require("http")
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**Lua API:** [SQL 모듈](lua-sql.md) 참조
+**Lua API:** [SQL 모듈](lua/storage/sql.md) 참조
 
 ```lua
 local sql = require("sql")
@@ -174,7 +174,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**Lua API:** [Store 모듈](lua-store.md) 참조
+**Lua API:** [Store 모듈](lua/storage/store.md) 참조
 
 ```lua
 local store = require("store")
@@ -215,7 +215,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua API:** [Queue 모듈](lua-queue.md) 참조
+**Lua API:** [Queue 모듈](lua/storage/queue.md) 참조
 
 ```lua
 local queue = require("queue")
@@ -324,7 +324,7 @@ local data = msg:body_json()
   endpoint: ""  # 선택적, S3 호환 서비스용
 ```
 
-**Lua API:** [클라우드 스토리지 모듈](lua-cloudstorage.md) 참조
+**Lua API:** [클라우드 스토리지 모듈](lua/storage/cloud.md) 참조
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -352,7 +352,7 @@ MinIO나 DigitalOcean Spaces 같은 S3 호환 서비스에 연결하려면 <code
   mode: "0755"      # 권한
 ```
 
-**Lua API:** [파일시스템 모듈](lua-fs.md) 참조
+**Lua API:** [파일시스템 모듈](lua/storage/filesystem.md) 참조
 
 ```lua
 local fs = require("fs")
@@ -389,7 +389,7 @@ file:close()
     - app:file_env
 ```
 
-**Lua API:** [Env 모듈](lua-env.md) 참조
+**Lua API:** [Env 모듈](lua/system/env.md) 참조
 
 ```lua
 local env = require("env")
@@ -426,7 +426,7 @@ env.set("CACHE_TTL", "3600")
   set: app:templates
 ```
 
-**Lua API:** [템플릿 모듈](lua-template.md) 참조
+**Lua API:** [템플릿 모듈](lua/text/template.md) 참조
 
 ```lua
 local templates = require("templates")
@@ -469,7 +469,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua API:** [보안 모듈](lua-security.md) 참조
+**Lua API:** [보안 모듈](lua/security/security.md) 참조
 
 ```lua
 local security = require("security")
@@ -548,7 +548,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua API:** [계약 모듈](lua-contract.md) 참조
+**Lua API:** [계약 모듈](lua/core/contract.md) 참조
 
 <tip>
 바인딩 ID 없이 계약을 열 때 기본으로 사용하려면 하나의 바인딩에 <code>default: true</code>를 설정하세요(<code>context_required</code> 필드가 설정되지 않은 경우에만 작동).

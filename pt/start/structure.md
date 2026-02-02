@@ -175,7 +175,7 @@ Use o kind `registry.entry` para configuração em nível de aplicação:
 | `http.endpoint` | Handler HTTP |
 | `process.host` | Supervisor de processos |
 
-Consulte o [Guia de Tipos de Entradas](guide-entry-kinds.md) para referência completa.
+Consulte o [Guia de Tipos de Entradas](guides/entry-kinds.md) para referência completa.
 
 ## Arquivos de Configuração
 
@@ -195,7 +195,7 @@ http:
   address: :8080
 ```
 
-Consulte o [Guia de Configuração](guide-configuration.md) para todas as opções.
+Consulte o [Guia de Configuração](guides/configuration.md) para todas as opções.
 
 ### wippy.lock
 
@@ -247,6 +247,6 @@ myapp/
 
 ## Veja Também
 
-- [Guia de Tipos de Entradas](guide-entry-kinds.md) - Tipos de entradas disponíveis
-- [Guia de Configuração](guide-configuration.md) - Opções do runtime
-- [Tipos de Entradas Personalizados](internal-kinds.md) - Implementando handlers (avançado)
+- [Guia de Tipos de Entradas](guides/entry-kinds.md) - Tipos de entradas disponíveis
+- [Guia de Configuração](guides/configuration.md) - Opções do runtime
+- [Tipos de Entradas Personalizados](internals/kinds.md) - Implementando handlers (avançado)

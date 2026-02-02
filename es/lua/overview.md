@@ -22,7 +22,7 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-Consulte [Gestión de Procesos](lua-process.md) para creación, enlace y supervisión.
+Consulte [Gestión de Procesos](lua/core/process.md) para creación, enlace y supervisión.
 
 ## Canales
 
@@ -36,7 +36,7 @@ ch:send(value)                  -- bloquea hasta que se reciba
 local val, ok = ch:receive()    -- bloquea hasta que esté listo
 ```
 
-Consulte [Canales](lua-channel.md) para select y patrones.
+Consulte [Canales](lua/core/channel.md) para select y patrones.
 
 ## Corrutinas
 
@@ -90,15 +90,15 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Los módulos disponibles dependen de la configuración de entrada. Consulte [Definiciones de Entrada](lua-entries.md).
+Los módulos disponibles dependen de la configuración de entrada. Consulte [Definiciones de Entrada](lua/entries.md).
 
 ## Bibliotecas Externas
 
-Wippy usa sintaxis Lua 5.3 con un [sistema de tipos gradual](lua-types.md) inspirado en Luau. Los tipos son valores de primera clase en tiempo de ejecución, invocables para validación, pasables como argumentos e introspectables, reemplazando la necesidad de bibliotecas de esquemas como Zod o Pydantic.
+Wippy usa sintaxis Lua 5.3 con un [sistema de tipos gradual](lua/types.md) inspirado en Luau. Los tipos son valores de primera clase en tiempo de ejecución, invocables para validación, pasables como argumentos e introspectables, reemplazando la necesidad de bibliotecas de esquemas como Zod o Pydantic.
 
 Las bibliotecas Lua externas (LuaRocks, etc.) no están soportadas. El runtime proporciona su propio sistema de módulos con extensiones incorporadas para I/O, redes e integración de sistema.
 
-Para extensiones personalizadas, consulte [Módulos](internal-modules.md) en la documentación de internos.
+Para extensiones personalizadas, consulte [Módulos](internals/modules.md) en la documentación de internos.
 
 ## Manejo de Errores
 
@@ -111,11 +111,11 @@ if err then
 end
 ```
 
-Consulte [Manejo de Errores](lua-errors.md) para patrones.
+Consulte [Manejo de Errores](lua/core/errors.md) para patrones.
 
 ## Siguiente
 
-- [Definiciones de Entrada](lua-entries.md) - Configurar puntos de entrada
-- [Canales](lua-channel.md) - Patrones de canales
-- [Gestión de Procesos](lua-process.md) - Creación y supervisión
-- [Funciones](lua-funcs.md) - Llamadas entre procesos
+- [Definiciones de Entrada](lua/entries.md) - Configurar puntos de entrada
+- [Canales](lua/core/channel.md) - Patrones de canales
+- [Gestión de Procesos](lua/core/process.md) - Creación y supervisión
+- [Funciones](lua/core/funcs.md) - Llamadas entre procesos

@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-요청 범위 컨텍스트 값에 접근합니다. 컨텍스트는 [Funcs](lua-funcs.md) 또는 [Process](lua-process.md)를 통해 설정됩니다.
+요청 범위 컨텍스트 값에 접근합니다. 컨텍스트는 [Funcs](lua/core/funcs.md) 또는 [Process](lua/core/process.md)를 통해 설정됩니다.
 
 ## 로딩
 
@@ -41,4 +41,4 @@ local values, err = ctx.all()
 | 키를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 컨텍스트 없음 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

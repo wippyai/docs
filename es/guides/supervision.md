@@ -185,6 +185,6 @@ Apagado: http_server -> handler -> cache -> database
 
 ## Ver También
 
-- [Modelo de Procesos](concept-process-model.md) - Ciclo de vida de procesos
-- [Configuración](guide-configuration.md) - Formato de configuración YAML
-- [Módulo Security](lua-security.md) - Verificaciones de permisos en Lua
+- [Modelo de Procesos](concepts/process-model.md) - Ciclo de vida de procesos
+- [Configuración](guides/configuration.md) - Formato de configuración YAML
+- [Módulo Security](lua/security/security.md) - Verificaciones de permisos en Lua

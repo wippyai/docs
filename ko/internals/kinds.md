@@ -128,5 +128,5 @@ type TransactionListener interface {
 
 ## 참고
 
-- [레지스트리](internal-registry.md) - 엔트리 저장
-- [아키텍처](internal-architecture.md) - 부트 시퀀스
+- [레지스트리](internals/registry.md) - 엔트리 저장
+- [아키텍처](internals/architecture.md) - 부트 시퀀스

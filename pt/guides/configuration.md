@@ -4,7 +4,7 @@ O Wippy é configurado via arquivos `.wippy.yaml`. Todas as opções têm padrõ
 
 ## Gerenciador de Log
 
-Controla o roteamento de logs do runtime. A saída do console é configurada via [flags do CLI](guide-cli.md) (`-v`, `-c`, `-s`).
+Controla o roteamento de logs do runtime. A saída do console é configurada via [flags do CLI](guides/cli.md) (`-v`, `-c`, `-s`).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -19,7 +19,7 @@ logmanager:
   min_level: 0
 ```
 
-Veja: [Módulo Logger](lua-logger.md)
+Veja: [Módulo Logger](lua/system/logger.md)
 
 ## Profiler
 
@@ -43,7 +43,7 @@ Acesse em `http://localhost:6060/debug/pprof/`
 
 ## Segurança
 
-Comportamento de segurança global. Políticas individuais são definidas como [entradas security.policy](guide-entry-kinds.md).
+Comportamento de segurança global. Políticas individuais são definidas como [entradas security.policy](guides/entry-kinds.md).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -54,7 +54,7 @@ security:
   strict_mode: true
 ```
 
-Veja: [Sistema de Segurança](system-security.md), [Módulo Security](lua-security.md)
+Veja: [Sistema de Segurança](system/security.md), [Módulo Security](lua/security/security.md)
 
 ## Registro
 
@@ -72,7 +72,7 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-Veja: [Conceito de Registro](concept-registry.md), [Módulo Registry](lua-registry.md)
+Veja: [Conceito de Registro](concepts/registry.md), [Módulo Registry](lua/core/registry.md)
 
 ## Relay
 
@@ -87,7 +87,7 @@ relay:
   node_name: worker-1
 ```
 
-Veja: [Modelo de Processos](concept-process-model.md)
+Veja: [Modelo de Processos](concepts/process-model.md)
 
 ## Supervisor
 
@@ -105,7 +105,7 @@ supervisor:
     worker_count: 32
 ```
 
-Veja: [Guia de Supervisão](guide-supervision.md)
+Veja: [Guia de Supervisão](guides/supervision.md)
 
 ## Funções
 
@@ -123,7 +123,7 @@ functions:
     worker_count: 32
 ```
 
-Veja: [Conceito de Funções](concept-functions.md), [Módulo Funcs](lua-funcs.md)
+Veja: [Conceito de Funções](concepts/functions.md), [Módulo Funcs](lua/core/funcs.md)
 
 ## Runtime Lua
 
@@ -146,7 +146,7 @@ lua:
     capacity: 5000
 ```
 
-Veja: [Visão Geral Lua](lua-overview.md)
+Veja: [Visão Geral Lua](lua/overview.md)
 
 ## Finder
 
@@ -188,7 +188,7 @@ otel:
     trace_lifecycle: true
 ```
 
-Veja: [Guia de Observabilidade](guide-observability.md)
+Veja: [Guia de Observabilidade](guides/observability.md)
 
 ## Shutdown
 
@@ -220,7 +220,7 @@ metrics:
     enabled: true
 ```
 
-Veja: [Módulo Metrics](lua-metrics.md), [Guia de Observabilidade](guide-observability.md)
+Veja: [Módulo Metrics](lua/system/metrics.md), [Guia de Observabilidade](guides/observability.md)
 
 ## Prometheus
 
@@ -239,7 +239,7 @@ prometheus:
 
 Expõe endpoint `/metrics` para scraping do Prometheus.
 
-Veja: [Guia de Observabilidade](guide-observability.md)
+Veja: [Guia de Observabilidade](guides/observability.md)
 
 ## Cluster
 
@@ -267,7 +267,7 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-Veja: [Guia de Cluster](guide-cluster.md)
+Veja: [Guia de Cluster](guides/cluster.md)
 
 ## Variáveis de Ambiente
 
@@ -277,7 +277,7 @@ Veja: [Guia de Cluster](guide-cluster.md)
 
 ## Veja Também
 
-- [Referência do CLI](guide-cli.md) - Opções de linha de comando
-- [Tipos de Entradas](guide-entry-kinds.md) - Todos os tipos de entradas
-- [Guia de Cluster](guide-cluster.md) - Configuração multi-nó
-- [Guia de Observabilidade](guide-observability.md) - Logging, métricas, tracing
+- [Referência do CLI](guides/cli.md) - Opções de linha de comando
+- [Tipos de Entradas](guides/entry-kinds.md) - Todos os tipos de entradas
+- [Guia de Cluster](guides/cluster.md) - Configuração multi-nó
+- [Guia de Observabilidade](guides/observability.md) - Logging, métricas, tracing

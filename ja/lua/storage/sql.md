@@ -6,7 +6,7 @@
 
 PostgreSQL、MySQL、SQLite、MSSQL、Oracleデータベースに対してSQLクエリを実行。パラメータ化クエリ、トランザクション、プリペアドステートメント、流暢なクエリビルダーをサポート。
 
-データベース設定については[データベース](system-database.md)を参照。
+データベース設定については[データベース](system/database.md)を参照。
 
 ## ロード
 
@@ -1519,7 +1519,7 @@ local sql_str, args = executor:to_sql()
 | 無効なセーブポイント名 | `errors.INVALID` | no |
 | クエリ実行エラー | 様々 | 様々 |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ## 例
 

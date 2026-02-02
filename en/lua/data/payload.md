@@ -168,5 +168,5 @@ print(result.computed_value)
 | Transcoding failure | `errors.INTERNAL` | no |
 | Result not valid Lua value | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 

@@ -203,7 +203,7 @@ end
 
 ## 次のステップ
 
-- [I/Oモジュール](lua-io.md) - 完全なI/Oリファレンス
-- [Systemモジュール](lua-system.md) - ランタイムとシステム情報
+- [I/Oモジュール](lua/system/io.md) - 完全なI/Oリファレンス
+- [Systemモジュール](lua/system/system.md) - ランタイムとシステム情報
 - [Echoサービス](echo-service.md) - マルチプロセスアプリケーション
 

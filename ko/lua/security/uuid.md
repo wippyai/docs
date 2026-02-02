@@ -156,4 +156,4 @@ local formatted, err = uuid.format(id, "urn")
 | 지원되지 않는 포맷 타입 | `errors.INVALID` | 아니오 |
 | 생성 실패 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

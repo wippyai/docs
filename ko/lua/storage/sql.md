@@ -6,7 +6,7 @@
 
 PostgreSQL, MySQL, SQLite, MSSQL, Oracle 데이터베이스에 대해 SQL 쿼리를 실행합니다. 파라미터화된 쿼리, 트랜잭션, prepared statement, 플루언트 쿼리 빌더를 지원합니다.
 
-데이터베이스 설정은 [데이터베이스](system-database.md)를 참조하세요.
+데이터베이스 설정은 [데이터베이스](system/database.md)를 참조하세요.
 
 ## 로딩
 
@@ -1519,7 +1519,7 @@ local sql_str, args = executor:to_sql()
 | 잘못된 savepoint 이름 | `errors.INVALID` | 아니오 |
 | 쿼리 실행 에러 | 다양함 | 다양함 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 예제
 

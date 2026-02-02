@@ -22,7 +22,7 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-Siehe [Prozessverwaltung](lua-process.md) für Spawning, Linking und Überwachung.
+Siehe [Prozessverwaltung](lua/core/process.md) für Spawning, Linking und Überwachung.
 
 ## Channels
 
@@ -36,7 +36,7 @@ ch:send(value)                  -- blockiert bis empfangen
 local val, ok = ch:receive()    -- blockiert bis bereit
 ```
 
-Siehe [Channels](lua-channel.md) für Select und Muster.
+Siehe [Channels](lua/core/channel.md) für Select und Muster.
 
 ## Coroutinen
 
@@ -90,15 +90,15 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Verfügbare Module hängen von der Entry-Konfiguration ab. Siehe [Entry-Definitionen](lua-entries.md).
+Verfügbare Module hängen von der Entry-Konfiguration ab. Siehe [Entry-Definitionen](lua/entries.md).
 
 ## Externe Bibliotheken
 
-Wippy verwendet Lua 5.3-Syntax mit einem [graduellen Typsystem](lua-types.md), inspiriert von Luau. Typen sind erstklassige Laufzeitwerte - aufrufbar zur Validierung, als Argumente übergebbar und introspektierbar - was den Bedarf an Schema-Bibliotheken wie Zod oder Pydantic ersetzt.
+Wippy verwendet Lua 5.3-Syntax mit einem [graduellen Typsystem](lua/types.md), inspiriert von Luau. Typen sind erstklassige Laufzeitwerte - aufrufbar zur Validierung, als Argumente übergebbar und introspektierbar - was den Bedarf an Schema-Bibliotheken wie Zod oder Pydantic ersetzt.
 
 Externe Lua-Bibliotheken (LuaRocks, etc.) werden nicht unterstützt. Die Laufzeitumgebung stellt ihr eigenes Modulsystem mit integrierten Erweiterungen für E/A, Netzwerk und Systemintegration bereit.
 
-Für benutzerdefinierte Erweiterungen siehe [Module](internal-modules.md) in der Internals-Dokumentation.
+Für benutzerdefinierte Erweiterungen siehe [Module](internals/modules.md) in der Internals-Dokumentation.
 
 ## Fehlerbehandlung
 
@@ -111,11 +111,11 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) für Muster.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für Muster.
 
 ## Nächste Schritte
 
-- [Entry-Definitionen](lua-entries.md) - Einstiegspunkte konfigurieren
-- [Channels](lua-channel.md) - Channel-Muster
-- [Prozessverwaltung](lua-process.md) - Spawning und Überwachung
-- [Funktionen](lua-funcs.md) - Prozessübergreifende Aufrufe
+- [Entry-Definitionen](lua/entries.md) - Einstiegspunkte konfigurieren
+- [Channels](lua/core/channel.md) - Channel-Muster
+- [Prozessverwaltung](lua/core/process.md) - Spawning und Überwachung
+- [Funktionen](lua/core/funcs.md) - Prozessübergreifende Aufrufe

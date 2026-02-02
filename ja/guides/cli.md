@@ -351,5 +351,5 @@ override:
 
 ## 関連項目
 
-- [設定](guide-configuration.md) - 設定ファイルリファレンス
-- [可観測性](guide-observability.md) - モニタリングとロギング
+- [設定](guides/configuration.md) - 設定ファイルリファレンス
+- [可観測性](guides/observability.md) - モニタリングとロギング

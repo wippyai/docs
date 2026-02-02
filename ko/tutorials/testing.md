@@ -576,6 +576,6 @@ myapp/
 
 ## 다음 단계
 
-- [에러 처리](lua-errors.md) - 에러 패턴 및 어설션
-- [레지스트리](lua-registry.md) - 레지스트리 쿼리 및 필터링
-- [함수](concept-functions.md) - 함수 호출 및 실행
+- [에러 처리](lua/core/errors.md) - 에러 패턴 및 어설션
+- [레지스트리](lua/core/registry.md) - 레지스트리 쿼리 및 필터링
+- [함수](concepts/functions.md) - 함수 호출 및 실행

@@ -125,5 +125,5 @@ On shutdown, the scheduler sends cancel events to all running processes and wait
 
 ## See Also
 
-- [Command Dispatch](internal-dispatch.md) - How yields reach handlers
-- [Process Model](concept-process-model.md) - High-level concepts
+- [Command Dispatch](internals/dispatch.md) - How yields reach handlers
+- [Process Model](concepts/process-model.md) - High-level concepts

@@ -6,7 +6,7 @@
 
 Ejecutar consultas SQL contra bases de datos PostgreSQL, MySQL, SQLite, MSSQL y Oracle. Las caracteristicas incluyen consultas parametrizadas, transacciones, sentencias preparadas y un constructor de consultas fluido.
 
-Para configuración de base de datos, consulte [Base de Datos](system-database.md).
+Para configuración de base de datos, consulte [Base de Datos](system/database.md).
 
 ## Carga
 
@@ -856,4 +856,4 @@ El acceso a base de datos esta sujeto a evaluacion de politica de seguridad.
 | Nombre de savepoint invalido | `errors.INVALID` | no |
 | Error de ejecución de consulta | varia | varia |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

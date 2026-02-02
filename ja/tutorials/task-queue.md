@@ -454,8 +454,8 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## 次のステップ
 
-- [HTTPモジュール](lua-http.md) - リクエスト/レスポンス処理
-- [Queueモジュール](lua-queue.md) - メッセージキュー操作
-- [SQLモジュール](lua-sql.md) - データベースアクセス
-- [キューコンシューマー](guide-queue-consumers.md) - キュー設定
+- [HTTPモジュール](lua/http/http.md) - リクエスト/レスポンス処理
+- [Queueモジュール](lua/storage/queue.md) - メッセージキュー操作
+- [SQLモジュール](lua/storage/sql.md) - データベースアクセス
+- [キューコンシューマー](guides/queue-consumers.md) - キュー設定
 

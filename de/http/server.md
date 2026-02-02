@@ -85,7 +85,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Dies setzt einen Basis-Actor und Richtlinien für alle Anfragen. Für authentifizierte Anfragen überschreibt die [token_auth-Middleware](http-middleware.md) den Actor basierend auf dem validierten Token, was benutzerspezifische Sicherheitsrichtlinien ermöglicht.
+Dies setzt einen Basis-Actor und Richtlinien für alle Anfragen. Für authentifizierte Anfragen überschreibt die [token_auth-Middleware](http/middleware.md) den Actor basierend auf dem validierten Token, was benutzerspezifische Sicherheitsrichtlinien ermöglicht.
 
 ## Lebenszyklus
 
@@ -158,8 +158,8 @@ TLS-Terminierung wird typischerweise von einem Reverse-Proxy (Nginx, Caddy, Load
 
 ## Siehe auch
 
-- [Routing](http-router.md) - Router und Endpunkte
-- [Statische Dateien](http-static.md) - Statische Datei-Bereitstellung
-- [Middleware](http-middleware.md) - Verfügbare Middleware
-- [Sicherheit](system-security.md) - Sicherheitsrichtlinien
-- [WebSocket-Relay](http-websocket-relay.md) - WebSocket-Messaging
+- [Routing](http/router.md) - Router und Endpunkte
+- [Statische Dateien](http/static.md) - Statische Datei-Bereitstellung
+- [Middleware](http/middleware.md) - Verfügbare Middleware
+- [Sicherheit](system/security.md) - Sicherheitsrichtlinien
+- [WebSocket-Relay](http/websocket-relay.md) - WebSocket-Messaging

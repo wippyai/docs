@@ -6,7 +6,7 @@
 Lesen von stdin und Schreiben zu stdout/stderr für CLI-Anwendungen.
 
 <note>
-Dieses Modul funktioniert nur im Terminal-Kontext. Sie können es nicht aus regularen Funktionen verwenden—nur aus Prozessen, die auf einem <a href="system-terminal.md">Terminal-Host</a> laufen.
+Dieses Modul funktioniert nur im Terminal-Kontext. Sie können es nicht aus regularen Funktionen verwenden—nur aus Prozessen, die auf einem <a href="system/terminal.md">Terminal-Host</a> laufen.
 </note>
 
 ## Laden
@@ -110,4 +110,4 @@ local args = io.args()
 | Leseoperation fehlgeschlagen | `errors.INTERNAL` | nein |
 | Flush-Operation fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

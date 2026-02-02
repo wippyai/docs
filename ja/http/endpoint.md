@@ -252,6 +252,6 @@ entries:
 
 ## 関連項目
 
-- [ルーター](http-router.md) - ルートグループ化
-- [HTTPモジュール](lua-http.md) - リクエスト/レスポンスAPI
-- [ミドルウェア](http-middleware.md) - リクエスト処理
+- [ルーター](http/router.md) - ルートグループ化
+- [HTTPモジュール](lua/http/http.md) - リクエスト/レスポンスAPI
+- [ミドルウェア](http/middleware.md) - リクエスト処理

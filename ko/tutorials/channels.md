@@ -241,5 +241,5 @@ local total = done:receive()
 
 ## 다음 단계
 
-- [채널 모듈 참조](lua-channel.md) - 완전한 API 문서
+- [채널 모듈 참조](lua/core/channel.md) - 완전한 API 문서
 - [프로세스](processes.md) - 프로세스 간 통신

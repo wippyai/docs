@@ -254,7 +254,7 @@ entries:
     func: app:ws_ticker
 ```
 
-프로덕션에서는 HMAC 키를 하드코딩하는 대신 환경 변수에서 읽기 위해 `token_key_env`를 사용하세요. [환경 시스템](system-env.md)을 참조하세요.
+프로덕션에서는 HMAC 키를 하드코딩하는 대신 환경 변수에서 읽기 위해 `token_key_env`를 사용하세요. [환경 시스템](system/env.md)을 참조하세요.
 
 ## 토큰 교환
 
@@ -654,6 +654,6 @@ http://localhost:8081을 열고 로그에 표시된 데모 API 키를 입력합�
 
 ## 참고
 
-- [WebSocket Relay](http-websocket-relay.md) - 미들웨어 설정
-- [보안 모듈](lua-security.md) - 액터, 정책, 토큰 스토어
-- [프로세스 관리](lua-process.md) - 스폰 및 메시징
+- [WebSocket Relay](http/websocket-relay.md) - 미들웨어 설정
+- [보안 모듈](lua/security/security.md) - 액터, 정책, 토큰 스토어
+- [프로세스 관리](lua/core/process.md) - 스폰 및 메시징

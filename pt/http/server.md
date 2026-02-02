@@ -85,7 +85,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Isso define um ator e políticas base para todas as requisições. Para requisições autenticadas, o [middleware token_auth](http-middleware.md) sobrescreve o ator baseado no token validado, permitindo políticas de segurança por usuário.
+Isso define um ator e políticas base para todas as requisições. Para requisições autenticadas, o [middleware token_auth](http/middleware.md) sobrescreve o ator baseado no token validado, permitindo políticas de segurança por usuário.
 
 ## Ciclo de Vida
 
@@ -158,8 +158,8 @@ Terminação TLS é tipicamente tratada por um proxy reverso (Nginx, Caddy, load
 
 ## Veja Também
 
-- [Roteamento](http-router.md) - Roteadores e endpoints
-- [Arquivos Estáticos](http-static.md) - Servindo arquivos estáticos
-- [Middleware](http-middleware.md) - Middleware disponível
-- [Segurança](system-security.md) - Políticas de segurança
-- [Relay WebSocket](http-websocket-relay.md) - Mensagens WebSocket
+- [Roteamento](http/router.md) - Roteadores e endpoints
+- [Arquivos Estáticos](http/static.md) - Servindo arquivos estáticos
+- [Middleware](http/middleware.md) - Middleware disponível
+- [Segurança](system/security.md) - Políticas de segurança
+- [Relay WebSocket](http/websocket-relay.md) - Mensagens WebSocket

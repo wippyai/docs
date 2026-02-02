@@ -235,7 +235,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## Coroutines
 
-Coroutine creation and control. See [Channels and Coroutines](lua-channel.md) for channels and concurrent patterns:
+Coroutine creation and control. See [Channels and Coroutines](lua/core/channel.md) for channels and concurrent patterns:
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -269,7 +269,7 @@ process_request()
 
 ## Error Handling
 
-Structured error creation and classification. See [Error Handling](lua-errors.md) for full documentation:
+Structured error creation and classification. See [Error Handling](lua/core/errors.md) for full documentation:
 
 ### Constants {id="error-constants"}
 
@@ -367,16 +367,16 @@ The following standard Lua features are NOT available for security:
 
 | Feature | Alternative |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Use [Dynamic Evaluation](lua-eval.md) module |
+| `load`, `loadstring`, `loadfile`, `dofile` | Use [Dynamic Evaluation](lua/dynamic/eval.md) module |
 | `collectgarbage` | Automatic GC |
 | `rawlen` | Use `#` operator |
-| `io.*` | Use [File System](lua-fs.md) module |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua-exec.md), [Environment](lua-env.md) modules |
+| `io.*` | Use [File System](lua/storage/filesystem.md) module |
+| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) modules |
 | `debug.*` (except traceback) | Not available |
 | `package.loadlib` | Native libraries not supported |
 
 ## See Also
 
-- [Channels and Coroutines](lua-channel.md) - Go-style channels for concurrency
-- [Error Handling](lua-errors.md) - Creating and handling structured errors
-- [OS Time](lua-ostime.md) - System time functions
+- [Channels and Coroutines](lua/core/channel.md) - Go-style channels for concurrency
+- [Error Handling](lua/core/errors.md) - Creating and handling structured errors
+- [OS Time](lua/system/ostime.md) - System time functions

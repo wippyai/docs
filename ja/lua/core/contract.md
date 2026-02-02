@@ -130,7 +130,7 @@ if ok then
 end
 ```
 
-Futureメソッドについては[Future](lua-future.md)を参照。
+Futureメソッドについては[Future](lua/core/future.md)を参照。
 
 ## コントラクト経由で開く
 

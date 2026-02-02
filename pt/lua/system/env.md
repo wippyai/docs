@@ -5,7 +5,7 @@
 
 Acesse variaveis de ambiente para valores de configuração, secrets e configuracoes de runtime.
 
-Variaveis devem ser definidas no [Environment System](system-env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (OS, arquivo, memoria) fornecem valores e se variaveis sao somente leitura.
+Variaveis devem ser definidas no [Environment System](system/env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (OS, arquivo, memoria) fornecem valores e se variaveis sao somente leitura.
 
 ## Carregamento
 
@@ -116,7 +116,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Veja [Security Model](system-security.md) para configuração de políticas.
+Veja [Security Model](system/security.md) para configuração de políticas.
 
 ## Erros
 
@@ -126,8 +126,8 @@ Veja [Security Model](system-security.md) para configuração de políticas.
 | Variavel não encontrada | `errors.NOT_FOUND` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Environment System](system-env.md) - Configurar backends de armazenamento e definicoes de variaveis
+- [Environment System](system/env.md) - Configurar backends de armazenamento e definicoes de variaveis

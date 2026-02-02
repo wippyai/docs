@@ -247,7 +247,7 @@ entries:
     func: app:ws_ticker
 ```
 
-Para producción, use `token_key_env` para leer la clave HMAC desde una variable de entorno en lugar de hardcodearla. Ver [Sistema de Entorno](system-env.md).
+Para producción, use `token_key_env` para leer la clave HMAC desde una variable de entorno en lugar de hardcodearla. Ver [Sistema de Entorno](system/env.md).
 
 ## Intercambio de Token
 
@@ -590,6 +590,6 @@ Abra http://localhost:8081 e ingrese el API key demo mostrado en los logs.
 
 ## Ver También
 
-- [WebSocket Relay](http-websocket-relay.md) - Configuración de middleware
-- [Módulo Security](lua-security.md) - Actores, políticas, almacenes de tokens
-- [Gestión de Procesos](lua-process.md) - Generación y mensajería
+- [WebSocket Relay](http/websocket-relay.md) - Configuración de middleware
+- [Módulo Security](lua/security/security.md) - Actores, políticas, almacenes de tokens
+- [Gestión de Procesos](lua/core/process.md) - Generación y mensajería

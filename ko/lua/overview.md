@@ -22,7 +22,7 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
 
-생성, 링킹, 슈퍼비전은 [프로세스 관리](lua-process.md)를 참조하세요.
+생성, 링킹, 슈퍼비전은 [프로세스 관리](lua/core/process.md)를 참조하세요.
 
 ## 채널
 
@@ -36,7 +36,7 @@ ch:send(value)                  -- 수신될 때까지 블록
 local val, ok = ch:receive()    -- 준비될 때까지 블록
 ```
 
-select와 패턴은 [채널](lua-channel.md)을 참조하세요.
+select와 패턴은 [채널](lua/core/channel.md)을 참조하세요.
 
 ## 코루틴
 
@@ -90,15 +90,15 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-사용 가능한 모듈은 엔트리 설정에 따라 다릅니다. [엔트리 정의](lua-entries.md)를 참조하세요.
+사용 가능한 모듈은 엔트리 설정에 따라 다릅니다. [엔트리 정의](lua/entries.md)를 참조하세요.
 
 ## 외부 라이브러리
 
-Wippy는 Luau에서 영감을 받은 [점진적 타입 시스템](lua-types.md)과 함께 Lua 5.3 구문을 사용합니다. 타입은 일급 런타임 값입니다. 검증을 위해 호출 가능하고, 인자로 전달 가능하며, 인트로스펙션 가능합니다. Zod나 Pydantic 같은 스키마 라이브러리의 필요성을 대체합니다.
+Wippy는 Luau에서 영감을 받은 [점진적 타입 시스템](lua/types.md)과 함께 Lua 5.3 구문을 사용합니다. 타입은 일급 런타임 값입니다. 검증을 위해 호출 가능하고, 인자로 전달 가능하며, 인트로스펙션 가능합니다. Zod나 Pydantic 같은 스키마 라이브러리의 필요성을 대체합니다.
 
 외부 Lua 라이브러리(LuaRocks 등)는 지원되지 않습니다. 런타임은 I/O, 네트워킹, 시스템 통합을 위한 내장 확장과 함께 자체 모듈 시스템을 제공합니다.
 
-커스텀 확장은 내부 문서의 [모듈](internal-modules.md)을 참조하세요.
+커스텀 확장은 내부 문서의 [모듈](internals/modules.md)을 참조하세요.
 
 ## 오류 처리
 
@@ -111,11 +111,11 @@ if err then
 end
 ```
 
-패턴은 [오류 처리](lua-errors.md)를 참조하세요.
+패턴은 [오류 처리](lua/core/errors.md)를 참조하세요.
 
 ## 다음은
 
-- [엔트리 정의](lua-entries.md) - 엔트리 포인트 설정
-- [채널](lua-channel.md) - 채널 패턴
-- [프로세스 관리](lua-process.md) - 생성 및 슈퍼비전
-- [함수](lua-funcs.md) - 프로세스 간 호출
+- [엔트리 정의](lua/entries.md) - 엔트리 포인트 설정
+- [채널](lua/core/channel.md) - 채널 패턴
+- [프로세스 관리](lua/core/process.md) - 생성 및 슈퍼비전
+- [함수](lua/core/funcs.md) - 프로세스 간 호출

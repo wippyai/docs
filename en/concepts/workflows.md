@@ -169,6 +169,6 @@ See [Temporal](https://temporal.io) for production workflow infrastructure.
 
 ## See Also
 
-- [Functions](concept-functions.md) - Stateless request handling
-- [Process Model](concept-process-model.md) - Stateful background work
-- [Supervision](guide-supervision.md) - Process restart policies
+- [Functions](concepts/functions.md) - Stateless request handling
+- [Process Model](concepts/process-model.md) - Stateful background work
+- [Supervision](guides/supervision.md) - Process restart policies

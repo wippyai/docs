@@ -203,5 +203,5 @@ local request = json.decode(body)
 | スキーマコンパイル失敗 | `errors.INVALID` | no |
 | 検証失敗 | `errors.INVALID` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

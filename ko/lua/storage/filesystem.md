@@ -6,7 +6,7 @@
 
 샌드박스된 파일시스템 볼륨 내에서 파일을 읽고, 쓰고, 관리합니다.
 
-파일시스템 설정은 [파일시스템](system-filesystem.md)을 참조하세요.
+파일시스템 설정은 [파일시스템](system/filesystem.md)을 참조하세요.
 
 ## 로딩
 
@@ -221,4 +221,4 @@ fs.seek.END       -- 끝부터
 | 경로가 이미 존재 | `errors.ALREADY_EXISTS` | 아니오 |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

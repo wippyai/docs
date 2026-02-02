@@ -169,4 +169,4 @@ end
 | No changes to apply | `errors.INVALID` |
 | Registry not available | `errors.INTERNAL` |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

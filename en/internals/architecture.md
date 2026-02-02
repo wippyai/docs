@@ -220,7 +220,7 @@ Second signal forces immediate exit.
 
 ## See Also
 
-- [Scheduler](internal-scheduler.md) - Process execution
-- [Event Bus](internal-events.md) - Pub/sub system
-- [Registry](internal-registry.md) - State management
-- [Command Dispatch](internal-dispatch.md) - Yield handling
+- [Scheduler](internals/scheduler.md) - Process execution
+- [Event Bus](internals/events.md) - Pub/sub system
+- [Registry](internals/registry.md) - State management
+- [Command Dispatch](internals/dispatch.md) - Yield handling

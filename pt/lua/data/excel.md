@@ -267,8 +267,8 @@ wb:close()
 | Referência de celula invalida | `errors.INTERNAL` | não |
 | Escrita falhou | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Filesystem](lua-fs.md) - Operações de arquivo para leitura/escrita de arquivos Excel
+- [Filesystem](lua/storage/filesystem.md) - Operações de arquivo para leitura/escrita de arquivos Excel

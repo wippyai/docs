@@ -302,4 +302,4 @@ Funktionsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Abonnement fehlgeschlagen | `errors.INTERNAL` | nein |
 | Funktionsfehler | variiert | variiert |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

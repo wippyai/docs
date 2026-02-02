@@ -137,4 +137,4 @@ sub:close()
 | Leerer Pfad | `errors.INVALID` | nein |
 | Policy abgelehnt | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

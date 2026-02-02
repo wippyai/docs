@@ -5,7 +5,7 @@
 
 Trate requisicoes HTTP e construa respostas. Acesse dados da requisição, parametros de rota, headers e conteudo do corpo. Construa respostas com codigos de status, headers e suporte a streaming.
 
-Para configuração de servidor, veja [HTTP Server](http-server.md).
+Para configuração de servidor, veja [HTTP Server](http/server.md).
 
 ## Carregamento
 
@@ -536,4 +536,4 @@ http.ERROR.STREAM_ERROR   -- Erro de stream do corpo
 | Headers ja enviados | `errors.INVALID` | não |
 | Escrita falhou | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

@@ -130,7 +130,7 @@ if ok then
 end
 ```
 
-Siehe [Futures](lua-future.md) für Future-Methoden.
+Siehe [Futures](lua/core/future.md) für Future-Methoden.
 
 ## Via Contract öffnen
 

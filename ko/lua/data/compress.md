@@ -309,4 +309,4 @@ end
 | 잘못된 압축 데이터 | `errors.INVALID` | 아니오 |
 | 압축 해제 크기 제한 초과 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

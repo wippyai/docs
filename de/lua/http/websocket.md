@@ -303,7 +303,7 @@ WebSocket-Verbindungen unterliegen der Sicherheitsrichtlinienauswertung.
 | `websocket.connect` | - | WebSocket-Verbindungen erlauben/verweigern |
 | `websocket.connect.url` | URL | Verbindungen zu bestimmten URLs erlauben/verweigern |
 
-Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -327,4 +327,4 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

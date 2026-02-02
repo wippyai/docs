@@ -678,4 +678,4 @@ Configuração de workers:
 
 - [Processes](processes.md) - Fundamentos de processos
 - [Channels](channels.md) - Padrões de passagem de mensagens
-- [Process Module](lua-process.md) - Referência da API
+- [Process Module](lua/core/process.md) - Referência da API

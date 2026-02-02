@@ -4,7 +4,7 @@ Wippy is configured via `.wippy.yaml` files. All options have sensible defaults.
 
 ## Log Manager
 
-Controls runtime log routing. Console output is configured via [CLI flags](guide-cli.md) (`-v`, `-c`, `-s`).
+Controls runtime log routing. Console output is configured via [CLI flags](guides/cli.md) (`-v`, `-c`, `-s`).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -19,7 +19,7 @@ logmanager:
   min_level: 0
 ```
 
-See: [Logger Module](lua-logger.md)
+See: [Logger Module](lua/system/logger.md)
 
 ## Profiler
 
@@ -43,7 +43,7 @@ Access at `http://localhost:6060/debug/pprof/`
 
 ## Security
 
-Global security behavior. Individual policies are defined as [security.policy entries](guide-entry-kinds.md).
+Global security behavior. Individual policies are defined as [security.policy entries](guides/entry-kinds.md).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -54,7 +54,7 @@ security:
   strict_mode: true
 ```
 
-See: [Security System](system-security.md), [Security Module](lua-security.md)
+See: [Security System](system/security.md), [Security Module](lua/security/security.md)
 
 ## Registry
 
@@ -72,7 +72,7 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-See: [Registry Concept](concept-registry.md), [Registry Module](lua-registry.md)
+See: [Registry Concept](concepts/registry.md), [Registry Module](lua/core/registry.md)
 
 ## Relay
 
@@ -87,7 +87,7 @@ relay:
   node_name: worker-1
 ```
 
-See: [Process Model](concept-process-model.md)
+See: [Process Model](concepts/process-model.md)
 
 ## Supervisor
 
@@ -105,7 +105,7 @@ supervisor:
     worker_count: 32
 ```
 
-See: [Supervision Guide](guide-supervision.md)
+See: [Supervision Guide](guides/supervision.md)
 
 ## Functions
 
@@ -123,7 +123,7 @@ functions:
     worker_count: 32
 ```
 
-See: [Functions Concept](concept-functions.md), [Funcs Module](lua-funcs.md)
+See: [Functions Concept](concepts/functions.md), [Funcs Module](lua/core/funcs.md)
 
 ## Lua Runtime
 
@@ -146,7 +146,7 @@ lua:
     capacity: 5000
 ```
 
-See: [Lua Overview](lua-overview.md)
+See: [Lua Overview](lua/overview.md)
 
 ## Finder
 
@@ -188,7 +188,7 @@ otel:
     trace_lifecycle: true
 ```
 
-See: [Observability Guide](guide-observability.md)
+See: [Observability Guide](guides/observability.md)
 
 ## Shutdown
 
@@ -220,7 +220,7 @@ metrics:
     enabled: true
 ```
 
-See: [Metrics Module](lua-metrics.md), [Observability Guide](guide-observability.md)
+See: [Metrics Module](lua/system/metrics.md), [Observability Guide](guides/observability.md)
 
 ## Prometheus
 
@@ -239,7 +239,7 @@ prometheus:
 
 Exposes `/metrics` endpoint for Prometheus scraping.
 
-See: [Observability Guide](guide-observability.md)
+See: [Observability Guide](guides/observability.md)
 
 ## Cluster
 
@@ -267,7 +267,7 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-See: [Cluster Guide](guide-cluster.md)
+See: [Cluster Guide](guides/cluster.md)
 
 ## Environment Variables
 
@@ -277,7 +277,7 @@ See: [Cluster Guide](guide-cluster.md)
 
 ## See Also
 
-- [CLI Reference](guide-cli.md) - Command line options
-- [Entry Kinds](guide-entry-kinds.md) - All entry types
-- [Cluster Guide](guide-cluster.md) - Multi-node setup
-- [Observability Guide](guide-observability.md) - Logging, metrics, tracing
+- [CLI Reference](guides/cli.md) - Command line options
+- [Entry Kinds](guides/entry-kinds.md) - All entry types
+- [Cluster Guide](guides/cluster.md) - Multi-node setup
+- [Observability Guide](guides/observability.md) - Logging, metrics, tracing

@@ -6,8 +6,8 @@ Complete reference of all entry kinds available in Wippy.
 
 ## See Also
 
-- [Registry](concept-registry.md) - How entries are stored and resolved
-- [Configuration](guide-configuration.md) - YAML configuration format
+- [Registry](concepts/registry.md) - How entries are stored and resolved
+- [Configuration](guides/configuration.md) - YAML configuration format
 
 ## Lua Runtime
 
@@ -71,7 +71,7 @@ Use <code>imports</code> to reference other Lua entries. They become available v
   func: list_handler
 ```
 
-**Lua API:** See [HTTP Module](lua-http.md)
+**Lua API:** See [HTTP Module](lua/http/http.md)
 
 ```lua
 local http = require("http")
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**Lua API:** See [SQL Module](lua-sql.md)
+**Lua API:** See [SQL Module](lua/storage/sql.md)
 
 ```lua
 local sql = require("sql")
@@ -174,7 +174,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**Lua API:** See [Store Module](lua-store.md)
+**Lua API:** See [Store Module](lua/storage/store.md)
 
 ```lua
 local store = require("store")
@@ -215,7 +215,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua API:** See [Queue Module](lua-queue.md)
+**Lua API:** See [Queue Module](lua/storage/queue.md)
 
 ```lua
 local queue = require("queue")
@@ -324,7 +324,7 @@ Use <code>process.service</code> when you need a process to run as a supervised 
   endpoint: ""  # Optional, for S3-compatible services
 ```
 
-**Lua API:** See [Cloud Storage Module](lua-cloudstorage.md)
+**Lua API:** See [Cloud Storage Module](lua/storage/cloud.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -352,7 +352,7 @@ Use <code>endpoint</code> to connect to S3-compatible services like MinIO or Dig
   mode: "0755"      # Permissions
 ```
 
-**Lua API:** See [Filesystem Module](lua-fs.md)
+**Lua API:** See [Filesystem Module](lua/storage/filesystem.md)
 
 ```lua
 local fs = require("fs")
@@ -389,7 +389,7 @@ file:close()
     - app:file_env
 ```
 
-**Lua API:** See [Env Module](lua-env.md)
+**Lua API:** See [Env Module](lua/system/env.md)
 
 ```lua
 local env = require("env")
@@ -426,7 +426,7 @@ The router tries storages in order. First match wins for reads; writes go to the
   set: app:templates
 ```
 
-**Lua API:** See [Template Module](lua-template.md)
+**Lua API:** See [Template Module](lua/text/template.md)
 
 ```lua
 local templates = require("templates")
@@ -469,7 +469,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua API:** See [Security Module](lua-security.md)
+**Lua API:** See [Security Module](lua/security/security.md)
 
 ```lua
 local security = require("security")
@@ -548,7 +548,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua API:** See [Contract Module](lua-contract.md)
+**Lua API:** See [Contract Module](lua/core/contract.md)
 
 <tip>
 Mark one binding as <code>default: true</code> to use it when opening a contract without specifying a binding ID (only works when no <code>context_required</code> fields are set).

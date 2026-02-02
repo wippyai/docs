@@ -7,7 +7,7 @@
 
 Acesse armazenamento de objetos compativel com S3. Upload, download, listagem e gerenciamento de arquivos com suporte a URLs pre-assinadas.
 
-Para configuração de armazenamento, veja [Cloud Storage](system-cloudstorage.md).
+Para configuração de armazenamento, veja [Cloud Storage](system/cloudstorage.md).
 
 ## Carregamento
 
@@ -263,4 +263,4 @@ Operações de cloud storage estao sujeitas a avaliação de política de segura
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Operação falhou | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

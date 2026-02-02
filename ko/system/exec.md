@@ -93,7 +93,7 @@ command_whitelist:
 
 ## Lua API
 
-[Exec 모듈](lua-exec.md)은 명령 실행을 제공합니다:
+[Exec 모듈](lua/dynamic/exec.md)은 명령 실행을 제공합니다:
 
 ```lua
 local exec = require("exec")

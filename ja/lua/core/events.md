@@ -137,6 +137,6 @@ sub:close()
 | 空のpath | `errors.INVALID` | no |
 | ポリシー拒否 | `errors.INVALID` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 

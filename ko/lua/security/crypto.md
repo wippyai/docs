@@ -219,4 +219,4 @@ local equal = crypto.constant_time_compare(a, b)
 | 복호화 실패 | `errors.INTERNAL` | 아니오 |
 | 토큰 만료됨 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

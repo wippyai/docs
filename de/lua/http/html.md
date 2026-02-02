@@ -355,4 +355,4 @@ local clean = policy:sanitize(dirty)
 |-----------|------|-----------|
 | Ungültiges Regex-Muster | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

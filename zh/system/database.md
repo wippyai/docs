@@ -102,7 +102,7 @@ entries:
 ```
 
 <warning>
-避免在配置中硬编码密码。使用环境变量或 <code>env.variable</code> entry 来管理凭据。参见 <a href="system-env.md">Environment</a> 了解安全的密钥管理。
+避免在配置中硬编码密码。使用环境变量或 <code>env.variable</code> entry 来管理凭据。参见 <a href="system/env.md">Environment</a> 了解安全的密钥管理。
 </warning>
 
 ## 连接池

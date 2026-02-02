@@ -309,4 +309,4 @@ end
 | Ungültige komprimierte Daten | `errors.INVALID` | nein |
 | Dekomprimierte Größe überschreitet Limit | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

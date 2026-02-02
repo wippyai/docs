@@ -20,7 +20,7 @@ local ch = future:response()
 local result, ok = ch:receive()
 ```
 
-전체 API는 [funcs 모듈](lua-funcs.md)을 참조하세요.
+전체 API는 [funcs 모듈](lua/core/funcs.md)을 참조하세요.
 
 ## 컨텍스트 전파
 
@@ -41,7 +41,7 @@ local exec = funcs.new()
     :call("app.api:process", data)
 ```
 
-보안 컨텍스트도 같은 방식으로 전파됩니다. 호출된 함수는 호출자의 액터를 보고 권한을 확인할 수 있습니다. 접근 제어 API는 [보안 모듈](lua-security.md)을 참조하세요.
+보안 컨텍스트도 같은 방식으로 전파됩니다. 호출된 함수는 호출자의 액터를 보고 권한을 확인할 수 있습니다. 접근 제어 API는 [보안 모듈](lua/security/security.md)을 참조하세요.
 
 ## 레지스트리 정의
 

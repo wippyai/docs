@@ -20,7 +20,7 @@ local ch = future:response()
 local result, ok = ch:receive()
 ```
 
-完全なAPIについては[funcsモジュール](lua-funcs.md)を参照してください。
+完全なAPIについては[funcsモジュール](lua/core/funcs.md)を参照してください。
 
 ## コンテキスト伝播
 
@@ -41,7 +41,7 @@ local exec = funcs.new()
     :call("app.api:process", data)
 ```
 
-セキュリティコンテキストも同様に伝播します。呼び出された関数は呼び出し元のアクターを参照し、権限をチェックできます。アクセス制御APIについては[セキュリティモジュール](lua-security.md)を参照してください。
+セキュリティコンテキストも同様に伝播します。呼び出された関数は呼び出し元のアクターを参照し、権限をチェックできます。アクセス制御APIについては[セキュリティモジュール](lua/security/security.md)を参照してください。
 
 ## レジストリ定義
 

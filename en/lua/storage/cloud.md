@@ -7,7 +7,7 @@
 
 Access S3-compatible object storage. Upload, download, list, and manage files with presigned URL support.
 
-For storage configuration, see [Cloud Storage](system-cloudstorage.md).
+For storage configuration, see [Cloud Storage](system/cloudstorage.md).
 
 ## Loading
 
@@ -263,4 +263,4 @@ Cloud storage operations are subject to security policy evaluation.
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 | Operation failed | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

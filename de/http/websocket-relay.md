@@ -200,6 +200,6 @@ Für komplexe Multi-Raum-Szenarien starten Sie einen separaten Handler-Prozess p
 
 ## Siehe auch
 
-- [Middleware](http-middleware.md) - Middleware-Konfiguration
-- [Prozess](lua-process.md) - Prozess-Messaging
-- [WebSocket-Client](lua-websocket.md) - Ausgehende WebSocket-Verbindungen
+- [Middleware](http/middleware.md) - Middleware-Konfiguration
+- [Prozess](lua/core/process.md) - Prozess-Messaging
+- [WebSocket-Client](lua/http/websocket.md) - Ausgehende WebSocket-Verbindungen

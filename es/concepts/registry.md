@@ -17,16 +17,16 @@ Cada entrada tiene un `ID` (formato namespace:nombre), un `kind` que determina s
 
 ## Manejadores de Kind
 
-Cuando se envía una entrada, su `kind` determina qué manejador la procesa. El manejador valida la configuración y crea recursos del runtime: una entrada `http.service` inicia un servidor HTTP, una entrada `function.lua` crea un pool de funciones, una entrada `sql.database` establece un pool de conexiones. Consulte la [Guía de Tipos de Entrada](guide-entry-kinds.md) para kinds disponibles y [Tipos de Entrada Personalizados](internal-kinds.md) para implementar manejadores.
+Cuando se envía una entrada, su `kind` determina qué manejador la procesa. El manejador valida la configuración y crea recursos del runtime: una entrada `http.service` inicia un servidor HTTP, una entrada `function.lua` crea un pool de funciones, una entrada `sql.database` establece un pool de conexiones. Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para kinds disponibles y [Tipos de Entrada Personalizados](internals/kinds.md) para implementar manejadores.
 
 ## Actualizaciones en Vivo
 
 El registro soporta cambios en tiempo de ejecución: agregar, actualizar, o eliminar entradas mientras el sistema se ejecuta. Los cambios fluyen a través del bus de eventos donde los listeners pueden validarlos o rechazarlos, y las transacciones aseguran atomicidad. El historial de versiones permite rollback.
 
-Los archivos de definición YAML son snapshots serializados del registro cargados al inicio. Consulte el [módulo Registry](lua-registry.md) para acceso programático.
+Los archivos de definición YAML son snapshots serializados del registro cargados al inicio. Consulte el [módulo Registry](lua/core/registry.md) para acceso programático.
 
 ## Ver También
 
-- [YAML y Estructura del Proyecto](getting-started-structure.md) - Archivos de definición
-- [Tipos de Entrada Personalizados](internal-kinds.md) - Implementar manejadores de kind
-- [Modelo de Procesos](concept-process-model.md) - Cómo funcionan los procesos
+- [YAML y Estructura del Proyecto](start/structure.md) - Archivos de definición
+- [Tipos de Entrada Personalizados](internals/kinds.md) - Implementar manejadores de kind
+- [Modelo de Procesos](concepts/process-model.md) - Cómo funcionan los procesos

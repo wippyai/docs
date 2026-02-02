@@ -66,4 +66,4 @@ Ambos almacenes soportan tiempo de vida. Las entradas expiradas persisten brevem
 
 ## API Lua
 
-Consulte el [Módulo Store](lua-store.md) para operaciones (get, set, delete, exists, clear).
+Consulte el [Módulo Store](lua/storage/store.md) para operaciones (get, set, delete, exists, clear).

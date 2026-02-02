@@ -169,6 +169,6 @@ process.send(pid, "update", {status = "approved"})
 
 ## 関連項目
 
-- [関数](concept-functions.md) - ステートレスなリクエスト処理
-- [プロセスモデル](concept-process-model.md) - ステートフルなバックグラウンド作業
-- [スーパービジョン](guide-supervision.md) - プロセス再起動ポリシー
+- [関数](concepts/functions.md) - ステートレスなリクエスト処理
+- [プロセスモデル](concepts/process-model.md) - ステートフルなバックグラウンド作業
+- [スーパービジョン](guides/supervision.md) - プロセス再起動ポリシー

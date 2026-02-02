@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Access request-scoped context values. Context is set via [Funcs](lua-funcs.md) or [Process](lua-process.md).
+Access request-scoped context values. Context is set via [Funcs](lua/core/funcs.md) or [Process](lua/core/process.md).
 
 ## Loading
 
@@ -41,4 +41,4 @@ local values, err = ctx.all()
 | Key not found | `errors.NOT_FOUND` | no |
 | No context available | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

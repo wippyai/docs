@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-リクエストスコープのコンテキスト値にアクセス。コンテキストは[Funcs](lua-funcs.md)または[Process](lua-process.md)経由で設定されます。
+リクエストスコープのコンテキスト値にアクセス。コンテキストは[Funcs](lua/core/funcs.md)または[Process](lua/core/process.md)経由で設定されます。
 
 ## ロード
 
@@ -41,5 +41,5 @@ local values, err = ctx.all()
 | キーが見つからない | `errors.NOT_FOUND` | no |
 | コンテキストが利用不可 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

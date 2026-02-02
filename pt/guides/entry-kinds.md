@@ -6,8 +6,8 @@ Referência completa de todos os tipos de entradas disponíveis no Wippy.
 
 ## Veja Também
 
-- [Registro](concept-registry.md) - Como entradas são armazenadas e resolvidas
-- [Configuração](guide-configuration.md) - Formato de configuração YAML
+- [Registro](concepts/registry.md) - Como entradas são armazenadas e resolvidas
+- [Configuração](guides/configuration.md) - Formato de configuração YAML
 
 ## Runtime Lua
 
@@ -71,7 +71,7 @@ Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam di
   func: list_handler
 ```
 
-**API Lua:** Veja [Módulo HTTP](lua-http.md)
+**API Lua:** Veja [Módulo HTTP](lua/http/http.md)
 
 ```lua
 local http = require("http")
@@ -140,7 +140,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-**API Lua:** Veja [Módulo SQL](lua-sql.md)
+**API Lua:** Veja [Módulo SQL](lua/storage/sql.md)
 
 ```lua
 local sql = require("sql")
@@ -174,7 +174,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
     auto_start: true
 ```
 
-**API Lua:** Veja [Módulo Store](lua-store.md)
+**API Lua:** Veja [Módulo Store](lua/storage/store.md)
 
 ```lua
 local store = require("store")
@@ -215,7 +215,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**API Lua:** Veja [Módulo Queue](lua-queue.md)
+**API Lua:** Veja [Módulo Queue](lua/storage/queue.md)
 
 ```lua
 local queue = require("queue")
@@ -324,7 +324,7 @@ Use <code>process.service</code> quando precisar que um processo execute como se
   endpoint: ""  # Opcional, para serviços compatíveis com S3
 ```
 
-**API Lua:** Veja [Módulo Cloud Storage](lua-cloudstorage.md)
+**API Lua:** Veja [Módulo Cloud Storage](lua/storage/cloud.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -352,7 +352,7 @@ Use <code>endpoint</code> para conectar a serviços compatíveis com S3 como Min
   mode: "0755"      # Permissões
 ```
 
-**API Lua:** Veja [Módulo Filesystem](lua-fs.md)
+**API Lua:** Veja [Módulo Filesystem](lua/storage/filesystem.md)
 
 ```lua
 local fs = require("fs")
@@ -389,7 +389,7 @@ file:close()
     - app:file_env
 ```
 
-**API Lua:** Veja [Módulo Env](lua-env.md)
+**API Lua:** Veja [Módulo Env](lua/system/env.md)
 
 ```lua
 local env = require("env")
@@ -426,7 +426,7 @@ O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; es
   set: app:templates
 ```
 
-**API Lua:** Veja [Módulo Template](lua-template.md)
+**API Lua:** Veja [Módulo Template](lua/text/template.md)
 
 ```lua
 local templates = require("templates")
@@ -469,7 +469,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**API Lua:** Veja [Módulo Security](lua-security.md)
+**API Lua:** Veja [Módulo Security](lua/security/security.md)
 
 ```lua
 local security = require("security")
@@ -548,7 +548,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**API Lua:** Veja [Módulo Contract](lua-contract.md)
+**API Lua:** Veja [Módulo Contract](lua/core/contract.md)
 
 <tip>
 Marque um binding como <code>default: true</code> para usá-lo ao abrir um contrato sem especificar um ID de binding (funciona apenas quando nenhum campo <code>context_required</code> está definido).

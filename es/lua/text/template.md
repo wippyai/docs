@@ -5,7 +5,7 @@
 
 Renderizar contenido dinamico usando el [motor de plantillas Jet](https://github.com/CloudyKit/jet). Construir paginas HTML, emails y documentos con herencia e inclusiones de plantillas.
 
-Para configuración de conjunto de plantillas, consulte [Motor de Plantillas](system-template.md).
+Para configuración de conjunto de plantillas, consulte [Motor de Plantillas](system/template.md).
 
 ## Carga
 
@@ -139,4 +139,4 @@ Jet usa `{{ }}` para expresiones y estructuras de control, `{* *}` para comentar
 | Error de renderizado | `errors.INTERNAL` | no |
 | Conjunto ya liberado | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

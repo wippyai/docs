@@ -154,4 +154,4 @@ print(type(data.tags))     -- "table"
 | String vacio (decode) | `errors.INVALID` | no |
 | Sintaxis YAML invalida | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua-errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

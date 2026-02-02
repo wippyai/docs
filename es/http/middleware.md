@@ -149,7 +149,7 @@ options:
 
 <note>Pre-match</note>
 
-Autenticación basada en token. Ver [Seguridad](system-security.md) para configuración de almacén de tokens.
+Autenticación basada en token. Ver [Seguridad](system/security.md) para configuración de almacén de tokens.
 
 ```yaml
 middleware:
@@ -259,7 +259,7 @@ Soporta solicitudes de rango para descargas reanudables.
 
 <warning>Post-match</warning>
 
-Retransmite conexiones WebSocket a procesos. Ver [WebSocket Relay](http-websocket-relay.md).
+Retransmite conexiones WebSocket a procesos. Ver [WebSocket Relay](http/websocket-relay.md).
 
 ```yaml
 post_middleware:
@@ -289,7 +289,7 @@ post_middleware:
 
 ## Ver También
 
-- [Routing](http-router.md) - Configuración de router
-- [Seguridad](system-security.md) - Almacenes de tokens y políticas
-- [WebSocket Relay](http-websocket-relay.md) - Manejo de WebSocket
-- [Terminal](system-terminal.md) - Servicio de terminal
+- [Routing](http/router.md) - Configuración de router
+- [Seguridad](system/security.md) - Almacenes de tokens y políticas
+- [WebSocket Relay](http/websocket-relay.md) - Manejo de WebSocket
+- [Terminal](system/terminal.md) - Servicio de terminal

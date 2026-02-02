@@ -85,7 +85,7 @@ flowchart LR
 | `prefetch` | 10 | 10000 | 메시지 버퍼 크기 |
 
 <tip>
-컨슈머는 호출 컨텍스트를 준수하며 보안 정책의 적용을 받을 수 있습니다. 라이프사이클 레벨에서 액터와 정책을 설정하세요. <a href="system-security.md">보안</a> 참조.
+컨슈머는 호출 컨텍스트를 준수하며 보안 정책의 적용을 받을 수 있습니다. 라이프사이클 레벨에서 액터와 정책을 설정하세요. <a href="system/security.md">보안</a> 참조.
 </tip>
 
 ### 워커 풀
@@ -155,7 +155,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-전체 API는 [Queue 모듈](lua-queue.md)을 참조하세요.
+전체 API는 [Queue 모듈](lua/storage/queue.md)을 참조하세요.
 
 ## 정상 종료
 

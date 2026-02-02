@@ -104,4 +104,4 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 |-----------|------|-----------|
 | Collector not available | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

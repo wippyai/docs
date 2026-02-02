@@ -85,7 +85,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-これはすべてのリクエストに対するベースラインのアクターとポリシーを設定します。認証されたリクエストの場合、[token_authミドルウェア](http-middleware.md)は検証されたトークンに基づいてアクターをオーバーライドし、ユーザーごとのセキュリティポリシーを可能にします。
+これはすべてのリクエストに対するベースラインのアクターとポリシーを設定します。認証されたリクエストの場合、[token_authミドルウェア](http/middleware.md)は検証されたトークンに基づいてアクターをオーバーライドし、ユーザーごとのセキュリティポリシーを可能にします。
 
 ## ライフサイクル
 
@@ -158,8 +158,8 @@ TLS終端は通常リバースプロキシ（Nginx、Caddy、ロードバラン�
 
 ## 関連項目
 
-- [ルーティング](http-router.md) - ルーターとエンドポイント
-- [静的ファイル](http-static.md) - 静的ファイル配信
-- [ミドルウェア](http-middleware.md) - 利用可能なミドルウェア
-- [セキュリティ](system-security.md) - セキュリティポリシー
-- [WebSocketリレー](http-websocket-relay.md) - WebSocketメッセージング
+- [ルーティング](http/router.md) - ルーターとエンドポイント
+- [静的ファイル](http/static.md) - 静的ファイル配信
+- [ミドルウェア](http/middleware.md) - 利用可能なミドルウェア
+- [セキュリティ](system/security.md) - セキュリティポリシー
+- [WebSocketリレー](http/websocket-relay.md) - WebSocketメッセージング

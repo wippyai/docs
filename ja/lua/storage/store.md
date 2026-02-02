@@ -6,7 +6,7 @@
 
 TTLサポート付きの高速キーバリューストレージ。キャッシュ、セッション、一時的な状態に最適。
 
-ストア設定については[ストア](system-store.md)を参照。
+ストア設定については[ストア](system/store.md)を参照。
 
 ## ロード
 
@@ -140,5 +140,5 @@ cache:delete("session:" .. session_id)
 | ストアが解放済み | `errors.INVALID` | no |
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

@@ -81,7 +81,7 @@ entries:
 
 ### 환경 변수 필드
 
-`_env` 접미사를 사용하여 환경 변수나 [env.variable](system-env.md) 엔트리에서 값을 로드:
+`_env` 접미사를 사용하여 환경 변수나 [env.variable](system/env.md) 엔트리에서 값을 로드:
 
 | 필드 | 설명 |
 |-------|-------------|
@@ -102,7 +102,7 @@ entries:
 ```
 
 <warning>
-설정에 비밀번호를 직접 입력하지 마세요. 자격 증명에는 환경 변수나 <code>env.variable</code> 엔트리를 사용하세요. 안전한 시크릿 관리는 <a href="system-env.md">환경</a>을 참조하세요.
+설정에 비밀번호를 직접 입력하지 마세요. 자격 증명에는 환경 변수나 <code>env.variable</code> 엔트리를 사용하세요. 안전한 시크릿 관리는 <a href="system/env.md">환경</a>을 참조하세요.
 </warning>
 
 ## 연결 풀
@@ -211,4 +211,4 @@ options:
 
 ## Lua API
 
-데이터베이스 작업 API는 [SQL 모듈](lua-sql.md)을 참조하세요.
+데이터베이스 작업 API는 [SQL 모듈](lua/storage/sql.md)을 참조하세요.

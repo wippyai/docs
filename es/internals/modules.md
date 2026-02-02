@@ -228,7 +228,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-El dispatcher enruta el comando a un handler. Ver [Command Dispatch](internal-dispatch.md) para implementar handlers.
+El dispatcher enruta el comando a un handler. Ver [Command Dispatch](internals/dispatch.md) para implementar handlers.
 
 ## Manejo de Errores
 
@@ -272,5 +272,5 @@ func myFunc(l *lua.LState) int {
 
 ## Ver También
 
-- [Command Dispatch](internal-dispatch.md) - Manejar comandos de yield
-- [Scheduler](internal-scheduler.md) - Ejecución de procesos
+- [Command Dispatch](internals/dispatch.md) - Manejar comandos de yield
+- [Scheduler](internals/scheduler.md) - Ejecución de procesos

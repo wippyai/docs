@@ -141,6 +141,6 @@ Path(v3, v1) = [v2, v1]      // 逆チェンジセットを適用
 
 ## 関連項目
 
-- [レジストリ](concept-registry.md) - 高レベルコンセプト
-- [イベント](internal-events.md) - イベントバスの詳細
+- [レジストリ](concepts/registry.md) - 高レベルコンセプト
+- [イベント](internals/events.md) - イベントバスの詳細
 

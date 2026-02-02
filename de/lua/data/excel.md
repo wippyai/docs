@@ -267,8 +267,8 @@ wb:close()
 | Ungültige Zellreferenz | `errors.INTERNAL` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
-- [Dateisystem](lua-fs.md) - Dateioperationen zum Lesen/Schreiben von Excel-Dateien
+- [Dateisystem](lua/storage/filesystem.md) - Dateioperationen zum Lesen/Schreiben von Excel-Dateien

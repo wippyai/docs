@@ -249,6 +249,6 @@ Prepare-then-Waitパターンは競合状態を回避：レスポンスを生成
 
 ## 関連項目
 
-- [レジストリ](internal-registry.md) - 主要なイベントプロデューサー
-- [コマンドディスパッチ](internal-dispatch.md) - プロセスからハンドラへのルーティング
+- [レジストリ](internals/registry.md) - 主要なイベントプロデューサー
+- [コマンドディスパッチ](internals/dispatch.md) - プロセスからハンドラへのルーティング
 

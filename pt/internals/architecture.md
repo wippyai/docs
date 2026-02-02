@@ -220,7 +220,7 @@ Segundo sinal força saída imediata.
 
 ## Veja Também
 
-- [Scheduler](internal-scheduler.md) - Execução de processos
-- [Event Bus](internal-events.md) - Sistema pub/sub
-- [Registry](internal-registry.md) - Gerenciamento de estado
-- [Command Dispatch](internal-dispatch.md) - Tratamento de yields
+- [Scheduler](internals/scheduler.md) - Execução de processos
+- [Event Bus](internals/events.md) - Sistema pub/sub
+- [Registry](internals/registry.md) - Gerenciamento de estado
+- [Command Dispatch](internals/dispatch.md) - Tratamento de yields

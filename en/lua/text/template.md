@@ -5,7 +5,7 @@
 
 Render dynamic content using the [Jet template engine](https://github.com/CloudyKit/jet). Build HTML pages, emails, and documents with template inheritance and includes.
 
-For template set configuration, see [Template Engine](system-template.md).
+For template set configuration, see [Template Engine](system/template.md).
 
 ## Loading
 
@@ -139,4 +139,4 @@ Jet uses `{{ }}` for expressions and control structures, `{* *}` for comments.
 | Render error | `errors.INTERNAL` | no |
 | Set already released | `errors.INTERNAL` | no |
 
-See [Error Handling](lua-errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

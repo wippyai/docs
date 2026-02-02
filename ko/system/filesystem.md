@@ -61,4 +61,4 @@
 
 ## Lua API
 
-파일 작업은 [파일시스템 모듈](lua-fs.md)을 참조하세요.
+파일 작업은 [파일시스템 모듈](lua/storage/filesystem.md)을 참조하세요.

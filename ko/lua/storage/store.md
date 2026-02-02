@@ -6,7 +6,7 @@
 
 TTL 지원이 있는 빠른 키-값 스토리지. 캐싱, 세션, 임시 상태에 이상적입니다.
 
-스토어 설정은 [스토어](system-store.md)를 참조하세요.
+스토어 설정은 [스토어](system/store.md)를 참조하세요.
 
 ## 로딩
 
@@ -140,4 +140,4 @@ cache:delete("session:" .. session_id)
 | 스토어 해제됨 | `errors.INVALID` | 아니오 |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
 
-에러 처리는 [에러 처리](lua-errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

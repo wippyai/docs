@@ -363,6 +363,6 @@ Escriba mensajes para eco. Ctrl+C para salir.
 
 ## Siguientes Pasos
 
-- [Gestión de Procesos](lua-process.md)
-- [Canales](lua-channel.md)
-- [Tiempo y Duración](lua-time.md)
+- [Gestión de Procesos](lua/core/process.md)
+- [Canales](lua/core/channel.md)
+- [Tiempo y Duración](lua/core/time.md)

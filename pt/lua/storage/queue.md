@@ -6,7 +6,7 @@
 
 Publique e consuma mensagens de filas distribuidas. Suporta multiplos backends incluindo RabbitMQ e outros brokers compativeis com AMQP.
 
-Para configuração de fila, veja [Queue](system-queue.md).
+Para configuração de fila, veja [Queue](system/queue.md).
 
 ## Carregamento
 

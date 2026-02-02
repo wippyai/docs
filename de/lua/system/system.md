@@ -276,4 +276,4 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Service-Info nicht verfügbar | `errors.INTERNAL` | nein |
 | OS-Fehler beim Hostname abrufen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

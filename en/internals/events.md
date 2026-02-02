@@ -249,5 +249,5 @@ The Prepare-then-Wait pattern avoids race conditions: subscribe before triggerin
 
 ## See Also
 
-- [Registry](internal-registry.md) - Primary event producer
-- [Command Dispatch](internal-dispatch.md) - Process-to-handler routing
+- [Registry](internals/registry.md) - Primary event producer
+- [Command Dispatch](internals/dispatch.md) - Process-to-handler routing

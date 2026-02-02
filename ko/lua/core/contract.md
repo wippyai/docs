@@ -130,7 +130,7 @@ if ok then
 end
 ```
 
-Future 메서드는 [Futures](lua-future.md)를 참조하세요.
+Future 메서드는 [Futures](lua/core/future.md)를 참조하세요.
 
 ## 계약을 통해 열기
 

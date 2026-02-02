@@ -37,7 +37,7 @@ Scripts executando em um host de terminal recebem um contexto de terminal com:
 
 ## API Lua
 
-O [Módulo IO](lua-io.md) fornece operações de terminal:
+O [Módulo IO](lua/system/io.md) fornece operações de terminal:
 
 ```lua
 local io = require("io")

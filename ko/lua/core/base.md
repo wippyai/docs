@@ -235,7 +235,7 @@ math.ult(m, n)        -- 부호 없는 미만 비교
 
 ## 코루틴
 
-코루틴 생성과 제어. 채널과 동시 패턴은 [채널과 코루틴](lua-channel.md) 참조:
+코루틴 생성과 제어. 채널과 동시 패턴은 [채널과 코루틴](lua/core/channel.md) 참조:
 
 ```lua
 coroutine.create(fn)        -- 함수에서 코루틴 생성
@@ -269,7 +269,7 @@ process_request()
 
 ## 에러 처리
 
-구조화된 에러 생성과 분류. 전체 문서는 [에러 처리](lua-errors.md) 참조:
+구조화된 에러 생성과 분류. 전체 문서는 [에러 처리](lua/core/errors.md) 참조:
 
 ### 상수 {id="error-constants"}
 
@@ -367,16 +367,16 @@ local emoji = utf8.char(0x1F600)  -- 웃는 얼굴
 
 | 기능 | 대안 |
 |------|------|
-| `load`, `loadstring`, `loadfile`, `dofile` | [동적 평가](lua-eval.md) 모듈 사용 |
+| `load`, `loadstring`, `loadfile`, `dofile` | [동적 평가](lua/dynamic/eval.md) 모듈 사용 |
 | `collectgarbage` | 자동 GC |
 | `rawlen` | `#` 연산자 사용 |
-| `io.*` | [파일 시스템](lua-fs.md) 모듈 사용 |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [명령 실행](lua-exec.md), [환경](lua-env.md) 모듈 사용 |
+| `io.*` | [파일 시스템](lua/storage/filesystem.md) 모듈 사용 |
+| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [명령 실행](lua/dynamic/exec.md), [환경](lua/system/env.md) 모듈 사용 |
 | `debug.*` (traceback 제외) | 사용 불가 |
 | `package.loadlib` | 네이티브 라이브러리 미지원 |
 
 ## 참고
 
-- [채널과 코루틴](lua-channel.md) - 동시성을 위한 Go 스타일 채널
-- [에러 처리](lua-errors.md) - 구조화된 에러 생성 및 처리
-- [OS 시간](lua-ostime.md) - 시스템 시간 함수
+- [채널과 코루틴](lua/core/channel.md) - 동시성을 위한 Go 스타일 채널
+- [에러 처리](lua/core/errors.md) - 구조화된 에러 생성 및 처리
+- [OS 시간](lua/system/ostime.md) - 시스템 시간 함수

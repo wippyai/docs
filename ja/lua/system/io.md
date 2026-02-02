@@ -6,7 +6,7 @@
 CLIアプリケーション用のstdinからの読み取りとstdout/stderrへの書き込み。
 
 <note>
-このモジュールはターミナルコンテキスト内でのみ動作。通常の関数からは使用できず、<a href="system-terminal.md">ターミナルホスト</a>で実行されているプロセスからのみ使用可能。
+このモジュールはターミナルコンテキスト内でのみ動作。通常の関数からは使用できず、<a href="system/terminal.md">ターミナルホスト</a>で実行されているプロセスからのみ使用可能。
 </note>
 
 ## ロード
@@ -110,5 +110,5 @@ local args = io.args()
 | 読み取り操作失敗 | `errors.INTERNAL` | no |
 | フラッシュ操作失敗 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

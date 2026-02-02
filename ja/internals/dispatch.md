@@ -156,7 +156,7 @@ type Yield struct {
 
 ## 関連項目
 
-- [スケジューラ](internal-scheduler.md) - プロセス実行
-- [モジュール](internal-modules.md) - Luaモジュール統合
-- [プロセスモデル](concept-process-model.md) - 高レベルコンセプト
+- [スケジューラ](internals/scheduler.md) - プロセス実行
+- [モジュール](internals/modules.md) - Luaモジュール統合
+- [プロセスモデル](concepts/process-model.md) - 高レベルコンセプト
 

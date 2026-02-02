@@ -353,4 +353,4 @@ security:
 
 ## Ver También
 
-- [Módulo Security](lua-security.md) - API de seguridad en Lua
+- [Módulo Security](lua/security/security.md) - API de seguridad en Lua

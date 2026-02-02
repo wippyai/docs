@@ -128,5 +128,5 @@ Die Registry ruft `Begin` vor Verarbeitung eines Batches auf, dann `Commit` bei 
 
 ## Siehe auch
 
-- [Registry](internal-registry.md) - Entry-Speicherung
-- [Architektur](internal-architecture.md) - Boot-Sequenz
+- [Registry](internals/registry.md) - Entry-Speicherung
+- [Architektur](internals/architecture.md) - Boot-Sequenz

@@ -66,4 +66,4 @@ Beide Stores unterstützen Time-to-Live. Abgelaufene Einträge bleiben kurz best
 
 ## Lua-API
 
-Siehe [Store-Modul](lua-store.md) für Operationen (get, set, delete, exists, clear).
+Siehe [Store-Modul](lua/storage/store.md) für Operationen (get, set, delete, exists, clear).

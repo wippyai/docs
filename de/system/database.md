@@ -81,7 +81,7 @@ entries:
 
 ### Umgebungsvariablen-Felder
 
-Verwenden Sie das Suffix `_env` um Werte aus Umgebungsvariablen oder [env.variable](system-env.md)-Einträgen zu laden:
+Verwenden Sie das Suffix `_env` um Werte aus Umgebungsvariablen oder [env.variable](system/env.md)-Einträgen zu laden:
 
 | Feld | Beschreibung |
 |------|--------------|
@@ -102,7 +102,7 @@ Verwenden Sie das Suffix `_env` um Werte aus Umgebungsvariablen oder [env.variab
 ```
 
 <warning>
-Vermeiden Sie das Hardcodieren von Passwörtern in der Konfiguration. Verwenden Sie Umgebungsvariablen oder <code>env.variable</code>-Einträge für Anmeldedaten. Siehe <a href="system-env.md">Umgebung</a> für sicheres Geheimnis-Management.
+Vermeiden Sie das Hardcodieren von Passwörtern in der Konfiguration. Verwenden Sie Umgebungsvariablen oder <code>env.variable</code>-Einträge für Anmeldedaten. Siehe <a href="system/env.md">Umgebung</a> für sicheres Geheimnis-Management.
 </warning>
 
 ## Connection-Pool
@@ -304,8 +304,8 @@ entries:
 
 ## Laufzeitregistrierung
 
-Datenbanken können zur Laufzeit mit dem [Registry-Modul](lua-registry.md) registriert werden, was dynamische Datenbankkonfiguration basierend auf Anwendungszustand oder externer Konfiguration ermöglicht.
+Datenbanken können zur Laufzeit mit dem [Registry-Modul](lua/core/registry.md) registriert werden, was dynamische Datenbankkonfiguration basierend auf Anwendungszustand oder externer Konfiguration ermöglicht.
 
 ## Lua-API
 
-Siehe [SQL-Modul](lua-sql.md) für die Datenbankoperationen-API.
+Siehe [SQL-Modul](lua/storage/sql.md) für die Datenbankoperationen-API.

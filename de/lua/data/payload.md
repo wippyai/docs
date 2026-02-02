@@ -168,4 +168,4 @@ print(result.computed_value)
 | Transkodierung fehlgeschlagen | `errors.INTERNAL` | nein |
 | Ergebnis ist kein gültiger Lua-Wert | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

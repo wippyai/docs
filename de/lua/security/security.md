@@ -336,7 +336,7 @@ Sicherheitsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `security.token.create` | Store-ID | Tokens erstellen |
 | `security.token.revoke` | Store-ID | Tokens widerrufen |
 
-Siehe [Sicherheitsmodell](system-security.md) für Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -361,9 +361,9 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
-- [Sicherheitsmodell](system-security.md) - Actors, Richtlinien, Scopes-Konfiguration
-- [HTTP-Middleware](http-middleware.md) - Endpoint- und Ressourcen-Firewall
+- [Sicherheitsmodell](system/security.md) - Actors, Richtlinien, Scopes-Konfiguration
+- [HTTP-Middleware](http/middleware.md) - Endpoint- und Ressourcen-Firewall

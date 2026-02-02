@@ -93,7 +93,7 @@ Commands not in the whitelist are rejected with an error.
 
 ## Lua API
 
-The [Exec Module](lua-exec.md) provides command execution:
+The [Exec Module](lua/dynamic/exec.md) provides command execution:
 
 ```lua
 local exec = require("exec")

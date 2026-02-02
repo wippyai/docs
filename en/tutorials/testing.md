@@ -577,6 +577,6 @@ myapp/
 
 ## Next Steps
 
-- [Error Handling](lua-errors.md) - Error patterns and assertions
-- [Registry](lua-registry.md) - Registry queries and filtering
-- [Functions](concept-functions.md) - Function calls and execution
+- [Error Handling](lua/core/errors.md) - Error patterns and assertions
+- [Registry](lua/core/registry.md) - Registry queries and filtering
+- [Functions](concepts/functions.md) - Function calls and execution

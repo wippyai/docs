@@ -169,5 +169,5 @@ local n = hash.fnv64("data")
 | 入力が文字列でない | `errors.INVALID` | no |
 | シークレットが文字列でない（HMAC） | `errors.INVALID` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

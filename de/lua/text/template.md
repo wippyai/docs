@@ -5,7 +5,7 @@
 
 Rendern Sie dynamische Inhalte mit der [Jet Template Engine](https://github.com/CloudyKit/jet). Erstellen Sie HTML-Seiten, E-Mails und Dokumente mit Template-Vererbung und Includes.
 
-Für Template-Set-Konfiguration siehe [Template-Engine](system-template.md).
+Für Template-Set-Konfiguration siehe [Template-Engine](system/template.md).
 
 ## Laden
 
@@ -139,4 +139,4 @@ Jet verwendet `{{ }}` für Ausdrücke und Kontrollstrukturen, `{* *}` für Komme
 | Render-Fehler | `errors.INTERNAL` | nein |
 | Set bereits freigegeben | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua-errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

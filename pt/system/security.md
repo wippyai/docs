@@ -383,7 +383,7 @@ entries:
 | `token_key` | nenhum | Chave de assinatura HMAC-SHA256 (valor direto) |
 | `token_key_env` | nenhum | Nome da variável de ambiente para chave de assinatura |
 
-Use `token_key_env` em produção para evitar embutir segredos em entradas. Veja [Sistema de Ambiente](system-env.md) para registrar variáveis de ambiente.
+Use `token_key_env` em produção para evitar embutir segredos em entradas. Veja [Sistema de Ambiente](system/env.md) para registrar variáveis de ambiente.
 
 ### Criando Tokens
 

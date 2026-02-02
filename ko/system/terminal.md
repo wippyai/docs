@@ -37,7 +37,7 @@
 
 ## Lua API
 
-[IO 모듈](lua-io.md)은 터미널 작업을 제공합니다:
+[IO 모듈](lua/system/io.md)은 터미널 작업을 제공합니다:
 
 ```lua
 local io = require("io")

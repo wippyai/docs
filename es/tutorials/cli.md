@@ -203,6 +203,6 @@ end
 
 ## Siguientes Pasos
 
-- [Módulo I/O](lua-io.md) - Referencia completa de I/O
-- [Módulo System](lua-system.md) - Info de runtime y sistema
+- [Módulo I/O](lua/system/io.md) - Referencia completa de I/O
+- [Módulo System](lua/system/system.md) - Info de runtime y sistema
 - [Echo Service](echo-service.md) - Aplicaciones multi-proceso

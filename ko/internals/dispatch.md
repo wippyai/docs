@@ -156,6 +156,6 @@ type Yield struct {
 
 ## 참고
 
-- [스케줄러](internal-scheduler.md) - 프로세스 실행
-- [모듈](internal-modules.md) - Lua 모듈 통합
-- [프로세스 모델](concept-process-model.md) - 상위 수준 개념
+- [스케줄러](internals/scheduler.md) - 프로세스 실행
+- [모듈](internals/modules.md) - Lua 모듈 통합
+- [프로세스 모델](concepts/process-model.md) - 상위 수준 개념

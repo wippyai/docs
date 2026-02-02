@@ -130,7 +130,7 @@ if ok then
 end
 ```
 
-Veja [Futures](lua-future.md) para métodos de future.
+Veja [Futures](lua/core/future.md) para métodos de future.
 
 ## Abrindo via Contract
 

@@ -88,5 +88,5 @@ local payload = json.decode(base64.decode(parts[2]))
 | 無効なbase64文字 | `errors.INVALID` | no |
 | 破損したパディング | `errors.INVALID` | no |
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

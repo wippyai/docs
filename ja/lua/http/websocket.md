@@ -303,7 +303,7 @@ WebSocket接続はセキュリティポリシー評価の対象。
 | `websocket.connect` | - | WebSocket接続を許可/拒否 |
 | `websocket.connect.url` | URL | 特定のURLへの接続を許可/拒否 |
 
-ポリシー設定については[セキュリティモデル](system-security.md)を参照。
+ポリシー設定については[セキュリティモデル](system/security.md)を参照。
 
 ## エラー
 
@@ -327,5 +327,5 @@ if err then
 end
 ```
 
-エラーの処理については[エラー処理](lua-errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

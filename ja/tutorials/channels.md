@@ -241,6 +241,6 @@ local total = done:receive()
 
 ## 次のステップ
 
-- [チャネルモジュールリファレンス](lua-channel.md) - 完全なAPIドキュメント
+- [チャネルモジュールリファレンス](lua/core/channel.md) - 完全なAPIドキュメント
 - [プロセス](processes.md) - プロセス間通信
 

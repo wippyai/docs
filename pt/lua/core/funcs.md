@@ -302,4 +302,4 @@ Operações de função estão sujeitas a avaliação de política de segurança
 | Falha de inscrição | `errors.INTERNAL` | não |
 | Erro da função | varia | varia |
 
-Veja [Error Handling](lua-errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
