@@ -168,8 +168,7 @@
       {"title": "プロセス", "path": "tutorials/processes"},
       {"title": "スーパービジョン", "path": "tutorials/supervision"},
       {"title": "タスクキュー", "path": "tutorials/task-queue"},
-      {"title": "認証", "path": "tutorials/auth"},
-      {"title": "テスト", "path": "tutorials/testing"}
+      {"title": "認証", "path": "tutorials/auth"}
     ]
   },
   {

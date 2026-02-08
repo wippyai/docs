@@ -168,8 +168,7 @@
       {"title": "进程", "path": "tutorials/processes"},
       {"title": "进程监管", "path": "tutorials/supervision"},
       {"title": "任务队列", "path": "tutorials/task-queue"},
-      {"title": "身份认证", "path": "tutorials/auth"},
-      {"title": "测试", "path": "tutorials/testing"}
+      {"title": "身份认证", "path": "tutorials/auth"}
     ]
   },
   {

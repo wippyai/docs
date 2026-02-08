@@ -168,8 +168,7 @@
       {"title": "프로세스", "path": "tutorials/processes"},
       {"title": "슈퍼비전", "path": "tutorials/supervision"},
       {"title": "태스크 큐", "path": "tutorials/task-queue"},
-      {"title": "인증", "path": "tutorials/auth"},
-      {"title": "테스트", "path": "tutorials/testing"}
+      {"title": "인증", "path": "tutorials/auth"}
     ]
   },
   {
