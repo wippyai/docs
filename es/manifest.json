@@ -168,8 +168,7 @@
       {"title": "Procesos", "path": "tutorials/processes"},
       {"title": "Supervision", "path": "tutorials/supervision"},
       {"title": "Cola de Tareas", "path": "tutorials/task-queue"},
-      {"title": "Autenticacion", "path": "tutorials/auth"},
-      {"title": "Pruebas", "path": "tutorials/testing"}
+      {"title": "Autenticacion", "path": "tutorials/auth"}
     ]
   },
   {

@@ -168,8 +168,7 @@
       {"title": "Процессы", "path": "tutorials/processes"},
       {"title": "Супервизия", "path": "tutorials/supervision"},
       {"title": "Очередь задач", "path": "tutorials/task-queue"},
-      {"title": "Аутентификация", "path": "tutorials/auth"},
-      {"title": "Тестирование", "path": "tutorials/testing"}
+      {"title": "Аутентификация", "path": "tutorials/auth"}
     ]
   },
   {

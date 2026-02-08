@@ -168,8 +168,7 @@
       {"title": "Processes", "path": "tutorials/processes"},
       {"title": "Supervision", "path": "tutorials/supervision"},
       {"title": "Task Queue", "path": "tutorials/task-queue"},
-      {"title": "Authentication", "path": "tutorials/auth"},
-      {"title": "Testing", "path": "tutorials/testing"}
+      {"title": "Authentication", "path": "tutorials/auth"}
     ]
   },
   {
