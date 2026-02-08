@@ -12,6 +12,9 @@
     "children": [
       {"title": "CLI", "path": "guides/cli"},
       {"title": "Configuration", "path": "guides/configuration"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Language Server", "path": "guides/lsp"},
+      {"title": "Dependency Management", "path": "guides/dependency-management"},
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
       {"title": "Queue Consumers", "path": "guides/queue-consumers"},
@@ -161,7 +164,12 @@
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLI Applications", "path": "tutorials/cli"},
       {"title": "Echo Service", "path": "tutorials/echo-service"},
-      {"title": "Task Queue", "path": "tutorials/task-queue"}
+      {"title": "Channels", "path": "tutorials/channels"},
+      {"title": "Processes", "path": "tutorials/processes"},
+      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "Authentication", "path": "tutorials/auth"},
+      {"title": "Testing", "path": "tutorials/testing"}
     ]
   },
   {

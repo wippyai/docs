@@ -12,6 +12,9 @@
     "children": [
       {"title": "命令行工具", "path": "guides/cli"},
       {"title": "配置", "path": "guides/configuration"},
+      {"title": "代码检查", "path": "guides/linter"},
+      {"title": "语言服务器", "path": "guides/lsp"},
+      {"title": "依赖管理", "path": "guides/dependency-management"},
       {"title": "记录类型", "path": "guides/entry-kinds"},
       {"title": "可观测性", "path": "guides/observability"},
       {"title": "队列消费者", "path": "guides/queue-consumers"},
@@ -22,9 +25,9 @@
   {
     "title": "核心概念",
     "children": [
-      {"title": "进程模型", "path": "concepts/process-model"},
       {"title": "计算单元", "path": "concepts/compute-units"},
       {"title": "注册表", "path": "concepts/registry"},
+      {"title": "进程模型", "path": "concepts/process-model"},
       {"title": "函数", "path": "concepts/functions"},
       {"title": "工作流", "path": "concepts/workflows"}
     ]
@@ -161,7 +164,12 @@
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLI 应用", "path": "tutorials/cli"},
       {"title": "Echo 服务", "path": "tutorials/echo-service"},
-      {"title": "任务队列", "path": "tutorials/task-queue"}
+      {"title": "通道", "path": "tutorials/channels"},
+      {"title": "进程", "path": "tutorials/processes"},
+      {"title": "进程监管", "path": "tutorials/supervision"},
+      {"title": "任务队列", "path": "tutorials/task-queue"},
+      {"title": "身份认证", "path": "tutorials/auth"},
+      {"title": "测试", "path": "tutorials/testing"}
     ]
   },
   {

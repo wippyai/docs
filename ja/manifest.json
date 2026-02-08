@@ -12,6 +12,9 @@
     "children": [
       {"title": "CLI", "path": "guides/cli"},
       {"title": "設定", "path": "guides/configuration"},
+      {"title": "リンター", "path": "guides/linter"},
+      {"title": "言語サーバー", "path": "guides/lsp"},
+      {"title": "依存関係管理", "path": "guides/dependency-management"},
       {"title": "エントリ種別", "path": "guides/entry-kinds"},
       {"title": "可観測性", "path": "guides/observability"},
       {"title": "キューコンシューマ", "path": "guides/queue-consumers"},
@@ -22,9 +25,9 @@
   {
     "title": "コアコンセプト",
     "children": [
-      {"title": "プロセスモデル", "path": "concepts/process-model"},
       {"title": "コンピュートユニット", "path": "concepts/compute-units"},
       {"title": "レジストリ", "path": "concepts/registry"},
+      {"title": "プロセスモデル", "path": "concepts/process-model"},
       {"title": "関数", "path": "concepts/functions"},
       {"title": "ワークフロー", "path": "concepts/workflows"}
     ]
@@ -161,7 +164,12 @@
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLIアプリケーション", "path": "tutorials/cli"},
       {"title": "Echoサービス", "path": "tutorials/echo-service"},
-      {"title": "タスクキュー", "path": "tutorials/task-queue"}
+      {"title": "チャネル", "path": "tutorials/channels"},
+      {"title": "プロセス", "path": "tutorials/processes"},
+      {"title": "スーパービジョン", "path": "tutorials/supervision"},
+      {"title": "タスクキュー", "path": "tutorials/task-queue"},
+      {"title": "認証", "path": "tutorials/auth"},
+      {"title": "テスト", "path": "tutorials/testing"}
     ]
   },
   {
