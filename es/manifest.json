@@ -12,6 +12,9 @@
     "children": [
       {"title": "CLI", "path": "guides/cli"},
       {"title": "Configuracion", "path": "guides/configuration"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Servidor de Lenguaje", "path": "guides/lsp"},
+      {"title": "Gestion de Dependencias", "path": "guides/dependency-management"},
       {"title": "Tipos de Entradas", "path": "guides/entry-kinds"},
       {"title": "Observabilidad", "path": "guides/observability"},
       {"title": "Consumidores de Colas", "path": "guides/queue-consumers"},
@@ -22,9 +25,9 @@
   {
     "title": "Conceptos Fundamentales",
     "children": [
-      {"title": "Modelo de Procesos", "path": "concepts/process-model"},
       {"title": "Unidades de Computo", "path": "concepts/compute-units"},
       {"title": "Registro", "path": "concepts/registry"},
+      {"title": "Modelo de Procesos", "path": "concepts/process-model"},
       {"title": "Funciones", "path": "concepts/functions"},
       {"title": "Flujos de Trabajo", "path": "concepts/workflows"}
     ]
@@ -161,7 +164,12 @@
       {"title": "Hola Mundo", "path": "tutorials/hello-world"},
       {"title": "Aplicaciones CLI", "path": "tutorials/cli"},
       {"title": "Servicio Echo", "path": "tutorials/echo-service"},
-      {"title": "Cola de Tareas", "path": "tutorials/task-queue"}
+      {"title": "Canales", "path": "tutorials/channels"},
+      {"title": "Procesos", "path": "tutorials/processes"},
+      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Cola de Tareas", "path": "tutorials/task-queue"},
+      {"title": "Autenticacion", "path": "tutorials/auth"},
+      {"title": "Pruebas", "path": "tutorials/testing"}
     ]
   },
   {

@@ -12,6 +12,9 @@
     "children": [
       {"title": "CLI", "path": "guides/cli"},
       {"title": "Konfiguration", "path": "guides/configuration"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Sprachserver", "path": "guides/lsp"},
+      {"title": "Abhängigkeitsverwaltung", "path": "guides/dependency-management"},
       {"title": "Entry-Typen", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
       {"title": "Queue-Konsumenten", "path": "guides/queue-consumers"},
@@ -22,9 +25,9 @@
   {
     "title": "Kernkonzepte",
     "children": [
-      {"title": "Prozessmodell", "path": "concepts/process-model"},
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Prozessmodell", "path": "concepts/process-model"},
       {"title": "Funktionen", "path": "concepts/functions"},
       {"title": "Workflows", "path": "concepts/workflows"}
     ]
@@ -161,7 +164,12 @@
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLI-Anwendungen", "path": "tutorials/cli"},
       {"title": "Echo-Dienst", "path": "tutorials/echo-service"},
-      {"title": "Task-Queue", "path": "tutorials/task-queue"}
+      {"title": "Channels", "path": "tutorials/channels"},
+      {"title": "Prozesse", "path": "tutorials/processes"},
+      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Task-Queue", "path": "tutorials/task-queue"},
+      {"title": "Authentifizierung", "path": "tutorials/auth"},
+      {"title": "Testen", "path": "tutorials/testing"}
     ]
   },
   {

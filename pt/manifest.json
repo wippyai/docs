@@ -12,6 +12,9 @@
     "children": [
       {"title": "CLI", "path": "guides/cli"},
       {"title": "Configuracao", "path": "guides/configuration"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Servidor de Linguagem", "path": "guides/lsp"},
+      {"title": "Gerenciamento de Dependencias", "path": "guides/dependency-management"},
       {"title": "Tipos de Entradas", "path": "guides/entry-kinds"},
       {"title": "Observabilidade", "path": "guides/observability"},
       {"title": "Consumidores de Filas", "path": "guides/queue-consumers"},
@@ -22,9 +25,9 @@
   {
     "title": "Conceitos Principais",
     "children": [
-      {"title": "Modelo de Processos", "path": "concepts/process-model"},
       {"title": "Unidades de Computacao", "path": "concepts/compute-units"},
       {"title": "Registro", "path": "concepts/registry"},
+      {"title": "Modelo de Processos", "path": "concepts/process-model"},
       {"title": "Funcoes", "path": "concepts/functions"},
       {"title": "Workflows", "path": "concepts/workflows"}
     ]
@@ -161,7 +164,12 @@
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "Aplicacoes CLI", "path": "tutorials/cli"},
       {"title": "Servico Echo", "path": "tutorials/echo-service"},
-      {"title": "Fila de Tarefas", "path": "tutorials/task-queue"}
+      {"title": "Canais", "path": "tutorials/channels"},
+      {"title": "Processos", "path": "tutorials/processes"},
+      {"title": "Supervisao", "path": "tutorials/supervision"},
+      {"title": "Fila de Tarefas", "path": "tutorials/task-queue"},
+      {"title": "Autenticacao", "path": "tutorials/auth"},
+      {"title": "Testes", "path": "tutorials/testing"}
     ]
   },
   {

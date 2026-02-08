@@ -12,6 +12,9 @@
     "children": [
       {"title": "CLI", "path": "guides/cli"},
       {"title": "설정", "path": "guides/configuration"},
+      {"title": "린터", "path": "guides/linter"},
+      {"title": "언어 서버", "path": "guides/lsp"},
+      {"title": "의존성 관리", "path": "guides/dependency-management"},
       {"title": "엔트리 종류", "path": "guides/entry-kinds"},
       {"title": "관측성", "path": "guides/observability"},
       {"title": "큐 컨슈머", "path": "guides/queue-consumers"},
@@ -22,9 +25,9 @@
   {
     "title": "핵심 개념",
     "children": [
-      {"title": "프로세스 모델", "path": "concepts/process-model"},
       {"title": "컴퓨트 유닛", "path": "concepts/compute-units"},
       {"title": "레지스트리", "path": "concepts/registry"},
+      {"title": "프로세스 모델", "path": "concepts/process-model"},
       {"title": "함수", "path": "concepts/functions"},
       {"title": "워크플로우", "path": "concepts/workflows"}
     ]
@@ -161,7 +164,12 @@
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLI 애플리케이션", "path": "tutorials/cli"},
       {"title": "에코 서비스", "path": "tutorials/echo-service"},
-      {"title": "태스크 큐", "path": "tutorials/task-queue"}
+      {"title": "채널", "path": "tutorials/channels"},
+      {"title": "프로세스", "path": "tutorials/processes"},
+      {"title": "슈퍼비전", "path": "tutorials/supervision"},
+      {"title": "태스크 큐", "path": "tutorials/task-queue"},
+      {"title": "인증", "path": "tutorials/auth"},
+      {"title": "테스트", "path": "tutorials/testing"}
     ]
   },
   {
