@@ -170,6 +170,40 @@ end
 return { main = main }
 ```
 
+## Named Commands
+
+Instead of using `-x app:cli`, you can register your process as a named command:
+
+```yaml
+  - name: cli
+    kind: process.lua
+    meta:
+      command:
+        name: greet
+        short: Greet the user
+    source: file://cli.lua
+    method: main
+    modules:
+      - io
+```
+
+Now run it by name:
+
+```bash
+wippy run greet
+```
+
+List all available commands:
+
+```bash
+wippy run list
+```
+
+```
+Available commands:
+  greet    Greet the user
+```
+
 ## Exit Codes
 
 Return from `main()` to set the exit code:

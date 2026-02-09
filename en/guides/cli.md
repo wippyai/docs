@@ -91,14 +91,12 @@ Install dependencies from lock file.
 ```bash
 wippy install
 wippy install --force
-wippy install --repair
 ```
 
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--lock-file` | `-l` | Lock file path |
 | `--force` | | Bypass cache, always download |
-| `--repair` | | Verify hashes, re-download if mismatch |
 | `--registry` | | Registry URL |
 
 ## wippy update
@@ -257,6 +255,47 @@ wippy version
 wippy version --short
 ```
 
+## Custom Commands
+
+Any `process.lua` or `process.wasm` entry can be registered as a named command by adding `command` metadata:
+
+```yaml
+entries:
+  - name: test_runner
+    kind: process.lua
+    meta:
+      command:
+        name: test
+        short: Run application tests
+    source: file://runner.lua
+    method: main
+    modules:
+      - io
+      - registry
+      - funcs
+```
+
+Run it with:
+
+```bash
+wippy run test
+```
+
+List all available commands:
+
+```bash
+wippy run list
+```
+
+### Command Metadata Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Command name used with `wippy run <name>` |
+| `short` | No | Short description shown in `wippy run list` |
+
+Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process.
+
 ## Examples
 
 ### Development Workflow
@@ -303,9 +342,6 @@ wippy run -p -v
 ```bash
 # Add new dependency
 wippy add acme/http@latest
-
-# Repair corrupted modules
-wippy install --repair
 
 # Force re-download
 wippy install --force

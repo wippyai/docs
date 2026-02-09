@@ -124,6 +124,22 @@
     ]
   },
   {
+    "title": "Runtime WASM",
+    "children": [
+      {"title": "Visao Geral", "path": "wasm/overview"},
+      {"title": "Funcoes", "path": "wasm/functions"},
+      {"title": "Funcoes Host", "path": "wasm/hosts"},
+      {"title": "Processos", "path": "wasm/processes"}
+    ]
+  },
+  {
+    "title": "Framework",
+    "children": [
+      {"title": "Visao Geral", "path": "framework/overview"},
+      {"title": "Testes", "path": "framework/testing"}
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Visao Geral", "path": "temporal/overview"},
@@ -168,7 +184,8 @@
       {"title": "Processos", "path": "tutorials/processes"},
       {"title": "Supervisao", "path": "tutorials/supervision"},
       {"title": "Fila de Tarefas", "path": "tutorials/task-queue"},
-      {"title": "Autenticacao", "path": "tutorials/auth"}
+      {"title": "Autenticacao", "path": "tutorials/auth"},
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
     ]
   },
   {
