@@ -124,6 +124,22 @@
     ]
   },
   {
+    "title": "WASMランタイム",
+    "children": [
+      {"title": "概要", "path": "wasm/overview"},
+      {"title": "関数", "path": "wasm/functions"},
+      {"title": "ホスト関数", "path": "wasm/hosts"},
+      {"title": "プロセス", "path": "wasm/processes"}
+    ]
+  },
+  {
+    "title": "フレームワーク",
+    "children": [
+      {"title": "概要", "path": "framework/overview"},
+      {"title": "テスト", "path": "framework/testing"}
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "概要", "path": "temporal/overview"},
@@ -168,7 +184,8 @@
       {"title": "プロセス", "path": "tutorials/processes"},
       {"title": "スーパービジョン", "path": "tutorials/supervision"},
       {"title": "タスクキュー", "path": "tutorials/task-queue"},
-      {"title": "認証", "path": "tutorials/auth"}
+      {"title": "認証", "path": "tutorials/auth"},
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
     ]
   },
   {

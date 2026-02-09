@@ -124,6 +124,22 @@
     ]
   },
   {
+    "title": "WASM Runtime",
+    "children": [
+      {"title": "Overview", "path": "wasm/overview"},
+      {"title": "Functions", "path": "wasm/functions"},
+      {"title": "Host Functions", "path": "wasm/hosts"},
+      {"title": "Processes", "path": "wasm/processes"}
+    ]
+  },
+  {
+    "title": "Framework",
+    "children": [
+      {"title": "Overview", "path": "framework/overview"},
+      {"title": "Testing", "path": "framework/testing"}
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},
@@ -168,7 +184,8 @@
       {"title": "Processes", "path": "tutorials/processes"},
       {"title": "Supervision", "path": "tutorials/supervision"},
       {"title": "Task Queue", "path": "tutorials/task-queue"},
-      {"title": "Authentication", "path": "tutorials/auth"}
+      {"title": "Authentication", "path": "tutorials/auth"},
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
     ]
   },
   {

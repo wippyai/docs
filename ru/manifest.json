@@ -124,6 +124,22 @@
     ]
   },
   {
+    "title": "WASM Runtime",
+    "children": [
+      {"title": "Обзор", "path": "wasm/overview"},
+      {"title": "Функции", "path": "wasm/functions"},
+      {"title": "Хост-функции", "path": "wasm/hosts"},
+      {"title": "Процессы", "path": "wasm/processes"}
+    ]
+  },
+  {
+    "title": "Framework",
+    "children": [
+      {"title": "Обзор", "path": "framework/overview"},
+      {"title": "Тестирование", "path": "framework/testing"}
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Обзор", "path": "temporal/overview"},
@@ -168,7 +184,8 @@
       {"title": "Процессы", "path": "tutorials/processes"},
       {"title": "Супервизия", "path": "tutorials/supervision"},
       {"title": "Очередь задач", "path": "tutorials/task-queue"},
-      {"title": "Аутентификация", "path": "tutorials/auth"}
+      {"title": "Аутентификация", "path": "tutorials/auth"},
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
     ]
   },
   {

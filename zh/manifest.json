@@ -124,6 +124,22 @@
     ]
   },
   {
+    "title": "WASM 运行时",
+    "children": [
+      {"title": "概述", "path": "wasm/overview"},
+      {"title": "函数", "path": "wasm/functions"},
+      {"title": "宿主函数", "path": "wasm/hosts"},
+      {"title": "进程", "path": "wasm/processes"}
+    ]
+  },
+  {
+    "title": "框架",
+    "children": [
+      {"title": "概述", "path": "framework/overview"},
+      {"title": "测试", "path": "framework/testing"}
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "概述", "path": "temporal/overview"},
@@ -168,7 +184,8 @@
       {"title": "进程", "path": "tutorials/processes"},
       {"title": "进程监管", "path": "tutorials/supervision"},
       {"title": "任务队列", "path": "tutorials/task-queue"},
-      {"title": "身份认证", "path": "tutorials/auth"}
+      {"title": "身份认证", "path": "tutorials/auth"},
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
     ]
   },
   {
