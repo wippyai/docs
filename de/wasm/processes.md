@@ -115,7 +115,6 @@ WASM-Prozesse, die WASI-Schnittstellen importieren, koennen asynchrone Operation
       - wasi:io
       - wasi:cli
       - wasi:http
-      - funcs
     wasi:
       env:
         - id: myns:api_url

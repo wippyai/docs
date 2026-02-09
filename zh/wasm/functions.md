@@ -45,7 +45,7 @@ entries:
 | `wit` | 否 | 原始/核心模块的 WIT 签名 |
 | `pool` | 否 | 工作池配置 |
 | `transport` | 否 | 输入/输出映射（默认：`payload`） |
-| `imports` | 否 | 要启用的宿主导入（如 `wasi:cli`、`funcs`） |
+| `imports` | 否 | 要启用的宿主导入（如 `wasi:cli`、`wasi:io`） |
 | `wasi` | 否 | WASI 配置（args、env、mounts） |
 | `limits` | 否 | 执行限制 |
 

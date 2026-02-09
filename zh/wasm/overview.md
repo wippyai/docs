@@ -52,22 +52,6 @@ local users = {
 local transformed, err = funcs.call("myns:transform_users", users)
 ```
 
-## WASM 模块间调用
-
-WASM 组件可以通过 `wippy:runtime/funcs` 宿主接口调用其他 Wippy 函数（Lua 或 WASM）：
-
-```wit
-call-string: func(target: string, input: string) -> result<string, string>;
-call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
-```
-
-在条目配置中导入 `funcs` 宿主：
-
-```yaml
-imports:
-  - funcs
-```
-
 ## 安全性
 
 WASM 执行默认继承调用者的安全上下文：

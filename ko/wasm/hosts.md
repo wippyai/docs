@@ -6,7 +6,6 @@ WASM 모듈은 호스트 함수 임포트를 통해 런타임 기능에 접근�
 
 | Import | Description |
 |--------|-------------|
-| `funcs` | WASM 모듈 내에서 다른 Wippy 함수 (Lua 또는 WASM) 호출 |
 | `wasi:cli` | 환경, 종료, stdin/stdout/stderr, 터미널 |
 | `wasi:io` | 스트림, 오류 처리, 폴링 |
 | `wasi:clocks` | 벽시계 및 모노토닉 클럭 |
@@ -29,52 +28,11 @@ WASM 모듈은 호스트 함수 임포트를 통해 런타임 기능에 접근�
       - wasi:io
       - wasi:clocks
       - wasi:filesystem
-      - funcs
     pool:
       type: inline
 ```
 
 모듈이 실제로 필요한 임포트만 선언하십시오.
-
-## Wippy 함수 호스트
-
-**Namespace:** `wippy:runtime/funcs@0.1.0`
-
-WASM 모듈이 Lua 함수 및 다른 WASM 함수를 포함하여 Wippy 레지스트리의 모든 함수를 호출할 수 있도록 합니다.
-
-### 인터페이스
-
-```wit
-interface funcs {
-    call-string: func(target: string, input: string) -> result<string, string>;
-    call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
-}
-```
-
-| Function | Description |
-|----------|-------------|
-| `call-string` | 문자열 입출력으로 함수 호출 |
-| `call-bytes` | 바이너리 입출력으로 함수 호출 |
-
-`target` 파라미터는 레지스트리 ID 형식을 사용합니다: `namespace:entry_name`.
-
-### 예제
-
-Lua 함수를 호출하는 WASM 컴포넌트:
-
-```yaml
-  - name: orchestrator
-    kind: function.wasm
-    fs: myns:assets
-    path: /orchestrator.wasm
-    hash: sha256:...
-    method: run
-    imports:
-      - funcs
-    pool:
-      type: lazy
-      max_size: 4
-```
 
 ## WASI 임포트
 

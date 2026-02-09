@@ -115,7 +115,6 @@ WASM-процессы, импортирующие WASI-интерфейсы, м�
       - wasi:io
       - wasi:cli
       - wasi:http
-      - funcs
     wasi:
       env:
         - id: myns:api_url

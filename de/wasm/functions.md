@@ -45,7 +45,7 @@ Fuer groessere WAT-Quellen verwenden Sie eine Dateireferenz:
 | `wit` | No | WIT-Signatur fuer Raw/Core-Module |
 | `pool` | No | Worker-Pool-Konfiguration |
 | `transport` | No | Input/Output-Mapping (Standard: `payload`) |
-| `imports` | No | Host-Imports zum Aktivieren (z.B. `wasi:cli`, `funcs`) |
+| `imports` | No | Host-Imports zum Aktivieren (z.B. `wasi:cli`, `wasi:io`) |
 | `wasi` | No | WASI-Konfiguration (args, env, mounts) |
 | `limits` | No | Ausfuehrungslimits |
 

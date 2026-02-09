@@ -115,7 +115,6 @@ WASI 인터페이스를 임포트하는 WASM 프로세스는 비동기 연산을
       - wasi:io
       - wasi:cli
       - wasi:http
-      - funcs
     wasi:
       env:
         - id: myns:api_url

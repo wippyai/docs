@@ -52,22 +52,6 @@ local users = {
 local transformed, err = funcs.call("myns:transform_users", users)
 ```
 
-## Aufrufe zwischen WASM-Modulen
-
-WASM-Komponenten koennen andere Wippy-Funktionen (Lua oder WASM) ueber die Host-Schnittstelle `wippy:runtime/funcs` aufrufen:
-
-```wit
-call-string: func(target: string, input: string) -> result<string, string>;
-call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
-```
-
-Importieren Sie den `funcs`-Host in Ihrer Entry-Konfiguration:
-
-```yaml
-imports:
-  - funcs
-```
-
 ## Sicherheit
 
 WASM-Ausfuehrungen erben standardmaessig den Sicherheitskontext des Aufrufers:
