@@ -45,7 +45,7 @@ entries:
 | `wit` | No | Raw/Core 모듈용 WIT 시그니처 |
 | `pool` | No | 워커 풀 설정 |
 | `transport` | No | 입출력 매핑 (기본값: `payload`) |
-| `imports` | No | 활성화할 호스트 임포트 (예: `wasi:cli`, `funcs`) |
+| `imports` | No | 활성화할 호스트 임포트 (예: `wasi:cli`, `wasi:io`) |
 | `wasi` | No | WASI 설정 (args, env, mounts) |
 | `limits` | No | 실행 제한 |
 

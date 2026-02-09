@@ -115,7 +115,6 @@ Processos WASM que importam interfaces WASI podem realizar operacoes assincronas
       - wasi:io
       - wasi:cli
       - wasi:http
-      - funcs
     wasi:
       env:
         - id: myns:api_url

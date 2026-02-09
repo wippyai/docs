@@ -45,7 +45,7 @@ entries:
 | `wit` | No | WIT-сигнатура для raw/core модулей |
 | `pool` | No | Конфигурация пула воркеров |
 | `transport` | No | Маппинг ввода/вывода (по умолчанию: `payload`) |
-| `imports` | No | Хост-импорты для подключения (напр., `wasi:cli`, `funcs`) |
+| `imports` | No | Хост-импорты для подключения (напр., `wasi:cli`, `wasi:io`) |
 | `wasi` | No | Конфигурация WASI (args, env, mounts) |
 | `limits` | No | Ограничения выполнения |
 

@@ -45,7 +45,7 @@ Para fontes WAT maiores, use uma referencia a arquivo:
 | `wit` | Nao | Assinatura WIT para modulos raw/core |
 | `pool` | Nao | Configuracao do pool de workers |
 | `transport` | Nao | Mapeamento de entrada/saida (padrao: `payload`) |
-| `imports` | Nao | Imports do host a habilitar (ex.: `wasi:cli`, `funcs`) |
+| `imports` | Nao | Imports do host a habilitar (ex.: `wasi:cli`, `wasi:io`) |
 | `wasi` | Nao | Configuracao WASI (args, env, mounts) |
 | `limits` | Nao | Limites de execucao |
 

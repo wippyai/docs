@@ -45,7 +45,7 @@ entries:
 | `wit` | No | Raw/コアモジュール用のWITシグネチャ |
 | `pool` | No | ワーカープール設定 |
 | `transport` | No | 入出力マッピング（デフォルト: `payload`） |
-| `imports` | No | 有効にするホストインポート（例: `wasi:cli`、`funcs`） |
+| `imports` | No | 有効にするホストインポート（例: `wasi:cli`、`wasi:io`） |
 | `wasi` | No | WASI設定（args、env、mounts） |
 | `limits` | No | 実行制限 |
 

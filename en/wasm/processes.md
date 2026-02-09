@@ -115,7 +115,6 @@ WASM processes that import WASI interfaces can perform async operations. The sch
       - wasi:io
       - wasi:cli
       - wasi:http
-      - funcs
     wasi:
       env:
         - id: myns:api_url

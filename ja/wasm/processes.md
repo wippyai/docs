@@ -115,7 +115,6 @@ WASIインターフェースをインポートするWASMプロセスは非同期
       - wasi:io
       - wasi:cli
       - wasi:http
-      - funcs
     wasi:
       env:
         - id: myns:api_url

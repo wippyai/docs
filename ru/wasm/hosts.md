@@ -6,7 +6,6 @@ WASM-модули получают доступ к возможностям ср
 
 | Import | Описание |
 |--------|----------|
-| `funcs` | Вызов других функций Wippy (Lua или WASM) из WASM-модуля |
 | `wasi:cli` | Окружение, выход, stdin/stdout/stderr, терминал |
 | `wasi:io` | Потоки, обработка ошибок, опрос (polling) |
 | `wasi:clocks` | Системные и монотонные часы |
@@ -29,52 +28,11 @@ WASM-модули получают доступ к возможностям ср
       - wasi:io
       - wasi:clocks
       - wasi:filesystem
-      - funcs
     pool:
       type: inline
 ```
 
 Объявляйте только те импорты, которые действительно нужны вашему модулю.
-
-## Хост функций Wippy
-
-**Namespace:** `wippy:runtime/funcs@0.1.0`
-
-Позволяет WASM-модулям вызывать любые функции в реестре Wippy, включая Lua-функции и другие WASM-функции.
-
-### Интерфейс
-
-```wit
-interface funcs {
-    call-string: func(target: string, input: string) -> result<string, string>;
-    call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
-}
-```
-
-| Function | Описание |
-|----------|----------|
-| `call-string` | Вызов функции со строковым вводом и выводом |
-| `call-bytes` | Вызов функции с бинарным вводом и выводом |
-
-Параметр `target` использует формат ID реестра: `namespace:entry_name`.
-
-### Пример
-
-WASM-компонент, вызывающий Lua-функцию:
-
-```yaml
-  - name: orchestrator
-    kind: function.wasm
-    fs: myns:assets
-    path: /orchestrator.wasm
-    hash: sha256:...
-    method: run
-    imports:
-      - funcs
-    pool:
-      type: lazy
-      max_size: 4
-```
 
 ## Импорты WASI
 

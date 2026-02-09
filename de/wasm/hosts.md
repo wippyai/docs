@@ -6,7 +6,6 @@ WASM-Module greifen ueber Host-Funktions-Imports auf Runtime-Faehigkeiten zu. Je
 
 | Import | Beschreibung |
 |--------|-------------|
-| `funcs` | Andere Wippy-Funktionen (Lua oder WASM) aus einem WASM-Modul aufrufen |
 | `wasi:cli` | Umgebung, Exit, stdin/stdout/stderr, Terminal |
 | `wasi:io` | Streams, Fehlerbehandlung, Polling |
 | `wasi:clocks` | Wall Clock und Monotonic Clock |
@@ -29,52 +28,11 @@ Aktivieren Sie Imports in Ihrer Entry-Konfiguration:
       - wasi:io
       - wasi:clocks
       - wasi:filesystem
-      - funcs
     pool:
       type: inline
 ```
 
 Deklarieren Sie nur die Imports, die Ihr Modul tatsaechlich benoetigt.
-
-## Wippy Functions Host
-
-**Namespace:** `wippy:runtime/funcs@0.1.0`
-
-Ermoeglicht WASM-Modulen, jede Funktion in der Wippy-Registry aufzurufen, einschliesslich Lua-Funktionen und anderer WASM-Funktionen.
-
-### Schnittstelle
-
-```wit
-interface funcs {
-    call-string: func(target: string, input: string) -> result<string, string>;
-    call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
-}
-```
-
-| Function | Beschreibung |
-|----------|-------------|
-| `call-string` | Eine Funktion mit String-Ein- und -Ausgabe aufrufen |
-| `call-bytes` | Eine Funktion mit binaerer Ein- und Ausgabe aufrufen |
-
-Der `target`-Parameter verwendet das Registry-ID-Format: `namespace:entry_name`.
-
-### Beispiel
-
-Eine WASM-Komponente, die eine Lua-Funktion aufruft:
-
-```yaml
-  - name: orchestrator
-    kind: function.wasm
-    fs: myns:assets
-    path: /orchestrator.wasm
-    hash: sha256:...
-    method: run
-    imports:
-      - funcs
-    pool:
-      type: lazy
-      max_size: 4
-```
 
 ## WASI-Imports
 

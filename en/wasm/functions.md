@@ -45,7 +45,7 @@ For larger WAT sources, use a file reference:
 | `wit` | No | WIT signature for raw/core modules |
 | `pool` | No | Worker pool configuration |
 | `transport` | No | Input/output mapping (default: `payload`) |
-| `imports` | No | Host imports to enable (e.g., `wasi:cli`, `funcs`) |
+| `imports` | No | Host imports to enable (e.g., `wasi:cli`, `wasi:io`) |
 | `wasi` | No | WASI configuration (args, env, mounts) |
 | `limits` | No | Execution limits |
 

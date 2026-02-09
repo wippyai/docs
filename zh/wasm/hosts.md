@@ -6,7 +6,6 @@ WASM 模块通过宿主函数导入访问运行时能力。每个导入在条目
 
 | Import | 描述 |
 |--------|-------------|
-| `funcs` | 从 WASM 模块内部调用其他 Wippy 函数（Lua 或 WASM） |
 | `wasi:cli` | 环境、退出、stdin/stdout/stderr、终端 |
 | `wasi:io` | 流、错误处理、轮询 |
 | `wasi:clocks` | 墙上时钟和单调时钟 |
@@ -29,52 +28,11 @@ WASM 模块通过宿主函数导入访问运行时能力。每个导入在条目
       - wasi:io
       - wasi:clocks
       - wasi:filesystem
-      - funcs
     pool:
       type: inline
 ```
 
 仅声明模块实际需要的导入。
-
-## Wippy 函数宿主
-
-**命名空间：** `wippy:runtime/funcs@0.1.0`
-
-使 WASM 模块能够调用 Wippy 注册表中的任何函数，包括 Lua 函数和其他 WASM 函数。
-
-### 接口
-
-```wit
-interface funcs {
-    call-string: func(target: string, input: string) -> result<string, string>;
-    call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
-}
-```
-
-| 函数 | 描述 |
-|----------|-------------|
-| `call-string` | 使用字符串输入和输出调用函数 |
-| `call-bytes` | 使用二进制输入和输出调用函数 |
-
-`target` 参数使用注册表 ID 格式：`namespace:entry_name`。
-
-### 示例
-
-一个调用 Lua 函数的 WASM 组件：
-
-```yaml
-  - name: orchestrator
-    kind: function.wasm
-    fs: myns:assets
-    path: /orchestrator.wasm
-    hash: sha256:...
-    method: run
-    imports:
-      - funcs
-    pool:
-      type: lazy
-      max_size: 4
-```
 
 ## WASI 导入
 
