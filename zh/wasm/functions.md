@@ -264,26 +264,6 @@ local transformed, err = funcs.call("myns:transform_users", users)
 local active, err = funcs.call("myns:filter_active", users)
 ```
 
-### JavaScript 组件
-
-任何编译为 WASM 组件模型的语言均可使用。以下是从 JavaScript 编译的函数：
-
-```yaml
-  - name: js_add
-    kind: function.wasm
-    fs: myns:wasm_binaries
-    path: /js_calculator.wasm
-    hash: sha256:eda7db3925a40c12b5e8c36b0d228a4be4f2c79ee8b5c86b912cf8b3d9a70a7c
-    method: add
-    pool:
-      type: inline
-```
-
-```lua
-local result, err = funcs.call("myns:js_add", 10, 20)
--- result: 30
-```
-
 ### 使用 WASI Clocks 的异步 Sleep
 
 导入 `wasi:clocks` 和 `wasi:io` 的 WASM 组件可以使用时钟和轮询。异步 yield 机制与 Wippy 调度器集成：
