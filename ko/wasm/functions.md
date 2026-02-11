@@ -264,26 +264,6 @@ local transformed, err = funcs.call("myns:transform_users", users)
 local active, err = funcs.call("myns:filter_active", users)
 ```
 
-### JavaScript 컴포넌트
-
-WASM 컴포넌트 모델로 컴파일되는 모든 언어가 사용 가능합니다. 다음은 JavaScript에서 컴파일된 함수입니다:
-
-```yaml
-  - name: js_add
-    kind: function.wasm
-    fs: myns:wasm_binaries
-    path: /js_calculator.wasm
-    hash: sha256:eda7db3925a40c12b5e8c36b0d228a4be4f2c79ee8b5c86b912cf8b3d9a70a7c
-    method: add
-    pool:
-      type: inline
-```
-
-```lua
-local result, err = funcs.call("myns:js_add", 10, 20)
--- result: 30
-```
-
 ### WASI Clocks를 사용한 비동기 슬립
 
 `wasi:clocks`와 `wasi:io`를 임포트하는 WASM 컴포넌트는 클럭과 폴링을 사용할 수 있습니다. 비동기 양보 메커니즘은 Wippy 디스패처와 통합됩니다:

@@ -264,26 +264,6 @@ local transformed, err = funcs.call("myns:transform_users", users)
 local active, err = funcs.call("myns:filter_active", users)
 ```
 
-### JavaScript-компонент
-
-Любой язык, компилируемый в WASM Component Model, работает. Вот функция, скомпилированная из JavaScript:
-
-```yaml
-  - name: js_add
-    kind: function.wasm
-    fs: myns:wasm_binaries
-    path: /js_calculator.wasm
-    hash: sha256:eda7db3925a40c12b5e8c36b0d228a4be4f2c79ee8b5c86b912cf8b3d9a70a7c
-    method: add
-    pool:
-      type: inline
-```
-
-```lua
-local result, err = funcs.call("myns:js_add", 10, 20)
--- result: 30
-```
-
 ### Асинхронный sleep с WASI Clocks
 
 WASM-компоненты, импортирующие `wasi:clocks` и `wasi:io`, могут использовать часы и опрос (polling). Механизм асинхронной передачи управления интегрируется с диспетчером Wippy:

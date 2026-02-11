@@ -110,12 +110,11 @@ impl Guest for Component {
         if n <= 1 {
             return n as u64;
         }
-        let mut a: u64 = 0;
-        let mut b: u64 = 1;
+        let (mut a, mut b) = (0u64, 1u64);
         for _ in 2..=n {
-            let temp = a + b;
+            let next = a + b;
             a = b;
-            b = temp;
+            b = next;
         }
         b
     }
@@ -124,23 +123,37 @@ impl Guest for Component {
         let mut result = String::new();
         match std::fs::read_dir(&path) {
             Ok(entries) => {
-                for entry in entries.flatten() {
-                    let meta = entry.metadata().ok();
-                    let kind = meta
-                        .as_ref()
-                        .map(|m| if m.is_dir() { "dir" } else { "file" })
-                        .unwrap_or("???");
-                    let size = meta.map(|m| m.len()).unwrap_or(0);
-                    let name = entry.file_name().to_string_lossy().to_string();
-                    let line = format!("{kind:<6} {size:>8}  {name}\n");
-                    print!("{line}");
-                    result.push_str(&line);
+                for entry in entries {
+                    match entry {
+                        Ok(e) => {
+                            let name = e.file_name().to_string_lossy().to_string();
+                            let meta = e.metadata();
+                            let (kind, size) = match meta {
+                                Ok(m) => {
+                                    let kind = if m.is_dir() { "dir" } else { "file" };
+                                    (kind, m.len())
+                                }
+                                Err(_) => ("?", 0),
+                            };
+                            let line = format!("{:<6} {:>8}  {}", kind, size, name);
+                            println!("{}", line);
+                            result.push_str(&line);
+                            result.push('\n');
+                        }
+                        Err(e) => {
+                            let line = format!("error: {}", e);
+                            eprintln!("{}", line);
+                            result.push_str(&line);
+                            result.push('\n');
+                        }
+                    }
                 }
             }
             Err(e) => {
-                let msg = format!("Error reading {path}: {e}\n");
-                eprint!("{msg}");
-                result.push_str(&msg);
+                let line = format!("cannot read {}: {}", path, e);
+                eprintln!("{}", line);
+                result.push_str(&line);
+                result.push('\n');
             }
         }
         result

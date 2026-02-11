@@ -264,26 +264,6 @@ local transformed, err = funcs.call("myns:transform_users", users)
 local active, err = funcs.call("myns:filter_active", users)
 ```
 
-### JavaScript-Komponente
-
-Jede Sprache, die in das WASM Component Model kompiliert, funktioniert. Hier ist eine Funktion, die aus JavaScript kompiliert wurde:
-
-```yaml
-  - name: js_add
-    kind: function.wasm
-    fs: myns:wasm_binaries
-    path: /js_calculator.wasm
-    hash: sha256:eda7db3925a40c12b5e8c36b0d228a4be4f2c79ee8b5c86b912cf8b3d9a70a7c
-    method: add
-    pool:
-      type: inline
-```
-
-```lua
-local result, err = funcs.call("myns:js_add", 10, 20)
--- result: 30
-```
-
 ### Asynchrones Sleep mit WASI Clocks
 
 WASM-Komponenten, die `wasi:clocks` und `wasi:io` importieren, koennen Clocks und Polling verwenden. Der asynchrone Yield-Mechanismus integriert sich in den Wippy-Dispatcher:
