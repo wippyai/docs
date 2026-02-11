@@ -99,6 +99,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | バッファリングせずにレスポンスボディをストリーミング |
 | `max_response_body` | number | 最大レスポンスサイズ（バイト単位）（0 = デフォルト） |
 | `unix_socket` | string | Unixソケットパス経由で接続 |
+| `tls` | table | リクエストごとのTLS設定（[TLSオプション](#tlsオプション)を参照） |
 
 ### クエリパラメータ
 
@@ -175,6 +176,59 @@ local resp, err = http_client.get(url, {timeout = 30})
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
+```
+
+### TLSオプション
+
+リクエストごとのTLS設定で、mTLS（相互TLS）やカスタムCA証明書を構成する。
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `cert` | string | PEM形式のクライアント証明書 |
+| `key` | string | PEM形式のクライアント秘密鍵 |
+| `ca` | string | PEM形式のカスタムCA証明書 |
+| `server_name` | string | SNI検証用のサーバー名 |
+| `insecure_skip_verify` | boolean | TLS証明書検証をスキップ |
+
+mTLSには`cert`と`key`の両方を一緒に指定する必要がある。`ca`フィールドはシステム証明書プールをカスタムCAで上書きする。
+
+#### mTLS認証
+
+```lua
+local cert_pem = fs.read("/certs/client.crt")
+local key_pem = fs.read("/certs/client.key")
+
+local resp, err = http_client.get("https://secure.example.com/api", {
+    tls = {
+        cert = cert_pem,
+        key = key_pem,
+    }
+})
+```
+
+#### カスタムCA
+
+```lua
+local ca_pem = fs.read("/certs/internal-ca.crt")
+
+local resp, err = http_client.get("https://internal.example.com/api", {
+    tls = {
+        ca = ca_pem,
+        server_name = "internal.example.com",
+    }
+})
+```
+
+#### 安全でない検証スキップ
+
+開発環境向けにTLS検証をスキップする。`http_client.insecure_tls`セキュリティ権限が必要。
+
+```lua
+local resp, err = http_client.get("https://localhost:8443/api", {
+    tls = {
+        insecure_skip_verify = true,
+    }
+})
 ```
 
 ## レスポンスオブジェクト
@@ -292,6 +346,7 @@ HTTPリクエストはセキュリティポリシー評価の対象。
 | `http_client.request` | URL | 特定のURLへのリクエストを許可/拒否 |
 | `http_client.unix_socket` | ソケットパス | Unixソケット接続を許可/拒否 |
 | `http_client.private_ip` | IPアドレス | プライベートIP範囲へのアクセスを許可/拒否 |
+| `http_client.insecure_tls` | URL | 安全でないTLS（検証スキップ）の許可/拒否 |
 
 ### アクセス確認
 
@@ -321,6 +376,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 | セキュリティポリシーが拒否 | `errors.PERMISSION_DENIED` | no |
 | プライベートIPがブロック | `errors.PERMISSION_DENIED` | no |
 | Unixソケットが拒否 | `errors.PERMISSION_DENIED` | no |
+| 安全でないTLSが拒否 | `errors.PERMISSION_DENIED` | no |
 | 無効なURLまたはオプション | `errors.INVALID` | no |
 | コンテキストがない | `errors.INTERNAL` | no |
 | ネットワーク障害 | `errors.INTERNAL` | yes |

@@ -99,6 +99,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | 流式响应正文而非缓冲 |
 | `max_response_body` | number | 最大响应大小（字节）（0 = 默认） |
 | `unix_socket` | string | 通过 Unix socket 路径连接 |
+| `tls` | table | 每请求 TLS 配置（参见 [TLS 选项](#tls-选项)） |
 
 ### 查询参数
 
@@ -175,6 +176,59 @@ local resp, err = http_client.get(url, {timeout = 30})
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
+```
+
+### TLS 选项
+
+配置每请求的 TLS 设置，用于 mTLS（双向 TLS）和自定义 CA 证书。
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `cert` | string | PEM 格式的客户端证书 |
+| `key` | string | PEM 格式的客户端私钥 |
+| `ca` | string | PEM 格式的自定义 CA 证书 |
+| `server_name` | string | 用于 SNI 验证的服务器名称 |
+| `insecure_skip_verify` | boolean | 跳过 TLS 证书验证 |
+
+`cert` 和 `key` 必须同时提供才能使用 mTLS。`ca` 字段会使用自定义 CA 覆盖系统证书池。
+
+#### mTLS 认证
+
+```lua
+local cert_pem = fs.read("/certs/client.crt")
+local key_pem = fs.read("/certs/client.key")
+
+local resp, err = http_client.get("https://secure.example.com/api", {
+    tls = {
+        cert = cert_pem,
+        key = key_pem,
+    }
+})
+```
+
+#### 自定义 CA
+
+```lua
+local ca_pem = fs.read("/certs/internal-ca.crt")
+
+local resp, err = http_client.get("https://internal.example.com/api", {
+    tls = {
+        ca = ca_pem,
+        server_name = "internal.example.com",
+    }
+})
+```
+
+#### 跳过不安全验证
+
+在开发环境中跳过 TLS 验证。需要 `http_client.insecure_tls` 安全权限。
+
+```lua
+local resp, err = http_client.get("https://localhost:8443/api", {
+    tls = {
+        insecure_skip_verify = true,
+    }
+})
 ```
 
 ## 响应对象
@@ -292,6 +346,7 @@ HTTP 请求受安全策略评估约束。
 | `http_client.request` | URL | 允许/拒绝对特定 URL 的请求 |
 | `http_client.unix_socket` | Socket 路径 | 允许/拒绝 Unix socket 连接 |
 | `http_client.private_ip` | IP 地址 | 允许/拒绝访问私有 IP 范围 |
+| `http_client.insecure_tls` | URL | 允许/禁止不安全的 TLS（跳过验证） |
 
 ### 检查访问权限
 
@@ -321,6 +376,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 | 安全策略拒绝 | `errors.PERMISSION_DENIED` | 否 |
 | 私有 IP 被阻止 | `errors.PERMISSION_DENIED` | 否 |
 | Unix socket 被拒绝 | `errors.PERMISSION_DENIED` | 否 |
+| 不安全 TLS 被拒绝 | `errors.PERMISSION_DENIED` | 否 |
 | 无效的 URL 或选项 | `errors.INVALID` | 否 |
 | 无上下文 | `errors.INTERNAL` | 否 |
 | 网络故障 | `errors.INTERNAL` | 是 |

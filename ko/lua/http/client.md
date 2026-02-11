@@ -99,6 +99,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | 버퍼링 대신 응답 본문 스트리밍 |
 | `max_response_body` | number | 최대 응답 크기 바이트 (0 = 기본값) |
 | `unix_socket` | string | Unix 소켓 경로로 연결 |
+| `tls` | table | 요청별 TLS 설정 ([TLS 옵션](#tls-옵션) 참조) |
 
 ### 쿼리 파라미터
 
@@ -175,6 +176,59 @@ local resp, err = http_client.get(url, {timeout = 30})
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
+```
+
+### TLS 옵션
+
+mTLS(상호 TLS) 및 커스텀 CA 인증서를 위한 요청별 TLS 설정을 구성합니다.
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `cert` | string | PEM 형식의 클라이언트 인증서 |
+| `key` | string | PEM 형식의 클라이언트 개인 키 |
+| `ca` | string | PEM 형식의 커스텀 CA 인증서 |
+| `server_name` | string | SNI 검증을 위한 서버 이름 |
+| `insecure_skip_verify` | boolean | TLS 인증서 검증 건너뛰기 |
+
+mTLS를 위해서는 `cert`와 `key`를 함께 제공해야 합니다. `ca` 필드는 시스템 인증서 풀을 커스텀 CA로 대체합니다.
+
+#### mTLS 인증
+
+```lua
+local cert_pem = fs.read("/certs/client.crt")
+local key_pem = fs.read("/certs/client.key")
+
+local resp, err = http_client.get("https://secure.example.com/api", {
+    tls = {
+        cert = cert_pem,
+        key = key_pem,
+    }
+})
+```
+
+#### 커스텀 CA
+
+```lua
+local ca_pem = fs.read("/certs/internal-ca.crt")
+
+local resp, err = http_client.get("https://internal.example.com/api", {
+    tls = {
+        ca = ca_pem,
+        server_name = "internal.example.com",
+    }
+})
+```
+
+#### 안전하지 않은 검증 건너뛰기
+
+개발 환경에서 TLS 검증을 건너뜁니다. `http_client.insecure_tls` 보안 권한이 필요합니다.
+
+```lua
+local resp, err = http_client.get("https://localhost:8443/api", {
+    tls = {
+        insecure_skip_verify = true,
+    }
+})
 ```
 
 ## 응답 객체
@@ -292,6 +346,7 @@ HTTP 요청은 보안 정책 평가 대상입니다.
 | `http_client.request` | URL | 특정 URL에 대한 요청 허용/거부 |
 | `http_client.unix_socket` | 소켓 경로 | Unix 소켓 연결 허용/거부 |
 | `http_client.private_ip` | IP 주소 | 사설 IP 범위 접근 허용/거부 |
+| `http_client.insecure_tls` | URL | 안전하지 않은 TLS 허용/거부 (검증 건너뛰기) |
 
 ### 접근 확인
 
@@ -321,6 +376,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 | 보안 정책 거부 | `errors.PERMISSION_DENIED` | 아니오 |
 | 사설 IP 차단 | `errors.PERMISSION_DENIED` | 아니오 |
 | Unix 소켓 거부 | `errors.PERMISSION_DENIED` | 아니오 |
+| 안전하지 않은 TLS 거부 | `errors.PERMISSION_DENIED` | 아니오 |
 | 잘못된 URL 또는 옵션 | `errors.INVALID` | 아니오 |
 | 컨텍스트 없음 | `errors.INTERNAL` | 아니오 |
 | 네트워크 실패 | `errors.INTERNAL` | 예 |

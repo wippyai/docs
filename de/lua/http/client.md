@@ -99,6 +99,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | Response-Body streamen statt puffern |
 | `max_response_body` | number | Max. Response-Größe in Bytes (0 = Standard) |
 | `unix_socket` | string | Über Unix-Socket-Pfad verbinden |
+| `tls` | table | TLS-Konfiguration pro Anfrage (siehe [TLS-Optionen](#tls-optionen)) |
 
 ### Query-Parameter
 
@@ -175,6 +176,59 @@ local resp, err = http_client.get(url, {timeout = 30})
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
+```
+
+### TLS-Optionen
+
+Konfigurieren Sie TLS-Einstellungen pro Anfrage für mTLS (Mutual TLS) und benutzerdefinierte CA-Zertifikate.
+
+| Feld | Typ | Beschreibung |
+|-------|------|-------------|
+| `cert` | string | Client-Zertifikat im PEM-Format |
+| `key` | string | Privater Schlüssel des Clients im PEM-Format |
+| `ca` | string | Benutzerdefiniertes CA-Zertifikat im PEM-Format |
+| `server_name` | string | Servername für SNI-Verifizierung |
+| `insecure_skip_verify` | boolean | TLS-Zertifikatsverifizierung überspringen |
+
+`cert` und `key` müssen für mTLS zusammen angegeben werden. Das Feld `ca` ersetzt den System-Zertifikatspool durch eine benutzerdefinierte CA.
+
+#### mTLS-Authentifizierung
+
+```lua
+local cert_pem = fs.read("/certs/client.crt")
+local key_pem = fs.read("/certs/client.key")
+
+local resp, err = http_client.get("https://secure.example.com/api", {
+    tls = {
+        cert = cert_pem,
+        key = key_pem,
+    }
+})
+```
+
+#### Benutzerdefinierte CA
+
+```lua
+local ca_pem = fs.read("/certs/internal-ca.crt")
+
+local resp, err = http_client.get("https://internal.example.com/api", {
+    tls = {
+        ca = ca_pem,
+        server_name = "internal.example.com",
+    }
+})
+```
+
+#### Unsichere Verifizierung überspringen
+
+TLS-Verifizierung für Entwicklungsumgebungen überspringen. Erfordert die Sicherheitsberechtigung `http_client.insecure_tls`.
+
+```lua
+local resp, err = http_client.get("https://localhost:8443/api", {
+    tls = {
+        insecure_skip_verify = true,
+    }
+})
 ```
 
 ## Response-Objekt
@@ -292,6 +346,7 @@ HTTP-Anfragen unterliegen der Sicherheitsrichtlinienauswertung.
 | `http_client.request` | URL | Anfragen an bestimmte URLs erlauben/verweigern |
 | `http_client.unix_socket` | Socket-Pfad | Unix-Socket-Verbindungen erlauben/verweigern |
 | `http_client.private_ip` | IP-Adresse | Zugriff auf private IP-Bereiche erlauben/verweigern |
+| `http_client.insecure_tls` | URL | Unsichere TLS-Verbindungen erlauben/verweigern (Verifizierung überspringen) |
 
 ### Zugriff prüfen
 
@@ -321,6 +376,7 @@ Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 | Sicherheitsrichtlinie verweigert | `errors.PERMISSION_DENIED` | nein |
 | Private IP blockiert | `errors.PERMISSION_DENIED` | nein |
 | Unix-Socket verweigert | `errors.PERMISSION_DENIED` | nein |
+| Unsichere TLS verweigert | `errors.PERMISSION_DENIED` | nein |
 | Ungültige URL oder Optionen | `errors.INVALID` | nein |
 | Kein Kontext | `errors.INTERNAL` | nein |
 | Netzwerkfehler | `errors.INTERNAL` | ja |
