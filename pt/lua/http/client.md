@@ -99,6 +99,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | Streaming do corpo da resposta ao inves de buffer |
 | `max_response_body` | number | Tamanho maximo da resposta em bytes (0 = padrão) |
 | `unix_socket` | string | Conectar via caminho de socket Unix |
+| `tls` | table | Configuracao TLS por requisicao (ver [Opcoes TLS](#opcoes-tls)) |
 
 ### Parametros de Query
 
@@ -175,6 +176,59 @@ local resp, err = http_client.get(url, {timeout = 30})
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
+```
+
+### Opcoes TLS
+
+Configure opcoes TLS por requisicao para mTLS (mutual TLS) e certificados CA customizados.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `cert` | string | Certificado do cliente em formato PEM |
+| `key` | string | Chave privada do cliente em formato PEM |
+| `ca` | string | Certificado CA customizado em formato PEM |
+| `server_name` | string | Nome do servidor para verificacao SNI |
+| `insecure_skip_verify` | boolean | Pular verificacao de certificado TLS |
+
+Tanto `cert` quanto `key` devem ser fornecidos juntos para mTLS. O campo `ca` substitui o pool de certificados do sistema por um CA customizado.
+
+#### Autenticacao mTLS
+
+```lua
+local cert_pem = fs.read("/certs/client.crt")
+local key_pem = fs.read("/certs/client.key")
+
+local resp, err = http_client.get("https://secure.example.com/api", {
+    tls = {
+        cert = cert_pem,
+        key = key_pem,
+    }
+})
+```
+
+#### CA Customizado
+
+```lua
+local ca_pem = fs.read("/certs/internal-ca.crt")
+
+local resp, err = http_client.get("https://internal.example.com/api", {
+    tls = {
+        ca = ca_pem,
+        server_name = "internal.example.com",
+    }
+})
+```
+
+#### Pular Verificacao TLS
+
+Pular verificacao TLS para ambientes de desenvolvimento. Requer a permissão de segurança `http_client.insecure_tls`.
+
+```lua
+local resp, err = http_client.get("https://localhost:8443/api", {
+    tls = {
+        insecure_skip_verify = true,
+    }
+})
 ```
 
 ## Objeto Response
@@ -292,6 +346,7 @@ Requisicoes HTTP estao sujeitas a avaliação de política de segurança.
 | `http_client.request` | URL | Permitir/negar requisicoes para URLs específicas |
 | `http_client.unix_socket` | Caminho do socket | Permitir/negar conexoes Unix socket |
 | `http_client.private_ip` | Endereco IP | Permitir/negar acesso a faixas de IP privado |
+| `http_client.insecure_tls` | URL | Permitir/negar TLS inseguro (pular verificacao) |
 
 ### Verificando Acesso
 
@@ -321,6 +376,7 @@ Veja [Security Model](system/security.md) para configuração de políticas.
 | Política de segurança negou | `errors.PERMISSION_DENIED` | não |
 | IP privado bloqueado | `errors.PERMISSION_DENIED` | não |
 | Socket Unix negado | `errors.PERMISSION_DENIED` | não |
+| TLS inseguro negado | `errors.PERMISSION_DENIED` | não |
 | URL ou opções invalidas | `errors.INVALID` | não |
 | Sem contexto | `errors.INTERNAL` | não |
 | Falha de rede | `errors.INTERNAL` | sim |

@@ -99,6 +99,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | Потоковое получение тела вместо буферизации |
 | `max_response_body` | number | Макс. размер ответа в байтах (0 = по умолчанию) |
 | `unix_socket` | string | Подключение через Unix-сокет |
+| `tls` | table | Настройки TLS для запроса (см. [Параметры TLS](#параметры-tls)) |
 
 ### Query-параметры
 
@@ -175,6 +176,59 @@ local resp, err = http_client.get(url, {timeout = 30})
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
+```
+
+### Параметры TLS
+
+Настройка TLS для отдельных запросов: mTLS (взаимный TLS) и пользовательские CA-сертификаты.
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `cert` | string | Клиентский сертификат в формате PEM |
+| `key` | string | Закрытый ключ клиента в формате PEM |
+| `ca` | string | Пользовательский CA-сертификат в формате PEM |
+| `server_name` | string | Имя сервера для SNI-верификации |
+| `insecure_skip_verify` | boolean | Пропустить проверку TLS-сертификата |
+
+Для mTLS необходимо указать оба поля `cert` и `key`. Поле `ca` заменяет системный пул сертификатов пользовательским CA.
+
+#### Аутентификация mTLS
+
+```lua
+local cert_pem = fs.read("/certs/client.crt")
+local key_pem = fs.read("/certs/client.key")
+
+local resp, err = http_client.get("https://secure.example.com/api", {
+    tls = {
+        cert = cert_pem,
+        key = key_pem,
+    }
+})
+```
+
+#### Пользовательский CA
+
+```lua
+local ca_pem = fs.read("/certs/internal-ca.crt")
+
+local resp, err = http_client.get("https://internal.example.com/api", {
+    tls = {
+        ca = ca_pem,
+        server_name = "internal.example.com",
+    }
+})
+```
+
+#### Пропуск проверки TLS
+
+Пропуск TLS-верификации для сред разработки. Требует разрешение безопасности `http_client.insecure_tls`.
+
+```lua
+local resp, err = http_client.get("https://localhost:8443/api", {
+    tls = {
+        insecure_skip_verify = true,
+    }
+})
 ```
 
 ## Объект ответа
@@ -292,6 +346,7 @@ HTTP-запросы подчиняются вычислению политики
 | `http_client.request` | URL | Разрешить/запретить запросы к конкретным URL |
 | `http_client.unix_socket` | Путь сокета | Разрешить/запретить подключения через Unix-сокет |
 | `http_client.private_ip` | IP-адрес | Разрешить/запретить доступ к приватным IP-диапазонам |
+| `http_client.insecure_tls` | URL | Разрешить/запретить небезопасный TLS (пропуск верификации) |
 
 ### Проверка доступа
 
@@ -321,6 +376,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 | Запрещено политикой безопасности | `errors.PERMISSION_DENIED` | нет |
 | Приватный IP заблокирован | `errors.PERMISSION_DENIED` | нет |
 | Unix-сокет запрещён | `errors.PERMISSION_DENIED` | нет |
+| Небезопасный TLS запрещён | `errors.PERMISSION_DENIED` | нет |
 | Некорректный URL или опции | `errors.INVALID` | нет |
 | Нет контекста | `errors.INTERNAL` | нет |
 | Сетевая ошибка | `errors.INTERNAL` | да |

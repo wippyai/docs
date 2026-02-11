@@ -99,6 +99,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | Stream response body instead of buffering |
 | `max_response_body` | number | Max response size in bytes (0 = default) |
 | `unix_socket` | string | Connect via Unix socket path |
+| `tls` | table | Per-request TLS configuration (see [TLS Options](#tls-options)) |
 
 ### Query Parameters
 
@@ -175,6 +176,59 @@ local resp, err = http_client.get(url, {timeout = 30})
 local resp, err = http_client.get(url, {timeout = "30s"})
 local resp, err = http_client.get(url, {timeout = "1m30s"})
 local resp, err = http_client.get(url, {timeout = "1h"})
+```
+
+### TLS Options
+
+Configure per-request TLS settings for mTLS (mutual TLS) and custom CA certificates.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `cert` | string | Client certificate in PEM format |
+| `key` | string | Client private key in PEM format |
+| `ca` | string | Custom CA certificate in PEM format |
+| `server_name` | string | Server name for SNI verification |
+| `insecure_skip_verify` | boolean | Skip TLS certificate verification |
+
+Both `cert` and `key` must be provided together for mTLS. The `ca` field overrides the system certificate pool with a custom CA.
+
+#### mTLS Authentication
+
+```lua
+local cert_pem = fs.read("/certs/client.crt")
+local key_pem = fs.read("/certs/client.key")
+
+local resp, err = http_client.get("https://secure.example.com/api", {
+    tls = {
+        cert = cert_pem,
+        key = key_pem,
+    }
+})
+```
+
+#### Custom CA
+
+```lua
+local ca_pem = fs.read("/certs/internal-ca.crt")
+
+local resp, err = http_client.get("https://internal.example.com/api", {
+    tls = {
+        ca = ca_pem,
+        server_name = "internal.example.com",
+    }
+})
+```
+
+#### Insecure Skip Verify
+
+Skip TLS verification for development environments. Requires the `http_client.insecure_tls` security permission.
+
+```lua
+local resp, err = http_client.get("https://localhost:8443/api", {
+    tls = {
+        insecure_skip_verify = true,
+    }
+})
 ```
 
 ## Response Object
@@ -292,6 +346,7 @@ HTTP requests are subject to security policy evaluation.
 | `http_client.request` | URL | Allow/deny requests to specific URLs |
 | `http_client.unix_socket` | Socket path | Allow/deny Unix socket connections |
 | `http_client.private_ip` | IP address | Allow/deny access to private IP ranges |
+| `http_client.insecure_tls` | URL | Allow/deny insecure TLS (skip verification) |
 
 ### Checking Access
 
@@ -321,6 +376,7 @@ See [Security Model](system/security.md) for policy configuration.
 | Security policy denied | `errors.PERMISSION_DENIED` | no |
 | Private IP blocked | `errors.PERMISSION_DENIED` | no |
 | Unix socket denied | `errors.PERMISSION_DENIED` | no |
+| Insecure TLS denied | `errors.PERMISSION_DENIED` | no |
 | Invalid URL or options | `errors.INVALID` | no |
 | No context | `errors.INTERNAL` | no |
 | Network failure | `errors.INTERNAL` | yes |
