@@ -136,6 +136,8 @@
     "title": "フレームワーク",
     "children": [
       {"title": "概要", "path": "framework/overview"},
+      {"title": "LLM", "path": "framework/llm"},
+      {"title": "エージェント", "path": "framework/agents"},
       {"title": "テスト", "path": "framework/testing"}
     ]
   },
@@ -185,7 +187,8 @@
       {"title": "スーパービジョン", "path": "tutorials/supervision"},
       {"title": "タスクキュー", "path": "tutorials/task-queue"},
       {"title": "認証", "path": "tutorials/auth"},
-      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
+      {"title": "LLM Agent", "path": "tutorials/llm-agent"}
     ]
   },
   {

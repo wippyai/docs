@@ -136,6 +136,8 @@
     "title": "Framework",
     "children": [
       {"title": "Visao Geral", "path": "framework/overview"},
+      {"title": "LLM", "path": "framework/llm"},
+      {"title": "Agents", "path": "framework/agents"},
       {"title": "Testes", "path": "framework/testing"}
     ]
   },
@@ -185,7 +187,8 @@
       {"title": "Supervisao", "path": "tutorials/supervision"},
       {"title": "Fila de Tarefas", "path": "tutorials/task-queue"},
       {"title": "Autenticacao", "path": "tutorials/auth"},
-      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
+      {"title": "LLM Agent", "path": "tutorials/llm-agent"}
     ]
   },
   {

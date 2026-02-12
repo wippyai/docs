@@ -136,6 +136,8 @@
     "title": "프레임워크",
     "children": [
       {"title": "개요", "path": "framework/overview"},
+      {"title": "LLM", "path": "framework/llm"},
+      {"title": "에이전트", "path": "framework/agents"},
       {"title": "테스트", "path": "framework/testing"}
     ]
   },
@@ -185,7 +187,8 @@
       {"title": "슈퍼비전", "path": "tutorials/supervision"},
       {"title": "태스크 큐", "path": "tutorials/task-queue"},
       {"title": "인증", "path": "tutorials/auth"},
-      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
+      {"title": "LLM Agent", "path": "tutorials/llm-agent"}
     ]
   },
   {
