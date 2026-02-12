@@ -58,29 +58,6 @@ lsp:
   http_allow_origin: "*"
 ```
 
-## Configuracion de VS Code
-
-### Usando la Extension Wippy Lua
-
-1. Instala la extension `wippy-lua` desde el marketplace de VS Code (o compilala desde el codigo fuente)
-2. Inicia el runtime de Wippy con LSP habilitado:
-
-```bash
-wippy run
-```
-
-3. La extension se conecta a `127.0.0.1:7777` por defecto.
-
-### Ajustes de la Extension
-
-| Ajuste | Por Defecto | Descripcion |
-|--------|-------------|-------------|
-| `wippyLua.lsp.enabled` | true | Habilitar cliente LSP |
-| `wippyLua.lsp.host` | 127.0.0.1 | Host del servidor LSP |
-| `wippyLua.lsp.port` | 7777 | Puerto TCP |
-| `wippyLua.lsp.httpPort` | 7778 | Puerto de transporte HTTP |
-| `wippyLua.lsp.mode` | tcp | Modo de conexion (tcp, http) |
-
 ## Esquema de URI de Documentos
 
 El servidor LSP usa el esquema de URI `wippy://` para identificar entradas del registro:
