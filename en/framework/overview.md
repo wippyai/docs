@@ -55,6 +55,8 @@ The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namesp
 
 | Module | Description |
 |--------|-------------|
+| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
+| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
 | `wippy/test` | BDD-style testing framework with assertions and mocking |
 | `wippy/terminal` | Terminal UI components |
 

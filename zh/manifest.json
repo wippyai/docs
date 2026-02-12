@@ -136,6 +136,8 @@
     "title": "框架",
     "children": [
       {"title": "概述", "path": "framework/overview"},
+      {"title": "LLM", "path": "framework/llm"},
+      {"title": "代理", "path": "framework/agents"},
       {"title": "测试", "path": "framework/testing"}
     ]
   },
@@ -185,7 +187,8 @@
       {"title": "进程监管", "path": "tutorials/supervision"},
       {"title": "任务队列", "path": "tutorials/task-queue"},
       {"title": "身份认证", "path": "tutorials/auth"},
-      {"title": "Rust WASM", "path": "tutorials/rust-wasm"}
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
+      {"title": "LLM Agent", "path": "tutorials/llm-agent"}
     ]
   },
   {
