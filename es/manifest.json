@@ -188,7 +188,8 @@
       {"title": "Cola de Tareas", "path": "tutorials/task-queue"},
       {"title": "Autenticacion", "path": "tutorials/auth"},
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
-      {"title": "LLM Agent", "path": "tutorials/llm-agent"}
+      {"title": "LLM Agent", "path": "tutorials/llm-agent"},
+      {"title": "Micro AGI", "path": "tutorials/micro-agi"}
     ]
   },
   {
