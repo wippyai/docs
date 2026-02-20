@@ -46,7 +46,7 @@ sequenceDiagram
     A->>A: execute doc_search
     A->>L: step(conversation + tool result)
     L->>A: tool_call: create_tool(name, source, schema)
-    A->>R: evaluate ns deny policies + changeset create
+    A->>R: evaluate deny policies + changeset create
     R->>A: ok
     A->>L: step(conversation + tool result)
     L->>A: tool_call: load_tool("app.generated:current_time")
@@ -139,10 +139,9 @@ entries:
 
 ### Security Policies
 
-Two `security.policy` entries use namespace-based deny to restrict where the agent can write:
+Two `security.policy` entries restrict which namespaces the agent can write to:
 
 ```yaml
-  # deny tool writes to core namespace
   - name: deny_core_ns
     kind: security.policy
     policy:
@@ -152,7 +151,6 @@ Two `security.policy` entries use namespace-based deny to restrict where the age
     groups:
       - agent_security
 
-  # deny tool writes to tools namespace
   - name: deny_tools_ns
     kind: security.policy
     policy:
@@ -172,7 +170,6 @@ See [Security Model](../system/security.md) for details on policy evaluation.
 Two models serve different purposes:
 
 ```yaml
-  # reasoning model for the agent
   - name: gpt-5.1
     kind: registry.entry
     meta:
@@ -195,7 +192,6 @@ Two models serve different purposes:
         provider_model: gpt-5.1
     thinking_effort: 10
 
-  # cheap model for context compression
   - name: gpt-4.1-nano
     kind: registry.entry
     meta:
@@ -270,7 +266,7 @@ The prompt is deliberately terse. Key rules:
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command (root level). Security enforcement happens inside the tools themselves — `create_tool` loads the `agent_security` policy group and evaluates it before writing.
+The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
 
 Imports:
 - `prompt` — conversation builder
@@ -352,9 +348,9 @@ return { handler = handler }
 
 ### create_tool
 
-The core of self-modification. Validates input, evaluates namespace deny policies, and creates a `function.lua` entry in the registry with inline Lua source.
+The core of self-modification. Evaluates namespace deny policies and creates a `function.lua` entry in the registry with inline Lua source.
 
-**Source validation** — code-level checks that policies cannot enforce:
+The `modules` field on the generated entry controls what the tool can access. Modules not listed simply do not exist for that entry — there is nothing to block or scan for.
 
 ```lua
 local registry = require("registry")
@@ -369,15 +365,6 @@ local ALLOWED_MODULES = {
     time = true, json = true, http_client = true, expr = true,
     text = true, base64 = true, yaml = true, crypto = true,
     hash = true, uuid = true, url = true,
-}
-
-local BLOCKED_PATTERNS = {
-    "os%.execute", "os%.remove", "os%.rename",
-    "io%.open", "io%.popen",
-    "loadfile", "dofile",
-    "debug%.", "package%.",
-    "rawset", "rawget",
-    "setfenv", "getfenv",
 }
 ```
 
@@ -396,7 +383,7 @@ if result == "deny" then
 end
 ```
 
-**Registry write** — the entry is written with source in `data.source`:
+**Registry write** — the entry is written with source in `data.source` and only the allowed modules:
 
 ```lua
 local entry = {
@@ -539,21 +526,18 @@ session.conversation:add_system("Conversation summary:\n\n" .. summary)
 
 ## Security Model
 
-The agent is secured at two levels: declarative namespace deny policies and code-level source validation.
+The agent is secured through namespace deny policies and module-level access control.
 
 ```mermaid
 flowchart TD
     LLM[LLM generates tool] --> P{Namespace Deny Policies}
     P -->|scope:evaluate| Check{Target namespace?}
-    Check -->|app.generated:*| OK[No deny match - proceed]
-    Check -->|app:* or app.tools:*| Deny1[Policy Denied]
+    Check -->|app.generated:*| OK[No deny match]
+    Check -->|app:* or app.tools:*| Deny[Policy Denied]
 
-    OK --> V{Source Validation}
-    V -->|module check| M[allowlist only]
-    V -->|pattern check| B[no os.execute, io.open, etc.]
-    V -->|size check| S[max 16KB]
-    M & B & S -->|all pass| R[Registry write]
-    V -->|any fail| Deny2[Validation Error]
+    OK --> M{Module Allowlist}
+    M -->|only granted modules| R[Registry write]
+    M -->|unknown module requested| Err[Rejected]
 ```
 
 ### Namespace Deny Policies
@@ -570,14 +554,15 @@ This prevents the agent from:
 - Overwriting its built-in tools (`app.tools:*`)
 - Changing infrastructure entries (`app:processes`, etc.)
 
-Source validation additionally blocks `os.execute`, `io.open`, `debug.*`, `package.*`, and enforces a module allowlist and 16KB size limit.
+### Module Access Control
+
+Generated tools declare their `modules` in `data.modules`. Only modules from the `ALLOWED_MODULES` set are permitted. The Wippy runtime enforces this at the module level — if a module is not listed on the entry, `require()` returns an error. There is no source code scanning because there is nothing to scan for: modules that are not granted do not exist in the execution context.
 
 ## Run
 
 Run directly from hub:
 
 ```bash
-export OPENAI_API_KEY=sk-...
 wippy run wippy/micro-agi agent
 ```
 
@@ -585,7 +570,6 @@ Or clone and run locally:
 
 ```bash
 cd micro-agi
-export OPENAI_API_KEY=sk-...
 wippy init && wippy update
 wippy run agent
 ```
