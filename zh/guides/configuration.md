@@ -267,8 +267,6 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-参见：[集群指南](guides/cluster.md)
-
 ## 环境变量
 
 | 变量 | 说明 |
@@ -279,5 +277,4 @@ cluster:
 
 - [CLI 参考](guides/cli.md) - 命令行选项
 - [入口类型](guides/entry-kinds.md) - 所有入口类型
-- [集群指南](guides/cluster.md) - 多节点配置
 - [可观测性指南](guides/observability.md) - 日志、指标、追踪

@@ -267,8 +267,6 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-참조: [클러스터 가이드](guides/cluster.md)
-
 ## 환경 변수
 
 | 변수 | 설명 |
@@ -279,5 +277,4 @@ cluster:
 
 - [CLI 레퍼런스](guides/cli.md) - 커맨드라인 옵션
 - [엔트리 종류](guides/entry-kinds.md) - 모든 엔트리 타입
-- [클러스터 가이드](guides/cluster.md) - 멀티 노드 설정
 - [관측성 가이드](guides/observability.md) - 로깅, 메트릭, 트레이싱

@@ -267,8 +267,6 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-Veja: [Guia de Cluster](guides/cluster.md)
-
 ## Variáveis de Ambiente
 
 | Variável | Descrição |
@@ -279,5 +277,4 @@ Veja: [Guia de Cluster](guides/cluster.md)
 
 - [Referência do CLI](guides/cli.md) - Opções de linha de comando
 - [Tipos de Entradas](guides/entry-kinds.md) - Todos os tipos de entradas
-- [Guia de Cluster](guides/cluster.md) - Configuração multi-nó
 - [Guia de Observabilidade](guides/observability.md) - Logging, métricas, tracing

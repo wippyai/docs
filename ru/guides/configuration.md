@@ -267,8 +267,6 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
-См.: [Кластеризация](guides/cluster.md)
-
 ## Переменные окружения
 
 | Переменная | Описание |
@@ -279,5 +277,4 @@ cluster:
 
 - [Справочник CLI](guides/cli.md) — параметры командной строки
 - [Типы записей](guides/entry-kinds.md) — все типы записей
-- [Кластеризация](guides/cluster.md) — многонодовая настройка
 - [Наблюдаемость](guides/observability.md) — логирование, метрики, трассировка

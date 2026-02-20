@@ -200,6 +200,7 @@
   {
     "title": "Internals",
     "children": [
+      {"title": "Arquitetura", "path": "internals/architecture"},
       {"title": "Registry", "path": "internals/registry"},
       {"title": "Scheduler", "path": "internals/scheduler"},
       {"title": "Dispatch", "path": "internals/dispatch"},
