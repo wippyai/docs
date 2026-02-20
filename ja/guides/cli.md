@@ -1,77 +1,77 @@
-# CLIリファレンス
+# CLI Reference
 
-Wippyランタイムのコマンドラインインターフェース。
+Command-line interface for the Wippy runtime.
 
-## グローバルフラグ
+## Global Flags
 
-すべてのコマンドで使用可能：
+Available on all commands:
 
-| フラグ | 短縮形 | 説明 |
-|--------|--------|------|
-| `--config` | | 設定ファイル（デフォルト: .wippy.yaml） |
-| `--verbose` | `-v` | デバッグログを有効化 |
-| `--very-verbose` | | スタックトレース付きデバッグ |
-| `--console` | `-c` | カラフルなコンソールログ |
-| `--silent` | `-s` | コンソールログを無効化 |
-| `--event-streams` | `-e` | ログをイベントバスにストリーム |
-| `--profiler` | `-p` | localhost:6060でpprofを有効化 |
-| `--memory-limit` | `-m` | メモリ制限（例: 1G, 512M） |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--config` | | Config file (default: .wippy.yaml) |
+| `--verbose` | `-v` | Enable debug logging |
+| `--very-verbose` | | Debug with stack traces |
+| `--console` | `-c` | Colorful console logging |
+| `--silent` | `-s` | Disable console logging |
+| `--event-streams` | `-e` | Stream logs to event bus |
+| `--profiler` | `-p` | Enable pprof on localhost:6060 |
+| `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
 
-メモリ制限の優先順位: `--memory-limit`フラグ > `GOMEMLIMIT`環境変数 > 1GBデフォルト。
+Memory limit priority: `--memory-limit` flag > `GOMEMLIMIT` env > 1GB default.
 
 ## wippy init
 
-新しいロックファイルを作成。
+Create a new lock file.
 
 ```bash
 wippy init
 wippy init --src-dir ./src --modules-dir .wippy
 ```
 
-| フラグ | 短縮形 | デフォルト | 説明 |
-|--------|--------|------------|------|
-| `--src-dir` | `-d` | ./src | ソースディレクトリ |
-| `--modules-dir` | | .wippy | モジュールディレクトリ |
-| `--lock-file` | `-l` | wippy.lock | ロックファイルパス |
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--src-dir` | `-d` | ./src | Source directory |
+| `--modules-dir` | | .wippy | Modules directory |
+| `--lock-file` | `-l` | wippy.lock | Lock file path |
 
 ## wippy run
 
-ランタイムを起動またはコマンドを実行。
+Start the runtime or execute a command.
 
 ```bash
-wippy run                                    # ランタイムを起動
-wippy run list                               # 利用可能なコマンドを一覧表示
-wippy run test                               # テストを実行
-wippy run snapshot.wapp                      # パックファイルから実行
-wippy run acme/http                          # モジュールを実行
-wippy run --exec app:processes/app:worker   # 単一プロセスを実行
+wippy run                                    # Start runtime
+wippy run list                               # List available commands
+wippy run test                               # Run tests
+wippy run snapshot.wapp                      # Run from pack file
+wippy run acme/http                          # Run module
+wippy run --exec app:processes/app:worker   # Execute single process
 ```
 
-| フラグ | 短縮形 | 説明 |
-|--------|--------|------|
-| `--override` | `-o` | エントリ値をオーバーライド（namespace:entry:field=value） |
-| `--exec` | `-x` | プロセスを実行して終了（host/namespace:entry） |
-| `--host` | | 実行用ホスト |
-| `--registry` | | レジストリURL |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--override` | `-o` | Override entry values (namespace:entry:field=value) |
+| `--exec` | `-x` | Execute process and exit (host/namespace:entry) |
+| `--host` | | Host for execution |
+| `--registry` | | Registry URL |
 
 ## wippy lint
 
-Luaコードの型エラーと警告をチェック。
+Check Lua code for type errors and warnings.
 
 ```bash
 wippy lint
 wippy lint --level warning
 ```
 
-すべてのLuaエントリを検証: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`。
+Validates all Lua entries: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
 
-| フラグ | 説明 |
-|--------|------|
-| `--level` | レポートする最小重大度レベル |
+| Flag | Description |
+|------|-------------|
+| `--level` | Minimum severity level to report |
 
 ## wippy add
 
-モジュール依存関係を追加。
+Add a module dependency.
 
 ```bash
 wippy add acme/http
@@ -79,48 +79,46 @@ wippy add acme/http@1.2.3
 wippy add acme/http@latest
 ```
 
-| フラグ | 短縮形 | デフォルト | 説明 |
-|--------|--------|------------|------|
-| `--lock-file` | `-l` | wippy.lock | ロックファイルパス |
-| `--registry` | | | レジストリURL |
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | wippy.lock | Lock file path |
+| `--registry` | | | Registry URL |
 
 ## wippy install
 
-ロックファイルから依存関係をインストール。
+Install dependencies from lock file.
 
 ```bash
 wippy install
 wippy install --force
-wippy install --repair
 ```
 
-| フラグ | 短縮形 | 説明 |
-|--------|--------|------|
-| `--lock-file` | `-l` | ロックファイルパス |
-| `--force` | | キャッシュをバイパスし、常にダウンロード |
-| `--repair` | | ハッシュを検証し、不一致の場合は再ダウンロード |
-| `--registry` | | レジストリURL |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--lock-file` | `-l` | Lock file path |
+| `--force` | | Bypass cache, always download |
+| `--registry` | | Registry URL |
 
 ## wippy update
 
-依存関係を更新しロックファイルを再生成。
+Update dependencies and regenerate lock file.
 
 ```bash
-wippy update                      # すべて更新
-wippy update acme/http            # 特定のモジュールを更新
-wippy update acme/http demo/sql   # 複数を更新
+wippy update                      # Update all
+wippy update acme/http            # Update specific module
+wippy update acme/http demo/sql   # Update multiple
 ```
 
-| フラグ | 短縮形 | デフォルト | 説明 |
-|--------|--------|------------|------|
-| `--lock-file` | `-l` | wippy.lock | ロックファイルパス |
-| `--src-dir` | `-d` | . | ソースディレクトリ |
-| `--modules-dir` | | .wippy | モジュールディレクトリ |
-| `--registry` | | | レジストリURL |
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | wippy.lock | Lock file path |
+| `--src-dir` | `-d` | . | Source directory |
+| `--modules-dir` | | .wippy | Modules directory |
+| `--registry` | | | Registry URL |
 
 ## wippy pack
 
-スナップショットパック（.wappファイル）を作成。
+Create a snapshot pack (.wapp file).
 
 ```bash
 wippy pack snapshot.wapp
@@ -128,21 +126,21 @@ wippy pack release.wapp --description "Release 1.0"
 wippy pack app.wapp --embed app:assets --bytecode **
 ```
 
-| フラグ | 短縮形 | 説明 |
-|--------|--------|------|
-| `--lock-file` | `-l` | ロックファイルパス |
-| `--description` | `-d` | パックの説明 |
-| `--tags` | `-t` | パックタグ（カンマ区切り） |
-| `--meta` | | カスタムメタデータ（key=value） |
-| `--embed` | | fs.directoryエントリを埋め込み（パターン） |
-| `--list` | | fs.directoryエントリを一覧表示（dry-run） |
-| `--exclude-ns` | | 名前空間を除外（パターン） |
-| `--exclude` | | エントリを除外（パターン） |
-| `--bytecode` | | Luaをバイトコードにコンパイル（**ですべて） |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--lock-file` | `-l` | Lock file path |
+| `--description` | `-d` | Pack description |
+| `--tags` | `-t` | Pack tags (comma-separated) |
+| `--meta` | | Custom metadata (key=value) |
+| `--embed` | | Embed fs.directory entries (patterns) |
+| `--list` | | List fs.directory entries (dry-run) |
+| `--exclude-ns` | | Exclude namespaces (patterns) |
+| `--exclude` | | Exclude entries (patterns) |
+| `--bytecode` | | Compile Lua to bytecode (** for all) |
 
 ## wippy publish
 
-ハブにモジュールを公開。
+Publish module to the hub.
 
 ```bash
 wippy publish
@@ -150,19 +148,22 @@ wippy publish --version 1.0.0
 wippy publish --dry-run
 ```
 
-カレントディレクトリの`wippy.yaml`から読み込み。
+Reads from `wippy.yaml` in current directory.
 
-| フラグ | 説明 |
-|--------|------|
-| `--version` | 公開するバージョン |
-| `--dry-run` | 公開せずに検証 |
-| `--label` | バージョンラベル |
-| `--release-notes` | リリースノート |
-| `--registry` | レジストリURL |
+| Flag | Description |
+|------|-------------|
+| `--version` | Version to publish |
+| `--dry-run` | Validate without publishing |
+| `--label` | Publish as mutable label instead of version |
+| `--release-notes` | Release notes |
+| `--protected` | Mark version as protected |
+| `--embed` | Embed fs.directory entries by id or name |
+| `--config` | Path to directory containing wippy.yaml (default: .) |
+| `--registry` | Registry URL |
 
 ## wippy search
 
-ハブでモジュールを検索。
+Search for modules in the hub.
 
 ```bash
 wippy search http
@@ -170,15 +171,15 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| フラグ | 説明 |
-|--------|------|
-| `--json` | JSONとして出力 |
-| `--limit` | 最大結果数 |
-| `--registry` | レジストリURL |
+| Flag | Description |
+|------|-------------|
+| `--json` | Output as JSON |
+| `--limit` | Maximum results |
+| `--registry` | Registry URL |
 
 ## wippy auth
 
-レジストリ認証を管理。
+Manage registry authentication.
 
 ### wippy auth login
 
@@ -187,11 +188,11 @@ wippy auth login
 wippy auth login --token YOUR_TOKEN
 ```
 
-| フラグ | 説明 |
-|--------|------|
-| `--token` | APIトークン |
-| `--registry` | レジストリURL |
-| `--local` | 認証情報をローカルに保存 |
+| Flag | Description |
+|------|-------------|
+| `--token` | API token |
+| `--registry` | Registry URL |
+| `--local` | Store credentials locally |
 
 ### wippy auth logout
 
@@ -199,10 +200,10 @@ wippy auth login --token YOUR_TOKEN
 wippy auth logout
 ```
 
-| フラグ | 説明 |
-|--------|------|
-| `--registry` | レジストリURL |
-| `--local` | ローカル認証情報を削除 |
+| Flag | Description |
+|------|-------------|
+| `--registry` | Registry URL |
+| `--local` | Remove local credentials |
 
 ### wippy auth status
 
@@ -213,7 +214,7 @@ wippy auth status --json
 
 ## wippy registry
 
-レジストリエントリをクエリおよび検査。
+Query and inspect registry entries.
 
 ### wippy registry list
 
@@ -223,15 +224,15 @@ wippy registry list --kind function.lua
 wippy registry list --ns app --json
 ```
 
-| フラグ | 短縮形 | 説明 |
-|--------|--------|------|
-| `--kind` | `-k` | 種別でフィルタ |
-| `--ns` | `-n` | 名前空間でフィルタ |
-| `--name` | | 名前でフィルタ |
-| `--meta` | | メタデータでフィルタ |
-| `--json` | | JSONとして出力 |
-| `--yaml` | | YAMLとして出力 |
-| `--lock-file` | `-l` | ロックファイルパス |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--kind` | `-k` | Filter by kind |
+| `--ns` | `-n` | Filter by namespace |
+| `--name` | | Filter by name |
+| `--meta` | | Filter by metadata |
+| `--json` | | Output as JSON |
+| `--yaml` | | Output as YAML |
+| `--lock-file` | `-l` | Lock file path |
 
 ### wippy registry show
 
@@ -240,96 +241,134 @@ wippy registry show app:http:handler
 wippy registry show app:config --yaml
 ```
 
-| フラグ | 短縮形 | 説明 |
-|--------|--------|------|
-| `--field` | `-f` | 特定のフィールドを表示 |
-| `--json` | | JSONとして出力 |
-| `--yaml` | | YAMLとして出力 |
-| `--raw` | | 生の出力 |
-| `--lock-file` | `-l` | ロックファイルパス |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--field` | `-f` | Show specific field |
+| `--json` | | Output as JSON |
+| `--yaml` | | Output as YAML |
+| `--raw` | | Raw output |
+| `--lock-file` | `-l` | Lock file path |
 
 ## wippy version
 
-バージョン情報を表示。
+Print version information.
 
 ```bash
 wippy version
 wippy version --short
 ```
 
-## 例
+## Custom Commands
 
-### 開発ワークフロー
+Any `process.lua` or `process.wasm` entry can be registered as a named command by adding `command` metadata:
+
+```yaml
+entries:
+  - name: test_runner
+    kind: process.lua
+    meta:
+      command:
+        name: test
+        short: Run application tests
+    source: file://runner.lua
+    method: main
+    modules:
+      - io
+      - registry
+      - funcs
+```
+
+Run it with:
 
 ```bash
-# プロジェクトを初期化
+wippy run test
+```
+
+List all available commands:
+
+```bash
+wippy run list
+```
+
+### Command Metadata Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Command name used with `wippy run <name>` |
+| `short` | No | Short description shown in `wippy run list` |
+
+Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process.
+
+## Examples
+
+### Development Workflow
+
+```bash
+# Initialize project
 wippy init
 wippy add wippy/http wippy/sql
 wippy install
 
-# エラーをチェック
+# Check for errors
 wippy lint
 
-# デバッグ出力で実行
+# Run with debug output
 wippy run -c -v
 
-# ローカル開発用に設定をオーバーライド
+# Override config for local dev
 wippy run -o app:db:host=localhost -o app:db:port=5432
 ```
 
-### 本番デプロイメント
+### Production Deployment
 
 ```bash
-# バイトコード付きリリースパックを作成
+# Create release pack with bytecode
 wippy pack release.wapp --bytecode ** --exclude-ns test.**
 
-# メモリ制限付きでパックから実行
+# Run from pack with memory limit
 wippy run release.wapp -m 2G
 ```
 
-### デバッグ
+### Debugging
 
 ```bash
-# 単一プロセスを実行
+# Execute single process
 wippy run --exec app:processes/app:worker
 
-# プロファイラを有効にして実行
+# With profiler enabled
 wippy run -p -v
-# その後: go tool pprof http://localhost:6060/debug/pprof/heap
+# Then: go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 
-### 依存関係管理
+### Dependency Management
 
 ```bash
-# 新しい依存関係を追加
+# Add new dependency
 wippy add acme/http@latest
 
-# 破損したモジュールを修復
-wippy install --repair
-
-# 強制再ダウンロード
+# Force re-download
 wippy install --force
 
-# 特定のモジュールを更新
+# Update specific module
 wippy update acme/http
 ```
 
-### パブリッシング
+### Publishing
 
 ```bash
-# ハブにログイン
+# Login to hub
 wippy auth login
 
-# モジュールを検証
+# Validate module
 wippy publish --dry-run
 
-# 公開
+# Publish
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## 設定ファイル
+## Configuration File
 
-永続的な設定のために`.wippy.yaml`を作成：
+Create `.wippy.yaml` for persistent settings:
 
 ```yaml
 logger:
@@ -349,7 +388,7 @@ override:
   app:db:host: "localhost"
 ```
 
-## 関連項目
+## See Also
 
-- [設定](guides/configuration.md) - 設定ファイルリファレンス
-- [可観測性](guides/observability.md) - モニタリングとロギング
+- [Configuration](guides/configuration.md) - Config file reference
+- [Observability](guides/observability.md) - Monitoring and logging

@@ -1,27 +1,27 @@
-# モジュールのパブリッシング
+# Publishing Modules
 
-Wippy Hubで再利用可能なコードを共有します。
+Share reusable code on the Wippy Hub.
 
-## 前提条件
+## Prerequisites
 
-1. [hub.wippy.ai](https://hub.wippy.ai)でアカウントを作成
-2. 組織を作成するか、既存の組織に参加
-3. 組織の下にモジュール名を登録
+1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
+2. Create an organization or join one
+3. Register your module name under your organization
 
-## モジュール構造
+## Module Structure
 
 ```
 mymodule/
-├── wippy.yaml      # モジュールマニフェスト
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # エントリ定義
-│   └── *.lua       # ソースファイル
-└── README.md       # ドキュメント（オプション）
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-モジュールマニフェスト：
+Module manifest:
 
 ```yaml
 organization: acme
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| フィールド | 必須 | 説明 |
-|-----------|------|------|
-| `organization` | はい | ハブ上の組織名 |
-| `module` | はい | モジュール名 |
-| `description` | はい | 短い説明 |
-| `license` | いいえ | SPDX識別子（MIT, Apache-2.0） |
-| `repository` | いいえ | ソースリポジトリURL |
-| `homepage` | いいえ | プロジェクトホームページ |
-| `keywords` | いいえ | 検索キーワード |
+| Field | Required | Description |
+|-------|----------|-------------|
+| `organization` | Yes | Your org name on the hub |
+| `module` | Yes | Module name |
+| `description` | Yes | Short description |
+| `license` | No | SPDX identifier (MIT, Apache-2.0) |
+| `repository` | No | Source repository URL |
+| `homepage` | No | Project homepage |
+| `keywords` | No | Search keywords |
 
-## エントリ定義
+## Entry Definitions
 
-エントリは`_index.yaml`で定義します：
+Entries are defined in `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -68,9 +68,9 @@ entries:
       - json
 ```
 
-## 依存関係
+## Dependencies
 
-他のモジュールへの依存関係を宣言：
+Declare dependencies on other modules:
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-バージョン制約：
+Version constraints:
 
-| 制約 | 意味 |
-|------|------|
-| `*` | 任意のバージョン |
-| `1.0.0` | 正確なバージョン |
-| `>=1.0.0` | 最小バージョン |
-| `^1.0.0` | 互換性あり（同じメジャー） |
+| Constraint | Meaning |
+|------------|---------|
+| `*` | Any version |
+| `1.0.0` | Exact version |
+| `>=1.0.0` | Minimum version |
+| `^1.0.0` | Compatible (same major) |
 
-## 要件
+## Requirements
 
-コンシューマが提供する必要がある設定を定義：
+Define configuration that consumers must provide:
 
 ```yaml
 entries:
@@ -107,19 +107,19 @@ entries:
     default: "https://api.example.com"
 ```
 
-ターゲットは値が注入される場所を指定：
-- `entry` - 設定するフルエントリID
-- `path` - 値注入用のJSONPath
+Targets specify where the value is injected:
+- `entry` - Full entry ID to configure
+- `path` - JSONPath for value injection
 
-コンシューマはオーバーライドで設定：
+Consumers configure via override:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://custom.api.com
 ```
 
-## インポート
+## Imports
 
-他のエントリを参照：
+Reference other entries:
 
 ```yaml
 - name: handler
@@ -128,21 +128,21 @@ wippy run -o acme.http:api_endpoint=https://custom.api.com
   modules:
     - json
   imports:
-    client: acme.http:client           # 同じ名前空間
-    utils: acme.utils:helpers          # 異なる名前空間
-    base_registry: :registry           # 組み込み
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
-Luaで：
+In Lua:
 
 ```lua
 local client = require("client")
 local utils = require("utils")
 ```
 
-## コントラクト
+## Contracts
 
-パブリックインターフェースを定義：
+Define public interfaces:
 
 ```yaml
 - name: http_contract
@@ -164,15 +164,15 @@ local utils = require("utils")
         post: acme.http:post_handler
 ```
 
-## パブリッシングワークフロー
+## Publishing Workflow
 
-### 1. 認証
+### 1. Authenticate
 
 ```bash
 wippy auth login
 ```
 
-### 2. 準備
+### 2. Prepare
 
 ```bash
 wippy init
@@ -180,27 +180,38 @@ wippy update
 wippy lint
 ```
 
-### 3. 検証
+### 3. Validate
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. 公開
+### 4. Publish
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-リリースノート付き：
+With release notes:
 
 ```bash
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## 公開されたモジュールの使用
+### Embedding Static Files
 
-### 依存関係の追加
+Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+
+```bash
+wippy publish --version 1.0.0 --embed app:public_files
+wippy publish --version 1.0.0 --embed app:assets,app:templates
+```
+
+The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+
+## Using Published Modules
+
+### Add Dependency
 
 ```bash
 wippy add acme/http-utils
@@ -208,22 +219,22 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### 要件の設定
+### Configure Requirements
 
-実行時に値をオーバーライド：
+Override values at runtime:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://my.api.com
 ```
 
-または`.wippy.yaml`で：
+Or in `.wippy.yaml`:
 
 ```yaml
 override:
   acme.http:api_endpoint: "https://my.api.com"
 ```
 
-### コードでのインポート
+### Import in Your Code
 
 ```yaml
 # your src/_index.yaml
@@ -240,7 +251,7 @@ entries:
       http: acme.http:client
 ```
 
-## 完全な例
+## Complete Example
 
 **wippy.yaml:**
 ```yaml
@@ -313,15 +324,15 @@ end
 return cache
 ```
 
-公開：
+Publish:
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## 関連項目
+## See Also
 
-- [CLIリファレンス](guides/cli.md)
-- [エントリ種別](guides/entry-kinds.md)
-- [設定](guides/configuration.md)
+- [CLI Reference](guides/cli.md)
+- [Entry Kinds](guides/entry-kinds.md)
+- [Configuration](guides/configuration.md)

@@ -1,32 +1,32 @@
-# 모듈 퍼블리싱
+# Publishing Modules
 
-Wippy Hub에서 재사용 가능한 코드를 공유하세요.
+Share reusable code on the Wippy Hub.
 
-## 사전 요구사항
+## Prerequisites
 
-1. [hub.wippy.ai](https://hub.wippy.ai)에서 계정 생성
-2. 조직 생성 또는 가입
-3. 조직 아래에 모듈 이름 등록
+1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
+2. Create an organization or join one
+3. Register your module name under your organization
 
-## 모듈 구조
+## Module Structure
 
 ```
 mymodule/
-├── wippy.yaml      # 모듈 매니페스트
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # 엔트리 정의
-│   └── *.lua       # 소스 파일
-└── README.md       # 문서 (선택)
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-모듈 매니페스트:
+Module manifest:
 
 ```yaml
 organization: acme
 module: http-utils
-description: HTTP 유틸리티 및 헬퍼
+description: HTTP utilities and helpers
 license: MIT
 repository: https://github.com/acme/http-utils
 homepage: https://acme.dev
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| 필드 | 필수 | 설명 |
+| Field | Required | Description |
 |-------|----------|-------------|
-| `organization` | 예 | Hub의 조직 이름 |
-| `module` | 예 | 모듈 이름 |
-| `description` | 예 | 짧은 설명 |
-| `license` | 아니오 | SPDX 식별자 (MIT, Apache-2.0) |
-| `repository` | 아니오 | 소스 저장소 URL |
-| `homepage` | 아니오 | 프로젝트 홈페이지 |
-| `keywords` | 아니오 | 검색 키워드 |
+| `organization` | Yes | Your org name on the hub |
+| `module` | Yes | Module name |
+| `description` | Yes | Short description |
+| `license` | No | SPDX identifier (MIT, Apache-2.0) |
+| `repository` | No | Source repository URL |
+| `homepage` | No | Project homepage |
+| `keywords` | No | Search keywords |
 
-## 엔트리 정의
+## Entry Definitions
 
-엔트리는 `_index.yaml`에 정의됩니다:
+Entries are defined in `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -57,8 +57,8 @@ entries:
   - name: definition
     kind: ns.definition
     meta:
-      title: HTTP 유틸리티
-      description: HTTP 작업을 위한 헬퍼
+      title: HTTP Utilities
+      description: Helpers for HTTP operations
 
   - name: client
     kind: library.lua
@@ -68,58 +68,58 @@ entries:
       - json
 ```
 
-## 의존성
+## Dependencies
 
-다른 모듈에 대한 의존성 선언:
+Declare dependencies on other modules:
 
 ```yaml
 entries:
   - name: __dependency.wippy.test
     kind: ns.dependency
     meta:
-      description: 테스팅 프레임워크
+      description: Testing framework
     component: wippy/test
     version: ">=0.3.0"
 ```
 
-버전 제약:
+Version constraints:
 
-| 제약 | 의미 |
+| Constraint | Meaning |
 |------------|---------|
-| `*` | 모든 버전 |
-| `1.0.0` | 정확한 버전 |
-| `>=1.0.0` | 최소 버전 |
-| `^1.0.0` | 호환 (같은 메이저) |
+| `*` | Any version |
+| `1.0.0` | Exact version |
+| `>=1.0.0` | Minimum version |
+| `^1.0.0` | Compatible (same major) |
 
-## 요구사항
+## Requirements
 
-소비자가 제공해야 하는 설정 정의:
+Define configuration that consumers must provide:
 
 ```yaml
 entries:
   - name: api_endpoint
     kind: ns.requirement
     meta:
-      description: API 엔드포인트 URL
+      description: API endpoint URL
     targets:
       - entry: acme.http:client
         path: ".meta.endpoint"
     default: "https://api.example.com"
 ```
 
-타겟은 값이 주입되는 위치를 지정합니다:
-- `entry` - 설정할 전체 엔트리 ID
-- `path` - 값 주입을 위한 JSONPath
+Targets specify where the value is injected:
+- `entry` - Full entry ID to configure
+- `path` - JSONPath for value injection
 
-소비자는 오버라이드로 설정합니다:
+Consumers configure via override:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://custom.api.com
 ```
 
-## 임포트
+## Imports
 
-다른 엔트리 참조:
+Reference other entries:
 
 ```yaml
 - name: handler
@@ -128,32 +128,32 @@ wippy run -o acme.http:api_endpoint=https://custom.api.com
   modules:
     - json
   imports:
-    client: acme.http:client           # 같은 네임스페이스
-    utils: acme.utils:helpers          # 다른 네임스페이스
-    base_registry: :registry           # 내장
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
-Lua에서:
+In Lua:
 
 ```lua
 local client = require("client")
 local utils = require("utils")
 ```
 
-## 계약
+## Contracts
 
-공개 인터페이스 정의:
+Define public interfaces:
 
 ```yaml
 - name: http_contract
   kind: contract.definition
   meta:
-    name: HTTP 클라이언트 계약
+    name: HTTP Client Contract
   methods:
     - name: get
-      description: GET 요청 수행
+      description: Perform GET request
     - name: post
-      description: POST 요청 수행
+      description: Perform POST request
 
 - name: http_contract_binding
   kind: contract.binding
@@ -164,15 +164,15 @@ local utils = require("utils")
         post: acme.http:post_handler
 ```
 
-## 퍼블리싱 워크플로우
+## Publishing Workflow
 
-### 1. 인증
+### 1. Authenticate
 
 ```bash
 wippy auth login
 ```
 
-### 2. 준비
+### 2. Prepare
 
 ```bash
 wippy init
@@ -180,27 +180,38 @@ wippy update
 wippy lint
 ```
 
-### 3. 검증
+### 3. Validate
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. 퍼블리시
+### 4. Publish
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-릴리스 노트 포함:
+With release notes:
 
 ```bash
-wippy publish --version 1.0.0 --release-notes "최초 릴리스"
+wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## 퍼블리시된 모듈 사용
+### Embedding Static Files
 
-### 의존성 추가
+Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+
+```bash
+wippy publish --version 1.0.0 --embed app:public_files
+wippy publish --version 1.0.0 --embed app:assets,app:templates
+```
+
+The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+
+## Using Published Modules
+
+### Add Dependency
 
 ```bash
 wippy add acme/http-utils
@@ -208,22 +219,22 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### 요구사항 설정
+### Configure Requirements
 
-런타임에 값 오버라이드:
+Override values at runtime:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://my.api.com
 ```
 
-또는 `.wippy.yaml`에서:
+Or in `.wippy.yaml`:
 
 ```yaml
 override:
   acme.http:api_endpoint: "https://my.api.com"
 ```
 
-### 코드에서 임포트
+### Import in Your Code
 
 ```yaml
 # your src/_index.yaml
@@ -240,13 +251,13 @@ entries:
       http: acme.http:client
 ```
 
-## 전체 예제
+## Complete Example
 
 **wippy.yaml:**
 ```yaml
 organization: acme
 module: cache
-description: TTL이 있는 인메모리 캐싱
+description: In-memory caching with TTL
 license: MIT
 keywords:
   - cache
@@ -262,12 +273,12 @@ entries:
   - name: definition
     kind: ns.definition
     meta:
-      title: 캐시 모듈
+      title: Cache Module
 
   - name: max_size
     kind: ns.requirement
     meta:
-      description: 최대 캐시 항목 수
+      description: Maximum cache entries
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
@@ -313,15 +324,15 @@ end
 return cache
 ```
 
-퍼블리시:
+Publish:
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## 참고
+## See Also
 
-- [CLI 참조](guides/cli.md)
-- [엔트리 종류](guides/entry-kinds.md)
-- [설정](guides/configuration.md)
+- [CLI Reference](guides/cli.md)
+- [Entry Kinds](guides/entry-kinds.md)
+- [Configuration](guides/configuration.md)

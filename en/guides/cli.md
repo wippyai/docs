@@ -154,8 +154,11 @@ Reads from `wippy.yaml` in current directory.
 |------|-------------|
 | `--version` | Version to publish |
 | `--dry-run` | Validate without publishing |
-| `--label` | Version label |
+| `--label` | Publish as mutable label instead of version |
 | `--release-notes` | Release notes |
+| `--protected` | Mark version as protected |
+| `--embed` | Embed fs.directory entries by id or name |
+| `--config` | Path to directory containing wippy.yaml (default: .) |
 | `--registry` | Registry URL |
 
 ## wippy search

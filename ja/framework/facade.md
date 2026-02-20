@@ -156,7 +156,7 @@ Pages without a `group` appear as top-level items.
 When publishing a component that includes static files (like the facade's `public/` directory), use `--embed` to include `fs.directory` entries in the package:
 
 ```bash
-wippy publish --embed public_files
+wippy publish --embed facade:public_files
 ```
 
 Without `--embed`, `fs.directory` entries are excluded from the published package. The `--embed` flag accepts entry IDs or names matching `fs.directory` entries.

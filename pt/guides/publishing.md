@@ -1,32 +1,32 @@
-# Publicando Módulos
+# Publishing Modules
 
-Compartilhe código reutilizável no Wippy Hub.
+Share reusable code on the Wippy Hub.
 
-## Pré-requisitos
+## Prerequisites
 
-1. Crie uma conta em [hub.wippy.ai](https://hub.wippy.ai)
-2. Crie uma organização ou junte-se a uma
-3. Registre o nome do seu módulo sob sua organização
+1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
+2. Create an organization or join one
+3. Register your module name under your organization
 
-## Estrutura do Módulo
+## Module Structure
 
 ```
 mymodule/
-├── wippy.yaml      # Manifesto do módulo
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # Definições de entradas
-│   └── *.lua       # Arquivos fonte
-└── README.md       # Documentação (opcional)
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-Manifesto do módulo:
+Module manifest:
 
 ```yaml
 organization: acme
 module: http-utils
-description: Utilitários e helpers HTTP
+description: HTTP utilities and helpers
 license: MIT
 repository: https://github.com/acme/http-utils
 homepage: https://acme.dev
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| Campo | Obrigatório | Descrição |
-|-------|-------------|-----------|
-| `organization` | Sim | Nome da sua org no hub |
-| `module` | Sim | Nome do módulo |
-| `description` | Sim | Descrição curta |
-| `license` | Não | Identificador SPDX (MIT, Apache-2.0) |
-| `repository` | Não | URL do repositório fonte |
-| `homepage` | Não | Homepage do projeto |
-| `keywords` | Não | Palavras-chave de busca |
+| Field | Required | Description |
+|-------|----------|-------------|
+| `organization` | Yes | Your org name on the hub |
+| `module` | Yes | Module name |
+| `description` | Yes | Short description |
+| `license` | No | SPDX identifier (MIT, Apache-2.0) |
+| `repository` | No | Source repository URL |
+| `homepage` | No | Project homepage |
+| `keywords` | No | Search keywords |
 
-## Definições de Entradas
+## Entry Definitions
 
-Entradas são definidas em `_index.yaml`:
+Entries are defined in `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -57,8 +57,8 @@ entries:
   - name: definition
     kind: ns.definition
     meta:
-      title: Utilitários HTTP
-      description: Helpers para operações HTTP
+      title: HTTP Utilities
+      description: Helpers for HTTP operations
 
   - name: client
     kind: library.lua
@@ -68,50 +68,50 @@ entries:
       - json
 ```
 
-## Dependências
+## Dependencies
 
-Declare dependências em outros módulos:
+Declare dependencies on other modules:
 
 ```yaml
 entries:
   - name: __dependency.wippy.test
     kind: ns.dependency
     meta:
-      description: Framework de testes
+      description: Testing framework
     component: wippy/test
     version: ">=0.3.0"
 ```
 
-Restrições de versão:
+Version constraints:
 
-| Restrição | Significado |
-|-----------|-------------|
-| `*` | Qualquer versão |
-| `1.0.0` | Versão exata |
-| `>=1.0.0` | Versão mínima |
-| `^1.0.0` | Compatível (mesmo major) |
+| Constraint | Meaning |
+|------------|---------|
+| `*` | Any version |
+| `1.0.0` | Exact version |
+| `>=1.0.0` | Minimum version |
+| `^1.0.0` | Compatible (same major) |
 
-## Requisitos
+## Requirements
 
-Defina configuração que consumidores devem fornecer:
+Define configuration that consumers must provide:
 
 ```yaml
 entries:
   - name: api_endpoint
     kind: ns.requirement
     meta:
-      description: URL do endpoint da API
+      description: API endpoint URL
     targets:
       - entry: acme.http:client
         path: ".meta.endpoint"
     default: "https://api.example.com"
 ```
 
-Targets especificam onde o valor é injetado:
-- `entry` - ID completo da entrada a configurar
-- `path` - JSONPath para injeção do valor
+Targets specify where the value is injected:
+- `entry` - Full entry ID to configure
+- `path` - JSONPath for value injection
 
-Consumidores configuram via override:
+Consumers configure via override:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://custom.api.com
@@ -119,7 +119,7 @@ wippy run -o acme.http:api_endpoint=https://custom.api.com
 
 ## Imports
 
-Referencie outras entradas:
+Reference other entries:
 
 ```yaml
 - name: handler
@@ -128,32 +128,32 @@ Referencie outras entradas:
   modules:
     - json
   imports:
-    client: acme.http:client           # Mesmo namespace
-    utils: acme.utils:helpers          # Namespace diferente
-    base_registry: :registry           # Embutido
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
-No Lua:
+In Lua:
 
 ```lua
 local client = require("client")
 local utils = require("utils")
 ```
 
-## Contratos
+## Contracts
 
-Defina interfaces públicas:
+Define public interfaces:
 
 ```yaml
 - name: http_contract
   kind: contract.definition
   meta:
-    name: Contrato de Cliente HTTP
+    name: HTTP Client Contract
   methods:
     - name: get
-      description: Executa requisição GET
+      description: Perform GET request
     - name: post
-      description: Executa requisição POST
+      description: Perform POST request
 
 - name: http_contract_binding
   kind: contract.binding
@@ -164,15 +164,15 @@ Defina interfaces públicas:
         post: acme.http:post_handler
 ```
 
-## Fluxo de Publicação
+## Publishing Workflow
 
-### 1. Autenticar
+### 1. Authenticate
 
 ```bash
 wippy auth login
 ```
 
-### 2. Preparar
+### 2. Prepare
 
 ```bash
 wippy init
@@ -180,27 +180,38 @@ wippy update
 wippy lint
 ```
 
-### 3. Validar
+### 3. Validate
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. Publicar
+### 4. Publish
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-Com notas de lançamento:
+With release notes:
 
 ```bash
-wippy publish --version 1.0.0 --release-notes "Release inicial"
+wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## Usando Módulos Publicados
+### Embedding Static Files
 
-### Adicionar Dependência
+Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+
+```bash
+wippy publish --version 1.0.0 --embed app:public_files
+wippy publish --version 1.0.0 --embed app:assets,app:templates
+```
+
+The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+
+## Using Published Modules
+
+### Add Dependency
 
 ```bash
 wippy add acme/http-utils
@@ -208,25 +219,25 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### Configurar Requisitos
+### Configure Requirements
 
-Sobrescreva valores em tempo de execução:
+Override values at runtime:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://my.api.com
 ```
 
-Ou em `.wippy.yaml`:
+Or in `.wippy.yaml`:
 
 ```yaml
 override:
   acme.http:api_endpoint: "https://my.api.com"
 ```
 
-### Importar no Seu Código
+### Import in Your Code
 
 ```yaml
-# seu src/_index.yaml
+# your src/_index.yaml
 entries:
   - name: __dependency.acme.http
     kind: ns.dependency
@@ -240,13 +251,13 @@ entries:
       http: acme.http:client
 ```
 
-## Exemplo Completo
+## Complete Example
 
 **wippy.yaml:**
 ```yaml
 organization: acme
 module: cache
-description: Cache em memória com TTL
+description: In-memory caching with TTL
 license: MIT
 keywords:
   - cache
@@ -262,12 +273,12 @@ entries:
   - name: definition
     kind: ns.definition
     meta:
-      title: Módulo de Cache
+      title: Cache Module
 
   - name: max_size
     kind: ns.requirement
     meta:
-      description: Máximo de entradas no cache
+      description: Maximum cache entries
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
@@ -313,15 +324,15 @@ end
 return cache
 ```
 
-Publicar:
+Publish:
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## Veja Também
+## See Also
 
-- [Referência do CLI](guides/cli.md)
-- [Tipos de Entradas](guides/entry-kinds.md)
-- [Configuração](guides/configuration.md)
+- [CLI Reference](guides/cli.md)
+- [Entry Kinds](guides/entry-kinds.md)
+- [Configuration](guides/configuration.md)

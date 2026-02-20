@@ -1,27 +1,27 @@
-# 发布模块
+# Publishing Modules
 
-在 Wippy Hub 上分享可复用的代码。
+Share reusable code on the Wippy Hub.
 
-## 前提条件
+## Prerequisites
 
-1. 在 [hub.wippy.ai](https://hub.wippy.ai) 创建账户
-2. 创建或加入组织
-3. 在组织下注册模块名称
+1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
+2. Create an organization or join one
+3. Register your module name under your organization
 
-## 模块结构
+## Module Structure
 
 ```
 mymodule/
-├── wippy.yaml      # 模块清单
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # 入口定义
-│   └── *.lua       # 源文件
-└── README.md       # 文档（可选）
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-模块清单：
+Module manifest:
 
 ```yaml
 organization: acme
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| `organization` | 是 | Hub 上的组织名称 |
-| `module` | 是 | 模块名称 |
-| `description` | 是 | 简短描述 |
-| `license` | 否 | SPDX 标识符（MIT, Apache-2.0） |
-| `repository` | 否 | 源代码仓库 URL |
-| `homepage` | 否 | 项目主页 |
-| `keywords` | 否 | 搜索关键词 |
+| Field | Required | Description |
+|-------|----------|-------------|
+| `organization` | Yes | Your org name on the hub |
+| `module` | Yes | Module name |
+| `description` | Yes | Short description |
+| `license` | No | SPDX identifier (MIT, Apache-2.0) |
+| `repository` | No | Source repository URL |
+| `homepage` | No | Project homepage |
+| `keywords` | No | Search keywords |
 
-## 入口定义
+## Entry Definitions
 
-入口在 `_index.yaml` 中定义：
+Entries are defined in `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -68,9 +68,9 @@ entries:
       - json
 ```
 
-## 依赖
+## Dependencies
 
-声明对其他模块的依赖：
+Declare dependencies on other modules:
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-版本约束：
+Version constraints:
 
-| 约束 | 含义 |
-|------|------|
-| `*` | 任意版本 |
-| `1.0.0` | 精确版本 |
-| `>=1.0.0` | 最低版本 |
-| `^1.0.0` | 兼容版本（相同主版本） |
+| Constraint | Meaning |
+|------------|---------|
+| `*` | Any version |
+| `1.0.0` | Exact version |
+| `>=1.0.0` | Minimum version |
+| `^1.0.0` | Compatible (same major) |
 
-## 需求
+## Requirements
 
-定义使用者必须提供的配置：
+Define configuration that consumers must provide:
 
 ```yaml
 entries:
@@ -107,19 +107,19 @@ entries:
     default: "https://api.example.com"
 ```
 
-Targets 指定值注入的位置：
-- `entry` - 要配置的完整入口 ID
-- `path` - 值注入的 JSONPath
+Targets specify where the value is injected:
+- `entry` - Full entry ID to configure
+- `path` - JSONPath for value injection
 
-使用者通过覆盖配置：
+Consumers configure via override:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://custom.api.com
 ```
 
-## 导入
+## Imports
 
-引用其他入口：
+Reference other entries:
 
 ```yaml
 - name: handler
@@ -128,21 +128,21 @@ wippy run -o acme.http:api_endpoint=https://custom.api.com
   modules:
     - json
   imports:
-    client: acme.http:client           # 同一命名空间
-    utils: acme.utils:helpers          # 不同命名空间
-    base_registry: :registry           # 内置
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
-在 Lua 中：
+In Lua:
 
 ```lua
 local client = require("client")
 local utils = require("utils")
 ```
 
-## 契约
+## Contracts
 
-定义公共接口：
+Define public interfaces:
 
 ```yaml
 - name: http_contract
@@ -164,15 +164,15 @@ local utils = require("utils")
         post: acme.http:post_handler
 ```
 
-## 发布流程
+## Publishing Workflow
 
-### 1. 认证
+### 1. Authenticate
 
 ```bash
 wippy auth login
 ```
 
-### 2. 准备
+### 2. Prepare
 
 ```bash
 wippy init
@@ -180,27 +180,38 @@ wippy update
 wippy lint
 ```
 
-### 3. 验证
+### 3. Validate
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. 发布
+### 4. Publish
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-带发布说明：
+With release notes:
 
 ```bash
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## 使用已发布的模块
+### Embedding Static Files
 
-### 添加依赖
+Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+
+```bash
+wippy publish --version 1.0.0 --embed app:public_files
+wippy publish --version 1.0.0 --embed app:assets,app:templates
+```
+
+The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+
+## Using Published Modules
+
+### Add Dependency
 
 ```bash
 wippy add acme/http-utils
@@ -208,25 +219,25 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### 配置需求
+### Configure Requirements
 
-运行时覆盖值：
+Override values at runtime:
 
 ```bash
 wippy run -o acme.http:api_endpoint=https://my.api.com
 ```
 
-或在 `.wippy.yaml` 中：
+Or in `.wippy.yaml`:
 
 ```yaml
 override:
   acme.http:api_endpoint: "https://my.api.com"
 ```
 
-### 在代码中导入
+### Import in Your Code
 
 ```yaml
-# 你的 src/_index.yaml
+# your src/_index.yaml
 entries:
   - name: __dependency.acme.http
     kind: ns.dependency
@@ -240,7 +251,7 @@ entries:
       http: acme.http:client
 ```
 
-## 完整示例
+## Complete Example
 
 **wippy.yaml:**
 ```yaml
@@ -313,15 +324,15 @@ end
 return cache
 ```
 
-发布：
+Publish:
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## 参见
+## See Also
 
-- [CLI 参考](guides/cli.md)
-- [入口类型](guides/entry-kinds.md)
-- [配置](guides/configuration.md)
+- [CLI Reference](guides/cli.md)
+- [Entry Kinds](guides/entry-kinds.md)
+- [Configuration](guides/configuration.md)

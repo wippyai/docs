@@ -198,6 +198,17 @@ With release notes:
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
+### Embedding Static Files
+
+Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+
+```bash
+wippy publish --version 1.0.0 --embed app:public_files
+wippy publish --version 1.0.0 --embed app:assets,app:templates
+```
+
+The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+
 ## Using Published Modules
 
 ### Add Dependency
