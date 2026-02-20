@@ -178,7 +178,8 @@
       {"title": "Endpoint", "path": "http/endpoint"},
       {"title": "Middleware", "path": "http/middleware"},
       {"title": "Static Files", "path": "http/static"},
-      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
+      {"title": "WebSocket Relay", "path": "http/websocket-relay"},
+      {"title": "Server-Sent Events", "path": "http/sse"}
     ]
   },
   {

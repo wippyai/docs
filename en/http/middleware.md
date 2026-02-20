@@ -270,6 +270,21 @@ post_options:
 
 ---
 
+### SSE Relay {#sse_relay}
+
+<warning>Post-match</warning>
+
+Stream Server-Sent Events from processes. See [Server-Sent Events](http/sse.md).
+
+```yaml
+post_middleware:
+  - sse_relay
+post_options:
+  sserelay.allowed.origins: "https://app.example.com"
+```
+
+---
+
 ## Middleware Order
 
 Middleware executes in listed order. Recommended sequence:
@@ -292,4 +307,5 @@ post_middleware:
 - [Routing](http/router.md) - Router configuration
 - [Security](system/security.md) - Token stores and policies
 - [WebSocket Relay](http/websocket-relay.md) - WebSocket handling
+- [Server-Sent Events](http/sse.md) - SSE streaming
 - [Terminal](system/terminal.md) - Terminal service

@@ -268,6 +268,22 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
+
+---
+
+### SSE Relay {#sse_relay}
+
+<warning>Post-match</warning>
+
+Потоковая передача Server-Sent Events из процессов. См. [Server-Sent Events](http/sse.md).
+
+```yaml
+post_middleware:
+  - sse_relay
+post_options:
+  sserelay.allowed.origins: "https://app.example.com"
+```
+
 ---
 
 ## Порядок middleware
@@ -292,4 +308,5 @@ post_middleware:
 - [Маршрутизация](http/router.md) — конфигурация роутера
 - [Безопасность](system/security.md) — хранилища токенов и политики
 - [WebSocket Relay](http/websocket-relay.md) — обработка WebSocket
+- [Server-Sent Events](http/sse.md) — потоковая передача SSE
 - [Терминал](system/terminal.md) — терминальный сервис

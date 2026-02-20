@@ -268,6 +268,22 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
+
+---
+
+### SSE 릴레이 {#sse_relay}
+
+<warning>Post-match</warning>
+
+프로세스에서 Server-Sent Events를 스트리밍합니다. [Server-Sent Events](http/sse.md)를 참조하세요.
+
+```yaml
+post_middleware:
+  - sse_relay
+post_options:
+  sserelay.allowed.origins: "https://app.example.com"
+```
+
 ---
 
 ## 미들웨어 순서
@@ -292,4 +308,5 @@ post_middleware:
 - [라우팅](http/router.md) - 라우터 설정
 - [보안](system/security.md) - 토큰 스토어 및 정책
 - [WebSocket 릴레이](http/websocket-relay.md) - WebSocket 처리
+- [Server-Sent Events](http/sse.md) - SSE 스트리밍
 - [터미널](system/terminal.md) - 터미널 서비스

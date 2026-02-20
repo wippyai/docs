@@ -268,6 +268,22 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
+
+---
+
+### SSE Relay {#sse_relay}
+
+<warning>Post-match</warning>
+
+从进程流式传输 Server-Sent Events。参阅 [Server-Sent Events](http/sse.md)。
+
+```yaml
+post_middleware:
+  - sse_relay
+post_options:
+  sserelay.allowed.origins: "https://app.example.com"
+```
+
 ---
 
 ## 中间件顺序
@@ -292,4 +308,5 @@ post_middleware:
 - [路由](http/router.md) - 路由器配置
 - [安全性](system/security.md) - Token 存储和策略
 - [WebSocket Relay](http/websocket-relay.md) - WebSocket 处理
+- [Server-Sent Events](http/sse.md) - SSE 流式传输
 - [终端](system/terminal.md) - 终端服务

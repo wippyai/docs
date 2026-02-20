@@ -268,6 +268,22 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
+
+---
+
+### Relay SSE {#sse_relay}
+
+<warning>Post-match</warning>
+
+Transmite Server-Sent Events de processos. Veja [Server-Sent Events](http/sse.md).
+
+```yaml
+post_middleware:
+  - sse_relay
+post_options:
+  sserelay.allowed.origins: "https://app.example.com"
+```
+
 ---
 
 ## Ordem de Middleware
@@ -292,4 +308,5 @@ post_middleware:
 - [Roteamento](http/router.md) - Configuração de roteador
 - [Segurança](system/security.md) - Token stores e políticas
 - [Relay WebSocket](http/websocket-relay.md) - Tratamento de WebSocket
+- [Server-Sent Events](http/sse.md) - Streaming SSE
 - [Terminal](system/terminal.md) - Serviço de terminal

@@ -268,6 +268,22 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
+
+---
+
+### SSEリレー {#sse_relay}
+
+<warning>Post-match</warning>
+
+プロセスからServer-Sent Eventsをストリーミングします。[Server-Sent Events](http/sse.md)を参照してください。
+
+```yaml
+post_middleware:
+  - sse_relay
+post_options:
+  sserelay.allowed.origins: "https://app.example.com"
+```
+
 ---
 
 ## ミドルウェアの順序
@@ -292,4 +308,5 @@ post_middleware:
 - [ルーティング](http/router.md) - ルーター設定
 - [セキュリティ](system/security.md) - トークンストアとポリシー
 - [WebSocketリレー](http/websocket-relay.md) - WebSocket処理
+- [Server-Sent Events](http/sse.md) - SSEストリーミング
 - [ターミナル](system/terminal.md) - ターミナルサービス
