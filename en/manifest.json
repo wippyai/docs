@@ -217,5 +217,11 @@
       {"title": "Contributing", "path": "about/contributing"},
       {"title": "License", "path": "about/license"}
     ]
+  },
+  {
+    "title": "LLM",
+    "children": [
+      {"title": "Platform Brief", "path": "start/llm-brief"}
+    ]
   }
 ]

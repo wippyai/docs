@@ -202,7 +202,7 @@
   {
     "title": "Internals",
     "children": [
-      {"title": "\u30a2\u30fc\u30ad\u30c6\u30af\u30c1\u30e3", "path": "internals/architecture"},
+      {"title": "Architecture", "path": "internals/architecture"},
       {"title": "Registry", "path": "internals/registry"},
       {"title": "Scheduler", "path": "internals/scheduler"},
       {"title": "Dispatch", "path": "internals/dispatch"},
@@ -216,6 +216,12 @@
     "children": [
       {"title": "Contributing", "path": "about/contributing"},
       {"title": "License", "path": "about/license"}
+    ]
+  },
+  {
+    "title": "LLM",
+    "children": [
+      {"title": "Platform Brief", "path": "start/llm-brief"}
     ]
   }
 ]
