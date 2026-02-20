@@ -50,3 +50,8 @@ local args = io.args()
 ```
 
 在 terminal 上下文之外调用函数会返回错误。
+
+## 参见
+
+- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr 操作
+- [TTY](lua/system/tty.md) — 原始输入事件、样式和布局

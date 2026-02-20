@@ -93,7 +93,8 @@
           {"title": "Logger", "path": "lua/system/logger"},
           {"title": "I/O", "path": "lua/system/io"},
           {"title": "Metrics", "path": "lua/system/metrics"},
-          {"title": "OS Time", "path": "lua/system/ostime"}
+          {"title": "OS Time", "path": "lua/system/ostime"},
+          {"title": "TTY", "path": "lua/system/tty"}
         ]
       },
       {

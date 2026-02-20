@@ -50,3 +50,8 @@ local args = io.args()
 ```
 
 Funções retornam erros se chamadas fora de um contexto de terminal.
+
+## Veja Também
+
+- [Terminal I/O](lua/system/io.md) — Operações stdin/stdout/stderr
+- [TTY](lua/system/tty.md) — Eventos de entrada, estilos e layout

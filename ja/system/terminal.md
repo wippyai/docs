@@ -50,3 +50,8 @@ local args = io.args()
 ```
 
 ターミナルコンテキスト外で呼び出された場合、関数はエラーを返します。
+
+## 関連項目
+
+- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr操作
+- [TTY](lua/system/tty.md) — 入力イベント、スタイル、レイアウト

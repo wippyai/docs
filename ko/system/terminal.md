@@ -50,3 +50,8 @@ local args = io.args()
 ```
 
 터미널 컨텍스트 외부에서 호출하면 함수가 에러를 반환합니다.
+
+## 참고
+
+- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr 작업
+- [TTY](lua/system/tty.md) — 입력 이벤트, 스타일, 레이아웃
