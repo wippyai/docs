@@ -1,30 +1,22 @@
 # Licença
 
-O Wippy é distribuído sob a Apache License 2.0.
+O Wippy é distribuído sob a Mozilla Public License 2.0.
 
-## Apache License 2.0
+## Mozilla Public License 2.0
 
 ```
-Copyright 2024 Wippy
+Copyright 2025 Spiral Scout
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
 ```
 
 ## O Que Isso Significa
 
-Você pode usar o Wippy em projetos comerciais, modificar o código-fonte e distribuir suas modificações. A licença fornece uma concessão expressa de direitos de patente dos contribuidores.
+Você pode usar o Wippy em projetos comerciais, modificar o código-fonte e distribuir suas modificações. Arquivos modificados devem permanecer sob MPL-2.0, mas você pode combinar o Wippy com código proprietário em uma obra maior.
 
-Você deve incluir o aviso de licença nas cópias e declarar quaisquer alterações que fez no código.
+Você deve disponibilizar o código-fonte de qualquer arquivo MPL modificado ao distribuí-los.
 
 ## Dependências
 
