@@ -1,19 +1,19 @@
 # Framework
 
-Wippy proporciona modulos oficiales del framework a traves del hub. Estos modulos se mantienen bajo la organizacion `wippy` y pueden agregarse a cualquier proyecto.
+Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
 
-## Agregar Modulos del Framework
+## Adding Framework Modules
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-Esto agrega el modulo a tu archivo lock y lo descarga a `.wippy/vendor/`.
+This adds the module to your lock file and downloads it to `.wippy/vendor/`.
 
-## Declarar Dependencias en el Codigo Fuente
+## Declaring Dependencies in Source
 
-Los modulos del framework tambien pueden declararse como dependencias en tu `_index.yaml`:
+Framework modules can also be declared as dependencies in your `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -26,15 +26,15 @@ entries:
     version: "^0.3.0"
 ```
 
-Luego resuelve e instala:
+Then resolve and install:
 
 ```bash
 wippy update
 ```
 
-## Importar Bibliotecas del Framework
+## Importing Framework Libraries
 
-Una vez instaladas, importa las bibliotecas del framework en tus entradas:
+Once installed, import framework libraries into your entries:
 
 ```yaml
 entries:
@@ -49,23 +49,28 @@ entries:
       test: wippy.test:test
 ```
 
-El import mapea `wippy.test:test` (la entrada `test` del namespace `wippy.test`) al nombre local `test`, que luego usas con `require("test")` en Lua.
+The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
 
-## Modulos Disponibles
+## Available Modules
 
 | Module | Description |
 |--------|-------------|
-| `wippy/test` | Framework de testing estilo BDD con aserciones y mocking |
-| `wippy/terminal` | Componentes de interfaz de terminal |
+| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
+| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
+| `wippy/test` | BDD-style testing framework with assertions and mocking |
+| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
+| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
+| `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/terminal` | Terminal UI components |
 
-Hay mas modulos disponibles y se publican regularmente. Busca en el hub:
+More modules are available and being published regularly. Search the hub:
 
 ```bash
 wippy search wippy
 ```
 
-## Ver Tambien
+## See Also
 
-- [Gestion de Dependencias](guides/dependency-management.md) - Archivo lock y restricciones de version
-- [Publicacion](guides/publishing.md) - Publicar tus propios modulos
-- [Referencia CLI](guides/cli.md) - Comandos CLI
+- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
+- [Publishing](guides/publishing.md) - Publishing your own modules
+- [CLI Reference](guides/cli.md) - CLI commands

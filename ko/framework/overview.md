@@ -1,19 +1,19 @@
-# 프레임워크
+# Framework
 
-Wippy는 허브를 통해 공식 프레임워크 모듈을 제공합니다. 이 모듈은 `wippy` 조직에서 관리되며 모든 프로젝트에 추가할 수 있습니다.
+Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
 
-## 프레임워크 모듈 추가하기
+## Adding Framework Modules
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-이렇게 하면 모듈이 잠금 파일에 추가되고 `.wippy/vendor/`에 다운로드됩니다.
+This adds the module to your lock file and downloads it to `.wippy/vendor/`.
 
-## 소스에서 의존성 선언하기
+## Declaring Dependencies in Source
 
-프레임워크 모듈은 `_index.yaml`에서 의존성으로 선언할 수도 있습니다:
+Framework modules can also be declared as dependencies in your `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -26,15 +26,15 @@ entries:
     version: "^0.3.0"
 ```
 
-그런 다음 확인하고 설치합니다:
+Then resolve and install:
 
 ```bash
 wippy update
 ```
 
-## 프레임워크 라이브러리 임포트하기
+## Importing Framework Libraries
 
-설치 후 프레임워크 라이브러리를 엔트리에 임포트합니다:
+Once installed, import framework libraries into your entries:
 
 ```yaml
 entries:
@@ -49,23 +49,28 @@ entries:
       test: wippy.test:test
 ```
 
-임포트는 `wippy.test:test` (`wippy.test` 네임스페이스의 `test` 엔트리)를 로컬 이름 `test`에 매핑하며, Lua에서 `require("test")`로 사용합니다.
+The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
 
-## 사용 가능한 모듈
+## Available Modules
 
 | Module | Description |
 |--------|-------------|
-| `wippy/test` | 어서션과 모킹을 갖춘 BDD 스타일 테스트 프레임워크 |
-| `wippy/terminal` | 터미널 UI 컴포넌트 |
+| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
+| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
+| `wippy/test` | BDD-style testing framework with assertions and mocking |
+| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
+| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
+| `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/terminal` | Terminal UI components |
 
-더 많은 모듈이 제공되고 있으며 정기적으로 게시됩니다. 허브에서 검색하십시오:
+More modules are available and being published regularly. Search the hub:
 
 ```bash
 wippy search wippy
 ```
 
-## 참고
+## See Also
 
-- [의존성 관리](guides/dependency-management.md) - 잠금 파일 및 버전 제약 조건
-- [퍼블리싱](guides/publishing.md) - 자체 모듈 게시하기
-- [CLI 레퍼런스](guides/cli.md) - CLI 명령
+- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
+- [Publishing](guides/publishing.md) - Publishing your own modules
+- [CLI Reference](guides/cli.md) - CLI commands

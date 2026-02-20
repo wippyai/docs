@@ -1,65 +1,67 @@
-# 类型系统
+# Type System
 
-Wippy 包含一个带有流敏感检查的渐进类型系统。类型默认是非空的。
+> **Experimental.** The type system is under active development. Syntax and behavior may change.
 
-## 原始类型
+Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
+
+## Primitives
 
 ```lua
 local n: number = 3.14
-local i: integer = 42         -- integer 是 number 的子类型
+local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- 显式动态（退出检查）
-local u: unknown = something  -- 使用前必须收窄
+local a: any = "anything"     -- explicit dynamic (opt-out of checking)
+local u: unknown = something  -- must narrow before use
 ```
 
 ### any vs unknown
 
 ```lua
--- any: 退出类型检查
+-- any: opt-out of type checking
 local a: any = get_data()
-a.foo.bar.baz()              -- 无错误，可能在运行时崩溃
+a.foo.bar.baz()              -- no error, may crash at runtime
 
--- unknown: 安全的未知，使用前必须收窄
+-- unknown: safe unknown, must narrow before use
 local u: unknown = get_data()
-u.foo                        -- 错误：不能访问 unknown 的属性
+u.foo                        -- ERROR: cannot access property of unknown
 if type(u) == "table" then
-    -- u 在这里被收窄为 table
+    -- u narrowed to table here
 end
 ```
 
-## Nil 安全
+## Nil Safety
 
-类型默认是非空的。使用 `?` 表示可选值：
+Types are non-nullable by default. Use `?` for optional values:
 
 ```lua
-local x: number = nil         -- 错误：nil 不能赋值给 number
-local y: number? = nil        -- OK：number? 意味着 "number 或 nil"
+local x: number = nil         -- ERROR: nil not assignable to number
+local y: number? = nil        -- OK: number? means "number or nil"
 local z: number? = 42         -- OK
 ```
 
-### 控制流收窄
+### Control Flow Narrowing
 
-类型检查器跟踪控制流：
+The type checker tracks control flow:
 
 ```lua
 local function process(x: number?): number
     if x ~= nil then
-        return x              -- x 在这里是 number
+        return x              -- x is number here
     end
     return 0
 end
 
--- 提前返回模式
+-- Early return pattern
 local user, err = get_user(123)
 if err then return nil, err end
--- user 在这里被收窄为非 nil
+-- user narrowed to non-nil here
 
--- 或使用默认值
+-- Or default
 local val = get_value() or 0  -- val: number
 ```
 
-## 联合类型
+## Union Types
 
 ```lua
 local val: number | string = get_value()
@@ -71,39 +73,39 @@ else
 end
 ```
 
-### 字面量类型
+### Literal Types
 
 ```lua
 type Status = "pending" | "active" | "done"
 
 local s: Status = "pending"   -- OK
-local s: Status = "invalid"   -- 错误
+local s: Status = "invalid"   -- ERROR
 ```
 
-## 函数类型
+## Function Types
 
 ```lua
 local function add(a: number, b: number): number
     return a + b
 end
 
--- 多返回值
+-- Multiple returns
 local function div_mod(a: number, b: number): (number, number)
     return math.floor(a / b), a % b
 end
 
--- 错误返回（Lua 惯用法）
+-- Error returns (Lua idiom)
 local function fetch(url: string): (string?, error?)
-    -- 返回 (data, nil) 或 (nil, error)
+    -- returns (data, nil) or (nil, error)
 end
 
--- 一等函数类型
+-- First-class function types
 local double: (number) -> number = function(x: number): number
     return x * 2
 end
 ```
 
-### 可变参数函数
+### Variadic Functions
 
 ```lua
 local function sum(...: number): number
@@ -115,7 +117,7 @@ local function sum(...: number): number
 end
 ```
 
-## 记录类型
+## Record Types
 
 ```lua
 type User = {name: string, age: number}
@@ -123,7 +125,7 @@ type User = {name: string, age: number}
 local u: User = {name = "alice", age = 25}
 ```
 
-### 可选字段
+### Optional Fields
 
 ```lua
 type Config = {
@@ -136,7 +138,7 @@ type Config = {
 local cfg: Config = {host = "localhost", port = 8080}  -- OK
 ```
 
-## 泛型
+## Generics
 
 ```lua
 local function identity<T>(x: T): T
@@ -147,7 +149,7 @@ local n: number = identity(42)
 local s: string = identity("hello")
 ```
 
-### 受约束泛型
+### Constrained Generics
 
 ```lua
 type HasName = {name: string}
@@ -157,12 +159,12 @@ local function greet<T: HasName>(obj: T): string
 end
 
 greet({name = "Alice"})       -- OK
-greet({age = 30})             -- 错误：缺少 'name'
+greet({age = 30})             -- ERROR: missing 'name'
 ```
 
-## 交叉类型
+## Intersection Types
 
-组合多个类型：
+Combine multiple types:
 
 ```lua
 type Named = {name: string}
@@ -172,7 +174,7 @@ type Person = Named & Aged
 local p: Person = {name = "Alice", age = 30}
 ```
 
-## 标签联合
+## Tagged Unions
 
 ```lua
 type Result<T, E> =
@@ -195,9 +197,9 @@ local function render(state: LoadState): string
 end
 ```
 
-## never 类型
+## The never Type
 
-`never` 是底部类型——不存在任何值：
+`never` is the bottom type - no values exist:
 
 ```lua
 function fail(msg: string): never
@@ -205,58 +207,58 @@ function fail(msg: string): never
 end
 ```
 
-## 错误处理模式
+## Error Handling Pattern
 
-检查器理解 Lua 错误惯用法：
+The checker understands the Lua error idiom:
 
 ```lua
 local value, err = call()
 if err then
-    -- value 在这里是 nil
+    -- value is nil here
     return nil, err
 end
--- value 在这里是非 nil，err 是 nil
+-- value is non-nil here, err is nil
 print(value)
 ```
 
-## 非空断言
+## Non-Nil Assertion
 
-使用 `!` 断言表达式是非空的：
+Use `!` to assert an expression is non-nil:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- 断言 user 是非 nil
+local name = user!.name              -- assert user is non-nil
 ```
 
-如果值在运行时是 nil，会抛出错误。当你知道值不可能是 nil 但类型检查器无法证明时使用。
+If the value is nil at runtime, an error is raised. Use when you know a value cannot be nil but the type checker cannot prove it.
 
-## 类型转换
+## Type Casts
 
-### 安全转换（验证）
+### Safe Cast (Validation)
 
-将类型作为函数调用以验证和转换：
+Call a type as a function to validate and cast:
 
 ```lua
 local data: any = get_json()
-local user = User(data)              -- 验证并返回 User
-local name = user.name               -- 安全的字段访问
+local user = User(data)              -- validates and returns User
+local name = user.name               -- safe field access
 ```
 
-适用于原始类型和自定义类型：
+Works with primitives and custom types:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- 转换为 string
-local n = integer(x)                 -- 转换为 integer
-local b = boolean(x)                 -- 转换为 boolean
+local s = string(x)                  -- cast to string
+local n = integer(x)                 -- cast to integer
+local b = boolean(x)                 -- cast to boolean
 
 type Point = {x: number, y: number}
-local p = Point(data)                -- 验证记录结构
+local p = Point(data)                -- validates record structure
 ```
 
-### Type:is() 方法
+### Type:is() Method
 
-验证但不抛出，返回 `(value, nil)` 或 `(nil, error)`：
+Validate without throwing, returns `(value, nil)` or `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -264,37 +266,37 @@ local data: any = get_input()
 
 local p, err = Point:is(data)
 if p then
-    local sum = p.x + p.y            -- p 是有效的 Point
+    local sum = p.x + p.y            -- p is valid Point
 else
-    return nil, err                  -- 验证失败
+    return nil, err                  -- validation failed
 end
 ```
 
-结果在条件中收窄：
+The result narrows in conditionals:
 
 ```lua
 if Point:is(data) then
-    local p: Point = data            -- data 被收窄为 Point
+    local p: Point = data            -- data narrowed to Point
 end
 ```
 
-### 不安全转换
+### Unsafe Cast
 
-使用 `::` 或 `as` 进行未检查的转换：
+Use `::` or `as` for unchecked casts:
 
 ```lua
 local data: any = get_data()
-local user = data :: User            -- 无运行时检查
-local user = data as User            -- 与 :: 相同
+local user = data :: User            -- no runtime check
+local user = data as User            -- same as ::
 ```
 
-谨慎使用。不安全转换绕过验证，如果值与类型不匹配可能导致运行时错误。
+Use sparingly. Unsafe casts bypass validation and can cause runtime errors if the value doesn't match the type.
 
-## 类型反射
+## Type Reflection
 
-类型是一等值，具有内省方法。
+Types are first-class values with introspection methods.
 
-### Kind 和 Name
+### Kind and Name
 
 ```lua
 print(Number:kind())                 -- "number"
@@ -302,9 +304,9 @@ print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
 
-### 记录字段
+### Record Fields
 
-遍历记录字段：
+Iterate over record fields:
 
 ```lua
 type User = {name: string, age: number}
@@ -316,14 +318,14 @@ end
 -- age     number
 ```
 
-访问单个字段类型：
+Access individual field types:
 
 ```lua
-local nameType = User.name           -- 'name' 字段的类型
+local nameType = User.name           -- type of 'name' field
 print(nameType:kind())               -- "string"
 ```
 
-### 集合类型
+### Collection Types
 
 ```lua
 local arr: {number} = {1, 2, 3}
@@ -336,7 +338,7 @@ print(mapType:key():kind())          -- "string"
 print(mapType:val():kind())          -- "number"
 ```
 
-### 可选类型
+### Optional Types
 
 ```lua
 local opt: number? = nil
@@ -345,7 +347,7 @@ print(optType:kind())                -- "optional"
 print(optType:inner():kind())        -- "number"
 ```
 
-### 联合类型
+### Union Types
 
 ```lua
 type Status = "pending" | "active" | "done"
@@ -355,7 +357,7 @@ for variant in Status:variants() do
 end
 ```
 
-### 函数类型
+### Function Types
 
 ```lua
 local fn: (number, string) -> boolean
@@ -367,15 +369,15 @@ end
 print(fnType:ret():kind())           -- "boolean"
 ```
 
-### 类型比较
+### Type Comparison
 
 ```lua
 print(Number == Number)              -- true
-print(Integer <= Number)             -- true（子类型）
-print(Integer < Number)              -- true（严格子类型）
+print(Integer <= Number)             -- true (subtype)
+print(Integer < Number)              -- true (strict subtype)
 ```
 
-### 类型作为表键
+### Types as Table Keys
 
 ```lua
 local handlers = {}
@@ -386,53 +388,53 @@ local h = handlers[typeof(value)]
 if h then h() end
 ```
 
-## 类型注解
+## Type Annotations
 
-为函数签名添加类型：
+Add types to function signatures:
 
 ```lua
--- 参数和返回类型
+-- Parameter and return types
 local function process(input: string): number
     return #input
 end
 
--- 局部变量类型
+-- Local variable types
 local count: number = 0
 
--- 类型别名
+-- Type aliases
 type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
-## 类型验证器
+## Type Validators
 
-使用注解为类型添加运行时验证约束：
+Add runtime validation constraints to types using annotations:
 
 ```lua
--- 单个验证器
+-- Single validator
 local x: number @min(0) = 1
 
--- 多个验证器
+-- Multiple validators
 local x: number @min(0) @max(100) = 50
 
--- 字符串模式
+-- String pattern
 local email: string @pattern("^.+@.+$") = "test@example.com"
 
--- 无参数验证器
+-- No-arg validator
 local x: number @integer = 42
 ```
 
-### 内置验证器
+### Built-in Validators
 
-| 验证器 | 适用于 | 示例 |
-|--------|--------|------|
+| Validator | Applies to | Example |
+|-----------|------------|---------|
 | `@min(n)` | number | `local x: number @min(0) = 1` |
 | `@max(n)` | number | `local x: number @max(100) = 50` |
 | `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
 | `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
 | `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
 
-### 记录字段验证器
+### Record Field Validators
 
 ```lua
 type User = {
@@ -441,61 +443,61 @@ type User = {
 }
 ```
 
-### 数组元素验证器
+### Array Element Validators
 
 ```lua
 local scores: {number @min(0) @max(100)} = {85, 90}
 ```
 
-### 联合成员验证器
+### Union Member Validators
 
 ```lua
 local id: number @min(1) | string @min_len(1) = 1
 ```
 
-## 协变规则
+## Variance Rules
 
-| 位置 | 协变性 | 描述 |
-|------|--------|------|
-| 只读字段 | 协变 | 可以使用子类型 |
-| 可变字段 | 不变 | 必须精确匹配 |
-| 函数参数 | 逆变 | 可以使用超类型 |
-| 函数返回 | 协变 | 可以使用子类型 |
+| Position | Variance | Description |
+|----------|----------|-------------|
+| Readonly field | Covariant | Can use subtype |
+| Mutable field | Invariant | Must match exactly |
+| Function parameter | Contravariant | Can use supertype |
+| Function return | Covariant | Can use subtype |
 
-## 子类型
+## Subtyping
 
-- `integer` 是 `number` 的子类型
-- `never` 是所有类型的子类型
-- 所有类型都是 `any` 的子类型
-- 联合子类型：`A` 是 `A | B` 的子类型
+- `integer` is a subtype of `number`
+- `never` is a subtype of all types
+- All types are subtypes of `any`
+- Union subtyping: `A` is subtype of `A | B`
 
-## 渐进采用
+## Gradual Adoption
 
-增量添加类型——无类型代码继续工作：
+Add types incrementally - untyped code continues to work:
 
 ```lua
--- 现有代码保持不变
+-- Existing code works unchanged
 function old_function(x)
     return x + 1
 end
 
--- 新代码获得类型
+-- New code gets types
 function new_function(x: number): number
     return x + 1
 end
 ```
 
-从以下开始添加类型：
-1. API 边界的函数签名
-2. HTTP 处理器和队列消费者
-3. 关键业务逻辑
+Start by adding types to:
+1. Function signatures at API boundaries
+2. HTTP handlers and queue consumers
+3. Critical business logic
 
-## 类型检查
+## Type Checking
 
-运行类型检查器：
+Run the type checker:
 
 ```bash
 wippy lint
 ```
 
-报告类型错误但不执行代码。
+Reports type errors without executing code.

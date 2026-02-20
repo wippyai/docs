@@ -1,19 +1,19 @@
-# Фреймворк
+# Framework
 
-Wippy предоставляет официальные модули фреймворка через хаб. Эти модули поддерживаются организацией `wippy` и могут быть добавлены в любой проект.
+Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
 
-## Добавление модулей фреймворка
+## Adding Framework Modules
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-Это добавляет модуль в lock-файл и скачивает его в `.wippy/vendor/`.
+This adds the module to your lock file and downloads it to `.wippy/vendor/`.
 
-## Объявление зависимостей в исходниках
+## Declaring Dependencies in Source
 
-Модули фреймворка также можно объявить как зависимости в `_index.yaml`:
+Framework modules can also be declared as dependencies in your `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -26,15 +26,15 @@ entries:
     version: "^0.3.0"
 ```
 
-Затем разрешите и установите:
+Then resolve and install:
 
 ```bash
 wippy update
 ```
 
-## Импорт библиотек фреймворка
+## Importing Framework Libraries
 
-После установки импортируйте библиотеки фреймворка в свои записи:
+Once installed, import framework libraries into your entries:
 
 ```yaml
 entries:
@@ -49,23 +49,28 @@ entries:
       test: wippy.test:test
 ```
 
-Импорт связывает `wippy.test:test` (запись `test` из пространства имен `wippy.test`) с локальным именем `test`, которое затем используется через `require("test")` в Lua.
+The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
 
-## Доступные модули
+## Available Modules
 
-| Module | Описание |
-|--------|----------|
-| `wippy/test` | BDD-фреймворк для тестирования с утверждениями и моками |
-| `wippy/terminal` | Компоненты терминального UI |
+| Module | Description |
+|--------|-------------|
+| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
+| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
+| `wippy/test` | BDD-style testing framework with assertions and mocking |
+| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
+| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
+| `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/terminal` | Terminal UI components |
 
-Дополнительные модули доступны и регулярно публикуются. Поиск в хабе:
+More modules are available and being published regularly. Search the hub:
 
 ```bash
 wippy search wippy
 ```
 
-## См. также
+## See Also
 
-- [Управление зависимостями](guides/dependency-management.md) - Lock-файл и ограничения версий
-- [Публикация](guides/publishing.md) - Публикация собственных модулей
-- [CLI-справочник](guides/cli.md) - CLI-команды
+- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
+- [Publishing](guides/publishing.md) - Publishing your own modules
+- [CLI Reference](guides/cli.md) - CLI commands

@@ -1,19 +1,19 @@
-# フレームワーク
+# Framework
 
-Wippyはハブを通じて公式フレームワークモジュールを提供しています。これらのモジュールは`wippy`組織の下で管理されており、任意のプロジェクトに追加できます。
+Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
 
-## フレームワークモジュールの追加
+## Adding Framework Modules
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-これによりモジュールがロックファイルに追加され、`.wippy/vendor/`にダウンロードされます。
+This adds the module to your lock file and downloads it to `.wippy/vendor/`.
 
-## ソース内での依存関係宣言
+## Declaring Dependencies in Source
 
-フレームワークモジュールは`_index.yaml`で依存関係として宣言することもできます:
+Framework modules can also be declared as dependencies in your `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -26,15 +26,15 @@ entries:
     version: "^0.3.0"
 ```
 
-その後、解決してインストールします:
+Then resolve and install:
 
 ```bash
 wippy update
 ```
 
-## フレームワークライブラリのインポート
+## Importing Framework Libraries
 
-インストール後、フレームワークライブラリをエントリにインポートします:
+Once installed, import framework libraries into your entries:
 
 ```yaml
 entries:
@@ -49,23 +49,28 @@ entries:
       test: wippy.test:test
 ```
 
-このインポートは`wippy.test:test`（`wippy.test`名前空間の`test`エントリ）をローカル名`test`にマッピングし、Luaで`require("test")`として使用できます。
+The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
 
-## 利用可能なモジュール
+## Available Modules
 
-| モジュール | 説明 |
-|-----------|------|
-| `wippy/test` | アサーションとモッキングを備えたBDDスタイルのテストフレームワーク |
-| `wippy/terminal` | ターミナルUIコンポーネント |
+| Module | Description |
+|--------|-------------|
+| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
+| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
+| `wippy/test` | BDD-style testing framework with assertions and mocking |
+| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
+| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
+| `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/terminal` | Terminal UI components |
 
-より多くのモジュールが利用可能で、定期的に公開されています。ハブで検索してください:
+More modules are available and being published regularly. Search the hub:
 
 ```bash
 wippy search wippy
 ```
 
-## 関連項目
+## See Also
 
-- [依存関係管理](guides/dependency-management.md) - ロックファイルとバージョン制約
-- [パブリッシング](guides/publishing.md) - 独自モジュールの公開
-- [CLIリファレンス](guides/cli.md) - CLIコマンド
+- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
+- [Publishing](guides/publishing.md) - Publishing your own modules
+- [CLI Reference](guides/cli.md) - CLI commands

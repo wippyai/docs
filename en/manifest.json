@@ -138,7 +138,12 @@
       {"title": "Overview", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
       {"title": "Agents", "path": "framework/agents"},
-      {"title": "Testing", "path": "framework/testing"}
+      {"title": "Testing", "path": "framework/testing"},
+      {"title": "Dataflow", "path": "framework/dataflow"},
+      {"title": "Relay", "path": "framework/relay"},
+      {"title": "Views", "path": "framework/views", "children": [
+        {"title": "Facade", "path": "framework/facade"}
+      ]}
     ]
   },
   {

@@ -1,65 +1,67 @@
-# Система типов
+# Type System
 
-Wippy включает постепенную систему типов с flow-sensitive проверкой. Типы не допускают nil по умолчанию.
+> **Experimental.** The type system is under active development. Syntax and behavior may change.
 
-## Примитивы
+Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
+
+## Primitives
 
 ```lua
 local n: number = 3.14
-local i: integer = 42         -- integer — подтип number
+local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- явный dynamic (отказ от проверки)
-local u: unknown = something  -- нужно сузить перед использованием
+local a: any = "anything"     -- explicit dynamic (opt-out of checking)
+local u: unknown = something  -- must narrow before use
 ```
 
 ### any vs unknown
 
 ```lua
--- any: отказ от проверки типов
+-- any: opt-out of type checking
 local a: any = get_data()
-a.foo.bar.baz()              -- без ошибки, может упасть в runtime
+a.foo.bar.baz()              -- no error, may crash at runtime
 
--- unknown: безопасный unknown, нужно сузить перед использованием
+-- unknown: safe unknown, must narrow before use
 local u: unknown = get_data()
-u.foo                        -- ОШИБКА: нельзя обращаться к свойству unknown
+u.foo                        -- ERROR: cannot access property of unknown
 if type(u) == "table" then
-    -- u сужен до table здесь
+    -- u narrowed to table here
 end
 ```
 
-## Безопасность nil
+## Nil Safety
 
-Типы не допускают nil по умолчанию. Используйте `?` для опциональных значений:
+Types are non-nullable by default. Use `?` for optional values:
 
 ```lua
-local x: number = nil         -- ОШИБКА: nil не присваивается number
-local y: number? = nil        -- OK: number? означает "number или nil"
+local x: number = nil         -- ERROR: nil not assignable to number
+local y: number? = nil        -- OK: number? means "number or nil"
 local z: number? = 42         -- OK
 ```
 
-### Сужение через control flow
+### Control Flow Narrowing
 
-Чекер типов отслеживает control flow:
+The type checker tracks control flow:
 
 ```lua
 local function process(x: number?): number
     if x ~= nil then
-        return x              -- x здесь number
+        return x              -- x is number here
     end
     return 0
 end
 
--- Паттерн раннего return
+-- Early return pattern
 local user, err = get_user(123)
 if err then return nil, err end
--- user сужен до non-nil здесь
+-- user narrowed to non-nil here
 
--- Или default
+-- Or default
 local val = get_value() or 0  -- val: number
 ```
 
-## Union-типы
+## Union Types
 
 ```lua
 local val: number | string = get_value()
@@ -71,39 +73,39 @@ else
 end
 ```
 
-### Литеральные типы
+### Literal Types
 
 ```lua
 type Status = "pending" | "active" | "done"
 
 local s: Status = "pending"   -- OK
-local s: Status = "invalid"   -- ОШИБКА
+local s: Status = "invalid"   -- ERROR
 ```
 
-## Типы функций
+## Function Types
 
 ```lua
 local function add(a: number, b: number): number
     return a + b
 end
 
--- Множественные возвраты
+-- Multiple returns
 local function div_mod(a: number, b: number): (number, number)
     return math.floor(a / b), a % b
 end
 
--- Возврат ошибок (Lua-идиома)
+-- Error returns (Lua idiom)
 local function fetch(url: string): (string?, error?)
-    -- возвращает (data, nil) или (nil, error)
+    -- returns (data, nil) or (nil, error)
 end
 
--- First-class типы функций
+-- First-class function types
 local double: (number) -> number = function(x: number): number
     return x * 2
 end
 ```
 
-### Вариадические функции
+### Variadic Functions
 
 ```lua
 local function sum(...: number): number
@@ -115,7 +117,7 @@ local function sum(...: number): number
 end
 ```
 
-## Record-типы
+## Record Types
 
 ```lua
 type User = {name: string, age: number}
@@ -123,7 +125,7 @@ type User = {name: string, age: number}
 local u: User = {name = "alice", age = 25}
 ```
 
-### Опциональные поля
+### Optional Fields
 
 ```lua
 type Config = {
@@ -136,7 +138,7 @@ type Config = {
 local cfg: Config = {host = "localhost", port = 8080}  -- OK
 ```
 
-## Дженерики
+## Generics
 
 ```lua
 local function identity<T>(x: T): T
@@ -147,7 +149,7 @@ local n: number = identity(42)
 local s: string = identity("hello")
 ```
 
-### Ограниченные дженерики
+### Constrained Generics
 
 ```lua
 type HasName = {name: string}
@@ -157,12 +159,12 @@ local function greet<T: HasName>(obj: T): string
 end
 
 greet({name = "Alice"})       -- OK
-greet({age = 30})             -- ОШИБКА: отсутствует 'name'
+greet({age = 30})             -- ERROR: missing 'name'
 ```
 
-## Intersection-типы
+## Intersection Types
 
-Комбинирование нескольких типов:
+Combine multiple types:
 
 ```lua
 type Named = {name: string}
@@ -195,9 +197,9 @@ local function render(state: LoadState): string
 end
 ```
 
-## Тип never
+## The never Type
 
-`never` — bottom-тип, значений не существует:
+`never` is the bottom type - no values exist:
 
 ```lua
 function fail(msg: string): never
@@ -205,58 +207,58 @@ function fail(msg: string): never
 end
 ```
 
-## Паттерн обработки ошибок
+## Error Handling Pattern
 
-Чекер понимает Lua-идиому ошибок:
+The checker understands the Lua error idiom:
 
 ```lua
 local value, err = call()
 if err then
-    -- value здесь nil
+    -- value is nil here
     return nil, err
 end
--- value здесь non-nil, err — nil
+-- value is non-nil here, err is nil
 print(value)
 ```
 
-## Non-nil утверждение
+## Non-Nil Assertion
 
-Используйте `!` для утверждения, что выражение non-nil:
+Use `!` to assert an expression is non-nil:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- утверждение, что user non-nil
+local name = user!.name              -- assert user is non-nil
 ```
 
-Если значение nil в runtime, выбрасывается ошибка. Используйте, когда знаете, что значение не может быть nil, но чекер не может это доказать.
+If the value is nil at runtime, an error is raised. Use when you know a value cannot be nil but the type checker cannot prove it.
 
-## Приведения типов
+## Type Casts
 
-### Безопасное приведение (валидация)
+### Safe Cast (Validation)
 
-Вызовите тип как функцию для валидации и приведения:
+Call a type as a function to validate and cast:
 
 ```lua
 local data: any = get_json()
-local user = User(data)              -- валидирует и возвращает User
-local name = user.name               -- безопасный доступ к полю
+local user = User(data)              -- validates and returns User
+local name = user.name               -- safe field access
 ```
 
-Работает с примитивами и пользовательскими типами:
+Works with primitives and custom types:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- приведение к string
-local n = integer(x)                 -- приведение к integer
-local b = boolean(x)                 -- приведение к boolean
+local s = string(x)                  -- cast to string
+local n = integer(x)                 -- cast to integer
+local b = boolean(x)                 -- cast to boolean
 
 type Point = {x: number, y: number}
-local p = Point(data)                -- валидирует структуру record
+local p = Point(data)                -- validates record structure
 ```
 
-### Метод Type:is()
+### Type:is() Method
 
-Валидация без выброса, возвращает `(value, nil)` или `(nil, error)`:
+Validate without throwing, returns `(value, nil)` or `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -264,37 +266,37 @@ local data: any = get_input()
 
 local p, err = Point:is(data)
 if p then
-    local sum = p.x + p.y            -- p — валидный Point
+    local sum = p.x + p.y            -- p is valid Point
 else
-    return nil, err                  -- валидация не прошла
+    return nil, err                  -- validation failed
 end
 ```
 
-Результат сужается в условиях:
+The result narrows in conditionals:
 
 ```lua
 if Point:is(data) then
-    local p: Point = data            -- data сужен до Point
+    local p: Point = data            -- data narrowed to Point
 end
 ```
 
-### Небезопасное приведение
+### Unsafe Cast
 
-Используйте `::` или `as` для непроверяемых приведений:
+Use `::` or `as` for unchecked casts:
 
 ```lua
 local data: any = get_data()
-local user = data :: User            -- без runtime-проверки
-local user = data as User            -- то же, что ::
+local user = data :: User            -- no runtime check
+local user = data as User            -- same as ::
 ```
 
-Используйте экономно. Небезопасные приведения обходят валидацию и могут вызвать runtime-ошибки, если значение не соответствует типу.
+Use sparingly. Unsafe casts bypass validation and can cause runtime errors if the value doesn't match the type.
 
-## Рефлексия типов
+## Type Reflection
 
-Типы — first-class значения с методами интроспекции.
+Types are first-class values with introspection methods.
 
-### Kind и Name
+### Kind and Name
 
 ```lua
 print(Number:kind())                 -- "number"
@@ -302,9 +304,9 @@ print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
 
-### Поля Record
+### Record Fields
 
-Итерация по полям record:
+Iterate over record fields:
 
 ```lua
 type User = {name: string, age: number}
@@ -316,14 +318,14 @@ end
 -- age     number
 ```
 
-Доступ к типам отдельных полей:
+Access individual field types:
 
 ```lua
-local nameType = User.name           -- тип поля 'name'
+local nameType = User.name           -- type of 'name' field
 print(nameType:kind())               -- "string"
 ```
 
-### Типы коллекций
+### Collection Types
 
 ```lua
 local arr: {number} = {1, 2, 3}
@@ -336,7 +338,7 @@ print(mapType:key():kind())          -- "string"
 print(mapType:val():kind())          -- "number"
 ```
 
-### Опциональные типы
+### Optional Types
 
 ```lua
 local opt: number? = nil
@@ -345,7 +347,7 @@ print(optType:kind())                -- "optional"
 print(optType:inner():kind())        -- "number"
 ```
 
-### Union-типы
+### Union Types
 
 ```lua
 type Status = "pending" | "active" | "done"
@@ -355,7 +357,7 @@ for variant in Status:variants() do
 end
 ```
 
-### Типы функций
+### Function Types
 
 ```lua
 local fn: (number, string) -> boolean
@@ -367,15 +369,15 @@ end
 print(fnType:ret():kind())           -- "boolean"
 ```
 
-### Сравнение типов
+### Type Comparison
 
 ```lua
 print(Number == Number)              -- true
-print(Integer <= Number)             -- true (подтип)
-print(Integer < Number)              -- true (строгий подтип)
+print(Integer <= Number)             -- true (subtype)
+print(Integer < Number)              -- true (strict subtype)
 ```
 
-### Типы как ключи таблиц
+### Types as Table Keys
 
 ```lua
 local handlers = {}
@@ -386,53 +388,53 @@ local h = handlers[typeof(value)]
 if h then h() end
 ```
 
-## Аннотации типов
+## Type Annotations
 
-Добавляйте типы в сигнатуры функций:
+Add types to function signatures:
 
 ```lua
--- Типы параметров и возврата
+-- Parameter and return types
 local function process(input: string): number
     return #input
 end
 
--- Типы локальных переменных
+-- Local variable types
 local count: number = 0
 
--- Псевдонимы типов
+-- Type aliases
 type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
-## Валидаторы типов
+## Type Validators
 
-Добавляйте ограничения валидации к типам с помощью аннотаций:
+Add runtime validation constraints to types using annotations:
 
 ```lua
--- Один валидатор
+-- Single validator
 local x: number @min(0) = 1
 
--- Несколько валидаторов
+-- Multiple validators
 local x: number @min(0) @max(100) = 50
 
--- Паттерн строки
+-- String pattern
 local email: string @pattern("^.+@.+$") = "test@example.com"
 
--- Валидатор без аргументов
+-- No-arg validator
 local x: number @integer = 42
 ```
 
-### Встроенные валидаторы
+### Built-in Validators
 
-| Валидатор | Применяется к | Пример |
-|-----------|---------------|--------|
+| Validator | Applies to | Example |
+|-----------|------------|---------|
 | `@min(n)` | number | `local x: number @min(0) = 1` |
 | `@max(n)` | number | `local x: number @max(100) = 50` |
 | `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
 | `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
 | `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
 
-### Валидаторы полей записи
+### Record Field Validators
 
 ```lua
 type User = {
@@ -441,61 +443,61 @@ type User = {
 }
 ```
 
-### Валидаторы элементов массива
+### Array Element Validators
 
 ```lua
 local scores: {number @min(0) @max(100)} = {85, 90}
 ```
 
-### Валидаторы членов объединения
+### Union Member Validators
 
 ```lua
 local id: number @min(1) | string @min_len(1) = 1
 ```
 
-## Правила вариантности
+## Variance Rules
 
-| Позиция | Вариантность | Описание |
-|---------|--------------|----------|
-| Readonly поле | Ковариантная | Можно использовать подтип |
-| Mutable поле | Инвариантная | Должно точно совпадать |
-| Параметр функции | Контравариантная | Можно использовать супертип |
-| Возврат функции | Ковариантная | Можно использовать подтип |
+| Position | Variance | Description |
+|----------|----------|-------------|
+| Readonly field | Covariant | Can use subtype |
+| Mutable field | Invariant | Must match exactly |
+| Function parameter | Contravariant | Can use supertype |
+| Function return | Covariant | Can use subtype |
 
-## Подтипирование
+## Subtyping
 
-- `integer` — подтип `number`
-- `never` — подтип всех типов
-- Все типы — подтипы `any`
-- Union-подтипирование: `A` — подтип `A | B`
+- `integer` is a subtype of `number`
+- `never` is a subtype of all types
+- All types are subtypes of `any`
+- Union subtyping: `A` is subtype of `A | B`
 
-## Постепенное внедрение
+## Gradual Adoption
 
-Добавляйте типы инкрементально — нетипизированный код продолжает работать:
+Add types incrementally - untyped code continues to work:
 
 ```lua
--- Существующий код работает без изменений
+-- Existing code works unchanged
 function old_function(x)
     return x + 1
 end
 
--- Новый код получает типы
+-- New code gets types
 function new_function(x: number): number
     return x + 1
 end
 ```
 
-Начните с добавления типов в:
-1. Сигнатуры функций на границах API
-2. HTTP-обработчики и потребители очередей
-3. Критическую бизнес-логику
+Start by adding types to:
+1. Function signatures at API boundaries
+2. HTTP handlers and queue consumers
+3. Critical business logic
 
-## Проверка типов
+## Type Checking
 
-Запуск чекера типов:
+Run the type checker:
 
 ```bash
 wippy lint
 ```
 
-Сообщает об ошибках типов без выполнения кода.
+Reports type errors without executing code.

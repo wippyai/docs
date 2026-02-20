@@ -1,213 +1,218 @@
 [
   {
-    "title": "快速入门",
+    "title": "Getting Started",
     "children": [
-      {"title": "关于 Wippy", "path": "start/about"},
-      {"title": "安装", "path": "start/installation"},
-      {"title": "项目结构", "path": "start/structure"}
+      {"title": "What is Wippy", "path": "start/about"},
+      {"title": "Installation", "path": "start/installation"},
+      {"title": "Project Structure", "path": "start/structure"}
     ]
   },
   {
-    "title": "使用指南",
+    "title": "Guides",
     "children": [
-      {"title": "命令行工具", "path": "guides/cli"},
-      {"title": "配置", "path": "guides/configuration"},
-      {"title": "代码检查", "path": "guides/linter"},
-      {"title": "语言服务器", "path": "guides/lsp"},
-      {"title": "依赖管理", "path": "guides/dependency-management"},
-      {"title": "记录类型", "path": "guides/entry-kinds"},
-      {"title": "可观测性", "path": "guides/observability"},
-      {"title": "队列消费者", "path": "guides/queue-consumers"},
-      {"title": "进程监管", "path": "guides/supervision"},
-      {"title": "发布", "path": "guides/publishing"}
+      {"title": "CLI", "path": "guides/cli"},
+      {"title": "Configuration", "path": "guides/configuration"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Language Server", "path": "guides/lsp"},
+      {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Entry Kinds", "path": "guides/entry-kinds"},
+      {"title": "Observability", "path": "guides/observability"},
+      {"title": "Queue Consumers", "path": "guides/queue-consumers"},
+      {"title": "Supervision", "path": "guides/supervision"},
+      {"title": "Publishing", "path": "guides/publishing"}
     ]
   },
   {
-    "title": "核心概念",
+    "title": "Core Concepts",
     "children": [
-      {"title": "计算单元", "path": "concepts/compute-units"},
-      {"title": "注册表", "path": "concepts/registry"},
-      {"title": "进程模型", "path": "concepts/process-model"},
-      {"title": "函数", "path": "concepts/functions"},
-      {"title": "工作流", "path": "concepts/workflows"}
+      {"title": "Compute Units", "path": "concepts/compute-units"},
+      {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Process Model", "path": "concepts/process-model"},
+      {"title": "Functions", "path": "concepts/functions"},
+      {"title": "Workflows", "path": "concepts/workflows"}
     ]
   },
   {
-    "title": "Lua 运行时",
+    "title": "Lua Runtime",
     "children": [
-      {"title": "概述", "path": "lua/overview"},
-      {"title": "类型系统", "path": "lua/types"},
-      {"title": "记录定义", "path": "lua/entries"},
+      {"title": "Overview", "path": "lua/overview"},
+      {"title": "Types", "path": "lua/types"},
+      {"title": "Entries", "path": "lua/entries"},
       {
-        "title": "核心模块",
+        "title": "Core",
         "children": [
-          {"title": "标准库", "path": "lua/core/base"},
-          {"title": "错误处理", "path": "lua/core/errors"},
-          {"title": "时间", "path": "lua/core/time"},
-          {"title": "通道", "path": "lua/core/channel"},
-          {"title": "进程", "path": "lua/core/process"},
-          {"title": "函数调用", "path": "lua/core/funcs"},
+          {"title": "Base", "path": "lua/core/base"},
+          {"title": "Errors", "path": "lua/core/errors"},
+          {"title": "Time", "path": "lua/core/time"},
+          {"title": "Channels", "path": "lua/core/channel"},
+          {"title": "Process", "path": "lua/core/process"},
+          {"title": "Functions", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},
-          {"title": "流", "path": "lua/core/stream"},
-          {"title": "上下文", "path": "lua/core/context"},
-          {"title": "事件", "path": "lua/core/events"},
-          {"title": "注册表", "path": "lua/core/registry"},
-          {"title": "契约", "path": "lua/core/contract"}
+          {"title": "Stream", "path": "lua/core/stream"},
+          {"title": "Context", "path": "lua/core/context"},
+          {"title": "Events", "path": "lua/core/events"},
+          {"title": "Registry", "path": "lua/core/registry"},
+          {"title": "Contract", "path": "lua/core/contract"}
         ]
       },
       {
-        "title": "数据格式",
+        "title": "Data Formats",
         "children": [
           {"title": "JSON", "path": "lua/data/json"},
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "Base64", "path": "lua/data/base64"},
-          {"title": "压缩", "path": "lua/data/compress"},
+          {"title": "Compress", "path": "lua/data/compress"},
           {"title": "Payload", "path": "lua/data/payload"},
           {"title": "Excel", "path": "lua/data/excel"}
         ]
       },
       {
-        "title": "HTTP 与 Web",
+        "title": "HTTP & Web",
         "children": [
           {"title": "HTTP", "path": "lua/http/http"},
-          {"title": "HTTP 客户端", "path": "lua/http/client"},
+          {"title": "HTTP Client", "path": "lua/http/client"},
           {"title": "WebSocket", "path": "lua/http/websocket"},
           {"title": "HTML", "path": "lua/http/html"}
         ]
       },
       {
-        "title": "存储",
+        "title": "Storage",
         "children": [
           {"title": "SQL", "path": "lua/storage/sql"},
-          {"title": "键值存储", "path": "lua/storage/store"},
-          {"title": "文件系统", "path": "lua/storage/filesystem"},
-          {"title": "云存储", "path": "lua/storage/cloud"},
-          {"title": "消息队列", "path": "lua/storage/queue"}
+          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Filesystem", "path": "lua/storage/filesystem"},
+          {"title": "Cloud Storage", "path": "lua/storage/cloud"},
+          {"title": "Queue", "path": "lua/storage/queue"}
         ]
       },
       {
-        "title": "系统",
+        "title": "System",
         "children": [
-          {"title": "系统信息", "path": "lua/system/system"},
-          {"title": "环境变量", "path": "lua/system/env"},
-          {"title": "日志", "path": "lua/system/logger"},
-          {"title": "终端 I/O", "path": "lua/system/io"},
-          {"title": "指标", "path": "lua/system/metrics"},
-          {"title": "系统时间", "path": "lua/system/ostime"}
+          {"title": "System", "path": "lua/system/system"},
+          {"title": "Environment", "path": "lua/system/env"},
+          {"title": "Logger", "path": "lua/system/logger"},
+          {"title": "I/O", "path": "lua/system/io"},
+          {"title": "Metrics", "path": "lua/system/metrics"},
+          {"title": "OS Time", "path": "lua/system/ostime"}
         ]
       },
       {
-        "title": "文本与模板",
+        "title": "Text & Templates",
         "children": [
-          {"title": "文本处理", "path": "lua/text/text"},
-          {"title": "模板", "path": "lua/text/template"},
+          {"title": "Text", "path": "lua/text/text"},
+          {"title": "Template", "path": "lua/text/template"},
           {"title": "TreeSitter", "path": "lua/text/treesitter"}
         ]
       },
       {
-        "title": "安全",
+        "title": "Security",
         "children": [
-          {"title": "安全模块", "path": "lua/security/security"},
-          {"title": "加密", "path": "lua/security/crypto"},
-          {"title": "哈希", "path": "lua/security/hash"},
+          {"title": "Security", "path": "lua/security/security"},
+          {"title": "Crypto", "path": "lua/security/crypto"},
+          {"title": "Hash", "path": "lua/security/hash"},
           {"title": "UUID", "path": "lua/security/uuid"}
         ]
       },
       {
-        "title": "动态执行",
+        "title": "Dynamic",
         "children": [
           {"title": "Eval", "path": "lua/dynamic/eval"},
           {"title": "Exec", "path": "lua/dynamic/exec"},
-          {"title": "表达式", "path": "lua/dynamic/expression"}
+          {"title": "Expression", "path": "lua/dynamic/expression"}
         ]
       }
     ]
   },
   {
-    "title": "WASM 运行时",
+    "title": "WASM Runtime",
     "children": [
-      {"title": "概述", "path": "wasm/overview"},
-      {"title": "函数", "path": "wasm/functions"},
-      {"title": "宿主函数", "path": "wasm/hosts"},
-      {"title": "进程", "path": "wasm/processes"}
+      {"title": "Overview", "path": "wasm/overview"},
+      {"title": "Functions", "path": "wasm/functions"},
+      {"title": "Host Functions", "path": "wasm/hosts"},
+      {"title": "Processes", "path": "wasm/processes"}
     ]
   },
   {
-    "title": "框架",
+    "title": "Framework",
     "children": [
-      {"title": "概述", "path": "framework/overview"},
+      {"title": "Overview", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
-      {"title": "代理", "path": "framework/agents"},
-      {"title": "测试", "path": "framework/testing"}
+      {"title": "Agents", "path": "framework/agents"},
+      {"title": "Testing", "path": "framework/testing"},
+      {"title": "Dataflow", "path": "framework/dataflow"},
+      {"title": "Relay", "path": "framework/relay"},
+      {"title": "Views", "path": "framework/views", "children": [
+        {"title": "Facade", "path": "framework/facade"}
+      ]}
     ]
   },
   {
     "title": "Temporal",
     "children": [
-      {"title": "概述", "path": "temporal/overview"},
-      {"title": "Activity", "path": "temporal/activities"},
-      {"title": "工作流", "path": "temporal/workflows"}
+      {"title": "Overview", "path": "temporal/overview"},
+      {"title": "Activities", "path": "temporal/activities"},
+      {"title": "Workflows", "path": "temporal/workflows"}
     ]
   },
   {
-    "title": "系统组件",
+    "title": "System Components",
     "children": [
-      {"title": "进程宿主", "path": "system/process-host"},
-      {"title": "终端", "path": "system/terminal"},
-      {"title": "数据库", "path": "system/database"},
-      {"title": "键值存储", "path": "system/store"},
-      {"title": "消息队列", "path": "system/queue"},
-      {"title": "文件系统", "path": "system/filesystem"},
-      {"title": "云存储", "path": "system/cloudstorage"},
-      {"title": "环境变量", "path": "system/env"},
-      {"title": "模板", "path": "system/template"},
-      {"title": "安全", "path": "system/security"},
-      {"title": "命令执行", "path": "system/exec"}
+      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "Database", "path": "system/database"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Queue", "path": "system/queue"},
+      {"title": "Filesystem", "path": "system/filesystem"},
+      {"title": "Cloud Storage", "path": "system/cloudstorage"},
+      {"title": "Environment", "path": "system/env"},
+      {"title": "Template", "path": "system/template"},
+      {"title": "Security", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
     ]
   },
   {
     "title": "HTTP",
     "children": [
-      {"title": "服务器", "path": "http/server"},
-      {"title": "路由器", "path": "http/router"},
-      {"title": "端点", "path": "http/endpoint"},
-      {"title": "中间件", "path": "http/middleware"},
-      {"title": "静态文件", "path": "http/static"},
-      {"title": "WebSocket 中继", "path": "http/websocket-relay"}
+      {"title": "Server", "path": "http/server"},
+      {"title": "Router", "path": "http/router"},
+      {"title": "Endpoint", "path": "http/endpoint"},
+      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "Static Files", "path": "http/static"},
+      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
     ]
   },
   {
-    "title": "示例教程",
+    "title": "Tutorials",
     "children": [
       {"title": "Hello World", "path": "tutorials/hello-world"},
-      {"title": "CLI 应用", "path": "tutorials/cli"},
-      {"title": "Echo 服务", "path": "tutorials/echo-service"},
-      {"title": "通道", "path": "tutorials/channels"},
-      {"title": "进程", "path": "tutorials/processes"},
-      {"title": "进程监管", "path": "tutorials/supervision"},
-      {"title": "任务队列", "path": "tutorials/task-queue"},
-      {"title": "身份认证", "path": "tutorials/auth"},
+      {"title": "CLI Applications", "path": "tutorials/cli"},
+      {"title": "Echo Service", "path": "tutorials/echo-service"},
+      {"title": "Channels", "path": "tutorials/channels"},
+      {"title": "Processes", "path": "tutorials/processes"},
+      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "Authentication", "path": "tutorials/auth"},
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"}
     ]
   },
   {
-    "title": "内部机制",
+    "title": "Internals",
     "children": [
-      {"title": "注册表", "path": "internals/registry"},
-      {"title": "调度器", "path": "internals/scheduler"},
-      {"title": "命令分发", "path": "internals/dispatch"},
-      {"title": "事件系统", "path": "internals/events"},
-      {"title": "模块系统", "path": "internals/modules"},
-      {"title": "Kind 处理器", "path": "internals/kinds"}
+      {"title": "Registry", "path": "internals/registry"},
+      {"title": "Scheduler", "path": "internals/scheduler"},
+      {"title": "Dispatch", "path": "internals/dispatch"},
+      {"title": "Events", "path": "internals/events"},
+      {"title": "Modules", "path": "internals/modules"},
+      {"title": "Kinds", "path": "internals/kinds"}
     ]
   },
   {
-    "title": "关于",
+    "title": "About",
     "children": [
-      {"title": "参与贡献", "path": "about/contributing"},
-      {"title": "许可证", "path": "about/license"}
+      {"title": "Contributing", "path": "about/contributing"},
+      {"title": "License", "path": "about/license"}
     ]
   }
 ]

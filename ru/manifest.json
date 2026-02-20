@@ -1,124 +1,124 @@
 [
   {
-    "title": "Начало работы",
+    "title": "Getting Started",
     "children": [
-      {"title": "Что такое Wippy", "path": "start/about"},
-      {"title": "Установка", "path": "start/installation"},
-      {"title": "Структура проекта", "path": "start/structure"}
+      {"title": "What is Wippy", "path": "start/about"},
+      {"title": "Installation", "path": "start/installation"},
+      {"title": "Project Structure", "path": "start/structure"}
     ]
   },
   {
-    "title": "Руководства",
+    "title": "Guides",
     "children": [
       {"title": "CLI", "path": "guides/cli"},
-      {"title": "Конфигурация", "path": "guides/configuration"},
-      {"title": "Линтер", "path": "guides/linter"},
-      {"title": "Языковой сервер", "path": "guides/lsp"},
-      {"title": "Управление зависимостями", "path": "guides/dependency-management"},
-      {"title": "Типы записей", "path": "guides/entry-kinds"},
-      {"title": "Наблюдаемость", "path": "guides/observability"},
-      {"title": "Потребители очередей", "path": "guides/queue-consumers"},
-      {"title": "Супервизия", "path": "guides/supervision"},
-      {"title": "Публикация", "path": "guides/publishing"}
+      {"title": "Configuration", "path": "guides/configuration"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Language Server", "path": "guides/lsp"},
+      {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Entry Kinds", "path": "guides/entry-kinds"},
+      {"title": "Observability", "path": "guides/observability"},
+      {"title": "Queue Consumers", "path": "guides/queue-consumers"},
+      {"title": "Supervision", "path": "guides/supervision"},
+      {"title": "Publishing", "path": "guides/publishing"}
     ]
   },
   {
-    "title": "Основные концепции",
+    "title": "Core Concepts",
     "children": [
-      {"title": "Вычислительные единицы", "path": "concepts/compute-units"},
-      {"title": "Реестр", "path": "concepts/registry"},
-      {"title": "Модель процессов", "path": "concepts/process-model"},
-      {"title": "Функции", "path": "concepts/functions"},
-      {"title": "Воркфлоу", "path": "concepts/workflows"}
+      {"title": "Compute Units", "path": "concepts/compute-units"},
+      {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Process Model", "path": "concepts/process-model"},
+      {"title": "Functions", "path": "concepts/functions"},
+      {"title": "Workflows", "path": "concepts/workflows"}
     ]
   },
   {
-    "title": "Lua-среда",
+    "title": "Lua Runtime",
     "children": [
-      {"title": "Обзор", "path": "lua/overview"},
-      {"title": "Типы", "path": "lua/types"},
-      {"title": "Записи", "path": "lua/entries"},
+      {"title": "Overview", "path": "lua/overview"},
+      {"title": "Types", "path": "lua/types"},
+      {"title": "Entries", "path": "lua/entries"},
       {
-        "title": "Ядро",
+        "title": "Core",
         "children": [
-          {"title": "Базовые функции", "path": "lua/core/base"},
-          {"title": "Ошибки", "path": "lua/core/errors"},
-          {"title": "Время", "path": "lua/core/time"},
-          {"title": "Каналы", "path": "lua/core/channel"},
-          {"title": "Процессы", "path": "lua/core/process"},
-          {"title": "Функции", "path": "lua/core/funcs"},
-          {"title": "Фьючеры", "path": "lua/core/future"},
-          {"title": "Потоки", "path": "lua/core/stream"},
-          {"title": "Контекст", "path": "lua/core/context"},
-          {"title": "События", "path": "lua/core/events"},
-          {"title": "Реестр", "path": "lua/core/registry"},
-          {"title": "Контракты", "path": "lua/core/contract"}
+          {"title": "Base", "path": "lua/core/base"},
+          {"title": "Errors", "path": "lua/core/errors"},
+          {"title": "Time", "path": "lua/core/time"},
+          {"title": "Channels", "path": "lua/core/channel"},
+          {"title": "Process", "path": "lua/core/process"},
+          {"title": "Functions", "path": "lua/core/funcs"},
+          {"title": "Future", "path": "lua/core/future"},
+          {"title": "Stream", "path": "lua/core/stream"},
+          {"title": "Context", "path": "lua/core/context"},
+          {"title": "Events", "path": "lua/core/events"},
+          {"title": "Registry", "path": "lua/core/registry"},
+          {"title": "Contract", "path": "lua/core/contract"}
         ]
       },
       {
-        "title": "Форматы данных",
+        "title": "Data Formats",
         "children": [
           {"title": "JSON", "path": "lua/data/json"},
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "Base64", "path": "lua/data/base64"},
-          {"title": "Сжатие", "path": "lua/data/compress"},
+          {"title": "Compress", "path": "lua/data/compress"},
           {"title": "Payload", "path": "lua/data/payload"},
           {"title": "Excel", "path": "lua/data/excel"}
         ]
       },
       {
-        "title": "HTTP и веб",
+        "title": "HTTP & Web",
         "children": [
           {"title": "HTTP", "path": "lua/http/http"},
-          {"title": "HTTP клиент", "path": "lua/http/client"},
+          {"title": "HTTP Client", "path": "lua/http/client"},
           {"title": "WebSocket", "path": "lua/http/websocket"},
           {"title": "HTML", "path": "lua/http/html"}
         ]
       },
       {
-        "title": "Хранилища",
+        "title": "Storage",
         "children": [
           {"title": "SQL", "path": "lua/storage/sql"},
-          {"title": "Хранилище", "path": "lua/storage/store"},
-          {"title": "Файловая система", "path": "lua/storage/filesystem"},
-          {"title": "Облачное хранилище", "path": "lua/storage/cloud"},
-          {"title": "Очереди", "path": "lua/storage/queue"}
+          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Filesystem", "path": "lua/storage/filesystem"},
+          {"title": "Cloud Storage", "path": "lua/storage/cloud"},
+          {"title": "Queue", "path": "lua/storage/queue"}
         ]
       },
       {
-        "title": "Система",
+        "title": "System",
         "children": [
-          {"title": "Системные функции", "path": "lua/system/system"},
-          {"title": "Окружение", "path": "lua/system/env"},
-          {"title": "Логгер", "path": "lua/system/logger"},
-          {"title": "Ввод/вывод", "path": "lua/system/io"},
-          {"title": "Метрики", "path": "lua/system/metrics"},
-          {"title": "Системное время", "path": "lua/system/ostime"}
+          {"title": "System", "path": "lua/system/system"},
+          {"title": "Environment", "path": "lua/system/env"},
+          {"title": "Logger", "path": "lua/system/logger"},
+          {"title": "I/O", "path": "lua/system/io"},
+          {"title": "Metrics", "path": "lua/system/metrics"},
+          {"title": "OS Time", "path": "lua/system/ostime"}
         ]
       },
       {
-        "title": "Текст и шаблоны",
+        "title": "Text & Templates",
         "children": [
-          {"title": "Текст", "path": "lua/text/text"},
-          {"title": "Шаблоны", "path": "lua/text/template"},
+          {"title": "Text", "path": "lua/text/text"},
+          {"title": "Template", "path": "lua/text/template"},
           {"title": "TreeSitter", "path": "lua/text/treesitter"}
         ]
       },
       {
-        "title": "Безопасность",
+        "title": "Security",
         "children": [
-          {"title": "Безопасность", "path": "lua/security/security"},
-          {"title": "Криптография", "path": "lua/security/crypto"},
-          {"title": "Хеширование", "path": "lua/security/hash"},
+          {"title": "Security", "path": "lua/security/security"},
+          {"title": "Crypto", "path": "lua/security/crypto"},
+          {"title": "Hash", "path": "lua/security/hash"},
           {"title": "UUID", "path": "lua/security/uuid"}
         ]
       },
       {
-        "title": "Динамика",
+        "title": "Dynamic",
         "children": [
           {"title": "Eval", "path": "lua/dynamic/eval"},
           {"title": "Exec", "path": "lua/dynamic/exec"},
-          {"title": "Выражения", "path": "lua/dynamic/expression"}
+          {"title": "Expression", "path": "lua/dynamic/expression"}
         ]
       }
     ]
@@ -126,88 +126,93 @@
   {
     "title": "WASM Runtime",
     "children": [
-      {"title": "Обзор", "path": "wasm/overview"},
-      {"title": "Функции", "path": "wasm/functions"},
-      {"title": "Хост-функции", "path": "wasm/hosts"},
-      {"title": "Процессы", "path": "wasm/processes"}
+      {"title": "Overview", "path": "wasm/overview"},
+      {"title": "Functions", "path": "wasm/functions"},
+      {"title": "Host Functions", "path": "wasm/hosts"},
+      {"title": "Processes", "path": "wasm/processes"}
     ]
   },
   {
     "title": "Framework",
     "children": [
-      {"title": "Обзор", "path": "framework/overview"},
+      {"title": "Overview", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
-      {"title": "Агенты", "path": "framework/agents"},
-      {"title": "Тестирование", "path": "framework/testing"}
+      {"title": "Agents", "path": "framework/agents"},
+      {"title": "Testing", "path": "framework/testing"},
+      {"title": "Dataflow", "path": "framework/dataflow"},
+      {"title": "Relay", "path": "framework/relay"},
+      {"title": "Views", "path": "framework/views", "children": [
+        {"title": "Facade", "path": "framework/facade"}
+      ]}
     ]
   },
   {
     "title": "Temporal",
     "children": [
-      {"title": "Обзор", "path": "temporal/overview"},
-      {"title": "Активности", "path": "temporal/activities"},
-      {"title": "Воркфлоу", "path": "temporal/workflows"}
+      {"title": "Overview", "path": "temporal/overview"},
+      {"title": "Activities", "path": "temporal/activities"},
+      {"title": "Workflows", "path": "temporal/workflows"}
     ]
   },
   {
-    "title": "Системные компоненты",
+    "title": "System Components",
     "children": [
-      {"title": "Хост процессов", "path": "system/process-host"},
-      {"title": "Терминал", "path": "system/terminal"},
-      {"title": "База данных", "path": "system/database"},
-      {"title": "Хранилище", "path": "system/store"},
-      {"title": "Очередь", "path": "system/queue"},
-      {"title": "Файловая система", "path": "system/filesystem"},
-      {"title": "Облачное хранилище", "path": "system/cloudstorage"},
-      {"title": "Окружение", "path": "system/env"},
-      {"title": "Шаблоны", "path": "system/template"},
-      {"title": "Безопасность", "path": "system/security"},
+      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "Database", "path": "system/database"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Queue", "path": "system/queue"},
+      {"title": "Filesystem", "path": "system/filesystem"},
+      {"title": "Cloud Storage", "path": "system/cloudstorage"},
+      {"title": "Environment", "path": "system/env"},
+      {"title": "Template", "path": "system/template"},
+      {"title": "Security", "path": "system/security"},
       {"title": "Exec", "path": "system/exec"}
     ]
   },
   {
     "title": "HTTP",
     "children": [
-      {"title": "Сервер", "path": "http/server"},
-      {"title": "Роутер", "path": "http/router"},
-      {"title": "Эндпоинт", "path": "http/endpoint"},
-      {"title": "Middleware-обработчики", "path": "http/middleware"},
-      {"title": "Статические файлы", "path": "http/static"},
-      {"title": "WebSocket-ретранслятор", "path": "http/websocket-relay"}
+      {"title": "Server", "path": "http/server"},
+      {"title": "Router", "path": "http/router"},
+      {"title": "Endpoint", "path": "http/endpoint"},
+      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "Static Files", "path": "http/static"},
+      {"title": "WebSocket Relay", "path": "http/websocket-relay"}
     ]
   },
   {
-    "title": "Примеры",
+    "title": "Tutorials",
     "children": [
       {"title": "Hello World", "path": "tutorials/hello-world"},
-      {"title": "CLI приложения", "path": "tutorials/cli"},
-      {"title": "Echo сервис", "path": "tutorials/echo-service"},
-      {"title": "Каналы", "path": "tutorials/channels"},
-      {"title": "Процессы", "path": "tutorials/processes"},
-      {"title": "Супервизия", "path": "tutorials/supervision"},
-      {"title": "Очередь задач", "path": "tutorials/task-queue"},
-      {"title": "Аутентификация", "path": "tutorials/auth"},
+      {"title": "CLI Applications", "path": "tutorials/cli"},
+      {"title": "Echo Service", "path": "tutorials/echo-service"},
+      {"title": "Channels", "path": "tutorials/channels"},
+      {"title": "Processes", "path": "tutorials/processes"},
+      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "Authentication", "path": "tutorials/auth"},
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"}
     ]
   },
   {
-    "title": "Внутреннее устройство",
+    "title": "Internals",
     "children": [
-      {"title": "Реестр", "path": "internals/registry"},
-      {"title": "Планировщик", "path": "internals/scheduler"},
-      {"title": "Диспетчеризация", "path": "internals/dispatch"},
-      {"title": "События", "path": "internals/events"},
-      {"title": "Модули", "path": "internals/modules"},
-      {"title": "Виды записей", "path": "internals/kinds"}
+      {"title": "Registry", "path": "internals/registry"},
+      {"title": "Scheduler", "path": "internals/scheduler"},
+      {"title": "Dispatch", "path": "internals/dispatch"},
+      {"title": "Events", "path": "internals/events"},
+      {"title": "Modules", "path": "internals/modules"},
+      {"title": "Kinds", "path": "internals/kinds"}
     ]
   },
   {
-    "title": "О проекте",
+    "title": "About",
     "children": [
-      {"title": "Участие в разработке", "path": "about/contributing"},
-      {"title": "Лицензия", "path": "about/license"}
+      {"title": "Contributing", "path": "about/contributing"},
+      {"title": "License", "path": "about/license"}
     ]
   }
 ]

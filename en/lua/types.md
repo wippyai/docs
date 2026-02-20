@@ -1,5 +1,7 @@
 # Type System
 
+> **Experimental.** The type system is under active development. Syntax and behavior may change.
+
 Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
 
 ## Primitives

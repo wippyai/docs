@@ -1,19 +1,19 @@
-# 框架
+# Framework
 
-Wippy 通过 hub 提供官方框架模块。这些模块在 `wippy` 组织下维护，可以添加到任何项目中。
+Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
 
-## 添加框架模块
+## Adding Framework Modules
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-这会将模块添加到锁文件并下载到 `.wippy/vendor/`。
+This adds the module to your lock file and downloads it to `.wippy/vendor/`.
 
-## 在源码中声明依赖
+## Declaring Dependencies in Source
 
-框架模块也可以在 `_index.yaml` 中声明为依赖项：
+Framework modules can also be declared as dependencies in your `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -26,15 +26,15 @@ entries:
     version: "^0.3.0"
 ```
 
-然后解析并安装：
+Then resolve and install:
 
 ```bash
 wippy update
 ```
 
-## 导入框架库
+## Importing Framework Libraries
 
-安装后，将框架库导入到你的条目中：
+Once installed, import framework libraries into your entries:
 
 ```yaml
 entries:
@@ -49,23 +49,28 @@ entries:
       test: wippy.test:test
 ```
 
-导入将 `wippy.test:test`（`wippy.test` 命名空间中的 `test` 条目）映射到本地名称 `test`，然后在 Lua 中通过 `require("test")` 使用。
+The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
 
-## 可用模块
+## Available Modules
 
-| 模块 | 描述 |
+| Module | Description |
 |--------|-------------|
-| `wippy/test` | BDD 风格的测试框架，支持断言和 Mock |
-| `wippy/terminal` | 终端 UI 组件 |
+| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
+| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
+| `wippy/test` | BDD-style testing framework with assertions and mocking |
+| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
+| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
+| `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/terminal` | Terminal UI components |
 
-更多模块正在持续发布中。搜索 hub：
+More modules are available and being published regularly. Search the hub:
 
 ```bash
 wippy search wippy
 ```
 
-## 另请参阅
+## See Also
 
-- [依赖管理](guides/dependency-management.md) - 锁文件和版本约束
-- [发布](guides/publishing.md) - 发布你自己的模块
-- [命令行工具](guides/cli.md) - CLI 命令
+- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
+- [Publishing](guides/publishing.md) - Publishing your own modules
+- [CLI Reference](guides/cli.md) - CLI commands
