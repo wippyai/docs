@@ -370,6 +370,7 @@ file:close()
 | `env.storage.memory` | In-memory env storage |
 | `env.storage.file` | File-based env storage |
 | `env.storage.os` | OS environment |
+| `env.storage.static` | Read-only static key-value storage |
 | `env.storage.router` | Env router (multiple storages) |
 | `env.variable` | Environment variable |
 
@@ -382,11 +383,18 @@ file:close()
   file_path: ".env"
   auto_create: true
 
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    APP_ENV: "production"
+
 - name: app_env
   kind: env.storage.router
   storages:
     - app:os_env
     - app:file_env
+    - app:defaults
 ```
 
 **Lua API:** See [Env Module](lua/system/env.md)

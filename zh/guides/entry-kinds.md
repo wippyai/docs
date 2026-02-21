@@ -370,6 +370,7 @@ file:close()
 | `env.storage.memory` | 内存环境存储 |
 | `env.storage.file` | 文件环境存储 |
 | `env.storage.os` | 操作系统环境 |
+| `env.storage.static` | 只读静态键值存储 |
 | `env.storage.router` | 环境路由（多存储） |
 | `env.variable` | 环境变量 |
 
@@ -382,11 +383,18 @@ file:close()
   file_path: ".env"
   auto_create: true
 
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    APP_ENV: "production"
+
 - name: app_env
   kind: env.storage.router
   storages:
     - app:os_env
     - app:file_env
+    - app:defaults
 ```
 
 **Lua API：** 参见 [Env 模块](lua/system/env.md)

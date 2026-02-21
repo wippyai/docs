@@ -22,6 +22,7 @@
 | `env.storage.memory` | 内存键值存储 |
 | `env.storage.file` | 基于文件的存储（.env 格式） |
 | `env.storage.os` | 只读 OS 环境访问 |
+| `env.storage.static` | 只读静态键值存储 |
 | `env.storage.router` | 链接多个存储 |
 | `env.variable` | 引用存储的命名变量 |
 
@@ -64,6 +65,25 @@
 - name: os_env
   kind: env.storage.os
 ```
+
+始终只读。Set 操作返回 `PERMISSION_DENIED`。
+
+### 静态存储
+
+只读存储，值直接在配置中定义。值嵌入到条目中，运行时无法更改。适用于随模块或包分发的公共配置常量。
+
+```yaml
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    PUBLIC_WS_HOST: "wss://api.example.com/ws"
+    APP_ENV: "production"
+```
+
+| 属性 | 类型 | 描述 |
+|------|------|------|
+| `values` | map | 键值对（字符串到字符串） |
 
 始终只读。Set 操作返回 `PERMISSION_DENIED`。
 

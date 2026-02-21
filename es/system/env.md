@@ -22,6 +22,7 @@ Si no desea que una variable sea accesible públicamente por nombre, omita el ca
 | `env.storage.memory` | Almacenamiento clave-valor en memoria |
 | `env.storage.file` | Almacenamiento basado en archivo (formato .env) |
 | `env.storage.os` | Acceso de solo lectura al entorno del SO |
+| `env.storage.static` | Almacenamiento estático de solo lectura clave-valor |
 | `env.storage.router` | Encadena múltiples almacenes |
 | `env.variable` | Variable nombrada referenciando un almacén |
 
@@ -64,6 +65,25 @@ Acceso de solo lectura a variables de entorno del sistema operativo.
 - name: os_env
   kind: env.storage.os
 ```
+
+Siempre de solo lectura. Las operaciones de escritura retornan `PERMISSION_DENIED`.
+
+### Almacén Estático
+
+Almacenamiento de solo lectura con valores definidos directamente en la configuración. Los valores se integran en la entrada y no pueden cambiarse en tiempo de ejecución. Útil para constantes de configuración públicas que se distribuyen con un módulo o paquete.
+
+```yaml
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    PUBLIC_WS_HOST: "wss://api.example.com/ws"
+    APP_ENV: "production"
+```
+
+| Propiedad | Tipo | Descripción |
+|----------|------|-------------|
+| `values` | map | Pares clave-valor (string a string) |
 
 Siempre de solo lectura. Las operaciones de escritura retornan `PERMISSION_DENIED`.
 

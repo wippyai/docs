@@ -22,6 +22,7 @@ Wenn Sie nicht möchten, dass eine Variable öffentlich über den Namen zugängl
 | `env.storage.memory` | In-Memory-Key-Value-Speicher |
 | `env.storage.file` | Dateibasierter Speicher (.env-Format) |
 | `env.storage.os` | Schreibgeschützter OS-Umgebungszugriff |
+| `env.storage.static` | Schreibgeschützter statischer Key-Value-Speicher |
 | `env.storage.router` | Verkettet mehrere Speicher |
 | `env.variable` | Benannte Variable die auf einen Speicher referenziert |
 
@@ -64,6 +65,25 @@ Schreibgeschützter Zugriff auf Betriebssystem-Umgebungsvariablen.
 - name: os_env
   kind: env.storage.os
 ```
+
+Immer schreibgeschützt. Set-Operationen geben `PERMISSION_DENIED` zurück.
+
+### Statischer Speicher
+
+Schreibgeschützter Speicher mit direkt in der Konfiguration definierten Werten. Werte werden in den Eintrag eingebettet und können zur Laufzeit nicht geändert werden. Nützlich für öffentliche Konfigurationskonstanten, die mit einem Modul oder Paket ausgeliefert werden.
+
+```yaml
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    PUBLIC_WS_HOST: "wss://api.example.com/ws"
+    APP_ENV: "production"
+```
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `values` | map | Schlüssel-Wert-Paare (String zu String) |
 
 Immer schreibgeschützt. Set-Operationen geben `PERMISSION_DENIED` zurück.
 

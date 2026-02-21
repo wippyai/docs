@@ -369,6 +369,7 @@ file:close()
 | `env.storage.memory` | Almacén de env en memoria |
 | `env.storage.file` | Almacén de env basado en archivo |
 | `env.storage.os` | Entorno del SO |
+| `env.storage.static` | Almacenamiento estático de solo lectura clave-valor |
 | `env.storage.router` | Router de env (múltiples almacenes) |
 | `env.variable` | Variable de entorno |
 
@@ -381,11 +382,18 @@ file:close()
   file_path: ".env"
   auto_create: true
 
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    APP_ENV: "production"
+
 - name: app_env
   kind: env.storage.router
   storages:
     - app:os_env
     - app:file_env
+    - app:defaults
 ```
 
 **API Lua:** Ver [Módulo Env](lua/system/env.md)

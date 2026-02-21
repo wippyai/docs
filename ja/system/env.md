@@ -22,6 +22,7 @@
 | `env.storage.memory` | インメモリキーバリューストレージ |
 | `env.storage.file` | ファイルベースストレージ（.env形式） |
 | `env.storage.os` | 読み取り専用OS環境変数アクセス |
+| `env.storage.static` | 読み取り専用の静的キーバリューストレージ |
 | `env.storage.router` | 複数のストレージをチェーン |
 | `env.variable` | ストレージを参照する名前付き変数 |
 
@@ -64,6 +65,25 @@
 - name: os_env
   kind: env.storage.os
 ```
+
+常に読み取り専用。Set操作は`PERMISSION_DENIED`を返します。
+
+### 静的ストレージ
+
+設定に直接定義された値を持つ読み取り専用ストレージ。値はエントリに組み込まれ、実行時に変更できません。モジュールやパックに同梱する公開設定定数に便利です。
+
+```yaml
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    PUBLIC_WS_HOST: "wss://api.example.com/ws"
+    APP_ENV: "production"
+```
+
+| プロパティ | 型 | 説明 |
+|-----------|-----|------|
+| `values` | map | キーバリューペア（文字列から文字列） |
 
 常に読み取り専用。Set操作は`PERMISSION_DENIED`を返します。
 

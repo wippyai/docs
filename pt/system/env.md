@@ -22,6 +22,7 @@ Se você não quer que uma variável seja publicamente acessível pelo nome, omi
 | `env.storage.memory` | Armazenamento chave-valor em memória |
 | `env.storage.file` | Armazenamento baseado em arquivo (formato .env) |
 | `env.storage.os` | Acesso somente leitura ao ambiente do SO |
+| `env.storage.static` | Armazenamento estático somente leitura de chave-valor |
 | `env.storage.router` | Encadeia múltiplos armazenamentos |
 | `env.variable` | Variável nomeada referenciando um armazenamento |
 
@@ -64,6 +65,25 @@ Acesso somente leitura a variáveis de ambiente do sistema operacional.
 - name: os_env
   kind: env.storage.os
 ```
+
+Sempre somente leitura. Operações de escrita retornam `PERMISSION_DENIED`.
+
+### Armazenamento Estático
+
+Armazenamento somente leitura com valores definidos diretamente na configuração. Os valores são incorporados na entrada e não podem ser alterados em tempo de execução. Útil para constantes de configuração públicas que acompanham um módulo ou pacote.
+
+```yaml
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    PUBLIC_WS_HOST: "wss://api.example.com/ws"
+    APP_ENV: "production"
+```
+
+| Propriedade | Tipo | Descrição |
+|-------------|------|-----------|
+| `values` | map | Pares chave-valor (string para string) |
 
 Sempre somente leitura. Operações de escrita retornam `PERMISSION_DENIED`.
 

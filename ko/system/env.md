@@ -22,6 +22,7 @@
 | `env.storage.memory` | 인메모리 키-값 스토리지 |
 | `env.storage.file` | 파일 기반 스토리지 (.env 형식) |
 | `env.storage.os` | 읽기 전용 OS 환경 접근 |
+| `env.storage.static` | 읽기 전용 정적 키-값 스토리지 |
 | `env.storage.router` | 여러 스토리지 체인 |
 | `env.variable` | 스토리지를 참조하는 명명된 변수 |
 
@@ -64,6 +65,25 @@
 - name: os_env
   kind: env.storage.os
 ```
+
+항상 읽기 전용입니다. 설정 작업은 `PERMISSION_DENIED`를 반환합니다.
+
+### 정적 스토리지
+
+설정에 직접 정의된 값을 가진 읽기 전용 스토리지입니다. 값은 엔트리에 포함되며 런타임에 변경할 수 없습니다. 모듈이나 팩과 함께 배포되는 공개 설정 상수에 유용합니다.
+
+```yaml
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    PUBLIC_WS_HOST: "wss://api.example.com/ws"
+    APP_ENV: "production"
+```
+
+| 속성 | 타입 | 설명 |
+|----------|------|-------------|
+| `values` | map | 키-값 쌍 (문자열 대 문자열) |
 
 항상 읽기 전용입니다. 설정 작업은 `PERMISSION_DENIED`를 반환합니다.
 

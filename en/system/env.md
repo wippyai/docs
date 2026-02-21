@@ -22,6 +22,7 @@ If you don't want a variable to be publicly accessible by name, omit the `variab
 | `env.storage.memory` | In-memory key-value storage |
 | `env.storage.file` | File-based storage (.env format) |
 | `env.storage.os` | Read-only OS environment access |
+| `env.storage.static` | Read-only static key-value storage |
 | `env.storage.router` | Chains multiple storages |
 | `env.variable` | Named variable referencing a storage |
 
@@ -64,6 +65,25 @@ Read-only access to operating system environment variables.
 - name: os_env
   kind: env.storage.os
 ```
+
+Always read-only. Set operations return `PERMISSION_DENIED`.
+
+### Static Storage
+
+Read-only storage with values defined directly in configuration. Values are baked into the entry and cannot be changed at runtime. Useful for public configuration constants that ship with a module or pack.
+
+```yaml
+- name: defaults
+  kind: env.storage.static
+  values:
+    PUBLIC_API_HOST: "https://api.example.com"
+    PUBLIC_WS_HOST: "wss://api.example.com/ws"
+    APP_ENV: "production"
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `values` | map | Key-value pairs (string to string) |
 
 Always read-only. Set operations return `PERMISSION_DENIED`.
 
