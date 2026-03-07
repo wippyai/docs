@@ -1,77 +1,77 @@
-# CLI Reference
+# CLI 参考
 
-Command-line interface for the Wippy runtime.
+Wippy 运行时的命令行界面。
 
-## Global Flags
+## 全局标志
 
-Available on all commands:
+适用于所有命令：
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--config` | | Config file (default: .wippy.yaml) |
-| `--verbose` | `-v` | Enable debug logging |
-| `--very-verbose` | | Debug with stack traces |
-| `--console` | `-c` | Colorful console logging |
-| `--silent` | `-s` | Disable console logging |
-| `--event-streams` | `-e` | Stream logs to event bus |
-| `--profiler` | `-p` | Enable pprof on localhost:6060 |
-| `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
+| 标志 | 缩写 | 描述 |
+|------|------|------|
+| `--config` | | 配置文件（默认：.wippy.yaml） |
+| `--verbose` | `-v` | 启用调试日志 |
+| `--very-verbose` | | 包含堆栈跟踪的调试日志 |
+| `--console` | `-c` | 彩色控制台日志 |
+| `--silent` | `-s` | 禁用控制台日志 |
+| `--event-streams` | `-e` | 将日志流式传输到事件总线 |
+| `--profiler` | `-p` | 在 localhost:6060 启用 pprof |
+| `--memory-limit` | `-m` | 内存限制（例如 1G、512M） |
 
-Memory limit priority: `--memory-limit` flag > `GOMEMLIMIT` env > 1GB default.
+内存限制优先级：`--memory-limit` 标志 > `GOMEMLIMIT` 环境变量 > 默认 1GB。
 
 ## wippy init
 
-Create a new lock file.
+创建新的锁文件。
 
 ```bash
 wippy init
 wippy init --src-dir ./src --modules-dir .wippy
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--src-dir` | `-d` | ./src | Source directory |
-| `--modules-dir` | | .wippy | Modules directory |
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
+| 标志 | 缩写 | 默认值 | 描述 |
+|------|------|--------|------|
+| `--src-dir` | `-d` | ./src | 源代码目录 |
+| `--modules-dir` | | .wippy | 模块目录 |
+| `--lock-file` | `-l` | wippy.lock | 锁文件路径 |
 
 ## wippy run
 
-Start the runtime or execute a command.
+启动运行时或执行命令。
 
 ```bash
-wippy run                                    # Start runtime
-wippy run list                               # List available commands
-wippy run test                               # Run tests
-wippy run snapshot.wapp                      # Run from pack file
-wippy run acme/http                          # Run module
-wippy run --exec app:processes/app:worker   # Execute single process
+wippy run                                    # 启动运行时
+wippy run list                               # 列出可用命令
+wippy run test                               # 运行测试
+wippy run snapshot.wapp                      # 从打包文件运行
+wippy run acme/http                          # 运行模块
+wippy run --exec app:processes/app:worker   # 执行单个进程
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--override` | `-o` | Override entry values (namespace:entry:field=value) |
-| `--exec` | `-x` | Execute process and exit (host/namespace:entry) |
-| `--host` | | Host for execution |
-| `--registry` | | Registry URL |
+| 标志 | 缩写 | 描述 |
+|------|------|------|
+| `--override` | `-o` | 覆盖条目值（namespace:entry:field=value） |
+| `--exec` | `-x` | 执行进程后退出（host/namespace:entry） |
+| `--host` | | 执行主机 |
+| `--registry` | | 注册中心 URL |
 
 ## wippy lint
 
-Check Lua code for type errors and warnings.
+检查 Lua 代码的类型错误和警告。
 
 ```bash
 wippy lint
 wippy lint --level warning
 ```
 
-Validates all Lua entries: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
+验证所有 Lua 条目：`function.lua.*`、`library.lua.*`、`process.lua.*`、`workflow.lua.*`。
 
-| Flag | Description |
-|------|-------------|
-| `--level` | Minimum severity level to report |
+| 标志 | 描述 |
+|------|------|
+| `--level` | 报告的最低严重级别 |
 
 ## wippy add
 
-Add a module dependency.
+添加模块依赖。
 
 ```bash
 wippy add acme/http
@@ -79,46 +79,46 @@ wippy add acme/http@1.2.3
 wippy add acme/http@latest
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--registry` | | | Registry URL |
+| 标志 | 缩写 | 默认值 | 描述 |
+|------|------|--------|------|
+| `--lock-file` | `-l` | wippy.lock | 锁文件路径 |
+| `--registry` | | | 注册中心 URL |
 
 ## wippy install
 
-Install dependencies from lock file.
+从锁文件安装依赖。
 
 ```bash
 wippy install
 wippy install --force
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--lock-file` | `-l` | Lock file path |
-| `--force` | | Bypass cache, always download |
-| `--registry` | | Registry URL |
+| 标志 | 缩写 | 描述 |
+|------|------|------|
+| `--lock-file` | `-l` | 锁文件路径 |
+| `--force` | | 绕过缓存，始终重新下载 |
+| `--registry` | | 注册中心 URL |
 
 ## wippy update
 
-Update dependencies and regenerate lock file.
+更新依赖并重新生成锁文件。
 
 ```bash
-wippy update                      # Update all
-wippy update acme/http            # Update specific module
-wippy update acme/http demo/sql   # Update multiple
+wippy update                      # 更新全部
+wippy update acme/http            # 更新指定模块
+wippy update acme/http demo/sql   # 更新多个模块
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--src-dir` | `-d` | . | Source directory |
-| `--modules-dir` | | .wippy | Modules directory |
-| `--registry` | | | Registry URL |
+| 标志 | 缩写 | 默认值 | 描述 |
+|------|------|--------|------|
+| `--lock-file` | `-l` | wippy.lock | 锁文件路径 |
+| `--src-dir` | `-d` | . | 源代码目录 |
+| `--modules-dir` | | .wippy | 模块目录 |
+| `--registry` | | | 注册中心 URL |
 
 ## wippy pack
 
-Create a snapshot pack (.wapp file).
+创建快照包（.wapp 文件）。
 
 ```bash
 wippy pack snapshot.wapp
@@ -126,21 +126,21 @@ wippy pack release.wapp --description "Release 1.0"
 wippy pack app.wapp --embed app:assets --bytecode **
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--lock-file` | `-l` | Lock file path |
-| `--description` | `-d` | Pack description |
-| `--tags` | `-t` | Pack tags (comma-separated) |
-| `--meta` | | Custom metadata (key=value) |
-| `--embed` | | Embed fs.directory entries (patterns) |
-| `--list` | | List fs.directory entries (dry-run) |
-| `--exclude-ns` | | Exclude namespaces (patterns) |
-| `--exclude` | | Exclude entries (patterns) |
-| `--bytecode` | | Compile Lua to bytecode (** for all) |
+| 标志 | 缩写 | 描述 |
+|------|------|------|
+| `--lock-file` | `-l` | 锁文件路径 |
+| `--description` | `-d` | 包描述 |
+| `--tags` | `-t` | 包标签（逗号分隔） |
+| `--meta` | | 自定义元数据（key=value） |
+| `--embed` | | 嵌入 fs.directory 条目（模式匹配） |
+| `--list` | | 列出 fs.directory 条目（预览模式） |
+| `--exclude-ns` | | 排除命名空间（模式匹配） |
+| `--exclude` | | 排除条目（模式匹配） |
+| `--bytecode` | | 将 Lua 编译为字节码（** 表示全部） |
 
 ## wippy publish
 
-Publish module to the hub.
+将模块发布到 Hub。
 
 ```bash
 wippy publish
@@ -148,22 +148,22 @@ wippy publish --version 1.0.0
 wippy publish --dry-run
 ```
 
-Reads from `wippy.yaml` in current directory.
+从当前目录的 `wippy.yaml` 读取配置。
 
-| Flag | Description |
-|------|-------------|
-| `--version` | Version to publish |
-| `--dry-run` | Validate without publishing |
-| `--label` | Publish as mutable label instead of version |
-| `--release-notes` | Release notes |
-| `--protected` | Mark version as protected |
-| `--embed` | Embed fs.directory entries by id or name |
-| `--config` | Path to directory containing wippy.yaml (default: .) |
-| `--registry` | Registry URL |
+| 标志 | 描述 |
+|------|------|
+| `--version` | 发布版本 |
+| `--dry-run` | 仅验证，不实际发布 |
+| `--label` | 以可变标签发布，而非版本号 |
+| `--release-notes` | 发布说明 |
+| `--protected` | 将版本标记为受保护 |
+| `--embed` | 按 id 或 name 嵌入 fs.directory 条目 |
+| `--config` | 包含 wippy.yaml 的目录路径（默认：.） |
+| `--registry` | 注册中心 URL |
 
 ## wippy search
 
-Search for modules in the hub.
+在 Hub 中搜索模块。
 
 ```bash
 wippy search http
@@ -171,15 +171,15 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Output as JSON |
-| `--limit` | Maximum results |
-| `--registry` | Registry URL |
+| 标志 | 描述 |
+|------|------|
+| `--json` | 以 JSON 格式输出 |
+| `--limit` | 最大结果数 |
+| `--registry` | 注册中心 URL |
 
 ## wippy auth
 
-Manage registry authentication.
+管理注册中心认证。
 
 ### wippy auth login
 
@@ -188,11 +188,11 @@ wippy auth login
 wippy auth login --token YOUR_TOKEN
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--token` | API token |
-| `--registry` | Registry URL |
-| `--local` | Store credentials locally |
+| 标志 | 描述 |
+|------|------|
+| `--token` | API 令牌 |
+| `--registry` | 注册中心 URL |
+| `--local` | 将凭据存储在本地 |
 
 ### wippy auth logout
 
@@ -200,10 +200,10 @@ wippy auth login --token YOUR_TOKEN
 wippy auth logout
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--registry` | Registry URL |
-| `--local` | Remove local credentials |
+| 标志 | 描述 |
+|------|------|
+| `--registry` | 注册中心 URL |
+| `--local` | 删除本地凭据 |
 
 ### wippy auth status
 
@@ -214,7 +214,7 @@ wippy auth status --json
 
 ## wippy registry
 
-Query and inspect registry entries.
+查询和检查注册表条目。
 
 ### wippy registry list
 
@@ -224,15 +224,15 @@ wippy registry list --kind function.lua
 wippy registry list --ns app --json
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--kind` | `-k` | Filter by kind |
-| `--ns` | `-n` | Filter by namespace |
-| `--name` | | Filter by name |
-| `--meta` | | Filter by metadata |
-| `--json` | | Output as JSON |
-| `--yaml` | | Output as YAML |
-| `--lock-file` | `-l` | Lock file path |
+| 标志 | 缩写 | 描述 |
+|------|------|------|
+| `--kind` | `-k` | 按类型过滤 |
+| `--ns` | `-n` | 按命名空间过滤 |
+| `--name` | | 按名称过滤 |
+| `--meta` | | 按元数据过滤 |
+| `--json` | | 以 JSON 格式输出 |
+| `--yaml` | | 以 YAML 格式输出 |
+| `--lock-file` | `-l` | 锁文件路径 |
 
 ### wippy registry show
 
@@ -241,26 +241,26 @@ wippy registry show app:http:handler
 wippy registry show app:config --yaml
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--field` | `-f` | Show specific field |
-| `--json` | | Output as JSON |
-| `--yaml` | | Output as YAML |
-| `--raw` | | Raw output |
-| `--lock-file` | `-l` | Lock file path |
+| 标志 | 缩写 | 描述 |
+|------|------|------|
+| `--field` | `-f` | 显示指定字段 |
+| `--json` | | 以 JSON 格式输出 |
+| `--yaml` | | 以 YAML 格式输出 |
+| `--raw` | | 原始输出 |
+| `--lock-file` | `-l` | 锁文件路径 |
 
 ## wippy version
 
-Print version information.
+打印版本信息。
 
 ```bash
 wippy version
 wippy version --short
 ```
 
-## Custom Commands
+## 自定义命令
 
-Any `process.lua` or `process.wasm` entry can be registered as a named command by adding `command` metadata:
+任何 `process.lua` 或 `process.wasm` 条目都可以通过添加 `command` 元数据注册为命名命令：
 
 ```yaml
 entries:
@@ -278,97 +278,97 @@ entries:
       - funcs
 ```
 
-Run it with:
+使用以下方式运行：
 
 ```bash
 wippy run test
 ```
 
-List all available commands:
+列出所有可用命令：
 
 ```bash
 wippy run list
 ```
 
-### Command Metadata Fields
+### 命令元数据字段
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | Yes | Command name used with `wippy run <name>` |
-| `short` | No | Short description shown in `wippy run list` |
+| 字段 | 必填 | 描述 |
+|------|------|------|
+| `name` | 是 | 与 `wippy run <name>` 配合使用的命令名称 |
+| `short` | 否 | 在 `wippy run list` 中显示的简短描述 |
 
-Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process.
+任何进程条目类型均可使用（`process.lua`、`process.wasm`）。命令名称在所有已加载的条目中必须唯一。命令名称之后的参数会传递给该进程。
 
-## Examples
+## 示例
 
-### Development Workflow
+### 开发工作流
 
 ```bash
-# Initialize project
+# 初始化项目
 wippy init
 wippy add wippy/http wippy/sql
 wippy install
 
-# Check for errors
+# 检查错误
 wippy lint
 
-# Run with debug output
+# 启用调试输出运行
 wippy run -c -v
 
-# Override config for local dev
+# 覆盖本地开发配置
 wippy run -o app:db:host=localhost -o app:db:port=5432
 ```
 
-### Production Deployment
+### 生产部署
 
 ```bash
-# Create release pack with bytecode
+# 创建带字节码的发布包
 wippy pack release.wapp --bytecode ** --exclude-ns test.**
 
-# Run from pack with memory limit
+# 从打包文件运行并设置内存限制
 wippy run release.wapp -m 2G
 ```
 
-### Debugging
+### 调试
 
 ```bash
-# Execute single process
+# 执行单个进程
 wippy run --exec app:processes/app:worker
 
-# With profiler enabled
+# 启用性能分析器
 wippy run -p -v
-# Then: go tool pprof http://localhost:6060/debug/pprof/heap
+# 然后：go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 
-### Dependency Management
+### 依赖管理
 
 ```bash
-# Add new dependency
+# 添加新依赖
 wippy add acme/http@latest
 
-# Force re-download
+# 强制重新下载
 wippy install --force
 
-# Update specific module
+# 更新指定模块
 wippy update acme/http
 ```
 
-### Publishing
+### 发布
 
 ```bash
-# Login to hub
+# 登录 Hub
 wippy auth login
 
-# Validate module
+# 验证模块
 wippy publish --dry-run
 
-# Publish
+# 发布
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## Configuration File
+## 配置文件
 
-Create `.wippy.yaml` for persistent settings:
+创建 `.wippy.yaml` 以保存持久化设置：
 
 ```yaml
 logger:
@@ -388,7 +388,7 @@ override:
   app:db:host: "localhost"
 ```
 
-## See Also
+## 另请参阅
 
-- [Configuration](guides/configuration.md) - Config file reference
-- [Observability](guides/observability.md) - Monitoring and logging
+- [配置](guides/configuration.md) - 配置文件参考
+- [可观测性](guides/observability.md) - 监控与日志

@@ -1,77 +1,77 @@
-# CLI Reference
+# Referência da CLI
 
-Command-line interface for the Wippy runtime.
+Interface de linha de comando para o runtime do Wippy.
 
-## Global Flags
+## Flags Globais
 
-Available on all commands:
+Disponíveis em todos os comandos:
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--config` | | Config file (default: .wippy.yaml) |
-| `--verbose` | `-v` | Enable debug logging |
-| `--very-verbose` | | Debug with stack traces |
-| `--console` | `-c` | Colorful console logging |
-| `--silent` | `-s` | Disable console logging |
-| `--event-streams` | `-e` | Stream logs to event bus |
-| `--profiler` | `-p` | Enable pprof on localhost:6060 |
-| `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
+| Flag | Curta | Descrição |
+|------|-------|-----------|
+| `--config` | | Arquivo de configuração (padrão: .wippy.yaml) |
+| `--verbose` | `-v` | Ativar logs de depuração |
+| `--very-verbose` | | Depuração com stack traces |
+| `--console` | `-c` | Logs coloridos no console |
+| `--silent` | `-s` | Desativar logs no console |
+| `--event-streams` | `-e` | Transmitir logs para o barramento de eventos |
+| `--profiler` | `-p` | Ativar pprof em localhost:6060 |
+| `--memory-limit` | `-m` | Limite de memória (ex: 1G, 512M) |
 
-Memory limit priority: `--memory-limit` flag > `GOMEMLIMIT` env > 1GB default.
+Prioridade do limite de memória: flag `--memory-limit` > variável de ambiente `GOMEMLIMIT` > padrão de 1GB.
 
 ## wippy init
 
-Create a new lock file.
+Criar um novo arquivo de lock.
 
 ```bash
 wippy init
 wippy init --src-dir ./src --modules-dir .wippy
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--src-dir` | `-d` | ./src | Source directory |
-| `--modules-dir` | | .wippy | Modules directory |
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
+| Flag | Curta | Padrão | Descrição |
+|------|-------|--------|-----------|
+| `--src-dir` | `-d` | ./src | Diretório de fontes |
+| `--modules-dir` | | .wippy | Diretório de módulos |
+| `--lock-file` | `-l` | wippy.lock | Caminho do arquivo de lock |
 
 ## wippy run
 
-Start the runtime or execute a command.
+Iniciar o runtime ou executar um comando.
 
 ```bash
-wippy run                                    # Start runtime
-wippy run list                               # List available commands
-wippy run test                               # Run tests
-wippy run snapshot.wapp                      # Run from pack file
-wippy run acme/http                          # Run module
-wippy run --exec app:processes/app:worker   # Execute single process
+wippy run                                    # Iniciar o runtime
+wippy run list                               # Listar comandos disponíveis
+wippy run test                               # Executar testes
+wippy run snapshot.wapp                      # Executar a partir de arquivo pack
+wippy run acme/http                          # Executar módulo
+wippy run --exec app:processes/app:worker   # Executar um único processo
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--override` | `-o` | Override entry values (namespace:entry:field=value) |
-| `--exec` | `-x` | Execute process and exit (host/namespace:entry) |
-| `--host` | | Host for execution |
-| `--registry` | | Registry URL |
+| Flag | Curta | Descrição |
+|------|-------|-----------|
+| `--override` | `-o` | Sobrescrever valores de entrada (namespace:entry:field=value) |
+| `--exec` | `-x` | Executar processo e encerrar (host/namespace:entry) |
+| `--host` | | Host para execução |
+| `--registry` | | URL do registry |
 
 ## wippy lint
 
-Check Lua code for type errors and warnings.
+Verificar erros de tipo e avisos no código Lua.
 
 ```bash
 wippy lint
 wippy lint --level warning
 ```
 
-Validates all Lua entries: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
+Valida todas as entradas Lua: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
 
-| Flag | Description |
-|------|-------------|
-| `--level` | Minimum severity level to report |
+| Flag | Descrição |
+|------|-----------|
+| `--level` | Nível mínimo de severidade a reportar |
 
 ## wippy add
 
-Add a module dependency.
+Adicionar uma dependência de módulo.
 
 ```bash
 wippy add acme/http
@@ -79,46 +79,46 @@ wippy add acme/http@1.2.3
 wippy add acme/http@latest
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--registry` | | | Registry URL |
+| Flag | Curta | Padrão | Descrição |
+|------|-------|--------|-----------|
+| `--lock-file` | `-l` | wippy.lock | Caminho do arquivo de lock |
+| `--registry` | | | URL do registry |
 
 ## wippy install
 
-Install dependencies from lock file.
+Instalar dependências a partir do arquivo de lock.
 
 ```bash
 wippy install
 wippy install --force
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--lock-file` | `-l` | Lock file path |
-| `--force` | | Bypass cache, always download |
-| `--registry` | | Registry URL |
+| Flag | Curta | Descrição |
+|------|-------|-----------|
+| `--lock-file` | `-l` | Caminho do arquivo de lock |
+| `--force` | | Ignorar cache, sempre baixar |
+| `--registry` | | URL do registry |
 
 ## wippy update
 
-Update dependencies and regenerate lock file.
+Atualizar dependências e regenerar o arquivo de lock.
 
 ```bash
-wippy update                      # Update all
-wippy update acme/http            # Update specific module
-wippy update acme/http demo/sql   # Update multiple
+wippy update                      # Atualizar todas
+wippy update acme/http            # Atualizar módulo específico
+wippy update acme/http demo/sql   # Atualizar múltiplos
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--src-dir` | `-d` | . | Source directory |
-| `--modules-dir` | | .wippy | Modules directory |
-| `--registry` | | | Registry URL |
+| Flag | Curta | Padrão | Descrição |
+|------|-------|--------|-----------|
+| `--lock-file` | `-l` | wippy.lock | Caminho do arquivo de lock |
+| `--src-dir` | `-d` | . | Diretório de fontes |
+| `--modules-dir` | | .wippy | Diretório de módulos |
+| `--registry` | | | URL do registry |
 
 ## wippy pack
 
-Create a snapshot pack (.wapp file).
+Criar um pack de snapshot (arquivo .wapp).
 
 ```bash
 wippy pack snapshot.wapp
@@ -126,21 +126,21 @@ wippy pack release.wapp --description "Release 1.0"
 wippy pack app.wapp --embed app:assets --bytecode **
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--lock-file` | `-l` | Lock file path |
-| `--description` | `-d` | Pack description |
-| `--tags` | `-t` | Pack tags (comma-separated) |
-| `--meta` | | Custom metadata (key=value) |
-| `--embed` | | Embed fs.directory entries (patterns) |
-| `--list` | | List fs.directory entries (dry-run) |
-| `--exclude-ns` | | Exclude namespaces (patterns) |
-| `--exclude` | | Exclude entries (patterns) |
-| `--bytecode` | | Compile Lua to bytecode (** for all) |
+| Flag | Curta | Descrição |
+|------|-------|-----------|
+| `--lock-file` | `-l` | Caminho do arquivo de lock |
+| `--description` | `-d` | Descrição do pack |
+| `--tags` | `-t` | Tags do pack (separadas por vírgula) |
+| `--meta` | | Metadados personalizados (chave=valor) |
+| `--embed` | | Incorporar entradas fs.directory (padrões) |
+| `--list` | | Listar entradas fs.directory (simulação) |
+| `--exclude-ns` | | Excluir namespaces (padrões) |
+| `--exclude` | | Excluir entradas (padrões) |
+| `--bytecode` | | Compilar Lua para bytecode (** para todos) |
 
 ## wippy publish
 
-Publish module to the hub.
+Publicar módulo no hub.
 
 ```bash
 wippy publish
@@ -148,22 +148,22 @@ wippy publish --version 1.0.0
 wippy publish --dry-run
 ```
 
-Reads from `wippy.yaml` in current directory.
+Lê a partir do `wippy.yaml` no diretório atual.
 
-| Flag | Description |
-|------|-------------|
-| `--version` | Version to publish |
-| `--dry-run` | Validate without publishing |
-| `--label` | Publish as mutable label instead of version |
-| `--release-notes` | Release notes |
-| `--protected` | Mark version as protected |
-| `--embed` | Embed fs.directory entries by id or name |
-| `--config` | Path to directory containing wippy.yaml (default: .) |
-| `--registry` | Registry URL |
+| Flag | Descrição |
+|------|-----------|
+| `--version` | Versão a publicar |
+| `--dry-run` | Validar sem publicar |
+| `--label` | Publicar como label mutável em vez de versão |
+| `--release-notes` | Notas de lançamento |
+| `--protected` | Marcar versão como protegida |
+| `--embed` | Incorporar entradas fs.directory por id ou nome |
+| `--config` | Caminho para o diretório contendo wippy.yaml (padrão: .) |
+| `--registry` | URL do registry |
 
 ## wippy search
 
-Search for modules in the hub.
+Buscar módulos no hub.
 
 ```bash
 wippy search http
@@ -171,15 +171,15 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Output as JSON |
-| `--limit` | Maximum results |
-| `--registry` | Registry URL |
+| Flag | Descrição |
+|------|-----------|
+| `--json` | Saída em JSON |
+| `--limit` | Máximo de resultados |
+| `--registry` | URL do registry |
 
 ## wippy auth
 
-Manage registry authentication.
+Gerenciar autenticação no registry.
 
 ### wippy auth login
 
@@ -188,11 +188,11 @@ wippy auth login
 wippy auth login --token YOUR_TOKEN
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--token` | API token |
-| `--registry` | Registry URL |
-| `--local` | Store credentials locally |
+| Flag | Descrição |
+|------|-----------|
+| `--token` | Token de API |
+| `--registry` | URL do registry |
+| `--local` | Armazenar credenciais localmente |
 
 ### wippy auth logout
 
@@ -200,10 +200,10 @@ wippy auth login --token YOUR_TOKEN
 wippy auth logout
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--registry` | Registry URL |
-| `--local` | Remove local credentials |
+| Flag | Descrição |
+|------|-----------|
+| `--registry` | URL do registry |
+| `--local` | Remover credenciais locais |
 
 ### wippy auth status
 
@@ -214,7 +214,7 @@ wippy auth status --json
 
 ## wippy registry
 
-Query and inspect registry entries.
+Consultar e inspecionar entradas do registry.
 
 ### wippy registry list
 
@@ -224,15 +224,15 @@ wippy registry list --kind function.lua
 wippy registry list --ns app --json
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--kind` | `-k` | Filter by kind |
-| `--ns` | `-n` | Filter by namespace |
-| `--name` | | Filter by name |
-| `--meta` | | Filter by metadata |
-| `--json` | | Output as JSON |
-| `--yaml` | | Output as YAML |
-| `--lock-file` | `-l` | Lock file path |
+| Flag | Curta | Descrição |
+|------|-------|-----------|
+| `--kind` | `-k` | Filtrar por tipo |
+| `--ns` | `-n` | Filtrar por namespace |
+| `--name` | | Filtrar por nome |
+| `--meta` | | Filtrar por metadados |
+| `--json` | | Saída em JSON |
+| `--yaml` | | Saída em YAML |
+| `--lock-file` | `-l` | Caminho do arquivo de lock |
 
 ### wippy registry show
 
@@ -241,26 +241,26 @@ wippy registry show app:http:handler
 wippy registry show app:config --yaml
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--field` | `-f` | Show specific field |
-| `--json` | | Output as JSON |
-| `--yaml` | | Output as YAML |
-| `--raw` | | Raw output |
-| `--lock-file` | `-l` | Lock file path |
+| Flag | Curta | Descrição |
+|------|-------|-----------|
+| `--field` | `-f` | Mostrar campo específico |
+| `--json` | | Saída em JSON |
+| `--yaml` | | Saída em YAML |
+| `--raw` | | Saída bruta |
+| `--lock-file` | `-l` | Caminho do arquivo de lock |
 
 ## wippy version
 
-Print version information.
+Imprimir informações de versão.
 
 ```bash
 wippy version
 wippy version --short
 ```
 
-## Custom Commands
+## Comandos Personalizados
 
-Any `process.lua` or `process.wasm` entry can be registered as a named command by adding `command` metadata:
+Qualquer entrada `process.lua` ou `process.wasm` pode ser registrada como um comando nomeado adicionando metadados de `command`:
 
 ```yaml
 entries:
@@ -278,97 +278,97 @@ entries:
       - funcs
 ```
 
-Run it with:
+Execute com:
 
 ```bash
 wippy run test
 ```
 
-List all available commands:
+Liste todos os comandos disponíveis:
 
 ```bash
 wippy run list
 ```
 
-### Command Metadata Fields
+### Campos de Metadados do Comando
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | Yes | Command name used with `wippy run <name>` |
-| `short` | No | Short description shown in `wippy run list` |
+| Campo | Obrigatório | Descrição |
+|-------|-------------|-----------|
+| `name` | Sim | Nome do comando usado com `wippy run <name>` |
+| `short` | Não | Descrição curta exibida em `wippy run list` |
 
-Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process.
+Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O nome do comando deve ser único entre todas as entradas carregadas. Argumentos após o nome do comando são passados para o processo.
 
-## Examples
+## Exemplos
 
-### Development Workflow
+### Fluxo de Desenvolvimento
 
 ```bash
-# Initialize project
+# Inicializar projeto
 wippy init
 wippy add wippy/http wippy/sql
 wippy install
 
-# Check for errors
+# Verificar erros
 wippy lint
 
-# Run with debug output
+# Executar com saída de depuração
 wippy run -c -v
 
-# Override config for local dev
+# Sobrescrever configuração para desenvolvimento local
 wippy run -o app:db:host=localhost -o app:db:port=5432
 ```
 
-### Production Deployment
+### Deploy em Produção
 
 ```bash
-# Create release pack with bytecode
+# Criar pack de release com bytecode
 wippy pack release.wapp --bytecode ** --exclude-ns test.**
 
-# Run from pack with memory limit
+# Executar a partir do pack com limite de memória
 wippy run release.wapp -m 2G
 ```
 
-### Debugging
+### Depuração
 
 ```bash
-# Execute single process
+# Executar um único processo
 wippy run --exec app:processes/app:worker
 
-# With profiler enabled
+# Com profiler ativado
 wippy run -p -v
-# Then: go tool pprof http://localhost:6060/debug/pprof/heap
+# Depois: go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 
-### Dependency Management
+### Gerenciamento de Dependências
 
 ```bash
-# Add new dependency
+# Adicionar nova dependência
 wippy add acme/http@latest
 
-# Force re-download
+# Forçar re-download
 wippy install --force
 
-# Update specific module
+# Atualizar módulo específico
 wippy update acme/http
 ```
 
-### Publishing
+### Publicação
 
 ```bash
-# Login to hub
+# Login no hub
 wippy auth login
 
-# Validate module
+# Validar módulo
 wippy publish --dry-run
 
-# Publish
+# Publicar
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## Configuration File
+## Arquivo de Configuração
 
-Create `.wippy.yaml` for persistent settings:
+Crie `.wippy.yaml` para configurações persistentes:
 
 ```yaml
 logger:
@@ -377,7 +377,7 @@ logger:
   encoding: console
 
 logmanager:
-  min_level: -1  # debug
+  min_level: -1  # depuração
 
 profiler:
   enabled: true
@@ -388,7 +388,7 @@ override:
   app:db:host: "localhost"
 ```
 
-## See Also
+## Veja Também
 
-- [Configuration](guides/configuration.md) - Config file reference
-- [Observability](guides/observability.md) - Monitoring and logging
+- [Configuração](guides/configuration.md) - Referência do arquivo de configuração
+- [Observabilidade](guides/observability.md) - Monitoramento e logging

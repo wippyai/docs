@@ -1,77 +1,77 @@
-# CLI Reference
+# CLI 레퍼런스
 
-Command-line interface for the Wippy runtime.
+Wippy 런타임의 커맨드라인 인터페이스입니다.
 
-## Global Flags
+## 전역 플래그
 
-Available on all commands:
+모든 명령어에서 사용할 수 있습니다:
 
-| Flag | Short | Description |
+| 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--config` | | Config file (default: .wippy.yaml) |
-| `--verbose` | `-v` | Enable debug logging |
-| `--very-verbose` | | Debug with stack traces |
-| `--console` | `-c` | Colorful console logging |
-| `--silent` | `-s` | Disable console logging |
-| `--event-streams` | `-e` | Stream logs to event bus |
-| `--profiler` | `-p` | Enable pprof on localhost:6060 |
-| `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
+| `--config` | | 설정 파일 (기본값: .wippy.yaml) |
+| `--verbose` | `-v` | 디버그 로깅 활성화 |
+| `--very-verbose` | | 스택 트레이스를 포함한 디버그 |
+| `--console` | `-c` | 컬러 콘솔 로깅 |
+| `--silent` | `-s` | 콘솔 로깅 비활성화 |
+| `--event-streams` | `-e` | 이벤트 버스로 로그 스트리밍 |
+| `--profiler` | `-p` | localhost:6060에서 pprof 활성화 |
+| `--memory-limit` | `-m` | 메모리 제한 (예: 1G, 512M) |
 
-Memory limit priority: `--memory-limit` flag > `GOMEMLIMIT` env > 1GB default.
+메모리 제한 우선순위: `--memory-limit` 플래그 > `GOMEMLIMIT` 환경 변수 > 1GB 기본값.
 
 ## wippy init
 
-Create a new lock file.
+새 lock 파일을 생성합니다.
 
 ```bash
 wippy init
 wippy init --src-dir ./src --modules-dir .wippy
 ```
 
-| Flag | Short | Default | Description |
+| 플래그 | 약어 | 기본값 | 설명 |
 |------|-------|---------|-------------|
-| `--src-dir` | `-d` | ./src | Source directory |
-| `--modules-dir` | | .wippy | Modules directory |
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
+| `--src-dir` | `-d` | ./src | 소스 디렉토리 |
+| `--modules-dir` | | .wippy | 모듈 디렉토리 |
+| `--lock-file` | `-l` | wippy.lock | Lock 파일 경로 |
 
 ## wippy run
 
-Start the runtime or execute a command.
+런타임을 시작하거나 명령어를 실행합니다.
 
 ```bash
-wippy run                                    # Start runtime
-wippy run list                               # List available commands
-wippy run test                               # Run tests
-wippy run snapshot.wapp                      # Run from pack file
-wippy run acme/http                          # Run module
-wippy run --exec app:processes/app:worker   # Execute single process
+wippy run                                    # 런타임 시작
+wippy run list                               # 사용 가능한 명령어 목록
+wippy run test                               # 테스트 실행
+wippy run snapshot.wapp                      # 팩 파일에서 실행
+wippy run acme/http                          # 모듈 실행
+wippy run --exec app:processes/app:worker   # 단일 프로세스 실행
 ```
 
-| Flag | Short | Description |
+| 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--override` | `-o` | Override entry values (namespace:entry:field=value) |
-| `--exec` | `-x` | Execute process and exit (host/namespace:entry) |
-| `--host` | | Host for execution |
-| `--registry` | | Registry URL |
+| `--override` | `-o` | 엔트리 값 오버라이드 (namespace:entry:field=value) |
+| `--exec` | `-x` | 프로세스를 실행하고 종료 (host/namespace:entry) |
+| `--host` | | 실행 호스트 |
+| `--registry` | | 레지스트리 URL |
 
 ## wippy lint
 
-Check Lua code for type errors and warnings.
+Lua 코드의 타입 오류 및 경고를 검사합니다.
 
 ```bash
 wippy lint
 wippy lint --level warning
 ```
 
-Validates all Lua entries: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
+모든 Lua 엔트리를 검증합니다: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
 
-| Flag | Description |
+| 플래그 | 설명 |
 |------|-------------|
-| `--level` | Minimum severity level to report |
+| `--level` | 보고할 최소 심각도 수준 |
 
 ## wippy add
 
-Add a module dependency.
+모듈 의존성을 추가합니다.
 
 ```bash
 wippy add acme/http
@@ -79,46 +79,46 @@ wippy add acme/http@1.2.3
 wippy add acme/http@latest
 ```
 
-| Flag | Short | Default | Description |
+| 플래그 | 약어 | 기본값 | 설명 |
 |------|-------|---------|-------------|
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--registry` | | | Registry URL |
+| `--lock-file` | `-l` | wippy.lock | Lock 파일 경로 |
+| `--registry` | | | 레지스트리 URL |
 
 ## wippy install
 
-Install dependencies from lock file.
+Lock 파일에서 의존성을 설치합니다.
 
 ```bash
 wippy install
 wippy install --force
 ```
 
-| Flag | Short | Description |
+| 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--lock-file` | `-l` | Lock file path |
-| `--force` | | Bypass cache, always download |
-| `--registry` | | Registry URL |
+| `--lock-file` | `-l` | Lock 파일 경로 |
+| `--force` | | 캐시를 무시하고 항상 다운로드 |
+| `--registry` | | 레지스트리 URL |
 
 ## wippy update
 
-Update dependencies and regenerate lock file.
+의존성을 업데이트하고 lock 파일을 재생성합니다.
 
 ```bash
-wippy update                      # Update all
-wippy update acme/http            # Update specific module
-wippy update acme/http demo/sql   # Update multiple
+wippy update                      # 전체 업데이트
+wippy update acme/http            # 특정 모듈 업데이트
+wippy update acme/http demo/sql   # 여러 모듈 업데이트
 ```
 
-| Flag | Short | Default | Description |
+| 플래그 | 약어 | 기본값 | 설명 |
 |------|-------|---------|-------------|
-| `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--src-dir` | `-d` | . | Source directory |
-| `--modules-dir` | | .wippy | Modules directory |
-| `--registry` | | | Registry URL |
+| `--lock-file` | `-l` | wippy.lock | Lock 파일 경로 |
+| `--src-dir` | `-d` | . | 소스 디렉토리 |
+| `--modules-dir` | | .wippy | 모듈 디렉토리 |
+| `--registry` | | | 레지스트리 URL |
 
 ## wippy pack
 
-Create a snapshot pack (.wapp file).
+스냅샷 팩(.wapp 파일)을 생성합니다.
 
 ```bash
 wippy pack snapshot.wapp
@@ -126,21 +126,21 @@ wippy pack release.wapp --description "Release 1.0"
 wippy pack app.wapp --embed app:assets --bytecode **
 ```
 
-| Flag | Short | Description |
+| 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--lock-file` | `-l` | Lock file path |
-| `--description` | `-d` | Pack description |
-| `--tags` | `-t` | Pack tags (comma-separated) |
-| `--meta` | | Custom metadata (key=value) |
-| `--embed` | | Embed fs.directory entries (patterns) |
-| `--list` | | List fs.directory entries (dry-run) |
-| `--exclude-ns` | | Exclude namespaces (patterns) |
-| `--exclude` | | Exclude entries (patterns) |
-| `--bytecode` | | Compile Lua to bytecode (** for all) |
+| `--lock-file` | `-l` | Lock 파일 경로 |
+| `--description` | `-d` | 팩 설명 |
+| `--tags` | `-t` | 팩 태그 (쉼표로 구분) |
+| `--meta` | | 커스텀 메타데이터 (key=value) |
+| `--embed` | | fs.directory 엔트리 임베드 (패턴) |
+| `--list` | | fs.directory 엔트리 목록 (dry-run) |
+| `--exclude-ns` | | 네임스페이스 제외 (패턴) |
+| `--exclude` | | 엔트리 제외 (패턴) |
+| `--bytecode` | | Lua를 바이트코드로 컴파일 (** 으로 전체 대상) |
 
 ## wippy publish
 
-Publish module to the hub.
+모듈을 허브에 퍼블리시합니다.
 
 ```bash
 wippy publish
@@ -148,22 +148,22 @@ wippy publish --version 1.0.0
 wippy publish --dry-run
 ```
 
-Reads from `wippy.yaml` in current directory.
+현재 디렉토리의 `wippy.yaml`을 읽습니다.
 
-| Flag | Description |
+| 플래그 | 설명 |
 |------|-------------|
-| `--version` | Version to publish |
-| `--dry-run` | Validate without publishing |
-| `--label` | Publish as mutable label instead of version |
-| `--release-notes` | Release notes |
-| `--protected` | Mark version as protected |
-| `--embed` | Embed fs.directory entries by id or name |
-| `--config` | Path to directory containing wippy.yaml (default: .) |
-| `--registry` | Registry URL |
+| `--version` | 퍼블리시할 버전 |
+| `--dry-run` | 퍼블리시 없이 검증만 수행 |
+| `--label` | 버전 대신 변경 가능한 레이블로 퍼블리시 |
+| `--release-notes` | 릴리스 노트 |
+| `--protected` | 버전을 보호됨으로 표시 |
+| `--embed` | id 또는 name으로 fs.directory 엔트리 임베드 |
+| `--config` | wippy.yaml이 있는 디렉토리 경로 (기본값: .) |
+| `--registry` | 레지스트리 URL |
 
 ## wippy search
 
-Search for modules in the hub.
+허브에서 모듈을 검색합니다.
 
 ```bash
 wippy search http
@@ -171,15 +171,15 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| Flag | Description |
+| 플래그 | 설명 |
 |------|-------------|
-| `--json` | Output as JSON |
-| `--limit` | Maximum results |
-| `--registry` | Registry URL |
+| `--json` | JSON으로 출력 |
+| `--limit` | 최대 결과 수 |
+| `--registry` | 레지스트리 URL |
 
 ## wippy auth
 
-Manage registry authentication.
+레지스트리 인증을 관리합니다.
 
 ### wippy auth login
 
@@ -188,11 +188,11 @@ wippy auth login
 wippy auth login --token YOUR_TOKEN
 ```
 
-| Flag | Description |
+| 플래그 | 설명 |
 |------|-------------|
-| `--token` | API token |
-| `--registry` | Registry URL |
-| `--local` | Store credentials locally |
+| `--token` | API 토큰 |
+| `--registry` | 레지스트리 URL |
+| `--local` | 자격 증명을 로컬에 저장 |
 
 ### wippy auth logout
 
@@ -200,10 +200,10 @@ wippy auth login --token YOUR_TOKEN
 wippy auth logout
 ```
 
-| Flag | Description |
+| 플래그 | 설명 |
 |------|-------------|
-| `--registry` | Registry URL |
-| `--local` | Remove local credentials |
+| `--registry` | 레지스트리 URL |
+| `--local` | 로컬 자격 증명 제거 |
 
 ### wippy auth status
 
@@ -214,7 +214,7 @@ wippy auth status --json
 
 ## wippy registry
 
-Query and inspect registry entries.
+레지스트리 엔트리를 조회하고 검사합니다.
 
 ### wippy registry list
 
@@ -224,15 +224,15 @@ wippy registry list --kind function.lua
 wippy registry list --ns app --json
 ```
 
-| Flag | Short | Description |
+| 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--kind` | `-k` | Filter by kind |
-| `--ns` | `-n` | Filter by namespace |
-| `--name` | | Filter by name |
-| `--meta` | | Filter by metadata |
-| `--json` | | Output as JSON |
-| `--yaml` | | Output as YAML |
-| `--lock-file` | `-l` | Lock file path |
+| `--kind` | `-k` | 종류별 필터 |
+| `--ns` | `-n` | 네임스페이스별 필터 |
+| `--name` | | 이름별 필터 |
+| `--meta` | | 메타데이터별 필터 |
+| `--json` | | JSON으로 출력 |
+| `--yaml` | | YAML로 출력 |
+| `--lock-file` | `-l` | Lock 파일 경로 |
 
 ### wippy registry show
 
@@ -241,26 +241,26 @@ wippy registry show app:http:handler
 wippy registry show app:config --yaml
 ```
 
-| Flag | Short | Description |
+| 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--field` | `-f` | Show specific field |
-| `--json` | | Output as JSON |
-| `--yaml` | | Output as YAML |
-| `--raw` | | Raw output |
-| `--lock-file` | `-l` | Lock file path |
+| `--field` | `-f` | 특정 필드 표시 |
+| `--json` | | JSON으로 출력 |
+| `--yaml` | | YAML로 출력 |
+| `--raw` | | 원시 출력 |
+| `--lock-file` | `-l` | Lock 파일 경로 |
 
 ## wippy version
 
-Print version information.
+버전 정보를 출력합니다.
 
 ```bash
 wippy version
 wippy version --short
 ```
 
-## Custom Commands
+## 커스텀 명령어
 
-Any `process.lua` or `process.wasm` entry can be registered as a named command by adding `command` metadata:
+모든 `process.lua` 또는 `process.wasm` 엔트리는 `command` 메타데이터를 추가하여 이름이 있는 명령어로 등록할 수 있습니다:
 
 ```yaml
 entries:
@@ -278,97 +278,97 @@ entries:
       - funcs
 ```
 
-Run it with:
+다음과 같이 실행합니다:
 
 ```bash
 wippy run test
 ```
 
-List all available commands:
+사용 가능한 모든 명령어를 나열합니다:
 
 ```bash
 wippy run list
 ```
 
-### Command Metadata Fields
+### 명령어 메타데이터 필드
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `name` | Yes | Command name used with `wippy run <name>` |
-| `short` | No | Short description shown in `wippy run list` |
+| `name` | 예 | `wippy run <name>`으로 사용하는 명령어 이름 |
+| `short` | 아니오 | `wippy run list`에 표시되는 간단한 설명 |
 
-Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process.
+모든 프로세스 엔트리 종류(`process.lua`, `process.wasm`)를 사용할 수 있습니다. 명령어 이름은 로드된 모든 엔트리에서 고유해야 합니다. 명령어 이름 뒤의 인수는 프로세스에 전달됩니다.
 
-## Examples
+## 예제
 
-### Development Workflow
+### 개발 워크플로우
 
 ```bash
-# Initialize project
+# 프로젝트 초기화
 wippy init
 wippy add wippy/http wippy/sql
 wippy install
 
-# Check for errors
+# 오류 검사
 wippy lint
 
-# Run with debug output
+# 디버그 출력과 함께 실행
 wippy run -c -v
 
-# Override config for local dev
+# 로컬 개발을 위한 설정 오버라이드
 wippy run -o app:db:host=localhost -o app:db:port=5432
 ```
 
-### Production Deployment
+### 프로덕션 배포
 
 ```bash
-# Create release pack with bytecode
+# 바이트코드로 릴리스 팩 생성
 wippy pack release.wapp --bytecode ** --exclude-ns test.**
 
-# Run from pack with memory limit
+# 메모리 제한과 함께 팩에서 실행
 wippy run release.wapp -m 2G
 ```
 
-### Debugging
+### 디버깅
 
 ```bash
-# Execute single process
+# 단일 프로세스 실행
 wippy run --exec app:processes/app:worker
 
-# With profiler enabled
+# 프로파일러 활성화와 함께
 wippy run -p -v
-# Then: go tool pprof http://localhost:6060/debug/pprof/heap
+# 이후: go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 
-### Dependency Management
+### 의존성 관리
 
 ```bash
-# Add new dependency
+# 새 의존성 추가
 wippy add acme/http@latest
 
-# Force re-download
+# 강제 재다운로드
 wippy install --force
 
-# Update specific module
+# 특정 모듈 업데이트
 wippy update acme/http
 ```
 
-### Publishing
+### 퍼블리싱
 
 ```bash
-# Login to hub
+# 허브에 로그인
 wippy auth login
 
-# Validate module
+# 모듈 검증
 wippy publish --dry-run
 
-# Publish
+# 퍼블리시
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-## Configuration File
+## 설정 파일
 
-Create `.wippy.yaml` for persistent settings:
+영구적인 설정을 위해 `.wippy.yaml`을 생성합니다:
 
 ```yaml
 logger:
@@ -388,7 +388,7 @@ override:
   app:db:host: "localhost"
 ```
 
-## See Also
+## 참고
 
-- [Configuration](guides/configuration.md) - Config file reference
-- [Observability](guides/observability.md) - Monitoring and logging
+- [설정](guides/configuration.md) - 설정 파일 레퍼런스
+- [관측성](guides/observability.md) - 모니터링 및 로깅
