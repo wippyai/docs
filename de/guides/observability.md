@@ -18,10 +18,10 @@ Wippy bietet drei Observability-Säulen, die beim Start konfiguriert werden:
 
 ```yaml
 logger:
-  mode: production     # development oder production
-  level: info          # debug, info, warn, error
   encoding: json       # json oder console
 ```
+
+Level und Ausgabe werden über CLI-Flags (`-v`, `-c`, `-s`) gesteuert — nur `encoding` wird aus der YAML-Datei gelesen.
 
 ### Log-Manager
 

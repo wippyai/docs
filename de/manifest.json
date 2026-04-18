@@ -163,6 +163,7 @@
       {"title": "Database", "path": "system/database"},
       {"title": "Store", "path": "system/store"},
       {"title": "Queue", "path": "system/queue"},
+      {"title": "Network", "path": "system/network"},
       {"title": "Filesystem", "path": "system/filesystem"},
       {"title": "Cloud Storage", "path": "system/cloudstorage"},
       {"title": "Environment", "path": "system/env"},
@@ -196,7 +197,8 @@
       {"title": "Authentication", "path": "tutorials/auth"},
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
-      {"title": "Micro AGI", "path": "tutorials/micro-agi"}
+      {"title": "Micro AGI", "path": "tutorials/micro-agi"},
+      {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },
   {

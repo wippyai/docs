@@ -18,10 +18,10 @@ O Wippy fornece três pilares de observabilidade configurados no boot:
 
 ```yaml
 logger:
-  mode: production     # development ou production
-  level: info          # debug, info, warn, error
   encoding: json       # json ou console
 ```
+
+O nível e a saída são controlados por flags da CLI (`-v`, `-c`, `-s`) — apenas `encoding` é lido do yaml.
 
 ### Gerenciador de Log
 

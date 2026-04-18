@@ -185,8 +185,7 @@ entries:
 
 ```yaml
 logger:
-  level: info
-  mode: production
+  encoding: json
 
 host:
   worker_count: 16

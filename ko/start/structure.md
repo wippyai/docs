@@ -185,8 +185,7 @@ UI 표시용 정보는 `meta`에 지정합니다:
 
 ```yaml
 logger:
-  level: info
-  mode: production
+  encoding: json
 
 host:
   worker_count: 16

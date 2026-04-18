@@ -18,10 +18,10 @@ Wippy는 부트 시 설정하는 세 가지 관측성 요소를 제공합니다:
 
 ```yaml
 logger:
-  mode: production     # development 또는 production
-  level: info          # debug, info, warn, error
   encoding: json       # json 또는 console
 ```
+
+레벨과 출력은 CLI 플래그(`-v`, `-c`, `-s`)로 제어됩니다 — yaml에서는 `encoding`만 읽습니다.
 
 ### 로그 매니저
 

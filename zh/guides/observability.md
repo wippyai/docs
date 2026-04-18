@@ -18,10 +18,10 @@ Wippy 提供三大可观测性支柱，在启动时配置：
 
 ```yaml
 logger:
-  mode: production     # development 或 production
-  level: info          # debug, info, warn, error
   encoding: json       # json 或 console
 ```
+
+级别和输出由 CLI 标志（`-v`、`-c`、`-s`）控制 — yaml 中仅读取 `encoding`。
 
 ### 日志管理器
 

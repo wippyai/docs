@@ -372,8 +372,6 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ```yaml
 logger:
-  mode: development
-  level: debug
   encoding: console
 
 logmanager:

@@ -18,10 +18,10 @@ Wippy предоставляет три столпа наблюдаемости,
 
 ```yaml
 logger:
-  mode: production     # development или production
-  level: info          # debug, info, warn, error
   encoding: json       # json или console
 ```
+
+Уровень и вывод управляются флагами CLI (`-v`, `-c`, `-s`) — из yaml читается только `encoding`.
 
 ### Log Manager
 

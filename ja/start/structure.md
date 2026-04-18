@@ -185,8 +185,7 @@ UI向けの情報には`meta`を使用します：
 
 ```yaml
 logger:
-  level: info
-  mode: production
+  encoding: json
 
 host:
   worker_count: 16

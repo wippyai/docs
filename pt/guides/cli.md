@@ -372,8 +372,6 @@ Crie `.wippy.yaml` para configurações persistentes:
 
 ```yaml
 logger:
-  mode: development
-  level: debug
   encoding: console
 
 logmanager:

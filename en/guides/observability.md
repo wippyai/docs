@@ -18,10 +18,10 @@ Wippy provides three observability pillars configured at boot time:
 
 ```yaml
 logger:
-  mode: production     # development or production
-  level: info          # debug, info, warn, error
   encoding: json       # json or console
 ```
+
+Level and output are controlled by CLI flags (`-v`, `-c`, `-s`) — only `encoding` is read from yaml.
 
 ### Log Manager
 
@@ -116,7 +116,7 @@ otel:
   # Function call tracing
   interceptor:
     enabled: true
-    order: 0                   # Interceptor execution order
+    order: 100                 # Interceptor execution order
 ```
 
 ### Temporal Workflows

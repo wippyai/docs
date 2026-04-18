@@ -185,8 +185,7 @@ Configuración del runtime en la raíz del proyecto:
 
 ```yaml
 logger:
-  level: info
-  mode: production
+  encoding: json
 
 host:
   worker_count: 16

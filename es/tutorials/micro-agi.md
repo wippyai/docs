@@ -88,8 +88,6 @@ Create `.wippy.yaml`:
 version: "1.0"
 
 logger:
-  mode: development
-  level: info
   encoding: console
 ```
 
