@@ -21,7 +21,7 @@ flowchart LR
 Los procesos no están limitados a Lua. El runtime soporta cualquier implementación de máquina de estado: procesos basados en Go y módulos WebAssembly están planeados.
 
 <warning>
-Los procesos son ligeros pero no gratuitos. Cada proceso comienza con aproximadamente 13KB de overhead base. Las asignaciones dinámicas y el crecimiento del heap se agregan durante la ejecución.
+Los procesos son ligeros pero no gratuitos. Cada proceso conlleva un pequeño costo base para su estado, su bandeja de entrada y la contabilidad del planificador, y las asignaciones dinámicas aumentan esa huella durante la ejecución.
 </warning>
 
 ## Hosts de Procesos

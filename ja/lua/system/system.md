@@ -205,6 +205,63 @@ local hostname, err = system.process.hostname()
 
 **戻り値:** `string, error`
 
+## 作業ディレクトリ
+
+ランタイムの現在の作業ディレクトリを取得:
+
+```lua
+local dir, err = system.process.cwd()
+```
+
+**戻り値:** `string, error`
+
+## プロセスホスト
+
+ワーカーとキューの統計情報とともにすべてのプロセスホストを一覧:
+
+```lua
+local hosts, err = system.hosts.list()
+```
+
+**戻り値:** `table[], error`
+
+各ホストテーブルの内容:
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `id` | string | ホストレジストリID |
+| `workers` | number | ワーカープールサイズ |
+| `processes` | number | このホスト上のアクティブなプロセス数 |
+| `executed` | number | 実行された総ステップ数 |
+| `stolen` | number | 他のホストから奪取したステップ数 |
+| `queue_depth` | number | ホストキュー内の保留アイテム数 |
+
+特定のホストで実行中のプロセスを一覧:
+
+```lua
+local procs, err = system.hosts.processes("app:host")
+```
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `host_id` | string | ホストレジストリID |
+
+**戻り値:** `table[], error`
+
+各プロセステーブルの内容:
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `pid` | string | プロセスID |
+| `host` | string | ホストID |
+| `source` | string | ソースエントリID |
+| `state` | string | プロセス状態 |
+| `steps` | number | 実行されたステップ数 |
+| `started_at` | number | 開始タイムスタンプ（ナノ秒） |
+| `parent` | string | 親PID（なしの場合は省略） |
+| `actor_id` | string | アクターID（なしの場合は省略） |
+| `stats` | table | プロセス固有の統計（オプション） |
+
 ## サービス状態
 
 特定の監視対象サービスの状態を取得:
@@ -261,6 +318,8 @@ local states, err = system.supervisor.states()
 | `system.read` | `cpu` | CPU数を読み取り |
 | `system.read` | `pid` | プロセスIDを読み取り |
 | `system.read` | `hostname` | ホスト名を読み取り |
+| `system.read` | `cwd` | 作業ディレクトリを読み取り |
+| `system.read` | `hosts` | ホスト / ホストプロセスを一覧 |
 | `system.read` | `modules` | ロード済みモジュールを一覧 |
 | `system.read` | `supervisor` | スーパーバイザー状態を読み取り |
 | `system.exit` | - | システムシャットダウンをトリガー |

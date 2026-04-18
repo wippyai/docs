@@ -67,7 +67,7 @@ func MyService() boot.Component {
 
 ## エントリデータのデコード
 
-`entry.DecodeEntryConfig`を使用してエントリデータをアンマーシャル：
+`internal/entry`の`entry.DecodeEntryConfig`を使用してエントリデータをアンマーシャルします。このヘルパーは`internal/`配下に存在するため、ランタイムモジュール内からのみインポート可能です。ツリー外の拡張機能は、このパターンをコピーするか、トランスコーダを直接使用する必要があります：
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {

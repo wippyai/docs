@@ -39,7 +39,7 @@ keywords:
 |-------|----------|-------------|
 | `organization` | Yes | Your org name on the hub |
 | `module` | Yes | Module name |
-| `description` | Yes | Short description |
+| `description` | No | Short description |
 | `license` | No | SPDX identifier (MIT, Apache-2.0) |
 | `repository` | No | Source repository URL |
 | `homepage` | No | Project homepage |

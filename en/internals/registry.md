@@ -88,14 +88,15 @@ Some kinds skip the event bus entirely:
 - `registry.entry` - Application configs
 - `ns.requirement` - Namespace requirements
 - `ns.dependency` - Module dependencies
+- `ns.definition` - Module metadata (readme, license, authors)
 
 ## Dependency Resolution
 
 Entries can declare dependencies on other entries. The resolver extracts dependencies via registered patterns:
 
 ```go
-resolver.RegisterPattern(PathConfig{
-    Path: "meta.server",
+resolver.RegisterPattern(registry.DependencyPattern{
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```

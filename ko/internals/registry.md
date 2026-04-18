@@ -88,13 +88,14 @@ sequenceDiagram
 - `registry.entry` - 애플리케이션 설정
 - `ns.requirement` - 네임스페이스 요구사항
 - `ns.dependency` - 모듈 의존성
+- `ns.definition` - 모듈 메타데이터 (readme, 라이선스, 저자)
 
 ## 의존성 해결
 
 엔트리는 다른 엔트리에 대한 의존성을 선언할 수 있습니다. 리졸버는 등록된 패턴을 통해 의존성을 추출합니다:
 
 ```go
-resolver.RegisterPattern(PathConfig{
+resolver.RegisterPattern(registry.DependencyPattern{
     Path: "meta.server",
     AllowWildcard: true,
 })

@@ -39,16 +39,7 @@ Erstellt Kerninfrastruktur bevor Komponenten geladen werden:
 
 Der Loader löst Abhängigkeiten via topologischer Sortierung auf und lädt Komponenten Level für Level. Komponenten auf demselben Level laden parallel.
 
-| Level | Komponenten | Abhängigkeiten |
-|-------|-------------|----------------|
-| 0 | PIDGen | keine |
-| 1 | Dispatcher | PIDGen |
-| 2 | Registry | Dispatcher |
-| 3 | Finder, Supervisor | Registry |
-| 4 | Topology | Supervisor |
-| 5 | Lifecycle | Topology |
-| 6 | Factory | Lifecycle |
-| 7 | Functions | Factory |
+Core-Komponenten (PIDGen, Dispatcher, Registry, Finder, Supervisor) initialisieren zuerst, gefolgt von Systemkomponenten (Topology, Lifecycle, Factory, Functions, Contracts). Konkrete Level werden zur Laufzeit aus dem Abhängigkeitsgraphen berechnet, sodass sich die Reihenfolge anpasst, wenn Komponenten hinzugefügt oder entfernt werden.
 
 Jede Komponente hängt sich während Load an den Kontext an, wodurch Services für abhängige Komponenten verfügbar werden.
 
@@ -200,7 +191,7 @@ Versiegeltes Dictionary für Komponentenreferenzen.
 
 | Eigenschaft | Verhalten |
 |-------------|-----------|
-| Vor Versiegelung | RWMutex-geschützte Schreibzugriffe |
+| Vor Versiegelung | Single-Threaded-Schreibzugriffe während Boot |
 | Nach Versiegelung | Lock-freie Lesezugriffe, Panic bei Schreibzugriff |
 | Duplikat-Schlüssel | Panic |
 | Typsicherheit | Typisierte Getter-Funktionen |

@@ -39,16 +39,7 @@ Creates core infrastructure before any components load:
 
 The Loader resolves dependencies via topological sort and loads components level by level. Components at the same level load in parallel.
 
-| Level | Components | Dependencies |
-|-------|------------|--------------|
-| 0 | PIDGen | none |
-| 1 | Dispatcher | PIDGen |
-| 2 | Registry | Dispatcher |
-| 3 | Finder, Supervisor | Registry |
-| 4 | Topology | Supervisor |
-| 5 | Lifecycle | Topology |
-| 6 | Factory | Lifecycle |
-| 7 | Functions | Factory |
+Базовые компоненты (PIDGen, Dispatcher, Registry, Finder, Supervisor) инициализируются первыми, затем следуют системные компоненты (Topology, Lifecycle, Factory, Functions, Contracts). Конкретные уровни вычисляются во время выполнения из графа зависимостей, поэтому порядок адаптируется при добавлении или удалении компонентов.
 
 Each component attaches itself to context during Load, making services available to dependent components.
 
@@ -200,7 +191,7 @@ Sealed dictionary for component references.
 
 | Property | Behavior |
 |----------|----------|
-| Before seal | RWMutex-protected writes |
+| Before seal | Однопоточная запись во время загрузки |
 | After seal | Lock-free reads, panics on write |
 | Duplicate keys | Panic |
 | Type safety | Typed getter functions |

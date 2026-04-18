@@ -67,7 +67,7 @@ func MyService() boot.Component {
 
 ## Decodificar Datos de Entrada
 
-Use `entry.DecodeEntryConfig` para deserializar datos de entrada:
+Use `entry.DecodeEntryConfig` de `internal/entry` para deserializar datos de entrada. Este helper vive bajo `internal/`, por lo que solo se puede importar desde dentro del módulo runtime; las extensiones fuera del árbol deben copiar el patrón o usar el transcoder directamente:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {

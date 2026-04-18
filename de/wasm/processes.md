@@ -26,9 +26,15 @@ entries:
 | `path` | Yes | Pfad zur `.wasm`-Datei innerhalb des Dateisystems |
 | `hash` | Yes | SHA-256-Hash zur Integritaetspruefung |
 | `method` | Yes | Name der exportierten Funktion zur Ausfuehrung |
+| `transport` | No | Aufruftransport: `payload` (Standard) oder `wasi-http` |
+| `wit` | No | WIT-Signatur fuer Raw/Core-Module |
 | `imports` | No | Host-Imports zum Aktivieren |
 | `wasi` | No | WASI-Konfiguration (args, env, mounts) |
 | `limits` | No | Ausfuehrungslimits |
+
+<note>
+`process.wasm` teilt sich die Konfigurationsstruktur mit `function.wasm`, daher wird ein `pool`-Block vom Schema akzeptiert, aber ignoriert — Prozesse laufen unter dem Process Host und nicht unter einem Function Pool.
+</note>
 
 ## CLI-Befehle
 

@@ -22,6 +22,8 @@ flowchart LR
 | `func` | Obrigatório | - | ID do registro da função handler |
 | `concurrency` | 1 | 1000 | Quantidade de workers |
 | `prefetch` | 10 | 10000 | Tamanho do buffer de mensagens |
+| `auto_ack` | false | - | Fazer Ack automaticamente antes de executar o handler |
+| `driver_options` | `{}` | - | Opções de consumidor específicas do driver |
 
 ## Definição de Entrada
 
@@ -119,17 +121,20 @@ Ao parar:
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
-  options:
-    queue_name: orders      # Sobrescreve nome (padrão: nome da entrada)
-    max_length: 10000       # Tamanho máximo da fila
-    durable: true           # Sobrevive a reinicializações
+  queue_name: orders        # Sobrescreve nome (padrão: nome da entrada)
+  codec: json               # Codec de payload (opcional)
+  dead_letter: app:dlq      # ID da fila dead-letter (opcional)
+  driver_options:
+    memory:
+      max_length: 10000     # Driver de memória: tamanho limitado da fila
 ```
 
-| Opção | Descrição |
+| Campo | Descrição |
 |-------|-----------|
 | `queue_name` | Sobrescreve nome da fila (padrão: nome do ID da entrada) |
-| `max_length` | Tamanho máximo da fila |
-| `durable` | Sobrevive a reinicializações (dependente do driver) |
+| `codec` | Nome do codec de payload |
+| `dead_letter` | ID de registro da fila dead-letter |
+| `driver_options` | Configurações específicas do driver indexadas por nome do driver |
 
 ## Driver de Memória
 

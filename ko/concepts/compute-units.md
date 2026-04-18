@@ -39,7 +39,7 @@ process.send(pid, "job", {task = "process_data"})
 
 ```lua
 -- 며칠 동안 실행될 수 있고, 재시작을 견디며, 진행 상황을 잃지 않음
-workflow.execute("app.orders:process", order_id)
+process.spawn("app.orders:process", "app:temporal_worker", order_id)
 ```
 
 단점은 지연 시간입니다. 모든 단계가 기록되므로 워크플로우는 함수나 프로세스보다 느립니다. 하지만 다단계 비즈니스 프로세스나 장기 실행 오케스트레이션에서는 그 내구성이 충분한 가치가 있습니다.

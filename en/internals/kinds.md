@@ -67,7 +67,7 @@ func MyService() boot.Component {
 
 ## Decoding Entry Data
 
-Use `entry.DecodeEntryConfig` to unmarshal entry data:
+Use `entry.DecodeEntryConfig` from `internal/entry` to unmarshal entry data. This helper lives under `internal/`, so it is only importable from inside the runtime module; out-of-tree extensions must copy the pattern or use the transcoder directly:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {

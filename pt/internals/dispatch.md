@@ -39,19 +39,21 @@ Comandos de sistema (0-255) usam indexação de array. Comandos estendidos usam 
 
 | Faixa | Módulo | Exemplos |
 |-------|--------|----------|
-| 1-9 | process | Send, Spawn, Terminate, Monitor, Link |
+| 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
 | 10-29 | clock | Sleep, Ticker, Timer |
+| 30-39 | socket | Dial, Listen, Accept, Close |
 | 50-59 | stream | Read, Write, Close, Seek |
-| 60-79 | http | Request, RequestBatch |
+| 60-69 | http | Request, RequestBatch |
+| 70-79 | tty | E/S de terminal |
 | 80-89 | websocket | Connect, Send, Receive |
 | 90-99 | event | Subscribe, Send |
-| 100-119 | sql | Query, Execute, Transaction ops |
+| 100-119 | sql | Query, Execute, Prepare, Stmt, Tx ops |
 | 120-129 | store | Get, Set, Delete, Has |
 | 130-139 | security | ValidateToken, CreateToken |
 | 140-149 | function | Call, AsyncStart, AsyncCancel |
 | 150-159 | exec | ProcessWait |
 | 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
-| 170-179 | eval | Compile, Run, CreateProcess |
+| 170-179 | eval | Compile, Run |
 | 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
 | 256+ | custom | Serviços definidos pelo usuário |

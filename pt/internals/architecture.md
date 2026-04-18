@@ -39,16 +39,7 @@ Cria infraestrutura central antes de qualquer componente carregar:
 
 O Loader resolve dependências via ordenação topológica e carrega componentes nível por nível. Componentes no mesmo nível carregam em paralelo.
 
-| Nível | Componentes | Dependências |
-|-------|-------------|--------------|
-| 0 | PIDGen | nenhuma |
-| 1 | Dispatcher | PIDGen |
-| 2 | Registry | Dispatcher |
-| 3 | Finder, Supervisor | Registry |
-| 4 | Topology | Supervisor |
-| 5 | Lifecycle | Topology |
-| 6 | Factory | Lifecycle |
-| 7 | Functions | Factory |
+Os componentes core (PIDGen, Dispatcher, Registry, Finder, Supervisor) inicializam primeiro, seguidos pelos componentes de sistema (Topology, Lifecycle, Factory, Functions, Contracts). Os níveis concretos são calculados em tempo de execução a partir do grafo de dependências, então a ordenação se adapta à medida que componentes são adicionados ou removidos.
 
 Cada componente se anexa ao contexto durante Load, disponibilizando serviços para componentes dependentes.
 
@@ -200,7 +191,7 @@ Dicionário selado para referências de componentes.
 
 | Propriedade | Comportamento |
 |-------------|---------------|
-| Antes de selar | Escritas protegidas por RWMutex |
+| Antes de selar | Escritas de thread única durante a inicialização |
 | Após selar | Leituras sem lock, panic em escrita |
 | Chaves duplicadas | Panic |
 | Type safety | Funções getter tipadas |

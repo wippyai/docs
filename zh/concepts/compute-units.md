@@ -39,7 +39,7 @@ process.send(pid, "job", {task = "process_data"})
 
 ```lua
 -- 这可以运行数天，在重启后存活，永不丢失进度
-workflow.execute("app.orders:process", order_id)
+process.spawn("app.orders:process", "app:temporal_worker", order_id)
 ```
 
 代价是延迟。每个步骤都会被记录，因此工作流比函数或进程慢。但对于多步骤业务流程或长时间运行的编排，这种持久性是值得的。

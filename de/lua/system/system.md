@@ -205,6 +205,63 @@ local hostname, err = system.process.hostname()
 
 **Gibt zurück:** `string, error`
 
+## Arbeitsverzeichnis
+
+Aktuelles Arbeitsverzeichnis der Laufzeit abrufen:
+
+```lua
+local dir, err = system.process.cwd()
+```
+
+**Gibt zurück:** `string, error`
+
+## Prozess-Hosts
+
+Alle Prozess-Hosts mit Worker- und Queue-Statistiken auflisten:
+
+```lua
+local hosts, err = system.hosts.list()
+```
+
+**Gibt zurück:** `table[], error`
+
+Jede Host-Tabelle enthält:
+
+| Feld | Typ | Beschreibung |
+|-------|------|-------------|
+| `id` | string | Host-Registry-ID |
+| `workers` | number | Größe des Worker-Pools |
+| `processes` | number | Aktive Prozesse auf diesem Host |
+| `executed` | number | Insgesamt ausgeführte Schritte |
+| `stolen` | number | Von anderen Hosts gestohlene Schritte |
+| `queue_depth` | number | Ausstehende Einträge in der Host-Queue |
+
+Auf einem bestimmten Host laufende Prozesse auflisten:
+
+```lua
+local procs, err = system.hosts.processes("app:host")
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `host_id` | string | Host-Registry-ID |
+
+**Gibt zurück:** `table[], error`
+
+Jede Prozess-Tabelle enthält:
+
+| Feld | Typ | Beschreibung |
+|-------|------|-------------|
+| `pid` | string | Prozess-ID |
+| `host` | string | Host-ID |
+| `source` | string | Quell-Eintrag-ID |
+| `state` | string | Prozessstatus |
+| `steps` | number | Ausgeführte Schritte |
+| `started_at` | number | Start-Zeitstempel (Nanosekunden) |
+| `parent` | string | Parent-PID (entfällt, falls keine) |
+| `actor_id` | string | Actor-ID (entfällt, falls keine) |
+| `stats` | table | Prozessspezifische Stats (optional) |
+
 ## Service-Status
 
 Status für einen spezifischen überwachten Service abrufen:
@@ -261,6 +318,8 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `system.read` | `cpu` | CPU-Anzahl lesen |
 | `system.read` | `pid` | Prozess-ID lesen |
 | `system.read` | `hostname` | Hostname lesen |
+| `system.read` | `cwd` | Arbeitsverzeichnis lesen |
+| `system.read` | `hosts` | Hosts / Host-Prozesse auflisten |
 | `system.read` | `modules` | Geladene Module auflisten |
 | `system.read` | `supervisor` | Supervisor-Status lesen |
 | `system.exit` | - | System-Shutdown auslösen |

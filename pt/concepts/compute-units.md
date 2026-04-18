@@ -39,7 +39,7 @@ Workflows são para operações que absolutamente não podem falhar. Eles persis
 
 ```lua
 -- Isso pode executar por dias, sobreviver a reinicializações, e nunca perder progresso
-workflow.execute("app.orders:process", order_id)
+process.spawn("app.orders:process", "app:temporal_worker", order_id)
 ```
 
 O trade-off é latência. Cada passo é registrado, então workflows são mais lentos que funções ou processos. Mas para processos de negócio de múltiplas etapas ou orquestrações de longa duração, essa durabilidade vale a pena.

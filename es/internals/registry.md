@@ -88,13 +88,14 @@ Algunos kinds omiten el event bus completamente:
 - `registry.entry` - Configs de aplicación
 - `ns.requirement` - Requisitos de namespace
 - `ns.dependency` - Dependencias de módulos
+- `ns.definition` - Metadatos del módulo (readme, licencia, autores)
 
 ## Resolución de Dependencias
 
 Las entradas pueden declarar dependencias en otras entradas. El resolver extrae dependencias vía patrones registrados:
 
 ```go
-resolver.RegisterPattern(PathConfig{
+resolver.RegisterPattern(registry.DependencyPattern{
     Path: "meta.server",
     AllowWildcard: true,
 })

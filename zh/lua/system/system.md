@@ -205,6 +205,63 @@ local hostname, err = system.process.hostname()
 
 **返回:** `string, error`
 
+## 工作目录
+
+获取运行时的当前工作目录：
+
+```lua
+local dir, err = system.process.cwd()
+```
+
+**返回:** `string, error`
+
+## 进程主机
+
+列出所有进程主机及其 worker 和队列统计信息：
+
+```lua
+local hosts, err = system.hosts.list()
+```
+
+**返回:** `table[], error`
+
+每个主机表包含：
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `id` | string | 主机注册表 ID |
+| `workers` | number | Worker 池大小 |
+| `processes` | number | 此主机上的活跃进程数 |
+| `executed` | number | 已执行的总步数 |
+| `stolen` | number | 从其他主机窃取的步数 |
+| `queue_depth` | number | 主机队列中的待处理项数 |
+
+列出特定主机上运行的进程：
+
+```lua
+local procs, err = system.hosts.processes("app:host")
+```
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `host_id` | string | 主机注册表 ID |
+
+**返回:** `table[], error`
+
+每个进程表包含：
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `pid` | string | 进程 ID |
+| `host` | string | 主机 ID |
+| `source` | string | 源条目 ID |
+| `state` | string | 进程状态 |
+| `steps` | number | 已执行步数 |
+| `started_at` | number | 启动时间戳（纳秒） |
+| `parent` | string | 父 PID（若无则省略） |
+| `actor_id` | string | Actor ID（若无则省略） |
+| `stats` | table | 进程特定统计（可选） |
+
 ## 服务状态
 
 获取特定受监督服务的状态：
@@ -261,6 +318,8 @@ local states, err = system.supervisor.states()
 | `system.read` | `cpu` | 读取 CPU 数量 |
 | `system.read` | `pid` | 读取进程 ID |
 | `system.read` | `hostname` | 读取主机名 |
+| `system.read` | `cwd` | 读取工作目录 |
+| `system.read` | `hosts` | 列出主机 / 主机进程 |
 | `system.read` | `modules` | 列出已加载模块 |
 | `system.read` | `supervisor` | 读取监督器状态 |
 | `system.exit` | - | 触发系统关闭 |

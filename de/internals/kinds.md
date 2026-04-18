@@ -67,7 +67,7 @@ func MyService() boot.Component {
 
 ## Entry-Daten dekodieren
 
-Verwenden Sie `entry.DecodeEntryConfig` um Entry-Daten zu unmarshallen:
+Verwenden Sie `entry.DecodeEntryConfig` aus `internal/entry`, um Entry-Daten zu unmarshallen. Dieser Helper befindet sich unter `internal/`, ist also nur innerhalb des Runtime-Moduls importierbar; Erweiterungen außerhalb des Baums müssen das Muster kopieren oder den Transcoder direkt verwenden:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {

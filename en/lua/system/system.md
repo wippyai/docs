@@ -205,6 +205,63 @@ local hostname, err = system.process.hostname()
 
 **Returns:** `string, error`
 
+## Working Directory
+
+Get the runtime's current working directory:
+
+```lua
+local dir, err = system.process.cwd()
+```
+
+**Returns:** `string, error`
+
+## Process Hosts
+
+List all process hosts with worker and queue statistics:
+
+```lua
+local hosts, err = system.hosts.list()
+```
+
+**Returns:** `table[], error`
+
+Each host table contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Host registry ID |
+| `workers` | number | Worker pool size |
+| `processes` | number | Active processes on this host |
+| `executed` | number | Total steps executed |
+| `stolen` | number | Steps stolen from other hosts |
+| `queue_depth` | number | Pending items in the host queue |
+
+List processes running on a specific host:
+
+```lua
+local procs, err = system.hosts.processes("app:host")
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `host_id` | string | Host registry ID |
+
+**Returns:** `table[], error`
+
+Each process table contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `pid` | string | Process ID |
+| `host` | string | Host ID |
+| `source` | string | Source entry ID |
+| `state` | string | Process state |
+| `steps` | number | Steps executed |
+| `started_at` | number | Start timestamp (nanoseconds) |
+| `parent` | string | Parent PID (omitted if none) |
+| `actor_id` | string | Actor ID (omitted if none) |
+| `stats` | table | Process-specific stats (optional) |
+
 ## Service State
 
 Get state for a specific supervised service:
@@ -261,6 +318,8 @@ System operations are subject to security policy evaluation.
 | `system.read` | `cpu` | Read CPU count |
 | `system.read` | `pid` | Read process ID |
 | `system.read` | `hostname` | Read hostname |
+| `system.read` | `cwd` | Read working directory |
+| `system.read` | `hosts` | List hosts / host processes |
 | `system.read` | `modules` | List loaded modules |
 | `system.read` | `supervisor` | Read supervisor state |
 | `system.exit` | - | Trigger system shutdown |

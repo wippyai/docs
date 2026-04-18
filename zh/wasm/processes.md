@@ -26,9 +26,15 @@ entries:
 | `path` | 是 | 文件系统中 `.wasm` 文件的路径 |
 | `hash` | 是 | 用于完整性验证的 SHA-256 哈希 |
 | `method` | 是 | 要执行的导出函数名 |
+| `transport` | 否 | 调用传输：`payload`（默认）或 `wasi-http` |
+| `wit` | 否 | 用于 raw/core 模块的 WIT 签名 |
 | `imports` | 否 | 要启用的宿主导入 |
 | `wasi` | 否 | WASI 配置（args、env、mounts） |
 | `limits` | 否 | 执行限制 |
+
+<note>
+`process.wasm` 与 `function.wasm` 共享其配置结构体，因此模式接受 `pool` 块但会忽略 — 进程在进程宿主下运行，而不是函数池。
+</note>
 
 ## CLI 命令
 

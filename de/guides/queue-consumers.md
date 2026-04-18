@@ -22,6 +22,8 @@ flowchart LR
 | `func` | Erforderlich | - | Handler-Funktions-Registry-ID |
 | `concurrency` | 1 | 1000 | Worker-Anzahl |
 | `prefetch` | 10 | 10000 | Nachrichtenpuffer-Größe |
+| `auto_ack` | false | - | Automatisch bestätigen, bevor der Handler ausgeführt wird |
+| `driver_options` | `{}` | - | Treiberspezifische Consumer-Optionen |
 
 ## Entry-Definition
 
@@ -119,17 +121,20 @@ Beim Stoppen:
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
-  options:
-    queue_name: orders      # Namen überschreiben (Standard: Entry-Name)
-    max_length: 10000       # Maximale Queue-Größe
-    durable: true           # Neustarts überleben
+  queue_name: orders        # Namen überschreiben (Standard: Entry-Name)
+  codec: json               # Payload-Codec (optional)
+  dead_letter: app:dlq      # Dead-Letter-Queue-ID (optional)
+  driver_options:
+    memory:
+      max_length: 10000     # Memory-Treiber: begrenzte Queue-Größe
 ```
 
-| Option | Beschreibung |
-|--------|--------------|
+| Feld | Beschreibung |
+|------|--------------|
 | `queue_name` | Queue-Namen überschreiben (Standard: Entry-ID-Name) |
-| `max_length` | Maximale Queue-Größe |
-| `durable` | Neustarts überleben (treiberabhängig) |
+| `codec` | Name des Payload-Codecs |
+| `dead_letter` | Registry-ID der Dead-Letter-Queue |
+| `driver_options` | Treiberspezifische Einstellungen, nach Treibernamen geschlüsselt |
 
 ## Memory-Treiber
 

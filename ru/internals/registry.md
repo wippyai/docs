@@ -88,13 +88,14 @@ sequenceDiagram
 - `registry.entry` — конфигурации приложения
 - `ns.requirement` — требования namespace
 - `ns.dependency` — зависимости модулей
+- `ns.definition` — метаданные модуля (readme, лицензия, авторы)
 
 ## Разрешение зависимостей
 
 Записи могут объявлять зависимости от других записей. Резолвер извлекает зависимости через зарегистрированные паттерны:
 
 ```go
-resolver.RegisterPattern(PathConfig{
+resolver.RegisterPattern(registry.DependencyPattern{
     Path: "meta.server",
     AllowWildcard: true,
 })

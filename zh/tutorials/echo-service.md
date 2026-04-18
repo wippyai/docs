@@ -334,7 +334,7 @@ end
 
 ```bash
 wippy init
-wippy run -x app:terminal/app:cli
+wippy run -x app:cli
 ```
 
 示例输出：

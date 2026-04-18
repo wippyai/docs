@@ -135,7 +135,7 @@ Beim Aktualisieren bestimmter Module bleiben andere Module auf ihren aktuellen V
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --force              # Bypass cache, re-download
+wippy install --refresh            # Jedes Modul erneut herunterladen (--force ist ein Alias)
 ```
 
 ## Modulspeicher

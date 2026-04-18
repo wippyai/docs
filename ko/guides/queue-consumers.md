@@ -22,6 +22,8 @@ flowchart LR
 | `func` | 필수 | - | 핸들러 함수 레지스트리 ID |
 | `concurrency` | 1 | 1000 | 워커 수 |
 | `prefetch` | 10 | 10000 | 메시지 버퍼 크기 |
+| `auto_ack` | false | - | 핸들러 실행 전 자동으로 Ack |
+| `driver_options` | `{}` | - | 드라이버별 컨슈머 옵션 |
 
 ## 엔트리 정의
 
@@ -119,17 +121,20 @@ prefetch: 10
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
-  options:
-    queue_name: orders      # 이름 오버라이드 (기본값: 엔트리 이름)
-    max_length: 10000       # 최대 큐 크기
-    durable: true           # 재시작 시 유지
+  queue_name: orders        # 이름 오버라이드 (기본값: 엔트리 이름)
+  codec: json               # 페이로드 코덱 (선택사항)
+  dead_letter: app:dlq      # 데드 레터 큐 ID (선택사항)
+  driver_options:
+    memory:
+      max_length: 10000     # 메모리 드라이버: 제한된 큐 크기
 ```
 
-| 옵션 | 설명 |
-|--------|-------------|
+| 필드 | 설명 |
+|------|------|
 | `queue_name` | 큐 이름 오버라이드 (기본값: 엔트리 ID 이름) |
-| `max_length` | 최대 큐 크기 |
-| `durable` | 재시작 시 유지(드라이버에 따라 다름) |
+| `codec` | 페이로드 코덱 이름 |
+| `dead_letter` | 데드 레터 큐의 레지스트리 ID |
+| `driver_options` | 드라이버 이름으로 키가 지정된 드라이버별 설정 |
 
 ## 메모리 드라이버
 

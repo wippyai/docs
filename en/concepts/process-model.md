@@ -21,7 +21,7 @@ flowchart LR
 Processes aren't limited to Lua. The runtime supports any state machine implementation—Go-based processes and WebAssembly modules are planned.
 
 <warning>
-Processes are lightweight but not free. Each process starts with approximately 13KB baseline overhead. Dynamic allocations and heap growth add to this during execution.
+Processes are lightweight but not free. Each process carries a small baseline cost for its state, inbox, and scheduler bookkeeping, and dynamic allocations grow that footprint during execution.
 </warning>
 
 ## Process Hosts

@@ -22,6 +22,8 @@ flowchart LR
 | `func` | Required | - | Handler function registry ID |
 | `concurrency` | 1 | 1000 | Worker count |
 | `prefetch` | 10 | 10000 | Message buffer size |
+| `auto_ack` | false | - | Ack automatically before running the handler |
+| `driver_options` | `{}` | - | Driver-specific consumer options |
 
 ## Entry Definition
 
@@ -119,17 +121,20 @@ On stop:
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
-  options:
-    queue_name: orders      # Override name (default: entry name)
-    max_length: 10000       # Maximum queue size
-    durable: true           # Survive restarts
+  queue_name: orders        # Override name (default: entry name)
+  codec: json               # Payload codec (optional)
+  dead_letter: app:dlq      # Dead-letter queue ID (optional)
+  driver_options:
+    memory:
+      max_length: 10000     # Memory driver: bounded queue size
 ```
 
-| Option | Description |
-|--------|-------------|
+| Field | Description |
+|-------|-------------|
 | `queue_name` | Override queue name (default: entry ID name) |
-| `max_length` | Maximum queue size |
-| `durable` | Survive restarts (driver-dependent) |
+| `codec` | Payload codec name |
+| `dead_letter` | Registry ID of dead-letter queue |
+| `driver_options` | Driver-specific settings keyed by driver name |
 
 ## Memory Driver
 

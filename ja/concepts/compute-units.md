@@ -39,7 +39,7 @@ process.send(pid, "job", {task = "process_data"})
 
 ```lua
 -- これは数日間実行でき、再起動を乗り越え、進捗を失うことはありません
-workflow.execute("app.orders:process", order_id)
+process.spawn("app.orders:process", "app:temporal_worker", order_id)
 ```
 
 トレードオフはレイテンシーです。すべてのステップが記録されるため、ワークフローは関数やプロセスより遅くなります。しかし、マルチステップのビジネスプロセスや長時間実行されるオーケストレーションには、その耐久性が価値があります。

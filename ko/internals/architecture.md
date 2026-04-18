@@ -39,16 +39,7 @@ Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성
 
 Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로 컴포넌트를 로드합니다. 같은 레벨의 컴포넌트는 병렬로 로드됩니다.
 
-| 레벨 | 컴포넌트 | 의존성 |
-|-------|------------|--------------|
-| 0 | PIDGen | 없음 |
-| 1 | Dispatcher | PIDGen |
-| 2 | Registry | Dispatcher |
-| 3 | Finder, Supervisor | Registry |
-| 4 | Topology | Supervisor |
-| 5 | Lifecycle | Topology |
-| 6 | Factory | Lifecycle |
-| 7 | Functions | Factory |
+코어 컴포넌트(PIDGen, Dispatcher, Registry, Finder, Supervisor)가 먼저 초기화되고, 이어서 시스템 컴포넌트(Topology, Lifecycle, Factory, Functions, Contracts)가 초기화됩니다. 구체적인 레벨은 런타임에 의존성 그래프로부터 계산되므로, 컴포넌트가 추가되거나 제거될 때 순서가 적응됩니다.
 
 각 컴포넌트는 Load 단계에서 컨텍스트에 자신을 연결하여 의존 컴포넌트가 서비스를 사용할 수 있게 합니다.
 
@@ -200,7 +191,7 @@ flowchart LR
 
 | 속성 | 동작 |
 |----------|----------|
-| 봉인 전 | RWMutex로 보호된 쓰기 |
+| 봉인 전 | 부팅 중 단일 스레드 쓰기 |
 | 봉인 후 | 락 프리 읽기, 쓰기 시 패닉 |
 | 중복 키 | 패닉 |
 | 타입 안전성 | 타입화된 getter 함수 |

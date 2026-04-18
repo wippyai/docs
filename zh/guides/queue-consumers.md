@@ -22,6 +22,8 @@ flowchart LR
 | `func` | 必填 | - | 处理函数注册表 ID |
 | `concurrency` | 1 | 1000 | 工作线程数 |
 | `prefetch` | 10 | 10000 | 消息缓冲区大小 |
+| `auto_ack` | false | - | 在运行处理器之前自动确认 |
+| `driver_options` | `{}` | - | 驱动特定的消费者选项 |
 
 ## 入口定义
 
@@ -120,17 +122,20 @@ prefetch: 10
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
-  options:
-    queue_name: orders      # 覆盖名称（默认：入口名称）
-    max_length: 10000       # 最大队列大小
-    durable: true           # 重启后持久化
+  queue_name: orders        # 覆盖名称（默认：入口名称）
+  codec: json               # 负载编解码器（可选）
+  dead_letter: app:dlq      # 死信队列 ID（可选）
+  driver_options:
+    memory:
+      max_length: 10000     # 内存驱动：有界队列大小
 ```
 
-| 选项 | 说明 |
+| 字段 | 说明 |
 |------|------|
 | `queue_name` | 覆盖队列名称（默认：入口 ID 名称） |
-| `max_length` | 最大队列大小 |
-| `durable` | 重启后持久化（取决于驱动） |
+| `codec` | 负载编解码器名称 |
+| `dead_letter` | 死信队列的注册表 ID |
+| `driver_options` | 按驱动名称键控的驱动特定设置 |
 
 ## 内存驱动
 

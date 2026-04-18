@@ -21,7 +21,7 @@ flowchart LR
 Prozesse sind nicht auf Lua beschränkt. Die Laufzeitumgebung unterstützt jede Zustandsautomaten-Implementierung — Go-basierte Prozesse und WebAssembly-Module sind geplant.
 
 <warning>
-Prozesse sind leichtgewichtig, aber nicht kostenlos. Jeder Prozess beginnt mit etwa 13 KB Grundspeicher. Dynamische Speicherreservierungen und Heap-Wachstum kommen während der Ausführung hinzu.
+Prozesse sind leichtgewichtig, aber nicht kostenlos. Jeder Prozess trägt einen kleinen Basiskostenaufwand für seinen Zustand, seine Inbox und die Scheduler-Buchführung, und dynamische Speicherreservierungen vergrößern diesen Footprint während der Ausführung.
 </warning>
 
 ## Process Hosts

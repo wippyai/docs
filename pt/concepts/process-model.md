@@ -21,7 +21,7 @@ flowchart LR
 Processos não estão limitados a Lua. O runtime suporta qualquer implementação de máquina de estado — processos baseados em Go e módulos WebAssembly estão planejados.
 
 <warning>
-Processos são leves, mas não são gratuitos. Cada processo inicia com aproximadamente 13KB de overhead base. Alocações dinâmicas e crescimento de heap adicionam a isso durante a execução.
+Processos são leves, mas não são gratuitos. Cada processo carrega um pequeno custo base para seu estado, caixa de entrada e contabilidade do escalonador, e as alocações dinâmicas aumentam essa pegada durante a execução.
 </warning>
 
 ## Hosts de Processos

@@ -135,7 +135,7 @@ wippy update acme/http acme/sql    # Update specific modules
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --force              # Bypass cache, re-download
+wippy install --refresh            # 重新获取每个模块（--force 是别名）
 ```
 
 ## 模块存储

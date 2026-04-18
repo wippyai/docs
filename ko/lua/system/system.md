@@ -205,6 +205,63 @@ local hostname, err = system.process.hostname()
 
 **반환:** `string, error`
 
+## 작업 디렉토리
+
+런타임의 현재 작업 디렉토리를 가져옵니다:
+
+```lua
+local dir, err = system.process.cwd()
+```
+
+**반환:** `string, error`
+
+## 프로세스 호스트
+
+워커 및 큐 통계와 함께 모든 프로세스 호스트를 나열합니다:
+
+```lua
+local hosts, err = system.hosts.list()
+```
+
+**반환:** `table[], error`
+
+각 호스트 테이블에는 다음이 포함됩니다:
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `id` | string | 호스트 레지스트리 ID |
+| `workers` | number | 워커 풀 크기 |
+| `processes` | number | 이 호스트의 활성 프로세스 수 |
+| `executed` | number | 실행된 총 스텝 수 |
+| `stolen` | number | 다른 호스트로부터 훔친 스텝 수 |
+| `queue_depth` | number | 호스트 큐의 대기 항목 수 |
+
+특정 호스트에서 실행 중인 프로세스를 나열합니다:
+
+```lua
+local procs, err = system.hosts.processes("app:host")
+```
+
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| `host_id` | string | 호스트 레지스트리 ID |
+
+**반환:** `table[], error`
+
+각 프로세스 테이블에는 다음이 포함됩니다:
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `pid` | string | 프로세스 ID |
+| `host` | string | 호스트 ID |
+| `source` | string | 소스 엔트리 ID |
+| `state` | string | 프로세스 상태 |
+| `steps` | number | 실행된 스텝 수 |
+| `started_at` | number | 시작 타임스탬프 (나노초) |
+| `parent` | string | 부모 PID (없으면 생략) |
+| `actor_id` | string | 액터 ID (없으면 생략) |
+| `stats` | table | 프로세스별 통계 (선택) |
+
 ## 서비스 상태
 
 특정 감독 서비스의 상태를 가져옵니다:
@@ -261,6 +318,8 @@ local states, err = system.supervisor.states()
 | `system.read` | `cpu` | CPU 수 읽기 |
 | `system.read` | `pid` | 프로세스 ID 읽기 |
 | `system.read` | `hostname` | 호스트명 읽기 |
+| `system.read` | `cwd` | 작업 디렉토리 읽기 |
+| `system.read` | `hosts` | 호스트 / 호스트 프로세스 목록 |
 | `system.read` | `modules` | 로드된 모듈 목록 |
 | `system.read` | `supervisor` | 수퍼바이저 상태 읽기 |
 | `system.exit` | - | 시스템 종료 트리거 |

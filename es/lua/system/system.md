@@ -205,6 +205,63 @@ local hostname, err = system.process.hostname()
 
 **Devuelve:** `string, error`
 
+## Directorio de Trabajo
+
+Obtener el directorio de trabajo actual del runtime:
+
+```lua
+local dir, err = system.process.cwd()
+```
+
+**Devuelve:** `string, error`
+
+## Hosts de Proceso
+
+Listar todos los hosts de proceso con estadisticas de workers y colas:
+
+```lua
+local hosts, err = system.hosts.list()
+```
+
+**Devuelve:** `table[], error`
+
+Cada tabla de host contiene:
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | string | ID de registro del host |
+| `workers` | number | Tamano del pool de workers |
+| `processes` | number | Procesos activos en este host |
+| `executed` | number | Total de pasos ejecutados |
+| `stolen` | number | Pasos robados a otros hosts |
+| `queue_depth` | number | Elementos pendientes en la cola del host |
+
+Listar procesos corriendo en un host específico:
+
+```lua
+local procs, err = system.hosts.processes("app:host")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `host_id` | string | ID de registro del host |
+
+**Devuelve:** `table[], error`
+
+Cada tabla de proceso contiene:
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `pid` | string | ID de proceso |
+| `host` | string | ID del host |
+| `source` | string | ID de entrada fuente |
+| `state` | string | Estado del proceso |
+| `steps` | number | Pasos ejecutados |
+| `started_at` | number | Marca de tiempo de inicio (nanosegundos) |
+| `parent` | string | PID padre (omitido si no hay) |
+| `actor_id` | string | ID de actor (omitido si no hay) |
+| `stats` | table | Estadisticas especificas del proceso (opcional) |
+
 ## Estado de Servicio
 
 Obtener estado para un servicio supervisado específico:
@@ -261,6 +318,8 @@ Las operaciones de sistema estan sujetas a evaluacion de politica de seguridad.
 | `system.read` | `cpu` | Leer conteo de CPU |
 | `system.read` | `pid` | Leer ID de proceso |
 | `system.read` | `hostname` | Leer hostname |
+| `system.read` | `cwd` | Leer directorio de trabajo |
+| `system.read` | `hosts` | Listar hosts / procesos de host |
 | `system.read` | `modules` | Listar modulos cargados |
 | `system.read` | `supervisor` | Leer estado del supervisor |
 | `system.exit` | - | Activar apagado del sistema |

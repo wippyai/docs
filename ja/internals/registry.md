@@ -88,13 +88,14 @@ sequenceDiagram
 - `registry.entry` - アプリケーション設定
 - `ns.requirement` - 名前空間要件
 - `ns.dependency` - モジュール依存関係
+- `ns.definition` - モジュールメタデータ（readme、ライセンス、著者）
 
 ## 依存関係解決
 
 エントリは他のエントリへの依存関係を宣言可能。リゾルバは登録されたパターンを通じて依存関係を抽出：
 
 ```go
-resolver.RegisterPattern(PathConfig{
+resolver.RegisterPattern(registry.DependencyPattern{
     Path: "meta.server",
     AllowWildcard: true,
 })

@@ -88,13 +88,14 @@ Einige Arten überspringen den Event-Bus komplett:
 - `registry.entry` - Anwendungskonfigurationen
 - `ns.requirement` - Namespace-Requirements
 - `ns.dependency` - Modul-Abhängigkeiten
+- `ns.definition` - Modul-Metadaten (Readme, Lizenz, Autoren)
 
 ## Abhängigkeitsauflösung
 
 Einträge können Abhängigkeiten von anderen Einträgen deklarieren. Der Resolver extrahiert Abhängigkeiten über registrierte Muster:
 
 ```go
-resolver.RegisterPattern(PathConfig{
+resolver.RegisterPattern(registry.DependencyPattern{
     Path: "meta.server",
     AllowWildcard: true,
 })

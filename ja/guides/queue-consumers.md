@@ -22,6 +22,8 @@ flowchart LR
 | `func` | 必須 | - | ハンドラ関数レジストリID |
 | `concurrency` | 1 | 1000 | ワーカー数 |
 | `prefetch` | 10 | 10000 | メッセージバッファサイズ |
+| `auto_ack` | false | - | ハンドラ実行前に自動的にAckする |
+| `driver_options` | `{}` | - | ドライバ固有のコンシューマオプション |
 
 ## エントリ定義
 
@@ -119,17 +121,20 @@ prefetch: 10
 - name: orders
   kind: queue.queue
   driver: app:queue_driver
-  options:
-    queue_name: orders      # 名前をオーバーライド（デフォルト: エントリ名）
-    max_length: 10000       # 最大キューサイズ
-    durable: true           # 再起動を乗り越える
+  queue_name: orders        # 名前をオーバーライド（デフォルト: エントリ名）
+  codec: json               # ペイロードコーデック（オプション）
+  dead_letter: app:dlq      # デッドレターキューID（オプション）
+  driver_options:
+    memory:
+      max_length: 10000     # メモリドライバ: 有界キューサイズ
 ```
 
-| オプション | 説明 |
+| フィールド | 説明 |
 |-----------|------|
 | `queue_name` | キュー名をオーバーライド（デフォルト: エントリID名） |
-| `max_length` | 最大キューサイズ |
-| `durable` | 再起動を乗り越える（ドライバ依存） |
+| `codec` | ペイロードコーデック名 |
+| `dead_letter` | デッドレターキューのレジストリID |
+| `driver_options` | ドライバ名でキー付けされたドライバ固有の設定 |
 
 ## メモリドライバ
 

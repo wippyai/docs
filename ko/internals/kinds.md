@@ -67,7 +67,7 @@ func MyService() boot.Component {
 
 ## 엔트리 데이터 디코딩
 
-엔트리 데이터를 언마샬하려면 `entry.DecodeEntryConfig`를 사용합니다:
+엔트리 데이터를 언마샬하려면 `internal/entry`의 `entry.DecodeEntryConfig`를 사용합니다. 이 헬퍼는 `internal/` 아래에 있으므로 런타임 모듈 내부에서만 임포트할 수 있습니다. 트리 외부 확장은 패턴을 복사하거나 트랜스코더를 직접 사용해야 합니다:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {

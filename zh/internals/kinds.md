@@ -67,7 +67,7 @@ func MyService() boot.Component {
 
 ## 解码 Entry Data
 
-使用 `entry.DecodeEntryConfig` 反序列化 entry 数据：
+使用 `internal/entry` 中的 `entry.DecodeEntryConfig` 反序列化 entry 数据。该辅助函数位于 `internal/` 下，因此只能在 runtime 模块内部导入；树外扩展必须复制该模式或直接使用 transcoder：
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {

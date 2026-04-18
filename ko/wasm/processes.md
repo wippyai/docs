@@ -26,9 +26,15 @@ entries:
 | `path` | Yes | 파일시스템 내 `.wasm` 파일 경로 |
 | `hash` | Yes | 무결성 검증을 위한 SHA-256 해시 |
 | `method` | Yes | 실행할 내보내기된 함수 이름 |
+| `transport` | No | 호출 전송: `payload` (기본값) 또는 `wasi-http` |
+| `wit` | No | raw/core 모듈용 WIT 시그니처 |
 | `imports` | No | 활성화할 호스트 임포트 |
 | `wasi` | No | WASI 설정 (args, env, mounts) |
 | `limits` | No | 실행 제한 |
+
+<note>
+`process.wasm`은 `function.wasm`과 설정 구조체를 공유하므로 `pool` 블록은 스키마에서 수용되지만 무시됩니다 — 프로세스는 함수 풀이 아닌 프로세스 호스트 아래에서 실행됩니다.
+</note>
 
 ## CLI 명령
 

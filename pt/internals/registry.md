@@ -88,13 +88,14 @@ Alguns tipos pulam o event bus completamente:
 - `registry.entry` - Configs de aplicação
 - `ns.requirement` - Requirements de namespace
 - `ns.dependency` - Dependências de módulo
+- `ns.definition` - Metadados do módulo (readme, licença, autores)
 
 ## Resolução de Dependências
 
 Entradas podem declarar dependências de outras entradas. O resolver extrai dependências via padrões registrados:
 
 ```go
-resolver.RegisterPattern(PathConfig{
+resolver.RegisterPattern(registry.DependencyPattern{
     Path: "meta.server",
     AllowWildcard: true,
 })

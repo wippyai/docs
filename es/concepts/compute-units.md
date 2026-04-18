@@ -39,7 +39,7 @@ Los flujos de trabajo son para operaciones que absolutamente no pueden fallar. P
 
 ```lua
 -- Esto puede ejecutarse por días, sobrevivir reinicios, y nunca perder progreso
-workflow.execute("app.orders:process", order_id)
+process.spawn("app.orders:process", "app:temporal_worker", order_id)
 ```
 
 El compromiso es la latencia. Cada paso se registra, así que los flujos de trabajo son más lentos que funciones o procesos. Pero para procesos de negocio de múltiples pasos u orquestaciones de larga duración, esa durabilidad vale la pena.

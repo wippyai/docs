@@ -67,7 +67,7 @@ func MyService() boot.Component {
 
 ## Декодирование данных записи
 
-Используйте `entry.DecodeEntryConfig` для десериализации данных записи:
+Используйте `entry.DecodeEntryConfig` из `internal/entry` для десериализации данных записи. Этот хелпер находится в `internal/`, поэтому импортируется только внутри модуля runtime; расширения вне дерева должны скопировать этот шаблон или использовать транскодер напрямую:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {

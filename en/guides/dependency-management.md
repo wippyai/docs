@@ -135,7 +135,7 @@ When updating specific modules, other modules stay pinned to their current versi
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --force              # Bypass cache, re-download
+wippy install --refresh            # Re-fetch every module (--force is an alias)
 ```
 
 ## Module Storage
