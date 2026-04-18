@@ -42,6 +42,8 @@ wippy run
 | `wippy pack` | Create a snapshot |
 | `wippy publish` | Publish to hub |
 | `wippy search` | Search for modules |
+| `wippy readme` | Fetch a module README from the hub |
+| `wippy registry` | Inspect loaded registry entries |
 | `wippy auth` | Manage authentication |
 | `wippy version` | Print version info |
 

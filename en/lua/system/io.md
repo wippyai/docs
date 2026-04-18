@@ -81,6 +81,23 @@ local line, err = io.readline()
 
 **Returns:** `string, error`
 
+## Raw Mode
+
+Enable or disable raw terminal mode (disables line buffering and echo):
+
+```lua
+local ok, err = io.raw(true)   -- enable
+local ok, err = io.raw(false)  -- disable
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `enable` | boolean | `true` to enable, `false` to disable (default: `true`) |
+
+**Returns:** `boolean, error`
+
+Raw mode is reference-counted — each `io.raw(true)` must be matched by an `io.raw(false)`. The terminal resets to normal mode automatically on process exit.
+
 ## Flushing Output
 
 Flush stdout buffer:

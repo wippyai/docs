@@ -152,9 +152,10 @@ When receiving from inbox or with `{message = true}`:
 ```lua
 local msg = inbox:receive()
 
-msg:topic()    -- string: topic name
-msg:from()     -- string|nil: sender PID
-msg:payload()  -- any: payload data
+msg:topic()            -- string: topic name
+msg:from()             -- string|nil: sender PID
+msg:payload()          -- Payload: wrapper (call :data() to extract)
+msg:payload():data()   -- any: actual payload value
 ```
 
 ## Synchronous Call

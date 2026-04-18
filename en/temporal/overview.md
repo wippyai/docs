@@ -156,11 +156,15 @@ Fine-tune worker behavior:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # Identity
+    identity: ""                          # Worker identity (appears in Temporal UI)
+
     # Concurrency
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # Pollers
     max_concurrent_activity_task_pollers: 20
@@ -175,6 +179,8 @@ Fine-tune worker behavior:
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # Feature flags
     enable_logging_in_replay: false
@@ -182,6 +188,7 @@ Fine-tune worker behavior:
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # Versioning
     deployment_name: ""

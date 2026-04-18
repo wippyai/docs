@@ -114,7 +114,7 @@ Variables provide named access to storage values.
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | Property | Type | Description |
@@ -122,7 +122,7 @@ Variables provide named access to storage values.
 | `variable` | string | Public variable name (optional, must be unique) |
 | `storage` | string | Storage reference (`namespace:name`) |
 | `default` | string | Default value if not found |
-| `read_only` | boolean | Prevent modifications |
+| `readonly` | boolean | Prevent modifications |
 
 ### Variable Naming
 

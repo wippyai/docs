@@ -92,7 +92,9 @@ At the root level, the runtime provides services that start and supervise long-r
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 The service starts automatically, restarts on crash with backoff, and integrates with the runtime's lifecycle management.

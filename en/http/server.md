@@ -32,6 +32,8 @@ The HTTP server (`http.service`) listens on a port and hosts routers, endpoints,
 | `timeouts.idle` | duration | - | Keep-alive connection timeout |
 | `host.buffer_size` | int | 1024 | Message relay buffer size |
 | `host.worker_count` | int | NumCPU | Message relay workers |
+| `network` | Registry ID | - | Bind listener through a [network overlay](system/network.md) (e.g. Tailscale, I2P) |
+| `tls` | object | - | TLS termination (see [TLS](#tls)) |
 
 ## Timeouts
 
@@ -152,9 +154,60 @@ entries:
       auto_start: true
 ```
 
-<warning>
-TLS termination is typically handled by a reverse proxy (Nginx, Caddy, load balancer). Configure your proxy to forward to Wippy's HTTP server.
-</warning>
+## TLS
+
+The server can terminate TLS directly. Set `tls.mode` to `manual` (supply certificate) or `auto` (ACME-managed by the network driver, when available). Omit `tls` or leave the mode empty to run plain HTTP.
+
+### Manual certificate
+
+Provide cert and key either inline/file-loaded or via environment variables (never both):
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: file://./certs/server.pem
+    key:  file://./certs/server.key
+```
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert_env: TLS_SERVER_CERT
+    key_env:  TLS_SERVER_KEY
+```
+
+| Field | Description |
+|-------|-------------|
+| `mode` | `""` (off), `auto`, or `manual` |
+| `cert` / `key` | PEM content (typically loaded via `file://`) |
+| `cert_env` / `key_env` | Env variable names resolved via the [env registry](system/env.md) |
+
+### Mutual TLS (mTLS)
+
+Under `mode: manual` the server can additionally verify client certificates:
+
+```yaml
+tls:
+  mode: manual
+  cert_env: TLS_SERVER_CERT
+  key_env:  TLS_SERVER_KEY
+  client_ca: file://./certs/clients-ca.pem
+  client_auth: require_and_verify
+```
+
+| Field | Description |
+|-------|-------------|
+| `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
+| `client_ca` | PEM bundle of trusted client CAs |
+| `client_ca_env` | Env variable holding the CA bundle (mutually exclusive with `client_ca`) |
+
+`verify_if_given` and `require_and_verify` require a CA. `request` and `require_any` accept any client cert without CA verification.
 
 ## See Also
 

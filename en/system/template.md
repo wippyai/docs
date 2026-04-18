@@ -26,6 +26,9 @@ All configuration is optional with sensible defaults:
 | `engine.development_mode` | bool | false | Disable template caching |
 | `engine.delimiters.left` | string | `{{` | Variable opening delimiter |
 | `engine.delimiters.right` | string | `}}` | Variable closing delimiter |
+| `engine.delimiters.comment_left` | string | `{*` | Comment opening delimiter |
+| `engine.delimiters.comment_right` | string | `*}` | Comment closing delimiter |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Template file extensions |
 | `engine.globals` | map | - | Variables available to all templates |
 
 ## Templates

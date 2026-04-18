@@ -64,10 +64,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### Text Messages
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- Send JSON
 client:send(json.encode({
@@ -87,7 +84,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Message content |
 | `type` | number | `websocket.TEXT` (1) or `websocket.BINARY` (2) |
 
-**Returns:** `boolean, error`
+Yields until the message is sent. Raises a runtime error on failure.
 
 ### Ping
 
@@ -95,7 +92,7 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-**Returns:** `boolean, error`
+Yields until the ping is sent.
 
 ## Receiving Messages
 
@@ -178,7 +175,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Close code (1000-4999), default 1000 |
 | `reason` | string | Close reason (optional) |
 
-**Returns:** `boolean, error`
+Yields until the close frame is sent.
 
 ## Constants
 

@@ -133,6 +133,8 @@ Store operations are subject to security policy evaluation.
 
 ## Errors
 
+`store.get()` returns structured errors (use `err:kind()`). Methods on the store handle (`get`, `set`, `has`, `delete`) return string errors.
+
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty resource ID | `errors.INVALID` | no |

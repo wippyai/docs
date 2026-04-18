@@ -185,14 +185,14 @@ Runtime configuration at project root:
 
 ```yaml
 logger:
-  level: info
-  mode: production
+  encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 See [Configuration Guide](guides/configuration.md) for all options.
@@ -209,20 +209,24 @@ directories:
 
 ## Referencing Entries
 
-Reference entries by full ID or relative name:
+Reference entries by full ID or relative name. Children attach to their parent through `meta`, not via parent-side lists:
 
 ```yaml
-# Full ID (cross-namespace)
-- name: main.router
+# Router declares itself against a server
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# Same namespace - just use name
+# Endpoint references router by registry ID (cross-namespace works the same way)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## Example Project

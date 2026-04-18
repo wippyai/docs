@@ -93,7 +93,7 @@ The first argument to `generate()` can be a string prompt, a prompt builder, or 
 | Field | Type | Description |
 |-------|------|-------------|
 | `result` | string | Generated text content |
-| `tokens` | table | Token usage: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
+| `tokens` | table | Token usage: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, plus optional `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | Why generation stopped: `"stop"`, `"length"`, `"tool_call"` |
 | `tool_calls` | table? | Array of tool calls (if model invoked tools) |
 | `metadata` | table | Provider-specific metadata |
@@ -135,7 +135,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | Add assistant message |
 | `:add_developer(content, meta?)` | Add developer message |
 | `:add_message(role, content_parts, name?, meta?)` | Add message with role and content parts |
-| `:add_function_call(name, args, id?)` | Add tool call from assistant |
+| `:add_function_call(name, arguments, id?, options?)` | Add tool call from assistant (`arguments` is the raw JSON string) |
 | `:add_function_result(name, result, id?)` | Add tool execution result |
 | `:add_cache_marker(id?)` | Mark cache boundary (Claude models) |
 | `:get_messages()` | Get message array |
@@ -503,6 +503,23 @@ local response = llm.embed({
 }, { model = "text-embedding-3-small" })
 -- response.result is an array of float arrays
 ```
+
+## Provider Status
+
+Probe a provider before sending work. Useful for readiness checks and lightweight health monitoring:
+
+```lua
+local status, err = llm.status({
+    model = "gpt-4o",
+})
+```
+
+| Option | Description |
+|--------|-------------|
+| `model` | Required. Model to check. |
+| `provider_id` | Optional. Skip model resolution and target a specific provider. |
+
+Returns the provider's `StatusResponse` (contents are provider-dependent).
 
 ## Error Handling
 

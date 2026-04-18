@@ -57,11 +57,13 @@ The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namesp
 |--------|-------------|
 | `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
 | `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
+| `wippy/embeddings` | Vector embeddings storage and similarity search |
 | `wippy/test` | BDD-style testing framework with assertions and mocking |
 | `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
 | `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
 | `wippy/views` | Virtual page/component system with template rendering |
 | `wippy/terminal` | Terminal UI components |
+| `wippy/migration` | Database schema migrations |
 
 More modules are available and being published regularly. Search the hub:
 

@@ -197,7 +197,7 @@ fs.seek.END       -- from end
 | `isdir(path)` | `boolean, error` | Check if directory |
 | `mkdir(path)` | `boolean, error` | Create directory |
 | `remove(path)` | `boolean, error` | Remove file/empty dir |
-| `readdir(path)` | `iterator` | List directory |
+| `readdir(path)` | `iterator, state` | List directory (use in generic `for` loop) |
 | `open(path, mode)` | `File, error` | Open file handle |
 | `chdir(path)` | `boolean, error` | Change working dir |
 | `pwd()` | `string` | Get working dir |

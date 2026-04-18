@@ -100,6 +100,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | Max response size in bytes (0 = default) |
 | `unix_socket` | string | Connect via Unix socket path |
 | `tls` | table | Per-request TLS configuration (see [TLS Options](#tls-options)) |
+| `overlay_network` | string | Route through a [network overlay](system/network.md) — registry ID of a `network.socks5` / `network.tailscale` / `network.i2p` entry |
 
 ### Query Parameters
 

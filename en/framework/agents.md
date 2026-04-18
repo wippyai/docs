@@ -109,12 +109,15 @@ end
 | `agent_context.new(options?)` | Create new context |
 | `:add_tools(specs)` | Add tools at runtime |
 | `:add_delegates(specs)` | Add delegate agents |
+| `:configure_delegate_tools(config)` | Configure how delegates expose themselves as tools |
 | `:set_memory_contract(config)` | Configure dynamic memory |
+| `:set_context_merger(fn)` | Provide a function to merge runtime context updates |
 | `:update_context(updates)` | Update runtime context |
 | `:load_agent(spec_or_id, options?)` | Load and compile agent, returns runner |
 | `:switch_to_agent(id, options?)` | Switch to different agent, returns `(boolean, string?)` |
 | `:switch_to_model(name)` | Change model on current agent, returns `(boolean, string?)` |
 | `:get_current_agent()` | Get current runner |
+| `:get_config()` | Return a summary of the context configuration |
 
 ### Context Options
 
@@ -122,8 +125,15 @@ end
 local ctx = agent_context.new({
     context = { session_id = "abc", user_id = "u1" },
     delegate_tools = { enabled = true },
+    enable_cache = true,
 })
 ```
+
+| Option | Description |
+|--------|-------------|
+| `context` | Base runtime context forwarded to tools and delegates |
+| `delegate_tools` | Default delegate-tool configuration (overridden by `configure_delegate_tools`) |
+| `enable_cache` | Enable prompt cache markers (Claude models). Defaults to `true`. |
 
 ### Loading by Inline Spec
 

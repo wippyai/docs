@@ -208,7 +208,7 @@ entries:
     kind: http.router
     meta:
       comment: Public API router
-    server: gateway
+      server: demo:gateway
     prefix: /
 
   - name: processes

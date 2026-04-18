@@ -77,6 +77,19 @@ Only available when processing queue messages in consumer context.
 | `id()` | `string, error` | Unique message identifier |
 | `header(key)` | `any, error` | Single header value (nil if missing) |
 | `headers()` | `table, error` | All message headers |
+| `ack()` | `boolean, error` | Acknowledge processing (single-shot) |
+| `nack()` | `boolean, error` | Signal failure for redelivery or dead-letter (single-shot) |
+
+The runtime auto-acks on handler success and auto-nacks on handler error. Call `ack`/`nack` only to settle early.
+
+## Queue Info
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats may contain: message_count, consumer_count, ready (driver-dependent)
+```
+
+**Returns:** `table, error`
 
 ## Consumer Pattern
 

@@ -29,7 +29,7 @@ entries:
       suite: math
       description: Math operations
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
@@ -352,7 +352,7 @@ entries:
       type: test
       suite: math
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 
@@ -362,7 +362,7 @@ entries:
       type: test
       suite: user
     source: file://user_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```

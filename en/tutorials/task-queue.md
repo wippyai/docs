@@ -258,7 +258,7 @@ local function handler()
 
     local ok, err = queue.publish("app:tasks_queue", task)
     if err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "failed to queue task"})
         return
     end
@@ -291,7 +291,7 @@ local function handler()
 
     local db, db_err = sql.get("app:db")
     if db_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "database unavailable"})
         return
     end
@@ -311,7 +311,7 @@ local function handler()
     db:release()
 
     if query_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "query failed"})
         return
     end

@@ -7,7 +7,8 @@ Endpoints (`http.endpoint`) define HTTP route handlers that execute Lua function
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -17,7 +18,7 @@ Endpoints (`http.endpoint`) define HTTP route handlers that execute Lua function
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `router` | registry.ID | Parent router (optional if only one router) |
+| `meta.router` | registry.ID | Parent router (optional if only one router) |
 | `method` | string | HTTP method |
 | `path` | string | URL path pattern |
 | `func` | registry.ID | Function to execute |
@@ -35,6 +36,7 @@ Supported methods:
 | `DELETE` | Remove resources |
 | `HEAD` | Headers only |
 | `OPTIONS` | CORS preflight (auto-handled) |
+| `TRACE` | Diagnostic loopback |
 
 ## Path Parameters
 
@@ -57,7 +59,10 @@ Use `{param}` syntax for URL parameters:
 Access in handler:
 
 ```lua
-function(req, res)
+local http = require("http")
+
+local function handler()
+    local req = http.request()
     local user_id = req:param("id")
     local post_id = req:param("post_id")
 end
@@ -76,7 +81,8 @@ Capture remaining path with `{path...}`:
 ```
 
 ```lua
-function(req, res)
+local function handler()
+    local req = http.request()
     local file_path = req:param("path")
     -- /files/docs/readme.md -> path = "docs/readme.md"
 end
@@ -84,10 +90,16 @@ end
 
 ## Handler Function
 
-Endpoint functions receive request and response objects:
+Endpoint functions obtain request and response objects from the `http` module:
 
 ```lua
-function(req, res)
+local http = require("http")
+local json = require("json")
+
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     -- Read request
     local body = req:body()
     local user_id = req:param("id")
@@ -98,10 +110,12 @@ function(req, res)
     local user = get_user(user_id)
 
     -- Write response
-    res:set_header("Content-Type", "application/json")
-    res:set_status(200)
-    res:write(json.encode(user))
+    res:set_content_type(http.CONTENT.JSON)
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ### Request Object
@@ -111,79 +125,96 @@ end
 | `req:method()` | string | HTTP method |
 | `req:path()` | string | Request path |
 | `req:param(name)` | string | URL parameter |
+| `req:params()` | table | All path parameters |
 | `req:query(name)` | string | Query parameter |
+| `req:query_params()` | table | All query parameters |
 | `req:header(name)` | string | Request header |
-| `req:headers()` | table | All headers |
 | `req:body()` | string | Request body |
-| `req:cookie(name)` | string | Cookie value |
+| `req:body_json()` | table, error | Parse JSON body |
+| `req:has_body()` | boolean | Check if body exists |
+| `req:content_type()` | string | Content type |
+| `req:content_length()` | number | Body size in bytes |
+| `req:host()` | string | Hostname |
 | `req:remote_addr()` | string | Client IP address |
+| `req:accepts(type)` | boolean | Content negotiation |
+| `req:is_content_type(type)` | boolean | Check content type |
+| `req:stream()` | Stream | Body as stream for large files |
+| `req:parse_multipart(max?)` | table, error | Parse multipart form |
 
 ### Response Object
 
 | Method | Description |
 |--------|-------------|
-| `res:set_status(code)` | Set HTTP status |
-| `res:set_header(name, value)` | Set header |
-| `res:set_cookie(name, value, opts)` | Set cookie |
-| `res:write(data)` | Write body |
-| `res:redirect(url, code?)` | Redirect (default 302) |
+| `res:set_status(code)` | Set HTTP status code |
+| `res:set_header(name, value)` | Set response header |
+| `res:set_content_type(type)` | Set content type |
+| `res:write(data)` | Write raw body |
+| `res:write_json(data)` | Write JSON response |
+| `res:write_event(data)` | Send SSE event |
+| `res:set_transfer(encoding)` | Set transfer mode (SSE, chunked) |
+| `res:flush()` | Flush response to client |
 
 ## JSON API Pattern
 
 Common pattern for JSON APIs:
 
 ```lua
-local json = require("json")
+local http = require("http")
 
-function(req, res)
-    -- Parse JSON body
-    local data, err = json.decode(req:body())
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
+    local data, err = req:body_json()
     if err then
-        res:set_status(400)
-        res:set_header("Content-Type", "application/json")
-        res:write(json.encode({error = "Invalid JSON"}))
+        res:set_status(http.STATUS.BAD_REQUEST)
+        res:write_json({error = "Invalid JSON"})
         return
     end
 
-    -- Process request
     local result = process(data)
 
-    -- Return JSON response
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(result))
+    res:set_status(http.STATUS.OK)
+    res:write_json(result)
 end
+
+return { handler = handler }
 ```
 
 ## Error Responses
 
 ```lua
+local http = require("http")
+
 local function api_error(res, status, code, message)
     res:set_status(status)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode({
+    res:write_json({
         error = {
             code = code,
             message = message
         }
-    }))
+    })
 end
 
-function(req, res)
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     local user_id = req:param("id")
     local user, err = db.get_user(user_id)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
-            return api_error(res, 404, "USER_NOT_FOUND", "User not found")
+            return api_error(res, http.STATUS.NOT_FOUND, "USER_NOT_FOUND", "User not found")
         end
-        return api_error(res, 500, "INTERNAL_ERROR", "Server error")
+        return api_error(res, http.STATUS.INTERNAL_ERROR, "INTERNAL_ERROR", "Server error")
     end
 
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ## Examples
@@ -201,35 +232,40 @@ entries:
 
   - name: list_users
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /
     func: app.users:list
 
   - name: get_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /{id}
     func: app.users:get
 
   - name: create_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: POST
     path: /
     func: app.users:create
 
   - name: update_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: PUT
     path: /{id}
     func: app.users:update
 
   - name: delete_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: DELETE
     path: /{id}
     func: app.users:delete
@@ -240,7 +276,8 @@ entries:
 ```yaml
 - name: admin_endpoint
   kind: http.endpoint
-  router: admin_router
+  meta:
+    router: admin_router
   method: POST
   path: /settings
   func: app.admin:update_settings

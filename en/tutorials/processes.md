@@ -98,7 +98,7 @@ local function main()
         elseif result.channel == inbox_ch then
             -- Messages to any OTHER topic arrive here
             local msg = result.value
-            print("Inbox got:", msg.topic, msg.payload)
+            print("Inbox got:", msg:topic(), msg:payload():data())
         end
     end
 end
@@ -116,10 +116,10 @@ local function main()
     local msg = ch:receive()
     if msg then
         local sender = msg:from()
-        local payload = msg:payload()
+        local data = msg:payload():data()
 
         if sender then
-            process.send(sender, "reply", payload)
+            process.send(sender, "reply", data)
         end
         return true
     end

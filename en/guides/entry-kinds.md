@@ -17,6 +17,11 @@ Complete reference of all entry kinds available in Wippy.
 | `process.lua` | Long-running Lua process |
 | `workflow.lua` | Temporal workflow (deterministic) |
 | `library.lua` | Shared Lua library |
+| `module.lua` | Lua module surface |
+| `function.lua.bc` | Precompiled function bytecode |
+| `library.lua.bc` | Precompiled library bytecode |
+| `process.lua.bc` | Precompiled process bytecode |
+| `workflow.lua.bc` | Precompiled workflow bytecode |
 
 ```yaml
 - name: handler
@@ -59,7 +64,7 @@ Use <code>imports</code> to reference other Lua entries. They become available v
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Endpoint
 - name: users_list
@@ -111,7 +116,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.postgres
-  dsn: "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+  host: localhost
+  port: 5432
+  database: dbname
+  username: user
+  password: pass
+  options:
+    sslmode: disable
   pool:
     max_open: 25
     max_idle: 5
@@ -125,7 +136,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mysql
-  dsn: "user:pass@tcp(localhost:3306)/dbname?parseTime=true"
+  host: localhost
+  port: 3306
+  database: dbname
+  username: user
+  password: pass
+  options:
+    parseTime: "true"
   lifecycle:
     auto_start: true
 ```
@@ -135,10 +152,16 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mssql
-  dsn: "sqlserver://user:pass@localhost:1433?database=dbname"
+  host: localhost
+  port: 1433
+  database: dbname
+  username: user
+  password: pass
   lifecycle:
     auto_start: true
 ```
+
+See [Database](system/database.md) for `*_env` suffix variants, TLS options, and connection pool tuning.
 
 **Lua API:** See [SQL Module](lua/storage/sql.md)
 
@@ -189,6 +212,8 @@ local data = s:get("user:123")
 | Kind | Description |
 |------|-------------|
 | `queue.driver.memory` | In-memory queue driver |
+| `queue.driver.amqp` | AMQP (RabbitMQ) driver |
+| `queue.driver.sqs` | AWS SQS driver |
 | `queue.queue` | Queue declaration |
 | `queue.consumer` | Queue consumer |
 
@@ -343,6 +368,7 @@ Use <code>endpoint</code> to connect to S3-compatible services like MinIO or Dig
 | Kind | Description |
 |------|-------------|
 | `fs.directory` | Directory access |
+| `fs.embed` | Read-only embedded filesystem |
 
 ```yaml
 - name: data_dir
@@ -586,6 +612,45 @@ Mark one binding as <code>default: true</code> to use it when opening a contract
   command_whitelist:
     - "python"
 ```
+
+## WASM Runtime
+
+| Kind | Description |
+|------|-------------|
+| `function.wat` | WebAssembly function (WAT text format) |
+| `function.wasm` | WebAssembly function (binary) |
+| `process.wasm` | WebAssembly process |
+
+```yaml
+- name: sum
+  kind: function.wasm
+  source: file://sum.wasm
+  transport: payload   # or wasi-http
+```
+
+See [WASM Overview](wasm/overview.md).
+
+## Networks
+
+| Kind | Description |
+|------|-------------|
+| `network` | Base network overlay |
+| `network.socks5` | SOCKS5 proxy overlay |
+| `network.i2p` | I2P network overlay |
+| `network.tailscale` | Tailscale overlay |
+
+Referenced by `http.service` via `network:` and `http_client` via `overlay_network`. See [Network](system/network.md).
+
+## Registry Primitives
+
+| Kind | Description |
+|------|-------------|
+| `registry.entry` | Entry descriptor (internal) |
+| `ns.definition` | Namespace definition |
+| `ns.requirement` | Namespace requirement declaration |
+| `ns.dependency` | Namespace dependency |
+
+These are produced by the registry loader from `_index.yaml` frontmatter and dependency declarations. Authors generally don't define them directly — they appear as a result of `version:`, `namespace:`, and dependency blocks being resolved.
 
 ## Lifecycle Configuration
 

@@ -39,20 +39,21 @@ wippy init --src-dir ./src --modules-dir .wippy
 Start the runtime or execute a command.
 
 ```bash
-wippy run                                    # Start runtime
-wippy run list                               # List available commands
-wippy run test                               # Run tests
-wippy run snapshot.wapp                      # Run from pack file
-wippy run acme/http                          # Run module
-wippy run --exec app:processes/app:worker   # Execute single process
+wippy run                                   # Start runtime
+wippy run list                              # List available commands
+wippy run test                              # Run tests
+wippy run snapshot.wapp                     # Run from pack file
+wippy run acme/http                         # Run module from hub
+wippy run acme/http@1.2.3                   # Run specific version
+wippy run --exec app:worker                 # Start runtime and execute a single process
 ```
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--override` | `-o` | Override entry values (namespace:entry:field=value) |
-| `--exec` | `-x` | Execute process and exit (host/namespace:entry) |
-| `--host` | | Host for execution |
-| `--registry` | | Registry URL |
+| `--override` | `-o` | Override entry values (`namespace:entry:field=value`) |
+| `--exec` | `-x` | Execute process and exit (`namespace:entry`) |
+| `--host` | | Terminal host ID for `--exec` (auto-detected if only one `terminal.host` exists) |
+| `--registry` | | Registry URL for hub modules |
 
 ## wippy lint
 
@@ -61,13 +62,24 @@ Check Lua code for type errors and warnings.
 ```bash
 wippy lint
 wippy lint --level warning
+wippy lint --json
+wippy lint --rules
 ```
 
 Validates all Lua entries: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
 
-| Flag | Description |
-|------|-------------|
-| `--level` | Minimum severity level to report |
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | `wippy.lock` | Lock file path |
+| `--level` | | `warning` | Minimum severity: `error`, `warning`, `hint` |
+| `--ns` | | | Filter by namespace patterns (e.g. `app`, `lib.*`) |
+| `--code` | | | Filter by error codes (e.g. `E0001,E0004`) |
+| `--rules` | | `false` | Enable style/quality lint rules |
+| `--summary` | | `false` | Group output by error code |
+| `--limit` | | `0` | Max diagnostics shown (0 = unlimited) |
+| `--json` | | `false` | JSON output |
+| `--no-color` | | `false` | Disable colored output |
+| `--cache-reset` | | `false` | Clear Lua cache before linting |
 
 ## wippy add
 
@@ -212,6 +224,26 @@ wippy auth status
 wippy auth status --json
 ```
 
+| Flag | Description |
+|------|-------------|
+| `--json` | Output as JSON |
+| `--registry` | Registry URL |
+
+## wippy readme
+
+Fetch a module README from the hub.
+
+```bash
+wippy readme wippy/terminal
+wippy readme wippy/terminal@1.2.3
+wippy readme --json wippy/terminal@latest
+```
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Output as JSON |
+| `--registry` | Registry URL (default: from credentials) |
+
 ## wippy registry
 
 Query and inspect registry entries.
@@ -220,19 +252,30 @@ Query and inspect registry entries.
 
 ```bash
 wippy registry list
-wippy registry list --kind function.lua
-wippy registry list --ns app --json
+wippy registry list --kind "function.lua.*"
+wippy registry list --ns "app.*" --json
+wippy registry list --meta "type=api" --meta "enabled=true"
 ```
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--kind` | `-k` | Filter by kind |
-| `--ns` | `-n` | Filter by namespace |
-| `--name` | | Filter by name |
-| `--meta` | | Filter by metadata |
+| `--kind` | `-k` | Filter by kind (glob pattern) |
+| `--ns` | `-n` | Filter by namespace (glob pattern) |
+| `--name` | | Filter by name (glob pattern) |
+| `--meta` | | Filter by metadata (repeatable) |
 | `--json` | | Output as JSON |
 | `--yaml` | | Output as YAML |
 | `--lock-file` | `-l` | Lock file path |
+
+Metadata operators for `--meta`:
+
+| Operator | Meaning |
+|----------|---------|
+| `field=value` | Exact match |
+| `field~regex` | Regex match |
+| `field*substr` | Contains substring |
+| `field^prefix` | Starts with prefix |
+| `field$suffix` | Ends with suffix |
 
 ### wippy registry show
 
@@ -296,8 +339,9 @@ wippy run list
 |-------|----------|-------------|
 | `name` | Yes | Command name used with `wippy run <name>` |
 | `short` | No | Short description shown in `wippy run list` |
+| `main` | No | Mark this entry as the default command (picked automatically by packs and hub modules that ship a single command) |
 
-Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process.
+Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process as string payloads.
 
 ## Examples
 
@@ -372,8 +416,6 @@ Create `.wippy.yaml` for persistent settings:
 
 ```yaml
 logger:
-  mode: development
-  level: debug
   encoding: console
 
 logmanager:

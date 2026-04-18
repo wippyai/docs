@@ -63,7 +63,7 @@ Entries reference parents via metadata:
 | Field | Type | Description |
 |-------|------|-------------|
 | `meta.router` | Registry ID | Parent router |
-| `method` | string | HTTP method (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `method` | string | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` |
 | `path` | string | URL path pattern (starts with `/`) |
 | `func` | Registry ID | Handler function |
 
@@ -122,7 +122,6 @@ Endpoint handlers use the `http` module to access request and response objects. 
 
 ```lua
 local http = require("http")
-local json = require("json")
 
 local function handler()
     local req = http.request()
@@ -131,8 +130,8 @@ local function handler()
     local user_id = req:param("id")
     local user = get_user(user_id)
 
-    res:status(200)
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }
@@ -162,7 +161,7 @@ Post-match middleware uses `post_options`:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## Pre-Match vs Post-Match Middleware
@@ -283,7 +282,7 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```

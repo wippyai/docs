@@ -94,7 +94,10 @@ local result = channel.select(cases)
 | `cases` | table | Array of select cases |
 | `default` | boolean | If true, returns immediately when no case ready |
 
-**Returns:** `table` with fields: `channel`, `value`, `ok`, `default`
+**Returns:** `table`
+
+- For a channel case: `{channel, value, ok}` — `channel` is the case's channel, `value` is the received/sent value, `ok` is false for a closed-channel receive.
+- For the default branch (when no case is ready and `default = true`): `{default = true, ok = true}`.
 
 ### Timeout Pattern
 

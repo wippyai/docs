@@ -45,11 +45,8 @@ Process hosts execute entries of these kinds:
 
 | Kind | Description |
 |------|-------------|
-| `lua.process` | Source-based Lua process |
-| `lua.process.bytecode` | Precompiled Lua bytecode |
-
-<note>
-Additional process kinds are planned for future releases.
-</note>
+| `process.lua` | Source-based Lua process |
+| `process.lua.bc` | Precompiled Lua bytecode |
+| `process.wasm` | WebAssembly process (experimental) |
 
 Processes run independently with their own context, communicate via messages, and are supervised for fault tolerance.

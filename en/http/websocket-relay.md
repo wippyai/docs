@@ -85,7 +85,7 @@ local function handler()
     local pid = process.spawn("app.ws:handler", "app:processes")
 
     -- Configure relay
-    res:header("X-WS-Relay", json.encode({
+    res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "ws.message",
         heartbeat_interval = "30s",
@@ -114,7 +114,7 @@ The relay sends these messages to the target process:
 | `ws.join` | Client connects | `client_pid`, `metadata` |
 | `ws.message` | Client sends message | `client_pid`, `type`, `data`, `metadata` |
 | `ws.heartbeat` | Periodic (if configured) | `client_pid`, `uptime`, `message_count` |
-| `ws.leave` | Client disconnects | `client_pid`, `reason`, `metadata` |
+| `ws.leave` | Client disconnects | `client_pid`, `metadata` |
 
 ## Receiving Messages
 
