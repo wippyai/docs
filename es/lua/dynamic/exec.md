@@ -199,7 +199,7 @@ Las operaciones de exec estan sujetas a evaluacion de politica de seguridad.
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID invalido | `errors.INVALID` | no |
-| Permiso denegado | `errors.PERMISSION_DENIED` | no |
+| Permiso denegado | `errors.INVALID` | no |
 | Proceso cerrado | `errors.INVALID` | no |
 | Proceso no iniciado | `errors.INVALID` | no |
 | Ya iniciado | `errors.INVALID` | no |

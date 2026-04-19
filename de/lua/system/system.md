@@ -328,11 +328,11 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
+| Berechtigung verweigert | `errors.INVALID` | nein |
 | Ungültiges Argument | `errors.INVALID` | nein |
 | Fehlendes erforderliches Argument | `errors.INVALID` | nein |
 | Code-Manager nicht verfügbar | `errors.INTERNAL` | nein |
 | Service-Info nicht verfügbar | `errors.INTERNAL` | nein |
-| OS-Fehler beim Hostname abrufen | `errors.INTERNAL` | nein |
+| OS-Fehler (hostname, cwd) | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

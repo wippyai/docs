@@ -328,11 +328,11 @@ Las operaciones de sistema estan sujetas a evaluacion de politica de seguridad.
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Permiso denegado | `errors.PERMISSION_DENIED` | no |
+| Permiso denegado | `errors.INVALID` | no |
 | Argumento invalido | `errors.INVALID` | no |
 | Argumento requerido faltante | `errors.INVALID` | no |
 | Gestor de código no disponible | `errors.INTERNAL` | no |
 | Información de servicio no disponible | `errors.INTERNAL` | no |
-| Error de OS obteniendo hostname | `errors.INTERNAL` | no |
+| Error de OS (hostname, cwd) | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

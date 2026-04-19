@@ -371,14 +371,18 @@ cursor:close()
 | `current_node()` | `Node` | Nodo en posicion del cursor |
 | `current_depth()` | `integer` | Profundidad (0 = raiz) |
 | `current_field_name()` | `string?` | Nombre de campo si hay |
+| `current_field_id()` | `integer?` | ID de campo si hay |
+| `current_descendant_index()` | `integer` | Indice de descendiente del nodo actual |
 | `goto_parent()` | `boolean` | Mover al padre |
 | `goto_first_child()` | `boolean` | Mover al primer hijo |
 | `goto_last_child()` | `boolean` | Mover al ultimo hijo |
 | `goto_next_sibling()` | `boolean` | Mover al siguiente hermano |
 | `goto_previous_sibling()` | `boolean` | Mover al hermano anterior |
+| `goto_descendant(index)` | - | Mover al descendiente por indice |
 | `goto_first_child_for_byte(n)` | `integer?` | Mover al hijo que contiene byte |
 | `goto_first_child_for_point(pt)` | `integer?` | Mover al hijo que contiene punto |
 | `reset(node)` | - | Reiniciar cursor al nodo |
+| `reset_to(cursor)` | - | Reiniciar cursor a la posicion de otro cursor |
 | `copy()` | `Cursor` | Crear copia del cursor |
 | `close()` | - | Liberar recursos |
 

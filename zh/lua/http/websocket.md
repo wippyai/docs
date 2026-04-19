@@ -99,7 +99,7 @@ client:ping()
 
 ## 接收消息
 
-`channel()` 方法返回用于接收消息的通道。可与 `channel.select` 配合使用进行多路复用。
+`channel()` 方法返回用于接收消息的通道。`receive()` 是 `channel()` 的别名。可与 `channel.select` 配合使用进行多路复用。
 
 ### 基本接收
 
@@ -213,14 +213,18 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (per-message)
 | `GOING_AWAY` | 1001 | 服务器正在关闭 |
 | `PROTOCOL_ERROR` | 1002 | 协议错误 |
 | `UNSUPPORTED_DATA` | 1003 | 不支持的数据类型 |
+| `RESERVED` | 1004 | 保留 |
 | `NO_STATUS` | 1005 | 未收到状态 |
 | `ABNORMAL_CLOSURE` | 1006 | 连接丢失 |
 | `INVALID_PAYLOAD` | 1007 | 无效的帧负载 |
 | `POLICY_VIOLATION` | 1008 | 策略违规 |
 | `MESSAGE_TOO_BIG` | 1009 | 消息过大 |
+| `MANDATORY_EXTENSION` | 1010 | 未协商所需扩展 |
 | `INTERNAL_ERROR` | 1011 | 服务器错误 |
 | `SERVICE_RESTART` | 1012 | 服务器重启 |
 | `TRY_AGAIN_LATER` | 1013 | 服务器过载 |
+| `BAD_GATEWAY` | 1014 | 网关错误 |
+| `TLS_HANDSHAKE` | 1015 | TLS 握手失败 |
 
 ```lua
 client:close(websocket.CLOSE_CODES.NORMAL, "Done")

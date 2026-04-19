@@ -133,6 +133,18 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 **반환:** `Payload, error`
 
+## Unmarshalling
+
+소스 형식에 관계없이 페이로드를 Lua 값으로 강제 디코딩합니다:
+
+```lua
+local data, err = p:unmarshal()
+```
+
+`unmarshal()`은 항상 Lua 형식으로 트랜스코딩하고 결과 Lua 값을 반환합니다. 원시 기본 값(비-Lua 형식의 경우 Go 객체일 수 있음)을 반환하는 `data()`와 달리 `unmarshal()`은 완전히 디코딩된 Lua 값을 보장합니다.
+
+**반환:** `any, error`
+
 ## 비동기 결과
 
 페이로드는 일반적으로 비동기 함수 호출에서 수신됩니다:

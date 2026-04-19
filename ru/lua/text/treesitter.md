@@ -371,14 +371,18 @@ cursor:close()
 | `current_node()` | `Node` | Текущий узел |
 | `current_depth()` | `integer` | Глубина (0 = корень) |
 | `current_field_name()` | `string?` | Имя поля, если есть |
+| `current_field_id()` | `integer?` | ID поля, если есть |
+| `current_descendant_index()` | `integer` | Индекс потомка для текущего узла |
 | `goto_parent()` | `boolean` | Перейти к родителю |
 | `goto_first_child()` | `boolean` | Перейти к первому потомку |
 | `goto_last_child()` | `boolean` | Перейти к последнему потомку |
 | `goto_next_sibling()` | `boolean` | Перейти к следующему соседу |
 | `goto_previous_sibling()` | `boolean` | Перейти к предыдущему соседу |
+| `goto_descendant(index)` | - | Перейти к потомку по индексу |
 | `goto_first_child_for_byte(n)` | `integer?` | Перейти к потомку, содержащему байт |
 | `goto_first_child_for_point(pt)` | `integer?` | Перейти к потомку, содержащему точку |
 | `reset(node)` | - | Сбросить курсор на узел |
+| `reset_to(cursor)` | - | Сбросить курсор в позицию другого курсора |
 | `copy()` | `Cursor` | Создать копию курсора |
 | `close()` | - | Освободить ресурсы |
 

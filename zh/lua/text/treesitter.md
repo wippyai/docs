@@ -371,14 +371,18 @@ cursor:close()
 | `current_node()` | `Node` | 游标位置的节点 |
 | `current_depth()` | `integer` | 深度（0 = 根） |
 | `current_field_name()` | `string?` | 字段名（如果有） |
+| `current_field_id()` | `integer?` | 字段 ID（如果有） |
+| `current_descendant_index()` | `integer` | 当前节点的后代索引 |
 | `goto_parent()` | `boolean` | 移动到父节点 |
 | `goto_first_child()` | `boolean` | 移动到第一个子节点 |
 | `goto_last_child()` | `boolean` | 移动到最后一个子节点 |
 | `goto_next_sibling()` | `boolean` | 移动到下一个兄弟节点 |
 | `goto_previous_sibling()` | `boolean` | 移动到上一个兄弟节点 |
+| `goto_descendant(index)` | - | 按索引移动到后代节点 |
 | `goto_first_child_for_byte(n)` | `integer?` | 移动到包含该字节的子节点 |
 | `goto_first_child_for_point(pt)` | `integer?` | 移动到包含该点的子节点 |
 | `reset(node)` | - | 将游标重置到节点 |
+| `reset_to(cursor)` | - | 将游标重置到另一个游标的位置 |
 | `copy()` | `Cursor` | 创建游标副本 |
 | `close()` | - | 释放资源 |
 

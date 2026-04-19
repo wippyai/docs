@@ -371,14 +371,18 @@ cursor:close()
 | `current_node()` | `Node` | カーソル位置のノード |
 | `current_depth()` | `integer` | 深度（0 = ルート） |
 | `current_field_name()` | `string?` | フィールド名（あれば） |
+| `current_field_id()` | `integer?` | フィールドID（あれば） |
+| `current_descendant_index()` | `integer` | 現在のノードの子孫インデックス |
 | `goto_parent()` | `boolean` | 親に移動 |
 | `goto_first_child()` | `boolean` | 最初の子に移動 |
 | `goto_last_child()` | `boolean` | 最後の子に移動 |
 | `goto_next_sibling()` | `boolean` | 次の兄弟に移動 |
 | `goto_previous_sibling()` | `boolean` | 前の兄弟に移動 |
+| `goto_descendant(index)` | - | インデックスで子孫に移動 |
 | `goto_first_child_for_byte(n)` | `integer?` | バイトを含む子に移動 |
 | `goto_first_child_for_point(pt)` | `integer?` | ポイントを含む子に移動 |
 | `reset(node)` | - | カーソルをノードにリセット |
+| `reset_to(cursor)` | - | カーソルを別のカーソルの位置にリセット |
 | `copy()` | `Cursor` | カーソルのコピーを作成 |
 | `close()` | - | リソースを解放 |
 

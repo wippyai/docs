@@ -133,6 +133,18 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 **Gibt zurück:** `Payload, error`
 
+## Unmarshalling
+
+Erzwingt die Dekodierung eines Payloads zu einem Lua-Wert, unabhängig vom Quellformat:
+
+```lua
+local data, err = p:unmarshal()
+```
+
+`unmarshal()` transkodiert immer in das Lua-Format und gibt den resultierenden Lua-Wert zurück. Im Gegensatz zu `data()`, das den rohen zugrunde liegenden Wert zurückgibt (möglicherweise ein Go-Objekt für Nicht-Lua-Formate), garantiert `unmarshal()` einen vollständig dekodierten Lua-Wert.
+
+**Gibt zurück:** `any, error`
+
 ## Async-Ergebnisse
 
 Payloads werden häufig von asynchronen Funktionsaufrufen empfangen:

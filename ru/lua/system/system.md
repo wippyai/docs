@@ -328,11 +328,11 @@ local states, err = system.supervisor.states()
 
 | Условие | Kind | Повторяемо |
 |---------|------|------------|
-| Доступ запрещён | `errors.PERMISSION_DENIED` | нет |
+| Доступ запрещён | `errors.INVALID` | нет |
 | Некорректный аргумент | `errors.INVALID` | нет |
 | Отсутствует обязательный аргумент | `errors.INVALID` | нет |
 | Менеджер кода недоступен | `errors.INTERNAL` | нет |
 | Информация о сервисе недоступна | `errors.INTERNAL` | нет |
-| Ошибка ОС при получении имени хоста | `errors.INTERNAL` | нет |
+| Ошибка ОС (hostname, cwd) | `errors.INTERNAL` | нет |
 
 См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

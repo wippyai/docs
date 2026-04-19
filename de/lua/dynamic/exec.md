@@ -199,7 +199,7 @@ Exec-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Ungültige ID | `errors.INVALID` | nein |
-| Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
+| Berechtigung verweigert | `errors.INVALID` | nein |
 | Prozess geschlossen | `errors.INVALID` | nein |
 | Prozess nicht gestartet | `errors.INVALID` | nein |
 | Bereits gestartet | `errors.INVALID` | nein |

@@ -199,7 +199,7 @@ Exec操作はセキュリティポリシー評価の対象です。
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | 無効なID | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| 権限拒否 | `errors.INVALID` | no |
 | プロセスがクローズ済み | `errors.INVALID` | no |
 | プロセスが開始されていない | `errors.INVALID` | no |
 | 既に開始済み | `errors.INVALID` | no |

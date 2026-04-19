@@ -328,11 +328,11 @@ local states, err = system.supervisor.states()
 
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
-| 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
+| 권한 거부됨 | `errors.INVALID` | 아니오 |
 | 잘못된 인수 | `errors.INVALID` | 아니오 |
 | 필수 인수 누락 | `errors.INVALID` | 아니오 |
 | 코드 매니저 사용 불가 | `errors.INTERNAL` | 아니오 |
 | 서비스 정보 사용 불가 | `errors.INTERNAL` | 아니오 |
-| 호스트명 가져오기 OS 에러 | `errors.INTERNAL` | 아니오 |
+| OS 에러 (hostname, cwd) | `errors.INTERNAL` | 아니오 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

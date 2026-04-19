@@ -210,6 +210,20 @@ policy:sanitize('<a href="/page">Link</a>')
 
 **반환:** `Policy`
 
+### 파싱 가능한 URL 요구
+
+깔끔하게 파싱되지 않는 URL을 거부합니다. `true`로 설정하면 HTML 새니타이저가 파싱할 수 없는 속성 URL은 통과시키지 않고 제거됩니다.
+
+```lua
+policy:require_parseable_urls(true)
+```
+
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| `require` | boolean | URL이 파싱 가능해야 함 |
+
+**반환:** `Policy`
+
 ### Nofollow 링크
 
 모든 링크에 `rel="nofollow"`를 추가합니다. SEO 스팸을 방지합니다.

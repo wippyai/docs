@@ -133,6 +133,18 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 **返回:** `Payload, error`
 
+## Unmarshalling
+
+强制将 payload 解码为 Lua 值，无论源格式如何：
+
+```lua
+local data, err = p:unmarshal()
+```
+
+`unmarshal()` 始终转码为 Lua 格式并返回得到的 Lua 值。与返回原始底层值（对于非 Lua 格式可能是 Go 对象）的 `data()` 不同，`unmarshal()` 保证返回完全解码的 Lua 值。
+
+**返回:** `any, error`
+
 ## 异步结果
 
 Payload 通常从异步函数调用中接收：

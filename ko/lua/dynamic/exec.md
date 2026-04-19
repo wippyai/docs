@@ -199,7 +199,7 @@ proc:signal(SIGINT)
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
 | 잘못된 ID | `errors.INVALID` | 아니오 |
-| 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
+| 권한 거부됨 | `errors.INVALID` | 아니오 |
 | 프로세스 닫힘 | `errors.INVALID` | 아니오 |
 | 프로세스 시작되지 않음 | `errors.INVALID` | 아니오 |
 | 이미 시작됨 | `errors.INVALID` | 아니오 |

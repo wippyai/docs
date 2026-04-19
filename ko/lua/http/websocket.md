@@ -99,7 +99,7 @@ client:ping()
 
 ## 메시지 받기
 
-`channel()` 메서드는 메시지 수신을 위한 채널을 반환합니다. 멀티플렉싱을 위해 `channel.select`와 함께 작동합니다.
+`channel()` 메서드는 메시지 수신을 위한 채널을 반환합니다. `receive()`는 `channel()`의 별칭입니다. 멀티플렉싱을 위해 `channel.select`와 함께 작동합니다.
 
 ### 기본 수신
 
@@ -213,14 +213,18 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (메시지별)
 | `GOING_AWAY` | 1001 | 서버 종료 중 |
 | `PROTOCOL_ERROR` | 1002 | 프로토콜 에러 |
 | `UNSUPPORTED_DATA` | 1003 | 지원되지 않는 데이터 타입 |
+| `RESERVED` | 1004 | 예약됨 |
 | `NO_STATUS` | 1005 | 상태 수신되지 않음 |
 | `ABNORMAL_CLOSURE` | 1006 | 연결 끊김 |
 | `INVALID_PAYLOAD` | 1007 | 잘못된 프레임 페이로드 |
 | `POLICY_VIOLATION` | 1008 | 정책 위반 |
 | `MESSAGE_TOO_BIG` | 1009 | 메시지 너무 큼 |
+| `MANDATORY_EXTENSION` | 1010 | 필수 확장이 협상되지 않음 |
 | `INTERNAL_ERROR` | 1011 | 서버 에러 |
 | `SERVICE_RESTART` | 1012 | 서버 재시작 중 |
 | `TRY_AGAIN_LATER` | 1013 | 서버 과부하 |
+| `BAD_GATEWAY` | 1014 | 게이트웨이 에러 |
+| `TLS_HANDSHAKE` | 1015 | TLS 핸드셰이크 실패 |
 
 ```lua
 client:close(websocket.CLOSE_CODES.NORMAL, "Done")

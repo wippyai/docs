@@ -371,14 +371,18 @@ cursor:close()
 | `current_node()` | `Node` | 커서 위치의 노드 |
 | `current_depth()` | `integer` | 깊이 (0 = 루트) |
 | `current_field_name()` | `string?` | 필드 이름 (있는 경우) |
+| `current_field_id()` | `integer?` | 필드 ID (있는 경우) |
+| `current_descendant_index()` | `integer` | 현재 노드의 후손 인덱스 |
 | `goto_parent()` | `boolean` | 부모로 이동 |
 | `goto_first_child()` | `boolean` | 첫 번째 자식으로 이동 |
 | `goto_last_child()` | `boolean` | 마지막 자식으로 이동 |
 | `goto_next_sibling()` | `boolean` | 다음 형제로 이동 |
 | `goto_previous_sibling()` | `boolean` | 이전 형제로 이동 |
+| `goto_descendant(index)` | - | 인덱스로 후손으로 이동 |
 | `goto_first_child_for_byte(n)` | `integer?` | 바이트를 포함하는 자식으로 이동 |
 | `goto_first_child_for_point(pt)` | `integer?` | 포인트를 포함하는 자식으로 이동 |
 | `reset(node)` | - | 커서를 노드로 초기화 |
+| `reset_to(cursor)` | - | 커서를 다른 커서의 위치로 초기화 |
 | `copy()` | `Cursor` | 커서 복사본 생성 |
 | `close()` | - | 리소스 해제 |
 

@@ -328,11 +328,11 @@ Operações de sistema estao sujeitas a avaliação de política de segurança.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada | `errors.INVALID` | não |
 | Argumento inválido | `errors.INVALID` | não |
 | Argumento obrigatorio ausente | `errors.INVALID` | não |
 | Code manager indisponivel | `errors.INTERNAL` | não |
 | Info de servico indisponivel | `errors.INTERNAL` | não |
-| Erro de OS obtendo hostname | `errors.INTERNAL` | não |
+| Erro de OS (hostname, cwd) | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

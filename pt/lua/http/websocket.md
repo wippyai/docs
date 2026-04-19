@@ -99,7 +99,7 @@ client:ping()
 
 ## Recebendo Mensagens
 
-O método `channel()` retorna um channel para receber mensagens. Funciona com `channel.select` para multiplexação.
+O método `channel()` retorna um channel para receber mensagens. `receive()` é um alias para `channel()`. Funciona com `channel.select` para multiplexação.
 
 ### Recepcao Basica
 
@@ -213,14 +213,18 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (por mensagem)
 | `GOING_AWAY` | 1001 | Servidor desligando |
 | `PROTOCOL_ERROR` | 1002 | Erro de protocolo |
 | `UNSUPPORTED_DATA` | 1003 | Tipo de dados não suportado |
+| `RESERVED` | 1004 | Reservado |
 | `NO_STATUS` | 1005 | Nenhum status recebido |
 | `ABNORMAL_CLOSURE` | 1006 | Conexão perdida |
 | `INVALID_PAYLOAD` | 1007 | Payload de frame inválido |
 | `POLICY_VIOLATION` | 1008 | Violação de política |
 | `MESSAGE_TOO_BIG` | 1009 | Mensagem muito grande |
+| `MANDATORY_EXTENSION` | 1010 | Extensão obrigatória não negociada |
 | `INTERNAL_ERROR` | 1011 | Erro do servidor |
 | `SERVICE_RESTART` | 1012 | Servidor reiniciando |
 | `TRY_AGAIN_LATER` | 1013 | Servidor sobrecarregado |
+| `BAD_GATEWAY` | 1014 | Erro de gateway |
+| `TLS_HANDSHAKE` | 1015 | Falha no handshake TLS |
 
 ```lua
 client:close(websocket.CLOSE_CODES.NORMAL, "Done")

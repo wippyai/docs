@@ -210,6 +210,20 @@ policy:sanitize('<a href="/page">Link</a>')
 
 **返回:** `Policy`
 
+### 要求可解析 URL
+
+拒绝无法干净解析的 URL。设置为 `true` 时，HTML 净化器无法解析的属性 URL 将被剥离，而不是直接传递。
+
+```lua
+policy:require_parseable_urls(true)
+```
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `require` | boolean | 要求 URL 必须可解析 |
+
+**返回:** `Policy`
+
 ### Nofollow 链接
 
 为所有链接添加 `rel="nofollow"`。防止 SEO 垃圾信息。

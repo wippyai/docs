@@ -328,12 +328,12 @@ local states, err = system.supervisor.states()
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| 権限拒否 | `errors.INVALID` | no |
 | 無効な引数 | `errors.INVALID` | no |
 | 必須引数がない | `errors.INVALID` | no |
 | コードマネージャが利用不可 | `errors.INTERNAL` | no |
 | サービス情報が利用不可 | `errors.INTERNAL` | no |
-| ホスト名取得のOSエラー | `errors.INTERNAL` | no |
+| OSエラー (hostname, cwd) | `errors.INTERNAL` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

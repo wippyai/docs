@@ -99,7 +99,7 @@ client:ping()
 
 ## メッセージの受信
 
-`channel()`メソッドはメッセージ受信用のチャネルを返す。多重化のために`channel.select`と連携。
+`channel()`メソッドはメッセージ受信用のチャネルを返す。`receive()`は`channel()`のエイリアス。多重化のために`channel.select`と連携。
 
 ### 基本受信
 
@@ -213,14 +213,18 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2（メッセージごと）
 | `GOING_AWAY` | 1001 | サーバーシャットダウン |
 | `PROTOCOL_ERROR` | 1002 | プロトコルエラー |
 | `UNSUPPORTED_DATA` | 1003 | サポートされていないデータ型 |
+| `RESERVED` | 1004 | 予約済み |
 | `NO_STATUS` | 1005 | ステータスを受信していない |
 | `ABNORMAL_CLOSURE` | 1006 | 接続が切断 |
 | `INVALID_PAYLOAD` | 1007 | 無効なフレームペイロード |
 | `POLICY_VIOLATION` | 1008 | ポリシー違反 |
 | `MESSAGE_TOO_BIG` | 1009 | メッセージが大きすぎる |
+| `MANDATORY_EXTENSION` | 1010 | 必須拡張がネゴシエートされていない |
 | `INTERNAL_ERROR` | 1011 | サーバーエラー |
 | `SERVICE_RESTART` | 1012 | サーバー再起動中 |
 | `TRY_AGAIN_LATER` | 1013 | サーバー過負荷 |
+| `BAD_GATEWAY` | 1014 | ゲートウェイエラー |
+| `TLS_HANDSHAKE` | 1015 | TLSハンドシェイク失敗 |
 
 ```lua
 client:close(websocket.CLOSE_CODES.NORMAL, "Done")

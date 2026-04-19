@@ -133,6 +133,18 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 **Retorna:** `Payload, error`
 
+## Unmarshalling
+
+Forçar a decodificação de um payload para um valor Lua, independentemente do formato de origem:
+
+```lua
+local data, err = p:unmarshal()
+```
+
+`unmarshal()` sempre transcodifica para o formato Lua e retorna o valor Lua resultante. Diferente de `data()`, que retorna o valor bruto subjacente (potencialmente um objeto Go para formatos não-Lua), `unmarshal()` garante um valor Lua totalmente decodificado.
+
+**Retorna:** `any, error`
+
 ## Resultados Assincronos
 
 Payloads sao comumente recebidos de chamadas de função assíncronas:

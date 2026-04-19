@@ -133,6 +133,18 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 **戻り値:** `Payload, error`
 
+## Unmarshalling
+
+ソースフォーマットに関係なく、ペイロードを Lua 値に強制的にデコードする:
+
+```lua
+local data, err = p:unmarshal()
+```
+
+`unmarshal()` は常に Lua フォーマットに変換して、結果として得られる Lua 値を返す。生の基となる値 (Lua 以外のフォーマットでは Go オブジェクトの可能性がある) を返す `data()` とは異なり、`unmarshal()` は完全にデコードされた Lua 値を保証する。
+
+**戻り値:** `any, error`
+
 ## 非同期の結果
 
 ペイロードは一般的に非同期関数呼び出しから受信される:

@@ -199,7 +199,7 @@ proc:signal(SIGINT)
 | Ситуация | Тип | Повтор |
 |----------|-----|--------|
 | Неверный ID | `errors.INVALID` | нет |
-| Доступ запрещён | `errors.PERMISSION_DENIED` | нет |
+| Доступ запрещён | `errors.INVALID` | нет |
 | Процесс закрыт | `errors.INVALID` | нет |
 | Процесс не запущен | `errors.INVALID` | нет |
 | Процесс уже запущен | `errors.INVALID` | нет |

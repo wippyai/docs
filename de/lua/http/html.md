@@ -210,6 +210,20 @@ policy:sanitize('<a href="/page">Link</a>')
 
 **Gibt zurück:** `Policy`
 
+### Parsbare URLs erfordern
+
+URLs ablehnen, die nicht sauber geparst werden können. Mit `true` werden Attribut-URLs, die der HTML-Sanitizer nicht parsen kann, entfernt anstatt durchgereicht.
+
+```lua
+policy:require_parseable_urls(true)
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `require` | boolean | URLs müssen parsbar sein |
+
+**Gibt zurück:** `Policy`
+
 ### Nofollow-Links
 
 `rel="nofollow"` zu allen Links hinzufügen. Verhindert SEO-Spam.

@@ -328,11 +328,11 @@ local states, err = system.supervisor.states()
 
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
-| 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
+| 权限被拒绝 | `errors.INVALID` | 否 |
 | 参数无效 | `errors.INVALID` | 否 |
 | 缺少必需参数 | `errors.INVALID` | 否 |
 | 代码管理器不可用 | `errors.INTERNAL` | 否 |
 | 服务信息不可用 | `errors.INTERNAL` | 否 |
-| 获取主机名时操作系统错误 | `errors.INTERNAL` | 否 |
+| 操作系统错误 (hostname, cwd) | `errors.INTERNAL` | 否 |
 
 错误处理请参阅 [错误处理](lua/core/errors.md)。

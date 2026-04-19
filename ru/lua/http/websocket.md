@@ -99,7 +99,7 @@ client:ping()
 
 ## Приём сообщений
 
-Метод `channel()` возвращает канал для приёма сообщений. Работает с `channel.select` для мультиплексирования.
+Метод `channel()` возвращает канал для приёма сообщений. `receive()` является алиасом для `channel()`. Работает с `channel.select` для мультиплексирования.
 
 ### Базовый приём
 
@@ -213,14 +213,18 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (по-сообщенийно)
 | `GOING_AWAY` | 1001 | Сервер завершает работу |
 | `PROTOCOL_ERROR` | 1002 | Ошибка протокола |
 | `UNSUPPORTED_DATA` | 1003 | Неподдерживаемый тип данных |
+| `RESERVED` | 1004 | Зарезервировано |
 | `NO_STATUS` | 1005 | Статус не получен |
 | `ABNORMAL_CLOSURE` | 1006 | Соединение потеряно |
 | `INVALID_PAYLOAD` | 1007 | Некорректные данные фрейма |
 | `POLICY_VIOLATION` | 1008 | Нарушение политики |
 | `MESSAGE_TOO_BIG` | 1009 | Сообщение слишком большое |
+| `MANDATORY_EXTENSION` | 1010 | Требуемое расширение не согласовано |
 | `INTERNAL_ERROR` | 1011 | Ошибка сервера |
 | `SERVICE_RESTART` | 1012 | Сервер перезапускается |
 | `TRY_AGAIN_LATER` | 1013 | Сервер перегружен |
+| `BAD_GATEWAY` | 1014 | Ошибка шлюза |
+| `TLS_HANDSHAKE` | 1015 | Ошибка TLS handshake |
 
 ```lua
 client:close(websocket.CLOSE_CODES.NORMAL, "Done")

@@ -210,6 +210,20 @@ policy:sanitize('<a href="/page">Link</a>')
 
 **戻り値:** `Policy`
 
+### パース可能なURLを要求
+
+クリーンにパースできないURLを拒否する。`true`を指定すると、HTMLサニタイザーがパースできない属性URLは通過させずに削除される。
+
+```lua
+policy:require_parseable_urls(true)
+```
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `require` | boolean | URLがパース可能であることを要求 |
+
+**戻り値:** `Policy`
+
 ### Nofollowリンク
 
 すべてのリンクに`rel="nofollow"`を追加。SEOスパムを防止。

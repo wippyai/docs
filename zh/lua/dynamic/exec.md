@@ -199,7 +199,7 @@ Exec 操作受安全策略评估约束。
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 无效的 ID | `errors.INVALID` | 否 |
-| 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
+| 权限被拒绝 | `errors.INVALID` | 否 |
 | 进程已关闭 | `errors.INVALID` | 否 |
 | 进程未启动 | `errors.INVALID` | 否 |
 | 已经启动 | `errors.INVALID` | 否 |
