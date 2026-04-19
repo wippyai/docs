@@ -210,6 +210,20 @@ policy:sanitize('<a href="/page">Link</a>')
 
 **Returns:** `Policy`
 
+### Require Parseable URLs
+
+Reject URLs that fail to parse cleanly. With `true`, attribute URLs that the HTML sanitizer cannot parse are stripped instead of passed through.
+
+```lua
+policy:require_parseable_urls(true)
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `require` | boolean | Require URLs to be parseable |
+
+**Returns:** `Policy`
+
 ### Nofollow Links
 
 Add `rel="nofollow"` to all links. Prevents SEO spam.

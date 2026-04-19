@@ -96,7 +96,7 @@ Yields until the ping is sent.
 
 ## Receiving Messages
 
-The `channel()` method returns a channel for receiving messages. Works with `channel.select` for multiplexing.
+The `channel()` method returns a channel for receiving messages. `receive()` is an alias for `channel()`. Works with `channel.select` for multiplexing.
 
 ### Basic Receive
 
@@ -210,14 +210,18 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (per-message)
 | `GOING_AWAY` | 1001 | Server shutting down |
 | `PROTOCOL_ERROR` | 1002 | Protocol error |
 | `UNSUPPORTED_DATA` | 1003 | Unsupported data type |
+| `RESERVED` | 1004 | Reserved |
 | `NO_STATUS` | 1005 | No status received |
 | `ABNORMAL_CLOSURE` | 1006 | Connection lost |
 | `INVALID_PAYLOAD` | 1007 | Invalid frame payload |
 | `POLICY_VIOLATION` | 1008 | Policy violation |
 | `MESSAGE_TOO_BIG` | 1009 | Message too large |
+| `MANDATORY_EXTENSION` | 1010 | Required extension not negotiated |
 | `INTERNAL_ERROR` | 1011 | Server error |
 | `SERVICE_RESTART` | 1012 | Server restarting |
 | `TRY_AGAIN_LATER` | 1013 | Server overloaded |
+| `BAD_GATEWAY` | 1014 | Gateway error |
+| `TLS_HANDSHAKE` | 1015 | TLS handshake failure |
 
 ```lua
 client:close(websocket.CLOSE_CODES.NORMAL, "Done")

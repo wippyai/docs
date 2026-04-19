@@ -199,7 +199,7 @@ Exec operations are subject to security policy evaluation.
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Invalid ID | `errors.INVALID` | no |
-| Permission denied | `errors.PERMISSION_DENIED` | no |
+| Permission denied | `errors.INVALID` | no |
 | Process closed | `errors.INVALID` | no |
 | Process not started | `errors.INVALID` | no |
 | Already started | `errors.INVALID` | no |

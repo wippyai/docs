@@ -328,11 +328,11 @@ System operations are subject to security policy evaluation.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Permission denied | `errors.PERMISSION_DENIED` | no |
+| Permission denied | `errors.INVALID` | no |
 | Invalid argument | `errors.INVALID` | no |
 | Missing required argument | `errors.INVALID` | no |
 | Code manager unavailable | `errors.INTERNAL` | no |
 | Service info unavailable | `errors.INTERNAL` | no |
-| OS error getting hostname | `errors.INTERNAL` | no |
+| OS error (hostname, cwd) | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
