@@ -285,6 +285,21 @@ post_options:
 
 ---
 
+### OpenTelemetry {#otel}
+
+<warning>Pre-match</warning>
+
+Records OpenTelemetry spans and metrics for incoming requests. Registered automatically when OTel is enabled; acts as a no-op otherwise.
+
+```yaml
+middleware:
+  - otel
+```
+
+Takes no options. Works alongside the `metrics` middleware; enable both when you need Prometheus counters and OTel traces.
+
+---
+
 ## Middleware Order
 
 Middleware executes in listed order. Recommended sequence:

@@ -1,19 +1,19 @@
 # Procesos y Mensajería
 
-Genere procesos aislados y comuníquese vía paso de mensajes.
+Genere procesos aislados y comuníquese mediante paso de mensajes.
 
 ## Resumen
 
-Los procesos proporcionan unidades de ejecución aisladas que se comunican a través de paso de mensajes. Cada proceso tiene su propio inbox y puede suscribirse a tópicos de mensajes específicos.
+Los procesos proporcionan unidades de ejecución aisladas que se comunican mediante paso de mensajes. Cada proceso tiene su propio inbox y puede suscribirse a temas de mensajes específicos.
 
 Conceptos clave:
-- Generar procesos con `process.spawn()` y variantes
-- Enviar mensajes a PIDs o nombres registrados vía tópicos
+- Generar procesos con `process.spawn()` y sus variantes
+- Enviar mensajes a PIDs o nombres registrados mediante temas
 - Recibir mensajes usando `process.listen()` o `process.inbox()`
-- Monitorear ciclo de vida de procesos con eventos
-- Enlazar procesos para manejo coordinado de fallos
+- Monitorear el ciclo de vida del proceso con eventos
+- Enlazar procesos para el manejo coordinado de fallos
 
-## Generar Procesos
+## Generación de Procesos
 
 Genere un nuevo proceso desde una referencia de entrada.
 
@@ -28,22 +28,22 @@ print("Started worker:", pid)
 ```
 
 Parámetros:
-- Referencia de entrada (ej. `"app.test.process:echo_worker"`)
-- Referencia de host (ej. `"app:processes"`)
+- Referencia de entrada (p. ej., `"app.test.process:echo_worker"`)
+- Referencia al host (p. ej., `"app:processes"`)
 - Argumentos opcionales pasados a la función main del worker
 
-### Obtener Su Propio PID
+### Obtener tu Propio PID
 
 ```lua
 local my_pid = process.pid()
--- Retorna string PID del proceso actual
+-- Devuelve el PID del proceso actual como string
 ```
 
 ## Paso de Mensajes
 
-Los mensajes usan un sistema de routing basado en tópicos. Envíe mensajes a PIDs con un tópico, luego reciba vía suscripción a tópico o inbox.
+Los mensajes usan un sistema de enrutamiento basado en temas. Envíe mensajes a PIDs con un tema y luego recíbalos por suscripción a tema o por inbox.
 
-### Enviar Mensajes
+### Envío de Mensajes
 
 ```lua
 -- Enviar a proceso por PID
@@ -52,15 +52,15 @@ if err then
     return false, "send failed: " .. err
 end
 
--- send retorna (bool, error)
+-- send devuelve (bool, error)
 ```
 
-### Recibir vía Suscripción a Tópico
+### Recepción por Suscripción a Tema
 
-Suscríbase a tópicos específicos usando `process.listen()`:
+Suscríbase a temas específicos usando `process.listen()`:
 
 ```lua
--- Worker que escucha mensajes en tópico "messages"
+-- Worker que escucha mensajes en el tema "messages"
 local function main()
     local ch = process.listen("messages")
 
@@ -77,9 +77,9 @@ end
 return { main = main }
 ```
 
-### Recibir vía Inbox
+### Recepción por Inbox
 
-Inbox recibe mensajes que no coinciden con ningún listener de tópico:
+El inbox recibe mensajes que no coinciden con ningún listener de tema:
 
 ```lua
 local function main()
@@ -93,33 +93,33 @@ local function main()
         })
 
         if result.channel == specific_ch then
-            -- Mensajes a "specific_topic" llegan aquí
+            -- Los mensajes a "specific_topic" llegan aquí
             local payload = result.value
         elseif result.channel == inbox_ch then
-            -- Mensajes a CUALQUIER OTRO tópico llegan aquí
+            -- Los mensajes a CUALQUIER otro tema llegan aquí
             local msg = result.value
-            print("Inbox got:", msg.topic, msg.payload)
+            print("Inbox got:", msg:topic(), msg:payload():data())
         end
     end
 end
 ```
 
-### Modo Message para Info del Remitente
+### Modo Mensaje para Información del Remitente
 
-Use `{ message = true }` para acceder PID del remitente y tópico:
+Use `{ message = true }` para acceder al PID del remitente y al tema:
 
 ```lua
--- Worker que hace eco de mensajes al remitente
+-- Worker que devuelve los mensajes al remitente
 local function main()
     local ch = process.listen("echo", { message = true })
 
     local msg = ch:receive()
     if msg then
         local sender = msg:from()
-        local payload = msg:payload()
+        local data = msg:payload():data()
 
         if sender then
-            process.send(sender, "reply", payload)
+            process.send(sender, "reply", data)
         end
         return true
     end
@@ -130,11 +130,11 @@ end
 return { main = main }
 ```
 
-## Monitorear Procesos
+## Monitoreo de Procesos
 
-Monitoree procesos para recibir eventos EXIT cuando terminan.
+Monitoree procesos para recibir eventos EXIT cuando terminen.
 
-### Spawn con Monitoreo
+### Generar con Monitoreo
 
 ```lua
 local events_ch = process.events()
@@ -164,7 +164,7 @@ if event.kind == process.event.EXIT then
     if event.error then
         print("Exit error:", event.error)
     end
-    -- Acceder valor de retorno vía event.result
+    -- Acceder al valor de retorno vía event.result
 end
 ```
 
@@ -175,22 +175,22 @@ Monitorear un proceso ya en ejecución:
 ```lua
 local events_ch = process.events()
 
--- Spawn sin monitoreo
+-- Generar sin monitoreo
 local worker_pid, err = process.spawn("app.test.process:long_worker", "app:processes")
 if err then
     return false, "spawn failed: " .. err
 end
 
--- Agregar monitoreo explícitamente
+-- Añadir monitoreo explícitamente
 local ok, monitor_err = process.monitor(worker_pid)
 if monitor_err then
     return false, "monitor failed: " .. monitor_err
 end
 
--- Ahora recibirá eventos EXIT para este worker
+-- Ahora recibirá eventos EXIT de este worker
 ```
 
-Detener monitoreo:
+Detener el monitoreo:
 
 ```lua
 local ok, err = process.unmonitor(worker_pid)
@@ -198,12 +198,12 @@ local ok, err = process.unmonitor(worker_pid)
 
 ## Enlace de Procesos
 
-Enlace procesos para gestión coordinada de ciclo de vida. Los procesos enlazados reciben eventos LINK_DOWN cuando procesos enlazados fallan.
+Enlace procesos para la gestión coordinada del ciclo de vida. Los procesos enlazados reciben eventos LINK_DOWN cuando los procesos enlazados fallan.
 
-### Spawn de Proceso Enlazado
+### Generar Proceso Enlazado
 
 ```lua
--- Hijo termina si padre crashea (a menos que trap_links esté establecido)
+-- El hijo termina si el padre falla (a menos que trap_links esté activo)
 local pid, err = process.spawn_linked("app.test.process:child_worker", "app:processes")
 if err then
     return false, "spawn_linked failed: " .. err
@@ -213,7 +213,7 @@ end
 ### Enlace Explícito
 
 ```lua
--- Enlazar a proceso existente
+-- Enlazar con proceso existente
 local ok, err = process.link(target_pid)
 if err then
     return false, "link failed: " .. err
@@ -225,19 +225,25 @@ local ok, err = process.unlink(target_pid)
 
 ### Manejar Eventos LINK_DOWN
 
-Por defecto, LINK_DOWN causa que el proceso falle. Habilite `trap_links` para recibirlo como evento:
+Por defecto, LINK_DOWN hace que el proceso falle. Active `trap_links` para recibirlo como evento:
 
 ```lua
 local function main()
-    -- Habilitar trap_links para recibir eventos LINK_DOWN en lugar de crashear
+    -- Activar trap_links para recibir eventos LINK_DOWN en vez de fallar
     local ok, err = process.set_options({ trap_links = true })
     if not ok then
         return false, "set_options failed: " .. err
     end
 
+    -- Verificar que trap_links está activo
+    local opts = process.get_options()
+    if not opts.trap_links then
+        return false, "trap_links should be true"
+    end
+
     local events_ch = process.events()
 
-    -- Spawn un proceso enlazado que fallará
+    -- Generar un proceso enlazado que fallará
     local error_pid, err2 = process.spawn_linked(
         "app.test.process:error_exit_worker",
         "app:processes"
@@ -260,7 +266,7 @@ local function main()
     local event = result.value
     if event.kind == process.event.LINK_DOWN then
         print("Linked process died:", event.from)
-        -- Manejar gracefully en lugar de crashear
+        -- Manejar el fallo sin hacer crash
         return true
     end
 
@@ -270,9 +276,9 @@ end
 return { main = main }
 ```
 
-## Registry de Procesos
+## Registro de Procesos
 
-Registre nombres para procesos para habilitar lookups y mensajería por nombre.
+Registre nombres para procesos para habilitar búsquedas y mensajería por nombre.
 
 ### Registrar Nombres
 
@@ -280,13 +286,13 @@ Registre nombres para procesos para habilitar lookups y mensajería por nombre.
 local function main()
     local test_name = "my_service_" .. tostring(os.time())
 
-    -- Registrar proceso actual con un nombre
+    -- Registrar el proceso actual con un nombre
     local ok, err = process.registry.register(test_name)
     if err then
         return false, "register failed: " .. err
     end
 
-    -- Lookup del nombre registrado
+    -- Buscar el nombre registrado
     local pid, lookup_err = process.registry.lookup(test_name)
     if lookup_err then
         return false, "lookup failed: " .. lookup_err
@@ -312,44 +318,127 @@ if not unregistered then
     print("Name was not registered")
 end
 
--- Lookup después de desregistrar retorna nil + error
+-- La búsqueda tras desregistrar devuelve nil + error
 local pid, err = process.registry.lookup(test_name)
--- pid será nil, err será non-nil
+-- pid será nil, err será no-nil
 ```
 
 Los nombres se liberan automáticamente cuando el proceso termina.
 
+## Ejemplo Completo: Pool de Workers Monitoreados
+
+Este ejemplo muestra un proceso padre que genera múltiples workers monitoreados y rastrea su finalización.
+
+```lua
+-- Proceso padre
+local time = require("time")
+
+local function main()
+    local events_ch = process.events()
+
+    -- Rastrear workers generados
+    local workers = {}
+    local worker_count = 5
+
+    -- Generar múltiples workers monitoreados
+    for i = 1, worker_count do
+        local worker_pid, err = process.spawn_monitored(
+            "app.test.process:task_worker",
+            "app:processes",
+            { task_id = i, value = i * 10 }
+        )
+
+        if err then
+            return false, "spawn worker " .. i .. " failed: " .. err
+        end
+
+        workers[worker_pid] = { task_id = i, started = os.time() }
+    end
+
+    -- Esperar a que todos los workers terminen
+    local completed = 0
+    local timeout = time.after("10s")
+
+    while completed < worker_count do
+        local result = channel.select {
+            events_ch:case_receive(),
+            timeout:case_receive(),
+        }
+
+        if result.channel == timeout then
+            return false, "timeout waiting for workers"
+        end
+
+        local event = result.value
+        if event.kind == process.event.EXIT then
+            local worker = workers[event.from]
+            if worker then
+                if event.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                else
+                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                end
+                completed = completed + 1
+            end
+        end
+    end
+
+    return true
+end
+
+return { main = main }
+```
+
+Proceso worker:
+
+```lua
+-- task_worker.lua
+local time = require("time")
+
+local function main(task)
+    -- Simular trabajo
+    time.sleep("100ms")
+
+    -- Procesar tarea
+    local result = task.value * 2
+
+    return result
+end
+
+return { main = main }
+```
+
 ## Resumen
 
 Generación de procesos:
-- `process.spawn()` - Spawn básico, retorna PID
-- `process.spawn_monitored()` - Spawn con monitoreo automático
-- `process.spawn_linked()` - Spawn con acoplamiento de ciclo de vida
-- `process.pid()` - Obtener PID del proceso actual
+- `process.spawn()` - Generación básica, devuelve PID
+- `process.spawn_monitored()` - Genera con monitoreo automático
+- `process.spawn_linked()` - Genera con acoplamiento de ciclo de vida
+- `process.pid()` - Obtiene el PID del proceso actual
 
 Mensajería:
-- `process.send(pid, topic, payload)` - Enviar mensaje a PID
-- `process.listen(topic)` - Suscribirse a tópico, recibir payloads
-- `process.listen(topic, { message = true })` - Recibir mensaje completo con `:from()`, `:payload()`, `:topic()`
-- `process.inbox()` - Recibir mensajes no coincidentes por listeners
+- `process.send(pid, topic, payload)` - Envía mensaje a PID
+- `process.listen(topic)` - Se suscribe al tema, recibe payloads
+- `process.listen(topic, { message = true })` - Recibe mensaje completo con `:from()`, `:payload()`, `:topic()`
+- `process.inbox()` - Recibe mensajes no emparejados por listeners
 
 Monitoreo:
 - `process.events()` - Canal para eventos EXIT y LINK_DOWN
-- `process.monitor(pid)` - Monitorear proceso existente
-- `process.unmonitor(pid)` - Detener monitoreo
+- `process.monitor(pid)` - Monitorea un proceso existente
+- `process.unmonitor(pid)` - Detiene el monitoreo
 
 Enlace:
-- `process.link(pid)` - Enlazar a proceso
-- `process.unlink(pid)` - Desenlazar de proceso
-- `process.set_options({ trap_links = true })` - Recibir LINK_DOWN como evento en lugar de crashear
-- `process.get_options()` - Obtener opciones del proceso actual
+- `process.link(pid)` - Enlaza con proceso
+- `process.unlink(pid)` - Desenlaza del proceso
+- `process.set_options({ trap_links = true })` - Recibe LINK_DOWN como evento en vez de hacer crash
+- `process.get_options()` - Obtiene las opciones actuales del proceso
 
-Registry:
-- `process.registry.register(name)` - Registrar nombre para proceso actual
-- `process.registry.lookup(name)` - Encontrar PID por nombre
-- `process.registry.unregister(name)` - Remover registro de nombre
+Registro:
+- `process.registry.register(name)` - Registra nombre para el proceso actual
+- `process.registry.lookup(name)` - Encuentra PID por nombre
+- `process.registry.unregister(name)` - Elimina el registro de nombre
 
-## Ver También
+## Véase También
 
-- [Referencia del Módulo Process](lua/core/process.md) - Documentación completa de API
-- [Canales](channels.md) - Operaciones de canal para manejo de mensajes
+- [Referencia del Módulo Process](lua/core/process.md) - Documentación completa de la API
+- [Canales](channels.md) - Operaciones de canales para el manejo de mensajes

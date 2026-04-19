@@ -1,6 +1,6 @@
 # Módulos Lua
 
-Los módulos de runtime extienden el entorno Lua con nueva funcionalidad. Los módulos pueden proporcionar utilidades determinísticas, operaciones I/O, o comandos async que hacen yield a sistemas externos.
+Los módulos de runtime extienden el entorno Lua con nueva funcionalidad. Los módulos pueden proveer utilidades determinísticas, operaciones I/O o comandos asíncronos que hacen yield a sistemas externos.
 
 > La implementación del runtime Lua puede cambiar en futuras versiones.
 
@@ -11,9 +11,9 @@ Cada módulo usa `luaapi.ModuleDef`:
 ```go
 var Module = &luaapi.ModuleDef{
     Name:        "mymodule",
-    Description: "Mi módulo personalizado",
+    Description: "My custom module",
     Class:       []string{luaapi.ClassDeterministic},
-    Types:       ModuleTypes,  // Definiciones de tipo para herramientas
+    Types:       ModuleTypes,  // Type definitions for tooling
     Build: func() (*lua.LTable, []luaapi.YieldType) {
         mod := lua.CreateTable(0, 2)
         mod.RawSetString("hello", lua.LGoFunc(helloFunc))
@@ -24,35 +24,35 @@ var Module = &luaapi.ModuleDef{
 }
 ```
 
-La función `Build` retorna:
-- Tabla de módulo con funciones exportadas
-- Lista de tipos de yield para operaciones async (o nil)
+La función `Build` devuelve:
+- Tabla del módulo con funciones exportadas
+- Lista de tipos de yield para operaciones asíncronas (o nil)
 
-Las tablas de módulo se construyen una vez y se cachean para reutilización en todos los estados Lua.
+Las tablas de los módulos se construyen una vez y se almacenan en caché para su reutilización en todos los estados Lua.
 
 ## Clasificación de Módulos
 
-El campo `Class` determina donde puede usarse el módulo:
+El campo `Class` determina dónde se puede usar el módulo:
 
 | Clase | Descripción |
 |-------|-------------|
 | `ClassDeterministic` | La misma entrada siempre produce la misma salida |
-| `ClassNondeterministic` | La salida varía (tiempo, random) |
-| `ClassIO` | Operaciones I/O externas |
+| `ClassNondeterministic` | La salida varía (tiempo, aleatoriedad) |
+| `ClassIO` | Operaciones de I/O externas |
 | `ClassNetwork` | Operaciones de red |
 | `ClassStorage` | Persistencia de datos |
-| `ClassWorkflow` | Operaciones seguras para workflow |
+| `ClassWorkflow` | Operaciones seguras para workflows |
 
-Módulos marcados solo con `ClassDeterministic` son seguros para workflow. Agregar clases de I/O o network restringe el módulo a funciones y procesos.
+Los módulos marcados solo con `ClassDeterministic` son seguros para workflows. Añadir clases de I/O o red restringe el módulo a funciones y procesos.
 
 ## Exponer Funciones
 
-Las funciones tienen signature `func(l *lua.LState) int` donde el valor de retorno es el número de valores pusheados al stack:
+Las funciones tienen la firma `func(l *lua.LState) int`, donde el valor de retorno es el número de valores apilados en la pila:
 
 ```go
 func greetFunc(l *lua.LState) int {
-    name := l.CheckString(1)           // Argumento requerido
-    greeting := l.OptString(2, "Hello") // Opcional con default
+    name := l.CheckString(1)           // Required argument
+    greeting := l.OptString(2, "Hello") // Optional with default
 
     l.Push(lua.LString(greeting + ", " + name + "!"))
     return 1
@@ -61,24 +61,24 @@ func greetFunc(l *lua.LState) int {
 
 | Método | Descripción |
 |--------|-------------|
-| `l.CheckString(n)` | String requerido en posición n |
+| `l.CheckString(n)` | String requerido en la posición n |
 | `l.CheckInt(n)` | Entero requerido |
 | `l.CheckNumber(n)` | Número requerido |
 | `l.CheckTable(n)` | Tabla requerida |
-| `l.OptString(n, def)` | String opcional con default |
-| `l.OptInt(n, def)` | Int opcional con default |
+| `l.OptString(n, def)` | String opcional con valor por defecto |
+| `l.OptInt(n, def)` | Entero opcional con valor por defecto |
 
 ## Tablas
 
-Las tablas pasadas entre Go y Lua son mutables por defecto. Las tablas de exportación de módulo deben marcarse como inmutables:
+Las tablas que se pasan entre Go y Lua son mutables por defecto. Las tablas de exportación de módulos deben marcarse como inmutables:
 
 ```go
 mod := lua.CreateTable(0, 5)
 mod.RawSetString("func1", lua.LGoFunc(func1))
-mod.Immutable = true  // Prevenir que Lua modifique exports
+mod.Immutable = true  // Prevent Lua from modifying exports
 ```
 
-Las tablas de datos permanecen mutables para uso normal:
+Las tablas de datos permanecen mutables para su uso normal:
 
 ```go
 result := l.CreateTable(0, 3)
@@ -91,9 +91,9 @@ l.Push(result)
 
 Los módulos usan dos mecanismos de tipado separados pero complementarios.
 
-### Definiciones de Tipo (Herramientas)
+### Definiciones de Tipos (Herramientas)
 
-El campo `Types` proporciona signatures de tipo para soporte de IDE y documentación:
+El campo `Types` proporciona firmas de tipo para soporte en IDE y documentación:
 
 ```go
 func ModuleTypes() *types.TypeManifest {
@@ -113,7 +113,7 @@ func ModuleTypes() *types.TypeManifest {
 }
 ```
 
-**Constructos de tipo disponibles:**
+**Constructores de tipo disponibles:**
 
 | Tipo | Descripción |
 |------|-------------|
@@ -121,14 +121,14 @@ func ModuleTypes() *types.TypeManifest {
 | `types.Number` | Valor numérico |
 | `types.Boolean` | Valor booleano |
 | `types.Any` | Cualquier valor Lua |
-| `types.LuaError` | Tipo de error |
+| `types.LuaError` | Tipo error |
 | `types.Optional(t)` | Valor opcional de tipo t |
 | `types.InterfaceType` | Objeto con métodos |
-| `types.FunctionType` | Signature de función con params/returns |
-| `types.RecordType` | Tipo similar a struct con campos |
-| `types.TableType` | Tabla con tipos key/value |
+| `types.FunctionType` | Firma de función con parámetros/retornos |
+| `types.RecordType` | Tipo tipo struct con campos |
+| `types.TableType` | Tabla con tipos de clave/valor |
 
-Signatures de función soportan parámetros variádicos:
+Las firmas de función soportan parámetros variádicos:
 
 ```go
 // (string, ...any) -> (string, error?)
@@ -139,40 +139,40 @@ types.FunctionType{
 }
 ```
 
-Ver el paquete `types` en go-lua para el sistema de tipos completo.
+Consulte el paquete `types` en go-lua para el sistema de tipos completo.
 
 ### Bindings UserData (Runtime)
 
-`RegisterTypeMethods` crea los bindings reales Go-a-Lua:
+`RegisterTypeMethods` crea los bindings reales de Go a Lua:
 
 ```go
 func init() {
     value.RegisterTypeMethods(nil, "mymodule.Object",
         map[string]lua.LGoFunc{
-            "__tostring": objectToString,  // Metametodos
+            "__tostring": objectToString,  // Metamethods
         },
         map[string]lua.LGoFunc{
-            "get_value": objectGetValue,   // Métodos regulares
+            "get_value": objectGetValue,   // Regular methods
             "set_value": objectSetValue,
         },
     )
 }
 ```
 
-Las metatables son inmutables y cacheadas globalmente para reutilización thread-safe.
+Las metatablas son inmutables y se cachean globalmente para una reutilización segura entre hilos.
 
 | Sistema | Propósito | Define |
 |---------|-----------|--------|
-| Definiciones de Tipo | IDE, docs, type checking | Signatures |
+| Definiciones de Tipos | IDE, docs, verificación de tipos | Firmas |
 | Bindings UserData | Llamadas a métodos en runtime | Funciones ejecutables |
 
-## Operaciones Async
+## Operaciones Asíncronas
 
-Para operaciones que esperan en sistemas externos, retorne un yield en lugar de un resultado. El yield es despachado a un handler Go y el proceso resume cuando el handler completa.
+Para operaciones que esperan en sistemas externos, devuelva un yield en lugar de un resultado. El yield se despacha a un handler Go y el proceso se reanuda cuando el handler termina.
 
 ### Definir Yields
 
-Declare tipos de yield en la función `Build` del módulo:
+Declare los tipos de yield en la función `Build` del módulo:
 
 ```go
 Build: func() (*lua.LTable, []luaapi.YieldType) {
@@ -190,7 +190,7 @@ Build: func() (*lua.LTable, []luaapi.YieldType) {
 
 ### Crear un Yield
 
-Retorne -1 para señalar un yield en lugar de valores de retorno normales:
+Devuelva -1 para indicar un yield en lugar de valores de retorno normales:
 
 ```go
 func fetchFunc(l *lua.LState) int {
@@ -200,13 +200,13 @@ func fetchFunc(l *lua.LState) int {
     yield.URL = url
 
     l.Push(yield)
-    return -1  // Señalar yield, no conteo de stack
+    return -1  // Signal yield, not stack count
 }
 ```
 
-### Implementación de Yield
+### Implementación del Yield
 
-Los yields conectan valores Lua y comandos dispatcher:
+Los yields conectan los valores Lua con los comandos del dispatcher:
 
 ```go
 type FetchYield struct {
@@ -228,11 +228,11 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-El dispatcher enruta el comando a un handler. Ver [Command Dispatch](internals/dispatch.md) para implementar handlers.
+El dispatcher enruta el comando a un handler. Consulte [Despacho de Comandos](internals/dispatch.md) para implementar handlers.
 
 ## Manejo de Errores
 
-Retorne errores como segundo valor usando errores estructurados:
+Devuelva errores como segundo valor usando errores estructurados:
 
 ```go
 func myFunc(l *lua.LState) int {
@@ -254,7 +254,7 @@ func myFunc(l *lua.LState) int {
 
 ## Seguridad
 
-Verifique permisos antes de realizar operaciones sensibles:
+Verifique los permisos antes de realizar operaciones sensibles:
 
 ```go
 func myFunc(l *lua.LState) int {
@@ -266,11 +266,130 @@ func myFunc(l *lua.LState) int {
         return 2
     }
 
-    // Proceder con operación
+    // Proceed with operation
 }
 ```
 
-## Ver También
+## Pruebas
 
-- [Command Dispatch](internals/dispatch.md) - Manejar comandos de yield
-- [Scheduler](internals/scheduler.md) - Ejecución de procesos
+Las pruebas básicas de módulo verifican la estructura y las funciones síncronas:
+
+```go
+func TestModule(t *testing.T) {
+    l := lua.NewState()
+    defer l.Close()
+
+    mod, _ := Module.Build()
+    l.SetGlobal("mymodule", mod)
+
+    err := l.DoString(`
+        local m = mymodule
+        assert(m.hello() == "Hello, World!")
+    `)
+    if err != nil {
+        t.Fatal(err)
+    }
+}
+```
+
+### Probar Módulos con Yields
+
+Para probar código Lua que usa funciones con yield, cree un planificador mínimo con los dispatchers requeridos:
+
+```go
+type testScheduler struct {
+    *actor.Scheduler
+    clock   *clock.Dispatcher
+    mu      sync.Mutex
+    pending map[string]chan *runtime.Result
+}
+
+func newTestScheduler() *testScheduler {
+    ts := &testScheduler{pending: make(map[string]chan *runtime.Result)}
+    reg := scheduler.NewRegistry()
+
+    // Register dispatchers for yields your module uses
+    clockSvc := clock.NewDispatcher()
+    clockSvc.RegisterAll(func(id dispatcher.CommandID, h dispatcher.Handler) {
+        reg.Register(id, h)
+    })
+    ts.clock = clockSvc
+
+    ts.Scheduler = actor.NewScheduler(reg, actor.WithWorkers(4), actor.WithLifecycle(ts))
+    return ts
+}
+
+func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
+    ts.mu.Lock()
+    ch, ok := ts.pending[p.UniqID]
+    delete(ts.pending, p.UniqID)
+    ts.mu.Unlock()
+    if ok {
+        ch <- result
+    }
+}
+
+func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Process,
+    method string, input payload.Payloads) (*runtime.Result, error) {
+    resultCh := make(chan *runtime.Result, 1)
+    ts.mu.Lock()
+    ts.pending[p.UniqID] = resultCh
+    ts.mu.Unlock()
+
+    _, err := ts.Scheduler.Submit(ctx, p, proc, method, input)
+    if err != nil {
+        return nil, err
+    }
+
+    select {
+    case result := <-resultCh:
+        return result, nil
+    case <-ctx.Done():
+        return nil, ctx.Err()
+    }
+}
+```
+
+Cree procesos desde scripts Lua con los módulos que esté probando:
+
+```go
+func bindMyModule(l *lua.LState) {
+    tbl, _ := mymodule.Module.Build()
+    l.SetGlobal(mymodule.Module.Name, tbl)
+}
+
+func newLuaProcess(script string) *engine.Process {
+    proto, _ := lua.CompileString(script, "test.lua")
+    return engine.NewProcess(
+        engine.WithProto(proto),
+        engine.WithModuleBinder(bindMyModule),
+    )
+}
+
+func TestMyModuleYields(t *testing.T) {
+    sched := newTestScheduler()
+    sched.Start()
+    defer sched.Stop()
+
+    script := `
+        local result = mymodule.fetch("http://example.com")
+        return result.status
+    `
+
+    ctx, _ := ctxapi.OpenFrameContext(context.Background())
+    proc := newLuaProcess(script)
+
+    result, err := sched.Execute(ctx, pid.PID{UniqID: "test"}, proc, "", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    // Assert on result
+}
+```
+
+Consulte `runtime/lua/modules/time/integration_test.go` para un ejemplo completo.
+
+## Véase También
+
+- [Despacho de Comandos](internals/dispatch.md) - Manejo de comandos de yield
+- [Planificador](internals/scheduler.md) - Ejecución de procesos

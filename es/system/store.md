@@ -72,4 +72,3 @@ Consulte el [Módulo Store](lua/storage/store.md) para operaciones (get, set, de
 
 - [Módulo Store](lua/storage/store.md) - Referencia de la API Lua
 - [Base de Datos](system/database.md) - Respaldo SQL para `store.sql`
-- [Cache](lua/storage/cache.md) - Módulo de caché en proceso

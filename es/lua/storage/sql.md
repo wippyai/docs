@@ -4,9 +4,9 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Ejecutar consultas SQL contra bases de datos PostgreSQL, MySQL, SQLite, MSSQL y Oracle. Las caracteristicas incluyen consultas parametrizadas, transacciones, sentencias preparadas y un constructor de consultas fluido.
+Ejecuta consultas SQL contra bases de datos PostgreSQL, MySQL, SQLite, MSSQL y Oracle. Incluye consultas parametrizadas, transacciones, sentencias preparadas y un constructor de consultas fluido.
 
-Para configuración de base de datos, consulte [Base de Datos](system/database.md).
+Para la configuración de la base de datos, consulte [Base de Datos](system/database.md).
 
 ## Carga
 
@@ -16,7 +16,7 @@ local sql = require("sql")
 
 ## Adquirir una Conexión
 
-Obtener una conexión de base de datos del registro de recursos:
+Obtener una conexión a la base de datos desde el registro de recursos:
 
 ```lua
 local db, err = sql.get("app.db:main")
@@ -31,12 +31,12 @@ db:release()
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `id` | string | ID de recurso (ej., "app.db:main") |
+| `id` | string | ID de recurso (p. ej., "app.db:main") |
 
 **Devuelve:** `DB, error`
 
 <note>
-Las conexiones se devuelven automaticamente al pool cuando la función termina, pero llamar `db:release()` explicitamente es recomendado para operaciones de larga duración.
+Las conexiones se devuelven automáticamente al pool cuando termina la función, pero se recomienda llamar a `db:release()` explícitamente en operaciones de larga duración.
 </note>
 
 ## Constantes
@@ -71,7 +71,7 @@ local insert = sql.builder.insert("users")
     :values("alice", sql.NULL)
 ```
 
-## Coercion de Tipos
+## Coerción de Tipos
 
 ### as.int
 
@@ -83,7 +83,7 @@ local value = sql.as.int(42)
 
 ## as.float
 
-Coerciona valor a tipo SQL float.
+Convierte un valor al tipo SQL float.
 
 ```lua
 local value = sql.as.float(19.99)
@@ -93,7 +93,7 @@ local value = sql.as.float(19.99)
 
 ## as.text
 
-Coerciona valor a tipo SQL text.
+Convierte un valor al tipo SQL text.
 
 ```lua
 local value = sql.as.text("hello")
@@ -103,7 +103,7 @@ local value = sql.as.text("hello")
 
 ## as.binary
 
-Coerciona valor a tipo SQL binary.
+Convierte un valor al tipo SQL binary.
 
 ```lua
 local value = sql.as.binary("binary data")
@@ -113,7 +113,7 @@ local value = sql.as.binary("binary data")
 
 ## as.null
 
-Devuelve marcador SQL NULL.
+Devuelve el marcador SQL NULL.
 
 ```lua
 local value = sql.as.null()
@@ -139,7 +139,7 @@ local query = sql.builder.select("id", "name")
 
 ## builder.insert
 
-Crea constructor de consulta INSERT.
+Crea un constructor de consulta INSERT.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -155,7 +155,7 @@ local query = sql.builder.insert("users")
 
 ## builder.update
 
-Crea constructor de consulta UPDATE.
+Crea un constructor de consulta UPDATE.
 
 ```lua
 local query = sql.builder.update("users")
@@ -171,7 +171,7 @@ local query = sql.builder.update("users")
 
 ## builder.delete
 
-Crea constructor de consulta DELETE.
+Crea un constructor de consulta DELETE.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -187,7 +187,7 @@ local query = sql.builder.delete("users")
 
 ## builder.expr
 
-Crea expresion SQL cruda para usar en clausulas where/having.
+Crea una expresión SQL cruda para usar en cláusulas where/having.
 
 ```lua
 local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
@@ -195,14 +195,14 @@ local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `sql` | string | Expresion SQL con marcadores ? |
+| `sql` | string | Expresión SQL con marcadores ? |
 | `args` | ...any | Argumentos de enlace (opcional) |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.eq
 
-Crea condición de igualdad desde tabla.
+Crea una condición de igualdad desde una tabla.
 
 ```lua
 local cond = sql.builder.eq({active = 1, status = "open"})
@@ -210,13 +210,13 @@ local cond = sql.builder.eq({active = 1, status = "open"})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.not_eq
 
-Crea condición de desigualdad desde tabla.
+Crea una condición de desigualdad desde una tabla.
 
 ```lua
 local cond = sql.builder.not_eq({status = "closed"})
@@ -224,13 +224,13 @@ local cond = sql.builder.not_eq({status = "closed"})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.lt
 
-Crea condición menor-que desde tabla.
+Crea una condición "menor que" desde una tabla.
 
 ```lua
 local cond = sql.builder.lt({age = 18})
@@ -238,13 +238,13 @@ local cond = sql.builder.lt({age = 18})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.lte
 
-Crea condición menor-o-igual desde tabla.
+Crea una condición "menor o igual que" desde una tabla.
 
 ```lua
 local cond = sql.builder.lte({price = 100})
@@ -252,13 +252,13 @@ local cond = sql.builder.lte({price = 100})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.gt
 
-Crea condición mayor-que desde tabla.
+Crea una condición "mayor que" desde una tabla.
 
 ```lua
 local cond = sql.builder.gt({score = 80})
@@ -266,13 +266,13 @@ local cond = sql.builder.gt({score = 80})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.gte
 
-Crea condición mayor-o-igual desde tabla.
+Crea una condición "mayor o igual que" desde una tabla.
 
 ```lua
 local cond = sql.builder.gte({age = 21})
@@ -280,13 +280,13 @@ local cond = sql.builder.gte({age = 21})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.like
 
-Crea condición LIKE desde tabla.
+Crea una condición LIKE desde una tabla.
 
 ```lua
 local cond = sql.builder.like({name = "john%"})
@@ -294,13 +294,13 @@ local cond = sql.builder.like({name = "john%"})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.not_like
 
-Crea condición NOT LIKE desde tabla.
+Crea una condición NOT LIKE desde una tabla.
 
 ```lua
 local cond = sql.builder.not_like({email = "%@spam.com"})
@@ -308,13 +308,13 @@ local cond = sql.builder.not_like({email = "%@spam.com"})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | pares {columna = valor} |
+| `map` | table | Pares {column = value} |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.and_
 
-Combina multiples condiciones con AND.
+Combina múltiples condiciones con AND.
 
 ```lua
 local cond = sql.builder.and_({
@@ -325,13 +325,13 @@ local cond = sql.builder.and_({
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `conditions` | table | Array de condiciones Sqlizer o table |
+| `conditions` | table | Arreglo de condiciones Sqlizer o tabla |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.or_
 
-Combina multiples condiciones con OR.
+Combina múltiples condiciones con OR.
 
 ```lua
 local cond = sql.builder.or_({
@@ -342,13 +342,13 @@ local cond = sql.builder.or_({
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `conditions` | table | Array de condiciones Sqlizer o table |
+| `conditions` | table | Arreglo de condiciones Sqlizer o tabla |
 
 **Devuelve:** `Sqlizer`
 
 ## builder.question
 
-Formato de marcador para marcadores ? (predeterminado). Disponible como alias `sql.builder.default_placeholder`.
+Formato de marcador para ? (predeterminado). Disponible como alias `sql.builder.default_placeholder`.
 
 ```lua
 local query = sql.builder.select("*")
@@ -358,7 +358,7 @@ local query = sql.builder.select("*")
 
 ## builder.dollar
 
-Formato de marcador para marcadores $1, $2, ...
+Formato de marcador para $1, $2, ...
 
 ```lua
 local query = sql.builder.select("*")
@@ -368,7 +368,7 @@ local query = sql.builder.select("*")
 
 ## builder.at
 
-Formato de marcador para marcadores @p1, @p2, ...
+Formato de marcador para @p1, @p2, ...
 
 ```lua
 local query = sql.builder.select("*")
@@ -378,7 +378,7 @@ local query = sql.builder.select("*")
 
 ## builder.colon
 
-Formato de marcador para marcadores :1, :2, ...
+Formato de marcador para :1, :2, ...
 
 ```lua
 local query = sql.builder.select("*")
@@ -386,13 +386,13 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.colon)
 ```
 
-## Metodos de Conexión
+## Métodos de Conexión
 
-Handle de conexión de base de datos devuelto por `sql.get()`.
+Handle de conexión a la base de datos devuelto por `sql.get()`.
 
 ### db:type
 
-Devuelve constante de tipo de base de datos.
+Devuelve la constante del tipo de base de datos.
 
 ```lua
 local dbtype, err = db:type()
@@ -402,7 +402,7 @@ local dbtype, err = db:type()
 
 ### db:query
 
-Ejecuta consulta SELECT y devuelve filas.
+Ejecuta una consulta SELECT y devuelve filas.
 
 ```lua
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -411,13 +411,13 @@ local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `sql` | string | Consulta SQL con marcadores ? |
-| `params` | table | Array de parametros de enlace (opcional) |
+| `params` | table | Arreglo de parámetros de enlace (opcional) |
 
 **Devuelve:** `table[], error`
 
 ### db:execute
 
-Ejecuta consulta INSERT/UPDATE/DELETE.
+Ejecuta una consulta INSERT/UPDATE/DELETE.
 
 ```lua
 local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -426,17 +426,17 @@ local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `sql` | string | Sentencia SQL con marcadores ? |
-| `params` | table | Array de parametros de enlace (opcional) |
+| `params` | table | Arreglo de parámetros de enlace (opcional) |
 
 **Devuelve:** `table, error`
 
-Devuelve tabla con campos:
-- `last_insert_id` - Ultimo ID insertado
+Devuelve una tabla con los campos:
+- `last_insert_id` - Último ID insertado
 - `rows_affected` - Número de filas afectadas
 
 ### db:prepare
 
-Crea sentencia preparada para ejecución repetida.
+Crea una sentencia preparada para ejecución repetida.
 
 ```lua
 local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
@@ -450,7 +450,7 @@ local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
 
 ### db:begin
 
-Inicia transaccion de base de datos.
+Inicia una transacción en la base de datos.
 
 ```lua
 local tx, err = db:begin({
@@ -461,17 +461,17 @@ local tx, err = db:begin({
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `options` | table | Opciones de transaccion (opcional) |
+| `options` | table | Opciones de transacción (opcional) |
 
-Campos de tabla de opciones:
+Campos de la tabla options:
 - `isolation` - Nivel de aislamiento de sql.isolation.* (predeterminado: DEFAULT)
-- `read_only` - Flag de transaccion de solo lectura (predeterminado: false)
+- `read_only` - Indicador de transacción de solo lectura (predeterminado: false)
 
 **Devuelve:** `Transaction, error`
 
 ### db:release
 
-Libera recurso de base de datos de vuelta al pool.
+Devuelve el recurso de base de datos al pool.
 
 ```lua
 local ok, err = db:release()
@@ -481,7 +481,7 @@ local ok, err = db:release()
 
 ### db:stats
 
-Devuelve estadisticas del pool de conexiones.
+Devuelve estadísticas del pool de conexiones.
 
 ```lua
 local stats, err = db:stats()
@@ -489,16 +489,16 @@ local stats, err = db:stats()
 
 **Devuelve:** `table, error`
 
-Devuelve tabla con campos:
-- `max_open_connections` - Conexiones abiertas maximas permitidas
-- `open_connections` - Conexiones abiertas actuales
+Devuelve una tabla con los campos:
+- `max_open_connections` - Máximo de conexiones abiertas permitidas
+- `open_connections` - Conexiones abiertas actualmente
 - `in_use` - Conexiones actualmente en uso
-- `idle` - Conexiones inactivas en pool
-- `wait_count` - Conteo total de esperas de conexión
+- `idle` - Conexiones inactivas en el pool
+- `wait_count` - Número total de esperas de conexión
 - `wait_duration` - Duración total de espera
-- `max_idle_closed` - Conexiones cerradas por max idle
+- `max_idle_closed` - Conexiones cerradas por máximo de inactivas
 - `max_idle_time_closed` - Conexiones cerradas por timeout de inactividad
-- `max_lifetime_closed` - Conexiones cerradas por tiempo de vida maximo
+- `max_lifetime_closed` - Conexiones cerradas por tiempo de vida máximo
 
 ## Sentencias Preparadas
 
@@ -506,7 +506,7 @@ Sentencia preparada devuelta por `db:prepare()`.
 
 ### stmt:query
 
-Ejecuta sentencia preparada como SELECT.
+Ejecuta la sentencia preparada como SELECT.
 
 ```lua
 local rows, err = stmt:query({123})
@@ -514,13 +514,13 @@ local rows, err = stmt:query({123})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `params` | table | Array de parametros de enlace (opcional) |
+| `params` | table | Arreglo de parámetros de enlace (opcional) |
 
 **Devuelve:** `table[], error`
 
 ### stmt:execute
 
-Ejecuta sentencia preparada como INSERT/UPDATE/DELETE.
+Ejecuta la sentencia preparada como INSERT/UPDATE/DELETE.
 
 ```lua
 local result, err = stmt:execute({"alice"})
@@ -528,17 +528,17 @@ local result, err = stmt:execute({"alice"})
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `params` | table | Array de parametros de enlace (opcional) |
+| `params` | table | Arreglo de parámetros de enlace (opcional) |
 
 **Devuelve:** `table, error`
 
-Devuelve tabla con campos:
-- `last_insert_id` - Ultimo ID insertado
+Devuelve una tabla con los campos:
+- `last_insert_id` - Último ID insertado
 - `rows_affected` - Número de filas afectadas
 
 ### stmt:close
 
-Cierra sentencia preparada.
+Cierra la sentencia preparada.
 
 ```lua
 local ok, err = stmt:close()
@@ -548,11 +548,11 @@ local ok, err = stmt:close()
 
 ## Transacciones
 
-Transaccion de base de datos devuelta por `db:begin()`.
+Transacción de base de datos devuelta por `db:begin()`.
 
 ### tx:db_type
 
-Devuelve constante de tipo de base de datos.
+Devuelve la constante del tipo de base de datos.
 
 ```lua
 local dbtype, err = tx:db_type()
@@ -562,7 +562,7 @@ local dbtype, err = tx:db_type()
 
 ### tx:query
 
-Ejecuta consulta SELECT dentro de transaccion.
+Ejecuta una consulta SELECT dentro de la transacción.
 
 ```lua
 local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -571,13 +571,13 @@ local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `sql` | string | Consulta SQL con marcadores ? |
-| `params` | table | Array de parametros de enlace (opcional) |
+| `params` | table | Arreglo de parámetros de enlace (opcional) |
 
 **Devuelve:** `table[], error`
 
 ### tx:execute
 
-Ejecuta INSERT/UPDATE/DELETE dentro de transaccion.
+Ejecuta INSERT/UPDATE/DELETE dentro de la transacción.
 
 ```lua
 local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -586,17 +586,17 @@ local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `sql` | string | Sentencia SQL con marcadores ? |
-| `params` | table | Array de parametros de enlace (opcional) |
+| `params` | table | Arreglo de parámetros de enlace (opcional) |
 
 **Devuelve:** `table, error`
 
-Devuelve tabla con campos:
-- `last_insert_id` - Ultimo ID insertado
+Devuelve una tabla con los campos:
+- `last_insert_id` - Último ID insertado
 - `rows_affected` - Número de filas afectadas
 
 ### tx:prepare
 
-Crea sentencia preparada dentro de transaccion.
+Crea una sentencia preparada dentro de la transacción.
 
 ```lua
 local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
@@ -610,7 +610,7 @@ local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
 
 ### tx:commit
 
-Confirma transaccion.
+Confirma la transacción.
 
 ```lua
 local ok, err = tx:commit()
@@ -620,7 +620,7 @@ local ok, err = tx:commit()
 
 ### tx:rollback
 
-Revierte transaccion.
+Revierte la transacción.
 
 ```lua
 local ok, err = tx:rollback()
@@ -630,7 +630,7 @@ local ok, err = tx:rollback()
 
 ### tx:savepoint
 
-Crea savepoint nombrado dentro de transaccion.
+Crea un savepoint nombrado dentro de la transacción.
 
 ```lua
 local ok, err = tx:savepoint("sp1")
@@ -638,13 +638,13 @@ local ok, err = tx:savepoint("sp1")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `name` | string | Nombre de savepoint (solo alfanumerico y guion bajo) |
+| `name` | string | Nombre del savepoint (solo alfanuméricos y guion bajo) |
 
 **Devuelve:** `boolean, error`
 
 ### tx:rollback_to
 
-Revierte a savepoint nombrado.
+Revierte hasta el savepoint nombrado.
 
 ```lua
 local ok, err = tx:rollback_to("sp1")
@@ -652,13 +652,13 @@ local ok, err = tx:rollback_to("sp1")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `name` | string | Nombre de savepoint |
+| `name` | string | Nombre del savepoint |
 
 **Devuelve:** `boolean, error`
 
 ### tx:release
 
-Libera savepoint.
+Libera el savepoint.
 
 ```lua
 local ok, err = tx:release("sp1")
@@ -666,7 +666,7 @@ local ok, err = tx:release("sp1")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `name` | string | Nombre de savepoint |
+| `name` | string | Nombre del savepoint |
 
 **Devuelve:** `boolean, error`
 
@@ -676,7 +676,7 @@ Interfaz fluida para construir consultas SELECT.
 
 ### select:from
 
-Establece clausula FROM.
+Establece la cláusula FROM.
 
 ```lua
 local query = sql.builder.select("id", "name"):from("users")
@@ -690,7 +690,7 @@ local query = sql.builder.select("id", "name"):from("users")
 
 ### select:join
 
-Agrega clausula JOIN.
+Añade una cláusula JOIN.
 
 ```lua
 local query = sql.builder.select("*")
@@ -700,14 +700,14 @@ local query = sql.builder.select("*")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `join` | string | Clausula JOIN con marcadores ? |
+| `join` | string | Cláusula JOIN con marcadores ? |
 | `args` | ...any | Argumentos de enlace (opcional) |
 
 **Devuelve:** `SelectBuilder`
 
 ### select:left_join
 
-Agrega clausula LEFT JOIN.
+Añade una cláusula LEFT JOIN.
 
 ```lua
 local query = sql.builder.select("*")
@@ -717,14 +717,48 @@ local query = sql.builder.select("*")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `join` | string | Clausula JOIN con marcadores ? |
+| `join` | string | Cláusula JOIN con marcadores ? |
+| `args` | ...any | Argumentos de enlace (opcional) |
+
+**Devuelve:** `SelectBuilder`
+
+### select:right_join
+
+Añade una cláusula RIGHT JOIN.
+
+```lua
+local query = sql.builder.select("*")
+    :from("users")
+    :right_join("orders ON orders.user_id = users.id")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `join` | string | Cláusula JOIN con marcadores ? |
+| `args` | ...any | Argumentos de enlace (opcional) |
+
+**Devuelve:** `SelectBuilder`
+
+### select:inner_join
+
+Añade una cláusula INNER JOIN.
+
+```lua
+local query = sql.builder.select("*")
+    :from("users")
+    :inner_join("orders ON orders.user_id = users.id")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `join` | string | Cláusula JOIN con marcadores ? |
 | `args` | ...any | Argumentos de enlace (opcional) |
 
 **Devuelve:** `SelectBuilder`
 
 ### select:where
 
-Agrega condición WHERE.
+Añade una condición WHERE.
 
 ```lua
 local query = sql.builder.select("*")
@@ -737,7 +771,7 @@ local query = sql.builder.select("*")
 | `condition` | string\|table\|Sqlizer | Condición WHERE |
 | `args` | ...any | Argumentos de enlace (opcional, cuando se usa string) |
 
-Soporta tres formatos:
+Admite tres formatos:
 - String: `where("status = ?", "active")`
 - Table: `where({status = "active"})`
 - Sqlizer: `where(sql.builder.gt({score = 80}))`
@@ -746,7 +780,7 @@ Soporta tres formatos:
 
 ### select:order_by
 
-Agrega clausula ORDER BY.
+Añade una cláusula ORDER BY.
 
 ```lua
 local query = sql.builder.select("*")
@@ -762,7 +796,7 @@ local query = sql.builder.select("*")
 
 ### select:group_by
 
-Agrega clausula GROUP BY.
+Añade una cláusula GROUP BY.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*)")
@@ -776,9 +810,27 @@ local query = sql.builder.select("status", "COUNT(*)")
 
 **Devuelve:** `SelectBuilder`
 
+### select:having
+
+Añade una condición HAVING.
+
+```lua
+local query = sql.builder.select("status", "COUNT(*) as cnt")
+    :from("users")
+    :group_by("status")
+    :having(sql.builder.gt({cnt = 10}))
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `condition` | string\|table\|Sqlizer | Condición HAVING |
+| `args` | ...any | Argumentos de enlace (opcional, cuando se usa string) |
+
+**Devuelve:** `SelectBuilder`
+
 ### select:limit
 
-Establece LIMIT.
+Establece el LIMIT.
 
 ```lua
 local query = sql.builder.select("*")
@@ -788,13 +840,13 @@ local query = sql.builder.select("*")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `n` | integer | Valor de limite |
+| `n` | integer | Valor del límite |
 
 **Devuelve:** `SelectBuilder`
 
 ### select:offset
 
-Establece OFFSET.
+Establece el OFFSET.
 
 ```lua
 local query = sql.builder.select("*")
@@ -804,13 +856,72 @@ local query = sql.builder.select("*")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `n` | integer | Valor de offset |
+| `n` | integer | Valor del offset |
+
+**Devuelve:** `SelectBuilder`
+
+### select:columns
+
+Añade columnas al SELECT.
+
+```lua
+local query = sql.builder.select():columns("id", "name", "email")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `columns` | ...string | Nombres de columnas |
+
+**Devuelve:** `SelectBuilder`
+
+### select:distinct
+
+Añade el modificador DISTINCT.
+
+```lua
+local query = sql.builder.select("status")
+    :from("users")
+    :distinct()
+```
+
+**Devuelve:** `SelectBuilder`
+
+### select:suffix
+
+Añade un sufijo SQL.
+
+```lua
+local query = sql.builder.select("*")
+    :from("users")
+    :suffix("FOR UPDATE")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `sql` | string | Sufijo SQL con marcadores ? |
+| `args` | ...any | Argumentos de enlace (opcional) |
+
+**Devuelve:** `SelectBuilder`
+
+### select:placeholder_format
+
+Establece el formato de marcadores.
+
+```lua
+local query = sql.builder.select("*")
+    :from("users")
+    :placeholder_format(sql.builder.dollar)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `format` | userdata | Formato de marcadores (sql.builder.*) |
 
 **Devuelve:** `SelectBuilder`
 
 ### select:to_sql
 
-Genera string SQL y argumentos de enlace.
+Genera la cadena SQL y los argumentos de enlace.
 
 ```lua
 local sql_str, args = query:to_sql()
@@ -820,7 +931,7 @@ local sql_str, args = query:to_sql()
 
 ### select:run_with
 
-Crea ejecutor para consulta.
+Crea un ejecutor para la consulta.
 
 ```lua
 local executor = query:run_with(db)
@@ -829,31 +940,671 @@ local rows, err = executor:query()
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `db` | DB\|Transaction | Handle de base de datos o transaccion |
+| `db` | DB\|Transaction | Handle de base de datos o transacción |
 
 **Devuelve:** `QueryExecutor`
 
+## Constructor INSERT
+
+Interfaz fluida para construir consultas INSERT.
+
+### insert:into
+
+Establece el nombre de la tabla.
+
+```lua
+local query = sql.builder.insert():into("users")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `table` | string | Nombre de tabla |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:columns
+
+Establece los nombres de las columnas.
+
+```lua
+local query = sql.builder.insert("users"):columns("name", "email")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `columns` | ...string | Nombres de columnas |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:values
+
+Añade valores de fila.
+
+```lua
+local query = sql.builder.insert("users")
+    :columns("name", "email")
+    :values("alice", "alice@example.com")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `values` | ...any | Valores de fila |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:set_map
+
+Establece columnas y valores desde una tabla.
+
+```lua
+local query = sql.builder.insert("users")
+    :set_map({name = "alice", email = "alice@example.com"})
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `map` | table | Pares {column = value} |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:select
+
+Inserta desde una consulta SELECT.
+
+```lua
+local select_query = sql.builder.select("name", "email"):from("temp_users")
+local query = sql.builder.insert("users")
+    :columns("name", "email")
+    :select(select_query)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `query` | SelectBuilder | Consulta SELECT |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:prefix
+
+Añade un prefijo SQL.
+
+```lua
+local query = sql.builder.insert("users")
+    :prefix("INSERT IGNORE INTO")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `sql` | string | Prefijo SQL con marcadores ? |
+| `args` | ...any | Argumentos de enlace (opcional) |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:suffix
+
+Añade un sufijo SQL.
+
+```lua
+local query = sql.builder.insert("users")
+    :columns("name")
+    :values("alice")
+    :suffix("RETURNING id")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `sql` | string | Sufijo SQL con marcadores ? |
+| `args` | ...any | Argumentos de enlace (opcional) |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:options
+
+Añade opciones de INSERT.
+
+```lua
+local query = sql.builder.insert("users")
+    :options("DELAYED", "IGNORE")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `options` | ...string | Opciones de INSERT |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:placeholder_format
+
+Establece el formato de marcadores.
+
+```lua
+local query = sql.builder.insert("users")
+    :placeholder_format(sql.builder.dollar)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `format` | userdata | Formato de marcadores (sql.builder.*) |
+
+**Devuelve:** `InsertBuilder`
+
+### insert:to_sql
+
+Genera la cadena SQL y los argumentos de enlace.
+
+```lua
+local sql_str, args = query:to_sql()
+```
+
+**Devuelve:** `string, table`
+
+### insert:run_with
+
+Crea un ejecutor para la consulta.
+
+```lua
+local executor = query:run_with(db)
+local result, err = executor:exec()
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `db` | DB\|Transaction | Handle de base de datos o transacción |
+
+**Devuelve:** `QueryExecutor`
+
+## Constructor UPDATE
+
+Interfaz fluida para construir consultas UPDATE.
+
+### update:table
+
+Establece el nombre de la tabla.
+
+```lua
+local query = sql.builder.update():table("users")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `table` | string | Nombre de tabla |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:set
+
+Establece el valor de una columna.
+
+```lua
+local query = sql.builder.update("users")
+    :set("status", "active")
+    :set("updated_at", sql.builder.expr("NOW()"))
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `column` | string | Nombre de la columna |
+| `value` | any | Valor de la columna |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:set_map
+
+Establece múltiples columnas desde una tabla.
+
+```lua
+local query = sql.builder.update("users")
+    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `map` | table | Pares {column = value} |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:where
+
+Añade una condición WHERE.
+
+```lua
+local query = sql.builder.update("users")
+    :set("status", "active")
+    :where({id = 123})
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `condition` | string\|table\|Sqlizer | Condición WHERE |
+| `args` | ...any | Argumentos de enlace (opcional, cuando se usa string) |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:order_by
+
+Añade una cláusula ORDER BY.
+
+```lua
+local query = sql.builder.update("users")
+    :set("rank", 1)
+    :order_by("score DESC")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `columns` | ...string | Nombres de columnas con ASC/DESC opcional |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:limit
+
+Establece el LIMIT.
+
+```lua
+local query = sql.builder.update("users")
+    :set("status", "active")
+    :limit(10)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `n` | integer | Valor del límite |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:offset
+
+Establece el OFFSET.
+
+```lua
+local query = sql.builder.update("users")
+    :set("status", "active")
+    :offset(5)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `n` | integer | Valor del offset |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:suffix
+
+Añade un sufijo SQL.
+
+```lua
+local query = sql.builder.update("users")
+    :set("status", "active")
+    :suffix("RETURNING id")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `sql` | string | Sufijo SQL con marcadores ? |
+| `args` | ...any | Argumentos de enlace (opcional) |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:from
+
+Añade una cláusula FROM.
+
+```lua
+local query = sql.builder.update("users")
+    :set("status", "active")
+    :from("other_table")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `table` | string | Nombre de tabla |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:from_select
+
+Actualiza desde una consulta SELECT.
+
+```lua
+local select_query = sql.builder.select("*"):from("temp_users")
+local query = sql.builder.update("users")
+    :set("status", "active")
+    :from_select(select_query, "t")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `query` | SelectBuilder | Consulta SELECT |
+| `alias` | string | Alias de tabla |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:placeholder_format
+
+Establece el formato de marcadores.
+
+```lua
+local query = sql.builder.update("users")
+    :placeholder_format(sql.builder.dollar)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `format` | userdata | Formato de marcadores (sql.builder.*) |
+
+**Devuelve:** `UpdateBuilder`
+
+### update:to_sql
+
+Genera la cadena SQL y los argumentos de enlace.
+
+```lua
+local sql_str, args = query:to_sql()
+```
+
+**Devuelve:** `string, table`
+
+### update:run_with
+
+Crea un ejecutor para la consulta.
+
+```lua
+local executor = query:run_with(db)
+local result, err = executor:exec()
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `db` | DB\|Transaction | Handle de base de datos o transacción |
+
+**Devuelve:** `QueryExecutor`
+
+## Constructor DELETE
+
+Interfaz fluida para construir consultas DELETE.
+
+### delete:from
+
+Establece el nombre de la tabla.
+
+```lua
+local query = sql.builder.delete():from("users")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `table` | string | Nombre de tabla |
+
+**Devuelve:** `DeleteBuilder`
+
+### delete:where
+
+Añade una condición WHERE.
+
+```lua
+local query = sql.builder.delete("users")
+    :where({active = 0})
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `condition` | string\|table\|Sqlizer | Condición WHERE |
+| `args` | ...any | Argumentos de enlace (opcional, cuando se usa string) |
+
+**Devuelve:** `DeleteBuilder`
+
+### delete:order_by
+
+Añade una cláusula ORDER BY.
+
+```lua
+local query = sql.builder.delete("users")
+    :where({active = 0})
+    :order_by("created_at ASC")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `columns` | ...string | Nombres de columnas con ASC/DESC opcional |
+
+**Devuelve:** `DeleteBuilder`
+
+### delete:limit
+
+Establece el LIMIT.
+
+```lua
+local query = sql.builder.delete("users")
+    :where({active = 0})
+    :limit(100)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `n` | integer | Valor del límite |
+
+**Devuelve:** `DeleteBuilder`
+
+### delete:offset
+
+Establece el OFFSET.
+
+```lua
+local query = sql.builder.delete("users")
+    :where({active = 0})
+    :offset(10)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `n` | integer | Valor del offset |
+
+**Devuelve:** `DeleteBuilder`
+
+### delete:suffix
+
+Añade un sufijo SQL.
+
+```lua
+local query = sql.builder.delete("users")
+    :where({active = 0})
+    :suffix("RETURNING id")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `sql` | string | Sufijo SQL con marcadores ? |
+| `args` | ...any | Argumentos de enlace (opcional) |
+
+**Devuelve:** `DeleteBuilder`
+
+### delete:placeholder_format
+
+Establece el formato de marcadores.
+
+```lua
+local query = sql.builder.delete("users")
+    :placeholder_format(sql.builder.dollar)
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `format` | userdata | Formato de marcadores (sql.builder.*) |
+
+**Devuelve:** `DeleteBuilder`
+
+### delete:to_sql
+
+Genera la cadena SQL y los argumentos de enlace.
+
+```lua
+local sql_str, args = query:to_sql()
+```
+
+**Devuelve:** `string, table`
+
+### delete:run_with
+
+Crea un ejecutor para la consulta.
+
+```lua
+local executor = query:run_with(db)
+local result, err = executor:exec()
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `db` | DB\|Transaction | Handle de base de datos o transacción |
+
+**Devuelve:** `QueryExecutor`
+
+## Ejecutar Consultas
+
+El ejecutor de consultas ejecuta las consultas generadas por el constructor.
+
+### executor:query
+
+Ejecuta la consulta y devuelve filas (para SELECT).
+
+```lua
+local rows, err = executor:query()
+```
+
+**Devuelve:** `table[], error`
+
+### executor:exec
+
+Ejecuta la consulta y devuelve el resultado (para INSERT/UPDATE/DELETE).
+
+```lua
+local result, err = executor:exec()
+```
+
+**Devuelve:** `table, error`
+
+Devuelve una tabla con los campos:
+- `last_insert_id` - Último ID insertado
+- `rows_affected` - Número de filas afectadas
+
+### executor:to_sql
+
+Devuelve el SQL generado y los argumentos sin ejecutar.
+
+```lua
+local sql_str, args = executor:to_sql()
+```
+
+**Devuelve:** `string, table`
+
 ## Permisos
 
-El acceso a base de datos esta sujeto a evaluacion de politica de seguridad.
+El acceso a la base de datos está sujeto a la evaluación de políticas de seguridad.
 
-| Accion | Recurso | Descripción |
+| Acción | Recurso | Descripción |
 |--------|---------|-------------|
-| `db.get` | ID de Database | Adquirir conexión de base de datos |
+| `db.get` | ID de base de datos | Adquirir conexión a la base de datos |
 
 ## Errores
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| ID de recurso vacio | `errors.INVALID` | no |
+| ID de recurso vacío | `errors.INVALID` | no |
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
 | Recurso no encontrado | `errors.NOT_FOUND` | no |
-| Recurso no es base de datos | `errors.INVALID` | no |
-| Parametros invalidos | `errors.INVALID` | no |
+| El recurso no es base de datos | `errors.INVALID` | no |
+| Parámetros inválidos | `errors.INVALID` | no |
 | Error de sintaxis SQL | `errors.INVALID` | no |
 | Sentencia cerrada | `errors.INVALID` | no |
-| Transaccion no activa | `errors.INVALID` | no |
-| Nombre de savepoint invalido | `errors.INVALID` | no |
-| Error de ejecución de consulta | varia | varia |
+| Transacción no activa | `errors.INVALID` | no |
+| Nombre de savepoint inválido | `errors.INVALID` | no |
+| Error de ejecución de consulta | varía | varía |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+
+## Ejemplo
+
+```lua
+local sql = require("sql")
+
+-- Obtener conexión a la base de datos
+local db, err = sql.get("app.db:main")
+if err then error(err) end
+
+-- Verificar tipo de base de datos
+local dbtype, _ = db:type()
+print("Database type:", dbtype)
+
+-- Consulta directa
+local users, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
+if err then error(err) end
+
+for _, user in ipairs(users) do
+    print(user.id, user.name)
+end
+
+-- Patrón constructor
+local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
+    :from("users u")
+    :left_join("orders o ON o.user_id = u.id")
+    :where(sql.builder.and_({
+        sql.builder.eq({["u.active"] = 1}),
+        sql.builder.gte({["u.score"] = 80})
+    }))
+    :group_by("u.id", "u.name")
+    :having(sql.builder.gt({["COUNT(o.id)"] = 0}))
+    :order_by("order_count DESC")
+    :limit(10)
+
+local executor = query:run_with(db)
+local results, err = executor:query()
+if err then error(err) end
+
+-- Transacción con savepoints
+local tx, err = db:begin({isolation = sql.isolation.SERIALIZABLE})
+if err then error(err) end
+
+local _, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
+if err then
+    tx:rollback()
+    error(err)
+end
+
+tx:savepoint("sp1")
+
+local _, err = tx:execute("UPDATE users SET status = ? WHERE id = ?", {"active", 1})
+if err then
+    tx:rollback_to("sp1")
+else
+    tx:release("sp1")
+end
+
+local ok, err = tx:commit()
+if err then error(err) end
+
+-- Sentencias preparadas
+local stmt, err = db:prepare("INSERT INTO logs (message, level) VALUES (?, ?)")
+if err then error(err) end
+
+for i = 1, 100 do
+    local _, err = stmt:execute({"log message " .. i, "info"})
+    if err then
+        stmt:close()
+        error(err)
+    end
+end
+
+stmt:close()
+
+-- NULL y valores tipados
+local insert = sql.builder.insert("products")
+    :columns("name", "price", "description")
+    :values("Widget", sql.as.float(19.99), sql.NULL)
+
+local executor = insert:run_with(db)
+local result, err = executor:exec()
+if err then error(err) end
+
+print("Inserted ID:", result.last_insert_id)
+
+db:release()
+```

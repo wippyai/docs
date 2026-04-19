@@ -1,32 +1,32 @@
-# LLM Brief
+# LLM 向け概要
 
-This page is for AI agents and LLMs. If you are building on Wippy or generating code for a Wippy project, read this first.
+このページは AI エージェントおよび LLM 向けです。Wippy 上で構築したり、Wippy プロジェクト用のコードを生成したりする場合は、まずこれを読んでください。
 
-## What Wippy Is
+## Wippy とは
 
-Wippy is a single-binary application runtime built on the actor model. It runs Lua code in isolated processes with message passing — no shared memory, no locks. Three compute models exist: functions (stateless, request-scoped), processes (long-lived actors with state), and workflows (durable actors backed by Temporal that survive crashes). The system is designed so that agents can generate code, register it, and improve applications without redeployment.
+Wippy はアクターモデル上に構築された単一バイナリのアプリケーションランタイムです。Lua コードを分離されたプロセスで実行し、メッセージパッシングで通信します — 共有メモリもロックもありません。3 つの計算モデルが存在します：関数（ステートレス、リクエストスコープ）、プロセス（状態を持つ長期稼働アクター）、ワークフロー（Temporal に支えられたクラッシュ耐性のある永続アクター）。このシステムは、エージェントがコードを生成し、登録し、再デプロイなしにアプリケーションを改善できるように設計されています。
 
-## Mental Model
+## メンタルモデル
 
-Everything in Wippy is a **registry entry**. Entries have an ID (`namespace:name`), a kind (which determines behavior), metadata, and data. YAML files are one way to declare entries, but the registry is the runtime source of truth and entries can be created, updated, or deleted while the system is running.
+Wippy の中のすべては**レジストリエントリ**（registry entry）です。エントリは ID（`namespace:name`）、種別（挙動を決定する）、メタデータ、データを持ちます。YAML ファイルはエントリを宣言する方法の 1 つですが、ランタイムにおける真実の源はレジストリであり、エントリはシステム稼働中に作成、更新、削除が可能です。
 
-Kinds determine what an entry does:
+種別はエントリの動作を決定します：
 
-- `function.lua` — stateless callable function
-- `process.lua` — long-running actor
-- `workflow.lua` — durable workflow (Temporal)
-- `http.service` — HTTP server
-- `http.router` — route group with middleware
-- `http.endpoint` — HTTP handler
-- `db.sql.postgres` / `mysql` / `sqlite` — database connection
-- `store.memory` / `store.sql` — key-value store
-- `queue.queue` — message queue
-- `process.host` — process execution host
-- `process.service` — supervised process
-- `contract.definition` / `contract.binding` — typed service interfaces
-- `registry.entry` — configuration data
+- `function.lua` — ステートレスな呼び出し可能関数
+- `process.lua` — 長期稼働アクター
+- `workflow.lua` — 永続ワークフロー（Temporal）
+- `http.service` — HTTP サーバー
+- `http.router` — ミドルウェア付きルートグループ
+- `http.endpoint` — HTTP ハンドラー
+- `db.sql.postgres` / `mysql` / `sqlite` — データベース接続
+- `store.memory` / `store.sql` — キーバリューストア
+- `queue.queue` — メッセージキュー
+- `process.host` — プロセス実行ホスト
+- `process.service` — 監視されたプロセス
+- `contract.definition` / `contract.binding` — 型付きサービスインターフェース
+- `registry.entry` — 構成データ
 
-## Project Structure
+## プロジェクト構造
 
 ```
 myapp/
@@ -42,7 +42,7 @@ myapp/
         └── task.lua
 ```
 
-Entry definitions live in `_index.yaml` files:
+エントリ定義は `_index.yaml` ファイル内にあります：
 
 ```yaml
 version: "1.0"
@@ -64,9 +64,9 @@ entries:
     func: app.api:get_user
 ```
 
-## Writing Functions
+## 関数の記述
 
-Functions are stateless. They receive arguments, do work, return results. They inherit the caller's context and cancel if the caller cancels.
+関数はステートレスです。引数を受け取り、処理を行い、結果を返します。呼び出し元のコンテキストを継承し、呼び出し元がキャンセルされるとキャンセルされます。
 
 ```lua
 local sql = require("sql")
@@ -87,7 +87,7 @@ end
 return get_user
 ```
 
-For HTTP handlers, use the `http` module:
+HTTP ハンドラーには `http` モジュールを使用します：
 
 ```lua
 local http = require("http")
@@ -111,9 +111,9 @@ end
 return handler
 ```
 
-## Writing Processes
+## プロセスの記述
 
-Processes are actors. They have their own PID, receive messages via inbox, and maintain state across messages. They yield on blocking I/O, allowing thousands to run concurrently.
+プロセスはアクターです。独自の PID を持ち、受信箱経由でメッセージを受信し、メッセージ間で状態を保持します。ブロッキング I/O で yield するため、数千のプロセスを並行実行できます。
 
 ```lua
 local function worker(initial_config)
@@ -143,16 +143,16 @@ end
 return worker
 ```
 
-Spawn processes from other code:
+他のコードからプロセスを生成します：
 
 ```lua
 local pid = process.spawn("app.workers:task", "app:process_host", config)
 process.send(pid, "work", {item_id = 123})
 ```
 
-## Writing Workflows
+## ワークフローの記述
 
-Workflows are durable — they survive crashes and restarts. Code looks like normal Lua. The runtime automatically records function call results, sleeps, and random values so replay is deterministic.
+ワークフローは永続的であり、クラッシュや再起動を超えて存続します。コードは通常の Lua のように見えます。ランタイムは関数呼び出しの結果、スリープ、乱数値を自動的に記録し、リプレイが決定的になるようにします。
 
 ```lua
 local function order_flow(order)
@@ -181,9 +181,9 @@ end
 return order_flow
 ```
 
-## Key APIs
+## 主要な API
 
-### Calling Functions
+### 関数の呼び出し
 
 ```lua
 local funcs = require("funcs")
@@ -200,7 +200,7 @@ local exec = funcs.new():with_context({user_id = "123"})
 exec:call("namespace:function_name")
 ```
 
-### Process Communication
+### プロセス通信
 
 ```lua
 -- Send message (fire-and-forget)
@@ -219,9 +219,9 @@ process.monitor(pid)
 process.spawn_linked("namespace:name", "host")
 ```
 
-### Channels
+### チャネル
 
-Go-style channels for coroutine communication:
+コルーチン通信のための Go スタイルのチャネル：
 
 ```lua
 local ch = channel.new(10)  -- buffered
@@ -236,9 +236,9 @@ local r = channel.select {
 }
 ```
 
-### Error Handling
+### エラー処理
 
-Functions return `result, error` pairs. Errors are typed objects:
+関数は `result, error` のペアを返します。エラーは型付きオブジェクトです：
 
 ```lua
 local result, err = some_operation()
@@ -250,9 +250,9 @@ if err then
 end
 ```
 
-Error kinds: `UNKNOWN`, `INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`, `PERMISSION_DENIED`, `TIMEOUT`, `CANCELED`, `UNAVAILABLE`, `INTERNAL`, `CONFLICT`, `RATE_LIMITED`.
+エラー種別：`UNKNOWN`、`INVALID`、`NOT_FOUND`、`ALREADY_EXISTS`、`PERMISSION_DENIED`、`TIMEOUT`、`CANCELED`、`UNAVAILABLE`、`INTERNAL`、`CONFLICT`、`RATE_LIMITED`。
 
-### Data Access
+### データアクセス
 
 ```lua
 -- SQL
@@ -278,7 +278,7 @@ local data = vol:readfile("path/to/file.txt")
 vol:writefile("output.txt", content)
 ```
 
-### HTTP Client
+### HTTP クライアント
 
 ```lua
 local http_client = require("http_client")
@@ -290,7 +290,7 @@ local resp, err = http_client.get("https://api.example.com/data", {
 local body = resp.body
 ```
 
-### Security
+### セキュリティ
 
 ```lua
 local security = require("security")
@@ -305,7 +305,7 @@ local token = ts:create(actor, scope, {expiration = "24h"})
 local validated_actor, validated_scope = ts:validate(token)
 ```
 
-### Time
+### 時間
 
 ```lua
 local time = require("time")
@@ -316,7 +316,7 @@ local timeout = time.after("30s")  -- channel that fires once
 local ticker = time.ticker("10s")  -- repeating channel
 ```
 
-### Registry
+### レジストリ
 
 ```lua
 local registry = require("registry")
@@ -331,7 +331,7 @@ changes:create({id = "app:new_func", kind = "function.lua", data = {...}})
 changes:apply()
 ```
 
-### Events
+### イベント
 
 ```lua
 local events = require("events")
@@ -345,44 +345,44 @@ local ch = sub:channel()
 local evt = ch:receive()
 ```
 
-## Module Access Control
+## モジュールアクセス制御
 
-Each entry declares which modules it can `require()`. Modules not listed are simply unavailable — there is no `os.execute`, `io.open`, `debug.*`, or `package.*` unless you explicitly grant them. The runtime does not scan or validate source code; it controls access at the module level. If a module is not in the list, it does not exist for that entry.
+各エントリはどのモジュールを `require()` できるかを宣言します。リストにないモジュールは単に利用できません — 明示的に許可しない限り、`os.execute`、`io.open`、`debug.*`、`package.*` は存在しません。ランタイムはソースコードをスキャンも検証もしません。アクセスをモジュールレベルで制御します。モジュールがリストにない場合、そのエントリにとって存在しません。
 
 ```yaml
 modules: [sql, json, http, time, funcs, store]
 ```
 
-This is also how workflow determinism works — workflow entries only receive deterministic modules. The runtime intercepts `time.now()`, `uuid.v4()`, and other non-deterministic calls at the module level, recording results for replay.
+これはワークフローの決定性の動作方法でもあります — ワークフローエントリには決定的なモジュールのみが提供されます。ランタイムは `time.now()`、`uuid.v4()` やその他の非決定的呼び出しをモジュールレベルで傍受し、リプレイのために結果を記録します。
 
-## Framework Modules
+## フレームワークモジュール
 
-Wippy has framework modules installed via dependencies:
+Wippy には依存関係経由でインストールされるフレームワークモジュールがあります：
 
-- **wippy/llm** — LLM integration (OpenAI, Anthropic, Google). `llm.generate()`, structured output, embeddings, streaming.
-- **wippy/agent** — Agent framework with tool use, delegation, traits, memory. Agents defined as registry entries.
-- **wippy/test** — BDD testing. `describe/it` blocks, assertions, mocking.
-- **wippy/dataflow** — DAG-based workflow orchestration. Function, agent, cycle, parallel nodes.
-- **wippy/relay** — WebSocket relay with central hub, per-user hubs, plugin routing.
-- **wippy/views** — Page and component system with template rendering.
-- **wippy/facade** — Frontend iframe facade with authentication bridging.
+- **wippy/llm** — LLM 統合（OpenAI、Anthropic、Google）。`llm.generate()`、構造化出力、埋め込み、ストリーミング。
+- **wippy/agent** — ツール利用、委譲、特性、メモリを持つエージェントフレームワーク。エージェントはレジストリエントリとして定義されます。
+- **wippy/test** — BDD テスト。`describe/it` ブロック、アサーション、モック。
+- **wippy/dataflow** — DAG ベースのワークフローオーケストレーション。Function、Agent、Cycle、Parallel ノード。
+- **wippy/relay** — 中央ハブ、ユーザーごとのハブ、プラグインルーティングを持つ WebSocket リレー。
+- **wippy/views** — テンプレートレンダリングを持つページおよびコンポーネントシステム。
+- **wippy/facade** — 認証ブリッジングを持つフロントエンド iframe ファサード。
 
-## Conventions
+## 規約
 
-- Entry IDs use `namespace:name` format
-- Names use dots for semantic separation, underscores for words: `get_user.endpoint`
-- Functions return `result, error` — always check the error
-- Processes communicate via message passing, never shared state
-- Use `channel.select` to multiplex multiple event sources
-- Supervision trees handle failures — design for "let it crash"
-- Context (trace IDs, user info, security) propagates automatically through function calls
-- Workflows must not use non-deterministic operations directly — the runtime handles this for `funcs.call`, `time.sleep`, `uuid.v4`, `time.now`
+- エントリ ID は `namespace:name` 形式を使用します
+- 名前は意味的な区切りにドットを、単語にはアンダースコアを使用します：`get_user.endpoint`
+- 関数は `result, error` を返します — 常にエラーをチェックしてください
+- プロセスはメッセージパッシングで通信し、共有状態を使用しません
+- `channel.select` を使用して複数のイベントソースを多重化します
+- スーパーバイザーツリーが失敗を処理します — "let it crash" 原則で設計してください
+- コンテキスト（trace ID、ユーザー情報、セキュリティ）は関数呼び出しを通じて自動的に伝播されます
+- ワークフローは非決定的操作を直接使用してはなりません — ランタイムが `funcs.call`、`time.sleep`、`uuid.v4`、`time.now` についてこれを処理します
 
-## Documentation
+## ドキュメント
 
-Full documentation is available at [wippy.ai/docs](https://wippy.ai/docs). LLM-friendly endpoints:
+完全なドキュメントは [wippy.ai/docs](https://wippy.ai/docs) で入手できます。LLM フレンドリーなエンドポイント：
 
-- Browse structure: `https://wippy.ai/llm/toc`
-- Search: `https://wippy.ai/llm/search?q=query`
-- Fetch page: `https://wippy.ai/llm/path/en/<path>`
-- Batch fetch: `https://wippy.ai/llm/context?paths=path1,path2`
+- 構造の参照：`https://wippy.ai/llm/toc`
+- 検索：`https://wippy.ai/llm/search?q=query`
+- ページの取得：`https://wippy.ai/llm/path/en/<path>`
+- バッチ取得：`https://wippy.ai/llm/context?paths=path1,path2`

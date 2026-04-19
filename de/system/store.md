@@ -72,4 +72,3 @@ Siehe [Store-Modul](lua/storage/store.md) für Operationen (get, set, delete, ex
 
 - [Store-Modul](lua/storage/store.md) - Lua-API-Referenz
 - [Datenbank](system/database.md) - SQL-Backend für `store.sql`
-- [Cache](lua/storage/cache.md) - In-Process-Cache-Modul

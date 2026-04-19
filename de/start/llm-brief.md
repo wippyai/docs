@@ -1,32 +1,32 @@
-# LLM Brief
+# LLM-Kurzinfo
 
-This page is for AI agents and LLMs. If you are building on Wippy or generating code for a Wippy project, read this first.
+Diese Seite ist fuer KI-Agenten und LLMs gedacht. Wenn du auf Wippy aufbaust oder Code fuer ein Wippy-Projekt generierst, lies dies zuerst.
 
-## What Wippy Is
+## Was Wippy ist
 
-Wippy is a single-binary application runtime built on the actor model. It runs Lua code in isolated processes with message passing — no shared memory, no locks. Three compute models exist: functions (stateless, request-scoped), processes (long-lived actors with state), and workflows (durable actors backed by Temporal that survive crashes). The system is designed so that agents can generate code, register it, and improve applications without redeployment.
+Wippy ist eine Single-Binary-Anwendungs-Runtime, die auf dem Aktor-Modell basiert. Sie fuehrt Lua-Code in isolierten Prozessen mit Nachrichtenuebermittlung aus — kein gemeinsamer Speicher, keine Locks. Es gibt drei Rechenmodelle: Funktionen (zustandslos, Request-gebunden), Prozesse (langlebige Aktoren mit Zustand) und Workflows (dauerhafte Aktoren, die von Temporal gestuetzt werden und Abstuerze ueberstehen). Das System ist so konzipiert, dass Agenten Code generieren, registrieren und Anwendungen ohne erneute Bereitstellung verbessern koennen.
 
-## Mental Model
+## Mentales Modell
 
-Everything in Wippy is a **registry entry**. Entries have an ID (`namespace:name`), a kind (which determines behavior), metadata, and data. YAML files are one way to declare entries, but the registry is the runtime source of truth and entries can be created, updated, or deleted while the system is running.
+Alles in Wippy ist ein **Registry-Eintrag**. Eintraege haben eine ID (`namespace:name`), eine Art (die das Verhalten bestimmt), Metadaten und Daten. YAML-Dateien sind eine Moeglichkeit, Eintraege zu deklarieren, aber die Registry ist zur Laufzeit die Quelle der Wahrheit, und Eintraege koennen waehrend des Systembetriebs erstellt, aktualisiert oder geloescht werden.
 
-Kinds determine what an entry does:
+Arten bestimmen, was ein Eintrag tut:
 
-- `function.lua` — stateless callable function
-- `process.lua` — long-running actor
-- `workflow.lua` — durable workflow (Temporal)
-- `http.service` — HTTP server
-- `http.router` — route group with middleware
-- `http.endpoint` — HTTP handler
-- `db.sql.postgres` / `mysql` / `sqlite` — database connection
-- `store.memory` / `store.sql` — key-value store
-- `queue.queue` — message queue
-- `process.host` — process execution host
-- `process.service` — supervised process
-- `contract.definition` / `contract.binding` — typed service interfaces
-- `registry.entry` — configuration data
+- `function.lua` — zustandslose aufrufbare Funktion
+- `process.lua` — langlaufender Aktor
+- `workflow.lua` — dauerhafter Workflow (Temporal)
+- `http.service` — HTTP-Server
+- `http.router` — Routengruppe mit Middleware
+- `http.endpoint` — HTTP-Handler
+- `db.sql.postgres` / `mysql` / `sqlite` — Datenbankverbindung
+- `store.memory` / `store.sql` — Key-Value-Speicher
+- `queue.queue` — Nachrichtenwarteschlange
+- `process.host` — Prozessausfuehrungs-Host
+- `process.service` — ueberwachter Prozess
+- `contract.definition` / `contract.binding` — typisierte Dienstschnittstellen
+- `registry.entry` — Konfigurationsdaten
 
-## Project Structure
+## Projektstruktur
 
 ```
 myapp/
@@ -42,7 +42,7 @@ myapp/
         └── task.lua
 ```
 
-Entry definitions live in `_index.yaml` files:
+Eintragsdefinitionen befinden sich in `_index.yaml`-Dateien:
 
 ```yaml
 version: "1.0"
@@ -64,9 +64,9 @@ entries:
     func: app.api:get_user
 ```
 
-## Writing Functions
+## Funktionen schreiben
 
-Functions are stateless. They receive arguments, do work, return results. They inherit the caller's context and cancel if the caller cancels.
+Funktionen sind zustandslos. Sie erhalten Argumente, fuehren Arbeit aus und geben Ergebnisse zurueck. Sie erben den Kontext des Aufrufers und werden abgebrochen, wenn der Aufrufer abbricht.
 
 ```lua
 local sql = require("sql")
@@ -87,7 +87,7 @@ end
 return get_user
 ```
 
-For HTTP handlers, use the `http` module:
+Verwende fuer HTTP-Handler das `http`-Modul:
 
 ```lua
 local http = require("http")
@@ -111,9 +111,9 @@ end
 return handler
 ```
 
-## Writing Processes
+## Prozesse schreiben
 
-Processes are actors. They have their own PID, receive messages via inbox, and maintain state across messages. They yield on blocking I/O, allowing thousands to run concurrently.
+Prozesse sind Aktoren. Sie haben ihre eigene PID, empfangen Nachrichten ueber einen Posteingang und behalten ihren Zustand ueber Nachrichten hinweg. Sie yield'en bei blockierendem I/O, wodurch Tausende gleichzeitig laufen koennen.
 
 ```lua
 local function worker(initial_config)
@@ -143,16 +143,16 @@ end
 return worker
 ```
 
-Spawn processes from other code:
+Prozesse aus anderem Code spawnen:
 
 ```lua
 local pid = process.spawn("app.workers:task", "app:process_host", config)
 process.send(pid, "work", {item_id = 123})
 ```
 
-## Writing Workflows
+## Workflows schreiben
 
-Workflows are durable — they survive crashes and restarts. Code looks like normal Lua. The runtime automatically records function call results, sleeps, and random values so replay is deterministic.
+Workflows sind dauerhaft — sie ueberstehen Abstuerze und Neustarts. Der Code sieht wie normales Lua aus. Die Runtime zeichnet automatisch Ergebnisse von Funktionsaufrufen, Sleeps und Zufallswerte auf, damit der Replay deterministisch ist.
 
 ```lua
 local function order_flow(order)
@@ -181,9 +181,9 @@ end
 return order_flow
 ```
 
-## Key APIs
+## Wichtige APIs
 
-### Calling Functions
+### Funktionen aufrufen
 
 ```lua
 local funcs = require("funcs")
@@ -200,7 +200,7 @@ local exec = funcs.new():with_context({user_id = "123"})
 exec:call("namespace:function_name")
 ```
 
-### Process Communication
+### Prozesskommunikation
 
 ```lua
 -- Send message (fire-and-forget)
@@ -219,9 +219,9 @@ process.monitor(pid)
 process.spawn_linked("namespace:name", "host")
 ```
 
-### Channels
+### Kanaele
 
-Go-style channels for coroutine communication:
+Kanaele im Go-Stil fuer die Koroutinen-Kommunikation:
 
 ```lua
 local ch = channel.new(10)  -- buffered
@@ -236,9 +236,9 @@ local r = channel.select {
 }
 ```
 
-### Error Handling
+### Fehlerbehandlung
 
-Functions return `result, error` pairs. Errors are typed objects:
+Funktionen geben `result, error`-Paare zurueck. Fehler sind typisierte Objekte:
 
 ```lua
 local result, err = some_operation()
@@ -250,9 +250,9 @@ if err then
 end
 ```
 
-Error kinds: `UNKNOWN`, `INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`, `PERMISSION_DENIED`, `TIMEOUT`, `CANCELED`, `UNAVAILABLE`, `INTERNAL`, `CONFLICT`, `RATE_LIMITED`.
+Fehlerarten: `UNKNOWN`, `INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`, `PERMISSION_DENIED`, `TIMEOUT`, `CANCELED`, `UNAVAILABLE`, `INTERNAL`, `CONFLICT`, `RATE_LIMITED`.
 
-### Data Access
+### Datenzugriff
 
 ```lua
 -- SQL
@@ -278,7 +278,7 @@ local data = vol:readfile("path/to/file.txt")
 vol:writefile("output.txt", content)
 ```
 
-### HTTP Client
+### HTTP-Client
 
 ```lua
 local http_client = require("http_client")
@@ -290,7 +290,7 @@ local resp, err = http_client.get("https://api.example.com/data", {
 local body = resp.body
 ```
 
-### Security
+### Sicherheit
 
 ```lua
 local security = require("security")
@@ -305,7 +305,7 @@ local token = ts:create(actor, scope, {expiration = "24h"})
 local validated_actor, validated_scope = ts:validate(token)
 ```
 
-### Time
+### Zeit
 
 ```lua
 local time = require("time")
@@ -345,44 +345,44 @@ local ch = sub:channel()
 local evt = ch:receive()
 ```
 
-## Module Access Control
+## Zugriffskontrolle auf Module
 
-Each entry declares which modules it can `require()`. Modules not listed are simply unavailable — there is no `os.execute`, `io.open`, `debug.*`, or `package.*` unless you explicitly grant them. The runtime does not scan or validate source code; it controls access at the module level. If a module is not in the list, it does not exist for that entry.
+Jeder Eintrag deklariert, welche Module er `require()` darf. Nicht aufgefuehrte Module sind schlicht nicht verfuegbar — es gibt kein `os.execute`, `io.open`, `debug.*` oder `package.*`, sofern du sie nicht ausdruecklich gewaehrst. Die Runtime scannt oder validiert keinen Quellcode; sie steuert den Zugriff auf Modulebene. Wenn ein Modul nicht in der Liste steht, existiert es fuer diesen Eintrag nicht.
 
 ```yaml
 modules: [sql, json, http, time, funcs, store]
 ```
 
-This is also how workflow determinism works — workflow entries only receive deterministic modules. The runtime intercepts `time.now()`, `uuid.v4()`, and other non-deterministic calls at the module level, recording results for replay.
+So funktioniert auch der Determinismus von Workflows — Workflow-Eintraege erhalten nur deterministische Module. Die Runtime faengt `time.now()`, `uuid.v4()` und andere nicht-deterministische Aufrufe auf Modulebene ab und zeichnet die Ergebnisse fuer den Replay auf.
 
-## Framework Modules
+## Framework-Module
 
-Wippy has framework modules installed via dependencies:
+Wippy verfuegt ueber Framework-Module, die als Abhaengigkeiten installiert werden:
 
-- **wippy/llm** — LLM integration (OpenAI, Anthropic, Google). `llm.generate()`, structured output, embeddings, streaming.
-- **wippy/agent** — Agent framework with tool use, delegation, traits, memory. Agents defined as registry entries.
-- **wippy/test** — BDD testing. `describe/it` blocks, assertions, mocking.
-- **wippy/dataflow** — DAG-based workflow orchestration. Function, agent, cycle, parallel nodes.
-- **wippy/relay** — WebSocket relay with central hub, per-user hubs, plugin routing.
-- **wippy/views** — Page and component system with template rendering.
-- **wippy/facade** — Frontend iframe facade with authentication bridging.
+- **wippy/llm** — LLM-Integration (OpenAI, Anthropic, Google). `llm.generate()`, strukturierte Ausgabe, Embeddings, Streaming.
+- **wippy/agent** — Agenten-Framework mit Tool-Nutzung, Delegation, Traits, Speicher. Agenten werden als Registry-Eintraege definiert.
+- **wippy/test** — BDD-Tests. `describe/it`-Bloecke, Assertions, Mocking.
+- **wippy/dataflow** — DAG-basierte Workflow-Orchestrierung. Function-, Agent-, Cycle-, Parallel-Nodes.
+- **wippy/relay** — WebSocket-Relay mit zentralem Hub, Per-User-Hubs, Plugin-Routing.
+- **wippy/views** — Seiten- und Komponentensystem mit Template-Rendering.
+- **wippy/facade** — Frontend-Iframe-Fassade mit Authentifizierungs-Bridging.
 
-## Conventions
+## Konventionen
 
-- Entry IDs use `namespace:name` format
-- Names use dots for semantic separation, underscores for words: `get_user.endpoint`
-- Functions return `result, error` — always check the error
-- Processes communicate via message passing, never shared state
-- Use `channel.select` to multiplex multiple event sources
-- Supervision trees handle failures — design for "let it crash"
-- Context (trace IDs, user info, security) propagates automatically through function calls
-- Workflows must not use non-deterministic operations directly — the runtime handles this for `funcs.call`, `time.sleep`, `uuid.v4`, `time.now`
+- Eintrags-IDs verwenden das Format `namespace:name`
+- Namen verwenden Punkte zur semantischen Trennung, Unterstriche fuer Woerter: `get_user.endpoint`
+- Funktionen geben `result, error` zurueck — pruefe den Fehler immer
+- Prozesse kommunizieren ueber Nachrichtenuebermittlung, niemals ueber gemeinsamen Zustand
+- Verwende `channel.select`, um mehrere Ereignisquellen zu multiplexen
+- Supervisions-Baeume behandeln Fehler — design fuer "let it crash"
+- Kontext (Trace-IDs, Benutzerinfo, Sicherheit) propagiert automatisch durch Funktionsaufrufe
+- Workflows duerfen nicht-deterministische Operationen nicht direkt verwenden — die Runtime uebernimmt dies fuer `funcs.call`, `time.sleep`, `uuid.v4`, `time.now`
 
-## Documentation
+## Dokumentation
 
-Full documentation is available at [wippy.ai/docs](https://wippy.ai/docs). LLM-friendly endpoints:
+Die vollstaendige Dokumentation ist unter [wippy.ai/docs](https://wippy.ai/docs) verfuegbar. LLM-freundliche Endpunkte:
 
-- Browse structure: `https://wippy.ai/llm/toc`
-- Search: `https://wippy.ai/llm/search?q=query`
-- Fetch page: `https://wippy.ai/llm/path/en/<path>`
-- Batch fetch: `https://wippy.ai/llm/context?paths=path1,path2`
+- Struktur durchsuchen: `https://wippy.ai/llm/toc`
+- Suche: `https://wippy.ai/llm/search?q=query`
+- Seite abrufen: `https://wippy.ai/llm/path/en/<path>`
+- Batch-Abruf: `https://wippy.ai/llm/context?paths=path1,path2`

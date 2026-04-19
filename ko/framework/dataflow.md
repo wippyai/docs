@@ -1,17 +1,17 @@
 # Dataflow
 
-The `wippy/dataflow` module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes — functions, agents, cycles, and parallel processors — connected by typed data routes. The orchestrator manages execution, state persistence, and recovery.
+`wippy/dataflow` 모듈은 유향 비순환 그래프(DAG)를 기반으로 하는 워크플로우 오케스트레이션 엔진을 제공합니다. 워크플로우는 노드로 구성되며—함수, 에이전트, 사이클, 병렬 프로세서—타입이 지정된 데이터 라우트로 연결됩니다. 오케스트레이터는 실행, 상태 영속성, 복구를 관리합니다.
 
-## Setup
+## 설치
 
-Add the module to your project:
+모듈을 프로젝트에 추가합니다:
 
 ```bash
 wippy add wippy/dataflow
 wippy install
 ```
 
-Declare the dependency:
+의존성을 선언합니다:
 
 ```yaml
 version: "1.0"
@@ -24,13 +24,13 @@ entries:
     version: "*"
 ```
 
-The dataflow module depends on `wippy/agent`, `wippy/llm`, and `wippy/session` — these are resolved automatically when you run `wippy install`. The module requires a database resource at `app:db` for workflow persistence and runs migrations automatically via `wippy/migration`.
+dataflow 모듈은 `wippy/agent`, `wippy/llm`, `wippy/session`에 의존합니다 — `wippy install`을 실행하면 이들이 자동으로 해결됩니다. 이 모듈은 워크플로우 영속화를 위해 `app:db`에 데이터베이스 리소스가 필요하며, `wippy/migration`을 통해 마이그레이션을 자동으로 실행합니다.
 
-The module publishes an `env.variable` entry `userspace.dataflow.env:web_host_origin` (default `https://front.wippy.ai`) that downstream flows can read for building public URLs. Override it through the env router or a requirement.
+이 모듈은 `env.variable` 항목 `userspace.dataflow.env:web_host_origin`(기본값 `https://front.wippy.ai`)을 게시하며, 다운스트림 플로우는 공개 URL을 구성하기 위해 이를 읽을 수 있습니다. env 라우터 또는 requirement를 통해 재정의하십시오.
 
 ## Flow Builder
 
-The flow builder provides a fluent interface for composing workflows. Import it into your entry:
+flow builder는 워크플로우를 구성하기 위한 유창한 인터페이스를 제공합니다. 항목에 가져옵니다:
 
 ```yaml
 imports:
@@ -41,7 +41,7 @@ imports:
 local flow = require("flow")
 ```
 
-### Core API
+### 핵심 API
 
 ```lua
 flow.create()
@@ -61,9 +61,9 @@ flow.template()
     :[operations]...
 ```
 
-### Linear Pipeline
+### 선형 파이프라인
 
-Nodes chain automatically when no explicit routing is defined. Output of each node flows to the next:
+명시적 라우팅이 정의되지 않은 경우 노드는 자동으로 체인됩니다. 각 노드의 출력이 다음으로 흐릅니다:
 
 ```lua
 local result, err = flow.create()
@@ -74,9 +74,9 @@ local result, err = flow.create()
     :run()
 ```
 
-### Named Routing
+### 명명된 라우팅
 
-Use `:as()` to name nodes and `:to()` to route data between them. Only use `:as()` when the node needs to be referenced:
+`:as()`로 노드의 이름을 지정하고 `:to()`로 그들 사이에 데이터를 라우팅합니다. 노드를 참조해야 할 때만 `:as()`를 사용하십시오:
 
 ```lua
 local result, err = flow.create()
@@ -96,11 +96,11 @@ local result, err = flow.create()
     :run()
 ```
 
-The second parameter to `:to()` is the **discriminator** — the input key at the receiving node. When a node receives multiple inputs, they are collected as a table keyed by discriminator.
+`:to()`의 두 번째 매개변수는 **판별자**(discriminator)입니다 — 수신 노드의 입력 키. 노드가 여러 입력을 받을 때, 이들은 판별자를 키로 하는 테이블로 수집됩니다.
 
-### Workflow Input and Static Data
+### 워크플로우 입력 및 정적 데이터
 
-`:with_input()` is the single primary input to the workflow. `:with_data()` creates independent static data sources:
+`:with_input()`은 워크플로우로의 단일 주요 입력입니다. `:with_data()`는 독립적인 정적 데이터 소스를 생성합니다:
 
 ```lua
 flow.create()
@@ -124,11 +124,11 @@ flow.create()
     :run()
 ```
 
-Use `:with_input()` for external data entering the workflow. Use `:with_data()` for config, constants, and reference data shared across multiple nodes. Static data uses reference optimization — the first route creates actual data, subsequent routes create lightweight references.
+워크플로우로 들어오는 외부 데이터에는 `:with_input()`을 사용합니다. 여러 노드 간에 공유되는 구성, 상수, 참조 데이터에는 `:with_data()`를 사용합니다. 정적 데이터는 참조 최적화를 사용합니다 — 첫 번째 경로는 실제 데이터를 만들고, 후속 경로는 가벼운 참조를 만듭니다.
 
-### Conditional Routing
+### 조건부 라우팅
 
-Use `:when()` after `:to()` to add conditions. Conditions evaluate against the node's output using `expr` syntax:
+`:to()` 다음에 `:when()`을 사용하여 조건을 추가합니다. 조건은 `expr` 구문을 사용하여 노드의 출력에 대해 평가됩니다:
 
 ```lua
 flow.create()
@@ -143,7 +143,7 @@ flow.create()
     :run()
 ```
 
-Conditions can combine with inline transforms for more complex routing:
+조건은 더 복잡한 라우팅을 위해 인라인 변환과 결합될 수 있습니다:
 
 ```lua
 :func("app:decompose"):as("decompose")
@@ -151,20 +151,20 @@ Conditions can combine with inline transforms for more complex routing:
     :to("processor", "items", "output.items")
 ```
 
-Conditional expressions support: comparisons (`output.score > 0.8`), logical operators (`output.valid && output.count > 5`), array functions (`len(output.items) > 0`, `any(output.errors, {.critical})`), string operations (`output.status contains 'success'`), and optional chaining (`output.data?.nested?.value`).
+조건부 표현식은 다음을 지원합니다: 비교(`output.score > 0.8`), 논리 연산자(`output.valid && output.count > 5`), 배열 함수(`len(output.items) > 0`, `any(output.errors, {.critical})`), 문자열 연산(`output.status contains 'success'`), 옵셔널 체이닝(`output.data?.nested?.value`).
 
-### Workflow Terminals
+### 워크플로우 터미널
 
-Route to `@success` or `@fail` to terminate the workflow explicitly. In nested contexts (cycles, parallel), terminals create node outputs instead of workflow outputs:
+`@success` 또는 `@fail`로 라우팅하여 워크플로우를 명시적으로 종료합니다. 중첩된 컨텍스트(사이클, 병렬)에서 터미널은 워크플로우 출력 대신 노드 출력을 생성합니다:
 
 ```lua
 :func("app:final_step"):to("@success")
 :func("app:handler"):error_to("@fail")
 ```
 
-### Error Routing
+### 오류 라우팅
 
-Use `:error_to()` to route node errors to a handler. Errors can be routed as normal inputs to recovery nodes:
+`:error_to()`를 사용하여 노드 오류를 핸들러로 라우팅합니다. 오류는 복구 노드에 대한 일반 입력으로 라우팅될 수 있습니다:
 
 ```lua
 :agent("app:gpt_planner", { model = "gpt-5" }):as("gpt_planner")
@@ -180,27 +180,27 @@ Use `:error_to()` to route node errors to a handler. Errors can be routed as nor
 }):as("consolidator")
 ```
 
-This pattern runs both planners in parallel — if one fails, its error becomes the input for the consolidator, which proceeds with whatever results are available.
+이 패턴은 두 플래너를 병렬로 실행합니다 — 하나가 실패하면 그 오류가 consolidator의 입력이 되고, consolidator는 사용 가능한 모든 결과로 진행합니다.
 
-## Input Merging
+## 입력 병합
 
-How nodes receive inputs depends on discriminators and whether `args` is configured.
+노드가 입력을 받는 방식은 판별자와 `args`가 구성되었는지에 따라 다릅니다.
 
-**Without args — single default input:**
+**args 없음 — 단일 기본 입력:**
 
 ```lua
 :func("source"):to("target")
 -- target receives: raw content (unwrapped)
 ```
 
-**Without args — single named input:**
+**args 없음 — 단일 명명된 입력:**
 
 ```lua
 :func("source"):to("target", "task")
 -- target receives: { task = content }
 ```
 
-**Without args — multiple inputs:**
+**args 없음 — 다중 입력:**
 
 ```lua
 :func("source1"):to("target", "data")
@@ -208,7 +208,7 @@ How nodes receive inputs depends on discriminators and whether `args` is configu
 -- target receives: { data = content1, config = content2 }
 ```
 
-**With args — inputs merge into base:**
+**args 있음 — 입력이 기본 항목에 병합됨:**
 
 ```lua
 :func("app:api_client", {
@@ -219,12 +219,12 @@ How nodes receive inputs depends on discriminators and whether `args` is configu
 ```
 
 <note>
-Nodes with <code>args</code> cannot receive inputs with the <code>"default"</code> discriminator. Use named discriminators with <code>:to(target, "input_key")</code> instead.
+<code>args</code>가 있는 노드는 <code>"default"</code> 판별자로 입력을 받을 수 없습니다. 대신 <code>:to(target, "input_key")</code>와 함께 명명된 판별자를 사용하십시오.
 </note>
 
-## Input Transforms
+## 입력 변환
 
-Transform data before it reaches a node:
+데이터가 노드에 도달하기 전에 변환합니다:
 
 ```lua
 -- String transform: single expression
@@ -240,11 +240,11 @@ Transform data before it reaches a node:
 })
 ```
 
-Context variables available in transforms: `input` (workflow input), `inputs` (all incoming node inputs), `output` (current node's output when routing).
+변환에서 사용할 수 있는 컨텍스트 변수: `input`(워크플로우 입력), `inputs`(모든 들어오는 노드 입력), `output`(라우팅 시 현재 노드의 출력).
 
-### Inline Route Transforms
+### 인라인 라우트 변환
 
-The third parameter to `:to()` is an inline transform expression:
+`:to()`의 세 번째 매개변수는 인라인 변환 표현식입니다:
 
 ```lua
 :func("source"):as("source")
@@ -253,11 +253,11 @@ The third parameter to `:to()` is an inline transform expression:
     :to("list", nil, "map(output.items, {.id})")
 ```
 
-## Node Types
+## 노드 타입
 
-### Function Node
+### 함수 노드
 
-Executes a registered `function.lua` entry:
+등록된 `function.lua` 항목을 실행합니다:
 
 ```lua
 :func("app:my_function", {
@@ -271,17 +271,17 @@ Executes a registered `function.lua` entry:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `args` | table | Base arguments merged with node inputs |
-| `inputs` | table | Input requirements: `{ required = {...}, optional = {...} }` |
-| `context` | table | Execution context passed to function |
-| `input_transform` | string/table | Expression to transform inputs |
-| `metadata` | table | Node metadata (e.g., `{ title = "..." }`) |
+| `args` | table | 노드 입력과 병합되는 기본 인수 |
+| `inputs` | table | 입력 요구사항: `{ required = {...}, optional = {...} }` |
+| `context` | table | 함수에 전달되는 실행 컨텍스트 |
+| `input_transform` | string/table | 입력을 변환하는 표현식 |
+| `metadata` | table | 노드 메타데이터(예: `{ title = "..." }`) |
 
-If the function returns `{ _control = { commands = [...] } }`, the orchestrator spawns a child workflow. This is how nested flows work.
+함수가 `{ _control = { commands = [...] } }`를 반환하면 오케스트레이터가 자식 워크플로우를 생성합니다. 중첩된 플로우가 이렇게 작동합니다.
 
-### Agent Node
+### 에이전트 노드
 
-Executes an agent with tool calling and optional structured exit:
+도구 호출과 선택적 구조화된 종료를 포함하여 에이전트를 실행합니다:
 
 ```lua
 :agent("app:content_writer", {
@@ -307,21 +307,21 @@ Executes an agent with tool calling and optional structured exit:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `model` | string | Override model |
-| `arena.prompt` | string | System prompt |
-| `arena.max_iterations` | number | Max reasoning loops (default: 64) |
-| `arena.min_iterations` | number | Min iterations before exit (default: 1) |
-| `arena.tool_calling` | string | `"auto"`, `"any"` (requires `exit_schema`), `"none"` (rejects `exit_schema`) |
-| `arena.tools` | array | Tool registry IDs |
-| `arena.exit_schema` | table | JSON schema for structured exit |
-| `arena.exit_func_id` | string | Function to validate exit output |
-| `arena.context` | table | Additional context |
-| `inputs` | table | Input requirements |
-| `show_tool_calls` | boolean | Include tool calls in output |
-| `input_transform` | string/table | Transform inputs |
-| `metadata` | table | Node metadata |
+| `model` | string | 모델 오버라이드 |
+| `arena.prompt` | string | 시스템 프롬프트 |
+| `arena.max_iterations` | number | 최대 추론 루프(기본값: 64) |
+| `arena.min_iterations` | number | 종료 전 최소 반복(기본값: 1) |
+| `arena.tool_calling` | string | `"auto"`, `"any"`(`exit_schema` 필요), `"none"`(`exit_schema` 거부) |
+| `arena.tools` | array | 도구 레지스트리 ID |
+| `arena.exit_schema` | table | 구조화된 종료를 위한 JSON schema |
+| `arena.exit_func_id` | string | 종료 출력을 검증하는 함수 |
+| `arena.context` | table | 추가 컨텍스트 |
+| `inputs` | table | 입력 요구사항 |
+| `show_tool_calls` | boolean | 출력에 도구 호출 포함 |
+| `input_transform` | string/table | 입력 변환 |
+| `metadata` | table | 노드 메타데이터 |
 
-**Dynamic agent selection:** Pass an empty string as agent ID and resolve it via `input_transform`:
+**동적 에이전트 선택:** 에이전트 ID로 빈 문자열을 전달하고 `input_transform`을 통해 해석합니다:
 
 ```lua
 :agent("", {
@@ -337,11 +337,11 @@ Executes an agent with tool calling and optional structured exit:
 })
 ```
 
-**Exit validation:** When `exit_func_id` is set, the function validates the agent's exit output. On validation failure, the agent receives the error as observation and continues (up to `max_iterations`).
+**종료 검증:** `exit_func_id`가 설정된 경우, 함수는 에이전트의 종료 출력을 검증합니다. 검증 실패 시 에이전트는 오류를 관찰로 받고 계속 진행합니다(최대 `max_iterations`까지).
 
-### Cycle Node
+### 사이클 노드
 
-Iterates a function or template repeatedly with persistent state:
+영속 상태를 가지고 함수나 템플릿을 반복적으로 반복합니다:
 
 ```lua
 :cycle({
@@ -356,7 +356,7 @@ Iterates a function or template repeatedly with persistent state:
 })
 ```
 
-The cycle function receives on each iteration:
+사이클 함수는 각 반복마다 다음을 받습니다:
 
 ```lua
 {
@@ -367,7 +367,7 @@ The cycle function receives on each iteration:
 }
 ```
 
-The function controls continuation:
+함수는 계속을 제어합니다:
 
 ```lua
 function my_cycle(cycle_context)
@@ -391,13 +391,13 @@ end
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `func_id` | string | Iteration function (mutually exclusive with `template`) |
-| `template` | FlowBuilder | Template for each iteration (mutually exclusive with `func_id`) |
-| `max_iterations` | number | Maximum iterations |
-| `initial_state` | table | Starting state |
-| `continue_condition` | string | Expression: continue while true |
+| `func_id` | string | 반복 함수(`template`과 상호 배타적) |
+| `template` | FlowBuilder | 각 반복의 템플릿(`func_id`와 상호 배타적) |
+| `max_iterations` | number | 최대 반복 횟수 |
+| `initial_state` | table | 시작 상태 |
+| `continue_condition` | string | 표현식: 참인 동안 계속 |
 
-**Template-based cycle:**
+**템플릿 기반 사이클:**
 
 ```lua
 :cycle({
@@ -408,9 +408,9 @@ end
 })
 ```
 
-### Parallel Node
+### 병렬 노드
 
-Map-reduce pattern over arrays:
+배열에 대한 map-reduce 패턴:
 
 ```lua
 :parallel({
@@ -441,16 +441,16 @@ Map-reduce pattern over arrays:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `source_array_key` | string | Input key containing the array (required) |
-| `template` | FlowBuilder | Template for each item (required, must route to `@success`) |
-| `iteration_input_key` | string | Input key for current item (default: `"default"`) |
-| `batch_size` | number | Items per parallel batch (default: 1 = sequential) |
-| `on_error` | string | `"collect_errors"` (default) or `"fail_fast"` |
-| `filter` | string | `"all"` (default), `"successes"`, `"failures"` |
-| `unwrap` | boolean | Return raw results instead of wrapped metadata (default: false) |
-| `passthrough_keys` | array | Input keys forwarded to every iteration |
+| `source_array_key` | string | 배열을 포함하는 입력 키(필수) |
+| `template` | FlowBuilder | 각 항목의 템플릿(필수, `@success`로 라우팅해야 함) |
+| `iteration_input_key` | string | 현재 항목의 입력 키(기본값: `"default"`) |
+| `batch_size` | number | 병렬 배치당 항목 수(기본값: 1 = 순차) |
+| `on_error` | string | `"collect_errors"`(기본값) 또는 `"fail_fast"` |
+| `filter` | string | `"all"`(기본값), `"successes"`, `"failures"` |
+| `unwrap` | boolean | 메타데이터가 포함된 래핑된 결과 대신 원시 결과 반환(기본값: false) |
+| `passthrough_keys` | array | 모든 반복에 전달되는 입력 키 |
 
-**Passthrough keys** provide shared context (config, task description) to every iteration without duplicating data in the source array:
+**Passthrough 키**는 소스 배열의 데이터를 중복하지 않고 모든 반복에 공유 컨텍스트(구성, 작업 설명)를 제공합니다:
 
 ```lua
 :with_data(file_list):as("files"):to("processor", "files")
@@ -469,9 +469,9 @@ Map-reduce pattern over arrays:
 }):as("processor")
 ```
 
-### Signal Node
+### 시그널 노드
 
-Pauses execution until an external signal arrives. Use for human approvals, external events, or staged workflows:
+외부 시그널이 도착할 때까지 실행을 일시 중지합니다. 사람의 승인, 외부 이벤트, 단계별 워크플로우에 사용합니다:
 
 ```lua
 :signal({
@@ -483,38 +483,38 @@ Pauses execution until an external signal arrives. Use for human approvals, exte
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `signal_id` | string | Signal name matched against `client:signal()`. If empty or omitted, a UUID v7 is generated at runtime |
-| `inputs` | table | Input requirements |
-| `input_transform` | string/table | Transform inputs before the node receives them |
-| `metadata` | table | Node metadata |
+| `signal_id` | string | `client:signal()`과 매칭되는 시그널 이름. 비어 있거나 생략된 경우 런타임에 UUID v7이 생성됨 |
+| `inputs` | table | 입력 요구사항 |
+| `input_transform` | string/table | 노드가 입력을 받기 전에 변환 |
+| `metadata` | table | 노드 메타데이터 |
 
-Send the signal from outside the workflow using the client API (see `client:signal()` below).
+클라이언트 API를 사용하여 워크플로우 외부에서 시그널을 전송합니다(아래의 `client:signal()` 참조).
 
-#### Behavior
+#### 동작
 
-The node yields with `wait_for_signal = true` and persists that yield in the workflow state. The orchestrator resumes the node when a matching `NODE_SIGNAL` commit arrives.
+노드는 `wait_for_signal = true`로 yield하고 해당 yield를 워크플로우 상태에 영속화합니다. 매칭되는 `NODE_SIGNAL` 커밋이 도착하면 오케스트레이터가 노드를 재개합니다.
 
-- The signal is satisfied by any non-`nil` payload. `false`, `0`, `""`, and `{}` all satisfy the yield; only `nil` keeps it pending.
-- A signal yield blocks `COMPLETE_WORKFLOW` but does not block other pending nodes — parallel branches continue to execute while one branch waits.
-- Signals can be pre-queued before `:start()`: if a matching `NODE_SIGNAL` commit arrives before the signal node reaches the yield, it is delivered the moment the yield is tracked.
-- Only one signal satisfies each yield. If a second signal with the same `signal_id` arrives before the yield is satisfied, it overwrites the first.
-- When multiple signal yields share the same `signal_id`, the first matching yield receives the data.
-- If the `signal_id` field is absent, matching falls back to the node's discriminator.
-- Delivered signal data is passed to the node's output as the signal payload.
+- 시그널은 `nil`이 아닌 모든 페이로드로 충족됩니다. `false`, `0`, `""`, `{}` 모두 yield를 충족시킵니다; `nil`만이 보류 상태를 유지합니다.
+- 시그널 yield는 `COMPLETE_WORKFLOW`를 차단하지만 다른 보류 중인 노드는 차단하지 않습니다 — 한 분기가 대기하는 동안 병렬 분기는 계속 실행됩니다.
+- 시그널은 `:start()` 전에 사전 큐잉될 수 있습니다: 시그널 노드가 yield에 도달하기 전에 매칭되는 `NODE_SIGNAL` 커밋이 도착하면, yield가 추적되는 순간 전달됩니다.
+- 각 yield는 하나의 시그널로만 충족됩니다. yield가 충족되기 전에 동일한 `signal_id`를 가진 두 번째 시그널이 도착하면 첫 번째를 덮어씁니다.
+- 여러 시그널 yield가 동일한 `signal_id`를 공유할 때, 첫 번째 매칭되는 yield가 데이터를 받습니다.
+- `signal_id` 필드가 없으면 매칭은 노드의 판별자로 대체됩니다.
+- 전달된 시그널 데이터는 시그널 페이로드로 노드 출력에 전달됩니다.
 
-#### Durability and recovery
+#### 내구성 및 복구
 
-The signal yield is part of the workflow state, persisted through the same outbox mechanism as every other command. If the orchestrator process is killed while waiting:
+시그널 yield는 워크플로우 상태의 일부이며, 다른 모든 명령과 동일한 outbox 메커니즘을 통해 영속화됩니다. 오케스트레이터 프로세스가 대기 중에 종료되는 경우:
 
-- The pending yield is restored on restart.
-- Signals delivered during the outage are queued and applied when the state reloads.
-- Compound pipelines (`func → signal → signal → func`) recover step-by-step — each signal can be delivered across a separate restart.
+- 보류 중인 yield는 재시작 시 복원됩니다.
+- 중단 기간 동안 전달된 시그널은 큐에 쌓이고 상태가 다시 로드될 때 적용됩니다.
+- 복합 파이프라인(`func → signal → signal → func`)은 단계별로 복구됩니다 — 각 시그널은 별도의 재시작에 걸쳐 전달될 수 있습니다.
 
-Orphaned signal yields (yields whose parent process exited without completion) are cleaned up by the workflow state's process exit handler.
+고아 시그널 yield(부모 프로세스가 완료 없이 종료된 yield)는 워크플로우 상태의 프로세스 종료 핸들러에 의해 정리됩니다.
 
-#### Pipeline patterns
+#### 파이프라인 패턴
 
-Signal nodes participate in any topology:
+시그널 노드는 모든 토폴로지에 참여할 수 있습니다:
 
 ```lua
 -- Human-in-the-loop approval between two functions
@@ -547,11 +547,11 @@ flow.create()
     :run()
 ```
 
-Signal data is exposed as the node output, so downstream nodes receive whatever was passed to `client:signal()`.
+시그널 데이터는 노드 출력으로 노출되므로 다운스트림 노드는 `client:signal()`에 전달된 것을 그대로 받습니다.
 
-### Join Node
+### Join 노드
 
-Collects multiple inputs before proceeding:
+진행하기 전에 여러 입력을 수집합니다:
 
 ```lua
 :join({
@@ -563,13 +563,13 @@ Collects multiple inputs before proceeding:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `output_mode` | string | `"object"` (default) or `"array"` (arrival order) |
-| `ignored_keys` | array | Input keys excluded from output |
-| `inputs` | table | Input requirements |
+| `output_mode` | string | `"object"`(기본값) 또는 `"array"`(도착 순서) |
+| `ignored_keys` | array | 출력에서 제외되는 입력 키 |
+| `inputs` | table | 입력 요구사항 |
 
-## Templates
+## 템플릿
 
-Templates define reusable sub-workflows. Use `flow.template()` to create, `:use()` to inline:
+템플릿은 재사용 가능한 하위 워크플로우를 정의합니다. 생성하려면 `flow.template()`을, 인라인하려면 `:use()`를 사용합니다:
 
 ```lua
 local preprocessor = flow.template()
@@ -583,11 +583,11 @@ flow.create()
     :run()
 ```
 
-Templates inline their operations into the parent flow at compile time.
+템플릿은 컴파일 시간에 해당 작업을 부모 플로우에 인라인합니다.
 
-## Nested Workflows
+## 중첩된 워크플로우
 
-Functions used in cycles and parallel nodes can spawn child workflows by returning `flow.create():run()`:
+사이클 및 병렬 노드에서 사용되는 함수는 `flow.create():run()`을 반환하여 자식 워크플로우를 생성할 수 있습니다:
 
 ```lua
 function my_processor(input)
@@ -599,15 +599,15 @@ function my_processor(input)
 end
 ```
 
-When `:run()` executes inside an existing dataflow context, it returns `{ _control = { commands = [...] } }` instead of executing directly. The orchestrator handles the child workflow through the yield mechanism.
+`:run()`이 기존 dataflow 컨텍스트 내에서 실행되면 직접 실행하는 대신 `{ _control = { commands = [...] } }`를 반환합니다. 오케스트레이터는 yield 메커니즘을 통해 자식 워크플로우를 처리합니다.
 
 <note>
-Functions that participate in dataflow composition <strong>must</strong> return <code>flow.create():run()</code>. Functions returning anything else cannot spawn child workflows.
+dataflow 구성에 참여하는 함수는 <code>flow.create():run()</code>을 반환해야 <strong>합니다</strong>. 다른 것을 반환하는 함수는 자식 워크플로우를 생성할 수 없습니다.
 </note>
 
-## Synchronous vs Asynchronous
+## 동기 vs 비동기
 
-`:run()` blocks until the workflow completes and returns output:
+`:run()`은 워크플로우가 완료될 때까지 차단하고 출력을 반환합니다:
 
 ```lua
 local result, err = flow.create()
@@ -616,7 +616,7 @@ local result, err = flow.create()
     :run()
 ```
 
-`:start()` returns immediately with a workflow ID:
+`:start()`는 즉시 워크플로우 ID와 함께 반환합니다:
 
 ```lua
 local dataflow_id, err = flow.create()
@@ -625,11 +625,11 @@ local dataflow_id, err = flow.create()
     :start()
 ```
 
-`:start()` cannot be used in nested contexts.
+`:start()`는 중첩된 컨텍스트에서 사용할 수 없습니다.
 
-## Client API
+## 클라이언트 API
 
-For programmatic workflow management:
+프로그래밍 방식 워크플로우 관리를 위해:
 
 ```yaml
 imports:
@@ -644,32 +644,32 @@ local c, err = client.new()
 
 | Method | Description |
 |--------|-------------|
-| `client.new()` | Create client (requires security actor) |
-| `:create_workflow(commands, options?)` | Create workflow, returns `dataflow_id` |
-| `:execute(dataflow_id, options?)` | Run synchronously, returns result |
-| `:start(dataflow_id, options?)` | Run asynchronously, returns `dataflow_id` |
-| `:output(dataflow_id)` | Fetch workflow outputs |
-| `:get_status(dataflow_id)` | Get current status |
-| `:cancel(dataflow_id, timeout?)` | Gracefully cancel (default: 30s) |
-| `:terminate(dataflow_id)` | Force terminate |
-| `:signal(dataflow_id, signal_id, data?)` | Deliver an external signal to a waiting signal node |
+| `client.new()` | 클라이언트 생성(보안 액터 필요) |
+| `:create_workflow(commands, options?)` | 워크플로우 생성, `dataflow_id` 반환 |
+| `:execute(dataflow_id, options?)` | 동기적으로 실행, 결과 반환 |
+| `:start(dataflow_id, options?)` | 비동기적으로 실행, `dataflow_id` 반환 |
+| `:output(dataflow_id)` | 워크플로우 출력 가져오기 |
+| `:get_status(dataflow_id)` | 현재 상태 가져오기 |
+| `:cancel(dataflow_id, timeout?)` | 우아하게 취소(기본값: 30초) |
+| `:terminate(dataflow_id)` | 강제 종료 |
+| `:signal(dataflow_id, signal_id, data?)` | 대기 중인 시그널 노드에 외부 시그널 전달 |
 
-## Workflow Status
+## 워크플로우 상태
 
 | Status | Description |
 |--------|-------------|
-| `template` | Node is a template instance |
-| `pending` | Waiting for inputs |
-| `ready` | Inputs collected, ready to execute |
-| `running` | Actively executing |
-| `paused` | Yielded, waiting for child workflow |
-| `completed` | Finished successfully |
-| `failed` | Failed |
-| `cancelled` | User cancelled |
-| `skipped` | Conditional branch not taken |
-| `terminated` | Force terminated |
+| `template` | 노드가 템플릿 인스턴스 |
+| `pending` | 입력 대기 중 |
+| `ready` | 입력 수집됨, 실행 준비 완료 |
+| `running` | 활발히 실행 중 |
+| `paused` | yield됨, 자식 워크플로우 대기 중 |
+| `completed` | 성공적으로 완료됨 |
+| `failed` | 실패 |
+| `cancelled` | 사용자 취소 |
+| `skipped` | 선택되지 않은 조건부 분기 |
+| `terminated` | 강제 종료됨 |
 
-## Metadata
+## 메타데이터
 
 ```lua
 flow.create()
@@ -679,53 +679,53 @@ flow.create()
     :run()
 ```
 
-Title defaults to "Flow Builder Workflow" if not provided.
+제공되지 않으면 제목은 기본값 "Flow Builder Workflow"입니다.
 
-## Validation Rules
+## 검증 규칙
 
-The compiler validates workflows at compile time:
+컴파일러는 컴파일 시 워크플로우를 검증합니다:
 
-- All `:as(name)` names must be unique
-- All `:to()` and `:error_to()` targets must reference existing names (except `@success`, `@fail`)
-- Graph must be acyclic
-- All nodes must have incoming routes (from another node, workflow input, or static data)
-- `:cycle()` requires `func_id` or `template` (not both)
-- `:parallel()` requires `source_array_key` and `template`
-- At least one path must lead to `@success` or have auto-output
-- `:when()` only follows `:to()` or `:error_to()` from nodes (not static data)
-- Nodes with `args` cannot receive inputs with `"default"` discriminator
+- 모든 `:as(name)` 이름은 고유해야 합니다
+- 모든 `:to()` 및 `:error_to()` 대상은 기존 이름을 참조해야 합니다(`@success`, `@fail` 제외)
+- 그래프는 비순환이어야 합니다
+- 모든 노드는 들어오는 라우트가 있어야 합니다(다른 노드, 워크플로우 입력 또는 정적 데이터로부터)
+- `:cycle()`은 `func_id` 또는 `template`이 필요합니다(둘 다 불가)
+- `:parallel()`은 `source_array_key`와 `template`이 필요합니다
+- 적어도 하나의 경로가 `@success`로 이어지거나 자동 출력이 있어야 합니다
+- `:when()`은 노드에서 `:to()` 또는 `:error_to()` 뒤에만 옵니다(정적 데이터 아님)
+- `args`가 있는 노드는 `"default"` 판별자로 입력을 받을 수 없습니다
 
-## Expression Reference
+## 표현식 참조
 
-Expressions use the `expr` module syntax, available in `:when()` conditions and `input_transform` values.
+표현식은 `expr` 모듈 구문을 사용하며, `:when()` 조건 및 `input_transform` 값에서 사용할 수 있습니다.
 
-**Operators:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
+**연산자:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
 
-**Array functions:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
+**배열 함수:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
 
-**Math functions:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `round()`, `sqrt()`, `pow()`
+**수학 함수:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `round()`, `sqrt()`, `pow()`
 
-**String functions:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
+**문자열 함수:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
 
-**Type functions:** `type()`, `int()`, `float()`, `string()`
+**타입 함수:** `type()`, `int()`, `float()`, `string()`
 
-**Literals:** numbers, strings, booleans (`true`/`false`), null (`nil`), arrays (`[1, 2, 3]`), objects (`{key: value}`)
+**리터럴:** 숫자, 문자열, 불리언(`true`/`false`), null(`nil`), 배열(`[1, 2, 3]`), 객체(`{key: value}`)
 
-**Ternary:** `output.age >= 18 ? output.verified : false`
+**삼항:** `output.age >= 18 ? output.verified : false`
 
-**Optional chaining:** `output.data?.nested?.value`
+**옵셔널 체이닝:** `output.data?.nested?.value`
 
-## Error Handling
+## 오류 처리
 
-Both `:run()` and `:start()` follow standard Lua error conventions:
+`:run()`과 `:start()` 모두 표준 Lua 오류 규칙을 따릅니다:
 
-- Success: `data, nil` (run) or `dataflow_id, nil` (start)
-- Failure: `nil, error_message`
+- 성공: `data, nil`(run) 또는 `dataflow_id, nil`(start)
+- 실패: `nil, error_message`
 
-Error categories: compilation errors, client errors, workflow creation errors, execution errors, and workflow failures.
+오류 범주: 컴파일 오류, 클라이언트 오류, 워크플로우 생성 오류, 실행 오류 및 워크플로우 실패.
 
-## See Also
+## 참고
 
-- [Agents](agents.md) - Agent framework used by agent nodes
-- [LLM](llm.md) - LLM module
-- [Framework Overview](overview.md) - Framework module usage
+- [Agents](agents.md) - 에이전트 노드가 사용하는 에이전트 프레임워크
+- [LLM](llm.md) - LLM 모듈
+- [Framework Overview](overview.md) - 프레임워크 모듈 사용법

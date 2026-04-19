@@ -116,6 +116,6 @@ executor:release()
 
 ## Siehe auch
 
-- [Exec-Modul](lua/system/exec.md) - Lua-API-Referenz
+- [Exec-Modul](lua/dynamic/exec.md) - Lua-API-Referenz
 - [Process Host](system/process-host.md) - Host, der Wippy-Prozesse ausführt
 - [Dateisystem](system/filesystem.md) - Als Arbeitsverzeichnisse genutzte Dateisystem-Einträge

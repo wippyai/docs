@@ -116,6 +116,6 @@ executor:release()
 
 ## См. также
 
-- [Модуль Exec](lua/system/exec.md) — справочник Lua API
+- [Модуль Exec](lua/dynamic/exec.md) — справочник Lua API
 - [Process Host](system/process-host.md) — хост, исполняющий процессы Wippy
 - [Файловая система](system/filesystem.md) — записи файловой системы, используемые как рабочие каталоги

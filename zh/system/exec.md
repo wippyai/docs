@@ -116,6 +116,6 @@ executor:release()
 
 ## 另请参阅
 
-- [Exec 模块](lua/system/exec.md) - Lua API 参考
+- [Exec 模块](lua/dynamic/exec.md) - Lua API 参考
 - [Process Host](system/process-host.md) - 运行 Wippy 进程的宿主
 - [Filesystem](system/filesystem.md) - 用作工作目录的文件系统条目

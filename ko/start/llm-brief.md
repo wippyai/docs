@@ -1,32 +1,32 @@
-# LLM Brief
+# LLM 브리프
 
-This page is for AI agents and LLMs. If you are building on Wippy or generating code for a Wippy project, read this first.
+이 페이지는 AI 에이전트와 LLM을 위한 것입니다. Wippy 위에서 빌드하거나 Wippy 프로젝트용 코드를 생성하는 경우, 먼저 이 문서를 읽으세요.
 
-## What Wippy Is
+## Wippy란 무엇인가
 
-Wippy is a single-binary application runtime built on the actor model. It runs Lua code in isolated processes with message passing — no shared memory, no locks. Three compute models exist: functions (stateless, request-scoped), processes (long-lived actors with state), and workflows (durable actors backed by Temporal that survive crashes). The system is designed so that agents can generate code, register it, and improve applications without redeployment.
+Wippy는 액터 모델 위에 구축된 단일 바이너리 애플리케이션 런타임입니다. 격리된 프로세스에서 Lua 코드를 실행하며, 메시지 전달을 통해 통신합니다 — 공유 메모리도 락도 없습니다. 세 가지 컴퓨팅 모델이 존재합니다: 함수(상태 없음, 요청 범위), 프로세스(상태를 가진 장기 실행 액터), 워크플로우(Temporal에 의해 뒷받침되며 크래시에서 살아남는 내구성 액터). 시스템은 에이전트가 코드를 생성하고 등록하며 재배포 없이 애플리케이션을 개선할 수 있도록 설계되어 있습니다.
 
-## Mental Model
+## 개념 모델
 
-Everything in Wippy is a **registry entry**. Entries have an ID (`namespace:name`), a kind (which determines behavior), metadata, and data. YAML files are one way to declare entries, but the registry is the runtime source of truth and entries can be created, updated, or deleted while the system is running.
+Wippy의 모든 것은 **레지스트리 항목**(registry entry)입니다. 항목은 ID(`namespace:name`), 종류(동작을 결정), 메타데이터, 데이터를 가집니다. YAML 파일은 항목을 선언하는 하나의 방법이지만, 레지스트리가 런타임의 진실의 원천이며, 항목은 시스템이 실행되는 동안 생성, 업데이트, 삭제될 수 있습니다.
 
-Kinds determine what an entry does:
+종류는 항목이 하는 일을 결정합니다:
 
-- `function.lua` — stateless callable function
-- `process.lua` — long-running actor
-- `workflow.lua` — durable workflow (Temporal)
-- `http.service` — HTTP server
-- `http.router` — route group with middleware
-- `http.endpoint` — HTTP handler
-- `db.sql.postgres` / `mysql` / `sqlite` — database connection
-- `store.memory` / `store.sql` — key-value store
-- `queue.queue` — message queue
-- `process.host` — process execution host
-- `process.service` — supervised process
-- `contract.definition` / `contract.binding` — typed service interfaces
-- `registry.entry` — configuration data
+- `function.lua` — 상태 없는 호출 가능 함수
+- `process.lua` — 장기 실행 액터
+- `workflow.lua` — 내구성 워크플로우(Temporal)
+- `http.service` — HTTP 서버
+- `http.router` — 미들웨어가 있는 라우트 그룹
+- `http.endpoint` — HTTP 핸들러
+- `db.sql.postgres` / `mysql` / `sqlite` — 데이터베이스 연결
+- `store.memory` / `store.sql` — 키-값 저장소
+- `queue.queue` — 메시지 큐
+- `process.host` — 프로세스 실행 호스트
+- `process.service` — 감독되는 프로세스
+- `contract.definition` / `contract.binding` — 타입이 지정된 서비스 인터페이스
+- `registry.entry` — 구성 데이터
 
-## Project Structure
+## 프로젝트 구조
 
 ```
 myapp/
@@ -42,7 +42,7 @@ myapp/
         └── task.lua
 ```
 
-Entry definitions live in `_index.yaml` files:
+항목 정의는 `_index.yaml` 파일에 있습니다:
 
 ```yaml
 version: "1.0"
@@ -64,9 +64,9 @@ entries:
     func: app.api:get_user
 ```
 
-## Writing Functions
+## 함수 작성
 
-Functions are stateless. They receive arguments, do work, return results. They inherit the caller's context and cancel if the caller cancels.
+함수는 상태가 없습니다. 인수를 받고, 작업을 수행하고, 결과를 반환합니다. 호출자의 컨텍스트를 상속하며 호출자가 취소되면 취소됩니다.
 
 ```lua
 local sql = require("sql")
@@ -87,7 +87,7 @@ end
 return get_user
 ```
 
-For HTTP handlers, use the `http` module:
+HTTP 핸들러에는 `http` 모듈을 사용합니다:
 
 ```lua
 local http = require("http")
@@ -111,9 +111,9 @@ end
 return handler
 ```
 
-## Writing Processes
+## 프로세스 작성
 
-Processes are actors. They have their own PID, receive messages via inbox, and maintain state across messages. They yield on blocking I/O, allowing thousands to run concurrently.
+프로세스는 액터입니다. 자체 PID를 가지고, 받은편지함을 통해 메시지를 받으며, 메시지 간 상태를 유지합니다. 블로킹 I/O에서 양보(yield)하므로 수천 개가 동시에 실행될 수 있습니다.
 
 ```lua
 local function worker(initial_config)
@@ -143,16 +143,16 @@ end
 return worker
 ```
 
-Spawn processes from other code:
+다른 코드에서 프로세스를 생성합니다:
 
 ```lua
 local pid = process.spawn("app.workers:task", "app:process_host", config)
 process.send(pid, "work", {item_id = 123})
 ```
 
-## Writing Workflows
+## 워크플로우 작성
 
-Workflows are durable — they survive crashes and restarts. Code looks like normal Lua. The runtime automatically records function call results, sleeps, and random values so replay is deterministic.
+워크플로우는 내구성이 있습니다 — 크래시와 재시작을 견뎌냅니다. 코드는 일반 Lua처럼 보입니다. 런타임은 함수 호출 결과, 슬립, 무작위 값을 자동으로 기록하여 리플레이가 결정론적이 되도록 합니다.
 
 ```lua
 local function order_flow(order)
@@ -181,9 +181,9 @@ end
 return order_flow
 ```
 
-## Key APIs
+## 주요 API
 
-### Calling Functions
+### 함수 호출
 
 ```lua
 local funcs = require("funcs")
@@ -200,7 +200,7 @@ local exec = funcs.new():with_context({user_id = "123"})
 exec:call("namespace:function_name")
 ```
 
-### Process Communication
+### 프로세스 통신
 
 ```lua
 -- Send message (fire-and-forget)
@@ -219,9 +219,9 @@ process.monitor(pid)
 process.spawn_linked("namespace:name", "host")
 ```
 
-### Channels
+### 채널
 
-Go-style channels for coroutine communication:
+코루틴 통신을 위한 Go 스타일 채널:
 
 ```lua
 local ch = channel.new(10)  -- buffered
@@ -236,9 +236,9 @@ local r = channel.select {
 }
 ```
 
-### Error Handling
+### 오류 처리
 
-Functions return `result, error` pairs. Errors are typed objects:
+함수는 `result, error` 쌍을 반환합니다. 오류는 타입이 지정된 객체입니다:
 
 ```lua
 local result, err = some_operation()
@@ -250,9 +250,9 @@ if err then
 end
 ```
 
-Error kinds: `UNKNOWN`, `INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`, `PERMISSION_DENIED`, `TIMEOUT`, `CANCELED`, `UNAVAILABLE`, `INTERNAL`, `CONFLICT`, `RATE_LIMITED`.
+오류 종류: `UNKNOWN`, `INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`, `PERMISSION_DENIED`, `TIMEOUT`, `CANCELED`, `UNAVAILABLE`, `INTERNAL`, `CONFLICT`, `RATE_LIMITED`.
 
-### Data Access
+### 데이터 액세스
 
 ```lua
 -- SQL
@@ -278,7 +278,7 @@ local data = vol:readfile("path/to/file.txt")
 vol:writefile("output.txt", content)
 ```
 
-### HTTP Client
+### HTTP 클라이언트
 
 ```lua
 local http_client = require("http_client")
@@ -290,7 +290,7 @@ local resp, err = http_client.get("https://api.example.com/data", {
 local body = resp.body
 ```
 
-### Security
+### 보안
 
 ```lua
 local security = require("security")
@@ -305,7 +305,7 @@ local token = ts:create(actor, scope, {expiration = "24h"})
 local validated_actor, validated_scope = ts:validate(token)
 ```
 
-### Time
+### 시간
 
 ```lua
 local time = require("time")
@@ -316,7 +316,7 @@ local timeout = time.after("30s")  -- channel that fires once
 local ticker = time.ticker("10s")  -- repeating channel
 ```
 
-### Registry
+### 레지스트리
 
 ```lua
 local registry = require("registry")
@@ -331,7 +331,7 @@ changes:create({id = "app:new_func", kind = "function.lua", data = {...}})
 changes:apply()
 ```
 
-### Events
+### 이벤트
 
 ```lua
 local events = require("events")
@@ -345,44 +345,44 @@ local ch = sub:channel()
 local evt = ch:receive()
 ```
 
-## Module Access Control
+## 모듈 액세스 제어
 
-Each entry declares which modules it can `require()`. Modules not listed are simply unavailable — there is no `os.execute`, `io.open`, `debug.*`, or `package.*` unless you explicitly grant them. The runtime does not scan or validate source code; it controls access at the module level. If a module is not in the list, it does not exist for that entry.
+각 항목은 어떤 모듈을 `require()`할 수 있는지 선언합니다. 목록에 없는 모듈은 단순히 사용할 수 없습니다 — 명시적으로 부여하지 않는 한 `os.execute`, `io.open`, `debug.*`, `package.*`는 존재하지 않습니다. 런타임은 소스 코드를 스캔하거나 검증하지 않습니다. 모듈 수준에서 액세스를 제어합니다. 모듈이 목록에 없으면 해당 항목에 대해 존재하지 않습니다.
 
 ```yaml
 modules: [sql, json, http, time, funcs, store]
 ```
 
-This is also how workflow determinism works — workflow entries only receive deterministic modules. The runtime intercepts `time.now()`, `uuid.v4()`, and other non-deterministic calls at the module level, recording results for replay.
+이는 워크플로우 결정성이 작동하는 방식이기도 합니다 — 워크플로우 항목은 결정론적 모듈만 받습니다. 런타임은 `time.now()`, `uuid.v4()` 및 기타 비결정론적 호출을 모듈 수준에서 가로채 결과를 리플레이를 위해 기록합니다.
 
-## Framework Modules
+## 프레임워크 모듈
 
-Wippy has framework modules installed via dependencies:
+Wippy에는 의존성을 통해 설치되는 프레임워크 모듈이 있습니다:
 
-- **wippy/llm** — LLM integration (OpenAI, Anthropic, Google). `llm.generate()`, structured output, embeddings, streaming.
-- **wippy/agent** — Agent framework with tool use, delegation, traits, memory. Agents defined as registry entries.
-- **wippy/test** — BDD testing. `describe/it` blocks, assertions, mocking.
-- **wippy/dataflow** — DAG-based workflow orchestration. Function, agent, cycle, parallel nodes.
-- **wippy/relay** — WebSocket relay with central hub, per-user hubs, plugin routing.
-- **wippy/views** — Page and component system with template rendering.
-- **wippy/facade** — Frontend iframe facade with authentication bridging.
+- **wippy/llm** — LLM 통합(OpenAI, Anthropic, Google). `llm.generate()`, 구조화된 출력, 임베딩, 스트리밍.
+- **wippy/agent** — 도구 사용, 위임, 특성, 메모리가 포함된 에이전트 프레임워크. 에이전트는 레지스트리 항목으로 정의됩니다.
+- **wippy/test** — BDD 테스트. `describe/it` 블록, 어설션, 모킹.
+- **wippy/dataflow** — DAG 기반 워크플로우 오케스트레이션. Function, Agent, Cycle, Parallel 노드.
+- **wippy/relay** — 중앙 허브, 사용자별 허브, 플러그인 라우팅을 갖춘 WebSocket 릴레이.
+- **wippy/views** — 템플릿 렌더링이 있는 페이지 및 컴포넌트 시스템.
+- **wippy/facade** — 인증 브리징이 있는 프런트엔드 iframe 파사드.
 
-## Conventions
+## 규약
 
-- Entry IDs use `namespace:name` format
-- Names use dots for semantic separation, underscores for words: `get_user.endpoint`
-- Functions return `result, error` — always check the error
-- Processes communicate via message passing, never shared state
-- Use `channel.select` to multiplex multiple event sources
-- Supervision trees handle failures — design for "let it crash"
-- Context (trace IDs, user info, security) propagates automatically through function calls
-- Workflows must not use non-deterministic operations directly — the runtime handles this for `funcs.call`, `time.sleep`, `uuid.v4`, `time.now`
+- 항목 ID는 `namespace:name` 형식을 사용합니다
+- 이름은 의미적 구분에 점을, 단어에 언더스코어를 사용합니다: `get_user.endpoint`
+- 함수는 `result, error`를 반환합니다 — 항상 오류를 확인하세요
+- 프로세스는 메시지 전달로 통신하며, 공유 상태를 사용하지 않습니다
+- 여러 이벤트 소스를 다중화하려면 `channel.select`를 사용하세요
+- 감독 트리가 실패를 처리합니다 — "let it crash"에 따라 설계하세요
+- 컨텍스트(trace ID, 사용자 정보, 보안)는 함수 호출을 통해 자동으로 전파됩니다
+- 워크플로우는 비결정론적 작업을 직접 사용해서는 안 됩니다 — 런타임이 `funcs.call`, `time.sleep`, `uuid.v4`, `time.now`에 대해 이를 처리합니다
 
-## Documentation
+## 문서
 
-Full documentation is available at [wippy.ai/docs](https://wippy.ai/docs). LLM-friendly endpoints:
+전체 문서는 [wippy.ai/docs](https://wippy.ai/docs)에서 이용할 수 있습니다. LLM 친화적인 엔드포인트:
 
-- Browse structure: `https://wippy.ai/llm/toc`
-- Search: `https://wippy.ai/llm/search?q=query`
-- Fetch page: `https://wippy.ai/llm/path/en/<path>`
-- Batch fetch: `https://wippy.ai/llm/context?paths=path1,path2`
+- 구조 탐색: `https://wippy.ai/llm/toc`
+- 검색: `https://wippy.ai/llm/search?q=query`
+- 페이지 가져오기: `https://wippy.ai/llm/path/en/<path>`
+- 일괄 가져오기: `https://wippy.ai/llm/context?paths=path1,path2`

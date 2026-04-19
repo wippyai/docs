@@ -1,32 +1,32 @@
-# LLM Brief
+# LLM 简介
 
-This page is for AI agents and LLMs. If you are building on Wippy or generating code for a Wippy project, read this first.
+此页面面向 AI 代理和 LLM。如果你基于 Wippy 进行构建或为 Wippy 项目生成代码，请先阅读本页。
 
-## What Wippy Is
+## Wippy 是什么
 
-Wippy is a single-binary application runtime built on the actor model. It runs Lua code in isolated processes with message passing — no shared memory, no locks. Three compute models exist: functions (stateless, request-scoped), processes (long-lived actors with state), and workflows (durable actors backed by Temporal that survive crashes). The system is designed so that agents can generate code, register it, and improve applications without redeployment.
+Wippy 是一个基于 Actor 模型构建的单二进制应用运行时。它在隔离的进程中运行 Lua 代码，并通过消息传递进行通信——没有共享内存，也没有锁。存在三种计算模型：函数（无状态，请求级作用域）、进程（带状态的长期 Actor）和工作流（由 Temporal 支持的持久 Actor，能够在崩溃后存活）。系统的设计使得代理可以生成代码、注册它，并在不重新部署的情况下改进应用。
 
-## Mental Model
+## 心智模型
 
-Everything in Wippy is a **registry entry**. Entries have an ID (`namespace:name`), a kind (which determines behavior), metadata, and data. YAML files are one way to declare entries, but the registry is the runtime source of truth and entries can be created, updated, or deleted while the system is running.
+Wippy 中的一切都是**注册表条目**（registry entry）。条目具有 ID（`namespace:name`）、种类（决定行为）、元数据和数据。YAML 文件是声明条目的一种方式，但注册表才是运行时的真实来源，条目可以在系统运行时被创建、更新或删除。
 
-Kinds determine what an entry does:
+种类决定了条目的行为：
 
-- `function.lua` — stateless callable function
-- `process.lua` — long-running actor
-- `workflow.lua` — durable workflow (Temporal)
-- `http.service` — HTTP server
-- `http.router` — route group with middleware
-- `http.endpoint` — HTTP handler
-- `db.sql.postgres` / `mysql` / `sqlite` — database connection
-- `store.memory` / `store.sql` — key-value store
-- `queue.queue` — message queue
-- `process.host` — process execution host
-- `process.service` — supervised process
-- `contract.definition` / `contract.binding` — typed service interfaces
-- `registry.entry` — configuration data
+- `function.lua` — 无状态可调用函数
+- `process.lua` — 长期运行的 Actor
+- `workflow.lua` — 持久工作流（Temporal）
+- `http.service` — HTTP 服务器
+- `http.router` — 带中间件的路由组
+- `http.endpoint` — HTTP 处理器
+- `db.sql.postgres` / `mysql` / `sqlite` — 数据库连接
+- `store.memory` / `store.sql` — 键值存储
+- `queue.queue` — 消息队列
+- `process.host` — 进程执行主机
+- `process.service` — 受监督的进程
+- `contract.definition` / `contract.binding` — 类型化服务接口
+- `registry.entry` — 配置数据
 
-## Project Structure
+## 项目结构
 
 ```
 myapp/
@@ -42,7 +42,7 @@ myapp/
         └── task.lua
 ```
 
-Entry definitions live in `_index.yaml` files:
+条目定义位于 `_index.yaml` 文件中：
 
 ```yaml
 version: "1.0"
@@ -64,9 +64,9 @@ entries:
     func: app.api:get_user
 ```
 
-## Writing Functions
+## 编写函数
 
-Functions are stateless. They receive arguments, do work, return results. They inherit the caller's context and cancel if the caller cancels.
+函数是无状态的。它们接收参数、执行工作并返回结果。它们继承调用者的上下文，并在调用者取消时被取消。
 
 ```lua
 local sql = require("sql")
@@ -87,7 +87,7 @@ end
 return get_user
 ```
 
-For HTTP handlers, use the `http` module:
+对于 HTTP 处理器，使用 `http` 模块：
 
 ```lua
 local http = require("http")
@@ -111,9 +111,9 @@ end
 return handler
 ```
 
-## Writing Processes
+## 编写进程
 
-Processes are actors. They have their own PID, receive messages via inbox, and maintain state across messages. They yield on blocking I/O, allowing thousands to run concurrently.
+进程是 Actor。它们拥有自己的 PID，通过收件箱接收消息，并在消息之间保持状态。它们在阻塞 I/O 时让出执行，从而允许数千个进程并发运行。
 
 ```lua
 local function worker(initial_config)
@@ -143,16 +143,16 @@ end
 return worker
 ```
 
-Spawn processes from other code:
+从其他代码中生成进程：
 
 ```lua
 local pid = process.spawn("app.workers:task", "app:process_host", config)
 process.send(pid, "work", {item_id = 123})
 ```
 
-## Writing Workflows
+## 编写工作流
 
-Workflows are durable — they survive crashes and restarts. Code looks like normal Lua. The runtime automatically records function call results, sleeps, and random values so replay is deterministic.
+工作流是持久的——它们可以在崩溃和重启后存活。代码看起来像普通的 Lua。运行时会自动记录函数调用结果、休眠和随机值，以使重放具有确定性。
 
 ```lua
 local function order_flow(order)
@@ -181,9 +181,9 @@ end
 return order_flow
 ```
 
-## Key APIs
+## 关键 API
 
-### Calling Functions
+### 调用函数
 
 ```lua
 local funcs = require("funcs")
@@ -200,7 +200,7 @@ local exec = funcs.new():with_context({user_id = "123"})
 exec:call("namespace:function_name")
 ```
 
-### Process Communication
+### 进程通信
 
 ```lua
 -- Send message (fire-and-forget)
@@ -219,9 +219,9 @@ process.monitor(pid)
 process.spawn_linked("namespace:name", "host")
 ```
 
-### Channels
+### 通道
 
-Go-style channels for coroutine communication:
+用于协程通信的 Go 风格通道：
 
 ```lua
 local ch = channel.new(10)  -- buffered
@@ -236,9 +236,9 @@ local r = channel.select {
 }
 ```
 
-### Error Handling
+### 错误处理
 
-Functions return `result, error` pairs. Errors are typed objects:
+函数返回 `result, error` 对。错误是类型化对象：
 
 ```lua
 local result, err = some_operation()
@@ -250,9 +250,9 @@ if err then
 end
 ```
 
-Error kinds: `UNKNOWN`, `INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`, `PERMISSION_DENIED`, `TIMEOUT`, `CANCELED`, `UNAVAILABLE`, `INTERNAL`, `CONFLICT`, `RATE_LIMITED`.
+错误种类：`UNKNOWN`、`INVALID`、`NOT_FOUND`、`ALREADY_EXISTS`、`PERMISSION_DENIED`、`TIMEOUT`、`CANCELED`、`UNAVAILABLE`、`INTERNAL`、`CONFLICT`、`RATE_LIMITED`。
 
-### Data Access
+### 数据访问
 
 ```lua
 -- SQL
@@ -278,7 +278,7 @@ local data = vol:readfile("path/to/file.txt")
 vol:writefile("output.txt", content)
 ```
 
-### HTTP Client
+### HTTP 客户端
 
 ```lua
 local http_client = require("http_client")
@@ -290,7 +290,7 @@ local resp, err = http_client.get("https://api.example.com/data", {
 local body = resp.body
 ```
 
-### Security
+### 安全
 
 ```lua
 local security = require("security")
@@ -305,7 +305,7 @@ local token = ts:create(actor, scope, {expiration = "24h"})
 local validated_actor, validated_scope = ts:validate(token)
 ```
 
-### Time
+### 时间
 
 ```lua
 local time = require("time")
@@ -316,7 +316,7 @@ local timeout = time.after("30s")  -- channel that fires once
 local ticker = time.ticker("10s")  -- repeating channel
 ```
 
-### Registry
+### 注册表
 
 ```lua
 local registry = require("registry")
@@ -331,7 +331,7 @@ changes:create({id = "app:new_func", kind = "function.lua", data = {...}})
 changes:apply()
 ```
 
-### Events
+### 事件
 
 ```lua
 local events = require("events")
@@ -345,44 +345,44 @@ local ch = sub:channel()
 local evt = ch:receive()
 ```
 
-## Module Access Control
+## 模块访问控制
 
-Each entry declares which modules it can `require()`. Modules not listed are simply unavailable — there is no `os.execute`, `io.open`, `debug.*`, or `package.*` unless you explicitly grant them. The runtime does not scan or validate source code; it controls access at the module level. If a module is not in the list, it does not exist for that entry.
+每个条目声明它可以 `require()` 哪些模块。未列出的模块根本不可用——除非你显式授予，否则不存在 `os.execute`、`io.open`、`debug.*` 或 `package.*`。运行时不会扫描或验证源代码；它在模块级别控制访问。如果一个模块不在列表中，那么对于该条目而言它就不存在。
 
 ```yaml
 modules: [sql, json, http, time, funcs, store]
 ```
 
-This is also how workflow determinism works — workflow entries only receive deterministic modules. The runtime intercepts `time.now()`, `uuid.v4()`, and other non-deterministic calls at the module level, recording results for replay.
+这也是工作流确定性的工作原理——工作流条目仅接收确定性模块。运行时在模块级别拦截 `time.now()`、`uuid.v4()` 和其他非确定性调用，记录结果以供重放。
 
-## Framework Modules
+## 框架模块
 
-Wippy has framework modules installed via dependencies:
+Wippy 有通过依赖安装的框架模块：
 
-- **wippy/llm** — LLM integration (OpenAI, Anthropic, Google). `llm.generate()`, structured output, embeddings, streaming.
-- **wippy/agent** — Agent framework with tool use, delegation, traits, memory. Agents defined as registry entries.
-- **wippy/test** — BDD testing. `describe/it` blocks, assertions, mocking.
-- **wippy/dataflow** — DAG-based workflow orchestration. Function, agent, cycle, parallel nodes.
-- **wippy/relay** — WebSocket relay with central hub, per-user hubs, plugin routing.
-- **wippy/views** — Page and component system with template rendering.
-- **wippy/facade** — Frontend iframe facade with authentication bridging.
+- **wippy/llm** — LLM 集成（OpenAI、Anthropic、Google）。`llm.generate()`、结构化输出、嵌入、流式传输。
+- **wippy/agent** — 带工具使用、委派、特性、记忆的代理框架。代理定义为注册表条目。
+- **wippy/test** — BDD 测试。`describe/it` 块、断言、模拟。
+- **wippy/dataflow** — 基于 DAG 的工作流编排。Function、Agent、Cycle、Parallel 节点。
+- **wippy/relay** — 带中央 Hub、按用户 Hub、插件路由的 WebSocket 中继。
+- **wippy/views** — 带模板渲染的页面和组件系统。
+- **wippy/facade** — 带身份验证桥接的前端 iframe 外观。
 
-## Conventions
+## 约定
 
-- Entry IDs use `namespace:name` format
-- Names use dots for semantic separation, underscores for words: `get_user.endpoint`
-- Functions return `result, error` — always check the error
-- Processes communicate via message passing, never shared state
-- Use `channel.select` to multiplex multiple event sources
-- Supervision trees handle failures — design for "let it crash"
-- Context (trace IDs, user info, security) propagates automatically through function calls
-- Workflows must not use non-deterministic operations directly — the runtime handles this for `funcs.call`, `time.sleep`, `uuid.v4`, `time.now`
+- 条目 ID 使用 `namespace:name` 格式
+- 名称使用点进行语义分隔，使用下划线分隔单词：`get_user.endpoint`
+- 函数返回 `result, error`——始终检查错误
+- 进程通过消息传递进行通信，从不共享状态
+- 使用 `channel.select` 多路复用多个事件源
+- 监督树处理失败——按"let it crash"原则设计
+- 上下文（trace ID、用户信息、安全性）自动通过函数调用传播
+- 工作流不能直接使用非确定性操作——运行时为 `funcs.call`、`time.sleep`、`uuid.v4`、`time.now` 处理此问题
 
-## Documentation
+## 文档
 
-Full documentation is available at [wippy.ai/docs](https://wippy.ai/docs). LLM-friendly endpoints:
+完整文档可在 [wippy.ai/docs](https://wippy.ai/docs) 获取。对 LLM 友好的端点：
 
-- Browse structure: `https://wippy.ai/llm/toc`
-- Search: `https://wippy.ai/llm/search?q=query`
-- Fetch page: `https://wippy.ai/llm/path/en/<path>`
-- Batch fetch: `https://wippy.ai/llm/context?paths=path1,path2`
+- 浏览结构：`https://wippy.ai/llm/toc`
+- 搜索：`https://wippy.ai/llm/search?q=query`
+- 获取页面：`https://wippy.ai/llm/path/en/<path>`
+- 批量获取：`https://wippy.ai/llm/context?paths=path1,path2`

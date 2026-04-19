@@ -72,4 +72,3 @@ See [Store Module](lua/storage/store.md) for operations (`get`, `set`, `has`, `d
 
 - [Store Module](lua/storage/store.md) - Lua API reference
 - [Database](system/database.md) - SQL backing for `store.sql`
-- [Cache](lua/storage/cache.md) - In-process cache module

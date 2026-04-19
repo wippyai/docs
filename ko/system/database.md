@@ -209,6 +209,103 @@ options:
   poolIncrement: "1"
 ```
 
+## 예제
+
+### SSL을 사용하는 PostgreSQL
+
+```yaml
+- name: secure_postgres
+  kind: db.sql.postgres
+  host: "db.example.com"
+  port: 5432
+  database: "production"
+  username: "app_user"
+  password: "${DB_PASSWORD}"
+  pool:
+    max_open: 50
+    max_idle: 10
+    max_lifetime: "1h"
+  options:
+    sslmode: "verify-full"
+    sslcert: "/certs/client.crt"
+    sslkey: "/certs/client.key"
+    sslrootcert: "/certs/ca.crt"
+  lifecycle:
+    auto_start: true
+```
+
+### MySQL 읽기 전용 복제본
+
+```yaml
+- name: mysql_replica
+  kind: db.sql.mysql
+  host: "replica.db.example.com"
+  port: 3306
+  database: "app"
+  username: "readonly"
+  password_env: "REPLICA_PASSWORD"
+  pool:
+    max_open: 20
+    max_idle: 5
+    max_lifetime: "30m"
+  options:
+    charset: "utf8mb4"
+    parseTime: "true"
+    readTimeout: "30s"
+```
+
+### SQLite 인메모리
+
+```yaml
+- name: test_db
+  kind: db.sql.sqlite
+  file: ":memory:"
+  pool:
+    max_open: 1
+    max_idle: 1
+  options:
+    cache: "shared"
+    mode: "memory"
+```
+
+### 여러 데이터베이스 구성
+
+```yaml
+entries:
+  # 기본 데이터베이스
+  - name: users_db
+    kind: db.sql.postgres
+    host_env: "USERS_DB_HOST"
+    port: 5432
+    database: "users"
+    username_env: "USERS_DB_USER"
+    password_env: "USERS_DB_PASSWORD"
+    lifecycle:
+      auto_start: true
+
+  # 분석 데이터베이스
+  - name: analytics_db
+    kind: db.sql.mysql
+    host_env: "ANALYTICS_DB_HOST"
+    port: 3306
+    database: "analytics"
+    username_env: "ANALYTICS_DB_USER"
+    password_env: "ANALYTICS_DB_PASSWORD"
+    lifecycle:
+      auto_start: true
+
+  # 로컬 캐시
+  - name: cache
+    kind: db.sql.sqlite
+    file: "/var/cache/app.db"
+    lifecycle:
+      auto_start: true
+```
+
+## 런타임 등록
+
+[레지스트리 모듈](lua/core/registry.md)을 사용하여 런타임에 데이터베이스를 등록할 수 있으며, 애플리케이션 상태나 외부 설정에 따라 동적으로 데이터베이스를 구성할 수 있습니다.
+
 ## Lua API
 
 데이터베이스 작업 API는 [SQL 모듈](lua/storage/sql.md)을 참조하세요.

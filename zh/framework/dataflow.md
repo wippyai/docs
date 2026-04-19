@@ -1,17 +1,17 @@
 # Dataflow
 
-The `wippy/dataflow` module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes — functions, agents, cycles, and parallel processors — connected by typed data routes. The orchestrator manages execution, state persistence, and recovery.
+`wippy/dataflow` 模块提供了一个基于有向无环图（DAG）的工作流编排引擎。工作流由节点组成——函数、代理、循环和并行处理器——通过类型化的数据路由连接。编排器管理执行、状态持久化和恢复。
 
-## Setup
+## 安装
 
-Add the module to your project:
+将模块添加到你的项目：
 
 ```bash
 wippy add wippy/dataflow
 wippy install
 ```
 
-Declare the dependency:
+声明依赖：
 
 ```yaml
 version: "1.0"
@@ -24,13 +24,13 @@ entries:
     version: "*"
 ```
 
-The dataflow module depends on `wippy/agent`, `wippy/llm`, and `wippy/session` — these are resolved automatically when you run `wippy install`. The module requires a database resource at `app:db` for workflow persistence and runs migrations automatically via `wippy/migration`.
+dataflow 模块依赖于 `wippy/agent`、`wippy/llm` 和 `wippy/session`——当你运行 `wippy install` 时这些会被自动解析。该模块需要一个位于 `app:db` 的数据库资源用于工作流持久化，并通过 `wippy/migration` 自动运行迁移。
 
-The module publishes an `env.variable` entry `userspace.dataflow.env:web_host_origin` (default `https://front.wippy.ai`) that downstream flows can read for building public URLs. Override it through the env router or a requirement.
+该模块发布一个 `env.variable` 条目 `userspace.dataflow.env:web_host_origin`（默认为 `https://front.wippy.ai`），下游流可以读取它以构建公共 URL。通过 env 路由器或 requirement 可以覆盖它。
 
-## Flow Builder
+## 流构建器
 
-The flow builder provides a fluent interface for composing workflows. Import it into your entry:
+流构建器提供了用于组合工作流的流式接口。将其导入到你的条目中：
 
 ```yaml
 imports:
@@ -41,7 +41,7 @@ imports:
 local flow = require("flow")
 ```
 
-### Core API
+### 核心 API
 
 ```lua
 flow.create()
@@ -61,9 +61,9 @@ flow.template()
     :[operations]...
 ```
 
-### Linear Pipeline
+### 线性管道
 
-Nodes chain automatically when no explicit routing is defined. Output of each node flows to the next:
+当没有定义显式路由时，节点自动链接。每个节点的输出流向下一个：
 
 ```lua
 local result, err = flow.create()
@@ -74,9 +74,9 @@ local result, err = flow.create()
     :run()
 ```
 
-### Named Routing
+### 命名路由
 
-Use `:as()` to name nodes and `:to()` to route data between them. Only use `:as()` when the node needs to be referenced:
+使用 `:as()` 为节点命名，使用 `:to()` 在它们之间路由数据。仅在需要引用节点时才使用 `:as()`：
 
 ```lua
 local result, err = flow.create()
@@ -96,11 +96,11 @@ local result, err = flow.create()
     :run()
 ```
 
-The second parameter to `:to()` is the **discriminator** — the input key at the receiving node. When a node receives multiple inputs, they are collected as a table keyed by discriminator.
+`:to()` 的第二个参数是**判别符**（discriminator）——即接收节点处的输入键。当节点接收多个输入时，它们作为以判别符为键的表收集。
 
-### Workflow Input and Static Data
+### 工作流输入和静态数据
 
-`:with_input()` is the single primary input to the workflow. `:with_data()` creates independent static data sources:
+`:with_input()` 是工作流的唯一主输入。`:with_data()` 创建独立的静态数据源：
 
 ```lua
 flow.create()
@@ -124,11 +124,11 @@ flow.create()
     :run()
 ```
 
-Use `:with_input()` for external data entering the workflow. Use `:with_data()` for config, constants, and reference data shared across multiple nodes. Static data uses reference optimization — the first route creates actual data, subsequent routes create lightweight references.
+`:with_input()` 用于进入工作流的外部数据。`:with_data()` 用于多个节点之间共享的配置、常量和参考数据。静态数据使用引用优化——第一条路由创建实际数据，后续路由创建轻量级引用。
 
-### Conditional Routing
+### 条件路由
 
-Use `:when()` after `:to()` to add conditions. Conditions evaluate against the node's output using `expr` syntax:
+在 `:to()` 之后使用 `:when()` 添加条件。条件使用 `expr` 语法针对节点输出进行求值：
 
 ```lua
 flow.create()
@@ -143,7 +143,7 @@ flow.create()
     :run()
 ```
 
-Conditions can combine with inline transforms for more complex routing:
+条件可以与内联转换结合使用以实现更复杂的路由：
 
 ```lua
 :func("app:decompose"):as("decompose")
@@ -151,20 +151,20 @@ Conditions can combine with inline transforms for more complex routing:
     :to("processor", "items", "output.items")
 ```
 
-Conditional expressions support: comparisons (`output.score > 0.8`), logical operators (`output.valid && output.count > 5`), array functions (`len(output.items) > 0`, `any(output.errors, {.critical})`), string operations (`output.status contains 'success'`), and optional chaining (`output.data?.nested?.value`).
+条件表达式支持：比较（`output.score > 0.8`）、逻辑运算符（`output.valid && output.count > 5`）、数组函数（`len(output.items) > 0`、`any(output.errors, {.critical})`）、字符串操作（`output.status contains 'success'`）以及可选链（`output.data?.nested?.value`）。
 
-### Workflow Terminals
+### 工作流终端
 
-Route to `@success` or `@fail` to terminate the workflow explicitly. In nested contexts (cycles, parallel), terminals create node outputs instead of workflow outputs:
+路由到 `@success` 或 `@fail` 以显式终止工作流。在嵌套上下文中（循环、并行），终端产生节点输出而不是工作流输出：
 
 ```lua
 :func("app:final_step"):to("@success")
 :func("app:handler"):error_to("@fail")
 ```
 
-### Error Routing
+### 错误路由
 
-Use `:error_to()` to route node errors to a handler. Errors can be routed as normal inputs to recovery nodes:
+使用 `:error_to()` 将节点错误路由到处理器。错误可以作为普通输入路由到恢复节点：
 
 ```lua
 :agent("app:gpt_planner", { model = "gpt-5" }):as("gpt_planner")
@@ -180,27 +180,27 @@ Use `:error_to()` to route node errors to a handler. Errors can be routed as nor
 }):as("consolidator")
 ```
 
-This pattern runs both planners in parallel — if one fails, its error becomes the input for the consolidator, which proceeds with whatever results are available.
+这种模式并行运行两个规划器——如果一个失败，其错误就成为整合器的输入，整合器则使用可用的任何结果继续。
 
-## Input Merging
+## 输入合并
 
-How nodes receive inputs depends on discriminators and whether `args` is configured.
+节点接收输入的方式取决于判别符和是否配置了 `args`。
 
-**Without args — single default input:**
+**没有 args——单个默认输入：**
 
 ```lua
 :func("source"):to("target")
 -- target receives: raw content (unwrapped)
 ```
 
-**Without args — single named input:**
+**没有 args——单个命名输入：**
 
 ```lua
 :func("source"):to("target", "task")
 -- target receives: { task = content }
 ```
 
-**Without args — multiple inputs:**
+**没有 args——多个输入：**
 
 ```lua
 :func("source1"):to("target", "data")
@@ -208,7 +208,7 @@ How nodes receive inputs depends on discriminators and whether `args` is configu
 -- target receives: { data = content1, config = content2 }
 ```
 
-**With args — inputs merge into base:**
+**有 args——输入合并到基础中：**
 
 ```lua
 :func("app:api_client", {
@@ -219,12 +219,12 @@ How nodes receive inputs depends on discriminators and whether `args` is configu
 ```
 
 <note>
-Nodes with <code>args</code> cannot receive inputs with the <code>"default"</code> discriminator. Use named discriminators with <code>:to(target, "input_key")</code> instead.
+带有 <code>args</code> 的节点不能接收带有 <code>"default"</code> 判别符的输入。请改用带 <code>:to(target, "input_key")</code> 的命名判别符。
 </note>
 
-## Input Transforms
+## 输入转换
 
-Transform data before it reaches a node:
+在数据到达节点之前对其进行转换：
 
 ```lua
 -- String transform: single expression
@@ -240,11 +240,11 @@ Transform data before it reaches a node:
 })
 ```
 
-Context variables available in transforms: `input` (workflow input), `inputs` (all incoming node inputs), `output` (current node's output when routing).
+转换中可用的上下文变量：`input`（工作流输入）、`inputs`（所有传入节点的输入）、`output`（路由时当前节点的输出）。
 
-### Inline Route Transforms
+### 内联路由转换
 
-The third parameter to `:to()` is an inline transform expression:
+`:to()` 的第三个参数是一个内联转换表达式：
 
 ```lua
 :func("source"):as("source")
@@ -253,11 +253,11 @@ The third parameter to `:to()` is an inline transform expression:
     :to("list", nil, "map(output.items, {.id})")
 ```
 
-## Node Types
+## 节点类型
 
-### Function Node
+### 函数节点
 
-Executes a registered `function.lua` entry:
+执行已注册的 `function.lua` 条目：
 
 ```lua
 :func("app:my_function", {
@@ -271,17 +271,17 @@ Executes a registered `function.lua` entry:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `args` | table | Base arguments merged with node inputs |
-| `inputs` | table | Input requirements: `{ required = {...}, optional = {...} }` |
-| `context` | table | Execution context passed to function |
-| `input_transform` | string/table | Expression to transform inputs |
-| `metadata` | table | Node metadata (e.g., `{ title = "..." }`) |
+| `args` | table | 与节点输入合并的基础参数 |
+| `inputs` | table | 输入要求：`{ required = {...}, optional = {...} }` |
+| `context` | table | 传递给函数的执行上下文 |
+| `input_transform` | string/table | 转换输入的表达式 |
+| `metadata` | table | 节点元数据（例如 `{ title = "..." }`） |
 
-If the function returns `{ _control = { commands = [...] } }`, the orchestrator spawns a child workflow. This is how nested flows work.
+如果函数返回 `{ _control = { commands = [...] } }`，编排器会生成一个子工作流。这就是嵌套流的工作方式。
 
-### Agent Node
+### 代理节点
 
-Executes an agent with tool calling and optional structured exit:
+执行带有工具调用和可选结构化退出的代理：
 
 ```lua
 :agent("app:content_writer", {
@@ -307,21 +307,21 @@ Executes an agent with tool calling and optional structured exit:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `model` | string | Override model |
-| `arena.prompt` | string | System prompt |
-| `arena.max_iterations` | number | Max reasoning loops (default: 64) |
-| `arena.min_iterations` | number | Min iterations before exit (default: 1) |
-| `arena.tool_calling` | string | `"auto"`, `"any"` (requires `exit_schema`), `"none"` (rejects `exit_schema`) |
-| `arena.tools` | array | Tool registry IDs |
-| `arena.exit_schema` | table | JSON schema for structured exit |
-| `arena.exit_func_id` | string | Function to validate exit output |
-| `arena.context` | table | Additional context |
-| `inputs` | table | Input requirements |
-| `show_tool_calls` | boolean | Include tool calls in output |
-| `input_transform` | string/table | Transform inputs |
-| `metadata` | table | Node metadata |
+| `model` | string | 覆盖模型 |
+| `arena.prompt` | string | 系统提示 |
+| `arena.max_iterations` | number | 最大推理循环次数（默认：64） |
+| `arena.min_iterations` | number | 退出前的最小迭代次数（默认：1） |
+| `arena.tool_calling` | string | `"auto"`、`"any"`（需要 `exit_schema`）、`"none"`（拒绝 `exit_schema`） |
+| `arena.tools` | array | 工具注册表 ID |
+| `arena.exit_schema` | table | 用于结构化退出的 JSON schema |
+| `arena.exit_func_id` | string | 验证退出输出的函数 |
+| `arena.context` | table | 额外的上下文 |
+| `inputs` | table | 输入要求 |
+| `show_tool_calls` | boolean | 在输出中包含工具调用 |
+| `input_transform` | string/table | 转换输入 |
+| `metadata` | table | 节点元数据 |
 
-**Dynamic agent selection:** Pass an empty string as agent ID and resolve it via `input_transform`:
+**动态代理选择：** 将空字符串作为代理 ID 传递，并通过 `input_transform` 解析：
 
 ```lua
 :agent("", {
@@ -337,11 +337,11 @@ Executes an agent with tool calling and optional structured exit:
 })
 ```
 
-**Exit validation:** When `exit_func_id` is set, the function validates the agent's exit output. On validation failure, the agent receives the error as observation and continues (up to `max_iterations`).
+**退出验证：** 当设置了 `exit_func_id` 时，该函数验证代理的退出输出。验证失败时，代理将错误作为观察接收并继续（最多达到 `max_iterations`）。
 
-### Cycle Node
+### 循环节点
 
-Iterates a function or template repeatedly with persistent state:
+使用持久状态反复迭代函数或模板：
 
 ```lua
 :cycle({
@@ -356,7 +356,7 @@ Iterates a function or template repeatedly with persistent state:
 })
 ```
 
-The cycle function receives on each iteration:
+循环函数在每次迭代时接收：
 
 ```lua
 {
@@ -367,7 +367,7 @@ The cycle function receives on each iteration:
 }
 ```
 
-The function controls continuation:
+该函数控制是否继续：
 
 ```lua
 function my_cycle(cycle_context)
@@ -391,13 +391,13 @@ end
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `func_id` | string | Iteration function (mutually exclusive with `template`) |
-| `template` | FlowBuilder | Template for each iteration (mutually exclusive with `func_id`) |
-| `max_iterations` | number | Maximum iterations |
-| `initial_state` | table | Starting state |
-| `continue_condition` | string | Expression: continue while true |
+| `func_id` | string | 迭代函数（与 `template` 互斥） |
+| `template` | FlowBuilder | 每次迭代的模板（与 `func_id` 互斥） |
+| `max_iterations` | number | 最大迭代次数 |
+| `initial_state` | table | 起始状态 |
+| `continue_condition` | string | 表达式：为真时继续 |
 
-**Template-based cycle:**
+**基于模板的循环：**
 
 ```lua
 :cycle({
@@ -408,9 +408,9 @@ end
 })
 ```
 
-### Parallel Node
+### 并行节点
 
-Map-reduce pattern over arrays:
+数组上的 map-reduce 模式：
 
 ```lua
 :parallel({
@@ -441,16 +441,16 @@ Map-reduce pattern over arrays:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `source_array_key` | string | Input key containing the array (required) |
-| `template` | FlowBuilder | Template for each item (required, must route to `@success`) |
-| `iteration_input_key` | string | Input key for current item (default: `"default"`) |
-| `batch_size` | number | Items per parallel batch (default: 1 = sequential) |
-| `on_error` | string | `"collect_errors"` (default) or `"fail_fast"` |
-| `filter` | string | `"all"` (default), `"successes"`, `"failures"` |
-| `unwrap` | boolean | Return raw results instead of wrapped metadata (default: false) |
-| `passthrough_keys` | array | Input keys forwarded to every iteration |
+| `source_array_key` | string | 包含数组的输入键（必需） |
+| `template` | FlowBuilder | 每个项的模板（必需，必须路由到 `@success`） |
+| `iteration_input_key` | string | 当前项的输入键（默认：`"default"`） |
+| `batch_size` | number | 每个并行批次的项数（默认：1 = 顺序） |
+| `on_error` | string | `"collect_errors"`（默认）或 `"fail_fast"` |
+| `filter` | string | `"all"`（默认）、`"successes"`、`"failures"` |
+| `unwrap` | boolean | 返回原始结果而非带元数据的包装（默认：false） |
+| `passthrough_keys` | array | 转发给每次迭代的输入键 |
 
-**Passthrough keys** provide shared context (config, task description) to every iteration without duplicating data in the source array:
+**直通键**（passthrough keys）在不复制源数组中的数据的情况下，为每次迭代提供共享上下文（配置、任务描述）：
 
 ```lua
 :with_data(file_list):as("files"):to("processor", "files")
@@ -469,9 +469,9 @@ Map-reduce pattern over arrays:
 }):as("processor")
 ```
 
-### Signal Node
+### 信号节点
 
-Pauses execution until an external signal arrives. Use for human approvals, external events, or staged workflows:
+暂停执行直到外部信号到达。用于人工审批、外部事件或分阶段工作流：
 
 ```lua
 :signal({
@@ -483,38 +483,38 @@ Pauses execution until an external signal arrives. Use for human approvals, exte
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `signal_id` | string | Signal name matched against `client:signal()`. If empty or omitted, a UUID v7 is generated at runtime |
-| `inputs` | table | Input requirements |
-| `input_transform` | string/table | Transform inputs before the node receives them |
-| `metadata` | table | Node metadata |
+| `signal_id` | string | 与 `client:signal()` 匹配的信号名称。如果为空或省略，则在运行时生成 UUID v7 |
+| `inputs` | table | 输入要求 |
+| `input_transform` | string/table | 在节点接收输入之前对其进行转换 |
+| `metadata` | table | 节点元数据 |
 
-Send the signal from outside the workflow using the client API (see `client:signal()` below).
+使用客户端 API 从工作流外部发送信号（见下文的 `client:signal()`）。
 
-#### Behavior
+#### 行为
 
-The node yields with `wait_for_signal = true` and persists that yield in the workflow state. The orchestrator resumes the node when a matching `NODE_SIGNAL` commit arrives.
+该节点使用 `wait_for_signal = true` yield 并将该 yield 持久化到工作流状态中。当匹配的 `NODE_SIGNAL` commit 到达时，编排器恢复该节点。
 
-- The signal is satisfied by any non-`nil` payload. `false`, `0`, `""`, and `{}` all satisfy the yield; only `nil` keeps it pending.
-- A signal yield blocks `COMPLETE_WORKFLOW` but does not block other pending nodes — parallel branches continue to execute while one branch waits.
-- Signals can be pre-queued before `:start()`: if a matching `NODE_SIGNAL` commit arrives before the signal node reaches the yield, it is delivered the moment the yield is tracked.
-- Only one signal satisfies each yield. If a second signal with the same `signal_id` arrives before the yield is satisfied, it overwrites the first.
-- When multiple signal yields share the same `signal_id`, the first matching yield receives the data.
-- If the `signal_id` field is absent, matching falls back to the node's discriminator.
-- Delivered signal data is passed to the node's output as the signal payload.
+- 任何非 `nil` 的 payload 都可以满足信号。`false`、`0`、`""` 和 `{}` 都能满足 yield；只有 `nil` 会使其保持挂起。
+- 信号 yield 会阻塞 `COMPLETE_WORKFLOW`，但不会阻塞其他待处理的节点——并行分支在一个分支等待时会继续执行。
+- 信号可以在 `:start()` 之前预排队：如果在信号节点到达 yield 之前匹配的 `NODE_SIGNAL` commit 到达，它将在 yield 被跟踪的瞬间传递。
+- 每个 yield 只有一个信号能满足。如果在 yield 被满足之前到达第二个具有相同 `signal_id` 的信号，它将覆盖第一个。
+- 当多个信号 yield 共享相同的 `signal_id` 时，第一个匹配的 yield 接收数据。
+- 如果 `signal_id` 字段缺失，匹配将回退到节点的判别符。
+- 传递的信号数据作为信号 payload 传递给节点的输出。
 
-#### Durability and recovery
+#### 持久性和恢复
 
-The signal yield is part of the workflow state, persisted through the same outbox mechanism as every other command. If the orchestrator process is killed while waiting:
+信号 yield 是工作流状态的一部分，通过与其他所有命令相同的 outbox 机制持久化。如果编排器进程在等待时被终止：
 
-- The pending yield is restored on restart.
-- Signals delivered during the outage are queued and applied when the state reloads.
-- Compound pipelines (`func → signal → signal → func`) recover step-by-step — each signal can be delivered across a separate restart.
+- 挂起的 yield 在重启时恢复。
+- 中断期间传递的信号被排队，并在状态重新加载时应用。
+- 复合管道（`func → signal → signal → func`）逐步恢复——每个信号可以在单独的重启中传递。
 
-Orphaned signal yields (yields whose parent process exited without completion) are cleaned up by the workflow state's process exit handler.
+孤立的信号 yield（其父进程在未完成时退出的 yield）由工作流状态的进程退出处理程序清理。
 
-#### Pipeline patterns
+#### 管道模式
 
-Signal nodes participate in any topology:
+信号节点可以参与任何拓扑：
 
 ```lua
 -- Human-in-the-loop approval between two functions
@@ -547,11 +547,11 @@ flow.create()
     :run()
 ```
 
-Signal data is exposed as the node output, so downstream nodes receive whatever was passed to `client:signal()`.
+信号数据作为节点输出暴露，因此下游节点接收传递给 `client:signal()` 的任何内容。
 
-### Join Node
+### 连接节点
 
-Collects multiple inputs before proceeding:
+在继续之前收集多个输入：
 
 ```lua
 :join({
@@ -563,13 +563,13 @@ Collects multiple inputs before proceeding:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `output_mode` | string | `"object"` (default) or `"array"` (arrival order) |
-| `ignored_keys` | array | Input keys excluded from output |
-| `inputs` | table | Input requirements |
+| `output_mode` | string | `"object"`（默认）或 `"array"`（到达顺序） |
+| `ignored_keys` | array | 从输出中排除的输入键 |
+| `inputs` | table | 输入要求 |
 
-## Templates
+## 模板
 
-Templates define reusable sub-workflows. Use `flow.template()` to create, `:use()` to inline:
+模板定义可重用的子工作流。使用 `flow.template()` 创建，使用 `:use()` 内联：
 
 ```lua
 local preprocessor = flow.template()
@@ -583,11 +583,11 @@ flow.create()
     :run()
 ```
 
-Templates inline their operations into the parent flow at compile time.
+模板在编译时将其操作内联到父流中。
 
-## Nested Workflows
+## 嵌套工作流
 
-Functions used in cycles and parallel nodes can spawn child workflows by returning `flow.create():run()`:
+在循环和并行节点中使用的函数可以通过返回 `flow.create():run()` 生成子工作流：
 
 ```lua
 function my_processor(input)
@@ -599,15 +599,15 @@ function my_processor(input)
 end
 ```
 
-When `:run()` executes inside an existing dataflow context, it returns `{ _control = { commands = [...] } }` instead of executing directly. The orchestrator handles the child workflow through the yield mechanism.
+当 `:run()` 在现有 dataflow 上下文中执行时，它会返回 `{ _control = { commands = [...] } }` 而不是直接执行。编排器通过 yield 机制处理子工作流。
 
 <note>
-Functions that participate in dataflow composition <strong>must</strong> return <code>flow.create():run()</code>. Functions returning anything else cannot spawn child workflows.
+参与 dataflow 组合的函数<strong>必须</strong>返回 <code>flow.create():run()</code>。返回其他任何内容的函数不能生成子工作流。
 </note>
 
-## Synchronous vs Asynchronous
+## 同步 vs 异步
 
-`:run()` blocks until the workflow completes and returns output:
+`:run()` 阻塞直到工作流完成并返回输出：
 
 ```lua
 local result, err = flow.create()
@@ -616,7 +616,7 @@ local result, err = flow.create()
     :run()
 ```
 
-`:start()` returns immediately with a workflow ID:
+`:start()` 立即返回一个工作流 ID：
 
 ```lua
 local dataflow_id, err = flow.create()
@@ -625,11 +625,11 @@ local dataflow_id, err = flow.create()
     :start()
 ```
 
-`:start()` cannot be used in nested contexts.
+`:start()` 不能在嵌套上下文中使用。
 
-## Client API
+## 客户端 API
 
-For programmatic workflow management:
+用于编程式工作流管理：
 
 ```yaml
 imports:
@@ -644,32 +644,32 @@ local c, err = client.new()
 
 | Method | Description |
 |--------|-------------|
-| `client.new()` | Create client (requires security actor) |
-| `:create_workflow(commands, options?)` | Create workflow, returns `dataflow_id` |
-| `:execute(dataflow_id, options?)` | Run synchronously, returns result |
-| `:start(dataflow_id, options?)` | Run asynchronously, returns `dataflow_id` |
-| `:output(dataflow_id)` | Fetch workflow outputs |
-| `:get_status(dataflow_id)` | Get current status |
-| `:cancel(dataflow_id, timeout?)` | Gracefully cancel (default: 30s) |
-| `:terminate(dataflow_id)` | Force terminate |
-| `:signal(dataflow_id, signal_id, data?)` | Deliver an external signal to a waiting signal node |
+| `client.new()` | 创建客户端（需要安全 actor） |
+| `:create_workflow(commands, options?)` | 创建工作流，返回 `dataflow_id` |
+| `:execute(dataflow_id, options?)` | 同步运行，返回结果 |
+| `:start(dataflow_id, options?)` | 异步运行，返回 `dataflow_id` |
+| `:output(dataflow_id)` | 获取工作流输出 |
+| `:get_status(dataflow_id)` | 获取当前状态 |
+| `:cancel(dataflow_id, timeout?)` | 优雅地取消（默认：30 秒） |
+| `:terminate(dataflow_id)` | 强制终止 |
+| `:signal(dataflow_id, signal_id, data?)` | 将外部信号传递给等待中的信号节点 |
 
-## Workflow Status
+## 工作流状态
 
 | Status | Description |
 |--------|-------------|
-| `template` | Node is a template instance |
-| `pending` | Waiting for inputs |
-| `ready` | Inputs collected, ready to execute |
-| `running` | Actively executing |
-| `paused` | Yielded, waiting for child workflow |
-| `completed` | Finished successfully |
-| `failed` | Failed |
-| `cancelled` | User cancelled |
-| `skipped` | Conditional branch not taken |
-| `terminated` | Force terminated |
+| `template` | 节点是模板实例 |
+| `pending` | 等待输入 |
+| `ready` | 输入已收集，准备执行 |
+| `running` | 正在执行 |
+| `paused` | 已 yield，等待子工作流 |
+| `completed` | 成功完成 |
+| `failed` | 失败 |
+| `cancelled` | 用户取消 |
+| `skipped` | 未采用的条件分支 |
+| `terminated` | 强制终止 |
 
-## Metadata
+## 元数据
 
 ```lua
 flow.create()
@@ -679,53 +679,53 @@ flow.create()
     :run()
 ```
 
-Title defaults to "Flow Builder Workflow" if not provided.
+如果未提供，标题默认为 "Flow Builder Workflow"。
 
-## Validation Rules
+## 验证规则
 
-The compiler validates workflows at compile time:
+编译器在编译时验证工作流：
 
-- All `:as(name)` names must be unique
-- All `:to()` and `:error_to()` targets must reference existing names (except `@success`, `@fail`)
-- Graph must be acyclic
-- All nodes must have incoming routes (from another node, workflow input, or static data)
-- `:cycle()` requires `func_id` or `template` (not both)
-- `:parallel()` requires `source_array_key` and `template`
-- At least one path must lead to `@success` or have auto-output
-- `:when()` only follows `:to()` or `:error_to()` from nodes (not static data)
-- Nodes with `args` cannot receive inputs with `"default"` discriminator
+- 所有 `:as(name)` 名称必须唯一
+- 所有 `:to()` 和 `:error_to()` 目标必须引用现有名称（`@success`、`@fail` 除外）
+- 图必须是无环的
+- 所有节点必须有传入路由（来自另一个节点、工作流输入或静态数据）
+- `:cycle()` 需要 `func_id` 或 `template`（不能同时有）
+- `:parallel()` 需要 `source_array_key` 和 `template`
+- 至少一条路径必须通向 `@success` 或具有自动输出
+- `:when()` 仅跟随来自节点的 `:to()` 或 `:error_to()`（不是静态数据）
+- 带 `args` 的节点不能接收带 `"default"` 判别符的输入
 
-## Expression Reference
+## 表达式参考
 
-Expressions use the `expr` module syntax, available in `:when()` conditions and `input_transform` values.
+表达式使用 `expr` 模块语法，在 `:when()` 条件和 `input_transform` 值中可用。
 
-**Operators:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
+**运算符：** `+`、`-`、`*`、`/`、`%`、`**`、`==`、`!=`、`<`、`<=`、`>`、`>=`、`&&`、`||`、`!`、`contains`、`startsWith`、`endsWith`
 
-**Array functions:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
+**数组函数：** `all()`、`any()`、`none()`、`one()`、`filter()`、`map()`、`count()`、`len()`、`first()`、`last()`
 
-**Math functions:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `round()`, `sqrt()`, `pow()`
+**数学函数：** `max()`、`min()`、`abs()`、`ceil()`、`floor()`、`round()`、`sqrt()`、`pow()`
 
-**String functions:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
+**字符串函数：** `len()`、`upper()`、`lower()`、`trim()`、`split()`、`join()`
 
-**Type functions:** `type()`, `int()`, `float()`, `string()`
+**类型函数：** `type()`、`int()`、`float()`、`string()`
 
-**Literals:** numbers, strings, booleans (`true`/`false`), null (`nil`), arrays (`[1, 2, 3]`), objects (`{key: value}`)
+**字面量：** 数字、字符串、布尔值（`true`/`false`）、null（`nil`）、数组（`[1, 2, 3]`）、对象（`{key: value}`）
 
-**Ternary:** `output.age >= 18 ? output.verified : false`
+**三元：** `output.age >= 18 ? output.verified : false`
 
-**Optional chaining:** `output.data?.nested?.value`
+**可选链：** `output.data?.nested?.value`
 
-## Error Handling
+## 错误处理
 
-Both `:run()` and `:start()` follow standard Lua error conventions:
+`:run()` 和 `:start()` 都遵循标准的 Lua 错误约定：
 
-- Success: `data, nil` (run) or `dataflow_id, nil` (start)
-- Failure: `nil, error_message`
+- 成功：`data, nil`（run）或 `dataflow_id, nil`（start）
+- 失败：`nil, error_message`
 
-Error categories: compilation errors, client errors, workflow creation errors, execution errors, and workflow failures.
+错误类别：编译错误、客户端错误、工作流创建错误、执行错误和工作流失败。
 
-## See Also
+## 另请参阅
 
-- [Agents](agents.md) - Agent framework used by agent nodes
-- [LLM](llm.md) - LLM module
-- [Framework Overview](overview.md) - Framework module usage
+- [Agents](agents.md) - 代理节点使用的代理框架
+- [LLM](llm.md) - LLM 模块
+- [Framework Overview](overview.md) - 框架模块用法

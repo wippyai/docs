@@ -30,31 +30,33 @@ O servidor HTTP (`http.service`) escuta em uma porta e hospeda roteadores, endpo
 | `timeouts.read` | duration | - | Timeout de leitura de requisição |
 | `timeouts.write` | duration | - | Timeout de escrita de resposta |
 | `timeouts.idle` | duration | - | Timeout de conexão keep-alive |
-| `host.buffer_size` | int | 1024 | Tamanho do buffer de relay de mensagens |
-| `host.worker_count` | int | NumCPU | Workers de relay de mensagens |
+| `host.buffer_size` | int | 1024 | Tamanho do buffer do relay de mensagens |
+| `host.worker_count` | int | NumCPU | Workers do relay de mensagens |
+| `network` | ID do Registro | - | Vincula o listener através de uma [rede overlay](system/network.md) (ex. Tailscale, I2P) |
+| `tls` | object | - | Terminação TLS (ver [TLS](#tls)) |
 
 ## Timeouts
 
-Configure timeouts para prevenir exaustão de recursos:
+Configure timeouts para evitar esgotamento de recursos:
 
 ```yaml
 timeouts:
-  read: "10s"    # Tempo máximo para ler headers da requisição
+  read: "10s"    # Tempo máximo para ler headers de requisição
   write: "60s"   # Tempo máximo para escrever resposta
-  idle: "120s"   # Timeout de keep-alive
+  idle: "120s"   # Timeout keep-alive
 ```
 
-- `read` - Curto (5-10s) para APIs, mais longo para uploads
-- `write` - Corresponda ao tempo esperado de geração de resposta
-- `idle` - Balance reutilização de conexão vs uso de recursos
+- `read` - Curto (5-10s) para APIs, maior para uploads
+- `write` - Deve corresponder ao tempo esperado de geração de resposta
+- `idle` - Balanço entre reutilização de conexão e uso de recursos
 
 <note>
 Formato de duração: <code>30s</code>, <code>1m</code>, <code>2h15m</code>. Use <code>0</code> para desabilitar.
 </note>
 
-## Configuração do Host
+## Configuração de Host
 
-A seção `host` configura o relay de mensagens interno do servidor usado por componentes como WebSocket relay:
+A seção `host` configura o relay interno de mensagens do servidor, usado por componentes como WebSocket relay:
 
 ```yaml
 host:
@@ -65,15 +67,15 @@ host:
 | Campo | Padrão | Descrição |
 |-------|--------|-----------|
 | `buffer_size` | 1024 | Capacidade da fila de mensagens por worker |
-| `worker_count` | NumCPU | Goroutines de processamento paralelo de mensagens |
+| `worker_count` | NumCPU | Goroutines paralelas de processamento de mensagens |
 
 <tip>
-Aumente esses valores para aplicações WebSocket de alto throughput. O relay de mensagens trata entrega assíncrona entre componentes HTTP e processos.
+Aumente esses valores para aplicações WebSocket de alto throughput. O relay de mensagens trata a entrega assíncrona entre componentes HTTP e processos.
 </tip>
 
 ## Segurança
 
-Servidores HTTP podem ter um contexto de segurança padrão aplicado através da configuração de ciclo de vida:
+Servidores HTTP podem ter um contexto de segurança padrão aplicado através da configuração de lifecycle:
 
 ```yaml
 lifecycle:
@@ -87,7 +89,7 @@ lifecycle:
 
 Isso define um ator e políticas base para todas as requisições. Para requisições autenticadas, o [middleware token_auth](http/middleware.md) sobrescreve o ator baseado no token validado, permitindo políticas de segurança por usuário.
 
-## Ciclo de Vida
+## Lifecycle
 
 Servidores são gerenciados pelo supervisor:
 
@@ -102,10 +104,10 @@ lifecycle:
 
 | Campo | Descrição |
 |-------|-----------|
-| `auto_start` | Inicia quando a aplicação inicia |
-| `start_timeout` | Tempo máximo de espera para servidor iniciar |
-| `stop_timeout` | Tempo máximo para encerramento gracioso |
-| `depends_on` | Inicia após essas entradas estarem prontas |
+| `auto_start` | Iniciar quando a aplicação iniciar |
+| `start_timeout` | Tempo máximo de espera pelo início do servidor |
+| `stop_timeout` | Tempo máximo para shutdown graceful |
+| `depends_on` | Iniciar após essas entradas estarem prontas |
 
 ## Conectando Componentes
 
@@ -154,9 +156,60 @@ entries:
 
 ## TLS
 
-O servidor pode terminar TLS diretamente. Defina `tls.mode` como `manual` (forneça seu próprio certificado) ou `auto` (certificado fornecido por um driver de rede overlay, por exemplo `network.tailscale`). Listeners de clearnet simples não suportam `auto`. Omita `tls` ou deixe o mode vazio para executar HTTP puro.
+O servidor pode terminar TLS diretamente. Defina `tls.mode` como `manual` (forneça seu próprio certificado) ou `auto` (certificado fornecido por um driver de rede overlay, ex. `network.tailscale`). Listeners clearnet simples não suportam `auto`. Omita `tls` ou deixe o mode vazio para executar HTTP simples.
 
 No modo `auto` o servidor não deve especificar `cert`/`key`/`cert_env`/`key_env` — o driver de rede os fornece.
+
+### Certificado manual
+
+Forneça cert e key inline/carregados de arquivo ou via variáveis de ambiente (nunca ambos):
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: file://./certs/server.pem
+    key:  file://./certs/server.key
+```
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert_env: TLS_SERVER_CERT
+    key_env:  TLS_SERVER_KEY
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `mode` | `""` (off), `auto` ou `manual` |
+| `cert` / `key` | Conteúdo PEM (tipicamente carregado via `file://`) |
+| `cert_env` / `key_env` | Nomes de variáveis de ambiente resolvidas via o [registro env](system/env.md) |
+
+### Mutual TLS (mTLS)
+
+Sob `mode: manual` o servidor pode adicionalmente verificar certificados de cliente:
+
+```yaml
+tls:
+  mode: manual
+  cert_env: TLS_SERVER_CERT
+  key_env:  TLS_SERVER_KEY
+  client_ca: file://./certs/clients-ca.pem
+  client_auth: require_and_verify
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
+| `client_ca` | Bundle PEM de CAs de cliente confiáveis |
+| `client_ca_env` | Variável de ambiente contendo o bundle da CA (mutuamente exclusiva com `client_ca`) |
+
+`verify_if_given` e `require_and_verify` exigem uma CA. `request` e `require_any` aceitam qualquer certificado de cliente sem verificação de CA.
 
 ## Veja Também
 
@@ -164,4 +217,4 @@ No modo `auto` o servidor não deve especificar `cert`/`key`/`cert_env`/`key_env
 - [Arquivos Estáticos](http/static.md) - Servindo arquivos estáticos
 - [Middleware](http/middleware.md) - Middleware disponível
 - [Segurança](system/security.md) - Políticas de segurança
-- [Relay WebSocket](http/websocket-relay.md) - Mensagens WebSocket
+- [WebSocket Relay](http/websocket-relay.md) - Mensageria WebSocket

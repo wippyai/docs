@@ -72,4 +72,3 @@ Veja [Módulo Store](lua/storage/store.md) para operações (get, set, delete, e
 
 - [Módulo Store](lua/storage/store.md) - Referência da API Lua
 - [Banco de Dados](system/database.md) - Backend SQL para `store.sql`
-- [Cache](lua/storage/cache.md) - Módulo de cache em processo

@@ -116,6 +116,6 @@ executor:release()
 
 ## 関連項目
 
-- [Execモジュール](lua/system/exec.md) - Lua APIリファレンス
+- [Execモジュール](lua/dynamic/exec.md) - Lua APIリファレンス
 - [プロセスホスト](system/process-host.md) - Wippyプロセスを実行するホスト
 - [ファイルシステム](system/filesystem.md) - 作業ディレクトリとして使用されるファイルシステムエントリ

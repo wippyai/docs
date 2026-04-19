@@ -72,4 +72,3 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 - [Store 模块](lua/storage/store.md) - Lua API 参考
 - [数据库](system/database.md) - `store.sql` 的 SQL 后端
-- [Cache](lua/storage/cache.md) - 进程内缓存模块
