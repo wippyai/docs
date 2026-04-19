@@ -26,8 +26,9 @@ WebSocket connections are full processes with their own PID. They integrate with
 -- Monitor a WebSocket connection from another process
 process.monitor(websocket_pid)
 
--- Send message to WebSocket client from any process
-process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
+-- Send a message to the WebSocket client from any process.
+-- The relay wraps it as {topic, data} JSON; the topic name is arbitrary.
+process.send(websocket_pid, "update", "hello")
 ```
 
 <tip>
@@ -111,10 +112,10 @@ The relay sends these messages to the target process:
 
 | Topic | When | Payload |
 |-------|------|---------|
-| `ws.join` | Client connects | `client_pid`, `metadata` |
-| `ws.message` | Client sends message | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | Periodic (if configured) | `client_pid`, `uptime`, `message_count` |
-| `ws.leave` | Client disconnects | `client_pid`, `metadata` |
+| `ws.join` | Client connects | JSON `{client_pid, metadata}` |
+| `ws.message` (or your `message_topic`) | Client sends message | Raw client payload (text frame → string, binary frame → bytes); the source PID of the relay package is the client PID |
+| `ws.heartbeat` | Periodic (if configured) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.leave` | Client disconnects | JSON `{client_pid, metadata}` |
 
 ## Receiving Messages
 
@@ -129,20 +130,21 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local from = msg:from()                -- client connection PID
 
         if topic == "ws.join" then
-            -- Client connected
+            -- Client connected — payload is {client_pid, metadata}
+            local data = msg:payload():data()
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- Handle client message
-            local content = json.decode(data.data)
-            handle_message(data.client_pid, content)
+            -- Raw client message; from() is the client PID
+            local body = msg:payload():data()  -- string or bytes
+            handle_message(from, json.decode(body))
 
         elseif topic == "ws.leave" then
-            -- Client disconnected
-            cleanup(data.client_pid)
+            -- Client disconnected — payload is {client_pid, metadata}
+            cleanup(from)
         end
     end
 end
@@ -150,27 +152,20 @@ end
 
 ## Sending to Client
 
-Send messages back using the client PID:
+Send messages back using the client PID. Any topic you choose is wrapped as `{topic, data}` JSON and forwarded to the WebSocket. The frame type is decided by the payload format: strings become text frames, bytes become binary frames (base64-encoded inside the JSON wrapper).
 
 ```lua
--- Send text message
-process.send(client_pid, "ws.send", {
-    type = "text",
-    data = json.encode({event = "update", value = 42})
-})
+-- Send a structured message (any topic name)
+process.send(client_pid, "update", json.encode({event = "update", value = 42}))
 
 -- Send binary
-process.send(client_pid, "ws.send", {
-    type = "binary",
-    data = binary_content
-})
+process.send(client_pid, "data", binary_content)
 
--- Close connection
-process.send(client_pid, "ws.close", {
-    code = 1000,
-    reason = "Session ended"
-})
+-- Close connection (payload is the close reason string)
+process.send(client_pid, "ws.close", "Session ended")
 ```
+
+The reserved topics from server → client are `ws.control` (relay reconfiguration) and `ws.close` (close the connection).
 
 ## Broadcasting
 
@@ -189,7 +184,7 @@ clients[client_pid] = nil
 local function broadcast(message)
     local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "ws.send", {type = "text", data = data})
+        process.send(pid, "broadcast", data)
     end
 end
 ```
