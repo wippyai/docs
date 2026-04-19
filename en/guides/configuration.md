@@ -280,6 +280,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+Language Server Protocol server for editor integrations.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | false | Enable the TCP server |
+| `address` | string | :7777 | TCP listen address |
+| `http_enabled` | bool | false | Enable the HTTP transport |
+| `http_address` | string | :7778 | HTTP listen address |
+| `http_path` | string | /lsp | HTTP endpoint path |
+| `http_allow_origin` | string | * | CORS allowed origin |
+| `max_message_bytes` | int | 8388608 | Max incoming message size |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+See: [LSP Guide](guides/lsp.md)
+
+## Network Service
+
+Overlay network manager (SOCKS5, I2P, Tailscale drivers).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `state_dir` | string | .wippy/net | Driver state storage directory |
+| `default_network` | string | | Default network ID applied when entries omit `network` |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+See: [Network Overlays](system/network.md)
+
+## Modules
+
+Module registry client used by `wippy install`/`update`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `registry_url` | string | https://hub.wippy.ai | Registry endpoint |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## Extensions
+
+Native Go plugin extensions loaded at boot (Unix only).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | true | Load extensions |
+| `paths` | string[] | | Plugin file paths (relative to config dir) |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## Environment Variables
 
 | Variable | Description |
