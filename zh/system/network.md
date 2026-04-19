@@ -100,13 +100,28 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
-`httpclient` 模块在按调用选项中接受相同的键。
+`http_client` 模块在按调用选项中接受相同的覆盖层选择，键名为 `overlay_network`。
 
 ## 继承
 
 覆盖层选择沿调用栈传递。通过 `funcs.new():with_options({network=...})` 调用的函数会在每次内部拨号、每次嵌套的 `funcs.call` 以及它执行的每个 `process.spawn` 上看到该覆盖层 — 直到后代显式选择另一个覆盖层或清除它。
 
 环境继承会绕过后代自己的 `network.select` 拒绝规则。只有 Lua 边界处的显式选择会受到限制。
+
+## 应用配置
+
+覆盖层驱动从 `.wippy.yaml` 中的 `network_service:` 块读取应用范围的设置：
+
+```yaml
+network_service:
+  state_dir: .wippy/net          # 驱动状态的基础目录（Tailscale 密钥等）
+  default_network: app.net:tailnet  # 当没有调用设置时应用的覆盖层
+```
+
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `state_dir` | `.wippy/net` | 驱动状态目录。相对路径相对于启动配置目录解析。 |
+| `default_network` | — | 应用于任何未通过选项固定自身网络的任务或进程的覆盖层 Registry ID。 |
 
 ## 权限
 

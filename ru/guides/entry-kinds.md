@@ -613,7 +613,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `network.i2p` | Оверлей сети I2P |
 | `network.tailscale` | Оверлей Tailscale |
 
-Используется в `http.service` через `network:` и в `http_client` через опцию `network`. См. [Сеть](system/network.md).
+Используется в `http.service` через `network:`, в `funcs`/`process` через опцию `network` и в `http_client` через опцию `overlay_network`. См. [Сеть](system/network.md).
 
 ## Примитивы реестра
 

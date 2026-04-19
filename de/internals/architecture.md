@@ -115,12 +115,14 @@ sequenceDiagram
 
 ### Gängige Topics
 
-| Topic | Publisher | Zweck |
-|-------|-----------|-------|
-| `registry.entry.*` | Registry | Entry-Änderungen |
-| `process.started` | Topology | Prozess-Lebenszyklus |
-| `process.stopped` | Topology | Prozess-Lebenszyklus |
-| `supervisor.state.*` | Supervisor | Service-Zustandsänderungen |
+Topics haben das Format `<system>:<kind>`. Die integrierten Systeme veröffentlichen:
+
+| System | Kind | Zweck |
+|--------|------|-------|
+| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Entry-Mutationen |
+| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Transaktionsgrenzen |
+| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | Factory-Registrierung für Process-Kinds |
+| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | Service-Lebenszyklus |
 
 ## Registry
 

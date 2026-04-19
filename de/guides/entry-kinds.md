@@ -613,7 +613,7 @@ Siehe [WASM-Übersicht](wasm/overview.md).
 | `network.i2p` | I2P-Netzwerk-Overlay |
 | `network.tailscale` | Tailscale-Overlay |
 
-Wird von `http.service` über `network:` und von `http_client` über die `network`-Option referenziert. Siehe [Netzwerk](system/network.md).
+Wird von `http.service` ueber `network:`, von `funcs`/`process` ueber die Option `network` und von `http_client` ueber die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
 
 ## Registry-Primitive
 

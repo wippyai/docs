@@ -47,8 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -70,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | Скрывает интерфейс выбора сессии |
 
 ### Theming
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+Применяются три области: **global** (везде), **host** (хром вокруг iframe) и **children** (содержимое внутри iframe).
+
+| Parameter | Область | Default | Описание |
+|-----------|---------|---------|----------|
+| `custom_css` | global | Google Fonts import | CSS, инжектируемый на каждом уровне |
+| `css_variables` | global | `{}` | JSON-карта CSS-кастомных свойств |
+| `icon_sets` | global | `[]` | URL-адреса наборов иконок Iconify |
+| `host_custom_css` | host | `""` | CSS только для host-хрома |
+| `host_css_variables` | host | `{}` | CSS-кастомные свойства только для host |
+| `host_icon_sets` | host | `[]` | Наборы иконок только для host |
+| `children_custom_css` | children | `""` | CSS только для содержимого iframe |
+| `children_css_variables` | children | `{}` | CSS-кастомные свойства только для содержимого iframe |
+| `login_path` | — | `/login.html` | Путь перенаправления для неаутентифицированных пользователей |
+
+### Опциональный JSON `hostConfig`
+
+Каждый из следующих параметров — это строка, закодированная в JSON; значения по умолчанию пустые (`{}` или `[]`). Они передаются без изменений в `hostConfig` для фронтенда.
+
+| Parameter | Default | Описание |
+|-----------|---------|----------|
+| `api_routes` | `{}` | Переопределения маршрутов для фронтенда |
+| `additional_nav_items` | `[]` | Дополнительные пункты боковой панели |
+| `state_cache` | `{}` | Конфигурация кэша состояния фронтенда |
+| `allow_additional_tags` | `[]` | Дополнительные HTML-теги, разрешённые в чате |
+| `chat` | `{}` | Переопределения UI чата |
+| `axios_defaults` | `{}` | Значения по умолчанию для HTTP-клиента axios на фронтенде |
 
 ## Config Endpoint
 
@@ -102,7 +124,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -118,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-API URL читается из переменной окружения `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` получается заменой `https://` на `wss://`. Тематизация имеет три области (`global`, `host`, `children`) — `host.i18n` содержит брендинг приложения. Ключи `hostConfig` в camelCase и собираются из параметров facade: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, плюс опциональные `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` и `axios_defaults`.
+API URL читается из переменной окружения `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` получается заменой `http://` на `ws://` или `https://` на `wss://`. Тематизация имеет три области (`global`, `host`, `children`) — `host.i18n` содержит брендинг приложения. Ключи `hostConfig` в camelCase и собираются из параметров facade: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, плюс опциональные `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` и `axios_defaults`.
 
 ## Navigation Sidebar
 

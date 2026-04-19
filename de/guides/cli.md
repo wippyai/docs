@@ -98,8 +98,9 @@ wippy add acme/http@latest
 Abhängigkeiten aus der Lock-Datei installieren.
 
 ```bash
-wippy install
-wippy install --refresh
+wippy install                            # Alle installieren
+wippy install acme/http                  # Bestimmtes Modul installieren
+wippy install --refresh acme/http        # Bestimmtes Modul neu laden
 ```
 
 | Flag | Kurz | Standard | Beschreibung |

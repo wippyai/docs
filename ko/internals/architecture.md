@@ -115,12 +115,14 @@ sequenceDiagram
 
 ### 일반적인 토픽
 
-| 토픽 | 퍼블리셔 | 목적 |
-|-------|-----------|---------|
-| `registry.entry.*` | Registry | 엔트리 변경 |
-| `process.started` | Topology | 프로세스 라이프사이클 |
-| `process.stopped` | Topology | 프로세스 라이프사이클 |
-| `supervisor.state.*` | Supervisor | 서비스 상태 변경 |
+토픽은 `<system>:<kind>` 형식입니다. 내장 시스템이 발행합니다:
+
+| System | Kind | 목적 |
+|--------|------|------|
+| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | 엔트리 변경 |
+| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | 트랜잭션 경계 |
+| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | 프로세스 종류에 대한 팩토리 등록 |
+| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | 서비스 라이프사이클 |
 
 ## 레지스트리
 

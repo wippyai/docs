@@ -47,8 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -70,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | 隐藏会话选择器 UI |
 
 ### Theming
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+适用三个范围：**global**（处处生效）、**host**（iframe 周围的外壳）和 **children**（iframe 内部内容）。
+
+| Parameter | 范围 | Default | 说明 |
+|-----------|------|---------|------|
+| `custom_css` | global | Google Fonts import | 在每一层注入的 CSS |
+| `css_variables` | global | `{}` | CSS 自定义属性的 JSON 映射 |
+| `icon_sets` | global | `[]` | Iconify 图标集 URL |
+| `host_custom_css` | host | `""` | 仅用于 host 外壳的 CSS |
+| `host_css_variables` | host | `{}` | 仅用于 host 的 CSS 自定义属性 |
+| `host_icon_sets` | host | `[]` | 仅用于 host 的图标集 |
+| `children_custom_css` | children | `""` | 仅用于 iframe 内容的 CSS |
+| `children_css_variables` | children | `{}` | 仅用于 iframe 内容的 CSS 自定义属性 |
+| `login_path` | — | `/login.html` | 未认证用户的重定向路径 |
+
+### 可选的 `hostConfig` JSON
+
+以下每个参数都是 JSON 编码的字符串；默认值为空（`{}` 或 `[]`）。它们将原样暴露在 `hostConfig` 下供前端使用。
+
+| Parameter | Default | 说明 |
+|-----------|---------|------|
+| `api_routes` | `{}` | 前端的路由覆盖 |
+| `additional_nav_items` | `[]` | 额外的侧边栏条目 |
+| `state_cache` | `{}` | 前端状态缓存配置 |
+| `allow_additional_tags` | `[]` | 聊天中允许的额外 HTML 标签 |
+| `chat` | `{}` | 聊天 UI 覆盖项 |
+| `axios_defaults` | `{}` | 前端 axios HTTP 客户端默认值 |
 
 ## Config Endpoint
 
@@ -102,7 +124,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -118,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-API URL 从 `PUBLIC_API_URL` 环境变量读取；`APP_WEBSOCKET_URL` 通过将 `https://` 替换为 `wss://` 得到。主题化有三个范围（`global`、`host`、`children`）— `host.i18n` 携带应用品牌信息。`hostConfig` 键采用 camelCase 并由 facade 参数组装：`session_type`、`history_mode`、`show_admin`、`allow_select_model`、`start_nav_open`、`hide_nav_bar`、`disable_right_panel`、`hide_session_selector`，以及可选的 `api_routes`、`additional_nav_items`、`state_cache`、`allow_additional_tags`、`chat` 和 `axios_defaults`。
+API URL 从 `PUBLIC_API_URL` 环境变量读取；`APP_WEBSOCKET_URL` 通过将 `http://` 替换为 `ws://` 或将 `https://` 替换为 `wss://` 得到。主题化有三个范围（`global`、`host`、`children`）— `host.i18n` 携带应用品牌信息。`hostConfig` 键采用 camelCase 并由 facade 参数组装：`session_type`、`history_mode`、`show_admin`、`allow_select_model`、`start_nav_open`、`hide_nav_bar`、`disable_right_panel`、`hide_session_selector`，以及可选的 `api_routes`、`additional_nav_items`、`state_cache`、`allow_additional_tags`、`chat` 和 `axios_defaults`。
 
 ## Navigation Sidebar
 

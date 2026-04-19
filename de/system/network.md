@@ -100,13 +100,28 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
-Das `httpclient`-Modul akzeptiert denselben Schlüssel in den Per-Call-Optionen.
+Das `http_client`-Modul akzeptiert dieselbe Overlay-Auswahl in den Per-Call-Optionen unter dem Schluessel `overlay_network`.
 
 ## Vererbung
 
 Die Overlay-Auswahl fließt durch den Call-Stack. Eine Funktion, die über `funcs.new():with_options({network=...})` aufgerufen wird, sieht das Overlay bei jeder inneren Verbindung, jedem verschachtelten `funcs.call` und jedem `process.spawn`, den sie ausführt — bis ein Nachkomme explizit ein anderes Overlay auswählt oder es löscht.
 
 Die Ambient-Vererbung umgeht die eigenen `network.select`-Deny-Regeln des Nachkommen. Nur die explizite Auswahl an einer Lua-Grenze wird überprüft.
+
+## App-Konfiguration
+
+Overlay-Treiber lesen app-weite Einstellungen aus einem `network_service:`-Block in `.wippy.yaml`:
+
+```yaml
+network_service:
+  state_dir: .wippy/net          # Basisverzeichnis fuer Treiber-State (Tailscale-Schluessel etc.)
+  default_network: app.net:tailnet  # Overlay, das verwendet wird, wenn kein Aufruf eines setzt
+```
+
+| Feld | Standard | Beschreibung |
+|------|----------|--------------|
+| `state_dir` | `.wippy/net` | Verzeichnis fuer Treiber-State. Relative Pfade werden gegen das Boot-Config-Verzeichnis aufgeloest. |
+| `default_network` | — | Registry-ID eines Overlays, das auf jede Aufgabe oder jeden Prozess angewendet wird, der sein eigenes Netzwerk nicht ueber Optionen festlegt. |
 
 ## Berechtigungen
 

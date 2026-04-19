@@ -115,12 +115,14 @@ sequenceDiagram
 
 ### Tópicos Comunes
 
-| Tópico | Publisher | Propósito |
-|--------|-----------|-----------|
-| `registry.entry.*` | Registry | Cambios de entrada |
-| `process.started` | Topology | Ciclo de vida de proceso |
-| `process.stopped` | Topology | Ciclo de vida de proceso |
-| `supervisor.state.*` | Supervisor | Cambios de estado de servicio |
+Los tópicos tienen el formato `<system>:<kind>`. Los sistemas integrados publican:
+
+| Sistema | Kind | Propósito |
+|---------|------|-----------|
+| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Mutaciones de entradas |
+| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Límites de transacción |
+| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | Registro de factory para tipos de proceso |
+| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | Ciclo de vida de servicio |
 
 ## Registry
 

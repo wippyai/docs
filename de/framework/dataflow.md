@@ -311,7 +311,7 @@ Executes an agent with tool calling and optional structured exit:
 | `arena.prompt` | string | System prompt |
 | `arena.max_iterations` | number | Max reasoning loops (default: 64) |
 | `arena.min_iterations` | number | Min iterations before exit (default: 1) |
-| `arena.tool_calling` | string | `"auto"`, `"any"`, `"none"` |
+| `arena.tool_calling` | string | `"auto"`, `"any"` (erfordert `exit_schema`), `"none"` (lehnt `exit_schema` ab) |
 | `arena.tools` | array | Tool registry IDs |
 | `arena.exit_schema` | table | JSON schema for structured exit |
 | `arena.exit_func_id` | string | Function to validate exit output |
@@ -469,6 +469,86 @@ Map-reduce pattern over arrays:
 }):as("processor")
 ```
 
+### Signal Node
+
+Pausiert die Ausführung, bis ein externes Signal eintrifft. Wird für menschliche Freigaben, externe Ereignisse oder mehrstufige Workflows verwendet:
+
+```lua
+:signal({
+    signal_id = "approval",
+    inputs = { required = { "draft" } },
+    metadata = { title = "Wait for approval" }
+})
+```
+
+| Option | Typ | Beschreibung |
+|--------|------|-------------|
+| `signal_id` | string | Signalname, der mit `client:signal()` abgeglichen wird. Wenn leer oder weggelassen, wird zur Laufzeit eine UUID v7 generiert |
+| `inputs` | table | Input-Anforderungen |
+| `input_transform` | string/table | Transformiert Inputs, bevor der Knoten sie erhält |
+| `metadata` | table | Knoten-Metadaten |
+
+Senden Sie das Signal von außerhalb des Workflows über die Client-API (siehe `client:signal()` unten).
+
+#### Verhalten
+
+Der Knoten yieldet mit `wait_for_signal = true` und persistiert diesen Yield im Workflow-Zustand. Der Orchestrator nimmt den Knoten wieder auf, wenn ein passender `NODE_SIGNAL`-Commit eintrifft.
+
+- Das Signal wird durch jede nicht-`nil` Payload erfüllt. `false`, `0`, `""` und `{}` erfüllen den Yield alle; nur `nil` lässt ihn ausstehend.
+- Ein Signal-Yield blockiert `COMPLETE_WORKFLOW`, aber nicht andere ausstehende Knoten — parallele Zweige werden weiter ausgeführt, während ein Zweig wartet.
+- Signale können vor `:start()` vorab in die Warteschlange gestellt werden: Wenn ein passender `NODE_SIGNAL`-Commit eintrifft, bevor der Signal-Knoten den Yield erreicht, wird er in dem Moment zugestellt, in dem der Yield erfasst wird.
+- Nur ein Signal erfüllt jeden Yield. Wenn ein zweites Signal mit derselben `signal_id` eintrifft, bevor der Yield erfüllt ist, überschreibt es das erste.
+- Wenn mehrere Signal-Yields dieselbe `signal_id` teilen, erhält der erste passende Yield die Daten.
+- Wenn das Feld `signal_id` fehlt, fällt der Abgleich auf den Diskriminator des Knotens zurück.
+- Die zugestellten Signaldaten werden als Signal-Payload an den Output des Knotens übergeben.
+
+#### Dauerhaftigkeit und Wiederherstellung
+
+Der Signal-Yield ist Teil des Workflow-Zustands und wird über denselben Outbox-Mechanismus wie jedes andere Kommando persistiert. Wenn der Orchestrator-Prozess während des Wartens beendet wird:
+
+- Der ausstehende Yield wird beim Neustart wiederhergestellt.
+- Während des Ausfalls zugestellte Signale werden in die Warteschlange gestellt und beim erneuten Laden des Zustands angewendet.
+- Verbund-Pipelines (`func → signal → signal → func`) erholen sich schrittweise — jedes Signal kann über einen separaten Neustart hinweg zugestellt werden.
+
+Verwaiste Signal-Yields (Yields, deren Elternprozess ohne Abschluss beendet wurde) werden vom Process-Exit-Handler des Workflow-Zustands bereinigt.
+
+#### Pipeline-Muster
+
+Signal-Knoten nehmen an jeder Topologie teil:
+
+```lua
+-- Human-in-the-Loop-Freigabe zwischen zwei Funktionen
+flow.create()
+    :func("app:draft")
+    :signal({ signal_id = "approve_draft" })
+    :func("app:publish")
+    :run()
+
+-- Zwei parallele Freigaben, die beide vor der Veröffentlichung eintreffen müssen
+flow.create()
+    :with_input({ doc = "release-notes" })
+        :as("trigger")
+        :to("legal", "doc")
+        :to("finance", "doc")
+
+    :signal({ signal_id = "legal_ok", inputs = { required = { "doc" } } })
+        :as("legal")
+        :to("gate", "legal")
+
+    :signal({ signal_id = "finance_ok", inputs = { required = { "doc" } } })
+        :as("finance")
+        :to("gate", "finance")
+
+    :join({ inputs = { required = { "legal", "finance" } } })
+        :as("gate")
+        :to("release")
+
+    :func("app:release"):as("release"):to("@success")
+    :run()
+```
+
+Signaldaten werden als Knoten-Output bereitgestellt, sodass nachgelagerte Knoten alles erhalten, was an `client:signal()` übergeben wurde.
+
 ### Join Node
 
 Collects multiple inputs before proceeding:
@@ -572,6 +652,7 @@ local c, err = client.new()
 | `:get_status(dataflow_id)` | Get current status |
 | `:cancel(dataflow_id, timeout?)` | Gracefully cancel (default: 30s) |
 | `:terminate(dataflow_id)` | Force terminate |
+| `:signal(dataflow_id, signal_id, data?)` | Liefert ein externes Signal an einen wartenden Signal-Knoten |
 
 ## Workflow Status
 

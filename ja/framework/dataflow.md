@@ -311,7 +311,7 @@ Executes an agent with tool calling and optional structured exit:
 | `arena.prompt` | string | System prompt |
 | `arena.max_iterations` | number | Max reasoning loops (default: 64) |
 | `arena.min_iterations` | number | Min iterations before exit (default: 1) |
-| `arena.tool_calling` | string | `"auto"`, `"any"`, `"none"` |
+| `arena.tool_calling` | string | `"auto"`, `"any"` (requires `exit_schema`), `"none"` (rejects `exit_schema`) |
 | `arena.tools` | array | Tool registry IDs |
 | `arena.exit_schema` | table | JSON schema for structured exit |
 | `arena.exit_func_id` | string | Function to validate exit output |
@@ -469,6 +469,86 @@ Map-reduce pattern over arrays:
 }):as("processor")
 ```
 
+### Signal Node
+
+Pauses execution until an external signal arrives. Use for human approvals, external events, or staged workflows:
+
+```lua
+:signal({
+    signal_id = "approval",
+    inputs = { required = { "draft" } },
+    metadata = { title = "Wait for approval" }
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `signal_id` | string | Signal name matched against `client:signal()`. If empty or omitted, a UUID v7 is generated at runtime |
+| `inputs` | table | Input requirements |
+| `input_transform` | string/table | Transform inputs before the node receives them |
+| `metadata` | table | Node metadata |
+
+Send the signal from outside the workflow using the client API (see `client:signal()` below).
+
+#### Behavior
+
+The node yields with `wait_for_signal = true` and persists that yield in the workflow state. The orchestrator resumes the node when a matching `NODE_SIGNAL` commit arrives.
+
+- The signal is satisfied by any non-`nil` payload. `false`, `0`, `""`, and `{}` all satisfy the yield; only `nil` keeps it pending.
+- A signal yield blocks `COMPLETE_WORKFLOW` but does not block other pending nodes — parallel branches continue to execute while one branch waits.
+- Signals can be pre-queued before `:start()`: if a matching `NODE_SIGNAL` commit arrives before the signal node reaches the yield, it is delivered the moment the yield is tracked.
+- Only one signal satisfies each yield. If a second signal with the same `signal_id` arrives before the yield is satisfied, it overwrites the first.
+- When multiple signal yields share the same `signal_id`, the first matching yield receives the data.
+- If the `signal_id` field is absent, matching falls back to the node's discriminator.
+- Delivered signal data is passed to the node's output as the signal payload.
+
+#### Durability and recovery
+
+The signal yield is part of the workflow state, persisted through the same outbox mechanism as every other command. If the orchestrator process is killed while waiting:
+
+- The pending yield is restored on restart.
+- Signals delivered during the outage are queued and applied when the state reloads.
+- Compound pipelines (`func → signal → signal → func`) recover step-by-step — each signal can be delivered across a separate restart.
+
+Orphaned signal yields (yields whose parent process exited without completion) are cleaned up by the workflow state's process exit handler.
+
+#### Pipeline patterns
+
+Signal nodes participate in any topology:
+
+```lua
+-- Human-in-the-loop approval between two functions
+flow.create()
+    :func("app:draft")
+    :signal({ signal_id = "approve_draft" })
+    :func("app:publish")
+    :run()
+
+-- Two parallel approvals that must both arrive before release
+flow.create()
+    :with_input({ doc = "release-notes" })
+        :as("trigger")
+        :to("legal", "doc")
+        :to("finance", "doc")
+
+    :signal({ signal_id = "legal_ok", inputs = { required = { "doc" } } })
+        :as("legal")
+        :to("gate", "legal")
+
+    :signal({ signal_id = "finance_ok", inputs = { required = { "doc" } } })
+        :as("finance")
+        :to("gate", "finance")
+
+    :join({ inputs = { required = { "legal", "finance" } } })
+        :as("gate")
+        :to("release")
+
+    :func("app:release"):as("release"):to("@success")
+    :run()
+```
+
+Signal data is exposed as the node output, so downstream nodes receive whatever was passed to `client:signal()`.
+
 ### Join Node
 
 Collects multiple inputs before proceeding:
@@ -572,6 +652,7 @@ local c, err = client.new()
 | `:get_status(dataflow_id)` | Get current status |
 | `:cancel(dataflow_id, timeout?)` | Gracefully cancel (default: 30s) |
 | `:terminate(dataflow_id)` | Force terminate |
+| `:signal(dataflow_id, signal_id, data?)` | Deliver an external signal to a waiting signal node |
 
 ## Workflow Status
 

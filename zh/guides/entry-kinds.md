@@ -613,7 +613,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `network.i2p` | I2P 网络叠加层 |
 | `network.tailscale` | Tailscale 叠加层 |
 
-由 `http.service` 通过 `network:` 引用，由 `http_client` 通过 `network` 选项引用。参见 [网络](system/network.md)。
+由 `http.service` 通过 `network:` 引用，由 `funcs`/`process` 通过 `network` 选项引用，由 `http_client` 通过 `overlay_network` 选项引用。参见 [网络](system/network.md)。
 
 ## 注册表原语
 

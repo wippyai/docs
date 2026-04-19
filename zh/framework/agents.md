@@ -74,9 +74,9 @@ entries:
 | `meta.name` | string | 智能体标识符 |
 | `prompt` | string | 系统提示词 |
 | `model` | string | 模型名称或类别 |
-| `max_tokens` | number | 最大输出令牌数 |
-| `temperature` | number | 随机性控制，0-1 |
-| `thinking_effort` | number | 思考深度 0-100 |
+| `max_tokens` | number | 最大输出令牌数（默认 `512`） |
+| `temperature` | number | 采样温度（默认 `0`；范围因提供商而异） |
+| `thinking_effort` | number | 仅当 `> 0` 时转发给模型（提供商定义的刻度） |
 | `tools` | array | 工具注册表 ID |
 | `traits` | array | 特征引用 |
 | `delegates` | array | 委托智能体引用 |
@@ -172,7 +172,7 @@ local response, err = runner:step(conversation, {
 |--------|------|-------------|
 | `context` | table | 与智能体上下文合并的运行时上下文 |
 | `stream_target` | table | 流式传输：`{ reply_to, topic }` |
-| `tool_call` | string | `"auto"`、`"required"`、`"none"` |
+| `tool_call` | string | `"auto"`、`"any"`、`"none"` 或工具名称 |
 
 ### 步骤响应
 

@@ -47,8 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -70,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | Blendet die Sitzungsauswahl-UI aus |
 
 ### Theming
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+Drei Bereiche gelten: **global** (ueberall), **host** (das Chrome um den iframe) und **children** (Inhalte innerhalb des iframe).
+
+| Parameter | Bereich | Standard | Beschreibung |
+|-----------|---------|----------|--------------|
+| `custom_css` | global | Google Fonts Import | CSS auf jeder Ebene injiziert |
+| `css_variables` | global | `{}` | JSON-Map von CSS-Custom-Properties |
+| `icon_sets` | global | `[]` | Iconify-Icon-Set-URLs |
+| `host_custom_css` | host | `""` | CSS nur fuer Host-Chrome |
+| `host_css_variables` | host | `{}` | CSS-Custom-Properties nur fuer Host |
+| `host_icon_sets` | host | `[]` | Icon-Sets nur fuer Host |
+| `children_custom_css` | children | `""` | CSS nur fuer iframe-Inhalte |
+| `children_css_variables` | children | `{}` | CSS-Custom-Properties nur fuer iframe-Inhalte |
+| `login_path` | — | `/login.html` | Weiterleitungspfad fuer nicht authentifizierte Benutzer |
+
+### Optionales `hostConfig`-JSON
+
+Jeder der folgenden Parameter ist ein JSON-kodierter String; Standardwerte sind leer (`{}` oder `[]`). Sie werden unveraendert unter `hostConfig` an das Frontend weitergegeben.
+
+| Parameter | Standard | Beschreibung |
+|-----------|----------|--------------|
+| `api_routes` | `{}` | Routen-Ueberschreibungen fuer das Frontend |
+| `additional_nav_items` | `[]` | Zusaetzliche Sidebar-Eintraege |
+| `state_cache` | `{}` | Konfiguration des Frontend-State-Caches |
+| `allow_additional_tags` | `[]` | Zusaetzlich im Chat erlaubte HTML-Tags |
+| `chat` | `{}` | Chat-UI-Ueberschreibungen |
+| `axios_defaults` | `{}` | Frontend-Axios-HTTP-Client-Standardwerte |
 
 ## Config Endpoint
 
@@ -102,7 +124,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -118,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-Die API-URL wird aus der Umgebungsvariable `PUBLIC_API_URL` gelesen; `APP_WEBSOCKET_URL` wird durch Ersetzen von `https://` mit `wss://` abgeleitet. Theming hat drei Bereiche (`global`, `host`, `children`) — `host.i18n` enthaelt das App-Branding. `hostConfig`-Schluessel sind in camelCase und werden aus Facade-Parametern zusammengesetzt: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` und `axios_defaults`.
+Die API-URL wird aus der Umgebungsvariable `PUBLIC_API_URL` gelesen; `APP_WEBSOCKET_URL` wird durch Ersetzen von `http://` mit `ws://` oder `https://` mit `wss://` abgeleitet. Theming hat drei Bereiche (`global`, `host`, `children`) — `host.i18n` enthaelt das App-Branding. `hostConfig`-Schluessel sind in camelCase und werden aus Facade-Parametern zusammengesetzt: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` und `axios_defaults`.
 
 ## Navigation Sidebar
 

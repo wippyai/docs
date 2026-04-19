@@ -347,11 +347,13 @@ local evt = ch:receive()
 
 ## Module Access Control
 
-Entries declare which modules they can use. This is both a security boundary and a determinism guarantee (workflows only get deterministic modules).
+Each entry declares which modules it can `require()`. Modules not listed are simply unavailable — there is no `os.execute`, `io.open`, `debug.*`, or `package.*` unless you explicitly grant them. The runtime does not scan or validate source code; it controls access at the module level. If a module is not in the list, it does not exist for that entry.
 
 ```yaml
 modules: [sql, json, http, time, funcs, store]
 ```
+
+This is also how workflow determinism works — workflow entries only receive deterministic modules. The runtime intercepts `time.now()`, `uuid.v4()`, and other non-deterministic calls at the module level, recording results for replay.
 
 ## Framework Modules
 

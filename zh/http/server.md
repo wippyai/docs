@@ -32,6 +32,8 @@ HTTP 服务器 (`http.service`) 监听端口并承载路由器、端点和静态
 | `timeouts.idle` | duration | - | Keep-alive 连接超时 |
 | `host.buffer_size` | int | 1024 | 消息中继缓冲区大小 |
 | `host.worker_count` | int | NumCPU | 消息中继工作线程数 |
+| `network` | Registry ID | - | 通过 [网络 overlay](system/network.md) 绑定监听器（例如 Tailscale、I2P） |
+| `tls` | object | - | TLS 终止（参见 [TLS](#tls)） |
 
 ## 超时设置
 
@@ -157,6 +159,57 @@ entries:
 服务器可以直接终止 TLS。将 `tls.mode` 设置为 `manual`（提供您自己的证书）或 `auto`（由 overlay 网络驱动提供证书，例如 `network.tailscale`）。普通 clearnet 监听器不支持 `auto`。省略 `tls` 或将 mode 留空以运行纯 HTTP。
 
 在 `auto` 模式下，服务器不得指定 `cert`/`key`/`cert_env`/`key_env` — 由网络驱动提供。
+
+### 手动证书
+
+通过内联/文件加载或环境变量提供证书和密钥（不能同时使用两者）：
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: file://./certs/server.pem
+    key:  file://./certs/server.key
+```
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert_env: TLS_SERVER_CERT
+    key_env:  TLS_SERVER_KEY
+```
+
+| 字段 | 说明 |
+|------|------|
+| `mode` | `""`（关闭）、`auto` 或 `manual` |
+| `cert` / `key` | PEM 内容（通常通过 `file://` 加载） |
+| `cert_env` / `key_env` | 通过 [env 注册表](system/env.md) 解析的环境变量名 |
+
+### 双向 TLS (mTLS)
+
+在 `mode: manual` 下，服务器还可以验证客户端证书：
+
+```yaml
+tls:
+  mode: manual
+  cert_env: TLS_SERVER_CERT
+  key_env:  TLS_SERVER_KEY
+  client_ca: file://./certs/clients-ca.pem
+  client_auth: require_and_verify
+```
+
+| 字段 | 说明 |
+|------|------|
+| `client_auth` | `request`、`require_any`、`verify_if_given`、`require_and_verify` |
+| `client_ca` | 受信任客户端 CA 的 PEM 包 |
+| `client_ca_env` | 持有 CA 包的环境变量（与 `client_ca` 互斥） |
+
+`verify_if_given` 和 `require_and_verify` 需要 CA。`request` 和 `require_any` 接受任何客户端证书而不进行 CA 验证。
 
 ## 参见
 

@@ -115,12 +115,14 @@ sequenceDiagram
 
 ### 常见主题
 
-| 主题 | 发布者 | 用途 |
-|------|--------|------|
-| `registry.entry.*` | Registry | 条目变更 |
-| `process.started` | Topology | 进程生命周期 |
-| `process.stopped` | Topology | 进程生命周期 |
-| `supervisor.state.*` | Supervisor | 服务状态变更 |
+主题格式为 `<system>:<kind>`。内置系统发布：
+
+| 系统 | Kind | 用途 |
+|------|------|------|
+| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | 条目变更 |
+| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | 事务边界 |
+| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | 进程类型的工厂注册 |
+| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | 服务生命周期 |
 
 ## 注册表
 

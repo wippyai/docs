@@ -74,9 +74,9 @@ entries:
 | `meta.name` | string | Идентификатор агента |
 | `prompt` | string | Системный промпт |
 | `model` | string | Имя модели или класс |
-| `max_tokens` | number | Максимальное количество выходных токенов |
-| `temperature` | number | Контроль случайности, 0-1 |
-| `thinking_effort` | number | Глубина размышления 0-100 |
+| `max_tokens` | number | Максимальное количество выходных токенов (по умолчанию `512`) |
+| `temperature` | number | Температура сэмплирования (по умолчанию `0`; диапазон зависит от провайдера) |
+| `thinking_effort` | number | Передаётся модели только при `> 0` (шкала определяется провайдером) |
 | `tools` | array | Идентификаторы инструментов в реестре |
 | `traits` | array | Ссылки на трейты |
 | `delegates` | array | Ссылки на агентов-делегатов |
@@ -172,7 +172,7 @@ local response, err = runner:step(conversation, {
 |----------|-----|----------|
 | `context` | table | Контекст выполнения, объединяемый с контекстом агента |
 | `stream_target` | table | Потоковая передача: `{ reply_to, topic }` |
-| `tool_call` | string | `"auto"`, `"required"`, `"none"` |
+| `tool_call` | string | `"auto"`, `"any"`, `"none"` или имя инструмента |
 
 ### Ответ шага
 

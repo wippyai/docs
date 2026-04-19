@@ -27,7 +27,7 @@ entries:
     meta:
       type: test
       suite: math
-      description: Math operations
+      name: 数学运算
     source: file://math_test.lua
     method: run
     imports:
@@ -40,7 +40,7 @@ entries:
 |-------|----------|-------------|
 | `type` | 是 | 必须为 `"test"` 以便运行器发现 |
 | `suite` | 否 | 在运行器输出中分组测试 |
-| `description` | 否 | 人类可读的描述 |
+| `name` | 否 | 在运行器输出中显示的名称 |
 | `order` | 否 | 套件内的排序顺序（越小越先执行） |
 
 ## 编写测试
@@ -386,6 +386,6 @@ entries:
 
 ## 另请参阅
 
-- [框架概述](framework/overview.md) - 框架模块使用
+- [框架概述](overview.md) - 框架模块使用
 - [命令行工具](guides/cli.md) - CLI 命令
 - [函数](concepts/functions.md) - 函数注册表

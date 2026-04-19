@@ -115,12 +115,14 @@ sequenceDiagram
 
 ### 一般的なトピック
 
-| トピック | パブリッシャー | 目的 |
-|---------|------------|------|
-| `registry.entry.*` | Registry | エントリの変更 |
-| `process.started` | Topology | プロセスライフサイクル |
-| `process.stopped` | Topology | プロセスライフサイクル |
-| `supervisor.state.*` | Supervisor | サービス状態の変更 |
+トピックは `<system>:<kind>` の形式です。組み込みシステムが発行するもの：
+
+| System | Kind | 目的 |
+|--------|------|------|
+| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | エントリの変更 |
+| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | トランザクション境界 |
+| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | プロセス種別のファクトリ登録 |
+| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | サービスライフサイクル |
 
 ## レジストリ
 

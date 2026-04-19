@@ -98,8 +98,9 @@ wippy add acme/http@latest
 从锁文件安装依赖。
 
 ```bash
-wippy install
-wippy install --refresh
+wippy install                            # 安装全部
+wippy install acme/http                  # 安装指定模块
+wippy install --refresh acme/http        # 重新获取指定模块
 ```
 
 | 标志 | 缩写 | 默认值 | 描述 |

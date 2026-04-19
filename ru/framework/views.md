@@ -25,14 +25,14 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: api_url_env
-        value: PUBLIC_API_URL
+      - name: env_storage
+        value: app:env.storage
 ```
 
 | Параметр | Обязательный | По умолчанию | Описание |
 |-----------|----------|---------|-------------|
 | `api_router` | да | — | HTTP-роутер для API-эндпоинтов представлений |
-| `api_url_env` | нет | `PUBLIC_API_URL` | Переменная окружения с публичным URL API |
+| `env_storage` | нет | внутреннее | Хранилище переменных окружения, обеспечивающее переменную `PUBLIC_API_URL` |
 
 ## Шаблонные страницы
 
@@ -205,7 +205,7 @@ entries:
 | Поле | Тип | Описание |
 |-------|------|-------------|
 | `meta.type` | string | Должно быть `view.resource` |
-| `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
+| `meta.resource_type` | string | Произвольное (по умолчанию `"other"`); распространённые значения — `"style"`, `"script"`, `"font"` |
 | `meta.order` | number | Порядок сортировки внутри типа |
 | `meta.global` | boolean | Применяется ко всем страницам |
 | `meta.template_set` | string | Специфичен для набора шаблонов |

@@ -63,7 +63,7 @@ entries:
 | `application_host` | はい | — | リレープロセス用のプロセスホスト |
 | `env_storage` | いいえ | 内部 | 環境変数ストレージ |
 | `user_security_scope` | はい | — | ユーザーハブ用のセキュリティスコープ |
-| `max_connections_per_user` | いいえ | `10` | ユーザーごとの WebSocket 接続数 |
+| `max_connections_per_user` | いいえ | `5` | ユーザーごとの WebSocket 接続数 |
 | `queue_multiplier` | いいえ | `100` | メッセージキュー = 接続数 × 乗数 |
 | `user_hub_inactivity_timeout` | いいえ | `7200s` | ハブクリーンアップまでのアイドル時間 |
 
@@ -84,6 +84,8 @@ entries:
     ]
 }
 ```
+
+プラグインの `status` は `"not_started"`（登録済み、未起動）、`"pending"`（起動中）、`"running"`、`"failed"`、`"stopped"` のいずれかです。
 
 ## メッセージルーティング
 

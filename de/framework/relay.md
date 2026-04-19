@@ -63,7 +63,7 @@ entries:
 | `application_host` | ja | — | Process Host für Relay-Prozesse |
 | `env_storage` | nein | intern | Speicher für Umgebungsvariablen |
 | `user_security_scope` | ja | — | Sicherheits-Scope für User-Hubs |
-| `max_connections_per_user` | nein | `10` | WebSocket-Verbindungen pro Benutzer |
+| `max_connections_per_user` | nein | `5` | WebSocket-Verbindungen pro Benutzer |
 | `queue_multiplier` | nein | `100` | Nachrichten-Queue = Verbindungen × Multiplikator |
 | `user_hub_inactivity_timeout` | nein | `7200s` | Idle-Zeit vor Hub-Bereinigung |
 
@@ -84,6 +84,8 @@ entries:
     ]
 }
 ```
+
+Plugin-`status` ist einer von `"not_started"` (registriert, nie gestartet), `"pending"` (Start in Arbeit), `"running"`, `"failed"` oder `"stopped"`.
 
 ## Nachrichten-Routing
 

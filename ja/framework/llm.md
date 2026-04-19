@@ -94,7 +94,7 @@ return { handler = handler }
 |-------|------|-------------|
 | `result` | string | 生成されたテキストコンテンツ |
 | `tokens` | table | トークン使用量: `prompt_tokens`、`completion_tokens`、`thinking_tokens`、`total_tokens` |
-| `finish_reason` | string | 生成が停止した理由: `"stop"`、`"length"`、`"tool_call"` |
+| `finish_reason` | string | 生成が停止した理由: `"stop"`、`"length"`、`"tool_call"`、`"filtered"`、`"error"` |
 | `tool_calls` | table? | ツール呼び出しの配列（モデルがツールを呼び出した場合） |
 | `metadata` | table | プロバイダー固有のメタデータ |
 | `usage_record` | table? | 使用量追跡レコード |
@@ -191,6 +191,7 @@ conversation:add_message(prompt.ROLE.USER, {
 | `prompt.ROLE.DEVELOPER` | `"developer"` |
 | `prompt.ROLE.FUNCTION_CALL` | `"function_call"` |
 | `prompt.ROLE.FUNCTION_RESULT` | `"function_result"` |
+| `prompt.ROLE.CACHE_MARKER` | `"cache_marker"` |
 
 ### クローン
 

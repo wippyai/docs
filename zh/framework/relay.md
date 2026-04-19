@@ -63,7 +63,7 @@ entries:
 | `application_host` | 是 | — | 用于中继进程的进程宿主 |
 | `env_storage` | 否 | 内部 | 环境变量存储 |
 | `user_security_scope` | 是 | — | User hub 的安全作用域 |
-| `max_connections_per_user` | 否 | `10` | 每个用户的 WebSocket 连接数 |
+| `max_connections_per_user` | 否 | `5` | 每个用户的 WebSocket 连接数 |
 | `queue_multiplier` | 否 | `100` | 消息队列 = 连接数 × 乘数 |
 | `user_hub_inactivity_timeout` | 否 | `7200s` | hub 清理前的空闲时间 |
 
@@ -84,6 +84,8 @@ entries:
     ]
 }
 ```
+
+插件 `status` 为 `"not_started"`（已注册，从未启动）、`"pending"`（启动进行中）、`"running"`、`"failed"` 或 `"stopped"` 之一。
 
 ## 消息路由
 

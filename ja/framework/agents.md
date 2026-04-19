@@ -74,9 +74,9 @@ entries:
 | `meta.name` | string | エージェント識別子 |
 | `prompt` | string | システムプロンプト |
 | `model` | string | モデル名またはクラス |
-| `max_tokens` | number | 最大出力トークン数 |
-| `temperature` | number | ランダム性の制御、0-1 |
-| `thinking_effort` | number | 思考の深さ 0-100 |
+| `max_tokens` | number | 最大出力トークン数（デフォルト `512`） |
+| `temperature` | number | サンプリング温度（デフォルト `0`；範囲はプロバイダ依存） |
+| `thinking_effort` | number | `> 0` の場合のみモデルに転送（プロバイダ定義のスケール） |
 | `tools` | array | ツールレジストリ ID |
 | `traits` | array | トレイト参照 |
 | `delegates` | array | デリゲートエージェント参照 |
@@ -172,7 +172,7 @@ local response, err = runner:step(conversation, {
 |--------|------|-------------|
 | `context` | table | エージェントコンテキストにマージされる実行時コンテキスト |
 | `stream_target` | table | ストリーミング: `{ reply_to, topic }` |
-| `tool_call` | string | `"auto"`、`"required"`、`"none"` |
+| `tool_call` | string | `"auto"`、`"any"`、`"none"` またはツール名 |
 
 ### ステップレスポンス
 

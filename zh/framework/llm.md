@@ -94,7 +94,7 @@ return { handler = handler }
 |-------|------|-------------|
 | `result` | string | 生成的文本内容 |
 | `tokens` | table | 令牌用量：`prompt_tokens`、`completion_tokens`、`thinking_tokens`、`total_tokens` |
-| `finish_reason` | string | 生成停止原因：`"stop"`、`"length"`、`"tool_call"` |
+| `finish_reason` | string | 生成停止原因：`"stop"`、`"length"`、`"tool_call"`、`"filtered"`、`"error"` |
 | `tool_calls` | table? | 工具调用数组（如果模型调用了工具） |
 | `metadata` | table | 提供商特定的元数据 |
 | `usage_record` | table? | 使用量跟踪记录 |
@@ -191,6 +191,7 @@ conversation:add_message(prompt.ROLE.USER, {
 | `prompt.ROLE.DEVELOPER` | `"developer"` |
 | `prompt.ROLE.FUNCTION_CALL` | `"function_call"` |
 | `prompt.ROLE.FUNCTION_RESULT` | `"function_result"` |
+| `prompt.ROLE.CACHE_MARKER` | `"cache_marker"` |
 
 ### 克隆
 

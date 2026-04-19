@@ -74,9 +74,9 @@ entries:
 | `meta.name` | string | Agent-Identifikator |
 | `prompt` | string | System-Prompt |
 | `model` | string | Modellname oder -klasse |
-| `max_tokens` | number | Maximale Ausgabe-Tokens |
-| `temperature` | number | Zufallskontrolle, 0-1 |
-| `thinking_effort` | number | Denktiefe 0-100 |
+| `max_tokens` | number | Maximale Ausgabe-Tokens (Standard `512`) |
+| `temperature` | number | Sampling-Temperatur (Standard `0`; Bereich anbieterabhaengig) |
+| `thinking_effort` | number | Wird nur an das Modell weitergeleitet, wenn `> 0` (anbieterdefinierte Skala) |
 | `tools` | array | Tool-Registry-IDs |
 | `traits` | array | Trait-Referenzen |
 | `delegates` | array | Delegate-Agent-Referenzen |
@@ -172,7 +172,7 @@ local response, err = runner:step(conversation, {
 |--------|-----|--------------|
 | `context` | table | Laufzeit-Context, der mit dem Agent-Context zusammengefuehrt wird |
 | `stream_target` | table | Streaming: `{ reply_to, topic }` |
-| `tool_call` | string | `"auto"`, `"required"`, `"none"` |
+| `tool_call` | string | `"auto"`, `"any"`, `"none"` oder ein Tool-Name |
 
 ### Schritt-Antwort
 

@@ -25,14 +25,14 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: api_url_env
-        value: PUBLIC_API_URL
+      - name: env_storage
+        value: app:env.storage
 ```
 
 | 参数 | 必填 | 默认值 | 说明 |
 |-----------|----------|---------|-------------|
 | `api_router` | 是 | — | 用于视图 API 端点的 HTTP 路由器 |
-| `api_url_env` | 否 | `PUBLIC_API_URL` | 包含公共 API URL 的环境变量 |
+| `env_storage` | 否 | 内部 | 提供 `PUBLIC_API_URL` 变量的环境变量存储 |
 
 ## 模板页面
 
@@ -205,7 +205,7 @@ entries:
 | 字段 | 类型 | 说明 |
 |-------|------|-------------|
 | `meta.type` | string | 必须为 `view.resource` |
-| `meta.resource_type` | string | `"style"`、`"script"`、`"font"` |
+| `meta.resource_type` | string | 自由形式（默认 `"other"`）；常见值为 `"style"`、`"script"`、`"font"` |
 | `meta.order` | number | 类型内的排序 |
 | `meta.global` | boolean | 应用于所有页面 |
 | `meta.template_set` | string | 特定于一个模板集 |

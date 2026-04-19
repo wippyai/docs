@@ -27,7 +27,7 @@ entries:
     meta:
       type: test
       suite: math
-      description: Math operations
+      name: 算術演算
     source: file://math_test.lua
     method: run
     imports:
@@ -40,7 +40,7 @@ entries:
 |-----------|------|------|
 | `type` | Yes | ランナーが検出するために`"test"`である必要がある |
 | `suite` | No | ランナー出力でテストをグループ化する |
-| `description` | No | 人間が読める説明 |
+| `name` | No | ランナー出力に表示される表示名 |
 | `order` | No | スイート内のソート順（小さい値が先に実行される） |
 
 ## テストの記述

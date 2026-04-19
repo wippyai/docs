@@ -32,6 +32,8 @@ Der HTTP-Server (`http.service`) lauscht auf einem Port und hostet Router, Endpu
 | `timeouts.idle` | duration | - | Keep-Alive-Verbindungs-Timeout |
 | `host.buffer_size` | int | 1024 | Nachrichten-Relay-Puffergröße |
 | `host.worker_count` | int | NumCPU | Nachrichten-Relay-Worker |
+| `network` | Registry-ID | - | Listener über ein [Netzwerk-Overlay](system/network.md) binden (z. B. Tailscale, I2P) |
+| `tls` | object | - | TLS-Terminierung (siehe [TLS](#tls)) |
 
 ## Timeouts
 
@@ -157,6 +159,57 @@ entries:
 Der Server kann TLS direkt terminieren. Setzen Sie `tls.mode` auf `manual` (eigenes Zertifikat bereitstellen) oder `auto` (Zertifikat wird von einem Overlay-Netzwerktreiber bereitgestellt, z. B. `network.tailscale`). Reine Clearnet-Listener unterstützen `auto` nicht. Lassen Sie `tls` weg oder den Modus leer, um reines HTTP auszuführen.
 
 Im `auto`-Modus darf der Server `cert`/`key`/`cert_env`/`key_env` nicht angeben — der Netzwerktreiber stellt sie bereit.
+
+### Manuelles Zertifikat
+
+Stellen Sie Zertifikat und Schlüssel entweder inline/aus einer Datei oder über Umgebungsvariablen bereit (niemals beides):
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: file://./certs/server.pem
+    key:  file://./certs/server.key
+```
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert_env: TLS_SERVER_CERT
+    key_env:  TLS_SERVER_KEY
+```
+
+| Feld | Beschreibung |
+|------|--------------|
+| `mode` | `""` (aus), `auto` oder `manual` |
+| `cert` / `key` | PEM-Inhalt (typischerweise via `file://` geladen) |
+| `cert_env` / `key_env` | Namen von Umgebungsvariablen, aufgelöst über die [env-Registry](system/env.md) |
+
+### Mutual TLS (mTLS)
+
+Unter `mode: manual` kann der Server zusätzlich Client-Zertifikate verifizieren:
+
+```yaml
+tls:
+  mode: manual
+  cert_env: TLS_SERVER_CERT
+  key_env:  TLS_SERVER_KEY
+  client_ca: file://./certs/clients-ca.pem
+  client_auth: require_and_verify
+```
+
+| Feld | Beschreibung |
+|------|--------------|
+| `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
+| `client_ca` | PEM-Bundle vertrauenswürdiger Client-CAs |
+| `client_ca_env` | Umgebungsvariable mit dem CA-Bundle (gegenseitig ausschließend mit `client_ca`) |
+
+`verify_if_given` und `require_and_verify` benötigen eine CA. `request` und `require_any` akzeptieren jedes Client-Zertifikat ohne CA-Verifizierung.
 
 ## Siehe auch
 

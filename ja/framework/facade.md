@@ -47,8 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -70,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | セッション選択 UI を非表示にする |
 
 ### Theming
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+3 つのスコープが適用されます: **global**（あらゆる場所）、**host**（iframe を囲むクローム）、**children**（iframe 内のコンテンツ）。
+
+| Parameter | スコープ | Default | 説明 |
+|-----------|----------|---------|------|
+| `custom_css` | global | Google Fonts import | あらゆるレベルに注入される CSS |
+| `css_variables` | global | `{}` | CSS カスタムプロパティの JSON マップ |
+| `icon_sets` | global | `[]` | Iconify アイコンセット URL |
+| `host_custom_css` | host | `""` | host クローム専用の CSS |
+| `host_css_variables` | host | `{}` | host 専用の CSS カスタムプロパティ |
+| `host_icon_sets` | host | `[]` | host 専用のアイコンセット |
+| `children_custom_css` | children | `""` | iframe コンテンツ専用の CSS |
+| `children_css_variables` | children | `{}` | iframe コンテンツ専用の CSS カスタムプロパティ |
+| `login_path` | — | `/login.html` | 未認証ユーザーのリダイレクト先パス |
+
+### オプションの `hostConfig` JSON
+
+以下の各パラメータは JSON エンコードされた文字列です。デフォルトは空（`{}` または `[]`）です。これらはそのまま `hostConfig` 配下でフロントエンドに公開されます。
+
+| Parameter | Default | 説明 |
+|-----------|---------|------|
+| `api_routes` | `{}` | フロントエンドのルートオーバーライド |
+| `additional_nav_items` | `[]` | 追加のサイドバー項目 |
+| `state_cache` | `{}` | フロントエンドの状態キャッシュ設定 |
+| `allow_additional_tags` | `[]` | チャットで許可される追加の HTML タグ |
+| `chat` | `{}` | チャット UI のオーバーライド |
+| `axios_defaults` | `{}` | フロントエンド axios HTTP クライアントのデフォルト |
 
 ## Config Endpoint
 
@@ -102,7 +124,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -118,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-API URLは`PUBLIC_API_URL`環境変数から読み取られます。`APP_WEBSOCKET_URL`は`https://`を`wss://`に置き換えて導出されます。テーミングには3つのスコープ（`global`、`host`、`children`）があります — `host.i18n`にはアプリのブランディングが含まれます。`hostConfig`キーはcamelCaseで、facadeパラメータから組み立てられます: `session_type`、`history_mode`、`show_admin`、`allow_select_model`、`start_nav_open`、`hide_nav_bar`、`disable_right_panel`、`hide_session_selector`、加えてオプションの`api_routes`、`additional_nav_items`、`state_cache`、`allow_additional_tags`、`chat`、`axios_defaults`。
+API URLは`PUBLIC_API_URL`環境変数から読み取られます。`APP_WEBSOCKET_URL`は`http://`を`ws://`に、または`https://`を`wss://`に置き換えて導出されます。テーミングには3つのスコープ（`global`、`host`、`children`）があります — `host.i18n`にはアプリのブランディングが含まれます。`hostConfig`キーはcamelCaseで、facadeパラメータから組み立てられます: `session_type`、`history_mode`、`show_admin`、`allow_select_model`、`start_nav_open`、`hide_nav_bar`、`disable_right_panel`、`hide_session_selector`、加えてオプションの`api_routes`、`additional_nav_items`、`state_cache`、`allow_additional_tags`、`chat`、`axios_defaults`。
 
 ## Navigation Sidebar
 
