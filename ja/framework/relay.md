@@ -1,8 +1,8 @@
-# Relay
+# リレー
 
-The `wippy/relay` module provides WebSocket relay infrastructure with a two-tier hub architecture. A central hub manages per-user hubs, which in turn manage WebSocket client connections and route messages to plugins.
+`wippy/relay` モジュールは、2 階層ハブアーキテクチャを持つ WebSocket リレーインフラストラクチャを提供します。中央ハブはユーザーごとのハブを管理し、それらが WebSocket クライアント接続を管理し、メッセージをプラグインへルーティングします。
 
-## Architecture
+## アーキテクチャ
 
 ```
 Central Hub
@@ -17,18 +17,18 @@ Central Hub
 └── ...
 ```
 
-The central hub runs as a service. When a WebSocket client connects, the central hub looks up or creates a user hub for that user. The user hub manages the client's lifetime and routes messages to plugins based on command prefixes.
+中央ハブはサービスとして実行されます。WebSocket クライアントが接続すると、中央ハブはそのユーザー用のユーザーハブを検索または作成します。ユーザーハブはクライアントのライフタイムを管理し、コマンドプレフィックスに基づいてプラグインへメッセージをルーティングします。
 
-## Setup
+## セットアップ
 
-Add the module to your project:
+プロジェクトにモジュールを追加します：
 
 ```bash
 wippy add wippy/relay
 wippy install
 ```
 
-Declare the dependency with required parameters:
+必要なパラメータとともに依存関係を宣言します：
 
 ```yaml
 version: "1.0"
@@ -56,23 +56,23 @@ entries:
         value: app.security:user_scope
 ```
 
-### Configuration Parameters
+### 設定パラメータ
 
-| Parameter | Required | Default | Description |
+| パラメータ | 必須 | デフォルト | 説明 |
 |-----------|----------|---------|-------------|
-| `application_host` | yes | — | Process host for relay processes |
-| `env_storage` | no | internal | Environment variable storage |
-| `user_security_scope` | yes | — | Security scope for user hubs |
-| `max_connections_per_user` | no | `10` | WebSocket connections per user |
-| `queue_multiplier` | no | `100` | Message queue = connections × multiplier |
-| `user_hub_inactivity_timeout` | no | `7200s` | Idle time before hub cleanup |
+| `application_host` | はい | — | リレープロセス用のプロセスホスト |
+| `env_storage` | いいえ | 内部 | 環境変数ストレージ |
+| `user_security_scope` | はい | — | ユーザーハブ用のセキュリティスコープ |
+| `max_connections_per_user` | いいえ | `10` | ユーザーごとの WebSocket 接続数 |
+| `queue_multiplier` | いいえ | `100` | メッセージキュー = 接続数 × 乗数 |
+| `user_hub_inactivity_timeout` | いいえ | `7200s` | ハブクリーンアップまでのアイドル時間 |
 
-## Client Connection Flow
+## クライアント接続フロー
 
-1. WebSocket client connects with `user_id` in metadata
-2. Central hub validates the connection and checks per-user limits
-3. Central hub creates or reuses a user hub for the user
-4. User hub sends a `welcome` message to the client:
+1. WebSocket クライアントがメタデータ内に `user_id` を含めて接続する
+2. 中央ハブが接続を検証し、ユーザーごとの上限をチェックする
+3. 中央ハブがそのユーザー用のユーザーハブを作成または再利用する
+4. ユーザーハブがクライアントへ `welcome` メッセージを送信する：
 
 ```json
 {
@@ -85,15 +85,15 @@ entries:
 }
 ```
 
-## Message Routing
+## メッセージルーティング
 
-Clients send JSON messages with a `type` field. The user hub matches the type prefix against registered plugins and routes the message:
+クライアントは `type` フィールドを持つ JSON メッセージを送信します。ユーザーハブは登録されたプラグインに対してタイププレフィックスを照合し、メッセージをルーティングします：
 
 ```json
 { "type": "session_get_state", "data": { "key": "value" } }
 ```
 
-The `session_` prefix matches the session plugin. The hub strips the prefix and sends the message to the plugin process with the stripped type as the topic:
+`session_` プレフィックスはセッションプラグインに一致します。ハブはプレフィックスを取り除き、取り除いたタイプをトピックとしてプラグインプロセスにメッセージを送信します：
 
 ```lua
 -- process topic: "get_state"
@@ -107,11 +107,11 @@ The `session_` prefix matches the session plugin. The hub strips the prefix and 
 }
 ```
 
-Plugins respond by sending messages back to `conn_pid`.
+プラグインは `conn_pid` にメッセージを送信して応答します。
 
-## Plugins
+## プラグイン
 
-Plugins are `process.lua` entries with `meta.type: relay.plugin`:
+プラグインは `meta.type: relay.plugin` を持つ `process.lua` エントリです：
 
 ```yaml
 entries:
@@ -126,18 +126,18 @@ entries:
     method: run
 ```
 
-### Plugin Metadata
+### プラグインメタデータ
 
-| Field | Type | Description |
+| フィールド | 型 | 説明 |
 |-------|------|-------------|
-| `meta.type` | string | Must be `relay.plugin` |
-| `meta.command_prefix` | string | Message type prefix this plugin handles |
-| `meta.auto_start` | boolean | Start when user hub initializes |
-| `meta.default_host` | string | Override process host |
+| `meta.type` | string | `relay.plugin` でなければならない |
+| `meta.command_prefix` | string | このプラグインが処理するメッセージタイプのプレフィックス |
+| `meta.auto_start` | boolean | ユーザーハブ初期化時に開始する |
+| `meta.default_host` | string | プロセスホストを上書きする |
 
-### Plugin Lifecycle
+### プラグインのライフサイクル
 
-Plugins are spawned by the user hub. On startup, the plugin receives:
+プラグインはユーザーハブによって生成されます。起動時、プラグインは以下を受け取ります：
 
 ```lua
 function run(args)
@@ -148,18 +148,18 @@ function run(args)
 end
 ```
 
-The `session_` plugin receives lifecycle messages:
+`session_` プラグインはライフサイクルメッセージを受け取ります：
 
-| Message | When |
+| メッセージ | タイミング |
 |---------|------|
-| `"resume"` | First client connects to user hub |
-| `"shutdown"` | Last client disconnects from user hub |
+| `"resume"` | 最初のクライアントがユーザーハブへ接続したとき |
+| `"shutdown"` | 最後のクライアントがユーザーハブから切断したとき |
 
-Plugins get 1 automatic restart on crash. After a second crash, the plugin is marked as `"failed"` and not restarted.
+プラグインはクラッシュ時に 1 回の自動再起動が行われます。2 回目のクラッシュ後、プラグインは `"failed"` としてマークされ、再起動されません。
 
-### Plugin Implementation
+### プラグイン実装
 
-Plugins receive messages on their process inbox. Each message has a topic (the stripped command prefix) and a payload containing the original message data along with `conn_pid` for sending responses back to the client.
+プラグインはプロセスインボックスでメッセージを受け取ります。各メッセージはトピック（取り除かれたコマンドプレフィックス）と、元のメッセージデータと、クライアントへのレスポンス送信用の `conn_pid` を含むペイロードを持ちます。
 
 ```lua
 local json = require("json")
@@ -191,9 +191,9 @@ local function run(args)
             local payload = msg:payload():data()
 
             if topic == "resume" then
-                -- first client connected
+                -- 最初のクライアントが接続した
             elseif topic == "shutdown" then
-                -- last client disconnected
+                -- 最後のクライアントが切断した
             else
                 handle_message(topic, payload)
             end
@@ -209,50 +209,50 @@ end
 return { run = run }
 ```
 
-## Error Handling
+## エラー処理
 
-The relay sends structured error messages to clients:
+リレーは構造化されたエラーメッセージをクライアントへ送信します：
 
-| Error Code | Description |
+| エラーコード | 説明 |
 |------------|-------------|
-| `max_connections_reached` | User at connection limit |
-| `missing_user_id` | No user_id in connection metadata |
-| `hub_creation_failed` | Failed to spawn user hub |
-| `invalid_json` | Message decode error |
-| `unknown_command` | Message missing type field |
-| `plugin_not_found` | No plugin matches the command prefix |
-| `plugin_failed` | Plugin unavailable or crashed |
+| `max_connections_reached` | ユーザーが接続上限に達した |
+| `missing_user_id` | 接続メタデータに user_id がない |
+| `hub_creation_failed` | ユーザーハブの生成に失敗した |
+| `invalid_json` | メッセージのデコードエラー |
+| `unknown_command` | メッセージに type フィールドがない |
+| `plugin_not_found` | コマンドプレフィックスに一致するプラグインがない |
+| `plugin_failed` | プラグインが利用不可またはクラッシュした |
 
-## Hub Lifecycle
+## ハブのライフサイクル
 
-### User Hub Creation
+### ユーザーハブの作成
 
-User hubs are created on demand when the first client for a user connects. The hub spawns with the user's security actor and scope.
+ユーザーハブは、ユーザーの最初のクライアントが接続したときにオンデマンドで作成されます。ハブはユーザーのセキュリティアクターとスコープで生成されます。
 
-### Garbage Collection
+### ガベージコレクション
 
-The central hub periodically checks for inactive user hubs. A hub with no connected clients for longer than `user_hub_inactivity_timeout` (default 2 hours) is gracefully terminated with a 10-second cancel timeout.
+中央ハブは定期的に非アクティブなユーザーハブをチェックします。`user_hub_inactivity_timeout`（デフォルト 2 時間）より長く接続クライアントを持たないハブは、10 秒のキャンセルタイムアウトを伴って正常に終了されます。
 
-The GC check interval is automatically derived: `inactivity_timeout / 2.5`.
+GC のチェック間隔は自動的に導出されます：`inactivity_timeout / 2.5`。
 
-### Security
+### セキュリティ
 
-The central hub runs under its own security group (`wippy.relay.security:root`) with full access. Each user hub spawns with the configured `user_security_scope`, isolating user-level operations.
+中央ハブはフルアクセスを持つ独自のセキュリティグループ（`wippy.relay.security:root`）の下で実行されます。各ユーザーハブは設定された `user_security_scope` で生成され、ユーザーレベルの操作を分離します。
 
-## Internal Topics
+## 内部トピック
 
-| Topic | Direction | Description |
+| トピック | 方向 | 説明 |
 |-------|-----------|-------------|
-| `ws.join` | Client → Central/User Hub | Connection request |
-| `ws.leave` | Client → Central/User Hub | Disconnection |
-| `ws.message` | Client → User Hub | WebSocket message |
-| `ws.cancel` | Central → User Hub | Graceful shutdown |
-| `ws.control` | Central → User Hub | Routing control |
-| `hub.activity_update` | User Hub → Central | Client count update |
+| `ws.join` | Client → Central/User Hub | 接続要求 |
+| `ws.leave` | Client → Central/User Hub | 切断 |
+| `ws.message` | Client → User Hub | WebSocket メッセージ |
+| `ws.cancel` | Central → User Hub | 正常シャットダウン |
+| `ws.control` | Central → User Hub | ルーティング制御 |
+| `hub.activity_update` | User Hub → Central | クライアント数の更新 |
 
-## See Also
+## 関連項目
 
-- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket endpoint configuration
-- [Process Model](../concepts/process-model.md) - Process lifecycle and messaging
-- [Security](../system/security.md) - Security actors and scopes
-- [Framework Overview](overview.md) - Framework module usage
+- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket エンドポイント設定
+- [プロセスモデル](../concepts/process-model.md) - プロセスのライフサイクルとメッセージング
+- [セキュリティ](../system/security.md) - セキュリティアクターとスコープ
+- [フレームワーク概要](overview.md) - フレームワークモジュールの利用

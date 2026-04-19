@@ -2,21 +2,21 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Terminal UI module for raw input events, styled output, and layout utilities.
+用于原始输入事件、样式化输出和布局工具的终端 UI 模块。
 
 <note>
-This module only works inside terminal context. You cannot use it from regular functions—only from processes running on a <a href="system/terminal.md">Terminal Host</a>.
+此模块仅在终端上下文中工作。你不能从普通函数中使用它——只能从运行在<a href="system/terminal.md">终端宿主</a>上的进程中使用。
 </note>
 
-## Loading
+## 加载
 
 ```lua
 local tty = require("tty")
 ```
 
-## Input Loop
+## 输入循环
 
-Start the raw input reader, subscribe to events, and process them in a loop:
+启动原始输入读取器、订阅事件并在循环中处理它们：
 
 ```lua
 local tty = require("tty")
@@ -45,89 +45,89 @@ local function handler()
 end
 ```
 
-## Input Control
+## 输入控制
 
 ### tty.start()
 
-Enable raw terminal input mode. The terminal switches to raw mode and begins emitting events.
+启用原始终端输入模式。终端切换到原始模式并开始发出事件。
 
 ```lua
 local ok, err = tty.start()
 ```
 
-**Returns:** `boolean, error`
+**返回：** `boolean, error`
 
 ### tty.stop()
 
-Disable raw input and restore the terminal to normal mode.
+禁用原始输入并将终端恢复到正常模式。
 
 ```lua
 local ok, err = tty.stop()
 ```
 
-**Returns:** `boolean, error`
+**返回：** `boolean, error`
 
 ### tty.events()
 
-Subscribe to terminal events and return a channel. Events are delivered as tables with a `type` field.
+订阅终端事件并返回一个通道。事件作为带有 `type` 字段的表传递。
 
 ```lua
 local events = tty.events()
 ```
 
-**Returns:** `EventChannel`
+**返回：** `EventChannel`
 
 ### tty.screen_size()
 
-Query current terminal dimensions.
+查询当前终端尺寸。
 
 ```lua
 local width, height, err = tty.screen_size()
 ```
 
-**Returns:** `number, number, error`
+**返回：** `number, number, error`
 
 ### tty.mouse(enable)
 
-Enable or disable mouse event tracking.
+启用或禁用鼠标事件跟踪。
 
 ```lua
 local ok, err = tty.mouse(true)
 ```
 
-| Parameter | Type | Description |
+| 参数 | 类型 | 说明 |
 |-----------|------|-------------|
-| `enable` | boolean | `true` to enable, `false` to disable |
+| `enable` | boolean | `true` 启用，`false` 禁用 |
 
-**Returns:** `boolean, error`
+**返回：** `boolean, error`
 
-## Event Types
+## 事件类型
 
-Events are tables with a `type` field that determines which other fields are present.
+事件是带有 `type` 字段的表，该字段决定了存在哪些其他字段。
 
-### Key Event
+### 按键事件
 
 ```lua
 {
     type = "key",
-    key = "a",           -- printable character or key name
-    key_type = "runes",  -- "runes" for printable, or special key name
-    action = "press",    -- "press" or "release"
+    key = "a",           -- 可打印字符或键名
+    key_type = "runes",  -- "runes" 表示可打印，或特殊键名
+    action = "press",    -- "press" 或 "release"
     alt = false,
     ctrl = false,
     shift = false
 }
 ```
 
-### Mouse Event
+### 鼠标事件
 
-Requires `tty.mouse(true)`.
+需要 `tty.mouse(true)`。
 
 ```lua
 {
     type = "mouse",
-    action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- button name
+    action = "press",    -- "press"、"release"、"motion"、"wheel"
+    button = "left",     -- 按钮名
     x = 10,
     y = 5,
     alt = false,
@@ -136,35 +136,35 @@ Requires `tty.mouse(true)`.
 }
 ```
 
-### Resize Event
+### 调整大小事件
 
 ```lua
 {type = "resize", width = 120, height = 40}
 ```
 
-### Start Event
+### 启动事件
 
-Emitted once after `tty.start()` with initial dimensions.
+在 `tty.start()` 之后发出一次，包含初始尺寸。
 
 ```lua
 {type = "start", width = 120, height = 40}
 ```
 
-### Focus Event
+### 焦点事件
 
 ```lua
 {type = "focus", focused = true}
 ```
 
-### Paste Event
+### 粘贴事件
 
 ```lua
 {type = "paste", text = "pasted content"}
 ```
 
-## Key Bindings
+## 按键绑定
 
-Create reusable key bindings that match against key events:
+创建可重用的按键绑定，与按键事件匹配：
 
 ```lua
 local quit = tty.bind({
@@ -172,7 +172,7 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- In event loop
+-- 在事件循环中
 if quit:matches(ev) then
     break
 end
@@ -180,25 +180,25 @@ end
 
 ### tty.bind(config)
 
-| Field | Type | Description |
+| 字段 | 类型 | 说明 |
 |-------|------|-------------|
-| `keys` | string[] | Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
-| `help` | table | Optional. `{key = "...", desc = "..."}` for help text |
+| `keys` | string[] | 要匹配的按键模式（如 `"a"`、`"ctrl+c"`、`"enter"`） |
+| `help` | table | 可选。`{key = "...", desc = "..."}` 用于帮助文本 |
 
-**Returns:** `KeyBinding`
+**返回：** `KeyBinding`
 
-### KeyBinding Methods
+### KeyBinding 方法
 
-| Method | Returns | Description |
+| 方法 | 返回 | 说明 |
 |--------|---------|-------------|
-| `matches(event)` | boolean | Test if a key event matches this binding |
-| `set_enabled(bool)` | self | Enable or disable the binding |
-| `is_enabled()` | boolean | Check if the binding is enabled |
-| `help()` | table | Returns `{key, desc}` help info |
+| `matches(event)` | boolean | 测试按键事件是否匹配此绑定 |
+| `set_enabled(bool)` | self | 启用或禁用绑定 |
+| `is_enabled()` | boolean | 检查绑定是否启用 |
+| `help()` | table | 返回 `{key, desc}` 帮助信息 |
 
-## Styles
+## 样式
 
-Create styled text output using lipgloss-based styling. All style methods return a new style (immutable).
+使用基于 lipgloss 的样式创建样式化文本输出。所有样式方法返回新样式（不可变）。
 
 ```lua
 local tty = require("tty")
@@ -220,58 +220,58 @@ io.print(box:render(title:render("Hello"), "World"))
 
 ### tty.style()
 
-Create a new empty style.
+创建一个新的空样式。
 
-**Returns:** `Style`
+**返回：** `Style`
 
-### Style Methods
+### 样式方法
 
-All methods return a new `Style` and can be chained.
+所有方法返回新的 `Style` 并可链式调用。
 
-#### Text Decoration
+#### 文本装饰
 
-| Method | Parameter | Description |
+| 方法 | 参数 | 说明 |
 |--------|-----------|-------------|
-| `foreground(color)` | string | Text color (hex `"#FF0000"`, ANSI `"9"`, or name) |
-| `background(color)` | string | Background color |
-| `bold(enable?)` | boolean | Bold text (default: true) |
-| `italic(enable?)` | boolean | Italic text |
-| `underline(enable?)` | boolean | Underline text |
-| `strikethrough(enable?)` | boolean | Strikethrough text |
-| `faint(enable?)` | boolean | Dimmed text |
-| `blink(enable?)` | boolean | Blinking text |
-| `reverse(enable?)` | boolean | Swap foreground/background |
+| `foreground(color)` | string | 文本颜色（十六进制 `"#FF0000"`、ANSI `"9"` 或名称） |
+| `background(color)` | string | 背景颜色 |
+| `bold(enable?)` | boolean | 粗体文本（默认：true） |
+| `italic(enable?)` | boolean | 斜体文本 |
+| `underline(enable?)` | boolean | 下划线文本 |
+| `strikethrough(enable?)` | boolean | 删除线文本 |
+| `faint(enable?)` | boolean | 暗淡文本 |
+| `blink(enable?)` | boolean | 闪烁文本 |
+| `reverse(enable?)` | boolean | 交换前景/背景 |
 
-#### Layout
+#### 布局
 
-| Method | Parameter | Description |
+| 方法 | 参数 | 说明 |
 |--------|-----------|-------------|
-| `width(n)` | number | Fixed width |
-| `height(n)` | number | Fixed height |
-| `max_width(n)` | number | Maximum width |
-| `max_height(n)` | number | Maximum height |
-| `padding(...)` | numbers | Padding (CSS-style: top, right, bottom, left) |
-| `margin(...)` | numbers | Margin (CSS-style) |
-| `align(pos)` | number | Horizontal alignment |
-| `align_vertical(pos)` | number | Vertical alignment |
-| `inline(enable?)` | boolean | Inline rendering mode |
+| `width(n)` | number | 固定宽度 |
+| `height(n)` | number | 固定高度 |
+| `max_width(n)` | number | 最大宽度 |
+| `max_height(n)` | number | 最大高度 |
+| `padding(...)` | numbers | 内边距（CSS 风格：上、右、下、左） |
+| `margin(...)` | numbers | 外边距（CSS 风格） |
+| `align(pos)` | number | 水平对齐 |
+| `align_vertical(pos)` | number | 垂直对齐 |
+| `inline(enable?)` | boolean | 内联渲染模式 |
 
-#### Borders
+#### 边框
 
-| Method | Parameter | Description |
+| 方法 | 参数 | 说明 |
 |--------|-----------|-------------|
-| `border(name, ...)` | string, booleans | Border style, optional per-side toggles |
-| `border_foreground(...)` | strings | Border color(s) |
-| `border_background(...)` | strings | Border background color(s) |
+| `border(name, ...)` | string, booleans | 边框样式，可选的每边切换 |
+| `border_foreground(...)` | strings | 边框颜色 |
+| `border_background(...)` | strings | 边框背景颜色 |
 
-#### Other
+#### 其他
 
-| Method | Description |
+| 方法 | 说明 |
 |--------|-------------|
-| `render(...)` | Render strings with this style applied |
-| `copy()` | Create a copy of this style |
+| `render(...)` | 应用此样式渲染字符串 |
+| `copy()` | 创建此样式的副本 |
 
-### Border Constants
+### 边框常量
 
 ```lua
 tty.borders.NORMAL
@@ -281,7 +281,7 @@ tty.borders.DOUBLE
 tty.borders.HIDDEN
 ```
 
-### Alignment Constants
+### 对齐常量
 
 ```lua
 tty.align.LEFT    -- 0
@@ -289,51 +289,51 @@ tty.align.CENTER  -- 0.5
 tty.align.RIGHT   -- 1
 ```
 
-## Text Utilities
+## 文本工具
 
-Layout and measurement functions for styled text. Available under `tty.text`.
+样式化文本的布局和测量函数。在 `tty.text` 下可用。
 
-### Measurement
+### 测量
 
 ```lua
-local w = tty.text.width("hello")         -- printable width (ANSI-aware)
-local h = tty.text.height("a\nb\nc")      -- line count
-local w, h = tty.text.size("hello\nworld") -- both
+local w = tty.text.width("hello")         -- 可打印宽度（ANSI 感知）
+local h = tty.text.height("a\nb\nc")      -- 行数
+local w, h = tty.text.size("hello\nworld") -- 两者
 ```
 
-### Joining
+### 拼接
 
 ```lua
--- Join side by side, aligned at top
+-- 并排拼接，顶部对齐
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Stack vertically, centered
+-- 垂直堆叠，居中
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
-### Max Dimensions
+### 最大尺寸
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- widest
-local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
+local w = tty.text.max_width({"short", "a longer string"})   -- 最宽
+local h = tty.text.max_height({"one\ntwo", "single"})         -- 最高
 ```
 
-### Placement
+### 放置
 
-Place a string within a box of given dimensions:
+将字符串放置在给定尺寸的盒子内：
 
 ```lua
--- Center in a 80x24 box
+-- 在 80x24 的盒子中居中
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Horizontal only
+-- 仅水平
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Vertical only
+-- 仅垂直
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
-### Position Constants
+### 位置常量
 
 ```lua
 tty.text.position.TOP      -- 0
@@ -343,7 +343,7 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
-## See Also
+## 另见
 
-- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
-- [Terminal Host](system/terminal.md) — Terminal host configuration
+- [终端 I/O](lua/system/io.md) —— stdin/stdout/stderr 操作
+- [终端宿主](system/terminal.md) —— 终端宿主配置

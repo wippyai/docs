@@ -1,27 +1,27 @@
-# Publishing Modules
+# Публикация модулей
 
-Share reusable code on the Wippy Hub.
+Делитесь переиспользуемым кодом в Wippy Hub.
 
-## Prerequisites
+## Предварительные требования
 
-1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
-2. Create an organization or join one
-3. Register your module name under your organization
+1. Создайте аккаунт на [hub.wippy.ai](https://hub.wippy.ai)
+2. Создайте организацию или присоединитесь к существующей
+3. Зарегистрируйте имя модуля под вашей организацией
 
-## Module Structure
+## Структура модуля
 
 ```
 mymodule/
-├── wippy.yaml      # Module manifest
+├── wippy.yaml      # Манифест модуля
 ├── src/
-│   ├── _index.yaml # Entry definitions
-│   └── *.lua       # Source files
-└── README.md       # Documentation (optional)
+│   ├── _index.yaml # Определения записей
+│   └── *.lua       # Исходные файлы
+└── README.md       # Документация (опционально)
 ```
 
 ## wippy.yaml
 
-Module manifest:
+Манифест модуля:
 
 ```yaml
 organization: acme
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| Field | Required | Description |
+| Поле | Обязательное | Описание |
 |-------|----------|-------------|
-| `organization` | Yes | Your org name on the hub |
-| `module` | Yes | Module name |
-| `description` | No | Short description |
-| `license` | No | SPDX identifier (MIT, Apache-2.0) |
-| `repository` | No | Source repository URL |
-| `homepage` | No | Project homepage |
-| `keywords` | No | Search keywords |
+| `organization` | Да | Имя вашей организации в hub |
+| `module` | Да | Имя модуля |
+| `description` | Нет | Краткое описание |
+| `license` | Нет | Идентификатор SPDX (MIT, Apache-2.0) |
+| `repository` | Нет | URL репозитория исходников |
+| `homepage` | Нет | Главная страница проекта |
+| `keywords` | Нет | Поисковые ключевые слова |
 
-## Entry Definitions
+## Определения записей
 
-Entries are defined in `_index.yaml`:
+Записи определяются в `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -68,9 +68,9 @@ entries:
       - json
 ```
 
-## Dependencies
+## Зависимости
 
-Declare dependencies on other modules:
+Объявление зависимостей от других модулей:
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-Version constraints:
+Ограничения версий:
 
-| Constraint | Meaning |
+| Ограничение | Значение |
 |------------|---------|
-| `*` | Any version |
-| `1.0.0` | Exact version |
-| `>=1.0.0` | Minimum version |
-| `^1.0.0` | Compatible (same major) |
+| `*` | Любая версия |
+| `1.0.0` | Точная версия |
+| `>=1.0.0` | Минимальная версия |
+| `^1.0.0` | Совместимая (тот же major) |
 
-## Requirements
+## Требования
 
-Define configuration that consumers must provide:
+Определите конфигурацию, которую должны предоставлять потребители:
 
 ```yaml
 entries:
@@ -107,19 +107,19 @@ entries:
     default: "https://api.example.com"
 ```
 
-Targets specify where the value is injected:
-- `entry` - Full entry ID to configure
-- `path` - JSONPath for value injection
+Targets указывают, куда внедряется значение:
+- `entry` — полный ID записи для конфигурирования
+- `path` — JSONPath для внедрения значения
 
-Consumers configure via override. The `-o` flag takes a `namespace:entry:field=value` triple:
+Потребители настраивают через override. Флаг `-o` принимает тройку `namespace:entry:field=value`:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
 ```
 
-## Imports
+## Импорты
 
-Reference other entries:
+Ссылки на другие записи:
 
 ```yaml
 - name: handler
@@ -128,21 +128,21 @@ Reference other entries:
   modules:
     - json
   imports:
-    client: acme.http:client           # Same namespace
-    utils: acme.utils:helpers          # Different namespace
-    base_registry: :registry           # Built-in
+    client: acme.http:client           # То же пространство имён
+    utils: acme.utils:helpers          # Другое пространство имён
+    base_registry: :registry           # Встроенное
 ```
 
-In Lua:
+В Lua:
 
 ```lua
 local client = require("client")
 local utils = require("utils")
 ```
 
-## Contracts
+## Контракты
 
-Define public interfaces:
+Определение публичных интерфейсов:
 
 ```yaml
 - name: http_contract
@@ -164,15 +164,15 @@ Define public interfaces:
         post: acme.http:post_handler
 ```
 
-## Publishing Workflow
+## Процесс публикации
 
-### 1. Authenticate
+### 1. Аутентификация
 
 ```bash
 wippy auth login
 ```
 
-### 2. Prepare
+### 2. Подготовка
 
 ```bash
 wippy init
@@ -180,47 +180,47 @@ wippy update
 wippy lint
 ```
 
-### 3. Validate
+### 3. Валидация
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. Publish
+### 4. Публикация
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-With release notes:
+С release notes:
 
 ```bash
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### Additional Flags
+### Дополнительные флаги
 
-| Flag | Description |
+| Флаг | Описание |
 |------|-------------|
-| `--label <name>` | Publish as a mutable label (e.g. `latest`, `beta`) instead of an immutable version |
-| `--protected` | Mark the published version as protected (cannot be deleted or overwritten) |
-| `--registry <url>` | Override the registry URL for this publish |
-| `--config <dir>` | Directory containing `wippy.yaml` (default: current dir) |
+| `--label <name>` | Опубликовать как изменяемый label (например, `latest`, `beta`) вместо неизменяемой версии |
+| `--protected` | Пометить опубликованную версию как защищённую (нельзя удалить или перезаписать) |
+| `--registry <url>` | Переопределить URL реестра для этой публикации |
+| `--config <dir>` | Каталог, содержащий `wippy.yaml` (по умолчанию: текущий) |
 
-### Embedding Static Files
+### Встраивание статических файлов
 
-Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+Модули с записями `fs.directory` (статические ассеты, шаблоны, публичные файлы) должны использовать `--embed`, чтобы включить их в опубликованный пакет. Без него записи `fs.directory` исключаются.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+Флаг `--embed` принимает ID или имена записей, соответствующие `fs.directory`. Тот же флаг доступен в `wippy pack`.
 
-## Using Published Modules
+## Использование опубликованных модулей
 
-### Add Dependency
+### Добавление зависимости
 
 ```bash
 wippy add acme/http-utils
@@ -228,25 +228,25 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### Configure Requirements
+### Конфигурация требований
 
-Override values at runtime:
+Переопределение значений во время выполнения:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://my.api.com
 ```
 
-Or in `.wippy.yaml`:
+Или в `.wippy.yaml`:
 
 ```yaml
 override:
   acme.http:client:meta.endpoint: "https://my.api.com"
 ```
 
-### Import in Your Code
+### Импорт в вашем коде
 
 ```yaml
-# your src/_index.yaml
+# ваш src/_index.yaml
 entries:
   - name: __dependency.acme.http
     kind: ns.dependency
@@ -260,7 +260,7 @@ entries:
       http: acme.http:client
 ```
 
-## Complete Example
+## Полный пример
 
 **wippy.yaml:**
 ```yaml
@@ -333,15 +333,15 @@ end
 return cache
 ```
 
-Publish:
+Публикация:
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## See Also
+## См. также
 
 - [CLI Reference](guides/cli.md)
-- [Entry Kinds](guides/entry-kinds.md)
-- [Configuration](guides/configuration.md)
+- [Виды записей](guides/entry-kinds.md)
+- [Конфигурация](guides/configuration.md)

@@ -1,67 +1,67 @@
-# Type System
+# 타입 시스템
 
-> **Experimental.** Some limitations are expected.
+> **실험적.** 일부 제약이 있을 수 있습니다.
 
-Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
+Wippy는 흐름 민감(flow-sensitive) 검사를 갖춘 점진적 타입 시스템을 포함합니다. 타입은 기본적으로 nullable이 아닙니다.
 
-## Primitives
+## 프리미티브
 
 ```lua
 local n: number = 3.14
-local i: integer = 42         -- integer is subtype of number
+local i: integer = 42         -- integer는 number의 서브타입
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- explicit dynamic (opt-out of checking)
-local u: unknown = something  -- must narrow before use
+local a: any = "anything"     -- 명시적 동적 (검사 옵트아웃)
+local u: unknown = something  -- 사용 전 좁혀야 함
 ```
 
-### any vs unknown
+### any와 unknown
 
 ```lua
--- any: opt-out of type checking
+-- any: 타입 검사 옵트아웃
 local a: any = get_data()
-a.foo.bar.baz()              -- no error, may crash at runtime
+a.foo.bar.baz()              -- 오류 없음, 런타임에 크래시할 수 있음
 
--- unknown: safe unknown, must narrow before use
+-- unknown: 안전한 unknown, 사용 전 좁혀야 함
 local u: unknown = get_data()
-u.foo                        -- ERROR: cannot access property of unknown
+u.foo                        -- 오류: unknown의 속성에 접근할 수 없음
 if type(u) == "table" then
-    -- u narrowed to table here
+    -- 여기서 u는 table로 좁혀짐
 end
 ```
 
-## Nil Safety
+## Nil 안전성
 
-Types are non-nullable by default. Use `?` for optional values:
+타입은 기본적으로 nullable이 아닙니다. 선택적 값에는 `?`를 사용합니다:
 
 ```lua
-local x: number = nil         -- ERROR: nil not assignable to number
-local y: number? = nil        -- OK: number? means "number or nil"
+local x: number = nil         -- 오류: nil은 number에 할당할 수 없음
+local y: number? = nil        -- OK: number?는 "number 또는 nil"을 의미
 local z: number? = 42         -- OK
 ```
 
-### Control Flow Narrowing
+### 제어 흐름 좁히기
 
-The type checker tracks control flow:
+타입 검사기는 제어 흐름을 추적합니다:
 
 ```lua
 local function process(x: number?): number
     if x ~= nil then
-        return x              -- x is number here
+        return x              -- 여기서 x는 number
     end
     return 0
 end
 
--- Early return pattern
+-- 조기 반환 패턴
 local user, err = get_user(123)
 if err then return nil, err end
--- user narrowed to non-nil here
+-- 여기서 user는 nil이 아닌 것으로 좁혀짐
 
--- Or default
+-- 또는 기본값
 local val = get_value() or 0  -- val: number
 ```
 
-## Union Types
+## 유니온 타입
 
 ```lua
 local val: number | string = get_value()
@@ -73,39 +73,39 @@ else
 end
 ```
 
-### Literal Types
+### 리터럴 타입
 
 ```lua
 type Status = "pending" | "active" | "done"
 
 local s: Status = "pending"   -- OK
-local s: Status = "invalid"   -- ERROR
+local s: Status = "invalid"   -- 오류
 ```
 
-## Function Types
+## 함수 타입
 
 ```lua
 local function add(a: number, b: number): number
     return a + b
 end
 
--- Multiple returns
+-- 다중 반환
 local function div_mod(a: number, b: number): (number, number)
     return math.floor(a / b), a % b
 end
 
--- Error returns (Lua idiom)
+-- 오류 반환 (Lua 관용구)
 local function fetch(url: string): (string?, error?)
-    -- returns (data, nil) or (nil, error)
+    -- (data, nil) 또는 (nil, error) 반환
 end
 
--- First-class function types
+-- 1급 함수 타입
 local double: (number) -> number = function(x: number): number
     return x * 2
 end
 ```
 
-### Variadic Functions
+### 가변 인자 함수
 
 ```lua
 local function sum(...: number): number
@@ -117,7 +117,7 @@ local function sum(...: number): number
 end
 ```
 
-## Record Types
+## 레코드 타입
 
 ```lua
 type User = {name: string, age: number}
@@ -125,7 +125,7 @@ type User = {name: string, age: number}
 local u: User = {name = "alice", age = 25}
 ```
 
-### Optional Fields
+### 선택적 필드
 
 ```lua
 type Config = {
@@ -138,7 +138,7 @@ type Config = {
 local cfg: Config = {host = "localhost", port = 8080}  -- OK
 ```
 
-## Generics
+## 제네릭
 
 ```lua
 local function identity<T>(x: T): T
@@ -149,7 +149,7 @@ local n: number = identity(42)
 local s: string = identity("hello")
 ```
 
-### Constrained Generics
+### 제약된 제네릭
 
 ```lua
 type HasName = {name: string}
@@ -159,12 +159,12 @@ local function greet<T: HasName>(obj: T): string
 end
 
 greet({name = "Alice"})       -- OK
-greet({age = 30})             -- ERROR: missing 'name'
+greet({age = 30})             -- 오류: 'name' 누락
 ```
 
-## Intersection Types
+## 인터섹션 타입
 
-Combine multiple types:
+여러 타입을 결합합니다:
 
 ```lua
 type Named = {name: string}
@@ -174,7 +174,7 @@ type Person = Named & Aged
 local p: Person = {name = "Alice", age = 30}
 ```
 
-## Tagged Unions
+## 태그된 유니온
 
 ```lua
 type Result<T, E> =
@@ -197,9 +197,9 @@ local function render(state: LoadState): string
 end
 ```
 
-## The never Type
+## never 타입
 
-`never` is the bottom type - no values exist:
+`never`는 바텀 타입입니다 - 값이 존재하지 않습니다:
 
 ```lua
 function fail(msg: string): never
@@ -207,58 +207,58 @@ function fail(msg: string): never
 end
 ```
 
-## Error Handling Pattern
+## 오류 처리 패턴
 
-The checker understands the Lua error idiom:
+검사기는 Lua의 오류 관용구를 이해합니다:
 
 ```lua
 local value, err = call()
 if err then
-    -- value is nil here
+    -- 여기서 value는 nil
     return nil, err
 end
--- value is non-nil here, err is nil
+-- 여기서 value는 nil이 아니고, err은 nil
 print(value)
 ```
 
-## Non-Nil Assertion
+## Non-Nil 단언
 
-Use `!` to assert an expression is non-nil:
+`!`를 사용하여 표현식이 nil이 아님을 단언합니다:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- assert user is non-nil
+local name = user!.name              -- user가 nil이 아님을 단언
 ```
 
-If the value is nil at runtime, an error is raised. Use when you know a value cannot be nil but the type checker cannot prove it.
+런타임에 값이 nil이면 오류가 발생합니다. 값이 nil이 될 수 없다는 것을 알지만 타입 검사기가 증명할 수 없을 때 사용합니다.
 
-## Type Casts
+## 타입 캐스트
 
-### Safe Cast (Validation)
+### 안전한 캐스트 (검증)
 
-Call a type as a function to validate and cast:
+타입을 함수로 호출하여 검증하고 캐스트합니다:
 
 ```lua
 local data: any = get_json()
-local user = User(data)              -- validates and returns User
-local name = user.name               -- safe field access
+local user = User(data)              -- 검증하고 User 반환
+local name = user.name               -- 안전한 필드 접근
 ```
 
-Works with primitives and custom types:
+프리미티브와 커스텀 타입에서 작동합니다:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- cast to string
-local n = integer(x)                 -- cast to integer
-local b = boolean(x)                 -- cast to boolean
+local s = string(x)                  -- string으로 캐스트
+local n = integer(x)                 -- integer로 캐스트
+local b = boolean(x)                 -- boolean으로 캐스트
 
 type Point = {x: number, y: number}
-local p = Point(data)                -- validates record structure
+local p = Point(data)                -- 레코드 구조 검증
 ```
 
-### Type:is() Method
+### Type:is() 메서드
 
-Validate without throwing, returns `(value, nil)` or `(nil, error)`:
+예외를 던지지 않고 검증, `(value, nil)` 또는 `(nil, error)` 반환:
 
 ```lua
 type Point = {x: number, y: number}
@@ -266,37 +266,37 @@ local data: any = get_input()
 
 local p, err = Point:is(data)
 if p then
-    local sum = p.x + p.y            -- p is valid Point
+    local sum = p.x + p.y            -- p는 유효한 Point
 else
-    return nil, err                  -- validation failed
+    return nil, err                  -- 검증 실패
 end
 ```
 
-The result narrows in conditionals:
+결과는 조건문에서 좁혀집니다:
 
 ```lua
 if Point:is(data) then
-    local p: Point = data            -- data narrowed to Point
+    local p: Point = data            -- data는 Point로 좁혀짐
 end
 ```
 
-### Unsafe Cast
+### 안전하지 않은 캐스트
 
-Use `::` or `as` for unchecked casts:
+체크되지 않은 캐스트에는 `::` 또는 `as`를 사용합니다:
 
 ```lua
 local data: any = get_data()
-local user = data :: User            -- no runtime check
-local user = data as User            -- same as ::
+local user = data :: User            -- 런타임 검사 없음
+local user = data as User            -- ::와 동일
 ```
 
-Use sparingly. Unsafe casts bypass validation and can cause runtime errors if the value doesn't match the type.
+신중하게 사용하세요. 안전하지 않은 캐스트는 검증을 우회하며 값이 타입과 일치하지 않으면 런타임 오류를 일으킬 수 있습니다.
 
-## Type Reflection
+## 타입 리플렉션
 
-Types are first-class values with introspection methods.
+타입은 인트로스펙션 메서드가 있는 1급 값입니다.
 
-### Kind and Name
+### 종류와 이름
 
 ```lua
 print(Number:kind())                 -- "number"
@@ -304,9 +304,9 @@ print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
 
-### Record Fields
+### 레코드 필드
 
-Iterate over record fields:
+레코드 필드를 순회합니다:
 
 ```lua
 type User = {name: string, age: number}
@@ -318,14 +318,14 @@ end
 -- age     number
 ```
 
-Access individual field types:
+개별 필드 타입에 접근:
 
 ```lua
-local nameType = User.name           -- type of 'name' field
+local nameType = User.name           -- 'name' 필드의 타입
 print(nameType:kind())               -- "string"
 ```
 
-### Collection Types
+### 컬렉션 타입
 
 ```lua
 local arr: {number} = {1, 2, 3}
@@ -338,7 +338,7 @@ print(mapType:key():kind())          -- "string"
 print(mapType:val():kind())          -- "number"
 ```
 
-### Optional Types
+### 선택적 타입
 
 ```lua
 local opt: number? = nil
@@ -347,7 +347,7 @@ print(optType:kind())                -- "optional"
 print(optType:inner():kind())        -- "number"
 ```
 
-### Union Types
+### 유니온 타입
 
 ```lua
 type Status = "pending" | "active" | "done"
@@ -357,7 +357,7 @@ for variant in Status:variants() do
 end
 ```
 
-### Function Types
+### 함수 타입
 
 ```lua
 local fn: (number, string) -> boolean
@@ -369,15 +369,15 @@ end
 print(fnType:ret():kind())           -- "boolean"
 ```
 
-### Type Comparison
+### 타입 비교
 
 ```lua
 print(Number == Number)              -- true
-print(Integer <= Number)             -- true (subtype)
-print(Integer < Number)              -- true (strict subtype)
+print(Integer <= Number)             -- true (서브타입)
+print(Integer < Number)              -- true (엄격한 서브타입)
 ```
 
-### Types as Table Keys
+### 테이블 키로서의 타입
 
 ```lua
 local handlers = {}
@@ -388,45 +388,45 @@ local h = handlers[typeof(value)]
 if h then h() end
 ```
 
-## Type Annotations
+## 타입 어노테이션
 
-Add types to function signatures:
+함수 시그니처에 타입을 추가합니다:
 
 ```lua
--- Parameter and return types
+-- 파라미터와 반환 타입
 local function process(input: string): number
     return #input
 end
 
--- Local variable types
+-- 로컬 변수 타입
 local count: number = 0
 
--- Type aliases
+-- 타입 별칭
 type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
-## Type Validators
+## 타입 검증자
 
-Add runtime validation constraints to types using annotations:
+어노테이션을 사용하여 타입에 런타임 검증 제약을 추가합니다:
 
 ```lua
--- Single validator
+-- 단일 검증자
 local x: number @min(0) = 1
 
--- Multiple validators
+-- 여러 검증자
 local x: number @min(0) @max(100) = 50
 
--- String pattern
+-- 문자열 패턴
 local email: string @pattern("^.+@.+$") = "test@example.com"
 
--- No-arg validator
+-- 인자 없는 검증자
 local x: number @integer = 42
 ```
 
-### Built-in Validators
+### 내장 검증자
 
-| Validator | Applies to | Example |
+| 검증자 | 적용 대상 | 예제 |
 |-----------|------------|---------|
 | `@min(n)` | number | `local x: number @min(0) = 1` |
 | `@max(n)` | number | `local x: number @max(100) = 50` |
@@ -434,7 +434,7 @@ local x: number @integer = 42
 | `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
 | `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
 
-### Record Field Validators
+### 레코드 필드 검증자
 
 ```lua
 type User = {
@@ -443,61 +443,61 @@ type User = {
 }
 ```
 
-### Array Element Validators
+### 배열 요소 검증자
 
 ```lua
 local scores: {number @min(0) @max(100)} = {85, 90}
 ```
 
-### Union Member Validators
+### 유니온 멤버 검증자
 
 ```lua
 local id: number @min(1) | string @min_len(1) = 1
 ```
 
-## Variance Rules
+## 변성(Variance) 규칙
 
-| Position | Variance | Description |
+| 위치 | 변성 | 설명 |
 |----------|----------|-------------|
-| Readonly field | Covariant | Can use subtype |
-| Mutable field | Invariant | Must match exactly |
-| Function parameter | Contravariant | Can use supertype |
-| Function return | Covariant | Can use subtype |
+| 읽기 전용 필드 | 공변 | 서브타입 사용 가능 |
+| 가변 필드 | 불변 | 정확히 일치해야 함 |
+| 함수 파라미터 | 반공변 | 슈퍼타입 사용 가능 |
+| 함수 반환 | 공변 | 서브타입 사용 가능 |
 
-## Subtyping
+## 서브타이핑
 
-- `integer` is a subtype of `number`
-- `never` is a subtype of all types
-- All types are subtypes of `any`
-- Union subtyping: `A` is subtype of `A | B`
+- `integer`는 `number`의 서브타입
+- `never`는 모든 타입의 서브타입
+- 모든 타입은 `any`의 서브타입
+- 유니온 서브타이핑: `A`는 `A | B`의 서브타입
 
-## Gradual Adoption
+## 점진적 도입
 
-Add types incrementally - untyped code continues to work:
+타입을 점진적으로 추가합니다 - 타입이 없는 코드는 계속 작동합니다:
 
 ```lua
--- Existing code works unchanged
+-- 기존 코드는 변경 없이 작동
 function old_function(x)
     return x + 1
 end
 
--- New code gets types
+-- 새 코드는 타입을 가짐
 function new_function(x: number): number
     return x + 1
 end
 ```
 
-Start by adding types to:
-1. Function signatures at API boundaries
-2. HTTP handlers and queue consumers
-3. Critical business logic
+다음에 먼저 타입을 추가하기 시작하세요:
+1. API 경계의 함수 시그니처
+2. HTTP 핸들러 및 큐 컨슈머
+3. 핵심 비즈니스 로직
 
-## Type Checking
+## 타입 검사
 
-Run the type checker:
+타입 검사기 실행:
 
 ```bash
 wippy lint
 ```
 
-Reports type errors without executing code.
+코드를 실행하지 않고 타입 오류를 보고합니다.

@@ -1,15 +1,15 @@
 # Micro AGI
 
-Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them into the active session.
+构建一个能够自我修改的智能体，它在运行时创建自己的工具——阅读文档、编写 Lua、在注册表中注册入口，并将它们加载到活动会话中。
 
-## What We're Building
+## 我们要构建什么
 
-A terminal agent that:
-- Answers questions using an LLM with streaming
-- Searches Wippy documentation to learn APIs
-- Inspects the registry to discover existing capabilities
-- Builds new tools on the fly when it lacks a capability
-- Manages its own context window via compression
+一个终端智能体，它能：
+- 使用具有流式输出的 LLM 回答问题
+- 搜索 Wippy 文档以学习 API
+- 检查注册表以发现现有能力
+- 在缺乏某种能力时即时构建新工具
+- 通过压缩管理自己的上下文窗口
 
 ```mermaid
 flowchart LR
@@ -29,9 +29,9 @@ flowchart LR
     end
 ```
 
-## Architecture
+## 架构
 
-The agent runs as a Wippy process with access to the registry. When the LLM decides it needs a capability it doesn't have, it uses the self-modification loop:
+智能体作为可访问注册表的 Wippy 进程运行。当 LLM 决定它需要某个不具备的能力时，它使用自我修改循环：
 
 ```mermaid
 sequenceDiagram
@@ -59,9 +59,9 @@ sequenceDiagram
     A->>U: stream response
 ```
 
-The key insight: tools are registry entries. Creating a tool is just writing a `function.lua` entry with inline Lua source in `data.source`. The agent runtime compiles and loads it like any other entry.
+关键洞察：工具就是注册表入口。创建一个工具就是写入一个带有 `data.source` 内联 Lua 源码的 `function.lua` 入口。智能体运行时像编译加载任何其他入口一样编译并加载它。
 
-## Project Structure
+## 项目结构
 
 ```
 micro-agi/
@@ -80,9 +80,9 @@ micro-agi/
         └── load_tool.lua
 ```
 
-## Infrastructure
+## 基础设施
 
-Create `.wippy.yaml`:
+创建 `.wippy.yaml`：
 
 ```yaml
 version: "1.0"
@@ -91,9 +91,9 @@ logger:
   encoding: console
 ```
 
-## Entry Definitions
+## 入口定义
 
-Create `src/_index.yaml` with infrastructure, security policies, models, agent, and process:
+创建包含基础设施、安全策略、模型、智能体和进程的 `src/_index.yaml`：
 
 ```yaml
 version: "1.0"
@@ -135,9 +135,9 @@ entries:
         value: app:processes
 ```
 
-### Security Policies
+### 安全策略
 
-Two `security.policy` entries restrict which namespaces the agent can write to:
+两个 `security.policy` 入口限制智能体可以写入哪些命名空间：
 
 ```yaml
   - name: deny_core_ns
@@ -159,13 +159,13 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
       - agent_security
 ```
 
-These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
+这些策略由 `create_tool` 作为命名作用域 (`app:agent_security`) 加载，并在任何注册表写入之前进行评估。智能体可以写入 `app.generated:*`（无匹配的拒绝策略），但不能写入 `app:*`（核心入口、模型、智能体定义）或 `app.tools:*`（内置工具）。
 
-See [Security Model](../system/security.md) for details on policy evaluation.
+有关策略评估的详细信息，参见[安全模型](../system/security.md)。
 
-### Models
+### 模型
 
-Two models serve different purposes:
+两个模型用于不同目的：
 
 ```yaml
   - name: gpt-5.1
@@ -210,9 +210,9 @@ Two models serve different purposes:
         provider_model: gpt-4.1-nano
 ```
 
-GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression at 25x lower cost.
+GPT-5.1 处理推理和工具使用。GPT-4.1 Nano 以低 25 倍的成本处理上下文压缩。
 
-### Agent Definition
+### 智能体定义
 
 ```yaml
   - name: dev_assistant
@@ -241,12 +241,12 @@ GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression
       - "app.tools:*"
 ```
 
-The prompt is deliberately terse. Key rules:
-- **No hallucination** — the agent must use tools for real data
-- **Self-modification** — build tools instead of refusing
-- **Action over explanation** — do first, explain if asked
+提示词刻意保持简洁。关键规则：
+- **不要幻觉** —— 智能体必须使用工具获取真实数据
+- **自我修改** —— 构建工具而不是拒绝
+- **行动优先于解释** —— 先执行，必要时再解释
 
-### Process
+### 进程
 
 ```yaml
   - name: agent
@@ -264,20 +264,20 @@ The prompt is deliberately terse. Key rules:
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
+进程作为终端命令运行。安全强制在 `create_tool` 内部进行，它加载 `agent_security` 策略组并在写入前进行评估。
 
-Imports:
-- `prompt` — conversation builder
-- `agent_context` — agent loading and dynamic tool management
-- `compress` — LLM-based text compression for context management
+导入：
+- `prompt` —— 对话构建器
+- `agent_context` —— 智能体加载和动态工具管理
+- `compress` —— 用于上下文管理的基于 LLM 的文本压缩
 
-## Tools
+## 工具
 
-Create `src/tools/_index.yaml` with five tools:
+创建包含五个工具的 `src/tools/_index.yaml`：
 
 ### doc_search
 
-Fetches Wippy documentation via the `wippy.ai/llm` API. Supports two modes: fetch a page by path, or search by query.
+通过 `wippy.ai/llm` API 获取 Wippy 文档。支持两种模式：按路径获取页面，或按查询搜索。
 
 ```lua
 local http_client = require("http_client")
@@ -346,9 +346,9 @@ return { handler = handler }
 
 ### create_tool
 
-The core of self-modification. Evaluates namespace deny policies and creates a `function.lua` entry in the registry with inline Lua source.
+自我修改的核心。评估命名空间拒绝策略，并在注册表中创建带有内联 Lua 源代码的 `function.lua` 入口。
 
-The `modules` field on the generated entry controls what the tool can access. Modules not listed simply do not exist for that entry — there is nothing to block or scan for.
+生成入口上的 `modules` 字段控制工具可以访问的内容。未列出的模块对该入口而言根本不存在 —— 没有什么需要阻止或扫描的。
 
 ```lua
 local registry = require("registry")
@@ -366,7 +366,7 @@ local ALLOWED_MODULES = {
 }
 ```
 
-**Policy evaluation** — `create_tool` loads the `agent_security` named scope and evaluates the deny policies against the target entry ID. Writes to `app:*` or `app.tools:*` are denied; writes to `app.generated:*` pass (no matching deny policy):
+**策略评估** —— `create_tool` 加载 `agent_security` 命名作用域，并对目标入口 ID 评估拒绝策略。对 `app:*` 或 `app.tools:*` 的写入被拒绝；对 `app.generated:*` 的写入通过（无匹配的拒绝策略）：
 
 ```lua
 local actor = security.new_actor("service:agent", { role = "agent" })
@@ -381,7 +381,7 @@ if result == "deny" then
 end
 ```
 
-**Registry write** — the entry is written with source in `data.source` and only the allowed modules:
+**注册表写入** —— 入口在 `data.source` 中带有源代码并仅包含允许的模块：
 
 ```lua
 local entry = {
@@ -412,11 +412,11 @@ end
 changes:apply()
 ```
 
-No files on disk. The tool lives entirely in the registry.
+磁盘上没有文件。工具完全存在于注册表中。
 
 ### load_tool
 
-Validates the entry is a tool and signals the agent loop to reload:
+验证入口是工具并向智能体循环发送重新加载信号：
 
 ```lua
 local function handler(input)
@@ -440,15 +440,15 @@ local function handler(input)
 end
 ```
 
-The agent loop detects `loaded = true` in the result and calls `ctx:add_tools(id)` followed by `ctx:load_agent()` to recompile the agent with the new tool.
+智能体循环检测到结果中的 `loaded = true`，并调用 `ctx:add_tools(id)`，然后调用 `ctx:load_agent()` 以使用新工具重新编译智能体。
 
-## Agent Loop
+## 智能体循环
 
-The agent loop in `src/agent.lua` handles streaming, tool execution, dynamic loading, and context compression.
+`src/agent.lua` 中的智能体循环处理流式输出、工具执行、动态加载和上下文压缩。
 
-### Streaming
+### 流式输出
 
-Uses the same coroutine + channel pattern from the [LLM Agent tutorial](llm-agent.md):
+使用与 [LLM Agent 教程](llm-agent.md) 相同的协程 + 通道模式：
 
 ```lua
 coroutine.spawn(function()
@@ -462,17 +462,17 @@ coroutine.spawn(function()
 end)
 ```
 
-### Tool Execution
+### 工具执行
 
-Tools are called via `funcs.call()` with `pcall` for safety:
+工具通过 `funcs.call()` 调用，并使用 `pcall` 保证安全：
 
 ```lua
 local ok, result = pcall(funcs.call, tc.registry_id, args)
 ```
 
-### Dynamic Tool Loading
+### 动态工具加载
 
-When `load_tool` returns `loaded = true`, the agent reloads itself:
+当 `load_tool` 返回 `loaded = true` 时，智能体重新加载自身：
 
 ```mermaid
 flowchart TD
@@ -501,11 +501,11 @@ local function handle_tool_loading(tool_calls, results)
 end
 ```
 
-The conversation is preserved across reloads because it lives in the prompt builder, not in the runner.
+对话在重新加载过程中得以保留，因为它存在于提示构建器中，而不是运行器中。
 
-### Context Compression
+### 上下文压缩
 
-When prompt tokens exceed 96K (75% of the 128K context window), the conversation is compressed using GPT-4.1 Nano:
+当提示词 token 超过 96K（128K 上下文窗口的 75%）时，使用 GPT-4.1 Nano 压缩对话：
 
 ```lua
 if response.tokens and response.tokens.prompt_tokens
@@ -514,7 +514,7 @@ if response.tokens and response.tokens.prompt_tokens
 end
 ```
 
-Compression extracts message content, calls `compress.to_size()` targeting 4000 characters, and replaces the conversation with a summary:
+压缩提取消息内容，调用 `compress.to_size()` 目标为 4000 字符，并用摘要替换对话：
 
 ```lua
 local summary = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
@@ -522,9 +522,9 @@ session.conversation = prompt.new()
 session.conversation:add_system("Conversation summary:\n\n" .. summary)
 ```
 
-## Security Model
+## 安全模型
 
-The agent is secured through namespace deny policies and module-level access control.
+智能体通过命名空间拒绝策略和模块级访问控制得到保护。
 
 ```mermaid
 flowchart TD
@@ -538,33 +538,33 @@ flowchart TD
     M -->|unknown module requested| Err[Rejected]
 ```
 
-### Namespace Deny Policies
+### 命名空间拒绝策略
 
-| Policy | Resources | Effect |
+| 策略 | 资源 | 效果 |
 |--------|-----------|--------|
 | `deny_core_ns` | `app:*` | deny |
 | `deny_tools_ns` | `app.tools:*` | deny |
 
-`create_tool` loads the `agent_security` policy group and evaluates against the target entry ID. Since deny policies only match `app:*` and `app.tools:*`, writes to `app.generated:*` pass through (result is `undefined`, meaning "not denied").
+`create_tool` 加载 `agent_security` 策略组并对目标入口 ID 进行评估。由于拒绝策略仅匹配 `app:*` 和 `app.tools:*`，对 `app.generated:*` 的写入会通过（结果为 `undefined`，意为"未拒绝"）。
 
-This prevents the agent from:
-- Modifying its own prompt or agent definition (`app:dev_assistant`)
-- Overwriting its built-in tools (`app.tools:*`)
-- Changing infrastructure entries (`app:processes`, etc.)
+这阻止了智能体：
+- 修改自己的提示词或智能体定义（`app:dev_assistant`）
+- 覆盖其内置工具（`app.tools:*`）
+- 更改基础设施入口（`app:processes` 等）
 
-### Module Access Control
+### 模块访问控制
 
-Generated tools declare their `modules` in `data.modules`. Only modules from the `ALLOWED_MODULES` set are permitted. The Wippy runtime enforces this at the module level — if a module is not listed on the entry, `require()` returns an error. There is no source code scanning because there is nothing to scan for: modules that are not granted do not exist in the execution context.
+生成的工具在 `data.modules` 中声明它们的 `modules`。仅允许来自 `ALLOWED_MODULES` 集合的模块。Wippy 运行时在模块层级强制执行此约束 —— 如果某个模块未列在入口上，`require()` 将返回错误。无需源代码扫描，因为没有什么需要扫描的：未授予的模块在执行上下文中根本不存在。
 
-## Run
+## 运行
 
-Run directly from hub:
+直接从 hub 运行：
 
 ```bash
 wippy run wippy/micro-agi agent
 ```
 
-Or clone and run locally:
+或克隆并在本地运行：
 
 ```bash
 cd micro-agi
@@ -591,10 +591,10 @@ The current UTC time is 2026-02-13T03:13:41Z.
 Your IP is 203.0.113.42.
 ```
 
-## Next Steps
+## 后续步骤
 
-- [LLM Agent](llm-agent.md) — Build a basic agent from scratch
-- [Agent Module](../framework/agents.md) — Agent framework reference
-- [Registry](../concepts/registry.md) — How the registry works
-- [Security Model](../system/security.md) — Declarative security policies
-- [Entry Kinds](../guides/entry-kinds.md) — Available entry types
+- [LLM Agent](llm-agent.md) —— 从零构建一个基本的智能体
+- [Agent 模块](../framework/agents.md) —— Agent 框架参考
+- [注册表](../concepts/registry.md) —— 注册表的工作原理
+- [安全模型](../system/security.md) —— 声明式安全策略
+- [入口类型](../guides/entry-kinds.md) —— 可用的入口类型

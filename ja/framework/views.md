@@ -1,17 +1,17 @@
-# Views
+# ビュー
 
-The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages can be backed by Jet templates or external components (SPAs, micro-frontends).
+`wippy/views` モジュールは、テンプレートレンダリング、リソース管理、環境変数マッピングを備えた仮想ページとコンポーネントシステムを提供します。ページは Jet テンプレートまたは外部コンポーネント（SPA、マイクロフロントエンド）でバックエンドできます。
 
-## Setup
+## セットアップ
 
-Add the module to your project:
+プロジェクトにモジュールを追加します：
 
 ```bash
 wippy add wippy/views
 wippy install
 ```
 
-Declare the dependency:
+依存関係を宣言します：
 
 ```yaml
 version: "1.0"
@@ -29,14 +29,14 @@ entries:
         value: PUBLIC_API_URL
 ```
 
-| Parameter | Required | Default | Description |
+| パラメータ | 必須 | デフォルト | 説明 |
 |-----------|----------|---------|-------------|
-| `api_router` | yes | — | HTTP router for view API endpoints |
-| `api_url_env` | no | `PUBLIC_API_URL` | Env var containing the public API URL |
+| `api_router` | はい | — | ビュー API エンドポイント用の HTTP ルーター |
+| `api_url_env` | いいえ | `PUBLIC_API_URL` | 公開 API URL を含む環境変数 |
 
-## Template Pages
+## テンプレートページ
 
-Template pages render server-side using Jet templates:
+テンプレートページは Jet テンプレートを使用してサーバー側でレンダリングされます：
 
 ```yaml
 entries:
@@ -60,48 +60,48 @@ entries:
         - contact_styles
 ```
 
-### Page Metadata
+### ページメタデータ
 
-| Field | Type | Default | Description |
+| フィールド | 型 | デフォルト | 説明 |
 |-------|------|---------|-------------|
-| `meta.type` | string | — | Must be `view.page` |
-| `meta.name` | string | entry name | Page identifier |
-| `meta.title` | string | — | Display title |
-| `meta.icon` | string | — | Icon identifier |
-| `meta.order` | number | `9999` | Sort order within group |
-| `meta.group` | string | — | Group category |
-| `meta.group_icon` | string | — | Group icon |
-| `meta.group_order` | number | `9999` | Group sort order |
-| `meta.group_placement` | string | `"default"` | Placement: `"default"`, `"sidebar"` |
-| `meta.secure` | boolean | `false` | Requires authentication |
-| `meta.public` | boolean | `false` | Publicly accessible |
-| `meta.announced` | boolean | `= public` | Show in navigation |
-| `meta.inline` | boolean | `false` | Hidden from UI |
-| `meta.content_type` | string | `text/html` | Response MIME type |
-| `meta.parent` | string | — | Parent page ID |
+| `meta.type` | string | — | `view.page` でなければならない |
+| `meta.name` | string | エントリ名 | ページ識別子 |
+| `meta.title` | string | — | 表示タイトル |
+| `meta.icon` | string | — | アイコン識別子 |
+| `meta.order` | number | `9999` | グループ内のソート順 |
+| `meta.group` | string | — | グループカテゴリ |
+| `meta.group_icon` | string | — | グループアイコン |
+| `meta.group_order` | number | `9999` | グループのソート順 |
+| `meta.group_placement` | string | `"default"` | 配置：`"default"`、`"sidebar"` |
+| `meta.secure` | boolean | `false` | 認証が必要 |
+| `meta.public` | boolean | `false` | 公開アクセス可能 |
+| `meta.announced` | boolean | `= public` | ナビゲーションに表示 |
+| `meta.inline` | boolean | `false` | UI から非表示 |
+| `meta.content_type` | string | `text/html` | レスポンスの MIME タイプ |
+| `meta.parent` | string | — | 親ページ ID |
 
-### Template Data
+### テンプレートデータ
 
-| Field | Description |
+| フィールド | 説明 |
 |-------|-------------|
-| `data.set` | Template set registry ID |
-| `data.data_func` | Function ID that returns page data |
-| `data.resources` | Array of resource registry IDs |
+| `data.set` | テンプレートセットのレジストリ ID |
+| `data.data_func` | ページデータを返す関数 ID |
+| `data.resources` | リソースレジストリ ID の配列 |
 
-The `data_func` receives `{ params, query }` and returns a table that becomes the `data` context in the template.
+`data_func` は `{ params, query }` を受け取り、テンプレート内の `data` コンテキストとなるテーブルを返します。
 
-### Rendering Pipeline
+### レンダリングパイプライン
 
-1. Load page from registry
-2. Check access (security)
-3. Call `data_func` if defined
-4. Collect resources: globals + template set resources + page-specific resources
-5. Load environment variables
-6. Render Jet template with context: `{ data, resources, query_params, route_params, env }`
+1. レジストリからページをロードする
+2. アクセス（セキュリティ）をチェックする
+3. 定義されていれば `data_func` を呼び出す
+4. リソースを収集する：グローバル + テンプレートセットのリソース + ページ固有のリソース
+5. 環境変数をロードする
+6. コンテキスト `{ data, resources, query_params, route_params, env }` で Jet テンプレートをレンダリングする
 
-## Component Pages
+## コンポーネントページ
 
-Component pages point to external applications (SPAs, micro-frontends):
+コンポーネントページは外部アプリケーション（SPA、マイクロフロントエンド）を指します：
 
 ```yaml
 entries:
@@ -124,37 +124,37 @@ entries:
         tailwind_config: true
 ```
 
-The API returns a component descriptor with the base URL and proxy configuration. The frontend renders the component in an iframe or inline.
+API はベース URL とプロキシ設定を含むコンポーネント記述子を返します。フロントエンドは iframe またはインラインでコンポーネントをレンダリングします。
 
-### Component Fields
+### コンポーネントフィールド
 
-| Field | Type | Default | Description |
+| フィールド | 型 | デフォルト | 説明 |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | Public URL of the component |
-| `meta.entry_point` | string | `index.html` (pages), `index.js` (components) | Entry file |
+| `meta.url` | string | — | コンポーネントの公開 URL |
+| `meta.entry_point` | string | `index.html`（ページ）、`index.js`（コンポーネント） | エントリファイル |
 
-### Proxy Configuration
+### プロキシ設定
 
-The proxy controls what CSS and behavior is injected into the component:
+プロキシはコンポーネントに注入される CSS と動作を制御します：
 
-| Option | Default | Description |
+| オプション | デフォルト | 説明 |
 |--------|---------|-------------|
-| `proxy.enabled` | `true` | Enable proxy wrapper |
-| `proxy.css.fonts` | `true` | Inject font styles |
-| `proxy.css.theme_config` | `true` | Inject theme variables |
-| `proxy.css.iframe` | `true` | Iframe-specific styles |
-| `proxy.css.prime_vue` | `false` | PrimeVue component styles |
-| `proxy.css.markdown` | `false` | Markdown rendering styles |
-| `proxy.css.custom_css` | `false` | Custom CSS |
-| `proxy.css.custom_variables` | `false` | Custom CSS variables |
-| `proxy.tailwind_config` | `false` | Inject Tailwind config |
-| `proxy.resize_observer` | `true` | Auto-resize iframe |
-| `proxy.prevent_link_clicks` | `true` | Intercept link navigation |
-| `proxy.iconify_icons` | `false` | Load Iconify icon set |
+| `proxy.enabled` | `true` | プロキシラッパーを有効にする |
+| `proxy.css.fonts` | `true` | フォントスタイルを注入する |
+| `proxy.css.theme_config` | `true` | テーマ変数を注入する |
+| `proxy.css.iframe` | `true` | iframe 固有のスタイル |
+| `proxy.css.prime_vue` | `false` | PrimeVue コンポーネントスタイル |
+| `proxy.css.markdown` | `false` | Markdown レンダリングスタイル |
+| `proxy.css.custom_css` | `false` | カスタム CSS |
+| `proxy.css.custom_variables` | `false` | カスタム CSS 変数 |
+| `proxy.tailwind_config` | `false` | Tailwind 設定を注入する |
+| `proxy.resize_observer` | `true` | iframe を自動リサイズする |
+| `proxy.prevent_link_clicks` | `true` | リンクナビゲーションをインターセプトする |
+| `proxy.iconify_icons` | `false` | Iconify アイコンセットをロードする |
 
-## View Components
+## ビューコンポーネント
 
-Standalone components that are not pages (no navigation entry):
+ページではない単独コンポーネント（ナビゲーションエントリなし）：
 
 ```yaml
 entries:
@@ -170,11 +170,11 @@ entries:
         enabled: true
 ```
 
-Components use `meta.type: view.component` instead of `view.page`. They default to `index.js` as entry point.
+コンポーネントは `view.page` ではなく `meta.type: view.component` を使用します。エントリポイントは `index.js` がデフォルトです。
 
-## Resources
+## リソース
 
-Resources are CSS, JS, and font files associated with pages:
+リソースはページに関連付けられた CSS、JS、フォントファイルです：
 
 ```yaml
 entries:
@@ -200,37 +200,37 @@ entries:
       defer: true
 ```
 
-### Resource Fields
+### リソースフィールド
 
-| Field | Type | Description |
+| フィールド | 型 | 説明 |
 |-------|------|-------------|
-| `meta.type` | string | Must be `view.resource` |
-| `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
-| `meta.order` | number | Sort order within type |
-| `meta.global` | boolean | Applied to all pages |
-| `meta.template_set` | string | Specific to a template set |
-| `meta.url` | string | Resource URL |
-| `meta.integrity` | string | SRI hash |
-| `meta.crossorigin` | string | `"anonymous"` or `"use-credentials"` |
-| `meta.media` | string | CSS media query |
-| `meta.defer` | boolean | Deferred script loading |
-| `meta.async` | boolean | Async script loading |
+| `meta.type` | string | `view.resource` でなければならない |
+| `meta.resource_type` | string | `"style"`、`"script"`、`"font"` |
+| `meta.order` | number | タイプ内のソート順 |
+| `meta.global` | boolean | すべてのページに適用 |
+| `meta.template_set` | string | 特定のテンプレートセットに固有 |
+| `meta.url` | string | リソース URL |
+| `meta.integrity` | string | SRI ハッシュ |
+| `meta.crossorigin` | string | `"anonymous"` または `"use-credentials"` |
+| `meta.media` | string | CSS メディアクエリ |
+| `meta.defer` | boolean | スクリプトの遅延ロード |
+| `meta.async` | boolean | スクリプトの非同期ロード |
 
-### Resource Collection
+### リソース収集
 
-Resources are collected in three layers, merged in order:
+リソースは 3 層で収集され、順番にマージされます：
 
-1. **Global resources** — `global: true`, applied to all pages
-2. **Template set resources** — matched by `template_set` ID
-3. **Page resources** — listed in `data.resources` array
+1. **グローバルリソース** — `global: true`、すべてのページに適用される
+2. **テンプレートセットリソース** — `template_set` ID で一致するもの
+3. **ページリソース** — `data.resources` 配列にリストされたもの
 
-Within each layer, resources are grouped by `resource_type` and sorted by `order`.
+各層の中で、リソースは `resource_type` でグループ化され、`order` でソートされます。
 
-## Environment Variable Mapping
+## 環境変数マッピング
 
-The env loader maps environment variables to template context keys through a priority-based system.
+env ローダーは、優先度ベースのシステムを通じて環境変数をテンプレートコンテキストキーへマップします。
 
-### Defining Mappings
+### マッピングの定義
 
 ```yaml
 entries:
@@ -246,22 +246,22 @@ entries:
         debug_mode: DEBUG_ENABLED
 ```
 
-Each mapping entry associates context keys (used in templates as `env.api_endpoint`) with environment variable names.
+各マッピングエントリは、コンテキストキー（テンプレート内で `env.api_endpoint` のように使用）を環境変数名に関連付けます。
 
-### Priority System
+### 優先度システム
 
-| Range | Category | Description |
+| 範囲 | カテゴリ | 説明 |
 |-------|----------|-------------|
-| 0–9 | Framework defaults | Built-in framework mappings |
-| 10–19 | System overrides | System-level configuration |
-| 20–29 | Application mappings | Application-specific mappings |
-| 30–100 | Environment overrides | Runtime overrides |
+| 0–9 | フレームワークデフォルト | 組み込みフレームワークマッピング |
+| 10–19 | システムオーバーライド | システムレベル設定 |
+| 20–29 | アプリケーションマッピング | アプリケーション固有のマッピング |
+| 30–100 | 環境オーバーライド | ランタイムオーバーライド |
 
-Higher priority wins when multiple mappings define the same context key.
+複数のマッピングが同じコンテキストキーを定義する場合、優先度の高いほうが勝ちます。
 
-### Using in Templates
+### テンプレートでの使用
 
-Resolved environment values are available in the `env` context object:
+解決された環境値は `env` コンテキストオブジェクトで利用できます：
 
 ```html
 <script>
@@ -270,22 +270,22 @@ Resolved environment values are available in the `env` context object:
 </script>
 ```
 
-## HTTP API Endpoints
+## HTTP API エンドポイント
 
-The views module registers these endpoints on the configured router:
+views モジュールは、設定されたルーター上に以下のエンドポイントを登録します：
 
-| Method | Path | Description |
+| メソッド | パス | 説明 |
 |--------|------|-------------|
-| GET | `/pages/list` | List accessible, announced pages |
-| GET | `/components/list` | List view components |
-| GET | `/pages/content/{id}` | Render page or return component descriptor |
-| GET | `/pages/public/{id}` | Get component base URL |
+| GET | `/pages/list` | アクセス可能で公示されているページをリストする |
+| GET | `/components/list` | ビューコンポーネントをリストする |
+| GET | `/pages/content/{id}` | ページをレンダリングするか、コンポーネント記述子を返す |
+| GET | `/pages/public/{id}` | コンポーネントのベース URL を取得する |
 
-### Render Response
+### レンダリングレスポンス
 
-For template pages, returns rendered HTML with the page's `content_type`.
+テンプレートページの場合、ページの `content_type` を伴ってレンダリング済み HTML を返します。
 
-For component pages, returns a descriptor:
+コンポーネントページの場合、記述子を返します：
 
 ```json
 {
@@ -310,29 +310,29 @@ For component pages, returns a descriptor:
 }
 ```
 
-## Access Control
+## アクセス制御
 
-Pages with `secure: true` require authentication. The page registry checks `security.can("view", "page:<page_id>")` against the current actor and scope.
+`secure: true` を持つページは認証が必要です。ページレジストリは現在のアクターとスコープに対して `security.can("view", "page:<page_id>")` をチェックします。
 
-Non-secure pages are always accessible. The `announced` flag controls visibility in navigation listings without affecting access.
+非セキュアページは常にアクセス可能です。`announced` フラグは、アクセスに影響を与えずにナビゲーションリストでの表示を制御します。
 
-## ID Qualification
+## ID 修飾
 
-Relative IDs in page definitions are qualified with the entry's namespace:
+ページ定義内の相対 ID は、エントリの名前空間で修飾されます：
 
 ```yaml
-# In namespace "app"
+# 名前空間 "app" 内
 data:
-  data_func: my_data_func       # resolves to app:my_data_func
-  set: templates:default         # stays as templates:default (already qualified)
+  data_func: my_data_func       # app:my_data_func に解決される
+  set: templates:default         # templates:default のまま（既に修飾済み）
   resources:
-    - page_styles                # resolves to app:page_styles
+    - page_styles                # app:page_styles に解決される
 ```
 
-## See Also
+## 関連項目
 
-- [Facade](facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](../system/template.md) - Jet template engine
-- [Security](../system/security.md) - Security actors and access control
-- [Environment](../system/env.md) - Environment variable storage
-- [Framework Overview](overview.md) - Framework module usage
+- [ファサード](facade.md) - フロントエンド iframe ファサードとナビゲーションサイドバー
+- [テンプレート](../system/template.md) - Jet テンプレートエンジン
+- [セキュリティ](../system/security.md) - セキュリティアクターとアクセス制御
+- [環境](../system/env.md) - 環境変数ストレージ
+- [フレームワーク概要](overview.md) - フレームワークモジュールの利用

@@ -2,21 +2,21 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Terminal UI module for raw input events, styled output, and layout utilities.
+Terminal-UI-Modul für Roh-Eingabeereignisse, formatierte Ausgabe und Layout-Hilfsfunktionen.
 
 <note>
-This module only works inside terminal context. You cannot use it from regular functions—only from processes running on a <a href="system/terminal.md">Terminal Host</a>.
+Dieses Modul funktioniert nur im Terminal-Kontext. Du kannst es nicht aus regulären Funktionen verwenden — nur aus Prozessen, die auf einem <a href="system/terminal.md">Terminal-Host</a> laufen.
 </note>
 
-## Loading
+## Laden
 
 ```lua
 local tty = require("tty")
 ```
 
-## Input Loop
+## Eingabe-Schleife
 
-Start the raw input reader, subscribe to events, and process them in a loop:
+Starte den Roh-Eingabe-Reader, abonniere Ereignisse und verarbeite sie in einer Schleife:
 
 ```lua
 local tty = require("tty")
@@ -45,67 +45,67 @@ local function handler()
 end
 ```
 
-## Input Control
+## Eingabesteuerung
 
 ### tty.start()
 
-Enable raw terminal input mode. The terminal switches to raw mode and begins emitting events.
+Aktiviert den Roh-Eingabemodus des Terminals. Das Terminal wechselt in den Raw-Modus und beginnt, Ereignisse auszugeben.
 
 ```lua
 local ok, err = tty.start()
 ```
 
-**Returns:** `boolean, error`
+**Rückgabe:** `boolean, error`
 
 ### tty.stop()
 
-Disable raw input and restore the terminal to normal mode.
+Deaktiviert die Roh-Eingabe und stellt das Terminal in den Normalmodus zurück.
 
 ```lua
 local ok, err = tty.stop()
 ```
 
-**Returns:** `boolean, error`
+**Rückgabe:** `boolean, error`
 
 ### tty.events()
 
-Subscribe to terminal events and return a channel. Events are delivered as tables with a `type` field.
+Abonniert Terminal-Ereignisse und gibt einen Channel zurück. Ereignisse werden als Tabellen mit einem `type`-Feld geliefert.
 
 ```lua
 local events = tty.events()
 ```
 
-**Returns:** `EventChannel`
+**Rückgabe:** `EventChannel`
 
 ### tty.screen_size()
 
-Query current terminal dimensions.
+Fragt die aktuellen Terminal-Dimensionen ab.
 
 ```lua
 local width, height, err = tty.screen_size()
 ```
 
-**Returns:** `number, number, error`
+**Rückgabe:** `number, number, error`
 
 ### tty.mouse(enable)
 
-Enable or disable mouse event tracking.
+Aktiviert oder deaktiviert das Maus-Ereignis-Tracking.
 
 ```lua
 local ok, err = tty.mouse(true)
 ```
 
-| Parameter | Type | Description |
+| Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `enable` | boolean | `true` to enable, `false` to disable |
+| `enable` | boolean | `true` zum Aktivieren, `false` zum Deaktivieren |
 
-**Returns:** `boolean, error`
+**Rückgabe:** `boolean, error`
 
-## Event Types
+## Ereignistypen
 
-Events are tables with a `type` field that determines which other fields are present.
+Ereignisse sind Tabellen mit einem `type`-Feld, das bestimmt, welche anderen Felder vorhanden sind.
 
-### Key Event
+### Key-Ereignis
 
 ```lua
 {
@@ -119,9 +119,9 @@ Events are tables with a `type` field that determines which other fields are pre
 }
 ```
 
-### Mouse Event
+### Maus-Ereignis
 
-Requires `tty.mouse(true)`.
+Erfordert `tty.mouse(true)`.
 
 ```lua
 {
@@ -136,35 +136,35 @@ Requires `tty.mouse(true)`.
 }
 ```
 
-### Resize Event
+### Resize-Ereignis
 
 ```lua
 {type = "resize", width = 120, height = 40}
 ```
 
-### Start Event
+### Start-Ereignis
 
-Emitted once after `tty.start()` with initial dimensions.
+Wird einmal nach `tty.start()` mit den initialen Dimensionen ausgegeben.
 
 ```lua
 {type = "start", width = 120, height = 40}
 ```
 
-### Focus Event
+### Focus-Ereignis
 
 ```lua
 {type = "focus", focused = true}
 ```
 
-### Paste Event
+### Paste-Ereignis
 
 ```lua
 {type = "paste", text = "pasted content"}
 ```
 
-## Key Bindings
+## Tastenbindungen
 
-Create reusable key bindings that match against key events:
+Erstelle wiederverwendbare Tastenbindungen, die mit Tastenereignissen abgeglichen werden:
 
 ```lua
 local quit = tty.bind({
@@ -180,25 +180,25 @@ end
 
 ### tty.bind(config)
 
-| Field | Type | Description |
+| Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `keys` | string[] | Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
-| `help` | table | Optional. `{key = "...", desc = "..."}` for help text |
+| `keys` | string[] | Zu vergleichende Tastenmuster (z. B. `"a"`, `"ctrl+c"`, `"enter"`) |
+| `help` | table | Optional. `{key = "...", desc = "..."}` für Hilfetext |
 
-**Returns:** `KeyBinding`
+**Rückgabe:** `KeyBinding`
 
-### KeyBinding Methods
+### KeyBinding-Methoden
 
-| Method | Returns | Description |
+| Methode | Rückgabe | Beschreibung |
 |--------|---------|-------------|
-| `matches(event)` | boolean | Test if a key event matches this binding |
-| `set_enabled(bool)` | self | Enable or disable the binding |
-| `is_enabled()` | boolean | Check if the binding is enabled |
-| `help()` | table | Returns `{key, desc}` help info |
+| `matches(event)` | boolean | Prüft, ob ein Tastenereignis zu dieser Bindung passt |
+| `set_enabled(bool)` | self | Aktiviert oder deaktiviert die Bindung |
+| `is_enabled()` | boolean | Prüft, ob die Bindung aktiviert ist |
+| `help()` | table | Gibt `{key, desc}`-Hilfeinformationen zurück |
 
-## Styles
+## Stile
 
-Create styled text output using lipgloss-based styling. All style methods return a new style (immutable).
+Erstelle formatierte Textausgabe mit lipgloss-basiertem Styling. Alle Stilmethoden geben einen neuen Stil zurück (unveränderlich).
 
 ```lua
 local tty = require("tty")
@@ -220,58 +220,58 @@ io.print(box:render(title:render("Hello"), "World"))
 
 ### tty.style()
 
-Create a new empty style.
+Erstellt einen neuen leeren Stil.
 
-**Returns:** `Style`
+**Rückgabe:** `Style`
 
-### Style Methods
+### Style-Methoden
 
-All methods return a new `Style` and can be chained.
+Alle Methoden geben einen neuen `Style` zurück und können verkettet werden.
 
-#### Text Decoration
+#### Textdekoration
 
-| Method | Parameter | Description |
+| Methode | Parameter | Beschreibung |
 |--------|-----------|-------------|
-| `foreground(color)` | string | Text color (hex `"#FF0000"`, ANSI `"9"`, or name) |
-| `background(color)` | string | Background color |
-| `bold(enable?)` | boolean | Bold text (default: true) |
-| `italic(enable?)` | boolean | Italic text |
-| `underline(enable?)` | boolean | Underline text |
-| `strikethrough(enable?)` | boolean | Strikethrough text |
-| `faint(enable?)` | boolean | Dimmed text |
-| `blink(enable?)` | boolean | Blinking text |
-| `reverse(enable?)` | boolean | Swap foreground/background |
+| `foreground(color)` | string | Textfarbe (Hex `"#FF0000"`, ANSI `"9"` oder Name) |
+| `background(color)` | string | Hintergrundfarbe |
+| `bold(enable?)` | boolean | Fetter Text (Standard: true) |
+| `italic(enable?)` | boolean | Kursiver Text |
+| `underline(enable?)` | boolean | Unterstrichener Text |
+| `strikethrough(enable?)` | boolean | Durchgestrichener Text |
+| `faint(enable?)` | boolean | Gedimmter Text |
+| `blink(enable?)` | boolean | Blinkender Text |
+| `reverse(enable?)` | boolean | Vorder- und Hintergrund tauschen |
 
 #### Layout
 
-| Method | Parameter | Description |
+| Methode | Parameter | Beschreibung |
 |--------|-----------|-------------|
-| `width(n)` | number | Fixed width |
-| `height(n)` | number | Fixed height |
-| `max_width(n)` | number | Maximum width |
-| `max_height(n)` | number | Maximum height |
-| `padding(...)` | numbers | Padding (CSS-style: top, right, bottom, left) |
-| `margin(...)` | numbers | Margin (CSS-style) |
-| `align(pos)` | number | Horizontal alignment |
-| `align_vertical(pos)` | number | Vertical alignment |
-| `inline(enable?)` | boolean | Inline rendering mode |
+| `width(n)` | number | Feste Breite |
+| `height(n)` | number | Feste Höhe |
+| `max_width(n)` | number | Maximale Breite |
+| `max_height(n)` | number | Maximale Höhe |
+| `padding(...)` | numbers | Padding (CSS-Stil: oben, rechts, unten, links) |
+| `margin(...)` | numbers | Margin (CSS-Stil) |
+| `align(pos)` | number | Horizontale Ausrichtung |
+| `align_vertical(pos)` | number | Vertikale Ausrichtung |
+| `inline(enable?)` | boolean | Inline-Rendering-Modus |
 
-#### Borders
+#### Rahmen
 
-| Method | Parameter | Description |
+| Methode | Parameter | Beschreibung |
 |--------|-----------|-------------|
-| `border(name, ...)` | string, booleans | Border style, optional per-side toggles |
-| `border_foreground(...)` | strings | Border color(s) |
-| `border_background(...)` | strings | Border background color(s) |
+| `border(name, ...)` | string, booleans | Rahmenstil, optionale Pro-Seiten-Toggles |
+| `border_foreground(...)` | strings | Rahmenfarbe(n) |
+| `border_background(...)` | strings | Rahmen-Hintergrundfarbe(n) |
 
-#### Other
+#### Sonstiges
 
-| Method | Description |
+| Methode | Beschreibung |
 |--------|-------------|
-| `render(...)` | Render strings with this style applied |
-| `copy()` | Create a copy of this style |
+| `render(...)` | Rendert Strings mit angewendetem Stil |
+| `copy()` | Erstellt eine Kopie dieses Stils |
 
-### Border Constants
+### Rahmenkonstanten
 
 ```lua
 tty.borders.NORMAL
@@ -281,7 +281,7 @@ tty.borders.DOUBLE
 tty.borders.HIDDEN
 ```
 
-### Alignment Constants
+### Ausrichtungskonstanten
 
 ```lua
 tty.align.LEFT    -- 0
@@ -289,11 +289,11 @@ tty.align.CENTER  -- 0.5
 tty.align.RIGHT   -- 1
 ```
 
-## Text Utilities
+## Text-Hilfsfunktionen
 
-Layout and measurement functions for styled text. Available under `tty.text`.
+Layout- und Messfunktionen für formatierten Text. Verfügbar unter `tty.text`.
 
-### Measurement
+### Messung
 
 ```lua
 local w = tty.text.width("hello")         -- printable width (ANSI-aware)
@@ -301,39 +301,39 @@ local h = tty.text.height("a\nb\nc")      -- line count
 local w, h = tty.text.size("hello\nworld") -- both
 ```
 
-### Joining
+### Verbinden
 
 ```lua
--- Join side by side, aligned at top
+-- Side-by-side verbinden, oben ausgerichtet
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Stack vertically, centered
+-- Vertikal stapeln, zentriert
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
-### Max Dimensions
+### Maximale Dimensionen
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- widest
-local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
+local w = tty.text.max_width({"short", "a longer string"})   -- breitestes
+local h = tty.text.max_height({"one\ntwo", "single"})         -- höchstes
 ```
 
-### Placement
+### Platzierung
 
-Place a string within a box of given dimensions:
+Platziert einen String in einer Box mit gegebenen Dimensionen:
 
 ```lua
--- Center in a 80x24 box
+-- Zentrieren in einer 80x24-Box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Horizontal only
+-- Nur horizontal
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Vertical only
+-- Nur vertikal
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
-### Position Constants
+### Positionskonstanten
 
 ```lua
 tty.text.position.TOP      -- 0
@@ -343,7 +343,7 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
-## See Also
+## Siehe auch
 
-- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
-- [Terminal Host](system/terminal.md) — Terminal host configuration
+- [Terminal-I/O](lua/system/io.md) — stdin/stdout/stderr-Operationen
+- [Terminal-Host](system/terminal.md) — Terminal-Host-Konfiguration

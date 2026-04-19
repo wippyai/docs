@@ -1,17 +1,17 @@
 # Views
 
-The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages can be backed by Jet templates or external components (SPAs, micro-frontends).
+`wippy/views` 모듈은 템플릿 렌더링, 리소스 관리, 환경 변수 매핑이 포함된 가상 페이지 및 컴포넌트 시스템을 제공합니다. 페이지는 Jet 템플릿 또는 외부 컴포넌트(SPA, 마이크로 프론트엔드)로 백킹될 수 있습니다.
 
-## Setup
+## 설정
 
-Add the module to your project:
+프로젝트에 모듈 추가:
 
 ```bash
 wippy add wippy/views
 wippy install
 ```
 
-Declare the dependency:
+의존성 선언:
 
 ```yaml
 version: "1.0"
@@ -29,14 +29,14 @@ entries:
         value: PUBLIC_API_URL
 ```
 
-| Parameter | Required | Default | Description |
+| 파라미터 | 필수 | 기본값 | 설명 |
 |-----------|----------|---------|-------------|
-| `api_router` | yes | — | HTTP router for view API endpoints |
-| `api_url_env` | no | `PUBLIC_API_URL` | Env var containing the public API URL |
+| `api_router` | 예 | — | 뷰 API 엔드포인트의 HTTP 라우터 |
+| `api_url_env` | 아니오 | `PUBLIC_API_URL` | 공개 API URL을 포함하는 환경 변수 |
 
-## Template Pages
+## 템플릿 페이지
 
-Template pages render server-side using Jet templates:
+템플릿 페이지는 Jet 템플릿을 사용하여 서버 측에서 렌더링됩니다:
 
 ```yaml
 entries:
@@ -60,48 +60,48 @@ entries:
         - contact_styles
 ```
 
-### Page Metadata
+### 페이지 메타데이터
 
-| Field | Type | Default | Description |
+| 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `meta.type` | string | — | Must be `view.page` |
-| `meta.name` | string | entry name | Page identifier |
-| `meta.title` | string | — | Display title |
-| `meta.icon` | string | — | Icon identifier |
-| `meta.order` | number | `9999` | Sort order within group |
-| `meta.group` | string | — | Group category |
-| `meta.group_icon` | string | — | Group icon |
-| `meta.group_order` | number | `9999` | Group sort order |
-| `meta.group_placement` | string | `"default"` | Placement: `"default"`, `"sidebar"` |
-| `meta.secure` | boolean | `false` | Requires authentication |
-| `meta.public` | boolean | `false` | Publicly accessible |
-| `meta.announced` | boolean | `= public` | Show in navigation |
-| `meta.inline` | boolean | `false` | Hidden from UI |
-| `meta.content_type` | string | `text/html` | Response MIME type |
-| `meta.parent` | string | — | Parent page ID |
+| `meta.type` | string | — | `view.page`이어야 함 |
+| `meta.name` | string | 엔트리 이름 | 페이지 식별자 |
+| `meta.title` | string | — | 표시 제목 |
+| `meta.icon` | string | — | 아이콘 식별자 |
+| `meta.order` | number | `9999` | 그룹 내 정렬 순서 |
+| `meta.group` | string | — | 그룹 카테고리 |
+| `meta.group_icon` | string | — | 그룹 아이콘 |
+| `meta.group_order` | number | `9999` | 그룹 정렬 순서 |
+| `meta.group_placement` | string | `"default"` | 배치: `"default"`, `"sidebar"` |
+| `meta.secure` | boolean | `false` | 인증 필요 |
+| `meta.public` | boolean | `false` | 공개 접근 가능 |
+| `meta.announced` | boolean | `= public` | 내비게이션에 표시 |
+| `meta.inline` | boolean | `false` | UI에서 숨김 |
+| `meta.content_type` | string | `text/html` | 응답 MIME 타입 |
+| `meta.parent` | string | — | 상위 페이지 ID |
 
-### Template Data
+### 템플릿 데이터
 
-| Field | Description |
+| 필드 | 설명 |
 |-------|-------------|
-| `data.set` | Template set registry ID |
-| `data.data_func` | Function ID that returns page data |
-| `data.resources` | Array of resource registry IDs |
+| `data.set` | 템플릿 세트 레지스트리 ID |
+| `data.data_func` | 페이지 데이터를 반환하는 함수 ID |
+| `data.resources` | 리소스 레지스트리 ID 배열 |
 
-The `data_func` receives `{ params, query }` and returns a table that becomes the `data` context in the template.
+`data_func`은 `{ params, query }`를 받고 템플릿에서 `data` 컨텍스트가 되는 테이블을 반환합니다.
 
-### Rendering Pipeline
+### 렌더링 파이프라인
 
-1. Load page from registry
-2. Check access (security)
-3. Call `data_func` if defined
-4. Collect resources: globals + template set resources + page-specific resources
-5. Load environment variables
-6. Render Jet template with context: `{ data, resources, query_params, route_params, env }`
+1. 레지스트리에서 페이지 로드
+2. 접근 확인 (보안)
+3. 정의된 경우 `data_func` 호출
+4. 리소스 수집: 전역 + 템플릿 세트 리소스 + 페이지별 리소스
+5. 환경 변수 로드
+6. 컨텍스트 `{ data, resources, query_params, route_params, env }`로 Jet 템플릿 렌더링
 
-## Component Pages
+## 컴포넌트 페이지
 
-Component pages point to external applications (SPAs, micro-frontends):
+컴포넌트 페이지는 외부 애플리케이션(SPA, 마이크로 프론트엔드)을 가리킵니다:
 
 ```yaml
 entries:
@@ -124,37 +124,37 @@ entries:
         tailwind_config: true
 ```
 
-The API returns a component descriptor with the base URL and proxy configuration. The frontend renders the component in an iframe or inline.
+API는 베이스 URL과 프록시 설정이 포함된 컴포넌트 디스크립터를 반환합니다. 프론트엔드는 컴포넌트를 iframe 또는 인라인으로 렌더링합니다.
 
-### Component Fields
+### 컴포넌트 필드
 
-| Field | Type | Default | Description |
+| 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | Public URL of the component |
-| `meta.entry_point` | string | `index.html` (pages), `index.js` (components) | Entry file |
+| `meta.url` | string | — | 컴포넌트의 공개 URL |
+| `meta.entry_point` | string | `index.html` (페이지), `index.js` (컴포넌트) | 진입 파일 |
 
-### Proxy Configuration
+### 프록시 설정
 
-The proxy controls what CSS and behavior is injected into the component:
+프록시는 컴포넌트에 주입되는 CSS와 동작을 제어합니다:
 
-| Option | Default | Description |
+| 옵션 | 기본값 | 설명 |
 |--------|---------|-------------|
-| `proxy.enabled` | `true` | Enable proxy wrapper |
-| `proxy.css.fonts` | `true` | Inject font styles |
-| `proxy.css.theme_config` | `true` | Inject theme variables |
-| `proxy.css.iframe` | `true` | Iframe-specific styles |
-| `proxy.css.prime_vue` | `false` | PrimeVue component styles |
-| `proxy.css.markdown` | `false` | Markdown rendering styles |
-| `proxy.css.custom_css` | `false` | Custom CSS |
-| `proxy.css.custom_variables` | `false` | Custom CSS variables |
-| `proxy.tailwind_config` | `false` | Inject Tailwind config |
-| `proxy.resize_observer` | `true` | Auto-resize iframe |
-| `proxy.prevent_link_clicks` | `true` | Intercept link navigation |
-| `proxy.iconify_icons` | `false` | Load Iconify icon set |
+| `proxy.enabled` | `true` | 프록시 래퍼 활성화 |
+| `proxy.css.fonts` | `true` | 폰트 스타일 주입 |
+| `proxy.css.theme_config` | `true` | 테마 변수 주입 |
+| `proxy.css.iframe` | `true` | iframe 전용 스타일 |
+| `proxy.css.prime_vue` | `false` | PrimeVue 컴포넌트 스타일 |
+| `proxy.css.markdown` | `false` | 마크다운 렌더링 스타일 |
+| `proxy.css.custom_css` | `false` | 커스텀 CSS |
+| `proxy.css.custom_variables` | `false` | 커스텀 CSS 변수 |
+| `proxy.tailwind_config` | `false` | Tailwind 설정 주입 |
+| `proxy.resize_observer` | `true` | iframe 자동 크기 조정 |
+| `proxy.prevent_link_clicks` | `true` | 링크 내비게이션 가로채기 |
+| `proxy.iconify_icons` | `false` | Iconify 아이콘 세트 로드 |
 
-## View Components
+## View 컴포넌트
 
-Standalone components that are not pages (no navigation entry):
+페이지가 아닌 독립 실행형 컴포넌트(내비게이션 엔트리 없음):
 
 ```yaml
 entries:
@@ -170,11 +170,11 @@ entries:
         enabled: true
 ```
 
-Components use `meta.type: view.component` instead of `view.page`. They default to `index.js` as entry point.
+컴포넌트는 `view.page` 대신 `meta.type: view.component`를 사용합니다. 진입점은 기본적으로 `index.js`입니다.
 
-## Resources
+## 리소스
 
-Resources are CSS, JS, and font files associated with pages:
+리소스는 페이지와 연관된 CSS, JS, 폰트 파일입니다:
 
 ```yaml
 entries:
@@ -200,37 +200,37 @@ entries:
       defer: true
 ```
 
-### Resource Fields
+### 리소스 필드
 
-| Field | Type | Description |
+| 필드 | 타입 | 설명 |
 |-------|------|-------------|
-| `meta.type` | string | Must be `view.resource` |
+| `meta.type` | string | `view.resource`이어야 함 |
 | `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
-| `meta.order` | number | Sort order within type |
-| `meta.global` | boolean | Applied to all pages |
-| `meta.template_set` | string | Specific to a template set |
-| `meta.url` | string | Resource URL |
-| `meta.integrity` | string | SRI hash |
-| `meta.crossorigin` | string | `"anonymous"` or `"use-credentials"` |
-| `meta.media` | string | CSS media query |
-| `meta.defer` | boolean | Deferred script loading |
-| `meta.async` | boolean | Async script loading |
+| `meta.order` | number | 타입 내 정렬 순서 |
+| `meta.global` | boolean | 모든 페이지에 적용 |
+| `meta.template_set` | string | 특정 템플릿 세트 전용 |
+| `meta.url` | string | 리소스 URL |
+| `meta.integrity` | string | SRI 해시 |
+| `meta.crossorigin` | string | `"anonymous"` 또는 `"use-credentials"` |
+| `meta.media` | string | CSS 미디어 쿼리 |
+| `meta.defer` | boolean | 지연 스크립트 로딩 |
+| `meta.async` | boolean | 비동기 스크립트 로딩 |
 
-### Resource Collection
+### 리소스 수집
 
-Resources are collected in three layers, merged in order:
+리소스는 세 계층으로 수집되어 순서대로 병합됩니다:
 
-1. **Global resources** — `global: true`, applied to all pages
-2. **Template set resources** — matched by `template_set` ID
-3. **Page resources** — listed in `data.resources` array
+1. **전역 리소스** — `global: true`, 모든 페이지에 적용
+2. **템플릿 세트 리소스** — `template_set` ID로 일치
+3. **페이지 리소스** — `data.resources` 배열에 나열됨
 
-Within each layer, resources are grouped by `resource_type` and sorted by `order`.
+각 계층 내에서 리소스는 `resource_type`별로 그룹화되고 `order`로 정렬됩니다.
 
-## Environment Variable Mapping
+## 환경 변수 매핑
 
-The env loader maps environment variables to template context keys through a priority-based system.
+env 로더는 우선순위 기반 시스템을 통해 환경 변수를 템플릿 컨텍스트 키에 매핑합니다.
 
-### Defining Mappings
+### 매핑 정의
 
 ```yaml
 entries:
@@ -246,22 +246,22 @@ entries:
         debug_mode: DEBUG_ENABLED
 ```
 
-Each mapping entry associates context keys (used in templates as `env.api_endpoint`) with environment variable names.
+각 매핑 엔트리는 컨텍스트 키(템플릿에서 `env.api_endpoint`로 사용)를 환경 변수 이름과 연결합니다.
 
-### Priority System
+### 우선순위 시스템
 
-| Range | Category | Description |
+| 범위 | 카테고리 | 설명 |
 |-------|----------|-------------|
-| 0–9 | Framework defaults | Built-in framework mappings |
-| 10–19 | System overrides | System-level configuration |
-| 20–29 | Application mappings | Application-specific mappings |
-| 30–100 | Environment overrides | Runtime overrides |
+| 0–9 | 프레임워크 기본값 | 내장 프레임워크 매핑 |
+| 10–19 | 시스템 오버라이드 | 시스템 수준 설정 |
+| 20–29 | 애플리케이션 매핑 | 애플리케이션별 매핑 |
+| 30–100 | 환경 오버라이드 | 런타임 오버라이드 |
 
-Higher priority wins when multiple mappings define the same context key.
+여러 매핑이 동일한 컨텍스트 키를 정의할 때 더 높은 우선순위가 우선합니다.
 
-### Using in Templates
+### 템플릿에서 사용
 
-Resolved environment values are available in the `env` context object:
+해석된 환경 값은 `env` 컨텍스트 객체에서 사용할 수 있습니다:
 
 ```html
 <script>
@@ -270,22 +270,22 @@ Resolved environment values are available in the `env` context object:
 </script>
 ```
 
-## HTTP API Endpoints
+## HTTP API 엔드포인트
 
-The views module registers these endpoints on the configured router:
+views 모듈은 설정된 라우터에 다음 엔드포인트를 등록합니다:
 
-| Method | Path | Description |
+| 메서드 | 경로 | 설명 |
 |--------|------|-------------|
-| GET | `/pages/list` | List accessible, announced pages |
-| GET | `/components/list` | List view components |
-| GET | `/pages/content/{id}` | Render page or return component descriptor |
-| GET | `/pages/public/{id}` | Get component base URL |
+| GET | `/pages/list` | 접근 가능하고 announced된 페이지 목록 |
+| GET | `/components/list` | view 컴포넌트 목록 |
+| GET | `/pages/content/{id}` | 페이지 렌더링 또는 컴포넌트 디스크립터 반환 |
+| GET | `/pages/public/{id}` | 컴포넌트 베이스 URL 가져오기 |
 
-### Render Response
+### 렌더 응답
 
-For template pages, returns rendered HTML with the page's `content_type`.
+템플릿 페이지의 경우 페이지의 `content_type`으로 렌더링된 HTML을 반환합니다.
 
-For component pages, returns a descriptor:
+컴포넌트 페이지의 경우 디스크립터를 반환합니다:
 
 ```json
 {
@@ -310,29 +310,29 @@ For component pages, returns a descriptor:
 }
 ```
 
-## Access Control
+## 접근 제어
 
-Pages with `secure: true` require authentication. The page registry checks `security.can("view", "page:<page_id>")` against the current actor and scope.
+`secure: true`인 페이지는 인증이 필요합니다. 페이지 레지스트리는 현재 액터와 스코프에 대해 `security.can("view", "page:<page_id>")`를 확인합니다.
 
-Non-secure pages are always accessible. The `announced` flag controls visibility in navigation listings without affecting access.
+비보안 페이지는 항상 접근 가능합니다. `announced` 플래그는 접근에 영향을 주지 않고 내비게이션 목록의 표시 여부를 제어합니다.
 
-## ID Qualification
+## ID 한정
 
-Relative IDs in page definitions are qualified with the entry's namespace:
+페이지 정의의 상대 ID는 엔트리의 네임스페이스로 한정됩니다:
 
 ```yaml
-# In namespace "app"
+# 네임스페이스 "app" 내
 data:
-  data_func: my_data_func       # resolves to app:my_data_func
-  set: templates:default         # stays as templates:default (already qualified)
+  data_func: my_data_func       # app:my_data_func로 해석됨
+  set: templates:default         # templates:default 그대로 (이미 한정됨)
   resources:
-    - page_styles                # resolves to app:page_styles
+    - page_styles                # app:page_styles로 해석됨
 ```
 
-## See Also
+## 참고
 
-- [Facade](facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](../system/template.md) - Jet template engine
-- [Security](../system/security.md) - Security actors and access control
-- [Environment](../system/env.md) - Environment variable storage
-- [Framework Overview](overview.md) - Framework module usage
+- [Facade](facade.md) - 프론트엔드 iframe 파사드 및 내비게이션 사이드바
+- [Template](../system/template.md) - Jet 템플릿 엔진
+- [보안](../system/security.md) - 보안 액터 및 접근 제어
+- [환경](../system/env.md) - 환경 변수 스토리지
+- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법

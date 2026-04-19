@@ -1,27 +1,27 @@
-# Publishing Modules
+# モジュールの公開
 
-Share reusable code on the Wippy Hub.
+再利用可能なコードを Wippy Hub で共有します。
 
-## Prerequisites
+## 前提条件
 
-1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
-2. Create an organization or join one
-3. Register your module name under your organization
+1. [hub.wippy.ai](https://hub.wippy.ai) でアカウントを作成する
+2. 組織を作成するか、既存の組織に参加する
+3. 組織内でモジュール名を登録する
 
-## Module Structure
+## モジュール構造
 
 ```
 mymodule/
-├── wippy.yaml      # Module manifest
+├── wippy.yaml      # モジュールマニフェスト
 ├── src/
-│   ├── _index.yaml # Entry definitions
-│   └── *.lua       # Source files
-└── README.md       # Documentation (optional)
+│   ├── _index.yaml # エントリ定義
+│   └── *.lua       # ソースファイル
+└── README.md       # ドキュメント（任意）
 ```
 
 ## wippy.yaml
 
-Module manifest:
+モジュールマニフェスト：
 
 ```yaml
 organization: acme
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| Field | Required | Description |
+| フィールド | 必須 | 説明 |
 |-------|----------|-------------|
-| `organization` | Yes | Your org name on the hub |
-| `module` | Yes | Module name |
-| `description` | No | Short description |
-| `license` | No | SPDX identifier (MIT, Apache-2.0) |
-| `repository` | No | Source repository URL |
-| `homepage` | No | Project homepage |
-| `keywords` | No | Search keywords |
+| `organization` | はい | Hub 上の組織名 |
+| `module` | はい | モジュール名 |
+| `description` | いいえ | 短い説明 |
+| `license` | いいえ | SPDX 識別子（MIT、Apache-2.0） |
+| `repository` | いいえ | ソースリポジトリ URL |
+| `homepage` | いいえ | プロジェクトホームページ |
+| `keywords` | いいえ | 検索キーワード |
 
-## Entry Definitions
+## エントリ定義
 
-Entries are defined in `_index.yaml`:
+エントリは `_index.yaml` で定義します：
 
 ```yaml
 version: "1.0"
@@ -68,9 +68,9 @@ entries:
       - json
 ```
 
-## Dependencies
+## 依存関係
 
-Declare dependencies on other modules:
+他のモジュールへの依存関係を宣言します：
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-Version constraints:
+バージョン制約：
 
-| Constraint | Meaning |
+| 制約 | 意味 |
 |------------|---------|
-| `*` | Any version |
-| `1.0.0` | Exact version |
-| `>=1.0.0` | Minimum version |
-| `^1.0.0` | Compatible (same major) |
+| `*` | 任意のバージョン |
+| `1.0.0` | 厳密なバージョン |
+| `>=1.0.0` | 最小バージョン |
+| `^1.0.0` | 互換性あり（同じメジャーバージョン） |
 
-## Requirements
+## 要件
 
-Define configuration that consumers must provide:
+利用者が指定する必要のある設定を定義します：
 
 ```yaml
 entries:
@@ -107,19 +107,19 @@ entries:
     default: "https://api.example.com"
 ```
 
-Targets specify where the value is injected:
-- `entry` - Full entry ID to configure
-- `path` - JSONPath for value injection
+ターゲットは値が注入される場所を指定します：
+- `entry` - 設定対象のエントリ ID
+- `path` - 値を注入する JSONPath
 
-Consumers configure via override. The `-o` flag takes a `namespace:entry:field=value` triple:
+利用者はオーバーライドで設定します。`-o` フラグは `namespace:entry:field=value` のトリプルを受け取ります：
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
 ```
 
-## Imports
+## インポート
 
-Reference other entries:
+他のエントリを参照します：
 
 ```yaml
 - name: handler
@@ -128,21 +128,21 @@ Reference other entries:
   modules:
     - json
   imports:
-    client: acme.http:client           # Same namespace
-    utils: acme.utils:helpers          # Different namespace
-    base_registry: :registry           # Built-in
+    client: acme.http:client           # 同じ名前空間
+    utils: acme.utils:helpers          # 異なる名前空間
+    base_registry: :registry           # 組み込み
 ```
 
-In Lua:
+Lua 内：
 
 ```lua
 local client = require("client")
 local utils = require("utils")
 ```
 
-## Contracts
+## コントラクト
 
-Define public interfaces:
+公開インターフェースを定義します：
 
 ```yaml
 - name: http_contract
@@ -164,15 +164,15 @@ Define public interfaces:
         post: acme.http:post_handler
 ```
 
-## Publishing Workflow
+## 公開ワークフロー
 
-### 1. Authenticate
+### 1. 認証
 
 ```bash
 wippy auth login
 ```
 
-### 2. Prepare
+### 2. 準備
 
 ```bash
 wippy init
@@ -180,47 +180,47 @@ wippy update
 wippy lint
 ```
 
-### 3. Validate
+### 3. 検証
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. Publish
+### 4. 公開
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-With release notes:
+リリースノート付き：
 
 ```bash
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### Additional Flags
+### 追加フラグ
 
-| Flag | Description |
+| フラグ | 説明 |
 |------|-------------|
-| `--label <name>` | Publish as a mutable label (e.g. `latest`, `beta`) instead of an immutable version |
-| `--protected` | Mark the published version as protected (cannot be deleted or overwritten) |
-| `--registry <url>` | Override the registry URL for this publish |
-| `--config <dir>` | Directory containing `wippy.yaml` (default: current dir) |
+| `--label <name>` | イミュータブルなバージョンの代わりに、可変ラベル（例：`latest`、`beta`）として公開する |
+| `--protected` | 公開バージョンを保護対象としてマークする（削除や上書きが不可になる） |
+| `--registry <url>` | この公開時のみレジストリ URL を上書きする |
+| `--config <dir>` | `wippy.yaml` を含むディレクトリ（デフォルト：カレントディレクトリ） |
 
-### Embedding Static Files
+### 静的ファイルの埋め込み
 
-Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+`fs.directory` エントリ（静的アセット、テンプレート、公開ファイル）を含むモジュールは、それらを公開パッケージに含めるために `--embed` を使用する必要があります。これがない場合、`fs.directory` エントリは除外されます。
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+`--embed` フラグは、エントリ ID または `fs.directory` エントリに一致する名前を受け取ります。同じフラグは `wippy pack` でも利用できます。
 
-## Using Published Modules
+## 公開モジュールの利用
 
-### Add Dependency
+### 依存関係の追加
 
 ```bash
 wippy add acme/http-utils
@@ -228,22 +228,22 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### Configure Requirements
+### 要件の設定
 
-Override values at runtime:
+ランタイム時に値をオーバーライドします：
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://my.api.com
 ```
 
-Or in `.wippy.yaml`:
+または `.wippy.yaml` 内：
 
 ```yaml
 override:
   acme.http:client:meta.endpoint: "https://my.api.com"
 ```
 
-### Import in Your Code
+### コードでのインポート
 
 ```yaml
 # your src/_index.yaml
@@ -260,7 +260,7 @@ entries:
       http: acme.http:client
 ```
 
-## Complete Example
+## 完全な例
 
 **wippy.yaml:**
 ```yaml
@@ -333,15 +333,15 @@ end
 return cache
 ```
 
-Publish:
+公開：
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## See Also
+## 関連項目
 
-- [CLI Reference](guides/cli.md)
-- [Entry Kinds](guides/entry-kinds.md)
-- [Configuration](guides/configuration.md)
+- [CLI リファレンス](guides/cli.md)
+- [エントリ種別](guides/entry-kinds.md)
+- [設定](guides/configuration.md)

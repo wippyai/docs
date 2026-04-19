@@ -2,21 +2,21 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Terminal UI module for raw input events, styled output, and layout utilities.
+Модуль терминального UI для событий сырого ввода, стилизованного вывода и утилит компоновки.
 
 <note>
-This module only works inside terminal context. You cannot use it from regular functions—only from processes running on a <a href="system/terminal.md">Terminal Host</a>.
+Этот модуль работает только в контексте терминала. Его нельзя использовать из обычных функций — только из процессов, запущенных на <a href="system/terminal.md">Terminal Host</a>.
 </note>
 
-## Loading
+## Загрузка
 
 ```lua
 local tty = require("tty")
 ```
 
-## Input Loop
+## Цикл ввода
 
-Start the raw input reader, subscribe to events, and process them in a loop:
+Запустите читалку сырого ввода, подпишитесь на события и обработайте их в цикле:
 
 ```lua
 local tty = require("tty")
@@ -45,89 +45,89 @@ local function handler()
 end
 ```
 
-## Input Control
+## Управление вводом
 
 ### tty.start()
 
-Enable raw terminal input mode. The terminal switches to raw mode and begins emitting events.
+Включить режим сырого ввода терминала. Терминал переключается в raw-режим и начинает выдавать события.
 
 ```lua
 local ok, err = tty.start()
 ```
 
-**Returns:** `boolean, error`
+**Возвращает:** `boolean, error`
 
 ### tty.stop()
 
-Disable raw input and restore the terminal to normal mode.
+Отключить сырой ввод и вернуть терминал в нормальный режим.
 
 ```lua
 local ok, err = tty.stop()
 ```
 
-**Returns:** `boolean, error`
+**Возвращает:** `boolean, error`
 
 ### tty.events()
 
-Subscribe to terminal events and return a channel. Events are delivered as tables with a `type` field.
+Подписаться на события терминала и вернуть канал. События доставляются в виде таблиц с полем `type`.
 
 ```lua
 local events = tty.events()
 ```
 
-**Returns:** `EventChannel`
+**Возвращает:** `EventChannel`
 
 ### tty.screen_size()
 
-Query current terminal dimensions.
+Запросить текущие размеры терминала.
 
 ```lua
 local width, height, err = tty.screen_size()
 ```
 
-**Returns:** `number, number, error`
+**Возвращает:** `number, number, error`
 
 ### tty.mouse(enable)
 
-Enable or disable mouse event tracking.
+Включить или отключить отслеживание событий мыши.
 
 ```lua
 local ok, err = tty.mouse(true)
 ```
 
-| Parameter | Type | Description |
+| Параметр | Тип | Описание |
 |-----------|------|-------------|
-| `enable` | boolean | `true` to enable, `false` to disable |
+| `enable` | boolean | `true` для включения, `false` для отключения |
 
-**Returns:** `boolean, error`
+**Возвращает:** `boolean, error`
 
-## Event Types
+## Типы событий
 
-Events are tables with a `type` field that determines which other fields are present.
+События — это таблицы с полем `type`, которое определяет, какие другие поля присутствуют.
 
-### Key Event
+### Событие клавиши
 
 ```lua
 {
     type = "key",
-    key = "a",           -- printable character or key name
-    key_type = "runes",  -- "runes" for printable, or special key name
-    action = "press",    -- "press" or "release"
+    key = "a",           -- печатный символ или имя клавиши
+    key_type = "runes",  -- "runes" для печатных, или имя специальной клавиши
+    action = "press",    -- "press" или "release"
     alt = false,
     ctrl = false,
     shift = false
 }
 ```
 
-### Mouse Event
+### Событие мыши
 
-Requires `tty.mouse(true)`.
+Требует `tty.mouse(true)`.
 
 ```lua
 {
     type = "mouse",
     action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- button name
+    button = "left",     -- имя кнопки
     x = 10,
     y = 5,
     alt = false,
@@ -136,35 +136,35 @@ Requires `tty.mouse(true)`.
 }
 ```
 
-### Resize Event
+### Событие изменения размера
 
 ```lua
 {type = "resize", width = 120, height = 40}
 ```
 
-### Start Event
+### Событие старта
 
-Emitted once after `tty.start()` with initial dimensions.
+Выдаётся один раз после `tty.start()` с начальными размерами.
 
 ```lua
 {type = "start", width = 120, height = 40}
 ```
 
-### Focus Event
+### Событие фокуса
 
 ```lua
 {type = "focus", focused = true}
 ```
 
-### Paste Event
+### Событие вставки
 
 ```lua
 {type = "paste", text = "pasted content"}
 ```
 
-## Key Bindings
+## Привязки клавиш
 
-Create reusable key bindings that match against key events:
+Создавайте переиспользуемые привязки клавиш, которые сопоставляются с событиями клавиш:
 
 ```lua
 local quit = tty.bind({
@@ -172,7 +172,7 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- In event loop
+-- В цикле событий
 if quit:matches(ev) then
     break
 end
@@ -180,25 +180,25 @@ end
 
 ### tty.bind(config)
 
-| Field | Type | Description |
+| Поле | Тип | Описание |
 |-------|------|-------------|
-| `keys` | string[] | Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
-| `help` | table | Optional. `{key = "...", desc = "..."}` for help text |
+| `keys` | string[] | Шаблоны клавиш для сопоставления (например, `"a"`, `"ctrl+c"`, `"enter"`) |
+| `help` | table | Опционально. `{key = "...", desc = "..."}` для текста справки |
 
-**Returns:** `KeyBinding`
+**Возвращает:** `KeyBinding`
 
-### KeyBinding Methods
+### Методы KeyBinding
 
-| Method | Returns | Description |
+| Метод | Возвращает | Описание |
 |--------|---------|-------------|
-| `matches(event)` | boolean | Test if a key event matches this binding |
-| `set_enabled(bool)` | self | Enable or disable the binding |
-| `is_enabled()` | boolean | Check if the binding is enabled |
-| `help()` | table | Returns `{key, desc}` help info |
+| `matches(event)` | boolean | Проверить, соответствует ли событие клавиши этой привязке |
+| `set_enabled(bool)` | self | Включить или отключить привязку |
+| `is_enabled()` | boolean | Проверить, включена ли привязка |
+| `help()` | table | Возвращает справочную информацию `{key, desc}` |
 
-## Styles
+## Стили
 
-Create styled text output using lipgloss-based styling. All style methods return a new style (immutable).
+Создавайте стилизованный текстовый вывод с помощью стилизации на базе lipgloss. Все методы стиля возвращают новый стиль (immutable).
 
 ```lua
 local tty = require("tty")
@@ -220,58 +220,58 @@ io.print(box:render(title:render("Hello"), "World"))
 
 ### tty.style()
 
-Create a new empty style.
+Создать новый пустой стиль.
 
-**Returns:** `Style`
+**Возвращает:** `Style`
 
-### Style Methods
+### Методы Style
 
-All methods return a new `Style` and can be chained.
+Все методы возвращают новый `Style` и могут быть зацеплены.
 
-#### Text Decoration
+#### Декорация текста
 
-| Method | Parameter | Description |
+| Метод | Параметр | Описание |
 |--------|-----------|-------------|
-| `foreground(color)` | string | Text color (hex `"#FF0000"`, ANSI `"9"`, or name) |
-| `background(color)` | string | Background color |
-| `bold(enable?)` | boolean | Bold text (default: true) |
-| `italic(enable?)` | boolean | Italic text |
-| `underline(enable?)` | boolean | Underline text |
-| `strikethrough(enable?)` | boolean | Strikethrough text |
-| `faint(enable?)` | boolean | Dimmed text |
-| `blink(enable?)` | boolean | Blinking text |
-| `reverse(enable?)` | boolean | Swap foreground/background |
+| `foreground(color)` | string | Цвет текста (hex `"#FF0000"`, ANSI `"9"` или имя) |
+| `background(color)` | string | Цвет фона |
+| `bold(enable?)` | boolean | Жирный текст (по умолчанию: true) |
+| `italic(enable?)` | boolean | Курсивный текст |
+| `underline(enable?)` | boolean | Подчёркнутый текст |
+| `strikethrough(enable?)` | boolean | Перечёркнутый текст |
+| `faint(enable?)` | boolean | Приглушённый текст |
+| `blink(enable?)` | boolean | Мигающий текст |
+| `reverse(enable?)` | boolean | Поменять местами цвет текста и фона |
 
-#### Layout
+#### Компоновка
 
-| Method | Parameter | Description |
+| Метод | Параметр | Описание |
 |--------|-----------|-------------|
-| `width(n)` | number | Fixed width |
-| `height(n)` | number | Fixed height |
-| `max_width(n)` | number | Maximum width |
-| `max_height(n)` | number | Maximum height |
-| `padding(...)` | numbers | Padding (CSS-style: top, right, bottom, left) |
-| `margin(...)` | numbers | Margin (CSS-style) |
-| `align(pos)` | number | Horizontal alignment |
-| `align_vertical(pos)` | number | Vertical alignment |
-| `inline(enable?)` | boolean | Inline rendering mode |
+| `width(n)` | number | Фиксированная ширина |
+| `height(n)` | number | Фиксированная высота |
+| `max_width(n)` | number | Максимальная ширина |
+| `max_height(n)` | number | Максимальная высота |
+| `padding(...)` | numbers | Внутренний отступ (CSS-стиль: top, right, bottom, left) |
+| `margin(...)` | numbers | Внешний отступ (CSS-стиль) |
+| `align(pos)` | number | Горизонтальное выравнивание |
+| `align_vertical(pos)` | number | Вертикальное выравнивание |
+| `inline(enable?)` | boolean | Inline-режим рендеринга |
 
-#### Borders
+#### Границы
 
-| Method | Parameter | Description |
+| Метод | Параметр | Описание |
 |--------|-----------|-------------|
-| `border(name, ...)` | string, booleans | Border style, optional per-side toggles |
-| `border_foreground(...)` | strings | Border color(s) |
-| `border_background(...)` | strings | Border background color(s) |
+| `border(name, ...)` | string, booleans | Стиль границы, опциональные переключатели по сторонам |
+| `border_foreground(...)` | strings | Цвет(а) границы |
+| `border_background(...)` | strings | Цвет(а) фона границы |
 
-#### Other
+#### Прочее
 
-| Method | Description |
+| Метод | Описание |
 |--------|-------------|
-| `render(...)` | Render strings with this style applied |
-| `copy()` | Create a copy of this style |
+| `render(...)` | Отрендерить строки с применённым стилем |
+| `copy()` | Создать копию этого стиля |
 
-### Border Constants
+### Константы границ
 
 ```lua
 tty.borders.NORMAL
@@ -281,7 +281,7 @@ tty.borders.DOUBLE
 tty.borders.HIDDEN
 ```
 
-### Alignment Constants
+### Константы выравнивания
 
 ```lua
 tty.align.LEFT    -- 0
@@ -289,51 +289,51 @@ tty.align.CENTER  -- 0.5
 tty.align.RIGHT   -- 1
 ```
 
-## Text Utilities
+## Утилиты текста
 
-Layout and measurement functions for styled text. Available under `tty.text`.
+Функции компоновки и измерения для стилизованного текста. Доступны под `tty.text`.
 
-### Measurement
+### Измерение
 
 ```lua
-local w = tty.text.width("hello")         -- printable width (ANSI-aware)
-local h = tty.text.height("a\nb\nc")      -- line count
-local w, h = tty.text.size("hello\nworld") -- both
+local w = tty.text.width("hello")         -- печатная ширина (с учётом ANSI)
+local h = tty.text.height("a\nb\nc")      -- количество строк
+local w, h = tty.text.size("hello\nworld") -- оба значения
 ```
 
-### Joining
+### Соединение
 
 ```lua
--- Join side by side, aligned at top
+-- Соединить бок о бок, выровняв по верху
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Stack vertically, centered
+-- Сложить вертикально, центрировано
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
-### Max Dimensions
+### Максимальные размеры
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- widest
-local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
+local w = tty.text.max_width({"short", "a longer string"})   -- самое широкое
+local h = tty.text.max_height({"one\ntwo", "single"})         -- самое высокое
 ```
 
-### Placement
+### Размещение
 
-Place a string within a box of given dimensions:
+Поместить строку внутри области заданных размеров:
 
 ```lua
--- Center in a 80x24 box
+-- Центрировать в области 80x24
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Horizontal only
+-- Только горизонтально
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Vertical only
+-- Только вертикально
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
-### Position Constants
+### Константы позиции
 
 ```lua
 tty.text.position.TOP      -- 0
@@ -343,7 +343,7 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
-## See Also
+## См. также
 
-- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
-- [Terminal Host](system/terminal.md) — Terminal host configuration
+- [Терминальный I/O](lua/system/io.md) — операции stdin/stdout/stderr
+- [Terminal Host](system/terminal.md) — Конфигурация хоста терминала

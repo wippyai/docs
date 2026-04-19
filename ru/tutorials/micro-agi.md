@@ -1,15 +1,15 @@
 # Micro AGI
 
-Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them into the active session.
+Создайте самомодифицирующегося агента, который создаёт собственные инструменты во время выполнения — читает документацию, пишет Lua, регистрирует записи в реестре и загружает их в активную сессию.
 
-## What We're Building
+## Что мы строим
 
-A terminal agent that:
-- Answers questions using an LLM with streaming
-- Searches Wippy documentation to learn APIs
-- Inspects the registry to discover existing capabilities
-- Builds new tools on the fly when it lacks a capability
-- Manages its own context window via compression
+Терминальный агент, который:
+- Отвечает на вопросы, используя LLM со стримингом
+- Ищет документацию Wippy для изучения API
+- Инспектирует реестр для обнаружения существующих возможностей
+- Создаёт новые инструменты на лету, когда не хватает возможности
+- Управляет собственным контекстным окном через сжатие
 
 ```mermaid
 flowchart LR
@@ -29,9 +29,9 @@ flowchart LR
     end
 ```
 
-## Architecture
+## Архитектура
 
-The agent runs as a Wippy process with access to the registry. When the LLM decides it needs a capability it doesn't have, it uses the self-modification loop:
+Агент работает как процесс Wippy с доступом к реестру. Когда LLM решает, что ему нужна возможность, которой у него нет, он использует цикл самомодификации:
 
 ```mermaid
 sequenceDiagram
@@ -59,9 +59,9 @@ sequenceDiagram
     A->>U: stream response
 ```
 
-The key insight: tools are registry entries. Creating a tool is just writing a `function.lua` entry with inline Lua source in `data.source`. The agent runtime compiles and loads it like any other entry.
+Ключевая идея: инструменты — это записи реестра. Создание инструмента — это просто запись `function.lua` с inline-исходником на Lua в `data.source`. Среда исполнения агента компилирует и загружает его как любую другую запись.
 
-## Project Structure
+## Структура проекта
 
 ```
 micro-agi/
@@ -80,9 +80,9 @@ micro-agi/
         └── load_tool.lua
 ```
 
-## Infrastructure
+## Инфраструктура
 
-Create `.wippy.yaml`:
+Создайте `.wippy.yaml`:
 
 ```yaml
 version: "1.0"
@@ -91,9 +91,9 @@ logger:
   encoding: console
 ```
 
-## Entry Definitions
+## Определения записей
 
-Create `src/_index.yaml` with infrastructure, security policies, models, agent, and process:
+Создайте `src/_index.yaml` с инфраструктурой, политиками безопасности, моделями, агентом и процессом:
 
 ```yaml
 version: "1.0"
@@ -135,9 +135,9 @@ entries:
         value: app:processes
 ```
 
-### Security Policies
+### Политики безопасности
 
-Two `security.policy` entries restrict which namespaces the agent can write to:
+Две записи `security.policy` ограничивают, в какие пространства имён агент может писать:
 
 ```yaml
   - name: deny_core_ns
@@ -159,13 +159,13 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
       - agent_security
 ```
 
-These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
+Эти политики загружаются как именованная область (`app:agent_security`) функцией `create_tool` и вычисляются перед любой записью в реестр. Агент может писать в `app.generated:*` (нет совпадающих deny-политик), но не может писать в `app:*` (основные записи, модели, определение агента) или `app.tools:*` (встроенные инструменты).
 
-See [Security Model](../system/security.md) for details on policy evaluation.
+См. [Модель безопасности](../system/security.md) для подробностей о вычислении политик.
 
-### Models
+### Модели
 
-Two models serve different purposes:
+Две модели служат разным целям:
 
 ```yaml
   - name: gpt-5.1
@@ -210,9 +210,9 @@ Two models serve different purposes:
         provider_model: gpt-4.1-nano
 ```
 
-GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression at 25x lower cost.
+GPT-5.1 обрабатывает рассуждения и использование инструментов. GPT-4.1 Nano выполняет сжатие контекста при стоимости в 25 раз ниже.
 
-### Agent Definition
+### Определение агента
 
 ```yaml
   - name: dev_assistant
@@ -241,12 +241,12 @@ GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression
       - "app.tools:*"
 ```
 
-The prompt is deliberately terse. Key rules:
-- **No hallucination** — the agent must use tools for real data
-- **Self-modification** — build tools instead of refusing
-- **Action over explanation** — do first, explain if asked
+Промпт намеренно лаконичен. Ключевые правила:
+- **Никаких галлюцинаций** — агент должен использовать инструменты для получения реальных данных
+- **Самомодификация** — создавать инструменты вместо отказа
+- **Действие важнее объяснения** — сначала действуй, объясняй, если попросят
 
-### Process
+### Процесс
 
 ```yaml
   - name: agent
@@ -264,20 +264,20 @@ The prompt is deliberately terse. Key rules:
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
+Процесс запускается как терминальная команда. Контроль безопасности выполняется внутри `create_tool`, который загружает группу политик `agent_security` и вычисляет её перед записью.
 
-Imports:
-- `prompt` — conversation builder
-- `agent_context` — agent loading and dynamic tool management
-- `compress` — LLM-based text compression for context management
+Импорты:
+- `prompt` — построитель диалога
+- `agent_context` — загрузка агента и динамическое управление инструментами
+- `compress` — сжатие текста на основе LLM для управления контекстом
 
-## Tools
+## Инструменты
 
-Create `src/tools/_index.yaml` with five tools:
+Создайте `src/tools/_index.yaml` с пятью инструментами:
 
 ### doc_search
 
-Fetches Wippy documentation via the `wippy.ai/llm` API. Supports two modes: fetch a page by path, or search by query.
+Получает документацию Wippy через API `wippy.ai/llm`. Поддерживает два режима: получение страницы по пути или поиск по запросу.
 
 ```lua
 local http_client = require("http_client")
@@ -346,9 +346,9 @@ return { handler = handler }
 
 ### create_tool
 
-The core of self-modification. Evaluates namespace deny policies and creates a `function.lua` entry in the registry with inline Lua source.
+Ядро самомодификации. Вычисляет deny-политики пространств имён и создаёт запись `function.lua` в реестре с inline-исходником на Lua.
 
-The `modules` field on the generated entry controls what the tool can access. Modules not listed simply do not exist for that entry — there is nothing to block or scan for.
+Поле `modules` сгенерированной записи контролирует, к чему может обращаться инструмент. Модули, не указанные в списке, просто не существуют для этой записи — нечего блокировать или сканировать.
 
 ```lua
 local registry = require("registry")
@@ -366,7 +366,7 @@ local ALLOWED_MODULES = {
 }
 ```
 
-**Policy evaluation** — `create_tool` loads the `agent_security` named scope and evaluates the deny policies against the target entry ID. Writes to `app:*` or `app.tools:*` are denied; writes to `app.generated:*` pass (no matching deny policy):
+**Вычисление политик** — `create_tool` загружает именованную область `agent_security` и вычисляет deny-политики для целевого ID записи. Запись в `app:*` или `app.tools:*` запрещена; запись в `app.generated:*` проходит (нет совпадающей deny-политики):
 
 ```lua
 local actor = security.new_actor("service:agent", { role = "agent" })
@@ -381,7 +381,7 @@ if result == "deny" then
 end
 ```
 
-**Registry write** — the entry is written with source in `data.source` and only the allowed modules:
+**Запись в реестр** — запись пишется с исходником в `data.source` и только с разрешёнными модулями:
 
 ```lua
 local entry = {
@@ -412,11 +412,11 @@ end
 changes:apply()
 ```
 
-No files on disk. The tool lives entirely in the registry.
+Никаких файлов на диске. Инструмент полностью живёт в реестре.
 
 ### load_tool
 
-Validates the entry is a tool and signals the agent loop to reload:
+Проверяет, что запись является инструментом, и сигнализирует циклу агента о перезагрузке:
 
 ```lua
 local function handler(input)
@@ -440,15 +440,15 @@ local function handler(input)
 end
 ```
 
-The agent loop detects `loaded = true` in the result and calls `ctx:add_tools(id)` followed by `ctx:load_agent()` to recompile the agent with the new tool.
+Цикл агента обнаруживает `loaded = true` в результате и вызывает `ctx:add_tools(id)`, после чего `ctx:load_agent()`, чтобы перекомпилировать агента с новым инструментом.
 
-## Agent Loop
+## Цикл агента
 
-The agent loop in `src/agent.lua` handles streaming, tool execution, dynamic loading, and context compression.
+Цикл агента в `src/agent.lua` обрабатывает стриминг, выполнение инструментов, динамическую загрузку и сжатие контекста.
 
-### Streaming
+### Стриминг
 
-Uses the same coroutine + channel pattern from the [LLM Agent tutorial](llm-agent.md):
+Использует тот же паттерн «coroutine + channel» из [туториала LLM Agent](llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -462,17 +462,17 @@ coroutine.spawn(function()
 end)
 ```
 
-### Tool Execution
+### Выполнение инструментов
 
-Tools are called via `funcs.call()` with `pcall` for safety:
+Инструменты вызываются через `funcs.call()` с `pcall` для безопасности:
 
 ```lua
 local ok, result = pcall(funcs.call, tc.registry_id, args)
 ```
 
-### Dynamic Tool Loading
+### Динамическая загрузка инструментов
 
-When `load_tool` returns `loaded = true`, the agent reloads itself:
+Когда `load_tool` возвращает `loaded = true`, агент перезагружает себя:
 
 ```mermaid
 flowchart TD
@@ -501,11 +501,11 @@ local function handle_tool_loading(tool_calls, results)
 end
 ```
 
-The conversation is preserved across reloads because it lives in the prompt builder, not in the runner.
+Диалог сохраняется между перезагрузками, потому что он живёт в построителе промптов, а не в runner-е.
 
-### Context Compression
+### Сжатие контекста
 
-When prompt tokens exceed 96K (75% of the 128K context window), the conversation is compressed using GPT-4.1 Nano:
+Когда токены промпта превышают 96K (75% от контекстного окна 128K), диалог сжимается с помощью GPT-4.1 Nano:
 
 ```lua
 if response.tokens and response.tokens.prompt_tokens
@@ -514,7 +514,7 @@ if response.tokens and response.tokens.prompt_tokens
 end
 ```
 
-Compression extracts message content, calls `compress.to_size()` targeting 4000 characters, and replaces the conversation with a summary:
+Сжатие извлекает содержимое сообщений, вызывает `compress.to_size()` с целью в 4000 символов и заменяет диалог сводкой:
 
 ```lua
 local summary = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
@@ -522,9 +522,9 @@ session.conversation = prompt.new()
 session.conversation:add_system("Conversation summary:\n\n" .. summary)
 ```
 
-## Security Model
+## Модель безопасности
 
-The agent is secured through namespace deny policies and module-level access control.
+Агент защищён через deny-политики пространств имён и контроль доступа на уровне модулей.
 
 ```mermaid
 flowchart TD
@@ -538,33 +538,33 @@ flowchart TD
     M -->|unknown module requested| Err[Rejected]
 ```
 
-### Namespace Deny Policies
+### Deny-политики пространств имён
 
-| Policy | Resources | Effect |
+| Политика | Ресурсы | Эффект |
 |--------|-----------|--------|
 | `deny_core_ns` | `app:*` | deny |
 | `deny_tools_ns` | `app.tools:*` | deny |
 
-`create_tool` loads the `agent_security` policy group and evaluates against the target entry ID. Since deny policies only match `app:*` and `app.tools:*`, writes to `app.generated:*` pass through (result is `undefined`, meaning "not denied").
+`create_tool` загружает группу политик `agent_security` и вычисляет её для целевого ID записи. Поскольку deny-политики совпадают только с `app:*` и `app.tools:*`, записи в `app.generated:*` проходят (результат — `undefined`, что означает «не запрещено»).
 
-This prevents the agent from:
-- Modifying its own prompt or agent definition (`app:dev_assistant`)
-- Overwriting its built-in tools (`app.tools:*`)
-- Changing infrastructure entries (`app:processes`, etc.)
+Это не позволяет агенту:
+- Изменять собственный промпт или определение агента (`app:dev_assistant`)
+- Перезаписывать встроенные инструменты (`app.tools:*`)
+- Изменять инфраструктурные записи (`app:processes` и т. д.)
 
-### Module Access Control
+### Контроль доступа к модулям
 
-Generated tools declare their `modules` in `data.modules`. Only modules from the `ALLOWED_MODULES` set are permitted. The Wippy runtime enforces this at the module level — if a module is not listed on the entry, `require()` returns an error. There is no source code scanning because there is nothing to scan for: modules that are not granted do not exist in the execution context.
+Сгенерированные инструменты объявляют свои `modules` в `data.modules`. Разрешены только модули из набора `ALLOWED_MODULES`. Среда исполнения Wippy обеспечивает это на уровне модулей — если модуль не указан в записи, `require()` возвращает ошибку. Сканирования исходного кода нет, потому что нечего сканировать: модули, не предоставленные в контексте выполнения, не существуют.
 
-## Run
+## Запуск
 
-Run directly from hub:
+Запуск напрямую из hub:
 
 ```bash
 wippy run wippy/micro-agi agent
 ```
 
-Or clone and run locally:
+Или клонирование и локальный запуск:
 
 ```bash
 cd micro-agi
@@ -591,10 +591,10 @@ The current UTC time is 2026-02-13T03:13:41Z.
 Your IP is 203.0.113.42.
 ```
 
-## Next Steps
+## Дальнейшие шаги
 
-- [LLM Agent](llm-agent.md) — Build a basic agent from scratch
-- [Agent Module](../framework/agents.md) — Agent framework reference
-- [Registry](../concepts/registry.md) — How the registry works
-- [Security Model](../system/security.md) — Declarative security policies
-- [Entry Kinds](../guides/entry-kinds.md) — Available entry types
+- [LLM Agent](llm-agent.md) — Создание базового агента с нуля
+- [Модуль Agent](../framework/agents.md) — Справочник фреймворка агентов
+- [Реестр](../concepts/registry.md) — Как работает реестр
+- [Модель безопасности](../system/security.md) — Декларативные политики безопасности
+- [Виды записей](../guides/entry-kinds.md) — Доступные типы записей

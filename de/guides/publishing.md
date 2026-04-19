@@ -1,27 +1,27 @@
-# Publishing Modules
+# Module veröffentlichen
 
-Share reusable code on the Wippy Hub.
+Teile wiederverwendbaren Code im Wippy Hub.
 
-## Prerequisites
+## Voraussetzungen
 
-1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
-2. Create an organization or join one
-3. Register your module name under your organization
+1. Erstelle ein Konto auf [hub.wippy.ai](https://hub.wippy.ai)
+2. Erstelle eine Organisation oder tritt einer bei
+3. Registriere deinen Modulnamen unter deiner Organisation
 
-## Module Structure
+## Modulstruktur
 
 ```
 mymodule/
-├── wippy.yaml      # Module manifest
+├── wippy.yaml      # Modul-Manifest
 ├── src/
-│   ├── _index.yaml # Entry definitions
-│   └── *.lua       # Source files
-└── README.md       # Documentation (optional)
+│   ├── _index.yaml # Eintragsdefinitionen
+│   └── *.lua       # Quelldateien
+└── README.md       # Dokumentation (optional)
 ```
 
 ## wippy.yaml
 
-Module manifest:
+Modul-Manifest:
 
 ```yaml
 organization: acme
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| Field | Required | Description |
+| Feld | Erforderlich | Beschreibung |
 |-------|----------|-------------|
-| `organization` | Yes | Your org name on the hub |
-| `module` | Yes | Module name |
-| `description` | No | Short description |
-| `license` | No | SPDX identifier (MIT, Apache-2.0) |
-| `repository` | No | Source repository URL |
-| `homepage` | No | Project homepage |
-| `keywords` | No | Search keywords |
+| `organization` | Ja | Name deiner Organisation im Hub |
+| `module` | Ja | Modulname |
+| `description` | Nein | Kurzbeschreibung |
+| `license` | Nein | SPDX-Bezeichner (MIT, Apache-2.0) |
+| `repository` | Nein | URL des Quell-Repositories |
+| `homepage` | Nein | Projekt-Homepage |
+| `keywords` | Nein | Suchschlüsselwörter |
 
-## Entry Definitions
+## Eintragsdefinitionen
 
-Entries are defined in `_index.yaml`:
+Einträge werden in `_index.yaml` definiert:
 
 ```yaml
 version: "1.0"
@@ -68,9 +68,9 @@ entries:
       - json
 ```
 
-## Dependencies
+## Abhängigkeiten
 
-Declare dependencies on other modules:
+Deklariere Abhängigkeiten zu anderen Modulen:
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-Version constraints:
+Versions-Constraints:
 
-| Constraint | Meaning |
+| Constraint | Bedeutung |
 |------------|---------|
-| `*` | Any version |
-| `1.0.0` | Exact version |
-| `>=1.0.0` | Minimum version |
-| `^1.0.0` | Compatible (same major) |
+| `*` | Beliebige Version |
+| `1.0.0` | Exakte Version |
+| `>=1.0.0` | Mindestversion |
+| `^1.0.0` | Kompatibel (gleiche Major-Version) |
 
-## Requirements
+## Anforderungen
 
-Define configuration that consumers must provide:
+Definiere Konfigurationen, die Konsumenten bereitstellen müssen:
 
 ```yaml
 entries:
@@ -107,11 +107,11 @@ entries:
     default: "https://api.example.com"
 ```
 
-Targets specify where the value is injected:
-- `entry` - Full entry ID to configure
-- `path` - JSONPath for value injection
+Targets geben an, wo der Wert eingefügt wird:
+- `entry` - Vollständige Eintrags-ID, die konfiguriert werden soll
+- `path` - JSONPath für die Werteinfügung
 
-Consumers configure via override. The `-o` flag takes a `namespace:entry:field=value` triple:
+Konsumenten konfigurieren über Override. Das `-o`-Flag erwartet ein Tripel `namespace:entry:field=value`:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
@@ -119,7 +119,7 @@ wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
 
 ## Imports
 
-Reference other entries:
+Andere Einträge referenzieren:
 
 ```yaml
 - name: handler
@@ -128,9 +128,9 @@ Reference other entries:
   modules:
     - json
   imports:
-    client: acme.http:client           # Same namespace
-    utils: acme.utils:helpers          # Different namespace
-    base_registry: :registry           # Built-in
+    client: acme.http:client           # Gleicher Namespace
+    utils: acme.utils:helpers          # Anderer Namespace
+    base_registry: :registry           # Eingebaut
 ```
 
 In Lua:
@@ -142,7 +142,7 @@ local utils = require("utils")
 
 ## Contracts
 
-Define public interfaces:
+Öffentliche Schnittstellen definieren:
 
 ```yaml
 - name: http_contract
@@ -164,15 +164,15 @@ Define public interfaces:
         post: acme.http:post_handler
 ```
 
-## Publishing Workflow
+## Veröffentlichungs-Workflow
 
-### 1. Authenticate
+### 1. Authentifizierung
 
 ```bash
 wippy auth login
 ```
 
-### 2. Prepare
+### 2. Vorbereitung
 
 ```bash
 wippy init
@@ -180,47 +180,47 @@ wippy update
 wippy lint
 ```
 
-### 3. Validate
+### 3. Validierung
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. Publish
+### 4. Veröffentlichung
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-With release notes:
+Mit Release Notes:
 
 ```bash
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### Additional Flags
+### Zusätzliche Flags
 
-| Flag | Description |
+| Flag | Beschreibung |
 |------|-------------|
-| `--label <name>` | Publish as a mutable label (e.g. `latest`, `beta`) instead of an immutable version |
-| `--protected` | Mark the published version as protected (cannot be deleted or overwritten) |
-| `--registry <url>` | Override the registry URL for this publish |
-| `--config <dir>` | Directory containing `wippy.yaml` (default: current dir) |
+| `--label <name>` | Als veränderliches Label veröffentlichen (z. B. `latest`, `beta`) anstelle einer unveränderlichen Version |
+| `--protected` | Veröffentlichte Version als geschützt markieren (kann nicht gelöscht oder überschrieben werden) |
+| `--registry <url>` | Registry-URL für diese Veröffentlichung überschreiben |
+| `--config <dir>` | Verzeichnis mit `wippy.yaml` (Standard: aktuelles Verzeichnis) |
 
-### Embedding Static Files
+### Statische Dateien einbetten
 
-Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+Module mit `fs.directory`-Einträgen (statische Assets, Templates, öffentliche Dateien) müssen `--embed` verwenden, um sie in das veröffentlichte Paket aufzunehmen. Ohne dieses Flag werden `fs.directory`-Einträge ausgeschlossen.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+Das `--embed`-Flag akzeptiert Eintrags-IDs oder Namen, die mit `fs.directory`-Einträgen übereinstimmen. Dasselbe Flag ist auch für `wippy pack` verfügbar.
 
-## Using Published Modules
+## Veröffentlichte Module verwenden
 
-### Add Dependency
+### Abhängigkeit hinzufügen
 
 ```bash
 wippy add acme/http-utils
@@ -228,22 +228,22 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### Configure Requirements
+### Anforderungen konfigurieren
 
-Override values at runtime:
+Werte zur Laufzeit überschreiben:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://my.api.com
 ```
 
-Or in `.wippy.yaml`:
+Oder in `.wippy.yaml`:
 
 ```yaml
 override:
   acme.http:client:meta.endpoint: "https://my.api.com"
 ```
 
-### Import in Your Code
+### Im eigenen Code importieren
 
 ```yaml
 # your src/_index.yaml
@@ -260,7 +260,7 @@ entries:
       http: acme.http:client
 ```
 
-## Complete Example
+## Vollständiges Beispiel
 
 **wippy.yaml:**
 ```yaml
@@ -333,15 +333,15 @@ end
 return cache
 ```
 
-Publish:
+Veröffentlichen:
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## See Also
+## Siehe auch
 
-- [CLI Reference](guides/cli.md)
-- [Entry Kinds](guides/entry-kinds.md)
-- [Configuration](guides/configuration.md)
+- [CLI-Referenz](guides/cli.md)
+- [Entry-Typen](guides/entry-kinds.md)
+- [Konfiguration](guides/configuration.md)

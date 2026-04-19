@@ -1,27 +1,27 @@
-# Publishing Modules
+# 모듈 게시
 
-Share reusable code on the Wippy Hub.
+Wippy Hub에서 재사용 가능한 코드를 공유합니다.
 
-## Prerequisites
+## 사전 요구사항
 
-1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
-2. Create an organization or join one
-3. Register your module name under your organization
+1. [hub.wippy.ai](https://hub.wippy.ai)에서 계정 생성
+2. 조직 생성 또는 가입
+3. 조직 아래에 모듈 이름 등록
 
-## Module Structure
+## 모듈 구조
 
 ```
 mymodule/
-├── wippy.yaml      # Module manifest
+├── wippy.yaml      # 모듈 매니페스트
 ├── src/
-│   ├── _index.yaml # Entry definitions
-│   └── *.lua       # Source files
-└── README.md       # Documentation (optional)
+│   ├── _index.yaml # 엔트리 정의
+│   └── *.lua       # 소스 파일
+└── README.md       # 문서 (선택)
 ```
 
 ## wippy.yaml
 
-Module manifest:
+모듈 매니페스트:
 
 ```yaml
 organization: acme
@@ -35,19 +35,19 @@ keywords:
   - utilities
 ```
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `organization` | Yes | Your org name on the hub |
-| `module` | Yes | Module name |
-| `description` | No | Short description |
-| `license` | No | SPDX identifier (MIT, Apache-2.0) |
-| `repository` | No | Source repository URL |
-| `homepage` | No | Project homepage |
-| `keywords` | No | Search keywords |
+| `organization` | 예 | Hub의 조직 이름 |
+| `module` | 예 | 모듈 이름 |
+| `description` | 아니오 | 짧은 설명 |
+| `license` | 아니오 | SPDX 식별자 (MIT, Apache-2.0) |
+| `repository` | 아니오 | 소스 저장소 URL |
+| `homepage` | 아니오 | 프로젝트 홈페이지 |
+| `keywords` | 아니오 | 검색 키워드 |
 
-## Entry Definitions
+## 엔트리 정의
 
-Entries are defined in `_index.yaml`:
+엔트리는 `_index.yaml`에 정의됩니다:
 
 ```yaml
 version: "1.0"
@@ -68,9 +68,9 @@ entries:
       - json
 ```
 
-## Dependencies
+## 의존성
 
-Declare dependencies on other modules:
+다른 모듈에 대한 의존성을 선언합니다:
 
 ```yaml
 entries:
@@ -82,18 +82,18 @@ entries:
     version: ">=0.3.0"
 ```
 
-Version constraints:
+버전 제약:
 
-| Constraint | Meaning |
+| 제약 | 의미 |
 |------------|---------|
-| `*` | Any version |
-| `1.0.0` | Exact version |
-| `>=1.0.0` | Minimum version |
-| `^1.0.0` | Compatible (same major) |
+| `*` | 모든 버전 |
+| `1.0.0` | 정확한 버전 |
+| `>=1.0.0` | 최소 버전 |
+| `^1.0.0` | 호환 (동일한 메이저) |
 
-## Requirements
+## 요구사항
 
-Define configuration that consumers must provide:
+소비자가 제공해야 하는 설정을 정의합니다:
 
 ```yaml
 entries:
@@ -107,19 +107,19 @@ entries:
     default: "https://api.example.com"
 ```
 
-Targets specify where the value is injected:
-- `entry` - Full entry ID to configure
-- `path` - JSONPath for value injection
+타겟은 값이 주입될 위치를 지정합니다:
+- `entry` - 설정할 전체 엔트리 ID
+- `path` - 값 주입을 위한 JSONPath
 
-Consumers configure via override. The `-o` flag takes a `namespace:entry:field=value` triple:
+소비자는 오버라이드를 통해 설정합니다. `-o` 플래그는 `namespace:entry:field=value` 트리플을 받습니다:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
 ```
 
-## Imports
+## 임포트
 
-Reference other entries:
+다른 엔트리를 참조합니다:
 
 ```yaml
 - name: handler
@@ -128,21 +128,21 @@ Reference other entries:
   modules:
     - json
   imports:
-    client: acme.http:client           # Same namespace
-    utils: acme.utils:helpers          # Different namespace
-    base_registry: :registry           # Built-in
+    client: acme.http:client           # 동일한 네임스페이스
+    utils: acme.utils:helpers          # 다른 네임스페이스
+    base_registry: :registry           # 내장
 ```
 
-In Lua:
+Lua에서:
 
 ```lua
 local client = require("client")
 local utils = require("utils")
 ```
 
-## Contracts
+## 계약
 
-Define public interfaces:
+공개 인터페이스 정의:
 
 ```yaml
 - name: http_contract
@@ -164,15 +164,15 @@ Define public interfaces:
         post: acme.http:post_handler
 ```
 
-## Publishing Workflow
+## 게시 워크플로우
 
-### 1. Authenticate
+### 1. 인증
 
 ```bash
 wippy auth login
 ```
 
-### 2. Prepare
+### 2. 준비
 
 ```bash
 wippy init
@@ -180,47 +180,47 @@ wippy update
 wippy lint
 ```
 
-### 3. Validate
+### 3. 검증
 
 ```bash
 wippy publish --dry-run
 ```
 
-### 4. Publish
+### 4. 게시
 
 ```bash
 wippy publish --version 1.0.0
 ```
 
-With release notes:
+릴리스 노트와 함께:
 
 ```bash
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### Additional Flags
+### 추가 플래그
 
-| Flag | Description |
+| 플래그 | 설명 |
 |------|-------------|
-| `--label <name>` | Publish as a mutable label (e.g. `latest`, `beta`) instead of an immutable version |
-| `--protected` | Mark the published version as protected (cannot be deleted or overwritten) |
-| `--registry <url>` | Override the registry URL for this publish |
-| `--config <dir>` | Directory containing `wippy.yaml` (default: current dir) |
+| `--label <name>` | 불변 버전 대신 가변 레이블(예: `latest`, `beta`)로 게시 |
+| `--protected` | 게시된 버전을 보호됨으로 표시 (삭제 또는 덮어쓰기 불가) |
+| `--registry <url>` | 이 게시에 대해 레지스트리 URL 재정의 |
+| `--config <dir>` | `wippy.yaml`을 포함한 디렉토리 (기본값: 현재 디렉토리) |
 
-### Embedding Static Files
+### 정적 파일 임베딩
 
-Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+`fs.directory` 엔트리(정적 자산, 템플릿, 공개 파일)가 있는 모듈은 게시된 패키지에 포함하려면 `--embed`를 사용해야 합니다. 그렇지 않으면 `fs.directory` 엔트리는 제외됩니다.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+`--embed` 플래그는 `fs.directory` 엔트리와 일치하는 엔트리 ID 또는 이름을 받습니다. `wippy pack`에서도 동일한 플래그를 사용할 수 있습니다.
 
-## Using Published Modules
+## 게시된 모듈 사용
 
-### Add Dependency
+### 의존성 추가
 
 ```bash
 wippy add acme/http-utils
@@ -228,22 +228,22 @@ wippy add acme/http-utils@1.0.0
 wippy install
 ```
 
-### Configure Requirements
+### 요구사항 설정
 
-Override values at runtime:
+런타임에 값 재정의:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://my.api.com
 ```
 
-Or in `.wippy.yaml`:
+또는 `.wippy.yaml`에서:
 
 ```yaml
 override:
   acme.http:client:meta.endpoint: "https://my.api.com"
 ```
 
-### Import in Your Code
+### 코드에서 임포트
 
 ```yaml
 # your src/_index.yaml
@@ -260,7 +260,7 @@ entries:
       http: acme.http:client
 ```
 
-## Complete Example
+## 전체 예제
 
 **wippy.yaml:**
 ```yaml
@@ -333,15 +333,15 @@ end
 return cache
 ```
 
-Publish:
+게시:
 
 ```bash
 wippy init && wippy update && wippy lint
 wippy publish --version 1.0.0
 ```
 
-## See Also
+## 참고
 
-- [CLI Reference](guides/cli.md)
-- [Entry Kinds](guides/entry-kinds.md)
-- [Configuration](guides/configuration.md)
+- [CLI 참조](guides/cli.md)
+- [엔트리 종류](guides/entry-kinds.md)
+- [설정](guides/configuration.md)

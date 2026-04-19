@@ -1,12 +1,12 @@
 # Server-Sent Events
 
-The SSE middleware streams events from the server to HTTP clients using the [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) protocol.
+SSE ミドルウェアは、[Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) プロトコルを使用してサーバーから HTTP クライアントへイベントをストリーミングします。
 
-Two mechanisms are available: **direct streaming** from an HTTP handler, and **process-backed relay** via the `sse_relay` middleware.
+2 つのメカニズムが利用可能です：HTTP ハンドラからの **直接ストリーミング** と、`sse_relay` ミドルウェア経由の **プロセスバックリレー** です。
 
-## Direct Streaming
+## 直接ストリーミング
 
-Use `res:write_event()` to send SSE events directly from an HTTP handler. The response automatically switches to SSE mode on the first call, setting appropriate headers.
+`res:write_event()` を使用して、HTTP ハンドラから SSE イベントを直接送信します。最初の呼び出し時に、レスポンスは自動的に SSE モードへ切り替わり、適切なヘッダが設定されます。
 
 ```lua
 local http = require("http")
@@ -20,47 +20,47 @@ local function handler()
 end
 ```
 
-Each event requires a `name` and `data` field. The `data` value is JSON-encoded automatically.
+各イベントには `name` と `data` フィールドが必要です。`data` の値は自動的に JSON エンコードされます。
 
 <tip>
-Direct streaming is suitable for short-lived request-response flows like progress updates. For long-lived connections managed by background processes, use the SSE Relay.
+直接ストリーミングは、進捗更新のような短命なリクエスト/レスポンスフローに適しています。バックグラウンドプロセスが管理する長期接続には、SSE Relay を使用してください。
 </tip>
 
 ## SSE Relay
 
-The SSE Relay middleware creates long-lived SSE streams backed by processes. It follows the same relay pattern as [WebSocket Relay](http/websocket-relay.md).
+SSE Relay ミドルウェアは、プロセスがバックエンドとなる長期 SSE ストリームを作成します。[WebSocket Relay](http/websocket-relay.md) と同じリレーパターンに従います。
 
-### How It Works
+### 仕組み
 
-1. HTTP handler sets `X-SSE-Relay` header with a JSON relay configuration
-2. Middleware intercepts the response and creates an SSE session
-3. Session registers as a process with its own PID
-4. Messages sent to the session PID are forwarded as SSE events to the client
+1. HTTP ハンドラが `X-SSE-Relay` ヘッダに JSON のリレー設定をセットする
+2. ミドルウェアがレスポンスをインターセプトし、SSE セッションを作成する
+3. セッションは独自の PID を持つプロセスとして登録される
+4. セッション PID に送信されたメッセージは、SSE イベントとしてクライアントへ転送される
 
-## Process Semantics
+## プロセスセマンティクス
 
-SSE streams are full processes with their own PID. They integrate with the process system:
+SSE ストリームは独自の PID を持つ完全なプロセスです。プロセスシステムと統合されています：
 
-- **Addressable** — Any process can send messages to a stream PID
-- **Monitorable** — Processes can monitor SSE streams for exit events
-- **Linkable** — SSE streams can be linked to other processes
-- **EXIT events** — When a stream closes, monitors receive exit notifications
+- **アドレス可能** — 任意のプロセスがストリーム PID へメッセージを送信できる
+- **モニタ可能** — プロセスは SSE ストリームを監視して終了イベントを受信できる
+- **リンク可能** — SSE ストリームを他のプロセスとリンクできる
+- **EXIT イベント** — ストリームが閉じると、モニタは終了通知を受け取る
 
 ```lua
--- Send event to SSE client from any process
+-- 任意のプロセスから SSE クライアントへイベントを送信
 process.send(stream_pid, "sse.message", {event = "update", value = 42})
 
--- Monitor an SSE stream
+-- SSE ストリームをモニタする
 process.monitor(stream_pid)
 ```
 
 <tip>
-The relay monitors the target process. If the target exits, the SSE stream closes automatically and the client receives a `done` event.
+リレーはターゲットプロセスをモニタします。ターゲットが終了すると、SSE ストリームは自動的に閉じられ、クライアントは <code>done</code> イベントを受け取ります。
 </tip>
 
-## Configuration
+## 設定
 
-Add as post-match middleware on a router:
+ルーターの post-match ミドルウェアとして追加します：
 
 ```yaml
 - name: sse_router
@@ -74,17 +74,17 @@ Add as post-match middleware on a router:
     sserelay.allowed.origins: "https://app.example.com"
 ```
 
-| Option | Description |
+| オプション | 説明 |
 |--------|-------------|
-| `sserelay.allowed.origins` | Comma-separated allowed origins (supports wildcards) |
+| `sserelay.allowed.origins` | カンマ区切りの許可オリジン（ワイルドカード対応） |
 
 <note>
-If no origins are configured, only same-origin requests are allowed.
+オリジンが設定されていない場合、同一オリジンからのリクエストのみが許可されます。
 </note>
 
-## Handler Setup
+## ハンドラのセットアップ
 
-The HTTP handler spawns a process and configures the relay:
+HTTP ハンドラはプロセスを生成し、リレーを設定します：
 
 ```lua
 local http = require("http")
@@ -93,10 +93,10 @@ local json = require("json")
 local function handler()
     local res = http.response()
 
-    -- Spawn handler process
+    -- ハンドラプロセスを生成
     local pid = process.spawn("app.sse:handler", "app:processes")
 
-    -- Configure relay
+    -- リレーを設定
     res:set_header("X-SSE-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "sse.message",
@@ -108,62 +108,62 @@ local function handler()
 end
 ```
 
-### Relay Config Fields
+### リレー設定フィールド
 
-| Field | Type | Default | Description |
+| フィールド | 型 | デフォルト | 説明 |
 |-------|------|---------|-------------|
-| `target_pid` | string | — | Process PID to receive messages (omit for detached mode) |
-| `message_topic` | string | `sse.message` | Topic filter for forwarded events |
-| `heartbeat_interval` | duration | `30s` | Heartbeat frequency (e.g. `30s`, `1m`) |
-| `idle_timeout` | duration | — | Close stream after inactivity |
-| `hard_timeout` | duration | — | Close stream after absolute duration |
-| `metadata` | object | — | Attached to join/leave/heartbeat messages |
+| `target_pid` | string | — | メッセージを受信するプロセス PID（detached モードでは省略） |
+| `message_topic` | string | `sse.message` | 転送するイベントのトピックフィルタ |
+| `heartbeat_interval` | duration | `30s` | ハートビート頻度（例：`30s`、`1m`） |
+| `idle_timeout` | duration | — | 一定時間アイドル状態でストリームを閉じる |
+| `hard_timeout` | duration | — | 絶対経過時間後にストリームを閉じる |
+| `metadata` | object | — | join/leave/heartbeat メッセージに付与される |
 
-## Managed vs Detached Mode
+## マネージドモード vs デタッチドモード
 
-### Managed Mode
+### マネージドモード
 
-When `target_pid` is set, the relay operates in managed mode:
+`target_pid` が設定されている場合、リレーはマネージドモードで動作します：
 
-- Monitors the target process
-- Sends `sse.join` on connect and `sse.leave` on disconnect
-- Closes the stream automatically if the target exits
+- ターゲットプロセスをモニタする
+- 接続時に `sse.join`、切断時に `sse.leave` を送信する
+- ターゲットが終了するとストリームを自動的に閉じる
 
-### Detached Mode
+### デタッチドモード
 
-When `target_pid` is omitted, the relay starts in detached mode:
+`target_pid` を省略すると、リレーはデタッチドモードで開始します：
 
-- Emits a `ready` event to the client with `stream_pid` and `message_topic`
-- No process is monitored initially
-- A process can attach later by sending an `sse.control` message
+- `stream_pid` と `message_topic` を含む `ready` イベントをクライアントへ送出する
+- 初期状態ではどのプロセスもモニタされていない
+- 後から `sse.control` メッセージを送信してプロセスをアタッチできる
 
 ```lua
--- Detached setup: no target_pid
+-- デタッチドセットアップ：target_pid なし
 res:set_header("X-SSE-Relay", json.encode({
     heartbeat_interval = "30s"
 }))
 ```
 
-The client receives a `ready` event:
+クライアントは `ready` イベントを受信します：
 
 ```json
 {"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
 ```
 
-## Message Topics
+## メッセージトピック
 
-The relay uses these topics for communication between the stream and target process:
+リレーはストリームとターゲットプロセス間の通信に以下のトピックを使用します：
 
-| Topic | Direction | When | Payload |
+| トピック | 方向 | タイミング | ペイロード |
 |-------|-----------|------|---------|
-| `sse.join` | stream → target | Client connects | `client_pid`, `metadata` |
-| `sse.message` | target → stream | Default event topic | Forwarded as SSE event |
-| `sse.heartbeat` | stream → target | Periodic (if configured) | `client_pid`, `uptime`, `message_count` |
-| `sse.leave` | stream → target | Client disconnects | `client_pid`, `metadata` |
-| `sse.control` | any → stream | Control command | Relay config fields |
-| `sse.close` | any → stream | Force close | Optional reason string |
+| `sse.join` | stream → target | クライアント接続時 | `client_pid`、`metadata` |
+| `sse.message` | target → stream | デフォルトのイベントトピック | SSE イベントとして転送 |
+| `sse.heartbeat` | stream → target | 周期的（設定時） | `client_pid`、`uptime`、`message_count` |
+| `sse.leave` | stream → target | クライアント切断時 | `client_pid`、`metadata` |
+| `sse.control` | any → stream | 制御コマンド | リレー設定フィールド |
+| `sse.close` | any → stream | 強制クローズ | 任意の理由文字列 |
 
-## Receiving in Target Process
+## ターゲットプロセスでの受信
 
 ```lua
 local json = require("json")
@@ -182,7 +182,7 @@ local function handler()
             local client_pid = data.client_pid
 
         elseif topic == "sse.heartbeat" then
-            -- Periodic health check
+            -- 周期的なヘルスチェック
 
         elseif topic == "sse.leave" then
             cleanup(data.client_pid)
@@ -191,26 +191,26 @@ local function handler()
 end
 ```
 
-## Sending Events
+## イベントの送信
 
-Send events to the client by messaging the stream PID:
+ストリーム PID へメッセージを送信することでクライアントへイベントを送信します：
 
 ```lua
--- Send on the default message topic
+-- デフォルトのメッセージトピックで送信
 process.send(stream_pid, "sse.message", {
     event = "update",
     value = 42
 })
 
--- Force close the stream
+-- ストリームを強制クローズ
 process.send(stream_pid, "sse.close", "session expired")
 ```
 
-Events sent on the configured `message_topic` are forwarded to the client as SSE events. The topic name becomes the SSE event name.
+設定済みの `message_topic` で送信されたイベントは、SSE イベントとしてクライアントへ転送されます。トピック名が SSE イベント名になります。
 
-## Connection Transfer
+## 接続の転送
 
-Send a control message to change the target process, topic filter, or timeouts dynamically:
+制御メッセージを送信して、ターゲットプロセス、トピックフィルタ、タイムアウトを動的に変更します：
 
 ```lua
 process.send(stream_pid, "sse.control", {
@@ -220,10 +220,10 @@ process.send(stream_pid, "sse.control", {
 })
 ```
 
-When the target changes, the relay sends `sse.leave` to the old target and `sse.join` to the new one. Set `target_pid` to an empty string to detach without reattaching.
+ターゲットが変更されると、リレーは古いターゲットへ `sse.leave` を、新しいターゲットへ `sse.join` を送信します。再アタッチせずにデタッチするには、`target_pid` を空文字列に設定します。
 
-## See Also
+## 関連項目
 
-- [Middleware](http/middleware.md) — Middleware configuration
-- [WebSocket Relay](http/websocket-relay.md) — WebSocket equivalent
-- [Process](lua/core/process.md) — Process messaging
+- [ミドルウェア](http/middleware.md) — ミドルウェア設定
+- [WebSocket Relay](http/websocket-relay.md) — WebSocket 版
+- [プロセス](lua/core/process.md) — プロセスメッセージング

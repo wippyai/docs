@@ -1,17 +1,17 @@
 # Views
 
-The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages can be backed by Jet templates or external components (SPAs, micro-frontends).
+O módulo `wippy/views` fornece um sistema de páginas e componentes virtuais com renderização de templates, gerenciamento de recursos e mapeamento de variáveis de ambiente. Páginas podem ser respaldadas por templates Jet ou componentes externos (SPAs, micro-frontends).
 
-## Setup
+## Configuração
 
-Add the module to your project:
+Adicione o módulo ao seu projeto:
 
 ```bash
 wippy add wippy/views
 wippy install
 ```
 
-Declare the dependency:
+Declare a dependência:
 
 ```yaml
 version: "1.0"
@@ -29,14 +29,14 @@ entries:
         value: PUBLIC_API_URL
 ```
 
-| Parameter | Required | Default | Description |
+| Parâmetro | Obrigatório | Padrão | Descrição |
 |-----------|----------|---------|-------------|
-| `api_router` | yes | — | HTTP router for view API endpoints |
-| `api_url_env` | no | `PUBLIC_API_URL` | Env var containing the public API URL |
+| `api_router` | sim | — | Roteador HTTP para os endpoints da API de views |
+| `api_url_env` | não | `PUBLIC_API_URL` | Variável de ambiente contendo a URL pública da API |
 
-## Template Pages
+## Páginas Template
 
-Template pages render server-side using Jet templates:
+Páginas template renderizam no lado do servidor usando templates Jet:
 
 ```yaml
 entries:
@@ -60,48 +60,48 @@ entries:
         - contact_styles
 ```
 
-### Page Metadata
+### Metadados da Página
 
-| Field | Type | Default | Description |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|---------|-------------|
-| `meta.type` | string | — | Must be `view.page` |
-| `meta.name` | string | entry name | Page identifier |
-| `meta.title` | string | — | Display title |
-| `meta.icon` | string | — | Icon identifier |
-| `meta.order` | number | `9999` | Sort order within group |
-| `meta.group` | string | — | Group category |
-| `meta.group_icon` | string | — | Group icon |
-| `meta.group_order` | number | `9999` | Group sort order |
-| `meta.group_placement` | string | `"default"` | Placement: `"default"`, `"sidebar"` |
-| `meta.secure` | boolean | `false` | Requires authentication |
-| `meta.public` | boolean | `false` | Publicly accessible |
-| `meta.announced` | boolean | `= public` | Show in navigation |
-| `meta.inline` | boolean | `false` | Hidden from UI |
-| `meta.content_type` | string | `text/html` | Response MIME type |
-| `meta.parent` | string | — | Parent page ID |
+| `meta.type` | string | — | Deve ser `view.page` |
+| `meta.name` | string | nome da entrada | Identificador da página |
+| `meta.title` | string | — | Título de exibição |
+| `meta.icon` | string | — | Identificador do ícone |
+| `meta.order` | number | `9999` | Ordem de classificação dentro do grupo |
+| `meta.group` | string | — | Categoria do grupo |
+| `meta.group_icon` | string | — | Ícone do grupo |
+| `meta.group_order` | number | `9999` | Ordem de classificação do grupo |
+| `meta.group_placement` | string | `"default"` | Posicionamento: `"default"`, `"sidebar"` |
+| `meta.secure` | boolean | `false` | Requer autenticação |
+| `meta.public` | boolean | `false` | Acessível publicamente |
+| `meta.announced` | boolean | `= public` | Mostrar na navegação |
+| `meta.inline` | boolean | `false` | Oculto da UI |
+| `meta.content_type` | string | `text/html` | Tipo MIME da resposta |
+| `meta.parent` | string | — | ID da página pai |
 
-### Template Data
+### Dados do Template
 
-| Field | Description |
+| Campo | Descrição |
 |-------|-------------|
-| `data.set` | Template set registry ID |
-| `data.data_func` | Function ID that returns page data |
-| `data.resources` | Array of resource registry IDs |
+| `data.set` | ID do registro do conjunto de templates |
+| `data.data_func` | ID da função que retorna dados da página |
+| `data.resources` | Array de IDs de registro de recursos |
 
-The `data_func` receives `{ params, query }` and returns a table that becomes the `data` context in the template.
+A `data_func` recebe `{ params, query }` e retorna uma tabela que se torna o contexto `data` no template.
 
-### Rendering Pipeline
+### Pipeline de Renderização
 
-1. Load page from registry
-2. Check access (security)
-3. Call `data_func` if defined
-4. Collect resources: globals + template set resources + page-specific resources
-5. Load environment variables
-6. Render Jet template with context: `{ data, resources, query_params, route_params, env }`
+1. Carrega a página do registro
+2. Verifica acesso (segurança)
+3. Chama `data_func` se definida
+4. Coleta recursos: globais + recursos do conjunto de templates + recursos específicos da página
+5. Carrega variáveis de ambiente
+6. Renderiza o template Jet com o contexto: `{ data, resources, query_params, route_params, env }`
 
-## Component Pages
+## Páginas de Componente
 
-Component pages point to external applications (SPAs, micro-frontends):
+Páginas de componente apontam para aplicações externas (SPAs, micro-frontends):
 
 ```yaml
 entries:
@@ -124,37 +124,37 @@ entries:
         tailwind_config: true
 ```
 
-The API returns a component descriptor with the base URL and proxy configuration. The frontend renders the component in an iframe or inline.
+A API retorna um descritor de componente com a URL base e configuração de proxy. O frontend renderiza o componente em um iframe ou inline.
 
-### Component Fields
+### Campos do Componente
 
-| Field | Type | Default | Description |
+| Campo | Tipo | Padrão | Descrição |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | Public URL of the component |
-| `meta.entry_point` | string | `index.html` (pages), `index.js` (components) | Entry file |
+| `meta.url` | string | — | URL pública do componente |
+| `meta.entry_point` | string | `index.html` (páginas), `index.js` (componentes) | Arquivo de entrada |
 
-### Proxy Configuration
+### Configuração do Proxy
 
-The proxy controls what CSS and behavior is injected into the component:
+O proxy controla qual CSS e comportamento é injetado no componente:
 
-| Option | Default | Description |
+| Opção | Padrão | Descrição |
 |--------|---------|-------------|
-| `proxy.enabled` | `true` | Enable proxy wrapper |
-| `proxy.css.fonts` | `true` | Inject font styles |
-| `proxy.css.theme_config` | `true` | Inject theme variables |
-| `proxy.css.iframe` | `true` | Iframe-specific styles |
-| `proxy.css.prime_vue` | `false` | PrimeVue component styles |
-| `proxy.css.markdown` | `false` | Markdown rendering styles |
-| `proxy.css.custom_css` | `false` | Custom CSS |
-| `proxy.css.custom_variables` | `false` | Custom CSS variables |
-| `proxy.tailwind_config` | `false` | Inject Tailwind config |
-| `proxy.resize_observer` | `true` | Auto-resize iframe |
-| `proxy.prevent_link_clicks` | `true` | Intercept link navigation |
-| `proxy.iconify_icons` | `false` | Load Iconify icon set |
+| `proxy.enabled` | `true` | Habilita o wrapper de proxy |
+| `proxy.css.fonts` | `true` | Injeta estilos de fontes |
+| `proxy.css.theme_config` | `true` | Injeta variáveis de tema |
+| `proxy.css.iframe` | `true` | Estilos específicos de iframe |
+| `proxy.css.prime_vue` | `false` | Estilos de componentes PrimeVue |
+| `proxy.css.markdown` | `false` | Estilos de renderização Markdown |
+| `proxy.css.custom_css` | `false` | CSS personalizado |
+| `proxy.css.custom_variables` | `false` | Variáveis CSS personalizadas |
+| `proxy.tailwind_config` | `false` | Injeta configuração do Tailwind |
+| `proxy.resize_observer` | `true` | Auto-redimensionar iframe |
+| `proxy.prevent_link_clicks` | `true` | Intercepta navegação por links |
+| `proxy.iconify_icons` | `false` | Carrega o conjunto de ícones Iconify |
 
-## View Components
+## Componentes de View
 
-Standalone components that are not pages (no navigation entry):
+Componentes autônomos que não são páginas (sem entrada de navegação):
 
 ```yaml
 entries:
@@ -170,11 +170,11 @@ entries:
         enabled: true
 ```
 
-Components use `meta.type: view.component` instead of `view.page`. They default to `index.js` as entry point.
+Componentes usam `meta.type: view.component` em vez de `view.page`. Eles assumem `index.js` como ponto de entrada por padrão.
 
-## Resources
+## Recursos
 
-Resources are CSS, JS, and font files associated with pages:
+Recursos são arquivos CSS, JS e fontes associados a páginas:
 
 ```yaml
 entries:
@@ -200,37 +200,37 @@ entries:
       defer: true
 ```
 
-### Resource Fields
+### Campos de Recurso
 
-| Field | Type | Description |
+| Campo | Tipo | Descrição |
 |-------|------|-------------|
-| `meta.type` | string | Must be `view.resource` |
+| `meta.type` | string | Deve ser `view.resource` |
 | `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
-| `meta.order` | number | Sort order within type |
-| `meta.global` | boolean | Applied to all pages |
-| `meta.template_set` | string | Specific to a template set |
-| `meta.url` | string | Resource URL |
-| `meta.integrity` | string | SRI hash |
-| `meta.crossorigin` | string | `"anonymous"` or `"use-credentials"` |
-| `meta.media` | string | CSS media query |
-| `meta.defer` | boolean | Deferred script loading |
-| `meta.async` | boolean | Async script loading |
+| `meta.order` | number | Ordem de classificação dentro do tipo |
+| `meta.global` | boolean | Aplicado a todas as páginas |
+| `meta.template_set` | string | Específico para um conjunto de templates |
+| `meta.url` | string | URL do recurso |
+| `meta.integrity` | string | Hash SRI |
+| `meta.crossorigin` | string | `"anonymous"` ou `"use-credentials"` |
+| `meta.media` | string | Media query CSS |
+| `meta.defer` | boolean | Carregamento de script com defer |
+| `meta.async` | boolean | Carregamento de script assíncrono |
 
-### Resource Collection
+### Coleta de Recursos
 
-Resources are collected in three layers, merged in order:
+Recursos são coletados em três camadas, mescladas em ordem:
 
-1. **Global resources** — `global: true`, applied to all pages
-2. **Template set resources** — matched by `template_set` ID
-3. **Page resources** — listed in `data.resources` array
+1. **Recursos globais** — `global: true`, aplicados a todas as páginas
+2. **Recursos do conjunto de templates** — combinados pelo ID de `template_set`
+3. **Recursos da página** — listados no array `data.resources`
 
-Within each layer, resources are grouped by `resource_type` and sorted by `order`.
+Dentro de cada camada, recursos são agrupados por `resource_type` e ordenados por `order`.
 
-## Environment Variable Mapping
+## Mapeamento de Variáveis de Ambiente
 
-The env loader maps environment variables to template context keys through a priority-based system.
+O carregador de env mapeia variáveis de ambiente para chaves de contexto do template através de um sistema baseado em prioridade.
 
-### Defining Mappings
+### Definindo Mapeamentos
 
 ```yaml
 entries:
@@ -246,22 +246,22 @@ entries:
         debug_mode: DEBUG_ENABLED
 ```
 
-Each mapping entry associates context keys (used in templates as `env.api_endpoint`) with environment variable names.
+Cada entrada de mapeamento associa chaves de contexto (usadas em templates como `env.api_endpoint`) com nomes de variáveis de ambiente.
 
-### Priority System
+### Sistema de Prioridade
 
-| Range | Category | Description |
+| Faixa | Categoria | Descrição |
 |-------|----------|-------------|
-| 0–9 | Framework defaults | Built-in framework mappings |
-| 10–19 | System overrides | System-level configuration |
-| 20–29 | Application mappings | Application-specific mappings |
-| 30–100 | Environment overrides | Runtime overrides |
+| 0–9 | Padrões do framework | Mapeamentos embutidos do framework |
+| 10–19 | Sobrescritas do sistema | Configuração a nível de sistema |
+| 20–29 | Mapeamentos da aplicação | Mapeamentos específicos da aplicação |
+| 30–100 | Sobrescritas de ambiente | Sobrescritas em tempo de execução |
 
-Higher priority wins when multiple mappings define the same context key.
+A maior prioridade vence quando múltiplos mapeamentos definem a mesma chave de contexto.
 
-### Using in Templates
+### Usando em Templates
 
-Resolved environment values are available in the `env` context object:
+Valores de ambiente resolvidos estão disponíveis no objeto de contexto `env`:
 
 ```html
 <script>
@@ -270,22 +270,22 @@ Resolved environment values are available in the `env` context object:
 </script>
 ```
 
-## HTTP API Endpoints
+## Endpoints HTTP da API
 
-The views module registers these endpoints on the configured router:
+O módulo views registra estes endpoints no roteador configurado:
 
-| Method | Path | Description |
+| Método | Caminho | Descrição |
 |--------|------|-------------|
-| GET | `/pages/list` | List accessible, announced pages |
-| GET | `/components/list` | List view components |
-| GET | `/pages/content/{id}` | Render page or return component descriptor |
-| GET | `/pages/public/{id}` | Get component base URL |
+| GET | `/pages/list` | Lista páginas anunciadas e acessíveis |
+| GET | `/components/list` | Lista componentes de view |
+| GET | `/pages/content/{id}` | Renderiza a página ou retorna o descritor do componente |
+| GET | `/pages/public/{id}` | Obtém a URL base do componente |
 
-### Render Response
+### Resposta de Renderização
 
-For template pages, returns rendered HTML with the page's `content_type`.
+Para páginas template, retorna o HTML renderizado com o `content_type` da página.
 
-For component pages, returns a descriptor:
+Para páginas de componente, retorna um descritor:
 
 ```json
 {
@@ -310,29 +310,29 @@ For component pages, returns a descriptor:
 }
 ```
 
-## Access Control
+## Controle de Acesso
 
-Pages with `secure: true` require authentication. The page registry checks `security.can("view", "page:<page_id>")` against the current actor and scope.
+Páginas com `secure: true` exigem autenticação. O registro de páginas verifica `security.can("view", "page:<page_id>")` contra o ator e escopo atuais.
 
-Non-secure pages are always accessible. The `announced` flag controls visibility in navigation listings without affecting access.
+Páginas não seguras estão sempre acessíveis. A flag `announced` controla a visibilidade nas listagens de navegação sem afetar o acesso.
 
-## ID Qualification
+## Qualificação de IDs
 
-Relative IDs in page definitions are qualified with the entry's namespace:
+IDs relativos em definições de páginas são qualificados com o namespace da entrada:
 
 ```yaml
-# In namespace "app"
+# No namespace "app"
 data:
-  data_func: my_data_func       # resolves to app:my_data_func
-  set: templates:default         # stays as templates:default (already qualified)
+  data_func: my_data_func       # resolve para app:my_data_func
+  set: templates:default         # permanece como templates:default (já qualificado)
   resources:
-    - page_styles                # resolves to app:page_styles
+    - page_styles                # resolve para app:page_styles
 ```
 
-## See Also
+## Veja Também
 
-- [Facade](facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](../system/template.md) - Jet template engine
-- [Security](../system/security.md) - Security actors and access control
-- [Environment](../system/env.md) - Environment variable storage
-- [Framework Overview](overview.md) - Framework module usage
+- [Facade](facade.md) - Facade de iframe do frontend e barra lateral de navegação
+- [Template](../system/template.md) - Motor de templates Jet
+- [Segurança](../system/security.md) - Atores de segurança e controle de acesso
+- [Ambiente](../system/env.md) - Armazenamento de variáveis de ambiente
+- [Visão Geral do Framework](overview.md) - Uso do módulo do framework

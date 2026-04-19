@@ -2,21 +2,21 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Terminal UI module for raw input events, styled output, and layout utilities.
+生の入力イベント、スタイル付き出力、レイアウトユーティリティ用のターミナル UI モジュール。
 
 <note>
-This module only works inside terminal context. You cannot use it from regular functions—only from processes running on a <a href="system/terminal.md">Terminal Host</a>.
+このモジュールはターミナルコンテキスト内でのみ動作します。通常の関数からは使用できません — <a href="system/terminal.md">ターミナルホスト</a>上で実行されているプロセスからのみ使用してください。
 </note>
 
-## Loading
+## ロード
 
 ```lua
 local tty = require("tty")
 ```
 
-## Input Loop
+## 入力ループ
 
-Start the raw input reader, subscribe to events, and process them in a loop:
+生の入力リーダーを起動し、イベントを購読し、ループで処理します：
 
 ```lua
 local tty = require("tty")
@@ -45,89 +45,89 @@ local function handler()
 end
 ```
 
-## Input Control
+## 入力制御
 
 ### tty.start()
 
-Enable raw terminal input mode. The terminal switches to raw mode and begins emitting events.
+生のターミナル入力モードを有効にします。ターミナルは生モードへ切り替わり、イベントの送出を開始します。
 
 ```lua
 local ok, err = tty.start()
 ```
 
-**Returns:** `boolean, error`
+**戻り値:** `boolean, error`
 
 ### tty.stop()
 
-Disable raw input and restore the terminal to normal mode.
+生の入力を無効にし、ターミナルを通常モードへ戻します。
 
 ```lua
 local ok, err = tty.stop()
 ```
 
-**Returns:** `boolean, error`
+**戻り値:** `boolean, error`
 
 ### tty.events()
 
-Subscribe to terminal events and return a channel. Events are delivered as tables with a `type` field.
+ターミナルイベントを購読し、チャネルを返します。イベントは `type` フィールドを持つテーブルとして配信されます。
 
 ```lua
 local events = tty.events()
 ```
 
-**Returns:** `EventChannel`
+**戻り値:** `EventChannel`
 
 ### tty.screen_size()
 
-Query current terminal dimensions.
+現在のターミナルの大きさを問い合わせます。
 
 ```lua
 local width, height, err = tty.screen_size()
 ```
 
-**Returns:** `number, number, error`
+**戻り値:** `number, number, error`
 
 ### tty.mouse(enable)
 
-Enable or disable mouse event tracking.
+マウスイベントトラッキングを有効化または無効化します。
 
 ```lua
 local ok, err = tty.mouse(true)
 ```
 
-| Parameter | Type | Description |
+| パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `enable` | boolean | `true` to enable, `false` to disable |
+| `enable` | boolean | 有効化する場合は `true`、無効化する場合は `false` |
 
-**Returns:** `boolean, error`
+**戻り値:** `boolean, error`
 
-## Event Types
+## イベント種別
 
-Events are tables with a `type` field that determines which other fields are present.
+イベントは `type` フィールドを持つテーブルで、それによってどの他のフィールドが存在するかが決まります。
 
-### Key Event
+### キーイベント
 
 ```lua
 {
     type = "key",
-    key = "a",           -- printable character or key name
-    key_type = "runes",  -- "runes" for printable, or special key name
-    action = "press",    -- "press" or "release"
+    key = "a",           -- 印刷可能文字またはキー名
+    key_type = "runes",  -- 印刷可能の場合は "runes"、または特殊キー名
+    action = "press",    -- "press" または "release"
     alt = false,
     ctrl = false,
     shift = false
 }
 ```
 
-### Mouse Event
+### マウスイベント
 
-Requires `tty.mouse(true)`.
+`tty.mouse(true)` が必要です。
 
 ```lua
 {
     type = "mouse",
-    action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- button name
+    action = "press",    -- "press"、"release"、"motion"、"wheel"
+    button = "left",     -- ボタン名
     x = 10,
     y = 5,
     alt = false,
@@ -136,35 +136,35 @@ Requires `tty.mouse(true)`.
 }
 ```
 
-### Resize Event
+### リサイズイベント
 
 ```lua
 {type = "resize", width = 120, height = 40}
 ```
 
-### Start Event
+### スタートイベント
 
-Emitted once after `tty.start()` with initial dimensions.
+`tty.start()` 後に初期サイズとともに 1 度だけ送出されます。
 
 ```lua
 {type = "start", width = 120, height = 40}
 ```
 
-### Focus Event
+### フォーカスイベント
 
 ```lua
 {type = "focus", focused = true}
 ```
 
-### Paste Event
+### ペーストイベント
 
 ```lua
 {type = "paste", text = "pasted content"}
 ```
 
-## Key Bindings
+## キーバインディング
 
-Create reusable key bindings that match against key events:
+キーイベントに照合する再利用可能なキーバインディングを作成します：
 
 ```lua
 local quit = tty.bind({
@@ -172,7 +172,7 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- In event loop
+-- イベントループ内
 if quit:matches(ev) then
     break
 end
@@ -180,25 +180,25 @@ end
 
 ### tty.bind(config)
 
-| Field | Type | Description |
+| フィールド | 型 | 説明 |
 |-------|------|-------------|
-| `keys` | string[] | Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
-| `help` | table | Optional. `{key = "...", desc = "..."}` for help text |
+| `keys` | string[] | 一致させるキーパターン（例：`"a"`、`"ctrl+c"`、`"enter"`） |
+| `help` | table | 任意。ヘルプテキスト用の `{key = "...", desc = "..."}` |
 
-**Returns:** `KeyBinding`
+**戻り値:** `KeyBinding`
 
-### KeyBinding Methods
+### KeyBinding メソッド
 
-| Method | Returns | Description |
+| メソッド | 戻り値 | 説明 |
 |--------|---------|-------------|
-| `matches(event)` | boolean | Test if a key event matches this binding |
-| `set_enabled(bool)` | self | Enable or disable the binding |
-| `is_enabled()` | boolean | Check if the binding is enabled |
-| `help()` | table | Returns `{key, desc}` help info |
+| `matches(event)` | boolean | キーイベントがこのバインディングに一致するかをテスト |
+| `set_enabled(bool)` | self | バインディングを有効化または無効化 |
+| `is_enabled()` | boolean | バインディングが有効かをチェック |
+| `help()` | table | `{key, desc}` のヘルプ情報を返す |
 
-## Styles
+## スタイル
 
-Create styled text output using lipgloss-based styling. All style methods return a new style (immutable).
+lipgloss ベースのスタイリングを使用してスタイル付きテキスト出力を作成します。すべてのスタイルメソッドは新しいスタイルを返します（不変）。
 
 ```lua
 local tty = require("tty")
@@ -220,58 +220,58 @@ io.print(box:render(title:render("Hello"), "World"))
 
 ### tty.style()
 
-Create a new empty style.
+新しい空のスタイルを作成します。
 
-**Returns:** `Style`
+**戻り値:** `Style`
 
-### Style Methods
+### Style メソッド
 
-All methods return a new `Style` and can be chained.
+すべてのメソッドは新しい `Style` を返し、チェーン可能です。
 
-#### Text Decoration
+#### テキスト装飾
 
-| Method | Parameter | Description |
+| メソッド | パラメータ | 説明 |
 |--------|-----------|-------------|
-| `foreground(color)` | string | Text color (hex `"#FF0000"`, ANSI `"9"`, or name) |
-| `background(color)` | string | Background color |
-| `bold(enable?)` | boolean | Bold text (default: true) |
-| `italic(enable?)` | boolean | Italic text |
-| `underline(enable?)` | boolean | Underline text |
-| `strikethrough(enable?)` | boolean | Strikethrough text |
-| `faint(enable?)` | boolean | Dimmed text |
-| `blink(enable?)` | boolean | Blinking text |
-| `reverse(enable?)` | boolean | Swap foreground/background |
+| `foreground(color)` | string | テキストカラー（hex `"#FF0000"`、ANSI `"9"`、または名前） |
+| `background(color)` | string | 背景色 |
+| `bold(enable?)` | boolean | 太字テキスト（デフォルト: true） |
+| `italic(enable?)` | boolean | イタリック体テキスト |
+| `underline(enable?)` | boolean | 下線付きテキスト |
+| `strikethrough(enable?)` | boolean | 取り消し線付きテキスト |
+| `faint(enable?)` | boolean | 薄いテキスト |
+| `blink(enable?)` | boolean | 点滅テキスト |
+| `reverse(enable?)` | boolean | 前景/背景の入れ替え |
 
-#### Layout
+#### レイアウト
 
-| Method | Parameter | Description |
+| メソッド | パラメータ | 説明 |
 |--------|-----------|-------------|
-| `width(n)` | number | Fixed width |
-| `height(n)` | number | Fixed height |
-| `max_width(n)` | number | Maximum width |
-| `max_height(n)` | number | Maximum height |
-| `padding(...)` | numbers | Padding (CSS-style: top, right, bottom, left) |
-| `margin(...)` | numbers | Margin (CSS-style) |
-| `align(pos)` | number | Horizontal alignment |
-| `align_vertical(pos)` | number | Vertical alignment |
-| `inline(enable?)` | boolean | Inline rendering mode |
+| `width(n)` | number | 固定幅 |
+| `height(n)` | number | 固定高さ |
+| `max_width(n)` | number | 最大幅 |
+| `max_height(n)` | number | 最大高さ |
+| `padding(...)` | numbers | パディング（CSS スタイル：top、right、bottom、left） |
+| `margin(...)` | numbers | マージン（CSS スタイル） |
+| `align(pos)` | number | 水平方向の配置 |
+| `align_vertical(pos)` | number | 垂直方向の配置 |
+| `inline(enable?)` | boolean | インラインレンダリングモード |
 
-#### Borders
+#### ボーダー
 
-| Method | Parameter | Description |
+| メソッド | パラメータ | 説明 |
 |--------|-----------|-------------|
-| `border(name, ...)` | string, booleans | Border style, optional per-side toggles |
-| `border_foreground(...)` | strings | Border color(s) |
-| `border_background(...)` | strings | Border background color(s) |
+| `border(name, ...)` | string, booleans | ボーダースタイル、辺ごとの任意トグル |
+| `border_foreground(...)` | strings | ボーダーカラー |
+| `border_background(...)` | strings | ボーダー背景色 |
 
-#### Other
+#### その他
 
-| Method | Description |
+| メソッド | 説明 |
 |--------|-------------|
-| `render(...)` | Render strings with this style applied |
-| `copy()` | Create a copy of this style |
+| `render(...)` | このスタイルを適用して文字列をレンダリング |
+| `copy()` | このスタイルのコピーを作成 |
 
-### Border Constants
+### ボーダー定数
 
 ```lua
 tty.borders.NORMAL
@@ -281,7 +281,7 @@ tty.borders.DOUBLE
 tty.borders.HIDDEN
 ```
 
-### Alignment Constants
+### アライメント定数
 
 ```lua
 tty.align.LEFT    -- 0
@@ -289,51 +289,51 @@ tty.align.CENTER  -- 0.5
 tty.align.RIGHT   -- 1
 ```
 
-## Text Utilities
+## テキストユーティリティ
 
-Layout and measurement functions for styled text. Available under `tty.text`.
+スタイル付きテキスト用のレイアウトと計測関数。`tty.text` の下で利用可能です。
 
-### Measurement
+### 計測
 
 ```lua
-local w = tty.text.width("hello")         -- printable width (ANSI-aware)
-local h = tty.text.height("a\nb\nc")      -- line count
-local w, h = tty.text.size("hello\nworld") -- both
+local w = tty.text.width("hello")         -- 印刷可能幅（ANSI 対応）
+local h = tty.text.height("a\nb\nc")      -- 行数
+local w, h = tty.text.size("hello\nworld") -- 両方
 ```
 
-### Joining
+### 結合
 
 ```lua
--- Join side by side, aligned at top
+-- 横並びに結合、上揃え
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Stack vertically, centered
+-- 縦に積む、中央揃え
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
-### Max Dimensions
+### 最大寸法
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- widest
-local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
+local w = tty.text.max_width({"short", "a longer string"})   -- 最も広いもの
+local h = tty.text.max_height({"one\ntwo", "single"})         -- 最も高いもの
 ```
 
-### Placement
+### 配置
 
-Place a string within a box of given dimensions:
+指定された寸法のボックス内に文字列を配置します：
 
 ```lua
--- Center in a 80x24 box
+-- 80x24 のボックスの中央に配置
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Horizontal only
+-- 水平方向のみ
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Vertical only
+-- 垂直方向のみ
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
-### Position Constants
+### ポジション定数
 
 ```lua
 tty.text.position.TOP      -- 0
@@ -343,7 +343,7 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
-## See Also
+## 関連項目
 
-- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
-- [Terminal Host](system/terminal.md) — Terminal host configuration
+- [ターミナル I/O](lua/system/io.md) — stdin/stdout/stderr 操作
+- [ターミナルホスト](system/terminal.md) — ターミナルホスト設定

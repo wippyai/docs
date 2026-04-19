@@ -1,15 +1,15 @@
 # Micro AGI
 
-Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them into the active session.
+ランタイム中に自分専用のツールを作成する自己改変型エージェントを構築します — ドキュメントを読み、Lua を書き、レジストリにエントリを登録し、それをアクティブなセッションへロードします。
 
-## What We're Building
+## 構築するもの
 
-A terminal agent that:
-- Answers questions using an LLM with streaming
-- Searches Wippy documentation to learn APIs
-- Inspects the registry to discover existing capabilities
-- Builds new tools on the fly when it lacks a capability
-- Manages its own context window via compression
+以下を行うターミナルエージェントです：
+- LLM とストリーミングで質問に回答する
+- Wippy ドキュメントを検索して API を学ぶ
+- レジストリを調査して既存の機能を発見する
+- 機能が不足しているときに新しいツールを動的に作成する
+- 圧縮を介して自身のコンテキストウィンドウを管理する
 
 ```mermaid
 flowchart LR
@@ -29,9 +29,9 @@ flowchart LR
     end
 ```
 
-## Architecture
+## アーキテクチャ
 
-The agent runs as a Wippy process with access to the registry. When the LLM decides it needs a capability it doesn't have, it uses the self-modification loop:
+エージェントはレジストリへのアクセスを持つ Wippy プロセスとして実行されます。LLM が持っていない機能が必要だと判断すると、自己改変ループを使用します：
 
 ```mermaid
 sequenceDiagram
@@ -59,9 +59,9 @@ sequenceDiagram
     A->>U: stream response
 ```
 
-The key insight: tools are registry entries. Creating a tool is just writing a `function.lua` entry with inline Lua source in `data.source`. The agent runtime compiles and loads it like any other entry.
+重要な洞察：ツールはレジストリエントリです。ツールを作成するとは、`data.source` にインライン Lua ソースを持つ `function.lua` エントリを書き込むだけです。エージェントランタイムは他のエントリと同じようにそれをコンパイルしてロードします。
 
-## Project Structure
+## プロジェクト構造
 
 ```
 micro-agi/
@@ -80,9 +80,9 @@ micro-agi/
         └── load_tool.lua
 ```
 
-## Infrastructure
+## インフラストラクチャ
 
-Create `.wippy.yaml`:
+`.wippy.yaml` を作成します：
 
 ```yaml
 version: "1.0"
@@ -91,9 +91,9 @@ logger:
   encoding: console
 ```
 
-## Entry Definitions
+## エントリ定義
 
-Create `src/_index.yaml` with infrastructure, security policies, models, agent, and process:
+`src/_index.yaml` をインフラストラクチャ、セキュリティポリシー、モデル、エージェント、プロセスとともに作成します：
 
 ```yaml
 version: "1.0"
@@ -135,9 +135,9 @@ entries:
         value: app:processes
 ```
 
-### Security Policies
+### セキュリティポリシー
 
-Two `security.policy` entries restrict which namespaces the agent can write to:
+2 つの `security.policy` エントリが、エージェントが書き込み可能な名前空間を制限します：
 
 ```yaml
   - name: deny_core_ns
@@ -159,13 +159,13 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
       - agent_security
 ```
 
-These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
+これらのポリシーは `create_tool` によって名前付きスコープ（`app:agent_security`）としてロードされ、レジストリへの書き込み前に評価されます。エージェントは `app.generated:*` には書き込めますが（拒否ポリシーが一致しない）、`app:*`（コアエントリ、モデル、エージェント定義）や `app.tools:*`（組み込みツール）には書き込めません。
 
-See [Security Model](../system/security.md) for details on policy evaluation.
+ポリシー評価の詳細については、[セキュリティモデル](../system/security.md) を参照してください。
 
-### Models
+### モデル
 
-Two models serve different purposes:
+2 つのモデルがそれぞれ異なる目的を果たします：
 
 ```yaml
   - name: gpt-5.1
@@ -210,9 +210,9 @@ Two models serve different purposes:
         provider_model: gpt-4.1-nano
 ```
 
-GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression at 25x lower cost.
+GPT-5.1 は推論とツール使用を担当します。GPT-4.1 Nano は 25 倍低コストでコンテキスト圧縮を担当します。
 
-### Agent Definition
+### エージェント定義
 
 ```yaml
   - name: dev_assistant
@@ -241,12 +241,12 @@ GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression
       - "app.tools:*"
 ```
 
-The prompt is deliberately terse. Key rules:
-- **No hallucination** — the agent must use tools for real data
-- **Self-modification** — build tools instead of refusing
-- **Action over explanation** — do first, explain if asked
+プロンプトは意図的に簡潔です。重要なルール：
+- **ハルシネーションなし** — エージェントは実データのためにツールを使用しなければならない
+- **自己改変** — 拒否する代わりにツールを構築する
+- **説明より行動** — 先に実行し、聞かれたら説明する
 
-### Process
+### プロセス
 
 ```yaml
   - name: agent
@@ -264,20 +264,20 @@ The prompt is deliberately terse. Key rules:
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
+プロセスはターミナルコマンドとして実行されます。セキュリティ強制は `create_tool` 内部で行われ、`agent_security` ポリシーグループをロードして書き込み前に評価します。
 
-Imports:
-- `prompt` — conversation builder
-- `agent_context` — agent loading and dynamic tool management
-- `compress` — LLM-based text compression for context management
+インポート：
+- `prompt` — 会話ビルダー
+- `agent_context` — エージェントのロードと動的ツール管理
+- `compress` — コンテキスト管理用の LLM ベースのテキスト圧縮
 
-## Tools
+## ツール
 
-Create `src/tools/_index.yaml` with five tools:
+`src/tools/_index.yaml` を 5 つのツールとともに作成します：
 
 ### doc_search
 
-Fetches Wippy documentation via the `wippy.ai/llm` API. Supports two modes: fetch a page by path, or search by query.
+`wippy.ai/llm` API 経由で Wippy ドキュメントをフェッチします。2 つのモードをサポート：パスでページを取得するか、クエリで検索します。
 
 ```lua
 local http_client = require("http_client")
@@ -346,9 +346,9 @@ return { handler = handler }
 
 ### create_tool
 
-The core of self-modification. Evaluates namespace deny policies and creates a `function.lua` entry in the registry with inline Lua source.
+自己改変の中核です。名前空間の拒否ポリシーを評価し、インライン Lua ソースを持つ `function.lua` エントリをレジストリに作成します。
 
-The `modules` field on the generated entry controls what the tool can access. Modules not listed simply do not exist for that entry — there is nothing to block or scan for.
+生成されるエントリの `modules` フィールドは、ツールがアクセスできる範囲を制御します。リストにないモジュールはそのエントリに対して単純に存在しません — ブロックする対象もスキャンする対象もありません。
 
 ```lua
 local registry = require("registry")
@@ -366,7 +366,7 @@ local ALLOWED_MODULES = {
 }
 ```
 
-**Policy evaluation** — `create_tool` loads the `agent_security` named scope and evaluates the deny policies against the target entry ID. Writes to `app:*` or `app.tools:*` are denied; writes to `app.generated:*` pass (no matching deny policy):
+**ポリシー評価** — `create_tool` は `agent_security` 名前付きスコープをロードし、対象のエントリ ID に対して拒否ポリシーを評価します。`app:*` または `app.tools:*` への書き込みは拒否されます。`app.generated:*` への書き込みは通過します（一致する拒否ポリシーがありません）：
 
 ```lua
 local actor = security.new_actor("service:agent", { role = "agent" })
@@ -381,7 +381,7 @@ if result == "deny" then
 end
 ```
 
-**Registry write** — the entry is written with source in `data.source` and only the allowed modules:
+**レジストリ書き込み** — エントリは `data.source` にソースを持ち、許可されたモジュールのみを伴って書き込まれます：
 
 ```lua
 local entry = {
@@ -412,11 +412,11 @@ end
 changes:apply()
 ```
 
-No files on disk. The tool lives entirely in the registry.
+ディスク上にファイルはありません。ツールは完全にレジストリ内に存在します。
 
 ### load_tool
 
-Validates the entry is a tool and signals the agent loop to reload:
+エントリがツールであることを検証し、エージェントループにリロードを通知します：
 
 ```lua
 local function handler(input)
@@ -440,15 +440,15 @@ local function handler(input)
 end
 ```
 
-The agent loop detects `loaded = true` in the result and calls `ctx:add_tools(id)` followed by `ctx:load_agent()` to recompile the agent with the new tool.
+エージェントループは結果内の `loaded = true` を検出し、`ctx:add_tools(id)` の後に `ctx:load_agent()` を呼び出して、新しいツールを伴うエージェントを再コンパイルします。
 
-## Agent Loop
+## エージェントループ
 
-The agent loop in `src/agent.lua` handles streaming, tool execution, dynamic loading, and context compression.
+`src/agent.lua` のエージェントループは、ストリーミング、ツール実行、動的ロード、コンテキスト圧縮を処理します。
 
-### Streaming
+### ストリーミング
 
-Uses the same coroutine + channel pattern from the [LLM Agent tutorial](llm-agent.md):
+[LLM エージェントチュートリアル](llm-agent.md) と同じコルーチン + チャネルパターンを使用します：
 
 ```lua
 coroutine.spawn(function()
@@ -462,17 +462,17 @@ coroutine.spawn(function()
 end)
 ```
 
-### Tool Execution
+### ツール実行
 
-Tools are called via `funcs.call()` with `pcall` for safety:
+ツールは安全のため `pcall` を伴って `funcs.call()` 経由で呼ばれます：
 
 ```lua
 local ok, result = pcall(funcs.call, tc.registry_id, args)
 ```
 
-### Dynamic Tool Loading
+### 動的ツールロード
 
-When `load_tool` returns `loaded = true`, the agent reloads itself:
+`load_tool` が `loaded = true` を返すと、エージェントは自身をリロードします：
 
 ```mermaid
 flowchart TD
@@ -501,11 +501,11 @@ local function handle_tool_loading(tool_calls, results)
 end
 ```
 
-The conversation is preserved across reloads because it lives in the prompt builder, not in the runner.
+会話はランナーではなくプロンプトビルダー内に存在するため、リロード間で保持されます。
 
-### Context Compression
+### コンテキスト圧縮
 
-When prompt tokens exceed 96K (75% of the 128K context window), the conversation is compressed using GPT-4.1 Nano:
+プロンプトトークンが 96K（128K コンテキストウィンドウの 75%）を超えると、GPT-4.1 Nano を使用して会話が圧縮されます：
 
 ```lua
 if response.tokens and response.tokens.prompt_tokens
@@ -514,7 +514,7 @@ if response.tokens and response.tokens.prompt_tokens
 end
 ```
 
-Compression extracts message content, calls `compress.to_size()` targeting 4000 characters, and replaces the conversation with a summary:
+圧縮はメッセージコンテンツを抽出し、4000 文字をターゲットに `compress.to_size()` を呼び出し、会話をサマリーに置き換えます：
 
 ```lua
 local summary = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
@@ -522,9 +522,9 @@ session.conversation = prompt.new()
 session.conversation:add_system("Conversation summary:\n\n" .. summary)
 ```
 
-## Security Model
+## セキュリティモデル
 
-The agent is secured through namespace deny policies and module-level access control.
+エージェントは名前空間の拒否ポリシーとモジュールレベルのアクセス制御で保護されています。
 
 ```mermaid
 flowchart TD
@@ -538,33 +538,33 @@ flowchart TD
     M -->|unknown module requested| Err[Rejected]
 ```
 
-### Namespace Deny Policies
+### 名前空間の拒否ポリシー
 
-| Policy | Resources | Effect |
+| ポリシー | リソース | 効果 |
 |--------|-----------|--------|
 | `deny_core_ns` | `app:*` | deny |
 | `deny_tools_ns` | `app.tools:*` | deny |
 
-`create_tool` loads the `agent_security` policy group and evaluates against the target entry ID. Since deny policies only match `app:*` and `app.tools:*`, writes to `app.generated:*` pass through (result is `undefined`, meaning "not denied").
+`create_tool` は `agent_security` ポリシーグループをロードし、対象のエントリ ID に対して評価します。拒否ポリシーは `app:*` と `app.tools:*` のみに一致するため、`app.generated:*` への書き込みは通過します（結果は `undefined` で、「拒否されていない」を意味します）。
 
-This prevents the agent from:
-- Modifying its own prompt or agent definition (`app:dev_assistant`)
-- Overwriting its built-in tools (`app.tools:*`)
-- Changing infrastructure entries (`app:processes`, etc.)
+これによりエージェントは以下を行うことができません：
+- 自身のプロンプトやエージェント定義（`app:dev_assistant`）の改変
+- 組み込みツール（`app.tools:*`）の上書き
+- インフラストラクチャエントリ（`app:processes` など）の変更
 
-### Module Access Control
+### モジュールアクセス制御
 
-Generated tools declare their `modules` in `data.modules`. Only modules from the `ALLOWED_MODULES` set are permitted. The Wippy runtime enforces this at the module level — if a module is not listed on the entry, `require()` returns an error. There is no source code scanning because there is nothing to scan for: modules that are not granted do not exist in the execution context.
+生成されたツールは `data.modules` でその `modules` を宣言します。`ALLOWED_MODULES` セットからのモジュールのみが許可されます。Wippy ランタイムはこれをモジュールレベルで強制します — モジュールがエントリにリストされていない場合、`require()` はエラーを返します。スキャンする対象がないため、ソースコードのスキャンは行いません：許可されていないモジュールは実行コンテキスト内に存在しません。
 
-## Run
+## 実行
 
-Run directly from hub:
+Hub から直接実行します：
 
 ```bash
 wippy run wippy/micro-agi agent
 ```
 
-Or clone and run locally:
+またはクローンしてローカルで実行します：
 
 ```bash
 cd micro-agi
@@ -591,10 +591,10 @@ The current UTC time is 2026-02-13T03:13:41Z.
 Your IP is 203.0.113.42.
 ```
 
-## Next Steps
+## 次のステップ
 
-- [LLM Agent](llm-agent.md) — Build a basic agent from scratch
-- [Agent Module](../framework/agents.md) — Agent framework reference
-- [Registry](../concepts/registry.md) — How the registry works
-- [Security Model](../system/security.md) — Declarative security policies
-- [Entry Kinds](../guides/entry-kinds.md) — Available entry types
+- [LLM エージェント](llm-agent.md) — 基本的なエージェントをゼロから構築する
+- [エージェントモジュール](../framework/agents.md) — エージェントフレームワークリファレンス
+- [レジストリ](../concepts/registry.md) — レジストリの仕組み
+- [セキュリティモデル](../system/security.md) — 宣言的セキュリティポリシー
+- [エントリ種別](../guides/entry-kinds.md) — 利用可能なエントリ種別

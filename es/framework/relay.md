@@ -1,8 +1,8 @@
 # Relay
 
-The `wippy/relay` module provides WebSocket relay infrastructure with a two-tier hub architecture. A central hub manages per-user hubs, which in turn manage WebSocket client connections and route messages to plugins.
+El módulo `wippy/relay` proporciona infraestructura de relay WebSocket con una arquitectura de hub de dos niveles. Un hub central gestiona hubs por usuario, los cuales a su vez gestionan conexiones de clientes WebSocket y enrutan mensajes a plugins.
 
-## Architecture
+## Arquitectura
 
 ```
 Central Hub
@@ -17,18 +17,18 @@ Central Hub
 └── ...
 ```
 
-The central hub runs as a service. When a WebSocket client connects, the central hub looks up or creates a user hub for that user. The user hub manages the client's lifetime and routes messages to plugins based on command prefixes.
+El hub central se ejecuta como un servicio. Cuando un cliente WebSocket se conecta, el hub central busca o crea un hub de usuario para ese usuario. El hub de usuario gestiona la vida útil del cliente y enruta mensajes a los plugins basándose en prefijos de comando.
 
-## Setup
+## Configuración
 
-Add the module to your project:
+Agregue el módulo a su proyecto:
 
 ```bash
 wippy add wippy/relay
 wippy install
 ```
 
-Declare the dependency with required parameters:
+Declare la dependencia con los parámetros requeridos:
 
 ```yaml
 version: "1.0"
@@ -56,23 +56,23 @@ entries:
         value: app.security:user_scope
 ```
 
-### Configuration Parameters
+### Parámetros de Configuración
 
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `application_host` | yes | — | Process host for relay processes |
-| `env_storage` | no | internal | Environment variable storage |
-| `user_security_scope` | yes | — | Security scope for user hubs |
-| `max_connections_per_user` | no | `10` | WebSocket connections per user |
-| `queue_multiplier` | no | `100` | Message queue = connections × multiplier |
-| `user_hub_inactivity_timeout` | no | `7200s` | Idle time before hub cleanup |
+| Parámetro | Requerido | Predeterminado | Descripción |
+|-----------|-----------|----------------|-------------|
+| `application_host` | sí | — | Host de procesos para procesos del relay |
+| `env_storage` | no | interno | Almacenamiento de variables de entorno |
+| `user_security_scope` | sí | — | Ámbito de seguridad para hubs de usuario |
+| `max_connections_per_user` | no | `10` | Conexiones WebSocket por usuario |
+| `queue_multiplier` | no | `100` | Cola de mensajes = conexiones × multiplicador |
+| `user_hub_inactivity_timeout` | no | `7200s` | Tiempo de inactividad antes de la limpieza del hub |
 
-## Client Connection Flow
+## Flujo de Conexión del Cliente
 
-1. WebSocket client connects with `user_id` in metadata
-2. Central hub validates the connection and checks per-user limits
-3. Central hub creates or reuses a user hub for the user
-4. User hub sends a `welcome` message to the client:
+1. El cliente WebSocket se conecta con `user_id` en los metadatos
+2. El hub central valida la conexión y verifica los límites por usuario
+3. El hub central crea o reutiliza un hub de usuario para el usuario
+4. El hub de usuario envía un mensaje `welcome` al cliente:
 
 ```json
 {
@@ -85,15 +85,15 @@ entries:
 }
 ```
 
-## Message Routing
+## Enrutamiento de Mensajes
 
-Clients send JSON messages with a `type` field. The user hub matches the type prefix against registered plugins and routes the message:
+Los clientes envían mensajes JSON con un campo `type`. El hub de usuario compara el prefijo del tipo con los plugins registrados y enruta el mensaje:
 
 ```json
 { "type": "session_get_state", "data": { "key": "value" } }
 ```
 
-The `session_` prefix matches the session plugin. The hub strips the prefix and sends the message to the plugin process with the stripped type as the topic:
+El prefijo `session_` coincide con el plugin de sesión. El hub elimina el prefijo y envía el mensaje al proceso del plugin con el tipo despojado como tópico:
 
 ```lua
 -- process topic: "get_state"
@@ -107,11 +107,11 @@ The `session_` prefix matches the session plugin. The hub strips the prefix and 
 }
 ```
 
-Plugins respond by sending messages back to `conn_pid`.
+Los plugins responden enviando mensajes de vuelta a `conn_pid`.
 
 ## Plugins
 
-Plugins are `process.lua` entries with `meta.type: relay.plugin`:
+Los plugins son entradas `process.lua` con `meta.type: relay.plugin`:
 
 ```yaml
 entries:
@@ -126,18 +126,18 @@ entries:
     method: run
 ```
 
-### Plugin Metadata
+### Metadatos del Plugin
 
-| Field | Type | Description |
+| Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `meta.type` | string | Must be `relay.plugin` |
-| `meta.command_prefix` | string | Message type prefix this plugin handles |
-| `meta.auto_start` | boolean | Start when user hub initializes |
-| `meta.default_host` | string | Override process host |
+| `meta.type` | string | Debe ser `relay.plugin` |
+| `meta.command_prefix` | string | Prefijo del tipo de mensaje que maneja este plugin |
+| `meta.auto_start` | boolean | Iniciar cuando se inicialice el hub de usuario |
+| `meta.default_host` | string | Anular el host de procesos |
 
-### Plugin Lifecycle
+### Ciclo de Vida del Plugin
 
-Plugins are spawned by the user hub. On startup, the plugin receives:
+Los plugins son generados por el hub de usuario. Al arrancar, el plugin recibe:
 
 ```lua
 function run(args)
@@ -148,18 +148,18 @@ function run(args)
 end
 ```
 
-The `session_` plugin receives lifecycle messages:
+El plugin `session_` recibe mensajes de ciclo de vida:
 
-| Message | When |
-|---------|------|
-| `"resume"` | First client connects to user hub |
-| `"shutdown"` | Last client disconnects from user hub |
+| Mensaje | Cuándo |
+|---------|--------|
+| `"resume"` | Primer cliente se conecta al hub de usuario |
+| `"shutdown"` | Último cliente se desconecta del hub de usuario |
 
-Plugins get 1 automatic restart on crash. After a second crash, the plugin is marked as `"failed"` and not restarted.
+Los plugins reciben 1 reinicio automático en caso de fallo. Después de un segundo fallo, el plugin se marca como `"failed"` y no se reinicia.
 
-### Plugin Implementation
+### Implementación del Plugin
 
-Plugins receive messages on their process inbox. Each message has a topic (the stripped command prefix) and a payload containing the original message data along with `conn_pid` for sending responses back to the client.
+Los plugins reciben mensajes en su buzón de proceso. Cada mensaje tiene un tópico (el prefijo de comando despojado) y una carga útil que contiene los datos originales del mensaje junto con `conn_pid` para enviar respuestas de vuelta al cliente.
 
 ```lua
 local json = require("json")
@@ -209,50 +209,50 @@ end
 return { run = run }
 ```
 
-## Error Handling
+## Manejo de Errores
 
-The relay sends structured error messages to clients:
+El relay envía mensajes de error estructurados a los clientes:
 
-| Error Code | Description |
-|------------|-------------|
-| `max_connections_reached` | User at connection limit |
-| `missing_user_id` | No user_id in connection metadata |
-| `hub_creation_failed` | Failed to spawn user hub |
-| `invalid_json` | Message decode error |
-| `unknown_command` | Message missing type field |
-| `plugin_not_found` | No plugin matches the command prefix |
-| `plugin_failed` | Plugin unavailable or crashed |
+| Código de Error | Descripción |
+|-----------------|-------------|
+| `max_connections_reached` | Usuario en el límite de conexiones |
+| `missing_user_id` | Sin user_id en los metadatos de conexión |
+| `hub_creation_failed` | Falló la generación del hub de usuario |
+| `invalid_json` | Error de decodificación del mensaje |
+| `unknown_command` | Mensaje sin campo type |
+| `plugin_not_found` | Ningún plugin coincide con el prefijo del comando |
+| `plugin_failed` | Plugin no disponible o caído |
 
-## Hub Lifecycle
+## Ciclo de Vida del Hub
 
-### User Hub Creation
+### Creación del Hub de Usuario
 
-User hubs are created on demand when the first client for a user connects. The hub spawns with the user's security actor and scope.
+Los hubs de usuario se crean bajo demanda cuando el primer cliente de un usuario se conecta. El hub se genera con el actor de seguridad y el ámbito del usuario.
 
-### Garbage Collection
+### Recolección de Basura
 
-The central hub periodically checks for inactive user hubs. A hub with no connected clients for longer than `user_hub_inactivity_timeout` (default 2 hours) is gracefully terminated with a 10-second cancel timeout.
+El hub central verifica periódicamente hubs de usuario inactivos. Un hub sin clientes conectados durante más de `user_hub_inactivity_timeout` (predeterminado 2 horas) se termina de forma elegante con un timeout de cancelación de 10 segundos.
 
-The GC check interval is automatically derived: `inactivity_timeout / 2.5`.
+El intervalo de verificación de GC se deriva automáticamente: `inactivity_timeout / 2.5`.
 
-### Security
+### Seguridad
 
-The central hub runs under its own security group (`wippy.relay.security:root`) with full access. Each user hub spawns with the configured `user_security_scope`, isolating user-level operations.
+El hub central se ejecuta bajo su propio grupo de seguridad (`wippy.relay.security:root`) con acceso completo. Cada hub de usuario se genera con el `user_security_scope` configurado, aislando las operaciones a nivel de usuario.
 
-## Internal Topics
+## Tópicos Internos
 
-| Topic | Direction | Description |
-|-------|-----------|-------------|
-| `ws.join` | Client → Central/User Hub | Connection request |
-| `ws.leave` | Client → Central/User Hub | Disconnection |
-| `ws.message` | Client → User Hub | WebSocket message |
-| `ws.cancel` | Central → User Hub | Graceful shutdown |
-| `ws.control` | Central → User Hub | Routing control |
-| `hub.activity_update` | User Hub → Central | Client count update |
+| Tópico | Dirección | Descripción |
+|--------|-----------|-------------|
+| `ws.join` | Cliente → Hub Central/Usuario | Solicitud de conexión |
+| `ws.leave` | Cliente → Hub Central/Usuario | Desconexión |
+| `ws.message` | Cliente → Hub de Usuario | Mensaje WebSocket |
+| `ws.cancel` | Central → Hub de Usuario | Apagado elegante |
+| `ws.control` | Central → Hub de Usuario | Control de enrutamiento |
+| `hub.activity_update` | Hub de Usuario → Central | Actualización del conteo de clientes |
 
-## See Also
+## Véase También
 
-- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket endpoint configuration
-- [Process Model](../concepts/process-model.md) - Process lifecycle and messaging
-- [Security](../system/security.md) - Security actors and scopes
-- [Framework Overview](overview.md) - Framework module usage
+- [WebSocket Relay](../http/websocket-relay.md) - Configuración del endpoint WebSocket HTTP
+- [Modelo de Procesos](../concepts/process-model.md) - Ciclo de vida y mensajería de procesos
+- [Seguridad](../system/security.md) - Actores y ámbitos de seguridad
+- [Resumen del Framework](overview.md) - Uso del módulo del framework

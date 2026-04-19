@@ -1,8 +1,8 @@
 # Relay
 
-The `wippy/relay` module provides WebSocket relay infrastructure with a two-tier hub architecture. A central hub manages per-user hubs, which in turn manage WebSocket client connections and route messages to plugins.
+`wippy/relay` 模块提供具有两层 hub 架构的 WebSocket 中继基础设施。中央 hub 管理每个用户的 hub，而后者又管理 WebSocket 客户端连接，并将消息路由到插件。
 
-## Architecture
+## 架构
 
 ```
 Central Hub
@@ -17,18 +17,18 @@ Central Hub
 └── ...
 ```
 
-The central hub runs as a service. When a WebSocket client connects, the central hub looks up or creates a user hub for that user. The user hub manages the client's lifetime and routes messages to plugins based on command prefixes.
+中央 hub 作为服务运行。当 WebSocket 客户端连接时，中央 hub 查找或为该用户创建一个 user hub。User hub 管理客户端的生命周期，并根据命令前缀将消息路由到插件。
 
-## Setup
+## 安装
 
-Add the module to your project:
+将模块添加到你的项目：
 
 ```bash
 wippy add wippy/relay
 wippy install
 ```
 
-Declare the dependency with required parameters:
+声明依赖并提供必需参数：
 
 ```yaml
 version: "1.0"
@@ -56,23 +56,23 @@ entries:
         value: app.security:user_scope
 ```
 
-### Configuration Parameters
+### 配置参数
 
-| Parameter | Required | Default | Description |
+| 参数 | 必填 | 默认值 | 说明 |
 |-----------|----------|---------|-------------|
-| `application_host` | yes | — | Process host for relay processes |
-| `env_storage` | no | internal | Environment variable storage |
-| `user_security_scope` | yes | — | Security scope for user hubs |
-| `max_connections_per_user` | no | `10` | WebSocket connections per user |
-| `queue_multiplier` | no | `100` | Message queue = connections × multiplier |
-| `user_hub_inactivity_timeout` | no | `7200s` | Idle time before hub cleanup |
+| `application_host` | 是 | — | 用于中继进程的进程宿主 |
+| `env_storage` | 否 | 内部 | 环境变量存储 |
+| `user_security_scope` | 是 | — | User hub 的安全作用域 |
+| `max_connections_per_user` | 否 | `10` | 每个用户的 WebSocket 连接数 |
+| `queue_multiplier` | 否 | `100` | 消息队列 = 连接数 × 乘数 |
+| `user_hub_inactivity_timeout` | 否 | `7200s` | hub 清理前的空闲时间 |
 
-## Client Connection Flow
+## 客户端连接流程
 
-1. WebSocket client connects with `user_id` in metadata
-2. Central hub validates the connection and checks per-user limits
-3. Central hub creates or reuses a user hub for the user
-4. User hub sends a `welcome` message to the client:
+1. WebSocket 客户端连接，元数据中包含 `user_id`
+2. 中央 hub 验证连接并检查每个用户的限制
+3. 中央 hub 为该用户创建或重用 user hub
+4. User hub 向客户端发送 `welcome` 消息：
 
 ```json
 {
@@ -85,33 +85,33 @@ entries:
 }
 ```
 
-## Message Routing
+## 消息路由
 
-Clients send JSON messages with a `type` field. The user hub matches the type prefix against registered plugins and routes the message:
+客户端发送带有 `type` 字段的 JSON 消息。User hub 将类型前缀与已注册的插件匹配并路由消息：
 
 ```json
 { "type": "session_get_state", "data": { "key": "value" } }
 ```
 
-The `session_` prefix matches the session plugin. The hub strips the prefix and sends the message to the plugin process with the stripped type as the topic:
+`session_` 前缀匹配 session 插件。Hub 剥离前缀，并将消息发送到插件进程，剥离后的类型作为主题：
 
 ```lua
--- process topic: "get_state"
--- payload:
+-- 进程主题: "get_state"
+-- 负载:
 {
     conn_pid = client_pid,
-    type = "session_get_state",  -- original full type preserved
+    type = "session_get_state",  -- 保留原始完整类型
     data = { key = "value" },
     request_id = "...",
     session_id = "..."
 }
 ```
 
-Plugins respond by sending messages back to `conn_pid`.
+插件通过向 `conn_pid` 发送消息进行响应。
 
-## Plugins
+## 插件
 
-Plugins are `process.lua` entries with `meta.type: relay.plugin`:
+插件是带有 `meta.type: relay.plugin` 的 `process.lua` 入口：
 
 ```yaml
 entries:
@@ -126,18 +126,18 @@ entries:
     method: run
 ```
 
-### Plugin Metadata
+### 插件元数据
 
-| Field | Type | Description |
+| 字段 | 类型 | 说明 |
 |-------|------|-------------|
-| `meta.type` | string | Must be `relay.plugin` |
-| `meta.command_prefix` | string | Message type prefix this plugin handles |
-| `meta.auto_start` | boolean | Start when user hub initializes |
-| `meta.default_host` | string | Override process host |
+| `meta.type` | string | 必须为 `relay.plugin` |
+| `meta.command_prefix` | string | 此插件处理的消息类型前缀 |
+| `meta.auto_start` | boolean | 在 user hub 初始化时启动 |
+| `meta.default_host` | string | 覆盖进程宿主 |
 
-### Plugin Lifecycle
+### 插件生命周期
 
-Plugins are spawned by the user hub. On startup, the plugin receives:
+插件由 user hub 生成。启动时，插件接收：
 
 ```lua
 function run(args)
@@ -148,18 +148,18 @@ function run(args)
 end
 ```
 
-The `session_` plugin receives lifecycle messages:
+`session_` 插件接收生命周期消息：
 
-| Message | When |
+| 消息 | 时机 |
 |---------|------|
-| `"resume"` | First client connects to user hub |
-| `"shutdown"` | Last client disconnects from user hub |
+| `"resume"` | 第一个客户端连接到 user hub |
+| `"shutdown"` | 最后一个客户端从 user hub 断开 |
 
-Plugins get 1 automatic restart on crash. After a second crash, the plugin is marked as `"failed"` and not restarted.
+插件在崩溃时自动重启 1 次。第二次崩溃后，插件被标记为 `"failed"` 且不再重启。
 
-### Plugin Implementation
+### 插件实现
 
-Plugins receive messages on their process inbox. Each message has a topic (the stripped command prefix) and a payload containing the original message data along with `conn_pid` for sending responses back to the client.
+插件在其进程收件箱接收消息。每条消息有一个主题（剥离的命令前缀）和一个负载，负载包含原始消息数据以及用于将响应发回客户端的 `conn_pid`。
 
 ```lua
 local json = require("json")
@@ -191,9 +191,9 @@ local function run(args)
             local payload = msg:payload():data()
 
             if topic == "resume" then
-                -- first client connected
+                -- 第一个客户端已连接
             elseif topic == "shutdown" then
-                -- last client disconnected
+                -- 最后一个客户端已断开
             else
                 handle_message(topic, payload)
             end
@@ -209,50 +209,50 @@ end
 return { run = run }
 ```
 
-## Error Handling
+## 错误处理
 
-The relay sends structured error messages to clients:
+中继向客户端发送结构化错误消息：
 
-| Error Code | Description |
+| 错误代码 | 说明 |
 |------------|-------------|
-| `max_connections_reached` | User at connection limit |
-| `missing_user_id` | No user_id in connection metadata |
-| `hub_creation_failed` | Failed to spawn user hub |
-| `invalid_json` | Message decode error |
-| `unknown_command` | Message missing type field |
-| `plugin_not_found` | No plugin matches the command prefix |
-| `plugin_failed` | Plugin unavailable or crashed |
+| `max_connections_reached` | 用户达到连接限制 |
+| `missing_user_id` | 连接元数据中无 user_id |
+| `hub_creation_failed` | 生成 user hub 失败 |
+| `invalid_json` | 消息解码错误 |
+| `unknown_command` | 消息缺少 type 字段 |
+| `plugin_not_found` | 没有插件匹配命令前缀 |
+| `plugin_failed` | 插件不可用或已崩溃 |
 
-## Hub Lifecycle
+## Hub 生命周期
 
-### User Hub Creation
+### User Hub 创建
 
-User hubs are created on demand when the first client for a user connects. The hub spawns with the user's security actor and scope.
+User hub 按需创建——当某用户的第一个客户端连接时。Hub 以该用户的安全 Actor 和作用域生成。
 
-### Garbage Collection
+### 垃圾回收
 
-The central hub periodically checks for inactive user hubs. A hub with no connected clients for longer than `user_hub_inactivity_timeout` (default 2 hours) is gracefully terminated with a 10-second cancel timeout.
+中央 hub 定期检查不活跃的 user hub。超过 `user_hub_inactivity_timeout`（默认 2 小时）没有连接客户端的 hub 会以 10 秒的取消超时被优雅终止。
 
-The GC check interval is automatically derived: `inactivity_timeout / 2.5`.
+GC 检查间隔自动派生：`inactivity_timeout / 2.5`。
 
-### Security
+### 安全
 
-The central hub runs under its own security group (`wippy.relay.security:root`) with full access. Each user hub spawns with the configured `user_security_scope`, isolating user-level operations.
+中央 hub 在自己的安全组（`wippy.relay.security:root`）下以完全访问权限运行。每个 user hub 以配置的 `user_security_scope` 生成，隔离用户级操作。
 
-## Internal Topics
+## 内部主题
 
-| Topic | Direction | Description |
+| 主题 | 方向 | 说明 |
 |-------|-----------|-------------|
-| `ws.join` | Client → Central/User Hub | Connection request |
-| `ws.leave` | Client → Central/User Hub | Disconnection |
-| `ws.message` | Client → User Hub | WebSocket message |
-| `ws.cancel` | Central → User Hub | Graceful shutdown |
-| `ws.control` | Central → User Hub | Routing control |
-| `hub.activity_update` | User Hub → Central | Client count update |
+| `ws.join` | Client → Central/User Hub | 连接请求 |
+| `ws.leave` | Client → Central/User Hub | 断开 |
+| `ws.message` | Client → User Hub | WebSocket 消息 |
+| `ws.cancel` | Central → User Hub | 优雅关闭 |
+| `ws.control` | Central → User Hub | 路由控制 |
+| `hub.activity_update` | User Hub → Central | 客户端数量更新 |
 
-## See Also
+## 另见
 
-- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket endpoint configuration
-- [Process Model](../concepts/process-model.md) - Process lifecycle and messaging
-- [Security](../system/security.md) - Security actors and scopes
-- [Framework Overview](overview.md) - Framework module usage
+- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket 端点配置
+- [进程模型](../concepts/process-model.md) - 进程生命周期和消息传递
+- [安全](../system/security.md) - 安全 Actor 和作用域
+- [框架概述](overview.md) - 框架模块用法

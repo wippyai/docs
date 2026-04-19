@@ -1,10 +1,10 @@
-# Type System
+# Typsystem
 
-> **Experimental.** Some limitations are expected.
+> **Experimentell.** Einige Einschränkungen sind zu erwarten.
 
-Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
+Wippy enthält ein graduelles Typsystem mit flusssensitiver Prüfung. Typen sind standardmäßig nicht-nullbar.
 
-## Primitives
+## Primitive
 
 ```lua
 local n: number = 3.14
@@ -15,7 +15,7 @@ local a: any = "anything"     -- explicit dynamic (opt-out of checking)
 local u: unknown = something  -- must narrow before use
 ```
 
-### any vs unknown
+### any vs. unknown
 
 ```lua
 -- any: opt-out of type checking
@@ -30,9 +30,9 @@ if type(u) == "table" then
 end
 ```
 
-## Nil Safety
+## Nil-Sicherheit
 
-Types are non-nullable by default. Use `?` for optional values:
+Typen sind standardmäßig nicht-nullbar. Verwende `?` für optionale Werte:
 
 ```lua
 local x: number = nil         -- ERROR: nil not assignable to number
@@ -40,9 +40,9 @@ local y: number? = nil        -- OK: number? means "number or nil"
 local z: number? = 42         -- OK
 ```
 
-### Control Flow Narrowing
+### Kontrollfluss-Verfeinerung
 
-The type checker tracks control flow:
+Der Typprüfer verfolgt den Kontrollfluss:
 
 ```lua
 local function process(x: number?): number
@@ -61,7 +61,7 @@ if err then return nil, err end
 local val = get_value() or 0  -- val: number
 ```
 
-## Union Types
+## Union-Typen
 
 ```lua
 local val: number | string = get_value()
@@ -73,7 +73,7 @@ else
 end
 ```
 
-### Literal Types
+### Literal-Typen
 
 ```lua
 type Status = "pending" | "active" | "done"
@@ -82,7 +82,7 @@ local s: Status = "pending"   -- OK
 local s: Status = "invalid"   -- ERROR
 ```
 
-## Function Types
+## Funktionstypen
 
 ```lua
 local function add(a: number, b: number): number
@@ -105,7 +105,7 @@ local double: (number) -> number = function(x: number): number
 end
 ```
 
-### Variadic Functions
+### Variadische Funktionen
 
 ```lua
 local function sum(...: number): number
@@ -117,7 +117,7 @@ local function sum(...: number): number
 end
 ```
 
-## Record Types
+## Record-Typen
 
 ```lua
 type User = {name: string, age: number}
@@ -125,7 +125,7 @@ type User = {name: string, age: number}
 local u: User = {name = "alice", age = 25}
 ```
 
-### Optional Fields
+### Optionale Felder
 
 ```lua
 type Config = {
@@ -149,7 +149,7 @@ local n: number = identity(42)
 local s: string = identity("hello")
 ```
 
-### Constrained Generics
+### Eingeschränkte Generics
 
 ```lua
 type HasName = {name: string}
@@ -162,9 +162,9 @@ greet({name = "Alice"})       -- OK
 greet({age = 30})             -- ERROR: missing 'name'
 ```
 
-## Intersection Types
+## Intersection-Typen
 
-Combine multiple types:
+Mehrere Typen kombinieren:
 
 ```lua
 type Named = {name: string}
@@ -197,9 +197,9 @@ local function render(state: LoadState): string
 end
 ```
 
-## The never Type
+## Der never-Typ
 
-`never` is the bottom type - no values exist:
+`never` ist der Bottom-Typ — es existieren keine Werte:
 
 ```lua
 function fail(msg: string): never
@@ -207,9 +207,9 @@ function fail(msg: string): never
 end
 ```
 
-## Error Handling Pattern
+## Fehlerbehandlungs-Muster
 
-The checker understands the Lua error idiom:
+Der Prüfer versteht das Lua-Fehler-Idiom:
 
 ```lua
 local value, err = call()
@@ -221,22 +221,22 @@ end
 print(value)
 ```
 
-## Non-Nil Assertion
+## Non-Nil-Assertion
 
-Use `!` to assert an expression is non-nil:
+Verwende `!`, um zu beteuern, dass ein Ausdruck nicht nil ist:
 
 ```lua
 local user: User? = get_user()
 local name = user!.name              -- assert user is non-nil
 ```
 
-If the value is nil at runtime, an error is raised. Use when you know a value cannot be nil but the type checker cannot prove it.
+Wenn der Wert zur Laufzeit nil ist, wird ein Fehler ausgelöst. Verwende dies, wenn du weißt, dass ein Wert nicht nil sein kann, der Typprüfer dies aber nicht beweisen kann.
 
-## Type Casts
+## Typ-Casts
 
-### Safe Cast (Validation)
+### Sicherer Cast (Validierung)
 
-Call a type as a function to validate and cast:
+Rufe einen Typ als Funktion auf, um zu validieren und zu casten:
 
 ```lua
 local data: any = get_json()
@@ -244,7 +244,7 @@ local user = User(data)              -- validates and returns User
 local name = user.name               -- safe field access
 ```
 
-Works with primitives and custom types:
+Funktioniert mit Primitiven und benutzerdefinierten Typen:
 
 ```lua
 local x: any = get_value()
@@ -256,9 +256,9 @@ type Point = {x: number, y: number}
 local p = Point(data)                -- validates record structure
 ```
 
-### Type:is() Method
+### Type:is()-Methode
 
-Validate without throwing, returns `(value, nil)` or `(nil, error)`:
+Validiert ohne zu werfen, gibt `(value, nil)` oder `(nil, error)` zurück:
 
 ```lua
 type Point = {x: number, y: number}
@@ -272,7 +272,7 @@ else
 end
 ```
 
-The result narrows in conditionals:
+Das Ergebnis verfeinert sich in Conditionals:
 
 ```lua
 if Point:is(data) then
@@ -280,9 +280,9 @@ if Point:is(data) then
 end
 ```
 
-### Unsafe Cast
+### Unsicherer Cast
 
-Use `::` or `as` for unchecked casts:
+Verwende `::` oder `as` für ungeprüfte Casts:
 
 ```lua
 local data: any = get_data()
@@ -290,13 +290,13 @@ local user = data :: User            -- no runtime check
 local user = data as User            -- same as ::
 ```
 
-Use sparingly. Unsafe casts bypass validation and can cause runtime errors if the value doesn't match the type.
+Sparsam verwenden. Unsichere Casts umgehen die Validierung und können Laufzeitfehler verursachen, wenn der Wert nicht zum Typ passt.
 
-## Type Reflection
+## Typ-Reflektion
 
-Types are first-class values with introspection methods.
+Typen sind First-Class-Werte mit Introspektionsmethoden.
 
-### Kind and Name
+### Kind und Name
 
 ```lua
 print(Number:kind())                 -- "number"
@@ -304,9 +304,9 @@ print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
 
-### Record Fields
+### Record-Felder
 
-Iterate over record fields:
+Über Record-Felder iterieren:
 
 ```lua
 type User = {name: string, age: number}
@@ -318,14 +318,14 @@ end
 -- age     number
 ```
 
-Access individual field types:
+Auf einzelne Feldtypen zugreifen:
 
 ```lua
 local nameType = User.name           -- type of 'name' field
 print(nameType:kind())               -- "string"
 ```
 
-### Collection Types
+### Collection-Typen
 
 ```lua
 local arr: {number} = {1, 2, 3}
@@ -338,7 +338,7 @@ print(mapType:key():kind())          -- "string"
 print(mapType:val():kind())          -- "number"
 ```
 
-### Optional Types
+### Optionale Typen
 
 ```lua
 local opt: number? = nil
@@ -347,7 +347,7 @@ print(optType:kind())                -- "optional"
 print(optType:inner():kind())        -- "number"
 ```
 
-### Union Types
+### Union-Typen
 
 ```lua
 type Status = "pending" | "active" | "done"
@@ -357,7 +357,7 @@ for variant in Status:variants() do
 end
 ```
 
-### Function Types
+### Funktionstypen
 
 ```lua
 local fn: (number, string) -> boolean
@@ -369,7 +369,7 @@ end
 print(fnType:ret():kind())           -- "boolean"
 ```
 
-### Type Comparison
+### Typ-Vergleich
 
 ```lua
 print(Number == Number)              -- true
@@ -377,7 +377,7 @@ print(Integer <= Number)             -- true (subtype)
 print(Integer < Number)              -- true (strict subtype)
 ```
 
-### Types as Table Keys
+### Typen als Tabellenschlüssel
 
 ```lua
 local handlers = {}
@@ -388,9 +388,9 @@ local h = handlers[typeof(value)]
 if h then h() end
 ```
 
-## Type Annotations
+## Typ-Annotationen
 
-Add types to function signatures:
+Typen zu Funktionssignaturen hinzufügen:
 
 ```lua
 -- Parameter and return types
@@ -406,9 +406,9 @@ type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
-## Type Validators
+## Typ-Validatoren
 
-Add runtime validation constraints to types using annotations:
+Füge Typen Laufzeit-Validierungs-Constraints über Annotationen hinzu:
 
 ```lua
 -- Single validator
@@ -424,9 +424,9 @@ local email: string @pattern("^.+@.+$") = "test@example.com"
 local x: number @integer = 42
 ```
 
-### Built-in Validators
+### Eingebaute Validatoren
 
-| Validator | Applies to | Example |
+| Validator | Gilt für | Beispiel |
 |-----------|------------|---------|
 | `@min(n)` | number | `local x: number @min(0) = 1` |
 | `@max(n)` | number | `local x: number @max(100) = 50` |
@@ -434,7 +434,7 @@ local x: number @integer = 42
 | `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
 | `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
 
-### Record Field Validators
+### Validatoren für Record-Felder
 
 ```lua
 type User = {
@@ -443,37 +443,37 @@ type User = {
 }
 ```
 
-### Array Element Validators
+### Validatoren für Array-Elemente
 
 ```lua
 local scores: {number @min(0) @max(100)} = {85, 90}
 ```
 
-### Union Member Validators
+### Validatoren für Union-Mitglieder
 
 ```lua
 local id: number @min(1) | string @min_len(1) = 1
 ```
 
-## Variance Rules
+## Varianzregeln
 
-| Position | Variance | Description |
+| Position | Varianz | Beschreibung |
 |----------|----------|-------------|
-| Readonly field | Covariant | Can use subtype |
-| Mutable field | Invariant | Must match exactly |
-| Function parameter | Contravariant | Can use supertype |
-| Function return | Covariant | Can use subtype |
+| Readonly-Feld | Kovariant | Subtyp erlaubt |
+| Veränderliches Feld | Invariant | Muss exakt übereinstimmen |
+| Funktionsparameter | Kontravariant | Supertyp erlaubt |
+| Funktions-Rückgabe | Kovariant | Subtyp erlaubt |
 
 ## Subtyping
 
-- `integer` is a subtype of `number`
-- `never` is a subtype of all types
-- All types are subtypes of `any`
-- Union subtyping: `A` is subtype of `A | B`
+- `integer` ist ein Subtyp von `number`
+- `never` ist ein Subtyp aller Typen
+- Alle Typen sind Subtypen von `any`
+- Union-Subtyping: `A` ist Subtyp von `A | B`
 
-## Gradual Adoption
+## Schrittweise Einführung
 
-Add types incrementally - untyped code continues to work:
+Typen inkrementell hinzufügen — untypisierter Code funktioniert weiterhin:
 
 ```lua
 -- Existing code works unchanged
@@ -487,17 +487,17 @@ function new_function(x: number): number
 end
 ```
 
-Start by adding types to:
-1. Function signatures at API boundaries
-2. HTTP handlers and queue consumers
-3. Critical business logic
+Beginne damit, Typen hinzuzufügen zu:
+1. Funktionssignaturen an API-Grenzen
+2. HTTP-Handler und Queue-Konsumenten
+3. Kritischer Geschäftslogik
 
-## Type Checking
+## Typprüfung
 
-Run the type checker:
+Den Typprüfer ausführen:
 
 ```bash
 wippy lint
 ```
 
-Reports type errors without executing code.
+Meldet Typfehler, ohne Code auszuführen.

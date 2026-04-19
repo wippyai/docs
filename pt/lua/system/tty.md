@@ -2,21 +2,21 @@
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Terminal UI module for raw input events, styled output, and layout utilities.
+Módulo de UI de terminal para eventos de entrada raw, saída estilizada e utilitários de layout.
 
 <note>
-This module only works inside terminal context. You cannot use it from regular functions—only from processes running on a <a href="system/terminal.md">Terminal Host</a>.
+Este módulo só funciona dentro de um contexto de terminal. Você não pode usá-lo a partir de funções regulares — apenas a partir de processos executando em um <a href="system/terminal.md">Terminal Host</a>.
 </note>
 
-## Loading
+## Carregamento
 
 ```lua
 local tty = require("tty")
 ```
 
-## Input Loop
+## Loop de Entrada
 
-Start the raw input reader, subscribe to events, and process them in a loop:
+Inicia o leitor de entrada raw, inscreve-se nos eventos e os processa em loop:
 
 ```lua
 local tty = require("tty")
@@ -45,89 +45,89 @@ local function handler()
 end
 ```
 
-## Input Control
+## Controle de Entrada
 
 ### tty.start()
 
-Enable raw terminal input mode. The terminal switches to raw mode and begins emitting events.
+Habilita o modo de entrada raw do terminal. O terminal alterna para o modo raw e começa a emitir eventos.
 
 ```lua
 local ok, err = tty.start()
 ```
 
-**Returns:** `boolean, error`
+**Retorna:** `boolean, error`
 
 ### tty.stop()
 
-Disable raw input and restore the terminal to normal mode.
+Desabilita a entrada raw e restaura o terminal ao modo normal.
 
 ```lua
 local ok, err = tty.stop()
 ```
 
-**Returns:** `boolean, error`
+**Retorna:** `boolean, error`
 
 ### tty.events()
 
-Subscribe to terminal events and return a channel. Events are delivered as tables with a `type` field.
+Inscreve-se nos eventos do terminal e retorna um channel. Eventos são entregues como tabelas com um campo `type`.
 
 ```lua
 local events = tty.events()
 ```
 
-**Returns:** `EventChannel`
+**Retorna:** `EventChannel`
 
 ### tty.screen_size()
 
-Query current terminal dimensions.
+Consulta as dimensões atuais do terminal.
 
 ```lua
 local width, height, err = tty.screen_size()
 ```
 
-**Returns:** `number, number, error`
+**Retorna:** `number, number, error`
 
 ### tty.mouse(enable)
 
-Enable or disable mouse event tracking.
+Habilita ou desabilita o rastreamento de eventos de mouse.
 
 ```lua
 local ok, err = tty.mouse(true)
 ```
 
-| Parameter | Type | Description |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-------------|
-| `enable` | boolean | `true` to enable, `false` to disable |
+| `enable` | boolean | `true` para habilitar, `false` para desabilitar |
 
-**Returns:** `boolean, error`
+**Retorna:** `boolean, error`
 
-## Event Types
+## Tipos de Evento
 
-Events are tables with a `type` field that determines which other fields are present.
+Eventos são tabelas com um campo `type` que determina quais outros campos estão presentes.
 
-### Key Event
+### Evento de Tecla
 
 ```lua
 {
     type = "key",
-    key = "a",           -- printable character or key name
-    key_type = "runes",  -- "runes" for printable, or special key name
-    action = "press",    -- "press" or "release"
+    key = "a",           -- caractere imprimível ou nome da tecla
+    key_type = "runes",  -- "runes" para imprimível, ou nome de tecla especial
+    action = "press",    -- "press" ou "release"
     alt = false,
     ctrl = false,
     shift = false
 }
 ```
 
-### Mouse Event
+### Evento de Mouse
 
-Requires `tty.mouse(true)`.
+Requer `tty.mouse(true)`.
 
 ```lua
 {
     type = "mouse",
     action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- button name
+    button = "left",     -- nome do botão
     x = 10,
     y = 5,
     alt = false,
@@ -136,35 +136,35 @@ Requires `tty.mouse(true)`.
 }
 ```
 
-### Resize Event
+### Evento de Redimensionamento
 
 ```lua
 {type = "resize", width = 120, height = 40}
 ```
 
-### Start Event
+### Evento de Início
 
-Emitted once after `tty.start()` with initial dimensions.
+Emitido uma vez após `tty.start()` com as dimensões iniciais.
 
 ```lua
 {type = "start", width = 120, height = 40}
 ```
 
-### Focus Event
+### Evento de Foco
 
 ```lua
 {type = "focus", focused = true}
 ```
 
-### Paste Event
+### Evento de Colar
 
 ```lua
 {type = "paste", text = "pasted content"}
 ```
 
-## Key Bindings
+## Vinculações de Teclas
 
-Create reusable key bindings that match against key events:
+Crie vinculações de teclas reutilizáveis que correspondem a eventos de tecla:
 
 ```lua
 local quit = tty.bind({
@@ -172,7 +172,7 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- In event loop
+-- No loop de eventos
 if quit:matches(ev) then
     break
 end
@@ -180,25 +180,25 @@ end
 
 ### tty.bind(config)
 
-| Field | Type | Description |
+| Campo | Tipo | Descrição |
 |-------|------|-------------|
-| `keys` | string[] | Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
-| `help` | table | Optional. `{key = "...", desc = "..."}` for help text |
+| `keys` | string[] | Padrões de tecla a corresponder (ex: `"a"`, `"ctrl+c"`, `"enter"`) |
+| `help` | table | Opcional. `{key = "...", desc = "..."}` para texto de ajuda |
 
-**Returns:** `KeyBinding`
+**Retorna:** `KeyBinding`
 
-### KeyBinding Methods
+### Métodos de KeyBinding
 
-| Method | Returns | Description |
+| Método | Retorna | Descrição |
 |--------|---------|-------------|
-| `matches(event)` | boolean | Test if a key event matches this binding |
-| `set_enabled(bool)` | self | Enable or disable the binding |
-| `is_enabled()` | boolean | Check if the binding is enabled |
-| `help()` | table | Returns `{key, desc}` help info |
+| `matches(event)` | boolean | Testa se um evento de tecla corresponde a esta vinculação |
+| `set_enabled(bool)` | self | Habilita ou desabilita a vinculação |
+| `is_enabled()` | boolean | Verifica se a vinculação está habilitada |
+| `help()` | table | Retorna informações de ajuda `{key, desc}` |
 
-## Styles
+## Estilos
 
-Create styled text output using lipgloss-based styling. All style methods return a new style (immutable).
+Crie saída de texto estilizada usando estilização baseada em lipgloss. Todos os métodos de estilo retornam um novo estilo (imutável).
 
 ```lua
 local tty = require("tty")
@@ -220,58 +220,58 @@ io.print(box:render(title:render("Hello"), "World"))
 
 ### tty.style()
 
-Create a new empty style.
+Cria um novo estilo vazio.
 
-**Returns:** `Style`
+**Retorna:** `Style`
 
-### Style Methods
+### Métodos de Estilo
 
-All methods return a new `Style` and can be chained.
+Todos os métodos retornam um novo `Style` e podem ser encadeados.
 
-#### Text Decoration
+#### Decoração de Texto
 
-| Method | Parameter | Description |
+| Método | Parâmetro | Descrição |
 |--------|-----------|-------------|
-| `foreground(color)` | string | Text color (hex `"#FF0000"`, ANSI `"9"`, or name) |
-| `background(color)` | string | Background color |
-| `bold(enable?)` | boolean | Bold text (default: true) |
-| `italic(enable?)` | boolean | Italic text |
-| `underline(enable?)` | boolean | Underline text |
-| `strikethrough(enable?)` | boolean | Strikethrough text |
-| `faint(enable?)` | boolean | Dimmed text |
-| `blink(enable?)` | boolean | Blinking text |
-| `reverse(enable?)` | boolean | Swap foreground/background |
+| `foreground(color)` | string | Cor do texto (hex `"#FF0000"`, ANSI `"9"`, ou nome) |
+| `background(color)` | string | Cor de fundo |
+| `bold(enable?)` | boolean | Texto em negrito (padrão: true) |
+| `italic(enable?)` | boolean | Texto em itálico |
+| `underline(enable?)` | boolean | Texto sublinhado |
+| `strikethrough(enable?)` | boolean | Texto tachado |
+| `faint(enable?)` | boolean | Texto esmaecido |
+| `blink(enable?)` | boolean | Texto piscante |
+| `reverse(enable?)` | boolean | Inverte primeiro plano/fundo |
 
 #### Layout
 
-| Method | Parameter | Description |
+| Método | Parâmetro | Descrição |
 |--------|-----------|-------------|
-| `width(n)` | number | Fixed width |
-| `height(n)` | number | Fixed height |
-| `max_width(n)` | number | Maximum width |
-| `max_height(n)` | number | Maximum height |
-| `padding(...)` | numbers | Padding (CSS-style: top, right, bottom, left) |
-| `margin(...)` | numbers | Margin (CSS-style) |
-| `align(pos)` | number | Horizontal alignment |
-| `align_vertical(pos)` | number | Vertical alignment |
-| `inline(enable?)` | boolean | Inline rendering mode |
+| `width(n)` | number | Largura fixa |
+| `height(n)` | number | Altura fixa |
+| `max_width(n)` | number | Largura máxima |
+| `max_height(n)` | number | Altura máxima |
+| `padding(...)` | numbers | Padding (estilo CSS: top, right, bottom, left) |
+| `margin(...)` | numbers | Margin (estilo CSS) |
+| `align(pos)` | number | Alinhamento horizontal |
+| `align_vertical(pos)` | number | Alinhamento vertical |
+| `inline(enable?)` | boolean | Modo de renderização inline |
 
-#### Borders
+#### Bordas
 
-| Method | Parameter | Description |
+| Método | Parâmetro | Descrição |
 |--------|-----------|-------------|
-| `border(name, ...)` | string, booleans | Border style, optional per-side toggles |
-| `border_foreground(...)` | strings | Border color(s) |
-| `border_background(...)` | strings | Border background color(s) |
+| `border(name, ...)` | string, booleans | Estilo de borda, alternâncias opcionais por lado |
+| `border_foreground(...)` | strings | Cor(es) de borda |
+| `border_background(...)` | strings | Cor(es) de fundo da borda |
 
-#### Other
+#### Outros
 
-| Method | Description |
+| Método | Descrição |
 |--------|-------------|
-| `render(...)` | Render strings with this style applied |
-| `copy()` | Create a copy of this style |
+| `render(...)` | Renderiza strings com este estilo aplicado |
+| `copy()` | Cria uma cópia deste estilo |
 
-### Border Constants
+### Constantes de Borda
 
 ```lua
 tty.borders.NORMAL
@@ -281,7 +281,7 @@ tty.borders.DOUBLE
 tty.borders.HIDDEN
 ```
 
-### Alignment Constants
+### Constantes de Alinhamento
 
 ```lua
 tty.align.LEFT    -- 0
@@ -289,51 +289,51 @@ tty.align.CENTER  -- 0.5
 tty.align.RIGHT   -- 1
 ```
 
-## Text Utilities
+## Utilitários de Texto
 
-Layout and measurement functions for styled text. Available under `tty.text`.
+Funções de layout e medição para texto estilizado. Disponíveis sob `tty.text`.
 
-### Measurement
+### Medição
 
 ```lua
-local w = tty.text.width("hello")         -- printable width (ANSI-aware)
-local h = tty.text.height("a\nb\nc")      -- line count
-local w, h = tty.text.size("hello\nworld") -- both
+local w = tty.text.width("hello")         -- largura imprimível (ciente de ANSI)
+local h = tty.text.height("a\nb\nc")      -- contagem de linhas
+local w, h = tty.text.size("hello\nworld") -- ambos
 ```
 
-### Joining
+### Junção
 
 ```lua
--- Join side by side, aligned at top
+-- Junta lado a lado, alinhado no topo
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Stack vertically, centered
+-- Empilha verticalmente, centralizado
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
-### Max Dimensions
+### Dimensões Máximas
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- widest
-local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
+local w = tty.text.max_width({"short", "a longer string"})   -- mais largo
+local h = tty.text.max_height({"one\ntwo", "single"})         -- mais alto
 ```
 
-### Placement
+### Posicionamento
 
-Place a string within a box of given dimensions:
+Posiciona uma string dentro de uma caixa de dimensões dadas:
 
 ```lua
--- Center in a 80x24 box
+-- Centraliza em uma caixa 80x24
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Horizontal only
+-- Apenas horizontal
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Vertical only
+-- Apenas vertical
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
-### Position Constants
+### Constantes de Posição
 
 ```lua
 tty.text.position.TOP      -- 0
@@ -343,7 +343,7 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
-## See Also
+## Veja Também
 
-- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
-- [Terminal Host](system/terminal.md) — Terminal host configuration
+- [I/O do Terminal](lua/system/io.md) — operações de stdin/stdout/stderr
+- [Terminal Host](system/terminal.md) — Configuração do host de terminal

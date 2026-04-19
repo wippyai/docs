@@ -1,12 +1,12 @@
 # Server-Sent Events
 
-The SSE middleware streams events from the server to HTTP clients using the [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) protocol.
+El middleware SSE transmite eventos desde el servidor a clientes HTTP usando el protocolo [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html).
 
-Two mechanisms are available: **direct streaming** from an HTTP handler, and **process-backed relay** via the `sse_relay` middleware.
+Hay dos mecanismos disponibles: **streaming directo** desde un handler HTTP, y **relay respaldado por procesos** mediante el middleware `sse_relay`.
 
-## Direct Streaming
+## Streaming Directo
 
-Use `res:write_event()` to send SSE events directly from an HTTP handler. The response automatically switches to SSE mode on the first call, setting appropriate headers.
+Use `res:write_event()` para enviar eventos SSE directamente desde un handler HTTP. La respuesta cambia automáticamente al modo SSE en la primera llamada, estableciendo las cabeceras apropiadas.
 
 ```lua
 local http = require("http")
@@ -20,47 +20,47 @@ local function handler()
 end
 ```
 
-Each event requires a `name` and `data` field. The `data` value is JSON-encoded automatically.
+Cada evento requiere los campos `name` y `data`. El valor de `data` se codifica como JSON automáticamente.
 
 <tip>
-Direct streaming is suitable for short-lived request-response flows like progress updates. For long-lived connections managed by background processes, use the SSE Relay.
+El streaming directo es adecuado para flujos de solicitud-respuesta de corta duración como actualizaciones de progreso. Para conexiones de larga duración gestionadas por procesos en segundo plano, use el SSE Relay.
 </tip>
 
 ## SSE Relay
 
-The SSE Relay middleware creates long-lived SSE streams backed by processes. It follows the same relay pattern as [WebSocket Relay](http/websocket-relay.md).
+El middleware SSE Relay crea streams SSE de larga duración respaldados por procesos. Sigue el mismo patrón de relay que [WebSocket Relay](http/websocket-relay.md).
 
-### How It Works
+### Cómo Funciona
 
-1. HTTP handler sets `X-SSE-Relay` header with a JSON relay configuration
-2. Middleware intercepts the response and creates an SSE session
-3. Session registers as a process with its own PID
-4. Messages sent to the session PID are forwarded as SSE events to the client
+1. El handler HTTP establece la cabecera `X-SSE-Relay` con una configuración de relay JSON
+2. El middleware intercepta la respuesta y crea una sesión SSE
+3. La sesión se registra como un proceso con su propio PID
+4. Los mensajes enviados al PID de la sesión se reenvían como eventos SSE al cliente
 
-## Process Semantics
+## Semántica de Procesos
 
-SSE streams are full processes with their own PID. They integrate with the process system:
+Los streams SSE son procesos completos con su propio PID. Se integran con el sistema de procesos:
 
-- **Addressable** — Any process can send messages to a stream PID
-- **Monitorable** — Processes can monitor SSE streams for exit events
-- **Linkable** — SSE streams can be linked to other processes
-- **EXIT events** — When a stream closes, monitors receive exit notifications
+- **Direccionables** — Cualquier proceso puede enviar mensajes al PID de un stream
+- **Monitoreables** — Los procesos pueden monitorear streams SSE para eventos de salida
+- **Vinculables** — Los streams SSE pueden vincularse a otros procesos
+- **Eventos EXIT** — Cuando un stream se cierra, los monitores reciben notificaciones de salida
 
 ```lua
--- Send event to SSE client from any process
+-- Enviar evento al cliente SSE desde cualquier proceso
 process.send(stream_pid, "sse.message", {event = "update", value = 42})
 
--- Monitor an SSE stream
+-- Monitorear un stream SSE
 process.monitor(stream_pid)
 ```
 
 <tip>
-The relay monitors the target process. If the target exits, the SSE stream closes automatically and the client receives a `done` event.
+El relay monitorea el proceso objetivo. Si el objetivo termina, el stream SSE se cierra automáticamente y el cliente recibe un evento `done`.
 </tip>
 
-## Configuration
+## Configuración
 
-Add as post-match middleware on a router:
+Agregar como middleware post-match en un router:
 
 ```yaml
 - name: sse_router
@@ -74,17 +74,17 @@ Add as post-match middleware on a router:
     sserelay.allowed.origins: "https://app.example.com"
 ```
 
-| Option | Description |
+| Opción | Descripción |
 |--------|-------------|
-| `sserelay.allowed.origins` | Comma-separated allowed origins (supports wildcards) |
+| `sserelay.allowed.origins` | Orígenes permitidos separados por comas (admite comodines) |
 
 <note>
-If no origins are configured, only same-origin requests are allowed.
+Si no se configuran orígenes, solo se permiten solicitudes del mismo origen.
 </note>
 
-## Handler Setup
+## Configuración del Handler
 
-The HTTP handler spawns a process and configures the relay:
+El handler HTTP genera un proceso y configura el relay:
 
 ```lua
 local http = require("http")
@@ -93,10 +93,10 @@ local json = require("json")
 local function handler()
     local res = http.response()
 
-    -- Spawn handler process
+    -- Generar proceso handler
     local pid = process.spawn("app.sse:handler", "app:processes")
 
-    -- Configure relay
+    -- Configurar relay
     res:set_header("X-SSE-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "sse.message",
@@ -108,62 +108,62 @@ local function handler()
 end
 ```
 
-### Relay Config Fields
+### Campos de Configuración del Relay
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `target_pid` | string | — | Process PID to receive messages (omit for detached mode) |
-| `message_topic` | string | `sse.message` | Topic filter for forwarded events |
-| `heartbeat_interval` | duration | `30s` | Heartbeat frequency (e.g. `30s`, `1m`) |
-| `idle_timeout` | duration | — | Close stream after inactivity |
-| `hard_timeout` | duration | — | Close stream after absolute duration |
-| `metadata` | object | — | Attached to join/leave/heartbeat messages |
+| Campo | Tipo | Predeterminado | Descripción |
+|-------|------|----------------|-------------|
+| `target_pid` | string | — | PID del proceso que recibe los mensajes (omitir para modo desacoplado) |
+| `message_topic` | string | `sse.message` | Filtro de tópico para eventos reenviados |
+| `heartbeat_interval` | duration | `30s` | Frecuencia de heartbeat (ej. `30s`, `1m`) |
+| `idle_timeout` | duration | — | Cerrar stream tras inactividad |
+| `hard_timeout` | duration | — | Cerrar stream tras duración absoluta |
+| `metadata` | object | — | Adjuntado a mensajes de join/leave/heartbeat |
 
-## Managed vs Detached Mode
+## Modo Gestionado vs Desacoplado
 
-### Managed Mode
+### Modo Gestionado
 
-When `target_pid` is set, the relay operates in managed mode:
+Cuando `target_pid` está establecido, el relay opera en modo gestionado:
 
-- Monitors the target process
-- Sends `sse.join` on connect and `sse.leave` on disconnect
-- Closes the stream automatically if the target exits
+- Monitorea el proceso objetivo
+- Envía `sse.join` al conectarse y `sse.leave` al desconectarse
+- Cierra el stream automáticamente si el objetivo termina
 
-### Detached Mode
+### Modo Desacoplado
 
-When `target_pid` is omitted, the relay starts in detached mode:
+Cuando `target_pid` se omite, el relay arranca en modo desacoplado:
 
-- Emits a `ready` event to the client with `stream_pid` and `message_topic`
-- No process is monitored initially
-- A process can attach later by sending an `sse.control` message
+- Emite un evento `ready` al cliente con `stream_pid` y `message_topic`
+- No se monitorea ningún proceso inicialmente
+- Un proceso puede vincularse después enviando un mensaje `sse.control`
 
 ```lua
--- Detached setup: no target_pid
+-- Configuración desacoplada: sin target_pid
 res:set_header("X-SSE-Relay", json.encode({
     heartbeat_interval = "30s"
 }))
 ```
 
-The client receives a `ready` event:
+El cliente recibe un evento `ready`:
 
 ```json
 {"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
 ```
 
-## Message Topics
+## Tópicos de Mensajes
 
-The relay uses these topics for communication between the stream and target process:
+El relay usa estos tópicos para la comunicación entre el stream y el proceso objetivo:
 
-| Topic | Direction | When | Payload |
-|-------|-----------|------|---------|
-| `sse.join` | stream → target | Client connects | `client_pid`, `metadata` |
-| `sse.message` | target → stream | Default event topic | Forwarded as SSE event |
-| `sse.heartbeat` | stream → target | Periodic (if configured) | `client_pid`, `uptime`, `message_count` |
-| `sse.leave` | stream → target | Client disconnects | `client_pid`, `metadata` |
-| `sse.control` | any → stream | Control command | Relay config fields |
-| `sse.close` | any → stream | Force close | Optional reason string |
+| Tópico | Dirección | Cuándo | Carga útil |
+|--------|-----------|--------|------------|
+| `sse.join` | stream → objetivo | El cliente se conecta | `client_pid`, `metadata` |
+| `sse.message` | objetivo → stream | Tópico de evento por defecto | Reenviado como evento SSE |
+| `sse.heartbeat` | stream → objetivo | Periódico (si está configurado) | `client_pid`, `uptime`, `message_count` |
+| `sse.leave` | stream → objetivo | El cliente se desconecta | `client_pid`, `metadata` |
+| `sse.control` | cualquiera → stream | Comando de control | Campos de configuración del relay |
+| `sse.close` | cualquiera → stream | Cierre forzado | Cadena opcional de motivo |
 
-## Receiving in Target Process
+## Recepción en el Proceso Objetivo
 
 ```lua
 local json = require("json")
@@ -182,7 +182,7 @@ local function handler()
             local client_pid = data.client_pid
 
         elseif topic == "sse.heartbeat" then
-            -- Periodic health check
+            -- Verificación periódica de salud
 
         elseif topic == "sse.leave" then
             cleanup(data.client_pid)
@@ -191,26 +191,26 @@ local function handler()
 end
 ```
 
-## Sending Events
+## Envío de Eventos
 
-Send events to the client by messaging the stream PID:
+Envíe eventos al cliente enviando mensajes al PID del stream:
 
 ```lua
--- Send on the default message topic
+-- Enviar en el tópico de mensaje por defecto
 process.send(stream_pid, "sse.message", {
     event = "update",
     value = 42
 })
 
--- Force close the stream
+-- Forzar cierre del stream
 process.send(stream_pid, "sse.close", "session expired")
 ```
 
-Events sent on the configured `message_topic` are forwarded to the client as SSE events. The topic name becomes the SSE event name.
+Los eventos enviados en el `message_topic` configurado se reenvían al cliente como eventos SSE. El nombre del tópico se convierte en el nombre del evento SSE.
 
-## Connection Transfer
+## Transferencia de Conexión
 
-Send a control message to change the target process, topic filter, or timeouts dynamically:
+Envíe un mensaje de control para cambiar dinámicamente el proceso objetivo, el filtro de tópico o los timeouts:
 
 ```lua
 process.send(stream_pid, "sse.control", {
@@ -220,10 +220,10 @@ process.send(stream_pid, "sse.control", {
 })
 ```
 
-When the target changes, the relay sends `sse.leave` to the old target and `sse.join` to the new one. Set `target_pid` to an empty string to detach without reattaching.
+Cuando cambia el objetivo, el relay envía `sse.leave` al objetivo anterior y `sse.join` al nuevo. Establezca `target_pid` en una cadena vacía para desvincular sin volver a vincular.
 
-## See Also
+## Véase También
 
-- [Middleware](http/middleware.md) — Middleware configuration
-- [WebSocket Relay](http/websocket-relay.md) — WebSocket equivalent
-- [Process](lua/core/process.md) — Process messaging
+- [Middleware](http/middleware.md) — Configuración de middleware
+- [WebSocket Relay](http/websocket-relay.md) — Equivalente WebSocket
+- [Process](lua/core/process.md) — Mensajería de procesos

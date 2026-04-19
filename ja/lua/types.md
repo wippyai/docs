@@ -1,67 +1,67 @@
-# Type System
+# 型システム
 
-> **Experimental.** Some limitations are expected.
+> **試験的。** 一部の制限が予想されます。
 
-Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
+Wippy には、フローセンシティブなチェックを伴う段階的型システムが含まれています。型はデフォルトで非 nullable です。
 
-## Primitives
+## プリミティブ
 
 ```lua
 local n: number = 3.14
-local i: integer = 42         -- integer is subtype of number
+local i: integer = 42         -- integer は number のサブタイプ
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- explicit dynamic (opt-out of checking)
-local u: unknown = something  -- must narrow before use
+local a: any = "anything"     -- 明示的な動的型（チェックを無効化）
+local u: unknown = something  -- 使用前にナローイングが必要
 ```
 
 ### any vs unknown
 
 ```lua
--- any: opt-out of type checking
+-- any: 型チェックを無効化
 local a: any = get_data()
-a.foo.bar.baz()              -- no error, may crash at runtime
+a.foo.bar.baz()              -- エラーなし、ランタイムでクラッシュする可能性がある
 
--- unknown: safe unknown, must narrow before use
+-- unknown: 安全な未知の型、使用前にナローイングが必要
 local u: unknown = get_data()
-u.foo                        -- ERROR: cannot access property of unknown
+u.foo                        -- エラー: unknown のプロパティにはアクセスできません
 if type(u) == "table" then
-    -- u narrowed to table here
+    -- ここで u は table にナローイングされる
 end
 ```
 
-## Nil Safety
+## nil 安全性
 
-Types are non-nullable by default. Use `?` for optional values:
+型はデフォルトで非 nullable です。任意の値には `?` を使用します：
 
 ```lua
-local x: number = nil         -- ERROR: nil not assignable to number
-local y: number? = nil        -- OK: number? means "number or nil"
+local x: number = nil         -- エラー: nil は number に代入できない
+local y: number? = nil        -- OK: number? は「number または nil」を意味する
 local z: number? = 42         -- OK
 ```
 
-### Control Flow Narrowing
+### 制御フローのナローイング
 
-The type checker tracks control flow:
+型チェッカーは制御フローを追跡します：
 
 ```lua
 local function process(x: number?): number
     if x ~= nil then
-        return x              -- x is number here
+        return x              -- ここで x は number
     end
     return 0
 end
 
--- Early return pattern
+-- 早期リターンパターン
 local user, err = get_user(123)
 if err then return nil, err end
--- user narrowed to non-nil here
+-- ここで user は非 nil にナローイングされる
 
--- Or default
+-- またはデフォルト値
 local val = get_value() or 0  -- val: number
 ```
 
-## Union Types
+## ユニオン型
 
 ```lua
 local val: number | string = get_value()
@@ -73,39 +73,39 @@ else
 end
 ```
 
-### Literal Types
+### リテラル型
 
 ```lua
 type Status = "pending" | "active" | "done"
 
 local s: Status = "pending"   -- OK
-local s: Status = "invalid"   -- ERROR
+local s: Status = "invalid"   -- エラー
 ```
 
-## Function Types
+## 関数型
 
 ```lua
 local function add(a: number, b: number): number
     return a + b
 end
 
--- Multiple returns
+-- 複数の戻り値
 local function div_mod(a: number, b: number): (number, number)
     return math.floor(a / b), a % b
 end
 
--- Error returns (Lua idiom)
+-- エラー戻り値（Lua のイディオム）
 local function fetch(url: string): (string?, error?)
-    -- returns (data, nil) or (nil, error)
+    -- (data, nil) または (nil, error) を返す
 end
 
--- First-class function types
+-- ファーストクラスの関数型
 local double: (number) -> number = function(x: number): number
     return x * 2
 end
 ```
 
-### Variadic Functions
+### 可変長引数関数
 
 ```lua
 local function sum(...: number): number
@@ -117,7 +117,7 @@ local function sum(...: number): number
 end
 ```
 
-## Record Types
+## レコード型
 
 ```lua
 type User = {name: string, age: number}
@@ -125,7 +125,7 @@ type User = {name: string, age: number}
 local u: User = {name = "alice", age = 25}
 ```
 
-### Optional Fields
+### オプションフィールド
 
 ```lua
 type Config = {
@@ -138,7 +138,7 @@ type Config = {
 local cfg: Config = {host = "localhost", port = 8080}  -- OK
 ```
 
-## Generics
+## ジェネリクス
 
 ```lua
 local function identity<T>(x: T): T
@@ -149,7 +149,7 @@ local n: number = identity(42)
 local s: string = identity("hello")
 ```
 
-### Constrained Generics
+### 制約付きジェネリクス
 
 ```lua
 type HasName = {name: string}
@@ -159,12 +159,12 @@ local function greet<T: HasName>(obj: T): string
 end
 
 greet({name = "Alice"})       -- OK
-greet({age = 30})             -- ERROR: missing 'name'
+greet({age = 30})             -- エラー: 'name' がない
 ```
 
-## Intersection Types
+## インターセクション型
 
-Combine multiple types:
+複数の型を組み合わせます：
 
 ```lua
 type Named = {name: string}
@@ -174,7 +174,7 @@ type Person = Named & Aged
 local p: Person = {name = "Alice", age = 30}
 ```
 
-## Tagged Unions
+## タグ付きユニオン
 
 ```lua
 type Result<T, E> =
@@ -197,9 +197,9 @@ local function render(state: LoadState): string
 end
 ```
 
-## The never Type
+## never 型
 
-`never` is the bottom type - no values exist:
+`never` はボトム型です — 値は存在しません：
 
 ```lua
 function fail(msg: string): never
@@ -207,58 +207,58 @@ function fail(msg: string): never
 end
 ```
 
-## Error Handling Pattern
+## エラー処理パターン
 
-The checker understands the Lua error idiom:
+チェッカーは Lua のエラーイディオムを理解します：
 
 ```lua
 local value, err = call()
 if err then
-    -- value is nil here
+    -- ここで value は nil
     return nil, err
 end
--- value is non-nil here, err is nil
+-- ここで value は非 nil、err は nil
 print(value)
 ```
 
-## Non-Nil Assertion
+## 非 nil アサーション
 
-Use `!` to assert an expression is non-nil:
+`!` を使用して式が非 nil であることをアサートします：
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- assert user is non-nil
+local name = user!.name              -- user が非 nil であることをアサート
 ```
 
-If the value is nil at runtime, an error is raised. Use when you know a value cannot be nil but the type checker cannot prove it.
+ランタイム時に値が nil の場合、エラーが発生します。値が nil でないことが分かっているが、型チェッカーがそれを証明できない場合に使用します。
 
-## Type Casts
+## 型キャスト
 
-### Safe Cast (Validation)
+### 安全なキャスト（検証）
 
-Call a type as a function to validate and cast:
+検証してキャストするために、型を関数として呼び出します：
 
 ```lua
 local data: any = get_json()
-local user = User(data)              -- validates and returns User
-local name = user.name               -- safe field access
+local user = User(data)              -- 検証して User を返す
+local name = user.name               -- 安全なフィールドアクセス
 ```
 
-Works with primitives and custom types:
+プリミティブ型とカスタム型の両方で動作します：
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- cast to string
-local n = integer(x)                 -- cast to integer
-local b = boolean(x)                 -- cast to boolean
+local s = string(x)                  -- string にキャスト
+local n = integer(x)                 -- integer にキャスト
+local b = boolean(x)                 -- boolean にキャスト
 
 type Point = {x: number, y: number}
-local p = Point(data)                -- validates record structure
+local p = Point(data)                -- レコード構造を検証する
 ```
 
-### Type:is() Method
+### Type:is() メソッド
 
-Validate without throwing, returns `(value, nil)` or `(nil, error)`:
+スローせずに検証し、`(value, nil)` または `(nil, error)` を返します：
 
 ```lua
 type Point = {x: number, y: number}
@@ -266,37 +266,37 @@ local data: any = get_input()
 
 local p, err = Point:is(data)
 if p then
-    local sum = p.x + p.y            -- p is valid Point
+    local sum = p.x + p.y            -- p は有効な Point
 else
-    return nil, err                  -- validation failed
+    return nil, err                  -- 検証失敗
 end
 ```
 
-The result narrows in conditionals:
+結果は条件文内でナローイングされます：
 
 ```lua
 if Point:is(data) then
-    local p: Point = data            -- data narrowed to Point
+    local p: Point = data            -- data は Point にナローイングされる
 end
 ```
 
-### Unsafe Cast
+### 安全でないキャスト
 
-Use `::` or `as` for unchecked casts:
+チェックなしのキャストには `::` または `as` を使用します：
 
 ```lua
 local data: any = get_data()
-local user = data :: User            -- no runtime check
-local user = data as User            -- same as ::
+local user = data :: User            -- ランタイムチェックなし
+local user = data as User            -- :: と同じ
 ```
 
-Use sparingly. Unsafe casts bypass validation and can cause runtime errors if the value doesn't match the type.
+控えめに使用してください。安全でないキャストは検証をバイパスし、値が型に一致しない場合にランタイムエラーを引き起こす可能性があります。
 
-## Type Reflection
+## 型のリフレクション
 
-Types are first-class values with introspection methods.
+型はイントロスペクションメソッドを持つファーストクラスの値です。
 
-### Kind and Name
+### 種別と名前
 
 ```lua
 print(Number:kind())                 -- "number"
@@ -304,9 +304,9 @@ print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
 
-### Record Fields
+### レコードフィールド
 
-Iterate over record fields:
+レコードフィールドを反復処理します：
 
 ```lua
 type User = {name: string, age: number}
@@ -318,14 +318,14 @@ end
 -- age     number
 ```
 
-Access individual field types:
+個々のフィールド型へアクセスします：
 
 ```lua
-local nameType = User.name           -- type of 'name' field
+local nameType = User.name           -- 'name' フィールドの型
 print(nameType:kind())               -- "string"
 ```
 
-### Collection Types
+### コレクション型
 
 ```lua
 local arr: {number} = {1, 2, 3}
@@ -338,7 +338,7 @@ print(mapType:key():kind())          -- "string"
 print(mapType:val():kind())          -- "number"
 ```
 
-### Optional Types
+### オプション型
 
 ```lua
 local opt: number? = nil
@@ -347,7 +347,7 @@ print(optType:kind())                -- "optional"
 print(optType:inner():kind())        -- "number"
 ```
 
-### Union Types
+### ユニオン型
 
 ```lua
 type Status = "pending" | "active" | "done"
@@ -357,7 +357,7 @@ for variant in Status:variants() do
 end
 ```
 
-### Function Types
+### 関数型
 
 ```lua
 local fn: (number, string) -> boolean
@@ -369,15 +369,15 @@ end
 print(fnType:ret():kind())           -- "boolean"
 ```
 
-### Type Comparison
+### 型の比較
 
 ```lua
 print(Number == Number)              -- true
-print(Integer <= Number)             -- true (subtype)
-print(Integer < Number)              -- true (strict subtype)
+print(Integer <= Number)             -- true (サブタイプ)
+print(Integer < Number)              -- true (厳密なサブタイプ)
 ```
 
-### Types as Table Keys
+### テーブルキーとしての型
 
 ```lua
 local handlers = {}
@@ -388,53 +388,53 @@ local h = handlers[typeof(value)]
 if h then h() end
 ```
 
-## Type Annotations
+## 型注釈
 
-Add types to function signatures:
+関数シグネチャに型を追加します：
 
 ```lua
--- Parameter and return types
+-- パラメータと戻り値の型
 local function process(input: string): number
     return #input
 end
 
--- Local variable types
+-- ローカル変数の型
 local count: number = 0
 
--- Type aliases
+-- 型エイリアス
 type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
-## Type Validators
+## 型バリデータ
 
-Add runtime validation constraints to types using annotations:
+注釈を使用して型にランタイム検証制約を追加します：
 
 ```lua
--- Single validator
+-- 単一バリデータ
 local x: number @min(0) = 1
 
--- Multiple validators
+-- 複数バリデータ
 local x: number @min(0) @max(100) = 50
 
--- String pattern
+-- 文字列パターン
 local email: string @pattern("^.+@.+$") = "test@example.com"
 
--- No-arg validator
+-- 引数なしバリデータ
 local x: number @integer = 42
 ```
 
-### Built-in Validators
+### 組み込みバリデータ
 
-| Validator | Applies to | Example |
+| バリデータ | 適用対象 | 例 |
 |-----------|------------|---------|
 | `@min(n)` | number | `local x: number @min(0) = 1` |
 | `@max(n)` | number | `local x: number @max(100) = 50` |
-| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
-| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
+| `@min_len(n)` | string、配列 | `local s: string @min_len(1) = "hi"` |
+| `@max_len(n)` | string、配列 | `local s: string @max_len(10) = "hi"` |
 | `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
 
-### Record Field Validators
+### レコードフィールドバリデータ
 
 ```lua
 type User = {
@@ -443,61 +443,61 @@ type User = {
 }
 ```
 
-### Array Element Validators
+### 配列要素バリデータ
 
 ```lua
 local scores: {number @min(0) @max(100)} = {85, 90}
 ```
 
-### Union Member Validators
+### ユニオンメンバーバリデータ
 
 ```lua
 local id: number @min(1) | string @min_len(1) = 1
 ```
 
-## Variance Rules
+## 変性のルール
 
-| Position | Variance | Description |
+| 位置 | 変性 | 説明 |
 |----------|----------|-------------|
-| Readonly field | Covariant | Can use subtype |
-| Mutable field | Invariant | Must match exactly |
-| Function parameter | Contravariant | Can use supertype |
-| Function return | Covariant | Can use subtype |
+| 読み取り専用フィールド | 共変 | サブタイプを使用可能 |
+| ミュータブルフィールド | 不変 | 完全に一致する必要がある |
+| 関数パラメータ | 反変 | スーパータイプを使用可能 |
+| 関数戻り値 | 共変 | サブタイプを使用可能 |
 
-## Subtyping
+## サブタイピング
 
-- `integer` is a subtype of `number`
-- `never` is a subtype of all types
-- All types are subtypes of `any`
-- Union subtyping: `A` is subtype of `A | B`
+- `integer` は `number` のサブタイプ
+- `never` はすべての型のサブタイプ
+- すべての型は `any` のサブタイプ
+- ユニオンサブタイピング: `A` は `A | B` のサブタイプ
 
-## Gradual Adoption
+## 段階的な導入
 
-Add types incrementally - untyped code continues to work:
+型を段階的に追加します — 型のないコードは引き続き動作します：
 
 ```lua
--- Existing code works unchanged
+-- 既存のコードは変更なしで動作
 function old_function(x)
     return x + 1
 end
 
--- New code gets types
+-- 新しいコードに型を付ける
 function new_function(x: number): number
     return x + 1
 end
 ```
 
-Start by adding types to:
-1. Function signatures at API boundaries
-2. HTTP handlers and queue consumers
-3. Critical business logic
+以下の箇所から型を追加し始めます：
+1. API 境界の関数シグネチャ
+2. HTTP ハンドラとキューコンシューマ
+3. 重要なビジネスロジック
 
-## Type Checking
+## 型チェック
 
-Run the type checker:
+型チェッカーを実行します：
 
 ```bash
 wippy lint
 ```
 
-Reports type errors without executing code.
+コードを実行せずに型エラーをレポートします。

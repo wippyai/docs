@@ -1,17 +1,17 @@
 # Views
 
-The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages can be backed by Jet templates or external components (SPAs, micro-frontends).
+Модуль `wippy/views` предоставляет систему виртуальных страниц и компонентов с рендерингом шаблонов, управлением ресурсами и маппингом переменных окружения. Страницы могут опираться на Jet-шаблоны или внешние компоненты (SPA, микро-фронтенды).
 
-## Setup
+## Установка
 
-Add the module to your project:
+Добавьте модуль в проект:
 
 ```bash
 wippy add wippy/views
 wippy install
 ```
 
-Declare the dependency:
+Объявите зависимость:
 
 ```yaml
 version: "1.0"
@@ -29,14 +29,14 @@ entries:
         value: PUBLIC_API_URL
 ```
 
-| Parameter | Required | Default | Description |
+| Параметр | Обязательный | По умолчанию | Описание |
 |-----------|----------|---------|-------------|
-| `api_router` | yes | — | HTTP router for view API endpoints |
-| `api_url_env` | no | `PUBLIC_API_URL` | Env var containing the public API URL |
+| `api_router` | да | — | HTTP-роутер для API-эндпоинтов представлений |
+| `api_url_env` | нет | `PUBLIC_API_URL` | Переменная окружения с публичным URL API |
 
-## Template Pages
+## Шаблонные страницы
 
-Template pages render server-side using Jet templates:
+Шаблонные страницы рендерятся на сервере с помощью Jet-шаблонов:
 
 ```yaml
 entries:
@@ -60,48 +60,48 @@ entries:
         - contact_styles
 ```
 
-### Page Metadata
+### Метаданные страницы
 
-| Field | Type | Default | Description |
+| Поле | Тип | По умолчанию | Описание |
 |-------|------|---------|-------------|
-| `meta.type` | string | — | Must be `view.page` |
-| `meta.name` | string | entry name | Page identifier |
-| `meta.title` | string | — | Display title |
-| `meta.icon` | string | — | Icon identifier |
-| `meta.order` | number | `9999` | Sort order within group |
-| `meta.group` | string | — | Group category |
-| `meta.group_icon` | string | — | Group icon |
-| `meta.group_order` | number | `9999` | Group sort order |
-| `meta.group_placement` | string | `"default"` | Placement: `"default"`, `"sidebar"` |
-| `meta.secure` | boolean | `false` | Requires authentication |
-| `meta.public` | boolean | `false` | Publicly accessible |
-| `meta.announced` | boolean | `= public` | Show in navigation |
-| `meta.inline` | boolean | `false` | Hidden from UI |
-| `meta.content_type` | string | `text/html` | Response MIME type |
-| `meta.parent` | string | — | Parent page ID |
+| `meta.type` | string | — | Должно быть `view.page` |
+| `meta.name` | string | имя записи | Идентификатор страницы |
+| `meta.title` | string | — | Отображаемый заголовок |
+| `meta.icon` | string | — | Идентификатор иконки |
+| `meta.order` | number | `9999` | Порядок сортировки в группе |
+| `meta.group` | string | — | Категория группы |
+| `meta.group_icon` | string | — | Иконка группы |
+| `meta.group_order` | number | `9999` | Порядок сортировки группы |
+| `meta.group_placement` | string | `"default"` | Размещение: `"default"`, `"sidebar"` |
+| `meta.secure` | boolean | `false` | Требует аутентификации |
+| `meta.public` | boolean | `false` | Публично доступна |
+| `meta.announced` | boolean | `= public` | Показывать в навигации |
+| `meta.inline` | boolean | `false` | Скрыта из UI |
+| `meta.content_type` | string | `text/html` | MIME-тип ответа |
+| `meta.parent` | string | — | ID родительской страницы |
 
-### Template Data
+### Данные шаблона
 
-| Field | Description |
+| Поле | Описание |
 |-------|-------------|
-| `data.set` | Template set registry ID |
-| `data.data_func` | Function ID that returns page data |
-| `data.resources` | Array of resource registry IDs |
+| `data.set` | ID набора шаблонов в реестре |
+| `data.data_func` | ID функции, возвращающей данные страницы |
+| `data.resources` | Массив ID ресурсов в реестре |
 
-The `data_func` receives `{ params, query }` and returns a table that becomes the `data` context in the template.
+`data_func` получает `{ params, query }` и возвращает таблицу, которая становится контекстом `data` в шаблоне.
 
-### Rendering Pipeline
+### Конвейер рендеринга
 
-1. Load page from registry
-2. Check access (security)
-3. Call `data_func` if defined
-4. Collect resources: globals + template set resources + page-specific resources
-5. Load environment variables
-6. Render Jet template with context: `{ data, resources, query_params, route_params, env }`
+1. Загрузить страницу из реестра
+2. Проверить доступ (security)
+3. Вызвать `data_func`, если определена
+4. Собрать ресурсы: глобальные + ресурсы набора шаблонов + ресурсы страницы
+5. Загрузить переменные окружения
+6. Отрендерить Jet-шаблон с контекстом: `{ data, resources, query_params, route_params, env }`
 
-## Component Pages
+## Компонентные страницы
 
-Component pages point to external applications (SPAs, micro-frontends):
+Компонентные страницы указывают на внешние приложения (SPA, микро-фронтенды):
 
 ```yaml
 entries:
@@ -124,37 +124,37 @@ entries:
         tailwind_config: true
 ```
 
-The API returns a component descriptor with the base URL and proxy configuration. The frontend renders the component in an iframe or inline.
+API возвращает дескриптор компонента с базовым URL и конфигурацией прокси. Фронтенд рендерит компонент в iframe или inline.
 
-### Component Fields
+### Поля компонента
 
-| Field | Type | Default | Description |
+| Поле | Тип | По умолчанию | Описание |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | Public URL of the component |
-| `meta.entry_point` | string | `index.html` (pages), `index.js` (components) | Entry file |
+| `meta.url` | string | — | Публичный URL компонента |
+| `meta.entry_point` | string | `index.html` (страницы), `index.js` (компоненты) | Файл точки входа |
 
-### Proxy Configuration
+### Конфигурация прокси
 
-The proxy controls what CSS and behavior is injected into the component:
+Прокси контролирует, какие CSS и поведение внедряются в компонент:
 
-| Option | Default | Description |
+| Опция | По умолчанию | Описание |
 |--------|---------|-------------|
-| `proxy.enabled` | `true` | Enable proxy wrapper |
-| `proxy.css.fonts` | `true` | Inject font styles |
-| `proxy.css.theme_config` | `true` | Inject theme variables |
-| `proxy.css.iframe` | `true` | Iframe-specific styles |
-| `proxy.css.prime_vue` | `false` | PrimeVue component styles |
-| `proxy.css.markdown` | `false` | Markdown rendering styles |
-| `proxy.css.custom_css` | `false` | Custom CSS |
-| `proxy.css.custom_variables` | `false` | Custom CSS variables |
-| `proxy.tailwind_config` | `false` | Inject Tailwind config |
-| `proxy.resize_observer` | `true` | Auto-resize iframe |
-| `proxy.prevent_link_clicks` | `true` | Intercept link navigation |
-| `proxy.iconify_icons` | `false` | Load Iconify icon set |
+| `proxy.enabled` | `true` | Включить обёртку прокси |
+| `proxy.css.fonts` | `true` | Внедрять стили шрифтов |
+| `proxy.css.theme_config` | `true` | Внедрять переменные темы |
+| `proxy.css.iframe` | `true` | Стили, специфичные для iframe |
+| `proxy.css.prime_vue` | `false` | Стили компонентов PrimeVue |
+| `proxy.css.markdown` | `false` | Стили рендеринга Markdown |
+| `proxy.css.custom_css` | `false` | Пользовательский CSS |
+| `proxy.css.custom_variables` | `false` | Пользовательские CSS-переменные |
+| `proxy.tailwind_config` | `false` | Внедрять конфигурацию Tailwind |
+| `proxy.resize_observer` | `true` | Авторесайз iframe |
+| `proxy.prevent_link_clicks` | `true` | Перехватывать навигацию по ссылкам |
+| `proxy.iconify_icons` | `false` | Загружать набор иконок Iconify |
 
-## View Components
+## View-компоненты
 
-Standalone components that are not pages (no navigation entry):
+Самостоятельные компоненты, не являющиеся страницами (без записи в навигации):
 
 ```yaml
 entries:
@@ -170,11 +170,11 @@ entries:
         enabled: true
 ```
 
-Components use `meta.type: view.component` instead of `view.page`. They default to `index.js` as entry point.
+Компоненты используют `meta.type: view.component` вместо `view.page`. По умолчанию точкой входа является `index.js`.
 
-## Resources
+## Ресурсы
 
-Resources are CSS, JS, and font files associated with pages:
+Ресурсы — это файлы CSS, JS и шрифтов, связанные со страницами:
 
 ```yaml
 entries:
@@ -200,37 +200,37 @@ entries:
       defer: true
 ```
 
-### Resource Fields
+### Поля ресурса
 
-| Field | Type | Description |
+| Поле | Тип | Описание |
 |-------|------|-------------|
-| `meta.type` | string | Must be `view.resource` |
+| `meta.type` | string | Должно быть `view.resource` |
 | `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
-| `meta.order` | number | Sort order within type |
-| `meta.global` | boolean | Applied to all pages |
-| `meta.template_set` | string | Specific to a template set |
-| `meta.url` | string | Resource URL |
-| `meta.integrity` | string | SRI hash |
-| `meta.crossorigin` | string | `"anonymous"` or `"use-credentials"` |
+| `meta.order` | number | Порядок сортировки внутри типа |
+| `meta.global` | boolean | Применяется ко всем страницам |
+| `meta.template_set` | string | Специфичен для набора шаблонов |
+| `meta.url` | string | URL ресурса |
+| `meta.integrity` | string | SRI-хеш |
+| `meta.crossorigin` | string | `"anonymous"` или `"use-credentials"` |
 | `meta.media` | string | CSS media query |
-| `meta.defer` | boolean | Deferred script loading |
-| `meta.async` | boolean | Async script loading |
+| `meta.defer` | boolean | Отложенная загрузка скрипта |
+| `meta.async` | boolean | Асинхронная загрузка скрипта |
 
-### Resource Collection
+### Сбор ресурсов
 
-Resources are collected in three layers, merged in order:
+Ресурсы собираются в три слоя, объединяемых по порядку:
 
-1. **Global resources** — `global: true`, applied to all pages
-2. **Template set resources** — matched by `template_set` ID
-3. **Page resources** — listed in `data.resources` array
+1. **Глобальные ресурсы** — `global: true`, применяются ко всем страницам
+2. **Ресурсы набора шаблонов** — сопоставляются по ID `template_set`
+3. **Ресурсы страницы** — перечислены в массиве `data.resources`
 
-Within each layer, resources are grouped by `resource_type` and sorted by `order`.
+Внутри каждого слоя ресурсы группируются по `resource_type` и сортируются по `order`.
 
-## Environment Variable Mapping
+## Маппинг переменных окружения
 
-The env loader maps environment variables to template context keys through a priority-based system.
+Загрузчик env сопоставляет переменные окружения с ключами контекста шаблона через систему приоритетов.
 
-### Defining Mappings
+### Определение маппингов
 
 ```yaml
 entries:
@@ -246,22 +246,22 @@ entries:
         debug_mode: DEBUG_ENABLED
 ```
 
-Each mapping entry associates context keys (used in templates as `env.api_endpoint`) with environment variable names.
+Каждая запись маппинга связывает ключи контекста (используются в шаблонах как `env.api_endpoint`) с именами переменных окружения.
 
-### Priority System
+### Система приоритетов
 
-| Range | Category | Description |
+| Диапазон | Категория | Описание |
 |-------|----------|-------------|
-| 0–9 | Framework defaults | Built-in framework mappings |
-| 10–19 | System overrides | System-level configuration |
-| 20–29 | Application mappings | Application-specific mappings |
-| 30–100 | Environment overrides | Runtime overrides |
+| 0–9 | Значения по умолчанию фреймворка | Встроенные маппинги фреймворка |
+| 10–19 | Системные переопределения | Конфигурация системного уровня |
+| 20–29 | Прикладные маппинги | Маппинги, специфичные для приложения |
+| 30–100 | Переопределения окружения | Runtime-переопределения |
 
-Higher priority wins when multiple mappings define the same context key.
+Более высокий приоритет побеждает, если несколько маппингов определяют один и тот же ключ контекста.
 
-### Using in Templates
+### Использование в шаблонах
 
-Resolved environment values are available in the `env` context object:
+Разрешённые значения окружения доступны в объекте контекста `env`:
 
 ```html
 <script>
@@ -270,22 +270,22 @@ Resolved environment values are available in the `env` context object:
 </script>
 ```
 
-## HTTP API Endpoints
+## HTTP API эндпоинты
 
-The views module registers these endpoints on the configured router:
+Модуль views регистрирует следующие эндпоинты на настроенном роутере:
 
-| Method | Path | Description |
+| Метод | Путь | Описание |
 |--------|------|-------------|
-| GET | `/pages/list` | List accessible, announced pages |
-| GET | `/components/list` | List view components |
-| GET | `/pages/content/{id}` | Render page or return component descriptor |
-| GET | `/pages/public/{id}` | Get component base URL |
+| GET | `/pages/list` | Список доступных, объявленных страниц |
+| GET | `/components/list` | Список view-компонентов |
+| GET | `/pages/content/{id}` | Отрендерить страницу или вернуть дескриптор компонента |
+| GET | `/pages/public/{id}` | Получить базовый URL компонента |
 
-### Render Response
+### Ответ рендеринга
 
-For template pages, returns rendered HTML with the page's `content_type`.
+Для шаблонных страниц возвращается отрендеренный HTML с `content_type` страницы.
 
-For component pages, returns a descriptor:
+Для компонентных страниц возвращается дескриптор:
 
 ```json
 {
@@ -310,29 +310,29 @@ For component pages, returns a descriptor:
 }
 ```
 
-## Access Control
+## Контроль доступа
 
-Pages with `secure: true` require authentication. The page registry checks `security.can("view", "page:<page_id>")` against the current actor and scope.
+Страницы с `secure: true` требуют аутентификации. Реестр страниц проверяет `security.can("view", "page:<page_id>")` относительно текущего актора и области.
 
-Non-secure pages are always accessible. The `announced` flag controls visibility in navigation listings without affecting access.
+Незащищённые страницы всегда доступны. Флаг `announced` контролирует видимость в списках навигации, не влияя на доступ.
 
-## ID Qualification
+## Квалификация ID
 
-Relative IDs in page definitions are qualified with the entry's namespace:
+Относительные ID в определениях страниц квалифицируются пространством имён записи:
 
 ```yaml
-# In namespace "app"
+# В пространстве имён "app"
 data:
-  data_func: my_data_func       # resolves to app:my_data_func
-  set: templates:default         # stays as templates:default (already qualified)
+  data_func: my_data_func       # разрешается в app:my_data_func
+  set: templates:default         # остаётся как templates:default (уже квалифицирован)
   resources:
-    - page_styles                # resolves to app:page_styles
+    - page_styles                # разрешается в app:page_styles
 ```
 
-## See Also
+## См. также
 
-- [Facade](facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](../system/template.md) - Jet template engine
-- [Security](../system/security.md) - Security actors and access control
-- [Environment](../system/env.md) - Environment variable storage
-- [Framework Overview](overview.md) - Framework module usage
+- [Facade](facade.md) — Iframe-фасад фронтенда и боковая панель навигации
+- [Template](../system/template.md) — Движок Jet-шаблонов
+- [Security](../system/security.md) — Акторы безопасности и контроль доступа
+- [Environment](../system/env.md) — Хранение переменных окружения
+- [Обзор фреймворка](overview.md) — Использование модулей фреймворка

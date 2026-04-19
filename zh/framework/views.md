@@ -1,17 +1,17 @@
 # Views
 
-The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages can be backed by Jet templates or external components (SPAs, micro-frontends).
+`wippy/views` 模块提供了一个虚拟页面和组件系统，具有模板渲染、资源管理和环境变量映射功能。页面可以由 Jet 模板支持，或由外部组件（SPA、微前端）支持。
 
-## Setup
+## 安装
 
-Add the module to your project:
+将模块添加到你的项目：
 
 ```bash
 wippy add wippy/views
 wippy install
 ```
 
-Declare the dependency:
+声明依赖：
 
 ```yaml
 version: "1.0"
@@ -29,14 +29,14 @@ entries:
         value: PUBLIC_API_URL
 ```
 
-| Parameter | Required | Default | Description |
+| 参数 | 必填 | 默认值 | 说明 |
 |-----------|----------|---------|-------------|
-| `api_router` | yes | — | HTTP router for view API endpoints |
-| `api_url_env` | no | `PUBLIC_API_URL` | Env var containing the public API URL |
+| `api_router` | 是 | — | 用于视图 API 端点的 HTTP 路由器 |
+| `api_url_env` | 否 | `PUBLIC_API_URL` | 包含公共 API URL 的环境变量 |
 
-## Template Pages
+## 模板页面
 
-Template pages render server-side using Jet templates:
+模板页面使用 Jet 模板在服务端渲染：
 
 ```yaml
 entries:
@@ -60,48 +60,48 @@ entries:
         - contact_styles
 ```
 
-### Page Metadata
+### 页面元数据
 
-| Field | Type | Default | Description |
+| 字段 | 类型 | 默认值 | 说明 |
 |-------|------|---------|-------------|
-| `meta.type` | string | — | Must be `view.page` |
-| `meta.name` | string | entry name | Page identifier |
-| `meta.title` | string | — | Display title |
-| `meta.icon` | string | — | Icon identifier |
-| `meta.order` | number | `9999` | Sort order within group |
-| `meta.group` | string | — | Group category |
-| `meta.group_icon` | string | — | Group icon |
-| `meta.group_order` | number | `9999` | Group sort order |
-| `meta.group_placement` | string | `"default"` | Placement: `"default"`, `"sidebar"` |
-| `meta.secure` | boolean | `false` | Requires authentication |
-| `meta.public` | boolean | `false` | Publicly accessible |
-| `meta.announced` | boolean | `= public` | Show in navigation |
-| `meta.inline` | boolean | `false` | Hidden from UI |
-| `meta.content_type` | string | `text/html` | Response MIME type |
-| `meta.parent` | string | — | Parent page ID |
+| `meta.type` | string | — | 必须为 `view.page` |
+| `meta.name` | string | 入口名 | 页面标识符 |
+| `meta.title` | string | — | 显示标题 |
+| `meta.icon` | string | — | 图标标识符 |
+| `meta.order` | number | `9999` | 组内排序 |
+| `meta.group` | string | — | 分组类别 |
+| `meta.group_icon` | string | — | 组图标 |
+| `meta.group_order` | number | `9999` | 组排序 |
+| `meta.group_placement` | string | `"default"` | 放置位置：`"default"`、`"sidebar"` |
+| `meta.secure` | boolean | `false` | 需要认证 |
+| `meta.public` | boolean | `false` | 公开可访问 |
+| `meta.announced` | boolean | `= public` | 在导航中显示 |
+| `meta.inline` | boolean | `false` | 从 UI 隐藏 |
+| `meta.content_type` | string | `text/html` | 响应 MIME 类型 |
+| `meta.parent` | string | — | 父页面 ID |
 
-### Template Data
+### 模板数据
 
-| Field | Description |
+| 字段 | 说明 |
 |-------|-------------|
-| `data.set` | Template set registry ID |
-| `data.data_func` | Function ID that returns page data |
-| `data.resources` | Array of resource registry IDs |
+| `data.set` | 模板集注册表 ID |
+| `data.data_func` | 返回页面数据的函数 ID |
+| `data.resources` | 资源注册表 ID 数组 |
 
-The `data_func` receives `{ params, query }` and returns a table that becomes the `data` context in the template.
+`data_func` 接收 `{ params, query }` 并返回一个表，该表成为模板中的 `data` 上下文。
 
-### Rendering Pipeline
+### 渲染管道
 
-1. Load page from registry
-2. Check access (security)
-3. Call `data_func` if defined
-4. Collect resources: globals + template set resources + page-specific resources
-5. Load environment variables
-6. Render Jet template with context: `{ data, resources, query_params, route_params, env }`
+1. 从注册表加载页面
+2. 检查访问权限（安全）
+3. 如果定义了 `data_func`，则调用它
+4. 收集资源：全局 + 模板集资源 + 页面特定资源
+5. 加载环境变量
+6. 使用上下文渲染 Jet 模板：`{ data, resources, query_params, route_params, env }`
 
-## Component Pages
+## 组件页面
 
-Component pages point to external applications (SPAs, micro-frontends):
+组件页面指向外部应用程序（SPA、微前端）：
 
 ```yaml
 entries:
@@ -124,37 +124,37 @@ entries:
         tailwind_config: true
 ```
 
-The API returns a component descriptor with the base URL and proxy configuration. The frontend renders the component in an iframe or inline.
+API 返回带有基础 URL 和代理配置的组件描述符。前端在 iframe 中或内联渲染组件。
 
-### Component Fields
+### 组件字段
 
-| Field | Type | Default | Description |
+| 字段 | 类型 | 默认值 | 说明 |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | Public URL of the component |
-| `meta.entry_point` | string | `index.html` (pages), `index.js` (components) | Entry file |
+| `meta.url` | string | — | 组件的公共 URL |
+| `meta.entry_point` | string | `index.html`（页面）、`index.js`（组件） | 入口文件 |
 
-### Proxy Configuration
+### 代理配置
 
-The proxy controls what CSS and behavior is injected into the component:
+代理控制注入到组件中的 CSS 和行为：
 
-| Option | Default | Description |
+| 选项 | 默认值 | 说明 |
 |--------|---------|-------------|
-| `proxy.enabled` | `true` | Enable proxy wrapper |
-| `proxy.css.fonts` | `true` | Inject font styles |
-| `proxy.css.theme_config` | `true` | Inject theme variables |
-| `proxy.css.iframe` | `true` | Iframe-specific styles |
-| `proxy.css.prime_vue` | `false` | PrimeVue component styles |
-| `proxy.css.markdown` | `false` | Markdown rendering styles |
-| `proxy.css.custom_css` | `false` | Custom CSS |
-| `proxy.css.custom_variables` | `false` | Custom CSS variables |
-| `proxy.tailwind_config` | `false` | Inject Tailwind config |
-| `proxy.resize_observer` | `true` | Auto-resize iframe |
-| `proxy.prevent_link_clicks` | `true` | Intercept link navigation |
-| `proxy.iconify_icons` | `false` | Load Iconify icon set |
+| `proxy.enabled` | `true` | 启用代理包装器 |
+| `proxy.css.fonts` | `true` | 注入字体样式 |
+| `proxy.css.theme_config` | `true` | 注入主题变量 |
+| `proxy.css.iframe` | `true` | iframe 专用样式 |
+| `proxy.css.prime_vue` | `false` | PrimeVue 组件样式 |
+| `proxy.css.markdown` | `false` | Markdown 渲染样式 |
+| `proxy.css.custom_css` | `false` | 自定义 CSS |
+| `proxy.css.custom_variables` | `false` | 自定义 CSS 变量 |
+| `proxy.tailwind_config` | `false` | 注入 Tailwind 配置 |
+| `proxy.resize_observer` | `true` | 自动调整 iframe 大小 |
+| `proxy.prevent_link_clicks` | `true` | 拦截链接导航 |
+| `proxy.iconify_icons` | `false` | 加载 Iconify 图标集 |
 
-## View Components
+## 视图组件
 
-Standalone components that are not pages (no navigation entry):
+不是页面的独立组件（无导航入口）：
 
 ```yaml
 entries:
@@ -170,11 +170,11 @@ entries:
         enabled: true
 ```
 
-Components use `meta.type: view.component` instead of `view.page`. They default to `index.js` as entry point.
+组件使用 `meta.type: view.component` 而不是 `view.page`。它们默认以 `index.js` 作为入口点。
 
-## Resources
+## 资源
 
-Resources are CSS, JS, and font files associated with pages:
+资源是与页面关联的 CSS、JS 和字体文件：
 
 ```yaml
 entries:
@@ -200,37 +200,37 @@ entries:
       defer: true
 ```
 
-### Resource Fields
+### 资源字段
 
-| Field | Type | Description |
+| 字段 | 类型 | 说明 |
 |-------|------|-------------|
-| `meta.type` | string | Must be `view.resource` |
-| `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
-| `meta.order` | number | Sort order within type |
-| `meta.global` | boolean | Applied to all pages |
-| `meta.template_set` | string | Specific to a template set |
-| `meta.url` | string | Resource URL |
-| `meta.integrity` | string | SRI hash |
-| `meta.crossorigin` | string | `"anonymous"` or `"use-credentials"` |
-| `meta.media` | string | CSS media query |
-| `meta.defer` | boolean | Deferred script loading |
-| `meta.async` | boolean | Async script loading |
+| `meta.type` | string | 必须为 `view.resource` |
+| `meta.resource_type` | string | `"style"`、`"script"`、`"font"` |
+| `meta.order` | number | 类型内的排序 |
+| `meta.global` | boolean | 应用于所有页面 |
+| `meta.template_set` | string | 特定于一个模板集 |
+| `meta.url` | string | 资源 URL |
+| `meta.integrity` | string | SRI 哈希 |
+| `meta.crossorigin` | string | `"anonymous"` 或 `"use-credentials"` |
+| `meta.media` | string | CSS 媒体查询 |
+| `meta.defer` | boolean | 延迟脚本加载 |
+| `meta.async` | boolean | 异步脚本加载 |
 
-### Resource Collection
+### 资源收集
 
-Resources are collected in three layers, merged in order:
+资源分三层收集，按顺序合并：
 
-1. **Global resources** — `global: true`, applied to all pages
-2. **Template set resources** — matched by `template_set` ID
-3. **Page resources** — listed in `data.resources` array
+1. **全局资源** —— `global: true`，应用于所有页面
+2. **模板集资源** —— 通过 `template_set` ID 匹配
+3. **页面资源** —— 列在 `data.resources` 数组中
 
-Within each layer, resources are grouped by `resource_type` and sorted by `order`.
+在每一层内，资源按 `resource_type` 分组并按 `order` 排序。
 
-## Environment Variable Mapping
+## 环境变量映射
 
-The env loader maps environment variables to template context keys through a priority-based system.
+env 加载器通过基于优先级的系统将环境变量映射到模板上下文键。
 
-### Defining Mappings
+### 定义映射
 
 ```yaml
 entries:
@@ -246,22 +246,22 @@ entries:
         debug_mode: DEBUG_ENABLED
 ```
 
-Each mapping entry associates context keys (used in templates as `env.api_endpoint`) with environment variable names.
+每个映射入口将上下文键（在模板中作为 `env.api_endpoint` 使用）与环境变量名相关联。
 
-### Priority System
+### 优先级系统
 
-| Range | Category | Description |
+| 范围 | 类别 | 说明 |
 |-------|----------|-------------|
-| 0–9 | Framework defaults | Built-in framework mappings |
-| 10–19 | System overrides | System-level configuration |
-| 20–29 | Application mappings | Application-specific mappings |
-| 30–100 | Environment overrides | Runtime overrides |
+| 0–9 | 框架默认值 | 内置框架映射 |
+| 10–19 | 系统覆盖 | 系统级配置 |
+| 20–29 | 应用映射 | 应用特定映射 |
+| 30–100 | 环境覆盖 | 运行时覆盖 |
 
-Higher priority wins when multiple mappings define the same context key.
+当多个映射定义同一上下文键时，优先级更高的胜出。
 
-### Using in Templates
+### 在模板中使用
 
-Resolved environment values are available in the `env` context object:
+解析后的环境值在 `env` 上下文对象中可用：
 
 ```html
 <script>
@@ -270,22 +270,22 @@ Resolved environment values are available in the `env` context object:
 </script>
 ```
 
-## HTTP API Endpoints
+## HTTP API 端点
 
-The views module registers these endpoints on the configured router:
+views 模块在配置的路由器上注册以下端点：
 
-| Method | Path | Description |
+| 方法 | 路径 | 说明 |
 |--------|------|-------------|
-| GET | `/pages/list` | List accessible, announced pages |
-| GET | `/components/list` | List view components |
-| GET | `/pages/content/{id}` | Render page or return component descriptor |
-| GET | `/pages/public/{id}` | Get component base URL |
+| GET | `/pages/list` | 列出可访问的、已公布的页面 |
+| GET | `/components/list` | 列出视图组件 |
+| GET | `/pages/content/{id}` | 渲染页面或返回组件描述符 |
+| GET | `/pages/public/{id}` | 获取组件基础 URL |
 
-### Render Response
+### 渲染响应
 
-For template pages, returns rendered HTML with the page's `content_type`.
+对于模板页面，返回带有页面 `content_type` 的渲染后 HTML。
 
-For component pages, returns a descriptor:
+对于组件页面，返回描述符：
 
 ```json
 {
@@ -310,29 +310,29 @@ For component pages, returns a descriptor:
 }
 ```
 
-## Access Control
+## 访问控制
 
-Pages with `secure: true` require authentication. The page registry checks `security.can("view", "page:<page_id>")` against the current actor and scope.
+带有 `secure: true` 的页面需要认证。页面注册表对当前 Actor 和作用域检查 `security.can("view", "page:<page_id>")`。
 
-Non-secure pages are always accessible. The `announced` flag controls visibility in navigation listings without affecting access.
+非安全页面始终可访问。`announced` 标志控制在导航列表中的可见性，但不影响访问。
 
-## ID Qualification
+## ID 限定
 
-Relative IDs in page definitions are qualified with the entry's namespace:
+页面定义中的相对 ID 会用入口的命名空间进行限定：
 
 ```yaml
-# In namespace "app"
+# 在命名空间 "app" 中
 data:
-  data_func: my_data_func       # resolves to app:my_data_func
-  set: templates:default         # stays as templates:default (already qualified)
+  data_func: my_data_func       # 解析为 app:my_data_func
+  set: templates:default         # 保持为 templates:default（已限定）
   resources:
-    - page_styles                # resolves to app:page_styles
+    - page_styles                # 解析为 app:page_styles
 ```
 
-## See Also
+## 另见
 
-- [Facade](facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](../system/template.md) - Jet template engine
-- [Security](../system/security.md) - Security actors and access control
-- [Environment](../system/env.md) - Environment variable storage
-- [Framework Overview](overview.md) - Framework module usage
+- [Facade](facade.md) - 前端 iframe 外观和导航侧边栏
+- [Template](../system/template.md) - Jet 模板引擎
+- [Security](../system/security.md) - 安全 Actor 和访问控制
+- [Environment](../system/env.md) - 环境变量存储
+- [框架概述](overview.md) - 框架模块用法
