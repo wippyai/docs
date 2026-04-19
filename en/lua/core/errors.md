@@ -11,10 +11,7 @@ Structured error handling with categorization and retry metadata. Global `errors
 -- Simple message (kind defaults to UNKNOWN)
 local err = errors.new("something went wrong")
 
--- With kind
-local err = errors.new(errors.NOT_FOUND, "user not found")
-
--- Full constructor
+-- With kind, retryable, and details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -22,6 +19,8 @@ local err = errors.new({
     details = {user_id = 123}
 })
 ```
+
+`errors.new` accepts either a string message or a table with at least a `message` field. The `(kind, message)` form is not supported.
 
 ## Wrapping Errors
 

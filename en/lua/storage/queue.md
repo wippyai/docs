@@ -137,8 +137,8 @@ Both permissions are checked: first the general permission, then the queue-speci
 | Queue ID empty | `errors.INVALID` | no |
 | Message data empty | `errors.INVALID` | no |
 | No delivery context | `errors.INVALID` | no |
-| Permission denied | `errors.PERMISSION_DENIED` | no |
-| Publish failed | `errors.INTERNAL` | yes |
+| Publish not allowed | `errors.INVALID` | no |
+| Publish failed | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

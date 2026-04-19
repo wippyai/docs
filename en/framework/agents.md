@@ -511,20 +511,20 @@ Configure dynamic memory recall from an external source:
       context:
         user_id: "${user_id}"
       options:
-        max_items: 5
-        max_length: 2000
-        recall_cooldown: 2
-        min_conversation_length: 3
+        max_items: 3
+        max_length: 1000
+        recall_cooldown: 1
+        min_conversation_length: 2
 ```
 
 The memory contract is called during `runner:step()` to recall relevant items based on the conversation context. Results are injected as developer messages.
 
-| Option | Description |
-|--------|-------------|
-| `max_items` | Maximum memory items per recall |
-| `max_length` | Maximum total character length |
-| `recall_cooldown` | Minimum steps between recalls |
-| `min_conversation_length` | Minimum conversation turns before first recall |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `max_items` | `3` | Maximum memory items per recall |
+| `max_length` | `1000` | Maximum total character length |
+| `recall_cooldown` | `1` | Minimum steps between recalls |
+| `min_conversation_length` | `2` | Minimum conversation turns before first recall |
 
 ## Resolver Contract
 
