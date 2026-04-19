@@ -13,7 +13,7 @@ flowchart LR
     W --> F[Function]
 ```
 
-- **Driver** - Backend implementation (memory, AMQP, Redis)
+- **Driver** - Backend implementation (memory, AMQP, SQS)
 - **Queue** - Logical queue bound to a driver
 - **Consumer** - Connects queue to handler with concurrency settings
 - **Worker Pool** - Concurrent message processors

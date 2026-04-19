@@ -639,7 +639,7 @@ See [WASM Overview](wasm/overview.md).
 | `network.i2p` | I2P network overlay |
 | `network.tailscale` | Tailscale overlay |
 
-Referenced by `http.service` via `network:` and `http_client` via `overlay_network`. See [Network](system/network.md).
+Referenced by `http.service` via `network:` and `http_client` via the `network` option. See [Network](system/network.md).
 
 ## Registry Primitives
 

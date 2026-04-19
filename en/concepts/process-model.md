@@ -18,7 +18,7 @@ flowchart LR
     Running --> Complete
 ```
 
-Processes aren't limited to Lua. The runtime supports any state machine implementation—Go-based processes and WebAssembly modules are planned.
+Processes aren't limited to Lua. The runtime already supports WebAssembly modules via the `process.wasm` kind, and the architecture admits any state machine implementation.
 
 <warning>
 Processes are lightweight but not free. Each process carries a small baseline cost for its state, inbox, and scheduler bookkeeping, and dynamic allocations grow that footprint during execution.
