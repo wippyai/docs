@@ -348,7 +348,7 @@ local cond = sql.builder.or_({
 
 ## builder.question
 
-?プレースホルダー用のプレースホルダーフォーマット（デフォルト）。
+?プレースホルダー用のプレースホルダーフォーマット（デフォルト）。`sql.builder.default_placeholder` のエイリアスとして利用可能です。
 
 ```lua
 local query = sql.builder.select("*")

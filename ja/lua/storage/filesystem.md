@@ -190,8 +190,8 @@ fs.seek.END       -- 末尾から
 
 | メソッド | 戻り値 | 説明 |
 |--------|---------|-------------|
-| `readfile(path)` | `string, error` | ファイル全体を読み取り |
-| `writefile(path, data, mode?)` | `boolean, error` | ファイルを書き込み |
+| `readfile(path)` / `read_file(path)` | `string, error` | ファイル全体を読み取り |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | ファイルを書き込み |
 | `exists(path)` | `boolean, error` | パスが存在するか確認 |
 | `stat(path)` | `table, error` | ファイル情報を取得 |
 | `isdir(path)` | `boolean, error` | ディレクトリか確認 |
@@ -200,7 +200,7 @@ fs.seek.END       -- 末尾から
 | `readdir(path)` | `iterator` | ディレクトリを一覧 |
 | `open(path, mode)` | `File, error` | ファイルハンドルを開く |
 | `chdir(path)` | `boolean, error` | 作業ディレクトリを変更 |
-| `pwd()` | `string` | 作業ディレクトリを取得 |
+| `pwd()` | `string, error` | 作業ディレクトリを取得 |
 
 ## 権限
 

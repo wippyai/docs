@@ -190,8 +190,8 @@ fs.seek.END       -- do fim
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
-| `readfile(path)` | `string, error` | Ler arquivo inteiro |
-| `writefile(path, data, mode?)` | `boolean, error` | Escrever arquivo |
+| `readfile(path)` / `read_file(path)` | `string, error` | Ler arquivo inteiro |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | Escrever arquivo |
 | `exists(path)` | `boolean, error` | Verificar se caminho existe |
 | `stat(path)` | `table, error` | Obter info do arquivo |
 | `isdir(path)` | `boolean, error` | Verificar se e diretorio |
@@ -200,7 +200,7 @@ fs.seek.END       -- do fim
 | `readdir(path)` | `iterator` | Listar diretorio |
 | `open(path, mode)` | `File, error` | Abrir file handle |
 | `chdir(path)` | `boolean, error` | Mudar diretorio de trabalho |
-| `pwd()` | `string` | Obter diretorio de trabalho |
+| `pwd()` | `string, error` | Obter diretorio de trabalho |
 
 ## Permissões
 

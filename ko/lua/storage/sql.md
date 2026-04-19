@@ -348,7 +348,7 @@ local cond = sql.builder.or_({
 
 ## builder.question
 
-? 플레이스홀더용 포맷 (기본값).
+? 플레이스홀더용 포맷 (기본값). `sql.builder.default_placeholder` 별칭으로 사용 가능합니다.
 
 ```lua
 local query = sql.builder.select("*")

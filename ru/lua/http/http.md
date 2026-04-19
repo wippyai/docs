@@ -280,7 +280,7 @@ if form.files.avatar then
 
     -- Чтение содержимого файла
     local stream = file:stream()
-    local content = stream:read_all()
+    local content = stream:read(0)
     stream:close()
 
     -- Сохранение в хранилище
@@ -488,7 +488,7 @@ http.STATUS.UNPROCESSABLE        -- 422
 http.STATUS.TOO_MANY_REQUESTS    -- 429
 
 -- Ошибки сервера (5xx)
-http.STATUS.INTERNAL_ERROR       -- 500
+http.STATUS.INTERNAL_ERROR       -- 500 (alias: INTERNAL_SERVER_ERROR)
 http.STATUS.NOT_IMPLEMENTED      -- 501
 http.STATUS.BAD_GATEWAY          -- 502
 http.STATUS.SERVICE_UNAVAILABLE  -- 503

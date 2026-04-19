@@ -348,7 +348,7 @@ local cond = sql.builder.or_({
 
 ## builder.question
 
-Формат плейсхолдеров ? (по умолчанию).
+Формат плейсхолдеров ? (по умолчанию). Доступен как алиас `sql.builder.default_placeholder`.
 
 ```lua
 local query = sql.builder.select("*")

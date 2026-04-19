@@ -348,7 +348,7 @@ local cond = sql.builder.or_({
 
 ## builder.question
 
-Formato de marcador para marcadores ? (predeterminado).
+Formato de marcador para marcadores ? (predeterminado). Disponible como alias `sql.builder.default_placeholder`.
 
 ```lua
 local query = sql.builder.select("*")

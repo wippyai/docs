@@ -190,8 +190,8 @@ fs.seek.END       -- 끝부터
 
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
-| `readfile(path)` | `string, error` | 전체 파일 읽기 |
-| `writefile(path, data, mode?)` | `boolean, error` | 파일 쓰기 |
+| `readfile(path)` / `read_file(path)` | `string, error` | 전체 파일 읽기 |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | 파일 쓰기 |
 | `exists(path)` | `boolean, error` | 경로 존재 확인 |
 | `stat(path)` | `table, error` | 파일 정보 가져오기 |
 | `isdir(path)` | `boolean, error` | 디렉토리인지 확인 |
@@ -200,7 +200,7 @@ fs.seek.END       -- 끝부터
 | `readdir(path)` | `iterator` | 디렉토리 목록 |
 | `open(path, mode)` | `File, error` | 파일 핸들 열기 |
 | `chdir(path)` | `boolean, error` | 작업 디렉토리 변경 |
-| `pwd()` | `string` | 작업 디렉토리 가져오기 |
+| `pwd()` | `string, error` | 작업 디렉토리 가져오기 |
 
 ## 권한
 

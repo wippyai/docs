@@ -190,8 +190,8 @@ fs.seek.END       -- vom Ende
 
 | Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
-| `readfile(path)` | `string, error` | Gesamte Datei lesen |
-| `writefile(path, data, mode?)` | `boolean, error` | Datei schreiben |
+| `readfile(path)` / `read_file(path)` | `string, error` | Gesamte Datei lesen |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | Datei schreiben |
 | `exists(path)` | `boolean, error` | Prüfen ob Pfad existiert |
 | `stat(path)` | `table, error` | Dateiinfo abrufen |
 | `isdir(path)` | `boolean, error` | Prüfen ob Verzeichnis |
@@ -200,7 +200,7 @@ fs.seek.END       -- vom Ende
 | `readdir(path)` | `iterator` | Verzeichnis auflisten |
 | `open(path, mode)` | `File, error` | Datei-Handle öffnen |
 | `chdir(path)` | `boolean, error` | Arbeitsverzeichnis wechseln |
-| `pwd()` | `string` | Arbeitsverzeichnis abrufen |
+| `pwd()` | `string, error` | Arbeitsverzeichnis abrufen |
 
 ## Berechtigungen
 

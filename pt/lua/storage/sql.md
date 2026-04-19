@@ -348,7 +348,7 @@ local cond = sql.builder.or_({
 
 ## builder.question
 
-Formato de placeholder para placeholders ? (padrão).
+Formato de placeholder para placeholders ? (padrão). Disponível como alias `sql.builder.default_placeholder`.
 
 ```lua
 local query = sql.builder.select("*")

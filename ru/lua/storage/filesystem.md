@@ -190,8 +190,8 @@ fs.seek.END       -- от конца
 
 | Метод | Возвращает | Описание |
 |-------|------------|----------|
-| `readfile(path)` | `string, error` | Прочитать весь файл |
-| `writefile(path, data, mode?)` | `boolean, error` | Записать файл |
+| `readfile(path)` / `read_file(path)` | `string, error` | Прочитать весь файл |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | Записать файл |
 | `exists(path)` | `boolean, error` | Проверить существование пути |
 | `stat(path)` | `table, error` | Получить информацию о файле |
 | `isdir(path)` | `boolean, error` | Проверить директорию |
@@ -200,7 +200,7 @@ fs.seek.END       -- от конца
 | `readdir(path)` | `iterator` | Список содержимого директории |
 | `open(path, mode)` | `File, error` | Открыть дескриптор файла |
 | `chdir(path)` | `boolean, error` | Сменить рабочую директорию |
-| `pwd()` | `string` | Получить рабочую директорию |
+| `pwd()` | `string, error` | Получить рабочую директорию |
 
 ## Разрешения
 

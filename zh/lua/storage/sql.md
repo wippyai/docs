@@ -348,7 +348,7 @@ local cond = sql.builder.or_({
 
 ## builder.question
 
-? 占位符格式（默认）。
+? 占位符格式（默认）。可作为 `sql.builder.default_placeholder` 别名使用。
 
 ```lua
 local query = sql.builder.select("*")

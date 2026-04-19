@@ -190,8 +190,8 @@ fs.seek.END       -- 从末尾
 
 | 方法 | 返回 | 描述 |
 |--------|---------|-------------|
-| `readfile(path)` | `string, error` | 读取整个文件 |
-| `writefile(path, data, mode?)` | `boolean, error` | 写入文件 |
+| `readfile(path)` / `read_file(path)` | `string, error` | 读取整个文件 |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | 写入文件 |
 | `exists(path)` | `boolean, error` | 检查路径是否存在 |
 | `stat(path)` | `table, error` | 获取文件信息 |
 | `isdir(path)` | `boolean, error` | 检查是否为目录 |
@@ -200,7 +200,7 @@ fs.seek.END       -- 从末尾
 | `readdir(path)` | `iterator` | 列出目录 |
 | `open(path, mode)` | `File, error` | 打开文件句柄 |
 | `chdir(path)` | `boolean, error` | 更改工作目录 |
-| `pwd()` | `string` | 获取工作目录 |
+| `pwd()` | `string, error` | 获取工作目录 |
 
 ## 权限
 
