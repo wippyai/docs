@@ -218,5 +218,5 @@ runner:rollback({ id = "app:01_create_users_table" })
 ## 関連情報
 
 - [SQL Driver](../system/database.md) - データベースリソースの設定
-- [Bootloader](../system/bootloader.md) - ブートローダーの順序とフック
+- [Bootloader](bootloader.md) - ブートローダーの順序とフック
 - [Framework Overview](overview.md) - フレームワークモジュールの使用方法

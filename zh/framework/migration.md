@@ -218,5 +218,5 @@ runner:rollback({ id = "app:01_create_users_table" })
 ## 另请参阅
 
 - [SQL 驱动](../system/database.md) - 数据库资源配置
-- [引导加载器](../system/bootloader.md) - 引导加载器顺序和钩子
+- [引导加载器](bootloader.md) - 引导加载器顺序和钩子
 - [框架概述](overview.md) - 框架模块用法

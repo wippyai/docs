@@ -218,5 +218,5 @@ The runner creates a `wippy_migrations` table in each target database on first r
 ## See Also
 
 - [SQL Driver](../system/database.md) - Database resource configuration
-- [Bootloader](../system/bootloader.md) - Bootloader ordering and hooks
+- [Bootloader](bootloader.md) - Bootloader ordering and hooks
 - [Framework Overview](overview.md) - Framework module usage

@@ -147,6 +147,7 @@
         {"title": "Facade", "path": "framework/facade"}
       ]},
       {"title": "Embeddings", "path": "framework/embeddings"},
+      {"title": "Bootloader", "path": "framework/bootloader"},
       {"title": "Migrations", "path": "framework/migration"},
       {"title": "Usage Tracking", "path": "framework/usage"}
     ]
