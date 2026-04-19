@@ -224,6 +224,21 @@ wippy auth status
 wippy auth status --json
 ```
 
+## wippy readme
+
+Obtener el README de un módulo desde el hub.
+
+```bash
+wippy readme wippy/terminal
+wippy readme wippy/terminal@1.2.3
+wippy readme --json wippy/terminal@latest
+```
+
+| Flag | Descripción |
+|------|-------------|
+| `--json` | Salida en formato JSON |
+| `--registry` | URL del registro (por defecto: desde credenciales) |
+
 ## wippy registry
 
 Consultar e inspeccionar entradas del registro.

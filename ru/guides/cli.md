@@ -224,6 +224,21 @@ wippy auth status
 wippy auth status --json
 ```
 
+## wippy readme
+
+Получить README модуля из хаба.
+
+```bash
+wippy readme wippy/terminal
+wippy readme wippy/terminal@1.2.3
+wippy readme --json wippy/terminal@latest
+```
+
+| Флаг | Описание |
+|------|----------|
+| `--json` | Вывод в формате JSON |
+| `--registry` | URL реестра (по умолчанию: из учётных данных) |
+
 ## wippy registry
 
 Запрос и просмотр записей реестра.

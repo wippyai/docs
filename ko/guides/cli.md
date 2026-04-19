@@ -224,6 +224,21 @@ wippy auth status
 wippy auth status --json
 ```
 
+## wippy readme
+
+허브에서 모듈의 README를 가져옵니다.
+
+```bash
+wippy readme wippy/terminal
+wippy readme wippy/terminal@1.2.3
+wippy readme --json wippy/terminal@latest
+```
+
+| 플래그 | 설명 |
+|------|-------------|
+| `--json` | JSON으로 출력 |
+| `--registry` | 레지스트리 URL (기본값: 자격 증명에서) |
+
 ## wippy registry
 
 레지스트리 엔트리를 조회하고 검사합니다.

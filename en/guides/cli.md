@@ -230,7 +230,6 @@ wippy auth status --json
 | Flag | Description |
 |------|-------------|
 | `--json` | Output as JSON |
-| `--registry` | Registry URL |
 
 ## wippy readme
 

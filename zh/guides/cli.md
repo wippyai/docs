@@ -224,6 +224,21 @@ wippy auth status
 wippy auth status --json
 ```
 
+## wippy readme
+
+从 Hub 获取模块的 README。
+
+```bash
+wippy readme wippy/terminal
+wippy readme wippy/terminal@1.2.3
+wippy readme --json wippy/terminal@latest
+```
+
+| 标志 | 描述 |
+|------|------|
+| `--json` | 以 JSON 格式输出 |
+| `--registry` | 注册中心 URL（默认：来自凭据） |
+
 ## wippy registry
 
 查询和检查注册表条目。
