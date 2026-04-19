@@ -123,7 +123,9 @@ prefetch: 10
   driver: app:queue_driver
   queue_name: orders        # 이름 오버라이드 (기본값: 엔트리 이름)
   codec: json               # 페이로드 코덱 (선택사항)
-  dead_letter: app:dlq      # 데드 레터 큐 ID (선택사항)
+  dead_letter:              # 데드 레터 처리 (선택사항)
+    queue: app:dlq
+    max_attempts: 5
   driver_options:
     memory:
       max_length: 10000     # 메모리 드라이버: 제한된 큐 크기
@@ -133,8 +135,13 @@ prefetch: 10
 |------|------|
 | `queue_name` | 큐 이름 오버라이드 (기본값: 엔트리 ID 이름) |
 | `codec` | 페이로드 코덱 이름 |
-| `dead_letter` | 데드 레터 큐의 레지스트리 ID |
+| `dead_letter.queue` | 데드 레터 큐의 레지스트리 ID |
+| `dead_letter.max_attempts` | DLQ로 라우팅되기 전 최대 전달 시도 횟수 |
 | `driver_options` | 드라이버 이름으로 키가 지정된 드라이버별 설정 |
+
+<note>
+데드 레터 라우팅은 드라이버에 따라 다릅니다. AMQP는 브로커 레벨의 DLX 설정을 따르며, 메모리 드라이버는 DLQ로 라우팅하지 않습니다.
+</note>
 
 ## 메모리 드라이버
 
@@ -142,7 +149,7 @@ prefetch: 10
 
 - Kind: `queue.driver.memory`
 - 메시지는 메모리에 저장
-- Nack은 메시지를 큐 앞으로 재큐잉
+- Nack은 메시지를 큐의 끝에 재큐잉
 - 재시작 간 지속성 없음
 
 ## 참고

@@ -123,7 +123,9 @@ prefetch: 10
   driver: app:queue_driver
   queue_name: orders        # 名前をオーバーライド（デフォルト: エントリ名）
   codec: json               # ペイロードコーデック（オプション）
-  dead_letter: app:dlq      # デッドレターキューID（オプション）
+  dead_letter:              # デッドレター処理（オプション）
+    queue: app:dlq
+    max_attempts: 5
   driver_options:
     memory:
       max_length: 10000     # メモリドライバ: 有界キューサイズ
@@ -133,8 +135,13 @@ prefetch: 10
 |-----------|------|
 | `queue_name` | キュー名をオーバーライド（デフォルト: エントリID名） |
 | `codec` | ペイロードコーデック名 |
-| `dead_letter` | デッドレターキューのレジストリID |
+| `dead_letter.queue` | デッドレターキューのレジストリID |
+| `dead_letter.max_attempts` | DLQにルーティングされるまでの最大配信試行回数 |
 | `driver_options` | ドライバ名でキー付けされたドライバ固有の設定 |
+
+<note>
+デッドレタールーティングはドライバ依存です。AMQPはブローカーレベルのDLX設定を尊重します。メモリドライバはDLQへのルーティングを行いません。
+</note>
 
 ## メモリドライバ
 
@@ -142,7 +149,7 @@ prefetch: 10
 
 - 種別: `queue.driver.memory`
 - メッセージはメモリに保存
-- Nackはメッセージをキューの先頭に再キュー
+- Nackはメッセージをキューの末尾に再キュー
 - 再起動をまたいで永続化なし
 
 ## 関連項目

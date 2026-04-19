@@ -124,7 +124,9 @@ prefetch: 10
   driver: app:queue_driver
   queue_name: orders        # 覆盖名称（默认：入口名称）
   codec: json               # 负载编解码器（可选）
-  dead_letter: app:dlq      # 死信队列 ID（可选）
+  dead_letter:              # 死信处理（可选）
+    queue: app:dlq
+    max_attempts: 5
   driver_options:
     memory:
       max_length: 10000     # 内存驱动：有界队列大小
@@ -134,8 +136,13 @@ prefetch: 10
 |------|------|
 | `queue_name` | 覆盖队列名称（默认：入口 ID 名称） |
 | `codec` | 负载编解码器名称 |
-| `dead_letter` | 死信队列的注册表 ID |
+| `dead_letter.queue` | 死信队列的注册表 ID |
+| `dead_letter.max_attempts` | 路由到 DLQ 之前的最大投递尝试次数 |
 | `driver_options` | 按驱动名称键控的驱动特定设置 |
+
+<note>
+死信路由取决于驱动。AMQP 遵循代理级别的 DLX 配置；内存驱动不会将消息路由到 DLQ。
+</note>
 
 ## 内存驱动
 
@@ -143,7 +150,7 @@ prefetch: 10
 
 - 类型：`queue.driver.memory`
 - 消息存储在内存中
-- Nack 将消息重新放入队列前端
+- Nack 将消息重新入队到队列尾部
 - 重启后不持久化
 
 ## 参见

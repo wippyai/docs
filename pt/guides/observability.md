@@ -31,17 +31,17 @@ O gerenciador de log controla propagação de logs e streaming de eventos:
 logmanager:
   propagate_downstream: true   # Propaga para componentes filhos
   stream_to_events: false      # Encaminha logs para barramento de eventos
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  min_level: -1                # -1=debug (padrão), 0=info, 1=warn, 2=error
 ```
 
 Quando `stream_to_events` está habilitado, entradas de log se tornam eventos que processos podem assinar via barramento de eventos.
 
 ### Contexto Automático
 
-Todos os logs incluem:
+Logs emitidos a partir de Lua via [módulo logger](lua/system/logger.md) incluem automaticamente:
 
-- `pid` - ID do Processo
-- `location` - ID da entrada e número da linha (ex: `app.api:handler:45`)
+- `pid` - PID do processo atual
+- `location` - ID da entrada e linha chamadora (ex: `app.api:handler:45`)
 
 ## Métricas Prometheus
 

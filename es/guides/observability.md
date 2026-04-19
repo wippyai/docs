@@ -31,17 +31,17 @@ El gestor de logs controla la propagación de logs y streaming de eventos:
 logmanager:
   propagate_downstream: true   # Propagar a componentes hijos
   stream_to_events: false      # Reenviar logs al bus de eventos
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  min_level: -1                # -1=debug (por defecto), 0=info, 1=warn, 2=error
 ```
 
 Cuando `stream_to_events` está habilitado, las entradas de log se convierten en eventos a los que los procesos pueden suscribirse vía el bus de eventos.
 
 ### Contexto Automático
 
-Todos los logs incluyen:
+Los logs emitidos desde Lua mediante el [módulo logger](lua/system/logger.md) incluyen automáticamente:
 
-- `pid` - ID de Proceso
-- `location` - ID de entrada y número de línea (ej., `app.api:handler:45`)
+- `pid` - PID del proceso actual
+- `location` - ID de entrada y línea invocadora (ej., `app.api:handler:45`)
 
 ## Métricas Prometheus
 

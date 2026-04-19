@@ -123,7 +123,9 @@ prefetch: 10
   driver: app:queue_driver
   queue_name: orders        # Переопределить имя (по умолчанию: имя записи)
   codec: json               # Кодек полезной нагрузки (опционально)
-  dead_letter: app:dlq      # ID очереди dead-letter (опционально)
+  dead_letter:              # Обработка dead-letter (опционально)
+    queue: app:dlq
+    max_attempts: 5
   driver_options:
     memory:
       max_length: 10000     # Memory-драйвер: ограниченный размер очереди
@@ -133,8 +135,13 @@ prefetch: 10
 |------|----------|
 | `queue_name` | Переопределить имя очереди (по умолчанию: имя записи) |
 | `codec` | Имя кодека полезной нагрузки |
-| `dead_letter` | ID очереди dead-letter в реестре |
+| `dead_letter.queue` | ID очереди dead-letter в реестре |
+| `dead_letter.max_attempts` | Максимальное число попыток доставки до маршрутизации в DLQ |
 | `driver_options` | Специфичные для драйвера настройки, сгруппированные по имени драйвера |
+
+<note>
+Маршрутизация dead-letter зависит от драйвера. AMQP учитывает конфигурацию DLX на уровне брокера; memory-драйвер не направляет сообщения в DLQ.
+</note>
 
 ## Memory-драйвер
 
@@ -142,7 +149,7 @@ prefetch: 10
 
 - Тип: `queue.driver.memory`
 - Сообщения хранятся в памяти
-- Nack возвращает сообщение в начало очереди
+- Nack возвращает сообщение в конец очереди
 - Не сохраняется между перезапусками
 
 ## См. также

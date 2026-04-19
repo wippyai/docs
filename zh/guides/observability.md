@@ -31,17 +31,17 @@ logger:
 logmanager:
   propagate_downstream: true   # 传播到子组件
   stream_to_events: false      # 转发日志到事件总线
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  min_level: -1                # -1=debug（默认）, 0=info, 1=warn, 2=error
 ```
 
 启用 `stream_to_events` 后，日志条目会成为事件，进程可通过事件总线订阅。
 
 ### 自动上下文
 
-所有日志自动包含：
+通过 [logger 模块](lua/system/logger.md) 从 Lua 发出的日志自动包含：
 
-- `pid` - 进程 ID
-- `location` - 入口 ID 和行号（例如 `app.api:handler:45`）
+- `pid` - 当前进程 PID
+- `location` - 入口 ID 和调用方行号（例如 `app.api:handler:45`）
 
 ## Prometheus 指标
 

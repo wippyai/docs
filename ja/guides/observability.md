@@ -31,17 +31,17 @@ logger:
 logmanager:
   propagate_downstream: true   # 子コンポーネントに伝播
   stream_to_events: false      # ログをイベントバスに転送
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  min_level: -1                # -1=debug（デフォルト）, 0=info, 1=warn, 2=error
 ```
 
 `stream_to_events`が有効な場合、ログエントリはイベントになり、プロセスはイベントバス経由でサブスクライブできます。
 
 ### 自動コンテキスト
 
-すべてのログに含まれるもの：
+Luaから[loggerモジュール](lua/system/logger.md)経由で出力されるログには、以下が自動的に含まれます：
 
-- `pid` - プロセスID
-- `location` - エントリIDと行番号（例：`app.api:handler:45`）
+- `pid` - 現在のプロセスのPID
+- `location` - エントリIDと呼び出し行（例：`app.api:handler:45`）
 
 ## Prometheusメトリクス
 

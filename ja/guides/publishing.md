@@ -111,10 +111,10 @@ Targets specify where the value is injected:
 - `entry` - Full entry ID to configure
 - `path` - JSONPath for value injection
 
-Consumers configure via override:
+Consumers configure via override. The `-o` flag takes a `namespace:entry:field=value` triple:
 
 ```bash
-wippy run -o acme.http:api_endpoint=https://custom.api.com
+wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
 ```
 
 ## Imports
@@ -198,6 +198,15 @@ With release notes:
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
+### Additional Flags
+
+| Flag | Description |
+|------|-------------|
+| `--label <name>` | Publish as a mutable label (e.g. `latest`, `beta`) instead of an immutable version |
+| `--protected` | Mark the published version as protected (cannot be deleted or overwritten) |
+| `--registry <url>` | Override the registry URL for this publish |
+| `--config <dir>` | Directory containing `wippy.yaml` (default: current dir) |
+
 ### Embedding Static Files
 
 Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
@@ -224,14 +233,14 @@ wippy install
 Override values at runtime:
 
 ```bash
-wippy run -o acme.http:api_endpoint=https://my.api.com
+wippy run -o acme.http:client:meta.endpoint=https://my.api.com
 ```
 
 Or in `.wippy.yaml`:
 
 ```yaml
 override:
-  acme.http:api_endpoint: "https://my.api.com"
+  acme.http:client:meta.endpoint: "https://my.api.com"
 ```
 
 ### Import in Your Code

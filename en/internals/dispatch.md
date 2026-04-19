@@ -54,7 +54,7 @@ System commands (0-255) use array indexing. Extended commands use map lookup. Af
 | 150-159 | exec | ProcessWait |
 | 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
 | 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
 | 256+ | custom | User-defined services |
 

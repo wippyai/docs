@@ -135,7 +135,7 @@ Al actualizar modulos especificos, los demas modulos permanecen fijados en sus v
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # Volver a descargar cada módulo (--force es un alias)
+wippy install --refresh            # Volver a descargar cada módulo (--force y --repair son alias)
 ```
 
 ## Almacenamiento de Modulos

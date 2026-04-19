@@ -31,17 +31,17 @@ logger:
 logmanager:
   propagate_downstream: true   # 자식 컴포넌트로 전파
   stream_to_events: false      # 이벤트 버스로 로그 전달
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  min_level: -1                # -1=debug(기본값), 0=info, 1=warn, 2=error
 ```
 
 `stream_to_events`를 활성화하면 로그 항목이 이벤트로 변환되어 프로세스가 이벤트 버스를 통해 구독할 수 있습니다.
 
 ### 자동 컨텍스트
 
-모든 로그에 포함되는 정보:
+Lua에서 [logger 모듈](lua/system/logger.md)을 통해 출력된 로그에는 자동으로 다음이 포함됩니다:
 
-- `pid` - 프로세스 ID
-- `location` - 엔트리 ID와 라인 번호 (예: `app.api:handler:45`)
+- `pid` - 현재 프로세스 PID
+- `location` - 엔트리 ID와 호출 라인 (예: `app.api:handler:45`)
 
 ## Prometheus 메트릭
 

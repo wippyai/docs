@@ -29,7 +29,7 @@ S3-compatible object storage with presigned URLs.
 Credentials load from the specified environment variables. If omitted, falls back to AWS SDK default credential chain (IAM roles, instance profiles, etc.).
 
 <note>
-AWS configuration is planned to be shared with other AWS services (SQS, etc.) in future releases.
+A single <code>config.aws</code> entry can be reused across AWS-backed services. <code>queue.driver.sqs</code> references the same entry via its <code>config:</code> field.
 </note>
 
 ## S3 Storage

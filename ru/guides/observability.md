@@ -31,17 +31,17 @@ Log manager управляет распространением логов и п
 logmanager:
   propagate_downstream: true   # Передавать дочерним компонентам
   stream_to_events: false      # Отправлять логи в шину событий
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  min_level: -1                # -1=debug (по умолчанию), 0=info, 1=warn, 2=error
 ```
 
 При включённом `stream_to_events` записи логов становятся событиями, на которые процессы могут подписаться через шину событий.
 
 ### Автоматический контекст
 
-Все логи включают:
+Логи, отправляемые из Lua через [модуль logger](lua/system/logger.md), автоматически включают:
 
-- `pid` — ID процесса
-- `location` — ID записи и номер строки (например, `app.api:handler:45`)
+- `pid` — PID текущего процесса
+- `location` — ID записи и строка вызова (например, `app.api:handler:45`)
 
 ## Метрики Prometheus
 

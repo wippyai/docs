@@ -123,7 +123,9 @@ Al detener:
   driver: app:queue_driver
   queue_name: orders        # Sobrescribir nombre (por defecto: nombre de entrada)
   codec: json               # Códec de payload (opcional)
-  dead_letter: app:dlq      # ID de la cola dead-letter (opcional)
+  dead_letter:              # Manejo dead-letter (opcional)
+    queue: app:dlq
+    max_attempts: 5
   driver_options:
     memory:
       max_length: 10000     # Driver de memoria: tamaño acotado de cola
@@ -133,8 +135,13 @@ Al detener:
 |-------|-------------|
 | `queue_name` | Sobrescribir nombre de cola (por defecto: nombre del ID de entrada) |
 | `codec` | Nombre del códec de payload |
-| `dead_letter` | ID de registro de la cola dead-letter |
+| `dead_letter.queue` | ID de registro de la cola dead-letter |
+| `dead_letter.max_attempts` | Máximo de intentos de entrega antes de enrutar al DLQ |
 | `driver_options` | Configuración específica del driver indexada por nombre del driver |
+
+<note>
+El enrutamiento dead-letter depende del driver. AMQP respeta la configuración DLX a nivel de broker; el driver de memoria no enruta al DLQ.
+</note>
 
 ## Driver de Memoria
 
@@ -142,7 +149,7 @@ Cola en memoria incorporada para desarrollo/pruebas:
 
 - Tipo: `queue.driver.memory`
 - Mensajes almacenados en memoria
-- Nack reencola mensaje al frente de la cola
+- Nack reencola el mensaje al final de la cola
 - Sin persistencia a través de reinicios
 
 ## Ver También

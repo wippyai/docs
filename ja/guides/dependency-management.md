@@ -135,7 +135,7 @@ wippy update acme/http acme/sql    # Update specific modules
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # すべてのモジュールを再取得（--force はエイリアス）
+wippy install --refresh            # すべてのモジュールを再取得（--force と --repair はエイリアス）
 ```
 
 ## モジュールストレージ

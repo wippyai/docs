@@ -123,7 +123,9 @@ Ao parar:
   driver: app:queue_driver
   queue_name: orders        # Sobrescreve nome (padrão: nome da entrada)
   codec: json               # Codec de payload (opcional)
-  dead_letter: app:dlq      # ID da fila dead-letter (opcional)
+  dead_letter:              # Tratamento dead-letter (opcional)
+    queue: app:dlq
+    max_attempts: 5
   driver_options:
     memory:
       max_length: 10000     # Driver de memória: tamanho limitado da fila
@@ -133,8 +135,13 @@ Ao parar:
 |-------|-----------|
 | `queue_name` | Sobrescreve nome da fila (padrão: nome do ID da entrada) |
 | `codec` | Nome do codec de payload |
-| `dead_letter` | ID de registro da fila dead-letter |
+| `dead_letter.queue` | ID de registro da fila dead-letter |
+| `dead_letter.max_attempts` | Número máximo de tentativas de entrega antes de rotear para a DLQ |
 | `driver_options` | Configurações específicas do driver indexadas por nome do driver |
+
+<note>
+O roteamento dead-letter depende do driver. AMQP respeita a configuração DLX a nível de broker; o driver de memória não roteia para a DLQ.
+</note>
 
 ## Driver de Memória
 
@@ -142,7 +149,7 @@ Fila em memória embutida para desenvolvimento/testes:
 
 - Tipo: `queue.driver.memory`
 - Mensagens armazenadas em memória
-- Nack reenfileira mensagem no início da fila
+- Nack reenfileira a mensagem no final da fila
 - Sem persistência entre reinicializações
 
 ## Veja Também

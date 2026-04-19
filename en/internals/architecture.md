@@ -115,12 +115,14 @@ sequenceDiagram
 
 ### Common Topics
 
-| Topic | Publisher | Purpose |
-|-------|-----------|---------|
-| `registry.entry.*` | Registry | Entry changes |
-| `process.started` | Topology | Process lifecycle |
-| `process.stopped` | Topology | Process lifecycle |
-| `supervisor.state.*` | Supervisor | Service state changes |
+Topics are `<system>:<kind>`. The built-in systems publish:
+
+| System | Kind | Purpose |
+|--------|------|---------|
+| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Entry mutations |
+| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Transaction boundaries |
+| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | Factory registration for process kinds |
+| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | Service lifecycle |
 
 ## Registry
 
