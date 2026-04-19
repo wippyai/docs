@@ -193,10 +193,10 @@ Characteristics:
 - Execute in workflow worker process
 - Lower latency (no task queue roundtrip)
 - No separate task queue overhead
-- Limited to short execution times
+- Limited to short execution times (capped by `local_activity_options.schedule_to_close_timeout`, typically a few seconds)
 - No heartbeating
 
-Use local activities for fast, short operations like input validation, data transformation, or cache lookups.
+Use local activities for fast, short operations like input validation, data transformation, or cache lookups. For long-running work, use a regular activity instead.
 
 ## Activity Naming
 
@@ -286,7 +286,7 @@ end
 
 | Failure | Error Kind | Retryable | Description |
 |---------|------------|-----------|-------------|
-| Application error | varies | varies | Error returned by activity code |
+| Application error | Whatever the activity returned | Inherited from the returned error | Error returned by activity code via `return nil, err` |
 | Runtime crash | `INTERNAL` | true | Unhandled Lua error in activity |
 | Missing activity | `NOT_FOUND` | false | Activity not registered with worker |
 | Timeout | `TIMEOUT` | true | Activity exceeded configured timeout |

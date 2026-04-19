@@ -193,10 +193,10 @@ Características:
 - Se ejecutan en el proceso del workflow worker
 - Menor latencia (sin ida y vuelta a la cola de tareas)
 - Sin overhead de cola de tareas separada
-- Limitadas a tiempos de ejecución cortos
+- Limitadas a tiempos de ejecución cortos (limitadas por `local_activity_options.schedule_to_close_timeout`, normalmente unos segundos)
 - Sin heartbeating
 
-Use activities locales para operaciones rápidas y cortas como validación de entrada, transformación de datos o consultas a caché.
+Use activities locales para operaciones rápidas y cortas como validación de entrada, transformación de datos o consultas a caché. Para trabajo de larga duración, use una activity regular en su lugar.
 
 ## Nombrado de Activities
 
@@ -286,7 +286,7 @@ end
 
 | Fallo | Tipo de Error | Reintentable | Descripción |
 |-------|---------------|--------------|-------------|
-| Error de aplicación | varía | varía | Error retornado por código de activity |
+| Error de aplicación | Lo que la activity haya retornado | Heredado del error retornado | Error retornado por código de activity vía `return nil, err` |
 | Crash en tiempo de ejecución | `INTERNAL` | sí | Error Lua no manejado en activity |
 | Activity faltante | `NOT_FOUND` | no | Activity no registrada con el worker |
 | Timeout | `TIMEOUT` | sí | La activity excedió el timeout configurado |

@@ -193,10 +193,10 @@ Características:
 - Executam no processo do worker de workflow
 - Menor latência (sem roundtrip de task queue)
 - Sem overhead de task queue separado
-- Limitado a tempos de execução curtos
+- Limitado a tempos de execução curtos (limitado por `local_activity_options.schedule_to_close_timeout`, tipicamente alguns segundos)
 - Sem heartbeating
 
-Use atividades locais para operações rápidas e curtas como validação de entrada, transformação de dados ou consultas em cache.
+Use atividades locais para operações rápidas e curtas como validação de entrada, transformação de dados ou consultas em cache. Para trabalho de longa duração, use uma activity regular em vez disso.
 
 ## Nomenclatura de Activity
 
@@ -286,7 +286,7 @@ end
 
 | Falha | Tipo de Erro | Permite Retry | Descrição |
 |-------|-------------|---------------|-----------|
-| Erro de aplicação | varia | varia | Erro retornado pelo código da activity |
+| Erro de aplicação | O que a activity retornou | Herdado do erro retornado | Erro retornado pelo código da activity via `return nil, err` |
 | Crash de runtime | `INTERNAL` | sim | Erro Lua não tratado na activity |
 | Activity ausente | `NOT_FOUND` | não | Activity não registrada no worker |
 | Timeout | `TIMEOUT` | sim | Activity excedeu o timeout configurado |

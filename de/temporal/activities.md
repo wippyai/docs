@@ -193,10 +193,10 @@ Eigenschaften:
 - Werden im Workflow-Worker-Prozess ausgeführt
 - Geringere Latenz (kein Task-Queue-Roundtrip)
 - Kein separater Task-Queue-Overhead
-- Beschränkt auf kurze Ausführungszeiten
+- Beschränkt auf kurze Ausführungszeiten (begrenzt durch `local_activity_options.schedule_to_close_timeout`, typischerweise wenige Sekunden)
 - Kein Heartbeating
 
-Lokale Activities eignen sich für schnelle, kurze Operationen wie Eingabevalidierung, Datentransformation oder Cache-Abfragen.
+Lokale Activities eignen sich für schnelle, kurze Operationen wie Eingabevalidierung, Datentransformation oder Cache-Abfragen. Für langlaufende Arbeiten verwenden Sie stattdessen eine reguläre Activity.
 
 ## Activity-Benennung
 
@@ -286,7 +286,7 @@ end
 
 | Fehler | Fehlerart | Wiederholbar | Beschreibung |
 |--------|-----------|--------------|--------------|
-| Anwendungsfehler | variiert | variiert | Von Activity-Code zurückgegebener Fehler |
+| Anwendungsfehler | Was die Activity zurückgegeben hat | Wird vom zurückgegebenen Fehler übernommen | Von Activity-Code via `return nil, err` zurückgegebener Fehler |
 | Laufzeitabsturz | `INTERNAL` | ja | Unbehandelter Lua-Fehler in Activity |
 | Fehlende Activity | `NOT_FOUND` | nein | Activity nicht beim Worker registriert |
 | Timeout | `TIMEOUT` | ja | Activity hat konfiguriertes Timeout überschritten |
