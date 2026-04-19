@@ -16,10 +16,12 @@ wippy lint --summary              # Group results by error code
 
 Der Linter validiert alle Lua-Eintragsarten:
 
-- `function.lua.*` - Funktionen
-- `library.lua.*` - Bibliotheken
-- `process.lua.*` - Prozesse
-- `workflow.lua.*` - Workflows
+- `function.lua` - Funktionen
+- `library.lua` - Bibliotheken
+- `process.lua` - Prozesse
+- `workflow.lua` - Workflows
+
+Ihre vorkompilierten `.bc`-Varianten (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) werden ebenfalls gelintet.
 
 Jeder Eintrag wird geparst, typgepruft und auf Korrektheitsprobleme analysiert.
 

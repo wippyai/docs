@@ -256,6 +256,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+エディタ統合のためのLanguage Server Protocolサーバー。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `enabled` | bool | false | TCPサーバーを有効化 |
+| `address` | string | :7777 | TCPリッスンアドレス |
+| `http_enabled` | bool | false | HTTPトランスポートを有効化 |
+| `http_address` | string | :7778 | HTTPリッスンアドレス |
+| `http_path` | string | /lsp | HTTPエンドポイントパス |
+| `http_allow_origin` | string | * | CORS許可オリジン |
+| `max_message_bytes` | int | 8388608 | 受信メッセージの最大サイズ |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+参照: [LSPガイド](guides/lsp.md)
+
+## ネットワークサービス
+
+オーバーレイネットワークマネージャ（SOCKS5、I2P、Tailscaleドライバ）。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `state_dir` | string | .wippy/net | ドライバ状態ストレージディレクトリ |
+| `default_network` | string | | エントリで `network` を省略した場合に適用されるデフォルトネットワークID |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+参照: [ネットワークオーバーレイ](system/network.md)
+
+## モジュール
+
+`wippy install`/`update` で使用されるモジュールレジストリクライアント。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `registry_url` | string | https://hub.wippy.ai | レジストリエンドポイント |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## 拡張機能
+
+起動時に読み込まれるネイティブGoプラグイン拡張機能（Unixのみ）。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `enabled` | bool | true | 拡張機能を読み込む |
+| `paths` | string[] | | プラグインファイルパス（設定ディレクトリからの相対パス） |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## 環境変数
 
 | 変数 | 説明 |

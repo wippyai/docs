@@ -16,10 +16,12 @@ wippy lint --summary              # Group results by error code
 
 リンターはすべてのLuaエントリ種別を検証します:
 
-- `function.lua.*` - 関数
-- `library.lua.*` - ライブラリ
-- `process.lua.*` - プロセス
-- `workflow.lua.*` - ワークフロー
+- `function.lua` - 関数
+- `library.lua` - ライブラリ
+- `process.lua` - プロセス
+- `workflow.lua` - ワークフロー
+
+それらのプリコンパイル済み `.bc` バリアント（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）もリントされます。
 
 各エントリはパースされ、型チェックされ、正確性の問題が解析されます。
 

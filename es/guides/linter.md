@@ -16,10 +16,12 @@ wippy lint --summary              # Group results by error code
 
 El linter valida todos los tipos de entradas Lua:
 
-- `function.lua.*` - Funciones
-- `library.lua.*` - Bibliotecas
-- `process.lua.*` - Procesos
-- `workflow.lua.*` - Workflows
+- `function.lua` - Funciones
+- `library.lua` - Bibliotecas
+- `process.lua` - Procesos
+- `workflow.lua` - Workflows
+
+Sus variantes precompiladas `.bc` (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) tambien son analizadas.
 
 Cada entrada es analizada, verificada en tipos y examinada en busca de problemas de correccion.
 

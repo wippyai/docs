@@ -16,10 +16,12 @@ wippy lint --summary              # Group results by error code
 
 代码检查器会验证所有 Lua 条目类型：
 
-- `function.lua.*` - 函数
-- `library.lua.*` - 库
-- `process.lua.*` - 进程
-- `workflow.lua.*` - 工作流
+- `function.lua` - 函数
+- `library.lua` - 库
+- `process.lua` - 进程
+- `workflow.lua` - 工作流
+
+它们的预编译 `.bc` 变体（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）也会被检查。
 
 每个条目都会经过解析、类型检查和正确性分析。
 

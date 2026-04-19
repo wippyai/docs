@@ -123,7 +123,9 @@ On stop:
   driver: app:queue_driver
   queue_name: orders        # Override name (default: entry name)
   codec: json               # Payload codec (optional)
-  dead_letter: app:dlq      # Dead-letter queue ID (optional)
+  dead_letter:              # Dead-letter handling (optional)
+    queue: app:dlq
+    max_attempts: 5
   driver_options:
     memory:
       max_length: 10000     # Memory driver: bounded queue size
@@ -133,8 +135,13 @@ On stop:
 |-------|-------------|
 | `queue_name` | Override queue name (default: entry ID name) |
 | `codec` | Payload codec name |
-| `dead_letter` | Registry ID of dead-letter queue |
+| `dead_letter.queue` | Registry ID of dead-letter queue |
+| `dead_letter.max_attempts` | Max delivery attempts before routing to DLQ |
 | `driver_options` | Driver-specific settings keyed by driver name |
+
+<note>
+Dead-letter routing is driver-dependent. AMQP honors broker-level DLX configuration; the memory driver does not route to a DLQ.
+</note>
 
 ## Memory Driver
 
@@ -142,7 +149,7 @@ Built-in in-memory queue for development/testing:
 
 - Kind: `queue.driver.memory`
 - Messages stored in memory
-- Nack requeues message to front of queue
+- Nack re-enqueues the message to the tail of the queue
 - No persistence across restarts
 
 ## See Also

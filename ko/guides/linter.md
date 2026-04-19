@@ -16,10 +16,12 @@ wippy lint --summary              # Group results by error code
 
 린터는 모든 Lua 엔트리 종류를 검증합니다:
 
-- `function.lua.*` - 함수
-- `library.lua.*` - 라이브러리
-- `process.lua.*` - 프로세스
-- `workflow.lua.*` - 워크플로우
+- `function.lua` - 함수
+- `library.lua` - 라이브러리
+- `process.lua` - 프로세스
+- `workflow.lua` - 워크플로우
+
+이들의 사전 컴파일된 `.bc` 변형(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)도 린팅됩니다.
 
 각 엔트리는 파싱, 타입 검사, 정확성 분석을 거칩니다.
 

@@ -256,6 +256,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+Servidor del Language Server Protocol para integraciones con editores.
+
+| Campo | Tipo | Por Defecto | Descripción |
+|-------|------|---------|-------------|
+| `enabled` | bool | false | Habilitar el servidor TCP |
+| `address` | string | :7777 | Dirección de escucha TCP |
+| `http_enabled` | bool | false | Habilitar el transporte HTTP |
+| `http_address` | string | :7778 | Dirección de escucha HTTP |
+| `http_path` | string | /lsp | Ruta del endpoint HTTP |
+| `http_allow_origin` | string | * | Origen permitido por CORS |
+| `max_message_bytes` | int | 8388608 | Tamaño máximo del mensaje entrante |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+Ver: [Guía LSP](guides/lsp.md)
+
+## Servicio de Red
+
+Gestor de redes overlay (drivers SOCKS5, I2P, Tailscale).
+
+| Campo | Tipo | Por Defecto | Descripción |
+|-------|------|---------|-------------|
+| `state_dir` | string | .wippy/net | Directorio de almacenamiento de estado del driver |
+| `default_network` | string | | ID de red por defecto aplicado cuando las entradas omiten `network` |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+Ver: [Overlays de Red](system/network.md)
+
+## Módulos
+
+Cliente del registro de módulos usado por `wippy install`/`update`.
+
+| Campo | Tipo | Por Defecto | Descripción |
+|-------|------|---------|-------------|
+| `registry_url` | string | https://hub.wippy.ai | Endpoint del registro |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## Extensiones
+
+Extensiones nativas de plugins Go cargadas al arrancar (solo Unix).
+
+| Campo | Tipo | Por Defecto | Descripción |
+|-------|------|---------|-------------|
+| `enabled` | bool | true | Cargar extensiones |
+| `paths` | string[] | | Rutas de archivos de plugins (relativas al directorio de configuración) |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## Variables de Entorno
 
 | Variable | Descripción |

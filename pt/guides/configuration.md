@@ -256,6 +256,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+Servidor do Language Server Protocol para integrações com editores.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `enabled` | bool | false | Habilitar o servidor TCP |
+| `address` | string | :7777 | Endereço de escuta TCP |
+| `http_enabled` | bool | false | Habilitar o transporte HTTP |
+| `http_address` | string | :7778 | Endereço de escuta HTTP |
+| `http_path` | string | /lsp | Caminho do endpoint HTTP |
+| `http_allow_origin` | string | * | Origem permitida por CORS |
+| `max_message_bytes` | int | 8388608 | Tamanho máximo de mensagem recebida |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+Veja: [Guia do LSP](guides/lsp.md)
+
+## Serviço de Rede
+
+Gerenciador de redes overlay (drivers SOCKS5, I2P, Tailscale).
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `state_dir` | string | .wippy/net | Diretório de armazenamento do estado do driver |
+| `default_network` | string | | ID de rede padrão aplicado quando entradas omitem `network` |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+Veja: [Overlays de Rede](system/network.md)
+
+## Módulos
+
+Cliente do registro de módulos usado por `wippy install`/`update`.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `registry_url` | string | https://hub.wippy.ai | Endpoint do registro |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## Extensões
+
+Extensões nativas de plugin Go carregadas no boot (somente Unix).
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `enabled` | bool | true | Carregar extensões |
+| `paths` | string[] | | Caminhos dos arquivos de plugin (relativos ao diretório de configuração) |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## Variáveis de Ambiente
 
 | Variável | Descrição |

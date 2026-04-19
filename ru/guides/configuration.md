@@ -256,6 +256,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+Сервер Language Server Protocol для интеграции с редакторами.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `enabled` | bool | false | Запустить TCP-сервер |
+| `address` | string | :7777 | Адрес прослушивания TCP |
+| `http_enabled` | bool | false | Включить HTTP-транспорт |
+| `http_address` | string | :7778 | Адрес прослушивания HTTP |
+| `http_path` | string | /lsp | Путь HTTP-эндпоинта |
+| `http_allow_origin` | string | * | Разрешённый CORS-источник |
+| `max_message_bytes` | int | 8388608 | Максимальный размер входящего сообщения |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+См.: [LSP](guides/lsp.md)
+
+## Сетевой сервис
+
+Менеджер оверлейных сетей (драйверы SOCKS5, I2P, Tailscale).
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `state_dir` | string | .wippy/net | Каталог хранения состояния драйверов |
+| `default_network` | string | | ID сети по умолчанию, применяемый когда в записях не указан `network` |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+См.: [Сетевые оверлеи](system/network.md)
+
+## Модули
+
+Клиент реестра модулей, используемый `wippy install`/`update`.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `registry_url` | string | https://hub.wippy.ai | Эндпоинт реестра |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## Расширения
+
+Нативные Go-плагины, загружаемые при старте (только Unix).
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `enabled` | bool | true | Загружать расширения |
+| `paths` | string[] | | Пути к файлам плагинов (относительно каталога конфигурации) |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## Переменные окружения
 
 | Переменная | Описание |

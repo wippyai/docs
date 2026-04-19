@@ -256,6 +256,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+Language-Server-Protocol-Server für Editor-Integrationen.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `enabled` | bool | false | TCP-Server aktivieren |
+| `address` | string | :7777 | TCP-Listen-Adresse |
+| `http_enabled` | bool | false | HTTP-Transport aktivieren |
+| `http_address` | string | :7778 | HTTP-Listen-Adresse |
+| `http_path` | string | /lsp | HTTP-Endpunkt-Pfad |
+| `http_allow_origin` | string | * | CORS Allowed-Origin |
+| `max_message_bytes` | int | 8388608 | Maximale Größe eingehender Nachrichten |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+Siehe: [LSP-Anleitung](guides/lsp.md)
+
+## Netzwerkdienst
+
+Overlay-Netzwerk-Manager (SOCKS5-, I2P-, Tailscale-Treiber).
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `state_dir` | string | .wippy/net | Verzeichnis für Treiber-Statusspeicherung |
+| `default_network` | string | | Standard-Netzwerk-ID, die angewendet wird, wenn Einträge `network` weglassen |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+Siehe: [Netzwerk-Overlays](system/network.md)
+
+## Module
+
+Modul-Registry-Client, der von `wippy install`/`update` verwendet wird.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `registry_url` | string | https://hub.wippy.ai | Registry-Endpunkt |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## Erweiterungen
+
+Native Go-Plugin-Erweiterungen, die beim Booten geladen werden (nur Unix).
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `enabled` | bool | true | Erweiterungen laden |
+| `paths` | string[] | | Plugin-Dateipfade (relativ zum Konfigurationsverzeichnis) |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## Umgebungsvariablen
 
 | Variable | Beschreibung |

@@ -256,6 +256,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+用于编辑器集成的语言服务器协议（Language Server Protocol）服务器。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | bool | false | 启用 TCP 服务器 |
+| `address` | string | :7777 | TCP 监听地址 |
+| `http_enabled` | bool | false | 启用 HTTP 传输 |
+| `http_address` | string | :7778 | HTTP 监听地址 |
+| `http_path` | string | /lsp | HTTP 端点路径 |
+| `http_allow_origin` | string | * | CORS 允许的源 |
+| `max_message_bytes` | int | 8388608 | 入站消息最大大小 |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+参见：[LSP 指南](guides/lsp.md)
+
+## 网络服务
+
+覆盖网络管理器（SOCKS5、I2P、Tailscale 驱动）。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `state_dir` | string | .wippy/net | 驱动状态存储目录 |
+| `default_network` | string | | 当入口省略 `network` 时应用的默认网络 ID |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+参见：[网络覆盖](system/network.md)
+
+## 模块
+
+`wippy install`/`update` 使用的模块注册表客户端。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `registry_url` | string | https://hub.wippy.ai | 注册表端点 |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## 扩展
+
+启动时加载的原生 Go 插件扩展（仅 Unix）。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | bool | true | 加载扩展 |
+| `paths` | string[] | | 插件文件路径（相对于配置目录） |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## 环境变量
 
 | 变量 | 说明 |

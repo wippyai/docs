@@ -256,6 +256,75 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+## LSP
+
+에디터 통합을 위한 Language Server Protocol 서버.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `enabled` | bool | false | TCP 서버 활성화 |
+| `address` | string | :7777 | TCP 리슨 주소 |
+| `http_enabled` | bool | false | HTTP 전송 활성화 |
+| `http_address` | string | :7778 | HTTP 리슨 주소 |
+| `http_path` | string | /lsp | HTTP 엔드포인트 경로 |
+| `http_allow_origin` | string | * | CORS 허용 오리진 |
+| `max_message_bytes` | int | 8388608 | 수신 메시지 최대 크기 |
+
+```yaml
+lsp:
+  enabled: true
+  address: ":7777"
+  http_enabled: true
+```
+
+참조: [LSP 가이드](guides/lsp.md)
+
+## 네트워크 서비스
+
+오버레이 네트워크 관리자 (SOCKS5, I2P, Tailscale 드라이버).
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `state_dir` | string | .wippy/net | 드라이버 상태 저장 디렉토리 |
+| `default_network` | string | | 엔트리가 `network`를 생략할 때 적용되는 기본 네트워크 ID |
+
+```yaml
+network_service:
+  state_dir: /var/lib/wippy/net
+  default_network: app:tailscale
+```
+
+참조: [네트워크 오버레이](system/network.md)
+
+## 모듈
+
+`wippy install`/`update`에서 사용되는 모듈 레지스트리 클라이언트.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `registry_url` | string | https://hub.wippy.ai | 레지스트리 엔드포인트 |
+
+```yaml
+modules:
+  registry_url: https://internal-registry.example.com
+```
+
+## 익스텐션
+
+부팅 시 로드되는 네이티브 Go 플러그인 익스텐션 (Unix 전용).
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `enabled` | bool | true | 익스텐션 로드 |
+| `paths` | string[] | | 플러그인 파일 경로 (설정 디렉토리 기준) |
+
+```yaml
+extensions:
+  enabled: true
+  paths:
+    - ./extensions/myplugin.so
+```
+
 ## 환경 변수
 
 | 변수 | 설명 |
