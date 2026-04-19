@@ -47,7 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -69,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | Hide the session picker UI |
 
 ### Theming
 
+Three scopes apply: **global** (everywhere), **host** (the chrome around the iframe), and **children** (content inside the iframe).
+
+| Parameter | Scope | Default | Description |
+|-----------|-------|---------|-------------|
+| `custom_css` | global | Google Fonts import | CSS injected at every level |
+| `css_variables` | global | `{}` | JSON map of CSS custom properties |
+| `icon_sets` | global | `[]` | Iconify icon-set URLs |
+| `host_custom_css` | host | `""` | CSS for host chrome only |
+| `host_css_variables` | host | `{}` | CSS custom properties for host only |
+| `host_icon_sets` | host | `[]` | Icon sets for host only |
+| `children_custom_css` | children | `""` | CSS for iframe contents only |
+| `children_css_variables` | children | `{}` | CSS custom properties for iframe contents only |
+| `login_path` | — | `/login.html` | Redirect path for unauthenticated users |
+
+### Optional `hostConfig` JSON
+
+Each of the following is a JSON-encoded string parameter; defaults are empty (`{}` or `[]`). They're surfaced verbatim under `hostConfig` for the frontend.
+
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+| `api_routes` | `{}` | Route overrides for the frontend |
+| `additional_nav_items` | `[]` | Extra sidebar entries |
+| `state_cache` | `{}` | Frontend state cache configuration |
+| `allow_additional_tags` | `[]` | Extra HTML tags allowed in chat |
+| `chat` | `{}` | Chat UI overrides |
+| `axios_defaults` | `{}` | Frontend axios HTTP client defaults |
 
 ## Config Endpoint
 
@@ -117,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`, and `axios_defaults`.
+The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`, and `axios_defaults`.
 
 ## Navigation Sidebar
 

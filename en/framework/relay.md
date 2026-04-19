@@ -85,6 +85,8 @@ entries:
 }
 ```
 
+Plugin `status` is one of `"not_started"` (registered, never spawned), `"pending"` (spawn in progress), `"running"`, `"failed"`, or `"stopped"`.
+
 ## Message Routing
 
 Clients send JSON messages with a `type` field. The user hub matches the type prefix against registered plugins and routes the message:

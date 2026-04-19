@@ -74,9 +74,9 @@ entries:
 | `meta.name` | string | Agent identifier |
 | `prompt` | string | System prompt |
 | `model` | string | Model name or class |
-| `max_tokens` | number | Maximum output tokens |
-| `temperature` | number | Randomness control, 0-1 |
-| `thinking_effort` | number | Thinking depth 0-100 |
+| `max_tokens` | number | Maximum output tokens (default `512`) |
+| `temperature` | number | Sampling temperature (default `0`; range provider-dependent) |
+| `thinking_effort` | number | Forwarded to the model only when `> 0` (provider-defined scale) |
 | `tools` | array | Tool registry IDs |
 | `traits` | array | Trait references |
 | `delegates` | array | Delegate agent references |

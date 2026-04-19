@@ -94,7 +94,7 @@ The first argument to `generate()` can be a string prompt, a prompt builder, or 
 |-------|------|-------------|
 | `result` | string | Generated text content |
 | `tokens` | table | Token usage: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, plus optional `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
-| `finish_reason` | string | Why generation stopped: `"stop"`, `"length"`, `"tool_call"` |
+| `finish_reason` | string | Why generation stopped: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Array of tool calls (if model invoked tools) |
 | `metadata` | table | Provider-specific metadata |
 | `usage_record` | table? | Usage tracking record |

@@ -386,6 +386,6 @@ entries:
 
 ## See Also
 
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Framework Overview](overview.md) - Framework module usage
 - [CLI Reference](guides/cli.md) - CLI commands
 - [Functions](concepts/functions.md) - Function registry

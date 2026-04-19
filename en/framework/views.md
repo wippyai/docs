@@ -25,14 +25,14 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: api_url_env
-        value: PUBLIC_API_URL
+      - name: env_storage
+        value: app:env.storage
 ```
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `api_router` | yes | — | HTTP router for view API endpoints |
-| `api_url_env` | no | `PUBLIC_API_URL` | Env var containing the public API URL |
+| `env_storage` | no | internal | Environment storage backing the `PUBLIC_API_URL` variable |
 
 ## Template Pages
 
@@ -205,7 +205,7 @@ entries:
 | Field | Type | Description |
 |-------|------|-------------|
 | `meta.type` | string | Must be `view.resource` |
-| `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
+| `meta.resource_type` | string | Free-form (defaults to `"other"`); common values are `"style"`, `"script"`, `"font"` |
 | `meta.order` | number | Sort order within type |
 | `meta.global` | boolean | Applied to all pages |
 | `meta.template_set` | string | Specific to a template set |

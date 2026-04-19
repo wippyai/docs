@@ -311,7 +311,7 @@ Executes an agent with tool calling and optional structured exit:
 | `arena.prompt` | string | System prompt |
 | `arena.max_iterations` | number | Max reasoning loops (default: 64) |
 | `arena.min_iterations` | number | Min iterations before exit (default: 1) |
-| `arena.tool_calling` | string | `"auto"`, `"any"`, `"none"` |
+| `arena.tool_calling` | string | `"auto"`, `"any"` (requires `exit_schema`), `"none"` (rejects `exit_schema`) |
 | `arena.tools` | array | Tool registry IDs |
 | `arena.exit_schema` | table | JSON schema for structured exit |
 | `arena.exit_func_id` | string | Function to validate exit output |
