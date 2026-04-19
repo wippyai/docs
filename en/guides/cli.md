@@ -101,8 +101,9 @@ wippy add acme/http@latest
 Install dependencies from lock file.
 
 ```bash
-wippy install
-wippy install --refresh
+wippy install                            # Install all
+wippy install acme/http                  # Install specific module
+wippy install --refresh acme/http        # Re-fetch a specific module
 ```
 
 | Flag | Short | Default | Description |

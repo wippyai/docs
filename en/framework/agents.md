@@ -182,7 +182,7 @@ local response, err = runner:step(conversation, {
 |--------|------|-------------|
 | `context` | table | Runtime context merged with agent context |
 | `stream_target` | table | Streaming: `{ reply_to, topic }` |
-| `tool_call` | string | `"auto"`, `"required"`, `"none"` |
+| `tool_call` | string | `"auto"`, `"any"`, `"none"`, or a tool name |
 
 ### Step Response
 

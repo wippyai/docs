@@ -47,7 +47,6 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
 | `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
@@ -102,7 +101,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,

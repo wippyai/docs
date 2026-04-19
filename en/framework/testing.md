@@ -27,7 +27,7 @@ entries:
     meta:
       type: test
       suite: math
-      description: Math operations
+      name: Math operations
     source: file://math_test.lua
     method: main
     imports:
@@ -40,7 +40,7 @@ entries:
 |-------|----------|-------------|
 | `type` | Yes | Must be `"test"` for the runner to discover it |
 | `suite` | No | Groups tests in the runner output |
-| `description` | No | Human-readable description |
+| `name` | No | Display name shown in runner output |
 | `order` | No | Sort order within a suite (lower runs first) |
 
 ## Writing Tests

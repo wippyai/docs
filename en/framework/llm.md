@@ -191,6 +191,7 @@ conversation:add_message(prompt.ROLE.USER, {
 | `prompt.ROLE.DEVELOPER` | `"developer"` |
 | `prompt.ROLE.FUNCTION_CALL` | `"function_call"` |
 | `prompt.ROLE.FUNCTION_RESULT` | `"function_result"` |
+| `prompt.ROLE.CACHE_MARKER` | `"cache_marker"` |
 
 ### Cloning
 

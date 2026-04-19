@@ -63,7 +63,7 @@ entries:
 | `application_host` | yes | — | Process host for relay processes |
 | `env_storage` | no | internal | Environment variable storage |
 | `user_security_scope` | yes | — | Security scope for user hubs |
-| `max_connections_per_user` | no | `10` | WebSocket connections per user |
+| `max_connections_per_user` | no | `5` | WebSocket connections per user |
 | `queue_multiplier` | no | `100` | Message queue = connections × multiplier |
 | `user_hub_inactivity_timeout` | no | `7200s` | Idle time before hub cleanup |
 

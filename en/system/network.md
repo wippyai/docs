@@ -100,13 +100,28 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
-The `httpclient` module accepts the same key on per-call options.
+The `http_client` module accepts the same overlay selection on per-call options under the key `overlay_network`.
 
 ## Inheritance
 
 Overlay selection flows through the call stack. A function called via `funcs.new():with_options({network=...})` sees the overlay on every inner dial, every nested `funcs.call`, and every `process.spawn` it performs — until a descendant explicitly selects a different overlay or clears it.
 
 Ambient inheritance bypasses the descendant's own `network.select` deny rules. Only explicit selection at a Lua edge is gated.
+
+## App Configuration
+
+Overlay drivers read app-wide settings from a `network_service:` block in `.wippy.yaml`:
+
+```yaml
+network_service:
+  state_dir: .wippy/net          # base dir for driver state (Tailscale keys, etc.)
+  default_network: app.net:tailnet  # overlay applied when no call sets one
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `state_dir` | `.wippy/net` | Driver state directory. Relative paths resolve against the boot config dir. |
+| `default_network` | — | Registry ID of an overlay applied to any task or process that does not pin its own network via options. |
 
 ## Permissions
 
