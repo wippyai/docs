@@ -44,7 +44,7 @@ wippy run list                               # 列出可用命令
 wippy run test                               # 运行测试
 wippy run snapshot.wapp                      # 从打包文件运行
 wippy run acme/http                          # 运行模块
-wippy run --exec app:processes/app:worker   # 执行单个进程
+wippy run --exec app:worker                  # 执行单个进程
 ```
 
 | 标志 | 缩写 | 描述 |
@@ -63,11 +63,20 @@ wippy lint
 wippy lint --level warning
 ```
 
-验证所有 Lua 条目：`function.lua.*`、`library.lua.*`、`process.lua.*`、`workflow.lua.*`。
+验证所有 Lua 条目：`function.lua`、`library.lua`、`process.lua`、`workflow.lua`（包括其 `.bc` 变体）。
 
-| 标志 | 描述 |
-|------|------|
-| `--level` | 报告的最低严重级别 |
+| 标志 | 缩写 | 默认值 | 描述 |
+|------|------|--------|------|
+| `--lock-file` | `-l` | `wippy.lock` | 锁文件路径 |
+| `--level` | | `warning` | 最低严重级别：`error`、`warning`、`hint` |
+| `--ns` | | | 按命名空间模式过滤（例如 `app`、`lib.*`） |
+| `--code` | | | 按错误代码过滤（例如 `E0001,E0004`） |
+| `--rules` | | `false` | 启用风格/质量 lint 规则 |
+| `--summary` | | `false` | 按错误代码分组输出 |
+| `--limit` | | `0` | 最多显示的诊断数（0 = 无限制） |
+| `--json` | | `false` | JSON 输出 |
+| `--no-color` | | `false` | 禁用彩色输出 |
+| `--cache-reset` | | `false` | lint 前清除 Lua 缓存 |
 
 ## wippy add
 
@@ -90,14 +99,16 @@ wippy add acme/http@latest
 
 ```bash
 wippy install
-wippy install --force
+wippy install --refresh
 ```
 
-| 标志 | 缩写 | 描述 |
-|------|------|------|
-| `--lock-file` | `-l` | 锁文件路径 |
-| `--force` | | 绕过缓存，始终重新下载 |
-| `--registry` | | 注册中心 URL |
+| 标志 | 缩写 | 默认值 | 描述 |
+|------|------|--------|------|
+| `--lock-file` | `-l` | wippy.lock | 锁文件路径 |
+| `--refresh` | | false | 重新获取每个模块，绕过缓存 |
+| `--force` | | false | `--refresh` 的别名 |
+| `--repair` | | false | `--refresh` 的别名 |
+| `--registry` | | | 注册中心 URL |
 
 ## wippy update
 
@@ -112,7 +123,7 @@ wippy update acme/http demo/sql   # 更新多个模块
 | 标志 | 缩写 | 默认值 | 描述 |
 |------|------|--------|------|
 | `--lock-file` | `-l` | wippy.lock | 锁文件路径 |
-| `--src-dir` | `-d` | . | 源代码目录 |
+| `--src-dir` | `-d` | ./src | 源代码目录 |
 | `--modules-dir` | | .wippy | 模块目录 |
 | `--registry` | | | 注册中心 URL |
 
@@ -171,11 +182,11 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| 标志 | 描述 |
-|------|------|
-| `--json` | 以 JSON 格式输出 |
-| `--limit` | 最大结果数 |
-| `--registry` | 注册中心 URL |
+| 标志 | 默认值 | 描述 |
+|------|--------|------|
+| `--json` | false | 以 JSON 格式输出 |
+| `--limit` | 20 | 最大结果数 |
+| `--registry` | | 注册中心 URL |
 
 ## wippy auth
 
@@ -333,7 +344,7 @@ wippy run release.wapp -m 2G
 
 ```bash
 # 执行单个进程
-wippy run --exec app:processes/app:worker
+wippy run --exec app:worker
 
 # 启用性能分析器
 wippy run -p -v

@@ -63,3 +63,9 @@ Quando um endpoint é fornecido, o acesso por estilo de caminho é habilitado au
 ## API Lua
 
 Veja [Módulo Cloud Storage](lua/storage/cloud.md) para operações (list, upload, download, delete, URLs pré-assinadas).
+
+## Veja Também
+
+- [Módulo Cloud Storage](lua/storage/cloud.md) - Referência da API Lua
+- [Filesystem](system/filesystem.md) - Entradas de filesystem local
+- [Queue](system/queue.md) - O handler SQS compartilha as mesmas entradas `config.aws`

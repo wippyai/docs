@@ -64,3 +64,9 @@ S3-совместимое объектное хранилище с presigned URL
 ## Lua API
 
 См. [Модуль Cloud Storage](lua/storage/cloud.md) для операций (list, upload, download, delete, presigned URLs).
+
+## См. также
+
+- [Модуль Cloud Storage](lua/storage/cloud.md) — справочник Lua API
+- [Файловая система](system/filesystem.md) — записи локальной файловой системы
+- [Очередь](system/queue.md) — обработчик SQS использует те же записи `config.aws`

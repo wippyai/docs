@@ -62,3 +62,9 @@ Write operations on embedded filesystems return an error.
 ## Lua API
 
 See [Filesystem Module](lua/storage/filesystem.md) for file operations.
+
+## See Also
+
+- [Filesystem Module](lua/storage/filesystem.md) - Lua API reference
+- [Cloud Storage](system/cloudstorage.md) - S3-compatible object storage
+- [Template](system/template.md) - Templates loaded from filesystems

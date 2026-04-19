@@ -62,3 +62,9 @@
 ## Lua API
 
 ファイル操作については[ファイルシステムモジュール](lua/storage/filesystem.md)を参照してください。
+
+## 関連項目
+
+- [ファイルシステムモジュール](lua/storage/filesystem.md) - Lua APIリファレンス
+- [クラウドストレージ](system/cloudstorage.md) - S3互換オブジェクトストレージ
+- [テンプレート](system/template.md) - ファイルシステムから読み込まれるテンプレート

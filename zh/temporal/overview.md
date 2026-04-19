@@ -193,6 +193,21 @@ health_check:
 
 以 `_env` 结尾的字段引用通过[环境系统](../system/env.md)条目定义的环境变量。
 
+### 版本控制行为
+
+当启用 `use_versioning` 时，`default_versioning_behavior` 控制新的工作流运行如何选择 worker 构建 ID：
+
+| 值 | 行为 |
+|------|------|
+| `pinned` | 工作流在整个运行期间保持在启动时所用的构建 ID 上 |
+| `auto_upgrade` | 工作流可在每个任务后在最新兼容的构建 ID 上恢复 |
+
+当 `build_id` 为空时，`build_id_env` 从指定的环境变量读取构建 ID。
+
+### Session Worker
+
+`enable_session_worker: true` 允许 worker 运行 Temporal Sessions：一系列固定到单个 worker 的活动（当活动需要共享本地状态如临时目录或打开的连接时很有用）。`max_concurrent_session_execution_size` 限制 worker 上的并发会话数。
+
 ### 并发默认值
 
 | 选项 | 默认值 |

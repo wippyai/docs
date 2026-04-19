@@ -64,3 +64,9 @@ AWS 配置计划在未来版本中与其他 AWS 服务（SQS 等）共享。
 ## Lua API
 
 参见 [Cloud Storage 模块](lua/storage/cloud.md) 了解操作方法（list、upload、download、delete、预签名 URL）。
+
+## 另请参阅
+
+- [Cloud Storage 模块](lua/storage/cloud.md) - Lua API 参考
+- [Filesystem](system/filesystem.md) - 本地文件系统条目
+- [Queue](system/queue.md) - SQS 处理器共享相同的 `config.aws` 条目

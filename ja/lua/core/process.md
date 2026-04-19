@@ -189,6 +189,20 @@ local spawner = process.with_context({request_id = "123"})
 
 **権限:** "context"に対する`process.context`
 
+### オプション付きスポーナー
+
+`process.with_options(options)`は、コンテキスト値の代わりにスポーン時のオプション（例：ネットワークセレクタ）を持つスポーナーを作成します：
+
+```lua
+local spawner = process.with_options({network = "app:tor_proxy"})
+```
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `network` | string | 子プロセスの送信接続に使用する`network.*`エントリのレジストリID |
+
+**権限:** "context"に対する`process.context`；ネットワークの選択にはさらに、そのネットワークIDに対する`network.select`が必要。
+
 ### SpawnBuilderメソッド
 
 SpawnBuilderはイミュータブル - 各メソッドは新しいインスタンスを返す：

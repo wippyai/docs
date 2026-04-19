@@ -309,3 +309,9 @@ entries:
 ## Lua API
 
 参见 [SQL 模块](lua/storage/sql.md) 了解数据库操作 API。
+
+## 另请参阅
+
+- [SQL 模块](lua/storage/sql.md) - Lua API 参考
+- [Store](system/store.md) - 基于 `database.sql` 的键值存储
+- [Queue](system/queue.md) - SQL 支持的队列处理器

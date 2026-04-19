@@ -67,3 +67,9 @@ Ambos os armazenamentos suportam time-to-live. Entradas expiradas persistem brev
 ## API Lua
 
 Veja [Módulo Store](lua/storage/store.md) para operações (get, set, delete, exists, clear).
+
+## Veja Também
+
+- [Módulo Store](lua/storage/store.md) - Referência da API Lua
+- [Banco de Dados](system/database.md) - Backend SQL para `store.sql`
+- [Cache](lua/storage/cache.md) - Módulo de cache em processo

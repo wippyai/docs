@@ -309,3 +309,9 @@ Bancos de dados podem ser registrados em tempo de execução usando o [módulo r
 ## API Lua
 
 Veja [Módulo SQL](lua/storage/sql.md) para API de operações de banco de dados.
+
+## Veja Também
+
+- [Módulo SQL](lua/storage/sql.md) - Referência da API Lua
+- [Store](system/store.md) - Armazenamento chave-valor baseado em `database.sql`
+- [Queue](system/queue.md) - Handler de fila baseado em SQL

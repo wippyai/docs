@@ -193,6 +193,21 @@ health_check:
 
 `_env`로 끝나는 필드는 [환경 시스템](system/env.md) 엔트리를 통해 정의된 환경 변수를 참조합니다.
 
+### 버전 관리 동작
+
+`default_versioning_behavior`는 `use_versioning`이 활성화된 경우 새 워크플로 실행이 워커 빌드 ID를 선택하는 방식을 제어합니다:
+
+| 값 | 동작 |
+|------|------|
+| `pinned` | 워크플로는 실행 전체에 걸쳐 시작했던 빌드 ID에 고정됩니다 |
+| `auto_upgrade` | 워크플로는 각 태스크 이후 호환되는 최신 빌드 ID에서 재개될 수 있습니다 |
+
+`build_id_env`는 `build_id`가 비어 있을 때 지정된 환경 변수에서 빌드 ID를 읽습니다.
+
+### 세션 워커
+
+`enable_session_worker: true`는 워커가 Temporal Sessions를 실행하도록 합니다: 단일 워커에 고정된 일련의 액티비티입니다 (액티비티들이 임시 디렉토리나 열려 있는 연결 같은 로컬 상태를 공유할 때 유용합니다). `max_concurrent_session_execution_size`는 워커의 동시 세션 수를 제한합니다.
+
 ### 동시성 기본값
 
 | 옵션 | 기본값 |

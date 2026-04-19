@@ -104,3 +104,9 @@
 ## Lua API
 
 См. [Модуль Template](lua/text/template.md) для операций рендеринга.
+
+## См. также
+
+- [Модуль Template](lua/text/template.md) — справочник Lua API
+- [Файловая система](system/filesystem.md) — загрузка шаблонов с диска
+- [HTTP Endpoint](http/endpoint.md) — рендеринг шаблонов из обработчиков запросов

@@ -62,3 +62,9 @@ mode 限制所有文件操作。当存在读取位时，执行位会自动添加
 ## Lua API
 
 参见 [Filesystem 模块](lua/storage/filesystem.md) 了解文件操作。
+
+## 另请参阅
+
+- [Filesystem 模块](lua/storage/filesystem.md) - Lua API 参考
+- [Cloud Storage](system/cloudstorage.md) - 兼容 S3 的对象存储
+- [Template](system/template.md) - 从文件系统加载的模板

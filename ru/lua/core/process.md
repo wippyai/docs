@@ -189,6 +189,20 @@ local spawner = process.with_context({request_id = "123"})
 
 **Разрешение:** `process.context` на "context"
 
+### Spawner с опциями
+
+`process.with_options(options)` создаёт spawner, который несёт опции времени spawn (например, селектор сети) вместо значений контекста:
+
+```lua
+local spawner = process.with_options({network = "app:tor_proxy"})
+```
+
+| Опция | Тип | Описание |
+|-------|-----|----------|
+| `network` | string | Registry ID записи `network.*`, используемой для исходящих соединений дочернего процесса |
+
+**Разрешение:** `process.context` на "context"; выбор сети дополнительно требует `network.select` на этом ID сети.
+
 ### Методы SpawnBuilder
 
 SpawnBuilder иммутабелен — каждый метод возвращает новый экземпляр:

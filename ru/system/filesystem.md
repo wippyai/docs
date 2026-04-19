@@ -62,3 +62,9 @@
 ## Lua API
 
 См. [Модуль Filesystem](lua/storage/filesystem.md) для файловых операций.
+
+## См. также
+
+- [Модуль Filesystem](lua/storage/filesystem.md) — справочник Lua API
+- [Cloud Storage](system/cloudstorage.md) — S3-совместимое объектное хранилище
+- [Template](system/template.md) — шаблоны, загружаемые из файловых систем

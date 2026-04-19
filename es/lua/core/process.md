@@ -189,6 +189,20 @@ local spawner = process.with_context({request_id = "123"})
 
 **Permiso:** `process.context` en "context"
 
+### Creador con Opciones
+
+`process.with_options(options)` crea un creador que lleva opciones de tiempo de creacion (ej., un selector de red) en lugar de valores de contexto:
+
+```lua
+local spawner = process.with_options({network = "app:tor_proxy"})
+```
+
+| Opción | Tipo | Descripción |
+|--------|------|-------------|
+| `network` | string | ID de registro de una entrada `network.*` a usar para las conexiones salientes del proceso hijo |
+
+**Permiso:** `process.context` en "context"; seleccionar una red requiere adicionalmente `network.select` en ese ID de red.
+
 ### Metodos de SpawnBuilder
 
 SpawnBuilder es inmutable - cada método devuelve una nueva instancia:

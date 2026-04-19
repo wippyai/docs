@@ -189,6 +189,20 @@ local spawner = process.with_context({request_id = "123"})
 
 **Permissão:** `process.context` em "context"
 
+### Spawner com Opções
+
+`process.with_options(options)` cria um spawner que carrega opções de tempo de spawn (ex: um seletor de rede) em vez de valores de contexto:
+
+```lua
+local spawner = process.with_options({network = "app:tor_proxy"})
+```
+
+| Opção | Tipo | Descrição |
+|-------|------|-----------|
+| `network` | string | ID de registro de uma entrada `network.*` para as conexões de saída do processo filho |
+
+**Permissão:** `process.context` em "context"; selecionar uma rede requer adicionalmente `network.select` nesse ID de rede.
+
 ### Métodos SpawnBuilder
 
 SpawnBuilder é imutável - cada método retorna uma nova instância:

@@ -64,3 +64,9 @@ When an endpoint is provided, path-style access is enabled automatically.
 ## Lua API
 
 See [Cloud Storage Module](lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs).
+
+## See Also
+
+- [Cloud Storage Module](lua/storage/cloud.md) - Lua API reference
+- [Filesystem](system/filesystem.md) - Local filesystem entries
+- [Queue](system/queue.md) - SQS handler shares the same `config.aws` entries

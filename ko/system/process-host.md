@@ -45,11 +45,15 @@
 
 | Kind | 설명 |
 |------|-------------|
-| `lua.process` | 소스 기반 Lua 프로세스 |
-| `lua.process.bytecode` | 사전 컴파일된 Lua 바이트코드 |
-
-<note>
-추가 프로세스 종류는 향후 릴리스에서 계획되어 있습니다.
-</note>
+| `process.lua` | 소스 기반 Lua 프로세스 |
+| `process.lua.bc` | 사전 컴파일된 Lua 바이트코드 |
+| `process.wasm` | WebAssembly 프로세스 (실험적) |
 
 프로세스는 자체 컨텍스트로 독립적으로 실행되며, 메시지를 통해 통신하고, 장애 허용을 위해 슈퍼바이즈됩니다.
+
+## 참고
+
+- [프로세스 모듈](lua/core/process.md) - Lua에서 프로세스 스폰 및 관리
+- [WASM 프로세스](wasm/processes.md) - `process.wasm` 엔트리 구성
+- [프로세스 모델](concepts/process-model.md) - 생명주기 및 슈퍼비전 개념
+- [슈퍼비전](guides/supervision.md) - 슈퍼비전 트리 구축

@@ -189,6 +189,20 @@ local spawner = process.with_context({request_id = "123"})
 
 **权限:** "context" 上的 `process.context`
 
+### 带选项的启动器
+
+`process.with_options(options)` 创建一个携带启动时选项（如网络选择器）而非上下文值的启动器：
+
+```lua
+local spawner = process.with_options({network = "app:tor_proxy"})
+```
+
+| 选项 | 类型 | 描述 |
+|------|------|------|
+| `network` | string | 用于子进程出站连接的 `network.*` 条目的注册表 ID |
+
+**权限:** "context" 上的 `process.context`；选择网络还需要在该网络 ID 上的 `network.select`。
+
 ### SpawnBuilder 方法
 
 SpawnBuilder 是不可变的 - 每个方法返回新实例：

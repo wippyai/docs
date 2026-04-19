@@ -113,3 +113,9 @@ proc:wait()
 stdout:close()
 executor:release()
 ```
+
+## 참고
+
+- [Exec 모듈](lua/system/exec.md) - Lua API 레퍼런스
+- [프로세스 호스트](system/process-host.md) - Wippy 프로세스를 실행하는 호스트
+- [파일시스템](system/filesystem.md) - 작업 디렉토리로 사용되는 파일시스템 엔트리

@@ -212,3 +212,9 @@ options:
 ## Lua API
 
 데이터베이스 작업 API는 [SQL 모듈](lua/storage/sql.md)을 참조하세요.
+
+## 참고
+
+- [SQL 모듈](lua/storage/sql.md) - Lua API 레퍼런스
+- [Store](system/store.md) - `database.sql` 기반의 키-값 저장소
+- [Queue](system/queue.md) - SQL 기반 큐 핸들러

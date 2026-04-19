@@ -45,11 +45,15 @@ Process Hosts führen Einträge dieser Typen aus:
 
 | Kind | Beschreibung |
 |------|--------------|
-| `lua.process` | Quellbasierter Lua-Prozess |
-| `lua.process.bytecode` | Vorkompilierter Lua-Bytecode |
-
-<note>
-Zusätzliche Prozesstypen sind für zukünftige Releases geplant.
-</note>
+| `process.lua` | Quellbasierter Lua-Prozess |
+| `process.lua.bc` | Vorkompilierter Lua-Bytecode |
+| `process.wasm` | WebAssembly-Prozess (experimentell) |
 
 Prozesse laufen unabhängig mit eigenem Kontext, kommunizieren über Nachrichten und werden für Fehlertoleranz überwacht.
+
+## Siehe auch
+
+- [Prozess-Modul](lua/core/process.md) - Prozesse aus Lua starten und verwalten
+- [WASM-Prozesse](wasm/processes.md) - Konfiguration von `process.wasm`-Einträgen
+- [Prozessmodell](concepts/process-model.md) - Konzepte zu Lebenszyklus und Supervision
+- [Supervision](guides/supervision.md) - Aufbau von Supervision-Bäumen

@@ -62,3 +62,9 @@ Schreiboperationen auf eingebetteten Dateisystemen geben einen Fehler zurück.
 ## Lua-API
 
 Siehe [Dateisystem-Modul](lua/storage/filesystem.md) für Dateioperationen.
+
+## Siehe auch
+
+- [Dateisystem-Modul](lua/storage/filesystem.md) - Lua-API-Referenz
+- [Cloud Storage](system/cloudstorage.md) - S3-kompatibler Objektspeicher
+- [Template](system/template.md) - Aus Dateisystemen geladene Templates

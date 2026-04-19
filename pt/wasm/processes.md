@@ -100,9 +100,10 @@ if err then
 end
 
 -- Wait for the process to complete
-local event = process.receive(time.seconds(10))
-if event and event.type == "EXIT" then
-    local result = event.value  -- return value from the WASM function
+local events = process.events()
+local event = events:receive()
+if event and event.kind == process.event.EXIT then
+    local result = event.result.value  -- return value from the WASM function
 end
 ```
 

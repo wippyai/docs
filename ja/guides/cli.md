@@ -44,7 +44,7 @@ wippy run list                               # 利用可能なコマンドを一
 wippy run test                               # テストを実行
 wippy run snapshot.wapp                      # パックファイルから実行
 wippy run acme/http                          # モジュールを実行
-wippy run --exec app:processes/app:worker   # 単一プロセスを実行
+wippy run --exec app:worker                  # 単一プロセスを実行
 ```
 
 | フラグ | 短縮形 | 説明 |
@@ -63,11 +63,20 @@ wippy lint
 wippy lint --level warning
 ```
 
-全ての Lua エントリを検証: `function.lua.*`、`library.lua.*`、`process.lua.*`、`workflow.lua.*`。
+全ての Lua エントリを検証: `function.lua`、`library.lua`、`process.lua`、`workflow.lua` (それらの `.bc` バリアントを含む)。
 
-| フラグ | 説明 |
-|------|-------------|
-| `--level` | 報告する最小重大度レベル |
+| フラグ | 短縮形 | デフォルト | 説明 |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | `wippy.lock` | ロックファイルのパス |
+| `--level` | | `warning` | 最小重大度: `error`、`warning`、`hint` |
+| `--ns` | | | 名前空間パターンでフィルタ (例: `app`、`lib.*`) |
+| `--code` | | | エラーコードでフィルタ (例: `E0001,E0004`) |
+| `--rules` | | `false` | スタイル/品質 lint ルールを有効化 |
+| `--summary` | | `false` | エラーコードで出力をグループ化 |
+| `--limit` | | `0` | 表示する最大診断数 (0 = 無制限) |
+| `--json` | | `false` | JSON 出力 |
+| `--no-color` | | `false` | カラー出力を無効化 |
+| `--cache-reset` | | `false` | lint 前に Lua キャッシュをクリア |
 
 ## wippy add
 
@@ -90,14 +99,16 @@ wippy add acme/http@latest
 
 ```bash
 wippy install
-wippy install --force
+wippy install --refresh
 ```
 
-| フラグ | 短縮形 | 説明 |
-|------|-------|-------------|
-| `--lock-file` | `-l` | ロックファイルのパス |
-| `--force` | | キャッシュをバイパスし、常にダウンロード |
-| `--registry` | | レジストリ URL |
+| フラグ | 短縮形 | デフォルト | 説明 |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | wippy.lock | ロックファイルのパス |
+| `--refresh` | | false | 全モジュールを再取得し、キャッシュをバイパス |
+| `--force` | | false | `--refresh` のエイリアス |
+| `--repair` | | false | `--refresh` のエイリアス |
+| `--registry` | | | レジストリ URL |
 
 ## wippy update
 
@@ -112,7 +123,7 @@ wippy update acme/http demo/sql   # 複数を更新
 | フラグ | 短縮形 | デフォルト | 説明 |
 |------|-------|---------|-------------|
 | `--lock-file` | `-l` | wippy.lock | ロックファイルのパス |
-| `--src-dir` | `-d` | . | ソースディレクトリ |
+| `--src-dir` | `-d` | ./src | ソースディレクトリ |
 | `--modules-dir` | | .wippy | モジュールディレクトリ |
 | `--registry` | | | レジストリ URL |
 
@@ -171,11 +182,11 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| フラグ | 説明 |
-|------|-------------|
-| `--json` | JSON として出力 |
-| `--limit` | 最大結果数 |
-| `--registry` | レジストリ URL |
+| フラグ | デフォルト | 説明 |
+|------|---------|-------------|
+| `--json` | false | JSON として出力 |
+| `--limit` | 20 | 最大結果数 |
+| `--registry` | | レジストリ URL |
 
 ## wippy auth
 
@@ -333,7 +344,7 @@ wippy run release.wapp -m 2G
 
 ```bash
 # 単一プロセスを実行
-wippy run --exec app:processes/app:worker
+wippy run --exec app:worker
 
 # プロファイラを有効にして実行
 wippy run -p -v

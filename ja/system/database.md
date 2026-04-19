@@ -309,3 +309,9 @@ entries:
 ## Lua API
 
 データベース操作APIについては[SQLモジュール](lua/storage/sql.md)を参照してください。
+
+## 関連項目
+
+- [SQLモジュール](lua/storage/sql.md) - Lua APIリファレンス
+- [ストア](system/store.md) - `database.sql`に基づくキーバリューストア
+- [キュー](system/queue.md) - SQLバックエンドのキューハンドラ

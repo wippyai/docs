@@ -104,3 +104,9 @@
 ## Lua API
 
 렌더링 작업은 [템플릿 모듈](lua/text/template.md)을 참조하세요.
+
+## 참고
+
+- [템플릿 모듈](lua/text/template.md) - Lua API 레퍼런스
+- [파일시스템](system/filesystem.md) - 디스크에서 템플릿 로드
+- [HTTP 엔드포인트](http/endpoint.md) - 요청 핸들러에서 템플릿 렌더링

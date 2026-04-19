@@ -309,3 +309,9 @@ Las bases de datos pueden registrarse en tiempo de ejecución usando el [módulo
 ## API Lua
 
 Consulte el [Módulo SQL](lua/storage/sql.md) para la API de operaciones de base de datos.
+
+## Ver También
+
+- [Módulo SQL](lua/storage/sql.md) - Referencia de la API Lua
+- [Store](system/store.md) - Almacén clave-valor respaldado por `database.sql`
+- [Queue](system/queue.md) - Handler de cola respaldado por SQL

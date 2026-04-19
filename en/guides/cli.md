@@ -66,7 +66,7 @@ wippy lint --json
 wippy lint --rules
 ```
 
-Validates all Lua entries: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
+Validates all Lua entries: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (including their `.bc` variants).
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
@@ -102,14 +102,16 @@ Install dependencies from lock file.
 
 ```bash
 wippy install
-wippy install --force
+wippy install --refresh
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--lock-file` | `-l` | Lock file path |
-| `--force` | | Bypass cache, always download |
-| `--registry` | | Registry URL |
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | wippy.lock | Lock file path |
+| `--refresh` | | false | Re-fetch every module, bypassing cache |
+| `--force` | | false | Alias for `--refresh` |
+| `--repair` | | false | Alias for `--refresh` |
+| `--registry` | | | Registry URL |
 
 ## wippy update
 
@@ -124,7 +126,7 @@ wippy update acme/http demo/sql   # Update multiple
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--src-dir` | `-d` | . | Source directory |
+| `--src-dir` | `-d` | ./src | Source directory |
 | `--modules-dir` | | .wippy | Modules directory |
 | `--registry` | | | Registry URL |
 
@@ -183,11 +185,11 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Output as JSON |
-| `--limit` | Maximum results |
-| `--registry` | Registry URL |
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--json` | false | Output as JSON |
+| `--limit` | 20 | Maximum results |
+| `--registry` | | Registry URL |
 
 ## wippy auth
 
@@ -377,7 +379,7 @@ wippy run release.wapp -m 2G
 
 ```bash
 # Execute single process
-wippy run --exec app:processes/app:worker
+wippy run --exec app:worker
 
 # With profiler enabled
 wippy run -p -v

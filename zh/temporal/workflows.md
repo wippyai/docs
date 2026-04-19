@@ -919,6 +919,12 @@ end
 ## 补偿模式 (Saga)
 
 ```lua
+local function run_compensations(compensations)
+    for _, comp in ipairs(compensations) do
+        funcs.call(comp.action, comp.args)
+    end
+end
+
 local function main(order)
     local compensations = {}
 
@@ -948,12 +954,6 @@ local function main(order)
     end
 
     return {status = "completed", tracking = shipment.tracking}
-end
-
-local function run_compensations(compensations)
-    for _, comp in ipairs(compensations) do
-        funcs.call(comp.action, comp.args)
-    end
 end
 ```
 

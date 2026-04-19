@@ -45,11 +45,15 @@ Process Host 执行以下类型的 entry：
 
 | Kind | 描述 |
 |------|------|
-| `lua.process` | 基于源码的 Lua 进程 |
-| `lua.process.bytecode` | 预编译的 Lua 字节码 |
-
-<note>
-未来版本计划支持更多进程类型。
-</note>
+| `process.lua` | 基于源码的 Lua 进程 |
+| `process.lua.bc` | 预编译的 Lua 字节码 |
+| `process.wasm` | WebAssembly 进程（实验性） |
 
 进程独立运行，拥有自己的上下文，通过消息通信，并受监督以实现容错。
+
+## 另请参阅
+
+- [Process 模块](lua/core/process.md) - 从 Lua 启动和管理进程
+- [WASM 进程](wasm/processes.md) - 配置 `process.wasm` 条目
+- [进程模型](concepts/process-model.md) - 生命周期和监督概念
+- [监督](guides/supervision.md) - 构建监督树

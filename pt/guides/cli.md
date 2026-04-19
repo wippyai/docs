@@ -44,7 +44,7 @@ wippy run list                               # Listar comandos disponíveis
 wippy run test                               # Executar testes
 wippy run snapshot.wapp                      # Executar a partir de arquivo pack
 wippy run acme/http                          # Executar módulo
-wippy run --exec app:processes/app:worker   # Executar um único processo
+wippy run --exec app:worker                  # Executar um único processo
 ```
 
 | Flag | Curta | Descrição |
@@ -63,11 +63,20 @@ wippy lint
 wippy lint --level warning
 ```
 
-Valida todas as entradas Lua: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
+Valida todas as entradas Lua: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (incluindo suas variantes `.bc`).
 
-| Flag | Descrição |
-|------|-----------|
-| `--level` | Nível mínimo de severidade a reportar |
+| Flag | Curta | Padrão | Descrição |
+|------|-------|--------|-----------|
+| `--lock-file` | `-l` | `wippy.lock` | Caminho do arquivo de lock |
+| `--level` | | `warning` | Severidade mínima: `error`, `warning`, `hint` |
+| `--ns` | | | Filtrar por padrões de namespace (ex: `app`, `lib.*`) |
+| `--code` | | | Filtrar por códigos de erro (ex: `E0001,E0004`) |
+| `--rules` | | `false` | Habilitar regras de estilo/qualidade do lint |
+| `--summary` | | `false` | Agrupar saída por código de erro |
+| `--limit` | | `0` | Máximo de diagnósticos exibidos (0 = ilimitado) |
+| `--json` | | `false` | Saída em JSON |
+| `--no-color` | | `false` | Desabilitar saída colorida |
+| `--cache-reset` | | `false` | Limpar cache Lua antes do lint |
 
 ## wippy add
 
@@ -90,14 +99,16 @@ Instalar dependências a partir do arquivo de lock.
 
 ```bash
 wippy install
-wippy install --force
+wippy install --refresh
 ```
 
-| Flag | Curta | Descrição |
-|------|-------|-----------|
-| `--lock-file` | `-l` | Caminho do arquivo de lock |
-| `--force` | | Ignorar cache, sempre baixar |
-| `--registry` | | URL do registry |
+| Flag | Curta | Padrão | Descrição |
+|------|-------|--------|-----------|
+| `--lock-file` | `-l` | wippy.lock | Caminho do arquivo de lock |
+| `--refresh` | | false | Re-baixar cada módulo, ignorando o cache |
+| `--force` | | false | Alias de `--refresh` |
+| `--repair` | | false | Alias de `--refresh` |
+| `--registry` | | | URL do registry |
 
 ## wippy update
 
@@ -112,7 +123,7 @@ wippy update acme/http demo/sql   # Atualizar múltiplos
 | Flag | Curta | Padrão | Descrição |
 |------|-------|--------|-----------|
 | `--lock-file` | `-l` | wippy.lock | Caminho do arquivo de lock |
-| `--src-dir` | `-d` | . | Diretório de fontes |
+| `--src-dir` | `-d` | ./src | Diretório de fontes |
 | `--modules-dir` | | .wippy | Diretório de módulos |
 | `--registry` | | | URL do registry |
 
@@ -171,11 +182,11 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| Flag | Descrição |
-|------|-----------|
-| `--json` | Saída em JSON |
-| `--limit` | Máximo de resultados |
-| `--registry` | URL do registry |
+| Flag | Padrão | Descrição |
+|------|--------|-----------|
+| `--json` | false | Saída em JSON |
+| `--limit` | 20 | Máximo de resultados |
+| `--registry` | | URL do registry |
 
 ## wippy auth
 
@@ -333,7 +344,7 @@ wippy run release.wapp -m 2G
 
 ```bash
 # Executar um único processo
-wippy run --exec app:processes/app:worker
+wippy run --exec app:worker
 
 # Com profiler ativado
 wippy run -p -v

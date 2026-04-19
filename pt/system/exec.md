@@ -113,3 +113,9 @@ proc:wait()
 stdout:close()
 executor:release()
 ```
+
+## Veja Também
+
+- [Módulo Exec](lua/system/exec.md) - Referência da API Lua
+- [Process Host](system/process-host.md) - Host que executa processos Wippy
+- [Filesystem](system/filesystem.md) - Entradas de filesystem usadas como diretórios de trabalho

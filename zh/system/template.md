@@ -104,3 +104,9 @@
 ## Lua API
 
 参见 [Template 模块](lua/text/template.md) 了解渲染操作。
+
+## 另请参阅
+
+- [Template 模块](lua/text/template.md) - Lua API 参考
+- [Filesystem](system/filesystem.md) - 从磁盘加载模板
+- [HTTP Endpoint](http/endpoint.md) - 从请求处理器渲染模板

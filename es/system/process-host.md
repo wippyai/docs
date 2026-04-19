@@ -45,11 +45,15 @@ Los hosts de procesos ejecutan entradas de estos tipos:
 
 | Tipo | Descripción |
 |------|-------------|
-| `lua.process` | Proceso Lua basado en fuente |
-| `lua.process.bytecode` | Bytecode Lua precompilado |
-
-<note>
-Tipos de proceso adicionales están planeados para futuras versiones.
-</note>
+| `process.lua` | Proceso Lua basado en fuente |
+| `process.lua.bc` | Bytecode Lua precompilado |
+| `process.wasm` | Proceso WebAssembly (experimental) |
 
 Los procesos se ejecutan independientemente con su propio contexto, se comunican vía mensajes, y son supervisados para tolerancia a fallos.
+
+## Ver También
+
+- [Módulo Process](lua/core/process.md) - Crear y gestionar procesos desde Lua
+- [Procesos WASM](wasm/processes.md) - Configuración de entradas `process.wasm`
+- [Modelo de Procesos](concepts/process-model.md) - Conceptos de ciclo de vida y supervisión
+- [Supervisión](guides/supervision.md) - Construcción de árboles de supervisión

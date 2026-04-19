@@ -193,6 +193,21 @@ Ajuste fino do comportamento do worker:
 
 Campos terminando em `_env` referenciam variáveis de ambiente definidas via entradas do [Sistema de Ambiente](system/env.md).
 
+### Comportamento de Versionamento
+
+`default_versioning_behavior` controla como novas execuções de workflow escolhem um build ID de worker quando `use_versioning` está ativado:
+
+| Valor | Comportamento |
+|-------|---------------|
+| `pinned` | O workflow permanece no build ID em que iniciou durante toda a sua execução |
+| `auto_upgrade` | O workflow pode ser retomado no build ID compatível mais recente após cada tarefa |
+
+`build_id_env` lê o build ID da variável de ambiente indicada quando `build_id` está vazio.
+
+### Session Worker
+
+`enable_session_worker: true` permite que o worker execute Sessões do Temporal: uma série de atividades fixadas a um único worker (útil quando atividades compartilham estado local como um diretório temporário ou uma conexão aberta). `max_concurrent_session_execution_size` limita as sessões concorrentes no worker.
+
 ### Padrões de Concorrência
 
 | Opção | Padrão |

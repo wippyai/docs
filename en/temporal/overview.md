@@ -200,6 +200,21 @@ Fine-tune worker behavior:
 
 Fields ending in `_env` reference environment variables defined via [Environment System](system/env.md) entries.
 
+### Versioning Behavior
+
+`default_versioning_behavior` controls how new workflow runs pick a worker build ID when `use_versioning` is enabled:
+
+| Value | Behavior |
+|-------|----------|
+| `pinned` | Workflow stays on the build ID it started on for its entire run |
+| `auto_upgrade` | Workflow may resume on the latest compatible build ID after each task |
+
+`build_id_env` reads the build ID from the named environment variable when `build_id` is empty.
+
+### Session Worker
+
+`enable_session_worker: true` lets the worker run Temporal Sessions: a series of activities pinned to a single worker (useful when activities share local state like a temp directory or open connection). `max_concurrent_session_execution_size` caps concurrent sessions on the worker.
+
 ### Concurrency Defaults
 
 | Option | Default |

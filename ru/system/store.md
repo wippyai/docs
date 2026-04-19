@@ -67,3 +67,9 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 ## Lua API
 
 См. [Модуль Store](lua/storage/store.md) для операций (get, set, delete, exists, clear).
+
+## См. также
+
+- [Модуль Store](lua/storage/store.md) — справочник Lua API
+- [База данных](system/database.md) — SQL-бэкенд для `store.sql`
+- [Кэш](lua/storage/cache.md) — модуль внутрипроцессного кэша

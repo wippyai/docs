@@ -107,3 +107,9 @@ Templates can extend parent templates and override blocks:
 ## Lua API
 
 See [Template Module](lua/text/template.md) for rendering operations.
+
+## See Also
+
+- [Template Module](lua/text/template.md) - Lua API reference
+- [Filesystem](system/filesystem.md) - Loading templates from disk
+- [HTTP Endpoint](http/endpoint.md) - Rendering templates from request handlers

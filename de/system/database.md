@@ -309,3 +309,9 @@ Datenbanken können zur Laufzeit mit dem [Registry-Modul](lua/core/registry.md) 
 ## Lua-API
 
 Siehe [SQL-Modul](lua/storage/sql.md) für die Datenbankoperationen-API.
+
+## Siehe auch
+
+- [SQL-Modul](lua/storage/sql.md) - Lua-API-Referenz
+- [Store](system/store.md) - Key-Value-Store basierend auf `database.sql`
+- [Queue](system/queue.md) - SQL-gestützter Queue-Handler

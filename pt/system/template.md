@@ -103,3 +103,9 @@ Templates podem estender templates pai e sobrescrever blocos:
 ## API Lua
 
 Veja [Módulo Template](lua/text/template.md) para operações de renderização.
+
+## Veja Também
+
+- [Módulo Template](lua/text/template.md) - Referência da API Lua
+- [Filesystem](system/filesystem.md) - Carregamento de templates do disco
+- [HTTP Endpoint](http/endpoint.md) - Renderização de templates a partir de handlers de requisição

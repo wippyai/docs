@@ -189,6 +189,20 @@ local spawner = process.with_context({request_id = "123"})
 
 **권한:** "context"에 대해 `process.context`
 
+### 옵션이 있는 Spawner
+
+`process.with_options(options)`는 컨텍스트 값 대신 스폰 시점의 옵션(예: 네트워크 선택자)을 가진 spawner를 생성합니다:
+
+```lua
+local spawner = process.with_options({network = "app:tor_proxy"})
+```
+
+| 옵션 | 타입 | 설명 |
+|------|------|------|
+| `network` | string | 자식 프로세스의 아웃바운드 연결에 사용할 `network.*` 엔트리의 레지스트리 ID |
+
+**권한:** "context"에 대해 `process.context`; 네트워크를 선택하려면 추가로 해당 네트워크 ID에 대해 `network.select`가 필요합니다.
+
 ### SpawnBuilder 메서드
 
 SpawnBuilder는 불변이며, 각 메서드는 새 인스턴스를 반환합니다:

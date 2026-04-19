@@ -103,3 +103,9 @@
 ## Lua API
 
 レンダリング操作については[テンプレートモジュール](lua/text/template.md)を参照してください。
+
+## 関連項目
+
+- [テンプレートモジュール](lua/text/template.md) - Lua APIリファレンス
+- [ファイルシステム](system/filesystem.md) - ディスクからのテンプレート読み込み
+- [HTTPエンドポイント](http/endpoint.md) - リクエストハンドラからのテンプレートレンダリング

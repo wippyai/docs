@@ -309,3 +309,9 @@ Databases can be registered at runtime using the [registry module](lua/core/regi
 ## Lua API
 
 See [SQL Module](lua/storage/sql.md) for database operations API.
+
+## See Also
+
+- [SQL Module](lua/storage/sql.md) - Lua API reference
+- [Store](system/store.md) - Key-value store backed by `database.sql`
+- [Queue](system/queue.md) - SQL-backed queue handler

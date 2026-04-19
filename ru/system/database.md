@@ -309,3 +309,9 @@ entries:
 ## Lua API
 
 См. [Модуль SQL](lua/storage/sql.md) для API работы с базами данных.
+
+## См. также
+
+- [Модуль SQL](lua/storage/sql.md) — справочник Lua API
+- [Store](system/store.md) — key-value хранилище на основе `database.sql`
+- [Queue](system/queue.md) — обработчик очередей на основе SQL

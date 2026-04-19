@@ -44,7 +44,7 @@ wippy run list                               # 사용 가능한 명령어 목록
 wippy run test                               # 테스트 실행
 wippy run snapshot.wapp                      # 팩 파일에서 실행
 wippy run acme/http                          # 모듈 실행
-wippy run --exec app:processes/app:worker   # 단일 프로세스 실행
+wippy run --exec app:worker                  # 단일 프로세스 실행
 ```
 
 | 플래그 | 약어 | 설명 |
@@ -63,11 +63,20 @@ wippy lint
 wippy lint --level warning
 ```
 
-모든 Lua 엔트리를 검증합니다: `function.lua.*`, `library.lua.*`, `process.lua.*`, `workflow.lua.*`.
+모든 Lua 엔트리를 검증합니다: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (해당 `.bc` 변형 포함).
 
-| 플래그 | 설명 |
-|------|-------------|
-| `--level` | 보고할 최소 심각도 수준 |
+| 플래그 | 약어 | 기본값 | 설명 |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | `wippy.lock` | Lock 파일 경로 |
+| `--level` | | `warning` | 최소 심각도: `error`, `warning`, `hint` |
+| `--ns` | | | 네임스페이스 패턴으로 필터 (예: `app`, `lib.*`) |
+| `--code` | | | 오류 코드로 필터 (예: `E0001,E0004`) |
+| `--rules` | | `false` | 스타일/품질 lint 규칙 활성화 |
+| `--summary` | | `false` | 오류 코드별로 출력 그룹화 |
+| `--limit` | | `0` | 표시할 최대 진단 수 (0 = 무제한) |
+| `--json` | | `false` | JSON 출력 |
+| `--no-color` | | `false` | 컬러 출력 비활성화 |
+| `--cache-reset` | | `false` | lint 전에 Lua 캐시 초기화 |
 
 ## wippy add
 
@@ -90,14 +99,16 @@ Lock 파일에서 의존성을 설치합니다.
 
 ```bash
 wippy install
-wippy install --force
+wippy install --refresh
 ```
 
-| 플래그 | 약어 | 설명 |
-|------|-------|-------------|
-| `--lock-file` | `-l` | Lock 파일 경로 |
-| `--force` | | 캐시를 무시하고 항상 다운로드 |
-| `--registry` | | 레지스트리 URL |
+| 플래그 | 약어 | 기본값 | 설명 |
+|------|-------|---------|-------------|
+| `--lock-file` | `-l` | wippy.lock | Lock 파일 경로 |
+| `--refresh` | | false | 모든 모듈을 캐시 무시하고 다시 가져오기 |
+| `--force` | | false | `--refresh`의 별칭 |
+| `--repair` | | false | `--refresh`의 별칭 |
+| `--registry` | | | 레지스트리 URL |
 
 ## wippy update
 
@@ -112,7 +123,7 @@ wippy update acme/http demo/sql   # 여러 모듈 업데이트
 | 플래그 | 약어 | 기본값 | 설명 |
 |------|-------|---------|-------------|
 | `--lock-file` | `-l` | wippy.lock | Lock 파일 경로 |
-| `--src-dir` | `-d` | . | 소스 디렉토리 |
+| `--src-dir` | `-d` | ./src | 소스 디렉토리 |
 | `--modules-dir` | | .wippy | 모듈 디렉토리 |
 | `--registry` | | | 레지스트리 URL |
 
@@ -171,11 +182,11 @@ wippy search "sql driver" --limit 20
 wippy search auth --json
 ```
 
-| 플래그 | 설명 |
-|------|-------------|
-| `--json` | JSON으로 출력 |
-| `--limit` | 최대 결과 수 |
-| `--registry` | 레지스트리 URL |
+| 플래그 | 기본값 | 설명 |
+|------|---------|-------------|
+| `--json` | false | JSON으로 출력 |
+| `--limit` | 20 | 최대 결과 수 |
+| `--registry` | | 레지스트리 URL |
 
 ## wippy auth
 
@@ -333,7 +344,7 @@ wippy run release.wapp -m 2G
 
 ```bash
 # 단일 프로세스 실행
-wippy run --exec app:processes/app:worker
+wippy run --exec app:worker
 
 # 프로파일러 활성화와 함께
 wippy run -p -v

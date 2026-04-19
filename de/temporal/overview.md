@@ -193,6 +193,21 @@ Worker-Verhalten fein abstimmen:
 
 Felder die mit `_env` enden referenzieren Umgebungsvariablen, die über [Umgebungssystem](system/env.md)-Einträge definiert sind.
 
+### Versionierungsverhalten
+
+`default_versioning_behavior` steuert, wie neue Workflow-Läufe eine Worker-Build-ID auswählen, wenn `use_versioning` aktiviert ist:
+
+| Wert | Verhalten |
+|------|-----------|
+| `pinned` | Workflow bleibt für die gesamte Laufzeit auf der Build-ID, mit der er gestartet wurde |
+| `auto_upgrade` | Workflow kann nach jedem Task auf der neuesten kompatiblen Build-ID fortgesetzt werden |
+
+`build_id_env` liest die Build-ID aus der angegebenen Umgebungsvariable, wenn `build_id` leer ist.
+
+### Session Worker
+
+`enable_session_worker: true` lässt den Worker Temporal Sessions ausführen: eine Reihe von Activities, die an einen einzelnen Worker gebunden sind (nützlich, wenn Activities lokalen Zustand wie ein temporäres Verzeichnis oder eine offene Verbindung teilen). `max_concurrent_session_execution_size` begrenzt die gleichzeitigen Sessions auf dem Worker.
+
 ### Nebenläufigkeits-Standards
 
 | Option | Standard |

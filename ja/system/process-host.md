@@ -45,11 +45,15 @@
 
 | 種別 | 説明 |
 |------|------|
-| `lua.process` | ソースベースのLuaプロセス |
-| `lua.process.bytecode` | プリコンパイル済みLuaバイトコード |
-
-<note>
-追加のプロセス種別は将来のリリースで計画されています。
-</note>
+| `process.lua` | ソースベースのLuaプロセス |
+| `process.lua.bc` | プリコンパイル済みLuaバイトコード |
+| `process.wasm` | WebAssemblyプロセス（実験的） |
 
 プロセスは独自のコンテキストを持って独立して実行され、メッセージを介して通信し、フォールトトレランスのために監視されます。
+
+## 関連項目
+
+- [プロセスモジュール](lua/core/process.md) - Luaからプロセスをスポーンおよび管理
+- [WASMプロセス](wasm/processes.md) - `process.wasm`エントリの設定
+- [プロセスモデル](concepts/process-model.md) - ライフサイクルとスーパービジョンの概念
+- [スーパービジョン](guides/supervision.md) - スーパービジョンツリーの構築
