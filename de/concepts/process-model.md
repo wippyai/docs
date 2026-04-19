@@ -18,7 +18,7 @@ flowchart LR
     Running --> Complete
 ```
 
-Prozesse sind nicht auf Lua beschränkt. Die Laufzeitumgebung unterstützt jede Zustandsautomaten-Implementierung — Go-basierte Prozesse und WebAssembly-Module sind geplant.
+Prozesse sind nicht auf Lua beschränkt. Die Laufzeitumgebung unterstützt bereits WebAssembly-Module über die `process.wasm`-Art, und die Architektur lässt jede Zustandsautomaten-Implementierung zu.
 
 <warning>
 Prozesse sind leichtgewichtig, aber nicht kostenlos. Jeder Prozess trägt einen kleinen Basiskostenaufwand für seinen Zustand, seine Inbox und die Scheduler-Buchführung, und dynamische Speicherreservierungen vergrößern diesen Footprint während der Ausführung.

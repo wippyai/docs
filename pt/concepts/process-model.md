@@ -18,7 +18,7 @@ flowchart LR
     Running --> Complete
 ```
 
-Processos não estão limitados a Lua. O runtime suporta qualquer implementação de máquina de estado — processos baseados em Go e módulos WebAssembly estão planejados.
+Processos não estão limitados a Lua. O runtime já suporta módulos WebAssembly através do tipo `process.wasm`, e a arquitetura admite qualquer implementação de máquina de estado.
 
 <warning>
 Processos são leves, mas não são gratuitos. Cada processo carrega um pequeno custo base para seu estado, caixa de entrada e contabilidade do escalonador, e as alocações dinâmicas aumentam essa pegada durante a execução.

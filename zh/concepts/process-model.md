@@ -18,7 +18,7 @@ flowchart LR
     Running --> Complete
 ```
 
-进程不限于 Lua。运行时支持任何状态机实现——基于 Go 的进程和 WebAssembly 模块已在计划中。
+进程不限于 Lua。运行时已通过 `process.wasm` 类型支持 WebAssembly 模块，并且其架构允许任何状态机实现。
 
 <warning>
 进程是轻量级的，但不是零成本的。每个进程在其状态、收件箱和调度器簿记方面承担少量基础成本，动态分配会在执行过程中增加这一占用。

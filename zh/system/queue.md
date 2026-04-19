@@ -13,7 +13,7 @@ flowchart LR
     W --> F[Function]
 ```
 
-- **Driver** - 后端实现（memory、AMQP、Redis）
+- **Driver** - 后端实现（memory、AMQP、SQS）
 - **Queue** - 绑定到驱动的逻辑队列
 - **Consumer** - 连接队列到处理器，带并发设置
 - **Worker Pool** - 并发消息处理器

@@ -13,7 +13,7 @@ flowchart LR
     W --> F[Función]
 ```
 
-- **Driver** - Implementación de backend (memory, AMQP, Redis)
+- **Driver** - Implementación de backend (memory, AMQP, SQS)
 - **Cola** - Cola lógica vinculada a un driver
 - **Consumidor** - Conecta cola a handler con configuración de concurrencia
 - **Pool de Workers** - Procesadores de mensajes concurrentes

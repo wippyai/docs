@@ -13,7 +13,7 @@ flowchart LR
     W --> F[Function]
 ```
 
-- **Driver** - Backend-Implementierung (Memory, AMQP, Redis)
+- **Driver** - Backend-Implementierung (Memory, AMQP, SQS)
 - **Queue** - Logische Queue gebunden an einen Driver
 - **Consumer** - Verbindet Queue mit Handler mit Nebenläufigkeits-Einstellungen
 - **Worker Pool** - Nebenläufige Nachrichtenverarbeiter
