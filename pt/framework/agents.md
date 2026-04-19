@@ -109,12 +109,15 @@ end
 | `agent_context.new(options?)` | Cria novo contexto |
 | `:add_tools(specs)` | Adiciona ferramentas em tempo de execucao |
 | `:add_delegates(specs)` | Adiciona agentes delegados |
+| `:configure_delegate_tools(config)` | Configura como os delegados se expoem como ferramentas |
 | `:set_memory_contract(config)` | Configura memoria dinamica |
+| `:set_context_merger(fn)` | Fornece uma funcao para mesclar atualizacoes do contexto em tempo de execucao |
 | `:update_context(updates)` | Atualiza contexto em tempo de execucao |
 | `:load_agent(spec_or_id, options?)` | Carrega e compila agente, retorna runner |
 | `:switch_to_agent(id, options?)` | Troca para agente diferente, retorna `(boolean, string?)` |
 | `:switch_to_model(name)` | Altera modelo no agente atual, retorna `(boolean, string?)` |
 | `:get_current_agent()` | Obtem o runner atual |
+| `:get_config()` | Retorna um resumo da configuracao do contexto |
 
 ### Opcoes do Contexto
 
@@ -122,8 +125,15 @@ end
 local ctx = agent_context.new({
     context = { session_id = "abc", user_id = "u1" },
     delegate_tools = { enabled = true },
+    enable_cache = true,
 })
 ```
+
+| Opcao | Descricao |
+|-------|-----------|
+| `context` | Contexto base em tempo de execucao encaminhado para ferramentas e delegados |
+| `delegate_tools` | Configuracao padrao de delegate-tool (substituida por `configure_delegate_tools`) |
+| `enable_cache` | Habilita marcadores de cache de prompt (modelos Claude). Padrao `true`. |
 
 ### Carregamento por Spec Inline
 

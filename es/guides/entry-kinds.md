@@ -17,6 +17,11 @@ Referencia completa de todos los tipos de entrada disponibles en Wippy.
 | `process.lua` | Proceso Lua de larga duración |
 | `workflow.lua` | Flujo de trabajo Temporal (determinístico) |
 | `library.lua` | Biblioteca Lua compartida |
+| `module.lua` | Interfaz de módulo Lua |
+| `function.lua.bc` | Bytecode de función precompilado |
+| `library.lua.bc` | Bytecode de biblioteca precompilado |
+| `process.lua.bc` | Bytecode de proceso precompilado |
+| `workflow.lua.bc` | Bytecode de workflow precompilado |
 
 ```yaml
 - name: handler
@@ -111,7 +116,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.postgres
-  dsn: "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+  host: localhost
+  port: 5432
+  database: dbname
+  username: user
+  password: pass
+  options:
+    sslmode: disable
   pool:
     max_open: 25
     max_idle: 5
@@ -125,7 +136,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mysql
-  dsn: "user:pass@tcp(localhost:3306)/dbname?parseTime=true"
+  host: localhost
+  port: 3306
+  database: dbname
+  username: user
+  password: pass
+  options:
+    parseTime: "true"
   lifecycle:
     auto_start: true
 ```
@@ -135,10 +152,16 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mssql
-  dsn: "sqlserver://user:pass@localhost:1433?database=dbname"
+  host: localhost
+  port: 1433
+  database: dbname
+  username: user
+  password: pass
   lifecycle:
     auto_start: true
 ```
+
+Consulta [Database](system/database.md) para variantes con sufijo `*_env`, opciones TLS y ajuste del pool de conexiones.
 
 **API Lua:** Ver [Módulo SQL](lua/storage/sql.md)
 
@@ -149,6 +172,7 @@ local db, err = sql.get("app:database")
 local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
 db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 ```
+
 
 ## Almacenes Clave-Valor
 
@@ -188,6 +212,8 @@ local data = s:get("user:123")
 | Tipo | Descripción |
 |------|-------------|
 | `queue.driver.memory` | Driver de cola en memoria |
+| `queue.driver.amqp` | Driver AMQP (RabbitMQ) |
+| `queue.driver.sqs` | Driver AWS SQS |
 | `queue.queue` | Declaración de cola |
 | `queue.consumer` | Consumidor de cola |
 
@@ -342,6 +368,7 @@ Use <code>endpoint</code> para conectarse a servicios compatibles con S3 como Mi
 | Tipo | Descripción |
 |------|-------------|
 | `fs.directory` | Acceso a directorio |
+| `fs.embed` | Sistema de archivos embebido de solo lectura |
 
 ```yaml
 - name: data_dir

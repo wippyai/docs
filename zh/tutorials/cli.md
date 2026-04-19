@@ -170,6 +170,40 @@ end
 return { main = main }
 ```
 
+## 命名命令
+
+可以将进程注册为命名命令，而不是使用 `-x app:cli`：
+
+```yaml
+  - name: cli
+    kind: process.lua
+    meta:
+      command:
+        name: greet
+        short: Greet the user
+    source: file://cli.lua
+    method: main
+    modules:
+      - io
+```
+
+现在按名称运行：
+
+```bash
+wippy run greet
+```
+
+列出所有可用命令：
+
+```bash
+wippy run list
+```
+
+```
+Available commands:
+  greet    Greet the user
+```
+
 ## 退出码
 
 从 `main()` 返回以设置退出码：

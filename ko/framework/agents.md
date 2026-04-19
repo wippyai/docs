@@ -109,12 +109,15 @@ end
 | `agent_context.new(options?)` | 새 컨텍스트 생성 |
 | `:add_tools(specs)` | 런타임에 도구 추가 |
 | `:add_delegates(specs)` | 위임 에이전트 추가 |
+| `:configure_delegate_tools(config)` | 위임자가 도구로 노출되는 방식 설정 |
 | `:set_memory_contract(config)` | 동적 메모리 설정 |
+| `:set_context_merger(fn)` | 런타임 컨텍스트 업데이트를 병합하는 함수 제공 |
 | `:update_context(updates)` | 런타임 컨텍스트 업데이트 |
 | `:load_agent(spec_or_id, options?)` | 에이전트를 로드하고 컴파일하여 러너 반환 |
 | `:switch_to_agent(id, options?)` | 다른 에이전트로 전환, `(boolean, string?)` 반환 |
 | `:switch_to_model(name)` | 현재 에이전트의 모델 변경, `(boolean, string?)` 반환 |
 | `:get_current_agent()` | 현재 러너 가져오기 |
+| `:get_config()` | 컨텍스트 구성 요약 반환 |
 
 ### 컨텍스트 옵션
 
@@ -122,8 +125,15 @@ end
 local ctx = agent_context.new({
     context = { session_id = "abc", user_id = "u1" },
     delegate_tools = { enabled = true },
+    enable_cache = true,
 })
 ```
+
+| 옵션 | 설명 |
+|--------|-------------|
+| `context` | 도구 및 위임자에게 전달되는 기본 런타임 컨텍스트 |
+| `delegate_tools` | 기본 위임-도구 구성 (`configure_delegate_tools`로 재정의 가능) |
+| `enable_cache` | 프롬프트 캐시 마커 활성화 (Claude 모델). 기본값은 `true`. |
 
 ### 인라인 스펙으로 로드
 

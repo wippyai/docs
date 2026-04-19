@@ -48,14 +48,17 @@ flowchart TB
         CryptoAPI[API Precios Crypto]
     end
 
+    %% Conexiones de cliente
     Browser -->|"GET /"| Static
     API -->|"POST /auth/token"| CORS1
     Browser -->|"WS /ws/ticker"| CORS2
 
+    %% Flujo API
     CORS1 --> AuthEndpoint
     AuthEndpoint -->|validate| TokenStore
     AuthEndpoint -->|"issue token"| API
 
+    %% Flujo WS
     CORS2 --> TokenAuth
     TokenAuth -->|validate| TokenStore
     TokenAuth --> WSEndpoint
@@ -64,15 +67,19 @@ flowchart TB
     WSEndpoint --> WSRelay
     WSRelay <-->|"messages"| WSHandler
 
+    %% Dependencias del almacén de tokens
     MemStore --> TokenStore
     Policy -->|attached to token| TokenStore
 
+    %% Auth usa DB para API keys
     AuthEndpoint -->|lookup API key| DB
 
+    %% Comunicación entre procesos
     WSHandler -->|subscribe| Ticker
     Ticker -->|broadcast| WSHandler
     WSRelay <-->|"ws frames"| Browser
 
+    %% Externo
     Ticker -->|fetch prices| CryptoAPI
 ```
 
@@ -265,21 +272,21 @@ local function handler()
     local body, parse_err = req:body_json()
     if parse_err then
         res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "JSON inválido"})
+        res:write_json({error = "invalid JSON"})
         return
     end
 
     local api_key = body.api_key
     if not api_key or #api_key == 0 then
         res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "api_key requerido"})
+        res:write_json({error = "api_key required"})
         return
     end
 
     local db, db_err = sql.get("app:db")
     if db_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({error = "base de datos no disponible"})
+        res:write_json({error = "database unavailable"})
         return
     end
 
@@ -291,7 +298,7 @@ local function handler()
 
     if query_err or #rows == 0 then
         res:set_status(http.STATUS.UNAUTHORIZED)
-        res:write_json({error = "API key inválido"})
+        res:write_json({error = "invalid API key"})
         return
     end
 
@@ -311,7 +318,7 @@ local function handler()
     local store, store_err = security.token_store("app:tokens")
     if store_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({error = "almacén de tokens no disponible"})
+        res:write_json({error = "token store unavailable"})
         return
     end
 
@@ -323,7 +330,7 @@ local function handler()
 
     if token_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({error = "creación de token falló"})
+        res:write_json({error = "token creation failed"})
         return
     end
 
@@ -354,7 +361,7 @@ local function handler()
 
     if req:method() ~= http.METHOD.GET then
         res:set_status(http.STATUS.METHOD_NOT_ALLOWED)
-        res:write_json({error = "método no permitido"})
+        res:write_json({error = "method not allowed"})
         return
     end
 
@@ -362,7 +369,7 @@ local function handler()
     local actor = security.actor()
     if not actor then
         res:set_status(http.STATUS.UNAUTHORIZED)
-        res:write_json({error = "autenticación requerida"})
+        res:write_json({error = "authentication required"})
         return
     end
 
@@ -373,7 +380,7 @@ local function handler()
     if err then
         logger:error("spawn failed", {error = tostring(err)})
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({error = "falló al crear handler"})
+        res:write_json({error = "failed to create handler"})
         return
     end
 
@@ -563,6 +570,63 @@ local function main()
             end
         end
     end
+end
+
+return { main = main }
+```
+
+## Migración de Base de Datos
+
+`migrate.lua` - crea la tabla de API keys y genera una clave demo:
+
+```lua
+local sql = require("sql")
+local logger = require("logger")
+local crypto = require("crypto")
+
+local function main()
+    local db, err = sql.get("app:db")
+    if err then
+        logger:error("failed to connect", {error = tostring(err)})
+        return 1
+    end
+
+    local _, exec_err = db:execute([[
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            api_key TEXT UNIQUE NOT NULL,
+            user_id TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user',
+            created_at INTEGER NOT NULL
+        )
+    ]])
+
+    if exec_err then
+        db:release()
+        logger:error("migration failed", {error = tostring(exec_err)})
+        return 1
+    end
+
+    -- Verificar si la clave demo existe
+    local rows, _ = db:query("SELECT api_key FROM api_keys WHERE user_id = ?", {"demo"})
+    if #rows == 0 then
+        local demo_key, key_err = crypto.random.string(32)
+        if key_err then
+            db:release()
+            return 1
+        end
+
+        db:execute(
+            "INSERT INTO api_keys (api_key, user_id, role, created_at) VALUES (?, ?, ?, ?)",
+            {demo_key, "demo", "user", os.time()}
+        )
+        logger:info("demo API key created", {api_key = demo_key})
+    else
+        logger:info("demo API key exists", {api_key = rows[1].api_key})
+    end
+
+    db:release()
+    return 0
 end
 
 return { main = main }

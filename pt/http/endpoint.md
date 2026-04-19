@@ -36,6 +36,7 @@ Métodos suportados:
 | `DELETE` | Remover recursos |
 | `HEAD` | Apenas headers |
 | `OPTIONS` | Preflight CORS (tratado automaticamente) |
+| `TRACE` | Loopback de diagnóstico |
 
 ## Parâmetros de Caminho
 
@@ -58,7 +59,10 @@ Use sintaxe `{param}` para parâmetros de URL:
 Acesso no handler:
 
 ```lua
-function(req, res)
+local http = require("http")
+
+local function handler()
+    local req = http.request()
     local user_id = req:param("id")
     local post_id = req:param("post_id")
 end
@@ -77,7 +81,8 @@ Capture caminho restante com `{path...}`:
 ```
 
 ```lua
-function(req, res)
+local function handler()
+    local req = http.request()
     local file_path = req:param("path")
     -- /files/docs/readme.md -> path = "docs/readme.md"
 end
@@ -85,10 +90,16 @@ end
 
 ## Função Handler
 
-Funções de endpoint recebem objetos de requisição e resposta:
+Funções de endpoint obtêm objetos de requisição e resposta do módulo `http`:
 
 ```lua
-function(req, res)
+local http = require("http")
+local json = require("json")
+
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     -- Lê requisição
     local body = req:body()
     local user_id = req:param("id")
@@ -99,10 +110,12 @@ function(req, res)
     local user = get_user(user_id)
 
     -- Escreve resposta
-    res:set_header("Content-Type", "application/json")
-    res:set_status(200)
-    res:write(json.encode(user))
+    res:set_content_type(http.CONTENT.JSON)
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ### Objeto Request
@@ -112,79 +125,96 @@ end
 | `req:method()` | string | Método HTTP |
 | `req:path()` | string | Caminho da requisição |
 | `req:param(name)` | string | Parâmetro de URL |
+| `req:params()` | table | Todos os parâmetros de caminho |
 | `req:query(name)` | string | Parâmetro de query |
+| `req:query_params()` | table | Todos os parâmetros de query |
 | `req:header(name)` | string | Header da requisição |
-| `req:headers()` | table | Todos os headers |
 | `req:body()` | string | Corpo da requisição |
-| `req:cookie(name)` | string | Valor do cookie |
+| `req:body_json()` | table, error | Analisa corpo JSON |
+| `req:has_body()` | boolean | Verifica se existe corpo |
+| `req:content_type()` | string | Tipo de conteúdo |
+| `req:content_length()` | number | Tamanho do corpo em bytes |
+| `req:host()` | string | Nome do host |
 | `req:remote_addr()` | string | Endereço IP do cliente |
+| `req:accepts(type)` | boolean | Negociação de conteúdo |
+| `req:is_content_type(type)` | boolean | Verifica tipo de conteúdo |
+| `req:stream()` | Stream | Corpo como stream para arquivos grandes |
+| `req:parse_multipart(max?)` | table, error | Analisa formulário multipart |
 
 ### Objeto Response
 
 | Método | Descrição |
 |--------|-----------|
-| `res:set_status(code)` | Define status HTTP |
-| `res:set_header(name, value)` | Define header |
-| `res:set_cookie(name, value, opts)` | Define cookie |
-| `res:write(data)` | Escreve corpo |
-| `res:redirect(url, code?)` | Redireciona (padrão 302) |
+| `res:set_status(code)` | Define código de status HTTP |
+| `res:set_header(name, value)` | Define header de resposta |
+| `res:set_content_type(type)` | Define tipo de conteúdo |
+| `res:write(data)` | Escreve corpo bruto |
+| `res:write_json(data)` | Escreve resposta JSON |
+| `res:write_event(data)` | Envia evento SSE |
+| `res:set_transfer(encoding)` | Define modo de transferência (SSE, chunked) |
+| `res:flush()` | Descarrega resposta para o cliente |
 
 ## Padrão de API JSON
 
 Padrão comum para APIs JSON:
 
 ```lua
-local json = require("json")
+local http = require("http")
 
-function(req, res)
-    -- Analisa corpo JSON
-    local data, err = json.decode(req:body())
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
+    local data, err = req:body_json()
     if err then
-        res:set_status(400)
-        res:set_header("Content-Type", "application/json")
-        res:write(json.encode({error = "JSON inválido"}))
+        res:set_status(http.STATUS.BAD_REQUEST)
+        res:write_json({error = "Invalid JSON"})
         return
     end
 
-    -- Processa requisição
     local result = process(data)
 
-    -- Retorna resposta JSON
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(result))
+    res:set_status(http.STATUS.OK)
+    res:write_json(result)
 end
+
+return { handler = handler }
 ```
 
 ## Respostas de Erro
 
 ```lua
+local http = require("http")
+
 local function api_error(res, status, code, message)
     res:set_status(status)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode({
+    res:write_json({
         error = {
             code = code,
             message = message
         }
-    }))
+    })
 end
 
-function(req, res)
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     local user_id = req:param("id")
     local user, err = db.get_user(user_id)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
-            return api_error(res, 404, "USER_NOT_FOUND", "Usuário não encontrado")
+            return api_error(res, http.STATUS.NOT_FOUND, "USER_NOT_FOUND", "User not found")
         end
-        return api_error(res, 500, "INTERNAL_ERROR", "Erro do servidor")
+        return api_error(res, http.STATUS.INTERNAL_ERROR, "INTERNAL_ERROR", "Server error")
     end
 
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ## Exemplos
@@ -202,35 +232,40 @@ entries:
 
   - name: list_users
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /
     func: app.users:list
 
   - name: get_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /{id}
     func: app.users:get
 
   - name: create_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: POST
     path: /
     func: app.users:create
 
   - name: update_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: PUT
     path: /{id}
     func: app.users:update
 
   - name: delete_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: DELETE
     path: /{id}
     func: app.users:delete
@@ -241,7 +276,8 @@ entries:
 ```yaml
 - name: admin_endpoint
   kind: http.endpoint
-  router: admin_router
+  meta:
+    router: admin_router
   method: POST
   path: /settings
   func: app.admin:update_settings

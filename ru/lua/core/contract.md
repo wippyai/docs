@@ -36,12 +36,18 @@ local svc, err = contract.open("app.services:user", {
 
 -- С query-параметрами (автоконвертация: "true"→bool, числа→int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
+
+-- С опциями вызова (третий аргумент)
+local inst, err = contract.open("app.services:flaky", nil, {
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 ```
 
 | Параметр | Тип | Описание |
 |----------|-----|----------|
 | `binding_id` | string | ID привязки, поддерживает query-параметры |
 | `scope` | table | Значения контекста (опционально, переопределяют query-параметры) |
+| `options` | table | Опции вызова (опционально) — например `retry.max_attempts`, `retry.initial_delay` |
 
 **Возвращает:** `Instance, error`
 
@@ -164,6 +170,27 @@ local wrapped = c:with_context({
 
 local instance, err = wrapped:open()
 ```
+
+## Опции вызова
+
+Настройте retry и другое поведение вызова через `with_options`:
+
+```lua
+local c, err = contract.get("app.services:flaky")
+
+local inst, err = c
+    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
+    :open("app.services:flaky_impl")
+
+local result, err = inst:call()
+```
+
+Опции применяются к каждому вызову метода возвращённого экземпляра. Только повторяемые ошибки запускают retry; неповторяемые ошибки возвращаются сразу. Цепочкой с `with_context`, `with_actor`, `with_scope`.
+
+| Опция | Тип | Описание |
+|-------|-----|----------|
+| `retry.max_attempts` | int | Максимум попыток включая первую (1 отключает retry) |
+| `retry.initial_delay` | int/duration | Задержка перед первым retry (ms или строка duration) |
 
 ## Контекст безопасности
 

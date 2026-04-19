@@ -81,6 +81,23 @@ local line, err = io.readline()
 
 **Gibt zurück:** `string, error`
 
+## Raw-Modus
+
+Aktiviert oder deaktiviert den Raw-Terminal-Modus (deaktiviert Zeilenpufferung und Echo):
+
+```lua
+local ok, err = io.raw(true)   -- aktivieren
+local ok, err = io.raw(false)  -- deaktivieren
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `enable` | boolean | `true` zum Aktivieren, `false` zum Deaktivieren (Standard: `true`) |
+
+**Gibt zurueck:** `boolean, error`
+
+Der Raw-Modus ist referenzgezaehlt — jedes `io.raw(true)` muss durch ein `io.raw(false)` ausgeglichen werden. Das Terminal wird beim Prozessende automatisch in den Normalmodus zurueckgesetzt.
+
 ## Ausgabe flushen
 
 Flusht den stdout-Puffer:

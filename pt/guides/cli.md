@@ -43,16 +43,17 @@ wippy run                                    # Iniciar o runtime
 wippy run list                               # Listar comandos disponíveis
 wippy run test                               # Executar testes
 wippy run snapshot.wapp                      # Executar a partir de arquivo pack
-wippy run acme/http                          # Executar módulo
-wippy run --exec app:worker                  # Executar um único processo
+wippy run acme/http                          # Executar módulo do hub
+wippy run acme/http@1.2.3                    # Executar versão específica
+wippy run --exec app:worker                  # Iniciar runtime e executar um único processo
 ```
 
 | Flag | Curta | Descrição |
 |------|-------|-----------|
-| `--override` | `-o` | Sobrescrever valores de entrada (namespace:entry:field=value) |
-| `--exec` | `-x` | Executar processo e encerrar (host/namespace:entry) |
-| `--host` | | Host para execução |
-| `--registry` | | URL do registry |
+| `--override` | `-o` | Sobrescrever valores de entrada (`namespace:entry:field=value`) |
+| `--exec` | `-x` | Executar processo e encerrar (`namespace:entry`) |
+| `--host` | | ID do host de terminal para `--exec` (detectado automaticamente se existir apenas um `terminal.host`) |
+| `--registry` | | URL do registry para módulos do hub |
 
 ## wippy lint
 
@@ -61,6 +62,8 @@ Verificar erros de tipo e avisos no código Lua.
 ```bash
 wippy lint
 wippy lint --level warning
+wippy lint --json
+wippy lint --rules
 ```
 
 Valida todas as entradas Lua: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (incluindo suas variantes `.bc`).
@@ -224,6 +227,10 @@ wippy auth status
 wippy auth status --json
 ```
 
+| Flag | Descrição |
+|------|-----------|
+| `--json` | Saída como JSON |
+
 ## wippy readme
 
 Obter o README de um módulo a partir do hub.
@@ -247,19 +254,30 @@ Consultar e inspecionar entradas do registry.
 
 ```bash
 wippy registry list
-wippy registry list --kind function.lua
-wippy registry list --ns app --json
+wippy registry list --kind "function.lua.*"
+wippy registry list --ns "app.*" --json
+wippy registry list --meta "type=api" --meta "enabled=true"
 ```
 
 | Flag | Curta | Descrição |
 |------|-------|-----------|
-| `--kind` | `-k` | Filtrar por tipo |
-| `--ns` | `-n` | Filtrar por namespace |
-| `--name` | | Filtrar por nome |
-| `--meta` | | Filtrar por metadados |
+| `--kind` | `-k` | Filtrar por tipo (padrão glob) |
+| `--ns` | `-n` | Filtrar por namespace (padrão glob) |
+| `--name` | | Filtrar por nome (padrão glob) |
+| `--meta` | | Filtrar por metadados (repetível) |
 | `--json` | | Saída em JSON |
 | `--yaml` | | Saída em YAML |
 | `--lock-file` | `-l` | Caminho do arquivo de lock |
+
+Operadores de metadados para `--meta`:
+
+| Operador | Significado |
+|----------|-------------|
+| `field=value` | Correspondência exata |
+| `field~regex` | Correspondência por regex |
+| `field*substr` | Contém substring |
+| `field^prefix` | Começa com prefixo |
+| `field$suffix` | Termina com sufixo |
 
 ### wippy registry show
 
@@ -323,6 +341,7 @@ wippy run list
 |-------|-------------|-----------|
 | `name` | Sim | Nome do comando usado com `wippy run <name>` |
 | `short` | Não | Descrição curta exibida em `wippy run list` |
+| `main` | Não | Marca esta entrada como comando padrão (selecionado automaticamente por packs e módulos do hub que entregam um único comando) |
 
 Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O nome do comando deve ser único entre todas as entradas carregadas. Argumentos após o nome do comando são passados para o processo.
 

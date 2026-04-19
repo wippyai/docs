@@ -77,6 +77,19 @@ local all_headers = msg:headers()
 | `id()` | `string, error` | 唯一消息标识符 |
 | `header(key)` | `any, error` | 单个头值（缺失时为 nil） |
 | `headers()` | `table, error` | 所有消息头 |
+| `ack()` | `boolean, error` | 确认处理（single-shot） |
+| `nack()` | `boolean, error` | 发送失败信号以重新投递或死信（single-shot） |
+
+Runtime 在处理器成功时自动 ack，在处理器出错时自动 nack。仅在需要提前确认时调用 `ack`/`nack`。
+
+## 队列信息
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats 可能包含：message_count、consumer_count、ready（驱动相关）
+```
+
+**返回:** `table, error`
 
 ## 消费者模式
 

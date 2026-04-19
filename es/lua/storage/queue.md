@@ -77,6 +77,19 @@ Solo disponible cuando se procesan mensajes de cola en contexto de consumidor.
 | `id()` | `string, error` | Identificador único de mensaje |
 | `header(key)` | `any, error` | Valor de cabecera individual (nil si falta) |
 | `headers()` | `table, error` | Todas las cabeceras del mensaje |
+| `ack()` | `boolean, error` | Confirmar procesamiento (single-shot) |
+| `nack()` | `boolean, error` | Señalar fallo para reentrega o dead-letter (single-shot) |
+
+El runtime hace auto-ack al éxito del handler y auto-nack al error del handler. Llama a `ack`/`nack` solo para confirmar anticipadamente.
+
+## Información de Cola
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats puede contener: message_count, consumer_count, ready (depende del driver)
+```
+
+**Devuelve:** `table, error`
 
 ## Patrón de Consumidor
 

@@ -505,6 +505,23 @@ local response = llm.embed({
 -- response.result is an array of float arrays
 ```
 
+## Anbieterstatus
+
+Pruefe einen Anbieter, bevor Arbeit gesendet wird. Nuetzlich fuer Bereitschaftspruefungen und leichtgewichtiges Health-Monitoring:
+
+```lua
+local status, err = llm.status({
+    model = "gpt-4o",
+})
+```
+
+| Option | Beschreibung |
+|--------|--------------|
+| `model` | Erforderlich. Zu pruefendes Modell. |
+| `provider_id` | Optional. Ueberspringt die Modellaufloesung und zielt auf einen bestimmten Anbieter. |
+
+Gibt die `StatusResponse` des Anbieters zurueck (Inhalt ist anbieterabhaengig).
+
 ## Fehlerbehandlung
 
 Fehler werden als zweiter Rueckgabewert zurueckgegeben. Bei einem Fehler ist der erste Rueckgabewert `nil`:

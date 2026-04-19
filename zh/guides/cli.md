@@ -43,16 +43,17 @@ wippy run                                    # 启动运行时
 wippy run list                               # 列出可用命令
 wippy run test                               # 运行测试
 wippy run snapshot.wapp                      # 从打包文件运行
-wippy run acme/http                          # 运行模块
-wippy run --exec app:worker                  # 执行单个进程
+wippy run acme/http                          # 从中心运行模块
+wippy run acme/http@1.2.3                    # 运行指定版本
+wippy run --exec app:worker                  # 启动运行时并执行单个进程
 ```
 
 | 标志 | 缩写 | 描述 |
 |------|------|------|
-| `--override` | `-o` | 覆盖条目值（namespace:entry:field=value） |
-| `--exec` | `-x` | 执行进程后退出（host/namespace:entry） |
-| `--host` | | 执行主机 |
-| `--registry` | | 注册中心 URL |
+| `--override` | `-o` | 覆盖条目值（`namespace:entry:field=value`） |
+| `--exec` | `-x` | 执行进程后退出（`namespace:entry`） |
+| `--host` | | `--exec` 的终端主机 ID（若仅存在一个 `terminal.host` 则自动检测） |
+| `--registry` | | 中心模块的注册中心 URL |
 
 ## wippy lint
 
@@ -61,6 +62,8 @@ wippy run --exec app:worker                  # 执行单个进程
 ```bash
 wippy lint
 wippy lint --level warning
+wippy lint --json
+wippy lint --rules
 ```
 
 验证所有 Lua 条目：`function.lua`、`library.lua`、`process.lua`、`workflow.lua`（包括其 `.bc` 变体）。
@@ -224,6 +227,10 @@ wippy auth status
 wippy auth status --json
 ```
 
+| 标志 | 描述 |
+|------|------|
+| `--json` | 以 JSON 格式输出 |
+
 ## wippy readme
 
 从 Hub 获取模块的 README。
@@ -247,19 +254,30 @@ wippy readme --json wippy/terminal@latest
 
 ```bash
 wippy registry list
-wippy registry list --kind function.lua
-wippy registry list --ns app --json
+wippy registry list --kind "function.lua.*"
+wippy registry list --ns "app.*" --json
+wippy registry list --meta "type=api" --meta "enabled=true"
 ```
 
 | 标志 | 缩写 | 描述 |
 |------|------|------|
-| `--kind` | `-k` | 按类型过滤 |
-| `--ns` | `-n` | 按命名空间过滤 |
-| `--name` | | 按名称过滤 |
-| `--meta` | | 按元数据过滤 |
+| `--kind` | `-k` | 按类型过滤（glob 模式） |
+| `--ns` | `-n` | 按命名空间过滤（glob 模式） |
+| `--name` | | 按名称过滤（glob 模式） |
+| `--meta` | | 按元数据过滤（可重复） |
 | `--json` | | 以 JSON 格式输出 |
 | `--yaml` | | 以 YAML 格式输出 |
 | `--lock-file` | `-l` | 锁文件路径 |
+
+`--meta` 的元数据运算符：
+
+| 运算符 | 含义 |
+|--------|------|
+| `field=value` | 精确匹配 |
+| `field~regex` | 正则匹配 |
+| `field*substr` | 包含子串 |
+| `field^prefix` | 以前缀开头 |
+| `field$suffix` | 以后缀结尾 |
 
 ### wippy registry show
 
@@ -323,6 +341,7 @@ wippy run list
 |------|------|------|
 | `name` | 是 | 与 `wippy run <name>` 配合使用的命令名称 |
 | `short` | 否 | 在 `wippy run list` 中显示的简短描述 |
+| `main` | 否 | 将此条目标记为默认命令（由仅提供单个命令的 pack 与中心模块自动选用） |
 
 任何进程条目类型均可使用（`process.lua`、`process.wasm`）。命令名称在所有已加载的条目中必须唯一。命令名称之后的参数会传递给该进程。
 

@@ -268,7 +268,6 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
-
 ---
 
 ### SSE Relay {#sse_relay}
@@ -283,6 +282,21 @@ post_middleware:
 post_options:
   sserelay.allowed.origins: "https://app.example.com"
 ```
+
+---
+
+### OpenTelemetry {#otel}
+
+<warning>Pre-match</warning>
+
+记录传入请求的 OpenTelemetry spans 和指标。启用 OTel 时自动注册；否则作为 no-op 运行。
+
+```yaml
+middleware:
+  - otel
+```
+
+不接受任何选项。与 `metrics` 中间件协同工作；当需要 Prometheus 计数器和 OTel 追踪时同时启用。
 
 ---
 

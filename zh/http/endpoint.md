@@ -36,6 +36,7 @@
 | `DELETE` | 删除资源 |
 | `HEAD` | 仅获取头部 |
 | `OPTIONS` | CORS 预检 (自动处理) |
+| `TRACE` | 诊断回环 |
 
 ## 路径参数
 
@@ -58,7 +59,10 @@
 在处理器中访问：
 
 ```lua
-function(req, res)
+local http = require("http")
+
+local function handler()
+    local req = http.request()
     local user_id = req:param("id")
     local post_id = req:param("post_id")
 end
@@ -77,7 +81,8 @@ end
 ```
 
 ```lua
-function(req, res)
+local function handler()
+    local req = http.request()
     local file_path = req:param("path")
     -- /files/docs/readme.md -> path = "docs/readme.md"
 end
@@ -85,10 +90,16 @@ end
 
 ## 处理函数
 
-端点函数接收请求和响应对象：
+端点函数从 `http` 模块获取请求和响应对象：
 
 ```lua
-function(req, res)
+local http = require("http")
+local json = require("json")
+
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     -- 读取请求
     local body = req:body()
     local user_id = req:param("id")
@@ -99,10 +110,12 @@ function(req, res)
     local user = get_user(user_id)
 
     -- 写入响应
-    res:set_header("Content-Type", "application/json")
-    res:set_status(200)
-    res:write(json.encode(user))
+    res:set_content_type(http.CONTENT.JSON)
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ### 请求对象
@@ -112,12 +125,21 @@ end
 | `req:method()` | string | HTTP 方法 |
 | `req:path()` | string | 请求路径 |
 | `req:param(name)` | string | URL 参数 |
+| `req:params()` | table | 所有路径参数 |
 | `req:query(name)` | string | 查询参数 |
+| `req:query_params()` | table | 所有查询参数 |
 | `req:header(name)` | string | 请求头 |
-| `req:headers()` | table | 所有请求头 |
 | `req:body()` | string | 请求体 |
-| `req:cookie(name)` | string | Cookie 值 |
+| `req:body_json()` | table, error | 解析 JSON 请求体 |
+| `req:has_body()` | boolean | 检查是否存在请求体 |
+| `req:content_type()` | string | 内容类型 |
+| `req:content_length()` | number | 请求体大小 (字节) |
+| `req:host()` | string | 主机名 |
 | `req:remote_addr()` | string | 客户端 IP 地址 |
+| `req:accepts(type)` | boolean | 内容协商 |
+| `req:is_content_type(type)` | boolean | 检查内容类型 |
+| `req:stream()` | Stream | 以流形式读取请求体 (用于大文件) |
+| `req:parse_multipart(max?)` | table, error | 解析 multipart 表单 |
 
 ### 响应对象
 
@@ -125,66 +147,74 @@ end
 |------|------|
 | `res:set_status(code)` | 设置 HTTP 状态码 |
 | `res:set_header(name, value)` | 设置响应头 |
-| `res:set_cookie(name, value, opts)` | 设置 Cookie |
-| `res:write(data)` | 写入响应体 |
-| `res:redirect(url, code?)` | 重定向 (默认 302) |
+| `res:set_content_type(type)` | 设置内容类型 |
+| `res:write(data)` | 写入原始响应体 |
+| `res:write_json(data)` | 写入 JSON 响应 |
+| `res:write_event(data)` | 发送 SSE 事件 |
+| `res:set_transfer(encoding)` | 设置传输模式 (SSE, chunked) |
+| `res:flush()` | 将响应刷新到客户端 |
 
 ## JSON API 模式
 
 JSON API 的常见模式：
 
 ```lua
-local json = require("json")
+local http = require("http")
 
-function(req, res)
-    -- 解析 JSON 请求体
-    local data, err = json.decode(req:body())
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
+    local data, err = req:body_json()
     if err then
-        res:set_status(400)
-        res:set_header("Content-Type", "application/json")
-        res:write(json.encode({error = "Invalid JSON"}))
+        res:set_status(http.STATUS.BAD_REQUEST)
+        res:write_json({error = "Invalid JSON"})
         return
     end
 
-    -- 处理请求
     local result = process(data)
 
-    -- 返回 JSON 响应
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(result))
+    res:set_status(http.STATUS.OK)
+    res:write_json(result)
 end
+
+return { handler = handler }
 ```
 
 ## 错误响应
 
 ```lua
+local http = require("http")
+
 local function api_error(res, status, code, message)
     res:set_status(status)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode({
+    res:write_json({
         error = {
             code = code,
             message = message
         }
-    }))
+    })
 end
 
-function(req, res)
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     local user_id = req:param("id")
     local user, err = db.get_user(user_id)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
-            return api_error(res, 404, "USER_NOT_FOUND", "User not found")
+            return api_error(res, http.STATUS.NOT_FOUND, "USER_NOT_FOUND", "User not found")
         end
-        return api_error(res, 500, "INTERNAL_ERROR", "Server error")
+        return api_error(res, http.STATUS.INTERNAL_ERROR, "INTERNAL_ERROR", "Server error")
     end
 
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ## 示例
@@ -202,35 +232,40 @@ entries:
 
   - name: list_users
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /
     func: app.users:list
 
   - name: get_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /{id}
     func: app.users:get
 
   - name: create_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: POST
     path: /
     func: app.users:create
 
   - name: update_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: PUT
     path: /{id}
     func: app.users:update
 
   - name: delete_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: DELETE
     path: /{id}
     func: app.users:delete
@@ -241,7 +276,8 @@ entries:
 ```yaml
 - name: admin_endpoint
   kind: http.endpoint
-  router: admin_router
+  meta:
+    router: admin_router
   method: POST
   path: /settings
   func: app.admin:update_settings

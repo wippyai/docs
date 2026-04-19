@@ -2,6 +2,19 @@
 
 Wippy wird über `.wippy.yaml`-Dateien konfiguriert. Alle Optionen haben sinnvolle Standardwerte.
 
+## Logger
+
+Steuert den zap-Logger-Encoder. CLI-Flags (`-v`, `-c`, `-s`) überschreiben Level/Ausgabe; die einzige yaml-gesteuerte Option ist die Kodierung.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `encoding` | string | console | Encoder: `console` (menschenlesbar) oder `json` (strukturiert) |
+
+```yaml
+logger:
+  encoding: json
+```
+
 ## Log-Manager
 
 Steuert das Runtime-Log-Routing. Konsolenausgabe wird über [CLI-Flags](guides/cli.md) (`-v`, `-c`, `-s`) konfiguriert.
@@ -160,13 +173,22 @@ Verteiltes Tracing und Metrik-Export über OTLP.
 | `enabled` | bool | false | OTEL aktivieren |
 | `endpoint` | string | localhost:4318 | OTLP-Endpunkt |
 | `protocol` | string | http/protobuf | Protokoll: grpc, http/protobuf |
-| `service_name` | string | wippy | Dienst-Bezeichner |
+| `service_name` | string | wippy-runtime | Dienst-Bezeichner |
+| `service_version` | string | | Dienst-Versions-Tag |
+| `insecure` | bool | true | Unverschlüsselte OTLP-Verbindung zulassen |
 | `sample_rate` | float | 1.0 | Trace-Sampling (0.0-1.0) |
-| `traces_enabled` | bool | false | Traces exportieren |
+| `propagators` | string[] | `[tracecontext, baggage]` | Context-Propagatoren |
+| `traces_enabled` | bool | true | Traces exportieren |
 | `metrics_enabled` | bool | false | Metriken exportieren |
 | `http.enabled` | bool | true | HTTP-Anfragen tracen |
+| `http.extract_headers` | bool | true | Trace-Context aus eingehenden Headern extrahieren |
+| `http.inject_headers` | bool | true | Trace-Context in ausgehende Header einfügen |
 | `process.enabled` | bool | true | Prozess-Lebenszyklus tracen |
-| `interceptor.enabled` | bool | false | Funktionsaufrufe tracen |
+| `process.trace_lifecycle` | bool | true | Spans für spawn/terminate ausgeben |
+| `interceptor.enabled` | bool | true | Funktionsaufrufe tracen |
+| `interceptor.order` | int | 100 | Interceptor-Priorität |
+| `queue.enabled` | bool | true | Queue publish/consume tracen |
+| `temporal.enabled` | bool | false | Temporal-Workflows tracen |
 
 ```yaml
 otel:
@@ -176,6 +198,8 @@ otel:
   process:
     trace_lifecycle: true
 ```
+
+Standard-OTEL-Umgebungsvariablen (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) überschreiben die entsprechenden Felder.
 
 Siehe: [Observability-Anleitung](guides/observability.md)
 

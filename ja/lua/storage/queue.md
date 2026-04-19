@@ -77,6 +77,19 @@ local all_headers = msg:headers()
 | `id()` | `string, error` | 一意のメッセージ識別子 |
 | `header(key)` | `any, error` | 単一のヘッダー値（存在しない場合nil） |
 | `headers()` | `table, error` | すべてのメッセージヘッダー |
+| `ack()` | `boolean, error` | 処理を確認 (single-shot) |
+| `nack()` | `boolean, error` | 再配信またはデッドレターの失敗を通知 (single-shot) |
+
+ランタイムはハンドラー成功時に自動ackし、ハンドラーエラー時に自動nackします。早期に確定する場合のみ `ack`/`nack` を呼び出します。
+
+## キュー情報
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats には以下が含まれる場合があります: message_count, consumer_count, ready（ドライバ依存）
+```
+
+**戻り値:** `table, error`
 
 ## コンシューマパターン
 
@@ -136,4 +149,3 @@ end
 - [プロセス管理](lua/core/process.md) - プロセスのスポーンと通信
 - [チャネル](lua/core/channel.md) - プロセス間通信パターン
 - [関数](lua/core/funcs.md) - 非同期関数呼び出し
-

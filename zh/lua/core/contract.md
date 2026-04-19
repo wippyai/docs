@@ -36,12 +36,18 @@ local svc, err = contract.open("app.services:user", {
 
 -- 带查询参数（自动转换："true"→bool，数字→int/float）
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
+
+-- 带调用选项（第三个参数）
+local inst, err = contract.open("app.services:flaky", nil, {
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 ```
 
 | 参数 | 类型 | 描述 |
 |-----------|------|-------------|
 | `binding_id` | string | 绑定 ID，支持查询参数 |
 | `scope` | table | 上下文值（可选，覆盖查询参数） |
+| `options` | table | 调用选项（可选）— 例如 `retry.max_attempts`、`retry.initial_delay` |
 
 **返回:** `Instance, error`
 
@@ -164,6 +170,27 @@ local wrapped = c:with_context({
 
 local instance, err = wrapped:open()
 ```
+
+## 调用选项
+
+通过 `with_options` 配置重试和其他调用行为：
+
+```lua
+local c, err = contract.get("app.services:flaky")
+
+local inst, err = c
+    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
+    :open("app.services:flaky_impl")
+
+local result, err = inst:call()
+```
+
+选项应用于返回实例的每次方法调用。仅可重试错误触发重试；不可重试错误立即返回。可与 `with_context`、`with_actor`、`with_scope` 链式调用。
+
+| 选项 | 类型 | 描述 |
+|--------|------|-------------|
+| `retry.max_attempts` | int | 最大尝试次数包括第一次 (1 禁用重试) |
+| `retry.initial_delay` | int/duration | 首次重试前的延迟（毫秒或 duration 字符串） |
 
 ## 安全上下文
 

@@ -43,16 +43,17 @@ wippy run                                    # ランタイムを起動
 wippy run list                               # 利用可能なコマンドを一覧表示
 wippy run test                               # テストを実行
 wippy run snapshot.wapp                      # パックファイルから実行
-wippy run acme/http                          # モジュールを実行
-wippy run --exec app:worker                  # 単一プロセスを実行
+wippy run acme/http                          # ハブからモジュールを実行
+wippy run acme/http@1.2.3                    # 特定バージョンを実行
+wippy run --exec app:worker                  # ランタイムを起動し単一プロセスを実行
 ```
 
 | フラグ | 短縮形 | 説明 |
 |------|-------|-------------|
-| `--override` | `-o` | エントリの値を上書き (namespace:entry:field=value) |
-| `--exec` | `-x` | プロセスを実行して終了 (host/namespace:entry) |
-| `--host` | | 実行用ホスト |
-| `--registry` | | レジストリ URL |
+| `--override` | `-o` | エントリの値を上書き (`namespace:entry:field=value`) |
+| `--exec` | `-x` | プロセスを実行して終了 (`namespace:entry`) |
+| `--host` | | `--exec` 用のターミナルホスト ID (`terminal.host` が 1 つしか存在しない場合は自動検出) |
+| `--registry` | | ハブモジュール用のレジストリ URL |
 
 ## wippy lint
 
@@ -61,6 +62,8 @@ Lua コードの型エラーや警告をチェックする。
 ```bash
 wippy lint
 wippy lint --level warning
+wippy lint --json
+wippy lint --rules
 ```
 
 全ての Lua エントリを検証: `function.lua`、`library.lua`、`process.lua`、`workflow.lua` (それらの `.bc` バリアントを含む)。
@@ -224,6 +227,10 @@ wippy auth status
 wippy auth status --json
 ```
 
+| フラグ | 説明 |
+|------|-------------|
+| `--json` | JSON として出力 |
+
 ## wippy readme
 
 ハブからモジュールの README を取得する。
@@ -247,19 +254,30 @@ wippy readme --json wippy/terminal@latest
 
 ```bash
 wippy registry list
-wippy registry list --kind function.lua
-wippy registry list --ns app --json
+wippy registry list --kind "function.lua.*"
+wippy registry list --ns "app.*" --json
+wippy registry list --meta "type=api" --meta "enabled=true"
 ```
 
 | フラグ | 短縮形 | 説明 |
 |------|-------|-------------|
-| `--kind` | `-k` | 種類でフィルタ |
-| `--ns` | `-n` | 名前空間でフィルタ |
-| `--name` | | 名前でフィルタ |
-| `--meta` | | メタデータでフィルタ |
+| `--kind` | `-k` | 種類でフィルタ (glob パターン) |
+| `--ns` | `-n` | 名前空間でフィルタ (glob パターン) |
+| `--name` | | 名前でフィルタ (glob パターン) |
+| `--meta` | | メタデータでフィルタ (繰り返し可) |
 | `--json` | | JSON として出力 |
 | `--yaml` | | YAML として出力 |
 | `--lock-file` | `-l` | ロックファイルのパス |
+
+`--meta` のメタデータ演算子:
+
+| 演算子 | 意味 |
+|--------|------|
+| `field=value` | 完全一致 |
+| `field~regex` | 正規表現マッチ |
+| `field*substr` | 部分文字列を含む |
+| `field^prefix` | プレフィックスで始まる |
+| `field$suffix` | サフィックスで終わる |
 
 ### wippy registry show
 
@@ -323,6 +341,7 @@ wippy run list
 |-------|----------|-------------|
 | `name` | はい | `wippy run <name>` で使用するコマンド名 |
 | `short` | いいえ | `wippy run list` に表示される短い説明 |
+| `main` | いいえ | このエントリをデフォルトコマンドとしてマーク (単一コマンドを提供するパックやハブモジュールで自動選択される) |
 
 任意のプロセスエントリ種類 (`process.lua`、`process.wasm`) が使用可能。コマンド名はロードされた全エントリ間で一意でなければならない。コマンド名の後の引数はプロセスに渡される。
 

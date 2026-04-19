@@ -170,6 +170,40 @@ end
 return { main = main }
 ```
 
+## Benannte Befehle
+
+Anstatt `-x app:cli` zu verwenden, koennen Sie Ihren Prozess als benannten Befehl registrieren:
+
+```yaml
+  - name: cli
+    kind: process.lua
+    meta:
+      command:
+        name: greet
+        short: Greet the user
+    source: file://cli.lua
+    method: main
+    modules:
+      - io
+```
+
+Jetzt nach Namen ausfuehren:
+
+```bash
+wippy run greet
+```
+
+Alle verfuegbaren Befehle auflisten:
+
+```bash
+wippy run list
+```
+
+```
+Available commands:
+  greet    Greet the user
+```
+
 ## Exit-Codes
 
 Von `main()` zurückgeben um den Exit-Code zu setzen:

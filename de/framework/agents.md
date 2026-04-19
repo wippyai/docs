@@ -109,12 +109,15 @@ end
 | `agent_context.new(options?)` | Neuen Context erstellen |
 | `:add_tools(specs)` | Tools zur Laufzeit hinzufuegen |
 | `:add_delegates(specs)` | Delegate-Agenten hinzufuegen |
+| `:configure_delegate_tools(config)` | Konfigurieren, wie Delegates sich als Tools exponieren |
 | `:set_memory_contract(config)` | Dynamisches Memory konfigurieren |
+| `:set_context_merger(fn)` | Funktion zum Zusammenfuehren von Laufzeit-Context-Aktualisierungen bereitstellen |
 | `:update_context(updates)` | Laufzeit-Context aktualisieren |
 | `:load_agent(spec_or_id, options?)` | Agent laden und kompilieren, gibt Runner zurueck |
 | `:switch_to_agent(id, options?)` | Zu anderem Agent wechseln, gibt `(boolean, string?)` zurueck |
 | `:switch_to_model(name)` | Modell des aktuellen Agenten aendern, gibt `(boolean, string?)` zurueck |
 | `:get_current_agent()` | Aktuellen Runner abrufen |
+| `:get_config()` | Zusammenfassung der Context-Konfiguration zurueckgeben |
 
 ### Context-Optionen
 
@@ -122,8 +125,15 @@ end
 local ctx = agent_context.new({
     context = { session_id = "abc", user_id = "u1" },
     delegate_tools = { enabled = true },
+    enable_cache = true,
 })
 ```
+
+| Option | Beschreibung |
+|--------|--------------|
+| `context` | Basis-Laufzeit-Context, der an Tools und Delegates weitergereicht wird |
+| `delegate_tools` | Standard-Delegate-Tool-Konfiguration (wird von `configure_delegate_tools` ueberschrieben) |
+| `enable_cache` | Prompt-Cache-Marker aktivieren (Claude-Modelle). Standardwert `true`. |
 
 ### Laden per Inline-Spezifikation
 

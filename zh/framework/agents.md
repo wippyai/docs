@@ -109,12 +109,15 @@ end
 | `agent_context.new(options?)` | 创建新上下文 |
 | `:add_tools(specs)` | 在运行时添加工具 |
 | `:add_delegates(specs)` | 添加委托智能体 |
+| `:configure_delegate_tools(config)` | 配置委托如何以工具形式暴露 |
 | `:set_memory_contract(config)` | 配置动态记忆 |
+| `:set_context_merger(fn)` | 提供用于合并运行时上下文更新的函数 |
 | `:update_context(updates)` | 更新运行时上下文 |
 | `:load_agent(spec_or_id, options?)` | 加载并编译智能体，返回运行器 |
 | `:switch_to_agent(id, options?)` | 切换到其他智能体，返回 `(boolean, string?)` |
 | `:switch_to_model(name)` | 更改当前智能体的模型，返回 `(boolean, string?)` |
 | `:get_current_agent()` | 获取当前运行器 |
+| `:get_config()` | 返回上下文配置的摘要 |
 
 ### 上下文选项
 
@@ -122,8 +125,15 @@ end
 local ctx = agent_context.new({
     context = { session_id = "abc", user_id = "u1" },
     delegate_tools = { enabled = true },
+    enable_cache = true,
 })
 ```
+
+| 选项 | 说明 |
+|--------|-------------|
+| `context` | 转发给工具和委托的基础运行时上下文 |
+| `delegate_tools` | 默认委托工具配置（可被 `configure_delegate_tools` 覆盖） |
+| `enable_cache` | 启用提示缓存标记（Claude 模型）。默认为 `true`。 |
 
 ### 通过内联规格加载
 

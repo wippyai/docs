@@ -17,6 +17,11 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
 | `process.lua` | 長時間実行Luaプロセス |
 | `workflow.lua` | Temporalワークフロー（決定論的） |
 | `library.lua` | 共有Luaライブラリ |
+| `module.lua` | Luaモジュールインターフェース |
+| `function.lua.bc` | プリコンパイル済み関数バイトコード |
+| `library.lua.bc` | プリコンパイル済みライブラリバイトコード |
+| `process.lua.bc` | プリコンパイル済みプロセスバイトコード |
+| `workflow.lua.bc` | プリコンパイル済みワークフローバイトコード |
 
 ```yaml
 - name: handler
@@ -111,7 +116,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.postgres
-  dsn: "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+  host: localhost
+  port: 5432
+  database: dbname
+  username: user
+  password: pass
+  options:
+    sslmode: disable
   pool:
     max_open: 25
     max_idle: 5
@@ -125,7 +136,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mysql
-  dsn: "user:pass@tcp(localhost:3306)/dbname?parseTime=true"
+  host: localhost
+  port: 3306
+  database: dbname
+  username: user
+  password: pass
+  options:
+    parseTime: "true"
   lifecycle:
     auto_start: true
 ```
@@ -135,10 +152,16 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mssql
-  dsn: "sqlserver://user:pass@localhost:1433?database=dbname"
+  host: localhost
+  port: 1433
+  database: dbname
+  username: user
+  password: pass
   lifecycle:
     auto_start: true
 ```
+
+`*_env` サフィックスのバリアント、TLSオプション、接続プールの調整については[Database](system/database.md)を参照してください。
 
 **Lua API:** [SQLモジュール](lua/storage/sql.md)を参照
 
@@ -189,6 +212,8 @@ local data = s:get("user:123")
 | 種別 | 説明 |
 |------|------|
 | `queue.driver.memory` | インメモリキュードライバ |
+| `queue.driver.amqp` | AMQP (RabbitMQ) ドライバ |
+| `queue.driver.sqs` | AWS SQS ドライバ |
 | `queue.queue` | キュー宣言 |
 | `queue.consumer` | キューコンシューマ |
 
@@ -343,6 +368,7 @@ MinIOやDigitalOcean SpacesなどのS3互換サービスに接続するには<co
 | 種別 | 説明 |
 |------|------|
 | `fs.directory` | ディレクトリアクセス |
+| `fs.embed` | 読み取り専用組み込みファイルシステム |
 
 ```yaml
 - name: data_dir

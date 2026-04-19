@@ -17,6 +17,11 @@ Referência completa de todos os tipos de entradas disponíveis no Wippy.
 | `process.lua` | Processo Lua de longa duração |
 | `workflow.lua` | Workflow Temporal (determinístico) |
 | `library.lua` | Biblioteca Lua compartilhada |
+| `module.lua` | Interface de módulo Lua |
+| `function.lua.bc` | Bytecode de função pré-compilado |
+| `library.lua.bc` | Bytecode de biblioteca pré-compilado |
+| `process.lua.bc` | Bytecode de processo pré-compilado |
+| `workflow.lua.bc` | Bytecode de workflow pré-compilado |
 
 ```yaml
 - name: handler
@@ -111,7 +116,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.postgres
-  dsn: "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+  host: localhost
+  port: 5432
+  database: dbname
+  username: user
+  password: pass
+  options:
+    sslmode: disable
   pool:
     max_open: 25
     max_idle: 5
@@ -125,7 +136,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mysql
-  dsn: "user:pass@tcp(localhost:3306)/dbname?parseTime=true"
+  host: localhost
+  port: 3306
+  database: dbname
+  username: user
+  password: pass
+  options:
+    parseTime: "true"
   lifecycle:
     auto_start: true
 ```
@@ -135,10 +152,16 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mssql
-  dsn: "sqlserver://user:pass@localhost:1433?database=dbname"
+  host: localhost
+  port: 1433
+  database: dbname
+  username: user
+  password: pass
   lifecycle:
     auto_start: true
 ```
+
+Veja [Database](system/database.md) para variantes com sufixo `*_env`, opções TLS e ajuste do pool de conexões.
 
 **API Lua:** Veja [Módulo SQL](lua/storage/sql.md)
 
@@ -189,6 +212,8 @@ local data = s:get("user:123")
 | Tipo | Descrição |
 |------|-----------|
 | `queue.driver.memory` | Driver de fila em memória |
+| `queue.driver.amqp` | Driver AMQP (RabbitMQ) |
+| `queue.driver.sqs` | Driver AWS SQS |
 | `queue.queue` | Declaração de fila |
 | `queue.consumer` | Consumidor de fila |
 
@@ -343,6 +368,7 @@ Use <code>endpoint</code> para conectar a serviços compatíveis com S3 como Min
 | Tipo | Descrição |
 |------|-----------|
 | `fs.directory` | Acesso a diretório |
+| `fs.embed` | Sistema de arquivos embutido somente leitura |
 
 ```yaml
 - name: data_dir

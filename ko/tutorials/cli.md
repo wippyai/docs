@@ -170,6 +170,40 @@ end
 return { main = main }
 ```
 
+## 명명된 명령
+
+`-x app:cli`를 사용하는 대신 프로세스를 명명된 명령으로 등록할 수 있습니다:
+
+```yaml
+  - name: cli
+    kind: process.lua
+    meta:
+      command:
+        name: greet
+        short: Greet the user
+    source: file://cli.lua
+    method: main
+    modules:
+      - io
+```
+
+이제 이름으로 실행:
+
+```bash
+wippy run greet
+```
+
+사용 가능한 모든 명령 나열:
+
+```bash
+wippy run list
+```
+
+```
+Available commands:
+  greet    Greet the user
+```
+
 ## 종료 코드
 
 `main()`에서 반환하여 종료 코드 설정:

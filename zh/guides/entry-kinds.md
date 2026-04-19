@@ -17,6 +17,11 @@ Wippy 中所有可用入口类型的完整参考。
 | `process.lua` | 长期运行的 Lua 进程 |
 | `workflow.lua` | Temporal 工作流（确定性） |
 | `library.lua` | 共享 Lua 库 |
+| `module.lua` | Lua 模块接口 |
+| `function.lua.bc` | 预编译函数字节码 |
+| `library.lua.bc` | 预编译库字节码 |
+| `process.lua.bc` | 预编译进程字节码 |
+| `workflow.lua.bc` | 预编译工作流字节码 |
 
 ```yaml
 - name: handler
@@ -111,7 +116,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.postgres
-  dsn: "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+  host: localhost
+  port: 5432
+  database: dbname
+  username: user
+  password: pass
+  options:
+    sslmode: disable
   pool:
     max_open: 25
     max_idle: 5
@@ -125,7 +136,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mysql
-  dsn: "user:pass@tcp(localhost:3306)/dbname?parseTime=true"
+  host: localhost
+  port: 3306
+  database: dbname
+  username: user
+  password: pass
+  options:
+    parseTime: "true"
   lifecycle:
     auto_start: true
 ```
@@ -135,10 +152,16 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mssql
-  dsn: "sqlserver://user:pass@localhost:1433?database=dbname"
+  host: localhost
+  port: 1433
+  database: dbname
+  username: user
+  password: pass
   lifecycle:
     auto_start: true
 ```
+
+参见 [Database](system/database.md) 了解 `*_env` 后缀变体、TLS 选项和连接池调优。
 
 **Lua API：** 参见 [SQL 模块](lua/storage/sql.md)
 
@@ -189,6 +212,8 @@ local data = s:get("user:123")
 | 类型 | 说明 |
 |------|------|
 | `queue.driver.memory` | 内存队列驱动 |
+| `queue.driver.amqp` | AMQP (RabbitMQ) 驱动 |
+| `queue.driver.sqs` | AWS SQS 驱动 |
 | `queue.queue` | 队列声明 |
 | `queue.consumer` | 队列消费者 |
 
@@ -343,6 +368,7 @@ local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
 | 类型 | 说明 |
 |------|------|
 | `fs.directory` | 目录访问 |
+| `fs.embed` | 只读嵌入式文件系统 |
 
 ```yaml
 - name: data_dir

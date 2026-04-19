@@ -268,7 +268,6 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
-
 ---
 
 ### SSE Relay {#sse_relay}
@@ -283,6 +282,21 @@ post_middleware:
 post_options:
   sserelay.allowed.origins: "https://app.example.com"
 ```
+
+---
+
+### OpenTelemetry {#otel}
+
+<warning>Pre-match</warning>
+
+Registra spans y métricas OpenTelemetry para solicitudes entrantes. Se registra automáticamente cuando OTel está habilitado; de lo contrario actúa como no-op.
+
+```yaml
+middleware:
+  - otel
+```
+
+No acepta opciones. Funciona junto al middleware `metrics`; habilita ambos cuando necesites contadores Prometheus y trazas OTel.
 
 ---
 

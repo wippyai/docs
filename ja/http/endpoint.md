@@ -36,6 +36,7 @@
 | `DELETE` | リソースの削除 |
 | `HEAD` | ヘッダーのみ |
 | `OPTIONS` | CORSプリフライト（自動処理） |
+| `TRACE` | 診断ループバック |
 
 ## パスパラメータ
 
@@ -58,7 +59,10 @@ URLパラメータには`{param}`構文を使用：
 ハンドラでのアクセス：
 
 ```lua
-function(req, res)
+local http = require("http")
+
+local function handler()
+    local req = http.request()
     local user_id = req:param("id")
     local post_id = req:param("post_id")
 end
@@ -77,7 +81,8 @@ end
 ```
 
 ```lua
-function(req, res)
+local function handler()
+    local req = http.request()
     local file_path = req:param("path")
     -- /files/docs/readme.md -> path = "docs/readme.md"
 end
@@ -85,10 +90,16 @@ end
 
 ## ハンドラ関数
 
-エンドポイント関数はリクエストとレスポンスオブジェクトを受け取ります：
+エンドポイント関数は`http`モジュールからリクエストとレスポンスオブジェクトを取得します：
 
 ```lua
-function(req, res)
+local http = require("http")
+local json = require("json")
+
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     -- リクエストを読み取り
     local body = req:body()
     local user_id = req:param("id")
@@ -99,10 +110,12 @@ function(req, res)
     local user = get_user(user_id)
 
     -- レスポンスを書き込み
-    res:set_header("Content-Type", "application/json")
-    res:set_status(200)
-    res:write(json.encode(user))
+    res:set_content_type(http.CONTENT.JSON)
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ### リクエストオブジェクト
@@ -112,79 +125,96 @@ end
 | `req:method()` | string | HTTPメソッド |
 | `req:path()` | string | リクエストパス |
 | `req:param(name)` | string | URLパラメータ |
+| `req:params()` | table | すべてのパスパラメータ |
 | `req:query(name)` | string | クエリパラメータ |
+| `req:query_params()` | table | すべてのクエリパラメータ |
 | `req:header(name)` | string | リクエストヘッダー |
-| `req:headers()` | table | すべてのヘッダー |
 | `req:body()` | string | リクエストボディ |
-| `req:cookie(name)` | string | Cookie値 |
+| `req:body_json()` | table, error | JSONボディをパース |
+| `req:has_body()` | boolean | ボディの有無を確認 |
+| `req:content_type()` | string | コンテンツタイプ |
+| `req:content_length()` | number | ボディサイズ（バイト） |
+| `req:host()` | string | ホスト名 |
 | `req:remote_addr()` | string | クライアントIPアドレス |
+| `req:accepts(type)` | boolean | コンテンツネゴシエーション |
+| `req:is_content_type(type)` | boolean | コンテンツタイプを確認 |
+| `req:stream()` | Stream | 大きなファイル用のストリームとしてボディを取得 |
+| `req:parse_multipart(max?)` | table, error | マルチパートフォームをパース |
 
 ### レスポンスオブジェクト
 
 | メソッド | 説明 |
 |---------|------|
-| `res:set_status(code)` | HTTPステータスを設定 |
-| `res:set_header(name, value)` | ヘッダーを設定 |
-| `res:set_cookie(name, value, opts)` | Cookieを設定 |
-| `res:write(data)` | ボディを書き込み |
-| `res:redirect(url, code?)` | リダイレクト（デフォルト302） |
+| `res:set_status(code)` | HTTPステータスコードを設定 |
+| `res:set_header(name, value)` | レスポンスヘッダーを設定 |
+| `res:set_content_type(type)` | コンテンツタイプを設定 |
+| `res:write(data)` | 生のボディを書き込み |
+| `res:write_json(data)` | JSONレスポンスを書き込み |
+| `res:write_event(data)` | SSEイベントを送信 |
+| `res:set_transfer(encoding)` | 転送モードを設定（SSE、chunked） |
+| `res:flush()` | レスポンスをクライアントにフラッシュ |
 
 ## JSON APIパターン
 
 JSON APIの一般的なパターン：
 
 ```lua
-local json = require("json")
+local http = require("http")
 
-function(req, res)
-    -- JSONボディをパース
-    local data, err = json.decode(req:body())
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
+    local data, err = req:body_json()
     if err then
-        res:set_status(400)
-        res:set_header("Content-Type", "application/json")
-        res:write(json.encode({error = "Invalid JSON"}))
+        res:set_status(http.STATUS.BAD_REQUEST)
+        res:write_json({error = "Invalid JSON"})
         return
     end
 
-    -- リクエストを処理
     local result = process(data)
 
-    -- JSONレスポンスを返す
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(result))
+    res:set_status(http.STATUS.OK)
+    res:write_json(result)
 end
+
+return { handler = handler }
 ```
 
 ## エラーレスポンス
 
 ```lua
+local http = require("http")
+
 local function api_error(res, status, code, message)
     res:set_status(status)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode({
+    res:write_json({
         error = {
             code = code,
             message = message
         }
-    }))
+    })
 end
 
-function(req, res)
+local function handler()
+    local req = http.request()
+    local res = http.response()
+
     local user_id = req:param("id")
     local user, err = db.get_user(user_id)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
-            return api_error(res, 404, "USER_NOT_FOUND", "User not found")
+            return api_error(res, http.STATUS.NOT_FOUND, "USER_NOT_FOUND", "User not found")
         end
-        return api_error(res, 500, "INTERNAL_ERROR", "Server error")
+        return api_error(res, http.STATUS.INTERNAL_ERROR, "INTERNAL_ERROR", "Server error")
     end
 
-    res:set_status(200)
-    res:set_header("Content-Type", "application/json")
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
+
+return { handler = handler }
 ```
 
 ## 例
@@ -202,35 +232,40 @@ entries:
 
   - name: list_users
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /
     func: app.users:list
 
   - name: get_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: GET
     path: /{id}
     func: app.users:get
 
   - name: create_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: POST
     path: /
     func: app.users:create
 
   - name: update_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: PUT
     path: /{id}
     func: app.users:update
 
   - name: delete_user
     kind: http.endpoint
-    router: users_router
+    meta:
+      router: users_router
     method: DELETE
     path: /{id}
     func: app.users:delete
@@ -241,7 +276,8 @@ entries:
 ```yaml
 - name: admin_endpoint
   kind: http.endpoint
-  router: admin_router
+  meta:
+    router: admin_router
   method: POST
   path: /settings
   func: app.admin:update_settings

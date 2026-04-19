@@ -81,6 +81,23 @@ local line, err = io.readline()
 
 **戻り値:** `string, error`
 
+## Rawモード
+
+Raw端末モードを有効化または無効化します（行バッファリングとエコーを無効化）:
+
+```lua
+local ok, err = io.raw(true)   -- 有効化
+local ok, err = io.raw(false)  -- 無効化
+```
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `enable` | boolean | `true` で有効化、`false` で無効化（デフォルト: `true`） |
+
+**戻り値:** `boolean, error`
+
+Rawモードは参照カウント方式 — 各 `io.raw(true)` には対応する `io.raw(false)` が必要です。プロセス終了時に端末は自動的に通常モードにリセットされます。
+
 ## 出力のフラッシュ
 
 stdoutバッファをフラッシュ:
@@ -111,4 +128,3 @@ local args = io.args()
 | フラッシュ操作失敗 | `errors.INTERNAL` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

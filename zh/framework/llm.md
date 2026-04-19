@@ -505,6 +505,23 @@ local response = llm.embed({
 -- response.result is an array of float arrays
 ```
 
+## 提供商状态
+
+在发送任务前探测提供商。适用于就绪性检查和轻量级健康监控：
+
+```lua
+local status, err = llm.status({
+    model = "gpt-4o",
+})
+```
+
+| 选项 | 说明 |
+|------|-------------|
+| `model` | 必填。要检查的模型。 |
+| `provider_id` | 可选。跳过模型解析，直接指向特定提供商。 |
+
+返回提供商的 `StatusResponse`（内容取决于提供商）。
+
 ## 错误处理
 
 错误作为第二个返回值返回。发生错误时，第一个返回值为 `nil`：

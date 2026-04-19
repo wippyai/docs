@@ -77,6 +77,19 @@ Nur verfügbar beim Verarbeiten von Queue-Nachrichten im Consumer-Kontext.
 | `id()` | `string, error` | Eindeutiger Nachrichten-Identifikator |
 | `header(key)` | `any, error` | Einzelner Header-Wert (nil wenn fehlend) |
 | `headers()` | `table, error` | Alle Nachrichten-Header |
+| `ack()` | `boolean, error` | Verarbeitung bestaetigen (single-shot) |
+| `nack()` | `boolean, error` | Fehlschlag fuer Redelivery oder Dead-Letter melden (single-shot) |
+
+Die Runtime fuehrt bei Handler-Erfolg automatisch ack aus und bei Handler-Fehler automatisch nack. Rufen Sie `ack`/`nack` nur auf, um frueher abzuschliessen.
+
+## Queue-Info
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats kann enthalten: message_count, consumer_count, ready (treiberabhaengig)
+```
+
+**Gibt zurueck:** `table, error`
 
 ## Consumer-Muster
 

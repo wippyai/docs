@@ -170,6 +170,40 @@ end
 return { main = main }
 ```
 
+## 名前付きコマンド
+
+`-x app:cli` を使う代わりに、プロセスを名前付きコマンドとして登録できます:
+
+```yaml
+  - name: cli
+    kind: process.lua
+    meta:
+      command:
+        name: greet
+        short: Greet the user
+    source: file://cli.lua
+    method: main
+    modules:
+      - io
+```
+
+名前で実行:
+
+```bash
+wippy run greet
+```
+
+利用可能なすべてのコマンドを一覧表示:
+
+```bash
+wippy run list
+```
+
+```
+Available commands:
+  greet    Greet the user
+```
+
 ## 終了コード
 
 `main()`から戻り値で終了コードを設定：
@@ -206,4 +240,3 @@ end
 - [I/Oモジュール](lua/system/io.md) - 完全なI/Oリファレンス
 - [Systemモジュール](lua/system/system.md) - ランタイムとシステム情報
 - [Echoサービス](echo-service.md) - マルチプロセスアプリケーション
-

@@ -36,12 +36,18 @@ local svc, err = contract.open("app.services:user", {
 
 -- 쿼리 파라미터와 함께 (자동 변환: "true"->bool, 숫자->int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
+
+-- 호출 옵션과 함께 (세 번째 인수)
+local inst, err = contract.open("app.services:flaky", nil, {
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 ```
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
 | `binding_id` | string | 바인딩 ID, 쿼리 파라미터 지원 |
 | `scope` | table | 컨텍스트 값 (선택적, 쿼리 파라미터 재정의) |
+| `options` | table | 호출 옵션 (선택적) — 예: `retry.max_attempts`, `retry.initial_delay` |
 
 **반환:** `Instance, error`
 
@@ -164,6 +170,27 @@ local wrapped = c:with_context({
 
 local instance, err = wrapped:open()
 ```
+
+## 호출 옵션
+
+`with_options`를 통해 재시도 및 기타 호출 동작을 구성합니다:
+
+```lua
+local c, err = contract.get("app.services:flaky")
+
+local inst, err = c
+    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
+    :open("app.services:flaky_impl")
+
+local result, err = inst:call()
+```
+
+옵션은 반환된 인스턴스의 모든 메서드 호출에 적용됩니다. 재시도 가능한 오류만 재시도를 트리거하며, 재시도 불가능한 오류는 즉시 표시됩니다. `with_context`, `with_actor`, `with_scope`와 체이닝 가능합니다.
+
+| 옵션 | 타입 | 설명 |
+|--------|------|------|
+| `retry.max_attempts` | int | 첫 번째를 포함한 최대 시도 횟수 (1은 재시도 비활성화) |
+| `retry.initial_delay` | int/duration | 첫 번째 재시도 전 지연 (ms 또는 duration 문자열) |
 
 ## 보안 컨텍스트
 

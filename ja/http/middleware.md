@@ -268,7 +268,6 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
-
 ---
 
 ### SSEリレー {#sse_relay}
@@ -283,6 +282,21 @@ post_middleware:
 post_options:
   sserelay.allowed.origins: "https://app.example.com"
 ```
+
+---
+
+### OpenTelemetry {#otel}
+
+<warning>Pre-match</warning>
+
+受信リクエストのOpenTelemetryスパンとメトリクスを記録します。OTelが有効な場合に自動登録され、それ以外の場合はno-opとして動作します。
+
+```yaml
+middleware:
+  - otel
+```
+
+オプションは受け取りません。`metrics`ミドルウェアと連携して動作します。PrometheusカウンターとOTelトレースの両方が必要な場合は、両方を有効にしてください。
 
 ---
 

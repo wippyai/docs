@@ -318,6 +318,73 @@ func newTestScheduler() *testScheduler {
     ts.Scheduler = actor.NewScheduler(reg, actor.WithWorkers(4), actor.WithLifecycle(ts))
     return ts
 }
+
+func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
+    ts.mu.Lock()
+    ch, ok := ts.pending[p.UniqID]
+    delete(ts.pending, p.UniqID)
+    ts.mu.Unlock()
+    if ok {
+        ch <- result
+    }
+}
+
+func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Process,
+    method string, input payload.Payloads) (*runtime.Result, error) {
+    resultCh := make(chan *runtime.Result, 1)
+    ts.mu.Lock()
+    ts.pending[p.UniqID] = resultCh
+    ts.mu.Unlock()
+
+    _, err := ts.Scheduler.Submit(ctx, p, proc, method, input)
+    if err != nil {
+        return nil, err
+    }
+
+    select {
+    case result := <-resultCh:
+        return result, nil
+    case <-ctx.Done():
+        return nil, ctx.Err()
+    }
+}
+```
+
+テスト対象のモジュールを使ってLuaスクリプトからプロセスを作成：
+
+```go
+func bindMyModule(l *lua.LState) {
+    tbl, _ := mymodule.Module.Build()
+    l.SetGlobal(mymodule.Module.Name, tbl)
+}
+
+func newLuaProcess(script string) *engine.Process {
+    proto, _ := lua.CompileString(script, "test.lua")
+    return engine.NewProcess(
+        engine.WithProto(proto),
+        engine.WithModuleBinder(bindMyModule),
+    )
+}
+
+func TestMyModuleYields(t *testing.T) {
+    sched := newTestScheduler()
+    sched.Start()
+    defer sched.Stop()
+
+    script := `
+        local result = mymodule.fetch("http://example.com")
+        return result.status
+    `
+
+    ctx, _ := ctxapi.OpenFrameContext(context.Background())
+    proc := newLuaProcess(script)
+
+    result, err := sched.Execute(ctx, pid.PID{UniqID: "test"}, proc, "", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    // 結果に対してアサート
+}
 ```
 
 完全な例については`runtime/lua/modules/time/integration_test.go`を参照。
@@ -326,4 +393,3 @@ func newTestScheduler() *testScheduler {
 
 - [コマンドディスパッチ](internals/dispatch.md) - yieldコマンドの処理
 - [スケジューラ](internals/scheduler.md) - プロセス実行
-

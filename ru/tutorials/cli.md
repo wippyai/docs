@@ -170,6 +170,40 @@ end
 return { main = main }
 ```
 
+## Именованные команды
+
+Вместо использования `-x app:cli` вы можете зарегистрировать процесс как именованную команду:
+
+```yaml
+  - name: cli
+    kind: process.lua
+    meta:
+      command:
+        name: greet
+        short: Greet the user
+    source: file://cli.lua
+    method: main
+    modules:
+      - io
+```
+
+Теперь запустите по имени:
+
+```bash
+wippy run greet
+```
+
+Список всех доступных команд:
+
+```bash
+wippy run list
+```
+
+```
+Available commands:
+  greet    Greet the user
+```
+
 ## Коды завершения
 
 Возвращайте значение из `main()` для установки кода завершения:

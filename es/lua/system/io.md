@@ -81,6 +81,23 @@ local line, err = io.readline()
 
 **Devuelve:** `string, error`
 
+## Modo Raw
+
+Activa o desactiva el modo raw del terminal (deshabilita el buffering por líneas y el eco):
+
+```lua
+local ok, err = io.raw(true)   -- activar
+local ok, err = io.raw(false)  -- desactivar
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `enable` | boolean | `true` para activar, `false` para desactivar (por defecto: `true`) |
+
+**Devuelve:** `boolean, error`
+
+El modo raw usa conteo de referencias — cada `io.raw(true)` debe emparejarse con un `io.raw(false)`. El terminal se restablece automáticamente al modo normal al salir el proceso.
+
 ## Vaciar Salida
 
 Vaciar buffer de stdout:

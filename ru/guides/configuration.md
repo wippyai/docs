@@ -2,6 +2,19 @@
 
 Wippy настраивается через файлы `.wippy.yaml`. Все параметры имеют разумные значения по умолчанию.
 
+## Logger
+
+Управляет кодировщиком zap-логгера. CLI-флаги (`-v`, `-c`, `-s`) переопределяют уровень/вывод; единственная опция, управляемая через yaml, — это кодировка.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `encoding` | string | console | Кодировщик: `console` (человекочитаемый) или `json` (структурированный) |
+
+```yaml
+logger:
+  encoding: json
+```
+
 ## Log Manager
 
 Управляет маршрутизацией логов. Вывод в консоль настраивается через [флаги CLI](guides/cli.md) (`-v`, `-c`, `-s`).
@@ -160,13 +173,22 @@ finder:
 | `enabled` | bool | false | Включить OTEL |
 | `endpoint` | string | localhost:4318 | Эндпоинт OTLP |
 | `protocol` | string | http/protobuf | Протокол: grpc, http/protobuf |
-| `service_name` | string | wippy | Идентификатор сервиса |
+| `service_name` | string | wippy-runtime | Идентификатор сервиса |
+| `service_version` | string | | Тег версии сервиса |
+| `insecure` | bool | true | Разрешить незашифрованное OTLP-соединение |
 | `sample_rate` | float | 1.0 | Частота семплирования (0.0-1.0) |
-| `traces_enabled` | bool | false | Экспортировать трейсы |
+| `propagators` | string[] | `[tracecontext, baggage]` | Пропагаторы контекста |
+| `traces_enabled` | bool | true | Экспортировать трейсы |
 | `metrics_enabled` | bool | false | Экспортировать метрики |
 | `http.enabled` | bool | true | Трассировать HTTP-запросы |
+| `http.extract_headers` | bool | true | Извлекать trace-контекст из входящих заголовков |
+| `http.inject_headers` | bool | true | Внедрять trace-контекст в исходящие заголовки |
 | `process.enabled` | bool | true | Трассировать жизненный цикл процессов |
-| `interceptor.enabled` | bool | false | Трассировать вызовы функций |
+| `process.trace_lifecycle` | bool | true | Выпускать спаны для spawn/terminate |
+| `interceptor.enabled` | bool | true | Трассировать вызовы функций |
+| `interceptor.order` | int | 100 | Приоритет перехватчика |
+| `queue.enabled` | bool | true | Трассировать публикацию/получение в очередях |
+| `temporal.enabled` | bool | false | Трассировать Temporal-воркфлоу |
 
 ```yaml
 otel:
@@ -176,6 +198,8 @@ otel:
   process:
     trace_lifecycle: true
 ```
+
+Стандартные переменные окружения OTEL (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) переопределяют соответствующие поля.
 
 См.: [Наблюдаемость](guides/observability.md)
 

@@ -505,6 +505,23 @@ local response = llm.embed({
 -- response.result is an array of float arrays
 ```
 
+## Status do Provedor
+
+Sonde um provedor antes de enviar trabalho. Util para verificacoes de prontidao e monitoramento leve de saude:
+
+```lua
+local status, err = llm.status({
+    model = "gpt-4o",
+})
+```
+
+| Opcao | Descricao |
+|-------|-----------|
+| `model` | Obrigatorio. Modelo a verificar. |
+| `provider_id` | Opcional. Ignora a resolucao do modelo e direciona para um provedor especifico. |
+
+Retorna o `StatusResponse` do provedor (o conteudo depende do provedor).
+
 ## Tratamento de Erros
 
 Erros sao retornados como o segundo valor de retorno. Em caso de erro, o primeiro valor de retorno e `nil`:

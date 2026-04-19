@@ -36,12 +36,18 @@ local svc, err = contract.open("app.services:user", {
 
 -- Com parametros de query (auto-convertido: "true"->bool, numeros->int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
+
+-- Com opções de chamada (terceiro argumento)
+local inst, err = contract.open("app.services:flaky", nil, {
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `binding_id` | string | ID do binding, suporta parametros de query |
 | `scope` | table | Valores de contexto (opcional, sobrescreve parametros de query) |
+| `options` | table | Opções de chamada (opcional) — ex. `retry.max_attempts`, `retry.initial_delay` |
 
 **Retorna:** `Instance, error`
 
@@ -164,6 +170,27 @@ local wrapped = c:with_context({
 
 local instance, err = wrapped:open()
 ```
+
+## Opções de Chamada
+
+Configure retry e outro comportamento de chamada via `with_options`:
+
+```lua
+local c, err = contract.get("app.services:flaky")
+
+local inst, err = c
+    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
+    :open("app.services:flaky_impl")
+
+local result, err = inst:call()
+```
+
+As opções aplicam-se a cada chamada de método na instância retornada. Apenas erros passíveis de retry disparam retries; erros não passíveis de retry aparecem imediatamente. Encadeável com `with_context`, `with_actor`, `with_scope`.
+
+| Opção | Tipo | Descrição |
+|--------|------|-----------|
+| `retry.max_attempts` | int | Tentativas máximas incluindo a primeira (1 desativa retry) |
+| `retry.initial_delay` | int/duration | Atraso antes do primeiro retry (ms ou string de duração) |
 
 ## Contexto de Segurança
 

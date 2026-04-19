@@ -170,6 +170,40 @@ end
 return { main = main }
 ```
 
+## Comandos Nomeados
+
+Em vez de usar `-x app:cli`, você pode registrar seu processo como um comando nomeado:
+
+```yaml
+  - name: cli
+    kind: process.lua
+    meta:
+      command:
+        name: greet
+        short: Greet the user
+    source: file://cli.lua
+    method: main
+    modules:
+      - io
+```
+
+Agora execute pelo nome:
+
+```bash
+wippy run greet
+```
+
+Liste todos os comandos disponíveis:
+
+```bash
+wippy run list
+```
+
+```
+Available commands:
+  greet    Greet the user
+```
+
 ## Códigos de Saída
 
 Retorne de `main()` para definir o código de saída:

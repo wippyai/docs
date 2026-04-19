@@ -77,6 +77,19 @@ local all_headers = msg:headers()
 | `id()` | `string, error` | Уникальный идентификатор сообщения |
 | `header(key)` | `any, error` | Одно значение заголовка (nil если отсутствует) |
 | `headers()` | `table, error` | Все заголовки сообщения |
+| `ack()` | `boolean, error` | Подтвердить обработку (single-shot) |
+| `nack()` | `boolean, error` | Сообщить о сбое для повторной доставки или dead-letter (single-shot) |
+
+Runtime автоматически выполняет ack при успехе обработчика и nack при ошибке. Вызывайте `ack`/`nack` только для раннего завершения.
+
+## Информация об очереди
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats может содержать: message_count, consumer_count, ready (зависит от драйвера)
+```
+
+**Возвращает:** `table, error`
 
 ## Паттерн консьюмера
 

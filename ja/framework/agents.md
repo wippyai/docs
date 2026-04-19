@@ -109,12 +109,15 @@ end
 | `agent_context.new(options?)` | 新しいコンテキストを作成 |
 | `:add_tools(specs)` | 実行時にツールを追加 |
 | `:add_delegates(specs)` | デリゲートエージェントを追加 |
+| `:configure_delegate_tools(config)` | デリゲートをツールとして公開する方法を設定 |
 | `:set_memory_contract(config)` | 動的メモリを設定 |
+| `:set_context_merger(fn)` | 実行時コンテキスト更新をマージする関数を提供 |
 | `:update_context(updates)` | 実行時コンテキストを更新 |
 | `:load_agent(spec_or_id, options?)` | エージェントをロードしてコンパイル、ランナーを返す |
 | `:switch_to_agent(id, options?)` | 別のエージェントに切り替え、`(boolean, string?)` を返す |
 | `:switch_to_model(name)` | 現在のエージェントのモデルを変更、`(boolean, string?)` を返す |
 | `:get_current_agent()` | 現在のランナーを取得 |
+| `:get_config()` | コンテキスト設定の要約を返す |
 
 ### コンテキストオプション
 
@@ -122,8 +125,15 @@ end
 local ctx = agent_context.new({
     context = { session_id = "abc", user_id = "u1" },
     delegate_tools = { enabled = true },
+    enable_cache = true,
 })
 ```
+
+| オプション | 説明 |
+|--------|-------------|
+| `context` | ツールとデリゲートに転送されるベース実行時コンテキスト |
+| `delegate_tools` | デフォルトのデリゲートツール設定（`configure_delegate_tools` で上書き可能） |
+| `enable_cache` | プロンプトキャッシュマーカーを有効化（Claude モデル）。デフォルトは `true`。 |
 
 ### インラインスペックによるロード
 

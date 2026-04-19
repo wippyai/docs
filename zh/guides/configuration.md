@@ -2,6 +2,19 @@
 
 Wippy 通过 `.wippy.yaml` 文件进行配置。所有选项都有合理的默认值。
 
+## Logger
+
+控制 zap logger 编码器。CLI 参数（`-v`、`-c`、`-s`）会覆盖级别/输出；唯一由 yaml 驱动的选项是编码。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `encoding` | string | console | 编码器：`console`（人类可读）或 `json`（结构化） |
+
+```yaml
+logger:
+  encoding: json
+```
+
 ## 日志管理器
 
 控制运行时日志路由。控制台输出通过 [CLI 参数](guides/cli.md)（`-v`、`-c`、`-s`）配置。
@@ -160,13 +173,22 @@ finder:
 | `enabled` | bool | false | 启用 OTEL |
 | `endpoint` | string | localhost:4318 | OTLP 端点 |
 | `protocol` | string | http/protobuf | 协议：grpc, http/protobuf |
-| `service_name` | string | wippy | 服务标识符 |
+| `service_name` | string | wippy-runtime | 服务标识符 |
+| `service_version` | string | | 服务版本标签 |
+| `insecure` | bool | true | 允许明文 OTLP 连接 |
 | `sample_rate` | float | 1.0 | 追踪采样率（0.0-1.0） |
-| `traces_enabled` | bool | false | 导出追踪 |
+| `propagators` | string[] | `[tracecontext, baggage]` | 上下文传播器 |
+| `traces_enabled` | bool | true | 导出追踪 |
 | `metrics_enabled` | bool | false | 导出指标 |
 | `http.enabled` | bool | true | 追踪 HTTP 请求 |
+| `http.extract_headers` | bool | true | 从入站请求头中提取追踪上下文 |
+| `http.inject_headers` | bool | true | 向出站请求头注入追踪上下文 |
 | `process.enabled` | bool | true | 追踪进程生命周期 |
-| `interceptor.enabled` | bool | false | 追踪函数调用 |
+| `process.trace_lifecycle` | bool | true | 为 spawn/terminate 发出 span |
+| `interceptor.enabled` | bool | true | 追踪函数调用 |
+| `interceptor.order` | int | 100 | 拦截器优先级 |
+| `queue.enabled` | bool | true | 追踪队列发布/消费 |
+| `temporal.enabled` | bool | false | 追踪 Temporal 工作流 |
 
 ```yaml
 otel:
@@ -176,6 +198,8 @@ otel:
   process:
     trace_lifecycle: true
 ```
+
+标准 OTEL 环境变量（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）会覆盖对应字段。
 
 参见：[可观测性指南](guides/observability.md)
 

@@ -17,6 +17,11 @@
 | `process.lua` | Долгоживущий Lua-процесс |
 | `workflow.lua` | Temporal workflow (детерминированный) |
 | `library.lua` | Разделяемая Lua-библиотека |
+| `module.lua` | Модульный интерфейс Lua |
+| `function.lua.bc` | Предкомпилированный байт-код функции |
+| `library.lua.bc` | Предкомпилированный байт-код библиотеки |
+| `process.lua.bc` | Предкомпилированный байт-код процесса |
+| `workflow.lua.bc` | Предкомпилированный байт-код workflow |
 
 ```yaml
 - name: handler
@@ -111,7 +116,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.postgres
-  dsn: "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+  host: localhost
+  port: 5432
+  database: dbname
+  username: user
+  password: pass
+  options:
+    sslmode: disable
   pool:
     max_open: 25
     max_idle: 5
@@ -125,7 +136,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mysql
-  dsn: "user:pass@tcp(localhost:3306)/dbname?parseTime=true"
+  host: localhost
+  port: 3306
+  database: dbname
+  username: user
+  password: pass
+  options:
+    parseTime: "true"
   lifecycle:
     auto_start: true
 ```
@@ -135,10 +152,16 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mssql
-  dsn: "sqlserver://user:pass@localhost:1433?database=dbname"
+  host: localhost
+  port: 1433
+  database: dbname
+  username: user
+  password: pass
   lifecycle:
     auto_start: true
 ```
+
+См. [Database](system/database.md) для вариантов с суффиксом `*_env`, параметров TLS и настройки пула соединений.
 
 **Lua API:** См. [Модуль SQL](lua/storage/sql.md)
 
@@ -189,6 +212,8 @@ local data = s:get("user:123")
 | Тип | Описание |
 |-----|----------|
 | `queue.driver.memory` | In-memory драйвер очередей |
+| `queue.driver.amqp` | Драйвер AMQP (RabbitMQ) |
+| `queue.driver.sqs` | Драйвер AWS SQS |
 | `queue.queue` | Объявление очереди |
 | `queue.consumer` | Потребитель очереди |
 
@@ -343,6 +368,7 @@ local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
 | Тип | Описание |
 |-----|----------|
 | `fs.directory` | Доступ к каталогу |
+| `fs.embed` | Встраиваемая файловая система только для чтения |
 
 ```yaml
 - name: data_dir

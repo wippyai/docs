@@ -43,16 +43,17 @@ wippy run                                    # 런타임 시작
 wippy run list                               # 사용 가능한 명령어 목록
 wippy run test                               # 테스트 실행
 wippy run snapshot.wapp                      # 팩 파일에서 실행
-wippy run acme/http                          # 모듈 실행
-wippy run --exec app:worker                  # 단일 프로세스 실행
+wippy run acme/http                          # 허브에서 모듈 실행
+wippy run acme/http@1.2.3                    # 특정 버전 실행
+wippy run --exec app:worker                  # 런타임을 시작하고 단일 프로세스 실행
 ```
 
 | 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--override` | `-o` | 엔트리 값 오버라이드 (namespace:entry:field=value) |
-| `--exec` | `-x` | 프로세스를 실행하고 종료 (host/namespace:entry) |
-| `--host` | | 실행 호스트 |
-| `--registry` | | 레지스트리 URL |
+| `--override` | `-o` | 엔트리 값 오버라이드 (`namespace:entry:field=value`) |
+| `--exec` | `-x` | 프로세스를 실행하고 종료 (`namespace:entry`) |
+| `--host` | | `--exec`용 터미널 호스트 ID (`terminal.host`가 하나만 존재하면 자동 감지) |
+| `--registry` | | 허브 모듈을 위한 레지스트리 URL |
 
 ## wippy lint
 
@@ -61,6 +62,8 @@ Lua 코드의 타입 오류 및 경고를 검사합니다.
 ```bash
 wippy lint
 wippy lint --level warning
+wippy lint --json
+wippy lint --rules
 ```
 
 모든 Lua 엔트리를 검증합니다: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (해당 `.bc` 변형 포함).
@@ -224,6 +227,10 @@ wippy auth status
 wippy auth status --json
 ```
 
+| 플래그 | 설명 |
+|------|-------------|
+| `--json` | JSON으로 출력 |
+
 ## wippy readme
 
 허브에서 모듈의 README를 가져옵니다.
@@ -247,19 +254,30 @@ wippy readme --json wippy/terminal@latest
 
 ```bash
 wippy registry list
-wippy registry list --kind function.lua
-wippy registry list --ns app --json
+wippy registry list --kind "function.lua.*"
+wippy registry list --ns "app.*" --json
+wippy registry list --meta "type=api" --meta "enabled=true"
 ```
 
 | 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--kind` | `-k` | 종류별 필터 |
-| `--ns` | `-n` | 네임스페이스별 필터 |
-| `--name` | | 이름별 필터 |
-| `--meta` | | 메타데이터별 필터 |
+| `--kind` | `-k` | 종류별 필터 (glob 패턴) |
+| `--ns` | `-n` | 네임스페이스별 필터 (glob 패턴) |
+| `--name` | | 이름별 필터 (glob 패턴) |
+| `--meta` | | 메타데이터별 필터 (반복 가능) |
 | `--json` | | JSON으로 출력 |
 | `--yaml` | | YAML로 출력 |
 | `--lock-file` | `-l` | Lock 파일 경로 |
+
+`--meta`의 메타데이터 연산자:
+
+| 연산자 | 의미 |
+|--------|------|
+| `field=value` | 정확히 일치 |
+| `field~regex` | 정규식 일치 |
+| `field*substr` | 부분 문자열 포함 |
+| `field^prefix` | 접두사로 시작 |
+| `field$suffix` | 접미사로 끝남 |
 
 ### wippy registry show
 
@@ -323,6 +341,7 @@ wippy run list
 |-------|----------|-------------|
 | `name` | 예 | `wippy run <name>`으로 사용하는 명령어 이름 |
 | `short` | 아니오 | `wippy run list`에 표시되는 간단한 설명 |
+| `main` | 아니오 | 이 엔트리를 기본 명령어로 표시 (단일 명령어를 제공하는 팩과 허브 모듈에서 자동으로 선택됨) |
 
 모든 프로세스 엔트리 종류(`process.lua`, `process.wasm`)를 사용할 수 있습니다. 명령어 이름은 로드된 모든 엔트리에서 고유해야 합니다. 명령어 이름 뒤의 인수는 프로세스에 전달됩니다.
 

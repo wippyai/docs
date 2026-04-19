@@ -268,7 +268,6 @@ post_options:
   wsrelay.allowed.origins: "https://app.example.com"
 ```
 
-
 ---
 
 ### SSE 릴레이 {#sse_relay}
@@ -283,6 +282,21 @@ post_middleware:
 post_options:
   sserelay.allowed.origins: "https://app.example.com"
 ```
+
+---
+
+### OpenTelemetry {#otel}
+
+<warning>Pre-match</warning>
+
+수신 요청에 대한 OpenTelemetry 스팬과 메트릭을 기록합니다. OTel이 활성화되면 자동으로 등록되며, 그렇지 않으면 no-op로 작동합니다.
+
+```yaml
+middleware:
+  - otel
+```
+
+옵션을 받지 않습니다. `metrics` 미들웨어와 함께 작동합니다. Prometheus 카운터와 OTel 트레이스가 모두 필요할 때 둘 다 활성화하세요.
 
 ---
 

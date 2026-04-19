@@ -2,6 +2,19 @@
 
 Wippy는 `.wippy.yaml` 파일로 설정됩니다. 모든 옵션에는 합리적인 기본값이 있습니다.
 
+## Logger
+
+zap 로거 인코더를 제어합니다. CLI 플래그(`-v`, `-c`, `-s`)는 레벨/출력을 재정의합니다. yaml로 제어할 수 있는 유일한 옵션은 인코딩입니다.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `encoding` | string | console | 인코더: `console`(사람이 읽기 쉬운) 또는 `json`(구조화됨) |
+
+```yaml
+logger:
+  encoding: json
+```
+
 ## 로그 매니저
 
 런타임 로그 라우팅 제어. 콘솔 출력은 [CLI 플래그](guides/cli.md) (`-v`, `-c`, `-s`)로 설정됩니다.
@@ -160,13 +173,22 @@ OTLP를 통한 분산 트레이싱 및 메트릭 익스포트.
 | `enabled` | bool | false | OTEL 활성화 |
 | `endpoint` | string | localhost:4318 | OTLP 엔드포인트 |
 | `protocol` | string | http/protobuf | 프로토콜: grpc, http/protobuf |
-| `service_name` | string | wippy | 서비스 식별자 |
+| `service_name` | string | wippy-runtime | 서비스 식별자 |
+| `service_version` | string | | 서비스 버전 태그 |
+| `insecure` | bool | true | 평문 OTLP 연결 허용 |
 | `sample_rate` | float | 1.0 | 트레이스 샘플링 (0.0-1.0) |
-| `traces_enabled` | bool | false | 트레이스 익스포트 |
+| `propagators` | string[] | `[tracecontext, baggage]` | 컨텍스트 전파자 |
+| `traces_enabled` | bool | true | 트레이스 익스포트 |
 | `metrics_enabled` | bool | false | 메트릭 익스포트 |
 | `http.enabled` | bool | true | HTTP 요청 트레이싱 |
+| `http.extract_headers` | bool | true | 수신 헤더에서 트레이스 컨텍스트 추출 |
+| `http.inject_headers` | bool | true | 발신 헤더에 트레이스 컨텍스트 주입 |
 | `process.enabled` | bool | true | 프로세스 라이프사이클 트레이싱 |
-| `interceptor.enabled` | bool | false | 함수 호출 트레이싱 |
+| `process.trace_lifecycle` | bool | true | spawn/terminate에 대한 span 발행 |
+| `interceptor.enabled` | bool | true | 함수 호출 트레이싱 |
+| `interceptor.order` | int | 100 | 인터셉터 우선순위 |
+| `queue.enabled` | bool | true | 큐 publish/consume 트레이싱 |
+| `temporal.enabled` | bool | false | Temporal 워크플로우 트레이싱 |
 
 ```yaml
 otel:
@@ -176,6 +198,8 @@ otel:
   process:
     trace_lifecycle: true
 ```
+
+표준 OTEL 환경 변수(`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`)는 해당 필드를 재정의합니다.
 
 참조: [관측성 가이드](guides/observability.md)
 

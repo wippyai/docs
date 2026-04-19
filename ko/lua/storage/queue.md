@@ -77,6 +77,19 @@ local all_headers = msg:headers()
 | `id()` | `string, error` | 고유 메시지 식별자 |
 | `header(key)` | `any, error` | 단일 헤더 값 (없으면 nil) |
 | `headers()` | `table, error` | 모든 메시지 헤더 |
+| `ack()` | `boolean, error` | 처리 확인 (single-shot) |
+| `nack()` | `boolean, error` | 재전송 또는 dead-letter를 위한 실패 신호 (single-shot) |
+
+런타임은 핸들러 성공 시 자동으로 ack하고 핸들러 오류 시 자동으로 nack합니다. 조기에 확정할 때만 `ack`/`nack`를 호출하세요.
+
+## 큐 정보
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats에 포함될 수 있는 필드: message_count, consumer_count, ready (드라이버 의존)
+```
+
+**반환:** `table, error`
 
 ## 컨슈머 패턴
 

@@ -109,12 +109,15 @@ end
 | `agent_context.new(options?)` | Создать новый контекст |
 | `:add_tools(specs)` | Добавить инструменты во время выполнения |
 | `:add_delegates(specs)` | Добавить агентов-делегатов |
+| `:configure_delegate_tools(config)` | Настроить, как делегаты предоставляются в виде инструментов |
 | `:set_memory_contract(config)` | Настроить динамическую память |
+| `:set_context_merger(fn)` | Задать функцию для объединения обновлений контекста выполнения |
 | `:update_context(updates)` | Обновить контекст выполнения |
 | `:load_agent(spec_or_id, options?)` | Загрузить и скомпилировать агента, возвращает раннер |
 | `:switch_to_agent(id, options?)` | Переключиться на другого агента, возвращает `(boolean, string?)` |
 | `:switch_to_model(name)` | Изменить модель текущего агента, возвращает `(boolean, string?)` |
 | `:get_current_agent()` | Получить текущий раннер |
+| `:get_config()` | Вернуть сводку по конфигурации контекста |
 
 ### Параметры контекста
 
@@ -122,8 +125,15 @@ end
 local ctx = agent_context.new({
     context = { session_id = "abc", user_id = "u1" },
     delegate_tools = { enabled = true },
+    enable_cache = true,
 })
 ```
+
+| Параметр | Описание |
+|----------|----------|
+| `context` | Базовый контекст выполнения, передаваемый инструментам и делегатам |
+| `delegate_tools` | Конфигурация делегатов по умолчанию (переопределяется через `configure_delegate_tools`) |
+| `enable_cache` | Включить маркеры кэша промптов (модели Claude). По умолчанию `true`. |
 
 ### Загрузка по встроенной спецификации
 

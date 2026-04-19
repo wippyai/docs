@@ -81,6 +81,23 @@ local line, err = io.readline()
 
 **반환:** `string, error`
 
+## Raw 모드
+
+Raw 터미널 모드를 활성화 또는 비활성화합니다 (라인 버퍼링과 에코를 비활성화):
+
+```lua
+local ok, err = io.raw(true)   -- 활성화
+local ok, err = io.raw(false)  -- 비활성화
+```
+
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| `enable` | boolean | 활성화하려면 `true`, 비활성화하려면 `false` (기본값: `true`) |
+
+**반환:** `boolean, error`
+
+Raw 모드는 참조 카운팅 방식입니다 — 각 `io.raw(true)`는 `io.raw(false)`와 짝을 이뤄야 합니다. 프로세스 종료 시 터미널은 자동으로 일반 모드로 재설정됩니다.
+
 ## 출력 플러시
 
 stdout 버퍼를 플러시합니다:

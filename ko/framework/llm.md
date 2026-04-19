@@ -505,6 +505,23 @@ local response = llm.embed({
 -- response.result is an array of float arrays
 ```
 
+## 프로바이더 상태
+
+작업을 보내기 전에 프로바이더를 탐지합니다. 준비 상태 확인과 경량 헬스 모니터링에 유용합니다:
+
+```lua
+local status, err = llm.status({
+    model = "gpt-4o",
+})
+```
+
+| 옵션 | 설명 |
+|--------|-------------|
+| `model` | 필수. 확인할 모델. |
+| `provider_id` | 선택. 모델 해석을 건너뛰고 특정 프로바이더를 대상으로 합니다. |
+
+프로바이더의 `StatusResponse`를 반환합니다(내용은 프로바이더에 따라 다릅니다).
+
 ## 오류 처리
 
 오류는 두 번째 반환 값으로 반환됩니다. 오류 발생 시 첫 번째 반환 값은 `nil`입니다:

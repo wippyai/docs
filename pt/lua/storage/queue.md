@@ -77,6 +77,19 @@ Disponível apenas ao processar mensagens de fila em contexto de consumer.
 | `id()` | `string, error` | Identificador único da mensagem |
 | `header(key)` | `any, error` | Valor de header único (nil se ausente) |
 | `headers()` | `table, error` | Todos os headers da mensagem |
+| `ack()` | `boolean, error` | Confirmar processamento (single-shot) |
+| `nack()` | `boolean, error` | Sinalizar falha para reentrega ou dead-letter (single-shot) |
+
+O runtime faz auto-ack no sucesso do handler e auto-nack no erro do handler. Chame `ack`/`nack` apenas para confirmar antecipadamente.
+
+## Informação da Fila
+
+```lua
+local stats, err = queue.info("app:tasks")
+-- stats pode conter: message_count, consumer_count, ready (depende do driver)
+```
+
+**Retorna:** `table, error`
 
 ## Padrão de Consumer
 

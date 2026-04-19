@@ -81,6 +81,23 @@ local line, err = io.readline()
 
 **返回:** `string, error`
 
+## 原始模式
+
+启用或禁用原始终端模式（禁用行缓冲和回显）：
+
+```lua
+local ok, err = io.raw(true)   -- 启用
+local ok, err = io.raw(false)  -- 禁用
+```
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `enable` | boolean | `true` 启用，`false` 禁用（默认: `true`） |
+
+**返回:** `boolean, error`
+
+原始模式使用引用计数 — 每个 `io.raw(true)` 必须由 `io.raw(false)` 匹配。进程退出时终端自动重置为正常模式。
+
 ## 刷新输出
 
 刷新 stdout 缓冲区：

@@ -36,12 +36,18 @@ local svc, err = contract.open("app.services:user", {
 
 -- クエリパラメータ付き（自動変換: "true"→bool, numbers→int/float）
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
+
+-- 呼び出しオプション付き（第3引数）
+local inst, err = contract.open("app.services:flaky", nil, {
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 ```
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
 | `binding_id` | string | バインディングID、クエリパラメータをサポート |
 | `scope` | table | コンテキスト値（オプション、クエリパラメータをオーバーライド） |
+| `options` | table | 呼び出しオプション（オプション）— 例: `retry.max_attempts`, `retry.initial_delay` |
 
 **戻り値:** `Instance, error`
 
@@ -165,6 +171,27 @@ local wrapped = c:with_context({
 local instance, err = wrapped:open()
 ```
 
+## 呼び出しオプション
+
+`with_options` でリトライおよびその他の呼び出し動作を構成します:
+
+```lua
+local c, err = contract.get("app.services:flaky")
+
+local inst, err = c
+    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
+    :open("app.services:flaky_impl")
+
+local result, err = inst:call()
+```
+
+オプションは返されるインスタンスのすべてのメソッド呼び出しに適用されます。リトライ可能なエラーのみがリトライをトリガーします。リトライ不可能なエラーは即座に返されます。`with_context`、`with_actor`、`with_scope` とチェーン可能です。
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `retry.max_attempts` | int | 最初を含む最大試行回数 (1 はリトライを無効化) |
+| `retry.initial_delay` | int/duration | 最初のリトライ前の遅延（ミリ秒または duration 文字列） |
+
 ## セキュリティコンテキスト
 
 認可用のアクターとスコープを設定：
@@ -200,4 +227,3 @@ local admin, err = secured:open()
 | デフォルトバインディングがない | `errors.NOT_FOUND` |
 | 権限拒否 | `errors.PERMISSION_DENIED` |
 | 呼び出し失敗 | `errors.INTERNAL` |
-

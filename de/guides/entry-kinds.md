@@ -17,6 +17,11 @@ Vollständige Referenz aller in Wippy verfügbaren Entry-Typen.
 | `process.lua` | Langlebiger Lua-Prozess |
 | `workflow.lua` | Temporal-Workflow (deterministisch) |
 | `library.lua` | Gemeinsam genutzte Lua-Bibliothek |
+| `module.lua` | Lua-Modul-Oberflaeche |
+| `function.lua.bc` | Vorkompiliertes Funktions-Bytecode |
+| `library.lua.bc` | Vorkompiliertes Bibliothek-Bytecode |
+| `process.lua.bc` | Vorkompiliertes Prozess-Bytecode |
+| `workflow.lua.bc` | Vorkompiliertes Workflow-Bytecode |
 
 ```yaml
 - name: handler
@@ -111,7 +116,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.postgres
-  dsn: "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+  host: localhost
+  port: 5432
+  database: dbname
+  username: user
+  password: pass
+  options:
+    sslmode: disable
   pool:
     max_open: 25
     max_idle: 5
@@ -125,7 +136,13 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mysql
-  dsn: "user:pass@tcp(localhost:3306)/dbname?parseTime=true"
+  host: localhost
+  port: 3306
+  database: dbname
+  username: user
+  password: pass
+  options:
+    parseTime: "true"
   lifecycle:
     auto_start: true
 ```
@@ -135,10 +152,16 @@ resp:status(200):json({users = get_users()})
 ```yaml
 - name: database
   kind: db.sql.mssql
-  dsn: "sqlserver://user:pass@localhost:1433?database=dbname"
+  host: localhost
+  port: 1433
+  database: dbname
+  username: user
+  password: pass
   lifecycle:
     auto_start: true
 ```
+
+Siehe [Datenbank](system/database.md) fuer `*_env`-Suffix-Varianten, TLS-Optionen und Verbindungs-Pool-Tuning.
 
 **Lua-API:** Siehe [SQL-Modul](lua/storage/sql.md)
 
@@ -189,6 +212,8 @@ local data = s:get("user:123")
 | Kind | Beschreibung |
 |------|--------------|
 | `queue.driver.memory` | In-Memory-Queue-Treiber |
+| `queue.driver.amqp` | AMQP-Treiber (RabbitMQ) |
+| `queue.driver.sqs` | AWS-SQS-Treiber |
 | `queue.queue` | Queue-Deklaration |
 | `queue.consumer` | Queue-Konsument |
 
@@ -343,6 +368,7 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
 | Kind | Beschreibung |
 |------|--------------|
 | `fs.directory` | Verzeichniszugriff |
+| `fs.embed` | Schreibgeschuetztes eingebettetes Dateisystem |
 
 ```yaml
 - name: data_dir

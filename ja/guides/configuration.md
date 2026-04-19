@@ -2,6 +2,19 @@
 
 Wippyは`.wippy.yaml`ファイルで設定されます。すべてのオプションには妥当なデフォルト値があります。
 
+## Logger
+
+zap ロガーのエンコーダを制御します。CLI フラグ（`-v`, `-c`, `-s`）はレベル/出力を上書きします。yaml で制御できる唯一のオプションはエンコーディングです。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `encoding` | string | console | エンコーダ: `console`（人間可読）または `json`（構造化） |
+
+```yaml
+logger:
+  encoding: json
+```
+
 ## ログマネージャ
 
 ランタイムログルーティングを制御します。コンソール出力は[CLIフラグ](guides/cli.md)（`-v`, `-c`, `-s`）で設定します。
@@ -160,13 +173,22 @@ OTLPによる分散トレーシングとメトリクスエクスポート。
 | `enabled` | bool | false | OTELを有効化 |
 | `endpoint` | string | localhost:4318 | OTLPエンドポイント |
 | `protocol` | string | http/protobuf | プロトコル: grpc, http/protobuf |
-| `service_name` | string | wippy | サービス識別子 |
+| `service_name` | string | wippy-runtime | サービス識別子 |
+| `service_version` | string | | サービスバージョンタグ |
+| `insecure` | bool | true | 平文 OTLP 接続を許可 |
 | `sample_rate` | float | 1.0 | トレースサンプリング（0.0-1.0） |
-| `traces_enabled` | bool | false | トレースをエクスポート |
+| `propagators` | string[] | `[tracecontext, baggage]` | コンテキストプロパゲータ |
+| `traces_enabled` | bool | true | トレースをエクスポート |
 | `metrics_enabled` | bool | false | メトリクスをエクスポート |
 | `http.enabled` | bool | true | HTTPリクエストをトレース |
+| `http.extract_headers` | bool | true | 受信ヘッダからトレースコンテキストを抽出 |
+| `http.inject_headers` | bool | true | 送信ヘッダにトレースコンテキストを注入 |
 | `process.enabled` | bool | true | プロセスライフサイクルをトレース |
-| `interceptor.enabled` | bool | false | 関数呼び出しをトレース |
+| `process.trace_lifecycle` | bool | true | spawn/terminate の span を発行 |
+| `interceptor.enabled` | bool | true | 関数呼び出しをトレース |
+| `interceptor.order` | int | 100 | インターセプタの優先度 |
+| `queue.enabled` | bool | true | キューの publish/consume をトレース |
+| `temporal.enabled` | bool | false | Temporal ワークフローをトレース |
 
 ```yaml
 otel:
@@ -176,6 +198,8 @@ otel:
   process:
     trace_lifecycle: true
 ```
+
+標準 OTEL 環境変数（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）は一致するフィールドを上書きします。
 
 参照: [可観測性ガイド](guides/observability.md)
 
