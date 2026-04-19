@@ -75,6 +75,7 @@ local versions, err = registry.versions()
 print(version:id())       -- numeric ID
 print(version:string())   -- display string
 local prev = version:previous()  -- previous version or nil
+local next = version:next()      -- next version or nil
 ```
 
 ## History

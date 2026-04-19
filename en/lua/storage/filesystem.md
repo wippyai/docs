@@ -190,8 +190,8 @@ fs.seek.END       -- from end
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `readfile(path)` | `string, error` | Read entire file |
-| `writefile(path, data, mode?)` | `boolean, error` | Write file |
+| `readfile(path)` / `read_file(path)` | `string, error` | Read entire file |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | Write file |
 | `exists(path)` | `boolean, error` | Check if path exists |
 | `stat(path)` | `table, error` | Get file info |
 | `isdir(path)` | `boolean, error` | Check if directory |
@@ -200,7 +200,7 @@ fs.seek.END       -- from end
 | `readdir(path)` | `iterator, state` | List directory (use in generic `for` loop) |
 | `open(path, mode)` | `File, error` | Open file handle |
 | `chdir(path)` | `boolean, error` | Change working dir |
-| `pwd()` | `string` | Get working dir |
+| `pwd()` | `string, error` | Get working dir |
 
 ## Permissions
 
