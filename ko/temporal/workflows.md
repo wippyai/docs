@@ -420,11 +420,14 @@ local function handler()
         order
     )
 
+    local res = http.response()
     if err then
-        return http.response():status(409):json({error = tostring(err)})
+        res:set_status(409)
+        return res:write_json({error = tostring(err)})
     end
 
-    return http.response():status(202):json({
+    res:set_status(202)
+    return res:write_json({
         workflow_id = tostring(pid),
         status = "started"
     })

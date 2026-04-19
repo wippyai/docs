@@ -26,8 +26,9 @@ WebSocket 연결은 자체 PID를 가진 완전한 프로세스입니다. 프로
 -- 다른 프로세스에서 WebSocket 연결 모니터링
 process.monitor(websocket_pid)
 
--- 모든 프로세스에서 WebSocket 클라이언트로 메시지 전송
-process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
+-- 모든 프로세스에서 WebSocket 클라이언트로 메시지 전송.
+-- 릴레이는 이를 {topic, data} JSON으로 래핑합니다; 토픽 이름은 임의입니다.
+process.send(websocket_pid, "update", "hello")
 ```
 
 <tip>
@@ -111,10 +112,10 @@ end
 
 | 토픽 | 시점 | 페이로드 |
 |-------|------|---------|
-| `ws.join` | 클라이언트 연결 시 | `client_pid`, `metadata` |
-| `ws.message` | 클라이언트 메시지 전송 시 | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | 주기적 (설정된 경우) | `client_pid`, `uptime`, `message_count` |
-| `ws.leave` | 클라이언트 연결 해제 시 | `client_pid`, `reason`, `metadata` |
+| `ws.join` | 클라이언트 연결 시 | JSON `{client_pid, metadata}` |
+| `ws.message` (또는 사용자의 `message_topic`) | 클라이언트 메시지 전송 시 | 원시 클라이언트 페이로드 (텍스트 프레임 -> string, 바이너리 프레임 -> bytes); 릴레이 패키지의 소스 PID가 클라이언트 PID |
+| `ws.heartbeat` | 주기적 (설정된 경우) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.leave` | 클라이언트 연결 해제 시 | JSON `{client_pid, metadata}` |
 
 ## 메시지 수신
 
@@ -129,20 +130,21 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local from = msg:from()                -- 클라이언트 연결 PID
 
         if topic == "ws.join" then
-            -- 클라이언트 연결됨
+            -- 클라이언트 연결됨 -- 페이로드는 {client_pid, metadata}
+            local data = msg:payload():data()
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- 클라이언트 메시지 처리
-            local content = json.decode(data.data)
-            handle_message(data.client_pid, content)
+            -- 원시 클라이언트 메시지; from() 은 클라이언트 PID
+            local body = msg:payload():data()  -- string 또는 bytes
+            handle_message(from, json.decode(body))
 
         elseif topic == "ws.leave" then
-            -- 클라이언트 연결 해제됨
-            cleanup(data.client_pid)
+            -- 클라이언트 연결 해제됨 -- 페이로드는 {client_pid, metadata}
+            cleanup(from)
         end
     end
 end
@@ -150,27 +152,20 @@ end
 
 ## 클라이언트로 전송
 
-클라이언트 PID를 사용하여 메시지 반환:
+클라이언트 PID를 사용하여 메시지 반환. 선택한 어떤 토픽이든 `{topic, data}` JSON으로 래핑되어 WebSocket으로 전달됩니다. 프레임 타입은 페이로드 형식에 따라 결정됩니다: 문자열은 텍스트 프레임이 되고, 바이트는 바이너리 프레임이 됩니다 (JSON 래퍼 내부에서 base64 인코딩).
 
 ```lua
--- 텍스트 메시지 전송
-process.send(client_pid, "ws.send", {
-    type = "text",
-    data = json.encode({event = "update", value = 42})
-})
+-- 구조화된 메시지 전송 (임의의 토픽 이름)
+process.send(client_pid, "update", json.encode({event = "update", value = 42}))
 
 -- 바이너리 전송
-process.send(client_pid, "ws.send", {
-    type = "binary",
-    data = binary_content
-})
+process.send(client_pid, "data", binary_content)
 
--- 연결 종료
-process.send(client_pid, "ws.close", {
-    code = 1000,
-    reason = "Session ended"
-})
+-- 연결 종료 (페이로드는 종료 사유 문자열)
+process.send(client_pid, "ws.close", "Session ended")
 ```
+
+서버 -> 클라이언트의 예약된 토픽은 `ws.control` (릴레이 재구성) 및 `ws.close` (연결 종료) 입니다.
 
 ## 브로드캐스팅
 
@@ -189,7 +184,7 @@ clients[client_pid] = nil
 local function broadcast(message)
     local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "ws.send", {type = "text", data = data})
+        process.send(pid, "broadcast", data)
     end
 end
 ```

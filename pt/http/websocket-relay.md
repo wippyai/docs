@@ -26,8 +26,9 @@ Conexões WebSocket são processos completos com seu próprio PID. Elas se integ
 -- Monitora uma conexão WebSocket de outro processo
 process.monitor(websocket_pid)
 
--- Envia mensagem para cliente WebSocket de qualquer processo
-process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
+-- Envia mensagem para cliente WebSocket de qualquer processo.
+-- O relay encapsula como JSON {topic, data}; o nome do tópico é arbitrário.
+process.send(websocket_pid, "update", "hello")
 ```
 
 <tip>
@@ -111,10 +112,10 @@ O relay envia estas mensagens para o processo alvo:
 
 | Tópico | Quando | Payload |
 |--------|--------|---------|
-| `ws.join` | Cliente conecta | `client_pid`, `metadata` |
-| `ws.message` | Cliente envia mensagem | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | Periódico (se configurado) | `client_pid`, `uptime`, `message_count` |
-| `ws.leave` | Cliente desconecta | `client_pid`, `reason`, `metadata` |
+| `ws.join` | Cliente conecta | JSON `{client_pid, metadata}` |
+| `ws.message` (ou seu `message_topic`) | Cliente envia mensagem | Payload bruto do cliente (frame de texto -> string, frame binário -> bytes); o PID de origem do pacote do relay é o PID do cliente |
+| `ws.heartbeat` | Periódico (se configurado) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.leave` | Cliente desconecta | JSON `{client_pid, metadata}` |
 
 ## Recebendo Mensagens
 
@@ -129,20 +130,21 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local from = msg:from()                -- PID da conexão do cliente
 
         if topic == "ws.join" then
-            -- Cliente conectou
+            -- Cliente conectou -- payload é {client_pid, metadata}
+            local data = msg:payload():data()
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- Trata mensagem do cliente
-            local content = json.decode(data.data)
-            handle_message(data.client_pid, content)
+            -- Mensagem bruta do cliente; from() é o PID do cliente
+            local body = msg:payload():data()  -- string ou bytes
+            handle_message(from, json.decode(body))
 
         elseif topic == "ws.leave" then
-            -- Cliente desconectou
-            cleanup(data.client_pid)
+            -- Cliente desconectou -- payload é {client_pid, metadata}
+            cleanup(from)
         end
     end
 end
@@ -150,27 +152,20 @@ end
 
 ## Enviando para o Cliente
 
-Envia mensagens de volta usando o PID do cliente:
+Envia mensagens de volta usando o PID do cliente. Qualquer tópico que você escolher é encapsulado como JSON `{topic, data}` e encaminhado para o WebSocket. O tipo de frame é decidido pelo formato do payload: strings se tornam frames de texto, bytes se tornam frames binários (codificados em base64 dentro do envoltório JSON).
 
 ```lua
--- Envia mensagem de texto
-process.send(client_pid, "ws.send", {
-    type = "text",
-    data = json.encode({event = "update", value = 42})
-})
+-- Envia uma mensagem estruturada (qualquer nome de tópico)
+process.send(client_pid, "update", json.encode({event = "update", value = 42}))
 
 -- Envia binário
-process.send(client_pid, "ws.send", {
-    type = "binary",
-    data = binary_content
-})
+process.send(client_pid, "data", binary_content)
 
--- Fecha conexão
-process.send(client_pid, "ws.close", {
-    code = 1000,
-    reason = "Sessão encerrada"
-})
+-- Fecha conexão (payload é a string do motivo de fechamento)
+process.send(client_pid, "ws.close", "Sessão encerrada")
 ```
+
+Os tópicos reservados de servidor -> cliente são `ws.control` (reconfiguração do relay) e `ws.close` (fechar a conexão).
 
 ## Broadcast
 
@@ -189,7 +184,7 @@ clients[client_pid] = nil
 local function broadcast(message)
     local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "ws.send", {type = "text", data = data})
+        process.send(pid, "broadcast", data)
     end
 end
 ```

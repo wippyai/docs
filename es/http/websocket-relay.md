@@ -26,8 +26,9 @@ Las conexiones WebSocket son procesos completos con su propio PID. Se integran c
 -- Monitorear una conexión WebSocket desde otro proceso
 process.monitor(websocket_pid)
 
--- Enviar mensaje a cliente WebSocket desde cualquier proceso
-process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
+-- Enviar mensaje a cliente WebSocket desde cualquier proceso.
+-- El relay lo envuelve como JSON {topic, data}; el nombre del tópico es arbitrario.
+process.send(websocket_pid, "update", "hello")
 ```
 
 <tip>
@@ -111,10 +112,10 @@ El relay envía estos mensajes al proceso destino:
 
 | Tópico | Cuándo | Payload |
 |--------|--------|---------|
-| `ws.join` | Cliente conecta | `client_pid`, `metadata` |
-| `ws.message` | Cliente envía mensaje | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | Periódico (si configurado) | `client_pid`, `uptime`, `message_count` |
-| `ws.leave` | Cliente desconecta | `client_pid`, `reason`, `metadata` |
+| `ws.join` | Cliente conecta | JSON `{client_pid, metadata}` |
+| `ws.message` (o tu `message_topic`) | Cliente envía mensaje | Payload sin procesar del cliente (frame de texto -> string, frame binario -> bytes); el PID origen del paquete relay es el PID del cliente |
+| `ws.heartbeat` | Periódico (si configurado) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.leave` | Cliente desconecta | JSON `{client_pid, metadata}` |
 
 ## Recibir Mensajes
 
@@ -129,20 +130,21 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local from = msg:from()                -- PID de la conexión del cliente
 
         if topic == "ws.join" then
-            -- Cliente conectado
+            -- Cliente conectado -- payload es {client_pid, metadata}
+            local data = msg:payload():data()
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- Manejar mensaje del cliente
-            local content = json.decode(data.data)
-            handle_message(data.client_pid, content)
+            -- Mensaje sin procesar del cliente; from() es el PID del cliente
+            local body = msg:payload():data()  -- string o bytes
+            handle_message(from, json.decode(body))
 
         elseif topic == "ws.leave" then
-            -- Cliente desconectado
-            cleanup(data.client_pid)
+            -- Cliente desconectado -- payload es {client_pid, metadata}
+            cleanup(from)
         end
     end
 end
@@ -150,27 +152,20 @@ end
 
 ## Enviar al Cliente
 
-Envíe mensajes de vuelta usando el PID del cliente:
+Envíe mensajes de vuelta usando el PID del cliente. Cualquier tópico que elija se envuelve como JSON `{topic, data}` y se reenvía al WebSocket. El tipo de frame se decide por el formato del payload: las cadenas se convierten en frames de texto, los bytes en frames binarios (codificados en base64 dentro del envoltorio JSON).
 
 ```lua
--- Enviar mensaje de texto
-process.send(client_pid, "ws.send", {
-    type = "text",
-    data = json.encode({event = "update", value = 42})
-})
+-- Enviar un mensaje estructurado (cualquier nombre de tópico)
+process.send(client_pid, "update", json.encode({event = "update", value = 42}))
 
 -- Enviar binario
-process.send(client_pid, "ws.send", {
-    type = "binary",
-    data = binary_content
-})
+process.send(client_pid, "data", binary_content)
 
--- Cerrar conexión
-process.send(client_pid, "ws.close", {
-    code = 1000,
-    reason = "Sesión terminada"
-})
+-- Cerrar conexión (el payload es la cadena de motivo de cierre)
+process.send(client_pid, "ws.close", "Sesión terminada")
 ```
+
+Los tópicos reservados de servidor -> cliente son `ws.control` (reconfiguración del relay) y `ws.close` (cerrar la conexión).
 
 ## Broadcasting
 
@@ -189,7 +184,7 @@ clients[client_pid] = nil
 local function broadcast(message)
     local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "ws.send", {type = "text", data = data})
+        process.send(pid, "broadcast", data)
     end
 end
 ```

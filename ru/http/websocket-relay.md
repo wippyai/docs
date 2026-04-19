@@ -26,8 +26,9 @@ WebSocket-соединения — полноценные процессы со 
 -- Мониторинг WebSocket-соединения из другого процесса
 process.monitor(websocket_pid)
 
--- Отправка сообщения WebSocket-клиенту из любого процесса
-process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
+-- Отправка сообщения WebSocket-клиенту из любого процесса.
+-- Relay оборачивает его в JSON {topic, data}; имя топика произвольное.
+process.send(websocket_pid, "update", "hello")
 ```
 
 <tip>
@@ -111,10 +112,10 @@ Relay отправляет целевому процессу следующие 
 
 | Топик | Когда | Payload |
 |-------|-------|---------|
-| `ws.join` | Клиент подключился | `client_pid`, `metadata` |
-| `ws.message` | Клиент отправил сообщение | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | Периодически (если настроен) | `client_pid`, `uptime`, `message_count` |
-| `ws.leave` | Клиент отключился | `client_pid`, `reason`, `metadata` |
+| `ws.join` | Клиент подключился | JSON `{client_pid, metadata}` |
+| `ws.message` (или ваш `message_topic`) | Клиент отправил сообщение | Сырой payload клиента (text-фрейм -> string, binary-фрейм -> bytes); source PID пакета relay — это PID клиента |
+| `ws.heartbeat` | Периодически (если настроен) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.leave` | Клиент отключился | JSON `{client_pid, metadata}` |
 
 ## Получение сообщений
 
@@ -129,20 +130,21 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local from = msg:from()                -- PID клиентского соединения
 
         if topic == "ws.join" then
-            -- Клиент подключился
+            -- Клиент подключился — payload это {client_pid, metadata}
+            local data = msg:payload():data()
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- Обрабатываем сообщение клиента
-            local content = json.decode(data.data)
-            handle_message(data.client_pid, content)
+            -- Сырое сообщение клиента; from() это PID клиента
+            local body = msg:payload():data()  -- string или bytes
+            handle_message(from, json.decode(body))
 
         elseif topic == "ws.leave" then
-            -- Клиент отключился
-            cleanup(data.client_pid)
+            -- Клиент отключился — payload это {client_pid, metadata}
+            cleanup(from)
         end
     end
 end
@@ -150,27 +152,20 @@ end
 
 ## Отправка клиенту
 
-Отправка сообщений обратно через PID клиента:
+Отправка сообщений обратно через PID клиента. Любой выбранный вами топик оборачивается в JSON `{topic, data}` и пересылается в WebSocket. Тип фрейма определяется форматом payload: строки становятся text-фреймами, bytes — binary-фреймами (закодированными в base64 внутри JSON-обёртки).
 
 ```lua
--- Отправка текстового сообщения
-process.send(client_pid, "ws.send", {
-    type = "text",
-    data = json.encode({event = "update", value = 42})
-})
+-- Отправка структурированного сообщения (любое имя топика)
+process.send(client_pid, "update", json.encode({event = "update", value = 42}))
 
 -- Отправка бинарных данных
-process.send(client_pid, "ws.send", {
-    type = "binary",
-    data = binary_content
-})
+process.send(client_pid, "data", binary_content)
 
--- Закрытие соединения
-process.send(client_pid, "ws.close", {
-    code = 1000,
-    reason = "Session ended"
-})
+-- Закрытие соединения (payload — строка с причиной закрытия)
+process.send(client_pid, "ws.close", "Session ended")
 ```
+
+Зарезервированные топики server -> client: `ws.control` (переконфигурация relay) и `ws.close` (закрыть соединение).
 
 ## Broadcast
 
@@ -189,7 +184,7 @@ clients[client_pid] = nil
 local function broadcast(message)
     local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "ws.send", {type = "text", data = data})
+        process.send(pid, "broadcast", data)
     end
 end
 ```

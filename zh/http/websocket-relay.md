@@ -26,8 +26,9 @@ WebSocket 连接是完整的进程，拥有自己的 PID。它们与进程系统
 -- 从另一个进程监控 WebSocket 连接
 process.monitor(websocket_pid)
 
--- 从任何进程向 WebSocket 客户端发送消息
-process.send(websocket_pid, "ws.send", {type = "text", data = "hello"})
+-- 从任何进程向 WebSocket 客户端发送消息。
+-- Relay 将其包装为 {topic, data} JSON; topic 名称是任意的。
+process.send(websocket_pid, "update", "hello")
 ```
 
 <tip>
@@ -111,10 +112,10 @@ Relay 向目标进程发送以下消息：
 
 | 主题 | 时机 | 负载 |
 |------|------|------|
-| `ws.join` | 客户端连接 | `client_pid`, `metadata` |
-| `ws.message` | 客户端发送消息 | `client_pid`, `type`, `data`, `metadata` |
-| `ws.heartbeat` | 定期 (如果配置) | `client_pid`, `uptime`, `message_count` |
-| `ws.leave` | 客户端断开 | `client_pid`, `reason`, `metadata` |
+| `ws.join` | 客户端连接 | JSON `{client_pid, metadata}` |
+| `ws.message` (或您的 `message_topic`) | 客户端发送消息 | 原始客户端负载 (text 帧 -> string, binary 帧 -> bytes); relay 包的源 PID 即客户端 PID |
+| `ws.heartbeat` | 定期 (如果配置) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.leave` | 客户端断开 | JSON `{client_pid, metadata}` |
 
 ## 接收消息
 
@@ -129,20 +130,21 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local from = msg:from()                -- 客户端连接 PID
 
         if topic == "ws.join" then
-            -- 客户端已连接
+            -- 客户端已连接 -- 负载是 {client_pid, metadata}
+            local data = msg:payload():data()
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- 处理客户端消息
-            local content = json.decode(data.data)
-            handle_message(data.client_pid, content)
+            -- 原始客户端消息; from() 是客户端 PID
+            local body = msg:payload():data()  -- string 或 bytes
+            handle_message(from, json.decode(body))
 
         elseif topic == "ws.leave" then
-            -- 客户端已断开
-            cleanup(data.client_pid)
+            -- 客户端已断开 -- 负载是 {client_pid, metadata}
+            cleanup(from)
         end
     end
 end
@@ -150,27 +152,20 @@ end
 
 ## 发送到客户端
 
-使用客户端 PID 发送回复消息：
+使用客户端 PID 发送回复消息。您选择的任何 topic 都会被包装为 `{topic, data}` JSON 并转发到 WebSocket。帧类型由负载格式决定: 字符串成为 text 帧, bytes 成为 binary 帧 (在 JSON 包装内 base64 编码)。
 
 ```lua
--- 发送文本消息
-process.send(client_pid, "ws.send", {
-    type = "text",
-    data = json.encode({event = "update", value = 42})
-})
+-- 发送结构化消息 (任意 topic 名称)
+process.send(client_pid, "update", json.encode({event = "update", value = 42}))
 
 -- 发送二进制
-process.send(client_pid, "ws.send", {
-    type = "binary",
-    data = binary_content
-})
+process.send(client_pid, "data", binary_content)
 
--- 关闭连接
-process.send(client_pid, "ws.close", {
-    code = 1000,
-    reason = "Session ended"
-})
+-- 关闭连接 (负载为关闭原因字符串)
+process.send(client_pid, "ws.close", "Session ended")
 ```
+
+服务器到客户端的保留 topic 是 `ws.control` (relay 重新配置) 和 `ws.close` (关闭连接)。
 
 ## 广播
 
@@ -189,7 +184,7 @@ clients[client_pid] = nil
 local function broadcast(message)
     local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "ws.send", {type = "text", data = data})
+        process.send(pid, "broadcast", data)
     end
 end
 ```
