@@ -311,7 +311,7 @@ Executes an agent with tool calling and optional structured exit:
 |--------|------|-------------|
 | `model` | string | Override model |
 | `arena.prompt` | string | System prompt |
-| `arena.max_iterations` | number | Max reasoning loops (default: 32) |
+| `arena.max_iterations` | number | Max reasoning loops (default: 64) |
 | `arena.min_iterations` | number | Min iterations before exit (default: 1) |
 | `arena.tool_calling` | string | `"auto"`, `"any"`, `"none"` |
 | `arena.tools` | array | Tool registry IDs |
@@ -421,7 +421,7 @@ Map-reduce pattern over arrays:
     iteration_input_key = "spec",
     passthrough_keys = { "task" },
     batch_size = 10,
-    on_error = "continue",
+    on_error = "collect_errors",
     filter = "successes",
     unwrap = true,
     template = flow.template()
@@ -447,7 +447,7 @@ Map-reduce pattern over arrays:
 | `template` | FlowBuilder | Template for each item (required, must route to `@success`) |
 | `iteration_input_key` | string | Input key for current item (default: `"default"`) |
 | `batch_size` | number | Items per parallel batch (default: 1 = sequential) |
-| `on_error` | string | `"continue"` (default) or `"fail_fast"` |
+| `on_error` | string | `"collect_errors"` (default) or `"fail_fast"` |
 | `filter` | string | `"all"` (default), `"successes"`, `"failures"` |
 | `unwrap` | boolean | Return raw results instead of wrapped metadata (default: false) |
 | `passthrough_keys` | array | Input keys forwarded to every iteration |

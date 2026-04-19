@@ -7,7 +7,8 @@
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -15,12 +16,12 @@
 
 ## 설정
 
-| 필드 | 타입 | 설명 |
-|-------|------|-------------|
-| `router` | registry.ID | 부모 라우터 (라우터가 하나면 선택적) |
-| `method` | string | HTTP 메서드 |
-| `path` | string | URL 경로 패턴 |
-| `func` | registry.ID | 실행할 함수 |
+| 필드 | 타입 | 필수 | 설명 |
+|-------|------|------|-------------|
+| `meta.router` | registry.ID | 아니오 | 부모 라우터 (정확히 하나의 라우터가 등록된 경우 해당 라우터가 기본값) |
+| `method` | string | 예 | HTTP 메서드 |
+| `path` | string | 예 | URL 경로 패턴 |
+| `func` | registry.ID | 예 | 실행할 함수 |
 
 ## HTTP 메서드
 

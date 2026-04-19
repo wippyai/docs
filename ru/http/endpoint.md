@@ -7,7 +7,8 @@
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -15,12 +16,12 @@
 
 ## Конфигурация
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `router` | registry.ID | Родительский роутер (необязательно, если роутер один) |
-| `method` | string | HTTP-метод |
-| `path` | string | Шаблон URL-пути |
-| `func` | registry.ID | Выполняемая функция |
+| Поле | Тип | Обязательно | Описание |
+|------|-----|-------------|----------|
+| `meta.router` | registry.ID | Нет | Родительский роутер (по умолчанию используется единственный зарегистрированный роутер, если он один) |
+| `method` | string | Да | HTTP-метод |
+| `path` | string | Да | Шаблон URL-пути |
+| `func` | registry.ID | Да | Выполняемая функция |
 
 ## HTTP-методы
 

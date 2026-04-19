@@ -7,7 +7,8 @@ Endpoints (`http.endpoint`) definem handlers de rota HTTP que executam funções
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -15,12 +16,12 @@ Endpoints (`http.endpoint`) definem handlers de rota HTTP que executam funções
 
 ## Configuração
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `router` | registry.ID | Roteador pai (opcional se apenas um roteador) |
-| `method` | string | Método HTTP |
-| `path` | string | Padrão de caminho URL |
-| `func` | registry.ID | Função a executar |
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `meta.router` | registry.ID | Não | Roteador pai (padrão: o único roteador se exatamente um estiver registrado) |
+| `method` | string | Sim | Método HTTP |
+| `path` | string | Sim | Padrão de caminho URL |
+| `func` | registry.ID | Sim | Função a executar |
 
 ## Métodos HTTP
 

@@ -152,9 +152,11 @@ entries:
       auto_start: true
 ```
 
-<warning>
-TLS-Terminierung wird typischerweise von einem Reverse-Proxy (Nginx, Caddy, Load-Balancer) behandelt. Konfigurieren Sie Ihren Proxy zur Weiterleitung an Wippys HTTP-Server.
-</warning>
+## TLS
+
+Der Server kann TLS direkt terminieren. Setzen Sie `tls.mode` auf `manual` (eigenes Zertifikat bereitstellen) oder `auto` (Zertifikat wird von einem Overlay-Netzwerktreiber bereitgestellt, z. B. `network.tailscale`). Reine Clearnet-Listener unterstützen `auto` nicht. Lassen Sie `tls` weg oder den Modus leer, um reines HTTP auszuführen.
+
+Im `auto`-Modus darf der Server `cert`/`key`/`cert_env`/`key_env` nicht angeben — der Netzwerktreiber stellt sie bereit.
 
 ## Siehe auch
 

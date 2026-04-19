@@ -7,7 +7,8 @@
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -15,12 +16,12 @@
 
 ## 配置
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `router` | registry.ID | 父级路由器 (如果只有一个路由器则可选) |
-| `method` | string | HTTP 方法 |
-| `path` | string | URL 路径模式 |
-| `func` | registry.ID | 要执行的函数 |
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `meta.router` | registry.ID | 否 | 父级路由器 (如果仅注册了一个路由器则默认使用该路由器) |
+| `method` | string | 是 | HTTP 方法 |
+| `path` | string | 是 | URL 路径模式 |
+| `func` | registry.ID | 是 | 要执行的函数 |
 
 ## HTTP 方法
 

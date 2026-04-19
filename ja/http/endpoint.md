@@ -7,7 +7,8 @@
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -15,12 +16,12 @@
 
 ## 設定
 
-| フィールド | 型 | 説明 |
-|------------|-----|------|
-| `router` | registry.ID | 親ルーター（ルーターが1つだけの場合はオプション） |
-| `method` | string | HTTPメソッド |
-| `path` | string | URLパスパターン |
-| `func` | registry.ID | 実行する関数 |
+| フィールド | 型 | 必須 | 説明 |
+|------------|-----|------|------|
+| `meta.router` | registry.ID | いいえ | 親ルーター（ルーターが1つだけ登録されている場合はそれがデフォルト） |
+| `method` | string | はい | HTTPメソッド |
+| `path` | string | はい | URLパスパターン |
+| `func` | registry.ID | はい | 実行する関数 |
 
 ## HTTPメソッド
 

@@ -152,9 +152,11 @@ entries:
       auto_start: true
 ```
 
-<warning>
-TLS 종료는 일반적으로 리버스 프록시(Nginx, Caddy, 로드 밸런서)가 처리합니다. Wippy의 HTTP 서버로 전달하도록 프록시를 설정하세요.
-</warning>
+## TLS
+
+서버는 TLS를 직접 종료할 수 있습니다. `tls.mode`를 `manual`(자체 인증서 제공) 또는 `auto`(오버레이 네트워크 드라이버, 예: `network.tailscale`에서 제공하는 인증서)로 설정하세요. 일반 clearnet 리스너는 `auto`를 지원하지 않습니다. `tls`를 생략하거나 mode를 비워 두면 일반 HTTP로 실행됩니다.
+
+`auto` 모드에서는 서버가 `cert`/`key`/`cert_env`/`key_env`를 지정해서는 안 됩니다 — 네트워크 드라이버가 제공합니다.
 
 ## 참고
 

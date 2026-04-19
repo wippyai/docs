@@ -7,7 +7,8 @@ Los endpoints (`http.endpoint`) definen manejadores de rutas HTTP que ejecutan f
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -15,12 +16,12 @@ Los endpoints (`http.endpoint`) definen manejadores de rutas HTTP que ejecutan f
 
 ## Configuración
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `router` | registry.ID | Router padre (opcional si solo hay un router) |
-| `method` | string | Método HTTP |
-| `path` | string | Patrón de ruta URL |
-| `func` | registry.ID | Función a ejecutar |
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `meta.router` | registry.ID | No | Router padre (por defecto, el único router si exactamente uno está registrado) |
+| `method` | string | Sí | Método HTTP |
+| `path` | string | Sí | Patrón de ruta URL |
+| `func` | registry.ID | Sí | Función a ejecutar |
 
 ## Métodos HTTP
 

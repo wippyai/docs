@@ -7,7 +7,8 @@ Endpunkte (`http.endpoint`) definieren HTTP-Routen-Handler, die Lua-Funktionen a
 ```yaml
 - name: get_user
   kind: http.endpoint
-  router: api_router
+  meta:
+    router: app:api_router
   method: GET
   path: /users/{id}
   func: app.users:get_user
@@ -15,12 +16,12 @@ Endpunkte (`http.endpoint`) definieren HTTP-Routen-Handler, die Lua-Funktionen a
 
 ## Konfiguration
 
-| Feld | Typ | Beschreibung |
-|------|-----|--------------|
-| `router` | registry.ID | Übergeordneter Router (optional wenn nur ein Router) |
-| `method` | string | HTTP-Methode |
-| `path` | string | URL-Pfadmuster |
-| `func` | registry.ID | Auszuführende Funktion |
+| Feld | Typ | Erforderlich | Beschreibung |
+|------|-----|--------------|--------------|
+| `meta.router` | registry.ID | Nein | Übergeordneter Router (Standard: der einzige Router, falls genau einer registriert ist) |
+| `method` | string | Ja | HTTP-Methode |
+| `path` | string | Ja | URL-Pfadmuster |
+| `func` | registry.ID | Ja | Auszuführende Funktion |
 
 ## HTTP-Methoden
 

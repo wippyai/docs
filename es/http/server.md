@@ -152,9 +152,11 @@ entries:
       auto_start: true
 ```
 
-<warning>
-La terminación TLS típicamente es manejada por un proxy reverso (Nginx, Caddy, balanceador de carga). Configure su proxy para reenviar al servidor HTTP de Wippy.
-</warning>
+## TLS
+
+El servidor puede terminar TLS directamente. Configure `tls.mode` como `manual` (proporcione su propio certificado) o `auto` (certificado proporcionado por un controlador de red overlay, por ejemplo `network.tailscale`). Los listeners de clearnet sin overlay no admiten `auto`. Omita `tls` o deje el modo vacío para ejecutar HTTP plano.
+
+En modo `auto` el servidor no debe especificar `cert`/`key`/`cert_env`/`key_env` — el controlador de red los proporciona.
 
 ## Ver También
 

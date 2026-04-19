@@ -152,9 +152,11 @@ entries:
       auto_start: true
 ```
 
-<warning>
-TLS終端は通常リバースプロキシ（Nginx、Caddy、ロードバランサー）で処理されます。WippyのHTTPサーバーに転送するようにプロキシを設定してください。
-</warning>
+## TLS
+
+サーバーはTLSを直接終端できます。`tls.mode`を`manual`（独自の証明書を提供）または`auto`（オーバーレイネットワークドライバ、例: `network.tailscale`によって証明書が提供される）に設定します。プレーンなクリアネットリスナーは`auto`をサポートしません。`tls`を省略するか、modeを空のままにしてプレーンHTTPで実行します。
+
+`auto`モードでは、サーバーは`cert`/`key`/`cert_env`/`key_env`を指定してはいけません — ネットワークドライバがそれらを提供します。
 
 ## 関連項目
 

@@ -16,12 +16,12 @@ Endpoints (`http.endpoint`) define HTTP route handlers that execute Lua function
 
 ## Configuration
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `meta.router` | registry.ID | Parent router (optional if only one router) |
-| `method` | string | HTTP method |
-| `path` | string | URL path pattern |
-| `func` | registry.ID | Function to execute |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `meta.router` | registry.ID | No | Parent router (defaults to the only router if exactly one is registered) |
+| `method` | string | Yes | HTTP method |
+| `path` | string | Yes | URL path pattern |
+| `func` | registry.ID | Yes | Function to execute |
 
 ## HTTP Methods
 

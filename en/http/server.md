@@ -156,7 +156,9 @@ entries:
 
 ## TLS
 
-The server can terminate TLS directly. Set `tls.mode` to `manual` (supply certificate) or `auto` (ACME-managed by the network driver, when available). Omit `tls` or leave the mode empty to run plain HTTP.
+The server can terminate TLS directly. Set `tls.mode` to `manual` (supply your own certificate) or `auto` (certificate provided by an overlay network driver, e.g. `network.tailscale`). Plain clearnet listeners do not support `auto`. Omit `tls` or leave the mode empty to run plain HTTP.
+
+In `auto` mode the server must not specify `cert`/`key`/`cert_env`/`key_env` — the network driver provides them.
 
 ### Manual certificate
 

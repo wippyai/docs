@@ -152,9 +152,11 @@ entries:
       auto_start: true
 ```
 
-<warning>
-TLS 终止通常由反向代理处理 (Nginx、Caddy、负载均衡器)。配置代理将请求转发到 Wippy 的 HTTP 服务器。
-</warning>
+## TLS
+
+服务器可以直接终止 TLS。将 `tls.mode` 设置为 `manual`（提供您自己的证书）或 `auto`（由 overlay 网络驱动提供证书，例如 `network.tailscale`）。普通 clearnet 监听器不支持 `auto`。省略 `tls` 或将 mode 留空以运行纯 HTTP。
+
+在 `auto` 模式下，服务器不得指定 `cert`/`key`/`cert_env`/`key_env` — 由网络驱动提供。
 
 ## 参见
 
