@@ -91,12 +91,12 @@ relay:
 
 ## Supervisor
 
-Управление жизненным циклом сервисов. Контролирует запуск и остановку супервизируемых записей.
+Управление жизненным циклом сервисов. Контролирует внутренний управляющий почтовый ящик супервизора, используемый для диспетчеризации событий жизненного цикла.
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
-| `host.buffer_size` | int | 1024 | Размер очереди сообщений |
-| `host.worker_count` | int | NumCPU | Число параллельных воркеров |
+| `host.buffer_size` | int | 1024 | Ёмкость внутреннего управляющего почтового ящика |
+| `host.worker_count` | int | 16 | Параллельные воркеры диспетчера |
 
 ```yaml
 supervisor:
@@ -107,23 +107,9 @@ supervisor:
 
 См.: [Супервизия](guides/supervision.md)
 
-## Functions
-
-Хост выполнения функций. Запускает записи `function.lua`.
-
-| Поле | Тип | По умолчанию | Описание |
-|------|-----|--------------|----------|
-| `host.buffer_size` | int | 1024 | Размер очереди задач |
-| `host.worker_count` | int | NumCPU | Число параллельных воркеров |
-
-```yaml
-functions:
-  host:
-    buffer_size: 2048
-    worker_count: 32
-```
-
-См.: [Концепция функций](concepts/functions.md), [Модуль Funcs](lua/core/funcs.md)
+<note>
+Воркеры и очереди для каждого `process.host` настраиваются в самой записи (`workers`, `queue_size`, `local_queue_size`), а не в этой глобальной секции. См. тип записи [Process Host](system/process-host.md).
+</note>
 
 ## Lua Runtime
 
@@ -133,17 +119,20 @@ functions:
 |------|-----|--------------|----------|
 | `proto_cache_size` | int | 60000 | Кэш скомпилированных прототипов |
 | `main_cache_size` | int | 10000 | Кэш main-чанков |
-| `expr.cache_enabled` | bool | true | Кэшировать скомпилированные выражения |
-| `expr.capacity` | int | 5000 | Размер кэша выражений |
-| `json.cache_enabled` | bool | true | Кэшировать JSON-схемы |
-| `json.capacity` | int | 1000 | Размер кэша JSON |
+| `cache.enabled` | bool | false | Сохранять скомпилированный байткод/typecheck-кэш на диск |
+| `cache.dir` | string | (системный каталог кэша) | Путь к каталогу кэша |
+| `cache.mode` | string | `read_write` | Режим кэша: `read_write`, `read_only`, `write_only` |
+| `type_system.enabled` | bool | false | Включить статическую проверку типов |
+| `type_system.strict` | bool | false | Считать предупреждения типов ошибками |
 
 ```yaml
 lua:
   proto_cache_size: 60000
-  expr:
-    cache_enabled: true
-    capacity: 5000
+  cache:
+    enabled: true
+    dir: .cache/lua
+  type_system:
+    enabled: true
 ```
 
 См.: [Обзор Lua](lua/overview.md)

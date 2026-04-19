@@ -104,12 +104,12 @@ See: [Process Model](concepts/process-model.md)
 
 ## Supervisor
 
-Service lifecycle management. Controls how supervised entries start/stop.
+Service lifecycle management. Controls the supervisor's internal control mailbox used to dispatch lifecycle events.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `host.buffer_size` | int | 1024 | Message queue capacity |
-| `host.worker_count` | int | NumCPU | Concurrent workers |
+| `host.buffer_size` | int | 1024 | Internal control mailbox capacity |
+| `host.worker_count` | int | 16 | Concurrent dispatcher workers |
 
 ```yaml
 supervisor:
@@ -120,23 +120,9 @@ supervisor:
 
 See: [Supervision Guide](guides/supervision.md)
 
-## Functions
-
-Function execution host. Runs `function.lua` entries.
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `host.buffer_size` | int | 1024 | Task queue capacity |
-| `host.worker_count` | int | NumCPU | Concurrent workers |
-
-```yaml
-functions:
-  host:
-    buffer_size: 2048
-    worker_count: 32
-```
-
-See: [Functions Concept](concepts/functions.md), [Funcs Module](lua/core/funcs.md)
+<note>
+Per-`process.host` workers and queues are configured on the entry itself (`workers`, `queue_size`, `local_queue_size`), not in this global section. See the [Process Host](system/process-host.md) entry kind.
+</note>
 
 ## Lua Runtime
 
@@ -146,17 +132,20 @@ Lua VM caching and expression evaluation.
 |-------|------|---------|-------------|
 | `proto_cache_size` | int | 60000 | Compiled prototype cache |
 | `main_cache_size` | int | 10000 | Main chunk cache |
-| `expr.cache_enabled` | bool | true | Cache compiled expressions |
-| `expr.capacity` | int | 5000 | Expression cache size |
-| `json.cache_enabled` | bool | true | Cache JSON schemas |
-| `json.capacity` | int | 1000 | JSON cache size |
+| `cache.enabled` | bool | false | Persist compiled bytecode/typecheck cache to disk |
+| `cache.dir` | string | (system cache dir) | Cache directory path |
+| `cache.mode` | string | `read_write` | Cache mode: `read_write`, `read_only`, `write_only` |
+| `type_system.enabled` | bool | false | Enable static type checking |
+| `type_system.strict` | bool | false | Treat type warnings as errors |
 
 ```yaml
 lua:
   proto_cache_size: 60000
-  expr:
-    cache_enabled: true
-    capacity: 5000
+  cache:
+    enabled: true
+    dir: .cache/lua
+  type_system:
+    enabled: true
 ```
 
 See: [Lua Overview](lua/overview.md)

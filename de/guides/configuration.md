@@ -91,12 +91,12 @@ Siehe: [Prozessmodell](concepts/process-model.md)
 
 ## Supervisor
 
-Dienst-Lebenszyklus-Verwaltung. Steuert wie überwachte Einträge starten/stoppen.
+Dienst-Lebenszyklus-Verwaltung. Steuert das interne Steuerungs-Postfach des Supervisors, das zum Versand von Lebenszyklus-Ereignissen verwendet wird.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `host.buffer_size` | int | 1024 | Nachrichtenwarteschlangen-Kapazität |
-| `host.worker_count` | int | NumCPU | Nebenläufige Worker |
+| `host.buffer_size` | int | 1024 | Kapazität des internen Steuerungs-Postfachs |
+| `host.worker_count` | int | 16 | Nebenläufige Dispatcher-Worker |
 
 ```yaml
 supervisor:
@@ -107,23 +107,9 @@ supervisor:
 
 Siehe: [Supervision-Anleitung](guides/supervision.md)
 
-## Funktionen
-
-Funktionsausführungs-Host. Führt `function.lua`-Einträge aus.
-
-| Feld | Typ | Standard | Beschreibung |
-|------|-----|----------|--------------|
-| `host.buffer_size` | int | 1024 | Task-Warteschlangen-Kapazität |
-| `host.worker_count` | int | NumCPU | Nebenläufige Worker |
-
-```yaml
-functions:
-  host:
-    buffer_size: 2048
-    worker_count: 32
-```
-
-Siehe: [Funktionen-Konzept](concepts/functions.md), [Funcs-Modul](lua/core/funcs.md)
+<note>
+Worker und Warteschlangen pro `process.host` werden am Eintrag selbst konfiguriert (`workers`, `queue_size`, `local_queue_size`), nicht in diesem globalen Abschnitt. Siehe den [Process Host](system/process-host.md)-Eintragstyp.
+</note>
 
 ## Lua-Runtime
 
@@ -133,17 +119,20 @@ Lua-VM-Caching und Expression-Auswertung.
 |------|-----|----------|--------------|
 | `proto_cache_size` | int | 60000 | Kompilierter Prototype-Cache |
 | `main_cache_size` | int | 10000 | Main-Chunk-Cache |
-| `expr.cache_enabled` | bool | true | Kompilierte Expressions cachen |
-| `expr.capacity` | int | 5000 | Expression-Cache-Größe |
-| `json.cache_enabled` | bool | true | JSON-Schemas cachen |
-| `json.capacity` | int | 1000 | JSON-Cache-Größe |
+| `cache.enabled` | bool | false | Kompilierten Bytecode-/Typecheck-Cache auf Disk persistieren |
+| `cache.dir` | string | (System-Cache-Verzeichnis) | Cache-Verzeichnis-Pfad |
+| `cache.mode` | string | `read_write` | Cache-Modus: `read_write`, `read_only`, `write_only` |
+| `type_system.enabled` | bool | false | Statische Typprüfung aktivieren |
+| `type_system.strict` | bool | false | Typwarnungen als Fehler behandeln |
 
 ```yaml
 lua:
   proto_cache_size: 60000
-  expr:
-    cache_enabled: true
-    capacity: 5000
+  cache:
+    enabled: true
+    dir: .cache/lua
+  type_system:
+    enabled: true
 ```
 
 Siehe: [Lua-Übersicht](lua/overview.md)

@@ -91,12 +91,12 @@ relay:
 
 ## スーパーバイザ
 
-サービスライフサイクル管理。監督されたエントリの起動/停止を制御します。
+サービスライフサイクル管理。ライフサイクルイベントのディスパッチに使用されるスーパーバイザの内部制御メールボックスを制御します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `host.buffer_size` | int | 1024 | メッセージキュー容量 |
-| `host.worker_count` | int | NumCPU | 同時ワーカー数 |
+| `host.buffer_size` | int | 1024 | 内部制御メールボックスの容量 |
+| `host.worker_count` | int | 16 | 同時ディスパッチャーワーカー数 |
 
 ```yaml
 supervisor:
@@ -107,23 +107,9 @@ supervisor:
 
 参照: [スーパービジョンガイド](guides/supervision.md)
 
-## 関数
-
-関数実行ホスト。`function.lua`エントリを実行します。
-
-| フィールド | 型 | デフォルト | 説明 |
-|------------|-----|------------|------|
-| `host.buffer_size` | int | 1024 | タスクキュー容量 |
-| `host.worker_count` | int | NumCPU | 同時ワーカー数 |
-
-```yaml
-functions:
-  host:
-    buffer_size: 2048
-    worker_count: 32
-```
-
-参照: [関数コンセプト](concepts/functions.md), [Funcsモジュール](lua/core/funcs.md)
+<note>
+`process.host`ごとのワーカーとキューは、このグローバルセクションではなく、エントリ自体（`workers`、`queue_size`、`local_queue_size`）で設定します。[Process Host](system/process-host.md)エントリ種別を参照してください。
+</note>
 
 ## Luaランタイム
 
@@ -133,17 +119,20 @@ Lua VMキャッシュと式評価。
 |------------|-----|------------|------|
 | `proto_cache_size` | int | 60000 | コンパイル済みプロトタイプキャッシュ |
 | `main_cache_size` | int | 10000 | メインチャンクキャッシュ |
-| `expr.cache_enabled` | bool | true | コンパイル済み式をキャッシュ |
-| `expr.capacity` | int | 5000 | 式キャッシュサイズ |
-| `json.cache_enabled` | bool | true | JSONスキーマをキャッシュ |
-| `json.capacity` | int | 1000 | JSONキャッシュサイズ |
+| `cache.enabled` | bool | false | コンパイル済みバイトコード/型チェックキャッシュをディスクに永続化 |
+| `cache.dir` | string | （システムキャッシュディレクトリ） | キャッシュディレクトリパス |
+| `cache.mode` | string | `read_write` | キャッシュモード: `read_write`, `read_only`, `write_only` |
+| `type_system.enabled` | bool | false | 静的型チェックを有効化 |
+| `type_system.strict` | bool | false | 型警告をエラーとして扱う |
 
 ```yaml
 lua:
   proto_cache_size: 60000
-  expr:
-    cache_enabled: true
-    capacity: 5000
+  cache:
+    enabled: true
+    dir: .cache/lua
+  type_system:
+    enabled: true
 ```
 
 参照: [Lua概要](lua/overview.md)

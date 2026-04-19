@@ -91,12 +91,12 @@ relay:
 
 ## 슈퍼바이저
 
-서비스 라이프사이클 관리. 슈퍼바이즈된 엔트리의 시작/중지 방법 제어.
+서비스 라이프사이클 관리. 라이프사이클 이벤트 디스패치에 사용되는 슈퍼바이저의 내부 제어 메일박스를 제어합니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `host.buffer_size` | int | 1024 | 메시지 큐 용량 |
-| `host.worker_count` | int | NumCPU | 동시 워커 |
+| `host.buffer_size` | int | 1024 | 내부 제어 메일박스 용량 |
+| `host.worker_count` | int | 16 | 동시 디스패처 워커 |
 
 ```yaml
 supervisor:
@@ -107,23 +107,9 @@ supervisor:
 
 참조: [슈퍼비전 가이드](guides/supervision.md)
 
-## 함수
-
-함수 실행 호스트. `function.lua` 엔트리 실행.
-
-| 필드 | 타입 | 기본값 | 설명 |
-|-------|------|---------|-------------|
-| `host.buffer_size` | int | 1024 | 태스크 큐 용량 |
-| `host.worker_count` | int | NumCPU | 동시 워커 |
-
-```yaml
-functions:
-  host:
-    buffer_size: 2048
-    worker_count: 32
-```
-
-참조: [함수 개념](concepts/functions.md), [Funcs 모듈](lua/core/funcs.md)
+<note>
+`process.host`별 워커와 큐는 이 전역 섹션이 아니라 엔트리 자체에서 (`workers`, `queue_size`, `local_queue_size`) 설정합니다. [Process Host](system/process-host.md) 엔트리 종류를 참조하세요.
+</note>
 
 ## Lua 런타임
 
@@ -133,17 +119,20 @@ Lua VM 캐싱 및 표현식 평가.
 |-------|------|---------|-------------|
 | `proto_cache_size` | int | 60000 | 컴파일된 프로토타입 캐시 |
 | `main_cache_size` | int | 10000 | 메인 청크 캐시 |
-| `expr.cache_enabled` | bool | true | 컴파일된 표현식 캐시 |
-| `expr.capacity` | int | 5000 | 표현식 캐시 크기 |
-| `json.cache_enabled` | bool | true | JSON 스키마 캐시 |
-| `json.capacity` | int | 1000 | JSON 캐시 크기 |
+| `cache.enabled` | bool | false | 컴파일된 바이트코드/타입체크 캐시를 디스크에 영속화 |
+| `cache.dir` | string | (시스템 캐시 디렉토리) | 캐시 디렉토리 경로 |
+| `cache.mode` | string | `read_write` | 캐시 모드: `read_write`, `read_only`, `write_only` |
+| `type_system.enabled` | bool | false | 정적 타입 검사 활성화 |
+| `type_system.strict` | bool | false | 타입 경고를 오류로 처리 |
 
 ```yaml
 lua:
   proto_cache_size: 60000
-  expr:
-    cache_enabled: true
-    capacity: 5000
+  cache:
+    enabled: true
+    dir: .cache/lua
+  type_system:
+    enabled: true
 ```
 
 참조: [Lua 개요](lua/overview.md)

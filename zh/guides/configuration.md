@@ -91,12 +91,12 @@ relay:
 
 ## 监督器
 
-服务生命周期管理。控制受监督入口的启动/停止方式。
+服务生命周期管理。控制监督器用于派发生命周期事件的内部控制邮箱。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `host.buffer_size` | int | 1024 | 消息队列容量 |
-| `host.worker_count` | int | NumCPU | 并发工作线程数 |
+| `host.buffer_size` | int | 1024 | 内部控制邮箱容量 |
+| `host.worker_count` | int | 16 | 并发派发工作线程数 |
 
 ```yaml
 supervisor:
@@ -107,23 +107,9 @@ supervisor:
 
 参见：[监督指南](guides/supervision.md)
 
-## 函数
-
-函数执行宿主。运行 `function.lua` 入口。
-
-| 字段 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `host.buffer_size` | int | 1024 | 任务队列容量 |
-| `host.worker_count` | int | NumCPU | 并发工作线程数 |
-
-```yaml
-functions:
-  host:
-    buffer_size: 2048
-    worker_count: 32
-```
-
-参见：[函数概念](concepts/functions.md)、[Funcs 模块](lua/core/funcs.md)
+<note>
+每个 `process.host` 的工作线程和队列在入口本身（`workers`、`queue_size`、`local_queue_size`）配置，而不是在此全局节中。参见 [Process Host](system/process-host.md) 入口类型。
+</note>
 
 ## Lua 运行时
 
@@ -133,17 +119,20 @@ Lua 虚拟机缓存和表达式求值。
 |------|------|--------|------|
 | `proto_cache_size` | int | 60000 | 编译原型缓存 |
 | `main_cache_size` | int | 10000 | 主块缓存 |
-| `expr.cache_enabled` | bool | true | 缓存编译表达式 |
-| `expr.capacity` | int | 5000 | 表达式缓存大小 |
-| `json.cache_enabled` | bool | true | 缓存 JSON Schema |
-| `json.capacity` | int | 1000 | JSON 缓存大小 |
+| `cache.enabled` | bool | false | 将编译后的字节码/类型检查缓存持久化到磁盘 |
+| `cache.dir` | string | （系统缓存目录） | 缓存目录路径 |
+| `cache.mode` | string | `read_write` | 缓存模式：`read_write`、`read_only`、`write_only` |
+| `type_system.enabled` | bool | false | 启用静态类型检查 |
+| `type_system.strict` | bool | false | 将类型警告视为错误 |
 
 ```yaml
 lua:
   proto_cache_size: 60000
-  expr:
-    cache_enabled: true
-    capacity: 5000
+  cache:
+    enabled: true
+    dir: .cache/lua
+  type_system:
+    enabled: true
 ```
 
 参见：[Lua 概览](lua/overview.md)
