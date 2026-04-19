@@ -148,6 +148,7 @@
       ]},
       {"title": "Embeddings", "path": "framework/embeddings"},
       {"title": "Bootloader", "path": "framework/bootloader"},
+      {"title": "Actor", "path": "framework/actor"},
       {"title": "Migrations", "path": "framework/migration"},
       {"title": "Usage Tracking", "path": "framework/usage"}
     ]
