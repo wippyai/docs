@@ -63,7 +63,7 @@ entries:
 | `application_host` | sí | — | Host de procesos para procesos del relay |
 | `env_storage` | no | interno | Almacenamiento de variables de entorno |
 | `user_security_scope` | sí | — | Ámbito de seguridad para hubs de usuario |
-| `max_connections_per_user` | no | `10` | Conexiones WebSocket por usuario |
+| `max_connections_per_user` | no | `5` | Conexiones WebSocket por usuario |
 | `queue_multiplier` | no | `100` | Cola de mensajes = conexiones × multiplicador |
 | `user_hub_inactivity_timeout` | no | `7200s` | Tiempo de inactividad antes de la limpieza del hub |
 
@@ -84,6 +84,8 @@ entries:
     ]
 }
 ```
+
+El `status` del plugin es uno de `"not_started"` (registrado, nunca iniciado), `"pending"` (inicio en curso), `"running"`, `"failed"` o `"stopped"`.
 
 ## Enrutamiento de Mensajes
 

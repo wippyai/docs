@@ -47,8 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -70,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | Oculta a UI de selecao de sessao |
 
-### Theming
+### Tematizacao
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+Tres escopos se aplicam: **global** (em todos os lugares), **host** (o chrome ao redor do iframe) e **children** (conteudo dentro do iframe).
+
+| Parametro | Escopo | Padrao | Descricao |
+|-----------|--------|--------|-----------|
+| `custom_css` | global | Import do Google Fonts | CSS injetado em todos os niveis |
+| `css_variables` | global | `{}` | Mapa JSON de CSS custom properties |
+| `icon_sets` | global | `[]` | URLs de conjuntos de icones Iconify |
+| `host_custom_css` | host | `""` | CSS apenas para o chrome do host |
+| `host_css_variables` | host | `{}` | CSS custom properties apenas para o host |
+| `host_icon_sets` | host | `[]` | Conjuntos de icones apenas para o host |
+| `children_custom_css` | children | `""` | CSS apenas para o conteudo do iframe |
+| `children_css_variables` | children | `{}` | CSS custom properties apenas para o conteudo do iframe |
+| `login_path` | — | `/login.html` | Caminho de redirecionamento para usuarios nao autenticados |
+
+### JSON opcional `hostConfig`
+
+Cada um dos parametros abaixo e uma string codificada em JSON; os padroes sao vazios (`{}` ou `[]`). Eles sao repassados inalterados ao frontend sob `hostConfig`.
+
+| Parametro | Padrao | Descricao |
+|-----------|--------|-----------|
+| `api_routes` | `{}` | Sobrescritas de rotas para o frontend |
+| `additional_nav_items` | `[]` | Entradas extras na sidebar |
+| `state_cache` | `{}` | Configuracao do cache de estado do frontend |
+| `allow_additional_tags` | `[]` | Tags HTML adicionais permitidas no chat |
+| `chat` | `{}` | Sobrescritas de UI do chat |
+| `axios_defaults` | `{}` | Padroes do cliente HTTP axios do frontend |
 
 ## Config Endpoint
 
@@ -102,7 +124,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -118,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-A URL da API e lida da variavel de ambiente `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` e derivada substituindo `https://` por `wss://`. A tematizacao tem tres escopos (`global`, `host`, `children`) — `host.i18n` carrega a marca da aplicacao. As chaves de `hostConfig` estao em camelCase e sao montadas a partir dos parametros do facade: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, mais opcionalmente `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` e `axios_defaults`.
+A URL da API e lida da variavel de ambiente `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` e derivada substituindo `http://` por `ws://` ou `https://` por `wss://`. A tematizacao tem tres escopos (`global`, `host`, `children`) — `host.i18n` carrega a marca da aplicacao. As chaves de `hostConfig` estao em camelCase e sao montadas a partir dos parametros do facade: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, mais opcionalmente `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` e `axios_defaults`.
 
 ## Navigation Sidebar
 

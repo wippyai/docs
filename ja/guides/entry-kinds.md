@@ -613,7 +613,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `network.i2p` | I2Pネットワークオーバーレイ |
 | `network.tailscale` | Tailscaleオーバーレイ |
 
-`http.service`からは`network:`経由で、`http_client`からは`network`オプション経由で参照されます。[ネットワーク](system/network.md)を参照。
+`http.service` からは `network:` 経由で、`funcs`/`process` からは `network` オプション経由で、`http_client` からは `overlay_network` オプション経由で参照されます。[ネットワーク](system/network.md)を参照。
 
 ## レジストリプリミティブ
 

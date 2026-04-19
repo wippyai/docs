@@ -47,8 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -70,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | Oculta la interfaz de seleccion de sesion |
 
 ### Theming
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+Se aplican tres ambitos: **global** (en todas partes), **host** (el chrome alrededor del iframe) y **children** (contenido dentro del iframe).
+
+| Parametro | Ambito | Valor por defecto | Descripcion |
+|-----------|--------|-------------------|-------------|
+| `custom_css` | global | Importacion de Google Fonts | CSS inyectado en todos los niveles |
+| `css_variables` | global | `{}` | Mapa JSON de propiedades CSS personalizadas |
+| `icon_sets` | global | `[]` | URLs de conjuntos de iconos Iconify |
+| `host_custom_css` | host | `""` | CSS solo para el chrome del host |
+| `host_css_variables` | host | `{}` | Propiedades CSS personalizadas solo para el host |
+| `host_icon_sets` | host | `[]` | Conjuntos de iconos solo para el host |
+| `children_custom_css` | children | `""` | CSS solo para el contenido del iframe |
+| `children_css_variables` | children | `{}` | Propiedades CSS personalizadas solo para el contenido del iframe |
+| `login_path` | — | `/login.html` | Ruta de redireccion para usuarios no autenticados |
+
+### JSON `hostConfig` opcional
+
+Cada uno de los siguientes es un parametro de cadena codificada en JSON; los valores por defecto estan vacios (`{}` o `[]`). Se exponen tal cual bajo `hostConfig` para el frontend.
+
+| Parametro | Valor por defecto | Descripcion |
+|-----------|-------------------|-------------|
+| `api_routes` | `{}` | Sobreescrituras de rutas para el frontend |
+| `additional_nav_items` | `[]` | Entradas adicionales para la barra lateral |
+| `state_cache` | `{}` | Configuracion del cache de estado del frontend |
+| `allow_additional_tags` | `[]` | Etiquetas HTML adicionales permitidas en el chat |
+| `chat` | `{}` | Sobreescrituras de la interfaz de chat |
+| `axios_defaults` | `{}` | Valores por defecto del cliente HTTP axios del frontend |
 
 ## Config Endpoint
 
@@ -102,7 +124,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -118,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-La URL de la API se lee de la variable de entorno `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` se deriva reemplazando `https://` por `wss://`. La tematizacion tiene tres ambitos (`global`, `host`, `children`) — `host.i18n` lleva la marca de la aplicacion. Las claves de `hostConfig` estan en camelCase y se ensamblan a partir de los parametros del facade: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, mas opcionalmente `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` y `axios_defaults`.
+La URL de la API se lee de la variable de entorno `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` se deriva reemplazando `http://` por `ws://` o `https://` por `wss://`. La tematizacion tiene tres ambitos (`global`, `host`, `children`) — `host.i18n` lleva la marca de la aplicacion. Las claves de `hostConfig` estan en camelCase y se ensamblan a partir de los parametros del facade: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, mas opcionalmente `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` y `axios_defaults`.
 
 ## Navigation Sidebar
 

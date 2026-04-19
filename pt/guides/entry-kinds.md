@@ -613,7 +613,7 @@ Veja [Visão Geral do WASM](wasm/overview.md).
 | `network.i2p` | Overlay de rede I2P |
 | `network.tailscale` | Overlay do Tailscale |
 
-Referenciado por `http.service` via `network:` e por `http_client` via a opção `network`. Veja [Rede](system/network.md).
+Referenciado por `http.service` via `network:`, por `funcs`/`process` via a opcao `network` e por `http_client` via a opcao `overlay_network`. Veja [Rede](system/network.md).
 
 ## Primitivas do Registro
 

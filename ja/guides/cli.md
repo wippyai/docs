@@ -98,8 +98,9 @@ wippy add acme/http@latest
 ロックファイルから依存関係をインストールする。
 
 ```bash
-wippy install
-wippy install --refresh
+wippy install                            # すべてをインストール
+wippy install acme/http                  # 特定のモジュールをインストール
+wippy install --refresh acme/http        # 特定のモジュールを再読み込み
 ```
 
 | フラグ | 短縮形 | デフォルト | 説明 |

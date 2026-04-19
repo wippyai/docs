@@ -74,9 +74,9 @@ entries:
 | `meta.name` | string | 에이전트 식별자 |
 | `prompt` | string | 시스템 프롬프트 |
 | `model` | string | 모델 이름 또는 클래스 |
-| `max_tokens` | number | 최대 출력 토큰 수 |
-| `temperature` | number | 무작위성 제어, 0-1 |
-| `thinking_effort` | number | 사고 깊이 0-100 |
+| `max_tokens` | number | 최대 출력 토큰 수 (기본값 `512`) |
+| `temperature` | number | 샘플링 온도 (기본값 `0`; 범위는 공급자별로 다름) |
+| `thinking_effort` | number | `> 0`일 때만 모델로 전달됨 (공급자 정의 스케일) |
 | `tools` | array | 도구 레지스트리 ID |
 | `traits` | array | 트레이트 참조 |
 | `delegates` | array | 위임 에이전트 참조 |
@@ -172,7 +172,7 @@ local response, err = runner:step(conversation, {
 |--------|------|-------------|
 | `context` | table | 에이전트 컨텍스트와 병합되는 런타임 컨텍스트 |
 | `stream_target` | table | 스트리밍: `{ reply_to, topic }` |
-| `tool_call` | string | `"auto"`, `"required"`, `"none"` |
+| `tool_call` | string | `"auto"`, `"any"`, `"none"` 또는 도구 이름 |
 
 ### 스텝 응답
 

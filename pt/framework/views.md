@@ -25,14 +25,14 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: api_url_env
-        value: PUBLIC_API_URL
+      - name: env_storage
+        value: app:env.storage
 ```
 
 | Parâmetro | Obrigatório | Padrão | Descrição |
 |-----------|----------|---------|-------------|
 | `api_router` | sim | — | Roteador HTTP para os endpoints da API de views |
-| `api_url_env` | não | `PUBLIC_API_URL` | Variável de ambiente contendo a URL pública da API |
+| `env_storage` | não | interno | Armazenamento de ambiente que fornece a variavel `PUBLIC_API_URL` |
 
 ## Páginas Template
 
@@ -205,7 +205,7 @@ entries:
 | Campo | Tipo | Descrição |
 |-------|------|-------------|
 | `meta.type` | string | Deve ser `view.resource` |
-| `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
+| `meta.resource_type` | string | Livre para escolher (padrao `"other"`); valores comuns sao `"style"`, `"script"`, `"font"` |
 | `meta.order` | number | Ordem de classificação dentro do tipo |
 | `meta.global` | boolean | Aplicado a todas as páginas |
 | `meta.template_set` | string | Específico para um conjunto de templates |

@@ -98,8 +98,9 @@ wippy add acme/http@latest
 Instalar dependencias desde el archivo de bloqueo.
 
 ```bash
-wippy install
-wippy install --refresh
+wippy install                            # Instalar todo
+wippy install acme/http                  # Instalar modulo especifico
+wippy install --refresh acme/http        # Recargar modulo especifico
 ```
 
 | Flag | Corto | Por defecto | Descripción |

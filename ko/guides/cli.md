@@ -98,8 +98,9 @@ wippy add acme/http@latest
 Lock 파일에서 의존성을 설치합니다.
 
 ```bash
-wippy install
-wippy install --refresh
+wippy install                            # 모두 설치
+wippy install acme/http                  # 특정 모듈 설치
+wippy install --refresh acme/http        # 특정 모듈 재로드
 ```
 
 | 플래그 | 약어 | 기본값 | 설명 |

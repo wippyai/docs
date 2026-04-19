@@ -100,13 +100,28 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
-`httpclient` 모듈은 호출별 옵션에서 동일한 키를 받습니다.
+`http_client` 모듈은 호출별 옵션에서 `overlay_network` 키를 통해 동일한 오버레이 선택을 받습니다.
 
 ## 상속
 
 오버레이 선택은 호출 스택을 따라 흐릅니다. `funcs.new():with_options({network=...})`를 통해 호출된 함수는 모든 내부 다이얼, 모든 중첩된 `funcs.call`, 수행하는 모든 `process.spawn`에서 오버레이를 봅니다 — 후손이 명시적으로 다른 오버레이를 선택하거나 지울 때까지.
 
 앰비언트 상속은 후손 자체의 `network.select` 거부 규칙을 우회합니다. Lua 경계에서의 명시적 선택만 게이트됩니다.
+
+## 앱 구성
+
+오버레이 드라이버는 `.wippy.yaml`의 `network_service:` 블록에서 앱 전역 설정을 읽습니다:
+
+```yaml
+network_service:
+  state_dir: .wippy/net          # 드라이버 상태(Tailscale 키 등)의 기본 디렉터리
+  default_network: app.net:tailnet  # 호출에서 설정되지 않은 경우 사용할 오버레이
+```
+
+| 필드 | 기본값 | 설명 |
+|------|----------|--------------|
+| `state_dir` | `.wippy/net` | 드라이버 상태 디렉터리. 상대 경로는 부트 config 디렉터리를 기준으로 해석됩니다. |
+| `default_network` | — | 옵션을 통해 자체 네트워크를 설정하지 않는 모든 작업 또는 프로세스에 적용되는 오버레이의 레지스트리 ID. |
 
 ## 권한
 

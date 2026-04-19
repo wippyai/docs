@@ -27,7 +27,7 @@ entries:
     meta:
       type: test
       suite: math
-      description: Math operations
+      name: Operacoes matematicas
     source: file://math_test.lua
     method: run
     imports:
@@ -40,7 +40,7 @@ entries:
 |-------|-------------|-----------|
 | `type` | Sim | Deve ser `"test"` para que o runner o descubra |
 | `suite` | Nao | Agrupa testes na saida do runner |
-| `description` | Nao | Descricao legivel |
+| `name` | Nao | Nome exibido na saida do runner |
 | `order` | Nao | Ordem de execucao dentro de uma suite (menor executa primeiro) |
 
 ## Escrevendo Testes
@@ -386,6 +386,6 @@ entries:
 
 ## Veja Tambem
 
-- [Visao Geral do Framework](framework/overview.md) - Uso de modulos do framework
+- [Visao Geral do Framework](overview.md) - Uso de modulos do framework
 - [Referencia CLI](guides/cli.md) - Comandos CLI
 - [Funcoes](concepts/functions.md) - Registro de funcoes

@@ -386,6 +386,6 @@ entries:
 
 ## 関連項目
 
-- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの使い方
+- [フレームワーク概要](overview.md) - フレームワークモジュールの使い方
 - [CLIリファレンス](guides/cli.md) - CLIコマンド
 - [関数](concepts/functions.md) - 関数レジストリ

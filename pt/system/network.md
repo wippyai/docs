@@ -100,13 +100,28 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
-O módulo `httpclient` aceita a mesma chave nas opções por chamada.
+O modulo `http_client` aceita a mesma selecao de overlay nas opcoes por chamada sob a chave `overlay_network`.
 
 ## Herança
 
 A seleção de sobreposição flui pela pilha de chamadas. Uma função chamada via `funcs.new():with_options({network=...})` vê a sobreposição em cada conexão interna, cada `funcs.call` aninhada e cada `process.spawn` que executa — até que um descendente selecione explicitamente uma sobreposição diferente ou a limpe.
 
 A herança ambiente ignora as próprias regras de negação `network.select` do descendente. Apenas a seleção explícita em uma borda Lua é controlada.
+
+## Configuracao do App
+
+Drivers de overlay leem configuracoes a nivel de app a partir de um bloco `network_service:` em `.wippy.yaml`:
+
+```yaml
+network_service:
+  state_dir: .wippy/net          # Diretorio base para o estado do driver (chaves do Tailscale, etc.)
+  default_network: app.net:tailnet  # Overlay usado quando nenhuma chamada define um
+```
+
+| Campo | Padrao | Descricao |
+|-------|--------|-----------|
+| `state_dir` | `.wippy/net` | Diretorio para o estado do driver. Caminhos relativos sao resolvidos contra o diretorio de config de boot. |
+| `default_network` | — | Registry ID de um overlay aplicado a cada tarefa ou processo que nao define sua propria rede via opcoes. |
 
 ## Permissões
 

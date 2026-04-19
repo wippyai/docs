@@ -94,7 +94,7 @@ return { handler = handler }
 |-------|------|-------------|
 | `result` | string | 생성된 텍스트 콘텐츠 |
 | `tokens` | table | 토큰 사용량: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
-| `finish_reason` | string | 생성이 중지된 이유: `"stop"`, `"length"`, `"tool_call"` |
+| `finish_reason` | string | 생성이 중지된 이유: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | 도구 호출 배열 (모델이 도구를 호출한 경우) |
 | `metadata` | table | 제공자별 메타데이터 |
 | `usage_record` | table? | 사용량 추적 레코드 |
@@ -191,6 +191,7 @@ conversation:add_message(prompt.ROLE.USER, {
 | `prompt.ROLE.DEVELOPER` | `"developer"` |
 | `prompt.ROLE.FUNCTION_CALL` | `"function_call"` |
 | `prompt.ROLE.FUNCTION_RESULT` | `"function_result"` |
+| `prompt.ROLE.CACHE_MARKER` | `"cache_marker"` |
 
 ### 복제
 

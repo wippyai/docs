@@ -94,7 +94,7 @@ O primeiro argumento de `generate()` pode ser uma string de prompt, um construto
 |-------|------|-----------|
 | `result` | string | Conteudo de texto gerado |
 | `tokens` | table | Uso de tokens: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
-| `finish_reason` | string | Motivo da interrupcao da geracao: `"stop"`, `"length"`, `"tool_call"` |
+| `finish_reason` | string | Motivo da interrupcao da geracao: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Array de chamadas de ferramentas (se o modelo invocou ferramentas) |
 | `metadata` | table | Metadados especificos do provedor |
 | `usage_record` | table? | Registro de uso |
@@ -191,6 +191,7 @@ conversation:add_message(prompt.ROLE.USER, {
 | `prompt.ROLE.DEVELOPER` | `"developer"` |
 | `prompt.ROLE.FUNCTION_CALL` | `"function_call"` |
 | `prompt.ROLE.FUNCTION_RESULT` | `"function_result"` |
+| `prompt.ROLE.CACHE_MARKER` | `"cache_marker"` |
 
 ### Clonagem
 

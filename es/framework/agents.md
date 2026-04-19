@@ -74,9 +74,9 @@ entries:
 | `meta.name` | string | Identificador del agente |
 | `prompt` | string | Prompt del sistema |
 | `model` | string | Nombre o clase del modelo |
-| `max_tokens` | number | Maximo de tokens de salida |
-| `temperature` | number | Control de aleatoriedad, 0-1 |
-| `thinking_effort` | number | Profundidad de razonamiento 0-100 |
+| `max_tokens` | number | Maximo de tokens de salida (por defecto `512`) |
+| `temperature` | number | Temperatura de muestreo (por defecto `0`; rango dependiente del proveedor) |
+| `thinking_effort` | number | Solo se reenvia al modelo cuando `> 0` (escala definida por el proveedor) |
 | `tools` | array | IDs de registro de herramientas |
 | `traits` | array | Referencias a traits |
 | `delegates` | array | Referencias a agentes delegados |
@@ -172,7 +172,7 @@ local response, err = runner:step(conversation, {
 |--------|------|-------------|
 | `context` | table | Contexto en tiempo de ejecucion combinado con el contexto del agente |
 | `stream_target` | table | Streaming: `{ reply_to, topic }` |
-| `tool_call` | string | `"auto"`, `"required"`, `"none"` |
+| `tool_call` | string | `"auto"`, `"any"`, `"none"` o un nombre de herramienta |
 
 ### Respuesta de Step
 

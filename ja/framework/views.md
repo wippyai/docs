@@ -25,14 +25,14 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: api_url_env
-        value: PUBLIC_API_URL
+      - name: env_storage
+        value: app:env.storage
 ```
 
 | パラメータ | 必須 | デフォルト | 説明 |
 |-----------|----------|---------|-------------|
 | `api_router` | はい | — | ビュー API エンドポイント用の HTTP ルーター |
-| `api_url_env` | いいえ | `PUBLIC_API_URL` | 公開 API URL を含む環境変数 |
+| `env_storage` | いいえ | 内部 | 変数 `PUBLIC_API_URL` を提供する環境ストレージ |
 
 ## テンプレートページ
 
@@ -205,7 +205,7 @@ entries:
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `meta.type` | string | `view.resource` でなければならない |
-| `meta.resource_type` | string | `"style"`、`"script"`、`"font"` |
+| `meta.resource_type` | string | 任意の値（デフォルト `"other"`）；一般的な値は `"style"`、`"script"`、`"font"` |
 | `meta.order` | number | タイプ内のソート順 |
 | `meta.global` | boolean | すべてのページに適用 |
 | `meta.template_set` | string | 特定のテンプレートセットに固有 |

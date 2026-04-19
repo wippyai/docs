@@ -145,7 +145,10 @@
       {"title": "Relay", "path": "framework/relay"},
       {"title": "Views", "path": "framework/views", "children": [
         {"title": "Facade", "path": "framework/facade"}
-      ]}
+      ]},
+      {"title": "Embeddings", "path": "framework/embeddings"},
+      {"title": "Migrations", "path": "framework/migration"},
+      {"title": "Usage Tracking", "path": "framework/usage"}
     ]
   },
   {

@@ -613,7 +613,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `network.i2p` | I2P 네트워크 오버레이 |
 | `network.tailscale` | Tailscale 오버레이 |
 
-`http.service`에서는 `network:`를 통해, `http_client`에서는 `network` 옵션을 통해 참조됩니다. [네트워크](system/network.md) 참조.
+`http.service`에서는 `network:`를 통해, `funcs`/`process`에서는 `network` 옵션을 통해, `http_client`에서는 `overlay_network` 옵션을 통해 참조됩니다. [네트워크](system/network.md) 참조.
 
 ## 레지스트리 프리미티브
 

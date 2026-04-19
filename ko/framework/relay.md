@@ -63,7 +63,7 @@ entries:
 | `application_host` | 예 | — | 릴레이 프로세스용 프로세스 호스트 |
 | `env_storage` | 아니오 | 내부 | 환경 변수 스토리지 |
 | `user_security_scope` | 예 | — | 사용자 허브의 보안 스코프 |
-| `max_connections_per_user` | 아니오 | `10` | 사용자당 WebSocket 연결 수 |
+| `max_connections_per_user` | 아니오 | `5` | 사용자당 WebSocket 연결 수 |
 | `queue_multiplier` | 아니오 | `100` | 메시지 큐 = 연결 × 승수 |
 | `user_hub_inactivity_timeout` | 아니오 | `7200s` | 허브 정리 전 유휴 시간 |
 
@@ -84,6 +84,8 @@ entries:
     ]
 }
 ```
+
+플러그인 `status`는 `"not_started"`(등록됨, 시작된 적 없음), `"pending"`(시작 진행 중), `"running"`, `"failed"`, `"stopped"` 중 하나입니다.
 
 ## 메시지 라우팅
 

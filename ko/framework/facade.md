@@ -47,8 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `api_url_env` | no | `PUBLIC_API_URL` | Environment variable containing the public API URL |
-| `fe_facade_url` | no | CDN URL | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -70,13 +69,36 @@ entries:
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `hide_session_selector` | `false` | 세션 선택 UI 숨김 |
 
 ### Theming
 
+세 가지 범위가 적용됩니다: **global**(모든 곳), **host**(iframe 주변 chrome), **children**(iframe 내부 콘텐츠).
+
+| Parameter | 범위 | Default | Description |
+|-----------|---------|----------|--------------|
+| `custom_css` | global | Google Fonts import | 모든 범위에 주입되는 CSS |
+| `css_variables` | global | `{}` | CSS 커스텀 프로퍼티의 JSON 맵 |
+| `icon_sets` | global | `[]` | Iconify 아이콘 세트 URL |
+| `host_custom_css` | host | `""` | 호스트 chrome 전용 CSS |
+| `host_css_variables` | host | `{}` | 호스트 전용 CSS 커스텀 프로퍼티 |
+| `host_icon_sets` | host | `[]` | 호스트 전용 아이콘 세트 |
+| `children_custom_css` | children | `""` | iframe 콘텐츠 전용 CSS |
+| `children_css_variables` | children | `{}` | iframe 콘텐츠 전용 CSS 커스텀 프로퍼티 |
+| `login_path` | — | `/login.html` | 인증되지 않은 사용자의 리다이렉트 경로 |
+
+### 선택적 `hostConfig` JSON
+
+다음 파라미터는 각각 JSON으로 인코딩된 문자열이며 기본값은 비어 있습니다(`{}` 또는 `[]`). `hostConfig` 아래에서 프런트엔드로 그대로 전달됩니다.
+
 | Parameter | Default | Description |
-|-----------|---------|-------------|
-| `custom_css` | Google Fonts import | Custom CSS injected into iframe |
-| `login_path` | `/login.html` | Redirect path for unauthenticated users |
+|-----------|----------|--------------|
+| `api_routes` | `{}` | 프런트엔드 라우트 오버라이드 |
+| `additional_nav_items` | `[]` | 추가 사이드바 항목 |
+| `state_cache` | `{}` | 프런트엔드 상태 캐시 구성 |
+| `allow_additional_tags` | `[]` | 채팅에서 추가로 허용할 HTML 태그 |
+| `chat` | `{}` | 채팅 UI 오버라이드 |
+| `axios_defaults` | `{}` | 프런트엔드 axios HTTP 클라이언트 기본값 |
 
 ## Config Endpoint
 
@@ -102,7 +124,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     },
     "hostConfig": {
         "session": { "type": "non-persistent" },
-        "history": "local",
+        "history": "hash",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -118,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-API URL은 `PUBLIC_API_URL` 환경 변수에서 읽어옵니다. `APP_WEBSOCKET_URL`은 `https://`를 `wss://`로 대체하여 파생됩니다. 테마는 세 가지 범위(`global`, `host`, `children`)를 가지며 — `host.i18n`은 앱 브랜딩을 담습니다. `hostConfig` 키는 camelCase이며 facade 파라미터에서 조립됩니다: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, 그리고 선택적 `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`, `axios_defaults`.
+API URL은 `PUBLIC_API_URL` 환경 변수에서 읽어옵니다. `APP_WEBSOCKET_URL`은 `http://`를 `ws://`로 또는 `https://`를 `wss://`로 대체하여 파생됩니다. 테마는 세 가지 범위(`global`, `host`, `children`)를 가지며 — `host.i18n`은 앱 브랜딩을 담습니다. `hostConfig` 키는 camelCase이며 facade 파라미터에서 조립됩니다: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, 그리고 선택적 `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`, `axios_defaults`.
 
 ## Navigation Sidebar
 

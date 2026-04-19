@@ -25,14 +25,14 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: api_url_env
-        value: PUBLIC_API_URL
+      - name: env_storage
+        value: app:env.storage
 ```
 
 | Parámetro | Requerido | Predeterminado | Descripción |
 |-----------|-----------|----------------|-------------|
 | `api_router` | sí | — | Router HTTP para los endpoints de API de las views |
-| `api_url_env` | no | `PUBLIC_API_URL` | Variable de entorno con la URL pública de la API |
+| `env_storage` | no | interno | Almacenamiento de entorno que provee la variable `PUBLIC_API_URL` |
 
 ## Páginas de Plantilla
 
@@ -205,7 +205,7 @@ entries:
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `meta.type` | string | Debe ser `view.resource` |
-| `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
+| `meta.resource_type` | string | De eleccion libre (por defecto `"other"`); valores comunes son `"style"`, `"script"`, `"font"` |
 | `meta.order` | number | Orden dentro del tipo |
 | `meta.global` | boolean | Aplicado a todas las páginas |
 | `meta.template_set` | string | Específico a un conjunto de plantillas |

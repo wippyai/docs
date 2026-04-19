@@ -100,13 +100,28 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
-El módulo `httpclient` acepta la misma clave en las opciones por llamada.
+El módulo `http_client` acepta la misma seleccion de superposicion en las opciones por llamada bajo la clave `overlay_network`.
 
 ## Herencia
 
 La selección de superposición fluye a través de la pila de llamadas. Una función llamada a través de `funcs.new():with_options({network=...})` ve la superposición en cada conexión interna, cada `funcs.call` anidado y cada `process.spawn` que realiza — hasta que un descendiente seleccione explícitamente una superposición diferente o la borre.
 
 La herencia ambiental omite las propias reglas de denegación `network.select` del descendiente. Solo la selección explícita en un borde de Lua está controlada.
+
+## Configuracion de la aplicacion
+
+Los drivers de superposicion leen ajustes a nivel de aplicacion desde un bloque `network_service:` en `.wippy.yaml`:
+
+```yaml
+network_service:
+  state_dir: .wippy/net          # Directorio base para el estado del driver (claves de Tailscale, etc.)
+  default_network: app.net:tailnet  # Superposicion usada cuando ninguna llamada establece una
+```
+
+| Campo | Valor por defecto | Descripcion |
+|-------|-------------------|-------------|
+| `state_dir` | `.wippy/net` | Directorio para el estado del driver. Las rutas relativas se resuelven contra el directorio de configuracion de arranque. |
+| `default_network` | — | Registry ID de una superposicion aplicada a cualquier tarea o proceso que no establezca su propia red mediante opciones. |
 
 ## Permisos
 

@@ -63,7 +63,7 @@ entries:
 | `application_host` | sim | — | Host de processos para os processos do relay |
 | `env_storage` | não | interno | Armazenamento de variáveis de ambiente |
 | `user_security_scope` | sim | — | Escopo de segurança para hubs de usuário |
-| `max_connections_per_user` | não | `10` | Conexões WebSocket por usuário |
+| `max_connections_per_user` | não | `5` | Conexões WebSocket por usuário |
 | `queue_multiplier` | não | `100` | Fila de mensagens = conexões × multiplicador |
 | `user_hub_inactivity_timeout` | não | `7200s` | Tempo ocioso antes da limpeza do hub |
 
@@ -84,6 +84,8 @@ entries:
     ]
 }
 ```
+
+O `status` do plugin e um dos seguintes: `"not_started"` (registrado, nunca iniciado), `"pending"` (inicializacao em andamento), `"running"`, `"failed"` ou `"stopped"`.
 
 ## Roteamento de Mensagens
 

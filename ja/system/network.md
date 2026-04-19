@@ -100,13 +100,28 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
-`httpclient` モジュールは、呼び出しごとのオプションで同じキーを受け入れます。
+`http_client` モジュールは、呼び出しごとのオプションの `overlay_network` キーで同じオーバーレイ選択を受け入れます。
 
 ## 継承
 
 オーバーレイの選択は呼び出しスタックを流れます。`funcs.new():with_options({network=...})` 経由で呼び出された関数は、すべての内部ダイヤル、すべてのネストされた `funcs.call`、および実行するすべての `process.spawn` でオーバーレイを見ます — 子孫が明示的に別のオーバーレイを選択するかクリアするまで。
 
 アンビエント継承は子孫自身の `network.select` 拒否ルールをバイパスします。Lua のエッジでの明示的な選択のみがゲートされます。
+
+## アプリ設定
+
+オーバーレイドライバは、`.wippy.yaml` の `network_service:` ブロックからアプリ全体の設定を読み込みます:
+
+```yaml
+network_service:
+  state_dir: .wippy/net          # ドライバ状態のベースディレクトリ（Tailscale キーなど）
+  default_network: app.net:tailnet  # 呼び出し側が設定しない場合に使用されるオーバーレイ
+```
+
+| フィールド | デフォルト | 説明 |
+|------|----------|--------------|
+| `state_dir` | `.wippy/net` | ドライバ状態用のディレクトリ。相対パスはブート設定ディレクトリを基準に解決されます。 |
+| `default_network` | — | オプションで独自のネットワークを設定しないすべてのタスクまたはプロセスに適用されるオーバーレイのレジストリ ID。 |
 
 ## 権限
 

@@ -25,14 +25,14 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: api_url_env
-        value: PUBLIC_API_URL
+      - name: env_storage
+        value: app:env.storage
 ```
 
 | 파라미터 | 필수 | 기본값 | 설명 |
 |-----------|----------|---------|-------------|
 | `api_router` | 예 | — | 뷰 API 엔드포인트의 HTTP 라우터 |
-| `api_url_env` | 아니오 | `PUBLIC_API_URL` | 공개 API URL을 포함하는 환경 변수 |
+| `env_storage` | 아니오 | 내부 | `PUBLIC_API_URL` 변수를 제공하는 환경 스토리지 |
 
 ## 템플릿 페이지
 
@@ -205,7 +205,7 @@ entries:
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
 | `meta.type` | string | `view.resource`이어야 함 |
-| `meta.resource_type` | string | `"style"`, `"script"`, `"font"` |
+| `meta.resource_type` | string | 자유롭게 지정 가능(기본값 `"other"`); 일반적인 값은 `"style"`, `"script"`, `"font"` |
 | `meta.order` | number | 타입 내 정렬 순서 |
 | `meta.global` | boolean | 모든 페이지에 적용 |
 | `meta.template_set` | string | 특정 템플릿 세트 전용 |

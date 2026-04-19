@@ -61,7 +61,10 @@ The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namesp
 | `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
 | `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
 | `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/facade` | Configuracion del host frontend, tematizacion y endpoint de config |
 | `wippy/terminal` | Terminal UI components |
+| `wippy/security` | Scopes de actor, paquetes de policy y helpers de seguridad |
+| `wippy/usage` | Contabilidad de tokens y costes para llamadas LLM |
 
 More modules are available and being published regularly. Search the hub:
 

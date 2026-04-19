@@ -27,7 +27,7 @@ entries:
     meta:
       type: test
       suite: math
-      description: Math operations
+      name: 수학 연산
     source: file://math_test.lua
     method: run
     imports:
@@ -40,7 +40,7 @@ entries:
 |-------|----------|-------------|
 | `type` | Yes | 러너가 검색하려면 `"test"`여야 합니다 |
 | `suite` | No | 러너 출력에서 테스트를 그룹화합니다 |
-| `description` | No | 사람이 읽을 수 있는 설명 |
+| `name` | No | 러너 출력에 표시되는 이름 |
 | `order` | No | 스위트 내 정렬 순서 (낮을수록 먼저 실행) |
 
 ## 테스트 작성하기
@@ -386,6 +386,6 @@ entries:
 
 ## 참고
 
-- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
+- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
 - [CLI 레퍼런스](guides/cli.md) - CLI 명령
 - [함수](concepts/functions.md) - 함수 레지스트리
