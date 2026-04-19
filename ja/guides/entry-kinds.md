@@ -587,6 +587,45 @@ local is_greeter = contract.is(greeter, "app:greeter")
     - "python"
 ```
 
+## WASMランタイム
+
+| 種別 | 説明 |
+|------|-------------|
+| `function.wat` | WebAssembly関数（WATテキスト形式） |
+| `function.wasm` | WebAssembly関数（バイナリ） |
+| `process.wasm` | WebAssemblyプロセス |
+
+```yaml
+- name: sum
+  kind: function.wasm
+  source: file://sum.wasm
+  transport: payload   # または wasi-http
+```
+
+[WASM概要](wasm/overview.md)を参照。
+
+## ネットワーク
+
+| 種別 | 説明 |
+|------|-------------|
+| `network` | ベースネットワークオーバーレイ |
+| `network.socks5` | SOCKS5プロキシオーバーレイ |
+| `network.i2p` | I2Pネットワークオーバーレイ |
+| `network.tailscale` | Tailscaleオーバーレイ |
+
+`http.service`からは`network:`経由で、`http_client`からは`network`オプション経由で参照されます。[ネットワーク](system/network.md)を参照。
+
+## レジストリプリミティブ
+
+| 種別 | 説明 |
+|------|-------------|
+| `registry.entry` | エントリ記述子（内部） |
+| `ns.definition` | 名前空間定義 |
+| `ns.requirement` | 名前空間要件宣言 |
+| `ns.dependency` | 名前空間依存関係 |
+
+これらはレジストリローダーが`_index.yaml`のフロントマターと依存関係宣言から生成します。通常、作者が直接定義することはありません — `version:`、`namespace:`、依存ブロックが解決された結果として現れます。
+
 ## ライフサイクル設定
 
 ほとんどのエントリはライフサイクル設定をサポートします：

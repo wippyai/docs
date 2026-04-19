@@ -587,6 +587,45 @@ local is_greeter = contract.is(greeter, "app:greeter")
     - "python"
 ```
 
+## WASM 运行时
+
+| 类型 | 说明 |
+|------|-------------|
+| `function.wat` | WebAssembly 函数（WAT 文本格式） |
+| `function.wasm` | WebAssembly 函数（二进制） |
+| `process.wasm` | WebAssembly 进程 |
+
+```yaml
+- name: sum
+  kind: function.wasm
+  source: file://sum.wasm
+  transport: payload   # 或 wasi-http
+```
+
+参见 [WASM 概述](wasm/overview.md)。
+
+## 网络
+
+| 类型 | 说明 |
+|------|-------------|
+| `network` | 基础网络叠加层 |
+| `network.socks5` | SOCKS5 代理叠加层 |
+| `network.i2p` | I2P 网络叠加层 |
+| `network.tailscale` | Tailscale 叠加层 |
+
+由 `http.service` 通过 `network:` 引用，由 `http_client` 通过 `network` 选项引用。参见 [网络](system/network.md)。
+
+## 注册表原语
+
+| 类型 | 说明 |
+|------|-------------|
+| `registry.entry` | 入口描述符（内部） |
+| `ns.definition` | 命名空间定义 |
+| `ns.requirement` | 命名空间需求声明 |
+| `ns.dependency` | 命名空间依赖 |
+
+这些由注册表加载器从 `_index.yaml` 的 frontmatter 和依赖声明中生成。作者通常不直接定义它们——它们在 `version:`、`namespace:` 和依赖块解析后产生。
+
 ## 生命周期配置
 
 大多数入口支持生命周期配置：

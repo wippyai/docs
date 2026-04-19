@@ -587,6 +587,45 @@ local is_greeter = contract.is(greeter, "app:greeter")
     - "python"
 ```
 
+## WASM 런타임
+
+| Kind | 설명 |
+|------|-------------|
+| `function.wat` | WebAssembly 함수 (WAT 텍스트 형식) |
+| `function.wasm` | WebAssembly 함수 (바이너리) |
+| `process.wasm` | WebAssembly 프로세스 |
+
+```yaml
+- name: sum
+  kind: function.wasm
+  source: file://sum.wasm
+  transport: payload   # 또는 wasi-http
+```
+
+[WASM 개요](wasm/overview.md) 참조.
+
+## 네트워크
+
+| Kind | 설명 |
+|------|-------------|
+| `network` | 기본 네트워크 오버레이 |
+| `network.socks5` | SOCKS5 프록시 오버레이 |
+| `network.i2p` | I2P 네트워크 오버레이 |
+| `network.tailscale` | Tailscale 오버레이 |
+
+`http.service`에서는 `network:`를 통해, `http_client`에서는 `network` 옵션을 통해 참조됩니다. [네트워크](system/network.md) 참조.
+
+## 레지스트리 프리미티브
+
+| Kind | 설명 |
+|------|-------------|
+| `registry.entry` | 엔트리 디스크립터 (내부) |
+| `ns.definition` | 네임스페이스 정의 |
+| `ns.requirement` | 네임스페이스 요구사항 선언 |
+| `ns.dependency` | 네임스페이스 의존성 |
+
+이들은 레지스트리 로더가 `_index.yaml` 프론트매터와 의존성 선언으로부터 생성합니다. 작성자가 직접 정의하는 경우는 거의 없으며, `version:`, `namespace:`, 의존성 블록이 해석된 결과로 나타납니다.
+
 ## 라이프사이클 설정
 
 대부분의 엔트리는 라이프사이클 설정을 지원합니다:

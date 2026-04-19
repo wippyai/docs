@@ -587,6 +587,45 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
     - "python"
 ```
 
+## WASM-Laufzeit
+
+| Kind | Beschreibung |
+|------|-------------|
+| `function.wat` | WebAssembly-Funktion (WAT-Textformat) |
+| `function.wasm` | WebAssembly-Funktion (binär) |
+| `process.wasm` | WebAssembly-Prozess |
+
+```yaml
+- name: sum
+  kind: function.wasm
+  source: file://sum.wasm
+  transport: payload   # oder wasi-http
+```
+
+Siehe [WASM-Übersicht](wasm/overview.md).
+
+## Netzwerke
+
+| Kind | Beschreibung |
+|------|-------------|
+| `network` | Basis-Netzwerk-Overlay |
+| `network.socks5` | SOCKS5-Proxy-Overlay |
+| `network.i2p` | I2P-Netzwerk-Overlay |
+| `network.tailscale` | Tailscale-Overlay |
+
+Wird von `http.service` über `network:` und von `http_client` über die `network`-Option referenziert. Siehe [Netzwerk](system/network.md).
+
+## Registry-Primitive
+
+| Kind | Beschreibung |
+|------|-------------|
+| `registry.entry` | Eintragsdeskriptor (intern) |
+| `ns.definition` | Namespace-Definition |
+| `ns.requirement` | Namespace-Anforderungsdeklaration |
+| `ns.dependency` | Namespace-Abhängigkeit |
+
+Diese werden vom Registry-Loader aus dem `_index.yaml`-Frontmatter und Abhängigkeitsdeklarationen erzeugt. Autoren definieren sie in der Regel nicht direkt — sie entstehen als Ergebnis der Auflösung von `version:`-, `namespace:`- und Abhängigkeitsblöcken.
+
 ## Lebenszyklus-Konfiguration
 
 Die meisten Einträge unterstützen Lebenszyklus-Konfiguration:

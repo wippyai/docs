@@ -586,6 +586,45 @@ Marque un binding como <code>default: true</code> para usarlo cuando se abra un 
     - "python"
 ```
 
+## Runtime WASM
+
+| Tipo | Descripción |
+|------|-------------|
+| `function.wat` | Función WebAssembly (formato de texto WAT) |
+| `function.wasm` | Función WebAssembly (binario) |
+| `process.wasm` | Proceso WebAssembly |
+
+```yaml
+- name: sum
+  kind: function.wasm
+  source: file://sum.wasm
+  transport: payload   # o wasi-http
+```
+
+Ver [Resumen de WASM](wasm/overview.md).
+
+## Redes
+
+| Tipo | Descripción |
+|------|-------------|
+| `network` | Overlay de red base |
+| `network.socks5` | Overlay de proxy SOCKS5 |
+| `network.i2p` | Overlay de red I2P |
+| `network.tailscale` | Overlay de Tailscale |
+
+Referenciado por `http.service` mediante `network:` y por `http_client` mediante la opción `network`. Ver [Red](system/network.md).
+
+## Primitivas del Registro
+
+| Tipo | Descripción |
+|------|-------------|
+| `registry.entry` | Descriptor de entrada (interno) |
+| `ns.definition` | Definición de namespace |
+| `ns.requirement` | Declaración de requisito de namespace |
+| `ns.dependency` | Dependencia de namespace |
+
+Son producidas por el cargador del registro a partir del frontmatter de `_index.yaml` y las declaraciones de dependencias. Los autores generalmente no las definen directamente — aparecen como resultado de la resolución de bloques `version:`, `namespace:` y de dependencias.
+
 ## Configuración de Ciclo de Vida
 
 La mayoría de las entradas soportan configuración de ciclo de vida:

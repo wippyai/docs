@@ -587,6 +587,45 @@ local is_greeter = contract.is(greeter, "app:greeter")
     - "python"
 ```
 
+## WASM Runtime
+
+| Тип | Описание |
+|------|-------------|
+| `function.wat` | WebAssembly-функция (текстовый формат WAT) |
+| `function.wasm` | WebAssembly-функция (бинарный формат) |
+| `process.wasm` | WebAssembly-процесс |
+
+```yaml
+- name: sum
+  kind: function.wasm
+  source: file://sum.wasm
+  transport: payload   # или wasi-http
+```
+
+См. [Обзор WASM](wasm/overview.md).
+
+## Сети
+
+| Тип | Описание |
+|------|-------------|
+| `network` | Базовый сетевой оверлей |
+| `network.socks5` | Оверлей SOCKS5-прокси |
+| `network.i2p` | Оверлей сети I2P |
+| `network.tailscale` | Оверлей Tailscale |
+
+Используется в `http.service` через `network:` и в `http_client` через опцию `network`. См. [Сеть](system/network.md).
+
+## Примитивы реестра
+
+| Тип | Описание |
+|------|-------------|
+| `registry.entry` | Дескриптор записи (внутренний) |
+| `ns.definition` | Определение пространства имён |
+| `ns.requirement` | Декларация требования пространства имён |
+| `ns.dependency` | Зависимость пространства имён |
+
+Они создаются загрузчиком реестра из frontmatter `_index.yaml` и деклараций зависимостей. Авторы обычно не определяют их напрямую — они появляются как результат разрешения блоков `version:`, `namespace:` и зависимостей.
+
 ## Настройка жизненного цикла
 
 Большинство записей поддерживают настройку жизненного цикла:
