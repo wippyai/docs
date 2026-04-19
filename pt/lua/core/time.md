@@ -378,7 +378,7 @@ local result = channel.select{
 }
 
 if result.channel == timeout_ch then
-    return nil, errors.new("TIMEOUT", "Request timed out")
+    return nil, errors.new({message = "Request timed out", kind = errors.TIMEOUT})
 end
 ```
 
@@ -538,9 +538,9 @@ time.SATURDAY   -- 6
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Formato de duração inválido | `errors.INVALID` | não |
-| Parse falhou | `errors.INVALID` | não |
+| Parse falhou | `errors.INTERNAL` | não |
 | Nome de location vazio | `errors.INVALID` | não |
-| Location não encontrada | `errors.NOT_FOUND` | não |
+| Location não encontrada | `errors.INTERNAL` | não |
 | Duração <= 0 (timer/ticker) | `errors.INVALID` | não |
 
 ```lua
@@ -554,7 +554,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.NOT_FOUND) then
+    if errors.is(err, errors.INTERNAL) then
         print("Location não encontrada:", err:message())
     end
     return nil, err

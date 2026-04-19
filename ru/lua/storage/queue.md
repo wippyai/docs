@@ -124,8 +124,8 @@ end
 | Пустой ID очереди | `errors.INVALID` | нет |
 | Пустые данные сообщения | `errors.INVALID` | нет |
 | Нет контекста доставки | `errors.INVALID` | нет |
-| Доступ запрещён | `errors.PERMISSION_DENIED` | нет |
-| Ошибка публикации | `errors.INTERNAL` | да |
+| Публикация не разрешена | `errors.INVALID` | нет |
+| Ошибка публикации | `errors.INTERNAL` | нет |
 
 См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.
 

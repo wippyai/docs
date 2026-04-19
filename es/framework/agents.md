@@ -501,20 +501,20 @@ Configura la recuperacion de memoria dinamica desde una fuente externa:
       context:
         user_id: "${user_id}"
       options:
-        max_items: 5
-        max_length: 2000
-        recall_cooldown: 2
-        min_conversation_length: 3
+        max_items: 3
+        max_length: 1000
+        recall_cooldown: 1
+        min_conversation_length: 2
 ```
 
 El contrato de memoria se invoca durante `runner:step()` para recuperar elementos relevantes basados en el contexto de la conversacion. Los resultados se inyectan como mensajes de desarrollador.
 
-| Opcion | Descripcion |
-|--------|-------------|
-| `max_items` | Maximo de elementos de memoria por recuperacion |
-| `max_length` | Longitud total maxima de caracteres |
-| `recall_cooldown` | Minimo de pasos entre recuperaciones |
-| `min_conversation_length` | Minimo de turnos de conversacion antes de la primera recuperacion |
+| Opcion | Por defecto | Descripcion |
+|--------|-------------|-------------|
+| `max_items` | `3` | Maximo de elementos de memoria por recuperacion |
+| `max_length` | `1000` | Longitud total maxima de caracteres |
+| `recall_cooldown` | `1` | Minimo de pasos entre recuperaciones |
+| `min_conversation_length` | `2` | Minimo de turnos de conversacion antes de la primera recuperacion |
 
 ## Contrato de Resolucion
 

@@ -501,20 +501,20 @@ ctx:add_delegates({
       context:
         user_id: "${user_id}"
       options:
-        max_items: 5
-        max_length: 2000
-        recall_cooldown: 2
-        min_conversation_length: 3
+        max_items: 3
+        max_length: 1000
+        recall_cooldown: 1
+        min_conversation_length: 2
 ```
 
 메모리 컨트랙트는 `runner:step()` 실행 중에 대화 컨텍스트를 기반으로 관련 항목을 회상하기 위해 호출됩니다. 결과는 개발자 메시지로 주입됩니다.
 
-| 옵션 | 설명 |
-|--------|-------------|
-| `max_items` | 회상당 최대 메모리 항목 수 |
-| `max_length` | 최대 총 문자 수 |
-| `recall_cooldown` | 회상 사이의 최소 스텝 수 |
-| `min_conversation_length` | 첫 회상 전 최소 대화 턴 수 |
+| 옵션 | 기본값 | 설명 |
+|--------|--------|-------------|
+| `max_items` | `3` | 회상당 최대 메모리 항목 수 |
+| `max_length` | `1000` | 최대 총 문자 수 |
+| `recall_cooldown` | `1` | 회상 사이의 최소 스텝 수 |
+| `min_conversation_length` | `2` | 첫 회상 전 최소 대화 턴 수 |
 
 ## 리졸버 컨트랙트
 

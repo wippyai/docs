@@ -11,10 +11,7 @@
 -- シンプルなメッセージ（kindはデフォルトでUNKNOWN）
 local err = errors.new("something went wrong")
 
--- kind付き
-local err = errors.new(errors.NOT_FOUND, "user not found")
-
--- フルコンストラクタ
+-- kind、retryable、details付き
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -22,6 +19,8 @@ local err = errors.new({
     details = {user_id = 123}
 })
 ```
+
+`errors.new`は文字列メッセージか、少なくとも`message`フィールドを持つテーブルを受け付けます。`(kind, message)`形式はサポートされていません。
 
 ## エラーのラップ
 

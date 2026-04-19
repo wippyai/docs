@@ -11,10 +11,7 @@
 -- 간단한 메시지 (kind 기본값은 UNKNOWN)
 local err = errors.new("something went wrong")
 
--- kind와 함께
-local err = errors.new(errors.NOT_FOUND, "user not found")
-
--- 전체 생성자
+-- kind, retryable, details와 함께
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -22,6 +19,8 @@ local err = errors.new({
     details = {user_id = 123}
 })
 ```
+
+`errors.new`는 문자열 메시지 또는 최소 `message` 필드를 가진 테이블을 받습니다. `(kind, message)` 형식은 지원되지 않습니다.
 
 ## 에러 래핑
 

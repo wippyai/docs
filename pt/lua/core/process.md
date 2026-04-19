@@ -259,9 +259,9 @@ Políticas podem permitir/negar baseado em:
 | `process.spawn` | `spawn*()` | id do processo |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | id do processo |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | id do processo |
-| `process.host` | `spawn*()`, `call()` | id do host |
+| `process.host` | `spawn*()`, `exec()` | id do host |
 | `process.send` | `send()` | PID de destino |
-| `process.exec` | `call()` | id do processo |
+| `process.exec` | `exec()` | id do processo |
 | `process.terminate` | `terminate()` | PID de destino |
 | `process.cancel` | `cancel()` | PID de destino |
 | `process.monitor` | `monitor()` | PID de destino |
@@ -283,7 +283,7 @@ Algumas operações requerem múltiplas permissões:
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.exec` + `process.host` |
+| `exec()` | `process.exec` + `process.host` |
 | spawn com ator/escopo customizado | permissões de spawn + `process.security` |
 
 ## Erros

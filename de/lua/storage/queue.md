@@ -124,8 +124,8 @@ Beide Berechtigungen werden geprüft: zuerst die allgemeine Berechtigung, dann d
 | Queue-ID leer | `errors.INVALID` | nein |
 | Nachrichtendaten leer | `errors.INVALID` | nein |
 | Kein Zustellungskontext | `errors.INVALID` | nein |
-| Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
-| Veröffentlichung fehlgeschlagen | `errors.INTERNAL` | ja |
+| Veröffentlichung nicht erlaubt | `errors.INVALID` | nein |
+| Veröffentlichung fehlgeschlagen | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 

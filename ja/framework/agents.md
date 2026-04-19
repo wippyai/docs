@@ -501,20 +501,20 @@ ctx:add_delegates({
       context:
         user_id: "${user_id}"
       options:
-        max_items: 5
-        max_length: 2000
-        recall_cooldown: 2
-        min_conversation_length: 3
+        max_items: 3
+        max_length: 1000
+        recall_cooldown: 1
+        min_conversation_length: 2
 ```
 
 メモリコントラクトは `runner:step()` の実行中に呼び出され、会話コンテキストに基づいて関連する項目を呼び出します。結果は開発者メッセージとして注入されます。
 
-| オプション | 説明 |
-|--------|-------------|
-| `max_items` | 1回の呼び出しあたりの最大メモリ項目数 |
-| `max_length` | 最大合計文字数 |
-| `recall_cooldown` | 呼び出し間の最小ステップ数 |
-| `min_conversation_length` | 最初の呼び出しまでの最小会話ターン数 |
+| オプション | デフォルト | 説明 |
+|--------|-----------|-------------|
+| `max_items` | `3` | 1回の呼び出しあたりの最大メモリ項目数 |
+| `max_length` | `1000` | 最大合計文字数 |
+| `recall_cooldown` | `1` | 呼び出し間の最小ステップ数 |
+| `min_conversation_length` | `2` | 最初の呼び出しまでの最小会話ターン数 |
 
 ## リゾルバーコントラクト
 

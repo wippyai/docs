@@ -501,20 +501,20 @@ Konfiguriere dynamischen Memory-Abruf aus einer externen Quelle:
       context:
         user_id: "${user_id}"
       options:
-        max_items: 5
-        max_length: 2000
-        recall_cooldown: 2
-        min_conversation_length: 3
+        max_items: 3
+        max_length: 1000
+        recall_cooldown: 1
+        min_conversation_length: 2
 ```
 
 Der Memory-Contract wird waehrend `runner:step()` aufgerufen, um relevante Eintraege basierend auf dem Konversationskontext abzurufen. Ergebnisse werden als Developer-Nachrichten eingefuegt.
 
-| Option | Beschreibung |
-|--------|--------------|
-| `max_items` | Maximale Memory-Eintraege pro Abruf |
-| `max_length` | Maximale Gesamtzeichenlaenge |
-| `recall_cooldown` | Mindestanzahl Schritte zwischen Abrufen |
-| `min_conversation_length` | Mindestanzahl Konversationsdurchgaenge vor dem ersten Abruf |
+| Option | Standard | Beschreibung |
+|--------|----------|--------------|
+| `max_items` | `3` | Maximale Memory-Eintraege pro Abruf |
+| `max_length` | `1000` | Maximale Gesamtzeichenlaenge |
+| `recall_cooldown` | `1` | Mindestanzahl Schritte zwischen Abrufen |
+| `min_conversation_length` | `2` | Mindestanzahl Konversationsdurchgaenge vor dem ersten Abruf |
 
 ## Resolver-Contract
 

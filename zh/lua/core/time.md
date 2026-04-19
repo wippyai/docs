@@ -378,7 +378,7 @@ local result = channel.select{
 }
 
 if result.channel == timeout_ch then
-    return nil, errors.new("TIMEOUT", "Request timed out")
+    return nil, errors.new({message = "Request timed out", kind = errors.TIMEOUT})
 end
 ```
 
@@ -538,9 +538,9 @@ time.SATURDAY   -- 6
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 无效时长格式 | `errors.INVALID` | 否 |
-| 解析失败 | `errors.INVALID` | 否 |
+| 解析失败 | `errors.INTERNAL` | 否 |
 | 空位置名称 | `errors.INVALID` | 否 |
-| 位置未找到 | `errors.NOT_FOUND` | 否 |
+| 位置未找到 | `errors.INTERNAL` | 否 |
 | 时长 <= 0（timer/ticker） | `errors.INVALID` | 否 |
 
 ```lua
@@ -554,7 +554,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.NOT_FOUND) then
+    if errors.is(err, errors.INTERNAL) then
         print("位置未找到:", err:message())
     end
     return nil, err

@@ -11,10 +11,7 @@
 -- Простое сообщение (kind по умолчанию UNKNOWN)
 local err = errors.new("something went wrong")
 
--- С указанием kind
-local err = errors.new(errors.NOT_FOUND, "user not found")
-
--- Полный конструктор
+-- С указанием kind, retryable и details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -22,6 +19,8 @@ local err = errors.new({
     details = {user_id = 123}
 })
 ```
+
+`errors.new` принимает либо строковое сообщение, либо таблицу с как минимум полем `message`. Форма `(kind, message)` не поддерживается.
 
 ## Оборачивание ошибок
 

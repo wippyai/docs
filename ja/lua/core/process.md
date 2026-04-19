@@ -259,9 +259,9 @@ local ok = process.registry.unregister(name)
 | `process.spawn` | `spawn*()` | process id |
 | `process.spawn.monitored` | `spawn_monitored()`、`spawn_linked_monitored()` | process id |
 | `process.spawn.linked` | `spawn_linked()`、`spawn_linked_monitored()` | process id |
-| `process.host` | `spawn*()`、`call()` | host id |
+| `process.host` | `spawn*()`、`exec()` | host id |
 | `process.send` | `send()` | target PID |
-| `process.exec` | `call()` | process id |
+| `process.exec` | `exec()` | process id |
 | `process.terminate` | `terminate()` | target PID |
 | `process.cancel` | `cancel()` | target PID |
 | `process.monitor` | `monitor()` | target PID |
@@ -283,7 +283,7 @@ local ok = process.registry.unregister(name)
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.exec` + `process.host` |
+| `exec()` | `process.exec` + `process.host` |
 | カスタムactor/scope付きスポーン | spawn権限 + `process.security` |
 
 ## エラー

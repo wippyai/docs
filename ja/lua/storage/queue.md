@@ -124,8 +124,8 @@ end
 | キューIDが空 | `errors.INVALID` | no |
 | メッセージデータが空 | `errors.INVALID` | no |
 | デリバリーコンテキストがない | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
-| パブリッシュ失敗 | `errors.INTERNAL` | yes |
+| パブリッシュ不許可 | `errors.INVALID` | no |
+| パブリッシュ失敗 | `errors.INTERNAL` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

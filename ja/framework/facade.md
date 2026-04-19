@@ -87,25 +87,38 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     "facade_url": "https://web-host.wippy.ai/webcomponents-...",
     "iframe_origin": "https://web-host.wippy.ai",
     "iframe_url": "https://web-host.wippy.ai/webcomponents-.../iframe.html?waitForCustomConfig",
-    "api_url": "https://api.example.com",
-    "ws_url": "wss://api.example.com",
-    "feature": {
-        "session_type": "non-persistent",
-        "hide_nav_bar": false,
-        "disable_right_panel": false,
-        "show_admin": true,
-        "start_nav_open": false,
-        "allow_select_model": false
+    "login_path": "/login.html",
+    "env": {
+        "APP_API_URL": "https://api.example.com",
+        "APP_AUTH_API_URL": "https://api.example.com",
+        "APP_WEBSOCKET_URL": "wss://api.example.com"
     },
-    "customization": {
-        "custom_css": "...",
-        "i18n": { "app": { "title": "Wippy", "icon": "wippy:logo", "appName": "Wippy AI" } }
+    "routePrefix": "https://api.example.com",
+    "axiosDefaults": { "...": "..." },
+    "theming": {
+        "global":  { "customCSS": "...", "cssVariables": {}, "iconSets": {} },
+        "host":    { "customCSS": "...", "cssVariables": {}, "iconSets": {}, "i18n": { "app": { "title": "Wippy", "icon": "wippy:logo", "appName": "Wippy AI" } } },
+        "children": { "customCSS": "...", "cssVariables": {} }
     },
-    "login_path": "/login.html"
+    "hostConfig": {
+        "session": { "type": "non-persistent" },
+        "history": "local",
+        "showAdmin": true,
+        "allowSelectModel": false,
+        "startNavOpen": false,
+        "hideNavBar": false,
+        "disableRightPanel": false,
+        "hideSessionSelector": false,
+        "apiRoutes":         { "...": "..." },
+        "additionalNavItems": [],
+        "stateCache":        { "...": "..." },
+        "allowAdditionalTags": [],
+        "chat":              { "...": "..." }
+    }
 }
 ```
 
-The `api_url` is resolved from the environment variable specified by `api_url_env`. The `ws_url` is derived by replacing `https://` with `wss://`.
+API URLは`PUBLIC_API_URL`環境変数から読み取られます。`APP_WEBSOCKET_URL`は`https://`を`wss://`に置き換えて導出されます。テーミングには3つのスコープ（`global`、`host`、`children`）があります — `host.i18n`にはアプリのブランディングが含まれます。`hostConfig`キーはcamelCaseで、facadeパラメータから組み立てられます: `session_type`、`history_mode`、`show_admin`、`allow_select_model`、`start_nav_open`、`hide_nav_bar`、`disable_right_panel`、`hide_session_selector`、加えてオプションの`api_routes`、`additional_nav_items`、`state_cache`、`allow_additional_tags`、`chat`、`axios_defaults`。
 
 ## Navigation Sidebar
 

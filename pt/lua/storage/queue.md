@@ -124,8 +124,8 @@ Ambas as permissões sao verificadas: primeiro a permissão geral, depois a espe
 | ID da fila vazio | `errors.INVALID` | não |
 | Dados da mensagem vazios | `errors.INVALID` | não |
 | Sem contexto de entrega | `errors.INVALID` | não |
-| Permissão negada | `errors.PERMISSION_DENIED` | não |
-| Publicação falhou | `errors.INTERNAL` | sim |
+| Publicação não permitida | `errors.INVALID` | não |
+| Publicação falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 

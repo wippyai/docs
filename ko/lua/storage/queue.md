@@ -124,8 +124,8 @@ end
 | 큐 ID 비어있음 | `errors.INVALID` | 아니오 |
 | 메시지 데이터 비어있음 | `errors.INVALID` | 아니오 |
 | 전달 컨텍스트 없음 | `errors.INVALID` | 아니오 |
-| 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
-| 발행 실패 | `errors.INTERNAL` | 예 |
+| 발행 허용되지 않음 | `errors.INVALID` | 아니오 |
+| 발행 실패 | `errors.INTERNAL` | 아니오 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 

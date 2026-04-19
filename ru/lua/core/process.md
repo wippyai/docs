@@ -259,9 +259,9 @@ local ok = process.registry.unregister(name)
 | `process.spawn` | `spawn*()` | id процесса |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | id процесса |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | id процесса |
-| `process.host` | `spawn*()`, `call()` | id хоста |
+| `process.host` | `spawn*()`, `exec()` | id хоста |
 | `process.send` | `send()` | целевой PID |
-| `process.exec` | `call()` | id процесса |
+| `process.exec` | `exec()` | id процесса |
 | `process.terminate` | `terminate()` | целевой PID |
 | `process.cancel` | `cancel()` | целевой PID |
 | `process.monitor` | `monitor()` | целевой PID |
@@ -283,7 +283,7 @@ local ok = process.registry.unregister(name)
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.exec` + `process.host` |
+| `exec()` | `process.exec` + `process.host` |
 | spawn с пользовательским actor/scope | разрешения spawn + `process.security` |
 
 ## Ошибки

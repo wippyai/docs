@@ -259,9 +259,9 @@ local ok = process.registry.unregister(name)
 | `process.spawn` | `spawn*()` | 프로세스 id |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | 프로세스 id |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | 프로세스 id |
-| `process.host` | `spawn*()`, `call()` | 호스트 id |
+| `process.host` | `spawn*()`, `exec()` | 호스트 id |
 | `process.send` | `send()` | 대상 PID |
-| `process.exec` | `call()` | 프로세스 id |
+| `process.exec` | `exec()` | 프로세스 id |
 | `process.terminate` | `terminate()` | 대상 PID |
 | `process.cancel` | `cancel()` | 대상 PID |
 | `process.monitor` | `monitor()` | 대상 PID |
@@ -283,7 +283,7 @@ local ok = process.registry.unregister(name)
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.exec` + `process.host` |
+| `exec()` | `process.exec` + `process.host` |
 | 커스텀 액터/스코프로 스폰 | 스폰 권한 + `process.security` |
 
 ## 에러

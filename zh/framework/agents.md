@@ -501,20 +501,20 @@ ctx:add_delegates({
       context:
         user_id: "${user_id}"
       options:
-        max_items: 5
-        max_length: 2000
-        recall_cooldown: 2
-        min_conversation_length: 3
+        max_items: 3
+        max_length: 1000
+        recall_cooldown: 1
+        min_conversation_length: 2
 ```
 
 记忆合约在 `runner:step()` 期间被调用，根据对话上下文召回相关项。结果以开发者消息的形式注入。
 
-| 选项 | 说明 |
-|--------|-------------|
-| `max_items` | 每次召回的最大记忆项数 |
-| `max_length` | 最大总字符长度 |
-| `recall_cooldown` | 两次召回之间的最小步骤数 |
-| `min_conversation_length` | 首次召回前的最小对话轮次数 |
+| 选项 | 默认值 | 说明 |
+|--------|--------|-------------|
+| `max_items` | `3` | 每次召回的最大记忆项数 |
+| `max_length` | `1000` | 最大总字符长度 |
+| `recall_cooldown` | `1` | 两次召回之间的最小步骤数 |
+| `min_conversation_length` | `2` | 首次召回前的最小对话轮次数 |
 
 ## 解析器合约
 

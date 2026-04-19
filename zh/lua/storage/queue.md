@@ -124,8 +124,8 @@ end
 | 队列 ID 为空 | `errors.INVALID` | 否 |
 | 消息数据为空 | `errors.INVALID` | 否 |
 | 无投递上下文 | `errors.INVALID` | 否 |
-| 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
-| 发布失败 | `errors.INTERNAL` | 是 |
+| 不允许发布 | `errors.INVALID` | 否 |
+| 发布失败 | `errors.INTERNAL` | 否 |
 
 错误处理请参阅 [错误处理](lua/core/errors.md)。
 

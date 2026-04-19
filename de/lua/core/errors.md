@@ -11,10 +11,7 @@ Strukturierte Fehlerbehandlung mit Kategorisierung und Retry-Metadaten. Die glob
 -- Einfache Nachricht (Art standardmäßig UNKNOWN)
 local err = errors.new("something went wrong")
 
--- Mit Art
-local err = errors.new(errors.NOT_FOUND, "user not found")
-
--- Vollständiger Konstruktor
+-- Mit Art, retryable und Details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -22,6 +19,8 @@ local err = errors.new({
     details = {user_id = 123}
 })
 ```
+
+`errors.new` akzeptiert entweder eine String-Nachricht oder eine Tabelle mit mindestens einem `message`-Feld. Die Form `(kind, message)` wird nicht unterstützt.
 
 ## Fehler wrappen
 

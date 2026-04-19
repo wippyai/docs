@@ -124,8 +124,8 @@ Ambos permisos se verifican: primero el permiso general, luego el específico de
 | ID de cola vacio | `errors.INVALID` | no |
 | Datos de mensaje vacios | `errors.INVALID` | no |
 | Sin contexto de entrega | `errors.INVALID` | no |
-| Permiso denegado | `errors.PERMISSION_DENIED` | no |
-| Publicacion fallida | `errors.INTERNAL` | si |
+| Publicacion no permitida | `errors.INVALID` | no |
+| Publicacion fallida | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 

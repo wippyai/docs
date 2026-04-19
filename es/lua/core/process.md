@@ -259,9 +259,9 @@ Las politicas pueden permitir/denegar basado en:
 | `process.spawn` | `spawn*()` | id de proceso |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | id de proceso |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | id de proceso |
-| `process.host` | `spawn*()`, `call()` | id de host |
+| `process.host` | `spawn*()`, `exec()` | id de host |
 | `process.send` | `send()` | PID objetivo |
-| `process.exec` | `call()` | id de proceso |
+| `process.exec` | `exec()` | id de proceso |
 | `process.terminate` | `terminate()` | PID objetivo |
 | `process.cancel` | `cancel()` | PID objetivo |
 | `process.monitor` | `monitor()` | PID objetivo |
@@ -283,7 +283,7 @@ Algunas operaciones requieren multiples permisos:
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
 | `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
-| `call()` | `process.exec` + `process.host` |
+| `exec()` | `process.exec` + `process.host` |
 | crear con actor/scope personalizado | permisos spawn + `process.security` |
 
 ## Errores

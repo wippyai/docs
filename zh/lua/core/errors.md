@@ -11,10 +11,7 @@
 -- 简单消息（类型默认为 UNKNOWN）
 local err = errors.new("something went wrong")
 
--- 指定类型
-local err = errors.new(errors.NOT_FOUND, "user not found")
-
--- 完整构造函数
+-- 指定类型、可重试性和详情
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -22,6 +19,8 @@ local err = errors.new({
     details = {user_id = 123}
 })
 ```
+
+`errors.new` 接受字符串消息或至少包含 `message` 字段的表。不支持 `(kind, message)` 形式。
 
 ## 包装错误
 

@@ -11,10 +11,7 @@ Tratamento de erros estruturados com categorização e metadados de retry. Tabel
 -- Mensagem simples (tipo padrão UNKNOWN)
 local err = errors.new("something went wrong")
 
--- Com tipo
-local err = errors.new(errors.NOT_FOUND, "user not found")
-
--- Construtor completo
+-- Com tipo, retryable e detalhes
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -22,6 +19,8 @@ local err = errors.new({
     details = {user_id = 123}
 })
 ```
+
+`errors.new` aceita uma mensagem string ou uma tabela com pelo menos um campo `message`. A forma `(kind, message)` não é suportada.
 
 ## Encapsulando Erros
 
