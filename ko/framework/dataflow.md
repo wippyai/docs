@@ -726,6 +726,6 @@ flow.create()
 
 ## 참고
 
-- [Agents](agents.md) - 에이전트 노드가 사용하는 에이전트 프레임워크
-- [LLM](llm.md) - LLM 모듈
-- [Framework Overview](overview.md) - 프레임워크 모듈 사용법
+- [Agents](framework/agents.md) - 에이전트 노드가 사용하는 에이전트 프레임워크
+- [LLM](framework/llm.md) - LLM 모듈
+- [Framework Overview](framework/overview.md) - 프레임워크 모듈 사용법

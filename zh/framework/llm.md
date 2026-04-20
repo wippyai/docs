@@ -574,6 +574,6 @@ io.print(response.result)
 
 ## 另请参阅
 
-- [智能体](agents.md) - 带有工具、委托和记忆的智能体框架
-- [构建 LLM 智能体](../tutorials/llm-agent.md) - 分步教程
-- [框架概述](overview.md) - 框架模块用法
+- [智能体](framework/agents.md) - 带有工具、委托和记忆的智能体框架
+- [构建 LLM 智能体](tutorials/llm-agent.md) - 分步教程
+- [框架概述](framework/overview.md) - 框架模块用法

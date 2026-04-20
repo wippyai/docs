@@ -10,6 +10,9 @@ Lua 기반 엔트리 설정: 함수, 프로세스, 워크플로우, 라이브러
 | `process.lua` | 상태를 가진 장기 실행 액터 |
 | `workflow.lua` | 내구성 있는 워크플로우 (Temporal) |
 | `library.lua` | 다른 엔트리가 임포트하는 공유 코드 |
+| `module.lua` | 모듈 표면 (다중 메서드 라이브러리) |
+
+각 종류에는 `wippy pack --bytecode`로 생성되는 사전 컴파일된 바이트코드 대응 항목(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)이 있습니다. 작성자는 `.lua` 엔트리를 작성하고, 바이트코드 종류는 패킹 시 자동으로 생성됩니다.
 
 ## 공통 필드
 
@@ -20,7 +23,7 @@ Lua 기반 엔트리 설정: 함수, 프로세스, 워크플로우, 라이브러
 | `name` | 예 | 네임스페이스 내 고유 이름 |
 | `kind` | 예 | 위의 Lua 종류 중 하나 |
 | `source` | 예 | Lua 파일 경로 (`file://path.lua`) |
-| `method` | 예 | 내보낼 함수 |
+| `method` | function/process/workflow | 내보낼 함수 (라이브러리는 사용하지 않음) |
 | `modules` | 아니오 | `require()`에 허용된 모듈 |
 | `imports` | 아니오 | 로컬 모듈로 사용할 다른 엔트리 |
 | `meta` | 아니오 | 검색 가능한 메타데이터 |
@@ -52,7 +55,6 @@ Lua 기반 엔트리 설정: 함수, 프로세스, 워크플로우, 라이브러
   method: main
   modules:
     - process
-    - channel
     - sql
 ```
 
@@ -95,7 +97,6 @@ Lua 기반 엔트리 설정: 함수, 프로세스, 워크플로우, 라이브러
 - name: helpers
   kind: library.lua
   source: file://helpers.lua
-  method: main
   modules:
     - json
     - base64
@@ -129,8 +130,9 @@ modules:
   - json
   - sql
   - process
-  - channel
 ```
+
+`channel`, `print`, `subscribe`, `unsubscribe`는 Lua 전역으로 로드되어 `modules:`에 나열할 필요가 없습니다.
 
 나열된 모듈만 사용 가능합니다. 이를 통해 다음을 보장합니다:
 - 보안: 시스템 모듈 접근 방지
@@ -161,11 +163,26 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: inline    # 호출자 컨텍스트에서 실행
+    type: adaptive    # 기본값
+    size: 4           # 초기 워커 수
+    max_size: 16      # 탄력적 풀의 상한
 ```
 
-풀 유형:
-- `inline` - 호출자 컨텍스트에서 실행 (HTTP 핸들러의 기본값)
+| 필드 | 풀 | 설명 |
+|------|----|------|
+| `type` | 모두 | 스케줄러 구현 (아래 표 참조) |
+| `size` | static, lazy, adaptive | 초기 워커 수 |
+| `workers` | engine v2 | 워커 스레드 수 |
+| `buffer` | static, adaptive | 작업 큐 용량 (기본값 `workers * 64`) |
+| `warm_start` | adaptive | 시작 시 엔트리 사전 컴파일 |
+| `max_size` | lazy, adaptive | 탄력적 확장 상한 (기본값 16) |
+
+| 유형 | 동작 |
+|------|------|
+| `inline` | 호출자의 고루틴에서 동기 실행. 최저 지연, 호출 간 격리 없음. |
+| `lazy` | 유휴 시 워커 없음, 요청 시 생성, 유휴 시 제거. |
+| `static` | 채널 기반 고정 크기 풀. 안정 부하에서 예측 가능. |
+| `adaptive` | 자동 확장 풀 — 부하 시 증가, 유휴 시 감소. 기본값. |
 
 ## 메타데이터
 

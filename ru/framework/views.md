@@ -331,8 +331,8 @@ data:
 
 ## См. также
 
-- [Facade](facade.md) — Iframe-фасад фронтенда и боковая панель навигации
-- [Template](../system/template.md) — Движок Jet-шаблонов
-- [Security](../system/security.md) — Акторы безопасности и контроль доступа
-- [Environment](../system/env.md) — Хранение переменных окружения
-- [Обзор фреймворка](overview.md) — Использование модулей фреймворка
+- [Facade](framework/facade.md) — Iframe-фасад фронтенда и боковая панель навигации
+- [Template](system/template.md) — Движок Jet-шаблонов
+- [Security](system/security.md) — Акторы безопасности и контроль доступа
+- [Environment](system/env.md) — Хранение переменных окружения
+- [Обзор фреймворка](framework/overview.md) — Использование модулей фреймворка

@@ -153,6 +153,6 @@ Los vectores siempre se transportan como un array JSON plano en la capa de API.
 
 ## Ver Tambien
 
-- [LLM](llm.md) - `llm.embed(...)` para generacion de embeddings cruda
-- [Migraciones](migration.md) - Runner de migraciones que provisiona la tabla
-- [Vision General del Framework](overview.md) - Uso de modulos del framework
+- [LLM](framework/llm.md) - `llm.embed(...)` para generacion de embeddings cruda
+- [Migraciones](framework/migration.md) - Runner de migraciones que provisiona la tabla
+- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework

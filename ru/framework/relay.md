@@ -254,7 +254,7 @@ return { run = run }
 
 ## См. также
 
-- [WebSocket Relay](../http/websocket-relay.md) — Конфигурация HTTP WebSocket-эндпоинта
-- [Модель процессов](../concepts/process-model.md) — Жизненный цикл процессов и обмен сообщениями
-- [Security](../system/security.md) — Акторы безопасности и области
-- [Обзор фреймворка](overview.md) — Использование модулей фреймворка
+- [WebSocket Relay](http/websocket-relay.md) — Конфигурация HTTP WebSocket-эндпоинта
+- [Модель процессов](concepts/process-model.md) — Жизненный цикл процессов и обмен сообщениями
+- [Security](system/security.md) — Акторы безопасности и области
+- [Обзор фреймворка](framework/overview.md) — Использование модулей фреймворка

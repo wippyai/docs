@@ -149,6 +149,7 @@ Entryフィールド: `name`、`type`（"file"または"directory"）
 | `read(size?)` | バイトを読み取り（デフォルト: 4096） |
 | `write(data)` | 文字列データを書き込み |
 | `seek(whence, offset)` | 位置を設定（"set"、"cur"、"end"） |
+| `stat()` | ファイル情報を取得（フィールドは `vol:stat` と同じ） |
 | `sync()` | ストレージにフラッシュ |
 | `close()` | ファイルハンドルを解放 |
 | `scanner(split?)` | 行/単語スキャナを作成 |

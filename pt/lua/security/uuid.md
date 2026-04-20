@@ -112,7 +112,7 @@ local var, err = uuid.variant(id)
 |-----------|------|-----------|
 | `uuid` | string | String UUID valida |
 
-**Retorna:** `string, error` (RFC4122, Microsoft, NCS ou Invalid)
+**Retorna:** `string, error` (RFC4122, Reserved, Microsoft, Future, NCS ou Invalid)
 
 ### Parse
 
@@ -128,7 +128,7 @@ local info, err = uuid.parse(id)
 
 Campos da tabela retornada:
 - `version` (integer): Versão do UUID (1, 3, 4, 5 ou 7)
-- `variant` (string): RFC4122, Microsoft, NCS ou Invalid
+- `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS ou Invalid
 - `timestamp` (integer): Timestamp Unix (apenas v1 e v7)
 - `node` (string): Node ID (apenas v1)
 

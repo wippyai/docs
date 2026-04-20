@@ -1,4 +1,4 @@
-# Task Queue
+# Fila de Tarefas
 
 Construa uma REST API que enfileira tarefas para processamento em background com persistência em banco de dados.
 
@@ -140,10 +140,8 @@ entries:
     source: file://process_task.lua
     method: main
     modules:
-      - queue
       - sql
       - logger
-      - time
       - json
 
   # Endpoints
@@ -228,12 +226,8 @@ local queue = require("queue")
 local uuid = require("uuid")
 
 local function handler()
-    local req, req_err = http.request()
-    local res, res_err = http.response()
-
-    if not req or not res then
-        return nil, "failed to get HTTP context"
-    end
+    local req = http.request()
+    local res = http.response()
 
     local body, parse_err = req:body_json()
     if parse_err then
@@ -258,7 +252,7 @@ local function handler()
 
     local ok, err = queue.publish("app:tasks_queue", task)
     if err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "failed to queue task"})
         return
     end
@@ -282,16 +276,12 @@ local http = require("http")
 local sql = require("sql")
 
 local function handler()
-    local req, req_err = http.request()
-    local res, res_err = http.response()
-
-    if not req or not res then
-        return nil, "failed to get HTTP context"
-    end
+    local req = http.request()
+    local res = http.response()
 
     local db, db_err = sql.get("app:db")
     if db_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "database unavailable"})
         return
     end
@@ -311,7 +301,7 @@ local function handler()
     db:release()
 
     if query_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "query failed"})
         return
     end
@@ -331,28 +321,16 @@ return { handler = handler }
 Crie `src/process_task.lua`:
 
 ```lua
-local queue = require("queue")
 local sql = require("sql")
 local logger = require("logger")
-local time = require("time")
 local json = require("json")
 
 local function main(task)
-    local msg, msg_err = queue.message()
-    if msg_err then
-        logger:error("failed to get message", {error = tostring(msg_err)})
-        return false
-    end
-
     logger:info("processing task", {
         id = task.id,
         action = task.action
     })
 
-    -- Simular trabalho
-    time.sleep("100ms")
-
-    -- Processar baseado na ação
     local result
     if task.action == "uppercase" then
         result = {output = string.upper(task.data.text or "")}
@@ -367,41 +345,29 @@ local function main(task)
         result = {output = "processed"}
     end
 
-    -- Armazenar no banco de dados
     local db, db_err = sql.get("app:db")
     if db_err then
-        logger:error("database unavailable", {error = tostring(db_err)})
-        return false
+        error("database unavailable: " .. tostring(db_err))
     end
 
-    local insert = sql.builder.insert("tasks")
-        :columns("id", "payload", "status", "result", "created_at", "processed_at")
-        :values(
-            task.id,
-            json.encode(task),
-            "completed",
-            json.encode(result),
-            task.created_at,
-            os.time()
-        )
-
-    local _, exec_err = insert:run_with(db):exec()
+    local _, exec_err = db:execute(
+        "INSERT OR REPLACE INTO tasks (id, payload, status, result, created_at, processed_at) VALUES (?, ?, ?, ?, ?, ?)",
+        { task.id, json.encode(task), "completed", json.encode(result), task.created_at, os.time() }
+    )
     db:release()
 
     if exec_err then
-        logger:error("failed to store result", {error = tostring(exec_err)})
-        return false
+        error("failed to store result: " .. tostring(exec_err))
     end
 
     logger:info("task completed", {id = task.id})
-    return true
 end
 
 return { main = main }
 ```
 
 <note>
-Retornar `true` confirma a mensagem. Retornar `false` faz com que a mensagem seja reenfileirada ou enviada para uma fila de dead-letter.
+O consumidor confirma automaticamente quando o handler retorna normalmente e nega automaticamente quando lança um erro. Chame `msg:ack()` ou `msg:nack()` via `queue.message()` apenas quando precisar de controle explícito antes do handler terminar.
 </note>
 
 ## Executando o Serviço
@@ -439,18 +405,6 @@ curl "http://localhost:8080/tasks?status=completed"
 2. **Consumidor da fila** pega a mensagem (2 workers concorrentes)
 3. **Worker** processa tarefa, escreve resultado no SQLite
 4. **GET /tasks** lê tarefas completadas do banco de dados
-
-## Conceitos Demonstrados
-
-| Conceito | API | Descrição |
-|----------|-----|-----------|
-| Endpoints REST | `http.request()`, `http.response()` | Tratar requisições HTTP |
-| Publicação em fila | `queue.publish(id, data)` | Enviar jobs assíncronos |
-| Consumo de fila | `queue.message()` | Acessar mensagem no handler |
-| Consultas ao banco | `sql.get()`, `db:query()` | Ler dados |
-| Query builder | `sql.builder.insert()` | Construir SQL com segurança |
-| Migrações | Processo retornando 0 | Tarefas de setup únicas |
-| Concorrência | `concurrency: 2` | Workers paralelos |
 
 ## Próximos Passos
 

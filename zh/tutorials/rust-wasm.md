@@ -208,7 +208,7 @@ entries:
     kind: http.router
     meta:
       comment: Public API router
-    server: gateway
+      server: demo:gateway
     prefix: /
 
   - name: processes
@@ -438,21 +438,7 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 -- fib: 55
 ```
 
-## 三种暴露 WASM 的方式
-
-| 方式 | 条目类型 | 使用场景 |
-|----------|-----------|----------|
-| 函数 | `function.wasm` | 从 Lua 或其他 WASM 通过 `funcs.call()` 调用 |
-| CLI 命令 | `process.wasm` + `meta.command` | 通过 `wippy run <name>` 运行终端命令 |
-| HTTP 端点 | `function.wasm` + `http.endpoint` | 通过 `wasi-http` 传输提供 REST API |
-
-三种方式均使用相同的编译后 `.wasm` 二进制文件，引用相同的方法。
-
-## 为其他语言构建
-
-任何编译为 WebAssembly 组件模型的语言均可与 Wippy 配合使用。定义 WIT 接口、实现导出、编译为 `.wasm`，然后在 `_index.yaml` 中配置条目。
-
-## 另请参阅
+## 下一步
 
 - [WASM 概述](wasm/overview.md) - WebAssembly 运行时概述
 - [WASM 函数](wasm/functions.md) - 函数配置参考

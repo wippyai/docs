@@ -6,7 +6,7 @@
 
 Spawnen, überwachen und kommunizieren Sie mit Kindprozessen. Implementiert Actor-Modell-Muster mit Nachrichtenübergabe, Supervision und Lebenszyklusverwaltung.
 
-Die globale `process`-Variable ist immer verfügbar.
+Die globale Variable `process` ist immer verfügbar — sie erfordert kein `require()` und muss nicht in `modules:` aufgeführt werden.
 
 ## Prozessinformationen
 

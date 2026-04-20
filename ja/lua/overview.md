@@ -75,14 +75,17 @@ end
 
 ## グローバル
 
-requireなしで常に利用可能：
+`require` なしで常に利用可能で、`modules:` に記載する必要はありません：
 
-- `process` - プロセス管理とメッセージング
+- `process` - プロセスのスポーン、メッセージ送信、監視、リンク
 - `channel` - Go形式チャネル
-- `os` - 時間とシステム関数
-- `coroutine` - 軽量並行処理
+- `payload` - エントリの入力 payload
+- `print`、`subscribe`、`unsubscribe` - ロギングと pub/sub
+- `os`、`table`、`math`、`string`、`coroutine`、`errors` - 標準ライブラリ
 
 ## モジュール
+
+その他はすべて `require()` で読み込み、エントリの `modules:` 許可リストに含める必要があります：
 
 ```lua
 local json = require("json")

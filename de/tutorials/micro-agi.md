@@ -161,7 +161,7 @@ Zwei `security.policy`-Einträge schränken ein, in welche Namespaces der Agent 
 
 Diese Richtlinien werden als benannter Scope (`app:agent_security`) durch `create_tool` geladen und vor jedem Registry-Schreibvorgang ausgewertet. Der Agent kann in `app.generated:*` schreiben (keine Deny-Richtlinie passt), aber nicht in `app:*` (Kerneinträge, Modelle, Agentendefinition) oder `app.tools:*` (eingebaute Tools).
 
-Siehe [Sicherheitsmodell](../system/security.md) für Details zur Richtlinien-Auswertung.
+Siehe [Sicherheitsmodell](system/security.md) für Details zur Richtlinien-Auswertung.
 
 ### Modelle
 
@@ -257,7 +257,7 @@ Der Prompt ist absichtlich knapp gehalten. Wichtige Regeln:
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, channel, funcs, registry, time, security]
+    modules: [io, json, process, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
@@ -448,7 +448,7 @@ Die Agentenschleife in `src/agent.lua` behandelt Streaming, Tool-Ausführung, dy
 
 ### Streaming
 
-Verwendet dasselbe Coroutine + Channel-Muster aus dem [LLM-Agent-Tutorial](llm-agent.md):
+Verwendet dasselbe Coroutine + Channel-Muster aus dem [LLM-Agent-Tutorial](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -593,8 +593,8 @@ Your IP is 203.0.113.42.
 
 ## Nächste Schritte
 
-- [LLM-Agent](llm-agent.md) — Einen einfachen Agenten von Grund auf bauen
-- [Agent-Modul](../framework/agents.md) — Referenz für das Agent-Framework
-- [Registry](../concepts/registry.md) — So funktioniert die Registry
-- [Sicherheitsmodell](../system/security.md) — Deklarative Sicherheitsrichtlinien
-- [Entry-Typen](../guides/entry-kinds.md) — Verfügbare Entry-Typen
+- [LLM-Agent](tutorials/llm-agent.md) — Einen einfachen Agenten von Grund auf bauen
+- [Agent-Modul](framework/agents.md) — Referenz für das Agent-Framework
+- [Registry](concepts/registry.md) — So funktioniert die Registry
+- [Sicherheitsmodell](system/security.md) — Deklarative Sicherheitsrichtlinien
+- [Entry-Typen](guides/entry-kinds.md) — Verfügbare Entry-Typen

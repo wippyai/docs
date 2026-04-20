@@ -340,17 +340,6 @@ return { main = main }
 
 逐令牌流式传输响应，而不是等待完整响应。
 
-### 更新模块
-
-将 `channel` 添加到进程模块：
-
-```yaml
-    modules:
-      - io
-      - process
-      - channel
-```
-
 ### 流式传输实现
 
 更新 `src/chat.lua`：
@@ -580,7 +569,6 @@ return { handler = handler }
       - io
       - json
       - process
-      - channel
       - funcs
 ```
 
@@ -766,9 +754,9 @@ The current time is 17:20 UTC on February 12, 2026.
 Bye!
 ```
 
-## 后续步骤
+## 下一步
 
-- [LLM 模块](../framework/llm.md) - 完整的 LLM API 参考
-- [智能体模块](../framework/agents.md) - 智能体框架参考
-- [CLI 应用](cli.md) - 终端 I/O 模式
-- [进程](processes.md) - 进程模型与通信
+- [LLM 模块](framework/llm.md) - 完整的 LLM API 参考
+- [智能体模块](framework/agents.md) - 智能体框架参考
+- [CLI 应用](tutorials/cli.md) - 终端 I/O 模式
+- [进程](tutorials/processes.md) - 进程模型与通信

@@ -153,6 +153,6 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 ## 関連情報
 
-- [LLM](llm.md) - 生のエンベディング生成用 `llm.embed(...)`
-- [Migrations](migration.md) - テーブルをプロビジョニングするマイグレーションランナー
-- [Framework Overview](overview.md) - フレームワークモジュールの使用方法
+- [LLM](framework/llm.md) - 生のエンベディング生成用 `llm.embed(...)`
+- [Migrations](framework/migration.md) - テーブルをプロビジョニングするマイグレーションランナー
+- [Framework Overview](framework/overview.md) - フレームワークモジュールの使用方法

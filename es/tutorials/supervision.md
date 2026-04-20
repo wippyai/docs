@@ -446,8 +446,8 @@ local function chain_node_main(depth)
         end
     end
 
-    -- Esperar a que el padre muera (dispara nuestra muerte vía LINK_DOWN)
-    time.sleep("5s")
+    -- Bloquear hasta que la muerte del padre nos elimine vía LINK_DOWN (trap_links=false por defecto)
+    process.inbox():receive()
 end
 ```
 
@@ -649,23 +649,6 @@ Configuración de workers:
 - Normalmente se establece al número de núcleos de CPU
 - Todos los procesos comparten este pool de hilos
 
-## Conceptos Clave
-
-**Monitoreo** (observación unidireccional):
-- Use `process.spawn_monitored()` o `process.monitor()`
-- Reciba eventos EXIT cuando el proceso monitoreado termine
-- El padre continúa ejecutándose tras la salida del hijo
-
-**Enlace** (destino compartido bidireccional):
-- Use `process.spawn_linked()` o `process.link()`
-- Por defecto: si cualquier proceso falla, ambos terminan
-- Con `trap_links=true`: reciba eventos LINK_DOWN en su lugar
-
-**Cancelación**:
-- Use `process.cancel(pid, timeout)` para apagado controlado
-- El worker recibe el evento CANCEL vía `process.events()`
-- Dispone del tiempo de timeout para limpiar antes de la terminación forzada
-
 ## Tipos de Eventos
 
 | Evento | Disparado por | Configuración Requerida |
@@ -674,8 +657,26 @@ Configuración de workers:
 | `LINK_DOWN` | El proceso enlazado falla | `spawn_linked()` o `link()` con `trap_links=true` |
 | `CANCEL` | Se llama a `process.cancel()` | Ninguna (siempre entregado) |
 
+## Ejecutar el Pool de Supervisores
+
+Coloca los archivos del pool en la estructura mostrada en [Configuración](#configuration), luego:
+
+```bash
+wippy init
+wippy run
+```
+
+El supervisor arranca automáticamente, genera cuatro workers y registra los reinicios cuando alguno muere. Dispara un reinicio cancelando un worker desde otro proceso:
+
+```lua
+-- en un proceso ad-hoc o comando de chat
+process.cancel("<pid-from-supervisor-log>", "100ms")
+```
+
+El pool recibe `LINK_DOWN`, espera 100 ms y regenera el worker con el mismo id.
+
 ## Siguientes Pasos
 
-- [Procesos](processes.md) - Fundamentos de procesos
-- [Canales](channels.md) - Patrones de paso de mensajes
+- [Procesos](tutorials/processes.md) - Fundamentos de procesos
+- [Canales](tutorials/channels.md) - Patrones de paso de mensajes
 - [Módulo Process](lua/core/process.md) - Referencia de la API

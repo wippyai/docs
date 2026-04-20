@@ -165,6 +165,6 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
 
 ## 関連情報
 
-- [LLM](llm.md) - LLM 生成と `usage_tracker` コントラクト
-- [Migrations](migration.md) - スキーマを作成するマイグレーションランナー
-- [Framework Overview](overview.md) - フレームワークモジュールの使用方法
+- [LLM](framework/llm.md) - LLM 生成と `usage_tracker` コントラクト
+- [Migrations](framework/migration.md) - スキーマを作成するマイグレーションランナー
+- [Framework Overview](framework/overview.md) - フレームワークモジュールの使用方法

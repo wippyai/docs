@@ -609,6 +609,6 @@ return {
 
 ## 참고 항목
 
-- [LLM](llm.md) - 기반 LLM 모듈
-- [LLM 에이전트 만들기](../tutorials/llm-agent.md) - 단계별 튜토리얼
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [LLM](framework/llm.md) - 기반 LLM 모듈
+- [LLM 에이전트 만들기](tutorials/llm-agent.md) - 단계별 튜토리얼
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

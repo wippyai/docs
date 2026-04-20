@@ -386,6 +386,6 @@ entries:
 
 ## Siehe auch
 
-- [Framework-Uebersicht](overview.md) - Verwendung von Framework-Modulen
+- [Framework-Uebersicht](framework/overview.md) - Verwendung von Framework-Modulen
 - [CLI-Referenz](guides/cli.md) - CLI-Befehle
 - [Funktionen](concepts/functions.md) - Funktions-Registry

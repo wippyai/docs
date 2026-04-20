@@ -161,7 +161,7 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
 
 These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
 
-See [Security Model](../system/security.md) for details on policy evaluation.
+See [Security Model](system/security.md) for details on policy evaluation.
 
 ### Models
 
@@ -257,7 +257,7 @@ The prompt is deliberately terse. Key rules:
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, channel, funcs, registry, time, security]
+    modules: [io, json, process, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
@@ -448,7 +448,7 @@ The agent loop in `src/agent.lua` handles streaming, tool execution, dynamic loa
 
 ### Streaming
 
-Uses the same coroutine + channel pattern from the [LLM Agent tutorial](llm-agent.md):
+Uses the same coroutine + channel pattern from the [LLM Agent tutorial](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -593,8 +593,8 @@ Your IP is 203.0.113.42.
 
 ## Next Steps
 
-- [LLM Agent](llm-agent.md) — Build a basic agent from scratch
-- [Agent Module](../framework/agents.md) — Agent framework reference
-- [Registry](../concepts/registry.md) — How the registry works
-- [Security Model](../system/security.md) — Declarative security policies
-- [Entry Kinds](../guides/entry-kinds.md) — Available entry types
+- [LLM Agent](tutorials/llm-agent.md) — Build a basic agent from scratch
+- [Agent Module](framework/agents.md) — Agent framework reference
+- [Registry](concepts/registry.md) — How the registry works
+- [Security Model](system/security.md) — Declarative security policies
+- [Entry Kinds](guides/entry-kinds.md) — Available entry types

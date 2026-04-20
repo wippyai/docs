@@ -112,7 +112,7 @@ local var, err = uuid.variant(id)
 |----------|-----|----------|
 | `uuid` | string | Корректный UUID-строка |
 
-**Возвращает:** `string, error` — RFC4122, Microsoft, NCS или Invalid
+**Возвращает:** `string, error` — RFC4122, Reserved, Microsoft, Future, NCS или Invalid
 
 ### Разбор
 
@@ -128,7 +128,7 @@ local info, err = uuid.parse(id)
 
 Поля таблицы:
 - `version` (integer): версия UUID (1, 3, 4, 5 или 7)
-- `variant` (string): RFC4122, Microsoft, NCS или Invalid
+- `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS или Invalid
 - `timestamp` (integer): Unix-время (только для v1 и v7)
 - `node` (string): идентификатор узла (только для v1)
 

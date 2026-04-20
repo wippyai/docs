@@ -39,7 +39,7 @@ entries:
   # Servidor HTTP
   - name: gateway
     kind: http.service
-    addr: :8080
+    addr: ":8080"
     lifecycle:
       auto_start: true
 
@@ -47,7 +47,7 @@ entries:
   - name: api
     kind: http.router
     meta:
-      server: gateway
+      server: app:gateway
     prefix: /
 
   # Função handler
@@ -64,7 +64,7 @@ entries:
     meta:
       router: app:api
     method: GET
-    func: hello
+    func: app:hello
     path: /hello
 ```
 
@@ -149,6 +149,6 @@ Resposta:
 
 ## Próximos Passos
 
-- [Echo Service](echo-service.md) - Tratar parâmetros de requisição
-- [Task Queue](task-queue.md) - REST API com processamento em background
+- [Echo Service](tutorials/echo-service.md) - Tratar parâmetros de requisição
+- [Task Queue](tutorials/task-queue.md) - REST API com processamento em background
 - [HTTP Router](http/router.md) - Padrões de roteamento

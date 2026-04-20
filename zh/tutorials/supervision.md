@@ -446,8 +446,8 @@ local function chain_node_main(depth)
         end
     end
 
-    -- 等待父进程死亡（通过 LINK_DOWN 触发我们的死亡）
-    time.sleep("5s")
+    -- 阻塞直到父进程死亡通过 LINK_DOWN 将我们终止（默认 trap_links=false）
+    process.inbox():receive()
 end
 ```
 
@@ -649,23 +649,6 @@ Workers 设置：
 - 通常设置为 CPU 核心数
 - 所有进程共享此线程池
 
-## 关键概念
-
-**监控**（单向观察）：
-- 使用 `process.spawn_monitored()` 或 `process.monitor()`
-- 当被监控进程终止时接收 EXIT 事件
-- 子进程退出后父进程继续运行
-
-**链接**（双向命运共享）：
-- 使用 `process.spawn_linked()` 或 `process.link()`
-- 默认：任一进程失败，两者都终止
-- 使用 `trap_links=true`：接收 LINK_DOWN 事件代替
-
-**取消**：
-- 使用 `process.cancel(pid, timeout)` 进行优雅关闭
-- Worker 通过 `process.events()` 接收 CANCEL 事件
-- 有超时时长用于在强制终止前进行清理
-
 ## 事件类型
 
 | 事件 | 触发条件 | 所需设置 |
@@ -673,6 +656,24 @@ Workers 设置：
 | `EXIT` | 被监控进程退出 | `spawn_monitored()` 或 `monitor()` |
 | `LINK_DOWN` | 链接的进程失败 | `spawn_linked()` 或 `link()` 并启用 `trap_links=true` |
 | `CANCEL` | 调用了 `process.cancel()` | 无（始终投递） |
+
+## 运行监管池
+
+将池文件放入[配置](#配置)中所示的结构中，然后：
+
+```bash
+wippy init
+wippy run
+```
+
+监管器自动启动，生成四个 worker，并在任意 worker 死亡时记录重启日志。通过在另一个进程中取消某个 worker 来触发重启：
+
+```lua
+-- 在临时进程或 chat 命令中
+process.cancel("<pid-from-supervisor-log>", "100ms")
+```
+
+池收到 `LINK_DOWN` 事件，等待 100 毫秒，然后以相同 id 重新生成该 worker。
 
 ## 下一步
 

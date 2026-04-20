@@ -254,7 +254,7 @@ GC 检查间隔自动派生：`inactivity_timeout / 2.5`。
 
 ## 另见
 
-- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket 端点配置
-- [进程模型](../concepts/process-model.md) - 进程生命周期和消息传递
-- [安全](../system/security.md) - 安全 Actor 和作用域
-- [框架概述](overview.md) - 框架模块用法
+- [WebSocket Relay](http/websocket-relay.md) - HTTP WebSocket 端点配置
+- [进程模型](concepts/process-model.md) - 进程生命周期和消息传递
+- [安全](system/security.md) - 安全 Actor 和作用域
+- [框架概述](framework/overview.md) - 框架模块用法

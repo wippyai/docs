@@ -726,6 +726,6 @@ Error categories: compilation errors, client errors, workflow creation errors, e
 
 ## See Also
 
-- [Agents](agents.md) - Agent framework used by agent nodes
-- [LLM](llm.md) - LLM module
-- [Framework Overview](overview.md) - Framework module usage
+- [Agents](framework/agents.md) - Agent framework used by agent nodes
+- [LLM](framework/llm.md) - LLM module
+- [Framework Overview](framework/overview.md) - Framework module usage

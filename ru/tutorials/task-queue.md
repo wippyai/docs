@@ -1,4 +1,4 @@
-# Task Queue
+# Очередь задач
 
 Создание REST API, которое ставит задачи в очередь для фоновой обработки с сохранением в базе данных.
 
@@ -140,10 +140,8 @@ entries:
     source: file://process_task.lua
     method: main
     modules:
-      - queue
       - sql
       - logger
-      - time
       - json
 
   # Эндпоинты
@@ -228,12 +226,8 @@ local queue = require("queue")
 local uuid = require("uuid")
 
 local function handler()
-    local req, req_err = http.request()
-    local res, res_err = http.response()
-
-    if not req or not res then
-        return nil, "failed to get HTTP context"
-    end
+    local req = http.request()
+    local res = http.response()
 
     local body, parse_err = req:body_json()
     if parse_err then
@@ -258,7 +252,7 @@ local function handler()
 
     local ok, err = queue.publish("app:tasks_queue", task)
     if err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "failed to queue task"})
         return
     end
@@ -282,16 +276,12 @@ local http = require("http")
 local sql = require("sql")
 
 local function handler()
-    local req, req_err = http.request()
-    local res, res_err = http.response()
-
-    if not req or not res then
-        return nil, "failed to get HTTP context"
-    end
+    local req = http.request()
+    local res = http.response()
 
     local db, db_err = sql.get("app:db")
     if db_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "database unavailable"})
         return
     end
@@ -311,7 +301,7 @@ local function handler()
     db:release()
 
     if query_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "query failed"})
         return
     end
@@ -331,28 +321,16 @@ return { handler = handler }
 Создайте `src/process_task.lua`:
 
 ```lua
-local queue = require("queue")
 local sql = require("sql")
 local logger = require("logger")
-local time = require("time")
 local json = require("json")
 
 local function main(task)
-    local msg, msg_err = queue.message()
-    if msg_err then
-        logger:error("failed to get message", {error = tostring(msg_err)})
-        return false
-    end
-
     logger:info("processing task", {
         id = task.id,
         action = task.action
     })
 
-    -- Симуляция работы
-    time.sleep("100ms")
-
-    -- Обработка по типу действия
     local result
     if task.action == "uppercase" then
         result = {output = string.upper(task.data.text or "")}
@@ -367,41 +345,29 @@ local function main(task)
         result = {output = "processed"}
     end
 
-    -- Сохранение в базу данных
     local db, db_err = sql.get("app:db")
     if db_err then
-        logger:error("database unavailable", {error = tostring(db_err)})
-        return false
+        error("database unavailable: " .. tostring(db_err))
     end
 
-    local insert = sql.builder.insert("tasks")
-        :columns("id", "payload", "status", "result", "created_at", "processed_at")
-        :values(
-            task.id,
-            json.encode(task),
-            "completed",
-            json.encode(result),
-            task.created_at,
-            os.time()
-        )
-
-    local _, exec_err = insert:run_with(db):exec()
+    local _, exec_err = db:execute(
+        "INSERT OR REPLACE INTO tasks (id, payload, status, result, created_at, processed_at) VALUES (?, ?, ?, ?, ?, ?)",
+        { task.id, json.encode(task), "completed", json.encode(result), task.created_at, os.time() }
+    )
     db:release()
 
     if exec_err then
-        logger:error("failed to store result", {error = tostring(exec_err)})
-        return false
+        error("failed to store result: " .. tostring(exec_err))
     end
 
     logger:info("task completed", {id = task.id})
-    return true
 end
 
 return { main = main }
 ```
 
 <note>
-Возврат `true` подтверждает сообщение. Возврат `false` приводит к возврату сообщения в очередь или отправке в dead-letter queue.
+Консьюмер автоматически подтверждает сообщение при нормальном завершении обработчика и отклоняет при возникновении ошибки. Вызывайте `msg:ack()` или `msg:nack()` через `queue.message()` только при необходимости явного управления до завершения обработчика.
 </note>
 
 ## Запуск сервиса
@@ -439,18 +405,6 @@ curl "http://localhost:8080/tasks?status=completed"
 2. **Консьюмер очереди** забирает сообщение (2 параллельных воркера)
 3. **Воркер** обрабатывает задачу, записывает результат в SQLite
 4. **GET /tasks** читает завершённые задачи из базы данных
-
-## Продемонстрированные концепции
-
-| Концепция | API | Описание |
-|-----------|-----|----------|
-| REST-эндпоинты | `http.request()`, `http.response()` | Обработка HTTP-запросов |
-| Публикация в очередь | `queue.publish(id, data)` | Отправка асинхронных заданий |
-| Потребление из очереди | `queue.message()` | Доступ к сообщению в обработчике |
-| Запросы к БД | `sql.get()`, `db:query()` | Чтение данных |
-| Query builder | `sql.builder.insert()` | Безопасное построение SQL |
-| Миграции | Процесс, возвращающий 0 | Одноразовые задачи настройки |
-| Параллелизм | `concurrency: 2` | Параллельные воркеры |
 
 ## Следующие шаги
 

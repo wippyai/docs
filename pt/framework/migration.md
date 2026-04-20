@@ -217,6 +217,6 @@ O executor cria uma tabela `wippy_migrations` em cada banco alvo na primeira exe
 
 ## Veja Tambem
 
-- [Driver SQL](../system/database.md) - Configuracao de recurso de banco de dados
-- [Bootloader](bootloader.md) - Ordenacao e hooks do bootloader
-- [Visao Geral do Framework](overview.md) - Uso dos modulos do framework
+- [Driver SQL](system/database.md) - Configuracao de recurso de banco de dados
+- [Bootloader](framework/bootloader.md) - Ordenacao e hooks do bootloader
+- [Visao Geral do Framework](framework/overview.md) - Uso dos modulos do framework

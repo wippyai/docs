@@ -2,6 +2,30 @@
 
 Build a real-time crypto ticker with API key authentication and WebSocket streaming. This tutorial demonstrates token-based security, middleware configuration, and process-based WebSocket handling.
 
+## Overview
+
+- **API key exchange** — POST an API key, receive an HMAC-signed bearer token
+- **Token middleware** — Gates WebSocket upgrades with the token store
+- **WebSocket fan-out** — One ticker process broadcasts to many connection handlers
+- **Static assets** — `http.static` serves the browser client
+- **SQLite** — Stores API keys; memory store backs the token store
+
+## Project Structure
+
+```
+auth-ticker/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── auth_token.lua
+    ├── ws_ticker.lua
+    ├── ws_handler.lua
+    ├── ticker.lua
+    ├── migrate.lua
+    └── public/
+        └── index.html
+```
+
 ## Architecture
 
 ```mermaid
@@ -296,7 +320,12 @@ local function handler()
     )
     db:release()
 
-    if query_err or #rows == 0 then
+    if query_err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({error = "lookup failed"})
+        return
+    end
+    if #rows == 0 then
         res:set_status(http.STATUS.UNAUTHORIZED)
         res:write_json({error = "invalid API key"})
         return
@@ -512,7 +541,7 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    local ticker, ticker_err = time.ticker("10ms")
+    local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
         return 1
@@ -641,18 +670,7 @@ wippy run
 
 Open http://localhost:8081 and enter the demo API key shown in logs.
 
-## Key Points
-
-| Concept | Implementation |
-|---------|----------------|
-| Token signing | `security.token_store` with HMAC key |
-| Token validation | `token_auth` middleware on router |
-| Authorization | `security.policy` attached to token scope |
-| WebSocket lifecycle | `websocket_relay` sends ws.join/ws.leave automatically |
-| Handler cleanup | `process.monitor(handler_pid)` detects crashes |
-| Subscription map | `subscriptions[handler_pid] = client_pid` |
-
-## See Also
+## Next Steps
 
 - [WebSocket Relay](http/websocket-relay.md) - Middleware configuration
 - [Security Module](lua/security/security.md) - Actors, policies, token stores

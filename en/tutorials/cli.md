@@ -239,4 +239,4 @@ end
 
 - [I/O Module](lua/system/io.md) - Complete I/O reference
 - [System Module](lua/system/system.md) - Runtime and system info
-- [Echo Service](echo-service.md) - Multi-process applications
+- [Echo Service](tutorials/echo-service.md) - Multi-process applications

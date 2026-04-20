@@ -331,8 +331,8 @@ data:
 
 ## Veja Também
 
-- [Facade](facade.md) - Facade de iframe do frontend e barra lateral de navegação
-- [Template](../system/template.md) - Motor de templates Jet
-- [Segurança](../system/security.md) - Atores de segurança e controle de acesso
-- [Ambiente](../system/env.md) - Armazenamento de variáveis de ambiente
-- [Visão Geral do Framework](overview.md) - Uso do módulo do framework
+- [Facade](framework/facade.md) - Facade de iframe do frontend e barra lateral de navegação
+- [Template](system/template.md) - Motor de templates Jet
+- [Segurança](system/security.md) - Atores de segurança e controle de acesso
+- [Ambiente](system/env.md) - Armazenamento de variáveis de ambiente
+- [Visão Geral do Framework](framework/overview.md) - Uso do módulo do framework

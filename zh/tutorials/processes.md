@@ -6,6 +6,8 @@
 
 进程提供通过消息传递进行通信的隔离执行单元。每个进程都有自己的收件箱，可以订阅特定的消息主题。
 
+本页为入门指南：每个代码片段单独展示一个 API。如需查看将生成、监控和消息传递整合在一起的完整可运行应用，请参阅 [Echo Service](tutorials/echo-service.md) 教程。
+
 关键概念：
 - 使用 `process.spawn()` 及其变体生成进程
 - 通过主题向 PID 或注册名称发送消息
@@ -161,10 +163,11 @@ end
 local event = result.value
 if event.kind == process.event.EXIT then
     print("Worker exited:", event.from)
-    if event.error then
-        print("Exit error:", event.error)
+    if event.result and event.result.error then
+        print("Exit error:", event.result.error)
+    elseif event.result then
+        print("Return value:", event.result.value)
     end
-    -- 通过 event.result 访问返回值
 end
 ```
 
@@ -373,10 +376,10 @@ local function main()
         if event.kind == process.event.EXIT then
             local worker = workers[event.from]
             if worker then
-                if event.error then
-                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                if event.result and event.result.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.result.error)
                 else
-                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                    print("Worker " .. worker.task_id .. " completed:", event.result and event.result.value)
                 end
                 completed = completed + 1
             end
@@ -408,37 +411,7 @@ end
 return { main = main }
 ```
 
-## 总结
-
-进程生成：
-- `process.spawn()` - 基本生成，返回 PID
-- `process.spawn_monitored()` - 带自动监控的生成
-- `process.spawn_linked()` - 带生命周期耦合的生成
-- `process.pid()` - 获取当前进程 PID
-
-消息传递：
-- `process.send(pid, topic, payload)` - 向 PID 发送消息
-- `process.listen(topic)` - 订阅主题，接收负载
-- `process.listen(topic, { message = true })` - 接收带 `:from()`、`:payload()`、`:topic()` 的完整消息
-- `process.inbox()` - 接收不匹配监听器的消息
-
-监控：
-- `process.events()` - EXIT 和 LINK_DOWN 事件的通道
-- `process.monitor(pid)` - 监控现有进程
-- `process.unmonitor(pid)` - 停止监控
-
-链接：
-- `process.link(pid)` - 链接到进程
-- `process.unlink(pid)` - 取消与进程的链接
-- `process.set_options({ trap_links = true })` - 将 LINK_DOWN 作为事件接收而不是崩溃
-- `process.get_options()` - 获取当前进程选项
-
-注册表：
-- `process.registry.register(name)` - 为当前进程注册名称
-- `process.registry.lookup(name)` - 按名称查找 PID
-- `process.registry.unregister(name)` - 移除名称注册
-
-## 另请参阅
+## 下一步
 
 - [进程模块参考](lua/core/process.md) - 完整 API 文档
 - [通道](tutorials/channels.md) - 消息处理的通道操作

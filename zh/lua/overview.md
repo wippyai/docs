@@ -75,14 +75,17 @@ end
 
 ## 全局变量
 
-这些总是可用的，无需 require：
+这些始终可用，无需 `require`，也不需要列在 `modules:` 中：
 
-- `process` — 进程管理和消息传递
+- `process` — 启动、发送消息、监控和链接进程
 - `channel` — Go 风格的通道
-- `os` — 时间和系统函数
-- `coroutine` — 轻量级并发
+- `payload` — 记录的输入 payload
+- `print`、`subscribe`、`unsubscribe` — 日志与发布/订阅
+- `os`、`table`、`math`、`string`、`coroutine`、`errors` — 标准库
 
 ## 模块
+
+其他一切通过 `require()` 加载，且必须出现在记录的 `modules:` 允许列表中：
 
 ```lua
 local json = require("json")

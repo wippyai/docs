@@ -331,8 +331,8 @@ data:
 
 ## 另见
 
-- [Facade](facade.md) - 前端 iframe 外观和导航侧边栏
-- [Template](../system/template.md) - Jet 模板引擎
-- [Security](../system/security.md) - 安全 Actor 和访问控制
-- [Environment](../system/env.md) - 环境变量存储
-- [框架概述](overview.md) - 框架模块用法
+- [Facade](framework/facade.md) - 前端 iframe 外观和导航侧边栏
+- [Template](system/template.md) - Jet 模板引擎
+- [Security](system/security.md) - 安全 Actor 和访问控制
+- [Environment](system/env.md) - 环境变量存储
+- [框架概述](framework/overview.md) - 框架模块用法

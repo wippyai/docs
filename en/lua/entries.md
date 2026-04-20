@@ -10,6 +10,9 @@ Configuration for Lua-based entries: functions, processes, workflows, and librar
 | `process.lua` | Long-running actor with state |
 | `workflow.lua` | Durable workflow (Temporal) |
 | `library.lua` | Shared code imported by other entries |
+| `module.lua` | Module surface (multi-method library) |
+
+Each kind has a precompiled bytecode counterpart (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) produced by `wippy pack --bytecode`. Authors write `.lua` entries; the bytecode kinds are emitted automatically when packing.
 
 ## Common Fields
 
@@ -20,7 +23,7 @@ All Lua entries share these fields:
 | `name` | yes | Unique name within namespace |
 | `kind` | yes | One of the Lua kinds above |
 | `source` | yes | Lua file path (`file://path.lua`) |
-| `method` | yes | Function to export |
+| `method` | function/process/workflow | Function to export (libraries don't use it) |
 | `modules` | no | Allowed modules for `require()` |
 | `imports` | no | Other entries as local modules |
 | `meta` | no | Searchable metadata |
@@ -52,7 +55,6 @@ Long-running actor that maintains state across messages. Communicates via messag
   method: main
   modules:
     - process
-    - channel
     - sql
 ```
 
@@ -95,7 +97,6 @@ Shared code that can be imported by other entries.
 - name: helpers
   kind: library.lua
   source: file://helpers.lua
-  method: main
   modules:
     - json
     - base64
@@ -129,8 +130,9 @@ modules:
   - json
   - sql
   - process
-  - channel
 ```
+
+`channel`, `print`, `subscribe`, and `unsubscribe` are loaded as Lua globals — they don't need to appear in `modules:`.
 
 Only listed modules are available. This provides:
 - Security: Prevent access to system modules
@@ -161,11 +163,26 @@ Configure execution pool for functions:
   source: file://handler.lua
   method: main
   pool:
-    type: inline    # Run in caller's context
+    type: adaptive    # default
+    size: 4           # initial workers
+    max_size: 16      # cap for elastic pools
 ```
 
-Pool types:
-- `inline` - Execute in caller's context (default for HTTP handlers)
+| Field | Pools | Description |
+|-------|-------|-------------|
+| `type` | all | Scheduler implementation (see table below) |
+| `size` | static, lazy, adaptive | Initial worker count |
+| `workers` | engine v2 | Worker thread count |
+| `buffer` | static, adaptive | Task queue capacity (default: `workers * 64`) |
+| `warm_start` | adaptive | Precompile entries at startup |
+| `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16) |
+
+| Type | Behavior |
+|------|----------|
+| `inline` | Synchronous execution in caller's goroutine. Lowest latency, no isolation between calls. |
+| `lazy` | Zero idle workers, spawn on demand, tear down when idle. |
+| `static` | Fixed-size channel-based pool. Predictable under steady load. |
+| `adaptive` | Auto-scaling pool — grows under load, shrinks when idle. Default. |
 
 ## Metadata
 

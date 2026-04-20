@@ -6,6 +6,8 @@
 
 Процессы предоставляют изолированные единицы выполнения, которые взаимодействуют через передачу сообщений. Каждый процесс имеет собственный почтовый ящик и может подписываться на конкретные темы сообщений.
 
+Эта страница — введение: каждый сниппет демонстрирует один API изолированно. Полное рабочее приложение, связывающее порождение, мониторинг и обмен сообщениями воедино, см. в руководстве [Echo Service](tutorials/echo-service.md).
+
 Основные концепции:
 - Создание процессов с помощью `process.spawn()` и его вариантов
 - Отправка сообщений по PID или зарегистрированным именам через темы
@@ -161,10 +163,11 @@ end
 local event = result.value
 if event.kind == process.event.EXIT then
     print("Worker exited:", event.from)
-    if event.error then
-        print("Exit error:", event.error)
+    if event.result and event.result.error then
+        print("Exit error:", event.result.error)
+    elseif event.result then
+        print("Return value:", event.result.value)
     end
-    -- Access return value via event.result
 end
 ```
 
@@ -373,10 +376,10 @@ local function main()
         if event.kind == process.event.EXIT then
             local worker = workers[event.from]
             if worker then
-                if event.error then
-                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                if event.result and event.result.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.result.error)
                 else
-                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                    print("Worker " .. worker.task_id .. " completed:", event.result and event.result.value)
                 end
                 completed = completed + 1
             end
@@ -408,37 +411,7 @@ end
 return { main = main }
 ```
 
-## Сводка
-
-Создание процессов:
-- `process.spawn()` - Базовое создание, возвращает PID
-- `process.spawn_monitored()` - Создание с автоматическим мониторингом
-- `process.spawn_linked()` - Создание со связыванием жизненных циклов
-- `process.pid()` - Получить PID текущего процесса
-
-Обмен сообщениями:
-- `process.send(pid, topic, payload)` - Отправить сообщение на PID
-- `process.listen(topic)` - Подписаться на тему, получать полезную нагрузку
-- `process.listen(topic, { message = true })` - Получать полное сообщение с `:from()`, `:payload()`, `:topic()`
-- `process.inbox()` - Получать сообщения, не соответствующие слушателям
-
-Мониторинг:
-- `process.events()` - Канал для событий EXIT и LINK_DOWN
-- `process.monitor(pid)` - Мониторить существующий процесс
-- `process.unmonitor(pid)` - Прекратить мониторинг
-
-Связывание:
-- `process.link(pid)` - Связать с процессом
-- `process.unlink(pid)` - Отвязать от процесса
-- `process.set_options({ trap_links = true })` - Получать LINK_DOWN как событие вместо падения
-- `process.get_options()` - Получить текущие параметры процесса
-
-Реестр:
-- `process.registry.register(name)` - Зарегистрировать имя для текущего процесса
-- `process.registry.lookup(name)` - Найти PID по имени
-- `process.registry.unregister(name)` - Удалить регистрацию имени
-
-## Смотрите также
+## Следующие шаги
 
 - [Справочник модуля процессов](lua/core/process.md) - Полная документация API
-- [Каналы](channels.md) - Операции с каналами для обработки сообщений
+- [Каналы](tutorials/channels.md) - Операции с каналами для обработки сообщений

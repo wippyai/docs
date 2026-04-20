@@ -153,6 +153,6 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 ## 참고 항목
 
-- [LLM](llm.md) - 원시 임베딩 생성을 위한 `llm.embed(...)`
-- [마이그레이션](migration.md) - 테이블을 프로비저닝하는 마이그레이션 러너
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [LLM](framework/llm.md) - 원시 임베딩 생성을 위한 `llm.embed(...)`
+- [마이그레이션](framework/migration.md) - 테이블을 프로비저닝하는 마이그레이션 러너
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

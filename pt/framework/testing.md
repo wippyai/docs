@@ -386,6 +386,6 @@ entries:
 
 ## Veja Tambem
 
-- [Visao Geral do Framework](overview.md) - Uso de modulos do framework
+- [Visao Geral do Framework](framework/overview.md) - Uso de modulos do framework
 - [Referencia CLI](guides/cli.md) - Comandos CLI
 - [Funcoes](concepts/functions.md) - Registro de funcoes

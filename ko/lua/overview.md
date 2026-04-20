@@ -75,14 +75,17 @@ end
 
 ## 전역
 
-require 없이 항상 사용 가능:
+`require` 없이 항상 사용 가능하며, `modules:`에 나열할 필요가 없습니다:
 
-- `process` - 프로세스 관리 및 메시징
+- `process` - 프로세스 스폰, 메시지 전송, 모니터링 및 연결
 - `channel` - Go 스타일 채널
-- `os` - 시간 및 시스템 함수
-- `coroutine` - 경량 동시성
+- `payload` - 엔트리의 입력 payload
+- `print`, `subscribe`, `unsubscribe` - 로깅 및 pub/sub
+- `os`, `table`, `math`, `string`, `coroutine`, `errors` - 표준 라이브러리
 
 ## 모듈
+
+그 외 모든 것은 `require()`로 로드되며 엔트리의 `modules:` 허용 목록에 있어야 합니다:
 
 ```lua
 local json = require("json")

@@ -217,6 +217,6 @@ Der Runner erzeugt bei der ersten Ausfuehrung in jeder Zieldatenbank eine Tabell
 
 ## Siehe auch
 
-- [SQL-Treiber](../system/database.md) - Konfiguration der Datenbank-Ressource
-- [Bootloader](bootloader.md) - Bootloader-Reihenfolge und Hooks
-- [Framework-Uebersicht](overview.md) - Nutzung der Framework-Module
+- [SQL-Treiber](system/database.md) - Konfiguration der Datenbank-Ressource
+- [Bootloader](framework/bootloader.md) - Bootloader-Reihenfolge und Hooks
+- [Framework-Uebersicht](framework/overview.md) - Nutzung der Framework-Module

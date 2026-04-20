@@ -340,17 +340,6 @@ return { main = main }
 
 전체 응답을 기다리는 대신 토큰 단위로 응답을 스트리밍합니다.
 
-### 모듈 업데이트
-
-프로세스 모듈에 `channel`을 추가합니다:
-
-```yaml
-    modules:
-      - io
-      - process
-      - channel
-```
-
 ### 스트리밍 구현
 
 `src/chat.lua`를 업데이트합니다:
@@ -580,7 +569,6 @@ return { handler = handler }
       - io
       - json
       - process
-      - channel
       - funcs
 ```
 
@@ -768,7 +756,7 @@ Bye!
 
 ## 다음 단계
 
-- [LLM 모듈](../framework/llm.md) - 전체 LLM API 레퍼런스
-- [에이전트 모듈](../framework/agents.md) - 에이전트 프레임워크 레퍼런스
-- [CLI 애플리케이션](cli.md) - 터미널 I/O 패턴
-- [프로세스](processes.md) - 프로세스 모델과 통신
+- [LLM 모듈](framework/llm.md) - 전체 LLM API 레퍼런스
+- [에이전트 모듈](framework/agents.md) - 에이전트 프레임워크 레퍼런스
+- [CLI 애플리케이션](tutorials/cli.md) - 터미널 I/O 패턴
+- [프로세스](tutorials/processes.md) - 프로세스 모델과 통신

@@ -76,7 +76,6 @@ entries:
       - io
       - process
       - time
-      - channel
 
   - name: relay
     kind: process.lua
@@ -85,7 +84,6 @@ entries:
     modules:
       - process
       - logger
-      - channel
       - time
 
   - name: relay-service
@@ -222,11 +220,7 @@ Workers receive arguments directly and send responses to the sender.
 Create `src/worker.lua`:
 
 ```lua
-local time = require("time")
-
 local function main(sender_pid, data)
-    time.sleep("100ms")
-
     local response = {
         data = string.upper(data),
         worker = process.pid()
@@ -259,8 +253,16 @@ local function cyan(s) return "\027[36m" .. s .. reset end
 local function main()
     local inbox = process.inbox()
 
-    -- Wait for relay to register
-    time.sleep("200ms")
+    -- Wait for relay to register its name
+    local deadline = time.after("5s")
+    while not process.registry.lookup("relay") do
+        local tick = time.after("50ms")
+        local r = channel.select { deadline:case_receive(), tick:case_receive() }
+        if r.channel == deadline then
+            io.print("relay not ready")
+            return 1
+        end
+    end
 
     io.print(cyan("Echo Client"))
     io.print(dim("Type messages to echo. Ctrl+C to exit.\n"))
@@ -347,19 +349,6 @@ Type messages to echo. Ctrl+C to exit.
   HELLO WORLD
   from worker: {app:processes|0x00004}
 ```
-
-## Concepts Summary
-
-| Concept | API |
-|---------|-----|
-| Process spawning | `process.spawn_monitored(entry, host, ...)` |
-| Message passing | `process.send(dest, topic, data)` |
-| Inbox | `process.inbox()` |
-| Events | `process.events()` |
-| Registration | `process.registry.register(name)` |
-| Channel select | `channel.select {...}` |
-| Timeout | `time.after(duration)` |
-| Coroutines | `coroutine.spawn(fn)` |
 
 ## Next Steps
 

@@ -6,6 +6,8 @@
 
 프로세스는 메시지 전달을 통해 통신하는 격리된 실행 단위를 제공합니다. 각 프로세스는 자체 인박스를 가지며 특정 메시지 토픽을 구독할 수 있습니다.
 
+이 페이지는 입문서입니다: 각 코드 조각은 하나의 API를 독립적으로 보여줍니다. 스폰, 모니터링, 메시징을 함께 연결하는 완전히 실행 가능한 애플리케이션은 [에코 서비스](tutorials/echo-service.md) 튜토리얼을 참조하세요.
+
 주요 개념:
 - `process.spawn()` 및 변형으로 프로세스 스폰
 - 토픽을 통해 PID 또는 등록된 이름으로 메시지 전송
@@ -161,10 +163,11 @@ end
 local event = result.value
 if event.kind == process.event.EXIT then
     print("Worker exited:", event.from)
-    if event.error then
-        print("Exit error:", event.error)
+    if event.result and event.result.error then
+        print("Exit error:", event.result.error)
+    elseif event.result then
+        print("Return value:", event.result.value)
     end
-    -- event.result를 통해 반환 값 접근
 end
 ```
 
@@ -373,10 +376,10 @@ local function main()
         if event.kind == process.event.EXIT then
             local worker = workers[event.from]
             if worker then
-                if event.error then
-                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                if event.result and event.result.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.result.error)
                 else
-                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                    print("Worker " .. worker.task_id .. " completed:", event.result and event.result.value)
                 end
                 completed = completed + 1
             end
@@ -408,37 +411,7 @@ end
 return { main = main }
 ```
 
-## 요약
-
-프로세스 스폰:
-- `process.spawn()` - 기본 스폰, PID 반환
-- `process.spawn_monitored()` - 자동 모니터링과 함께 스폰
-- `process.spawn_linked()` - 라이프사이클 연결과 함께 스폰
-- `process.pid()` - 현재 프로세스 PID 가져오기
-
-메시징:
-- `process.send(pid, topic, payload)` - PID로 메시지 전송
-- `process.listen(topic)` - 토픽 구독, 페이로드 수신
-- `process.listen(topic, { message = true })` - `:from()`, `:payload()`, `:topic()`이 있는 전체 메시지 수신
-- `process.inbox()` - 리스너와 매칭되지 않는 메시지 수신
-
-모니터링:
-- `process.events()` - EXIT 및 LINK_DOWN 이벤트를 위한 채널
-- `process.monitor(pid)` - 기존 프로세스 모니터링
-- `process.unmonitor(pid)` - 모니터링 중지
-
-연결:
-- `process.link(pid)` - 프로세스에 연결
-- `process.unlink(pid)` - 프로세스 연결 해제
-- `process.set_options({ trap_links = true })` - 크래시 대신 LINK_DOWN을 이벤트로 수신
-- `process.get_options()` - 현재 프로세스 옵션 가져오기
-
-레지스트리:
-- `process.registry.register(name)` - 현재 프로세스의 이름 등록
-- `process.registry.lookup(name)` - 이름으로 PID 찾기
-- `process.registry.unregister(name)` - 이름 등록 제거
-
-## 참고
+## 다음 단계
 
 - [프로세스 모듈 참조](lua/core/process.md) - 전체 API 문서
-- [채널](channels.md) - 메시지 처리를 위한 채널 작업
+- [채널](tutorials/channels.md) - 메시지 처리를 위한 채널 작업

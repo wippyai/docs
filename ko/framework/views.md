@@ -331,8 +331,8 @@ data:
 
 ## 참고
 
-- [Facade](facade.md) - 프론트엔드 iframe 파사드 및 내비게이션 사이드바
-- [Template](../system/template.md) - Jet 템플릿 엔진
-- [보안](../system/security.md) - 보안 액터 및 접근 제어
-- [환경](../system/env.md) - 환경 변수 스토리지
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [Facade](framework/facade.md) - 프론트엔드 iframe 파사드 및 내비게이션 사이드바
+- [Template](system/template.md) - Jet 템플릿 엔진
+- [보안](system/security.md) - 보안 액터 및 접근 제어
+- [환경](system/env.md) - 환경 변수 스토리지
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

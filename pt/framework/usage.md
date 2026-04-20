@@ -165,6 +165,6 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
 
 ## Veja Tambem
 
-- [LLM](llm.md) - Geracao LLM e o contrato `usage_tracker`
-- [Migracoes](migration.md) - Executor de migracoes que cria o schema
-- [Visao Geral do Framework](overview.md) - Uso dos modulos do framework
+- [LLM](framework/llm.md) - Geracao LLM e o contrato `usage_tracker`
+- [Migracoes](framework/migration.md) - Executor de migracoes que cria o schema
+- [Visao Geral do Framework](framework/overview.md) - Uso dos modulos do framework

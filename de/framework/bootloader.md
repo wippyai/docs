@@ -136,7 +136,7 @@ Generiert einen 256-Bit `ENCRYPTION_KEY` und speichert ihn ueber den konfigurier
 
 ### Migrations-Bootloader (Order `20`)
 
-Bereitgestellt von `wippy/migration`. Entdeckt jeden Eintrag mit `meta.type: migration`, gruppiert sie nach `meta.target_db` und wendet die ausstehenden an. Siehe [Migrationen](migration.md).
+Bereitgestellt von `wippy/migration`. Entdeckt jeden Eintrag mit `meta.type: migration`, gruppiert sie nach `meta.target_db` und wendet die ausstehenden an. Siehe [Migrationen](framework/migration.md).
 
 ## Boot-Status beobachten
 
@@ -148,6 +148,6 @@ Halte Bootloader idempotent. Sie koennen nach einem Crash-Restart erneut laufen,
 
 ## Siehe Auch
 
-- [Migrationen](migration.md) - Migrations-Bootloader und DSL
-- [Supervision](../guides/supervision.md) - Service-Lebenszyklus und Restart-Policy
-- [Framework-Uebersicht](overview.md) - Verwendung von Framework-Modulen
+- [Migrationen](framework/migration.md) - Migrations-Bootloader und DSL
+- [Supervision](guides/supervision.md) - Service-Lebenszyklus und Restart-Policy
+- [Framework-Uebersicht](framework/overview.md) - Verwendung von Framework-Modulen

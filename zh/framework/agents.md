@@ -609,6 +609,6 @@ return {
 
 ## 另请参阅
 
-- [LLM](llm.md) - 底层 LLM 模块
-- [构建 LLM 智能体](../tutorials/llm-agent.md) - 分步教程
-- [框架概述](overview.md) - 框架模块用法
+- [LLM](framework/llm.md) - 底层 LLM 模块
+- [构建 LLM 智能体](tutorials/llm-agent.md) - 分步教程
+- [框架概述](framework/overview.md) - 框架模块用法

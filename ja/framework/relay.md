@@ -254,7 +254,7 @@ GC のチェック間隔は自動的に導出されます：`inactivity_timeout 
 
 ## 関連項目
 
-- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket エンドポイント設定
-- [プロセスモデル](../concepts/process-model.md) - プロセスのライフサイクルとメッセージング
-- [セキュリティ](../system/security.md) - セキュリティアクターとスコープ
-- [フレームワーク概要](overview.md) - フレームワークモジュールの利用
+- [WebSocket Relay](http/websocket-relay.md) - HTTP WebSocket エンドポイント設定
+- [プロセスモデル](concepts/process-model.md) - プロセスのライフサイクルとメッセージング
+- [セキュリティ](system/security.md) - セキュリティアクターとスコープ
+- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの利用

@@ -198,6 +198,6 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 
 ## See Also
 
-- [Views](views.md) - Page and component system
-- [HTTP Server](../http/server.md) - HTTP service configuration
-- [Framework Overview](overview.md) - Framework module usage
+- [Views](framework/views.md) - Page and component system
+- [HTTP Server](http/server.md) - HTTP service configuration
+- [Framework Overview](framework/overview.md) - Framework module usage

@@ -1,12 +1,12 @@
-# Rust auf Wippy ausfuehren
+# Rust auf Wippy ausführen
 
-Erstellen Sie eine Rust-WebAssembly-Komponente und fuehren Sie sie als Funktionen, CLI-Befehle und HTTP-Endpunkte aus.
+Erstellen Sie eine Rust-WebAssembly-Komponente und führen Sie sie als Funktionen, CLI-Befehle und HTTP-Endpunkte aus.
 
 ## Was wir bauen
 
 Eine Rust-Komponente mit vier exportierten Funktionen:
 
-- **greet** - Nimmt einen Namen entgegen, gibt eine Begruessung zurueck
+- **greet** - Nimmt einen Namen entgegen, gibt eine Begrüßung zurück
 - **add** - Addiert zwei Ganzzahlen
 - **fibonacci** - Berechnet die n-te Fibonacci-Zahl
 - **list-files** - Listet Dateien in einem gemounteten Verzeichnis auf
@@ -179,7 +179,7 @@ mkdir -p ../app/src/demo/wasm
 cp target/wasm32-wasip1/release/demo.wasm ../app/src/demo/wasm/demo_component.wasm
 ```
 
-SHA-256-Hash fuer die Integritaetspruefung ermitteln:
+SHA-256-Hash für die Integritätsprüfung ermitteln:
 
 ```bash
 sha256sum ../app/src/demo/wasm/demo_component.wasm
@@ -208,7 +208,7 @@ entries:
     kind: http.router
     meta:
       comment: Public API router
-    server: gateway
+      server: demo:gateway
     prefix: /
 
   - name: processes
@@ -274,12 +274,12 @@ entries:
 Wichtige Punkte:
 - Ein einzelner `fs.directory`-Eintrag stellt das WASM-Binary bereit
 - Mehrere Funktionen referenzieren dasselbe Binary mit unterschiedlichen `method`-Werten
-- Das `hash`-Feld verifiziert die Integritaet des Binaries beim Laden
+- Das `hash`-Feld verifiziert die Integrität des Binaries beim Laden
 - `inline`-Pool erstellt eine neue Instanz pro Aufruf
 
 ### Funktionen mit WASI
 
-Die `list-files`-Funktion greift auf das Dateisystem zu und benoetigt daher WASI-Imports:
+Die `list-files`-Funktion greift auf das Dateisystem zu und benötigt daher WASI-Imports:
 
 ```yaml
   - name: list_files_function
@@ -348,11 +348,11 @@ entries:
           guest: /data
 ```
 
-Der `meta.command`-Block registriert den Prozess als benannten CLI-Befehl. Der `greet`-Befehl benoetigt keine WASI-Imports, da er nur String-Operationen verwendet. Der `ls`-Befehl benoetigt Dateisystemzugriff.
+Der `meta.command`-Block registriert den Prozess als benannten CLI-Befehl. Der `greet`-Befehl benötigt keine WASI-Imports, da er nur String-Operationen verwendet. Der `ls`-Befehl benötigt Dateisystemzugriff.
 
 ### HTTP-Endpunkt
 
-Fuegen Sie zu `app/src/demo/wasm/_index.yaml` hinzu:
+Fügen Sie zu `app/src/demo/wasm/_index.yaml` hinzu:
 
 ```yaml
   - name: http_greet
@@ -379,14 +379,14 @@ Fuegen Sie zu `app/src/demo/wasm/_index.yaml` hinzu:
 
 Der `wasi-http`-Transport bildet HTTP-Request/Response-Kontext auf WASM-Argumente und -Ergebnisse ab.
 
-## Schritt 5: Initialisieren und ausfuehren
+## Schritt 5: Initialisieren und ausführen
 
 ```bash
 cd app
 wippy init
 ```
 
-### CLI-Befehle ausfuehren
+### CLI-Befehle ausführen
 
 ```bash
 # List available commands
@@ -409,7 +409,7 @@ wippy run greet
 wippy run ls
 ```
 
-### Als Dienst ausfuehren
+### Als Dienst ausführen
 
 ```bash
 wippy run
@@ -438,24 +438,10 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 -- fib: 55
 ```
 
-## Drei Wege, WASM bereitzustellen
+## Nächste Schritte
 
-| Ansatz | Entry Kind | Anwendungsfall |
-|--------|-----------|----------|
-| Function | `function.wasm` | Aufruf aus Lua oder anderem WASM via `funcs.call()` |
-| CLI Command | `process.wasm` + `meta.command` | Terminal-Befehle via `wippy run <name>` |
-| HTTP Endpoint | `function.wasm` + `http.endpoint` | REST-API via `wasi-http`-Transport |
-
-Alle drei verwenden dasselbe kompilierte `.wasm`-Binary und referenzieren dieselben Methoden.
-
-## Fuer andere Sprachen bauen
-
-Jede Sprache, die in das WebAssembly Component Model kompiliert, funktioniert mit Wippy. Definieren Sie Ihre WIT-Schnittstelle, implementieren Sie die Exports, kompilieren Sie zu `.wasm` und konfigurieren Sie Eintraege in `_index.yaml`.
-
-## Siehe auch
-
-- [WASM-Uebersicht](wasm/overview.md) - WebAssembly-Runtime-Uebersicht
+- [WASM-Übersicht](wasm/overview.md) - WebAssembly-Runtime-Übersicht
 - [WASM-Funktionen](wasm/functions.md) - Funktionskonfigurations-Referenz
 - [WASM-Prozesse](wasm/processes.md) - Prozesskonfigurations-Referenz
-- [Host-Funktionen](wasm/hosts.md) - Verfuegbare WASI-Imports
+- [Host-Funktionen](wasm/hosts.md) - Verfügbare WASI-Imports
 - [CLI-Referenz](guides/cli.md) - CLI-Befehlsdokumentation

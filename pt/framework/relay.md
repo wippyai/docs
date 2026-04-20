@@ -254,7 +254,7 @@ O hub central executa sob seu próprio grupo de segurança (`wippy.relay.securit
 
 ## Veja Também
 
-- [WebSocket Relay](../http/websocket-relay.md) - Configuração de endpoint WebSocket HTTP
-- [Modelo de Processos](../concepts/process-model.md) - Ciclo de vida e mensageria de processos
-- [Segurança](../system/security.md) - Atores e escopos de segurança
-- [Visão Geral do Framework](overview.md) - Uso do módulo do framework
+- [WebSocket Relay](http/websocket-relay.md) - Configuração de endpoint WebSocket HTTP
+- [Modelo de Processos](concepts/process-model.md) - Ciclo de vida e mensageria de processos
+- [Segurança](system/security.md) - Atores e escopos de segurança
+- [Visão Geral do Framework](framework/overview.md) - Uso do módulo do framework

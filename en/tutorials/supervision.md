@@ -446,8 +446,8 @@ local function chain_node_main(depth)
         end
     end
 
-    -- Wait for parent to die (triggers our death via LINK_DOWN)
-    time.sleep("5s")
+    -- Block until parent death kills us via LINK_DOWN (default trap_links=false)
+    process.inbox():receive()
 end
 ```
 
@@ -649,23 +649,6 @@ Workers setting:
 - Typically set to number of CPU cores
 - All processes share this thread pool
 
-## Key Concepts
-
-**Monitoring** (one-way observation):
-- Use `process.spawn_monitored()` or `process.monitor()`
-- Receive EXIT events when monitored process terminates
-- Parent continues running after child exits
-
-**Linking** (bidirectional fate-sharing):
-- Use `process.spawn_linked()` or `process.link()`
-- By default: if either process fails, both terminate
-- With `trap_links=true`: receive LINK_DOWN events instead
-
-**Cancellation**:
-- Use `process.cancel(pid, timeout)` for graceful shutdown
-- Worker receives CANCEL event via `process.events()`
-- Has timeout duration to cleanup before force termination
-
 ## Event Types
 
 | Event | Triggered By | Required Setup |
@@ -674,8 +657,26 @@ Workers setting:
 | `LINK_DOWN` | Linked process fails | `spawn_linked()` or `link()` with `trap_links=true` |
 | `CANCEL` | `process.cancel()` called | None (always delivered) |
 
+## Running the Supervisor Pool
+
+Drop the pool files into the structure shown in [Configuration](#configuration), then:
+
+```bash
+wippy init
+wippy run
+```
+
+The supervisor autostarts, spawns four workers, and logs restarts when any of them dies. Trigger a restart by killing a worker from another process:
+
+```lua
+-- in an ad-hoc process or chat command
+process.cancel("<pid-from-supervisor-log>", "100ms")
+```
+
+The pool receives `LINK_DOWN`, waits 100 ms, and respawns the worker under the same id.
+
 ## Next Steps
 
-- [Processes](processes.md) - Process fundamentals
-- [Channels](channels.md) - Message passing patterns
+- [Processes](tutorials/processes.md) - Process fundamentals
+- [Channels](tutorials/channels.md) - Message passing patterns
 - [Process Module](lua/core/process.md) - API reference

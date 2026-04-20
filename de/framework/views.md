@@ -331,8 +331,8 @@ data:
 
 ## Siehe auch
 
-- [Facade](facade.md) - Frontend-iframe-Facade und Navigations-Sidebar
-- [Template](../system/template.md) - Jet-Template-Engine
-- [Sicherheit](../system/security.md) - Sicherheitsaktoren und Zugriffskontrolle
-- [Umgebung](../system/env.md) - Speicherung von Umgebungsvariablen
-- [Framework-Übersicht](overview.md) - Verwendung des Framework-Moduls
+- [Facade](framework/facade.md) - Frontend-iframe-Facade und Navigations-Sidebar
+- [Template](system/template.md) - Jet-Template-Engine
+- [Sicherheit](system/security.md) - Sicherheitsaktoren und Zugriffskontrolle
+- [Umgebung](system/env.md) - Speicherung von Umgebungsvariablen
+- [Framework-Übersicht](framework/overview.md) - Verwendung des Framework-Moduls

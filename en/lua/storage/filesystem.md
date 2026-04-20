@@ -149,6 +149,7 @@ When using `vol:open()` for streaming:
 | `read(size?)` | Read bytes (default: 4096) |
 | `write(data)` | Write string data |
 | `seek(whence, offset)` | Set position ("set", "cur", "end") |
+| `stat()` | Get file info (same fields as `vol:stat`) |
 | `sync()` | Flush to storage |
 | `close()` | Release file handle |
 | `scanner(split?)` | Create line/word scanner |

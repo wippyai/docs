@@ -239,4 +239,4 @@ end
 
 - [I/Oモジュール](lua/system/io.md) - 完全なI/Oリファレンス
 - [Systemモジュール](lua/system/system.md) - ランタイムとシステム情報
-- [Echoサービス](echo-service.md) - マルチプロセスアプリケーション
+- [Echoサービス](tutorials/echo-service.md) - マルチプロセスアプリケーション

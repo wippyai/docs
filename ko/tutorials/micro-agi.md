@@ -161,7 +161,7 @@ entries:
 
 이 정책들은 `create_tool`에 의해 명명된 스코프(`app:agent_security`)로 로드되며, 모든 레지스트리 쓰기 전에 평가됩니다. 에이전트는 `app.generated:*`에 쓸 수 있지만(거부 정책이 일치하지 않음), `app:*`(코어 엔트리, 모델, 에이전트 정의) 또는 `app.tools:*`(내장 도구)에는 쓸 수 없습니다.
 
-정책 평가에 대한 자세한 내용은 [보안 모델](../system/security.md)을 참조하세요.
+정책 평가에 대한 자세한 내용은 [보안 모델](system/security.md)을 참조하세요.
 
 ### 모델
 
@@ -257,7 +257,7 @@ GPT-5.1은 추론과 도구 사용을 처리합니다. GPT-4.1 Nano는 25배 낮
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, channel, funcs, registry, time, security]
+    modules: [io, json, process, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
@@ -448,7 +448,7 @@ end
 
 ### 스트리밍
 
-[LLM Agent 튜토리얼](llm-agent.md)과 동일한 코루틴 + 채널 패턴을 사용합니다:
+[LLM Agent 튜토리얼](tutorials/llm-agent.md)과 동일한 코루틴 + 채널 패턴을 사용합니다:
 
 ```lua
 coroutine.spawn(function()
@@ -593,8 +593,8 @@ Your IP is 203.0.113.42.
 
 ## 다음 단계
 
-- [LLM Agent](llm-agent.md) — 처음부터 기본 에이전트 구축
-- [에이전트 모듈](../framework/agents.md) — 에이전트 프레임워크 참조
-- [레지스트리](../concepts/registry.md) — 레지스트리 동작 방식
-- [보안 모델](../system/security.md) — 선언적 보안 정책
-- [엔트리 종류](../guides/entry-kinds.md) — 사용 가능한 엔트리 타입
+- [LLM Agent](tutorials/llm-agent.md) — 처음부터 기본 에이전트 구축
+- [에이전트 모듈](framework/agents.md) — 에이전트 프레임워크 참조
+- [레지스트리](concepts/registry.md) — 레지스트리 동작 방식
+- [보안 모델](system/security.md) — 선언적 보안 정책
+- [엔트리 종류](guides/entry-kinds.md) — 사용 가능한 엔트리 타입

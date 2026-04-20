@@ -1,4 +1,4 @@
-# Echo Service
+# Эхо-сервис
 
 Создание распределённого echo-сервиса, демонстрирующего процессы, каналы, корутины, обмен сообщениями и супервизию.
 
@@ -76,7 +76,6 @@ entries:
       - io
       - process
       - time
-      - channel
 
   - name: relay
     kind: process.lua
@@ -85,7 +84,6 @@ entries:
     modules:
       - process
       - logger
-      - channel
       - time
 
   - name: relay-service
@@ -222,11 +220,7 @@ local worker_pid, err = process.spawn_monitored("app:worker", "app:processes", .
 Создайте `src/worker.lua`:
 
 ```lua
-local time = require("time")
-
 local function main(sender_pid, data)
-    time.sleep("100ms")
-
     local response = {
         data = string.upper(data),
         worker = process.pid()
@@ -259,8 +253,16 @@ local function cyan(s) return "\027[36m" .. s .. reset end
 local function main()
     local inbox = process.inbox()
 
-    -- Ждём регистрации relay
-    time.sleep("200ms")
+    -- Ждём регистрации имени relay
+    local deadline = time.after("5s")
+    while not process.registry.lookup("relay") do
+        local tick = time.after("50ms")
+        local r = channel.select { deadline:case_receive(), tick:case_receive() }
+        if r.channel == deadline then
+            io.print("relay not ready")
+            return 1
+        end
+    end
 
     io.print(cyan("Echo Client"))
     io.print(dim("Type messages to echo. Ctrl+C to exit.\n"))
@@ -347,19 +349,6 @@ Type messages to echo. Ctrl+C to exit.
   HELLO WORLD
   from worker: {app:processes|0x00004}
 ```
-
-## Сводка по концепциям
-
-| Концепция | API |
-|-----------|-----|
-| Порождение процессов | `process.spawn_monitored(entry, host, ...)` |
-| Обмен сообщениями | `process.send(dest, topic, data)` |
-| Inbox | `process.inbox()` |
-| События | `process.events()` |
-| Регистрация | `process.registry.register(name)` |
-| Channel select | `channel.select {...}` |
-| Таймаут | `time.after(duration)` |
-| Корутины | `coroutine.spawn(fn)` |
 
 ## Следующие шаги
 

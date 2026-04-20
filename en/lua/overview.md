@@ -75,14 +75,17 @@ end
 
 ## Globals
 
-These are always available without require:
+These are always available without `require` and don't need to be listed in `modules:`:
 
-- `process` - process management and messaging
+- `process` - spawn, message, monitor, and link processes
 - `channel` - Go-style channels
-- `os` - time and system functions
-- `coroutine` - lightweight concurrency
+- `payload` - the entry's input payload
+- `print`, `subscribe`, `unsubscribe` - logging and pub/sub
+- `os`, `table`, `math`, `string`, `coroutine`, `errors` - standard libraries
 
 ## Modules
+
+Everything else is loaded with `require()` and must appear in the entry's `modules:` allowlist:
 
 ```lua
 local json = require("json")

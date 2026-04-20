@@ -574,6 +574,6 @@ io.print(response.result)
 
 ## See Also
 
-- [Agents](agents.md) - Agent framework with tools, delegates, and memory
-- [Building an LLM Agent](../tutorials/llm-agent.md) - Step-by-step tutorial
-- [Framework Overview](overview.md) - Framework module usage
+- [Agents](framework/agents.md) - Agent framework with tools, delegates, and memory
+- [Building an LLM Agent](tutorials/llm-agent.md) - Step-by-step tutorial
+- [Framework Overview](framework/overview.md) - Framework module usage

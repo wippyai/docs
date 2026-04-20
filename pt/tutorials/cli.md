@@ -239,4 +239,4 @@ end
 
 - [I/O Module](lua/system/io.md) - Referência completa de I/O
 - [System Module](lua/system/system.md) - Informações do runtime e sistema
-- [Echo Service](echo-service.md) - Aplicações multi-processo
+- [Echo Service](tutorials/echo-service.md) - Aplicações multi-processo

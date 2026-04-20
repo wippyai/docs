@@ -153,6 +153,6 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 ## См. также
 
-- [LLM](llm.md) -- `llm.embed(...)` для прямой генерации эмбеддингов
-- [Migrations](migration.md) -- Запуск миграций, создающий таблицу
-- [Обзор фреймворка](overview.md) -- Использование модулей фреймворка
+- [LLM](framework/llm.md) -- `llm.embed(...)` для прямой генерации эмбеддингов
+- [Migrations](framework/migration.md) -- Запуск миграций, создающий таблицу
+- [Обзор фреймворка](framework/overview.md) -- Использование модулей фреймворка

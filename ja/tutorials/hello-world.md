@@ -39,7 +39,7 @@ entries:
   # HTTPサーバー
   - name: gateway
     kind: http.service
-    addr: :8080
+    addr: ":8080"
     lifecycle:
       auto_start: true
 
@@ -47,7 +47,7 @@ entries:
   - name: api
     kind: http.router
     meta:
-      server: gateway
+      server: app:gateway
     prefix: /
 
   # ハンドラ関数
@@ -64,7 +64,7 @@ entries:
     meta:
       router: app:api
     method: GET
-    func: hello
+    func: app:hello
     path: /hello
 ```
 
@@ -149,7 +149,7 @@ curl http://localhost:8080/hello
 
 ## 次のステップ
 
-- [Echoサービス](echo-service.md) - リクエストパラメータの処理
-- [タスクキュー](task-queue.md) - バックグラウンド処理付きREST API
+- [Echoサービス](tutorials/echo-service.md) - リクエストパラメータの処理
+- [タスクキュー](tutorials/task-queue.md) - バックグラウンド処理付きREST API
 - [HTTPルーター](http/router.md) - ルーティングパターン
 

@@ -386,6 +386,6 @@ entries:
 
 ## 참고
 
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
 - [CLI 레퍼런스](guides/cli.md) - CLI 명령
 - [함수](concepts/functions.md) - 함수 레지스트리

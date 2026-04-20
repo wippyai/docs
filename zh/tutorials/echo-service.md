@@ -1,4 +1,4 @@
-# Echo Service
+# Echo 服务
 
 构建一个分布式 echo 服务，演示进程、通道、协程、消息传递和监督。
 
@@ -76,7 +76,6 @@ entries:
       - io
       - process
       - time
-      - channel
 
   - name: relay
     kind: process.lua
@@ -85,7 +84,6 @@ entries:
     modules:
       - process
       - logger
-      - channel
       - time
 
   - name: relay-service
@@ -222,11 +220,7 @@ Worker 直接接收参数并向发送者发送响应。
 创建 `src/worker.lua`：
 
 ```lua
-local time = require("time")
-
 local function main(sender_pid, data)
-    time.sleep("100ms")
-
     local response = {
         data = string.upper(data),
         worker = process.pid()
@@ -259,8 +253,16 @@ local function cyan(s) return "\027[36m" .. s .. reset end
 local function main()
     local inbox = process.inbox()
 
-    -- 等待 relay 注册
-    time.sleep("200ms")
+    -- 等待 relay 注册其名称
+    local deadline = time.after("5s")
+    while not process.registry.lookup("relay") do
+        local tick = time.after("50ms")
+        local r = channel.select { deadline:case_receive(), tick:case_receive() }
+        if r.channel == deadline then
+            io.print("relay not ready")
+            return 1
+        end
+    end
 
     io.print(cyan("Echo Client"))
     io.print(dim("Type messages to echo. Ctrl+C to exit.\n"))
@@ -347,19 +349,6 @@ Type messages to echo. Ctrl+C to exit.
   HELLO WORLD
   from worker: {app:processes|0x00004}
 ```
-
-## 概念总结
-
-| 概念 | API |
-|---------|-----|
-| 进程生成 | `process.spawn_monitored(entry, host, ...)` |
-| 消息传递 | `process.send(dest, topic, data)` |
-| 收件箱 | `process.inbox()` |
-| 事件 | `process.events()` |
-| 注册 | `process.registry.register(name)` |
-| Channel select | `channel.select {...}` |
-| 超时 | `time.after(duration)` |
-| 协程 | `coroutine.spawn(fn)` |
 
 ## 下一步
 

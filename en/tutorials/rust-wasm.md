@@ -438,21 +438,7 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 -- fib: 55
 ```
 
-## Three Ways to Expose WASM
-
-| Approach | Entry Kind | Use Case |
-|----------|-----------|----------|
-| Function | `function.wasm` | Called from Lua or other WASM via `funcs.call()` |
-| CLI Command | `process.wasm` + `meta.command` | Terminal commands via `wippy run <name>` |
-| HTTP Endpoint | `function.wasm` + `http.endpoint` | REST API via `wasi-http` transport |
-
-All three use the same compiled `.wasm` binary and reference the same methods.
-
-## Building for Other Languages
-
-Any language that compiles to the WebAssembly Component Model works with Wippy. Define your WIT interface, implement the exports, compile to `.wasm`, and configure entries in `_index.yaml`.
-
-## See Also
+## Next Steps
 
 - [WASM Overview](wasm/overview.md) - WebAssembly runtime overview
 - [WASM Functions](wasm/functions.md) - Function configuration reference

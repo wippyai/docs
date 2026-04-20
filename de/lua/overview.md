@@ -75,14 +75,17 @@ end
 
 ## Globale Variablen
 
-Diese sind immer ohne require verfügbar:
+Diese sind immer ohne `require` verfügbar und müssen nicht in `modules:` aufgeführt werden:
 
-- `process` - Prozessverwaltung und Nachrichtenaustausch
+- `process` - Prozesse spawnen, Nachrichten senden, überwachen und verknüpfen
 - `channel` - Go-ähnliche Channels
-- `os` - Zeit- und Systemfunktionen
-- `coroutine` - leichtgewichtige Nebenläufigkeit
+- `payload` - das Eingabe-Payload des Entrys
+- `print`, `subscribe`, `unsubscribe` - Logging und Pub/Sub
+- `os`, `table`, `math`, `string`, `coroutine`, `errors` - Standardbibliotheken
 
 ## Module
+
+Alles andere wird mit `require()` geladen und muss in der `modules:`-Allowlist des Entrys erscheinen:
 
 ```lua
 local json = require("json")

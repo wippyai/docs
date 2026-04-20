@@ -340,17 +340,6 @@ The agent framework separates the agent definition (prompt, model, parameters) f
 
 Stream responses token-by-token instead of waiting for the full response.
 
-### Update Modules
-
-Add `channel` to the process modules:
-
-```yaml
-    modules:
-      - io
-      - process
-      - channel
-```
-
 ### Streaming Implementation
 
 Update `src/chat.lua`:
@@ -580,7 +569,6 @@ Update the chat process modules to include `json` and `funcs`:
       - io
       - json
       - process
-      - channel
       - funcs
 ```
 
@@ -768,7 +756,7 @@ Bye!
 
 ## Next Steps
 
-- [LLM Module](../framework/llm.md) - Complete LLM API reference
-- [Agent Module](../framework/agents.md) - Agent framework reference
-- [CLI Applications](cli.md) - Terminal I/O patterns
-- [Processes](processes.md) - Process model and communication
+- [LLM Module](framework/llm.md) - Complete LLM API reference
+- [Agent Module](framework/agents.md) - Agent framework reference
+- [CLI Applications](tutorials/cli.md) - Terminal I/O patterns
+- [Processes](tutorials/processes.md) - Process model and communication

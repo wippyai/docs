@@ -153,6 +153,6 @@ Vektoren werden auf der API-Ebene stets ueber ein einfaches JSON-Array hin- und 
 
 ## Siehe auch
 
-- [LLM](llm.md) - `llm.embed(...)` fuer die Roh-Erzeugung von Embeddings
-- [Migrations](migration.md) - Migrations-Runner, der die Tabelle bereitstellt
-- [Framework-Uebersicht](overview.md) - Nutzung der Framework-Module
+- [LLM](framework/llm.md) - `llm.embed(...)` fuer die Roh-Erzeugung von Embeddings
+- [Migrations](framework/migration.md) - Migrations-Runner, der die Tabelle bereitstellt
+- [Framework-Uebersicht](framework/overview.md) - Nutzung der Framework-Module

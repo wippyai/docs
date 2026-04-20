@@ -39,7 +39,7 @@ entries:
   # HTTP-сервер
   - name: gateway
     kind: http.service
-    addr: :8080
+    addr: ":8080"
     lifecycle:
       auto_start: true
 
@@ -47,7 +47,7 @@ entries:
   - name: api
     kind: http.router
     meta:
-      server: gateway
+      server: app:gateway
     prefix: /
 
   # Функция-обработчик
@@ -64,7 +64,7 @@ entries:
     meta:
       router: app:api
     method: GET
-    func: hello
+    func: app:hello
     path: /hello
 ```
 

@@ -112,7 +112,7 @@ local var, err = uuid.variant(id)
 |-----------|------|-------------|
 | `uuid` | string | 有効なUUID文字列 |
 
-**戻り値:** `string, error`（RFC4122、Microsoft、NCS、またはInvalid）
+**戻り値:** `string, error`（RFC4122、Reserved、Microsoft、Future、NCS、またはInvalid）
 
 ### パース
 
@@ -128,7 +128,7 @@ local info, err = uuid.parse(id)
 
 返されるテーブルのフィールド:
 - `version`（integer）: UUIDバージョン（1、3、4、5、または7）
-- `variant`（string）: RFC4122、Microsoft、NCS、またはInvalid
+- `variant`（string）: RFC4122、Reserved、Microsoft、Future、NCS、またはInvalid
 - `timestamp`（integer）: Unixタイムスタンプ（v1とv7のみ）
 - `node`（string）: ノードID（v1のみ）
 

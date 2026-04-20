@@ -609,6 +609,6 @@ Este patron habilita aplicaciones multi-tenant donde los agentes se configuran p
 
 ## Ver Tambien
 
-- [LLM](llm.md) - Modulo LLM subyacente
-- [Construir un Agente LLM](../tutorials/llm-agent.md) - Tutorial paso a paso
-- [Vision General del Framework](overview.md) - Uso de modulos del framework
+- [LLM](framework/llm.md) - Modulo LLM subyacente
+- [Construir un Agente LLM](tutorials/llm-agent.md) - Tutorial paso a paso
+- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework

@@ -1,6 +1,30 @@
-# Crypto Ticker
+# 暗号通貨ティッカー
 
 APIキー認証とWebSocketストリーミングを備えたリアルタイム暗号通貨ティッカーを構築します。このチュートリアルでは、トークンベースのセキュリティ、ミドルウェア設定、プロセスベースのWebSocket処理を実演します。
+
+## 概要
+
+- **APIキー交換** — APIキーをPOSTして、HMAC署名されたbearerトークンを取得
+- **トークンミドルウェア** — token storeを使ってWebSocketアップグレードを保護
+- **WebSocketファンアウト** — 単一のtickerプロセスが複数の接続ハンドラーにブロードキャスト
+- **静的アセット** — `http.static`がブラウザクライアントを配信
+- **SQLite** — APIキーを保存; memory storeがtoken storeのバックエンドとして機能
+
+## プロジェクト構造
+
+```
+auth-ticker/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── auth_token.lua
+    ├── ws_ticker.lua
+    ├── ws_handler.lua
+    ├── ticker.lua
+    ├── migrate.lua
+    └── public/
+        └── index.html
+```
 
 ## アーキテクチャ
 
@@ -289,7 +313,12 @@ local function handler()
     )
     db:release()
 
-    if query_err or #rows == 0 then
+    if query_err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({error = "lookup failed"})
+        return
+    end
+    if #rows == 0 then
         res:set_status(http.STATUS.UNAUTHORIZED)
         res:write_json({error = "invalid API key"})
         return
@@ -505,7 +534,7 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    local ticker, ticker_err = time.ticker("10ms")
+    local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
         return 1
@@ -634,18 +663,7 @@ wippy run
 
 http://localhost:8081 を開き、ログに表示されるデモAPIキーを入力します。
 
-## ポイント
-
-| コンセプト | 実装 |
-|-----------|------|
-| トークン署名 | HMACキー付き`security.token_store` |
-| トークン検証 | ルーターの`token_auth`ミドルウェア |
-| 認可 | トークンスコープに付与された`security.policy` |
-| WebSocketライフサイクル | `websocket_relay`がws.join/ws.leaveを自動送信 |
-| ハンドラクリーンアップ | `process.monitor(handler_pid)`でクラッシュを検出 |
-| 購読マップ | `subscriptions[handler_pid] = client_pid` |
-
-## 関連項目
+## 次のステップ
 
 - [WebSocketリレー](http/websocket-relay.md) - ミドルウェア設定
 - [セキュリティモジュール](lua/security/security.md) - アクター、ポリシー、トークンストア

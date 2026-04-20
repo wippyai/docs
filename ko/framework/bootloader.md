@@ -136,7 +136,7 @@ Lua 오류를 발생시키는 부트로더는 `error`로 처리됩니다.
 
 ### 마이그레이션 부트로더(순서 `20`)
 
-`wippy/migration`에서 제공됩니다. `meta.type: migration`을 가진 모든 엔트리를 탐색하고, `meta.target_db`별로 그룹화한 다음, 대기 중인 것을 적용합니다. [마이그레이션](migration.md)을 참조하세요.
+`wippy/migration`에서 제공됩니다. `meta.type: migration`을 가진 모든 엔트리를 탐색하고, `meta.target_db`별로 그룹화한 다음, 대기 중인 것을 적용합니다. [마이그레이션](framework/migration.md)을 참조하세요.
 
 ## 부트 상태 관찰
 
@@ -148,6 +148,6 @@ Lua 오류를 발생시키는 부트로더는 `error`로 처리됩니다.
 
 ## 참고
 
-- [마이그레이션](migration.md) - 마이그레이션 부트로더와 DSL
-- [슈퍼비전](../guides/supervision.md) - 서비스 라이프사이클 및 재시작 정책
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [마이그레이션](framework/migration.md) - 마이그레이션 부트로더와 DSL
+- [슈퍼비전](guides/supervision.md) - 서비스 라이프사이클 및 재시작 정책
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

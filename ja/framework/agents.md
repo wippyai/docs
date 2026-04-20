@@ -609,6 +609,6 @@ return {
 
 ## 関連項目
 
-- [LLM](llm.md) - 基盤となる LLM モジュール
-- [LLM エージェントの構築](../tutorials/llm-agent.md) - ステップバイステップのチュートリアル
-- [フレームワーク概要](overview.md) - フレームワークモジュールの使用方法
+- [LLM](framework/llm.md) - 基盤となる LLM モジュール
+- [LLM エージェントの構築](tutorials/llm-agent.md) - ステップバイステップのチュートリアル
+- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの使用方法

@@ -6,7 +6,7 @@
 
 Spawn, monitor, and communicate with child processes. Implements actor-model patterns with message passing, supervision, and lifecycle management.
 
-The `process` global is always available.
+The `process` global is always available — it does not require `require()` and does not need to be listed in `modules:`.
 
 ## Process Information
 

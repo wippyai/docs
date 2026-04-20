@@ -1,4 +1,4 @@
-# Echo Service
+# Servicio de Eco
 
 Construya un servicio de eco distribuido demostrando procesos, canales, coroutines, paso de mensajes y supervisión.
 
@@ -76,7 +76,6 @@ entries:
       - io
       - process
       - time
-      - channel
 
   - name: relay
     kind: process.lua
@@ -85,7 +84,6 @@ entries:
     modules:
       - process
       - logger
-      - channel
       - time
 
   - name: relay-service
@@ -222,11 +220,7 @@ Los workers reciben argumentos directamente y envían respuestas al remitente.
 Cree `src/worker.lua`:
 
 ```lua
-local time = require("time")
-
 local function main(sender_pid, data)
-    time.sleep("100ms")
-
     local response = {
         data = string.upper(data),
         worker = process.pid()
@@ -259,8 +253,16 @@ local function cyan(s) return "\027[36m" .. s .. reset end
 local function main()
     local inbox = process.inbox()
 
-    -- Esperar a que relay se registre
-    time.sleep("200ms")
+    -- Esperar a que relay registre su nombre
+    local deadline = time.after("5s")
+    while not process.registry.lookup("relay") do
+        local tick = time.after("50ms")
+        local r = channel.select { deadline:case_receive(), tick:case_receive() }
+        if r.channel == deadline then
+            io.print("relay not ready")
+            return 1
+        end
+    end
 
     io.print(cyan("Echo Client"))
     io.print(dim("Escriba mensajes para eco. Ctrl+C para salir.\n"))
@@ -347,19 +349,6 @@ Escriba mensajes para eco. Ctrl+C para salir.
   HELLO WORLD
   from worker: {app:processes|0x00004}
 ```
-
-## Resumen de Conceptos
-
-| Concepto | API |
-|----------|-----|
-| Generación de procesos | `process.spawn_monitored(entry, host, ...)` |
-| Paso de mensajes | `process.send(dest, topic, data)` |
-| Inbox | `process.inbox()` |
-| Eventos | `process.events()` |
-| Registro | `process.registry.register(name)` |
-| Channel select | `channel.select {...}` |
-| Timeout | `time.after(duration)` |
-| Coroutines | `coroutine.spawn(fn)` |
 
 ## Siguientes Pasos
 

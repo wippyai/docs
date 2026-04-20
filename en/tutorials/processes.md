@@ -6,6 +6,8 @@ Spawn isolated processes and communicate via message passing.
 
 Processes provide isolated execution units that communicate through message passing. Each process has its own inbox and can subscribe to specific message topics.
 
+This page is a primer: each snippet shows one API in isolation. For a complete runnable application that wires spawning, monitoring, and messaging together, see the [Echo Service](tutorials/echo-service.md) tutorial.
+
 Key concepts:
 - Spawn processes with `process.spawn()` and variants
 - Send messages to PIDs or registered names via topics
@@ -161,10 +163,11 @@ end
 local event = result.value
 if event.kind == process.event.EXIT then
     print("Worker exited:", event.from)
-    if event.error then
-        print("Exit error:", event.error)
+    if event.result and event.result.error then
+        print("Exit error:", event.result.error)
+    elseif event.result then
+        print("Return value:", event.result.value)
     end
-    -- Access return value via event.result
 end
 ```
 
@@ -373,10 +376,10 @@ local function main()
         if event.kind == process.event.EXIT then
             local worker = workers[event.from]
             if worker then
-                if event.error then
-                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                if event.result and event.result.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.result.error)
                 else
-                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                    print("Worker " .. worker.task_id .. " completed:", event.result and event.result.value)
                 end
                 completed = completed + 1
             end
@@ -408,37 +411,7 @@ end
 return { main = main }
 ```
 
-## Summary
-
-Process spawning:
-- `process.spawn()` - Basic spawn, returns PID
-- `process.spawn_monitored()` - Spawn with automatic monitoring
-- `process.spawn_linked()` - Spawn with lifecycle coupling
-- `process.pid()` - Get current process PID
-
-Messaging:
-- `process.send(pid, topic, payload)` - Send message to PID
-- `process.listen(topic)` - Subscribe to topic, receive payloads
-- `process.listen(topic, { message = true })` - Receive full message with `:from()`, `:payload()`, `:topic()`
-- `process.inbox()` - Receive messages not matched by listeners
-
-Monitoring:
-- `process.events()` - Channel for EXIT and LINK_DOWN events
-- `process.monitor(pid)` - Monitor existing process
-- `process.unmonitor(pid)` - Stop monitoring
-
-Linking:
-- `process.link(pid)` - Link to process
-- `process.unlink(pid)` - Unlink from process
-- `process.set_options({ trap_links = true })` - Receive LINK_DOWN as event instead of crashing
-- `process.get_options()` - Get current process options
-
-Registry:
-- `process.registry.register(name)` - Register name for current process
-- `process.registry.lookup(name)` - Find PID by name
-- `process.registry.unregister(name)` - Remove name registration
-
-## See Also
+## Next Steps
 
 - [Process Module Reference](lua/core/process.md) - Full API documentation
-- [Channels](channels.md) - Channel operations for message handling
+- [Channels](tutorials/channels.md) - Channel operations for message handling

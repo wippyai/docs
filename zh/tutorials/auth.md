@@ -2,6 +2,30 @@
 
 构建具有 API 密钥认证和 WebSocket 流式传输的实时加密货币行情。本教程演示基于 Token 的安全性、中间件配置和基于进程的 WebSocket 处理。
 
+## 概述
+
+- **API 密钥交换** — 通过 POST API 密钥获取 HMAC 签名的 bearer token
+- **Token 中间件** — 通过 token store 保护 WebSocket 升级
+- **WebSocket 扇出** — 一个 ticker 进程向多个连接处理器广播
+- **静态资源** — `http.static` 提供浏览器客户端
+- **SQLite** — 存储 API 密钥；memory store 作为 token store 的后端
+
+## 项目结构
+
+```
+auth-ticker/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── auth_token.lua
+    ├── ws_ticker.lua
+    ├── ws_handler.lua
+    ├── ticker.lua
+    ├── migrate.lua
+    └── public/
+        └── index.html
+```
+
 ## 架构
 
 ```mermaid
@@ -296,7 +320,12 @@ local function handler()
     )
     db:release()
 
-    if query_err or #rows == 0 then
+    if query_err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({error = "lookup failed"})
+        return
+    end
+    if #rows == 0 then
         res:set_status(http.STATUS.UNAUTHORIZED)
         res:write_json({error = "invalid API key"})
         return
@@ -512,7 +541,7 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    local ticker, ticker_err = time.ticker("10ms")
+    local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
         return 1
@@ -641,18 +670,7 @@ wippy run
 
 打开 http://localhost:8081 并输入日志中显示的演示 API key。
 
-## 要点
-
-| 概念 | 实现 |
-|------|------|
-| Token 签名 | 带 HMAC 密钥的 `security.token_store` |
-| Token 验证 | 路由器上的 `token_auth` 中间件 |
-| 授权 | 附加到 token scope 的 `security.policy` |
-| WebSocket 生命周期 | `websocket_relay` 自动发送 ws.join/ws.leave |
-| 处理器清理 | `process.monitor(handler_pid)` 检测崩溃 |
-| 订阅映射 | `subscriptions[handler_pid] = client_pid` |
-
-## 另请参阅
+## 下一步
 
 - [WebSocket Relay](http/websocket-relay.md) - 中间件配置
 - [Security 模块](lua/security/security.md) - Actor、策略、token 存储

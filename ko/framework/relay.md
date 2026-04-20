@@ -254,7 +254,7 @@ GC 확인 간격은 자동으로 계산됩니다: `inactivity_timeout / 2.5`.
 
 ## 참고
 
-- [WebSocket Relay](../http/websocket-relay.md) - HTTP WebSocket 엔드포인트 설정
-- [프로세스 모델](../concepts/process-model.md) - 프로세스 라이프사이클 및 메시징
-- [보안](../system/security.md) - 보안 액터 및 스코프
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [WebSocket Relay](http/websocket-relay.md) - HTTP WebSocket 엔드포인트 설정
+- [프로세스 모델](concepts/process-model.md) - 프로세스 라이프사이클 및 메시징
+- [보안](system/security.md) - 보안 액터 및 스코프
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

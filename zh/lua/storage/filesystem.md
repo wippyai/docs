@@ -149,6 +149,7 @@ vol:remove("/temp/file.txt")
 | `read(size?)` | 读取字节（默认：4096） |
 | `write(data)` | 写入字符串数据 |
 | `seek(whence, offset)` | 设置位置（"set", "cur", "end"） |
+| `stat()` | 获取文件信息（字段与 `vol:stat` 相同） |
 | `sync()` | 刷新到存储 |
 | `close()` | 释放文件句柄 |
 | `scanner(split?)` | 创建行/词扫描器 |

@@ -149,6 +149,7 @@ vol:remove("/temp/file.txt")
 | `read(size?)` | 바이트 읽기 (기본값: 4096) |
 | `write(data)` | 문자열 데이터 쓰기 |
 | `seek(whence, offset)` | 위치 설정 ("set", "cur", "end") |
+| `stat()` | 파일 정보 가져오기 (`vol:stat`과 동일한 필드) |
 | `sync()` | 스토리지로 플러시 |
 | `close()` | 파일 핸들 해제 |
 | `scanner(split?)` | 라인/워드 스캐너 생성 |

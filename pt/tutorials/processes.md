@@ -6,6 +6,8 @@ Crie processos isolados e comunique-se via passagem de mensagens.
 
 Processos fornecem unidades de execução isoladas que se comunicam através de passagem de mensagens. Cada processo tem sua própria caixa de entrada e pode se inscrever em tópicos de mensagens específicos.
 
+Esta página é uma introdução: cada trecho demonstra uma API de forma isolada. Para uma aplicação completa e executável que combina criação, monitoramento e troca de mensagens, veja o tutorial [Echo Service](tutorials/echo-service.md).
+
 Conceitos-chave:
 - Criar processos com `process.spawn()` e variantes
 - Enviar mensagens para PIDs ou nomes registrados via tópicos
@@ -161,10 +163,11 @@ end
 local event = result.value
 if event.kind == process.event.EXIT then
     print("Worker exited:", event.from)
-    if event.error then
-        print("Exit error:", event.error)
+    if event.result and event.result.error then
+        print("Exit error:", event.result.error)
+    elseif event.result then
+        print("Return value:", event.result.value)
     end
-    -- Acesse valor de retorno via event.result
 end
 ```
 
@@ -373,10 +376,10 @@ local function main()
         if event.kind == process.event.EXIT then
             local worker = workers[event.from]
             if worker then
-                if event.error then
-                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                if event.result and event.result.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.result.error)
                 else
-                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                    print("Worker " .. worker.task_id .. " completed:", event.result and event.result.value)
                 end
                 completed = completed + 1
             end
@@ -408,37 +411,7 @@ end
 return { main = main }
 ```
 
-## Resumo
-
-Criação de processos:
-- `process.spawn()` - Spawn básico, retorna PID
-- `process.spawn_monitored()` - Spawn com monitoramento automático
-- `process.spawn_linked()` - Spawn com acoplamento de ciclo de vida
-- `process.pid()` - Obter PID do processo atual
-
-Mensagens:
-- `process.send(pid, topic, payload)` - Enviar mensagem para PID
-- `process.listen(topic)` - Inscrever em tópico, receber payloads
-- `process.listen(topic, { message = true })` - Receber mensagem completa com `:from()`, `:payload()`, `:topic()`
-- `process.inbox()` - Receber mensagens não correspondidas por listeners
-
-Monitoramento:
-- `process.events()` - Channel para eventos EXIT e LINK_DOWN
-- `process.monitor(pid)` - Monitorar processo existente
-- `process.unmonitor(pid)` - Parar monitoramento
-
-Vinculação:
-- `process.link(pid)` - Vincular a processo
-- `process.unlink(pid)` - Desvincular de processo
-- `process.set_options({ trap_links = true })` - Receber LINK_DOWN como evento em vez de falhar
-- `process.get_options()` - Obter opções do processo atual
-
-Registro:
-- `process.registry.register(name)` - Registrar nome para processo atual
-- `process.registry.lookup(name)` - Encontrar PID por nome
-- `process.registry.unregister(name)` - Remover registro de nome
-
-## Veja Também
+## Próximos Passos
 
 - [Process Module Reference](lua/core/process.md) - Documentação completa da API
-- [Channels](channels.md) - Operações de channel para tratamento de mensagens
+- [Channels](tutorials/channels.md) - Operações de channel para tratamento de mensagens

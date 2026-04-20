@@ -75,14 +75,17 @@ end
 
 ## Globais
 
-Estes estão sempre disponíveis sem require:
+Estes estão sempre disponíveis sem `require` e não precisam aparecer em `modules:`:
 
-- `process` - gerenciamento de processos e mensagens
+- `process` - spawnar processos, enviar mensagens, monitorar e vincular
 - `channel` - channels estilo Go
-- `os` - funções de tempo e sistema
-- `coroutine` - concorrência leve
+- `payload` - o payload de entrada da entrada
+- `print`, `subscribe`, `unsubscribe` - logging e pub/sub
+- `os`, `table`, `math`, `string`, `coroutine`, `errors` - bibliotecas padrão
 
 ## Módulos
+
+Todo o resto é carregado com `require()` e deve aparecer na lista de permissões `modules:` da entrada:
 
 ```lua
 local json = require("json")

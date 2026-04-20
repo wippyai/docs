@@ -6,6 +6,8 @@ Genere procesos aislados y comuníquese mediante paso de mensajes.
 
 Los procesos proporcionan unidades de ejecución aisladas que se comunican mediante paso de mensajes. Cada proceso tiene su propio inbox y puede suscribirse a temas de mensajes específicos.
 
+Esta página es una introducción: cada fragmento muestra una API de forma aislada. Para una aplicación completa y ejecutable que conecta generación, monitoreo y mensajería, consulta el tutorial de [Echo Service](tutorials/echo-service.md).
+
 Conceptos clave:
 - Generar procesos con `process.spawn()` y sus variantes
 - Enviar mensajes a PIDs o nombres registrados mediante temas
@@ -161,10 +163,11 @@ end
 local event = result.value
 if event.kind == process.event.EXIT then
     print("Worker exited:", event.from)
-    if event.error then
-        print("Exit error:", event.error)
+    if event.result and event.result.error then
+        print("Exit error:", event.result.error)
+    elseif event.result then
+        print("Return value:", event.result.value)
     end
-    -- Acceder al valor de retorno vía event.result
 end
 ```
 
@@ -373,10 +376,10 @@ local function main()
         if event.kind == process.event.EXIT then
             local worker = workers[event.from]
             if worker then
-                if event.error then
-                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                if event.result and event.result.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.result.error)
                 else
-                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                    print("Worker " .. worker.task_id .. " completed:", event.result and event.result.value)
                 end
                 completed = completed + 1
             end
@@ -408,37 +411,7 @@ end
 return { main = main }
 ```
 
-## Resumen
-
-Generación de procesos:
-- `process.spawn()` - Generación básica, devuelve PID
-- `process.spawn_monitored()` - Genera con monitoreo automático
-- `process.spawn_linked()` - Genera con acoplamiento de ciclo de vida
-- `process.pid()` - Obtiene el PID del proceso actual
-
-Mensajería:
-- `process.send(pid, topic, payload)` - Envía mensaje a PID
-- `process.listen(topic)` - Se suscribe al tema, recibe payloads
-- `process.listen(topic, { message = true })` - Recibe mensaje completo con `:from()`, `:payload()`, `:topic()`
-- `process.inbox()` - Recibe mensajes no emparejados por listeners
-
-Monitoreo:
-- `process.events()` - Canal para eventos EXIT y LINK_DOWN
-- `process.monitor(pid)` - Monitorea un proceso existente
-- `process.unmonitor(pid)` - Detiene el monitoreo
-
-Enlace:
-- `process.link(pid)` - Enlaza con proceso
-- `process.unlink(pid)` - Desenlaza del proceso
-- `process.set_options({ trap_links = true })` - Recibe LINK_DOWN como evento en vez de hacer crash
-- `process.get_options()` - Obtiene las opciones actuales del proceso
-
-Registro:
-- `process.registry.register(name)` - Registra nombre para el proceso actual
-- `process.registry.lookup(name)` - Encuentra PID por nombre
-- `process.registry.unregister(name)` - Elimina el registro de nombre
-
-## Véase También
+## Siguientes Pasos
 
 - [Referencia del Módulo Process](lua/core/process.md) - Documentación completa de la API
-- [Canales](channels.md) - Operaciones de canales para el manejo de mensajes
+- [Canales](tutorials/channels.md) - Operaciones de canales para el manejo de mensajes

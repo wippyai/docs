@@ -609,6 +609,6 @@ Esse padrao habilita aplicacoes multi-tenant onde agentes sao configurados por u
 
 ## Veja Tambem
 
-- [LLM](llm.md) - Modulo LLM subjacente
-- [Construindo um Agente LLM](../tutorials/llm-agent.md) - Tutorial passo a passo
-- [Visao Geral do Framework](overview.md) - Uso dos modulos do framework
+- [LLM](framework/llm.md) - Modulo LLM subjacente
+- [Construindo um Agente LLM](tutorials/llm-agent.md) - Tutorial passo a passo
+- [Visao Geral do Framework](framework/overview.md) - Uso dos modulos do framework

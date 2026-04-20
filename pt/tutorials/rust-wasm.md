@@ -1,19 +1,19 @@
 # Executando Rust no Wippy
 
-Compile um componente Rust WebAssembly e execute-o como funcoes, comandos CLI e endpoints HTTP.
+Compile um componente Rust WebAssembly e execute-o como funções, comandos CLI e endpoints HTTP.
 
 ## O Que Vamos Construir
 
-Um componente Rust com quatro funcoes exportadas:
+Um componente Rust com quatro funções exportadas:
 
-- **greet** - Recebe um nome, retorna uma saudacao
+- **greet** - Recebe um nome, retorna uma saudação
 - **add** - Soma dois inteiros
-- **fibonacci** - Calcula o n-esimo numero de Fibonacci
-- **list-files** - Lista arquivos em um diretorio montado
+- **fibonacci** - Calcula o n-ésimo número de Fibonacci
+- **list-files** - Lista arquivos em um diretório montado
 
-Vamos expor essas funcoes como funcoes chamaveis, um comando CLI e um endpoint HTTP.
+Vamos expor essas funções como funções chamáveis, um comando CLI e um endpoint HTTP.
 
-## Pre-requisitos
+## Pré-requisitos
 
 - [Rust toolchain](https://rustup.rs/) com target `wasm32-wasip1`
 - [cargo-component](https://github.com/bytecodealliance/cargo-component)
@@ -61,7 +61,7 @@ world demo {
 }
 ```
 
-Cada export se torna uma funcao que o Wippy pode chamar.
+Cada export se torna uma função que o Wippy pode chamar.
 
 ## Passo 2: Implementar em Rust
 
@@ -163,7 +163,7 @@ impl Guest for Component {
 bindings::export!(Component with_types_in bindings);
 ```
 
-O modulo `bindings` e gerado pelo `cargo-component` a partir da definicao WIT.
+O módulo `bindings` é gerado pelo `cargo-component` a partir da definição WIT.
 
 ## Passo 3: Compilar o Componente
 
@@ -172,20 +172,20 @@ cd demo
 cargo component build --release
 ```
 
-Isso produz `target/wasm32-wasip1/release/demo.wasm`. Copie para sua aplicacao Wippy:
+Isso produz `target/wasm32-wasip1/release/demo.wasm`. Copie para sua aplicação Wippy:
 
 ```bash
 mkdir -p ../app/src/demo/wasm
 cp target/wasm32-wasip1/release/demo.wasm ../app/src/demo/wasm/demo_component.wasm
 ```
 
-Obtenha o hash SHA-256 para verificacao de integridade:
+Obtenha o hash SHA-256 para verificação de integridade:
 
 ```bash
 sha256sum ../app/src/demo/wasm/demo_component.wasm
 ```
 
-## Passo 4: Aplicacao Wippy
+## Passo 4: Aplicação Wippy
 
 ### Infraestrutura
 
@@ -208,7 +208,7 @@ entries:
     kind: http.router
     meta:
       comment: Public API router
-    server: gateway
+      server: demo:gateway
     prefix: /
 
   - name: processes
@@ -222,7 +222,7 @@ entries:
       auto_start: true
 ```
 
-### Funcoes WASM
+### Funções WASM
 
 Crie `app/src/demo/wasm/_index.yaml`:
 
@@ -272,14 +272,14 @@ entries:
 ```
 
 Pontos-chave:
-- Uma unica entrada `fs.directory` fornece o binario WASM
-- Multiplas funcoes referenciam o mesmo binario com valores de `method` diferentes
-- O campo `hash` verifica a integridade do binario no carregamento
-- Pool `inline` cria uma nova instancia por chamada
+- Uma única entrada `fs.directory` fornece o binário WASM
+- Múltiplas funções referenciam o mesmo binário com valores de `method` diferentes
+- O campo `hash` verifica a integridade do binário no carregamento
+- Pool `inline` cria uma nova instância por chamada
 
-### Funcoes com WASI
+### Funções com WASI
 
-A funcao `list-files` acessa o sistema de arquivos, entao precisa de imports WASI:
+A função `list-files` acessa o sistema de arquivos, então precisa de imports WASI:
 
 ```yaml
   - name: list_files_function
@@ -303,7 +303,7 @@ A funcao `list-files` acessa o sistema de arquivos, entao precisa de imports WAS
       type: inline
 ```
 
-A secao `wasi.mounts` mapeia uma entrada de sistema de arquivos do Wippy para um caminho do guest. Dentro do modulo WASM, `/data` aponta para o diretorio `demo.wasm:assets`.
+A seção `wasi.mounts` mapeia uma entrada de sistema de arquivos do Wippy para um caminho do guest. Dentro do módulo WASM, `/data` aponta para o diretório `demo.wasm:assets`.
 
 ### Comandos CLI
 
@@ -348,7 +348,7 @@ entries:
           guest: /data
 ```
 
-O bloco `meta.command` registra o processo como um comando CLI nomeado. O comando `greet` nao precisa de imports WASI ja que usa apenas operacoes com strings. O comando `ls` precisa de acesso ao sistema de arquivos.
+O bloco `meta.command` registra o processo como um comando CLI nomeado. O comando `greet` não precisa de imports WASI já que usa apenas operações com strings. O comando `ls` precisa de acesso ao sistema de arquivos.
 
 ### Endpoint HTTP
 
@@ -377,7 +377,7 @@ Adicione ao `app/src/demo/wasm/_index.yaml`:
     func: http_greet
 ```
 
-O transporte `wasi-http` mapeia o contexto de requisicao/resposta HTTP para argumentos e resultados WASM.
+O transporte `wasi-http` mapeia o contexto de requisição/resposta HTTP para argumentos e resultados WASM.
 
 ## Passo 5: Inicializar e Executar
 
@@ -409,7 +409,7 @@ wippy run greet
 wippy run ls
 ```
 
-### Executar como Servico
+### Executar como Serviço
 
 ```bash
 wippy run
@@ -423,7 +423,7 @@ curl -X POST http://localhost:8090/greet
 
 ### Chamar a partir de Lua
 
-Funcoes WASM sao chamadas da mesma forma que funcoes Lua:
+Funções WASM são chamadas da mesma forma que funções Lua:
 
 ```lua
 local funcs = require("funcs")
@@ -438,24 +438,10 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 -- fib: 55
 ```
 
-## Tres Formas de Expor WASM
+## Próximos Passos
 
-| Abordagem | Tipo de Entrada | Caso de Uso |
-|-----------|----------------|-------------|
-| Funcao | `function.wasm` | Chamada de Lua ou outro WASM via `funcs.call()` |
-| Comando CLI | `process.wasm` + `meta.command` | Comandos de terminal via `wippy run <name>` |
-| Endpoint HTTP | `function.wasm` + `http.endpoint` | API REST via transporte `wasi-http` |
-
-Todas as tres abordagens usam o mesmo binario `.wasm` compilado e referenciam os mesmos metodos.
-
-## Compilando para Outras Linguagens
-
-Qualquer linguagem que compila para o WebAssembly Component Model funciona com o Wippy. Defina sua interface WIT, implemente os exports, compile para `.wasm` e configure as entradas em `_index.yaml`.
-
-## Veja Tambem
-
-- [Visao Geral WASM](wasm/overview.md) - Visao geral do runtime WebAssembly
-- [Funcoes WASM](wasm/functions.md) - Referencia de configuracao de funcoes
-- [Processos WASM](wasm/processes.md) - Referencia de configuracao de processos
-- [Funcoes Host](wasm/hosts.md) - Imports WASI disponiveis
-- [Referencia CLI](guides/cli.md) - Documentacao de comandos CLI
+- [Visão Geral WASM](wasm/overview.md) - Visão geral do runtime WebAssembly
+- [Funções WASM](wasm/functions.md) - Referência de configuração de funções
+- [Processos WASM](wasm/processes.md) - Referência de configuração de processos
+- [Funções Host](wasm/hosts.md) - Imports WASI disponíveis
+- [Referência CLI](guides/cli.md) - Documentação de comandos CLI

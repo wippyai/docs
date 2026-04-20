@@ -112,7 +112,7 @@ local var, err = uuid.variant(id)
 |----------|------|------|
 | `uuid` | string | 유효한 UUID 문자열 |
 
-**반환:** `string, error` (RFC4122, Microsoft, NCS, 또는 Invalid)
+**반환:** `string, error` (RFC4122, Reserved, Microsoft, Future, NCS, 또는 Invalid)
 
 ### 파싱
 
@@ -128,7 +128,7 @@ local info, err = uuid.parse(id)
 
 반환된 테이블 필드:
 - `version` (integer): UUID 버전 (1, 3, 4, 5, 또는 7)
-- `variant` (string): RFC4122, Microsoft, NCS, 또는 Invalid
+- `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, 또는 Invalid
 - `timestamp` (integer): Unix 타임스탬프 (v1 및 v7만)
 - `node` (string): 노드 ID (v1만)
 

@@ -386,6 +386,6 @@ entries:
 
 ## 另请参阅
 
-- [框架概述](overview.md) - 框架模块使用
+- [框架概述](framework/overview.md) - 框架模块使用
 - [命令行工具](guides/cli.md) - CLI 命令
 - [函数](concepts/functions.md) - 函数注册表

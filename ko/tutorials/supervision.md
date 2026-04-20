@@ -446,8 +446,8 @@ local function chain_node_main(depth)
         end
     end
 
-    -- 부모 사망 대기 (LINK_DOWN을 통해 우리 사망 트리거)
-    time.sleep("5s")
+    -- LINK_DOWN을 통해 부모 사망이 우리를 종료할 때까지 블록 (기본 trap_links=false)
+    process.inbox():receive()
 end
 ```
 
@@ -649,23 +649,6 @@ entries:
 - 일반적으로 CPU 코어 수로 설정
 - 모든 프로세스가 이 스레드 풀을 공유
 
-## 핵심 개념
-
-**모니터링** (단방향 관찰):
-- `process.spawn_monitored()` 또는 `process.monitor()` 사용
-- 모니터링되는 프로세스 종료 시 EXIT 이벤트 수신
-- 자식 종료 후에도 부모 계속 실행
-
-**연결** (양방향 운명 공유):
-- `process.spawn_linked()` 또는 `process.link()` 사용
-- 기본: 어느 프로세스가 실패해도 둘 다 종료
-- `trap_links=true` 사용: 대신 LINK_DOWN 이벤트 수신
-
-**취소**:
-- 우아한 종료를 위해 `process.cancel(pid, timeout)` 사용
-- 워커가 `process.events()`를 통해 CANCEL 이벤트 수신
-- 강제 종료 전 정리할 타임아웃 기간 있음
-
 ## 이벤트 유형
 
 | 이벤트 | 트리거 | 필요한 설정 |
@@ -674,8 +657,26 @@ entries:
 | `LINK_DOWN` | 연결된 프로세스 비정상 종료 | `spawn_linked()` 또는 `link()`와 `trap_links=true` |
 | `CANCEL` | `process.cancel()` 호출 | 없음 (항상 전달됨) |
 
+## 슈퍼바이저 풀 실행
+
+[설정](#설정)에 표시된 구조에 풀 파일을 넣은 후:
+
+```bash
+wippy init
+wippy run
+```
+
+슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며 워커 중 하나가 죽으면 재시작을 로그에 기록합니다. 다른 프로세스에서 워커를 취소하여 재시작을 트리거합니다:
+
+```lua
+-- 임시 프로세스 또는 chat 명령에서
+process.cancel("<pid-from-supervisor-log>", "100ms")
+```
+
+풀은 `LINK_DOWN`을 수신하고 100ms 대기 후 동일한 id로 워커를 재스폰합니다.
+
 ## 다음 단계
 
-- [프로세스](processes.md) - 프로세스 기초
-- [채널](channels.md) - 메시지 전달 패턴
+- [프로세스](tutorials/processes.md) - 프로세스 기초
+- [채널](tutorials/channels.md) - 메시지 전달 패턴
 - [프로세스 모듈](lua/core/process.md) - API 참조

@@ -6,6 +6,8 @@
 
 プロセスはメッセージパッシングを通じて通信する分離された実行ユニットを提供します。各プロセスは独自のinboxを持ち、特定のメッセージトピックを購読できます。
 
+このページは入門編です。各スニペットは1つのAPIを単独で示しています。スポーン、モニタリング、メッセージングをまとめた完全な実行可能アプリケーションについては、[Echoサービス](tutorials/echo-service.md)チュートリアルを参照してください。
+
 主要なコンセプト：
 - `process.spawn()`およびそのバリアントでプロセスを生成
 - トピック経由でPIDまたは登録名にメッセージを送信
@@ -161,10 +163,11 @@ end
 local event = result.value
 if event.kind == process.event.EXIT then
     print("Worker exited:", event.from)
-    if event.error then
-        print("Exit error:", event.error)
+    if event.result and event.result.error then
+        print("Exit error:", event.result.error)
+    elseif event.result then
+        print("Return value:", event.result.value)
     end
-    -- event.resultで戻り値にアクセス
 end
 ```
 
@@ -373,10 +376,10 @@ local function main()
         if event.kind == process.event.EXIT then
             local worker = workers[event.from]
             if worker then
-                if event.error then
-                    print("Worker " .. worker.task_id .. " failed:", event.error)
+                if event.result and event.result.error then
+                    print("Worker " .. worker.task_id .. " failed:", event.result.error)
                 else
-                    print("Worker " .. worker.task_id .. " completed:", event.result)
+                    print("Worker " .. worker.task_id .. " completed:", event.result and event.result.value)
                 end
                 completed = completed + 1
             end
@@ -408,38 +411,8 @@ end
 return { main = main }
 ```
 
-## まとめ
-
-プロセス生成：
-- `process.spawn()` - 基本的な生成、PIDを返す
-- `process.spawn_monitored()` - 自動モニタリング付き生成
-- `process.spawn_linked()` - ライフサイクル結合付き生成
-- `process.pid()` - 現在のプロセスPIDを取得
-
-メッセージング：
-- `process.send(pid, topic, payload)` - PIDにメッセージを送信
-- `process.listen(topic)` - トピックを購読し、ペイロードを受信
-- `process.listen(topic, { message = true })` - `:from()`, `:payload()`, `:topic()`を持つ完全なメッセージを受信
-- `process.inbox()` - リスナーにマッチしないメッセージを受信
-
-モニタリング：
-- `process.events()` - EXITおよびLINK_DOWNイベント用チャネル
-- `process.monitor(pid)` - 既存のプロセスをモニタリング
-- `process.unmonitor(pid)` - モニタリングを停止
-
-リンク：
-- `process.link(pid)` - プロセスにリンク
-- `process.unlink(pid)` - プロセスからリンク解除
-- `process.set_options({ trap_links = true })` - クラッシュの代わりにLINK_DOWNをイベントとして受信
-- `process.get_options()` - 現在のプロセスオプションを取得
-
-レジストリ：
-- `process.registry.register(name)` - 現在のプロセスに名前を登録
-- `process.registry.lookup(name)` - 名前でPIDを検索
-- `process.registry.unregister(name)` - 名前登録を削除
-
-## 関連項目
+## 次のステップ
 
 - [プロセスモジュールリファレンス](lua/core/process.md) - 完全なAPIドキュメント
-- [チャネル](channels.md) - メッセージ処理のためのチャネル操作
+- [チャネル](tutorials/channels.md) - メッセージ処理のためのチャネル操作
 

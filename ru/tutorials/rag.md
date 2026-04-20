@@ -199,13 +199,16 @@ entries:
     component: wippy/embeddings
     version: "*"
     parameters:
-      - { name: target_db, value: app:db }
+      - name: target_db
+        value: app:db
 
   - name: ingest
     kind: function.lua
     source: file://app/ingest.lua
     method: ingest
-    modules: [text, uuid]
+    modules:
+      - text
+      - uuid
     imports:
       embeddings: wippy.embeddings:embeddings
 
@@ -221,16 +224,19 @@ entries:
   - name: gateway
     kind: http.service
     addr: ":8080"
-    lifecycle: { auto_start: true }
+    lifecycle:
+      auto_start: true
 
   - name: api
     kind: http.router
-    meta: { server: gateway }
+    meta:
+      server: app:gateway
     prefix: /api
 
   - name: ask
     kind: http.endpoint
-    meta: { router: api }
+    meta:
+      router: app:api
     method: POST
     path: /ask
     func: app:answer_http
@@ -239,7 +245,8 @@ entries:
     kind: function.lua
     source: file://app/answer_http.lua
     method: handler
-    modules: [http]
+    modules:
+      - http
     imports:
       answer: app:answer
 ```
@@ -262,7 +269,7 @@ local function handler()
 
     local result, ans_err = answer.answer(body.question)
     if ans_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({ error = ans_err })
         return
     end
@@ -289,7 +296,7 @@ curl -X POST http://localhost:8080/api/ask \
 - **Гибридный поиск**: Для точного соответствия по терминам (имена, ID) комбинируйте векторный поиск с полнотекстовым поиском по вашей исходной таблице и перераспределяйте.
 - **Выбор модели**: Стандартная модель `text-embedding-3-small` с 512 измерениями экономична. Переходите на 1024 или 3072 измерения только если recall недостаточен — большие векторы означают больший объём хранилища и более медленный поиск.
 
-## См. также
+## Следующие шаги
 
 - [LLM-фреймворк](framework/llm.md) — `llm.generate`, `llm.embed`, построение промптов
 - [Агенты](framework/agents.md) — оберните ретривер в качестве инструмента агента

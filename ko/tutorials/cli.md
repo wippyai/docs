@@ -239,4 +239,4 @@ end
 
 - [I/O 모듈](lua/system/io.md) - 전체 I/O 참조
 - [시스템 모듈](lua/system/system.md) - 런타임 및 시스템 정보
-- [에코 서비스](echo-service.md) - 다중 프로세스 애플리케이션
+- [에코 서비스](tutorials/echo-service.md) - 다중 프로세스 애플리케이션

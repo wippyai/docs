@@ -239,4 +239,4 @@ end
 
 - [I/O Module](lua/system/io.md) - 完整的 I/O 参考
 - [System Module](lua/system/system.md) - 运行时和系统信息
-- [Echo Service](echo-service.md) - 多进程应用程序
+- [Echo Service](tutorials/echo-service.md) - 多进程应用程序

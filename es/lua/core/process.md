@@ -6,7 +6,7 @@
 
 Crear, monitorear y comunicarse con procesos hijos. Implementa patrones de modelo de actores con paso de mensajes, supervision y gestión de ciclo de vida.
 
-El global `process` siempre esta disponible.
+La variable global `process` siempre está disponible — no requiere `require()` ni necesita aparecer en `modules:`.
 
 ## Información de Proceso
 

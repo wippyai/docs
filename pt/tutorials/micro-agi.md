@@ -161,7 +161,7 @@ Duas entradas `security.policy` restringem em quais namespaces o agente pode esc
 
 Essas políticas são carregadas como um escopo nomeado (`app:agent_security`) por `create_tool` e avaliadas antes de qualquer escrita no registro. O agente pode escrever em `app.generated:*` (nenhuma política deny corresponde), mas não pode escrever em `app:*` (entradas centrais, modelos, definição do agente) ou `app.tools:*` (ferramentas embutidas).
 
-Veja [Modelo de Segurança](../system/security.md) para detalhes sobre a avaliação de políticas.
+Veja [Modelo de Segurança](system/security.md) para detalhes sobre a avaliação de políticas.
 
 ### Modelos
 
@@ -257,7 +257,7 @@ O prompt é deliberadamente conciso. Regras principais:
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, channel, funcs, registry, time, security]
+    modules: [io, json, process, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
@@ -448,7 +448,7 @@ O loop do agente em `src/agent.lua` trata streaming, execução de ferramentas, 
 
 ### Streaming
 
-Usa o mesmo padrão de coroutine + channel do [tutorial Agente LLM](llm-agent.md):
+Usa o mesmo padrão de coroutine + channel do [tutorial Agente LLM](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -593,8 +593,8 @@ Your IP is 203.0.113.42.
 
 ## Próximos Passos
 
-- [Agente LLM](llm-agent.md) — Construa um agente básico do zero
-- [Módulo Agent](../framework/agents.md) — Referência do framework de agentes
-- [Registro](../concepts/registry.md) — Como o registro funciona
-- [Modelo de Segurança](../system/security.md) — Políticas de segurança declarativas
-- [Tipos de Entradas](../guides/entry-kinds.md) — Tipos de entradas disponíveis
+- [Agente LLM](tutorials/llm-agent.md) — Construa um agente básico do zero
+- [Módulo Agent](framework/agents.md) — Referência do framework de agentes
+- [Registro](concepts/registry.md) — Como o registro funciona
+- [Modelo de Segurança](system/security.md) — Políticas de segurança declarativas
+- [Tipos de Entradas](guides/entry-kinds.md) — Tipos de entradas disponíveis

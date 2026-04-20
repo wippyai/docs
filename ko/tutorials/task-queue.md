@@ -140,10 +140,8 @@ entries:
     source: file://process_task.lua
     method: main
     modules:
-      - queue
       - sql
       - logger
-      - time
       - json
 
   # 엔드포인트
@@ -228,12 +226,8 @@ local queue = require("queue")
 local uuid = require("uuid")
 
 local function handler()
-    local req, req_err = http.request()
-    local res, res_err = http.response()
-
-    if not req or not res then
-        return nil, "failed to get HTTP context"
-    end
+    local req = http.request()
+    local res = http.response()
 
     local body, parse_err = req:body_json()
     if parse_err then
@@ -258,7 +252,7 @@ local function handler()
 
     local ok, err = queue.publish("app:tasks_queue", task)
     if err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "failed to queue task"})
         return
     end
@@ -282,16 +276,12 @@ local http = require("http")
 local sql = require("sql")
 
 local function handler()
-    local req, req_err = http.request()
-    local res, res_err = http.response()
-
-    if not req or not res then
-        return nil, "failed to get HTTP context"
-    end
+    local req = http.request()
+    local res = http.response()
 
     local db, db_err = sql.get("app:db")
     if db_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "database unavailable"})
         return
     end
@@ -311,7 +301,7 @@ local function handler()
     db:release()
 
     if query_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({error = "query failed"})
         return
     end
@@ -331,28 +321,16 @@ return { handler = handler }
 `src/process_task.lua` 생성:
 
 ```lua
-local queue = require("queue")
 local sql = require("sql")
 local logger = require("logger")
-local time = require("time")
 local json = require("json")
 
 local function main(task)
-    local msg, msg_err = queue.message()
-    if msg_err then
-        logger:error("failed to get message", {error = tostring(msg_err)})
-        return false
-    end
-
     logger:info("processing task", {
         id = task.id,
         action = task.action
     })
 
-    -- 작업 시뮬레이션
-    time.sleep("100ms")
-
-    -- 액션에 따라 처리
     local result
     if task.action == "uppercase" then
         result = {output = string.upper(task.data.text or "")}
@@ -367,41 +345,29 @@ local function main(task)
         result = {output = "processed"}
     end
 
-    -- 데이터베이스에 저장
     local db, db_err = sql.get("app:db")
     if db_err then
-        logger:error("database unavailable", {error = tostring(db_err)})
-        return false
+        error("database unavailable: " .. tostring(db_err))
     end
 
-    local insert = sql.builder.insert("tasks")
-        :columns("id", "payload", "status", "result", "created_at", "processed_at")
-        :values(
-            task.id,
-            json.encode(task),
-            "completed",
-            json.encode(result),
-            task.created_at,
-            os.time()
-        )
-
-    local _, exec_err = insert:run_with(db):exec()
+    local _, exec_err = db:execute(
+        "INSERT OR REPLACE INTO tasks (id, payload, status, result, created_at, processed_at) VALUES (?, ?, ?, ?, ?, ?)",
+        { task.id, json.encode(task), "completed", json.encode(result), task.created_at, os.time() }
+    )
     db:release()
 
     if exec_err then
-        logger:error("failed to store result", {error = tostring(exec_err)})
-        return false
+        error("failed to store result: " .. tostring(exec_err))
     end
 
     logger:info("task completed", {id = task.id})
-    return true
 end
 
 return { main = main }
 ```
 
 <note>
-<code>true</code>를 반환하면 메시지를 확인합니다. <code>false</code>를 반환하면 메시지가 재큐잉되거나 데드 레터 큐로 전송됩니다.
+컨슈머는 핸들러가 정상적으로 반환하면 자동으로 ack하고 오류를 발생시키면 자동으로 nack합니다. 핸들러 종료 전에 명시적 제어가 필요할 때만 `queue.message()`를 통해 `msg:ack()` 또는 `msg:nack()`을 호출하세요.
 </note>
 
 ## 서비스 실행
@@ -439,18 +405,6 @@ curl "http://localhost:8080/tasks?status=completed"
 2. **큐 컨슈머**가 메시지를 가져옴 (2개의 동시 워커)
 3. **워커**가 태스크를 처리하고, 결과를 SQLite에 쓰기
 4. **GET /tasks**가 데이터베이스에서 완료된 태스크 읽기
-
-## 보여주는 개념
-
-| 개념 | API | 설명 |
-|---------|-----|-------------|
-| REST 엔드포인트 | `http.request()`, `http.response()` | HTTP 요청 처리 |
-| 큐 발행 | `queue.publish(id, data)` | 비동기 작업 전송 |
-| 큐 소비 | `queue.message()` | 핸들러에서 메시지 접근 |
-| 데이터베이스 쿼리 | `sql.get()`, `db:query()` | 데이터 읽기 |
-| 쿼리 빌더 | `sql.builder.insert()` | 안전하게 SQL 빌드 |
-| 마이그레이션 | 0을 반환하는 프로세스 | 원샷 설정 태스크 |
-| 동시성 | `concurrency: 2` | 병렬 워커 |
 
 ## 다음 단계
 

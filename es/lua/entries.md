@@ -10,6 +10,9 @@ Configuración para entradas basadas en Lua: funciones, procesos, flujos de trab
 | `process.lua` | Actor de larga duración con estado |
 | `workflow.lua` | Flujo de trabajo durable (Temporal) |
 | `library.lua` | Código compartido importado por otras entradas |
+| `module.lua` | Superficie de módulo (biblioteca con múltiples métodos) |
+
+Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode`. Los autores escriben entradas `.lua`; los tipos de bytecode se emiten automáticamente al empaquetar.
 
 ## Campos Comunes
 
@@ -20,7 +23,7 @@ Todas las entradas Lua comparten estos campos:
 | `name` | sí | Nombre único dentro del namespace |
 | `kind` | sí | Uno de los tipos Lua anteriores |
 | `source` | sí | Ruta del archivo Lua (`file://path.lua`) |
-| `method` | sí | Función a exportar |
+| `method` | function/process/workflow | Función a exportar (las bibliotecas no la usan) |
 | `modules` | no | Módulos permitidos para `require()` |
 | `imports` | no | Otras entradas como módulos locales |
 | `meta` | no | Metadatos buscables |
@@ -52,7 +55,6 @@ Actor de larga duración que mantiene estado entre mensajes. Se comunica mediant
   method: main
   modules:
     - process
-    - channel
     - sql
 ```
 
@@ -95,7 +97,6 @@ Código compartido que puede ser importado por otras entradas.
 - name: helpers
   kind: library.lua
   source: file://helpers.lua
-  method: main
   modules:
     - json
     - base64
@@ -129,8 +130,9 @@ modules:
   - json
   - sql
   - process
-  - channel
 ```
+
+`channel`, `print`, `subscribe` y `unsubscribe` se cargan como globales de Lua y no necesitan aparecer en `modules:`.
 
 Solo los módulos listados están disponibles. Esto proporciona:
 - Seguridad: Prevenir acceso a módulos del sistema
@@ -161,11 +163,26 @@ Configure el pool de ejecución para funciones:
   source: file://handler.lua
   method: main
   pool:
-    type: inline    # Ejecutar en contexto del llamador
+    type: adaptive    # por defecto
+    size: 4           # workers iniciales
+    max_size: 16      # tope para pools elásticos
 ```
 
-Tipos de pool:
-- `inline` - Ejecutar en contexto del llamador (por defecto para manejadores HTTP)
+| Campo | Pools | Descripción |
+|-------|-------|-------------|
+| `type` | todos | Implementación del scheduler (ver tabla abajo) |
+| `size` | static, lazy, adaptive | Cantidad inicial de workers |
+| `workers` | engine v2 | Cantidad de hilos worker |
+| `buffer` | static, adaptive | Capacidad de la cola de tareas (por defecto `workers * 64`) |
+| `warm_start` | adaptive | Precompilar entradas al inicio |
+| `max_size` | lazy, adaptive | Tope superior para crecimiento elástico (por defecto 16) |
+
+| Tipo | Comportamiento |
+|------|----------------|
+| `inline` | Ejecución síncrona en la goroutine del llamador. Mínima latencia, sin aislamiento entre llamadas. |
+| `lazy` | Cero workers en reposo, se crean bajo demanda y se eliminan cuando están inactivos. |
+| `static` | Pool de tamaño fijo basado en canales. Predecible bajo carga estable. |
+| `adaptive` | Pool auto-escalable — crece bajo carga, se reduce cuando está inactivo. Predeterminado. |
 
 ## Metadatos
 

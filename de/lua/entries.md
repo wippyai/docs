@@ -10,6 +10,9 @@ Konfiguration für Lua-basierte Entries: Funktionen, Prozesse, Workflows und Bib
 | `process.lua` | Lang laufender Aktor mit Zustand |
 | `workflow.lua` | Dauerhafter Workflow (Temporal) |
 | `library.lua` | Gemeinsam genutzter Code, der von anderen Entries importiert wird |
+| `module.lua` | Modul-Oberfläche (Bibliothek mit mehreren Methoden) |
+
+Jede Art hat ein vorkompiliertes Bytecode-Gegenstück (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`), das von `wippy pack --bytecode` erzeugt wird. Autoren schreiben `.lua`-Entries; die Bytecode-Arten werden beim Packen automatisch erzeugt.
 
 ## Gemeinsame Felder
 
@@ -20,7 +23,7 @@ Alle Lua-Entries teilen diese Felder:
 | `name` | ja | Eindeutiger Name innerhalb des Namespace |
 | `kind` | ja | Eine der oben genannten Lua-Arten |
 | `source` | ja | Lua-Dateipfad (`file://path.lua`) |
-| `method` | ja | Zu exportierende Funktion |
+| `method` | function/process/workflow | Zu exportierende Funktion (Bibliotheken nutzen sie nicht) |
 | `modules` | nein | Erlaubte Module für `require()` |
 | `imports` | nein | Andere Entries als lokale Module |
 | `meta` | nein | Durchsuchbare Metadaten |
@@ -52,7 +55,6 @@ Lang laufender Aktor, der Zustand über Nachrichten hinweg beibehält. Kommunizi
   method: main
   modules:
     - process
-    - channel
     - sql
 ```
 
@@ -95,7 +97,6 @@ Gemeinsam genutzter Code, der von anderen Entries importiert werden kann.
 - name: helpers
   kind: library.lua
   source: file://helpers.lua
-  method: main
   modules:
     - json
     - base64
@@ -129,8 +130,9 @@ modules:
   - json
   - sql
   - process
-  - channel
 ```
+
+`channel`, `print`, `subscribe` und `unsubscribe` werden als Lua-Globale geladen — sie müssen nicht in `modules:` aufgeführt werden.
 
 Nur aufgelistete Module sind verfügbar. Dies bietet:
 - Sicherheit: Verhindert Zugriff auf Systemmodule
@@ -161,11 +163,26 @@ Konfigurieren Sie den Ausführungspool für Funktionen:
   source: file://handler.lua
   method: main
   pool:
-    type: inline    # Im Kontext des Aufrufers ausführen
+    type: adaptive    # Standard
+    size: 4           # Anfangs-Worker
+    max_size: 16      # Obergrenze für elastische Pools
 ```
 
-Pool-Typen:
-- `inline` - Im Kontext des Aufrufers ausführen (Standard für HTTP-Handler)
+| Feld | Pools | Beschreibung |
+|------|-------|--------------|
+| `type` | alle | Scheduler-Implementierung (siehe Tabelle unten) |
+| `size` | static, lazy, adaptive | Anfängliche Worker-Anzahl |
+| `workers` | Engine v2 | Anzahl der Worker-Threads |
+| `buffer` | static, adaptive | Aufgabenwarteschlange-Kapazität (Standard: `workers * 64`) |
+| `warm_start` | adaptive | Einträge beim Start vorkompilieren |
+| `max_size` | lazy, adaptive | Obergrenze für elastisches Wachstum (Standard: 16) |
+
+| Typ | Verhalten |
+|------|----------|
+| `inline` | Synchrone Ausführung in der Goroutine des Aufrufers. Geringste Latenz, keine Isolation zwischen Aufrufen. |
+| `lazy` | Keine Idle-Worker, Erstellung bei Bedarf, Abbau im Leerlauf. |
+| `static` | Pool fester Größe (Channel-basiert). Vorhersagbar bei stabiler Last. |
+| `adaptive` | Auto-skalierender Pool — wächst bei Last, schrumpft im Leerlauf. Standard. |
 
 ## Metadaten
 

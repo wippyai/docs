@@ -161,7 +161,7 @@ Dos entradas `security.policy` restringen los namespaces en los que puede escrib
 
 Estas políticas se cargan como un ámbito con nombre (`app:agent_security`) por `create_tool` y se evalúan antes de cualquier escritura en el registro. El agente puede escribir en `app.generated:*` (ninguna política deny coincide), pero no puede escribir en `app:*` (entradas core, modelos, definición del agente) ni en `app.tools:*` (herramientas integradas).
 
-Vea [Modelo de Seguridad](../system/security.md) para detalles sobre la evaluación de políticas.
+Vea [Modelo de Seguridad](system/security.md) para detalles sobre la evaluación de políticas.
 
 ### Modelos
 
@@ -257,7 +257,7 @@ El prompt es deliberadamente escueto. Reglas clave:
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, channel, funcs, registry, time, security]
+    modules: [io, json, process, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
@@ -448,7 +448,7 @@ El bucle del agente en `src/agent.lua` maneja streaming, ejecución de herramien
 
 ### Streaming
 
-Usa el mismo patrón de coroutine + canal del [tutorial de Agente LLM](llm-agent.md):
+Usa el mismo patrón de coroutine + canal del [tutorial de Agente LLM](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -591,10 +591,10 @@ The current UTC time is 2026-02-13T03:13:41Z.
 Your IP is 203.0.113.42.
 ```
 
-## Próximos Pasos
+## Siguientes Pasos
 
-- [Agente LLM](llm-agent.md) — Construir un agente básico desde cero
-- [Módulo de Agente](../framework/agents.md) — Referencia del framework de agentes
-- [Registro](../concepts/registry.md) — Cómo funciona el registro
-- [Modelo de Seguridad](../system/security.md) — Políticas de seguridad declarativas
-- [Tipos de Entrada](../guides/entry-kinds.md) — Tipos de entrada disponibles
+- [Agente LLM](tutorials/llm-agent.md) — Construir un agente básico desde cero
+- [Módulo de Agente](framework/agents.md) — Referencia del framework de agentes
+- [Registro](concepts/registry.md) — Cómo funciona el registro
+- [Modelo de Seguridad](system/security.md) — Políticas de seguridad declarativas
+- [Tipos de Entrada](guides/entry-kinds.md) — Tipos de entrada disponibles

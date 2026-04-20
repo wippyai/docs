@@ -446,8 +446,8 @@ local function chain_node_main(depth)
         end
     end
 
-    -- Warten bis Eltern stirbt (löst unseren Tod via LINK_DOWN aus)
-    time.sleep("5s")
+    -- Blockiert bis der Elterntod uns via LINK_DOWN beendet (standardmäßig trap_links=false)
+    process.inbox():receive()
 end
 ```
 
@@ -649,23 +649,6 @@ Workers-Einstellung:
 - Typischerweise auf Anzahl CPU-Kerne gesetzt
 - Alle Prozesse teilen sich diesen Thread-Pool
 
-## Schlüsselkonzepte
-
-**Monitoring** (einseitige Beobachtung):
-- Verwenden Sie `process.spawn_monitored()` oder `process.monitor()`
-- Empfangen Sie EXIT-Events wenn überwachter Prozess terminiert
-- Eltern läuft weiter nach Kind-Exit
-
-**Linking** (bidirektionales Schicksalsteilen):
-- Verwenden Sie `process.spawn_linked()` oder `process.link()`
-- Standardmäßig: wenn einer der Prozesse fehlschlägt, terminieren beide
-- Mit `trap_links=true`: LINK_DOWN-Events stattdessen empfangen
-
-**Cancellation**:
-- Verwenden Sie `process.cancel(pid, timeout)` für graceful Shutdown
-- Worker empfängt CANCEL-Event via `process.events()`
-- Hat Timeout-Dauer für Cleanup vor erzwungener Terminierung
-
 ## Event-Typen
 
 | Event | Ausgelöst durch | Erforderliches Setup |
@@ -674,8 +657,26 @@ Workers-Einstellung:
 | `LINK_DOWN` | Verlinkter Prozess schlägt fehl | `spawn_linked()` oder `link()` mit `trap_links=true` |
 | `CANCEL` | `process.cancel()` aufgerufen | Keines (wird immer geliefert) |
 
+## Supervisor-Pool ausführen
+
+Die Pool-Dateien in die unter [Konfiguration](#konfiguration) gezeigte Struktur legen, dann:
+
+```bash
+wippy init
+wippy run
+```
+
+Der Supervisor startet automatisch, startet vier Worker und protokolliert Neustarts, wenn einer davon abstürzt. Einen Neustart auslösen, indem ein Worker aus einem anderen Prozess beendet wird:
+
+```lua
+-- in einem Ad-hoc-Prozess oder Chat-Befehl
+process.cancel("<pid-aus-supervisor-log>", "100ms")
+```
+
+Der Pool empfängt `LINK_DOWN`, wartet 100 ms und startet den Worker unter derselben ID neu.
+
 ## Nächste Schritte
 
-- [Prozesse](processes.md) - Prozess-Grundlagen
-- [Channels](channels.md) - Message-Passing-Muster
+- [Prozesse](tutorials/processes.md) - Prozess-Grundlagen
+- [Channels](tutorials/channels.md) - Message-Passing-Muster
 - [Prozess-Modul](lua/core/process.md) - API-Referenz

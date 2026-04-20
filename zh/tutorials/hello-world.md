@@ -39,7 +39,7 @@ entries:
   # HTTP 服务器
   - name: gateway
     kind: http.service
-    addr: :8080
+    addr: ":8080"
     lifecycle:
       auto_start: true
 
@@ -47,7 +47,7 @@ entries:
   - name: api
     kind: http.router
     meta:
-      server: gateway
+      server: app:gateway
     prefix: /
 
   # 处理函数
@@ -64,7 +64,7 @@ entries:
     meta:
       router: app:api
     method: GET
-    func: hello
+    func: app:hello
     path: /hello
 ```
 
@@ -149,6 +149,6 @@ curl http://localhost:8080/hello
 
 ## 下一步
 
-- [Echo Service](echo-service.md) - 处理请求参数
-- [Task Queue](task-queue.md) - 带后台处理的 REST API
+- [Echo Service](tutorials/echo-service.md) - 处理请求参数
+- [Task Queue](tutorials/task-queue.md) - 带后台处理的 REST API
 - [HTTP Router](http/router.md) - 路由模式

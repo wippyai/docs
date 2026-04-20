@@ -340,17 +340,6 @@ return { main = main }
 
 完全なレスポンスを待つ代わりに、トークンごとにレスポンスをストリーミングします。
 
-### モジュールの更新
-
-プロセスモジュールに `channel` を追加します:
-
-```yaml
-    modules:
-      - io
-      - process
-      - channel
-```
-
 ### ストリーミングの実装
 
 `src/chat.lua` を更新します:
@@ -580,7 +569,6 @@ return { handler = handler }
       - io
       - json
       - process
-      - channel
       - funcs
 ```
 
@@ -768,7 +756,7 @@ Bye!
 
 ## 次のステップ
 
-- [LLM モジュール](../framework/llm.md) - 完全な LLM API リファレンス
-- [エージェントモジュール](../framework/agents.md) - エージェントフレームワークリファレンス
-- [CLI アプリケーション](cli.md) - ターミナル I/O パターン
-- [プロセス](processes.md) - プロセスモデルとコミュニケーション
+- [LLM モジュール](framework/llm.md) - 完全な LLM API リファレンス
+- [エージェントモジュール](framework/agents.md) - エージェントフレームワークリファレンス
+- [CLI アプリケーション](tutorials/cli.md) - ターミナル I/O パターン
+- [プロセス](tutorials/processes.md) - プロセスモデルとコミュニケーション

@@ -331,8 +331,8 @@ data:
 
 ## 関連項目
 
-- [ファサード](facade.md) - フロントエンド iframe ファサードとナビゲーションサイドバー
-- [テンプレート](../system/template.md) - Jet テンプレートエンジン
-- [セキュリティ](../system/security.md) - セキュリティアクターとアクセス制御
-- [環境](../system/env.md) - 環境変数ストレージ
-- [フレームワーク概要](overview.md) - フレームワークモジュールの利用
+- [ファサード](framework/facade.md) - フロントエンド iframe ファサードとナビゲーションサイドバー
+- [テンプレート](system/template.md) - Jet テンプレートエンジン
+- [セキュリティ](system/security.md) - セキュリティアクターとアクセス制御
+- [環境](system/env.md) - 環境変数ストレージ
+- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの利用

@@ -609,6 +609,6 @@ Dieses Muster ermoeglicht mandantenfaehige Anwendungen, bei denen Agenten pro Be
 
 ## Siehe auch
 
-- [LLM](llm.md) - Zugrundeliegendes LLM-Modul
-- [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md) - Schritt-fuer-Schritt-Tutorial
-- [Framework-Uebersicht](overview.md) - Nutzung der Framework-Module
+- [LLM](framework/llm.md) - Zugrundeliegendes LLM-Modul
+- [Einen LLM-Agenten erstellen](tutorials/llm-agent.md) - Schritt-fuer-Schritt-Tutorial
+- [Framework-Uebersicht](framework/overview.md) - Nutzung der Framework-Module

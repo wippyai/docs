@@ -331,8 +331,8 @@ data:
 
 ## See Also
 
-- [Facade](facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](../system/template.md) - Jet template engine
-- [Security](../system/security.md) - Security actors and access control
-- [Environment](../system/env.md) - Environment variable storage
-- [Framework Overview](overview.md) - Framework module usage
+- [Facade](framework/facade.md) - Frontend iframe facade and navigation sidebar
+- [Template](system/template.md) - Jet template engine
+- [Security](system/security.md) - Security actors and access control
+- [Environment](system/env.md) - Environment variable storage
+- [Framework Overview](framework/overview.md) - Framework module usage

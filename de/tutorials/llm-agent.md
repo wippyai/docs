@@ -1,14 +1,14 @@
 # LLM-Agent
 
-Erstelle Schritt fuer Schritt einen Terminal-Chat-Agenten, von einem einfachen LLM-Aufruf bis zu einem Streaming-Agenten mit Tools.
+Erstelle Schritt für Schritt einen Terminal-Chat-Agenten, von einem einfachen LLM-Aufruf bis zu einem Streaming-Agenten mit Tools.
 
 ## Was wir erstellen
 
 Einen Terminal-Chat-Agenten, der:
 - Text mit einem LLM generiert
-- Konversationen ueber mehrere Durchgaenge fuehrt
+- Konversationen über mehrere Durchgänge führt
 - Antworten in Echtzeit streamt
-- Tools fuer externe Faehigkeiten nutzt
+- Tools für externe Fähigkeiten nutzt
 
 ## Projektstruktur
 
@@ -72,8 +72,8 @@ entries:
       llm: wippy.llm:llm
 ```
 
-Das LLM-Modul benoetigt zwei Infrastruktur-Eintraege:
-- `env.storage.os` stellt API-Schluessel aus Umgebungsvariablen bereit
+Das LLM-Modul benötigt zwei Infrastruktur-Einträge:
+- `env.storage.os` stellt API-Schlüssel aus Umgebungsvariablen bereit
 - `process.host` stellt die Prozess-Laufzeitumgebung bereit, die das LLM-Modul intern nutzt
 
 ### Generierungscode
@@ -102,7 +102,7 @@ return { handler = handler }
 
 ### Modelldefinition
 
-Das LLM-Modul loest Modelle aus der Registry auf. Fuege einen Modelleintrag zur `_index.yaml` hinzu:
+Das LLM-Modul löst Modelle aus der Registry auf. Füge einen Modelleintrag zur `_index.yaml` hinzu:
 
 ```yaml
   - name: gpt-4.1-nano
@@ -140,11 +140,11 @@ Dies ruft die Funktion direkt auf und gibt das Ergebnis aus. Die Modelldefinitio
 
 ## Phase 2: Konversationen
 
-Wechsle von einem einzelnen Aufruf zu einer Konversation mit mehreren Durchgaengen mithilfe des Prompt-Builders. Aendere den Eintrag von einer Funktion zu einem Prozess mit Terminal-I/O.
+Wechsle von einem einzelnen Aufruf zu einer Konversation mit mehreren Durchgängen mithilfe des Prompt-Builders. Ändere den Eintrag von einer Funktion zu einem Prozess mit Terminal-I/O.
 
 ### Eintragsdefinitionen aktualisieren
 
-Ersetze den `ask`-Eintrag durch einen `chat`-Prozess und fuege die Terminal-Abhaengigkeit hinzu:
+Ersetze den `ask`-Eintrag durch einen `chat`-Prozess und füge die Terminal-Abhängigkeit hinzu:
 
 ```yaml
   - name: dep.terminal
@@ -217,22 +217,22 @@ end
 return { main = main }
 ```
 
-### Ausfuehren
+### Ausführen
 
 ```bash
 wippy update
 wippy run chat
 ```
 
-Der Prompt-Builder pflegt den vollstaendigen Konversationsverlauf. Jeder Durchgang fuegt die Benutzernachricht und die Assistenzantwort an, sodass das Modell Kontext ueber vorherige Austausche hat.
+Der Prompt-Builder pflegt den vollständigen Konversationsverlauf. Jeder Durchgang fügt die Benutzernachricht und die Assistenzantwort an, sodass das Modell Kontext über vorherige Austausche hat.
 
 ## Phase 3: Agent-Framework
 
-Das Agent-Modul bietet eine hoehere Abstraktionsebene ueber direkte LLM-Aufrufe. Agenten werden deklarativ mit Prompt, Modell und Tools definiert und dann ueber ein Context/Runner-Muster geladen und ausgefuehrt.
+Das Agent-Modul bietet eine höhere Abstraktionsebene über direkte LLM-Aufrufe. Agenten werden deklarativ mit Prompt, Modell und Tools definiert und dann über ein Context/Runner-Muster geladen und ausgeführt.
 
-### Agent-Abhaengigkeit hinzufuegen
+### Agent-Abhängigkeit hinzufügen
 
-Fuege zur `_index.yaml` hinzu:
+Füge zur `_index.yaml` hinzu:
 
 ```yaml
   - name: dep.agent
@@ -246,7 +246,7 @@ Fuege zur `_index.yaml` hinzu:
 
 ### Einen Agenten definieren
 
-Fuege einen Agent-Eintrag hinzu:
+Füge einen Agent-Eintrag hinzu:
 
 ```yaml
   - name: assistant
@@ -334,22 +334,11 @@ end
 return { main = main }
 ```
 
-Das Agent-Framework trennt die Agent-Definition (Prompt, Modell, Parameter) von der Ausfuehrungslogik. Derselbe Agent kann zur Laufzeit mit verschiedenen Contexts, Tools und Modellen geladen werden.
+Das Agent-Framework trennt die Agent-Definition (Prompt, Modell, Parameter) von der Ausführungslogik. Derselbe Agent kann zur Laufzeit mit verschiedenen Contexts, Tools und Modellen geladen werden.
 
 ## Phase 4: Streaming
 
-Streame Antworten Token fuer Token, anstatt auf die vollstaendige Antwort zu warten.
-
-### Module aktualisieren
-
-Fuege `channel` zu den Prozess-Modulen hinzu:
-
-```yaml
-    modules:
-      - io
-      - process
-      - channel
-```
+Streame Antworten Token für Token, anstatt auf die vollständige Antwort zu warten.
 
 ### Streaming-Implementierung
 
@@ -452,14 +441,14 @@ return { main = main }
 ```
 
 Zentrale Muster:
-- `coroutine.spawn` fuehrt `runner:step()` in einer separaten Coroutine aus, damit die Haupt-Coroutine Stream-Chunks verarbeiten kann
+- `coroutine.spawn` führt `runner:step()` in einer separaten Coroutine aus, damit die Haupt-Coroutine Stream-Chunks verarbeiten kann
 - `channel.select` multiplext den Stream-Channel und den Done-Channel
-- Ein einzelnes `process.listen()` wird einmal erstellt und ueber alle Durchgaenge wiederverwendet
-- Text wird akkumuliert, um ihn dem Konversationsverlauf hinzuzufuegen
+- Ein einzelnes `process.listen()` wird einmal erstellt und über alle Durchgänge wiederverwendet
+- Text wird akkumuliert, um ihn dem Konversationsverlauf hinzuzufügen
 
 ## Phase 5: Tools
 
-Gib dem Agenten Tools, die er aufrufen kann, um auf externe Faehigkeiten zuzugreifen.
+Gib dem Agenten Tools, die er aufrufen kann, um auf externe Fähigkeiten zuzugreifen.
 
 ### Tools definieren
 
@@ -510,7 +499,7 @@ entries:
 Tool-Metadaten teilen dem LLM mit, was das Tool tut:
 - `input_schema` ist ein JSON-Schema, das die Argumente definiert
 - `llm_alias` ist der Funktionsname, den das LLM sieht
-- `llm_description` erklaert, wann das Tool verwendet werden soll
+- `llm_description` erklärt, wann das Tool verwendet werden soll
 
 ### Tools implementieren
 
@@ -571,7 +560,7 @@ Aktualisiere den Agent-Eintrag in `src/_index.yaml`, um die Tools zu referenzier
       - app.tools:calculate
 ```
 
-### Tool-Ausfuehrung hinzufuegen
+### Tool-Ausführung hinzufügen
 
 Aktualisiere die Prozess-Module des Chat-Prozesses um `json` und `funcs`:
 
@@ -580,11 +569,10 @@ Aktualisiere die Prozess-Module des Chat-Prozesses um `json` und `funcs`:
       - io
       - json
       - process
-      - channel
       - funcs
 ```
 
-Aktualisiere `src/chat.lua` mit Tool-Ausfuehrung:
+Aktualisiere `src/chat.lua` mit Tool-Ausführung:
 
 ```lua
 local io = require("io")
@@ -737,14 +725,14 @@ end
 return { main = main }
 ```
 
-Die Tool-Ausfuehrungsschleife:
+Die Tool-Ausführungsschleife:
 1. `runner:step()` mit Streaming aufrufen
-2. Wenn die Antwort `tool_calls` enthaelt, jedes Tool ueber `funcs.call()` ausfuehren
-3. Tool-Aufrufe und Ergebnisse zur Konversation hinzufuegen
-4. Zurueck zu Schritt 1, damit der Agent die Ergebnisse einbeziehen kann
-5. Wenn keine weiteren Tool-Aufrufe vorhanden sind, den finalen Text zurueckgeben
+2. Wenn die Antwort `tool_calls` enthält, jedes Tool über `funcs.call()` ausführen
+3. Tool-Aufrufe und Ergebnisse zur Konversation hinzufügen
+4. Zurück zu Schritt 1, damit der Agent die Ergebnisse einbeziehen kann
+5. Wenn keine weiteren Tool-Aufrufe vorhanden sind, den finalen Text zurückgeben
 
-### Agenten ausfuehren
+### Agenten ausführen
 
 ```bash
 wippy update
@@ -766,9 +754,9 @@ The current time is 17:20 UTC on February 12, 2026.
 Bye!
 ```
 
-## Naechste Schritte
+## Nächste Schritte
 
-- [LLM-Modul](../framework/llm.md) - Vollstaendige LLM-API-Referenz
-- [Agent-Modul](../framework/agents.md) - Agent-Framework-Referenz
-- [CLI-Anwendungen](cli.md) - Terminal-I/O-Muster
-- [Prozesse](processes.md) - Prozessmodell und Kommunikation
+- [LLM-Modul](framework/llm.md) - Vollständige LLM-API-Referenz
+- [Agent-Modul](framework/agents.md) - Agent-Framework-Referenz
+- [CLI-Anwendungen](tutorials/cli.md) - Terminal-I/O-Muster
+- [Prozesse](tutorials/processes.md) - Prozessmodell und Kommunikation

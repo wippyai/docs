@@ -136,7 +136,7 @@ return { run = run }
 
 ### 迁移引导加载器（顺序 `20`）
 
-由 `wippy/migration` 提供。发现每个带有 `meta.type: migration` 的条目，按 `meta.target_db` 分组并应用待处理的迁移。参见[迁移](migration.md)。
+由 `wippy/migration` 提供。发现每个带有 `meta.type: migration` 的条目，按 `meta.target_db` 分组并应用待处理的迁移。参见[迁移](framework/migration.md)。
 
 ## 观察启动状态
 
@@ -148,6 +148,6 @@ return { run = run }
 
 ## 另见
 
-- [迁移](migration.md) - 迁移引导加载器和 DSL
-- [监管](../guides/supervision.md) - 服务生命周期和重启策略
-- [框架概览](overview.md) - 框架模块用法
+- [迁移](framework/migration.md) - 迁移引导加载器和 DSL
+- [监管](guides/supervision.md) - 服务生命周期和重启策略
+- [框架概览](framework/overview.md) - 框架模块用法

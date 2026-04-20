@@ -574,6 +574,6 @@ io.print(response.result)
 
 ## 참고 항목
 
-- [에이전트](agents.md) - 도구, 위임, 메모리를 갖춘 에이전트 프레임워크
-- [LLM 에이전트 만들기](../tutorials/llm-agent.md) - 단계별 튜토리얼
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [에이전트](framework/agents.md) - 도구, 위임, 메모리를 갖춘 에이전트 프레임워크
+- [LLM 에이전트 만들기](tutorials/llm-agent.md) - 단계별 튜토리얼
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

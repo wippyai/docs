@@ -446,8 +446,8 @@ local function chain_node_main(depth)
         end
     end
 
-    -- 親の死亡を待機（LINK_DOWNで自身の終了をトリガー）
-    time.sleep("5s")
+    -- 親の死亡がLINK_DOWN経由で終了させるまでブロック（デフォルトtrap_links=false）
+    process.inbox():receive()
 end
 ```
 
@@ -649,23 +649,6 @@ entries:
 - 通常はCPUコア数に設定
 - すべてのプロセスがこのスレッドプールを共有
 
-## 主要コンセプト
-
-**モニタリング**（一方向の監視）：
-- `process.spawn_monitored()`または`process.monitor()`を使用
-- モニタリング対象のプロセスが終了するとEXITイベントを受信
-- 子が終了しても親は実行を継続
-
-**リンク**（双方向の運命共有）：
-- `process.spawn_linked()`または`process.link()`を使用
-- デフォルト：どちらかのプロセスが失敗すると両方が終了
-- `trap_links=true`の場合：代わりにLINK_DOWNイベントを受信
-
-**キャンセル**：
-- 適切なシャットダウンには`process.cancel(pid, timeout)`を使用
-- ワーカーは`process.events()`経由でCANCELイベントを受信
-- 強制終了前のクリーンアップ用タイムアウト期間
-
 ## イベントタイプ
 
 | イベント | トリガー | 必要な設定 |
@@ -674,9 +657,27 @@ entries:
 | `LINK_DOWN` | リンクされたプロセスが失敗 | `spawn_linked()`または`link()`と`trap_links=true` |
 | `CANCEL` | `process.cancel()`が呼ばれた | なし（常に配信） |
 
+## スーパーバイザープールの実行
+
+[設定](#設定)に示した構造にプールファイルを配置し、次を実行します：
+
+```bash
+wippy init
+wippy run
+```
+
+スーパーバイザーが自動起動し、4つのワーカーをスポーンし、いずれかが終了すると再起動をログに記録します。別のプロセスからワーカーをキャンセルして再起動をトリガーできます：
+
+```lua
+-- アドホックプロセスまたはchatコマンド内で
+process.cancel("<pid-from-supervisor-log>", "100ms")
+```
+
+プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします。
+
 ## 次のステップ
 
-- [プロセス](processes.md) - プロセスの基礎
-- [チャネル](channels.md) - メッセージパッシングパターン
+- [プロセス](tutorials/processes.md) - プロセスの基礎
+- [チャネル](tutorials/channels.md) - メッセージパッシングパターン
 - [プロセスモジュール](lua/core/process.md) - APIリファレンス
 

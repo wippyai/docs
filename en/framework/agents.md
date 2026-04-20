@@ -609,6 +609,6 @@ This pattern enables multi-tenant applications where agents are configured per-u
 
 ## See Also
 
-- [LLM](llm.md) - Underlying LLM module
-- [Building an LLM Agent](../tutorials/llm-agent.md) - Step-by-step tutorial
-- [Framework Overview](overview.md) - Framework module usage
+- [LLM](framework/llm.md) - Underlying LLM module
+- [Building an LLM Agent](tutorials/llm-agent.md) - Step-by-step tutorial
+- [Framework Overview](framework/overview.md) - Framework module usage

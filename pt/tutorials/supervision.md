@@ -446,8 +446,8 @@ local function chain_node_main(depth)
         end
     end
 
-    -- Aguardar pai morrer (aciona nossa morte via LINK_DOWN)
-    time.sleep("5s")
+    -- Bloqueia até a morte do pai nos matar via LINK_DOWN (trap_links=false por padrão)
+    process.inbox():receive()
 end
 ```
 
@@ -649,23 +649,6 @@ Configuração de workers:
 - Tipicamente definido para o número de núcleos de CPU
 - Todos os processos compartilham este pool de threads
 
-## Conceitos-Chave
-
-**Monitoramento** (observação unidirecional):
-- Use `process.spawn_monitored()` ou `process.monitor()`
-- Receba eventos EXIT quando processo monitorado terminar
-- Pai continua executando após filho terminar
-
-**Vinculação** (compartilhamento bidirecional de destino):
-- Use `process.spawn_linked()` ou `process.link()`
-- Por padrão: se qualquer processo falhar, ambos terminam
-- Com `trap_links=true`: receba eventos LINK_DOWN em vez disso
-
-**Cancelamento**:
-- Use `process.cancel(pid, timeout)` para shutdown gracioso
-- Worker recebe evento CANCEL via `process.events()`
-- Tem duração de timeout para limpeza antes de terminação forçada
-
 ## Tipos de Evento
 
 | Evento | Acionado Por | Configuração Necessária |
@@ -674,8 +657,26 @@ Configuração de workers:
 | `LINK_DOWN` | Processo vinculado falha | `spawn_linked()` ou `link()` com `trap_links=true` |
 | `CANCEL` | `process.cancel()` chamado | Nenhuma (sempre entregue) |
 
+## Executando o Pool de Supervisores
+
+Coloque os arquivos do pool na estrutura mostrada em [Configuração](#configuração) e então:
+
+```bash
+wippy init
+wippy run
+```
+
+O supervisor inicia automaticamente, cria quatro workers e registra reinicializações quando qualquer um deles termina. Acione uma reinicialização encerrando um worker a partir de outro processo:
+
+```lua
+-- em um processo avulso ou comando de chat
+process.cancel("<pid-do-log-do-supervisor>", "100ms")
+```
+
+O pool recebe `LINK_DOWN`, aguarda 100 ms e recria o worker com o mesmo id.
+
 ## Próximos Passos
 
-- [Processes](processes.md) - Fundamentos de processos
-- [Channels](channels.md) - Padrões de passagem de mensagens
+- [Processes](tutorials/processes.md) - Fundamentos de processos
+- [Channels](tutorials/channels.md) - Padrões de passagem de mensagens
 - [Process Module](lua/core/process.md) - Referência da API

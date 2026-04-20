@@ -136,7 +136,7 @@ Gera uma `ENCRYPTION_KEY` de 256 bits e a armazena atraves do `env_storage` conf
 
 ### Bootloader de Migracao (ordem `20`)
 
-Fornecido por `wippy/migration`. Descobre cada entrada com `meta.type: migration`, agrupa-as por `meta.target_db` e aplica as pendentes. Veja [Migracoes](migration.md).
+Fornecido por `wippy/migration`. Descobre cada entrada com `meta.type: migration`, agrupa-as por `meta.target_db` e aplica as pendentes. Veja [Migracoes](framework/migration.md).
 
 ## Observando o Status de Boot
 
@@ -148,6 +148,6 @@ Mantenha os bootloaders idempotentes. Eles podem executar novamente apos um rein
 
 ## Veja Tambem
 
-- [Migracoes](migration.md) - Bootloader de migracao e DSL
-- [Supervisao](../guides/supervision.md) - Ciclo de vida do servico e politica de reinicio
-- [Visao Geral do Framework](overview.md) - Uso de modulos do framework
+- [Migracoes](framework/migration.md) - Bootloader de migracao e DSL
+- [Supervisao](guides/supervision.md) - Ciclo de vida do servico e politica de reinicio
+- [Visao Geral do Framework](framework/overview.md) - Uso de modulos do framework

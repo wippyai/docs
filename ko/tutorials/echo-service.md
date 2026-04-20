@@ -76,7 +76,6 @@ entries:
       - io
       - process
       - time
-      - channel
 
   - name: relay
     kind: process.lua
@@ -85,7 +84,6 @@ entries:
     modules:
       - process
       - logger
-      - channel
       - time
 
   - name: relay-service
@@ -222,11 +220,7 @@ local worker_pid, err = process.spawn_monitored("app:worker", "app:processes", .
 `src/worker.lua` 생성:
 
 ```lua
-local time = require("time")
-
 local function main(sender_pid, data)
-    time.sleep("100ms")
-
     local response = {
         data = string.upper(data),
         worker = process.pid()
@@ -259,8 +253,16 @@ local function cyan(s) return "\027[36m" .. s .. reset end
 local function main()
     local inbox = process.inbox()
 
-    -- 릴레이가 등록될 때까지 대기
-    time.sleep("200ms")
+    -- 릴레이가 이름을 등록할 때까지 대기
+    local deadline = time.after("5s")
+    while not process.registry.lookup("relay") do
+        local tick = time.after("50ms")
+        local r = channel.select { deadline:case_receive(), tick:case_receive() }
+        if r.channel == deadline then
+            io.print("relay not ready")
+            return 1
+        end
+    end
 
     io.print(cyan("Echo Client"))
     io.print(dim("Type messages to echo. Ctrl+C to exit.\n"))
@@ -347,19 +349,6 @@ Type messages to echo. Ctrl+C to exit.
   HELLO WORLD
   from worker: {app:processes|0x00004}
 ```
-
-## 개념 요약
-
-| 개념 | API |
-|---------|-----|
-| 프로세스 스폰 | `process.spawn_monitored(entry, host, ...)` |
-| 메시지 전달 | `process.send(dest, topic, data)` |
-| 인박스 | `process.inbox()` |
-| 이벤트 | `process.events()` |
-| 등록 | `process.registry.register(name)` |
-| 채널 select | `channel.select {...}` |
-| 타임아웃 | `time.after(duration)` |
-| 코루틴 | `coroutine.spawn(fn)` |
 
 ## 다음 단계
 

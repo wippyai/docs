@@ -165,6 +165,6 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
 
 ## См. также
 
-- [LLM](llm.md) -- Генерация LLM и контракт `usage_tracker`
-- [Migrations](migration.md) -- Запуск миграций, создающий схему
-- [Обзор фреймворка](overview.md) -- Использование модулей фреймворка
+- [LLM](framework/llm.md) -- Генерация LLM и контракт `usage_tracker`
+- [Migrations](framework/migration.md) -- Запуск миграций, создающий схему
+- [Обзор фреймворка](framework/overview.md) -- Использование модулей фреймворка

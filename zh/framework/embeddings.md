@@ -153,6 +153,6 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 ## 另请参阅
 
-- [LLM](llm.md) - `llm.embed(...)` 用于原始嵌入生成
-- [迁移](migration.md) - 用于创建该表的迁移运行器
-- [框架概述](overview.md) - 框架模块用法
+- [LLM](framework/llm.md) - `llm.embed(...)` 用于原始嵌入生成
+- [迁移](framework/migration.md) - 用于创建该表的迁移运行器
+- [框架概述](framework/overview.md) - 框架模块用法

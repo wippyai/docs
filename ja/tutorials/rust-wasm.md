@@ -208,7 +208,7 @@ entries:
     kind: http.router
     meta:
       comment: Public API router
-    server: gateway
+      server: demo:gateway
     prefix: /
 
   - name: processes
@@ -438,21 +438,7 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 -- fib: 55
 ```
 
-## WASMを公開する3つの方法
-
-| アプローチ | エントリ種別 | ユースケース |
-|-----------|-------------|-------------|
-| 関数 | `function.wasm` | Luaまたは他のWASMから`funcs.call()`経由で呼び出し |
-| CLIコマンド | `process.wasm` + `meta.command` | `wippy run <name>`経由のターミナルコマンド |
-| HTTPエンドポイント | `function.wasm` + `http.endpoint` | `wasi-http`トランスポート経由のREST API |
-
-3つとも同じコンパイル済み`.wasm`バイナリを使用し、同じメソッドを参照します。
-
-## 他の言語でのビルド
-
-WebAssemblyコンポーネントモデルにコンパイルできる言語であればWippyで動作します。WITインターフェースを定義し、エクスポートを実装し、`.wasm`にコンパイルし、`_index.yaml`でエントリを設定してください。
-
-## 関連項目
+## 次のステップ
 
 - [WASM概要](wasm/overview.md) - WebAssemblyランタイムの概要
 - [WASM関数](wasm/functions.md) - 関数設定リファレンス

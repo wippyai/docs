@@ -199,13 +199,16 @@ entries:
     component: wippy/embeddings
     version: "*"
     parameters:
-      - { name: target_db, value: app:db }
+      - name: target_db
+        value: app:db
 
   - name: ingest
     kind: function.lua
     source: file://app/ingest.lua
     method: ingest
-    modules: [text, uuid]
+    modules:
+      - text
+      - uuid
     imports:
       embeddings: wippy.embeddings:embeddings
 
@@ -221,16 +224,19 @@ entries:
   - name: gateway
     kind: http.service
     addr: ":8080"
-    lifecycle: { auto_start: true }
+    lifecycle:
+      auto_start: true
 
   - name: api
     kind: http.router
-    meta: { server: gateway }
+    meta:
+      server: app:gateway
     prefix: /api
 
   - name: ask
     kind: http.endpoint
-    meta: { router: api }
+    meta:
+      router: app:api
     method: POST
     path: /ask
     func: app:answer_http
@@ -239,7 +245,8 @@ entries:
     kind: function.lua
     source: file://app/answer_http.lua
     method: handler
-    modules: [http]
+    modules:
+      - http
     imports:
       answer: app:answer
 ```
@@ -262,7 +269,7 @@ local function handler()
 
     local result, ans_err = answer.answer(body.question)
     if ans_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({ error = ans_err })
         return
     end
@@ -289,7 +296,7 @@ curl -X POST http://localhost:8080/api/ask \
 - **Hybride Suche**: Für genaue Begriffs-Treffer (Namen, IDs) kombiniere die Vektorsuche mit Volltextsuche über deiner Quelltabelle und re-ranke.
 - **Modellwahl**: Das Standardmodell `text-embedding-3-small` mit 512 Dimensionen ist kostengünstig. Erweitere nur auf 1024 oder 3072 Dimensionen, wenn der Recall unzureichend ist — größere Vektoren bedeuten größeren Speicher und langsamere Suche.
 
-## Siehe auch
+## Nächste Schritte
 
 - [LLM-Framework](framework/llm.md) — `llm.generate`, `llm.embed`, Prompt-Konstruktion
 - [Agenten](framework/agents.md) — den Retriever als Agenten-Tool wrappen

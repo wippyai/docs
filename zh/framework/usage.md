@@ -165,6 +165,6 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
 
 ## 另请参阅
 
-- [LLM](llm.md) - LLM 生成和 `usage_tracker` 契约
-- [迁移](migration.md) - 用于创建模式的迁移运行器
-- [框架概述](overview.md) - 框架模块用法
+- [LLM](framework/llm.md) - LLM 生成和 `usage_tracker` 契约
+- [迁移](framework/migration.md) - 用于创建模式的迁移运行器
+- [框架概述](framework/overview.md) - 框架模块用法

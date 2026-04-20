@@ -242,4 +242,4 @@ Available operations:
 ## Next Steps
 
 - [Channel Module Reference](lua/core/channel.md) - Complete API documentation
-- [Processes](processes.md) - Inter-process communication
+- [Processes](tutorials/processes.md) - Inter-process communication

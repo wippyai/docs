@@ -10,6 +10,9 @@ Lua 相关记录的配置：函数、进程、工作流和库。
 | `process.lua` | 带状态的长时间运行 Actor |
 | `workflow.lua` | 持久化工作流（Temporal） |
 | `library.lua` | 被其他记录导入的共享代码 |
+| `module.lua` | 模块表面（多方法库） |
+
+每种类型都有一个预编译的字节码对应版本（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`），由 `wippy pack --bytecode` 生成。作者编写 `.lua` 记录；打包时会自动生成字节码类型。
 
 ## 通用字段
 
@@ -20,7 +23,7 @@ Lua 相关记录的配置：函数、进程、工作流和库。
 | `name` | 是 | 命名空间内的唯一名称 |
 | `kind` | 是 | 上述 Lua 类型之一 |
 | `source` | 是 | Lua 文件路径（`file://path.lua`） |
-| `method` | 是 | 要导出的函数 |
+| `method` | function/process/workflow | 要导出的函数（库不使用此字段） |
 | `modules` | 否 | `require()` 允许的模块 |
 | `imports` | 否 | 作为本地模块的其他记录 |
 | `meta` | 否 | 可搜索的元数据 |
@@ -52,7 +55,6 @@ Lua 相关记录的配置：函数、进程、工作流和库。
   method: main
   modules:
     - process
-    - channel
     - sql
 ```
 
@@ -95,7 +97,6 @@ Lua 相关记录的配置：函数、进程、工作流和库。
 - name: helpers
   kind: library.lua
   source: file://helpers.lua
-  method: main
   modules:
     - json
     - base64
@@ -129,8 +130,9 @@ modules:
   - json
   - sql
   - process
-  - channel
 ```
+
+`channel`、`print`、`subscribe` 和 `unsubscribe` 作为 Lua 全局加载——无需出现在 `modules:` 中。
 
 只有列出的模块可用。这提供了：
 - 安全性：防止访问系统模块
@@ -161,11 +163,26 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: inline    # 在调用者上下文中运行
+    type: adaptive    # 默认
+    size: 4           # 初始 worker 数
+    max_size: 16      # 弹性池上限
 ```
 
-池类型：
-- `inline` — 在调用者上下文中执行（HTTP 处理器的默认值）
+| 字段 | 池类型 | 描述 |
+|------|--------|------|
+| `type` | 全部 | 调度器实现（参见下表） |
+| `size` | static, lazy, adaptive | 初始 worker 数 |
+| `workers` | engine v2 | worker 线程数 |
+| `buffer` | static, adaptive | 任务队列容量（默认 `workers * 64`） |
+| `warm_start` | adaptive | 启动时预编译条目 |
+| `max_size` | lazy, adaptive | 弹性扩展上限（默认 16） |
+
+| 类型 | 行为 |
+|------|------|
+| `inline` | 在调用者的 goroutine 中同步执行。延迟最低，调用之间无隔离。 |
+| `lazy` | 空闲时无 worker，按需创建，空闲时回收。 |
+| `static` | 基于 channel 的固定大小池。在稳定负载下可预测。 |
+| `adaptive` | 自动扩展池——负载下扩容，空闲时收缩。默认。 |
 
 ## 元数据
 

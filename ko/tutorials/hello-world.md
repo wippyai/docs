@@ -39,7 +39,7 @@ entries:
   # HTTP 서버
   - name: gateway
     kind: http.service
-    addr: :8080
+    addr: ":8080"
     lifecycle:
       auto_start: true
 
@@ -47,7 +47,7 @@ entries:
   - name: api
     kind: http.router
     meta:
-      server: gateway
+      server: app:gateway
     prefix: /
 
   # 핸들러 함수
@@ -64,7 +64,7 @@ entries:
     meta:
       router: app:api
     method: GET
-    func: hello
+    func: app:hello
     path: /hello
 ```
 
@@ -149,6 +149,6 @@ curl http://localhost:8080/hello
 
 ## 다음 단계
 
-- [에코 서비스](echo-service.md) - 요청 파라미터 처리
-- [태스크 큐](task-queue.md) - 백그라운드 처리가 있는 REST API
+- [에코 서비스](tutorials/echo-service.md) - 요청 파라미터 처리
+- [태스크 큐](tutorials/task-queue.md) - 백그라운드 처리가 있는 REST API
 - [HTTP 라우터](http/router.md) - 라우팅 패턴

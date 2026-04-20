@@ -199,13 +199,16 @@ entries:
     component: wippy/embeddings
     version: "*"
     parameters:
-      - { name: target_db, value: app:db }
+      - name: target_db
+        value: app:db
 
   - name: ingest
     kind: function.lua
     source: file://app/ingest.lua
     method: ingest
-    modules: [text, uuid]
+    modules:
+      - text
+      - uuid
     imports:
       embeddings: wippy.embeddings:embeddings
 
@@ -221,16 +224,19 @@ entries:
   - name: gateway
     kind: http.service
     addr: ":8080"
-    lifecycle: { auto_start: true }
+    lifecycle:
+      auto_start: true
 
   - name: api
     kind: http.router
-    meta: { server: gateway }
+    meta:
+      server: app:gateway
     prefix: /api
 
   - name: ask
     kind: http.endpoint
-    meta: { router: api }
+    meta:
+      router: app:api
     method: POST
     path: /ask
     func: app:answer_http
@@ -239,7 +245,8 @@ entries:
     kind: function.lua
     source: file://app/answer_http.lua
     method: handler
-    modules: [http]
+    modules:
+      - http
     imports:
       answer: app:answer
 ```
@@ -262,7 +269,7 @@ local function handler()
 
     local result, ans_err = answer.answer(body.question)
     if ans_err then
-        res:set_status(http.STATUS.INTERNAL_SERVER_ERROR)
+        res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({ error = ans_err })
         return
     end
@@ -289,7 +296,7 @@ curl -X POST http://localhost:8080/api/ask \
 - **하이브리드 검색**: 정확한 용어 재현 (이름, ID) 을 위해 벡터 검색과 소스 테이블에 대한 전체 텍스트 검색을 결합하고 재순위를 매깁니다.
 - **모델 선택**: 기본 512차원 `text-embedding-3-small`은 비용 효율적입니다. 재현이 충분하지 않은 경우에만 1024 또는 3072차원으로 업그레이드하세요 — 더 큰 벡터는 더 큰 저장 공간과 느린 검색을 의미합니다.
 
-## 참고
+## 다음 단계
 
 - [LLM 프레임워크](framework/llm.md) — `llm.generate`, `llm.embed`, 프롬프트 구성
 - [에이전트](framework/agents.md) — 리트리버를 에이전트 도구로 래핑

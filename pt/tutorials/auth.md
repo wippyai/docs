@@ -1,6 +1,30 @@
-# Crypto Ticker
+# Ticker de Criptomoedas
 
 Construa um ticker de criptomoedas em tempo real com autenticação por API key e streaming WebSocket. Este tutorial demonstra segurança baseada em token, configuração de middleware e tratamento de WebSocket baseado em processos.
+
+## Visão Geral
+
+- **Troca de API key** — POST de uma API key devolve um token bearer assinado com HMAC
+- **Middleware de token** — Protege upgrades WebSocket através do token store
+- **Fan-out WebSocket** — Um processo ticker transmite para múltiplos handlers de conexão
+- **Ativos estáticos** — `http.static` serve o cliente do navegador
+- **SQLite** — Armazena API keys; um memory store suporta o token store
+
+## Estrutura do Projeto
+
+```
+auth-ticker/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── auth_token.lua
+    ├── ws_ticker.lua
+    ├── ws_handler.lua
+    ├── ticker.lua
+    ├── migrate.lua
+    └── public/
+        └── index.html
+```
 
 ## Arquitetura
 
@@ -296,7 +320,12 @@ local function handler()
     )
     db:release()
 
-    if query_err or #rows == 0 then
+    if query_err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({error = "lookup failed"})
+        return
+    end
+    if #rows == 0 then
         res:set_status(http.STATUS.UNAUTHORIZED)
         res:write_json({error = "invalid API key"})
         return
@@ -512,7 +541,7 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    local ticker, ticker_err = time.ticker("10ms")
+    local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
         return 1
@@ -641,18 +670,7 @@ wippy run
 
 Abra http://localhost:8081 e insira a API key demo mostrada nos logs.
 
-## Pontos-Chave
-
-| Conceito | Implementação |
-|----------|---------------|
-| Assinatura de token | `security.token_store` com chave HMAC |
-| Validação de token | middleware `token_auth` no router |
-| Autorização | `security.policy` anexada ao escopo do token |
-| Ciclo de vida WebSocket | `websocket_relay` envia ws.join/ws.leave automaticamente |
-| Limpeza do handler | `process.monitor(handler_pid)` detecta crashes |
-| Mapa de inscrições | `subscriptions[handler_pid] = client_pid` |
-
-## Veja Também
+## Próximos Passos
 
 - [WebSocket Relay](http/websocket-relay.md) - Configuração de middleware
 - [Security Module](lua/security/security.md) - Atores, políticas, token stores

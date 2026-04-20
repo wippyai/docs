@@ -165,6 +165,6 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
 
 ## 참고 항목
 
-- [LLM](llm.md) - LLM 생성 및 `usage_tracker` 컨트랙트
-- [마이그레이션](migration.md) - 스키마를 생성하는 마이그레이션 러너
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [LLM](framework/llm.md) - LLM 생성 및 `usage_tracker` 컨트랙트
+- [마이그레이션](framework/migration.md) - 스키마를 생성하는 마이그레이션 러너
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

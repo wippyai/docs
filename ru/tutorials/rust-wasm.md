@@ -208,7 +208,7 @@ entries:
     kind: http.router
     meta:
       comment: Public API router
-    server: gateway
+      server: demo:gateway
     prefix: /
 
   - name: processes
@@ -438,21 +438,7 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 -- fib: 55
 ```
 
-## Три способа предоставления WASM
-
-| Подход | Entry Kind | Вариант использования |
-|--------|-----------|----------------------|
-| Function | `function.wasm` | Вызов из Lua или другого WASM через `funcs.call()` |
-| CLI Command | `process.wasm` + `meta.command` | Терминальные команды через `wippy run <name>` |
-| HTTP Endpoint | `function.wasm` + `http.endpoint` | REST API через транспорт `wasi-http` |
-
-Все три подхода используют один и тот же скомпилированный `.wasm`-бинарник и ссылаются на одни и те же методы.
-
-## Сборка для других языков
-
-Любой язык, компилируемый в WebAssembly Component Model, работает с Wippy. Определите WIT-интерфейс, реализуйте экспорты, скомпилируйте в `.wasm` и настройте записи в `_index.yaml`.
-
-## См. также
+## Следующие шаги
 
 - [Обзор WASM](wasm/overview.md) - Обзор среды выполнения WebAssembly
 - [Функции WASM](wasm/functions.md) - Справочник по конфигурации функций

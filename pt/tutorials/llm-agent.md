@@ -1,12 +1,12 @@
 # Agente LLM
 
-Construa um agente de chat no terminal passo a passo, progredindo de uma simples chamada LLM ate um agente com streaming e ferramentas.
+Construa um agente de chat no terminal passo a passo, progredindo de uma simples chamada LLM até um agente com streaming e ferramentas.
 
 ## O Que Vamos Construir
 
 Um agente de chat no terminal que:
 - Gera texto com um LLM
-- Mantem conversas com multiplos turnos
+- Mantém conversas com múltiplos turnos
 - Transmite respostas em tempo real
 - Usa ferramentas para acessar capacidades externas
 
@@ -26,9 +26,9 @@ llm-agent/
         └── calculate.lua
 ```
 
-## Fase 1: Geracao Simples
+## Fase 1: Geração Simples
 
-Comece com uma funcao basica que chama `llm.generate()` com um prompt em string.
+Comece com uma função básica que chama `llm.generate()` com um prompt em string.
 
 ### Criar o Projeto
 
@@ -37,7 +37,7 @@ mkdir llm-agent && cd llm-agent
 mkdir -p src
 ```
 
-### Definicoes de Entrada
+### Definições de Entrada
 
 Crie `src/_index.yaml`:
 
@@ -72,11 +72,11 @@ entries:
       llm: wippy.llm:llm
 ```
 
-O modulo LLM precisa de duas entradas de infraestrutura:
-- `env.storage.os` fornece chaves de API a partir de variaveis de ambiente
-- `process.host` fornece o runtime de processos que o modulo LLM usa internamente
+O módulo LLM precisa de duas entradas de infraestrutura:
+- `env.storage.os` fornece chaves de API a partir de variáveis de ambiente
+- `process.host` fornece o runtime de processos que o módulo LLM usa internamente
 
-### Codigo de Geracao
+### Código de Geração
 
 Crie `src/ask.lua`:
 
@@ -100,9 +100,9 @@ end
 return { handler = handler }
 ```
 
-### Definicao do Modelo
+### Definição do Modelo
 
-O modulo LLM resolve modelos a partir do registro. Adicione uma entrada de modelo ao `_index.yaml`:
+O módulo LLM resolve modelos a partir do registro. Adicione uma entrada de modelo ao `_index.yaml`:
 
 ```yaml
   - name: gpt-4.1-nano
@@ -136,15 +136,15 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-Isso chama a funcao diretamente e imprime o resultado. A definicao do modelo diz ao modulo LLM qual provedor usar e qual nome de modelo enviar para a API.
+Isso chama a função diretamente e imprime o resultado. A definição do modelo diz ao módulo LLM qual provedor usar e qual nome de modelo enviar para a API.
 
 ## Fase 2: Conversas
 
-Evolua de uma unica chamada para uma conversa com multiplos turnos usando o construtor de prompt. Altere a entrada de uma funcao para um processo com I/O de terminal.
+Evolua de uma única chamada para uma conversa com múltiplos turnos usando o construtor de prompt. Altere a entrada de uma função para um processo com I/O de terminal.
 
-### Atualizar Definicoes de Entrada
+### Atualizar Definições de Entrada
 
-Substitua a entrada `ask` por um processo `chat` e adicione a dependencia do terminal:
+Substitua a entrada `ask` por um processo `chat` e adicione a dependência do terminal:
 
 ```yaml
   - name: dep.terminal
@@ -224,13 +224,13 @@ wippy update
 wippy run chat
 ```
 
-O construtor de prompt mantem o historico completo da conversa. Cada turno adiciona a mensagem do usuario e a resposta do assistente, fornecendo ao modelo o contexto das trocas anteriores.
+O construtor de prompt mantém o histórico completo da conversa. Cada turno adiciona a mensagem do usuário e a resposta do assistente, fornecendo ao modelo o contexto das trocas anteriores.
 
 ## Fase 3: Framework de Agentes
 
-O modulo de agentes fornece uma abstracao de nivel mais alto sobre chamadas LLM brutas. Agentes sao definidos declarativamente com um prompt, modelo e ferramentas, e depois carregados e executados atraves de um padrao de contexto/runner.
+O módulo de agentes fornece uma abstração de nível mais alto sobre chamadas LLM brutas. Agentes são definidos declarativamente com um prompt, modelo e ferramentas, e depois carregados e executados através de um padrão de contexto/runner.
 
-### Adicionar Dependencia do Agente
+### Adicionar Dependência do Agente
 
 Adicione ao `_index.yaml`:
 
@@ -267,7 +267,7 @@ Adicione uma entrada de agente:
 
 ### Atualizar o Processo de Chat
 
-Mude para o framework de agentes. Atualize as importacoes da entrada:
+Mude para o framework de agentes. Atualize as importações da entrada:
 
 ```yaml
   - name: chat
@@ -334,24 +334,13 @@ end
 return { main = main }
 ```
 
-O framework de agentes separa a definicao do agente (prompt, modelo, parametros) da logica de execucao. O mesmo agente pode ser carregado com diferentes contextos, ferramentas e modelos em tempo de execucao.
+O framework de agentes separa a definição do agente (prompt, modelo, parâmetros) da lógica de execução. O mesmo agente pode ser carregado com diferentes contextos, ferramentas e modelos em tempo de execução.
 
 ## Fase 4: Streaming
 
 Transmita respostas token por token em vez de esperar pela resposta completa.
 
-### Atualizar Modulos
-
-Adicione `channel` aos modulos do processo:
-
-```yaml
-    modules:
-      - io
-      - process
-      - channel
-```
-
-### Implementacao de Streaming
+### Implementação de Streaming
 
 Atualize `src/chat.lua`:
 
@@ -451,15 +440,15 @@ end
 return { main = main }
 ```
 
-Padroes principais:
+Padrões principais:
 - `coroutine.spawn` executa `runner:step()` em uma coroutine separada para que a coroutine principal possa processar chunks do stream
-- `channel.select` multiplexa o canal de stream e o canal de conclusao
-- Um unico `process.listen()` e criado uma vez e reutilizado entre os turnos
-- O texto e acumulado para adicionar ao historico da conversa
+- `channel.select` multiplexa o canal de stream e o canal de conclusão
+- Um único `process.listen()` é criado uma vez e reutilizado entre os turnos
+- O texto é acumulado para adicionar ao histórico da conversa
 
 ## Fase 5: Ferramentas
 
-Forneca ao agente ferramentas que ele pode chamar para acessar capacidades externas.
+Forneça ao agente ferramentas que ele pode chamar para acessar capacidades externas.
 
 ### Definir Ferramentas
 
@@ -508,8 +497,8 @@ entries:
 ```
 
 Os metadados da ferramenta informam ao LLM o que a ferramenta faz:
-- `input_schema` e um JSON Schema definindo os argumentos
-- `llm_alias` e o nome da funcao que o LLM ve
+- `input_schema` é um JSON Schema definindo os argumentos
+- `llm_alias` é o nome da função que o LLM vê
 - `llm_description` explica quando usar a ferramenta
 
 ### Implementar Ferramentas
@@ -571,20 +560,19 @@ Atualize a entrada do agente em `src/_index.yaml` para referenciar as ferramenta
       - app.tools:calculate
 ```
 
-### Adicionar Execucao de Ferramentas
+### Adicionar Execução de Ferramentas
 
-Atualize os modulos do processo de chat para incluir `json` e `funcs`:
+Atualize os módulos do processo de chat para incluir `json` e `funcs`:
 
 ```yaml
     modules:
       - io
       - json
       - process
-      - channel
       - funcs
 ```
 
-Atualize `src/chat.lua` com a execucao de ferramentas:
+Atualize `src/chat.lua` com a execução de ferramentas:
 
 ```lua
 local io = require("io")
@@ -737,12 +725,12 @@ end
 return { main = main }
 ```
 
-O loop de execucao de ferramentas:
+O loop de execução de ferramentas:
 1. Chama `runner:step()` com streaming
-2. Se a resposta contem `tool_calls`, executa cada ferramenta via `funcs.call()`
-3. Adiciona as chamadas de ferramentas e resultados a conversa
+2. Se a resposta contém `tool_calls`, executa cada ferramenta via `funcs.call()`
+3. Adiciona as chamadas de ferramentas e resultados à conversa
 4. Volta ao passo 1 para o agente incorporar os resultados
-5. Quando nao ha mais chamadas de ferramentas, retorna o texto final
+5. Quando não há mais chamadas de ferramentas, retorna o texto final
 
 ### Executar o Agente
 
@@ -766,9 +754,9 @@ The current time is 17:20 UTC on February 12, 2026.
 Bye!
 ```
 
-## Proximos Passos
+## Próximos Passos
 
-- [Modulo LLM](../framework/llm.md) - Referencia completa da API do LLM
-- [Modulo de Agentes](../framework/agents.md) - Referencia do framework de agentes
-- [Aplicacoes CLI](cli.md) - Padroes de I/O de terminal
-- [Processos](processes.md) - Modelo de processos e comunicacao
+- [Módulo LLM](framework/llm.md) - Referência completa da API do LLM
+- [Módulo de Agentes](framework/agents.md) - Referência do framework de agentes
+- [Aplicações CLI](tutorials/cli.md) - Padrões de I/O de terminal
+- [Processos](tutorials/processes.md) - Modelo de processos e comunicação

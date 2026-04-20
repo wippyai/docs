@@ -26,9 +26,9 @@ llm-agent/
         └── calculate.lua
 ```
 
-## Fase 1: Generacion Simple
+## Fase 1: Generación Simple
 
-Comienza con una funcion basica que llama a `llm.generate()` con un prompt de texto.
+Comienza con una función básica que llama a `llm.generate()` con un prompt de texto.
 
 ### Crear el Proyecto
 
@@ -72,11 +72,11 @@ entries:
       llm: wippy.llm:llm
 ```
 
-El modulo LLM necesita dos entradas de infraestructura:
+El módulo LLM necesita dos entradas de infraestructura:
 - `env.storage.os` proporciona claves API desde variables de entorno
-- `process.host` proporciona el runtime de procesos que el modulo LLM usa internamente
+- `process.host` proporciona el runtime de procesos que el módulo LLM usa internamente
 
-### Codigo de Generacion
+### Código de Generación
 
 Crea `src/ask.lua`:
 
@@ -100,9 +100,9 @@ end
 return { handler = handler }
 ```
 
-### Definicion del Modelo
+### Definición del Modelo
 
-El modulo LLM resuelve modelos desde el registro. Agrega una entrada de modelo a `_index.yaml`:
+El módulo LLM resuelve modelos desde el registro. Agrega una entrada de modelo a `_index.yaml`:
 
 ```yaml
   - name: gpt-4.1-nano
@@ -136,11 +136,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-Esto llama a la funcion directamente e imprime el resultado. La definicion del modelo le indica al modulo LLM que proveedor usar y que nombre de modelo enviar a la API.
+Esto llama a la función directamente e imprime el resultado. La definición del modelo le indica al módulo LLM qué proveedor usar y qué nombre de modelo enviar a la API.
 
 ## Fase 2: Conversaciones
 
-Pasa de una sola llamada a una conversacion multi-turno usando el constructor de prompts. Cambia la entrada de una funcion a un proceso con E/S de terminal.
+Pasa de una sola llamada a una conversación multi-turno usando el constructor de prompts. Cambia la entrada de una función a un proceso con E/S de terminal.
 
 ### Actualizar Definiciones de Entradas
 
@@ -224,11 +224,11 @@ wippy update
 wippy run chat
 ```
 
-El constructor de prompts mantiene el historial completo de la conversacion. Cada turno agrega el mensaje del usuario y la respuesta del asistente, dando al modelo contexto de los intercambios anteriores.
+El constructor de prompts mantiene el historial completo de la conversación. Cada turno agrega el mensaje del usuario y la respuesta del asistente, dando al modelo contexto de los intercambios anteriores.
 
 ## Fase 3: Framework de Agentes
 
-El modulo de agentes proporciona una abstraccion de nivel superior sobre las llamadas LLM directas. Los agentes se definen declarativamente con un prompt, modelo y herramientas, y luego se cargan y ejecutan a traves de un patron de contexto/runner.
+El módulo de agentes proporciona una abstracción de nivel superior sobre las llamadas LLM directas. Los agentes se definen declarativamente con un prompt, modelo y herramientas, y luego se cargan y ejecutan a través de un patrón de contexto/runner.
 
 ### Agregar Dependencia del Agente
 
@@ -334,24 +334,13 @@ end
 return { main = main }
 ```
 
-El framework de agentes separa la definicion del agente (prompt, modelo, parametros) de la logica de ejecucion. El mismo agente puede cargarse con diferentes contextos, herramientas y modelos en tiempo de ejecucion.
+El framework de agentes separa la definición del agente (prompt, modelo, parámetros) de la lógica de ejecución. El mismo agente puede cargarse con diferentes contextos, herramientas y modelos en tiempo de ejecución.
 
 ## Fase 4: Streaming
 
 Transmite respuestas token por token en lugar de esperar la respuesta completa.
 
-### Actualizar Modulos
-
-Agrega `channel` a los modulos del proceso:
-
-```yaml
-    modules:
-      - io
-      - process
-      - channel
-```
-
-### Implementacion de Streaming
+### Implementación de Streaming
 
 Actualiza `src/chat.lua`:
 
@@ -455,7 +444,7 @@ Patrones clave:
 - `coroutine.spawn` ejecuta `runner:step()` en una corrutina separada para que la corrutina principal pueda procesar los chunks del stream
 - `channel.select` multiplexa el canal de stream y el canal de completado
 - Se crea un solo `process.listen()` una vez y se reutiliza entre turnos
-- El texto se acumula para agregarlo al historial de la conversacion
+- El texto se acumula para agregarlo al historial de la conversación
 
 ## Fase 5: Herramientas
 
@@ -507,10 +496,10 @@ entries:
     method: handler
 ```
 
-Los metadatos de las herramientas le indican al LLM que hace cada herramienta:
+Los metadatos de las herramientas le indican al LLM qué hace cada herramienta:
 - `input_schema` es un JSON Schema que define los argumentos
-- `llm_alias` es el nombre de funcion que ve el LLM
-- `llm_description` explica cuando usar la herramienta
+- `llm_alias` es el nombre de función que ve el LLM
+- `llm_description` explica cuándo usar la herramienta
 
 ### Implementar Herramientas
 
@@ -571,20 +560,19 @@ Actualiza la entrada del agente en `src/_index.yaml` para referenciar las herram
       - app.tools:calculate
 ```
 
-### Agregar Ejecucion de Herramientas
+### Agregar Ejecución de Herramientas
 
-Actualiza los modulos del proceso de chat para incluir `json` y `funcs`:
+Actualiza los módulos del proceso de chat para incluir `json` y `funcs`:
 
 ```yaml
     modules:
       - io
       - json
       - process
-      - channel
       - funcs
 ```
 
-Actualiza `src/chat.lua` con ejecucion de herramientas:
+Actualiza `src/chat.lua` con ejecución de herramientas:
 
 ```lua
 local io = require("io")
@@ -737,12 +725,12 @@ end
 return { main = main }
 ```
 
-El bucle de ejecucion de herramientas:
+El bucle de ejecución de herramientas:
 1. Llama a `runner:step()` con streaming
-2. Si la respuesta contiene `tool_calls`, ejecuta cada herramienta via `funcs.call()`
-3. Agrega las llamadas a herramientas y resultados a la conversacion
+2. Si la respuesta contiene `tool_calls`, ejecuta cada herramienta vía `funcs.call()`
+3. Agrega las llamadas a herramientas y resultados a la conversación
 4. Vuelve al paso 1 para que el agente incorpore los resultados
-5. Cuando no hay mas llamadas a herramientas, retorna el texto final
+5. Cuando no hay más llamadas a herramientas, retorna el texto final
 
 ### Ejecutar el Agente
 
@@ -768,7 +756,7 @@ Bye!
 
 ## Siguientes Pasos
 
-- [Modulo LLM](../framework/llm.md) - Referencia completa de la API LLM
-- [Modulo de Agentes](../framework/agents.md) - Referencia del framework de agentes
-- [Aplicaciones CLI](cli.md) - Patrones de E/S de terminal
-- [Procesos](processes.md) - Modelo de procesos y comunicacion
+- [Módulo LLM](framework/llm.md) - Referencia completa de la API LLM
+- [Módulo de Agentes](framework/agents.md) - Referencia del framework de agentes
+- [Aplicaciones CLI](tutorials/cli.md) - Patrones de E/S de terminal
+- [Procesos](tutorials/processes.md) - Modelo de procesos y comunicación

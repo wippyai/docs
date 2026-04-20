@@ -2,6 +2,30 @@
 
 API 키 인증과 WebSocket 스트리밍을 사용하여 실시간 암호화폐 티커를 구축합니다. 이 튜토리얼은 토큰 기반 보안, 미들웨어 설정, 프로세스 기반 WebSocket 처리를 보여줍니다.
 
+## 개요
+
+- **API 키 교환** — API 키를 POST하여 HMAC 서명된 bearer 토큰 수신
+- **토큰 미들웨어** — token store를 통해 WebSocket 업그레이드 보호
+- **WebSocket fan-out** — 단일 ticker 프로세스가 여러 연결 핸들러에 브로드캐스트
+- **정적 자산** — `http.static`이 브라우저 클라이언트를 제공
+- **SQLite** — API 키 저장; memory store가 token store의 백엔드 역할
+
+## 프로젝트 구조
+
+```
+auth-ticker/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── auth_token.lua
+    ├── ws_ticker.lua
+    ├── ws_handler.lua
+    ├── ticker.lua
+    ├── migrate.lua
+    └── public/
+        └── index.html
+```
+
 ## 아키텍처
 
 ```mermaid
@@ -296,7 +320,12 @@ local function handler()
     )
     db:release()
 
-    if query_err or #rows == 0 then
+    if query_err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({error = "lookup failed"})
+        return
+    end
+    if #rows == 0 then
         res:set_status(http.STATUS.UNAUTHORIZED)
         res:write_json({error = "invalid API key"})
         return
@@ -512,7 +541,7 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    local ticker, ticker_err = time.ticker("10ms")
+    local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
         return 1
@@ -641,18 +670,7 @@ wippy run
 
 http://localhost:8081을 열고 로그에 표시된 데모 API 키를 입력합니다.
 
-## 핵심 사항
-
-| 개념 | 구현 |
-|---------|----------------|
-| 토큰 서명 | HMAC 키가 있는 `security.token_store` |
-| 토큰 검증 | 라우터의 `token_auth` 미들웨어 |
-| 인가 | 토큰 스코프에 첨부된 `security.policy` |
-| WebSocket 라이프사이클 | `websocket_relay`가 ws.join/ws.leave 자동 전송 |
-| 핸들러 정리 | `process.monitor(handler_pid)`로 크래시 감지 |
-| 구독 맵 | `subscriptions[handler_pid] = client_pid` |
-
-## 참고
+## 다음 단계
 
 - [WebSocket Relay](http/websocket-relay.md) - 미들웨어 설정
 - [보안 모듈](lua/security/security.md) - 액터, 정책, 토큰 스토어

@@ -112,7 +112,7 @@ local var, err = uuid.variant(id)
 |-----------|------|-------------|
 | `uuid` | string | 有效的 UUID 字符串 |
 
-**返回值:** `string, error` (RFC4122, Microsoft, NCS, 或 Invalid)
+**返回值:** `string, error` (RFC4122、Reserved、Microsoft、Future、NCS 或 Invalid)
 
 ### 解析
 
@@ -128,7 +128,7 @@ local info, err = uuid.parse(id)
 
 返回表字段：
 - `version` (integer): UUID 版本（1、3、4、5 或 7）
-- `variant` (string): RFC4122、Microsoft、NCS 或 Invalid
+- `variant` (string): RFC4122、Reserved、Microsoft、Future、NCS 或 Invalid
 - `timestamp` (integer): Unix 时间戳（仅 v1 和 v7）
 - `node` (string): 节点 ID（仅 v1）
 

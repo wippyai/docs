@@ -217,6 +217,6 @@ El runner crea una tabla `wippy_migrations` en cada base de datos destino en la 
 
 ## Ver Tambien
 
-- [SQL Driver](../system/database.md) - Configuracion del recurso de base de datos
-- [Bootloader](bootloader.md) - Ordenamiento y hooks del bootloader
-- [Vision General del Framework](overview.md) - Uso de modulos del framework
+- [SQL Driver](system/database.md) - Configuracion del recurso de base de datos
+- [Bootloader](framework/bootloader.md) - Ordenamiento y hooks del bootloader
+- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework

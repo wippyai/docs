@@ -217,6 +217,6 @@ runner:rollback({ id = "app:01_create_users_table" })
 
 ## 참고 항목
 
-- [SQL 드라이버](../system/database.md) - 데이터베이스 리소스 구성
-- [부트로더](bootloader.md) - 부트로더 순서 지정 및 훅
-- [프레임워크 개요](overview.md) - 프레임워크 모듈 사용법
+- [SQL 드라이버](system/database.md) - 데이터베이스 리소스 구성
+- [부트로더](framework/bootloader.md) - 부트로더 순서 지정 및 훅
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
