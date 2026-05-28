@@ -74,14 +74,14 @@ Workflow-Ausführungsinformationen abrufen:
 local workflow = require("workflow")
 
 local info = workflow.info()
-print(info.workflow_id)    -- workflow execution ID
-print(info.run_id)         -- current run ID
-print(info.workflow_type)  -- workflow type name
-print(info.task_queue)     -- task queue name
+print(info.workflow_id)    -- Workflow execution ID
+print(info.run_id)         -- Current run ID
+print(info.workflow_type)  -- Workflow type name
+print(info.task_queue)     -- Task queue name
 print(info.namespace)      -- Temporal namespace
-print(info.attempt)        -- current attempt number
-print(info.history_length) -- number of history events
-print(info.history_size)   -- history size in bytes
+print(info.attempt)        -- Current attempt number
+print(info.history_length) -- Number of history events
+print(info.history_size)   -- History size in bytes
 ```
 
 ### workflow.exec()
@@ -147,7 +147,7 @@ local length = workflow.history_length()
 local size = workflow.history_size()
 
 if length > 10000 then
-    -- consider continue-as-new to reset history
+    -- Continue-as-new in Betracht ziehen, um die History zurückzusetzen
 end
 ```
 
@@ -227,7 +227,7 @@ local pid, err = spawner:spawn_monitored(
 Verhalten steuern, wenn ein Workflow mit einer bereits existierenden ID gestartet wird:
 
 ```lua
--- fail if workflow already exists
+-- Fail if workflow already exists
 local spawner = process
     .with_options({
         ["temporal.workflow.id"] = "order-123",
@@ -236,12 +236,12 @@ local spawner = process
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
 if err then
-    -- workflow already running with this ID
+    -- Workflow already running with this ID
 end
 ```
 
 ```lua
--- error when already started (alternative approach)
+-- Error when already started (alternative approach)
 local spawner = process
     .with_options({
         ["temporal.workflow.id"] = "order-123",
@@ -252,14 +252,14 @@ local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
 ```
 
 ```lua
--- reuse existing (default behavior with explicit ID)
+-- Reuse existing (default behavior with explicit ID)
 local spawner = process
     .with_options({
         ["temporal.workflow.id"] = "order-123",
     })
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
--- returns existing workflow PID if already running
+-- Returns existing workflow PID if already running
 ```
 
 | Richtlinie | Verhalten |
@@ -353,7 +353,7 @@ local pid, err = spawner:spawn_monitored(
 Start-Nachrichten sind besonders nützlich mit der `use_existing`-Konfliktrichtlinie. Wenn ein zweiter Spawn auf einen bestehenden Workflow aufgelöst wird, werden die Start-Nachrichten trotzdem zugestellt:
 
 ```lua
--- first spawn starts the workflow with initial messages
+-- First spawn starts the workflow with initial messages
 local first = process
     .with_options({})
     :with_name("my-counter")
@@ -361,7 +361,7 @@ local first = process
 
 local pid, err = first:spawn("app:counter_workflow", "app:worker", {initial = 0})
 
--- second spawn reuses existing workflow and delivers new messages
+-- Second spawn reuses existing workflow and delivers new messages
 local second = process
     .with_options({})
     :with_name("my-counter")
@@ -369,7 +369,7 @@ local second = process
 
 local pid2, err = second:spawn("app:counter_workflow", "app:worker", {initial = 999})
 -- pid2 == pid (same workflow), input {initial = 999} is ignored
--- but the increment message with amount=2 is delivered
+-- But the increment message with amount=2 is delivered
 ```
 
 ### Kontextpropagierung
@@ -436,7 +436,7 @@ end
 
 ## Signale
 
-Workflows empfangen Signale über das Prozess-Nachrichtensystem. Signale sind dauerhaft -- sie überleben Workflow-Replays.
+Workflows empfangen Signale über das Prozess-Nachrichtensystem. Signale sind dauerhaft — sie überleben Workflow-Replays.
 
 ### Inbox-Muster
 
@@ -569,14 +569,14 @@ end
 Anfrage-Antwort-Muster implementieren, indem Antworten an den Absender zurückgesendet werden:
 
 ```lua
--- workflow side
+-- Workflow side
 local ch = process.listen("get_status", {message = true})
 local msg = ch:receive()
 process.send(msg:from(), "status_response", {status = "processing", progress = 75})
 ```
 
 ```lua
--- caller side
+-- Caller side
 local response_ch = process.listen("status_response")
 process.send(workflow_pid, "get_status", {})
 
@@ -596,7 +596,7 @@ end
 Workflows können Signale über ihre PID an andere Workflows senden:
 
 ```lua
--- sender workflow
+-- Sender workflow
 local function main(input)
     local target_pid = input.target
     local ok, err = process.send(target_pid, "cross_host_ping", {data = "hello"})
@@ -639,7 +639,7 @@ if err then
     return {status = "spawn_failed", error = tostring(err)}
 end
 
--- wait for child EXIT event
+-- Wait for child EXIT event
 local event = events_ch:receive()
 
 if event.kind == process.event.EXIT then
@@ -662,7 +662,7 @@ local child_pid, err = process.spawn(
 local event = events_ch:receive()
 if event.result.error then
     local child_err = event.result.error
-    -- error objects have kind(), retryable(), message() methods
+    -- Error objects have kind(), retryable(), message() methods
     print(child_err:kind())       -- e.g. "NOT_FOUND"
     print(child_err:retryable())  -- false
     print(child_err:message())    -- error message text
@@ -682,7 +682,7 @@ local result, err = process.exec(
 if err then
     return nil, err
 end
--- result contains workflow return value
+-- result contains the workflow return value
 ```
 
 ## Überwachung und Verknüpfung
@@ -698,7 +698,7 @@ local pid, err = process.spawn(
     {iterations = 100}
 )
 
--- monitor later
+-- Monitor later
 local ok, err = process.monitor(pid)
 
 local events_ch = process.events()
@@ -718,11 +718,11 @@ local pid, err = process.spawn(
     {iterations = 100}
 )
 
--- link after workflow has started
+-- Link after workflow has started
 time.sleep("200ms")
 local ok, err = process.link(pid)
 
--- if workflow is terminated, receive LINK_DOWN
+-- If workflow is terminated, receive LINK_DOWN
 process.terminate(pid)
 
 local events_ch = process.events()
@@ -757,10 +757,10 @@ local ok, err = process.terminate(workflow_pid)
 
 ### Stornieren
 
-Eine ordnungsgemäße Stornierung mit optionaler Frist anfordern:
+Eine ordnungsgemäße Stornierung mit optionalem Grund anfordern:
 
 ```lua
-local ok, err = process.cancel(workflow_pid, "5s")
+local ok, err = process.cancel(workflow_pid, "cancelled by operator")
 ```
 
 ## Nebenläufige Arbeit

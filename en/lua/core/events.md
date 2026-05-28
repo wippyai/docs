@@ -3,7 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publish and subscribe to events across your application for event-driven architectures.
+Publish and subscribe to events for observability — monitoring runtime and application activity and reacting to it.
+
+<note>
+Use the event bus for observation only: monitoring, logging, metrics, and reactive side effects. It is a best-effort publish/subscribe channel, not a reliable transport — do not build business logic on it or depend on it for guaranteed delivery. For business-critical messaging use process messaging (`process.send`), channels, or the [message queue](lua/storage/queue.md).
+</note>
 
 ## Loading
 

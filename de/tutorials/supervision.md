@@ -1,43 +1,43 @@
 # Prozess-Supervision
 
-Überwachen und verlinken Sie Prozesse um fehlertolerante Systeme zu bauen.
+Prozesse überwachen und verknüpfen, um fehlertolerante Systeme aufzubauen.
 
-## Monitoring vs Linking
+## Überwachung vs. Verknüpfung
 
-**Monitoring** bietet einseitige Beobachtung:
-- Eltern überwacht Kind
-- Kind beendet sich, Eltern erhält EXIT-Event
-- Eltern läuft weiter
+**Überwachung** bietet einseitige Beobachtung:
+- Elternteil überwacht Kind
+- Kind beendet sich, Elternteil erhält EXIT-Event
+- Elternteil läuft weiter
 
-**Linking** erstellt bidirektionales Schicksalsteilen:
-- Eltern und Kind sind verlinkt
-- Einer der Prozesse schlägt fehl, beide terminieren
-- Außer `trap_links=true` ist gesetzt
+**Verknüpfung** erzeugt bidirektionales Schicksal:
+- Elternteil und Kind sind verknüpft
+- Entweder Prozess schlägt fehl, beide werden beendet
+- Außer wenn `trap_links=true` gesetzt ist
 
 ```mermaid
 flowchart TB
-    subgraph Monitoring["MONITORING (einseitig)"]
+    subgraph Monitoring["ÜBERWACHUNG (einseitig)"]
         direction TB
-        P1[Eltern überwacht] -->|EXIT event<br/>Eltern läuft weiter| C1[Kind beendet]
+        P1[Elternteil überwacht] -->|EXIT-Event<br/>Elternteil läuft weiter| C1[Kind beendet sich]
     end
 
-    subgraph Linking["LINKING (bidirektional)"]
+    subgraph Linking["VERKNÜPFUNG (bidirektional)"]
         direction TB
-        P2[Eltern verlinkt] <-->|LINK_DOWN<br/>beide sterben| C2[Kind beendet]
+        P2[Elternteil verknüpft] <-->|LINK_DOWN<br/>beide sterben| C2[Kind beendet sich]
     end
 ```
 
-## Prozess-Monitoring
+## Prozessüberwachung
 
-### Spawn mit Monitoring
+### Spawn mit Überwachung
 
-Verwenden Sie `process.spawn_monitored()` um in einem Aufruf zu starten und zu überwachen:
+`process.spawn_monitored()` verwenden, um in einem Aufruf zu spawnen und zu überwachen:
 
 ```lua
 local function main()
     local events_ch = process.events()
 
-    -- Worker starten und überwachen
+    -- Worker spawnen und Überwachung starten
     local worker_pid, err = process.spawn_monitored(
         "app.workers:task_worker",
         "app:processes"
@@ -46,7 +46,7 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- Auf Worker-Abschluss warten
+    -- Auf Abschluss des Workers warten
     local event = events_ch:receive()
 
     if event.kind == process.event.EXIT then
@@ -61,16 +61,16 @@ local function main()
 end
 ```
 
-### Existierenden Prozess überwachen
+### Bestehenden Prozess überwachen
 
-Rufen Sie `process.monitor()` auf um einen bereits laufenden Prozess zu überwachen:
+`process.monitor()` aufrufen, um einen bereits laufenden Prozess zu überwachen:
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- Ohne Monitoring starten
+    -- Ohne Überwachung spawnen
     local worker_pid, err = process.spawn(
         "app.workers:long_worker",
         "app:processes"
@@ -79,15 +79,15 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- Später Monitoring hinzufügen
+    -- Überwachung später starten
     local ok, monitor_err = process.monitor(worker_pid)
     if monitor_err then
         return nil, "monitor failed: " .. tostring(monitor_err)
     end
 
-    -- Worker abbrechen
+    -- Worker kanzellieren
     time.sleep("5ms")
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- EXIT-Event empfangen
     local event = events_ch:receive()
@@ -97,16 +97,16 @@ local function main()
 end
 ```
 
-### Monitoring beenden
+### Überwachung beenden
 
-Verwenden Sie `process.unmonitor()` um keine EXIT-Events mehr zu empfangen:
+`process.unmonitor()` verwenden, um keine EXIT-Events mehr zu empfangen:
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- Starten und überwachen
+    -- Spawnen und überwachen
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
@@ -114,16 +114,16 @@ local function main()
 
     time.sleep("5ms")
 
-    -- Monitoring beenden
+    -- Überwachung beenden
     local ok, unmon_err = process.unmonitor(worker_pid)
     if unmon_err then
         return nil, "unmonitor failed: " .. tostring(unmon_err)
     end
 
-    -- Worker abbrechen
-    process.cancel(worker_pid, "100ms")
+    -- Worker kanzellieren
+    process.cancel(worker_pid)
 
-    -- Kein EXIT-Event wird empfangen (wir haben unmonitored)
+    -- Kein EXIT-Event wird empfangen (Überwachung beendet)
     local timeout = time.after("200ms")
     local result = channel.select {
         events_ch:case_receive(),
@@ -136,37 +136,37 @@ local function main()
 end
 ```
 
-## Prozess-Linking
+## Prozessverknüpfung
 
-### Explizites Linking
+### Explizite Verknüpfung
 
-Verwenden Sie `process.link()` um eine bidirektionale Verlinkung zu erstellen:
+`process.link()` verwenden, um eine bidirektionale Verknüpfung herzustellen:
 
 ```lua
--- Worker der sich mit einem Zielprozess verlinkt
+-- Worker, der sich mit einem Zielprozess verknüpft
 local function worker_main()
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
-    -- trap_links aktivieren um LINK_DOWN-Events zu empfangen
+    -- trap_links aktivieren, um LINK_DOWN-Events zu empfangen
     process.set_options({ trap_links = true })
 
-    -- Ziel-PID vom Sender empfangen
+    -- Ziel-PID vom Absender empfangen
     local msg = inbox_ch:receive()
     local target_pid = msg:payload():data()
     local sender = msg:from()
 
-    -- Bidirektionale Verlinkung erstellen
+    -- Bidirektionale Verknüpfung herstellen
     local ok, err = process.link(target_pid)
     if err then
         return nil, "link failed: " .. tostring(err)
     end
 
-    -- Sender benachrichtigen dass wir verlinkt sind
+    -- Absender benachrichtigen, dass wir verknüpft sind
     process.send(sender, "linked", process.pid())
 
-    -- Auf LINK_DOWN warten wenn Ziel beendet
+    -- Auf LINK_DOWN warten, wenn Ziel endet
     local timeout = time.after("3s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -184,18 +184,18 @@ local function worker_main()
 end
 ```
 
-### Spawn mit Link
+### Spawn mit Verknüpfung
 
-Verwenden Sie `process.spawn_linked()` um in einem Aufruf zu starten und zu verlinken:
+`process.spawn_linked()` verwenden, um in einem Aufruf zu spawnen und zu verknüpfen:
 
 ```lua
 local function parent_main()
-    -- trap_links aktivieren um Kind-Tod zu behandeln
+    -- trap_links aktivieren, um den Tod des Kindes zu verarbeiten
     process.set_options({ trap_links = true })
 
     local events_ch = process.events()
 
-    -- Kind starten und verlinken
+    -- Kind spawnen und verknüpfen
     local child_pid, err = process.spawn_linked(
         "app.workers:child_worker",
         "app:processes"
@@ -204,7 +204,7 @@ local function parent_main()
         return nil, "spawn_linked failed: " .. tostring(err)
     end
 
-    -- Wenn Kind stirbt, empfangen wir LINK_DOWN
+    -- Wenn Kind stirbt, erhalten wir LINK_DOWN
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         print("Child died:", event.from)
@@ -214,11 +214,11 @@ end
 
 ## Trap Links
 
-Standardmäßig terminiert der aktuelle Prozess wenn ein verlinkter Prozess fehlschlägt. Setzen Sie `trap_links=true` um stattdessen LINK_DOWN-Events zu empfangen.
+Standardmäßig schlägt der aktuelle Prozess fehl, wenn ein verknüpfter Prozess fehlschlägt. `trap_links=true` setzen, um stattdessen LINK_DOWN-Events zu empfangen.
 
 ### Standardverhalten (trap_links=false)
 
-Ohne `trap_links` terminiert der aktuelle Prozess bei Fehlschlag eines verlinkten Prozesses:
+Ohne `trap_links` beendet ein Fehlschlag des verknüpften Prozesses den aktuellen Prozess:
 
 ```lua
 local function worker_main()
@@ -228,13 +228,13 @@ local function worker_main()
     local opts = process.get_options()
     print("trap_links:", opts.trap_links)  -- false
 
-    -- Verlinkten Worker starten der fehlschlagen wird
+    -- Verknüpften Worker spawnen, der fehlschlagen wird
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
 
-    -- Wenn Kind Fehler hat, terminiert DIESER Prozess
+    -- Wenn Kind fehlschlägt, wird DIESER Prozess beendet
     -- Wir erreichen diesen Punkt nie
     local event = events_ch:receive()
 end
@@ -242,7 +242,7 @@ end
 
 ### Mit trap_links=true
 
-Aktivieren Sie `trap_links` um LINK_DOWN-Events zu empfangen und zu überleben:
+`trap_links` aktivieren, um LINK_DOWN-Events zu empfangen und zu überleben:
 
 ```lua
 local function worker_main()
@@ -251,7 +251,7 @@ local function worker_main()
 
     local events_ch = process.events()
 
-    -- Verlinkten Worker starten der fehlschlagen wird
+    -- Verknüpften Worker spawnen, der fehlschlagen wird
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
@@ -267,18 +267,18 @@ local function worker_main()
 end
 ```
 
-## Cancellation
+## Kanzellierung
 
-### Cancel-Signal senden
+### Kanzellierungssignal senden
 
-Verwenden Sie `process.cancel()` um einen Prozess graceful zu terminieren:
+`process.cancel()` verwenden, um einen Prozess ordnungsgemäß zu beenden:
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- Worker starten und überwachen
+    -- Worker spawnen und überwachen
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
@@ -286,8 +286,8 @@ local function main()
 
     time.sleep("5ms")
 
-    -- Mit 100ms Timeout für Cleanup abbrechen
-    local ok, cancel_err = process.cancel(worker_pid, "100ms")
+    -- Worker kanzellieren
+    local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
@@ -300,7 +300,7 @@ local function main()
 end
 ```
 
-### Cancellation behandeln
+### Kanzellierung verarbeiten
 
 Worker empfängt CANCEL-Event über `process.events()`:
 
@@ -318,7 +318,7 @@ local function worker_main()
         if result.channel == events_ch then
             local event = result.value
             if event.kind == process.event.CANCEL then
-                -- Ressourcen aufräumen
+                -- Ressourcen bereinigen
                 cleanup()
                 return "cancelled gracefully"
             end
@@ -330,25 +330,25 @@ local function worker_main()
 end
 ```
 
-## Supervision-Topologien
+## Supervisions-Topologien
 
 ### Stern-Topologie
 
-Eltern mit mehreren Kindern die zurück verlinken:
+Elternteil mit mehreren Kindern, die sich zurück mit ihm verknüpfen:
 
 ```lua
--- Eltern-Worker startet Kinder die ZUM Eltern verlinken
+-- Eltern-Worker spawnt Kinder, die sich mit dem Elternteil verknüpfen
 local function star_parent_main()
     local time = require("time")
     local events_ch = process.events()
     local child_count = 10
 
-    -- trap_links aktivieren um Kinder-Tod zu sehen
+    -- trap_links aktivieren, um den Tod der Kinder zu sehen
     process.set_options({ trap_links = true })
 
     local children = {}
 
-    -- Kinder starten
+    -- Kinder spawnen
     for i = 1, child_count do
         local child_pid, err = process.spawn(
             "app.workers:linker_child",
@@ -363,7 +363,7 @@ local function star_parent_main()
         children[child_pid] = true
     end
 
-    -- Auf Bestätigung aller Kinder warten
+    -- Warten, bis alle Kinder Verknüpfung bestätigen
     for i = 1, child_count do
         local msg = process.inbox():receive()
         if msg:topic() ~= "linked" then
@@ -371,12 +371,12 @@ local function star_parent_main()
         end
     end
 
-    -- Fehler auslösen - alle Kinder sollten LINK_DOWN empfangen
+    -- Fehler auslösen - alle Kinder sollten LINK_DOWN erhalten
     error("PARENT_STAR_FAILURE")
 end
 ```
 
-Kind-Worker der sich mit Eltern verlinkt:
+Kind-Worker, der sich mit dem Elternteil verknüpft:
 
 ```lua
 local function linker_child_main()
@@ -387,13 +387,13 @@ local function linker_child_main()
     local msg = inbox_ch:receive()
     local parent_pid = msg:payload():data()
 
-    -- Mit Eltern verlinken
+    -- Mit Elternteil verknüpfen
     process.link(parent_pid)
 
-    -- Verlinkung bestätigen
+    -- Verknüpfung bestätigen
     process.send(parent_pid, "linked", process.pid())
 
-    -- Auf LINK_DOWN warten wenn Eltern stirbt
+    -- Auf LINK_DOWN warten, wenn Elternteil stirbt
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         return "parent_died"
@@ -403,39 +403,39 @@ end
 
 ### Ketten-Topologie
 
-Lineare Kette wo jeder Knoten zu seinem Eltern verlinkt:
+Lineare Kette, bei der jeder Knoten sich mit seinem Elternteil verknüpft:
 
 ```lua
--- Ketten-Root: A -> B -> C -> D -> E
+-- Kettenwurzel: A -> B -> C -> D -> E
 local function chain_root_main()
     local time = require("time")
 
-    -- Erstes Kind starten
+    -- Erstes Kind spawnen
     local child_pid, err = process.spawn_linked(
         "app.workers:chain_node",
         "app:processes",
-        4  -- Verbleibende Tiefe
+        4  -- verbleibende Tiefe
     )
     if err then
         error("spawn failed: " .. tostring(err))
     end
 
-    -- Warten bis Kette aufgebaut ist
+    -- Warten, bis Kette aufgebaut ist
     time.sleep("100ms")
 
-    -- Kaskade auslösen - alle verlinkten Prozesse sterben
+    -- Kaskade auslösen - alle verknüpften Prozesse sterben
     error("CHAIN_ROOT_FAILURE")
 end
 ```
 
-Ketten-Knoten startet nächsten Knoten und verlinkt:
+Kettenknoten spawnt nächsten Knoten und verknüpft sich:
 
 ```lua
 local function chain_node_main(depth)
     local time = require("time")
 
     if depth > 0 then
-        -- Nächsten in Kette starten
+        -- Nächsten in der Kette spawnen
         local child_pid, err = process.spawn_linked(
             "app.workers:chain_node",
             "app:processes",
@@ -446,7 +446,7 @@ local function chain_node_main(depth)
         end
     end
 
-    -- Blockiert bis der Elterntod uns via LINK_DOWN beendet (standardmäßig trap_links=false)
+    -- Blockieren bis Tod des Elternteils uns über LINK_DOWN beendet (Standard trap_links=false)
     process.inbox():receive()
 end
 ```
@@ -493,7 +493,7 @@ local function main(worker_count)
     local time = require("time")
     worker_count = worker_count or 4
 
-    -- trap_links aktivieren um Worker-Tod zu behandeln
+    -- trap_links aktivieren, um Worker-Tode zu verarbeiten
     process.set_options({ trap_links = true })
 
     local events_ch = process.events()
@@ -522,7 +522,7 @@ local function main(worker_count)
 
     print("Supervisor started with " .. worker_count .. " workers")
 
-    -- Supervision-Loop
+    -- Supervision-Schleife
     while true do
         local timeout = time.after("60s")
         local result = channel.select {
@@ -558,7 +558,7 @@ end
 return { main = main }
 ```
 
-## Prozess-Konfiguration
+## Prozesskonfiguration
 
 ### Worker-Definition
 
@@ -617,7 +617,7 @@ local function main(worker_id)
             end
 
         elseif result.channel == timeout then
-            -- Idle-Timeout
+            -- Leerlauf-Timeout
             print("Worker " .. worker_id .. " idle")
         end
     end
@@ -628,7 +628,7 @@ return { main = main }
 
 ## Prozess-Host-Konfiguration
 
-Der Prozess-Host steuert wie viele OS-Threads Prozesse ausführen:
+Der Prozess-Host steuert, wie viele OS-Threads Prozesse ausführen:
 
 ```yaml
 # src/_index.yaml
@@ -646,37 +646,37 @@ entries:
 
 Workers-Einstellung:
 - Steuert Parallelität für CPU-gebundene Arbeit
-- Typischerweise auf Anzahl CPU-Kerne gesetzt
-- Alle Prozesse teilen sich diesen Thread-Pool
+- Typischerweise auf die Anzahl der CPU-Kerne gesetzt
+- Alle Prozesse teilen diesen Thread-Pool
 
-## Event-Typen
+## Ereignistypen
 
-| Event | Ausgelöst durch | Erforderliches Setup |
-|-------|-----------------|----------------------|
-| `EXIT` | Überwachter Prozess beendet | `spawn_monitored()` oder `monitor()` |
-| `LINK_DOWN` | Verlinkter Prozess schlägt fehl | `spawn_linked()` oder `link()` mit `trap_links=true` |
-| `CANCEL` | `process.cancel()` aufgerufen | Keines (wird immer geliefert) |
+| Ereignis | Ausgelöst durch | Erforderliche Einrichtung |
+|----------|-----------------|--------------------------|
+| `EXIT` | Überwachter Prozess beendet sich | `spawn_monitored()` oder `monitor()` |
+| `LINK_DOWN` | Verknüpfter Prozess schlägt fehl | `spawn_linked()` oder `link()` mit `trap_links=true` |
+| `CANCEL` | `process.cancel()` aufgerufen | Keine (immer zugestellt) |
 
-## Supervisor-Pool ausführen
+## Den Supervisor-Pool ausführen
 
-Die Pool-Dateien in die unter [Konfiguration](#konfiguration) gezeigte Struktur legen, dann:
+Die Pool-Dateien in die in [Konfiguration](#konfiguration) gezeigte Struktur ablegen, dann:
 
 ```bash
 wippy init
 wippy run
 ```
 
-Der Supervisor startet automatisch, startet vier Worker und protokolliert Neustarts, wenn einer davon abstürzt. Einen Neustart auslösen, indem ein Worker aus einem anderen Prozess beendet wird:
+Der Supervisor startet automatisch, spawnt vier Worker und protokolliert Neustarts, wenn einer davon stirbt. Einen Neustart auslösen, indem ein Worker aus einem anderen Prozess beendet wird:
 
 ```lua
 -- in einem Ad-hoc-Prozess oder Chat-Befehl
-process.cancel("<pid-aus-supervisor-log>", "100ms")
+process.cancel("<pid-from-supervisor-log>")
 ```
 
-Der Pool empfängt `LINK_DOWN`, wartet 100 ms und startet den Worker unter derselben ID neu.
+Der Pool empfängt `LINK_DOWN`, wartet 100 ms und respawnt den Worker unter derselben ID.
 
 ## Nächste Schritte
 
-- [Prozesse](tutorials/processes.md) - Prozess-Grundlagen
-- [Channels](tutorials/channels.md) - Message-Passing-Muster
+- [Prozesse](tutorials/processes.md) - Prozessgrundlagen
+- [Channels](tutorials/channels.md) - Nachrichtenübergabemuster
 - [Prozess-Modul](lua/core/process.md) - API-Referenz

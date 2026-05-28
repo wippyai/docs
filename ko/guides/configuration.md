@@ -256,28 +256,101 @@ Prometheus 스크레이핑을 위해 `/metrics` 엔드포인트 노출.
 
 ## 클러스터
 
-gossip 디스커버리를 사용한 멀티 노드 클러스터링.
+멀티 노드 클러스터링: gossip 멤버십과 제한된 Raft 합의 코어. 아키텍처와 운영 모델은 [클러스터 가이드](guides/cluster.md)를 참조하세요. 이 섹션은 설정 키 레퍼런스입니다.
+
+### 최상위
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | 클러스터링 활성화 |
-| `name` | string | hostname | 노드 식별자 |
-| `internode.bind_addr` | string | 0.0.0.0 | 노드 간 바인드 주소 |
-| `internode.bind_port` | int | 0 | 포트 (0=자동 7950-7959) |
-| `membership.bind_port` | int | 7946 | Gossip 포트 |
-| `membership.join_addrs` | string | | 시드 노드 (쉼표 구분) |
-| `membership.secret_key` | string | | 암호화 키 (base64) |
-| `membership.secret_file` | string | | 키 파일 경로 |
-| `membership.advertise_addr` | string | | NAT용 공개 주소 |
+| `name` | string | hostname | 노드 이름; 클러스터 전체에서 고유해야 함 |
+| `failure_domain` | string | | 가용 영역/랙 레이블; gossip에서 광고되어 voter가 도메인 간에 분산됨 |
+
+### 멤버십 (gossip)
+
+memberlist를 통한 SWIM gossip. 노드 디스커버리, 장애 감지, 메타데이터 전파에 사용됩니다.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `membership.bind_addr` | string | 0.0.0.0 | Gossip 바인드 주소 |
+| `membership.bind_port` | int | 7946 | Gossip 바인드 포트 (TCP+UDP) |
+| `membership.advertise_addr` | string | | 피어가 이 노드에 도달하기 위해 사용하는 주소 (NAT/k8s) |
+| `membership.join_addrs` | string | | 쉼표로 구분된 시드 `host:port` 쌍 |
+| `membership.secret_key` | string | | Base64로 인코딩된 gossip 암호화 키 (인라인) |
+| `membership.secret_file` | string | | gossip 암호화 키를 보유하는 파일 경로 |
+
+### 인터노드 (전송)
+
+노드 간 릴레이와 Raft 트래픽을 전달하는 TCP 메시. Raft는 이 메시를 통해 동작하며(yamux 멀티플렉싱), 별도의 Raft 포트는 없습니다.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `internode.bind_addr` | string | 0.0.0.0 | 메시 바인드 주소 |
+| `internode.bind_port` | int | 0 | 메시 포트 (0 = 자동: 7950-7959, 이후 임시 포트) |
+| `internode.auto_port` | bool | true | 부팅 시 실제 포트를 감지하여 고정하고 gossip에서 광고 |
+
+### Raft (합의)
+
+제한적이고 디스크 없는 Raft. 상태는 메모리에 있으며, 재시작 시 노드가 쿼럼에 다시 참여하고 피어로부터 재생합니다. `data_dir` 없음. 부트스트랩은 gossip 기반(Consul/Nomad의 `bootstrap_expect` 방식)이며, 정적 초기 클러스터 목록을 사용하지 않습니다.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `raft.enabled` | bool | true | Raft 노드 실행; `false`이면 gossip 전용 클라이언트 |
+| `raft.role` | string | server | `server`는 Raft 노드를 실행하고, `client`는 gossip 전용 |
+| `raft.eligible` | bool | true | 이 노드가 voter로 선택될 수 있는지 여부 |
+| `raft.priority` | int | 100 | Voter 선택 우선순위 (낮을수록 선호) |
+| `raft.bootstrap_expect` | int | 1 | 초기 쿼럼 크기: `0`=기존 클러스터에 참여, `1`=단일 노드, `N`=N개의 eligible 피어를 기다린 후 쿼럼 형성 |
+| `raft.max_voters` | int | 5 | Voter 상한선 (홀수여야 함); 초과하는 eligible 노드는 standby가 됨 |
+| `raft.max_standbys` | int | 4 | 승격을 위해 준비 상태로 유지되는 비투표 멤버; voters+standbys를 초과하는 노드는 Raft 멤버가 아님 |
+| `raft.reconcile_debounce` | duration | 2s | voter 조정자 실행 전 gossip 이벤트 이후 집계 창 |
+| `raft.reconcile_timeout` | duration | 2s | 조정 패스당 상한 |
+| `raft.heartbeat_timeout` | duration | 3s | 선거를 시작하기 전 팔로워 대기 시간 |
+| `raft.election_timeout` | duration | 3s | 후보 선거 타임아웃 (heartbeat 이상으로 제한됨) |
+| `raft.commit_timeout` | duration | 500ms | 유휴 리더 하트비트 주기 |
+| `raft.snapshot_threshold` | uint64 | 8192 | 새 스냅샷 전 마지막 스냅샷 이후의 로그 항목 수 |
+| `raft.snapshot_interval` | duration | 2m | 스냅샷 확인 간격 |
+| `raft.snapshot_retain` | int | 3 | 보관되는 스냅샷 수 |
+| `raft.trailing_logs` | uint64 | 10240 | 스냅샷 이후 보관되는 로그 항목 수 |
+| `raft.max_append_entries` | int | 16 | AppendEntries RPC당 최대 항목 수 |
+| `raft.leader_probe_interval` | duration | 3s | 글로벌 레지스트리 리더 도달 가능성 프로브 주기 |
+| `raft.leader_probe_grace` | int | 3 | 리더를 도달 불가능으로 선언하기 전 연속 프로브 실패 횟수 |
+
+단일 노드 (개발) — 클러스터링 활성화, 즉시 자체 부트스트랩:
+
+```yaml
+cluster:
+  enabled: true
+  name: dev
+  raft:
+    bootstrap_expect: 1
+```
+
+3노드 voting 클러스터 — 각 노드가 다른 노드를 시드로 나열하고 쿼럼을 형성하기 전에 세 노드 모두를 기다림:
 
 ```yaml
 cluster:
   enabled: true
   name: node-1
+  failure_domain: us-east-1a
   membership:
     bind_port: 7946
-    join_addrs: "10.0.0.1:7946,10.0.0.2:7946"
+    join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  raft:
+    bootstrap_expect: 3
+    max_voters: 5
+```
+
+Gossip 전용 클라이언트 — 명명/메시징을 위해 클러스터에 참여하지만 Raft를 실행하지 않음:
+
+```yaml
+cluster:
+  enabled: true
+  name: edge-7
+  membership:
+    join_addrs: "node-1:7946,node-2:7946"
+  raft:
+    role: client
 ```
 
 ## LSP
@@ -320,6 +393,25 @@ network_service:
 
 참조: [네트워크 오버레이](system/network.md)
 
+## HTTP 디스패처
+
+HTTP 디스패치 함수와 아웃바운드 요청에 사용되는 공유 HTTP 클라이언트 풀 튜닝.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `dispatcher.http.timeout` | duration | 0 (없음) | 요청당 타임아웃 |
+| `dispatcher.http.max_idle_conns` | int | 0 (stdlib) | 모든 호스트의 최대 유휴 연결 수 |
+| `dispatcher.http.max_idle_per_host` | int | 0 (stdlib) | 호스트당 최대 유휴 연결 수 |
+| `dispatcher.http.idle_conn_timeout` | duration | 0 (stdlib) | 유휴 연결 타임아웃 |
+| `dispatcher.http.max_clients` | int | 0 (무제한) | 최대 풀링 클라이언트 수 |
+
+```yaml
+dispatcher:
+  http:
+    timeout: 30s
+    max_idle_per_host: 32
+```
+
 ## 모듈
 
 `wippy install`/`update`에서 사용되는 모듈 레지스트리 클라이언트.
@@ -353,10 +445,11 @@ extensions:
 
 | 변수 | 설명 |
 |----------|-------------|
-| `GOMEMLIMIT` | 메모리 제한 (`--memory-limit` 플래그 오버라이드) |
+| `GOMEMLIMIT` | 메모리 제한 (`--memory-limit` 플래그 재정의) |
 
 ## 참고
 
 - [CLI 레퍼런스](guides/cli.md) - 커맨드라인 옵션
+- [클러스터 가이드](guides/cluster.md) - 클러스터링 아키텍처 및 운영
 - [엔트리 종류](guides/entry-kinds.md) - 모든 엔트리 타입
 - [관측성 가이드](guides/observability.md) - 로깅, 메트릭, 트레이싱

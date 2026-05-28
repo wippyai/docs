@@ -67,14 +67,14 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 -- Terminar forçadamente um processo
 local ok, err = process.terminate(destination)
 
--- Solicitar cancelamento gracioso com deadline opcional
-local ok, err = process.cancel(destination, "5s")
+-- Solicitar cancelamento gracioso com motivo opcional
+local ok, err = process.cancel(destination, "encerrando")
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `destination` | string | PID ou nome registrado |
-| `deadline` | string\|integer | String de duração ou milissegundos |
+| `reason` | string | Motivo opcional entregue ao alvo |
 
 **Permissões:** `process.terminate`, `process.cancel` no PID de destino
 
@@ -129,7 +129,7 @@ local events = process.events()  -- Eventos de ciclo de vida do tópico @events
 | `kind` | string | Constante de tipo de evento |
 | `from` | string | PID de origem |
 | `result` | table | Para EXIT: `{value: any}` ou `{error: string}` |
-| `deadline` | string | Para CANCEL: timestamp do deadline |
+| `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 
 ## Inscrição em Tópico
 
@@ -152,9 +152,10 @@ Ao receber do inbox ou com `{message = true}`:
 ```lua
 local msg = inbox:receive()
 
-msg:topic()    -- string: nome do tópico
-msg:from()     -- string|nil: PID do remetente
-msg:payload()  -- any: dados do payload
+msg:topic()            -- string: nome do tópico
+msg:from()             -- string|nil: PID do remetente
+msg:payload()          -- Payload: wrapper (chame :data() para extrair)
+msg:payload():data()   -- any: valor real do payload
 ```
 
 ## Chamada Síncrona
@@ -230,15 +231,58 @@ Mesmas permissões que funções spawn do módulo.
 
 ## Registro de Nomes
 
-Registrar e buscar processos por nome:
+Registrar um processo sob um nome e alcançá-lo por esse nome em vez de seu PID. Qualquer função que aceite um `destination` (`send`, `terminate`, `cancel`, `monitor`, `link`, ...) aceita um nome registrado no lugar de um PID.
 
 ```lua
-local ok, err = process.registry.register(name, pid)  -- pid padrão é self
+local ok, err = process.registry.register(name)               -- self, escopo local
 local pid, err = process.registry.lookup(name)
-local ok = process.registry.unregister(name)
+local ok, err = process.registry.unregister(name)
 ```
 
-**Permissões:** `process.registry.register`, `process.registry.unregister` no nome
+### Escopo
+
+O argumento opcional `scope` seleciona a garantia de consistência do nome. O padrão é `LOCAL`. Os quatro escopos e suas garantias estão descritos no [Guia de Cluster](guides/cluster.md#nomeação-e-escopos-de-nome); resumidamente:
+
+| Constante | Visibilidade | Garantia |
+|-----------|--------------|----------|
+| `process.registry.LOCAL` | apenas este nó | Instantâneo, local ao nó |
+| `process.registry.EVENTUAL` | todo o cluster | Eventualmente consistente (gossip) |
+| `process.registry.CONSISTENT` | todo o cluster | Singleton linearizável (Raft) |
+| `process.registry.STRONG` | todo o cluster | Consistente + todos os nós ativos reconhecem |
+
+Em um nó standalone apenas `LOCAL` é significativo; os escopos de cluster requerem [clustering](guides/cluster.md).
+
+### register
+
+```lua
+local ok, err = process.registry.register(name, scope, pid)
+```
+
+| Parâmetro | Tipo | Obrigatório | Padrão | Descrição |
+|-----------|------|-------------|--------|-----------|
+| `name` | string | sim | | Nome a registrar |
+| `scope` | number | não | `LOCAL` | Um dos constantes de escopo acima |
+| `pid` | string | não | self | PID a registrar; padrão é o processo chamador |
+
+Retorna `true` em caso de sucesso, ou `nil, error` em caso de falha. Conflitos (nome já registrado para um PID diferente sob um escopo de cluster) retornam `errors.ALREADY_EXISTS`. Registrar o mesmo nome para o mesmo PID é idempotente. Um registro `STRONG` bloqueia até que todos os nós ativos reconheçam ou o prazo da reserva expire; em timeout retorna um erro.
+
+Registrar em nome de um PID diferente requer adicionalmente a permissão `process.registry.foreign` no PID alvo.
+
+### lookup
+
+```lua
+local pid, err = process.registry.lookup(name)
+```
+
+Retorna a string PID registrada, ou `nil, error` com tipo `errors.NOT_FOUND` quando o nome não está registrado.
+
+### unregister
+
+```lua
+local ok, err = process.registry.unregister(name, scope)
+```
+
+`scope` tem padrão `LOCAL` e deve corresponder ao escopo sob o qual o nome foi registrado. Para `CONSISTENT` e `STRONG`, o processo proprietário é o autorizado a cancelar o registro; cancelar o registro de um nome pertencente a outro PID retorna `false`. Nomes também são liberados automaticamente quando o processo proprietário sai (e, para escopos de cluster, quando seu nó parte), portanto o unregister explícito é para liberação antecipada.
 
 ## Permissões
 
@@ -272,6 +316,9 @@ Políticas podem permitir/negar baseado em:
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | nome |
 | `process.registry.unregister` | `registry.unregister()` | nome |
+| `process.registry.foreign` | `registry.register()` | PID de destino |
+
+Escopos de nome de cluster são autorizados por variantes com sufixo de escopo dessas ações (`process.registry.register.eventual`, `.consistent`, `.strong` e as ações `unregister` correspondentes), de modo que uma política pode conceder nomeação local separadamente de nomeação em todo o cluster.
 
 ### Múltiplas Permissões
 
@@ -306,4 +353,5 @@ Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 - [Channels](lua/core/channel.md) - Comunicação entre processos
 - [Message Queue](lua/storage/queue.md) - Mensagens baseadas em fila
 - [Functions](lua/core/funcs.md) - Invocação de funções
-- [Supervision](guides/supervision.md) - Gerenciamento de ciclo de vida de processos
+- [Supervisão](guides/supervision.md) - Gerenciamento de ciclo de vida de processos
+- [Cluster](guides/cluster.md) - Escopos de nome e nomeação em todo o cluster

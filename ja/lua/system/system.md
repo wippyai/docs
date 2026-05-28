@@ -127,7 +127,7 @@ local ok, err = system.gc.collect()
 
 ## GCターゲットパーセンテージ
 
-GCターゲットパーセンテージを設定（以前の値を返す）。100の値はヒープが2倍になるとGCがトリガーされることを意味:
+GCターゲットパーセンテージを設定（以前の値を返す）。100の値はヒープが2倍になるとGCがトリガーされることを意味します:
 
 ```lua
 local prev, err = system.gc.set_percent(200)
@@ -298,7 +298,107 @@ local states, err = system.supervisor.states()
 
 **戻り値:** `table[], error`
 
-各状態テーブルは`system.supervisor.state()`と同じ形式。
+各状態テーブルは `system.supervisor.state()` と同じ形式。
+
+## クラスタプリミティブ
+
+`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効](guides/cluster.md)な場合に最も役立ちます。スタンドアロンノードでは予測可能な形で機能が制限されます — `system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告し、`system.lock` はクラスタリングが提供するグローバルレジストリを必要とします。
+
+すべての読み取り呼び出しはローカルかつ安価です: このノードのコミット済み状態のビューを報告し、ネットワークをブロックしません。
+
+### ノードアイデンティティ
+
+`system.node` はクラスタ内のこのノード自身のアイデンティティを報告します。
+
+```lua
+local id, err = system.node.id()      -- このノードのID
+local addr, err = system.node.addr()  -- 通知されたネットワークアドレス
+local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
+```
+
+| 関数 | 戻り値 | 備考 |
+|----------|---------|-------|
+| `system.node.id()` | `string, error` | リレーコンテキストからのノードID |
+| `system.node.addr()` | `string, error` | 通知されたアドレス（例: `10.0.0.1:7946`）。メンバーシップが利用不可の場合エラー |
+| `system.node.role()` | `string, error` | このノードの Raft ロール。Raft が実行されていない場合は `"non-member"` を返す（エラーなし） |
+
+**権限:** `node` に対する `system.read`。
+
+### クラスタメンバーシップ
+
+`system.cluster` はクラスタ全体のビューを報告します: メンバーと誰がリーダーかを報告します。
+
+```lua
+local members, err = system.cluster.members()  -- ノードテーブルの配列
+local leader, err = system.cluster.leader()    -- リーダーノードID、不明な場合は ""
+local n, err = system.cluster.size()           -- 見えているメンバー数
+```
+
+`system.cluster.members()` はノードテーブルの配列を返します。ローカルノードは一度含まれ先頭にソートされます。
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `id` | string | ノードID |
+| `is_local` | boolean | 呼び出しノードの場合はtrue |
+| `addr` | string | 通知されたアドレス（不明の場合は省略） |
+| `meta` | table | 文字列から文字列へのゴシップメタデータ（なしの場合は省略） |
+
+| 関数 | 戻り値 | 備考 |
+|----------|---------|-------|
+| `system.cluster.members()` | `table[], error` | メンバーシップ情報に到達できない場合エラー |
+| `system.cluster.leader()` | `string, error` | 現在の Raft リーダーのID。リーダーが不明または Raft が存在しない場合は `""` （エラーなし） |
+| `system.cluster.size()` | `number, error` | 見えているメンバー数。メンバーシップ情報が利用できない場合は `0` |
+
+**権限:** `cluster` に対する `system.read`。
+
+### Raft状態
+
+`system.raft` はこのノードの Raft コンセンサスコアのローカルビューを読み取ります。このノードで Raft が実行されていない場合、すべての関数は `nil, error`（"raft not available"）を返します。
+
+```lua
+local leader, err = system.raft.is_leader()      -- boolean
+local member, err = system.raft.is_member()      -- boolean: 投票ノードまたはスタンバイ
+local role, err = system.raft.role()             -- system.node.role() と同じ値
+local term, err = system.raft.term()             -- 現在の Raft ターム
+local idx, err = system.raft.commit_index()      -- 最高コミット済みログインデックス
+local stats, err = system.raft.stats()           -- 生の統計マップ（文字列 -> 文字列）
+```
+
+| 関数 | 戻り値 | 備考 |
+|----------|---------|-------|
+| `system.raft.is_leader()` | `boolean, error` | このノードが現在のリーダーの場合はtrue |
+| `system.raft.is_member()` | `boolean, error` | このノードがコミット済み設定の投票ノードまたはスタンバイの場合はtrue |
+| `system.raft.role()` | `string, error` | `"leader"` / `"voter"` / `"standby"` / `"non-member"` |
+| `system.raft.term()` | `number, error` | 現在のターム。統計から利用できない場合は `0` |
+| `system.raft.commit_index()` | `number, error` | このノードの最高コミット済みログインデックス |
+| `system.raft.stats()` | `table, error` | 完全な生の統計マップ。キーと値は文字列 |
+
+**権限:** `raft` に対する `system.read`。ただし `system.raft.stats()` は `raft_stats` に対する `system.read` が必要。
+
+### 分散ロック
+
+`system.lock` はクラスタ全体の排他制御を提供します。ロックは呼び出しプロセスが所有するグローバルに一意な名前です。Strong 名前スコープ上に構築されているため、クラスタ全体で最大1つの保持者しか存在できません。保持者プロセスが終了またはそのノードが離脱するとロックは自動解放されます — スタックしたロックのクリーンアップは不要です。
+
+```lua
+local ok, err = system.lock.acquire("orders.migration")
+if ok then
+  -- クリティカルセクション: クラスタ全体で保持者は1つだけ
+  system.lock.release("orders.migration")
+end
+```
+
+取得はフェイルファスト: ロックが既に保持されている場合はブロックせず即座に `false` を返します。呼び出し側は独自のリトライとバックオフを実装します。現在の保持者のみが解放できます。保持していないロックを解放しても安全なno-opです。
+
+| 関数 | 戻り値 | 結果 |
+|----------|---------|----------|
+| `system.lock.acquire(name)` | `boolean, error` | `true, nil` 取得成功。`false, error` 既に保持中（種別 `errors.ALREADY_EXISTS`）。`nil, error` 失敗 |
+| `system.lock.release(name)` | `boolean, error` | `true, nil` 解放成功。`false, nil` 保持していないか別プロセスが保持中。`nil, error` 失敗 |
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `name` | string | クラスタ全体のロック名 |
+
+**権限:** ロック `name` に対する `system.lock`（ポリシーで呼び出し元がロックできる名前を制限できる）。
 
 ## 権限
 
@@ -322,6 +422,11 @@ local states, err = system.supervisor.states()
 | `system.read` | `hosts` | ホスト / ホストプロセスを一覧 |
 | `system.read` | `modules` | ロード済みモジュールを一覧 |
 | `system.read` | `supervisor` | スーパーバイザー状態を読み取り |
+| `system.read` | `node` | このノードのアイデンティティを読み取り |
+| `system.read` | `cluster` | クラスタメンバーシップとリーダーを読み取り |
+| `system.read` | `raft` | Raft 状態を読み取り |
+| `system.read` | `raft_stats` | 生の Raft 統計マップを読み取り |
+| `system.lock` | `<ロック名>` | 分散ロックを取得または解放 |
 | `system.exit` | - | システムシャットダウンをトリガー |
 
 ## エラー
@@ -334,6 +439,8 @@ local states, err = system.supervisor.states()
 | コードマネージャが利用不可 | `errors.INTERNAL` | no |
 | サービス情報が利用不可 | `errors.INTERNAL` | no |
 | OSエラー (hostname, cwd) | `errors.INTERNAL` | no |
+| このノードで Raft が実行されていない | `errors.INTERNAL` | no |
+| メンバーシップが利用不可 | `errors.INTERNAL` | no |
+| ロックが既に保持中 | `errors.ALREADY_EXISTS` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

@@ -39,13 +39,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 ランタイムを起動するか、コマンドを実行する。
 
 ```bash
-wippy run                                    # ランタイムを起動
-wippy run list                               # 利用可能なコマンドを一覧表示
-wippy run test                               # テストを実行
-wippy run snapshot.wapp                      # パックファイルから実行
-wippy run acme/http                          # ハブからモジュールを実行
-wippy run acme/http@1.2.3                    # 特定バージョンを実行
-wippy run --exec app:worker                  # ランタイムを起動し単一プロセスを実行
+wippy run                                   # ランタイムを起動
+wippy run list                              # 利用可能なコマンドを一覧表示
+wippy run test                              # テストを実行
+wippy run snapshot.wapp                     # パックファイルから実行
+wippy run acme/http                         # ハブからモジュールを実行
+wippy run acme/http@1.2.3                   # 特定バージョンを実行
+wippy run --exec app:worker                 # ランタイムを起動し単一プロセスを実行
 ```
 
 | フラグ | 短縮形 | 説明 |
@@ -103,7 +103,7 @@ wippy add acme/http@latest
 ```bash
 wippy install                            # すべてをインストール
 wippy install acme/http                  # 特定のモジュールをインストール
-wippy install --refresh acme/http        # 特定のモジュールを再読み込み
+wippy install --refresh acme/http        # 特定のモジュールを再取得
 ```
 
 | フラグ | 短縮形 | デフォルト | 説明 |
@@ -175,6 +175,10 @@ wippy publish --dry-run
 | `--embed` | fs.directory エントリを ID または名前で埋め込む |
 | `--config` | wippy.yaml を含むディレクトリのパス (デフォルト: .) |
 | `--registry` | レジストリ URL |
+| `--create` | モジュールがレジストリに存在しない場合に作成 |
+| `--module-visibility` | 新規作成モジュールの公開設定 (`--create` のみ): `public` または `private` (デフォルト: private) |
+| `--module-type` | 新規作成モジュールのタイプ (`--create` のみ): `library`、`application`、`agent`、または `plugin` (デフォルト: application) |
+| `--module-display-name` | 新規作成モジュールの表示名 (`--create` のみ) |
 
 ## wippy search
 
@@ -272,7 +276,7 @@ wippy registry list --meta "type=api" --meta "enabled=true"
 `--meta` のメタデータ演算子:
 
 | 演算子 | 意味 |
-|--------|------|
+|----------|---------|
 | `field=value` | 完全一致 |
 | `field~regex` | 正規表現マッチ |
 | `field*substr` | 部分文字列を含む |
@@ -343,7 +347,7 @@ wippy run list
 | `short` | いいえ | `wippy run list` に表示される短い説明 |
 | `main` | いいえ | このエントリをデフォルトコマンドとしてマーク (単一コマンドを提供するパックやハブモジュールで自動選択される) |
 
-任意のプロセスエントリ種類 (`process.lua`、`process.wasm`) が使用可能。コマンド名はロードされた全エントリ間で一意でなければならない。コマンド名の後の引数はプロセスに渡される。
+任意のプロセスエントリ種類 (`process.lua`、`process.wasm`) が使用可能。コマンド名はロードされた全エントリ間で一意でなければならない。コマンド名の後の引数は文字列ペイロードとしてプロセスに渡される。
 
 ## 使用例
 

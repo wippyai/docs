@@ -67,14 +67,14 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 -- Forcefully terminate a process
 local ok, err = process.terminate(destination)
 
--- Request graceful cancellation with optional deadline
-local ok, err = process.cancel(destination, "5s")
+-- Request graceful cancellation with an optional reason
+local ok, err = process.cancel(destination, "shutting down")
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `destination` | string | PID or registered name |
-| `deadline` | string\|integer | Duration string or milliseconds |
+| `reason` | string | Optional reason delivered to the target |
 
 **Permissions:** `process.terminate`, `process.cancel` on target PID
 
@@ -129,7 +129,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 | `kind` | string | Event type constant |
 | `from` | string | Source PID |
 | `result` | table | For EXIT: `{value: any}` or `{error: string}` |
-| `deadline` | string | For CANCEL: deadline timestamp |
+| `reason` | string | For CANCEL: why the process is being cancelled |
 
 ## Topic Subscription
 
@@ -231,15 +231,58 @@ Same permissions as module-level spawn functions.
 
 ## Name Registry
 
-Register and lookup processes by name:
+Register a process under a name and reach it by that name instead of its PID. Any function that takes a `destination` (`send`, `terminate`, `cancel`, `monitor`, `link`, ...) accepts a registered name in place of a PID.
 
 ```lua
-local ok, err = process.registry.register(name, pid)  -- pid defaults to self
+local ok, err = process.registry.register(name)               -- self, local scope
 local pid, err = process.registry.lookup(name)
-local ok = process.registry.unregister(name)
+local ok, err = process.registry.unregister(name)
 ```
 
-**Permissions:** `process.registry.register`, `process.registry.unregister` on name
+### Scope
+
+The optional `scope` argument selects the consistency guarantee of the name. It defaults to `LOCAL`. The four scopes and their guarantees are described in the [Cluster Guide](guides/cluster.md#naming-and-name-scopes); in short:
+
+| Constant | Visibility | Guarantee |
+|----------|------------|-----------|
+| `process.registry.LOCAL` | this node only | Instant, node-local |
+| `process.registry.EVENTUAL` | cluster-wide | Eventually consistent (gossip) |
+| `process.registry.CONSISTENT` | cluster-wide | Linearizable singleton (Raft) |
+| `process.registry.STRONG` | cluster-wide | Consistent + every live node acknowledges |
+
+On a standalone node only `LOCAL` is meaningful; the cluster scopes require [clustering](guides/cluster.md).
+
+### register
+
+```lua
+local ok, err = process.registry.register(name, scope, pid)
+```
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | string | yes | | Name to register |
+| `scope` | number | no | `LOCAL` | One of the scope constants above |
+| `pid` | string | no | self | PID to register; defaults to the calling process |
+
+Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID under a cluster scope) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration blocks until every live node acknowledges or the reservation deadline expires; on timeout it returns an error.
+
+Registering on behalf of a different PID additionally requires the `process.registry.foreign` permission on the target PID.
+
+### lookup
+
+```lua
+local pid, err = process.registry.lookup(name)
+```
+
+Returns the registered PID string, or `nil, error` with kind `errors.NOT_FOUND` when the name is not registered.
+
+### unregister
+
+```lua
+local ok, err = process.registry.unregister(name, scope)
+```
+
+`scope` defaults to `LOCAL` and must match the scope the name was registered under. For `CONSISTENT` and `STRONG`, the owning process is the one allowed to unregister; unregistering a name owned by another PID returns `false`. Names also release automatically when the owning process exits (and, for cluster scopes, when its node leaves), so explicit unregister is for early release.
 
 ## Permissions
 
@@ -273,6 +316,9 @@ Policies can allow/deny based on:
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | name |
 | `process.registry.unregister` | `registry.unregister()` | name |
+| `process.registry.foreign` | `registry.register()` | target PID |
+
+Cluster name scopes are authorized by scope-suffixed variants of these actions (`process.registry.register.eventual`, `.consistent`, `.strong`, and the matching `unregister` actions), so a policy can grant local naming separately from cluster-wide naming.
 
 ### Multiple Permissions
 
@@ -308,3 +354,4 @@ See [Error Handling](lua/core/errors.md) for working with errors.
 - [Message Queue](lua/storage/queue.md) - Queue-based messaging
 - [Functions](lua/core/funcs.md) - Function invocation
 - [Supervision](guides/supervision.md) - Process lifecycle management
+- [Cluster](guides/cluster.md) - Name scopes and cluster-wide naming

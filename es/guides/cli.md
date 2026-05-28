@@ -39,13 +39,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 Iniciar el runtime o ejecutar un comando.
 
 ```bash
-wippy run                                    # Iniciar el runtime
-wippy run list                               # Listar comandos disponibles
-wippy run test                               # Ejecutar pruebas
-wippy run snapshot.wapp                      # Ejecutar desde archivo pack
-wippy run acme/http                          # Ejecutar módulo desde el hub
-wippy run acme/http@1.2.3                    # Ejecutar versión específica
-wippy run --exec app:worker                  # Iniciar runtime y ejecutar un único proceso
+wippy run                                   # Iniciar el runtime
+wippy run list                              # Listar comandos disponibles
+wippy run test                              # Ejecutar pruebas
+wippy run snapshot.wapp                     # Ejecutar desde archivo pack
+wippy run acme/http                         # Ejecutar módulo desde el hub
+wippy run acme/http@1.2.3                   # Ejecutar versión específica
+wippy run --exec app:worker                 # Iniciar runtime y ejecutar un único proceso
 ```
 
 | Flag | Corto | Descripción |
@@ -102,8 +102,8 @@ Instalar dependencias desde el archivo de bloqueo.
 
 ```bash
 wippy install                            # Instalar todo
-wippy install acme/http                  # Instalar modulo especifico
-wippy install --refresh acme/http        # Recargar modulo especifico
+wippy install acme/http                  # Instalar módulo específico
+wippy install --refresh acme/http        # Re-descargar un módulo específico
 ```
 
 | Flag | Corto | Por defecto | Descripción |
@@ -175,6 +175,10 @@ Lee desde `wippy.yaml` en el directorio actual.
 | `--embed` | Incrustar entradas fs.directory por id o nombre |
 | `--config` | Ruta al directorio que contiene wippy.yaml (por defecto: .) |
 | `--registry` | URL del registro |
+| `--create` | Crear el módulo en el registro si aún no existe |
+| `--module-visibility` | Visibilidad para módulos recién creados (solo `--create`): `public` o `private` (por defecto: private) |
+| `--module-type` | Tipo para módulos recién creados (solo `--create`): `library`, `application`, `agent` o `plugin` (por defecto: application) |
+| `--module-display-name` | Nombre para mostrar de módulos recién creados (solo `--create`) |
 
 ## wippy search
 
@@ -343,7 +347,7 @@ wippy run list
 | `short` | No | Descripción corta mostrada en `wippy run list` |
 | `main` | No | Marcar esta entrada como comando por defecto (seleccionado automáticamente por packs y módulos del hub que entregan un único comando) |
 
-Cualquier tipo de entrada de proceso funciona (`process.lua`, `process.wasm`). El nombre del comando debe ser único entre todas las entradas cargadas. Los argumentos después del nombre del comando se pasan al proceso.
+Cualquier tipo de entrada de proceso funciona (`process.lua`, `process.wasm`). El nombre del comando debe ser único entre todas las entradas cargadas. Los argumentos después del nombre del comando se pasan al proceso como payloads de cadena de texto.
 
 ## Ejemplos
 

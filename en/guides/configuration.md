@@ -256,28 +256,101 @@ See: [Observability Guide](guides/observability.md)
 
 ## Cluster
 
-Multi-node clustering with gossip discovery.
+Multi-node clustering: gossip membership plus a bounded Raft consensus core. See the [Cluster Guide](guides/cluster.md) for the architecture and operational model; this section is the config-key reference.
+
+### Top-level
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Enable clustering |
-| `name` | string | hostname | Node identifier |
-| `internode.bind_addr` | string | 0.0.0.0 | Inter-node bind address |
-| `internode.bind_port` | int | 0 | Port (0=auto 7950-7959) |
-| `membership.bind_port` | int | 7946 | Gossip port |
-| `membership.join_addrs` | string | | Seed nodes (comma-separated) |
-| `membership.secret_key` | string | | Encryption key (base64) |
-| `membership.secret_file` | string | | Key file path |
-| `membership.advertise_addr` | string | | Public address for NAT |
+| `name` | string | hostname | Node name; must be unique across the cluster |
+| `failure_domain` | string | | Zone/rack label; advertised in gossip so voters spread across domains |
+
+### Membership (gossip)
+
+SWIM gossip via memberlist. Used for node discovery, failure detection, and metadata dissemination.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `membership.bind_addr` | string | 0.0.0.0 | Gossip bind address |
+| `membership.bind_port` | int | 7946 | Gossip bind port (TCP+UDP) |
+| `membership.advertise_addr` | string | | Address peers use to reach this node (NAT/k8s) |
+| `membership.join_addrs` | string | | Comma-separated seed `host:port` pairs |
+| `membership.secret_key` | string | | Base64-encoded gossip encryption key (inline) |
+| `membership.secret_file` | string | | Path to file holding the gossip encryption key |
+
+### Internode (transport)
+
+TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh (yamux-multiplexed); there is no separate Raft port.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `internode.bind_addr` | string | 0.0.0.0 | Mesh bind address |
+| `internode.bind_port` | int | 0 | Mesh port (0 = auto: 7950-7959, then ephemeral) |
+| `internode.auto_port` | bool | true | Discover the actual port at boot, pin it, and advertise it in gossip |
+
+### Raft (consensus)
+
+Bounded, diskless Raft. State is in-memory; on restart a node rejoins quorum and replays from peers. No `data_dir`. Bootstrap is gossip-driven (Consul/Nomad `bootstrap_expect` style), not a static initial-cluster list.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `raft.enabled` | bool | true | Run a Raft node; `false` makes this a gossip-only client |
+| `raft.role` | string | server | `server` runs a Raft node; `client` is gossip-only |
+| `raft.eligible` | bool | true | Whether this node may be selected as a voter |
+| `raft.priority` | int | 100 | Voter selection priority (lower is preferred) |
+| `raft.bootstrap_expect` | int | 1 | Initial quorum size: `0`=join existing, `1`=single-node, `N`=wait for N eligible peers then form quorum |
+| `raft.max_voters` | int | 5 | Voter ceiling (must be odd); extra eligible nodes become standbys |
+| `raft.max_standbys` | int | 4 | Non-voting members kept warm for promotion; nodes beyond voters+standbys are not Raft members |
+| `raft.reconcile_debounce` | duration | 2s | Coalesce window after a gossip event before the voter reconciler runs |
+| `raft.reconcile_timeout` | duration | 2s | Bound per reconcile pass |
+| `raft.heartbeat_timeout` | duration | 3s | Follower idle wait before starting an election |
+| `raft.election_timeout` | duration | 3s | Candidate election timeout (clamped to >= heartbeat) |
+| `raft.commit_timeout` | duration | 500ms | Idle leader heartbeat cadence |
+| `raft.snapshot_threshold` | uint64 | 8192 | Log entries since last snapshot before a new one |
+| `raft.snapshot_interval` | duration | 2m | Snapshot check interval |
+| `raft.snapshot_retain` | int | 3 | Snapshots retained |
+| `raft.trailing_logs` | uint64 | 10240 | Log entries retained after a snapshot |
+| `raft.max_append_entries` | int | 16 | Max entries per AppendEntries RPC |
+| `raft.leader_probe_interval` | duration | 3s | Global-registry leader-reachability probe cadence |
+| `raft.leader_probe_grace` | int | 3 | Consecutive probe failures before leader is declared unreachable |
+
+Single-node (development) — clustering on, bootstraps itself immediately:
+
+```yaml
+cluster:
+  enabled: true
+  name: dev
+  raft:
+    bootstrap_expect: 1
+```
+
+Three-node voting cluster — each node lists the others as seeds and waits for all three before forming quorum:
 
 ```yaml
 cluster:
   enabled: true
   name: node-1
+  failure_domain: us-east-1a
   membership:
     bind_port: 7946
-    join_addrs: "10.0.0.1:7946,10.0.0.2:7946"
+    join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  raft:
+    bootstrap_expect: 3
+    max_voters: 5
+```
+
+Gossip-only client — joins the cluster for naming/messaging but never runs Raft:
+
+```yaml
+cluster:
+  enabled: true
+  name: edge-7
+  membership:
+    join_addrs: "node-1:7946,node-2:7946"
+  raft:
+    role: client
 ```
 
 ## LSP
@@ -320,6 +393,25 @@ network_service:
 
 See: [Network Overlays](system/network.md)
 
+## HTTP Dispatcher
+
+Tuning for the shared HTTP client pool used by HTTP-dispatched functions and outbound requests.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `dispatcher.http.timeout` | duration | 0 (none) | Per-request timeout |
+| `dispatcher.http.max_idle_conns` | int | 0 (stdlib) | Max idle connections across all hosts |
+| `dispatcher.http.max_idle_per_host` | int | 0 (stdlib) | Max idle connections per host |
+| `dispatcher.http.idle_conn_timeout` | duration | 0 (stdlib) | Idle connection timeout |
+| `dispatcher.http.max_clients` | int | 0 (unbounded) | Max distinct pooled clients |
+
+```yaml
+dispatcher:
+  http:
+    timeout: 30s
+    max_idle_per_host: 32
+```
+
 ## Modules
 
 Module registry client used by `wippy install`/`update`.
@@ -358,5 +450,6 @@ extensions:
 ## See Also
 
 - [CLI Reference](guides/cli.md) - Command line options
+- [Cluster Guide](guides/cluster.md) - Clustering architecture and operations
 - [Entry Kinds](guides/entry-kinds.md) - All entry types
 - [Observability Guide](guides/observability.md) - Logging, metrics, tracing

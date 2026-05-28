@@ -3,7 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publique e inscreva-se em eventos em toda sua aplicação para arquiteturas orientadas a eventos.
+Publique e inscreva-se em eventos para observabilidade — monitoramento de atividade do runtime e da aplicação e reação a ela.
+
+<note>
+Use o event bus apenas para observação: monitoramento, logging, métricas e efeitos colaterais reativos. É um canal publish/subscribe de melhor esforço, não um transporte confiável — não construa lógica de negócio sobre ele nem dependa dele para entrega garantida. Para mensagens críticas de negócio, use mensagens de processo (`process.send`), channels ou a [fila de mensagens](lua/storage/queue.md).
+</note>
 
 ## Carregamento
 
@@ -25,7 +29,7 @@ end
 -- Inscreva-se em tipo de evento específico
 local sub = events.subscribe("users", "user.created")
 
--- Inscrever em todos os eventos de um sistema
+-- Inscreva-se em todos os eventos de um sistema
 local sub = events.subscribe("payments")
 
 -- Processar eventos
@@ -138,4 +142,3 @@ sub:close()
 | Política negou | `errors.INVALID` | não |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
-

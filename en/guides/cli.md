@@ -175,6 +175,10 @@ Reads from `wippy.yaml` in current directory.
 | `--embed` | Embed fs.directory entries by id or name |
 | `--config` | Path to directory containing wippy.yaml (default: .) |
 | `--registry` | Registry URL |
+| `--create` | Create the module on the registry if it does not yet exist |
+| `--module-visibility` | Visibility for newly created modules (`--create` only): `public` or `private` (default: private) |
+| `--module-type` | Type for newly created modules (`--create` only): `library`, `application`, `agent`, or `plugin` (default: application) |
+| `--module-display-name` | Display name for newly created modules (`--create` only) |
 
 ## wippy search
 

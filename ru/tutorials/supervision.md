@@ -11,7 +11,7 @@
 
 **Связывание** создаёт двунаправленное разделение судьбы:
 - Родитель и потомок связаны
-- Один из процессов завершается с ошибкой -- оба завершаются
+- Один из процессов завершается с ошибкой — оба завершаются
 - Если не установлен `trap_links=true`
 
 ```mermaid
@@ -87,7 +87,7 @@ local function main()
 
     -- Cancel the worker
     time.sleep("5ms")
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- Receive EXIT event
     local event = events_ch:receive()
@@ -121,7 +121,7 @@ local function main()
     end
 
     -- Cancel worker
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- No EXIT event will be received (we unmonitored)
     local timeout = time.after("200ms")
@@ -286,8 +286,8 @@ local function main()
 
     time.sleep("5ms")
 
-    -- Cancel with 100ms timeout for cleanup
-    local ok, cancel_err = process.cancel(worker_pid, "100ms")
+    -- Cancel the worker
+    local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
@@ -446,7 +446,7 @@ local function chain_node_main(depth)
         end
     end
 
-    -- Блокируемся до гибели родителя, которая убивает нас через LINK_DOWN (trap_links=false по умолчанию)
+    -- Block until parent death kills us via LINK_DOWN (default trap_links=false)
     process.inbox():receive()
 end
 ```
@@ -669,14 +669,14 @@ wippy run
 Супервизор автоматически стартует, порождает четырёх воркеров и логирует перезапуски при гибели любого из них. Для принудительного перезапуска завершите воркер из другого процесса:
 
 ```lua
--- в отдельном процессе или chat-команде
-process.cancel("<pid-from-supervisor-log>", "100ms")
+-- in an ad-hoc process or chat command
+process.cancel("<pid-from-supervisor-log>")
 ```
 
 Пул получает `LINK_DOWN`, ждёт 100 мс и перезапускает воркер под тем же идентификатором.
 
 ## Следующие шаги
 
-- [Процессы](tutorials/processes.md) - Основы процессов
-- [Каналы](tutorials/channels.md) - Паттерны передачи сообщений
-- [Модуль процессов](lua/core/process.md) - Справочник API
+- [Процессы](tutorials/processes.md) — основы процессов
+- [Каналы](tutorials/channels.md) — паттерны передачи сообщений
+- [Модуль процессов](lua/core/process.md) — справочник API

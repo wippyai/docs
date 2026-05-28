@@ -303,9 +303,9 @@ local spawner = process.with_options({
 |----------|-----|----------|
 | `temporal.workflow.id` | string | Явный ID выполнения workflow |
 | `temporal.workflow.task_queue` | string | Переопределение очереди задач |
-| `temporal.workflow.execution_timeout` | duration | Общий тайм-аут выполнения workflow |
-| `temporal.workflow.run_timeout` | duration | Тайм-аут одного запуска |
-| `temporal.workflow.task_timeout` | duration | Тайм-аут обработки задачи workflow |
+| `temporal.workflow.execution_timeout` | duration | Общий таймаут выполнения workflow |
+| `temporal.workflow.run_timeout` | duration | Таймаут одного запуска |
+| `temporal.workflow.task_timeout` | duration | Таймаут обработки задачи workflow |
 | `temporal.workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
 | `temporal.workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
 | `temporal.workflow.execution_error_when_already_started` | boolean | Ошибка, если workflow уже запущен |
@@ -436,7 +436,7 @@ end
 
 ## Сигналы
 
-Workflow-процессы получают сигналы через систему сообщений. Сигналы устойчивы — они переживают replay workflow.
+Workflow получают сигналы через систему сообщений. Сигналы устойчивы — они переживают replay workflow.
 
 ### Паттерн inbox
 
@@ -757,10 +757,10 @@ local ok, err = process.terminate(workflow_pid)
 
 ### Отмена
 
-Запрос корректной отмены с опциональным дедлайном:
+Запрос корректной отмены с опциональной причиной:
 
 ```lua
-local ok, err = process.cancel(workflow_pid, "5s")
+local ok, err = process.cancel(workflow_pid, "cancelled by operator")
 ```
 
 ## Параллельная работа

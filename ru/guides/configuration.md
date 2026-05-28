@@ -17,12 +17,12 @@ logger:
 
 ## Log Manager
 
-Управляет маршрутизацией логов. Вывод в консоль настраивается через [флаги CLI](guides/cli.md) (`-v`, `-c`, `-s`).
+Управляет маршрутизацией логов среды выполнения. Вывод в консоль настраивается через [флаги CLI](guides/cli.md) (`-v`, `-c`, `-s`).
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `propagate_downstream` | bool | true | Передавать логи в консоль/файл |
-| `stream_to_events` | bool | false | Публиковать логи в шину событий |
+| `stream_to_events` | bool | false | Публиковать логи в шину событий для программного доступа |
 | `min_level` | int | -1 | Минимальный уровень: -1=debug, 0=info, 1=warn, 2=error |
 
 ```yaml
@@ -93,7 +93,7 @@ registry:
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
-| `node_name` | string | local | Идентификатор ноды |
+| `node_name` | string | local | Идентификатор ноды этого реле |
 
 ```yaml
 relay:
@@ -256,28 +256,101 @@ prometheus:
 
 ## Cluster
 
-Многонодовая кластеризация с gossip-обнаружением.
+Многонодовая кластеризация: gossip-обнаружение участников и ограниченное ядро консенсуса Raft. Архитектуру и операционную модель см. в [Руководстве по кластеру](guides/cluster.md); этот раздел — справочник по ключам конфигурации.
+
+### Верхний уровень
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `enabled` | bool | false | Включить кластеризацию |
-| `name` | string | hostname | Идентификатор ноды |
-| `internode.bind_addr` | string | 0.0.0.0 | Адрес межнодового соединения |
-| `internode.bind_port` | int | 0 | Порт (0=авто 7950-7959) |
-| `membership.bind_port` | int | 7946 | Порт gossip |
-| `membership.join_addrs` | string | | Seed-ноды (через запятую) |
-| `membership.secret_key` | string | | Ключ шифрования (base64) |
-| `membership.secret_file` | string | | Путь к файлу ключа |
-| `membership.advertise_addr` | string | | Публичный адрес для NAT |
+| `name` | string | hostname | Имя ноды; должно быть уникальным в кластере |
+| `failure_domain` | string | | Метка зоны/стойки; рекламируется через gossip, чтобы voters распределялись по доменам |
+
+### Membership (gossip)
+
+SWIM gossip через memberlist. Используется для обнаружения нод, обнаружения сбоев и распространения метаданных.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `membership.bind_addr` | string | 0.0.0.0 | Адрес привязки gossip |
+| `membership.bind_port` | int | 7946 | Порт gossip (TCP+UDP) |
+| `membership.advertise_addr` | string | | Адрес, используемый пирами для достижения этой ноды (NAT/k8s) |
+| `membership.join_addrs` | string | | Seed-адреса через запятую (`host:port`) |
+| `membership.secret_key` | string | | Ключ шифрования gossip в base64 (встроенный) |
+| `membership.secret_file` | string | | Путь к файлу с ключом шифрования gossip |
+
+### Internode (транспорт)
+
+TCP-меш, переносящий relay- и Raft-трафик между нодами. Raft работает по этому мешу (мультиплексирование через yamux); отдельного Raft-порта нет.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `internode.bind_addr` | string | 0.0.0.0 | Адрес привязки меша |
+| `internode.bind_port` | int | 0 | Порт меша (0 = авто: 7950-7959, затем эфемерный) |
+| `internode.auto_port` | bool | true | Определить фактический порт при запуске, зафиксировать и объявить через gossip |
+
+### Raft (консенсус)
+
+Ограниченный, бездисковый Raft. Состояние хранится в памяти; при перезапуске нода переприсоединяется к кворуму и воспроизводит от пиров. Нет `data_dir`. Bootstrap управляется gossip (по образцу Consul/Nomad `bootstrap_expect`), а не статическим списком.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `raft.enabled` | bool | true | Запускать Raft-ноду; `false` делает эту ноду только gossip-клиентом |
+| `raft.role` | string | server | `server` запускает Raft-ноду; `client` — только gossip |
+| `raft.eligible` | bool | true | Может ли эта нода быть выбрана voter |
+| `raft.priority` | int | 100 | Приоритет выбора voter (меньше — предпочтительнее) |
+| `raft.bootstrap_expect` | int | 1 | Начальный размер кворума: `0`=присоединиться к существующему, `1`=одна нода, `N`=ждать N eligible пиров и сформировать кворум |
+| `raft.max_voters` | int | 5 | Максимум voters (должно быть нечётным); лишние eligible-ноды становятся standby |
+| `raft.max_standbys` | int | 4 | Невотирующие члены, готовые к повышению; ноды за пределами voters+standbys не являются членами Raft |
+| `raft.reconcile_debounce` | duration | 2s | Окно агрегации после gossip-события перед запуском reconciler voters |
+| `raft.reconcile_timeout` | duration | 2s | Ограничение на один проход reconcile |
+| `raft.heartbeat_timeout` | duration | 3s | Ожидание follower в простое перед началом выборов |
+| `raft.election_timeout` | duration | 3s | Таймаут выборов кандидата (не меньше heartbeat) |
+| `raft.commit_timeout` | duration | 500ms | Ритм heartbeat лидера в простое |
+| `raft.snapshot_threshold` | uint64 | 8192 | Записей лога с последнего снимка перед созданием нового |
+| `raft.snapshot_interval` | duration | 2m | Интервал проверки снимков |
+| `raft.snapshot_retain` | int | 3 | Хранить снимков |
+| `raft.trailing_logs` | uint64 | 10240 | Записей лога, оставляемых после снимка |
+| `raft.max_append_entries` | int | 16 | Максимум записей в одном AppendEntries RPC |
+| `raft.leader_probe_interval` | duration | 3s | Период проверки доступности лидера глобального реестра |
+| `raft.leader_probe_grace` | int | 3 | Последовательных неудач проверки до признания лидера недоступным |
+
+Одна нода (разработка) — кластеризация включена, нода сразу bootstrap-ит себя:
+
+```yaml
+cluster:
+  enabled: true
+  name: dev
+  raft:
+    bootstrap_expect: 1
+```
+
+Трёхнодовый voting-кластер — каждая нода перечисляет остальные как seed и ждёт все три перед формированием кворума:
 
 ```yaml
 cluster:
   enabled: true
   name: node-1
+  failure_domain: us-east-1a
   membership:
     bind_port: 7946
-    join_addrs: "10.0.0.1:7946,10.0.0.2:7946"
+    join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  raft:
+    bootstrap_expect: 3
+    max_voters: 5
+```
+
+Только gossip-клиент — присоединяется к кластеру для именования/обмена сообщениями, но никогда не запускает Raft:
+
+```yaml
+cluster:
+  enabled: true
+  name: edge-7
+  membership:
+    join_addrs: "node-1:7946,node-2:7946"
+  raft:
+    role: client
 ```
 
 ## LSP
@@ -320,6 +393,25 @@ network_service:
 
 См.: [Сетевые оверлеи](system/network.md)
 
+## HTTP Dispatcher
+
+Настройка общего пула HTTP-клиентов, используемого HTTP-диспетчированными функциями и исходящими запросами.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `dispatcher.http.timeout` | duration | 0 (нет) | Таймаут на запрос |
+| `dispatcher.http.max_idle_conns` | int | 0 (stdlib) | Максимум простаивающих соединений по всем хостам |
+| `dispatcher.http.max_idle_per_host` | int | 0 (stdlib) | Максимум простаивающих соединений на хост |
+| `dispatcher.http.idle_conn_timeout` | duration | 0 (stdlib) | Таймаут простаивающего соединения |
+| `dispatcher.http.max_clients` | int | 0 (без ограничений) | Максимум различных клиентов в пуле |
+
+```yaml
+dispatcher:
+  http:
+    timeout: 30s
+    max_idle_per_host: 32
+```
+
 ## Модули
 
 Клиент реестра модулей, используемый `wippy install`/`update`.
@@ -358,5 +450,6 @@ extensions:
 ## См. также
 
 - [Справочник CLI](guides/cli.md) — параметры командной строки
+- [Руководство по кластеру](guides/cluster.md) — архитектура и операции кластеризации
 - [Типы записей](guides/entry-kinds.md) — все типы записей
 - [Наблюдаемость](guides/observability.md) — логирование, метрики, трассировка

@@ -757,10 +757,10 @@ Chamadores monitorados recebem um evento EXIT com erro.
 
 ### Cancelar
 
-Solicita cancelamento gracioso com um deadline opcional:
+Solicita cancelamento gracioso com um motivo opcional:
 
 ```lua
-local ok, err = process.cancel(workflow_pid, "5s")
+local ok, err = process.cancel(workflow_pid, "cancelled by operator")
 ```
 
 ## Trabalho Concorrente

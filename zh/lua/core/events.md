@@ -3,7 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-在应用程序中发布和订阅事件，用于事件驱动架构。
+发布和订阅事件，用于观测——监控运行时和应用活动并对其做出响应。
+
+<note>
+事件总线仅用于观测：监控、日志、指标和响应式副作用。它是尽力而为的发布/订阅通道，不是可靠传输——不要在其上构建业务逻辑，也不要依赖它保证投递。业务关键消息传递请使用进程消息（`process.send`）、通道或[消息队列](lua/storage/queue.md)。
+</note>
 
 ## 加载
 
@@ -44,9 +48,9 @@ end
 ```
 
 | 参数 | 类型 | 描述 |
-|-----------|------|-------------|
-| `system` | string | 系统模式（支持通配符如 "test.*"） |
-| `kind` | string | 事件类型过滤器（可选） |
+|------|------|------|
+| `system` | string | 系统模式（支持通配符，如 "test.*"） |
+| `kind` | string | 事件类型过滤（可选） |
 
 **返回:** `Subscription, error`
 
@@ -80,20 +84,20 @@ events.send("payments", "payment.completed", "/payments/" .. payment.id, {
     method = payment.method
 })
 
--- 发送不带数据的事件
+-- 发送无数据事件
 events.send("system", "heartbeat", "/health")
 ```
 
 | 参数 | 类型 | 描述 |
-|-----------|------|-------------|
+|------|------|------|
 | `system` | string | 系统标识符 |
-| `kind` | string | 事件类型 |
+| `kind` | string | 事件类型/种类 |
 | `path` | string | 用于路由的事件路径 |
 | `data` | any | 事件负载（可选） |
 
 **返回:** `boolean, error`
 
-## Subscription 方法
+## 订阅方法
 
 ### 获取通道
 
@@ -123,18 +127,18 @@ sub:close()
 
 ## 权限
 
-| 动作 | 资源 | 描述 |
-|--------|----------|-------------|
-| `events.subscribe` | system | 订阅系统的事件 |
-| `events.send` | system | 向系统发送事件 |
+| 操作 | 资源 | 描述 |
+|------|------|------|
+| `events.subscribe` | system | 订阅来自某系统的事件 |
+| `events.send` | system | 向某系统发送事件 |
 
 ## 错误
 
 | 条件 | 类型 | 可重试 |
-|-----------|------|-----------|
-| 空 system | `errors.INVALID` | 否 |
-| 空 kind | `errors.INVALID` | 否 |
-| 空 path | `errors.INVALID` | 否 |
+|------|------|--------|
+| 系统为空 | `errors.INVALID` | 否 |
+| 类型为空 | `errors.INVALID` | 否 |
+| 路径为空 | `errors.INVALID` | 否 |
 | 策略拒绝 | `errors.INVALID` | 否 |
 
-参见 [错误处理](lua/core/errors.md) 了解错误处理方法。
+错误处理参见[错误处理](lua/core/errors.md)。

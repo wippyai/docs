@@ -3,7 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Veröffentlichen und abonnieren Sie Events in Ihrer Anwendung für ereignisgesteuerte Architekturen.
+Ereignisse veröffentlichen und abonnieren für Observability — Überwachen von Runtime- und Anwendungsaktivität und Reagieren darauf.
+
+<note>
+Den Event-Bus ausschließlich zur Beobachtung verwenden: Monitoring, Logging, Metriken und reaktive Nebeneffekte. Es ist ein Best-Effort-Publish/Subscribe-Kanal, kein zuverlässiger Transport — keine Geschäftslogik darauf aufbauen und keine garantierte Zustellung erwarten. Für geschäftskritisches Messaging Prozess-Messaging (`process.send`), Channels oder die [Nachrichten-Queue](lua/storage/queue.md) verwenden.
+</note>
 
 ## Laden
 
@@ -13,7 +17,7 @@ local events = require("events")
 
 ## Events abonnieren
 
-Abonnieren Sie Events vom Event-Bus:
+Ereignisse vom Event-Bus abonnieren:
 
 ```lua
 -- Alle Bestellungs-Events abonnieren
@@ -44,7 +48,7 @@ end
 ```
 
 | Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
+|-----------|-----|--------------|
 | `system` | string | System-Muster (unterstützt Wildcards wie "test.*") |
 | `kind` | string | Event-Art-Filter (optional) |
 
@@ -52,7 +56,7 @@ end
 
 ## Events senden
 
-Senden Sie ein Event an den Event-Bus:
+Ein Ereignis an den Event-Bus senden:
 
 ```lua
 -- Bestellung-erstellt-Event senden
@@ -85,7 +89,7 @@ events.send("system", "heartbeat", "/health")
 ```
 
 | Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
+|-----------|-----|--------------|
 | `system` | string | System-Identifikator |
 | `kind` | string | Event-Art/-Typ |
 | `path` | string | Event-Pfad für Routing |
@@ -97,7 +101,7 @@ events.send("system", "heartbeat", "/health")
 
 ### Channel abrufen
 
-Holen Sie den Channel zum Empfangen von Events:
+Den Channel zum Empfangen von Ereignissen holen:
 
 ```lua
 local ch = sub:channel()
@@ -124,14 +128,14 @@ sub:close()
 ## Berechtigungen
 
 | Aktion | Ressource | Beschreibung |
-|--------|----------|-------------|
+|--------|-----------|--------------|
 | `events.subscribe` | system | Events von einem System abonnieren |
 | `events.send` | system | Events an ein System senden |
 
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
-|-----------|------|-----------|
+|-----------|-----|--------------|
 | Leeres System | `errors.INVALID` | nein |
 | Leere Art | `errors.INVALID` | nein |
 | Leerer Pfad | `errors.INVALID` | nein |

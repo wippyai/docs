@@ -26,7 +26,7 @@ local ok, err = process.send(destination, topic, ...)
 ```
 
 | 参数 | 类型 | 描述 |
-|-----------|------|-------------|
+|------|------|------|
 | `destination` | string | PID 或注册名称 |
 | `topic` | string | 主题名称（不能以 `@` 开头） |
 | `...` | any | 负载值 |
@@ -50,7 +50,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 ```
 
 | 参数 | 类型 | 描述 |
-|-----------|------|-------------|
+|------|------|------|
 | `id` | string | 进程源 ID（如 `"app.workers:handler"`） |
 | `host` | string | 主机 ID（如 `"app:processes"`） |
 | `...` | any | 传递给启动进程的参数 |
@@ -67,14 +67,14 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 -- 强制终止进程
 local ok, err = process.terminate(destination)
 
--- 请求优雅取消，可选截止时间
-local ok, err = process.cancel(destination, "5s")
+-- 请求优雅取消，可附带可选原因
+local ok, err = process.cancel(destination, "shutting down")
 ```
 
 | 参数 | 类型 | 描述 |
-|-----------|------|-------------|
+|------|------|------|
 | `destination` | string | PID 或注册名称 |
-| `deadline` | string\|integer | 时长字符串或毫秒数 |
+| `reason` | string | 传递给目标的可选原因 |
 
 **权限:** 目标 PID 上的 `process.terminate`、`process.cancel`
 
@@ -102,7 +102,7 @@ local ok, err = process.set_options({trap_links = true})
 ```
 
 | 字段 | 类型 | 描述 |
-|-------|------|-------------|
+|------|------|------|
 | `trap_links` | boolean | LINK_DOWN 事件是否传递到事件通道 |
 
 ## 收件箱和事件
@@ -117,7 +117,7 @@ local events = process.events()  -- 来自 @events 主题的生命周期事件
 ### 事件类型
 
 | 常量 | 描述 |
-|----------|-------------|
+|------|------|
 | `process.event.CANCEL` | 请求取消 |
 | `process.event.EXIT` | 被监控进程退出 |
 | `process.event.LINK_DOWN` | 链接进程异常终止 |
@@ -125,11 +125,11 @@ local events = process.events()  -- 来自 @events 主题的生命周期事件
 ### 事件字段
 
 | 字段 | 类型 | 描述 |
-|-------|------|-------------|
+|------|------|------|
 | `kind` | string | 事件类型常量 |
 | `from` | string | 源 PID |
-| `result` | table | EXIT 时: `{value: any}` 或 `{error: string}` |
-| `deadline` | string | CANCEL 时: 截止时间戳 |
+| `result` | table | EXIT 时：`{value: any}` 或 `{error: string}` |
+| `reason` | string | CANCEL 时：进程被取消的原因 |
 
 ## 主题订阅
 
@@ -141,7 +141,7 @@ process.unlisten(ch)
 ```
 
 | 参数 | 类型 | 描述 |
-|-----------|------|-------------|
+|------|------|------|
 | `topic` | string | 主题名称（不能以 `@` 开头） |
 | `options.message` | boolean | 若为 true，接收 Message 对象；若为 false，接收原始负载 |
 
@@ -152,9 +152,10 @@ process.unlisten(ch)
 ```lua
 local msg = inbox:receive()
 
-msg:topic()    -- string: 主题名称
-msg:from()     -- string|nil: 发送方 PID
-msg:payload()  -- any: 负载数据
+msg:topic()            -- string: 主题名称
+msg:from()             -- string|nil: 发送方 PID
+msg:payload()          -- Payload: 包装器（调用 :data() 提取）
+msg:payload():data()   -- any: 实际负载值
 ```
 
 ## 同步调用
@@ -205,7 +206,7 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 
 ### SpawnBuilder 方法
 
-SpawnBuilder 是不可变的 - 每个方法返回新实例：
+SpawnBuilder 是不可变的——每个方法返回新实例：
 
 ```lua
 spawner:with_context(values)      -- 添加上下文值
@@ -230,15 +231,58 @@ spawner:spawn_linked_monitored(id, host, ...)
 
 ## 名称注册表
 
-按名称注册和查找进程：
+以名称注册进程，通过名称而非 PID 访问它。任何接受 `destination` 参数的函数（`send`、`terminate`、`cancel`、`monitor`、`link` 等）都可以接受注册名称代替 PID。
 
 ```lua
-local ok, err = process.registry.register(name, pid)  -- pid 默认为自己
+local ok, err = process.registry.register(name)               -- 自身，本地作用域
 local pid, err = process.registry.lookup(name)
-local ok = process.registry.unregister(name)
+local ok, err = process.registry.unregister(name)
 ```
 
-**权限:** 名称上的 `process.registry.register`、`process.registry.unregister`
+### 作用域
+
+可选的 `scope` 参数选择名称的一致性保障。默认为 `LOCAL`。四种作用域及其保障在[集群指南](guides/cluster.md#命名与名称作用域)中有详细说明；简要说明：
+
+| 常量 | 可见性 | 保障 |
+|------|--------|------|
+| `process.registry.LOCAL` | 仅此节点 | 即时，节点本地 |
+| `process.registry.EVENTUAL` | 集群范围 | 最终一致（gossip） |
+| `process.registry.CONSISTENT` | 集群范围 | 线性化单例（Raft） |
+| `process.registry.STRONG` | 集群范围 | 一致 + 所有存活节点确认 |
+
+在独立节点上只有 `LOCAL` 有意义；集群作用域需要[启用集群](guides/cluster.md)。
+
+### register
+
+```lua
+local ok, err = process.registry.register(name, scope, pid)
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 描述 |
+|------|------|------|--------|------|
+| `name` | string | 是 | | 要注册的名称 |
+| `scope` | number | 否 | `LOCAL` | 上述作用域常量之一 |
+| `pid` | string | 否 | 自身 | 要注册的 PID；默认为调用进程 |
+
+成功返回 `true`，失败返回 `nil, error`。冲突（名称在集群作用域下已注册给不同 PID）返回 `errors.ALREADY_EXISTS`。将同一名称注册给同一 PID 是幂等的。`STRONG` 注册会阻塞，直到所有存活节点确认或预留截止时间到期；超时返回错误。
+
+代表不同 PID 注册时，还需要在目标 PID 上的 `process.registry.foreign` 权限。
+
+### lookup
+
+```lua
+local pid, err = process.registry.lookup(name)
+```
+
+返回已注册的 PID 字符串，或在名称未注册时返回 `nil, error`（类型为 `errors.NOT_FOUND`）。
+
+### unregister
+
+```lua
+local ok, err = process.registry.unregister(name, scope)
+```
+
+`scope` 默认为 `LOCAL`，必须与注册时使用的作用域匹配。对于 `CONSISTENT` 和 `STRONG`，拥有进程才能注销；注销另一个 PID 拥有的名称返回 `false`。当拥有进程退出时（以及对于集群作用域，当其节点离开时），名称也会自动释放，因此显式注销仅用于提前释放。
 
 ## 权限
 
@@ -255,7 +299,7 @@ local ok = process.registry.unregister(name)
 ### 权限参考
 
 | 权限 | 函数 | 资源 |
-|------------|-----------|----------|
+|------|------|------|
 | `process.spawn` | `spawn*()` | 进程 id |
 | `process.spawn.monitored` | `spawn_monitored()`、`spawn_linked_monitored()` | 进程 id |
 | `process.spawn.linked` | `spawn_linked()`、`spawn_linked_monitored()` | 进程 id |
@@ -272,13 +316,16 @@ local ok = process.registry.unregister(name)
 | `process.security` | `:with_actor()`、`:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | 名称 |
 | `process.registry.unregister` | `registry.unregister()` | 名称 |
+| `process.registry.foreign` | `registry.register()` | 目标 PID |
+
+集群名称作用域通过这些操作的作用域后缀变体授权（`process.registry.register.eventual`、`.consistent`、`.strong` 以及对应的 `unregister` 操作），策略可以单独授予本地命名和集群范围命名权限。
 
 ### 多重权限
 
 某些操作需要多个权限：
 
 | 操作 | 所需权限 |
-|-----------|---------------------|
+|------|---------|
 | `spawn()` | `process.spawn` + `process.host` |
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
@@ -289,21 +336,22 @@ local ok = process.registry.unregister(name)
 ## 错误
 
 | 条件 | 类型 |
-|-----------|------|
+|------|------|
 | 未找到上下文 | `errors.INVALID` |
 | 未找到帧上下文 | `errors.INVALID` |
 | 缺少必需参数 | `errors.INVALID` |
-| 保留主题前缀 (`@`) | `errors.INVALID` |
+| 保留主题前缀（`@`） | `errors.INVALID` |
 | 无效时长格式 | `errors.INVALID` |
 | 名称未注册 | `errors.NOT_FOUND` |
 | 权限被拒绝 | `errors.PERMISSION_DENIED` |
 | 名称已注册 | `errors.ALREADY_EXISTS` |
 
-参见 [错误处理](lua/core/errors.md) 了解错误处理方法。
+错误处理参见[错误处理](lua/core/errors.md)。
 
-## 参见
+## 另请参阅
 
 - [通道](lua/core/channel.md) - 进程间通信
 - [消息队列](lua/storage/queue.md) - 基于队列的消息传递
 - [函数调用](lua/core/funcs.md) - 函数调用
 - [监督](guides/supervision.md) - 进程生命周期管理
+- [集群](guides/cluster.md) - 名称作用域与集群范围命名

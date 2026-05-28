@@ -3,7 +3,11 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publicar y suscribirse a eventos a traves de su aplicación para arquitecturas dirigidas por eventos.
+Publicar y suscribirse a eventos para observabilidad — monitorear la actividad del runtime y de la aplicación y reaccionar a ella.
+
+<note>
+Usar el bus de eventos solo para observación: monitoreo, registro, métricas y efectos secundarios reactivos. Es un canal de publish/subscribe de mejor esfuerzo, no un transporte confiable — no construir lógica de negocio sobre él ni depender de él para entrega garantizada. Para mensajería crítica de negocio usar mensajería de proceso (`process.send`), canales, o la [cola de mensajes](lua/storage/queue.md).
+</note>
 
 ## Carga
 
@@ -93,7 +97,7 @@ events.send("system", "heartbeat", "/health")
 
 **Devuelve:** `boolean, error`
 
-## Metodos de Suscripcion
+## Métodos de Suscripción
 
 ### Obtener el Canal
 
@@ -113,7 +117,7 @@ end
 
 Campos del evento: `system`, `kind`, `path`, `data`
 
-### Cerrar Suscripcion
+### Cerrar Suscripción
 
 Desuscribirse y cerrar el canal:
 
@@ -123,7 +127,7 @@ sub:close()
 
 ## Permisos
 
-| Accion | Recurso | Descripción |
+| Acción | Recurso | Descripción |
 |--------|---------|-------------|
 | `events.subscribe` | sistema | Suscribirse a eventos de un sistema |
 | `events.send` | sistema | Enviar eventos a un sistema |
@@ -132,9 +136,9 @@ sub:close()
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Sistema vacio | `errors.INVALID` | no |
-| Tipo vacio | `errors.INVALID` | no |
-| Ruta vacia | `errors.INVALID` | no |
-| Politica denegada | `errors.INVALID` | no |
+| Sistema vacío | `errors.INVALID` | no |
+| Tipo vacío | `errors.INVALID` | no |
+| Ruta vacía | `errors.INVALID` | no |
+| Política denegada | `errors.INVALID` | no |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

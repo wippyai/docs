@@ -87,7 +87,7 @@ local function main()
 
     -- Cancelar o worker
     time.sleep("5ms")
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- Receber evento EXIT
     local event = events_ch:receive()
@@ -121,7 +121,7 @@ local function main()
     end
 
     -- Cancelar worker
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- Nenhum evento EXIT será recebido (desmonitoramos)
     local timeout = time.after("200ms")
@@ -286,8 +286,8 @@ local function main()
 
     time.sleep("5ms")
 
-    -- Cancelar com timeout de 100ms para limpeza
-    local ok, cancel_err = process.cancel(worker_pid, "100ms")
+    -- Cancelar o worker
+    local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
@@ -670,7 +670,7 @@ O supervisor inicia automaticamente, cria quatro workers e registra reinicializa
 
 ```lua
 -- em um processo avulso ou comando de chat
-process.cancel("<pid-do-log-do-supervisor>", "100ms")
+process.cancel("<pid-from-supervisor-log>")
 ```
 
 O pool recebe `LINK_DOWN`, aguarda 100 ms e recria o worker com o mesmo id.

@@ -4,7 +4,7 @@
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Spawnen, überwachen und kommunizieren Sie mit Kindprozessen. Implementiert Actor-Modell-Muster mit Nachrichtenübergabe, Supervision und Lebenszyklusverwaltung.
+Kindprozesse spawnen, überwachen und mit ihnen kommunizieren. Implementiert Actor-Modell-Muster mit Nachrichtenübergabe, Supervision und Lebenszyklusverwaltung.
 
 Die globale Variable `process` ist immer verfügbar — sie erfordert kein `require()` und muss nicht in `modules:` aufgeführt werden.
 
@@ -26,7 +26,7 @@ local ok, err = process.send(destination, topic, ...)
 ```
 
 | Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
+|-----------|-----|--------------|
 | `destination` | string | PID oder registrierter Name |
 | `topic` | string | Topic-Name (darf nicht mit `@` beginnen) |
 | `...` | any | Payload-Werte |
@@ -50,10 +50,10 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 ```
 
 | Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
+|-----------|-----|--------------|
 | `id` | string | Prozessquellen-ID (z.B. `"app.workers:handler"`) |
 | `host` | string | Host-ID (z.B. `"app:processes"`) |
-| `...` | any | Argumente, die an gespawnten Prozess übergeben werden |
+| `...` | any | Argumente, die an den gespawnten Prozess übergeben werden |
 
 **Berechtigungen:**
 - `process.spawn` auf Prozess-ID
@@ -67,14 +67,14 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 -- Prozess zwangsweise beenden
 local ok, err = process.terminate(destination)
 
--- Ordnungsgemäße Kanzellierung mit optionaler Deadline anfordern
-local ok, err = process.cancel(destination, "5s")
+-- Ordnungsgemäße Kanzellierung mit optionalem Grund anfordern
+local ok, err = process.cancel(destination, "shutting down")
 ```
 
 | Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
+|-----------|-----|--------------|
 | `destination` | string | PID oder registrierter Name |
-| `deadline` | string\|integer | Dauer-String oder Millisekunden |
+| `reason` | string | Optionaler Grund, der dem Ziel übermittelt wird |
 
 **Berechtigungen:** `process.terminate`, `process.cancel` auf Ziel-PID
 
@@ -102,7 +102,7 @@ local ok, err = process.set_options({trap_links = true})
 ```
 
 | Feld | Typ | Beschreibung |
-|-------|------|-------------|
+|------|-----|--------------|
 | `trap_links` | boolean | Ob LINK_DOWN-Events an den Events-Channel geliefert werden |
 
 ## Inbox und Events
@@ -117,19 +117,19 @@ local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
 ### Event-Typen
 
 | Konstante | Beschreibung |
-|----------|-------------|
+|-----------|--------------|
 | `process.event.CANCEL` | Kanzellierung angefordert |
-| `process.event.EXIT` | Uberwachter Prozess beendet |
+| `process.event.EXIT` | Überwachter Prozess beendet |
 | `process.event.LINK_DOWN` | Gelinkter Prozess abnormal beendet |
 
 ### Event-Felder
 
 | Feld | Typ | Beschreibung |
-|-------|------|-------------|
+|------|-----|--------------|
 | `kind` | string | Event-Typ-Konstante |
 | `from` | string | Quell-PID |
-| `result` | table | Fur EXIT: `{value: any}` oder `{error: string}` |
-| `deadline` | string | Fur CANCEL: Deadline-Zeitstempel |
+| `result` | table | Für EXIT: `{value: any}` oder `{error: string}` |
+| `reason` | string | Für CANCEL: Grund der Kanzellierung |
 
 ## Topic-Subscription
 
@@ -141,7 +141,7 @@ process.unlisten(ch)
 ```
 
 | Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
+|-----------|-----|--------------|
 | `topic` | string | Topic-Name (darf nicht mit `@` beginnen) |
 | `options.message` | boolean | Wenn true, Message-Objekte empfangen; wenn false, rohe Payloads |
 
@@ -152,9 +152,10 @@ Beim Empfangen von inbox oder mit `{message = true}`:
 ```lua
 local msg = inbox:receive()
 
-msg:topic()    -- string: Topic-Name
-msg:from()     -- string|nil: Absender-PID
-msg:payload()  -- any: Payload-Daten
+msg:topic()            -- string: Topic-Name
+msg:from()             -- string|nil: Absender-PID
+msg:payload()          -- Payload: Wrapper (`:data()` aufrufen zum Extrahieren)
+msg:payload():data()   -- any: tatsächlicher Payload-Wert
 ```
 
 ## Synchroner Aufruf
@@ -169,7 +170,7 @@ local result, err = process.exec(id, host, ...)
 
 ## Prozess-Upgrade
 
-Den aktuellen Prozess auf eine neue Definition upgraden und dabei PID beibehalten:
+Den aktuellen Prozess auf eine neue Definition upgraden und dabei die PID beibehalten:
 
 ```lua
 -- Auf neue Version upgraden, Zustand übergeben
@@ -230,15 +231,58 @@ Gleiche Berechtigungen wie Modul-Level-Spawn-Funktionen.
 
 ## Namensregistrierung
 
-Prozesse nach Namen registrieren und nachschlagen:
+Einen Prozess unter einem Namen registrieren und über diesen Namen statt seiner PID erreichen. Jede Funktion, die ein `destination` akzeptiert (`send`, `terminate`, `cancel`, `monitor`, `link`, ...), nimmt statt einer PID auch einen registrierten Namen.
 
 ```lua
-local ok, err = process.registry.register(name, pid)  -- pid standardmäßig self
+local ok, err = process.registry.register(name)               -- self, lokaler Scope
 local pid, err = process.registry.lookup(name)
-local ok = process.registry.unregister(name)
+local ok, err = process.registry.unregister(name)
 ```
 
-**Berechtigungen:** `process.registry.register`, `process.registry.unregister` auf Name
+### Scope
+
+Das optionale `scope`-Argument wählt die Konsistenzgarantie des Namens. Standard ist `LOCAL`. Die vier Scopes und ihre Garantien sind im [Cluster-Leitfaden](guides/cluster.md#benennung-und-namens-scopes) beschrieben; kurz gefasst:
+
+| Konstante | Sichtbarkeit | Garantie |
+|-----------|--------------|----------|
+| `process.registry.LOCAL` | nur dieser Knoten | Sofort, knotenlokal |
+| `process.registry.EVENTUAL` | clusterweit | Eventual Consistent (Gossip) |
+| `process.registry.CONSISTENT` | clusterweit | Linearisierbarer Singleton (Raft) |
+| `process.registry.STRONG` | clusterweit | Konsistent + jeder lebende Knoten bestätigt |
+
+Auf einem Einzelknoten ist nur `LOCAL` bedeutsam; die Cluster-Scopes erfordern [Clustering](guides/cluster.md).
+
+### register
+
+```lua
+local ok, err = process.registry.register(name, scope, pid)
+```
+
+| Parameter | Typ | Erforderlich | Standard | Beschreibung |
+|-----------|-----|--------------|----------|--------------|
+| `name` | string | ja | | Zu registrierender Name |
+| `scope` | number | nein | `LOCAL` | Eine der obigen Scope-Konstanten |
+| `pid` | string | nein | self | Zu registrierende PID; Standard ist der aufrufende Prozess |
+
+Gibt `true` bei Erfolg zurück, oder `nil, error` bei Fehler. Konflikte (Name bereits für eine andere PID unter einem Cluster-Scope registriert) geben `errors.ALREADY_EXISTS` zurück. Das Registrieren desselben Namens für dieselbe PID ist idempotent. Eine `STRONG`-Registrierung blockiert, bis jeder lebende Knoten bestätigt oder die Reservierungsdeadline abläuft; bei Timeout wird ein Fehler zurückgegeben.
+
+Das Registrieren im Namen einer anderen PID erfordert zusätzlich die Berechtigung `process.registry.foreign` auf der Ziel-PID.
+
+### lookup
+
+```lua
+local pid, err = process.registry.lookup(name)
+```
+
+Gibt den registrierten PID-String zurück, oder `nil, error` mit der Art `errors.NOT_FOUND`, wenn der Name nicht registriert ist.
+
+### unregister
+
+```lua
+local ok, err = process.registry.unregister(name, scope)
+```
+
+`scope` ist standardmäßig `LOCAL` und muss mit dem Scope übereinstimmen, unter dem der Name registriert wurde. Für `CONSISTENT` und `STRONG` ist der besitzende Prozess derjenige, dem die Deregistrierung erlaubt ist; das Deregistrieren eines von einer anderen PID gehaltenen Namens gibt `false` zurück. Namen werden auch automatisch freigegeben, wenn der besitzende Prozess endet (und für Cluster-Scopes, wenn sein Knoten ausscheidet), sodass explizites Deregistrieren für vorzeitige Freigabe ist.
 
 ## Berechtigungen
 
@@ -255,7 +299,7 @@ Richtlinien können basierend auf Folgendem erlauben/ablehnen:
 ### Berechtigungsreferenz
 
 | Berechtigung | Funktionen | Ressource |
-|------------|-----------|----------|
+|--------------|-----------|-----------|
 | `process.spawn` | `spawn*()` | Prozess-ID |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | Prozess-ID |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | Prozess-ID |
@@ -272,13 +316,16 @@ Richtlinien können basierend auf Folgendem erlauben/ablehnen:
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | Name |
 | `process.registry.unregister` | `registry.unregister()` | Name |
+| `process.registry.foreign` | `registry.register()` | Ziel-PID |
+
+Cluster-Namens-Scopes werden durch scope-suffixierte Varianten dieser Aktionen autorisiert (`process.registry.register.eventual`, `.consistent`, `.strong` und die entsprechenden `unregister`-Aktionen), sodass eine Richtlinie lokale Benennung separat von clusterweiter Benennung gewähren kann.
 
 ### Mehrfache Berechtigungen
 
 Einige Operationen erfordern mehrere Berechtigungen:
 
 | Operation | Erforderliche Berechtigungen |
-|-----------|---------------------|
+|-----------|------------------------------|
 | `spawn()` | `process.spawn` + `process.host` |
 | `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
 | `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
@@ -289,7 +336,7 @@ Einige Operationen erfordern mehrere Berechtigungen:
 ## Fehler
 
 | Bedingung | Art |
-|-----------|------|
+|-----------|-----|
 | Kein Kontext gefunden | `errors.INVALID` |
 | Frame-Kontext nicht gefunden | `errors.INVALID` |
 | Fehlende erforderliche Argumente | `errors.INVALID` |
@@ -304,6 +351,7 @@ Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 ## Siehe auch
 
 - [Channels](lua/core/channel.md) - Inter-Prozess-Kommunikation
-- [Nachrichtenwarteschlange](lua/storage/queue.md) - Queue-basiertes Messaging
+- [Nachrichten-Queue](lua/storage/queue.md) - Queue-basiertes Messaging
 - [Funktionen](lua/core/funcs.md) - Funktionsaufruf
 - [Supervision](guides/supervision.md) - Prozess-Lebenszyklusverwaltung
+- [Cluster](guides/cluster.md) - Namens-Scopes und clusterweite Benennung

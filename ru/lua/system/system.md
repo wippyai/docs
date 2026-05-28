@@ -300,6 +300,106 @@ local states, err = system.supervisor.states()
 
 Каждая таблица состояния имеет тот же формат, что и `system.supervisor.state()`.
 
+## Кластерные примитивы
+
+Подтаблицы `system.node`, `system.cluster`, `system.raft` и `system.lock` открывают доступ к слою кластеризации. Наиболее полезны при [включённой кластеризации](guides/cluster.md); на автономной ноде деградируют предсказуемо — `system.raft.*` сообщает "raft not available", `system.cluster` сообщает только о локальной ноде, а `system.lock` требует глобального реестра, который обеспечивает кластеризация.
+
+Все операции чтения локальны и дёшевы: они сообщают вид зафиксированного состояния этой ноды, никогда не блокируясь на сети.
+
+### Идентичность ноды
+
+`system.node` сообщает собственную идентичность этой ноды в кластере.
+
+```lua
+local id, err = system.node.id()      -- ID этой ноды
+local addr, err = system.node.addr()  -- рекламируемый сетевой адрес
+local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
+```
+
+| Функция | Возвращает | Примечания |
+|---------|------------|------------|
+| `system.node.id()` | `string, error` | ID ноды из relay-контекста |
+| `system.node.addr()` | `string, error` | Рекламируемый адрес (например, `10.0.0.1:7946`); ошибка если membership недоступен |
+| `system.node.role()` | `string, error` | Raft-роль этой ноды; возвращает `"non-member"` (без ошибки) когда Raft не запущен |
+
+**Разрешение:** `system.read` на `node`.
+
+### Membership кластера
+
+`system.cluster` сообщает вид кластера: кто члены и кто лидер.
+
+```lua
+local members, err = system.cluster.members()  -- массив таблиц нод
+local leader, err = system.cluster.leader()    -- ID ноды-лидера, или "" если неизвестен
+local n, err = system.cluster.size()           -- количество видимых членов
+```
+
+`system.cluster.members()` возвращает массив таблиц нод. Локальная нода включена один раз и сортируется первой.
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | string | ID ноды |
+| `is_local` | boolean | True для вызывающей ноды |
+| `addr` | string | Рекламируемый адрес (опускается если неизвестен) |
+| `meta` | table | Gossip-метаданные строка-в-строку (опускается если нет) |
+
+| Функция | Возвращает | Примечания |
+|---------|------------|------------|
+| `system.cluster.members()` | `table[], error` | Ошибка если информация о membership недоступна |
+| `system.cluster.leader()` | `string, error` | ID текущего лидера Raft; `""` (без ошибки) когда лидер неизвестен или Raft отсутствует |
+| `system.cluster.size()` | `number, error` | Количество видимых членов; `0` если информация о membership недоступна |
+
+**Разрешение:** `system.read` на `cluster`.
+
+### Состояние Raft
+
+`system.raft` читает локальный вид ядра консенсуса Raft этой ноды. Каждая функция возвращает `nil, error` ("raft not available") когда Raft не запущен на этой ноде.
+
+```lua
+local leader, err = system.raft.is_leader()      -- boolean
+local member, err = system.raft.is_member()      -- boolean: voter или standby
+local role, err = system.raft.role()             -- те же значения что у system.node.role()
+local term, err = system.raft.term()             -- текущий Raft term
+local idx, err = system.raft.commit_index()      -- наибольший зафиксированный индекс лога
+local stats, err = system.raft.stats()           -- сырая карта статистики (string -> string)
+```
+
+| Функция | Возвращает | Примечания |
+|---------|------------|------------|
+| `system.raft.is_leader()` | `boolean, error` | True если эта нода является текущим лидером |
+| `system.raft.is_member()` | `boolean, error` | True если эта нода является voter или standby в зафиксированной конфигурации |
+| `system.raft.role()` | `string, error` | `"leader"` / `"voter"` / `"standby"` / `"non-member"` |
+| `system.raft.term()` | `number, error` | Текущий term; `0` если недоступен из статистики |
+| `system.raft.commit_index()` | `number, error` | Наибольший зафиксированный индекс лога на этой ноде |
+| `system.raft.stats()` | `table, error` | Полная сырая карта статистики; ключи и значения — строки |
+
+**Разрешение:** `system.read` на `raft`, за исключением `system.raft.stats()`, которая требует `system.read` на `raft_stats`.
+
+### Распределённые блокировки
+
+`system.lock` обеспечивает кластерное взаимное исключение. Блокировка — это глобально уникальное имя, принадлежащее вызывающему процессу. Построена на области Strong, поэтому в кластере может существовать не более одного держателя, и блокировка автоматически освобождается при выходе держателя или уходе его ноды — зависших блокировок нет для очистки.
+
+```lua
+local ok, err = system.lock.acquire("orders.migration")
+if ok then
+  -- критическая секция: только один держатель в кластере
+  system.lock.release("orders.migration")
+end
+```
+
+Захват fail-fast: если блокировка уже занята, немедленно возвращает `false`, не блокируясь, поэтому вызывающие реализуют собственный retry и backoff. Только текущий держатель может освободить; освобождение блокировки, которой вы не владеете, — безопасная no-op.
+
+| Функция | Возвращает | Результаты |
+|---------|------------|------------|
+| `system.lock.acquire(name)` | `boolean, error` | `true, nil` — захвачено; `false, error` — уже занято (kind `errors.ALREADY_EXISTS`); `nil, error` — при ошибке |
+| `system.lock.release(name)` | `boolean, error` | `true, nil` — освобождено; `false, nil` — не занято или занято другим процессом; `nil, error` — при ошибке |
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `name` | string | Кластерное имя блокировки |
+
+**Разрешение:** `system.lock` на `name` блокировки (политика может ограничивать, какие имена вызывающий может блокировать).
+
 ## Разрешения
 
 Системные операции подчиняются вычислению политики безопасности.
@@ -322,6 +422,11 @@ local states, err = system.supervisor.states()
 | `system.read` | `hosts` | Список хостов / процессов хоста |
 | `system.read` | `modules` | Список загруженных модулей |
 | `system.read` | `supervisor` | Чтение состояния супервизора |
+| `system.read` | `node` | Чтение идентичности этой ноды |
+| `system.read` | `cluster` | Чтение membership кластера и лидера |
+| `system.read` | `raft` | Чтение состояния Raft |
+| `system.read` | `raft_stats` | Чтение сырой карты статистики Raft |
+| `system.lock` | `<имя блокировки>` | Захват или освобождение распределённой блокировки |
 | `system.exit` | - | Инициировать завершение системы |
 
 ## Ошибки
@@ -334,5 +439,8 @@ local states, err = system.supervisor.states()
 | Менеджер кода недоступен | `errors.INTERNAL` | нет |
 | Информация о сервисе недоступна | `errors.INTERNAL` | нет |
 | Ошибка ОС (hostname, cwd) | `errors.INTERNAL` | нет |
+| Raft не запущен на этой ноде | `errors.INTERNAL` | нет |
+| Membership недоступен | `errors.INTERNAL` | нет |
+| Блокировка уже занята | `errors.ALREADY_EXISTS` | нет |
 
 См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

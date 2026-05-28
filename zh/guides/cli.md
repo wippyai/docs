@@ -39,13 +39,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 启动运行时或执行命令。
 
 ```bash
-wippy run                                    # 启动运行时
-wippy run list                               # 列出可用命令
-wippy run test                               # 运行测试
-wippy run snapshot.wapp                      # 从打包文件运行
-wippy run acme/http                          # 从中心运行模块
-wippy run acme/http@1.2.3                    # 运行指定版本
-wippy run --exec app:worker                  # 启动运行时并执行单个进程
+wippy run                                   # 启动运行时
+wippy run list                              # 列出可用命令
+wippy run test                              # 运行测试
+wippy run snapshot.wapp                     # 从打包文件运行
+wippy run acme/http                         # 从中心运行模块
+wippy run acme/http@1.2.3                   # 运行指定版本
+wippy run --exec app:worker                 # 启动运行时并执行单个进程
 ```
 
 | 标志 | 缩写 | 描述 |
@@ -175,6 +175,10 @@ wippy publish --dry-run
 | `--embed` | 按 id 或 name 嵌入 fs.directory 条目 |
 | `--config` | 包含 wippy.yaml 的目录路径（默认：.） |
 | `--registry` | 注册中心 URL |
+| `--create` | 若模块在注册中心尚不存在则自动创建 |
+| `--module-visibility` | 新建模块的可见性（仅 `--create`）：`public` 或 `private`（默认：private） |
+| `--module-type` | 新建模块的类型（仅 `--create`）：`library`、`application`、`agent` 或 `plugin`（默认：application） |
+| `--module-display-name` | 新建模块的显示名称（仅 `--create`） |
 
 ## wippy search
 
@@ -343,7 +347,7 @@ wippy run list
 | `short` | 否 | 在 `wippy run list` 中显示的简短描述 |
 | `main` | 否 | 将此条目标记为默认命令（由仅提供单个命令的 pack 与中心模块自动选用） |
 
-任何进程条目类型均可使用（`process.lua`、`process.wasm`）。命令名称在所有已加载的条目中必须唯一。命令名称之后的参数会传递给该进程。
+任何进程条目类型均可使用（`process.lua`、`process.wasm`）。命令名称在所有已加载的条目中必须唯一。命令名称之后的参数会作为字符串负载传递给进程。
 
 ## 示例
 

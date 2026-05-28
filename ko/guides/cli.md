@@ -39,13 +39,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 런타임을 시작하거나 명령어를 실행합니다.
 
 ```bash
-wippy run                                    # 런타임 시작
-wippy run list                               # 사용 가능한 명령어 목록
-wippy run test                               # 테스트 실행
-wippy run snapshot.wapp                      # 팩 파일에서 실행
-wippy run acme/http                          # 허브에서 모듈 실행
-wippy run acme/http@1.2.3                    # 특정 버전 실행
-wippy run --exec app:worker                  # 런타임을 시작하고 단일 프로세스 실행
+wippy run                                   # 런타임 시작
+wippy run list                              # 사용 가능한 명령어 목록
+wippy run test                              # 테스트 실행
+wippy run snapshot.wapp                     # 팩 파일에서 실행
+wippy run acme/http                         # 허브에서 모듈 실행
+wippy run acme/http@1.2.3                   # 특정 버전 실행
+wippy run --exec app:worker                 # 런타임을 시작하고 단일 프로세스 실행
 ```
 
 | 플래그 | 약어 | 설명 |
@@ -175,6 +175,10 @@ wippy publish --dry-run
 | `--embed` | id 또는 name으로 fs.directory 엔트리 임베드 |
 | `--config` | wippy.yaml이 있는 디렉토리 경로 (기본값: .) |
 | `--registry` | 레지스트리 URL |
+| `--create` | 레지스트리에 모듈이 존재하지 않으면 새로 생성 |
+| `--module-visibility` | 새로 생성되는 모듈의 공개 범위 (`--create` 전용): `public` 또는 `private` (기본값: private) |
+| `--module-type` | 새로 생성되는 모듈의 타입 (`--create` 전용): `library`, `application`, `agent`, 또는 `plugin` (기본값: application) |
+| `--module-display-name` | 새로 생성되는 모듈의 표시 이름 (`--create` 전용) |
 
 ## wippy search
 
@@ -343,7 +347,7 @@ wippy run list
 | `short` | 아니오 | `wippy run list`에 표시되는 간단한 설명 |
 | `main` | 아니오 | 이 엔트리를 기본 명령어로 표시 (단일 명령어를 제공하는 팩과 허브 모듈에서 자동으로 선택됨) |
 
-모든 프로세스 엔트리 종류(`process.lua`, `process.wasm`)를 사용할 수 있습니다. 명령어 이름은 로드된 모든 엔트리에서 고유해야 합니다. 명령어 이름 뒤의 인수는 프로세스에 전달됩니다.
+모든 프로세스 엔트리 종류(`process.lua`, `process.wasm`)를 사용할 수 있습니다. 명령어 이름은 로드된 모든 엔트리에서 고유해야 합니다. 명령어 이름 뒤의 인수는 문자열 페이로드로 프로세스에 전달됩니다.
 
 ## 예제
 

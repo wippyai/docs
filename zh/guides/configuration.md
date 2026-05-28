@@ -256,28 +256,101 @@ prometheus:
 
 ## 集群
 
-基于 gossip 发现的多节点集群。
+多节点集群：gossip 成员发现加上有界 Raft 共识核心。架构和运维模型参见[集群指南](guides/cluster.md)；本节为配置键参考。
+
+### 顶层配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enabled` | bool | false | 启用集群 |
-| `name` | string | hostname | 节点标识符 |
-| `internode.bind_addr` | string | 0.0.0.0 | 节点间绑定地址 |
-| `internode.bind_port` | int | 0 | 端口（0=自动 7950-7959） |
-| `membership.bind_port` | int | 7946 | Gossip 端口 |
-| `membership.join_addrs` | string | | 种子节点（逗号分隔） |
-| `membership.secret_key` | string | | 加密密钥（base64） |
-| `membership.secret_file` | string | | 密钥文件路径 |
-| `membership.advertise_addr` | string | | NAT 公网地址 |
+| `name` | string | hostname | 节点名称；在集群中必须唯一 |
+| `failure_domain` | string | | 可用区/机架标签；在 gossip 中广播，使选民分布在不同域 |
+
+### 成员（gossip）
+
+通过 memberlist 实现 SWIM gossip。用于节点发现、故障检测和元数据传播。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `membership.bind_addr` | string | 0.0.0.0 | Gossip 绑定地址 |
+| `membership.bind_port` | int | 7946 | Gossip 绑定端口（TCP+UDP） |
+| `membership.advertise_addr` | string | | 对等节点访问此节点所用的地址（NAT/k8s） |
+| `membership.join_addrs` | string | | 逗号分隔的种子节点 `host:port` 列表 |
+| `membership.secret_key` | string | | Base64 编码的 gossip 加密密钥（内联） |
+| `membership.secret_file` | string | | 存放 gossip 加密密钥的文件路径 |
+
+### 节点间（传输）
+
+承载节点间中继和 Raft 流量的 TCP 网格。Raft 通过此网格传输（yamux 多路复用）；没有独立的 Raft 端口。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `internode.bind_addr` | string | 0.0.0.0 | 网格绑定地址 |
+| `internode.bind_port` | int | 0 | 网格端口（0 = 自动：7950-7959，之后为临时端口） |
+| `internode.auto_port` | bool | true | 启动时发现实际端口，固定并在 gossip 中广播 |
+
+### Raft（共识）
+
+有界、无磁盘的 Raft。状态存储在内存中；重启后节点重新加入 quorum 并从对等节点重放。无需 `data_dir`。引导通过 gossip 驱动（Consul/Nomad `bootstrap_expect` 风格），而非静态初始集群列表。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `raft.enabled` | bool | true | 运行 Raft 节点；`false` 使此节点成为仅 gossip 客户端 |
+| `raft.role` | string | server | `server` 运行 Raft 节点；`client` 仅参与 gossip |
+| `raft.eligible` | bool | true | 此节点是否可被选为选民 |
+| `raft.priority` | int | 100 | 选民选取优先级（值越低越优先） |
+| `raft.bootstrap_expect` | int | 1 | 初始 quorum 大小：`0`=加入已有集群，`1`=单节点，`N`=等待 N 个合格对等节点后组成 quorum |
+| `raft.max_voters` | int | 5 | 选民上限（必须为奇数）；超出的合格节点成为备用节点 |
+| `raft.max_standbys` | int | 4 | 保持热备以备晋升的非投票成员；超过 voters+standbys 的节点不作为 Raft 成员 |
+| `raft.reconcile_debounce` | duration | 2s | gossip 事件后运行选民协调器前的合并窗口 |
+| `raft.reconcile_timeout` | duration | 2s | 每次协调过程的超时时间 |
+| `raft.heartbeat_timeout` | duration | 3s | 追随者空闲等待发起选举前的超时 |
+| `raft.election_timeout` | duration | 3s | 候选人选举超时（不小于心跳超时） |
+| `raft.commit_timeout` | duration | 500ms | 空闲 leader 心跳节拍 |
+| `raft.snapshot_threshold` | uint64 | 8192 | 触发新快照前自上次快照以来的日志条目数 |
+| `raft.snapshot_interval` | duration | 2m | 快照检查间隔 |
+| `raft.snapshot_retain` | int | 3 | 保留的快照数量 |
+| `raft.trailing_logs` | uint64 | 10240 | 快照后保留的日志条目数 |
+| `raft.max_append_entries` | int | 16 | 每次 AppendEntries RPC 的最大条目数 |
+| `raft.leader_probe_interval` | duration | 3s | 全局注册表 leader 可达性探测间隔 |
+| `raft.leader_probe_grace` | int | 3 | 声明 leader 不可达前允许的连续探测失败次数 |
+
+单节点（开发环境）——集群开启，立即自举：
+
+```yaml
+cluster:
+  enabled: true
+  name: dev
+  raft:
+    bootstrap_expect: 1
+```
+
+三节点投票集群——每个节点列出其他节点作为种子，等待三个节点全部就绪后组成 quorum：
 
 ```yaml
 cluster:
   enabled: true
   name: node-1
+  failure_domain: us-east-1a
   membership:
     bind_port: 7946
-    join_addrs: "10.0.0.1:7946,10.0.0.2:7946"
+    join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  raft:
+    bootstrap_expect: 3
+    max_voters: 5
+```
+
+仅 gossip 客户端——加入集群用于命名/消息传递，但从不运行 Raft：
+
+```yaml
+cluster:
+  enabled: true
+  name: edge-7
+  membership:
+    join_addrs: "node-1:7946,node-2:7946"
+  raft:
+    role: client
 ```
 
 ## LSP
@@ -320,6 +393,25 @@ network_service:
 
 参见：[网络覆盖](system/network.md)
 
+## HTTP 调度器
+
+HTTP 调度函数和出站请求所用的共享 HTTP 客户端池的调优参数。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `dispatcher.http.timeout` | duration | 0（无） | 单请求超时 |
+| `dispatcher.http.max_idle_conns` | int | 0（标准库） | 所有主机的最大空闲连接数 |
+| `dispatcher.http.max_idle_per_host` | int | 0（标准库） | 每个主机的最大空闲连接数 |
+| `dispatcher.http.idle_conn_timeout` | duration | 0（标准库） | 空闲连接超时 |
+| `dispatcher.http.max_clients` | int | 0（无限制） | 最大池化客户端数 |
+
+```yaml
+dispatcher:
+  http:
+    timeout: 30s
+    max_idle_per_host: 32
+```
+
 ## 模块
 
 `wippy install`/`update` 使用的模块注册表客户端。
@@ -355,8 +447,9 @@ extensions:
 |------|------|
 | `GOMEMLIMIT` | 内存限制（覆盖 `--memory-limit` 参数） |
 
-## 参见
+## 另请参阅
 
 - [CLI 参考](guides/cli.md) - 命令行选项
+- [集群指南](guides/cluster.md) - 集群架构与运维
 - [入口类型](guides/entry-kinds.md) - 所有入口类型
 - [可观测性指南](guides/observability.md) - 日志、指标、追踪

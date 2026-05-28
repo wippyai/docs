@@ -1,29 +1,29 @@
 # 프로세스 슈퍼비전
 
-프로세스를 모니터링하고 연결하여 장애 내성 시스템을 구축합니다.
+프로세스를 모니터링하고 링크하여 장애 내성 시스템을 구축합니다.
 
-## 모니터링 vs 연결
+## 모니터링 vs 링킹
 
 **모니터링**은 단방향 관찰을 제공합니다:
 - 부모가 자식을 모니터링
-- 자식이 종료하면 부모가 EXIT 이벤트 수신
-- 부모는 계속 실행
+- 자식이 종료되면 부모가 EXIT 이벤트를 받음
+- 부모는 계속 실행됨
 
-**연결**은 양방향 운명 공유를 생성합니다:
-- 부모와 자식이 연결됨
-- 어느 프로세스가 실패해도 둘 다 종료
-- `trap_links=true`가 설정되지 않은 경우
+**링킹**은 양방향 운명 공유를 만듭니다:
+- 부모와 자식이 링크됨
+- 어느 프로세스든 실패하면 둘 다 종료됨
+- `trap_links=true`가 설정된 경우 제외
 
 ```mermaid
 flowchart TB
     subgraph Monitoring["모니터링 (단방향)"]
         direction TB
-        P1[부모 모니터링] -->|EXIT 이벤트<br/>부모 계속| C1[자식 종료]
+        P1[부모 모니터링] -->|EXIT 이벤트<br/>부모 계속 실행| C1[자식 종료]
     end
 
-    subgraph Linking["연결 (양방향)"]
+    subgraph Linking["링킹 (양방향)"]
         direction TB
-        P2[부모 연결됨] <-->|LINK_DOWN<br/>둘 다 종료| C2[자식 종료]
+        P2[부모 링크됨] <-->|LINK_DOWN<br/>둘 다 종료| C2[자식 종료]
     end
 ```
 
@@ -31,13 +31,13 @@ flowchart TB
 
 ### 모니터링과 함께 스폰
 
-`process.spawn_monitored()`를 사용하여 한 번에 스폰하고 모니터링합니다:
+`process.spawn_monitored()`를 사용하여 한 번의 호출로 스폰하고 모니터링:
 
 ```lua
 local function main()
     local events_ch = process.events()
 
-    -- 워커를 스폰하고 모니터링 시작
+    -- 워커 스폰하고 모니터링 시작
     local worker_pid, err = process.spawn_monitored(
         "app.workers:task_worker",
         "app:processes"
@@ -63,7 +63,7 @@ end
 
 ### 기존 프로세스 모니터링
 
-이미 실행 중인 프로세스를 모니터링하려면 `process.monitor()`를 호출합니다:
+`process.monitor()`를 호출하여 이미 실행 중인 프로세스 모니터링 시작:
 
 ```lua
 local function main()
@@ -87,7 +87,7 @@ local function main()
 
     -- 워커 취소
     time.sleep("5ms")
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- EXIT 이벤트 수신
     local event = events_ch:receive()
@@ -99,14 +99,14 @@ end
 
 ### 모니터링 중지
 
-EXIT 이벤트 수신을 중지하려면 `process.unmonitor()`를 사용합니다:
+`process.unmonitor()`를 사용하여 EXIT 이벤트 수신 중지:
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- 스폰 및 모니터링
+    -- 스폰하고 모니터링
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
@@ -121,9 +121,9 @@ local function main()
     end
 
     -- 워커 취소
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
-    -- EXIT 이벤트를 받지 않음 (모니터링 해제함)
+    -- EXIT 이벤트를 받지 않아야 함 (모니터링 해제함)
     local timeout = time.after("200ms")
     local result = channel.select {
         events_ch:case_receive(),
@@ -136,14 +136,14 @@ local function main()
 end
 ```
 
-## 프로세스 연결
+## 프로세스 링킹
 
-### 명시적 연결
+### 명시적 링킹
 
-`process.link()`를 사용하여 양방향 연결을 생성합니다:
+`process.link()`를 사용하여 양방향 링크 생성:
 
 ```lua
--- 대상 프로세스에 연결하는 워커
+-- 대상 프로세스에 링크하는 워커
 local function worker_main()
     local time = require("time")
     local events_ch = process.events()
@@ -157,16 +157,16 @@ local function worker_main()
     local target_pid = msg:payload():data()
     local sender = msg:from()
 
-    -- 양방향 연결 생성
+    -- 양방향 링크 생성
     local ok, err = process.link(target_pid)
     if err then
         return nil, "link failed: " .. tostring(err)
     end
 
-    -- 발신자에게 연결됨 알림
+    -- 발신자에게 링크됐음을 알림
     process.send(sender, "linked", process.pid())
 
-    -- 대상 종료 시 LINK_DOWN 대기
+    -- 대상이 종료될 때 LINK_DOWN 대기
     local timeout = time.after("3s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -184,9 +184,9 @@ local function worker_main()
 end
 ```
 
-### 연결과 함께 스폰
+### 링크와 함께 스폰
 
-`process.spawn_linked()`를 사용하여 한 번에 스폰하고 연결합니다:
+`process.spawn_linked()`를 사용하여 한 번의 호출로 스폰하고 링크:
 
 ```lua
 local function parent_main()
@@ -195,7 +195,7 @@ local function parent_main()
 
     local events_ch = process.events()
 
-    -- 자식을 스폰하고 연결
+    -- 자식 스폰하고 링크
     local child_pid, err = process.spawn_linked(
         "app.workers:child_worker",
         "app:processes"
@@ -214,11 +214,11 @@ end
 
 ## Trap Links
 
-기본적으로 연결된 프로세스가 실패하면 현재 프로세스도 실패합니다. `trap_links=true`를 설정하여 대신 LINK_DOWN 이벤트를 받습니다.
+기본적으로 링크된 프로세스가 실패하면 현재 프로세스도 실패합니다. LINK_DOWN 이벤트를 대신 받으려면 `trap_links=true`를 설정하세요.
 
 ### 기본 동작 (trap_links=false)
 
-`trap_links` 없이 연결된 프로세스 실패는 현재 프로세스를 종료시킵니다:
+`trap_links` 없이 링크된 프로세스 실패는 현재 프로세스를 종료합니다:
 
 ```lua
 local function worker_main()
@@ -228,13 +228,13 @@ local function worker_main()
     local opts = process.get_options()
     print("trap_links:", opts.trap_links)  -- false
 
-    -- 실패할 연결된 워커 스폰
+    -- 실패할 링크된 워커 스폰
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
 
-    -- 자식이 에러를 발생시키면 이 프로세스가 종료됨
+    -- 자식이 오류를 일으키면 이 프로세스도 종료됨
     -- 이 지점에 도달하지 않음
     local event = events_ch:receive()
 end
@@ -242,7 +242,7 @@ end
 
 ### trap_links=true 사용
 
-LINK_DOWN 이벤트를 받고 생존하려면 `trap_links`를 활성화합니다:
+LINK_DOWN 이벤트를 받고 생존하기 위해 `trap_links` 활성화:
 
 ```lua
 local function worker_main()
@@ -251,7 +251,7 @@ local function worker_main()
 
     local events_ch = process.events()
 
-    -- 실패할 연결된 워커 스폰
+    -- 실패할 링크된 워커 스폰
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
@@ -269,16 +269,16 @@ end
 
 ## 취소
 
-### 취소 신호 전송
+### 취소 시그널 전송
 
-`process.cancel()`을 사용하여 프로세스를 우아하게 종료합니다:
+`process.cancel()`을 사용하여 프로세스를 그레이스풀하게 종료:
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- 워커를 스폰하고 모니터링
+    -- 워커 스폰하고 모니터링
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
@@ -286,8 +286,8 @@ local function main()
 
     time.sleep("5ms")
 
-    -- 정리를 위해 100ms 타임아웃으로 취소
-    local ok, cancel_err = process.cancel(worker_pid, "100ms")
+    -- 워커 취소
+    local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
@@ -334,10 +334,10 @@ end
 
 ### 스타 토폴로지
 
-부모에게 연결된 여러 자식:
+부모에게 링크를 역으로 연결하는 여러 자식이 있는 부모:
 
 ```lua
--- 부모에 연결하는 자식을 스폰하는 부모 워커
+-- 부모 워커가 부모에게 링크하는 자식을 스폰
 local function star_parent_main()
     local time = require("time")
     local events_ch = process.events()
@@ -363,7 +363,7 @@ local function star_parent_main()
         children[child_pid] = true
     end
 
-    -- 모든 자식의 연결 확인 대기
+    -- 모든 자식이 링크를 확인할 때까지 대기
     for i = 1, child_count do
         local msg = process.inbox():receive()
         if msg:topic() ~= "linked" then
@@ -376,7 +376,7 @@ local function star_parent_main()
 end
 ```
 
-부모에 연결하는 자식 워커:
+부모에게 링크하는 자식 워커:
 
 ```lua
 local function linker_child_main()
@@ -387,13 +387,13 @@ local function linker_child_main()
     local msg = inbox_ch:receive()
     local parent_pid = msg:payload():data()
 
-    -- 부모에 연결
+    -- 부모에게 링크
     process.link(parent_pid)
 
-    -- 연결 확인
+    -- 링크 확인
     process.send(parent_pid, "linked", process.pid())
 
-    -- 부모 사망 시 LINK_DOWN 대기
+    -- 부모가 죽을 때 LINK_DOWN 대기
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         return "parent_died"
@@ -403,7 +403,7 @@ end
 
 ### 체인 토폴로지
 
-각 노드가 부모에 연결된 선형 체인:
+각 노드가 부모에게 링크하는 선형 체인:
 
 ```lua
 -- 체인 루트: A -> B -> C -> D -> E
@@ -420,22 +420,22 @@ local function chain_root_main()
         error("spawn failed: " .. tostring(err))
     end
 
-    -- 체인 구축 대기
+    -- 체인 구성 대기
     time.sleep("100ms")
 
-    -- 캐스케이드 트리거 - 모든 연결된 프로세스가 종료됨
+    -- 캐스케이드 트리거 - 링크된 모든 프로세스 종료
     error("CHAIN_ROOT_FAILURE")
 end
 ```
 
-체인 노드가 다음 노드를 스폰하고 연결:
+체인 노드가 다음 노드를 스폰하고 링크:
 
 ```lua
 local function chain_node_main(depth)
     local time = require("time")
 
     if depth > 0 then
-        -- 체인의 다음 스폰
+        -- 체인에서 다음 스폰
         local child_pid, err = process.spawn_linked(
             "app.workers:chain_node",
             "app:processes",
@@ -446,7 +446,7 @@ local function chain_node_main(depth)
         end
     end
 
-    -- LINK_DOWN을 통해 부모 사망이 우리를 종료할 때까지 블록 (기본 trap_links=false)
+    -- 기본 trap_links=false로 LINK_DOWN을 통해 부모 사망이 종료시킬 때까지 차단
     process.inbox():receive()
 end
 ```
@@ -546,7 +546,7 @@ local function main(worker_count)
                     local uptime = os.time() - dead_worker.started_at
                     print("Worker " .. dead_worker.id .. " died after " .. uptime .. "s, restarting")
 
-                    -- 재시작 전 잠시 지연
+                    -- 재시작 전 짧은 지연
                     time.sleep("100ms")
                     start_worker(dead_worker.id)
                 end
@@ -644,39 +644,39 @@ entries:
       auto_start: true
 ```
 
-워커 설정:
+workers 설정:
 - CPU 바운드 작업의 병렬성 제어
 - 일반적으로 CPU 코어 수로 설정
 - 모든 프로세스가 이 스레드 풀을 공유
 
-## 이벤트 유형
+## 이벤트 타입
 
-| 이벤트 | 트리거 | 필요한 설정 |
-|-------|--------|-------------|
-| `EXIT` | 모니터링되는 프로세스 종료 | `spawn_monitored()` 또는 `monitor()` |
-| `LINK_DOWN` | 연결된 프로세스 비정상 종료 | `spawn_linked()` 또는 `link()`와 `trap_links=true` |
-| `CANCEL` | `process.cancel()` 호출 | 없음 (항상 전달됨) |
+| 이벤트 | 트리거 조건 | 필요한 설정 |
+|-------|-------------|-------------|
+| `EXIT` | 모니터링된 프로세스 종료 | `spawn_monitored()` 또는 `monitor()` |
+| `LINK_DOWN` | 링크된 프로세스 실패 | `spawn_linked()` 또는 `link()`와 `trap_links=true` |
+| `CANCEL` | `process.cancel()` 호출됨 | 없음 (항상 전달됨) |
 
 ## 슈퍼바이저 풀 실행
 
-[설정](#설정)에 표시된 구조에 풀 파일을 넣은 후:
+[설정](#설정)에 표시된 구조에 풀 파일을 배치한 후:
 
 ```bash
 wippy init
 wippy run
 ```
 
-슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며 워커 중 하나가 죽으면 재시작을 로그에 기록합니다. 다른 프로세스에서 워커를 취소하여 재시작을 트리거합니다:
+슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며, 워커 중 하나가 죽으면 재시작을 기록합니다. 다른 프로세스에서 워커를 종료하여 재시작을 트리거합니다:
 
 ```lua
--- 임시 프로세스 또는 chat 명령에서
-process.cancel("<pid-from-supervisor-log>", "100ms")
+-- 임시 프로세스나 채팅 명령어에서
+process.cancel("<pid-from-supervisor-log>")
 ```
 
-풀은 `LINK_DOWN`을 수신하고 100ms 대기 후 동일한 id로 워커를 재스폰합니다.
+풀은 `LINK_DOWN`을 받고 100ms를 기다린 후 같은 id로 워커를 다시 스폰합니다.
 
 ## 다음 단계
 
 - [프로세스](tutorials/processes.md) - 프로세스 기초
 - [채널](tutorials/channels.md) - 메시지 전달 패턴
-- [프로세스 모듈](lua/core/process.md) - API 참조
+- [Process 모듈](lua/core/process.md) - API 레퍼런스

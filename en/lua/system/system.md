@@ -300,6 +300,106 @@ local states, err = system.supervisor.states()
 
 Each state table has the same format as `system.supervisor.state()`.
 
+## Cluster primitives
+
+The `system.node`, `system.cluster`, `system.raft`, and `system.lock` sub-tables expose the clustering layer. They are most useful when [clustering is enabled](guides/cluster.md); on a standalone node they degrade predictably — `system.raft.*` reports "raft not available", `system.cluster` reports just the local node, and `system.lock` requires the global registry that clustering provides.
+
+All read calls are local and cheap: they report this node's view of committed state, never blocking on the network.
+
+### Node identity
+
+`system.node` reports this node's own identity in the cluster.
+
+```lua
+local id, err = system.node.id()      -- this node's ID
+local addr, err = system.node.addr()  -- advertised network address
+local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
+```
+
+| Function | Returns | Notes |
+|----------|---------|-------|
+| `system.node.id()` | `string, error` | Node ID from the relay context |
+| `system.node.addr()` | `string, error` | Advertised address (e.g. `10.0.0.1:7946`); errors if membership is unavailable |
+| `system.node.role()` | `string, error` | Raft role of this node; returns `"non-member"` (no error) when Raft is not running |
+
+**Permission:** `system.read` on `node`.
+
+### Cluster membership
+
+`system.cluster` reports the cluster-wide view: who the members are and who leads.
+
+```lua
+local members, err = system.cluster.members()  -- array of node tables
+local leader, err = system.cluster.leader()    -- leader node ID, or "" if unknown
+local n, err = system.cluster.size()           -- count of visible members
+```
+
+`system.cluster.members()` returns an array of node tables. The local node is included once and sorts first.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Node ID |
+| `is_local` | boolean | True for the calling node |
+| `addr` | string | Advertised address (omitted when unknown) |
+| `meta` | table | String-to-string gossip metadata (omitted when none) |
+
+| Function | Returns | Notes |
+|----------|---------|-------|
+| `system.cluster.members()` | `table[], error` | Errors if no membership information is reachable |
+| `system.cluster.leader()` | `string, error` | Current Raft leader's ID; `""` (no error) when the leader is unknown or Raft is absent |
+| `system.cluster.size()` | `number, error` | Count of visible members; `0` when no membership info is available |
+
+**Permission:** `system.read` on `cluster`.
+
+### Raft state
+
+`system.raft` reads this node's local view of the Raft consensus core. Every function returns `nil, error` ("raft not available") when Raft is not running on this node.
+
+```lua
+local leader, err = system.raft.is_leader()      -- boolean
+local member, err = system.raft.is_member()      -- boolean: voter or standby
+local role, err = system.raft.role()             -- same values as system.node.role()
+local term, err = system.raft.term()             -- current Raft term
+local idx, err = system.raft.commit_index()      -- highest committed log index
+local stats, err = system.raft.stats()           -- raw stats map (string -> string)
+```
+
+| Function | Returns | Notes |
+|----------|---------|-------|
+| `system.raft.is_leader()` | `boolean, error` | True iff this node is the current leader |
+| `system.raft.is_member()` | `boolean, error` | True iff this node is a voter or standby in the committed configuration |
+| `system.raft.role()` | `string, error` | `"leader"` / `"voter"` / `"standby"` / `"non-member"` |
+| `system.raft.term()` | `number, error` | Current term; `0` if unavailable from stats |
+| `system.raft.commit_index()` | `number, error` | Highest committed log index on this node |
+| `system.raft.stats()` | `table, error` | Full raw stats map; keys and values are strings |
+
+**Permission:** `system.read` on `raft`, except `system.raft.stats()` which requires `system.read` on `raft_stats`.
+
+### Distributed locks
+
+`system.lock` provides cluster-wide mutual exclusion. A lock is a globally unique name owned by the calling process. It is built on the Strong name scope, so at most one holder can exist across the cluster, and the lock auto-releases when the holder process exits or its node leaves — there is no stuck lock to clean up.
+
+```lua
+local ok, err = system.lock.acquire("orders.migration")
+if ok then
+  -- critical section: only one holder cluster-wide
+  system.lock.release("orders.migration")
+end
+```
+
+Acquire is fail-fast: if the lock is already held it returns `false` immediately rather than blocking, so callers implement their own retry and backoff. Only the current holder can release; releasing a lock you do not hold is a safe no-op.
+
+| Function | Returns | Outcomes |
+|----------|---------|----------|
+| `system.lock.acquire(name)` | `boolean, error` | `true, nil` acquired; `false, error` already held (kind `errors.ALREADY_EXISTS`); `nil, error` on failure |
+| `system.lock.release(name)` | `boolean, error` | `true, nil` released; `false, nil` not held or held by another process; `nil, error` on failure |
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Cluster-wide lock name |
+
+**Permission:** `system.lock` on the lock `name` (so policy can restrict which names a caller may lock).
+
 ## Permissions
 
 System operations are subject to security policy evaluation.
@@ -322,6 +422,11 @@ System operations are subject to security policy evaluation.
 | `system.read` | `hosts` | List hosts / host processes |
 | `system.read` | `modules` | List loaded modules |
 | `system.read` | `supervisor` | Read supervisor state |
+| `system.read` | `node` | Read this node's identity |
+| `system.read` | `cluster` | Read cluster membership and leader |
+| `system.read` | `raft` | Read Raft state |
+| `system.read` | `raft_stats` | Read the raw Raft stats map |
+| `system.lock` | `<lock name>` | Acquire or release a distributed lock |
 | `system.exit` | - | Trigger system shutdown |
 
 ## Errors
@@ -334,5 +439,8 @@ System operations are subject to security policy evaluation.
 | Code manager unavailable | `errors.INTERNAL` | no |
 | Service info unavailable | `errors.INTERNAL` | no |
 | OS error (hostname, cwd) | `errors.INTERNAL` | no |
+| Raft not running on this node | `errors.INTERNAL` | no |
+| Membership unavailable | `errors.INTERNAL` | no |
+| Lock already held | `errors.ALREADY_EXISTS` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

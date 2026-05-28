@@ -39,13 +39,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 Die Runtime starten oder einen Befehl ausführen.
 
 ```bash
-wippy run                                    # Runtime starten
-wippy run list                               # Verfügbare Befehle auflisten
-wippy run test                               # Tests ausführen
-wippy run snapshot.wapp                      # Aus Pack-Datei ausführen
-wippy run acme/http                          # Modul aus dem Hub ausführen
-wippy run acme/http@1.2.3                    # Bestimmte Version ausführen
-wippy run --exec app:worker                  # Runtime starten und einen einzelnen Prozess ausführen
+wippy run                                   # Runtime starten
+wippy run list                              # Verfügbare Befehle auflisten
+wippy run test                              # Tests ausführen
+wippy run snapshot.wapp                     # Aus Pack-Datei ausführen
+wippy run acme/http                         # Modul aus dem Hub ausführen
+wippy run acme/http@1.2.3                   # Bestimmte Version ausführen
+wippy run --exec app:worker                 # Runtime starten und einen einzelnen Prozess ausführen
 ```
 
 | Flag | Kurz | Beschreibung |
@@ -175,6 +175,10 @@ Liest aus `wippy.yaml` im aktuellen Verzeichnis.
 | `--embed` | fs.directory-Entries nach ID oder Name einbetten |
 | `--config` | Pfad zum Verzeichnis mit wippy.yaml (Standard: .) |
 | `--registry` | Registry-URL |
+| `--create` | Modul in der Registry erstellen, falls noch nicht vorhanden |
+| `--module-visibility` | Sichtbarkeit für neu erstellte Module (nur `--create`): `public` oder `private` (Standard: private) |
+| `--module-type` | Typ für neu erstellte Module (nur `--create`): `library`, `application`, `agent` oder `plugin` (Standard: application) |
+| `--module-display-name` | Anzeigename für neu erstellte Module (nur `--create`) |
 
 ## wippy search
 
@@ -343,7 +347,7 @@ wippy run list
 | `short` | Nein | Kurzbeschreibung, angezeigt in `wippy run list` |
 | `main` | Nein | Diesen Entry als Standardbefehl markieren (automatisch ausgewählt von Packs und Hub-Modulen, die einen einzigen Befehl ausliefern) |
 
-Jede Art von Prozess-Entry funktioniert (`process.lua`, `process.wasm`). Der Befehlsname muss über alle geladenen Entries eindeutig sein. Argumente nach dem Befehlsnamen werden an den Prozess weitergegeben.
+Jede Art von Prozess-Entry funktioniert (`process.lua`, `process.wasm`). Der Befehlsname muss über alle geladenen Entries eindeutig sein. Argumente nach dem Befehlsnamen werden als String-Payloads an den Prozess übergeben.
 
 ## Beispiele
 
@@ -421,7 +425,7 @@ logger:
   encoding: console
 
 logmanager:
-  min_level: -1  # Debug
+  min_level: -1  # debug
 
 profiler:
   enabled: true

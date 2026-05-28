@@ -256,28 +256,101 @@ Prometheusスクレイピング用の`/metrics`エンドポイントを公開し
 
 ## クラスタ
 
-ゴシップディスカバリによるマルチノードクラスタリング。
+マルチノードクラスタリング: ゴシップメンバーシップと有界 Raft コンセンサスコア。アーキテクチャと運用モデルについては[クラスタガイド](guides/cluster.md)を参照。このセクションは設定キーのリファレンスです。
+
+### トップレベル
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `enabled` | bool | false | クラスタリングを有効化 |
-| `name` | string | hostname | ノード識別子 |
-| `internode.bind_addr` | string | 0.0.0.0 | ノード間バインドアドレス |
-| `internode.bind_port` | int | 0 | ポート（0=自動 7950-7959） |
-| `membership.bind_port` | int | 7946 | ゴシップポート |
-| `membership.join_addrs` | string | | シードノード（カンマ区切り） |
-| `membership.secret_key` | string | | 暗号化キー（base64） |
-| `membership.secret_file` | string | | キーファイルパス |
-| `membership.advertise_addr` | string | | NAT用パブリックアドレス |
+| `name` | string | hostname | ノード名。クラスタ全体で一意でなければならない |
+| `failure_domain` | string | | ゾーン/ラックラベル。ゴシップで通知され、投票ノードがドメインをまたぐように分散される |
+
+### メンバーシップ（ゴシップ）
+
+memberlist による SWIM ゴシップ。ノード探索、障害検出、メタデータ伝播に使用されます。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `membership.bind_addr` | string | 0.0.0.0 | ゴシップバインドアドレス |
+| `membership.bind_port` | int | 7946 | ゴシップバインドポート (TCP+UDP) |
+| `membership.advertise_addr` | string | | ピアがこのノードに到達するためのアドレス (NAT/k8s) |
+| `membership.join_addrs` | string | | カンマ区切りのシード `host:port` ペア |
+| `membership.secret_key` | string | | Base64エンコードされたゴシップ暗号化キー（インライン） |
+| `membership.secret_file` | string | | ゴシップ暗号化キーを保持するファイルのパス |
+
+### ノード間（トランスポート）
+
+ノード間でリレーと Raft トラフィックを運ぶ TCP メッシュ。Raft はこのメッシュ上を走行（yamux 多重化）し、独立した Raft ポートはありません。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `internode.bind_addr` | string | 0.0.0.0 | メッシュバインドアドレス |
+| `internode.bind_port` | int | 0 | メッシュポート（0 = 自動: 7950-7959、その後エフェメラル） |
+| `internode.auto_port` | bool | true | 起動時に実際のポートを探索して固定し、ゴシップで通知する |
+
+### Raft（コンセンサス）
+
+有界かつディスクレス Raft。状態はメモリ内のみ。再起動時にノードはクォーラムに再参加してピアからリプレイします。`data_dir` はありません。ブートストラップはゴシップ駆動（Consul/Nomad の `bootstrap_expect` スタイル）で、静的な初期クラスタリストではありません。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `raft.enabled` | bool | true | Raft ノードを実行。`false` にするとゴシップのみのクライアントになる |
+| `raft.role` | string | server | `server` は Raft ノードを実行。`client` はゴシップのみ |
+| `raft.eligible` | bool | true | このノードが投票ノードとして選択される可能性があるかどうか |
+| `raft.priority` | int | 100 | 投票ノード選択の優先度（値が小さいほど優先） |
+| `raft.bootstrap_expect` | int | 1 | 初期クォーラムサイズ: `0`=既存クラスタに参加のみ、`1`=単一ノード、`N`=N個の適格ピアを待ってからクォーラムを形成 |
+| `raft.max_voters` | int | 5 | 投票ノードの上限（奇数でなければならない）。それ以上の適格ノードはスタンバイになる |
+| `raft.max_standbys` | int | 4 | 昇格に備えて保持する非投票メンバー数。投票ノード+スタンバイを超えたノードは Raft メンバーではない |
+| `raft.reconcile_debounce` | duration | 2s | ゴシップイベント後、投票ノード調整ロジックが実行されるまでの集約ウィンドウ |
+| `raft.reconcile_timeout` | duration | 2s | 調整パスごとの上限時間 |
+| `raft.heartbeat_timeout` | duration | 3s | フォロワーが選挙を開始するまでのアイドル待機時間 |
+| `raft.election_timeout` | duration | 3s | 候補ノードの選挙タイムアウト（ハートビート以上にクランプされる） |
+| `raft.commit_timeout` | duration | 500ms | リーダーのアイドルハートビート間隔 |
+| `raft.snapshot_threshold` | uint64 | 8192 | 新しいスナップショットを作成するまでの最後のスナップショット以降のログエントリ数 |
+| `raft.snapshot_interval` | duration | 2m | スナップショットチェック間隔 |
+| `raft.snapshot_retain` | int | 3 | 保持するスナップショット数 |
+| `raft.trailing_logs` | uint64 | 10240 | スナップショット後に保持するログエントリ数 |
+| `raft.max_append_entries` | int | 16 | AppendEntries RPC あたりの最大エントリ数 |
+| `raft.leader_probe_interval` | duration | 3s | グローバルレジストリのリーダー到達可能性プローブ間隔 |
+| `raft.leader_probe_grace` | int | 3 | リーダーが到達不能と宣言されるまでの連続プローブ失敗回数 |
+
+単一ノード（開発用）— クラスタリング有効、即座にブートストラップ:
+
+```yaml
+cluster:
+  enabled: true
+  name: dev
+  raft:
+    bootstrap_expect: 1
+```
+
+3ノード投票クラスタ — 各ノードが他のノードをシードとして指定し、3つ全てが揃うのを待ってからクォーラムを形成:
 
 ```yaml
 cluster:
   enabled: true
   name: node-1
+  failure_domain: us-east-1a
   membership:
     bind_port: 7946
-    join_addrs: "10.0.0.1:7946,10.0.0.2:7946"
+    join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  raft:
+    bootstrap_expect: 3
+    max_voters: 5
+```
+
+ゴシップのみのクライアント — 名前付けやメッセージングのためにクラスタに参加するが、Raft は実行しない:
+
+```yaml
+cluster:
+  enabled: true
+  name: edge-7
+  membership:
+    join_addrs: "node-1:7946,node-2:7946"
+  raft:
+    role: client
 ```
 
 ## LSP
@@ -320,6 +393,25 @@ network_service:
 
 参照: [ネットワークオーバーレイ](system/network.md)
 
+## HTTPディスパッチャ
+
+HTTP ディスパッチ関数や送信リクエストで使用される共有 HTTP クライアントプールのチューニング。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `dispatcher.http.timeout` | duration | 0 (なし) | リクエストごとのタイムアウト |
+| `dispatcher.http.max_idle_conns` | int | 0 (stdlib) | 全ホスト合計のアイドル接続数上限 |
+| `dispatcher.http.max_idle_per_host` | int | 0 (stdlib) | ホストごとのアイドル接続数上限 |
+| `dispatcher.http.idle_conn_timeout` | duration | 0 (stdlib) | アイドル接続タイムアウト |
+| `dispatcher.http.max_clients` | int | 0 (無制限) | プールする個別クライアントの上限 |
+
+```yaml
+dispatcher:
+  http:
+    timeout: 30s
+    max_idle_per_host: 32
+```
+
 ## モジュール
 
 `wippy install`/`update` で使用されるモジュールレジストリクライアント。
@@ -358,5 +450,6 @@ extensions:
 ## 関連項目
 
 - [CLIリファレンス](guides/cli.md) - コマンドラインオプション
+- [クラスタガイド](guides/cluster.md) - クラスタリングのアーキテクチャと運用
 - [エントリ種別](guides/entry-kinds.md) - すべてのエントリタイプ
 - [可観測性ガイド](guides/observability.md) - ロギング、メトリクス、トレーシング

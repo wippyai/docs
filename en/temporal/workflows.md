@@ -757,10 +757,10 @@ Monitored callers receive an EXIT event with an error.
 
 ### Cancel
 
-Request graceful cancellation with an optional deadline:
+Request graceful cancellation with an optional reason:
 
 ```lua
-local ok, err = process.cancel(workflow_pid, "5s")
+local ok, err = process.cancel(workflow_pid, "cancelled by operator")
 ```
 
 ## Concurrent Work

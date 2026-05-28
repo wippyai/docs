@@ -256,28 +256,101 @@ Veja: [Guia de Observabilidade](guides/observability.md)
 
 ## Cluster
 
-Clustering multi-nó com descoberta gossip.
+Clustering multi-nó: associação gossip mais um núcleo Raft de consenso limitado. Consulte o [Guia de Cluster](guides/cluster.md) para a arquitetura e modelo operacional; esta seção é a referência de chaves de configuração.
+
+### Nível superior
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `enabled` | bool | false | Habilita clustering |
-| `name` | string | hostname | Identificador do nó |
-| `internode.bind_addr` | string | 0.0.0.0 | Endereço de bind entre nós |
-| `internode.bind_port` | int | 0 | Porta (0=auto 7950-7959) |
-| `membership.bind_port` | int | 7946 | Porta gossip |
-| `membership.join_addrs` | string | | Nós seed (separados por vírgula) |
-| `membership.secret_key` | string | | Chave de criptografia (base64) |
-| `membership.secret_file` | string | | Caminho do arquivo de chave |
-| `membership.advertise_addr` | string | | Endereço público para NAT |
+| `name` | string | hostname | Nome do nó; deve ser único no cluster |
+| `failure_domain` | string | | Label de zona/rack; anunciado via gossip para que voters se distribuam entre domínios |
+
+### Associação (gossip)
+
+Gossip SWIM via memberlist. Usado para descoberta de nós, detecção de falhas e disseminação de metadados.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `membership.bind_addr` | string | 0.0.0.0 | Endereço de bind do gossip |
+| `membership.bind_port` | int | 7946 | Porta de bind do gossip (TCP+UDP) |
+| `membership.advertise_addr` | string | | Endereço que os peers usam para alcançar este nó (NAT/k8s) |
+| `membership.join_addrs` | string | | Pares seed `host:port` separados por vírgula |
+| `membership.secret_key` | string | | Chave de criptografia gossip codificada em base64 (inline) |
+| `membership.secret_file` | string | | Caminho para arquivo contendo a chave de criptografia gossip |
+
+### Internós (transporte)
+
+Malha TCP que transporta o tráfego de relay e Raft entre nós. O Raft usa esta malha (multiplexado com yamux); não há porta Raft separada.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `internode.bind_addr` | string | 0.0.0.0 | Endereço de bind da malha |
+| `internode.bind_port` | int | 0 | Porta da malha (0 = auto: 7950-7959, depois efêmera) |
+| `internode.auto_port` | bool | true | Descobrir a porta real no boot, fixá-la e anunciá-la via gossip |
+
+### Raft (consenso)
+
+Raft limitado e sem disco. O estado fica em memória; ao reiniciar um nó, ele rejoina o quórum e reproduz a partir dos peers. Sem `data_dir`. O bootstrap é conduzido por gossip (estilo `bootstrap_expect` do Consul/Nomad), não por uma lista inicial estática de peers.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `raft.enabled` | bool | true | Executa um nó Raft; `false` torna este um cliente apenas gossip |
+| `raft.role` | string | server | `server` executa um nó Raft; `client` é apenas gossip |
+| `raft.eligible` | bool | true | Se este nó pode ser selecionado como voter |
+| `raft.priority` | int | 100 | Prioridade de seleção de voter (menor é preferido) |
+| `raft.bootstrap_expect` | int | 1 | Tamanho inicial do quórum: `0`=apenas se juntar a um existente, `1`=nó único, `N`=aguardar N peers elegíveis antes de formar quórum |
+| `raft.max_voters` | int | 5 | Teto de voters (deve ser ímpar); nós elegíveis extras tornam-se standbys |
+| `raft.max_standbys` | int | 4 | Membros não-votantes mantidos prontos para promoção; nós além de voters+standbys não são membros Raft |
+| `raft.reconcile_debounce` | duration | 2s | Janela de coalescência após um evento gossip antes do reconciliador de voters executar |
+| `raft.reconcile_timeout` | duration | 2s | Limite por passagem de reconciliação |
+| `raft.heartbeat_timeout` | duration | 3s | Tempo de espera ocioso do follower antes de iniciar uma eleição |
+| `raft.election_timeout` | duration | 3s | Timeout de eleição do candidato (limitado a >= heartbeat) |
+| `raft.commit_timeout` | duration | 500ms | Cadência de heartbeat do leader ocioso |
+| `raft.snapshot_threshold` | uint64 | 8192 | Entradas de log desde o último snapshot antes de criar um novo |
+| `raft.snapshot_interval` | duration | 2m | Intervalo de verificação de snapshot |
+| `raft.snapshot_retain` | int | 3 | Snapshots retidos |
+| `raft.trailing_logs` | uint64 | 10240 | Entradas de log retidas após um snapshot |
+| `raft.max_append_entries` | int | 16 | Máximo de entradas por RPC AppendEntries |
+| `raft.leader_probe_interval` | duration | 3s | Cadência de sondagem de alcançabilidade do leader do registro global |
+| `raft.leader_probe_grace` | int | 3 | Falhas consecutivas de sondagem antes de declarar o leader inacessível |
+
+Nó único (desenvolvimento) — clustering ativo, bootstrap imediato:
+
+```yaml
+cluster:
+  enabled: true
+  name: dev
+  raft:
+    bootstrap_expect: 1
+```
+
+Cluster de três voters — cada nó lista os outros como seeds e aguarda os três antes de formar quórum:
 
 ```yaml
 cluster:
   enabled: true
   name: node-1
+  failure_domain: us-east-1a
   membership:
     bind_port: 7946
-    join_addrs: "10.0.0.1:7946,10.0.0.2:7946"
+    join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  raft:
+    bootstrap_expect: 3
+    max_voters: 5
+```
+
+Cliente apenas gossip — junta-se ao cluster para nomeação/mensagens mas nunca executa Raft:
+
+```yaml
+cluster:
+  enabled: true
+  name: edge-7
+  membership:
+    join_addrs: "node-1:7946,node-2:7946"
+  raft:
+    role: client
 ```
 
 ## LSP
@@ -320,6 +393,25 @@ network_service:
 
 Veja: [Overlays de Rede](system/network.md)
 
+## Dispatcher HTTP
+
+Ajuste para o pool de clientes HTTP compartilhado usado por funções despachadas via HTTP e requisições de saída.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `dispatcher.http.timeout` | duration | 0 (nenhum) | Timeout por requisição |
+| `dispatcher.http.max_idle_conns` | int | 0 (stdlib) | Máximo de conexões ociosas em todos os hosts |
+| `dispatcher.http.max_idle_per_host` | int | 0 (stdlib) | Máximo de conexões ociosas por host |
+| `dispatcher.http.idle_conn_timeout` | duration | 0 (stdlib) | Timeout de conexão ociosa |
+| `dispatcher.http.max_clients` | int | 0 (ilimitado) | Máximo de clientes distintos em pool |
+
+```yaml
+dispatcher:
+  http:
+    timeout: 30s
+    max_idle_per_host: 32
+```
+
 ## Módulos
 
 Cliente do registro de módulos usado por `wippy install`/`update`.
@@ -358,5 +450,6 @@ extensions:
 ## Veja Também
 
 - [Referência do CLI](guides/cli.md) - Opções de linha de comando
+- [Guia de Cluster](guides/cluster.md) - Arquitetura e operações de clustering
 - [Tipos de Entradas](guides/entry-kinds.md) - Todos os tipos de entradas
 - [Guia de Observabilidade](guides/observability.md) - Logging, métricas, tracing

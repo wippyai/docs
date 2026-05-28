@@ -67,14 +67,14 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 -- Принудительно завершить процесс
 local ok, err = process.terminate(destination)
 
--- Запросить корректную отмену с опциональным дедлайном
-local ok, err = process.cancel(destination, "5s")
+-- Запросить корректную отмену с опциональной причиной
+local ok, err = process.cancel(destination, "shutting down")
 ```
 
 | Параметр | Тип | Описание |
 |----------|-----|----------|
 | `destination` | string | PID или зарегистрированное имя |
-| `deadline` | string\|integer | Строка длительности или миллисекунды |
+| `reason` | string | Опциональная причина, доставляемая цели |
 
 **Разрешения:** `process.terminate`, `process.cancel` на целевой PID
 
@@ -129,7 +129,7 @@ local events = process.events()  -- События жизненного цикл
 | `kind` | string | Константа типа события |
 | `from` | string | Исходный PID |
 | `result` | table | Для EXIT: `{value: any}` или `{error: string}` |
-| `deadline` | string | Для CANCEL: метка времени дедлайна |
+| `reason` | string | Для CANCEL: причина отмены процесса |
 
 ## Подписка на топики
 
@@ -152,9 +152,10 @@ process.unlisten(ch)
 ```lua
 local msg = inbox:receive()
 
-msg:topic()    -- string: имя топика
-msg:from()     -- string|nil: PID отправителя
-msg:payload()  -- any: данные payload
+msg:topic()            -- string: имя топика
+msg:from()             -- string|nil: PID отправителя
+msg:payload()          -- Payload: обёртка (вызовите :data() для извлечения)
+msg:payload():data()   -- any: фактическое значение payload
 ```
 
 ## Синхронный вызов
@@ -230,15 +231,58 @@ spawner:spawn_linked_monitored(id, host, ...)
 
 ## Реестр имён
 
-Регистрация и поиск процессов по имени:
+Регистрация процесса под именем и достижение его по имени вместо raw PID. Любая функция, принимающая `destination` (`send`, `terminate`, `cancel`, `monitor`, `link`, ...), принимает зарегистрированное имя вместо PID.
 
 ```lua
-local ok, err = process.registry.register(name, pid)  -- pid по умолчанию текущий
+local ok, err = process.registry.register(name)               -- self, local scope
 local pid, err = process.registry.lookup(name)
-local ok = process.registry.unregister(name)
+local ok, err = process.registry.unregister(name)
 ```
 
-**Разрешения:** `process.registry.register`, `process.registry.unregister` на имя
+### Область
+
+Опциональный аргумент `scope` выбирает гарантию согласованности имени. По умолчанию `LOCAL`. Четыре области и их гарантии описаны в [Руководстве по кластеру](guides/cluster.md#именование-и-области-имён); кратко:
+
+| Константа | Видимость | Гарантия |
+|-----------|-----------|---------|
+| `process.registry.LOCAL` | только эта нода | Мгновенно, локально |
+| `process.registry.EVENTUAL` | кластер | Eventually consistent (gossip) |
+| `process.registry.CONSISTENT` | кластер | Линеаризуемый синглтон (Raft) |
+| `process.registry.STRONG` | кластер | Consistent плюс подтверждение каждой живой нодой |
+
+На автономной ноде значим только `LOCAL`; кластерные области требуют [кластеризации](guides/cluster.md).
+
+### register
+
+```lua
+local ok, err = process.registry.register(name, scope, pid)
+```
+
+| Параметр | Тип | Обязательно | По умолчанию | Описание |
+|----------|-----|-------------|--------------|----------|
+| `name` | string | да | | Имя для регистрации |
+| `scope` | number | нет | `LOCAL` | Одна из констант области выше |
+| `pid` | string | нет | self | PID для регистрации; по умолчанию вызывающий процесс |
+
+Возвращает `true` при успехе, или `nil, error` при ошибке. Конфликты (имя уже зарегистрировано на другой PID в кластерной области) возвращают `errors.ALREADY_EXISTS`. Регистрация того же имени на тот же PID идемпотентна. Регистрация `STRONG` блокируется до подтверждения каждой живой нодой или истечения дедлайна; при таймауте возвращает ошибку.
+
+Регистрация от имени другого PID дополнительно требует разрешения `process.registry.foreign` на целевой PID.
+
+### lookup
+
+```lua
+local pid, err = process.registry.lookup(name)
+```
+
+Возвращает строку зарегистрированного PID или `nil, error` с kind `errors.NOT_FOUND`, если имя не зарегистрировано.
+
+### unregister
+
+```lua
+local ok, err = process.registry.unregister(name, scope)
+```
+
+`scope` по умолчанию `LOCAL` и должен совпадать с областью, под которой имя было зарегистрировано. Для `CONSISTENT` и `STRONG` снятие регистрации разрешено только владеющему процессу; попытка снять регистрацию имени другого PID возвращает `false`. Имена также освобождаются автоматически при выходе владеющего процесса (и, для кластерных областей, при уходе его ноды), поэтому явное unregister нужно только для досрочного освобождения.
 
 ## Разрешения
 
@@ -272,6 +316,9 @@ local ok = process.registry.unregister(name)
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | имя |
 | `process.registry.unregister` | `registry.unregister()` | имя |
+| `process.registry.foreign` | `registry.register()` | целевой PID |
+
+Кластерные области имён авторизуются суффиксными вариантами этих действий (`process.registry.register.eventual`, `.consistent`, `.strong` и соответствующими `unregister`), поэтому политика может разрешать локальное именование отдельно от кластерного.
 
 ### Множественные разрешения
 
@@ -307,3 +354,4 @@ local ok = process.registry.unregister(name)
 - [Очереди сообщений](lua/storage/queue.md) — сообщения через очереди
 - [Функции](lua/core/funcs.md) — вызов функций
 - [Супервизия](guides/supervision.md) — управление жизненным циклом процессов
+- [Кластер](guides/cluster.md) — области имён и кластерное именование

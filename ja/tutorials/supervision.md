@@ -4,34 +4,34 @@
 
 ## モニタリングとリンク
 
-**モニタリング**は一方向の監視を提供：
+**モニタリング**は一方向の監視を提供:
 - 親が子をモニタリング
 - 子が終了すると、親がEXITイベントを受信
 - 親は実行を継続
 
-**リンク**は双方向の運命共有を作成：
+**リンク**は双方向の運命共有を作成:
 - 親と子がリンクされる
 - どちらかのプロセスが失敗すると、両方が終了
 - `trap_links=true`が設定されていない限り
 
 ```mermaid
 flowchart TB
-    subgraph Monitoring["モニタリング（一方向）"]
+    subgraph Monitoring["MONITORING (one-way)"]
         direction TB
-        P1[親がモニタリング] -->|EXITイベント<br/>親は継続| C1[子が終了]
+        P1[Parent monitors] -->|EXIT event<br/>parent continues| C1[Child exits]
     end
 
-    subgraph Linking["リンク（双方向）"]
+    subgraph Linking["LINKING (bidirectional)"]
         direction TB
-        P2[親がリンク] <-->|LINK_DOWN<br/>両方終了| C2[子が終了]
+        P2[Parent linked] <-->|LINK_DOWN<br/>both die| C2[Child exits]
     end
 ```
 
 ## プロセスモニタリング
 
-### モニタリング付き生成
+### モニタリング付きスポーン
 
-`process.spawn_monitored()`を使用して生成とモニタリングを1回の呼び出しで実行：
+`process.spawn_monitored()`を使用して生成とモニタリングを1回の呼び出しで実行:
 
 ```lua
 local function main()
@@ -63,7 +63,7 @@ end
 
 ### 既存プロセスのモニタリング
 
-すでに実行中のプロセスのモニタリングを開始するには`process.monitor()`を呼び出す：
+すでに実行中のプロセスのモニタリングを開始するには`process.monitor()`を呼び出す:
 
 ```lua
 local function main()
@@ -87,7 +87,7 @@ local function main()
 
     -- ワーカーをキャンセル
     time.sleep("5ms")
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- EXITイベントを受信
     local event = events_ch:receive()
@@ -99,7 +99,7 @@ end
 
 ### モニタリングの停止
 
-EXITイベントの受信を停止するには`process.unmonitor()`を使用：
+EXITイベントの受信を停止するには`process.unmonitor()`を使用:
 
 ```lua
 local function main()
@@ -121,7 +121,7 @@ local function main()
     end
 
     -- ワーカーをキャンセル
-    process.cancel(worker_pid, "100ms")
+    process.cancel(worker_pid)
 
     -- EXITイベントは受信されない（モニタリング解除したため）
     local timeout = time.after("200ms")
@@ -140,7 +140,7 @@ end
 
 ### 明示的なリンク
 
-双方向リンクを作成するには`process.link()`を使用：
+双方向リンクを作成するには`process.link()`を使用:
 
 ```lua
 -- ターゲットプロセスにリンクするワーカー
@@ -184,9 +184,9 @@ local function worker_main()
 end
 ```
 
-### リンク付き生成
+### リンク付きスポーン
 
-`process.spawn_linked()`を使用して生成とリンクを1回の呼び出しで実行：
+`process.spawn_linked()`を使用して生成とリンクを1回の呼び出しで実行:
 
 ```lua
 local function parent_main()
@@ -218,7 +218,7 @@ end
 
 ### デフォルト動作（trap_links=false）
 
-`trap_links`なしでは、リンクされたプロセスの失敗は現在のプロセスを終了させます：
+`trap_links`なしでは、リンクされたプロセスの失敗は現在のプロセスを終了させます:
 
 ```lua
 local function worker_main()
@@ -242,7 +242,7 @@ end
 
 ### trap_links=trueの場合
 
-LINK_DOWNイベントを受信して生存するには`trap_links`を有効化：
+LINK_DOWNイベントを受信して生存するには`trap_links`を有効化:
 
 ```lua
 local function worker_main()
@@ -271,7 +271,7 @@ end
 
 ### キャンセルシグナルの送信
 
-プロセスを適切に終了させるには`process.cancel()`を使用：
+プロセスを適切に終了させるには`process.cancel()`を使用:
 
 ```lua
 local function main()
@@ -286,8 +286,8 @@ local function main()
 
     time.sleep("5ms")
 
-    -- クリーンアップ用に100msのタイムアウトでキャンセル
-    local ok, cancel_err = process.cancel(worker_pid, "100ms")
+    -- ワーカーをキャンセル
+    local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
@@ -302,7 +302,7 @@ end
 
 ### キャンセルの処理
 
-ワーカーは`process.events()`経由でCANCELイベントを受信：
+ワーカーは`process.events()`経由でCANCELイベントを受信:
 
 ```lua
 local function worker_main()
@@ -334,7 +334,7 @@ end
 
 ### スタートポロジー
 
-親に戻ってリンクする複数の子を持つ親：
+親に戻ってリンクする複数の子を持つ親:
 
 ```lua
 -- 親ワーカーは親にリンクする子を生成
@@ -363,7 +363,7 @@ local function star_parent_main()
         children[child_pid] = true
     end
 
-    -- すべての子がリンク確認を待機
+    -- すべての子がリンク確認するまで待機
     for i = 1, child_count do
         local msg = process.inbox():receive()
         if msg:topic() ~= "linked" then
@@ -376,7 +376,7 @@ local function star_parent_main()
 end
 ```
 
-親にリンクする子ワーカー：
+親にリンクする子ワーカー:
 
 ```lua
 local function linker_child_main()
@@ -403,7 +403,7 @@ end
 
 ### チェーントポロジー
 
-各ノードが親にリンクする線形チェーン：
+各ノードが親にリンクする線形チェーン:
 
 ```lua
 -- チェーンルート: A -> B -> C -> D -> E
@@ -428,7 +428,7 @@ local function chain_root_main()
 end
 ```
 
-チェーンノードは次のノードを生成してリンク：
+チェーンノードは次のノードを生成してリンク:
 
 ```lua
 local function chain_node_main(depth)
@@ -628,7 +628,7 @@ return { main = main }
 
 ## プロセスホスト設定
 
-プロセスホストは、プロセスを実行するOSスレッドの数を制御します：
+プロセスホストは、プロセスを実行するOSスレッドの数を制御します:
 
 ```yaml
 # src/_index.yaml
@@ -644,7 +644,7 @@ entries:
       auto_start: true
 ```
 
-ワーカー設定：
+ワーカー設定:
 - CPUバウンドな作業の並列性を制御
 - 通常はCPUコア数に設定
 - すべてのプロセスがこのスレッドプールを共有
@@ -659,18 +659,18 @@ entries:
 
 ## スーパーバイザープールの実行
 
-[設定](#設定)に示した構造にプールファイルを配置し、次を実行します：
+[設定](#設定)に示した構造にプールファイルを配置し、次を実行します:
 
 ```bash
 wippy init
 wippy run
 ```
 
-スーパーバイザーが自動起動し、4つのワーカーをスポーンし、いずれかが終了すると再起動をログに記録します。別のプロセスからワーカーをキャンセルして再起動をトリガーできます：
+スーパーバイザーが自動起動し、4つのワーカーをスポーンし、いずれかが終了すると再起動をログに記録します。別のプロセスからワーカーをキャンセルして再起動をトリガーできます:
 
 ```lua
 -- アドホックプロセスまたはchatコマンド内で
-process.cancel("<pid-from-supervisor-log>", "100ms")
+process.cancel("<pid-from-supervisor-log>")
 ```
 
 プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします。
@@ -680,4 +680,3 @@ process.cancel("<pid-from-supervisor-log>", "100ms")
 - [プロセス](tutorials/processes.md) - プロセスの基礎
 - [チャネル](tutorials/channels.md) - メッセージパッシングパターン
 - [プロセスモジュール](lua/core/process.md) - APIリファレンス
-

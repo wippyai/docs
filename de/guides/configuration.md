@@ -256,28 +256,101 @@ Siehe: [Observability-Anleitung](guides/observability.md)
 
 ## Cluster
 
-Multi-Node-Clustering mit Gossip-Discovery.
+Multi-Node-Clustering: Gossip-Mitgliedschaft plus ein begrenzter Raft-Konsenskern. Siehe den [Cluster-Leitfaden](guides/cluster.md) für Architektur und Betriebsmodell; dieser Abschnitt ist die Konfigurationsschlüssel-Referenz.
+
+### Oberste Ebene
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `enabled` | bool | false | Clustering aktivieren |
-| `name` | string | hostname | Knoten-Bezeichner |
-| `internode.bind_addr` | string | 0.0.0.0 | Inter-Node-Bind-Adresse |
-| `internode.bind_port` | int | 0 | Port (0=auto 7950-7959) |
-| `membership.bind_port` | int | 7946 | Gossip-Port |
-| `membership.join_addrs` | string | | Seed-Knoten (kommasepariert) |
-| `membership.secret_key` | string | | Verschlüsselungsschlüssel (base64) |
-| `membership.secret_file` | string | | Schlüsseldatei-Pfad |
-| `membership.advertise_addr` | string | | Öffentliche Adresse für NAT |
+| `name` | string | hostname | Knotenname; muss im Cluster eindeutig sein |
+| `failure_domain` | string | | Zonen-/Rack-Label; im Gossip beworben, damit Voter über Domains verteilt werden |
+
+### Mitgliedschaft (Gossip)
+
+SWIM-Gossip über memberlist. Wird für Knotenentdeckung, Fehlererkennung und Metadaten-Verbreitung verwendet.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `membership.bind_addr` | string | 0.0.0.0 | Gossip-Bind-Adresse |
+| `membership.bind_port` | int | 7946 | Gossip-Bind-Port (TCP+UDP) |
+| `membership.advertise_addr` | string | | Adresse, die Peers verwenden, um diesen Knoten zu erreichen (NAT/k8s) |
+| `membership.join_addrs` | string | | Kommagetrennte Seed-`host:port`-Paare |
+| `membership.secret_key` | string | | Base64-kodierter Gossip-Verschlüsselungsschlüssel (inline) |
+| `membership.secret_file` | string | | Pfad zur Datei mit dem Gossip-Verschlüsselungsschlüssel |
+
+### Internode (Transport)
+
+TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh (yamux-multiplexiert); es gibt keinen separaten Raft-Port.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `internode.bind_addr` | string | 0.0.0.0 | Mesh-Bind-Adresse |
+| `internode.bind_port` | int | 0 | Mesh-Port (0 = auto: 7950-7959, dann ephemer) |
+| `internode.auto_port` | bool | true | Tatsächlichen Port beim Start ermitteln, festlegen und im Gossip bewerben |
+
+### Raft (Konsens)
+
+Begrenztes, festplatten-loses Raft. Zustand liegt im Speicher; beim Neustart tritt ein Knoten dem Quorum wieder bei und spielt von Peers ab. Kein `data_dir`. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil), keine statische Initialliste.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `raft.enabled` | bool | true | Raft-Knoten betreiben; `false` macht diesen zum reinen Gossip-Client |
+| `raft.role` | string | server | `server` betreibt einen Raft-Knoten; `client` ist nur Gossip |
+| `raft.eligible` | bool | true | Ob dieser Knoten als Voter ausgewählt werden darf |
+| `raft.priority` | int | 100 | Voter-Auswahlpriorität (niedrigerer Wert wird bevorzugt) |
+| `raft.bootstrap_expect` | int | 1 | Initiale Quorumgröße: `0`=bestehendem beitreten, `1`=Einzelknoten, `N`=auf N berechtigte Peers warten, dann Quorum bilden |
+| `raft.max_voters` | int | 5 | Voter-Obergrenze (muss ungerade sein); zusätzliche berechtigte Knoten werden Standbys |
+| `raft.max_standbys` | int | 4 | Nicht-abstimmende Mitglieder, warm gehalten für Beförderung; Knoten jenseits voters+standbys sind keine Raft-Mitglieder |
+| `raft.reconcile_debounce` | duration | 2s | Koaleszenzfenster nach einem Gossip-Ereignis, bevor der Voter-Reconciler läuft |
+| `raft.reconcile_timeout` | duration | 2s | Schranke pro Reconcile-Durchlauf |
+| `raft.heartbeat_timeout` | duration | 3s | Follower-Leerlaufwartzeit vor dem Start einer Wahl |
+| `raft.election_timeout` | duration | 3s | Kandidaten-Wahltimeout (mindestens heartbeat) |
+| `raft.commit_timeout` | duration | 500ms | Heartbeat-Takt des Leerlauf-Leaders |
+| `raft.snapshot_threshold` | uint64 | 8192 | Log-Einträge seit dem letzten Snapshot, bevor ein neuer erstellt wird |
+| `raft.snapshot_interval` | duration | 2m | Snapshot-Prüfintervall |
+| `raft.snapshot_retain` | int | 3 | Beibehaltene Snapshots |
+| `raft.trailing_logs` | uint64 | 10240 | Nach einem Snapshot beibehaltene Log-Einträge |
+| `raft.max_append_entries` | int | 16 | Maximale Einträge pro AppendEntries RPC |
+| `raft.leader_probe_interval` | duration | 3s | Takt der Globale-Registry-Leader-Erreichbarkeits-Probe |
+| `raft.leader_probe_grace` | int | 3 | Aufeinanderfolgende Probe-Fehler, bevor Leader als nicht erreichbar gilt |
+
+Einzelknoten (Entwicklung) — Clustering aktiviert, bootstrappt sich sofort:
+
+```yaml
+cluster:
+  enabled: true
+  name: dev
+  raft:
+    bootstrap_expect: 1
+```
+
+Drei-Knoten-Voting-Cluster — jeder Knoten listet die anderen als Seeds und wartet auf alle drei vor der Quorumbildung:
 
 ```yaml
 cluster:
   enabled: true
   name: node-1
+  failure_domain: us-east-1a
   membership:
     bind_port: 7946
-    join_addrs: "10.0.0.1:7946,10.0.0.2:7946"
+    join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  raft:
+    bootstrap_expect: 3
+    max_voters: 5
+```
+
+Gossip-only-Client — tritt dem Cluster für Benennung/Messaging bei, betreibt nie Raft:
+
+```yaml
+cluster:
+  enabled: true
+  name: edge-7
+  membership:
+    join_addrs: "node-1:7946,node-2:7946"
+  raft:
+    role: client
 ```
 
 ## LSP
@@ -320,6 +393,25 @@ network_service:
 
 Siehe: [Netzwerk-Overlays](system/network.md)
 
+## HTTP-Dispatcher
+
+Tuning für den gemeinsamen HTTP-Client-Pool, der von HTTP-dispatched Funktionen und ausgehenden Anfragen verwendet wird.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `dispatcher.http.timeout` | duration | 0 (kein) | Timeout pro Anfrage |
+| `dispatcher.http.max_idle_conns` | int | 0 (stdlib) | Maximale Leerlaufverbindungen über alle Hosts |
+| `dispatcher.http.max_idle_per_host` | int | 0 (stdlib) | Maximale Leerlaufverbindungen pro Host |
+| `dispatcher.http.idle_conn_timeout` | duration | 0 (stdlib) | Leerlaufverbindungs-Timeout |
+| `dispatcher.http.max_clients` | int | 0 (unbegrenzt) | Maximale unterschiedliche gepoolte Clients |
+
+```yaml
+dispatcher:
+  http:
+    timeout: 30s
+    max_idle_per_host: 32
+```
+
 ## Module
 
 Modul-Registry-Client, der von `wippy install`/`update` verwendet wird.
@@ -358,5 +450,6 @@ extensions:
 ## Siehe auch
 
 - [CLI-Referenz](guides/cli.md) - Kommandozeilenoptionen
+- [Cluster-Leitfaden](guides/cluster.md) - Clustering-Architektur und Betrieb
 - [Entry-Typen](guides/entry-kinds.md) - Alle Entry-Typen
 - [Observability-Anleitung](guides/observability.md) - Logging, Metriken, Tracing

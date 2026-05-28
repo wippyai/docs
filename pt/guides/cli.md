@@ -39,13 +39,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 Iniciar o runtime ou executar um comando.
 
 ```bash
-wippy run                                    # Iniciar o runtime
-wippy run list                               # Listar comandos disponíveis
-wippy run test                               # Executar testes
-wippy run snapshot.wapp                      # Executar a partir de arquivo pack
-wippy run acme/http                          # Executar módulo do hub
-wippy run acme/http@1.2.3                    # Executar versão específica
-wippy run --exec app:worker                  # Iniciar runtime e executar um único processo
+wippy run                                   # Iniciar o runtime
+wippy run list                              # Listar comandos disponíveis
+wippy run test                              # Executar testes
+wippy run snapshot.wapp                     # Executar a partir de arquivo pack
+wippy run acme/http                         # Executar módulo do hub
+wippy run acme/http@1.2.3                   # Executar versão específica
+wippy run --exec app:worker                 # Iniciar runtime e executar um único processo
 ```
 
 | Flag | Curta | Descrição |
@@ -102,8 +102,8 @@ Instalar dependências a partir do arquivo de lock.
 
 ```bash
 wippy install                            # Instalar todos
-wippy install acme/http                  # Instalar um modulo especifico
-wippy install --refresh acme/http        # Recarregar um modulo especifico
+wippy install acme/http                  # Instalar módulo específico
+wippy install --refresh acme/http        # Re-baixar um módulo específico
 ```
 
 | Flag | Curta | Padrão | Descrição |
@@ -175,6 +175,10 @@ Lê a partir do `wippy.yaml` no diretório atual.
 | `--embed` | Incorporar entradas fs.directory por id ou nome |
 | `--config` | Caminho para o diretório contendo wippy.yaml (padrão: .) |
 | `--registry` | URL do registry |
+| `--create` | Criar o módulo no registry se ainda não existir |
+| `--module-visibility` | Visibilidade para módulos recém-criados (`--create` apenas): `public` ou `private` (padrão: private) |
+| `--module-type` | Tipo para módulos recém-criados (`--create` apenas): `library`, `application`, `agent` ou `plugin` (padrão: application) |
+| `--module-display-name` | Nome de exibição para módulos recém-criados (`--create` apenas) |
 
 ## wippy search
 
@@ -229,7 +233,7 @@ wippy auth status --json
 
 | Flag | Descrição |
 |------|-----------|
-| `--json` | Saída como JSON |
+| `--json` | Saída em JSON |
 
 ## wippy readme
 
@@ -343,7 +347,7 @@ wippy run list
 | `short` | Não | Descrição curta exibida em `wippy run list` |
 | `main` | Não | Marca esta entrada como comando padrão (selecionado automaticamente por packs e módulos do hub que entregam um único comando) |
 
-Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O nome do comando deve ser único entre todas as entradas carregadas. Argumentos após o nome do comando são passados para o processo.
+Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O nome do comando deve ser único entre todas as entradas carregadas. Argumentos após o nome do comando são passados para o processo como payloads de string.
 
 ## Exemplos
 
