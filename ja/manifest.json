@@ -12,6 +12,7 @@
     "children": [
       {"title": "CLI", "path": "guides/cli"},
       {"title": "Configuration", "path": "guides/configuration"},
+      {"title": "クラスタ", "path": "guides/cluster"},
       {"title": "Linter", "path": "guides/linter"},
       {"title": "Language Server", "path": "guides/lsp"},
       {"title": "Dependency Management", "path": "guides/dependency-management"},
@@ -46,6 +47,7 @@
           {"title": "Time", "path": "lua/core/time"},
           {"title": "Channels", "path": "lua/core/channel"},
           {"title": "Process", "path": "lua/core/process"},
+          {"title": "プロセスグループ", "path": "lua/core/pg"},
           {"title": "Functions", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},
           {"title": "Stream", "path": "lua/core/stream"},
@@ -164,6 +166,7 @@
     "title": "System Components",
     "children": [
       {"title": "Process Host", "path": "system/process-host"},
+      {"title": "プロセスグループ", "path": "system/process-groups"},
       {"title": "Terminal", "path": "system/terminal"},
       {"title": "Database", "path": "system/database"},
       {"title": "Store", "path": "system/store"},
