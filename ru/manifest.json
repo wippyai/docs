@@ -29,6 +29,7 @@
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "Registry", "path": "concepts/registry"},
       {"title": "Process Model", "path": "concepts/process-model"},
+      {"title": "Кластер", "path": "concepts/cluster"},
       {"title": "Functions", "path": "concepts/functions"},
       {"title": "Workflows", "path": "concepts/workflows"}
     ]
