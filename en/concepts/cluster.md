@@ -28,7 +28,7 @@ The scopes form a strict ordering — `Local < Eventual < Consistent < Strong` �
 Naming is only useful if a name reliably reaches the right process. Routing is what connects the two, and it follows a few consistent rules:
 
 - **Reads are local.** Every node resolves a name from its own replica or gossip-disseminated cache — no network round-trip to look up a name. This keeps resolution fast and keeps working during partitions.
-- **Resolution has a fixed order.** A name is resolved across the planes in order — Consistent (Raft), then Eventual (gossip), then Local — so a cluster-wide name shadows a local one of the same string.
+- **Resolution has a fixed order.** A name is resolved across the planes most-authoritative first — Consistent and Strong (Raft), then Eventual (gossip), then Local — so a cluster-wide name shadows a local one of the same string.
 - **Writes route to the authority.** A Consistent or Strong registration goes through the Raft leader; a node that isn't the leader forwards the write and waits for the result. Once committed, the active binding is disseminated over gossip so every node — including those not in the Raft core — can resolve the name locally afterward.
 - **Messaging routes by PID.** When you `process.send` to a name, it resolves to a PID and the relay delivers the message to the owning node. Your code addresses a process the same way whether it lives on this node or another — location is transparent.
 
