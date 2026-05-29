@@ -17,7 +17,7 @@ A process is normally addressed by its PID. In a cluster it can also be register
 | Scope | Visibility | Guarantee | Use it for |
 |-------|------------|-----------|------------|
 | **Local** | this node | instant, no coordination | node-local helpers |
-| **Eventual** | cluster-wide | converges after gossip; conflicts resolve and notify the loser | high-volume presence/session names |
+| **Eventual** | cluster-wide | converges after gossip; conflicts resolve and notify the loser | service, group, and bounded presence names |
 | **Consistent** | cluster-wide | linearizable singleton via Raft | the standard cluster-wide named service |
 | **Strong** | cluster-wide | Consistent, plus every live node acknowledges before the name is active | control-plane singletons and locks |
 

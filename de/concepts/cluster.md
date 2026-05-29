@@ -17,7 +17,7 @@ Ein Prozess wird normalerweise über seine PID adressiert. In einem Cluster kann
 | Gültigkeitsbereich | Sichtbarkeit | Garantie | Verwendung |
 |--------------------|--------------|----------|------------|
 | **Local** | dieser Knoten | sofort, keine Koordination | knotenlokal Hilfsprozesse |
-| **Eventual** | clusterweit | konvergiert nach Gossip; Konflikte werden aufgelöst und der Verlierer benachrichtigt | hochvolumige Präsenz-/Sitzungsnamen |
+| **Eventual** | clusterweit | konvergiert nach Gossip; Konflikte werden aufgelöst und der Verlierer benachrichtigt | Dienst-, Gruppen- und begrenzte Präsenznamen |
 | **Consistent** | clusterweit | linearisierbares Singleton über Raft | der Standard für clusterweite benannte Dienste |
 | **Strong** | clusterweit | Consistent, plus jeder lebende Knoten bestätigt, bevor der Name aktiv wird | Steuerungsebenen-Singletons und Sperren |
 

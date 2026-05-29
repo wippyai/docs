@@ -17,7 +17,7 @@ Un proceso se direcciona normalmente por su PID. En un cluster también puede re
 | Alcance | Visibilidad | Garantía | Úselo para |
 |---------|-------------|----------|------------|
 | **Local** | este nodo | instantáneo, sin coordinación | helpers locales del nodo |
-| **Eventual** | todo el cluster | converge tras el gossip; los conflictos se resuelven y notifican al perdedor | nombres de presencia/sesión de alto volumen |
+| **Eventual** | todo el cluster | converge tras el gossip; los conflictos se resuelven y notifican al perdedor | nombres de servicio, grupo y presencia acotada |
 | **Consistent** | todo el cluster | singleton linearizable vía Raft | el servicio con nombre estándar en todo el cluster |
 | **Strong** | todo el cluster | Consistent, más el reconocimiento de cada nodo activo antes de que el nombre esté activo | singletons y bloqueos del plano de control |
 

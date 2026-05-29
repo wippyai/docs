@@ -17,7 +17,7 @@ Um processo é normalmente endereçado pelo seu PID. Em um cluster, ele também 
 | Escopo | Visibilidade | Garantia | Use para |
 |--------|--------------|----------|----------|
 | **Local** | este nó | imediato, sem coordenação | auxiliares locais do nó |
-| **Eventual** | todo o cluster | converge após gossip; conflitos se resolvem e notificam o perdedor | nomes de presença/sessão de alto volume |
+| **Eventual** | todo o cluster | converge após gossip; conflitos se resolvem e notificam o perdedor | nomes de serviço, grupo e presença limitada |
 | **Consistent** | todo o cluster | singleton linearizável via Raft | o serviço nomeado padrão para todo o cluster |
 | **Strong** | todo o cluster | Consistent, mais o reconhecimento de todos os nós ativos antes de o nome estar ativo | singletons e locks do plano de controle |
 
