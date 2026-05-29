@@ -291,7 +291,7 @@ TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh
 
 ### Raft (consensus)
 
-Bounded, diskless Raft. State is in-memory; on restart a node rejoins quorum and replays from peers. No `data_dir`. Bootstrap is gossip-driven (Consul/Nomad `bootstrap_expect` style), not a static initial-cluster list.
+Bounded, diskless Raft. State is in-memory; on restart a node rejoins quorum and replays from peers. No `data_dir`. Bootstrap is gossip-driven (Consul/Nomad `bootstrap_expect` style).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

@@ -291,7 +291,7 @@ prometheus:
 
 ### Raft（共识）
 
-有界、无磁盘的 Raft。状态存储在内存中；重启后节点重新加入 quorum 并从对等节点重放。无需 `data_dir`。引导通过 gossip 驱动（Consul/Nomad `bootstrap_expect` 风格），而非静态初始集群列表。
+有界、无磁盘的 Raft。状态存储在内存中；重启后节点重新加入 quorum 并从对等节点重放。无需 `data_dir`。引导通过 gossip 驱动（Consul/Nomad `bootstrap_expect` 风格）。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|

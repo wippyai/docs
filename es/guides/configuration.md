@@ -291,7 +291,7 @@ Malla TCP que transporta el tráfico de relay y Raft entre nodos. Raft viaja por
 
 ### Raft (consenso)
 
-Raft acotado y sin disco. El estado reside en memoria; al reiniciar, un nodo se une al quórum y repite el estado desde sus peers. Sin `data_dir`. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`), no una lista de cluster inicial estática.
+Raft acotado y sin disco. El estado reside en memoria; al reiniciar, un nodo se une al quórum y repite el estado desde sus peers. Sin `data_dir`. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|

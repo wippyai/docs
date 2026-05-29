@@ -291,7 +291,7 @@ Malha TCP que transporta o tráfego de relay e Raft entre nós. O Raft usa esta 
 
 ### Raft (consenso)
 
-Raft limitado e sem disco. O estado fica em memória; ao reiniciar um nó, ele rejoina o quórum e reproduz a partir dos peers. Sem `data_dir`. O bootstrap é conduzido por gossip (estilo `bootstrap_expect` do Consul/Nomad), não por uma lista inicial estática de peers.
+Raft limitado e sem disco. O estado fica em memória; ao reiniciar um nó, ele rejoina o quórum e reproduz a partir dos peers. Sem `data_dir`. O bootstrap é conduzido por gossip (estilo `bootstrap_expect` do Consul/Nomad).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|

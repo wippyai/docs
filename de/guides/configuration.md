@@ -291,7 +291,7 @@ TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh (y
 
 ### Raft (Konsens)
 
-Begrenztes, festplatten-loses Raft. Zustand liegt im Speicher; beim Neustart tritt ein Knoten dem Quorum wieder bei und spielt von Peers ab. Kein `data_dir`. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil), keine statische Initialliste.
+Begrenztes, festplatten-loses Raft. Zustand liegt im Speicher; beim Neustart tritt ein Knoten dem Quorum wieder bei und spielt von Peers ab. Kein `data_dir`. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
