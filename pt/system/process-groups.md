@@ -53,7 +53,7 @@ Todos os campos são opcionais e têm padrões ajustados para um cluster típico
 
 **Estado de escritor único.** Cada escopo executa um loop de eventos de goroutine única (o padrão gen_server). Todas as mutações são serializadas por ele; leituras de membros e grupos são servidas a partir de snapshots publicados atomicamente, portanto nunca bloqueiam o loop.
 
-**Propagação de join/leave.** Um join ou leave local é aplicado ao loop e depois distribuído para a união dos peers de associação ativos e quaisquer nós remotos previamente descobertos. Enviar para essa união — em vez de apenas peers descobertos via gossip — garante que um nó recém-unido ou ainda não convergido ainda receba a mudança.
+**Propagação de join/leave.** Um join ou leave local é aplicado ao loop e depois distribuído para a união dos peers de associação ativos e quaisquer nós remotos previamente descobertos. Enviar para essa união garante que um nó recém-unido ou ainda não convergido ainda receba a mudança.
 
 **Broadcast.** `broadcast` faz snapshot da lista completa de membros cross-cluster dentro do loop, depois entrega a cada membro fora do loop para que um destinatário lento não trave o escopo. `broadcast_local` faz o mesmo mas apenas para membros no nó local.
 

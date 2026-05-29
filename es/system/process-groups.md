@@ -53,7 +53,7 @@ Todos los campos son opcionales y tienen valores por defecto ajustados para un c
 
 **Estado de escritor único.** Cada ámbito ejecuta un bucle de eventos de una sola goroutine (el patrón gen_server). Todas las mutaciones se serializan a través de él; las lecturas de miembros y grupos se sirven desde instantáneas publicadas atómicamente, por lo que nunca bloquean el bucle.
 
-**Propagación de join/leave.** Un join o leave local se aplica al bucle y luego se distribuye en abanico hacia la unión de los peers de membresía activos y cualquier nodo remoto descubierto previamente. Enviar a esa unión — en lugar de solo a los peers descubiertos por gossip — asegura que un nodo recién unido o aún no convergido reciba el cambio.
+**Propagación de join/leave.** Un join o leave local se aplica al bucle y luego se distribuye en abanico hacia la unión de los peers de membresía activos y cualquier nodo remoto descubierto previamente. Enviar a esa unión asegura que un nodo recién unido o aún no convergido reciba el cambio.
 
 **Difusión.** `broadcast` toma una instantánea de la lista completa de miembros del cluster dentro del bucle, luego entrega a cada miembro fuera del bucle para que un receptor lento no pueda detener el ámbito. `broadcast_local` hace lo mismo pero solo para miembros en el nodo local.
 

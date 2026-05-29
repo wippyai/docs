@@ -53,7 +53,7 @@ All fields are optional and have defaults tuned for a typical cluster.
 
 **Single-writer state.** Each scope runs a single-goroutine event loop (the gen_server pattern). All mutations are serialized through it; reads of members and groups are served from atomically-published snapshots, so they never block the loop.
 
-**Join/leave propagation.** A local join or leave is applied to the loop and then fanned out to the union of the live membership peers and any previously-discovered remote nodes. Sending to that union — rather than only gossip-discovered peers — ensures a freshly joined or not-yet-converged node still receives the change.
+**Join/leave propagation.** A local join or leave is applied to the loop and then fanned out to the union of the live membership peers and any previously-discovered remote nodes. Sending to that union ensures a freshly joined or not-yet-converged node still receives the change.
 
 **Broadcast.** `broadcast` snapshots the full cross-cluster member list inside the loop, then delivers to each member outside the loop so a slow recipient cannot stall the scope. `broadcast_local` does the same but only for members on the local node.
 

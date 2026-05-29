@@ -53,7 +53,7 @@ Alle Felder sind optional und haben auf einen typischen Cluster abgestimmte Stan
 
 **Single-Writer-Zustand.** Jeder Scope betreibt eine Single-Goroutine-Event-Loop (das gen_server-Muster). Alle Mutationen werden über sie serialisiert; Lesevorgänge von Mitgliedern und Gruppen werden aus atomar veröffentlichten Snapshots bedient, sodass sie die Loop niemals blockieren.
 
-**Beitritts-/Verlassens-Propagierung.** Ein lokaler Beitritt oder Austritt wird auf die Loop angewendet und dann an die Vereinigung der lebenden Mitglieds-Peers und aller zuvor entdeckten Remote-Knoten ausgefächert. Das Senden an diese Vereinigung — statt nur an Gossip-entdeckte Peers — stellt sicher, dass ein frisch beigetretener oder noch nicht konvergierter Knoten die Änderung trotzdem erhält.
+**Beitritts-/Verlassens-Propagierung.** Ein lokaler Beitritt oder Austritt wird auf die Loop angewendet und dann an die Vereinigung der lebenden Mitglieds-Peers und aller zuvor entdeckten Remote-Knoten ausgefächert. Das Senden an diese Vereinigung stellt sicher, dass ein frisch beigetretener oder noch nicht konvergierter Knoten die Änderung trotzdem erhält.
 
 **Broadcast.** `broadcast` snapshottiert die vollständige cluster-übergreifende Mitgliederliste innerhalb der Loop und liefert dann außerhalb der Loop an jedes Mitglied, sodass ein langsamer Empfänger den Scope nicht blockieren kann. `broadcast_local` macht dasselbe, aber nur für Mitglieder auf dem lokalen Knoten.
 
