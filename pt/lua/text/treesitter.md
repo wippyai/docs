@@ -17,6 +17,10 @@ Tree-sitter produz arvores de sintaxe que:
 local treesitter = require("treesitter")
 ```
 
+<note>
+O módulo treesitter é opcional — está presente apenas em builds que incluem a tag de build `treesitter`. Os binários oficiais do Wippy o incluem; para compilar a partir do código-fonte, use `make build-wippy` ou `go build -tags treesitter`. Sem a tag, `require("treesitter")` fica indisponível.
+</note>
+
 ## Linguagens Suportadas
 
 | Linguagem | Aliases | No Raiz |

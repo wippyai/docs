@@ -17,6 +17,10 @@
 local treesitter = require("treesitter")
 ```
 
+<note>
+Модуль treesitter является опциональным — он присутствует только в сборках, включающих тег сборки `treesitter`. Официальные бинарные файлы Wippy включают его; для сборки из исходного кода используйте `make build-wippy` или `go build -tags treesitter`. Без этого тега `require("treesitter")` недоступен.
+</note>
+
 ## Поддерживаемые языки
 
 | Язык | Псевдонимы | Корневой узел |

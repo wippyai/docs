@@ -17,6 +17,10 @@ Tree-sitterは以下の特性を持つ構文木を生成します:
 local treesitter = require("treesitter")
 ```
 
+<note>
+treesitter モジュールはオプションであり、`treesitter` ビルドタグを含むビルドにのみ存在します。Wippy の公式バイナリには含まれています。ソースからビルドする場合は `make build-wippy` または `go build -tags treesitter` を使用してください。タグがない場合、`require("treesitter")` は利用できません。
+</note>
+
 ## サポート言語
 
 | 言語 | エイリアス | ルートノード |

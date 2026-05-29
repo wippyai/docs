@@ -17,6 +17,10 @@ Tree-sitter 生成的语法树具有以下特点：
 local treesitter = require("treesitter")
 ```
 
+<note>
+treesitter 模块是可选的——仅在包含 `treesitter` 构建标签的构建中存在。Wippy 官方二进制文件已包含它；如需从源码构建，请使用 `make build-wippy` 或 `go build -tags treesitter`。没有该标签时，`require("treesitter")` 不可用。
+</note>
+
 ## 支持的语言
 
 | 语言 | 别名 | 根节点 |

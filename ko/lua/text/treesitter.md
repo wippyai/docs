@@ -17,6 +17,10 @@ Tree-sitter는 다음과 같은 구문 트리를 생성합니다:
 local treesitter = require("treesitter")
 ```
 
+<note>
+treesitter 모듈은 선택 사항이며 `treesitter` 빌드 태그를 포함한 빌드에만 존재합니다. 공식 Wippy 바이너리에는 포함되어 있습니다. 소스에서 빌드하려면 `make build-wippy` 또는 `go build -tags treesitter`를 사용하세요. 태그가 없으면 `require("treesitter")`를 사용할 수 없습니다.
+</note>
+
 ## 지원되는 언어
 
 | 언어 | 별칭 | 루트 노드 |
