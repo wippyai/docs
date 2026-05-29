@@ -255,14 +255,14 @@ Auf einem Einzelknoten ist nur `LOCAL` bedeutsam; die Cluster-Scopes erfordern [
 ### register
 
 ```lua
-local ok, err = process.registry.register(name, scope, pid)
+local ok, err = process.registry.register(name, pid, scope)
 ```
 
 | Parameter | Typ | Erforderlich | Standard | Beschreibung |
 |-----------|-----|--------------|----------|--------------|
 | `name` | string | ja | | Zu registrierender Name |
-| `scope` | number | nein | `LOCAL` | Eine der obigen Scope-Konstanten |
 | `pid` | string | nein | self | Zu registrierende PID; Standard ist der aufrufende Prozess |
+| `scope` | number | nein | `LOCAL` | Eine der obigen Scope-Konstanten |
 
 Gibt `true` bei Erfolg zurück, oder `nil, error` bei Fehler. Konflikte (Name bereits für eine andere PID unter einem Cluster-Scope registriert) geben `errors.ALREADY_EXISTS` zurück. Das Registrieren desselben Namens für dieselbe PID ist idempotent. Eine `STRONG`-Registrierung blockiert, bis jeder lebende Knoten bestätigt oder die Reservierungsdeadline abläuft; bei Timeout wird ein Fehler zurückgegeben.
 

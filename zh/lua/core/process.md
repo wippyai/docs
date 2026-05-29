@@ -255,14 +255,14 @@ local ok, err = process.registry.unregister(name)
 ### register
 
 ```lua
-local ok, err = process.registry.register(name, scope, pid)
+local ok, err = process.registry.register(name, pid, scope)
 ```
 
 | 参数 | 类型 | 必填 | 默认值 | 描述 |
 |------|------|------|--------|------|
 | `name` | string | 是 | | 要注册的名称 |
-| `scope` | number | 否 | `LOCAL` | 上述作用域常量之一 |
 | `pid` | string | 否 | 自身 | 要注册的 PID；默认为调用进程 |
+| `scope` | number | 否 | `LOCAL` | 上述作用域常量之一 |
 
 成功返回 `true`，失败返回 `nil, error`。冲突（名称在集群作用域下已注册给不同 PID）返回 `errors.ALREADY_EXISTS`。将同一名称注册给同一 PID 是幂等的。`STRONG` 注册会阻塞，直到所有存活节点确认或预留截止时间到期；超时返回错误。
 

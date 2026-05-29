@@ -255,14 +255,14 @@ En un nodo independiente solo `LOCAL` es significativo; los ámbitos de cluster 
 ### register
 
 ```lua
-local ok, err = process.registry.register(name, scope, pid)
+local ok, err = process.registry.register(name, pid, scope)
 ```
 
 | Parámetro | Tipo | Requerido | Por defecto | Descripción |
 |-----------|------|----------|---------|-------------|
 | `name` | string | sí | | Nombre a registrar |
-| `scope` | number | no | `LOCAL` | Una de las constantes de ámbito anteriores |
 | `pid` | string | no | self | PID a registrar; por defecto el proceso que llama |
+| `scope` | number | no | `LOCAL` | Una de las constantes de ámbito anteriores |
 
 Devuelve `true` en éxito, o `nil, error` en fallo. Los conflictos (nombre ya registrado a un PID diferente bajo un ámbito de cluster) devuelven `errors.ALREADY_EXISTS`. Registrar el mismo nombre al mismo PID es idempotente. Un registro `STRONG` bloquea hasta que cada nodo activo reconoce o el plazo de reserva expira; en tiempo de espera devuelve un error.
 

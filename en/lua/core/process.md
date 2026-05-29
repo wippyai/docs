@@ -255,14 +255,14 @@ On a standalone node only `LOCAL` is meaningful; the cluster scopes require [clu
 ### register
 
 ```lua
-local ok, err = process.registry.register(name, scope, pid)
+local ok, err = process.registry.register(name, pid, scope)
 ```
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `name` | string | yes | | Name to register |
-| `scope` | number | no | `LOCAL` | One of the scope constants above |
 | `pid` | string | no | self | PID to register; defaults to the calling process |
+| `scope` | number | no | `LOCAL` | One of the scope constants above |
 
 Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID under a cluster scope) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration blocks until every live node acknowledges or the reservation deadline expires; on timeout it returns an error.
 

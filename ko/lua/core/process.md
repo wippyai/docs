@@ -255,14 +255,14 @@ local ok, err = process.registry.unregister(name)
 ### register
 
 ```lua
-local ok, err = process.registry.register(name, scope, pid)
+local ok, err = process.registry.register(name, pid, scope)
 ```
 
 | 파라미터 | 타입 | 필수 | 기본값 | 설명 |
 |----------|------|------|---------|------|
 | `name` | string | 예 | | 등록할 이름 |
-| `scope` | number | 아니오 | `LOCAL` | 위의 범위 상수 중 하나 |
 | `pid` | string | 아니오 | 자신 | 등록할 PID; 기본값은 호출 프로세스 |
+| `scope` | number | 아니오 | `LOCAL` | 위의 범위 상수 중 하나 |
 
 성공 시 `true`를 반환하고, 실패 시 `nil, error`를 반환합니다. 충돌(다른 PID로 클러스터 범위에 이미 등록된 이름)은 `errors.ALREADY_EXISTS`를 반환합니다. 동일한 PID로 같은 이름을 등록하면 멱등합니다. `STRONG` 등록은 모든 살아있는 노드가 승인하거나 예약 데드라인이 만료될 때까지 차단됩니다; 타임아웃 시 오류를 반환합니다.
 

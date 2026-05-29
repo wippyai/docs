@@ -255,14 +255,14 @@ local ok, err = process.registry.unregister(name)
 ### register
 
 ```lua
-local ok, err = process.registry.register(name, scope, pid)
+local ok, err = process.registry.register(name, pid, scope)
 ```
 
 | パラメータ | 型 | 必須 | デフォルト | 説明 |
 |-----------|------|----------|---------|-------------|
 | `name` | string | はい | | 登録する名前 |
-| `scope` | number | いいえ | `LOCAL` | 上記のスコープ定数のいずれか |
 | `pid` | string | いいえ | self | 登録するPID。デフォルトは呼び出しプロセス |
+| `scope` | number | いいえ | `LOCAL` | 上記のスコープ定数のいずれか |
 
 成功時は `true`、失敗時は `nil, error` を返します。競合（異なるPIDに同じ名前がクラスタスコープで既に登録されている）は `errors.ALREADY_EXISTS` を返します。同じPIDに同じ名前を登録することは冪等です。`STRONG` 登録はすべてのライブノードが確認するか予約期限が切れるまでブロックします。タイムアウト時はエラーを返します。
 

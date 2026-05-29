@@ -255,14 +255,14 @@ Em um nó standalone apenas `LOCAL` é significativo; os escopos de cluster requ
 ### register
 
 ```lua
-local ok, err = process.registry.register(name, scope, pid)
+local ok, err = process.registry.register(name, pid, scope)
 ```
 
 | Parâmetro | Tipo | Obrigatório | Padrão | Descrição |
 |-----------|------|-------------|--------|-----------|
 | `name` | string | sim | | Nome a registrar |
-| `scope` | number | não | `LOCAL` | Um dos constantes de escopo acima |
 | `pid` | string | não | self | PID a registrar; padrão é o processo chamador |
+| `scope` | number | não | `LOCAL` | Um dos constantes de escopo acima |
 
 Retorna `true` em caso de sucesso, ou `nil, error` em caso de falha. Conflitos (nome já registrado para um PID diferente sob um escopo de cluster) retornam `errors.ALREADY_EXISTS`. Registrar o mesmo nome para o mesmo PID é idempotente. Um registro `STRONG` bloqueia até que todos os nós ativos reconheçam ou o prazo da reserva expire; em timeout retorna um erro.
 
