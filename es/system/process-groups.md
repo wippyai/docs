@@ -1,6 +1,6 @@
 # Grupos de Proceso
 
-Los grupos de proceso permiten que los procesos se unan a grupos con nombre y reciban difusiones dirigidas a un grupo, con la membresía rastreada en todos los nodos del cluster. El modelo sigue `pg` de Erlang/OTP: los grupos se crean al primer join, un proceso puede pertenecer a muchos grupos (y unirse a un grupo varias veces), y no hay registro central — cada nodo mantiene el estado y se reconcilia con los peers a través de gossip.
+Los grupos de proceso permiten que los procesos se unan a grupos con nombre y reciban difusiones dirigidas a un grupo, con la membresía rastreada en todos los nodos del cluster. El modelo sigue `pg` de Erlang/OTP: los grupos se crean al primer join, un proceso puede pertenecer a muchos grupos (y unirse a un grupo varias veces), y la membresía es descentralizada — cada nodo mantiene su propio estado y se reconcilia con los peers a través de la malla internode.
 
 La API Lua está documentada en [Grupos de Proceso](lua/core/pg.md); esta página cubre el tipo de entrada de ámbito y su configuración. Ver la [Guía de Cluster](guides/cluster.md) para el modelo de membresía circundante.
 

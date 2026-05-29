@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Agrupe processos em grupos nomeados e faça broadcast para todos os membros em todo o cluster. Modelado no `pg` do Erlang/OTP: grupos são dinâmicos, um processo pode pertencer a muitos grupos e a associação é rastreada em todo o cluster via gossip.
+Agrupe processos em grupos nomeados e faça broadcast para todos os membros em todo o cluster. Modelado no `pg` do Erlang/OTP: grupos são dinâmicos, um processo pode pertencer a muitos grupos e a associação é rastreada em todo o cluster e é eventualmente consistente.
 
 Para o tipo de entrada de escopo e sua configuração, veja [Grupos de Processos](system/process-groups.md). Para o modelo de clustering mais amplo, veja o [Guia de Cluster](guides/cluster.md).
 

@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Join processes into named groups and broadcast to every member across the cluster. Modeled on Erlang/OTP `pg`: groups are dynamic, a process can belong to many groups, and membership is tracked cluster-wide through gossip.
+Join processes into named groups and broadcast to every member across the cluster. Modeled on Erlang/OTP `pg`: groups are dynamic, a process can belong to many groups, and membership is tracked cluster-wide and is eventually consistent.
 
 For the scope entry kind and its configuration, see [Process Groups](system/process-groups.md). For the broader clustering model, see the [Cluster Guide](guides/cluster.md).
 

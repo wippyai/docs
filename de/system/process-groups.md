@@ -1,6 +1,6 @@
 # Prozessgruppen
 
-Prozessgruppen ermöglichen es Prozessen, benannten Gruppen beizutreten und Broadcasts zu empfangen, die an eine Gruppe gerichtet sind, wobei die Mitgliedschaft über jeden Knoten im Cluster verfolgt wird. Das Modell folgt Erlang/OTP `pg`: Gruppen werden beim ersten Beitritt erstellt, ein Prozess kann vielen Gruppen angehören (und einer Gruppe mehrmals beitreten), und es gibt keine zentrale Registry — jeder Knoten pflegt seinen Zustand und reconciliert mit Peers über Gossip.
+Prozessgruppen ermöglichen es Prozessen, benannten Gruppen beizutreten und Broadcasts zu empfangen, die an eine Gruppe gerichtet sind, wobei die Mitgliedschaft über jeden Knoten im Cluster verfolgt wird. Das Modell folgt Erlang/OTP `pg`: Gruppen werden beim ersten Beitritt erstellt, ein Prozess kann vielen Gruppen angehören (und einer Gruppe mehrmals beitreten), und die Mitgliedschaft ist dezentral — jeder Knoten pflegt seinen eigenen Zustand und gleicht ihn mit Peers über das Internode-Mesh ab.
 
 Die Lua-API ist in [Prozessgruppen](lua/core/pg.md) dokumentiert; diese Seite behandelt den Scope-Eintragstyp und seine Konfiguration. Siehe den [Cluster-Leitfaden](guides/cluster.md) für das umgebende Mitgliedschaftsmodell.
 

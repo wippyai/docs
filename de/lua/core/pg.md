@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Prozesse in benannte Gruppen aufnehmen und an jedes Mitglied im Cluster senden. Modelliert nach Erlang/OTP `pg`: Gruppen sind dynamisch, ein Prozess kann vielen Gruppen angehören, und die Mitgliedschaft wird clusterweit über Gossip verfolgt.
+Prozesse in benannte Gruppen aufnehmen und an jedes Mitglied im Cluster senden. Modelliert nach Erlang/OTP `pg`: Gruppen sind dynamisch, ein Prozess kann vielen Gruppen angehören, und die Mitgliedschaft wird clusterweit verfolgt und ist eventual consistent.
 
 Für den Scope-Eintragstyp und seine Konfiguration siehe [Prozessgruppen](system/process-groups.md). Für das umfassendere Clustering-Modell siehe den [Cluster-Leitfaden](guides/cluster.md).
 

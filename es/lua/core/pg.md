@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Unir procesos en grupos con nombre y difundir a todos los miembros en el cluster. Modelado sobre `pg` de Erlang/OTP: los grupos son dinámicos, un proceso puede pertenecer a muchos grupos, y la membresía se rastrea en todo el cluster a través de gossip.
+Unir procesos en grupos con nombre y difundir a todos los miembros en el cluster. Modelado sobre `pg` de Erlang/OTP: los grupos son dinámicos, un proceso puede pertenecer a muchos grupos, y la membresía se rastrea en todo el cluster y es eventualmente consistente.
 
 Para el tipo de entrada de ámbito y su configuración, ver [Grupos de Proceso](system/process-groups.md). Para el modelo de clustering más amplio, ver la [Guía de Cluster](guides/cluster.md).
 

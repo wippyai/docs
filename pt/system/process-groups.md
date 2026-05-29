@@ -1,6 +1,6 @@
 # Grupos de Processos
 
-Grupos de processos permitem que processos entrem em grupos nomeados e recebam broadcasts endereçados a um grupo, com associação rastreada em todos os nós do cluster. O modelo segue o `pg` do Erlang/OTP: grupos são criados no primeiro join, um processo pode pertencer a muitos grupos (e entrar em um grupo múltiplas vezes), e não há registro central — cada nó mantém estado e reconcilia com peers via gossip.
+Grupos de processos permitem que processos entrem em grupos nomeados e recebam broadcasts endereçados a um grupo, com associação rastreada em todos os nós do cluster. O modelo segue o `pg` do Erlang/OTP: grupos são criados no primeiro join, um processo pode pertencer a muitos grupos (e entrar em um grupo múltiplas vezes), e a associação é descentralizada — cada nó mantém seu próprio estado e reconcilia com peers pela malha internode.
 
 A API Lua está documentada em [Grupos de Processos](lua/core/pg.md); esta página cobre o tipo de entrada de escopo e sua configuração. Veja o [Guia de Cluster](guides/cluster.md) para o modelo de associação ao redor.
 

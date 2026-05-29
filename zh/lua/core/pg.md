@@ -3,7 +3,7 @@
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-将进程加入命名组并向集群中所有成员广播。以 Erlang/OTP `pg` 为模型：组是动态的，进程可以属于多个组，成员资格通过 gossip 在集群范围内追踪。
+将进程加入命名组并向集群中所有成员广播。以 Erlang/OTP `pg` 为模型：组是动态的，进程可以属于多个组，成员资格在集群范围内追踪，并具有最终一致性。
 
 有关作用域入口类型及其配置，参见[进程组](system/process-groups.md)。有关更广泛的集群模型，参见[集群指南](guides/cluster.md)。
 
