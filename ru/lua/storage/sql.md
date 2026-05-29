@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Выполнение SQL-запросов к базам данных PostgreSQL, MySQL, SQLite, MSSQL и Oracle. Поддержка параметризованных запросов, транзакций, подготовленных выражений и fluent-конструктора запросов.
+Выполнение SQL-запросов к базам данных PostgreSQL, MySQL и SQLite. Поддержка параметризованных запросов, транзакций, подготовленных выражений и fluent-конструктора запросов.
 
 Настройку базы данных см. в [Database](system/database.md).
 
@@ -39,6 +39,10 @@ db:release()
 Соединения автоматически возвращаются в пул при выходе из функции, но рекомендуется явно вызывать `db:release()` для длительных операций.
 </note>
 
+<note>
+Плейсхолдеры передаются драйверу базы данных без изменений; среда выполнения их не переписывает. SQLite и MySQL используют `?`, PostgreSQL использует `$1, $2` — записывайте их в форме, ожидаемой вашим драйвером. В примерах ниже используется `?` (SQLite/MySQL). Для запросов, рассчитанных на несколько движков, стройте их с помощью конструктора запросов и задавайте `placeholder_format` нужного диалекта.
+</note>
+
 ## Константы
 
 ### Типы баз данных
@@ -47,8 +51,6 @@ db:release()
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ local query = sql.builder.select("*")
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-Формат плейсхолдеров @p1, @p2, ...
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-Формат плейсхолдеров :1, :2, ...
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## Методы соединения

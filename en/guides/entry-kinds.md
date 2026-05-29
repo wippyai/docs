@@ -93,8 +93,6 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite database |
 | `db.sql.postgres` | PostgreSQL database |
 | `db.sql.mysql` | MySQL database |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Oracle database |
 
 ### SQLite
 
@@ -143,20 +141,6 @@ resp:status(200):json({users = get_users()})
   password: pass
   options:
     parseTime: "true"
-  lifecycle:
-    auto_start: true
-```
-
-### MSSQL
-
-```yaml
-- name: database
-  kind: db.sql.mssql
-  host: localhost
-  port: 1433
-  database: dbname
-  username: user
-  password: pass
   lifecycle:
     auto_start: true
 ```

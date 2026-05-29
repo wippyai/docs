@@ -50,10 +50,21 @@ wippy run --exec app:worker                 # Iniciar runtime y ejecutar un úni
 
 | Flag | Corto | Descripción |
 |------|-------|-------------|
-| `--override` | `-o` | Sobrescribir valores de entrada (`namespace:entry:field=value`) |
+| `--override` | `-o` | Sobrescribir valores de entrada (`namespace:entry:field=value`); `field` puede ser `kind` para cambiar el tipo de la entrada |
+| `--set` | | Sobrescribir un valor de configuración (`section.path=value`, repetible, tiene prioridad sobre el archivo de configuración) |
 | `--exec` | `-x` | Ejecutar proceso y salir (`namespace:entry`) |
 | `--host` | | ID del host de terminal para `--exec` (auto-detectado si solo existe un `terminal.host`) |
 | `--registry` | | URL del registro para módulos del hub |
+
+`--set` escribe cualquier valor de configuración del runtime desde la línea de comandos, fusionado sobre `.wippy.yaml` por hoja:
+
+```bash
+wippy run --set cluster.enabled=true \
+          --set cluster.membership.join_addrs=node-2:7946,node-3:7946 \
+          --set cluster.raft.bootstrap_expect=3
+```
+
+Los valores se convierten según su forma: `true`/`false` a bool, enteros y flotantes a números, el resto permanece como string (las duraciones como `5s` se analizan donde la opción lo espera).
 
 ## wippy lint
 

@@ -1,6 +1,6 @@
 # Database System
 
-SQL database connection pooling and configuration. Supports PostgreSQL, MySQL, SQLite, Microsoft SQL Server, and Oracle.
+SQL database connection pooling and configuration. Supports PostgreSQL, MySQL, and SQLite.
 
 ## Entry Kinds
 
@@ -9,12 +9,10 @@ SQL database connection pooling and configuration. Supports PostgreSQL, MySQL, S
 | `db.sql.postgres` | PostgreSQL database |
 | `db.sql.mysql` | MySQL database |
 | `db.sql.sqlite` | SQLite database |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Oracle database |
 
 ## Configuration
 
-### Standard Databases (PostgreSQL, MySQL, MSSQL, Oracle)
+### Standard Databases (PostgreSQL, MySQL)
 
 ```yaml
 # src/data/_index.yaml
@@ -149,18 +147,6 @@ file:/path/to/database.db?cache=shared
 :memory:?mode=memory
 ```
 
-### Microsoft SQL Server {id="dsn-mssql"}
-
-```
-sqlserver://username:password@host:port?database=dbname
-```
-
-### Oracle {id="dsn-oracle"}
-
-```
-oracle://username:password@host:port/service_name
-```
-
 ## Database Options
 
 Common database-specific options:
@@ -190,23 +176,6 @@ options:
   cache: "shared"         # shared, private
   mode: "rwc"            # ro, rw, rwc, memory
   _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
-
-### Microsoft SQL Server {id="options-mssql"}
-
-```yaml
-options:
-  encrypt: "true"
-  TrustServerCertificate: "false"
-```
-
-### Oracle {id="options-oracle"}
-
-```yaml
-options:
-  poolMinSessions: "1"
-  poolMaxSessions: "10"
-  poolIncrement: "1"
 ```
 
 ## Examples

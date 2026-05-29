@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Execute queries SQL em bancos de dados PostgreSQL, MySQL, SQLite, MSSQL e Oracle. Recursos incluem queries parametrizadas, transacoes, prepared statements e um query builder fluente.
+Execute queries SQL em bancos de dados PostgreSQL, MySQL e SQLite. Recursos incluem queries parametrizadas, transacoes, prepared statements e um query builder fluente.
 
 Para configuração de banco de dados, veja [Database](system/database.md).
 
@@ -39,6 +39,10 @@ db:release()
 Conexoes sao automaticamente retornadas ao pool quando a função termina, mas chamar `db:release()` explicitamente e recomendado para operações de longa duração.
 </note>
 
+<note>
+Os marcadores de posição são passados ao driver do banco de dados sem alteração; o runtime não os reescreve. SQLite e MySQL usam `?`, PostgreSQL usa `$1, $2` — escreva-os no formato que seu driver espera. Os exemplos a seguir usam `?` (SQLite/MySQL). Para consultas que visam mais de um mecanismo, construa-as com o [Query Builder](#query-builder) e defina o `placeholder_format` do dialeto.
+</note>
+
 ## Constantes
 
 ### Tipos de Banco de Dados
@@ -47,8 +51,6 @@ Conexoes sao automaticamente retornadas ao pool quando a função termina, mas c
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ Formato de placeholder para placeholders $1, $2, ...
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-Formato de placeholder para placeholders @p1, @p2, ...
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-Formato de placeholder para placeholders :1, :2, ...
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## Métodos de Conexão

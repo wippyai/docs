@@ -1,6 +1,6 @@
 # Sistema de Banco de Dados
 
-Pool de conexões e configuração de banco de dados SQL. Suporta PostgreSQL, MySQL, SQLite, Microsoft SQL Server e Oracle.
+Pool de conexões e configuração de banco de dados SQL. Suporta PostgreSQL, MySQL e SQLite.
 
 ## Tipos de Entradas
 
@@ -9,12 +9,10 @@ Pool de conexões e configuração de banco de dados SQL. Suporta PostgreSQL, My
 | `db.sql.postgres` | Banco de dados PostgreSQL |
 | `db.sql.mysql` | Banco de dados MySQL |
 | `db.sql.sqlite` | Banco de dados SQLite |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Banco de dados Oracle |
 
 ## Configuração
 
-### Bancos de Dados Padrão (PostgreSQL, MySQL, MSSQL, Oracle)
+### Bancos de Dados Padrão (PostgreSQL, MySQL)
 
 ```yaml
 # src/data/_index.yaml
@@ -149,18 +147,6 @@ file:/path/to/database.db?cache=shared
 :memory:?mode=memory
 ```
 
-### Microsoft SQL Server {id="dsn-mssql"}
-
-```
-sqlserver://username:password@host:port?database=dbname
-```
-
-### Oracle {id="dsn-oracle"}
-
-```
-oracle://username:password@host:port/service_name
-```
-
 ## Opções de Banco de Dados
 
 Opções comuns específicas de cada banco de dados:
@@ -190,23 +176,6 @@ options:
   cache: "shared"         # shared, private
   mode: "rwc"            # ro, rw, rwc, memory
   _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
-
-### Microsoft SQL Server {id="options-mssql"}
-
-```yaml
-options:
-  encrypt: "true"
-  TrustServerCertificate: "false"
-```
-
-### Oracle {id="options-oracle"}
-
-```yaml
-options:
-  poolMinSessions: "1"
-  poolMaxSessions: "10"
-  poolIncrement: "1"
 ```
 
 ## Exemplos

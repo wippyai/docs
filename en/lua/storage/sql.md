@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Execute SQL queries against PostgreSQL, MySQL, SQLite, MSSQL, and Oracle databases. Features include parameterized queries, transactions, prepared statements, and a fluent query builder.
+Execute SQL queries against PostgreSQL, MySQL, and SQLite databases. Features include parameterized queries, transactions, prepared statements, and a fluent query builder.
 
 For database configuration, see [Database](system/database.md).
 
@@ -39,6 +39,10 @@ db:release()
 Connections are automatically returned to the pool when the function exits, but calling `db:release()` explicitly is recommended for long-running operations.
 </note>
 
+<note>
+Placeholders are passed to the database driver unchanged; the runtime does not rewrite them. SQLite and MySQL use `?`, PostgreSQL uses `$1, $2` — write them in the form your driver expects. The examples below use `?` (SQLite/MySQL). For queries that target more than one engine, build them with the [query builder](#query-builder) and set the dialect's `placeholder_format`.
+</note>
+
 ## Constants
 
 ### Database Types
@@ -47,8 +51,6 @@ Connections are automatically returned to the pool when the function exits, but 
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ Placeholder format for $1, $2, ... placeholders.
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-Placeholder format for @p1, @p2, ... placeholders.
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-Placeholder format for :1, :2, ... placeholders.
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## Connection Methods

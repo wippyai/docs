@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Führen Sie SQL-Abfragen gegen PostgreSQL-, MySQL-, SQLite-, MSSQL- und Oracle-Datenbanken aus. Features umfassen parametrisierte Abfragen, Transaktionen, Prepared Statements und einen Fluent Query Builder.
+Führen Sie SQL-Abfragen gegen PostgreSQL-, MySQL- und SQLite-Datenbanken aus. Features umfassen parametrisierte Abfragen, Transaktionen, Prepared Statements und einen Fluent Query Builder.
 
 Für Datenbankkonfiguration siehe [Datenbank](system/database.md).
 
@@ -39,6 +39,10 @@ db:release()
 Verbindungen werden automatisch an den Pool zurückgegeben, wenn die Funktion beendet wird, aber explizites Aufrufen von `db:release()` wird für lang laufende Operationen empfohlen.
 </note>
 
+<note>
+Platzhalter werden unverändert an den Datenbanktreiber übergeben; die Laufzeit schreibt sie nicht um. SQLite und MySQL verwenden `?`, PostgreSQL verwendet `$1, $2` — schreiben Sie sie in der vom Treiber erwarteten Form. Die folgenden Beispiele verwenden `?` (SQLite/MySQL). Für Abfragen, die mehrere Engines unterstützen sollen, erstellen Sie sie mit dem [Query Builder](#query-builder) und setzen Sie das `placeholder_format` des jeweiligen Dialekts.
+</note>
+
 ## Konstanten
 
 ### Datenbanktypen
@@ -47,8 +51,6 @@ Verbindungen werden automatisch an den Pool zurückgegeben, wenn die Funktion be
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ Platzhalterformat für $1, $2, ...-Platzhalter.
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-Platzhalterformat für @p1, @p2, ...-Platzhalter.
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-Platzhalterformat für :1, :2, ...-Platzhalter.
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## Verbindungsmethoden

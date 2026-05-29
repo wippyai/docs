@@ -1,6 +1,6 @@
 # Database 系统
 
-SQL 数据库连接池和配置。支持 PostgreSQL、MySQL、SQLite、Microsoft SQL Server 和 Oracle。
+SQL 数据库连接池和配置。支持 PostgreSQL、MySQL 和 SQLite。
 
 ## Entry 类型
 
@@ -9,12 +9,10 @@ SQL 数据库连接池和配置。支持 PostgreSQL、MySQL、SQLite、Microsoft
 | `db.sql.postgres` | PostgreSQL 数据库 |
 | `db.sql.mysql` | MySQL 数据库 |
 | `db.sql.sqlite` | SQLite 数据库 |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Oracle 数据库 |
 
 ## 配置
 
-### 标准数据库（PostgreSQL、MySQL、MSSQL、Oracle）
+### 标准数据库（PostgreSQL、MySQL）
 
 ```yaml
 # src/data/_index.yaml
@@ -149,18 +147,6 @@ file:/path/to/database.db?cache=shared
 :memory:?mode=memory
 ```
 
-### Microsoft SQL Server {id="dsn-mssql"}
-
-```
-sqlserver://username:password@host:port?database=dbname
-```
-
-### Oracle {id="dsn-oracle"}
-
-```
-oracle://username:password@host:port/service_name
-```
-
 ## 数据库选项
 
 常见的数据库特定选项：
@@ -190,23 +176,6 @@ options:
   cache: "shared"         # shared, private
   mode: "rwc"            # ro, rw, rwc, memory
   _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
-
-### Microsoft SQL Server {id="options-mssql"}
-
-```yaml
-options:
-  encrypt: "true"
-  TrustServerCertificate: "false"
-```
-
-### Oracle {id="options-oracle"}
-
-```yaml
-options:
-  poolMinSessions: "1"
-  poolMaxSessions: "10"
-  poolIncrement: "1"
 ```
 
 ## 示例

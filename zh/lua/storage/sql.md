@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-对 PostgreSQL、MySQL、SQLite、MSSQL 和 Oracle 数据库执行 SQL 查询。支持参数化查询、事务、预处理语句和流式查询构建器。
+对 PostgreSQL、MySQL 和 SQLite 数据库执行 SQL 查询。支持参数化查询、事务、预处理语句和流式查询构建器。
 
 数据库配置请参阅 [数据库](system/database.md)。
 
@@ -39,6 +39,10 @@ db:release()
 函数退出时连接会自动返回连接池，但对于长时间运行的操作，建议显式调用 `db:release()`。
 </note>
 
+<note>
+占位符按原样传递给数据库驱动程序，运行时不会重写它们。SQLite 和 MySQL 使用 `?`，PostgreSQL 使用 `$1, $2` — 请按驱动程序期望的形式书写。下面的示例使用 `?`（SQLite/MySQL）。对于面向多种引擎的查询，请使用查询构建器构建，并设置对应方言的 `placeholder_format`。
+</note>
+
 ## 常量
 
 ### 数据库类型
@@ -47,8 +51,6 @@ db:release()
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ $1, $2, ... 占位符格式。
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-@p1, @p2, ... 占位符格式。
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-:1, :2, ... 占位符格式。
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## 连接方法

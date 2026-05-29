@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-PostgreSQL、MySQL、SQLite、MSSQL、Oracleデータベースに対してSQLクエリを実行。パラメータ化クエリ、トランザクション、プリペアドステートメント、流暢なクエリビルダーをサポート。
+PostgreSQL、MySQL、SQLiteデータベースに対してSQLクエリを実行。パラメータ化クエリ、トランザクション、プリペアドステートメント、流暢なクエリビルダーをサポート。
 
 データベース設定については[データベース](system/database.md)を参照。
 
@@ -39,6 +39,10 @@ db:release()
 接続は関数が終了すると自動的にプールに返される。長時間実行される操作では明示的に`db:release()`を呼び出すことを推奨。
 </note>
 
+<note>
+プレースホルダーはそのままデータベースドライバーに渡され、ランタイムは書き換えません。SQLite と MySQL は `?`、PostgreSQL は `$1, $2` を使用します。ドライバーが期待する形式で記述してください。以下の例では `?`（SQLite/MySQL）を使用しています。複数のエンジンを対象とするクエリは、クエリビルダーで構築し、方言に応じた `placeholder_format` を設定してください。
+</note>
+
 ## 定数
 
 ### データベースタイプ
@@ -47,8 +51,6 @@ db:release()
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ $1, $2, ...プレースホルダー用のプレースホルダーフォーマッ
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-@p1, @p2, ...プレースホルダー用のプレースホルダーフォーマット。
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-:1, :2, ...プレースホルダー用のプレースホルダーフォーマット。
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## 接続メソッド

@@ -50,10 +50,21 @@ wippy run --exec app:worker                 # Start runtime and execute a single
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--override` | `-o` | Override entry values (`namespace:entry:field=value`) |
+| `--override` | `-o` | Override entry values (`namespace:entry:field=value`); `field` may be `kind` to change the entry kind |
+| `--set` | | Override a config value (`section.path=value`, repeatable, takes precedence over the config file) |
 | `--exec` | `-x` | Execute process and exit (`namespace:entry`) |
 | `--host` | | Terminal host ID for `--exec` (auto-detected if only one `terminal.host` exists) |
 | `--registry` | | Registry URL for hub modules |
+
+`--set` writes any runtime configuration value from the command line, merged over `.wippy.yaml` per leaf:
+
+```bash
+wippy run --set cluster.enabled=true \
+          --set cluster.membership.join_addrs=node-2:7946,node-3:7946 \
+          --set cluster.raft.bootstrap_expect=3
+```
+
+Values coerce by shape: `true`/`false` to bool, integers and floats to numbers, everything else stays a string (durations like `5s` are parsed where the option expects one).
 
 ## wippy lint
 

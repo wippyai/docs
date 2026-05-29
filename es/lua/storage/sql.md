@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Ejecuta consultas SQL contra bases de datos PostgreSQL, MySQL, SQLite, MSSQL y Oracle. Incluye consultas parametrizadas, transacciones, sentencias preparadas y un constructor de consultas fluido.
+Ejecuta consultas SQL contra bases de datos PostgreSQL, MySQL y SQLite. Incluye consultas parametrizadas, transacciones, sentencias preparadas y un constructor de consultas fluido.
 
 Para la configuración de la base de datos, consulte [Base de Datos](system/database.md).
 
@@ -39,6 +39,10 @@ db:release()
 Las conexiones se devuelven automáticamente al pool cuando termina la función, pero se recomienda llamar a `db:release()` explícitamente en operaciones de larga duración.
 </note>
 
+<note>
+Los marcadores de posición se pasan al controlador de base de datos sin cambios; el runtime no los reescribe. SQLite y MySQL usan `?`, PostgreSQL usa `$1, $2`: escríbalos en la forma que espera su controlador. Los ejemplos siguientes usan `?` (SQLite/MySQL). Para consultas dirigidas a más de un motor, constrúyalas con el Constructor de Consultas y establezca el `placeholder_format` del dialecto.
+</note>
+
 ## Constantes
 
 ### Tipos de Base de Datos
@@ -47,8 +51,6 @@ Las conexiones se devuelven automáticamente al pool cuando termina la función,
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ Formato de marcador para $1, $2, ...
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-Formato de marcador para @p1, @p2, ...
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-Formato de marcador para :1, :2, ...
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## Métodos de Conexión

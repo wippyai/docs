@@ -93,8 +93,6 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite 데이터베이스 |
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
 | `db.sql.mysql` | MySQL 데이터베이스 |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Oracle 데이터베이스 |
 
 ### SQLite
 
@@ -143,20 +141,6 @@ resp:status(200):json({users = get_users()})
   password: pass
   options:
     parseTime: "true"
-  lifecycle:
-    auto_start: true
-```
-
-### MSSQL
-
-```yaml
-- name: database
-  kind: db.sql.mssql
-  host: localhost
-  port: 1433
-  database: dbname
-  username: user
-  password: pass
   lifecycle:
     auto_start: true
 ```

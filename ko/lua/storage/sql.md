@@ -4,7 +4,7 @@
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-PostgreSQL, MySQL, SQLite, MSSQL, Oracle 데이터베이스에 대해 SQL 쿼리를 실행합니다. 파라미터화된 쿼리, 트랜잭션, prepared statement, 플루언트 쿼리 빌더를 지원합니다.
+PostgreSQL, MySQL, SQLite 데이터베이스에 대해 SQL 쿼리를 실행합니다. 파라미터화된 쿼리, 트랜잭션, prepared statement, 플루언트 쿼리 빌더를 지원합니다.
 
 데이터베이스 설정은 [데이터베이스](system/database.md)를 참조하세요.
 
@@ -39,6 +39,10 @@ db:release()
 연결은 함수가 종료될 때 자동으로 풀로 반환되지만, 장기 실행 작업에서는 `db:release()`를 명시적으로 호출하는 것이 권장됩니다.
 </note>
 
+<note>
+플레이스홀더는 데이터베이스 드라이버에 변경 없이 전달되며 런타임은 이를 재작성하지 않습니다. SQLite와 MySQL은 `?`, PostgreSQL은 `$1, $2`를 사용합니다. 드라이버가 기대하는 형식으로 작성하세요. 아래 예제는 `?`(SQLite/MySQL)를 사용합니다. 여러 엔진을 대상으로 하는 쿼리는 쿼리 빌더로 작성하고 방언에 맞는 `placeholder_format`을 설정하세요.
+</note>
+
 ## 상수
 
 ### 데이터베이스 타입
@@ -47,8 +51,6 @@ db:release()
 sql.type.POSTGRES    -- "postgres"
 sql.type.MYSQL       -- "mysql"
 sql.type.SQLITE      -- "sqlite"
-sql.type.MSSQL       -- "mssql"
-sql.type.ORACLE      -- "oracle"
 sql.type.UNKNOWN     -- "unknown"
 ```
 
@@ -364,26 +366,6 @@ $1, $2, ... 플레이스홀더용 포맷.
 local query = sql.builder.select("*")
     :from("users")
     :placeholder_format(sql.builder.dollar)
-```
-
-## builder.at
-
-@p1, @p2, ... 플레이스홀더용 포맷.
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.at)
-```
-
-## builder.colon
-
-:1, :2, ... 플레이스홀더용 포맷.
-
-```lua
-local query = sql.builder.select("*")
-    :from("users")
-    :placeholder_format(sql.builder.colon)
 ```
 
 ## 연결 메서드

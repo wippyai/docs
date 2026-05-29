@@ -1,6 +1,6 @@
 # 데이터베이스 시스템
 
-SQL 데이터베이스 연결 풀링 및 설정. PostgreSQL, MySQL, SQLite, Microsoft SQL Server, Oracle을 지원합니다.
+SQL 데이터베이스 연결 풀링 및 설정. PostgreSQL, MySQL, SQLite를 지원합니다.
 
 ## 엔트리 종류
 
@@ -9,12 +9,10 @@ SQL 데이터베이스 연결 풀링 및 설정. PostgreSQL, MySQL, SQLite, Micr
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
 | `db.sql.mysql` | MySQL 데이터베이스 |
 | `db.sql.sqlite` | SQLite 데이터베이스 |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Oracle 데이터베이스 |
 
 ## 설정
 
-### 표준 데이터베이스 (PostgreSQL, MySQL, MSSQL, Oracle)
+### 표준 데이터베이스 (PostgreSQL, MySQL)
 
 ```yaml
 # src/data/_index.yaml
@@ -149,18 +147,6 @@ file:/path/to/database.db?cache=shared
 :memory:?mode=memory
 ```
 
-### Microsoft SQL Server {id="dsn-mssql"}
-
-```
-sqlserver://username:password@host:port?database=dbname
-```
-
-### Oracle {id="dsn-oracle"}
-
-```
-oracle://username:password@host:port/service_name
-```
-
 ## 데이터베이스 옵션
 
 일반적인 데이터베이스별 옵션:
@@ -190,23 +176,6 @@ options:
   cache: "shared"         # shared, private
   mode: "rwc"            # ro, rw, rwc, memory
   _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
-
-### Microsoft SQL Server {id="options-mssql"}
-
-```yaml
-options:
-  encrypt: "true"
-  TrustServerCertificate: "false"
-```
-
-### Oracle {id="options-oracle"}
-
-```yaml
-options:
-  poolMinSessions: "1"
-  poolMaxSessions: "10"
-  poolIncrement: "1"
 ```
 
 ## 예제

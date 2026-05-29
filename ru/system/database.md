@@ -1,6 +1,6 @@
 # База данных
 
-Пулы подключений к SQL-базам данных. Поддерживаются PostgreSQL, MySQL, SQLite, Microsoft SQL Server и Oracle.
+Пулы подключений к SQL-базам данных. Поддерживаются PostgreSQL, MySQL и SQLite.
 
 ## Типы записей
 
@@ -9,12 +9,10 @@
 | `db.sql.postgres` | PostgreSQL |
 | `db.sql.mysql` | MySQL |
 | `db.sql.sqlite` | SQLite |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Oracle |
 
 ## Настройка
 
-### Стандартные базы данных (PostgreSQL, MySQL, MSSQL, Oracle)
+### Стандартные базы данных (PostgreSQL, MySQL)
 
 ```yaml
 # src/data/_index.yaml
@@ -149,18 +147,6 @@ file:/path/to/database.db?cache=shared
 :memory:?mode=memory
 ```
 
-### Microsoft SQL Server {id="dsn-mssql"}
-
-```
-sqlserver://username:password@host:port?database=dbname
-```
-
-### Oracle {id="dsn-oracle"}
-
-```
-oracle://username:password@host:port/service_name
-```
-
 ## Опции баз данных
 
 Типичные опции для разных БД:
@@ -190,23 +176,6 @@ options:
   cache: "shared"         # shared, private
   mode: "rwc"            # ro, rw, rwc, memory
   _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
-
-### Microsoft SQL Server {id="options-mssql"}
-
-```yaml
-options:
-  encrypt: "true"
-  TrustServerCertificate: "false"
-```
-
-### Oracle {id="options-oracle"}
-
-```yaml
-options:
-  poolMinSessions: "1"
-  poolMaxSessions: "10"
-  poolIncrement: "1"
 ```
 
 ## Примеры

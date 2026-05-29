@@ -1,6 +1,6 @@
 # データベースシステム
 
-SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLite、Microsoft SQL Server、Oracleをサポート。
+SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLiteをサポート。
 
 ## エントリ種別
 
@@ -9,12 +9,10 @@ SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLi
 | `db.sql.postgres` | PostgreSQLデータベース |
 | `db.sql.mysql` | MySQLデータベース |
 | `db.sql.sqlite` | SQLiteデータベース |
-| `db.sql.mssql` | Microsoft SQL Server |
-| `db.sql.oracle` | Oracleデータベース |
 
 ## 設定
 
-### 標準データベース（PostgreSQL、MySQL、MSSQL、Oracle）
+### 標準データベース（PostgreSQL、MySQL）
 
 ```yaml
 # src/data/_index.yaml
@@ -149,18 +147,6 @@ file:/path/to/database.db?cache=shared
 :memory:?mode=memory
 ```
 
-### Microsoft SQL Server {id="dsn-mssql"}
-
-```
-sqlserver://username:password@host:port?database=dbname
-```
-
-### Oracle {id="dsn-oracle"}
-
-```
-oracle://username:password@host:port/service_name
-```
-
 ## データベースオプション
 
 一般的なデータベース固有のオプション：
@@ -190,23 +176,6 @@ options:
   cache: "shared"         # shared, private
   mode: "rwc"            # ro, rw, rwc, memory
   _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
-
-### Microsoft SQL Server {id="options-mssql"}
-
-```yaml
-options:
-  encrypt: "true"
-  TrustServerCertificate: "false"
-```
-
-### Oracle {id="options-oracle"}
-
-```yaml
-options:
-  poolMinSessions: "1"
-  poolMaxSessions: "10"
-  poolIncrement: "1"
 ```
 
 ## 例

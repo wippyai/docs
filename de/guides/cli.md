@@ -50,10 +50,21 @@ wippy run --exec app:worker                 # Runtime starten und einen einzelne
 
 | Flag | Kurz | Beschreibung |
 |------|------|--------------|
-| `--override` | `-o` | Entry-Werte überschreiben (`namespace:entry:field=value`) |
+| `--override` | `-o` | Entry-Werte überschreiben (`namespace:entry:field=value`); `field` kann `kind` sein, um die Entry-Art zu ändern |
+| `--set` | | Konfigurationswert überschreiben (`section.path=value`, wiederholbar, hat Vorrang vor der Konfigurationsdatei) |
 | `--exec` | `-x` | Prozess ausführen und beenden (`namespace:entry`) |
 | `--host` | | Terminal-Host-ID für `--exec` (automatisch erkannt, wenn nur ein `terminal.host` existiert) |
 | `--registry` | | Registry-URL für Hub-Module |
+
+`--set` schreibt jeden Laufzeit-Konfigurationswert über die Befehlszeile, pro Blatt über `.wippy.yaml` zusammengeführt:
+
+```bash
+wippy run --set cluster.enabled=true \
+          --set cluster.membership.join_addrs=node-2:7946,node-3:7946 \
+          --set cluster.raft.bootstrap_expect=3
+```
+
+Werte werden nach Form konvertiert: `true`/`false` zu Bool, Ganz- und Gleitkommazahlen zu Zahlen, alles andere bleibt ein String (Zeitdauern wie `5s` werden geparst, wo die Option eine erwartet).
 
 ## wippy lint
 
