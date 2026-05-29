@@ -110,7 +110,7 @@ Die Lua-Oberfläche für Benennung liegt auf `process.registry` (register/lookup
 
 ## Prozessgruppen
 
-Prozessgruppen sind eine cluster-aware Publish/Subscribe- und Mitgliedschaftseinrichtung, modelliert nach Erlang's `pg`. Ein Prozess tritt einer benannten Gruppe bei; ein Broadcast an diese Gruppe erreicht jedes Mitglied über alle Knoten hinweg. Gruppen sind gossip-gestützt und eventual consistent — unabhängig von Raft — sodass sie auch funktionieren, während der Konsenskern konvergiert.
+Prozessgruppen sind eine cluster-aware Publish/Subscribe- und Mitgliedschaftseinrichtung, modelliert nach Erlang's `pg`. Ein Prozess tritt einer benannten Gruppe bei; ein Broadcast verteilt sich über das Internode-Mesh an die Mitglieder der Gruppe über alle Knoten hinweg, best-effort zugestellt. Gruppen sind eventual consistent und unabhängig von Raft — sie nutzen die Gossip-Mitgliedschaftssicht zur Auswahl der Empfänger — sodass sie auch funktionieren, während der Konsenskern konvergiert.
 
 Typische Operationen: einer Gruppe beitreten/verlassen, an alle Mitglieder senden (oder nur lokale), Mitglieder auflisten und eine Gruppe auf Beitritts-/Verlassens-Ereignisse überwachen. Wenn ein neuer Knoten beitritt, reconcilen die Gruppen ihre Mitgliedschaft durch einen direkten Sync-Handshake, und eine Hintergrund-Anti-Entropy-Schleife behebt Abweichungen über die Zeit.
 

@@ -110,7 +110,7 @@ The Lua surface for naming lives on `process.registry` (register/lookup/unregist
 
 ## Process groups
 
-Process groups are a cluster-aware publish/subscribe and membership facility modeled on Erlang's `pg`. A process joins a named group; a broadcast to that group reaches every member across all nodes. Groups are gossip-backed and eventually consistent — independent of Raft — so they keep working even while the consensus core is converging.
+Process groups are a cluster-aware publish/subscribe and membership facility modeled on Erlang's `pg`. A process joins a named group; a broadcast fans out over the internode mesh to the group's members across all nodes, delivered best-effort. Groups are eventually consistent and independent of Raft — they use the gossip membership view to choose recipients — so they keep working even while the consensus core is converging.
 
 Typical operations: join/leave a group, broadcast to all members (or local members only), list members, and monitor a group for join/leave events. On a new node joining, groups reconcile their membership through a direct sync handshake, and a background anti-entropy loop repairs any divergence over time.
 

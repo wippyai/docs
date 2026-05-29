@@ -110,7 +110,7 @@ La superficie Lua para naming reside en `process.registry` (register/lookup/unre
 
 ## Grupos de proceso
 
-Los grupos de proceso son una facilidad de publish/subscribe y membresía consciente del cluster modelada en `pg` de Erlang. Un proceso se une a un grupo con nombre; una difusión a ese grupo alcanza a todos los miembros en todos los nodos. Los grupos están respaldados por gossip y son eventualmente consistentes — independientes de Raft — por lo que siguen funcionando incluso mientras el núcleo de consenso está convergiendo.
+Los grupos de proceso son una facilidad de publish/subscribe y membresía consciente del cluster modelada en `pg` de Erlang. Un proceso se une a un grupo con nombre; una difusión se reparte por la malla internode a los miembros del grupo en todos los nodos, entregada en modo best-effort. Los grupos son eventualmente consistentes e independientes de Raft — usan la vista de membresía de gossip para elegir los destinatarios — por lo que siguen funcionando incluso mientras el núcleo de consenso está convergiendo.
 
 Operaciones típicas: unirse/abandonar un grupo, difundir a todos los miembros (o solo miembros locales), listar miembros y monitorear un grupo para eventos de unión/salida. Cuando un nuevo nodo se une, los grupos reconcilian su membresía a través de un handshake de sincronización directa, y un bucle de anti-entropía en segundo plano repara cualquier divergencia con el tiempo.
 
