@@ -49,7 +49,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base CDN URL for the frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/<release-tag>` | Base CDN URL for the frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 
 ### App Identity
@@ -69,7 +69,7 @@ entries:
 | `start_nav_open` | `false` | Navigation drawer open by default |
 | `show_admin` | `true` | Show admin panel toggle |
 | `allow_select_model` | `false` | Allow user to select LLM model |
-| `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
+| `session_type` | `non-persistent` | Auth token storage: `non-persistent` (in-memory) or `cookie`. The Web Host treats any value other than `cookie` as `non-persistent`. |
 | `history_mode` | `hash` | Browser history mode: `hash` or `history` |
 | `hide_session_selector` | `false` | Hide the session picker UI |
 
@@ -108,9 +108,9 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 
 ```json
 {
-    "facade_url": "https://web-host.wippy.ai/webcomponents-...",
+    "facade_url": "https://web-host.wippy.ai/<release-tag>",
     "iframe_origin": "https://web-host.wippy.ai",
-    "iframe_url": "https://web-host.wippy.ai/webcomponents-.../iframe.html?waitForCustomConfig",
+    "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
     "env": {
         "APP_API_URL": "https://api.example.com",

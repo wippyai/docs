@@ -542,12 +542,12 @@ Reference: `gold:main/app.html`.
             "luxon":        "https://esm.sh/luxon",
             "@iconify/vue": "https://esm.sh/@iconify/vue",
             "axios":        "https://esm.sh/axios",
-            "@wippy-fe/markdown-iframe": "https://web-host.wippy.ai/<tag>/@wippy-fe/markdown-iframe.js"
+            "@wippy-fe/markdown-iframe": "https://web-host.wippy.ai/<release-tag>/@wippy-fe/markdown-iframe.js"
         }
     }
     </script>
     <script
-        src="https://web-host.wippy.ai/<tag>/dev-proxy.js"
+        src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"
         data-role="@wippy/scripts"
     ></script>
 </head>
@@ -1484,7 +1484,7 @@ Rules:
 
 ```html
 <script
-  src="https://web-host.wippy.ai/<tag>/dev-proxy.js"
+  src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"
   data-role="@wippy/scripts"
 ></script>
 ```
@@ -1574,7 +1574,7 @@ Two endpoints read it:
 | Endpoint | What it serves |
 |---|---|
 | `GET /api/public/pages/content/{id}` | resolved `wippy-meta.json` next to the served `app.html` (view.page) |
-| `GET /api/public/components/list` + `/components/by-tag/{tag}` | resolved `wippy-meta.json` next to each `index.js` (view.component) |
+| `GET /api/public/components/list` + `/components/by-tag/<release-tag>` | resolved `wippy-meta.json` next to each `index.js` (view.component) |
 
 **YAML-first priority**: the operator's `_index.yaml` registry entry overlays the bundled meta per-field. If `meta.tag_name`, `meta.title`, `meta.description`, `meta.props`, `meta.events`, or `meta.entry_point` is set in YAML, that wins. Otherwise the bundled meta fills in.
 

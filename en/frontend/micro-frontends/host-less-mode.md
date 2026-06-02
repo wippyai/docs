@@ -49,9 +49,9 @@ This isn't an accident or an afterthought. It is what makes:
 Every canonical app's `app.html` ships with **one** script tag that decides the boot path at load time:
 
 ```html
-<!-- URL MUST include a release-tag segment: https://web-host.wippy.ai/<tag>/dev-proxy.js -->
+<!-- URL MUST include a release-tag segment: https://web-host.wippy.ai/<release-tag>/dev-proxy.js -->
 <script
-    src="https://web-host.wippy.ai/v0.5.14/dev-proxy.js"
+    src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"
     data-role="@wippy/scripts"
 ></script>
 ```
@@ -65,12 +65,12 @@ Two attributes on that one tag carry the entire dual-mode contract:
 | `data-role="@wippy/scripts"` | Marker for the host. When present, the host removes this `<script>` element before serving the iframe and injects its own `loading.js` + `proxy.js` + importmap + AppConfig **before** the marker. The element disappears in hosted mode. | Wippy Web Host |
 | `src="…/dev-proxy.js"` | Fallback URL. Used when no host is present — the browser loads `dev-proxy.js` directly and that script bootstraps the page. The `src=` attribute is irrelevant in hosted mode (the `<script>` element no longer exists). | Standalone browser load |
 
-**Pick a URL that matches your environment.** Note that **the web host URL always requires a release-tag segment** in the path — `/dev-proxy.js` directly off the host root is NOT valid; you must address a specific build (`/<tag>/dev-proxy.js`). This guarantees every dev-mode boot is pinned to a known, reproducible bundle and avoids the "host CDN updated overnight, my preview broke" class of surprise.
+**Pick a URL that matches your environment.** Note that **the web host URL always requires a release-tag segment** in the path — `/dev-proxy.js` directly off the host root is NOT valid; you must address a specific build (`/<release-tag>/dev-proxy.js`). This guarantees every dev-mode boot is pinned to a known, reproducible bundle and avoids the "host CDN updated overnight, my preview broke" class of surprise.
 
 | Environment | Sample `src=` value |
 |---|---|
-| Public CDN (standard) | `https://web-host.wippy.ai/<tag>/dev-proxy.js` (e.g. `…/v0.5.14/dev-proxy.js`) |
-| Self-hosted Wippy deployment | `https://<your-wippy-host>/<tag>/dev-proxy.js` |
+| Public CDN (standard) | `https://web-host.wippy.ai/<release-tag>/dev-proxy.js` |
+| Self-hosted Wippy deployment | `https://<your-wippy-host>/<release-tag>/dev-proxy.js` |
 
 The tag must match the release version used by the facade's `fe_facade_url`. Pin it explicitly — `/dev-proxy.js` without a tag segment is not valid. The same bundle works for local iteration, CI, and shareable preview links.
 
@@ -118,7 +118,7 @@ The canonical pattern is `wippyPagePlugin()` from `@wippy-fe/vite-plugin` ≥ `0
 1. **Resolves `file://` references** in the `wippy` block (any string value of the form `"file://<relative>"` is replaced with the referenced file's UTF-8 contents — see `*.do-not-link.<ext>` naming convention in [build-system.md](./build-system.md)).
 2. **Emits two outputs** with the resolved JSON:
    - `<head>`-injected `<script type="application/json" data-role="@wippy/package">` for host-less / dev-proxy boot.
-   - `dist/wippy-meta.json` for wippy-hosted mode — `wippy/views` ≥ `0.5.0` reads this file when serving `/pages/content/{id}` and `/components/by-tag/{tag}` instead of synthesizing from YAML.
+   - `dist/wippy-meta.json` for wippy-hosted mode — `wippy/views` ≥ `0.5.0` reads this file when serving `/pages/content/{id}` and `/components/by-tag/<release-tag>` instead of synthesizing from YAML.
 
 ```ts
 // vite.config.ts
@@ -178,7 +178,7 @@ The canonical app-template apps ship with the `src="…/dev-proxy.js"` populated
 
 ## What `dev-proxy.js` actually does
 
-`dev-proxy.js` is the host-less boot bundle, served from the Wippy Web Host CDN at `https://web-host.wippy.ai/<tag>/dev-proxy.js`.
+`dev-proxy.js` is the host-less boot bundle, served from the Wippy Web Host CDN at `https://web-host.wippy.ai/<release-tag>/dev-proxy.js`.
 
 Its job is to make `window.$W` resolve correctly without any host. It does this in roughly five steps:
 
@@ -288,7 +288,7 @@ Web components share the same dual-mode design but are loaded as ES modules inst
         }
     }
     </script>
-    <script src="https://web-host.wippy.ai/<tag>/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>
@@ -354,7 +354,7 @@ When an app or WC has drifted from the standalone-aware contract, the symptoms a
 
 | Symptom | Probable cause | Fix |
 |---|---|---|
-| `app.html` has `<script data-role="@wippy/scripts"></script>` with no `src=` | Page can't boot host-less. Loading the file directly produces a blank page (no `window.$W`). | Add `src="https://web-host.wippy.ai/<tag>/dev-proxy.js"` to the tag — the URL always requires a release-tag segment. |
+| `app.html` has `<script data-role="@wippy/scripts"></script>` with no `src=` | Page can't boot host-less. Loading the file directly produces a blank page (no `window.$W`). | Add `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` to the tag — the URL always requires a release-tag segment. |
 | `app.html` has the dev-proxy `<script src=…>` but **no `<script type="importmap">`** above it | Browser can't resolve the bundle's bare-specifier imports (`vue`, `pinia`, `@iconify/vue`, `axios`, etc.). The first module-script load fails silently with `Failed to resolve module specifier "vue"` and the page never bootstraps Vue. | Declare the importmap inline in `<head>`, BEFORE the dev-proxy script. Mirror your bundler's `external` array exactly — every name listed in `vite.config.ts` `rollupOptions.external` MUST have an entry. Use `https://esm.sh/<pkg>@<major>` for vendor packages. See the [main example](#the-wippyscripts-switchpoint--one-tag-two-boot-paths). |
 | `app.html` body has a custom SVG spinner / `<div>Loading…</div>` instead of `<wippy-loading title="…">` | Pre-bootstrap loader doesn't match the canonical Wippy idiom. The custom markup keeps showing while the WC ecosystem (which would render a styled, theme-aware loader) is fully booted. | Replace with `<wippy-loading title="Loading..."></wippy-loading>`. The `<wippy-loading>` web component is registered by `dev-proxy.js` (it imports `@wippy-fe/loading` synchronously) before the `<body>` parses, so the element resolves correctly even at very early page load. |
 | `import` from a sibling app's source files | Shared code is being copy-pasted across module boundaries. | Extract to a workspace package or duplicate intentionally; never reach across app folders. |

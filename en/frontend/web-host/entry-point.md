@@ -23,7 +23,7 @@ A simplified version of the page looks like this:
 </head>
 <body>
   <div id="app"></div>
-  <script src="https://web-host.wippy.ai/main-1.2.0/module.js"></script>
+  <script src="https://web-host.wippy.ai/<release-tag>/module.js"></script>
   <script>
     fetch('/facade/config')
       .then(r => r.json())
@@ -57,9 +57,9 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
 ```json
 {
   "$schema": "wippy-context-2.0",
-  "facade_url": "https://web-host.wippy.ai/main-1.2.0",
+  "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/main-1.2.0/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
   "auth": {
     "token": "eyJ...",

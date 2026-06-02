@@ -43,16 +43,16 @@ For standard `wippy/facade`-based deployments you never reference these paths di
 The Web Host is versioned by git tag. The canonical production URL pattern is:
 
 ```
-https://web-host.wippy.ai/{tag}/
+https://web-host.wippy.ai/<release-tag>/
 ```
 
-Where `{tag}` is either a stable release (`main-1.2.0`) or a feature branch deploy (`ft-feature-name-2025-01-01-001`). The staging CDN is at `https://web-host.staging.wippy.ai/{tag}/`.
+Where `<release-tag>` is the Web Host git release tag — either a stable release or a feature-branch preview deploy. The staging CDN is at `https://web-host.staging.wippy.ai/<release-tag>/`.
 
 In a `wippy/facade` configuration the version is set via the `fe_facade_url` parameter:
 
 ```yaml
 - name: fe_facade_url
-  value: https://web-host.wippy.ai/main-1.2.0
+  value: https://web-host.wippy.ai/<release-tag>
 ```
 
 This parameter pins the entire deployment to a specific Web Host build. Child apps that use shared vendor libraries via import maps receive exactly the library versions that correspond to that build. When you upgrade the Web Host version you update this single parameter and redeploy the facade module.
