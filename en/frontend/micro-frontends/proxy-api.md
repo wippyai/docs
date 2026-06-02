@@ -26,7 +26,7 @@ const instance = await window.$W.instance()
 const { config, host, api, on, logger, state, ws } = await window.getWippyApi()
 ```
 
-Do not import `getWippyApi` from `@wippy-fe/proxy` in a page app. It is a global function installed by the injected iframe proxy.
+Do not import `getWippyApi` from `@wippy-fe/proxy` in a micro frontend app. It is a global function installed by the injected iframe proxy.
 
 ### Web components (`view.component`)
 
@@ -50,7 +50,7 @@ import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'
 
 `@wippy-fe/types-global-proxy` is still useful as a `devDependency` when you need type-checked access to `window.$W` itself (e.g. in `app.html` inline scripts or when writing polyfills).
 
-### Global access in page apps
+### Global access in micro frontend apps
 
 Page apps use the global API directly:
 

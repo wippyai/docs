@@ -1,12 +1,12 @@
-# Theming: Page Apps
+# Theming: Micro Frontend Apps
 
-[Theming reference](./theming.md) covers the full CSS variable catalog. This doc covers how a page app receives the theme.
+[Theming reference](./theming.md) covers the full CSS variable catalog. This doc covers how a micro frontend app receives the theme.
 
 ---
 
 ## How the theme reaches your app
 
-The host injects CSS into your page app's iframe through the proxy injection pipeline. The current runtime schema is `wippy-context-2.0`: facade theming is represented as `theming.global`, `theming.host`, and `theming.children`; a child page receives its effective child-facing theme as `config.theming.global`.
+The host injects CSS into your micro frontend app's iframe through the proxy injection pipeline. The current runtime schema is `wippy-context-2.0`: facade theming is represented as `theming.global`, `theming.host`, and `theming.children`; a child page receives its effective child-facing theme as `config.theming.global`.
 
 ### L1 — Global (facade level)
 
@@ -26,7 +26,7 @@ The facade exposes separate current-schema scopes for the host chrome and for ch
 | `theming.host` | Host UI chrome only | Sidebar, chat messages, splitter — host BEM overrides |
 | `theming.children` | Child iframes only | CSS that applies inside child apps but must not leak into the host |
 
-CSS set in `children_css_variables` or `children_custom_css` reaches your page app; host-scoped vars target the Web Host chrome only.
+CSS set in `children_css_variables` or `children_custom_css` reaches your micro frontend app; host-scoped vars target the Web Host chrome only.
 
 ### L3 — Per-page (`config_overrides` in registry YAML)
 
@@ -57,7 +57,7 @@ A `package.json` mirror under `wippy.configOverrides` provides the same shape fo
 
 ## Enabling CSS injection
 
-In your `package.json` `wippy` block, configure which injections your page app requests:
+In your `package.json` `wippy` block, configure which injections your micro frontend app requests:
 
 ```jsonc
 "wippy": {
@@ -79,7 +79,7 @@ In your `package.json` `wippy` block, configure which injections your page app r
 }
 ```
 
-The iframe proxy has broad runtime defaults when flags are omitted. **Enable these flags to receive theme CSS** in your page app (a theming-focused recap, not the authoritative flag list):
+The iframe proxy has broad runtime defaults when flags are omitted. **Enable these flags to receive theme CSS** in your micro frontend app (a theming-focused recap, not the authoritative flag list):
 
 - `css.themeConfig` — the full `--p-*` CSS variable system (`theme-config.css`). Enable to inherit the theme palette.
 - `css.primevue` — PrimeVue component styles. Enable for apps using PrimeVue.
@@ -144,7 +144,7 @@ A non-empty result confirms `themeConfig` injection is working. Full debugging w
 ## Related docs
 
 - [theming.md](./theming.md) — CSS variable catalog and anti-patterns
-- [wc-theming.md](./wc-theming.md) — theming for web components (shadow DOM)
-- [page-app.md](./page-app.md) — full page app development guide
+- [web-component-theming.md](./web-component-theming.md) — theming for web components (shadow DOM)
+- [micro-frontend-app.md](./micro-frontend-app.md) — full micro frontend app development guide
 - [host-less-mode.md](./host-less-mode.md) — dev overlay and CSS injection in host-less mode
 - [compliance-checklist.md](./compliance-checklist.md) — full REJECT/WARN rules for theming

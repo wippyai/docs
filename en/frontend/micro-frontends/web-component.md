@@ -4,7 +4,7 @@ A Wippy web component is a custom element (`view.component`) built with `WippyVu
 
 > **Isolation is mandatory.** The bundle carries only source and `package.json`. The BE-side `view.component` registry entry declares the URL, tag name, props, and events per deployment. The registry entry wins over `package.json` for any overlapping field — `package.json` values are suggestions and host-less fallbacks. The same built artifact ships unchanged to any Wippy instance.
 
-For a comparison of when to choose a web component over a page app, see [Overview](./overview.md).
+For a comparison of when to choose a web component over a micro frontend app, see [Overview](./overview.md).
 
 ## Project structure
 
@@ -240,7 +240,7 @@ export default defineConfig({
 })
 ```
 
-Key differences from a page app's `vite.config.ts`:
+Key differences from a micro frontend app's `vite.config.ts`:
 
 - **`lib` mode** — builds a JS module, not an HTML page. No `base: ''` needed.
 - **No `vue-router`** in externals — web components don't use routing.
@@ -428,7 +428,7 @@ Import `@wippy-fe/theme/theme-config.css` in your `styles.css`. This provides fa
 
 ## Proxy API
 
-Web components import `api`, `host`, and `on` directly from `@wippy-fe/proxy`. Unlike page apps, there is no `$W` global and no inject/provide pattern — the module exports are available immediately.
+Web components import `api`, `host`, and `on` directly from `@wippy-fe/proxy`. Unlike micro frontend apps, there is no `$W` global and no inject/provide pattern — the module exports are available immediately.
 
 ```vue
 <script setup lang="ts">
@@ -496,7 +496,7 @@ class MyWidgetElement extends WippyVueElement<ComponentProps, Events> {
 }
 ```
 
-Note: unlike page apps, web components do not call `preloadWippyState()` — the `WippyVueElement` base class handles pre-hydration internally.
+Note: unlike micro frontend apps, web components do not call `preloadWippyState()` — the `WippyVueElement` base class handles pre-hydration internally.
 
 When multiple instances of the same component appear on the same page, use a `persist-key` prop to give each instance its own scope:
 
@@ -886,4 +886,4 @@ The `wippy.scripts` map in `package.json` tells the platform which npm scripts t
 
 ## Testing without the host
 
-Web components work host-less the same way page apps do — `@wippy-fe/proxy` exports fall back to stubs when no host globals are present. See [host-less-mode.md](./host-less-mode.md) for the dev-proxy setup and component test isolation patterns.
+Web components work host-less the same way micro frontend apps do — `@wippy-fe/proxy` exports fall back to stubs when no host globals are present. See [host-less-mode.md](./host-less-mode.md) for the dev-proxy setup and component test isolation patterns.

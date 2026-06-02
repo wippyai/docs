@@ -1,6 +1,6 @@
 # Registry Entries
 
-A registry entry is how the Wippy backend declares a frontend artifact — either a full page application or a reusable web component — so the Web Host can discover and serve it. This document explains the contract between a module's `_index.yaml`, its `package.json` `wippy` block, and the `wippy-meta.json` file that connects them.
+A registry entry is how the Wippy backend declares a frontend artifact — either a micro frontend app or a reusable web component — so the Web Host can discover and serve it. This document explains the contract between a module's `_index.yaml`, its `package.json` `wippy` block, and the `wippy-meta.json` file that connects them.
 
 For the `wippy/views` module setup that processes these entries at runtime, see [Views](../../framework/views.md).
 
@@ -35,14 +35,14 @@ The `meta` block is what `wippy/views` reads. The `meta.type` field discriminate
 
 | Value | Meaning |
 |---|---|
-| `view.page` | A full page application, rendered in an iframe inside the Web Host |
+| `view.page` | A micro frontend app (full SPA), rendered in an iframe inside the Web Host |
 | `view.component` | A web component (custom element) that can be embedded anywhere in a page |
 
 Every other field in `meta` is interpreted in the context of this type. Fields that apply to one type and not the other are described in the per-type reference pages ([view.page](./view-page.md), [view.component](./view-component.md)).
 
 ## The `specification` Marker
 
-Every frontend package that participates in the bridge declares `"specification": "wippy-component-1.0"` at the top level of its `package.json`. This string is the handshake that tells Wippy (and tooling) that this package follows the wippy-component contract — it has a `wippy` block with a known shape, and it was built with `@wippy-fe/vite-plugin`.
+Every frontend package that participates in the registry declares `"specification": "wippy-component-1.0"` at the top level of its `package.json`. This string is the handshake that tells Wippy (and tooling) that this package follows the wippy-component contract — it has a `wippy` block with a known shape, and it was built with `@wippy-fe/vite-plugin`.
 
 ```json
 {
@@ -88,7 +88,7 @@ The `announced` flag has different consequences depending on `meta.type`:
 
 ## How Serving Fields Combine
 
-For page apps, the three fields compose to produce the HTML URL the Web Host loads:
+For micro frontend apps, the three fields compose to produce the HTML URL the Web Host loads:
 
 ```
 <url>/<base_path>/<entry_point>

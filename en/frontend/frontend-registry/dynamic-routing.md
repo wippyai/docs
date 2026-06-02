@@ -49,7 +49,7 @@ Two entries must not claim overlapping routes. If they do, the first one registe
 
 Once a page is loaded in its iframe, the child application navigates internally using its own router. Those internal navigations need to be reflected in the host's URL bar so that the browser's back button, bookmarks, and copy-URL all work correctly. This is done through a PostMessage pair.
 
-![Backend-Frontend bridge](../diagrams/be-fe-bridge.svg)
+![Frontend Registry](../diagrams/frontend-registry.svg)
 
 ### Child → Host: `CmdRouteChanged`
 

@@ -35,7 +35,7 @@ Config for the proxy is injected as `window.__WIPPY_PROXY_CONFIG__` before the s
 <script src="/.../proxy.js"></script>
 ```
 
-Per-page config overrides are injected separately as `window.__WIPPY_CONFIG_OVERRIDES__` (see [Proxy API — Config overrides](../writing-fe/proxy-api.md#config-overrides)).
+Per-page config overrides are injected separately as `window.__WIPPY_CONFIG_OVERRIDES__` (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
 
 ### WC proxy (`@wippy-fe/proxy` ESM)
 
@@ -127,7 +127,7 @@ Application code never sends or receives these messages directly. The proxy hand
 
 `<w-iframe>` is the low-level iframe primitive built into `proxy.js`. It accepts raw source HTML, injects the full Wippy runtime (base URL, import map, `loading.js`, `proxy.js`, child config), and renders the result as a sandboxed `srcdoc` iframe.
 
-Use `<w-iframe>` when you have source HTML and want the same runtime behavior that Wippy page apps get automatically: authenticated API, state relay, WebSocket relay, nav-owner routing, and parent-child bridge messaging.
+Use `<w-iframe>` when you have source HTML and want the same runtime behavior that Wippy micro frontend apps get automatically: authenticated API, state relay, WebSocket relay, nav-owner routing, and parent-child bridge messaging.
 
 ### Attributes and properties
 

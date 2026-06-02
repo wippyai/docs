@@ -125,7 +125,7 @@ WCs may run in host-less dev mode (no parent page), so a fallback is acceptable:
 color: var(--p-text-color, #404040);
 ```
 
-Limit fallbacks to one per logical color, document them as "dev preview only", and never use them in page apps (where the host always provides the vars).
+Limit fallbacks to one per logical color, document them as "dev preview only", and never use them in micro frontend apps (where the host always provides the vars).
 
 ### Reading vars into JS
 
@@ -183,7 +183,7 @@ Full debugging workflow: [Debugging](./debugging.md).
 ## Related docs
 
 - [theming.md](./theming.md) — CSS variable catalog and anti-patterns
-- [page-app-theming.md](./page-app-theming.md) — theming for page apps (iframe injection)
+- [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) — theming for micro frontend apps (iframe injection)
 - [web-component.md](./web-component.md) — full web component development guide
 - [host-less-mode.md](./host-less-mode.md) — dev overlay and host-less mode
 - [compliance-checklist.md](./compliance-checklist.md) — full REJECT/WARN rules for theming

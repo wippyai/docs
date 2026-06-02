@@ -2,7 +2,7 @@
 
 The Web Host uses a layered injection pipeline to give child iframes the same visual theme as the host itself. Because iframes do not inherit CSS from their parent document, the host re-injects each style asset explicitly into the child's `srcdoc`. Each layer is independently toggleable through `ProxyConfig`.
 
-This page documents the injection pipeline, all available flags, and how to customize styles at the global, host-chrome, or per-page level. It is the **canonical reference for the `proxy.injections` CSS flags and their runtime defaults** — authoring docs that show recommended explicit values link back here. For the developer-facing theming guide (CSS variable tokens, Tailwind mapping, web component patterns), see [Theming](../writing-fe/theming.md).
+This page documents the injection pipeline, all available flags, and how to customize styles at the global, host-chrome, or per-page level. It is the **canonical reference for the `proxy.injections` CSS flags and their runtime defaults** — authoring docs that show recommended explicit values link back here. For the developer-facing theming guide (CSS variable tokens, Tailwind mapping, web component patterns), see [Theming](../micro-frontends/theming.md).
 
 ## The Injection Pipeline
 
@@ -22,7 +22,7 @@ Each child iframe gets an independent copy of all styles, not inheritance throug
 
 ## `ProxyConfig.injections.css` Flags
 
-These flags are set in the `wippy.proxy.injections.css` block of your app's `package.json` (camelCase). They control which style layers are injected into the child iframe. An operator can override any of them per-deployment with a snake_case `proxy:` block in the registry entry YAML (`theme_config`, `prime_vue`, …); the host normalizes the two casings and YAML wins. See [Pages (view.page) § Operator proxy override](../be-fe-bridge/view-page.md#operator-proxy-override-_indexyaml).
+These flags are set in the `wippy.proxy.injections.css` block of your app's `package.json` (camelCase). They control which style layers are injected into the child iframe. An operator can override any of them per-deployment with a snake_case `proxy:` block in the registry entry YAML (`theme_config`, `prime_vue`, …); the host normalizes the two casings and YAML wins. See [Pages (view.page) § Operator proxy override](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
 
 ```json
 {
@@ -77,7 +77,7 @@ These flags sit alongside `css` in the `injections` block:
 | `historyPolyfill` | `false` | Patch history navigation in the child iframe so SPA route changes are observable by the host. |
 | `errorCapture` | `false` | Attach `window.onerror` and `window.onunhandledrejection` handlers that forward uncaught errors to the host via `logger.captureException`. Enable in production for centralized error collection. |
 
-If a page omits `wippy.proxy.injections`, the iframe proxy has permissive runtime defaults and enables most injections. Vite page apps should still declare the explicit values they rely on so a package review can see whether the app expects host CSS, link interception, body-size reporting, or error capture.
+If a page omits `wippy.proxy.injections`, the iframe proxy has permissive runtime defaults and enables most injections. Vite micro frontend apps should still declare the explicit values they rely on so a package review can see whether the app expects host CSS, link interception, body-size reporting, or error capture.
 
 ### Disabling unwanted injections
 
@@ -122,7 +122,7 @@ Available `hostCss` keys:
 | `hostCss.iframeCssUrl` | Scrollbar styling using `--p-surface-*` | Tiny |
 | `hostCss.preflightCssUrl` | Tailwind v3 preflight reset | Small (legacy CDN Tailwind only) |
 
-For guidance on which keys to request and when — including the decision tree for balancing style fidelity against Shadow DOM bundle size — see [WC Theming § hostCssKeys decision tree](../writing-fe/wc-theming.md).
+For guidance on which keys to request and when — including the decision tree for balancing style fidelity against Shadow DOM bundle size — see [WC Theming § hostCssKeys decision tree](../micro-frontends/web-component-theming.md).
 
 ## `AppConfig.theming` Projection
 
@@ -252,5 +252,5 @@ These variables only affect the host chrome. Child iframe styles are unaffected 
 
 ## See Also
 
-- [Theming](../writing-fe/theming.md) — CSS token reference, Tailwind mapping, and web component style patterns
+- [Theming](../micro-frontends/theming.md) — CSS token reference, Tailwind mapping, and web component style patterns
 - [Proxy & Isolation](./proxy-isolation.md) — how the proxy injection pipeline works and what `ProxyConfig` controls at the protocol level

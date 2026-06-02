@@ -78,7 +78,7 @@ Theme CSS variables, the Tailwind CSS configuration object, and PrimeVue styling
 
 **Page apps:** mark `@wippy-fe/theme` as `external`. The host injects the same CSS assets into child iframes via the proxy injection pipeline, so bundling your own copy produces duplicate styles.
 
-**Web components:** do NOT externalize `@wippy-fe/theme`. Shadow DOM is isolated — external stylesheets injected into the host document do not cross the shadow boundary. Instead, either bundle the CSS you need directly or declare the relevant keys in `hostCssKeys` inside your `wippyConfig` (e.g. `'themeConfigUrl'`, `'primeVueCssUrl'`) so the host injects them into the shadow root. See [Theming](../writing-fe/theming.md) for the full injection pipeline.
+**Web components:** do NOT externalize `@wippy-fe/theme`. Shadow DOM is isolated — external stylesheets injected into the host document do not cross the shadow boundary. Instead, either bundle the CSS you need directly or declare the relevant keys in `hostCssKeys` inside your `wippyConfig` (e.g. `'themeConfigUrl'`, `'primeVueCssUrl'`) so the host injects them into the shadow root. See [Theming](../micro-frontends/theming.md) for the full injection pipeline.
 
 ### `@wippy-fe/webcomponent-core`
 

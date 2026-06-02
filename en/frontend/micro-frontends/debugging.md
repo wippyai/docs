@@ -6,7 +6,7 @@ When something is broken, start here. Each section lists the most common causes 
 
 **1. Check the Console first:**
 - `Failed to resolve module specifier 'vue'` — the import map is missing. In hosted mode, the host injects it; in host-less mode, confirm your `app.html` `<script type="importmap">` block includes `vue`, `pinia`, `vue-router`, and `@wippy-fe/proxy`.
-- `window.$W is not defined` or `window.getWippyApi is not a function` — `proxy.js` was not loaded before your page app script ran. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
+- `window.$W is not defined` or `window.getWippyApi is not a function` — `proxy.js` was not loaded before your micro frontend app script ran. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
 - Silent hang (no errors, no app) — `window.$W.config()` / `window.getWippyApi()` is stalled waiting for the `SetConfig` PostMessage. In host-less mode, confirm the dev overlay FAB (floating button) appeared. If not, the proxy script did not load.
 
 **2. Check the Network tab:**
@@ -61,7 +61,7 @@ Open the dev overlay FAB → toggle the CSS injections you need → check "Auto-
 
 **2. Verify CSS variables are active:**
 
-For page apps — open DevTools, select the **inner iframe** context (not the outer page) in the frame selector:
+For micro frontend apps — open DevTools, select the **inner iframe** context (not the outer page) in the frame selector:
 ```javascript
 getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
 // non-empty = themeConfig injection is working
@@ -77,11 +77,11 @@ getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
 - If CSS vars are empty inside shadow root: check that `hostCssKeys` includes `'themeConfigUrl'` in your `wippyConfig`
 - If PrimeVue components render unstyled: add `'primeVueCssUrl'` to `hostCssKeys`
 
-See [Theming: Page Apps](./page-app-theming.md) or [Theming: Web Components](./wc-theming.md) for the full injection pipeline.
+See [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) or [Theming: Web Components](./web-component-theming.md) for the full injection pipeline.
 
 ## Host URL bar doesn't update
 
-Your page app must call `host.onRouteChanged` in every `router.afterEach` and subscribe to `@history` events to sync back. If either is missing, the URL bar freezes and the back button breaks.
+Your micro frontend app must call `host.onRouteChanged` in every `router.afterEach` and subscribe to `@history` events to sync back. If either is missing, the URL bar freezes and the back button breaks.
 
 **Check:**
 ```typescript

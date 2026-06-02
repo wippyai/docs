@@ -1,6 +1,6 @@
 # Theming Reference
 
-The host (wippy/facade) provides the theme. Both page apps and web components consume it. The variable catalog below is the shared vocabulary — delivery specifics are in [Theming: Page Apps](./page-app-theming.md) and [Theming: Web Components](./wc-theming.md).
+The host (wippy/facade) provides the theme. Both micro frontend apps and web components consume it. The variable catalog below is the shared vocabulary — delivery specifics are in [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) and [Theming: Web Components](./web-component-theming.md).
 
 YAML always wins. CSS variables set by the facade/host cascade to child iframes and (for custom properties only) into shadow DOM. Stylesheets do not cross shadow DOM boundaries.
 
@@ -286,7 +286,7 @@ Always scope class-based overrides to `.wippy-host-app` to prevent leaking into 
 
 ## Anti-patterns (REJECT list)
 
-These apply to both page apps and web components.
+These apply to both micro frontend apps and web components.
 
 ### Color / semantic vars
 
@@ -306,7 +306,7 @@ These apply to both page apps and web components.
 ### Components / API
 
 - Reimplementing a PrimeVue component from scratch (custom Toast, Dialog, Accordion, Select). Use the PrimeVue component + `customCSS` overrides.
-- `useToast()` / `useConfirm()` from PrimeVue in page app code. Use `host.toast(...)` / `host.confirm(...)`.
+- `useToast()` / `useConfirm()` from PrimeVue in micro frontend app code. Use `host.toast(...)` / `host.confirm(...)`.
 - Components that redeclare `--p-*` vars they should inherit (`:host { --p-primary-500: #abc }`).
 - `<Button icon="pi pi-plus">` — use `<Icon>` from `@iconify/vue` instead of the `pi-*` icon font.
 
@@ -321,9 +321,9 @@ These apply to both page apps and web components.
 
 ## Related docs
 
-- [page-app-theming.md](./page-app-theming.md) — how page apps receive and configure theme injection
-- [wc-theming.md](./wc-theming.md) — how web components receive the theme through shadow DOM
-- [page-app.md](./page-app.md) — building Wippy page apps
+- [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) — how micro frontend apps receive and configure theme injection
+- [web-component-theming.md](./web-component-theming.md) — how web components receive the theme through shadow DOM
+- [micro-frontend-app.md](./micro-frontend-app.md) — building Wippy micro frontend apps
 - [web-component.md](./web-component.md) — building Wippy web components
 - [host-less-mode.md](./host-less-mode.md) — dev overlay and CSS injection in host-less mode
 - [compliance-checklist.md](./compliance-checklist.md) — full REJECT/WARN rules for theming

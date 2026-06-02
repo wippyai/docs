@@ -1,8 +1,8 @@
 # Build System
 
-Wippy frontend apps are built with [Vite](https://vitejs.dev/). Every page app and web component is an independent Vite project — its own `package.json`, `vite.config.ts`, and `node_modules`. There is no shared build graph across projects.
+Wippy frontend apps are built with [Vite](https://vitejs.dev/). Every micro frontend app and web component is an independent Vite project — its own `package.json`, `vite.config.ts`, and `node_modules`. There is no shared build graph across projects.
 
-The `@wippy-fe/vite-plugin` package provides two Vite plugins that bridge your Vite project to the Wippy platform: `wippyPagePlugin()` for page apps, and `wippyComponentPlugin()` for web components. Their primary job is to emit `wippy-meta.json` alongside your build output so that `wippy/views` can read your component's identity, presentation metadata, and capabilities at registration time.
+The `@wippy-fe/vite-plugin` package provides two Vite plugins that bridge your Vite project to the Wippy platform: `wippyPagePlugin()` for micro frontend apps, and `wippyComponentPlugin()` for web components. Their primary job is to emit `wippy-meta.json` alongside your build output so that `wippy/views` can read your component's identity, presentation metadata, and capabilities at registration time.
 
 ## `@wippy-fe/vite-plugin`
 
@@ -37,13 +37,13 @@ The file is the resolved `wippy` block from `package.json`, written as a JSON ob
 | `events` | `wippy.events` — JSON Schema for emitted custom events |
 | `title`, `icon` | `wippy.title`, `wippy.icon` |
 
-For a page app, `tagName`/`props`/`events` are absent and `path` points to the HTML entry.
+For a micro frontend app, `tagName`/`props`/`events` are absent and `path` points to the HTML entry.
 
 `wippy/views` ≥ 0.5.0 reads `wippy-meta.json` from the served directory to populate the component registry and API responses. The file must be present; its absence triggers a per-process deprecation warning and a fallback synthesis path that will be removed in a future release.
 
 Starting with `@wippy-fe/vite-plugin` 0.0.32, the plugin enforces the shape at build time and throws on violations such as a missing `name`/`version`/`wippy` block, wrong `wippy.type`, or a malformed `tagName`.
 
-## Page App Vite Config
+## Micro Frontend App Vite Config
 
 ```ts
 // frontend/applications/main/vite.config.ts
@@ -92,7 +92,7 @@ export default defineConfig({
 
 ### `base: ''` — mandatory
 
-Setting `base` to an empty string makes all asset paths relative (`./app-abc123.js` instead of `/app-abc123.js`). This is mandatory because a Wippy page app is served from a CDN subdirectory whose path changes with every build. Absolute paths break silently — the browser requests `/app-abc123.js` from the origin instead of the CDN bucket, and the app fails to load.
+Setting `base` to an empty string makes all asset paths relative (`./app-abc123.js` instead of `/app-abc123.js`). This is mandatory because a Wippy micro frontend app is served from a CDN subdirectory whose path changes with every build. Absolute paths break silently — the browser requests `/app-abc123.js` from the origin instead of the CDN bucket, and the app fails to load.
 
 ### External dependencies
 
@@ -124,7 +124,7 @@ The Web Host provides a subset of libraries via a browser import map. Bundling t
 
 ### `entryFileNames: '[name].js'`
 
-This produces a predictable output filename (`app.js` for `input: { app: ... }`). The `wippy.path` field in `package.json` must match this filename — for a page app, `"path": "dist/app.html"` which is the HTML entry that references the compiled `app.js`.
+This produces a predictable output filename (`app.js` for `input: { app: ... }`). The `wippy.path` field in `package.json` must match this filename — for a micro frontend app, `"path": "dist/app.html"` which is the HTML entry that references the compiled `app.js`.
 
 ### `cssCodeSplit: false`
 
@@ -173,7 +173,7 @@ export default defineConfig({
 })
 ```
 
-### Key differences from a page app config
+### Key differences from a micro frontend app config
 
 **`lib` mode** — web components are built as ES library bundles, not as HTML-entry SPAs. The `entry` points to the TypeScript source, and `formats: ['es']` produces a single ESM file.
 
@@ -208,7 +208,7 @@ The `--emptyOutDir` flag clears the target directory before building, preventing
 
 ## npm Scripts
 
-Both page apps and web components follow the same script conventions:
+Both micro frontend apps and web components follow the same script conventions:
 
 ```json
 {

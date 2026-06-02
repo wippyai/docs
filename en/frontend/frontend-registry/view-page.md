@@ -50,11 +50,11 @@ Proxy injection has two surfaces. The FE developer authors the defaults in the `
 
 `proxy.enabled: true` means the Web Host wraps the page in its proxy iframe harness, which writes `window.__WIPPY_APP_CONFIG__` and related globals before the page bundle evaluates.
 
-If `proxy.injections` is omitted, the iframe proxy uses permissive runtime defaults and enables most injections. The list below shows the **recommended explicit values for a typical Vite page app** — not the runtime defaults — so package reviewers can see the page's intent.
+If `proxy.injections` is omitted, the iframe proxy uses permissive runtime defaults and enables most injections. The list below shows the **recommended explicit values for a typical Vite micro frontend app** — not the runtime defaults — so package reviewers can see the page's intent.
 
 #### Recommended explicit injection values
 
-These are the flags a page app typically declares and the value to set for a typical Vite SPA. They are not the runtime defaults.
+These are the flags a micro frontend app typically declares and the value to set for a typical Vite SPA. They are not the runtime defaults.
 
 - `css.fonts` (`true`) — platform web font declarations
 - `css.themeConfig` (`true`) — CSS custom properties for the active theme

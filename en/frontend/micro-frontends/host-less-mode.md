@@ -39,7 +39,7 @@ You can think of every app/WC as a "small program with a tiny standardized I/O s
 This isn't an accident or an afterthought. It is what makes:
 - Local FE iteration possible without spinning up a full Wippy backend.
 - WCs unit-testable in isolation under vitest + jsdom.
-- Apps shareable between Wippy modules — every page-app and web component builds with the same toolchain regardless of which module ships it.
+- Apps shareable between Wippy modules — every micro-frontend-app and web component builds with the same toolchain regardless of which module ships it.
 - Customer-specific overlays viable — operators patch metadata (theming, importmap, env) without rebuilding the FE bundle.
 
 ---
@@ -56,7 +56,7 @@ Every canonical app's `app.html` ships with **one** script tag that decides the 
 ></script>
 ```
 
-Full `app.html` scaffold in [Page App](./page-app.md).
+Full `app.html` scaffold in [Micro Frontend App](./micro-frontend-app.md).
 
 Two attributes on that one tag carry the entire dual-mode contract:
 
@@ -196,7 +196,7 @@ Its job is to make `window.$W` resolve correctly without any host. It does this 
 4. **Apply CSS injection** based on the proxy config the developer chose:
    - `theme_config: true` → injects `theme-config.css` from `@wippy-fe/theme`.
    - `iframe`, `primevue`, `markdown` → ditto, the inline-CSS bundles from `src/proxy/dev/css-inline.ts`.
-   - `customCss` / `customVariables` → applies `appConfig.theming.global.customCSS` / `cssVariables` (including the `@dark`/`@light` blocks described in [page-app-theming.md](./page-app-theming.md#l3-per-page-config_overrides-in-registry-yaml)).
+   - `customCss` / `customVariables` → applies `appConfig.theming.global.customCSS` / `cssVariables` (including the `@dark`/`@light` blocks described in [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3-per-page-config_overrides-in-registry-yaml)).
 5. **Expose `window.$W`** with the same shape as `entry.iframe.ts` — `config()`, `instance()`, `api()`, `host()`, `on()`, `logger()`, `state()`, `ws()`, `loadWebComponent()`. Any app code that uses the proxy API works unchanged.
 
 Default `ChildAppConfig` (from `getDefaultConfig()` in `config-store.ts`):
@@ -360,7 +360,7 @@ When an app or WC has drifted from the standalone-aware contract, the symptoms a
 | `import` from a sibling app's source files | Shared code is being copy-pasted across module boundaries. | Extract to a workspace package or duplicate intentionally; never reach across app folders. |
 | Hardcoded `fetch('/api/…')` calls | Bypasses the axios instance the proxy provides; won't pick up `env.APP_API_URL` overrides. | Use `useApi()` (apps) or `import { api } from '@wippy-fe/proxy'` (WCs). |
 | `new EventSource(...)` for live data | Bypasses the host's auth/relay bridge; standalone mode has no equivalent. | Use `instance.on('your.topic', cb)` — works in both modes (in standalone the topic just doesn't fire unless you simulate it). |
-| `document.documentElement.setAttribute('data-theme', ...)` for theme switch | Custom theme attribute is invisible to the proxy's `cssVariables.@dark/@light` (those bind to `prefers-color-scheme`). | Either drive theme from OS preference and use `@dark`/`@light` blocks, or document the attribute as a project-specific extension. See [page-app-theming.md](./page-app-theming.md#l3-per-page-config_overrides-in-registry-yaml). |
+| `document.documentElement.setAttribute('data-theme', ...)` for theme switch | Custom theme attribute is invisible to the proxy's `cssVariables.@dark/@light` (those bind to `prefers-color-scheme`). | Either drive theme from OS preference and use `@dark`/`@light` blocks, or document the attribute as a project-specific extension. See [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3-per-page-config_overrides-in-registry-yaml). |
 | `import '@wippy-fe/theme/theme-config.css'` in `app.ts` | Redundant — the host injects theme-config via `themeConfig: true` proxy injection. In host-less mode dev-proxy injects it too. | Remove the import. |
 | Hardcoded API base URLs in api/ modules | Won't work in host-less mode against a different env. | Read from `appConfig.env.APP_API_URL` via `useApi()`. |
 
@@ -391,7 +391,7 @@ Tests need to set `el.__wippyHost = fakeWrapper` *before* `connectedCallback` fi
 ## Related docs
 
 - [proxy-api.md](./proxy-api.md) — full `window.$W` / `@wippy-fe/proxy` reference (works identically in hosted and host-less mode)
-- [page-app.md](./page-app.md) — building web apps (the boot path is the dual-mode `app.html` pattern this doc covers)
+- [micro-frontend-app.md](./micro-frontend-app.md) — building web apps (the boot path is the dual-mode `app.html` pattern this doc covers)
 - [web-component.md](./web-component.md) — building web components (`WippyVueElement`, `define()`, host-less playground/tests)
 - [theming.md](./theming.md) — per-page theme overrides via `config_overrides` (also feed dev-proxy via `theming.global.cssVariables` / `customCSS`)
 - [compliance-checklist.md](./compliance-checklist.md) — §9 Host-less mode checklist with full REJECT rules

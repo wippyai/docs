@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1618.941 232.95000000000002" width="1618.941" height="232.95000000000002" style="--bg:transparent;--fg:#374151;--line:#9ca3af;--accent:#6366f1;--muted:#6b7280;--surface:transparent;--border:#e5e7eb">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<polyline class="edge" data-from="YAML" data-to="Registry" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="registered at startup" points="192.359,107.80000000000001 393.049,107.80000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Registry" data-to="API1" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="announced entries" points="558.005,98.83333333333334 594.005,98.83333333333334 594.005,66.9 752.1610000000001,66.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Registry" data-to="API2" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="app/component details" points="558.005,116.76666666666668 683.6020000000001,116.76666666666668 683.6020000000001,148.70000000000002 857.796,148.70000000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="API1" data-to="Router" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="sync at boot" points="954.908,66.9 1107.652,66.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Router" data-to="App" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="navigate to /path" points="1253.342,66.9 1407.172,66.9 1407.172,127.05000000000001 1419.172,127.05000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="App" data-to="StaticFiles" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="fetch entry_point" points="1419.172,140.5 1271.708,140.5 1271.708,145.36666666666667 1244.45,145.36666666666667" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="StaticFiles" data-to="App" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="loads in iframe" points="1244.45,168.93333333333334 1282.994,168.93333333333334 1282.994,173.8 1407.172,173.8 1407.172,153.95 1419.172,153.95" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="YAML" data-to="Registry" data-label="registered at startup">
+  <rect x="236.359" y="91.80000000000001" width="112.69000000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="292.704" y="106.95000000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">registered at startup</text>
+</g>
+<g class="edge-label" data-from="Registry" data-to="API1" data-label="announced entries">
+  <rect x="602.005" y="50.90000000000001" width="106.15600000000003" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="655.083" y="66.05000000000001" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">announced entries</text>
+</g>
+<g class="edge-label" data-from="Registry" data-to="API2" data-label="app/component details">
+  <rect x="691.6020000000001" y="132.70000000000002" width="122.19399999999999" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="752.6990000000001" y="147.85000000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">app/component details</text>
+</g>
+<g class="edge-label" data-from="API1" data-to="Router" data-label="sync at boot">
+  <rect x="998.908" y="50.90000000000001" width="73.486" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="1035.651" y="66.05000000000001" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">sync at boot</text>
+</g>
+<g class="edge-label" data-from="Router" data-to="App" data-label="navigate to /path">
+  <rect x="1306.084" y="50.90000000000001" width="93.08800000000002" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="1352.6280000000002" y="66.05000000000001" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">navigate to /path</text>
+</g>
+<g class="edge-label" data-from="App" data-to="StaticFiles" data-label="fetch entry_point">
+  <rect x="1279.708" y="124.5" width="95.46400000000003" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="1327.44" y="139.65" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">fetch entry_point</text>
+</g>
+<g class="edge-label" data-from="StaticFiles" data-to="App" data-label="loads in iframe">
+  <rect x="1290.994" y="157.8" width="84.17800000000003" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="1333.0829999999999" y="172.95000000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">loads in iframe</text>
+</g>
+<g class="node" data-id="YAML" data-label="_index.yaml
+(registry.entry
+kind with meta.type)" data-shape="rectangle">
+  <rect x="40" y="72.45" width="152.359" height="70.7" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="116.1795" y="107.80000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="116.1795" dy="-12.350000000000001">_index.yaml</tspan><tspan x="116.1795" dy="16.900000000000002">(registry.entry</tspan><tspan x="116.1795" dy="16.900000000000002">kind with meta.type)</tspan></text>
+</g>
+<g class="node" data-id="Registry" data-label="Frontend Registry
+(wippy/views module)" data-shape="rectangle">
+  <rect x="393.049" y="80.9" width="164.95600000000002" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="475.527" y="107.80000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="475.527" dy="-3.9000000000000012">Frontend Registry</tspan><tspan x="475.527" dy="16.900000000000002">(wippy/views module)</tspan></text>
+</g>
+<g class="node" data-id="API1" data-label="/api/v2/views/pages/routes
+(mount routes)" data-shape="rectangle">
+  <rect x="752.1610000000001" y="40" width="202.74699999999996" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="853.5345" y="66.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="853.5345" dy="-3.9000000000000012">/api/v2/views/pages/routes</tspan><tspan x="853.5345" dy="16.900000000000002">(mount routes)</tspan></text>
+</g>
+<g class="node" data-id="API2" data-label="/api/v2/views/:type/:id
+(app/component metadata)" data-shape="rectangle">
+  <rect x="857.796" y="121.80000000000001" width="193.11399999999998" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="954.3530000000001" y="148.70000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="954.3530000000001" dy="-3.9000000000000012">/api/v2/views/:type/:id</tspan><tspan x="954.3530000000001" dy="16.900000000000002">(app/component metadata)</tspan></text>
+</g>
+<g class="node" data-id="Router" data-label="Web Host Router
+router.addRoute()" data-shape="rectangle">
+  <rect x="1107.652" y="40" width="145.69" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1180.497" y="66.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="1180.497" dy="-3.9000000000000012">Web Host Router</tspan><tspan x="1180.497" dy="16.900000000000002">router.addRoute()</tspan></text>
+</g>
+<g class="node" data-id="App" data-label="Micro Frontend App
+(WPage / iframe)" data-shape="rectangle">
+  <rect x="1419.172" y="113.6" width="159.769" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1499.0565000000001" y="140.5" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="1499.0565000000001" dy="-3.9000000000000012">Micro Frontend App</tspan><tspan x="1499.0565000000001" dy="16.900000000000002">(WPage / iframe)</tspan></text>
+</g>
+<g class="node" data-id="StaticFiles" data-label="Static Files
+(app.html, app.js,
+proxy.js)" data-shape="rectangle">
+  <rect x="1107.652" y="121.80000000000001" width="136.798" height="70.7" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1176.051" y="157.15" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="1176.051" dy="-12.350000000000001">Static Files</tspan><tspan x="1176.051" dy="16.900000000000002">(app.html, app.js,</tspan><tspan x="1176.051" dy="16.900000000000002">proxy.js)</tspan></text>
+</g>
+</svg>

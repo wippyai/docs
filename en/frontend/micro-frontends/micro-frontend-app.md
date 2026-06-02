@@ -1,6 +1,6 @@
-# Page App (`view.page`)
+# Micro Frontend App (`view.page`)
 
-A Wippy page app is a Vue 3 SPA bundled into a standalone HTML artifact and loaded by the host inside an iframe. The iframe has no knowledge of the surrounding page — it communicates with the host exclusively through the `$W` proxy API.
+A Wippy micro frontend app is a Vue 3 SPA bundled into a standalone HTML artifact and loaded by the host inside an iframe. The iframe has no knowledge of the surrounding page — it communicates with the host exclusively through the `$W` proxy API.
 
 > **Isolation is mandatory.** The bundle has zero hardcoded assumptions about where it is served. `vite.config.ts` sets `base: ''`, no `outDir` is hardcoded in config, and the serving path is declared in the BE-side `view.page` registry entry — not in the package itself. The same built artifact ships unchanged to any Wippy instance.
 
@@ -115,7 +115,7 @@ Use kebab-case for all file names (`recent-sessions.vue`, `user-profile.vue`).
 | Field | Required | Description |
 |---|---|---|
 | `specification` | Yes | Must be `"wippy-component-1.0"`. Tells the platform this is a Wippy package. |
-| `wippy.type` | Yes | Must be `"page"` for page apps. |
+| `wippy.type` | Yes | Must be `"page"` for micro frontend apps. |
 | `wippy.title` | Recommended | Display name shown in the host navigation menu. |
 | `wippy.icon` | Recommended | Tabler icon name (e.g. `"tabler:chart-bar"`). Used in navigation. |
 | `wippy.order` | Optional | Sort position in the navigation menu (lower = earlier). |
@@ -131,7 +131,7 @@ Use kebab-case for all file names (`recent-sessions.vue`, `user-profile.vue`).
 
 ### Proxy injections
 
-The iframe proxy enables most injections when a package omits explicit settings. Page packages should still declare the values below deliberately; the table shows recommended explicit values for a Vite page app, not the runtime fallback defaults.
+The iframe proxy enables most injections when a package omits explicit settings. Page packages should still declare the values below deliberately; the table shows recommended explicit values for a Vite micro frontend app, not the runtime fallback defaults.
 
 | Key | Effect | Recommended explicit value |
 |---|---|---|
@@ -656,7 +656,7 @@ The root component provides the application shell. `<router-view />` renders the
 </template>
 ```
 
-Note that page apps control their full viewport — root-level padding on `<main>` is acceptable here, unlike web components where the host controls outer spacing.
+Note that micro frontend apps control their full viewport — root-level padding on `<main>` is acceptable here, unlike web components where the host controls outer spacing.
 
 ## `src/styles.css`
 
