@@ -30,3 +30,9 @@ go.work.sum
 # env file
 .env
 .claude/
+/.local
+
+# Local dev server artifacts (generated, not doc content)
+en/index.html
+en/_sidebar.md
+/.cache

@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant Browser
+    participant Facade as Facade page<br/>(wippy/facade)
+    participant FacadeAPI as /facade/config<br/>(Wippy BE)
+    participant Host as Web Host module<br/>(module.js / managed-layout.js)
+
+    Browser->>Facade: GET /
+    Facade->>Browser: HTML page with &lt;script src=".../module.js"&gt;
+    Browser->>Host: load JS module (registers window.initWippyApp)
+    Browser->>FacadeAPI: GET /facade/config
+    FacadeAPI->>Browser: AppConfig JSON (auth, env, theming, hostConfig, context)
+    Browser->>Host: window.initWippyApp(config, '#app')
+    Host->>Host: take over page + browser history, render shell

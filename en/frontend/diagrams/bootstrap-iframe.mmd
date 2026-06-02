@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant Host as Web Host
+    participant Pinia
+    participant Router as Vue Router
+    participant Theme as Theme / CSS
+    participant App as Vue App
+    participant BE as Wippy BE
+
+    Host->>Host: receive SetConfig(AppConfig)
+    Host->>Pinia: init stores
+    Host->>Router: createRouter(history mode from hostConfig)
+    Host->>Theme: inject theme-config.css, primevue.css
+    Host->>App: app.mount('#app')
+    App->>BE: GET /api/v2/views/pages/routes
+    BE->>App: mount routes list
+    App->>Router: router.addRoute() for each mount route
+    App->>App: resolve current URL → render page

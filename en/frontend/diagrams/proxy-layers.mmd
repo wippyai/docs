@@ -1,0 +1,33 @@
+graph LR
+    subgraph WebHost["Web Host (CDN iframe)"]
+        HostAPI["Host API\n(startChat, navigate,\nonRouteChanged...)"]
+    end
+
+    subgraph IframeProxy["Iframe Proxy (UMD)"]
+        ProxyJS["proxy.js\nwindow.$W"]
+        Config1["window.__WIPPY_PROXY_CONFIG__"]
+    end
+
+    subgraph WCProxy["WC Proxy (ESM)"]
+        ProxyESM["@wippy-fe/proxy\nwindow.$W"]
+        Config2["window.__WIPPY_APP_API__\nwindow.__WIPPY_APP_CONFIG__"]
+    end
+
+    subgraph PageIframe["view.page (iframe)"]
+        PageApp["Vue 3 App\nuses window.$W"]
+    end
+
+    subgraph WebComp["view.component (Shadow DOM)"]
+        WCApp["Web Component\nuses window.$W"]
+    end
+
+    WebHost -->|"injects via srcdoc scripts[]"| ProxyJS
+    WebHost -->|"sets globals"| Config1
+    ProxyJS -->|"exposes"| PageApp
+
+    WebHost -->|"provides via import map"| ProxyESM
+    WebHost -->|"sets globals"| Config2
+    ProxyESM -->|"exposes"| WCApp
+
+    PageApp -->|"PostMessage"| HostAPI
+    WCApp -->|"PostMessage"| HostAPI

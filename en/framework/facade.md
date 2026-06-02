@@ -1,6 +1,8 @@
 # Facade
 
-The `wippy/facade` module provides a portable iframe facade that loads and configures the Wippy frontend from a CDN. It serves an HTML shell that creates an iframe pointing to the frontend bundle, handles authentication, and bridges configuration between the backend and frontend.
+The `wippy/facade` module provides a portable facade that loads and configures the Wippy frontend from a CDN. It serves a thin HTML page that loads the Web Host JS-module entry (`module.js` for the default compat shell, or `managed-layout.js` for managed mode), handles authentication, and bridges configuration between the backend and frontend. The loaded module takes over the whole page and its browser history.
+
+The iframe-based delivery (`iframe.html` + a `SetConfig` PostMessage handshake) remains available for manual, facade-less embeddings where you embed the host yourself for isolation or partial-page use, but the facade itself no longer uses it.
 
 ## Setup
 
@@ -45,10 +47,10 @@ entries:
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `server` | yes | — | HTTP server for static and iframe serving |
+| `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
-| `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base CDN URL for the frontend bundle |
+| `fe_entry_path` | no | `/iframe.html` | Entry point path on the bundle. The current facade loads the JS-module entry (`module.js`/`managed-layout.js`) for its page; the iframe entry path is retained for compatibility and manual facade-less embeddings. |
 
 ### App Identity
 
@@ -73,7 +75,7 @@ entries:
 
 ### Theming
 
-Three scopes apply: **global** (everywhere), **host** (the chrome around the iframe), and **children** (content inside the iframe).
+Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — sidebar, chat, page area), and **children** (content inside the child view iframes).
 
 | Parameter | Scope | Default | Description |
 |-----------|-------|---------|-------------|
@@ -142,6 +144,8 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 
 The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`, and `axios_defaults`.
 
+The `facade_url`, `iframe_origin`, `iframe_url`, and `login_path` fields are **shell-level** fields used by the embedding page to build itself — they are not part of the child `AppConfig` that the host initializes with. The `iframe_origin`/`iframe_url` fields are consumed only by manual, facade-less iframe embeddings (see [Facade Entry Point](../frontend/web-host/entry-point.md)).
+
 ## Navigation Sidebar
 
 Pages registered via `wippy/views` appear in the sidebar automatically based on their metadata:
@@ -198,6 +202,8 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 
 ## See Also
 
-- [Views](framework/views.md) - Page and component system
-- [HTTP Server](http/server.md) - HTTP service configuration
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Views](./views.md) - Page and component system
+- [HTTP Server](../http/server.md) - HTTP service configuration
+- [Framework Overview](./overview.md) - Framework module usage
+- [Facade Entry Point](../frontend/web-host/entry-point.md) - How the facade bootstraps the Web Host (FE perspective)
+- [CSS Injection](../frontend/web-host/css-injection.md) - How facade theming flows into child iframes

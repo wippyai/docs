@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant ChildApp as Child App (iframe)
+    participant ProxyJS as proxy.js
+    participant WebHost as Web Host
+    participant HostRouter as Host Router
+    participant ChildRouter as Child Router
+
+    ChildApp->>ChildRouter: router.push('/new-path')
+    ChildRouter->>ChildApp: router.afterEach fires
+    ChildApp->>ProxyJS: host.onRouteChanged('/new-path', title)
+    ProxyJS->>WebHost: PostMessage: CmdRouteChanged
+    WebHost->>HostRouter: router.push('/mountpath/new-path')
+    HostRouter->>WebHost: URL bar updated
+    WebHost->>ProxyJS: PostMessage: UrlWasUpdatedInParent
+    ProxyJS->>ChildApp: on('@history') event fires
+    Note over ChildApp: Child router stays in sync<br/>with host URL bar

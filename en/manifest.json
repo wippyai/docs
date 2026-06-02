@@ -156,6 +156,49 @@
     ]
   },
   {
+    "title": "Frontend",
+    "children": [
+      {"title": "Overview", "path": "frontend/overview"},
+      {
+        "title": "BE → FE Bridge",
+        "children": [
+          {"title": "Registry Entries", "path": "frontend/be-fe-bridge/registry-entries"},
+          {"title": "Pages (view.page)", "path": "frontend/be-fe-bridge/view-page"},
+          {"title": "Components (view.component)", "path": "frontend/be-fe-bridge/view-component"},
+          {"title": "Dynamic Routing", "path": "frontend/be-fe-bridge/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Overview", "path": "frontend/web-host/overview"},
+          {"title": "Facade Entry Point", "path": "frontend/web-host/entry-point"},
+          {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
+          {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
+          {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
+        ]
+      },
+      {
+        "title": "Writing Wippy FE",
+        "children": [
+          {"title": "Overview", "path": "frontend/writing-fe/overview"},
+          {"title": "Page App", "path": "frontend/writing-fe/page-app"},
+          {"title": "Web Component", "path": "frontend/writing-fe/web-component"},
+          {"title": "Proxy API", "path": "frontend/writing-fe/proxy-api"},
+          {"title": "Theming", "path": "frontend/writing-fe/theming"},
+          {"title": "Theming: Page Apps", "path": "frontend/writing-fe/page-app-theming"},
+          {"title": "Theming: Web Components", "path": "frontend/writing-fe/wc-theming"},
+          {"title": "Build System", "path": "frontend/writing-fe/build-system"},
+          {"title": "Host-less Mode", "path": "frontend/writing-fe/host-less-mode"},
+          {"title": "Compliance Checklist", "path": "frontend/writing-fe/compliance-checklist"},
+          {"title": "Debugging", "path": "frontend/writing-fe/debugging"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},

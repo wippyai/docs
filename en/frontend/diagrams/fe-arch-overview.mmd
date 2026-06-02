@@ -1,0 +1,26 @@
+graph LR
+    subgraph L1["Layer 1 · Parent Page  (wippy/facade)"]
+        Facade["Facade HTML Shell"]
+    end
+
+    subgraph L2["Layer 2 · Wippy FE Host  (iframe or module)"]
+        Core["Host Core\nRouter · WC Loader"]
+        Nav["Navigation\n(optional)"]
+        Chat["Chat\n(optional)"]
+        Layout["Layout\npre-defined or custom"]
+    end
+
+    subgraph L3["Layer 3 · Children  (indefinitely nestable)"]
+        Page["view.page"]
+        WC["view.component"]
+        Deep["↳ nested pages & components"]
+    end
+
+    Facade -->|"iframe or\nmodule"| Core
+    Core --- Nav
+    Core --- Chat
+    Core --- Layout
+    Core -->|"mounts"| Page
+    Core -->|"registers"| WC
+    Page -->|"can contain"| Deep
+    WC -->|"can contain"| Deep

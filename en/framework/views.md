@@ -1,6 +1,9 @@
 # Views
 
-The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages can be backed by Jet templates or external components (SPAs, micro-frontends).
+The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages come in two distinct flavors:
+
+- **Jet template pages** (`kind: template.jet`) — server-side rendered HTML. The page's data and resources are assembled and injected server-side, then the Jet engine renders the final HTML. This is the legacy, server-rendered model. See [Template Pages](#template-pages).
+- **SPA / component pages** (`kind: registry.entry`) — external single-page applications and reusable components (micro-frontends) served from a CDN or static mount. The registry entry holds only routing and deployment policy; proxy/CSS injection is authored in the frontend package's `package.json`. See [Component Pages](#component-pages) and [View Components](#view-components).
 
 ## Setup
 
@@ -36,7 +39,9 @@ entries:
 
 ## Template Pages
 
-Template pages render server-side using Jet templates:
+> **Server-rendered model.** Template pages are the legacy, server-side rendering mechanism: `wippy/views` assembles the page data and resources on the server and renders the final HTML with the Jet template engine. There is no iframe proxy and no client-side micro-frontend — the response is plain HTML. For external SPAs and components, see [Component Pages](#component-pages).
+
+Template pages render server-side using Jet templates. Data is injected via `data.set`, `data.data_func`, and `data.resources` (server-side resource injection):
 
 ```yaml
 entries:
@@ -101,7 +106,7 @@ The `data_func` receives `{ params, query }` and returns a table that becomes th
 
 ## Component Pages
 
-Component pages point to external applications (SPAs, micro-frontends):
+Component pages point to external single-page applications (SPAs, micro-frontends) loaded by the Web Host inside an iframe. The registry entry holds **only registry-routing and deployment-policy fields** — URL serving, access control, mount route, and per-page config overrides:
 
 ```yaml
 entries:
@@ -112,65 +117,56 @@ entries:
       name: dashboard
       title: Dashboard
       icon: chart-bar
-      url: https://cdn.example.com/dashboard/
+      url: /app
+      base_path: app/dashboard
+      entry_point: index.html
+      mountRoute: /dashboard/:part(.*)*
       secure: true
       announced: true
-    data:
-      proxy:
-        enabled: true
-        css:
-          prime_vue: true
-          theme_config: true
-        tailwind_config: true
+      config_overrides:
+        customization:
+          cssVariables:
+            "--p-primary": "#7c9ed9"
 ```
 
-The API returns a component descriptor with the base URL and proxy configuration. The frontend renders the component in an iframe or inline.
+The API returns a component descriptor with the resolved base URL. The Web Host renders the SPA in an iframe and applies the proxy injections the frontend package requested.
 
-### Component Fields
+### Component Page Fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | Public URL of the component |
-| `meta.entry_point` | string | `index.html` (pages), `index.js` (components) | Entry file |
+| `meta.url` | string | — | Base URL prefix where the bundle is mounted (CDN origin or `http.static` path) |
+| `meta.base_path` | string | — | Subdirectory within the static mount |
+| `meta.entry_point` | string | `index.html` | HTML entry file; combined as `<url>/<base_path>/<entry_point>` |
+| `meta.mountRoute` | string | — | Claims a URL path in the host router (Vue Router syntax) |
+| `meta.announced` | boolean | — | Show in navigation and `pages/list` |
+| `meta.secure` | boolean | `false` | Requires authentication |
+| `meta.config_overrides` | object | — | Per-page AppConfig overrides (camelCase), deep-merged over the bundled defaults |
 
-### Proxy Configuration
+### Proxy Injection
 
-The proxy controls what CSS and behavior is injected into the component:
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `proxy.enabled` | `true` | Enable proxy wrapper |
-| `proxy.css.fonts` | `true` | Inject font styles |
-| `proxy.css.theme_config` | `true` | Inject theme variables |
-| `proxy.css.iframe` | `true` | Iframe-specific styles |
-| `proxy.css.prime_vue` | `false` | PrimeVue component styles |
-| `proxy.css.markdown` | `false` | Markdown rendering styles |
-| `proxy.css.custom_css` | `false` | Custom CSS |
-| `proxy.css.custom_variables` | `false` | Custom CSS variables |
-| `proxy.tailwind_config` | `false` | Inject Tailwind config |
-| `proxy.resize_observer` | `true` | Auto-resize iframe |
-| `proxy.prevent_link_clicks` | `true` | Intercept link navigation |
-| `proxy.iconify_icons` | `false` | Load Iconify icon set |
+Proxy injection for SPA pages is configured in the FE package.json `wippy.proxy.injections` block (camelCase) and baked into `wippy-meta.json` at build time — it is **not** set in the registry YAML. The operator can override per page via `config_overrides`. See [Pages (view.page)](../frontend/be-fe-bridge/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
 ## View Components
 
-Standalone components that are not pages (no navigation entry):
+View components are reusable custom elements (web components, micro-frontends) that the Web Host discovers and registers — they are not pages and have no navigation entry. Like component pages, the registry entry carries only routing and deployment policy:
 
 ```yaml
 entries:
-  - name: widget
+  - name: reaction-bar
     kind: registry.entry
     meta:
       type: view.component
-      name: chat-widget
-      title: Chat Widget
-      url: https://cdn.example.com/chat-widget/
-    data:
-      proxy:
-        enabled: true
+      name: reaction-bar
+      tag_name: example-reaction-bar
+      announced: true
+      auto_register: true
+      secure: false
+      url: /app/wc/reaction-bar
+      entry_point: index.js
 ```
 
-Components use `meta.type: view.component` instead of `view.page`. They default to `index.js` as entry point.
+Components use `meta.type: view.component` instead of `view.page`, identify themselves by `meta.tag_name`, and default to `index.js` as the entry point. Proxy injection and theme CSS for components are likewise authored in the FE package.json (camelCase) and, for shadow-DOM CSS, declared via `hostCssKeys` — not in the registry YAML. See [Components (view.component)](../frontend/be-fe-bridge/view-component.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
 ## Resources
 
@@ -331,8 +327,10 @@ data:
 
 ## See Also
 
-- [Facade](framework/facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](system/template.md) - Jet template engine
-- [Security](system/security.md) - Security actors and access control
-- [Environment](system/env.md) - Environment variable storage
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Facade](./facade.md) - Frontend iframe facade and navigation sidebar
+- [Template](../system/template.md) - Jet template engine
+- [Security](../system/security.md) - Security actors and access control
+- [Environment](../system/env.md) - Environment variable storage
+- [Framework Overview](./overview.md) - Framework module usage
+- [Pages (view.page)](../frontend/be-fe-bridge/view-page.md) - Full view.page metadata and proxy injection reference
+- [Components (view.component)](../frontend/be-fe-bridge/view-component.md) - Full view.component autoload and props reference

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1178.051 589.75" width="1178.051" height="589.75" style="--bg:transparent;--fg:#374151;--line:#9ca3af;--accent:#6366f1;--muted:#6b7280;--surface:transparent;--border:#e5e7eb">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<g class="subgraph" data-id="WebHost" data-label="Web Host (CDN iframe)">
+  <rect x="58" y="237.00000000000003" width="189.54600000000002" height="145.7" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="58" y="237.00000000000003" width="189.54600000000002" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="70" y="251.00000000000003" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Web Host (CDN iframe)</text>
+</g>
+<g class="subgraph" data-id="IframeProxy" data-label="Iframe Proxy (UMD)">
+  <rect x="483.3420000000002" y="89.30000000000001" width="296.9909999999999" height="178.70000000000002" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="483.3420000000002" y="89.30000000000001" width="296.9909999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="495.3420000000002" y="103.30000000000001" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Iframe Proxy (UMD)</text>
+</g>
+<g class="subgraph" data-id="WCProxy" data-label="WC Proxy (ESM)">
+  <rect x="445.086" y="296" width="279.2069999999999" height="195.60000000000002" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="445.086" y="296" width="279.2069999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="457.086" y="310" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">WC Proxy (ESM)</text>
+</g>
+<g class="subgraph" data-id="PageIframe" data-label="view.page (iframe)">
+  <rect x="939.5630000000001" y="154.2" width="170.28" height="113.80000000000001" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="939.5630000000001" y="154.2" width="170.28" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="951.5630000000001" y="168.2" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">view.page (iframe)</text>
+</g>
+<g class="subgraph" data-id="WebComp" data-label="view.component (Shadow DOM)">
+  <rect x="883.5229999999999" y="377.80000000000007" width="170.28" height="113.80000000000001" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="883.5229999999999" y="377.80000000000007" width="170.28" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="895.5229999999999" y="391.80000000000007" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">view.component (Shadow DOM)</text>
+</g>
+<polyline class="edge" data-from="WebHost" data-to="ProxyJS" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="injects via srcdoc scripts[]" points="247.54600000000002,291 283.54600000000016,291 283.54600000000016,225.1 578.6290000000001,225.10000000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="WebHost" data-to="Config1" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="sets globals" points="247.54600000000002,281 271.54600000000016,281 271.54600000000016,151.75000000000003 507.4457500000001,151.75" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="ProxyJS" data-to="PageApp" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="exposes" points="685.0460000000002,225.10000000000002 955.5630000000001,225.1" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="WebHost" data-to="ProxyESM" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="provides via import map" points="247.54600000000002,311 259.54600000000005,311 259.54600000000005,448.70000000000005 507.4457500000001,448.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="WebHost" data-to="Config2" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="sets globals" points="247.54600000000002,301 313.006,301 313.006,366.9 461.086,366.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="ProxyESM" data-to="WCApp" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="exposes" points="645.7257500000001,448.70000000000005 899.5229999999999,448.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="PageApp" data-to="HostAPI" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="PostMessage" points="1093.843,225.1 1127.843,225.1 1127.843,51 40,51 40,319.5666666666667 74,319.56666666666666" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="WCApp" data-to="HostAPI" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="PostMessage" points="1037.8029999999999,448.70000000000005 1071.8029999999999,448.70000000000016 1071.8029999999999,530.6000000000001 40,530.6000000000001 40,343.13333333333344 74,343.1333333333334" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="WebHost" data-to="ProxyJS" data-label="injects via srcdoc scripts[]">
+  <rect x="291.54600000000016" y="209.1" width="141.79600000000005" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="362.4440000000002" y="224.25" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">injects via srcdoc scripts[]</text>
+</g>
+<g class="edge-label" data-from="WebHost" data-to="Config1" data-label="sets globals">
+  <rect x="359.26200000000017" y="135.75000000000003" width="74.08000000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="396.3020000000002" y="150.90000000000003" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">sets globals</text>
+</g>
+<g class="edge-label" data-from="ProxyJS" data-to="PageApp" data-label="exposes">
+  <rect x="830.3330000000001" y="209.10000000000002" width="59.230000000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="859.9480000000001" y="224.25000000000003" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">exposes</text>
+</g>
+<g class="edge-label" data-from="WebHost" data-to="ProxyESM" data-label="provides via import map">
+  <rect x="267.54600000000005" y="432.70000000000005" width="127.54000000000003" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="331.3160000000001" y="447.85" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">provides via import map</text>
+</g>
+<g class="edge-label" data-from="WebHost" data-to="Config2" data-label="sets globals">
+  <rect x="321.006" y="350.9" width="74.08000000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="358.046" y="366.04999999999995" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">sets globals</text>
+</g>
+<g class="edge-label" data-from="ProxyESM" data-to="WCApp" data-label="exposes">
+  <rect x="774.2929999999999" y="432.70000000000005" width="59.230000000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="803.9079999999999" y="447.85" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">exposes</text>
+</g>
+<g class="edge-label" data-from="PageApp" data-to="HostAPI" data-label="PostMessage">
+  <rect x="1036.259" y="35" width="83.584" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="1078.051" y="50.15" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">PostMessage</text>
+</g>
+<g class="edge-label" data-from="WCApp" data-to="HostAPI" data-label="PostMessage">
+  <rect x="980.2189999999998" y="514.6" width="83.584" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="1022.0109999999999" y="529.75" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">PostMessage</text>
+</g>
+<g class="node" data-id="HostAPI" data-label="Host API
+(startChat, navigate,
+onRouteChanged...)" data-shape="rectangle">
+  <rect x="74" y="296" width="157.54600000000002" height="70.7" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="152.77300000000002" y="331.35" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="152.77300000000002" dy="-12.350000000000001">Host API</tspan><tspan x="152.77300000000002" dy="16.900000000000002">(startChat, navigate,</tspan><tspan x="152.77300000000002" dy="16.900000000000002">onRouteChanged...)</tspan></text>
+</g>
+<g class="node" data-id="ProxyJS" data-label="proxy.js
+window.$W" data-shape="rectangle">
+  <rect x="578.6290000000001" y="198.20000000000002" width="106.41699999999999" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="631.8375000000001" y="225.10000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="631.8375000000001" dy="-3.9000000000000012">proxy.js</tspan><tspan x="631.8375000000001" dy="16.900000000000002">window.$W</tspan></text>
+</g>
+<g class="node" data-id="Config1" data-label="window.__WIPPY_PROXY_CONFIG__" data-shape="rectangle">
+  <rect x="507.4457500000001" y="133.3" width="264.9909999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="639.9412500000001" y="151.75" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">window.__WIPPY_PROXY_CONFIG__</text>
+</g>
+<g class="node" data-id="ProxyESM" data-label="@wippy-fe/proxy
+window.$W" data-shape="rectangle">
+  <rect x="507.4457500000001" y="421.8" width="138.28" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="576.5857500000001" y="448.7" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="576.5857500000001" dy="-3.9000000000000012">@wippy-fe/proxy</tspan><tspan x="576.5857500000001" dy="16.900000000000002">window.$W</tspan></text>
+</g>
+<g class="node" data-id="Config2" data-label="window.__WIPPY_APP_API__
+window.__WIPPY_APP_CONFIG__" data-shape="rectangle">
+  <rect x="461.086" y="340" width="247.2069999999999" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="584.6895" y="366.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="584.6895" dy="-3.9000000000000012">window.__WIPPY_APP_API__</tspan><tspan x="584.6895" dy="16.900000000000002">window.__WIPPY_APP_CONFIG__</tspan></text>
+</g>
+<g class="node" data-id="PageApp" data-label="Vue 3 App
+uses window.$W" data-shape="rectangle">
+  <rect x="955.5630000000001" y="198.2" width="138.28" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1024.7030000000002" y="225.1" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="1024.7030000000002" dy="-3.9000000000000012">Vue 3 App</tspan><tspan x="1024.7030000000002" dy="16.900000000000002">uses window.$W</tspan></text>
+</g>
+<g class="node" data-id="WCApp" data-label="Web Component
+uses window.$W" data-shape="rectangle">
+  <rect x="899.5229999999999" y="421.80000000000007" width="138.28" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="968.6629999999999" y="448.70000000000005" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="968.6629999999999" dy="-3.9000000000000012">Web Component</tspan><tspan x="968.6629999999999" dy="16.900000000000002">uses window.$W</tspan></text>
+</g>
+</svg>
