@@ -21,6 +21,8 @@ When in doubt, start with a web component. It is easier to promote to a micro fr
 
 ## What to read next
 
+In a hurry? [Quickstart](./quickstart.md) has minimal end-to-end examples for both a Vue micro frontend app and a Vue web component, with links to the public [`app-template`](https://github.com/wippyai/app-template) repo.
+
 Build a micro frontend app:
 1. [Micro Frontend App](./micro-frontend-app.md) — scaffold, `package.json` wippy block, Vite config, bootstrap sequence, router sync
 2. [Build System](./build-system.md) — `@wippy-fe/vite-plugin`, `wippy-meta.json`, externals

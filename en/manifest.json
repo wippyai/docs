@@ -184,6 +184,7 @@
         "title": "Wippy Micro Frontends",
         "children": [
           {"title": "Overview", "path": "frontend/micro-frontends/overview"},
+          {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
           {"title": "Micro Frontend App", "path": "frontend/micro-frontends/micro-frontend-app"},
           {"title": "Web Component", "path": "frontend/micro-frontends/web-component"},
           {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
