@@ -6,11 +6,11 @@ Wippy's frontend system is built around three distinct layers. Understanding how
 
 ## The Three Layers
 
-### Layer 1: BE → FE Bridge
+### Layer 1: Backend-Frontend Bridge
 
 The backend registers frontend artifacts — pages and web components — as registry entries in `_index.yaml`. The `wippy/views` module reads these entries, exposes them through REST APIs, and serves their static files. This layer answers the question: *how does a Wippy backend tell the Web Host that a page or component exists?*
 
-See: [BE → FE Bridge](./be-fe-bridge/registry-entries.md)
+See: [Backend-Frontend Bridge](./be-fe-bridge/registry-entries.md)
 
 ### Layer 2: Web Host
 
@@ -39,7 +39,7 @@ See: [Writing Wippy FE](./writing-fe/page-app.md)
 
 ## Navigation
 
-### BE → FE Bridge
+### Backend-Frontend Bridge
 
 How the Wippy backend connects to the Wippy frontend through the registry.
 

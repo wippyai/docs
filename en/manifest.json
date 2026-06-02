@@ -160,7 +160,7 @@
     "children": [
       {"title": "Overview", "path": "frontend/overview"},
       {
-        "title": "BE → FE Bridge",
+        "title": "Backend-Frontend Bridge",
         "children": [
           {"title": "Registry Entries", "path": "frontend/be-fe-bridge/registry-entries"},
           {"title": "Pages (view.page)", "path": "frontend/be-fe-bridge/view-page"},
