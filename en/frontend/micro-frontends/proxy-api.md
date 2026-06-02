@@ -1,15 +1,15 @@
 # Proxy API
 
-Child apps and web components communicate with the Wippy host through the proxy API. Page apps and web components use different loading paths:
+Child apps and web components communicate with the Wippy host through the proxy API. Micro Frontend Apps and web components use different loading paths:
 
-- **Page apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`. The canonical API is the global `window.$W`.
+- **Micro Frontend Apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`. The canonical API is the global `window.$W`.
 - **Web components (`view.component`)** run as ESM modules in the host page. Import named exports from `@wippy-fe/proxy`; the host provides the module through the import map.
 
 For the two proxy adapters and how they are loaded, see [Proxy & Isolation](../web-host/proxy-isolation.md).
 
 ## Initialization
 
-### Page apps (`view.page`) — preferred
+### Micro Frontend Apps (`view.page`) — preferred
 
 ```typescript
 const config = await window.$W.config()
@@ -52,7 +52,7 @@ import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'
 
 ### Global access in micro frontend apps
 
-Page apps use the global API directly:
+Micro Frontend Apps use the global API directly:
 
 ```typescript
 const config = await window.$W.config()

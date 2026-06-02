@@ -1,4 +1,4 @@
-# Pages (view.page)
+# Micro Frontend Apps (view.page)
 
 A `view.page` entry describes a full single-page application that the Web Host loads inside an iframe. Each page entry claims a URL path in the host router, gets its own isolated browsing context, and receives injected CSS and configuration from the host through the proxy layer.
 

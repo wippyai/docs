@@ -36,7 +36,7 @@ The `meta` block is what `wippy/views` reads. The `meta.type` field discriminate
 | Value | Meaning |
 |---|---|
 | `view.page` | A micro frontend app (full SPA), rendered in an iframe inside the Web Host |
-| `view.component` | A web component (custom element) that can be embedded anywhere in a page |
+| `view.component` | A Web Component (custom element) that can be embedded anywhere in a page |
 
 Every other field in `meta` is interpreted in the context of this type. Fields that apply to one type and not the other are described in the per-type reference pages ([view.page](./view-page.md), [view.component](./view-component.md)).
 

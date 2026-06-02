@@ -2,7 +2,7 @@
 
 Authoritative guide for the standalone-aware design contract that lets every Wippy web app and web component build, run, and test **without** the Wippy web host wrapping it.
 
-> **Default injection state:** The dev overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe` disabled. Your app will render without platform CSS variables or component styles until you enable them in the overlay. Open the overlay FAB → enable the injections you need → check "Auto-accept on reload" to persist across reloads.
+> **Default injection state:** The dev overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe` **disabled**, but `customCss` and `customVariables` **enabled**. So an app that relies only on custom overrides may appear to work, while one that expects the platform theme variables or PrimeVue styles will render unstyled until you enable those injections. Open the overlay FAB → enable the injections you need → check "Auto-accept on reload" to persist across reloads.
 
 ---
 

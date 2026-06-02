@@ -22,7 +22,7 @@ Each child iframe gets an independent copy of all styles, not inheritance throug
 
 ## `ProxyConfig.injections.css` Flags
 
-These flags are set in the `wippy.proxy.injections.css` block of your app's `package.json` (camelCase). They control which style layers are injected into the child iframe. An operator can override any of them per-deployment with a snake_case `proxy:` block in the registry entry YAML (`theme_config`, `prime_vue`, …); the host normalizes the two casings and YAML wins. See [Pages (view.page) § Operator proxy override](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
+These flags are set in the `wippy.proxy.injections.css` block of your app's `package.json` (camelCase). They control which style layers are injected into the child iframe. An operator can override any of them per-deployment with a snake_case `proxy:` block in the registry entry YAML (`theme_config`, `prime_vue`, …); the host normalizes the two casings and YAML wins. See [Micro Frontend Apps (view.page) § Operator proxy override](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
 
 ```json
 {

@@ -3,7 +3,7 @@
 The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages come in two distinct flavors:
 
 - **Jet template pages** (`kind: template.jet`) — server-side rendered HTML. The page's data and resources are assembled and injected server-side, then the Jet engine renders the final HTML. This is the legacy, server-rendered model. See [Template Pages](#template-pages).
-- **SPA / component pages** (`kind: registry.entry`) — external single-page applications and reusable components (micro-frontends) served from a CDN or static mount. The registry entry holds only routing and deployment policy; proxy/CSS injection is authored in the frontend package's `package.json`. See [Component Pages](#component-pages) and [View Components](#view-components).
+- **Registry-entry frontends** (`kind: registry.entry`) — two kinds: micro frontend apps (`view.page`, full SPAs) and reusable web components (`view.component`), served from a CDN or static mount. The registry entry holds only routing and deployment policy; proxy/CSS injection is authored in the frontend package's `package.json`. See [Component Pages](#component-pages) and [View Components](#view-components).
 
 ## Setup
 

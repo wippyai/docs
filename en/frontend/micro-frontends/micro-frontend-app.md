@@ -314,7 +314,7 @@ mountApp()
 
 ## Router: mandatory host sync
 
-Page apps must use `createMemoryHistory`. Browser history is not available — the app runs in an iframe loaded as `srcdoc`, not at a real URL. Memory history also avoids polluting the parent window's history stack.
+Micro Frontend Apps must use `createMemoryHistory`. Browser history is not available — the app runs in an iframe loaded as `srcdoc`, not at a real URL. Memory history also avoids polluting the parent window's history stack.
 
 Two sync hooks are required on every router:
 

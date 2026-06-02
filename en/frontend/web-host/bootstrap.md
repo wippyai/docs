@@ -25,7 +25,7 @@ This is the path taken when you embed the full host inside an iframe yourself â€
 2. **Parent sends `SetConfig`.** The parent has fetched `/facade/config` (or supplied an equivalent payload) and forwards it via PostMessage:
    ```javascript
    iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'SetConfig', ...configPayload },
+     { type: '@gen2-chat', action: 'set-config', ...configPayload },
      config.iframe_origin
    )
    ```

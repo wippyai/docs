@@ -50,7 +50,7 @@ entries:
 | `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
 | `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base CDN URL for the frontend bundle |
-| `fe_entry_path` | no | `/iframe.html` | Entry point path on the bundle. The current facade loads the JS-module entry (`module.js`/`managed-layout.js`) for its page; the iframe entry path is retained for compatibility and manual facade-less embeddings. |
+| `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 
 ### App Identity
 

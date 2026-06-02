@@ -1,4 +1,4 @@
-# Components (view.component)
+# Web Components (view.component)
 
 A `view.component` entry describes a reusable custom element (web component) that the Web Host can discover, inject, and register automatically. Unlike a page, a component has no iframe of its own — it is a custom HTML tag that can appear anywhere a page's or host's template places it.
 

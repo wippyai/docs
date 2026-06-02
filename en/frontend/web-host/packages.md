@@ -10,9 +10,9 @@ npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 
 ## Choose Access by Runtime
 
-Page apps (`view.page`) run in srcdoc iframes and use the injected globals `window.$W` / `window.getWippyApi()`. Web components (`view.component`) run as ESM modules in the host page and import named exports from `@wippy-fe/proxy`.
+Micro Frontend Apps (`view.page`) run in srcdoc iframes and use the injected globals `window.$W` / `window.getWippyApi()`. Web components (`view.component`) run as ESM modules in the host page and import named exports from `@wippy-fe/proxy`.
 
-| Goal | Page app access | Web component access |
+| Goal | Micro Frontend App access | Web component access |
 |---|---|---|
 | Authenticated HTTP | `await window.$W.api()` | `import { api } from '@wippy-fe/proxy'` |
 | Host communication | `await window.$W.host()` | `import { host } from '@wippy-fe/proxy'` |
@@ -76,7 +76,7 @@ const router = createAppRouter({
 
 Theme CSS variables, the Tailwind CSS configuration object, and PrimeVue styling integration. Exposes `PrimeVuePlugin` for installing PrimeVue into a Vue app with the correct Wippy theme preset. Provides the `theme-config.css` file containing all `--p-primary-*`, `--p-surface-*`, and `--p-secondary-*` palette variables, and the Tailwind config that maps those variables to utility classes.
 
-**Page apps:** mark `@wippy-fe/theme` as `external`. The host injects the same CSS assets into child iframes via the proxy injection pipeline, so bundling your own copy produces duplicate styles.
+**Micro Frontend Apps:** mark `@wippy-fe/theme` as `external`. The host injects the same CSS assets into child iframes via the proxy injection pipeline, so bundling your own copy produces duplicate styles.
 
 **Web components:** do NOT externalize `@wippy-fe/theme`. Shadow DOM is isolated — external stylesheets injected into the host document do not cross the shadow boundary. Instead, either bundle the CSS you need directly or declare the relevant keys in `hostCssKeys` inside your `wippyConfig` (e.g. `'themeConfigUrl'`, `'primeVueCssUrl'`) so the host injects them into the shadow root. See [Theming](../micro-frontends/theming.md) for the full injection pipeline.
 

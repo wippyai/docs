@@ -2,9 +2,9 @@
 
 Wippy frontend code runs inside the Web Host's isolation boundary. There are two kinds of artifact you can build: **micro frontend apps** and **web components**. Both are independent Vite projects, both communicate with the platform through `@wippy-fe/proxy`, and both are declared to the backend via a `_index.yaml` registry entry. The difference is how they are rendered and what they are suitable for.
 
-## Page app vs web component
+## Micro Frontend App vs web component
 
-| | Page app (`view.page`) | Web component (`view.component`) |
+| | Micro Frontend App (`view.page`) | Web component (`view.component`) |
 |---|---|---|
 | **Rendered as** | Full iframe, isolated browsing context | Custom element in Shadow DOM, inside a page |
 | **Has its own URL / nav entry** | Yes — claims a `mountRoute` | No — embedded inside another page or chat artifact |

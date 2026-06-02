@@ -6,7 +6,7 @@ This doc supersedes the older `app-checklist.md` for new work. The older checkli
 
 **Gold standards** (validated against this checklist):
 
-- Page app: `app-template/frontend/applications/main/`
+- Micro Frontend App: `app-template/frontend/applications/main/`
 - Web component: `app-template/frontend/web-components/mermaid/`
 
 When this checklist disagrees with what the gold standards do, the gold standards win. See §14 for the validation report.
@@ -34,7 +34,7 @@ Source references use:
 0. [The FE isolation paradigm](#0-the-fe-isolation-paradigm) — read this first
 1. [Decide what you're shipping](#1-decide-what-youre-shipping)
 2. [YAML registration (host contract)](#2-yaml-registration-host-contract)
-3. [Page apps — manifest, build, runtime](#3-micro-frontend-apps--manifest-build-runtime)
+3. [Micro Frontend Apps — manifest, build, runtime](#3-micro-frontend-apps--manifest-build-runtime)
 4. [Web components — manifest, build, runtime](#4-web-components--manifest-build-runtime)
 5. [Theming](#5-theming)
 6. [Proxy API & subscriptions](#6-proxy-api--subscriptions)
@@ -308,7 +308,7 @@ All injection flags are technically MAY — the host has sane defaults — but m
 
 ---
 
-## 3. Page apps — manifest, build, runtime
+## 3. Micro Frontend Apps — manifest, build, runtime
 
 ### 3.1 `package.json`
 
@@ -1789,17 +1789,17 @@ REJECT a submission if any of the following are true.
 ### Manifest (§3.1, §4.1)
 1. `package.json.specification` is not `"wippy-component-1.0"`.
 2. `wippy.type` is not `"page"` (micro frontend apps), `"widget"` (web components, historical), or `"component"` (web components, newer alias accepted by the vite plugin validator).
-3. Page app: `wippy.path` does not point to the actual built artifact (e.g. `dist/app.html`).
+3. Micro Frontend App: `wippy.path` does not point to the actual built artifact (e.g. `dist/app.html`).
 4. WC: `wippy.tagName` is missing or does not contain a hyphen.
 5. WC: `wippy.props` is missing OR has properties without `type`/`default`/`description`.
 5a. WC: `wippy.description` is missing OR is a one-line label. It MUST be a verbose usage explanation — see §4.1 / §2.2.
 6. `peerDependencies` is missing `@wippy-fe/proxy` and `vue` (both kinds).
-7. Page app: `peerDependencies` is missing `vue-router`, `axios`, or `@iconify/vue` if the app imports them.
+7. Micro Frontend App: `peerDependencies` is missing `vue-router`, `axios`, or `@iconify/vue` if the app imports them.
 8. WC: `dependencies` is missing `@wippy-fe/webcomponent-core` or `@wippy-fe/webcomponent-vue`.
 
 ### vite.config.ts (§3.2, §4.2)
-9. Page app: `base` is not `''`. Hardcoded absolute base (e.g. `/app/keeper/`) is REJECT with no documented-exception escape hatch — see §9.5.
-10. Page app: `build.rollupOptions.external` does not include `vue` and `@wippy-fe/proxy`.
+9. Micro Frontend App: `base` is not `''`. Hardcoded absolute base (e.g. `/app/keeper/`) is REJECT with no documented-exception escape hatch — see §9.5.
+10. Micro Frontend App: `build.rollupOptions.external` does not include `vue` and `@wippy-fe/proxy`.
 11. WC: `build.lib` library mode is missing OR `formats: ['es']` is missing.
 12. WC: `build.rollupOptions.preserveEntrySignatures` is not `false`.
 13. WC: `@wippy-fe/proxy` is not in externals (must be external, never bundled).
@@ -1808,7 +1808,7 @@ REJECT a submission if any of the following are true.
 ### tsconfig.json (§3.8, §4.7)
 15. `strict` is not `true`.
 16. `target` is older than `ES2020`.
-17. Page app: `types` is missing `vite/client` or `@wippy-fe/types-global-proxy`.
+17. Micro Frontend App: `types` is missing `vite/client` or `@wippy-fe/types-global-proxy`.
 18. WC: `types` is missing `vite/client` or `@wippy-fe/proxy`.
 19. `vue-tsc` does not exit 0.
 
