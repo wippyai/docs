@@ -25,13 +25,13 @@ Opt in to `fe_mode = managed` (early access) only when you need to compose the c
 
 | Component | Minimum version |
 |-----------|----------------|
-| Wippy Web Host | `1.0.25` |
-| wippy-framework facade | `1.0.24` |
-| `@wippy-fe/proxy` | `0.0.20` |
-| `@wippy-fe/webcomponent-core` / `@wippy-fe/webcomponent-vue` | `0.0.20` |
-| `@wippy-fe/layout` / `@wippy-fe/vue-host` | `0.0.20` |
+| Wippy Web Host | `1.0.38` |
+| wippy-framework facade | `1.0.38` |
+| `@wippy-fe/proxy` | `0.0.38` |
+| `@wippy-fe/webcomponent-core` / `@wippy-fe/webcomponent-vue` | `0.0.38` |
+| `@wippy-fe/layout` / `@wippy-fe/vue-host` | `0.0.38` |
 
-Pin to an exact CDN tag (`https://web-host.wippy.ai/<release-tag>`) until the Draft 1 label is removed.
+Pin to an exact CDN tag — at least `https://web-host.wippy.ai/webcomponents-1.0.38` — until the Draft 1 label is removed.
 
 ## Enabling Managed Layout
 
