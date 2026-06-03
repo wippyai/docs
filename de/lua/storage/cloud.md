@@ -63,8 +63,36 @@ storage:release()
 |-----------|------|-------------|
 | `key` | string | Objektschlüssel/Pfad |
 | `content` | string oder Reader | Inhalt als String oder Datei-Reader |
+| `options` | table | Optionale Metadaten und Optionen für bedingtes Schreiben |
 
 **Gibt zurück:** `boolean, error`
+
+### Upload-Optionen
+
+Hängen Sie Metadaten an oder schützen Sie das Schreiben mit einer Optionstabelle:
+
+```lua
+storage:upload_object("reports/daily.json", body, {
+    content_type = "application/json",
+    cache_control = "max-age=3600",
+    metadata = { owner = "team-a", run_id = "1234" },  -- gespeichert als x-amz-meta-*
+    only_if_absent = true                              -- schlägt fehl, wenn der Schlüssel bereits existiert
+})
+```
+
+| Option | Typ | Beschreibung |
+|--------|------|-------------|
+| `content_type` | string | MIME-Typ |
+| `cache_control` | string | Cache-Control-Header |
+| `content_disposition` | string | Content-Disposition-Header |
+| `content_encoding` | string | Content-Encoding-Header |
+| `metadata` | table | Benutzer-Metadaten (string-Schlüssel/-Werte), gespeichert als `x-amz-meta-*` |
+| `headers` | table | Zusätzliche Request-Header (string-Schlüssel/-Werte) |
+| `if_match` | string | Nur schreiben, wenn das aktuelle Objekt-ETag übereinstimmt |
+| `if_none_match` | string | Nur schreiben, wenn kein Objekt mit dem ETag übereinstimmt (`"*"` bedeutet beliebig) |
+| `only_if_absent` | boolean | Nur schreiben, wenn der Schlüssel nicht existiert (Alias für `if_none_match = "*"`) |
+
+Ein bedingtes Schreiben, dessen Vorbedingung fehlschlägt, gibt einen `precondition_failed`-Fehler zurück.
 
 ## Objekte herunterladen
 
@@ -94,8 +122,12 @@ storage:release()
 | `key` | string | Herunterzuladender Objektschlüssel |
 | `writer` | Writer | Ziel-Datei-Writer |
 | `options.range` | string | Byte-Bereich (z.B. "bytes=0-1023") |
+| `options.if_match` | string | Nur herunterladen, wenn das Objekt-ETag übereinstimmt |
+| `options.if_none_match` | string | Nur herunterladen, wenn das ETag nicht übereinstimmt |
 
 **Gibt zurück:** `boolean, error`
+
+Eine fehlgeschlagene Vorbedingung (`if_match`/`if_none_match`) gibt einen `precondition_failed`-Fehler zurück.
 
 ## Objekte auflisten
 
@@ -110,7 +142,7 @@ local result, err = storage:list_objects({
 })
 
 for _, obj in ipairs(result.objects) do
-    print(obj.key, obj.size, obj.content_type)
+    print(obj.key, obj.size, obj.etag)
 end
 
 -- Durch große Ergebnisse paginieren
@@ -135,10 +167,60 @@ storage:release()
 | `options.prefix` | string | Nach Schlüssel-Präfix filtern |
 | `options.max_keys` | integer | Maximale Anzahl zurückzugebender Objekte |
 | `options.continuation_token` | string | Paginierungs-Token |
+| `options.include_owner` | boolean | Den `owner` jedes Objekts einbeziehen (`id`, `display_name`) |
+| `options.include_versions` | boolean | Objektversionen auflisten; jedes Element enthält `version_id` |
 
 **Gibt zurück:** `table, error`
 
-Ergebnis enthält `objects`, `is_truncated`, `next_continuation_token`.
+Ergebnis enthält `objects`, `is_truncated`, `next_continuation_token`. Jedes Objekt hat `key`, `size`, `etag`, `storage_class` sowie optional `last_modified`, `version_id` und `owner`.
+
+<note>
+In Listenergebnissen ist <code>content_type</code> immer leer — S3-Listenoperationen geben ihn nicht zurück. Verwenden Sie <code>head_object</code>, um den Content-Type und die Metadaten eines Objekts zu lesen.
+</note>
+
+## Objekt-Metadaten
+
+Die Metadaten eines einzelnen Objekts abrufen, ohne dessen Body herunterzuladen:
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local meta, err = storage:head_object("reports/daily.json")
+if err then
+    return nil, err
+end
+
+print(meta.size, meta.etag, meta.content_type)
+for k, v in pairs(meta.metadata) do
+    print("meta", k, v)
+end
+
+storage:release()
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `key` | string | Objektschlüssel |
+
+**Gibt zurück:** `table, error`
+
+Ergebnisfelder:
+
+| Feld | Typ | Beschreibung |
+|-------|------|-------------|
+| `size` | integer | Objektgröße in Bytes |
+| `etag` | string | Entity-Tag |
+| `content_type` | string | MIME-Typ |
+| `cache_control` | string | Cache-Control-Header |
+| `content_disposition` | string | Content-Disposition-Header |
+| `content_encoding` | string | Content-Encoding-Header |
+| `storage_class` | string | Speicherklasse |
+| `version_id` | string | Versions-ID (vorhanden, wenn Versionierung aktiviert ist) |
+| `last_modified` | integer | Zeitpunkt der letzten Änderung (Unix-Sekunden) |
+| `metadata` | table | Benutzer-Metadaten (`x-amz-meta-*`) |
+| `headers` | table | Rohe Response-Header (kleingeschriebene Schlüssel) |
+
+Ein fehlendes Objekt gibt einen `not_found`-Fehler zurück.
 
 ## Objekte löschen
 
@@ -232,8 +314,9 @@ return {upload_url = url}
 
 | Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
-| `upload_object(key, content)` | `boolean, error` | String- oder Dateiinhalt hochladen |
+| `upload_object(key, content, opts?)` | `boolean, error` | String- oder Dateiinhalt hochladen |
 | `download_object(key, writer, opts?)` | `boolean, error` | In Datei-Writer herunterladen |
+| `head_object(key)` | `table, error` | Objekt-Metadaten abrufen |
 | `list_objects(opts?)` | `table, error` | Objekte mit Präfix-Filter auflisten |
 | `delete_objects(keys)` | `boolean, error` | Mehrere Objekte löschen |
 | `presigned_get_url(key, opts?)` | `string, error` | Temporäre Download-URL generieren |
@@ -260,6 +343,7 @@ Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Inhalt nil | `errors.INVALID` | nein |
 | Writer nicht gültig | `errors.INVALID` | nein |
 | Objekt nicht gefunden | `errors.NOT_FOUND` | nein |
+| Bedingte Vorbedingung fehlgeschlagen | `errors.CONFLICT` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Operation fehlgeschlagen | `errors.INTERNAL` | nein |
 

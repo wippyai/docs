@@ -88,7 +88,7 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | チェックする値 |
 
-**戻り値:** `boolean`
+**戻り値:** `boolean, error`
 
 ### バージョン取得
 

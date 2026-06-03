@@ -87,6 +87,8 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Contenido del mensaje |
 | `type` | number | `websocket.TEXT` (1) o `websocket.BINARY` (2) |
 
+Cede hasta que el mensaje se envía.
+
 **Devuelve:** `boolean, error`
 
 ### Ping
@@ -94,6 +96,8 @@ client:send(binary_data, websocket.BINARY)
 ```lua
 client:ping()
 ```
+
+Cede hasta que el ping se envía.
 
 **Devuelve:** `boolean, error`
 
@@ -158,7 +162,7 @@ end
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `type` | string | `"text"` o `"binary"` |
-| `data` | string | Contenido del mensaje |
+| `data` | string? | Contenido del mensaje (nil para tipos de payload desconocidos) |
 
 ## Cerrar Conexión
 

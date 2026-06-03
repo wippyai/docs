@@ -84,7 +84,9 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Message content |
 | `type` | number | `websocket.TEXT` (1) or `websocket.BINARY` (2) |
 
-Yields until the message is sent. Raises a runtime error on failure.
+Yields until the message is sent.
+
+**Returns:** `boolean, error`
 
 ### Ping
 
@@ -93,6 +95,8 @@ client:ping()
 ```
 
 Yields until the ping is sent.
+
+**Returns:** `boolean, error`
 
 ## Receiving Messages
 
@@ -155,7 +159,7 @@ end
 | Field | Type | Description |
 |-------|------|-------------|
 | `type` | string | `"text"` or `"binary"` |
-| `data` | string | Message content |
+| `data` | string? | Message content (nil for unknown payload types) |
 
 ## Closing Connection
 

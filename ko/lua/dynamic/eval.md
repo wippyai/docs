@@ -160,7 +160,7 @@ runner.run({
 
 ### 프로그램 컴파일
 
-반복 실행을 위해 한 번 컴파일:
+`runner.compile`은 소스를 검증하고, 실행하지 않은 채 진입점과 모듈을 보고합니다:
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +170,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+컴파일된 프로그램은 정보 제공용입니다. 실행하려면 소스와 메서드로 `runner.run`을 호출하세요.
 
 ## 보안 모델
 

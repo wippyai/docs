@@ -158,7 +158,7 @@ end
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
 | `type` | string | `"text"` oder `"binary"` |
-| `data` | string | Nachrichteninhalt |
+| `data` | string? | Nachrichteninhalt (nil bei unbekannten Payload-Typen) |
 
 ## Verbindung schließen
 

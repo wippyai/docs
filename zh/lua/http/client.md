@@ -278,8 +278,10 @@ resp.stream:close()
 
 | 流方法 | 返回 | 描述 |
 |---------------|---------|-------------|
-| `read(size)` | string, error | 读取最多 `size` 字节 |
-| `close()` | - | 关闭流 |
+| `read(n?)` | string, error | 读取最多 `n` 字节（默认：实现缓冲区大小） |
+| `close()` | boolean, error | 关闭流 |
+
+`resp.stream` 是一个完整的 [stream](lua/core/stream.md) 对象——`seek`、`stat` 和 `scanner` 也可用。
 
 ## 批量请求
 

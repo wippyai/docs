@@ -79,6 +79,7 @@ local v, err = hub.versions.get("wippy/http", "1.0.0")
 |----------|-------------|
 | `hub.versions.list(module, opts?)` | 列出某个模块的所有版本 |
 | `hub.versions.get(module, version, opts?)` | 获取指定版本 |
+| `hub.versions.inspect(module, version, opts?)` | 检查某个版本的产物（下载并读取该包） |
 
 ## 依赖
 
@@ -98,7 +99,9 @@ local users, err = hub.dependents.get("wippy/http")
 local files, err = hub.files.list("wippy/http", "1.0.0")
 ```
 
-返回已发布版本的文件列表。
+| 函数 | 说明 |
+|----------|-------------|
+| `hub.files.list(module, version, opts?)` | 列出某个版本的文件（`version` 必填）；返回 `{items, total, page, page_size}` |
 
 ## 另请参阅
 

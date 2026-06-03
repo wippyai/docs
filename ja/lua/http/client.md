@@ -278,8 +278,10 @@ resp.stream:close()
 
 | Streamメソッド | 戻り値 | 説明 |
 |---------------|---------|-------------|
-| `read(size)` | string, error | 最大`size`バイトを読み取り |
-| `close()` | - | ストリームを閉じる |
+| `read(n?)` | string, error | 最大`n`バイトを読み取り（デフォルト: 実装のバッファ） |
+| `close()` | boolean, error | ストリームを閉じる |
+
+`resp.stream` は完全な [stream](lua/core/stream.md) オブジェクトです — `seek`、`stat`、`scanner` も利用できます。
 
 ## バッチリクエスト
 

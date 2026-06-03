@@ -2,6 +2,8 @@
 
 Wippy는 `.wippy.yaml` 파일로 설정됩니다. 모든 옵션에는 합리적인 기본값이 있습니다.
 
+아래의 모든 값은 실행 시 `wippy run --set section.path=value`로 재정의할 수 있습니다(반복 가능하며, 파일보다 우선합니다). 이러한 설정 섹션이 아니라 개별 레지스트리 *엔트리*를 재정의하려면 `override:` 섹션이나 `-o`를 사용하세요 — [엔트리 재정의](guides/entry-kinds.md#overriding-entries)를 참고하세요.
+
 ## Logger
 
 zap 로거 인코더를 제어합니다. CLI 플래그(`-v`, `-c`, `-s`)는 레벨/출력을 재정의합니다. yaml로 제어할 수 있는 유일한 옵션은 인코딩입니다.

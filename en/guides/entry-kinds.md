@@ -675,3 +675,29 @@ entries:
 # Reference from another entry
 func: app.users:handler
 ```
+
+## Overriding Entries
+
+Any entry's fields — including its `kind` — can be overridden at launch without editing the source YAML, using the `override:` config section or the `-o` CLI flag. Keys use `namespace:entry:path` format:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
+```
+
+| Path | Targets |
+|------|---------|
+| `kind` | The entry's typed kind (must be a non-empty string) |
+| `data.<field>` or bare `<field>` | A field in the entry's data payload |
+| `meta.<field>` | A field in the entry's metadata |
+
+The same overrides apply from the CLI:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+CLI (`-o`) values coerce by shape (`true`/`false` to bool, numbers to numbers, otherwise string); `override:` section values keep their YAML type. To override global [configuration](guides/configuration.md) sections instead of entries, use `--set`.

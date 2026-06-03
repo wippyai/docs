@@ -258,10 +258,10 @@ end
 
 ### parse_multipart
 
-multipart 폼 데이터(파일 업로드)를 파싱합니다.
+multipart 폼 데이터(파일 업로드)를 파싱합니다. 선택적 `max_memory` 정수(임시 파일로 넘기기 전 메모리에 보관하는 바이트 수, 기본값 32MB)를 받습니다.
 
 ```lua
-local form, err = req:parse_multipart()
+local form, err = req:parse_multipart()  -- or req:parse_multipart(8 * 1024 * 1024)
 if err then
     res:set_status(400)
     return res:write_json({error = "Invalid form data"})

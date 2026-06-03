@@ -35,18 +35,18 @@ local t = os.time({
 })
 ```
 
-**Firma:** `os.time([spec]) -> integer`
+**Firma:** `os.time([spec]) -> number`
 
 **Parametros:**
 
 | Campo | Tipo | Predeterminado | Descripción |
 |-------|------|----------------|-------------|
-| `year` | integer | ano actual | Ano de cuatro digitos (ej., 2024) |
-| `month` | integer | mes actual | Mes 1-12 |
-| `day` | integer | dia actual | Dia del mes 1-31 |
-| `hour` | integer | 0 | Hora 0-23 |
-| `min` | integer | 0 | Minuto 0-59 |
-| `sec` | integer | 0 | Segundo 0-59 |
+| `year` | number | ano actual | Ano de cuatro digitos (ej., 2024) |
+| `month` | number | mes actual | Mes 1-12 |
+| `day` | number | dia actual | Dia del mes 1-31 |
+| `hour` | number | 0 | Hora 0-23 |
+| `min` | number | 0 | Minuto 0-59 |
+| `sec` | number | 0 | Segundo 0-59 |
 
 Cuando se llama sin argumentos, devuelve la marca de tiempo Unix actual.
 
@@ -87,7 +87,7 @@ local t = os.date("*t", now)
 | Parámetro | Tipo | Predeterminado | Descripción |
 |-----------|------|----------------|-------------|
 | `format` | string | `"%c"` | String de formato, `"*t"` para tabla |
-| `timestamp` | integer | tiempo actual | Marca de tiempo Unix a formatear |
+| `timestamp` | number | tiempo actual | Marca de tiempo Unix a formatear |
 
 ### Especificadores de Formato
 
@@ -126,14 +126,14 @@ local t = os.date("*t")
 
 | Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
-| `year` | integer | Ano de cuatro digitos | 2024 |
-| `month` | integer | Mes (1-12) | 6 |
-| `day` | integer | Dia del mes (1-31) | 15 |
-| `hour` | integer | Hora (0-23) | 14 |
-| `min` | integer | Minuto (0-59) | 30 |
-| `sec` | integer | Segundo (0-59) | 45 |
-| `wday` | integer | Dia de semana (1-7, Domingo=1) | 7 |
-| `yday` | integer | Dia del ano (1-366) | 167 |
+| `year` | number | Ano de cuatro digitos | 2024 |
+| `month` | number | Mes (1-12) | 6 |
+| `day` | number | Dia del mes (1-31) | 15 |
+| `hour` | number | Hora (0-23) | 14 |
+| `min` | number | Minuto (0-59) | 30 |
+| `sec` | number | Segundo (0-59) | 45 |
+| `wday` | number | Dia de semana (1-7, Domingo=1) | 7 |
+| `yday` | number | Dia del ano (1-366) | 167 |
 | `isdst` | boolean | Horario de verano | false |
 
 Use `"!*t"` para tabla de fecha UTC.
@@ -171,8 +171,8 @@ print(days)  -- 365
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `t2` | integer | Marca de tiempo posterior |
-| `t1` | integer | Marca de tiempo anterior |
+| `t2` | number | Marca de tiempo posterior |
+| `t1` | number | Marca de tiempo anterior |
 
 Devuelve `t2 - t1` en segundos. Puede ser negativo si `t1 > t2`.
 

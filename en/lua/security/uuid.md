@@ -88,7 +88,7 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | Value to check |
 
-**Returns:** `boolean`
+**Returns:** `boolean, error`
 
 ### Get Version
 

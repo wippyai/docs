@@ -60,7 +60,7 @@ local err_p = payload.new(errors.new("something failed"))
 |-----------|------|-------------|
 | `value` | any | Lua値（string、number、boolean、table、nil、またはerror） |
 
-**戻り値:** `Payload, nil`
+**戻り値:** `Payload`
 
 ## フォーマットの取得
 
@@ -77,7 +77,7 @@ local err_p = payload.new(errors.new("failed"))
 local format3 = err_p:get_format()  -- "golang/error"
 ```
 
-**戻り値:** `string, nil` - `payload.format.*`定数のいずれか
+**戻り値:** `string` - `payload.format.*`定数のいずれか
 
 ## データの抽出
 

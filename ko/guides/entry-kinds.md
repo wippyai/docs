@@ -675,3 +675,29 @@ entries:
 # 다른 엔트리에서 참조
 func: app.users:handler
 ```
+
+## 엔트리 재정의 {id="overriding-entries"}
+
+`override:` 설정 섹션이나 `-o` CLI 플래그를 사용하면, 소스 YAML을 편집하지 않고도 실행 시 엔트리의 모든 필드(`kind` 포함)를 재정의할 수 있습니다. 키는 `namespace:entry:path` 형식을 사용합니다:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
+```
+
+| 경로 | 대상 |
+|------|---------|
+| `kind` | 엔트리의 타입 지정 kind(비어 있지 않은 문자열이어야 함) |
+| `data.<field>` 또는 단순 `<field>` | 엔트리 data 페이로드의 필드 |
+| `meta.<field>` | 엔트리 메타데이터의 필드 |
+
+동일한 재정의를 CLI에서도 적용할 수 있습니다:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+CLI(`-o`) 값은 형태에 따라 변환됩니다(`true`/`false`는 bool로, 숫자는 숫자로, 그 외에는 string). `override:` 섹션 값은 YAML 타입을 그대로 유지합니다. 엔트리 대신 전역 [설정](guides/configuration.md) 섹션을 재정의하려면 `--set`을 사용하세요.

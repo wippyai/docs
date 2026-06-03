@@ -206,6 +206,10 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--protected` | Mark the published version as protected (cannot be deleted or overwritten) |
 | `--registry <url>` | Override the registry URL for this publish |
 | `--config <dir>` | Directory containing `wippy.yaml` (default: current dir) |
+| `--create` | Register the module on the hub if it does not exist yet, then publish |
+| `--module-visibility <v>` | Visibility for `--create`: `private` (default) or `public` |
+| `--module-type <t>` | Type for `--create`: `application` (default), `library`, `agent`, or `plugin` |
+| `--module-display-name <n>` | Display name for `--create` |
 
 ### Embedding Static Files
 
@@ -217,6 +221,34 @@ wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
 The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+
+### First Publish
+
+The first time you publish a module it is registered on the hub automatically (private by default) and the publish retries once. Pass `--create` to register it up-front and set its properties:
+
+```bash
+wippy publish --create --version 0.1.0 \
+  --module-visibility public \
+  --module-type library \
+  --module-display-name "HTTP Utils"
+```
+
+`--create` is idempotent — for an already-registered module the create step is a no-op. If your account cannot create modules in the organization, the hub returns a permission error instead of publishing.
+
+### Publishing to a Local Hub
+
+Point `--registry` at a locally running hub to publish and install without the public registry. Plain HTTP is allowed only for local hosts — `localhost`, `127.0.0.1`, and the container aliases `host.docker.internal` (Docker Desktop / OrbStack) and `host.containers.internal` (Podman); any other host must use HTTPS.
+
+```bash
+wippy auth login --registry http://localhost:8080 --token wpy_xxx
+wippy publish --registry http://localhost:8080 --create --version 0.1.0
+```
+
+The registry and token can also come from the `WIPPY_REGISTRY` and `WIPPY_TOKEN` environment variables. When unset, the registry defaults to `https://hub.wippy.ai`.
+
+### Quotas
+
+If the organization's private-module quota is exhausted, publish fails with a message such as `cannot publish: Private-module quota exhausted (5 of 5)...`. Make the module public or ask an org admin to raise the quota. Uploads and downloads retry automatically on transient network errors.
 
 ## Using Published Modules
 

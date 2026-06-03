@@ -258,10 +258,10 @@ end
 
 ### parse_multipart
 
-Parses multipart form data (file uploads).
+Parses multipart form data (file uploads). Takes an optional `max_memory` integer (bytes held in memory before spilling to temp files; default 32MB).
 
 ```lua
-local form, err = req:parse_multipart()
+local form, err = req:parse_multipart()  -- or req:parse_multipart(8 * 1024 * 1024)
 if err then
     res:set_status(400)
     return res:write_json({error = "Invalid form data"})

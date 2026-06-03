@@ -22,11 +22,18 @@ S3-compatible object storage with presigned URLs.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `region` | string | Yes | AWS region |
+| `region` | string | Conditional | AWS region. Required unless `region_env` is set |
+| `region_env` | string | Conditional | Env variable name holding the region |
 | `access_key_id_env` | string | No | Environment variable name for access key |
 | `secret_access_key_env` | string | No | Environment variable name for secret key |
 
-Credentials load from the specified environment variables. If omitted, falls back to AWS SDK default credential chain (IAM roles, instance profiles, etc.).
+Credentials load from the specified environment variables. Both `access_key_id_env` and `secret_access_key_env` must resolve to non-empty values for static credentials to apply; otherwise the AWS SDK default credential chain is used (IAM roles, instance profiles, etc.).
+
+Requests are signed with AWS Signature Version 4 by the AWS SDK using the resolved credentials. No signing configuration is required.
+
+<note>
+Use the <code>_env</code> variants (<code>region_env</code>, and <code>bucket_env</code>/<code>endpoint_env</code> below) when a value differs per deployment. The variable name is resolved from the environment registry at startup.
+</note>
 
 <note>
 A single <code>config.aws</code> entry can be reused across AWS-backed services. <code>queue.driver.sqs</code> references the same entry via its <code>config:</code> field.
@@ -43,9 +50,11 @@ A single <code>config.aws</code> entry can be reused across AWS-backed services.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `bucket` | string | Yes | S3 bucket name |
+| `bucket` | string | Conditional | S3 bucket name. Required unless `bucket_env` is set |
+| `bucket_env` | string | Conditional | Env variable name holding the bucket name |
 | `config` | reference | Yes | AWS config entry reference |
 | `endpoint` | string | No | Custom endpoint for S3-compatible services |
+| `endpoint_env` | string | No | Env variable name holding the custom endpoint |
 
 ### S3-Compatible Services
 

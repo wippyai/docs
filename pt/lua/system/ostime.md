@@ -35,18 +35,18 @@ local t = os.time({
 })
 ```
 
-**Assinatura:** `os.time([spec]) -> integer`
+**Assinatura:** `os.time([spec]) -> number`
 
 **Parametros:**
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `year` | integer | ano atual | Ano de 4 digitos (ex: 2024) |
-| `month` | integer | mes atual | Mes 1-12 |
-| `day` | integer | dia atual | Dia do mes 1-31 |
-| `hour` | integer | 0 | Hora 0-23 |
-| `min` | integer | 0 | Minuto 0-59 |
-| `sec` | integer | 0 | Segundo 0-59 |
+| `year` | number | ano atual | Ano de 4 digitos (ex: 2024) |
+| `month` | number | mes atual | Mes 1-12 |
+| `day` | number | dia atual | Dia do mes 1-31 |
+| `hour` | number | 0 | Hora 0-23 |
+| `min` | number | 0 | Minuto 0-59 |
+| `sec` | number | 0 | Segundo 0-59 |
 
 Quando chamado sem argumentos, retorna timestamp Unix atual.
 
@@ -87,7 +87,7 @@ local t = os.date("*t", now)
 | Parâmetro | Tipo | Padrão | Descrição |
 |-----------|------|--------|-----------|
 | `format` | string | `"%c"` | String de formato, `"*t"` para tabela |
-| `timestamp` | integer | hora atual | Timestamp Unix para formatar |
+| `timestamp` | number | hora atual | Timestamp Unix para formatar |
 
 ### Específicadores de Formato
 
@@ -126,14 +126,14 @@ local t = os.date("*t")
 
 | Campo | Tipo | Descrição | Exemplo |
 |-------|------|-----------|---------|
-| `year` | integer | Ano 4 digitos | 2024 |
-| `month` | integer | Mes (1-12) | 6 |
-| `day` | integer | Dia do mes (1-31) | 15 |
-| `hour` | integer | Hora (0-23) | 14 |
-| `min` | integer | Minuto (0-59) | 30 |
-| `sec` | integer | Segundo (0-59) | 45 |
-| `wday` | integer | Dia da semana (1-7, Domingo=1) | 7 |
-| `yday` | integer | Dia do ano (1-366) | 167 |
+| `year` | number | Ano 4 digitos | 2024 |
+| `month` | number | Mes (1-12) | 6 |
+| `day` | number | Dia do mes (1-31) | 15 |
+| `hour` | number | Hora (0-23) | 14 |
+| `min` | number | Minuto (0-59) | 30 |
+| `sec` | number | Segundo (0-59) | 45 |
+| `wday` | number | Dia da semana (1-7, Domingo=1) | 7 |
+| `yday` | number | Dia do ano (1-366) | 167 |
 | `isdst` | boolean | Horario de verao | false |
 
 Use `"!*t"` para tabela de data UTC.
@@ -171,8 +171,8 @@ print(days)  -- 365
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `t2` | integer | Timestamp posterior |
-| `t1` | integer | Timestamp anterior |
+| `t2` | number | Timestamp posterior |
+| `t1` | number | Timestamp anterior |
 
 Retorna `t2 - t1` em segundos. Pode ser negativo se `t1 > t2`.
 

@@ -35,18 +35,18 @@ local t = os.time({
 })
 ```
 
-**签名:** `os.time([spec]) -> integer`
+**签名:** `os.time([spec]) -> number`
 
 **参数:**
 
 | 字段 | 类型 | 默认值 | 描述 |
 |-------|------|---------|-------------|
-| `year` | integer | 当前年份 | 四位数年份（例如 2024） |
-| `month` | integer | 当前月份 | 月份 1-12 |
-| `day` | integer | 当前日期 | 月中日期 1-31 |
-| `hour` | integer | 0 | 小时 0-23 |
-| `min` | integer | 0 | 分钟 0-59 |
-| `sec` | integer | 0 | 秒 0-59 |
+| `year` | number | 当前年份 | 四位数年份（例如 2024） |
+| `month` | number | 当前月份 | 月份 1-12 |
+| `day` | number | 当前日期 | 月中日期 1-31 |
+| `hour` | number | 0 | 小时 0-23 |
+| `min` | number | 0 | 分钟 0-59 |
+| `sec` | number | 0 | 秒 0-59 |
 
 不带参数调用时返回当前 Unix 时间戳。
 
@@ -87,7 +87,7 @@ local t = os.date("*t", now)
 | 参数 | 类型 | 默认值 | 描述 |
 |-----------|------|---------|-------------|
 | `format` | string | `"%c"` | 格式字符串，`"*t"` 返回表 |
-| `timestamp` | integer | 当前时间 | 要格式化的 Unix 时间戳 |
+| `timestamp` | number | 当前时间 | 要格式化的 Unix 时间戳 |
 
 ### 格式说明符
 
@@ -126,14 +126,14 @@ local t = os.date("*t")
 
 | 字段 | 类型 | 描述 | 示例 |
 |-------|------|-------------|---------|
-| `year` | integer | 四位数年份 | 2024 |
-| `month` | integer | 月份 (1-12) | 6 |
-| `day` | integer | 月中日期 (1-31) | 15 |
-| `hour` | integer | 小时 (0-23) | 14 |
-| `min` | integer | 分钟 (0-59) | 30 |
-| `sec` | integer | 秒 (0-59) | 45 |
-| `wday` | integer | 星期几 (1-7, Sunday=1) | 7 |
-| `yday` | integer | 年中日 (1-366) | 167 |
+| `year` | number | 四位数年份 | 2024 |
+| `month` | number | 月份 (1-12) | 6 |
+| `day` | number | 月中日期 (1-31) | 15 |
+| `hour` | number | 小时 (0-23) | 14 |
+| `min` | number | 分钟 (0-59) | 30 |
+| `sec` | number | 秒 (0-59) | 45 |
+| `wday` | number | 星期几 (1-7, Sunday=1) | 7 |
+| `yday` | number | 年中日 (1-366) | 167 |
 | `isdst` | boolean | 夏令时 | false |
 
 使用 `"!*t"` 获取 UTC 日期表。
@@ -171,8 +171,8 @@ print(days)  -- 365
 
 | 参数 | 类型 | 描述 |
 |-----------|------|-------------|
-| `t2` | integer | 较晚的时间戳 |
-| `t1` | integer | 较早的时间戳 |
+| `t2` | number | 较晚的时间戳 |
+| `t1` | number | 较早的时间戳 |
 
 返回 `t2 - t1`（秒）。如果 `t1 > t2` 可能为负数。
 

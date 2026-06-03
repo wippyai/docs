@@ -133,6 +133,8 @@ Store-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 ## Fehler
 
+`store.get()` und alle Methoden des Store-Handles (`get`, `set`, `has`, `delete`) geben strukturierte Fehler zurück (verwenden Sie `err:kind()`).
+
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Leere Ressourcen-ID | `errors.INVALID` | nein |

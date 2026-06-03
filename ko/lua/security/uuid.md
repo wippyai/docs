@@ -88,7 +88,7 @@ local valid = uuid.validate(input)
 |----------|------|------|
 | `input` | any | 확인할 값 |
 
-**반환:** `boolean`
+**반환:** `boolean, error`
 
 ### 버전 가져오기
 

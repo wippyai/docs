@@ -133,6 +133,8 @@ Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 
 ## Errores
 
+`store.get()` y todos los métodos del manejador de store (`get`, `set`, `has`, `delete`) devuelven errores estructurados (usa `err:kind()`).
+
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID de recurso vacio | `errors.INVALID` | no |

@@ -148,7 +148,7 @@ Queues are auto-created by the driver on first use. Use SQS-prefixed headers (`s
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `driver` | Registry ID | Yes | Queue driver |
-| `codec` | string | No | Payload encoding (e.g. `json/plain`, `msgpack/plain`) |
+| `codec` | string | No | Wire encoding for message bodies. Defaults to `json/plain` (see [Codecs](#codecs)) |
 | `queue_name` | string | No | External queue name (defaults to entry name) |
 | `driver_options` | object | No | Per-driver sub-bag, keyed by driver kind |
 | `dead_letter.queue` | Registry ID | No | Queue ID for failed messages |
@@ -173,6 +173,17 @@ Keys under `driver_options` are scoped by driver name. A driver reads only its o
 | `message_ttl` | Per-queue message TTL override |
 | `queue_expiry` | Unused-queue expiration |
 | `max_length` | Max messages retained |
+
+### Codecs
+
+The `codec` selects how a message body is serialized before it is handed to the broker. It is a payload format string and defaults to `json/plain`:
+
+| Codec | Format |
+|-------|--------|
+| `json/plain` | JSON (default) |
+| `application/msgpack` | MessagePack |
+
+The AMQP driver sets a matching `content-type` (`application/json` or `application/msgpack`) on published messages. An unknown codec fails when the queue is declared, not at publish time.
 
 ## Consumer Configuration
 

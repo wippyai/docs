@@ -2,6 +2,8 @@
 
 Wippy 通过 `.wippy.yaml` 文件进行配置。所有选项都有合理的默认值。
 
+下面的任何值都可以在启动时通过 `wippy run --set section.path=value` 覆盖（可重复使用，优先级高于文件）。如需覆盖单个注册表*入口*而非这些配置区段，请使用 `override:` 区段或 `-o`——参见[覆盖入口](guides/entry-kinds.md#overriding-entries)。
+
 ## Logger
 
 控制 zap logger 编码器。CLI 参数（`-v`、`-c`、`-s`）会覆盖级别/输出；唯一由 yaml 驱动的选项是编码。

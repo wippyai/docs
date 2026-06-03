@@ -75,7 +75,7 @@ Inscreve-se nos eventos do terminal e retorna um channel. Eventos são entregues
 local events = tty.events()
 ```
 
-**Retorna:** `EventChannel`
+**Retorna:** `EventChannel, error`
 
 ### tty.screen_size()
 

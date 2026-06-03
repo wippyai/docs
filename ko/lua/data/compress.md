@@ -166,6 +166,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `level` | integer | 압축 레벨 1-22 (기본값: 3) |
+| `dict` | string? | `train_dict`로 생성한 Zstd 사전 바이트 (기본값: 없음) |
 
 **반환:** `string, error`
 
@@ -188,8 +189,36 @@ end
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `max_size` | integer | 최대 압축 해제 크기 바이트 (기본값: 128MB, 최대: 1GB) |
+| `dict` | string? | Zstd 사전 바이트(인코딩에 사용한 사전과 일치해야 함) |
 
 **반환:** `string, error`
+
+### 사전 {id="zstd-dictionaries"}
+
+샘플 데이터로 사전을 학습시켜 작고 비슷한 페이로드가 많은 경우의 압축률을 개선할 수 있습니다. 학습된 사전을 `encode`/`decode`의 `dict` 옵션으로 전달하세요 — 양쪽 모두 동일한 사전을 사용해야 합니다.
+
+```lua
+local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
+local packed   = compress.zstd.encode(data, { dict = dict })
+local original = compress.zstd.decode(packed, { dict = dict })
+```
+
+#### train_dict(samples, options?)
+
+| 파라미터 | 타입 | 설명 |
+|-----------|------|------|
+| `samples` | string[] | 학습 샘플(8바이트 이상이 최소 하나 필요) |
+| `options` | table? | `size`(integer, 목표 사전 바이트, 256-1048576, 기본값 114688), `id`(integer, 기본값 0), `level`(integer, 1-22) |
+
+**반환:** `string, error` (사전 바이트)
+
+#### inspect_dict(dict)
+
+| 파라미터 | 타입 | 설명 |
+|-----------|------|------|
+| `dict` | string | 사전 바이트 |
+
+**반환:** `table, error` — `{id: integer, content_size: integer}`
 
 ## Deflate
 

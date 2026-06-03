@@ -368,6 +368,14 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
+## builder.at
+
+`@p1, @p2, ...` 占位符格式（SQL Server 风格）。像上面的格式一样传给 `placeholder_format`。
+
+## builder.colon
+
+`:1, :2, ...` 占位符格式。像上面的格式一样传给 `placeholder_format`。
+
 ## 连接方法
 
 `sql.get()` 返回的数据库连接句柄。

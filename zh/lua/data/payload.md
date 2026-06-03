@@ -60,7 +60,7 @@ local err_p = payload.new(errors.new("something failed"))
 |-----------|------|-------------|
 | `value` | any | Lua 值（字符串、数字、布尔值、表、nil 或 error） |
 
-**返回:** `Payload, nil`
+**返回:** `Payload`
 
 ## 获取格式
 
@@ -77,7 +77,7 @@ local err_p = payload.new(errors.new("failed"))
 local format3 = err_p:get_format()  -- "golang/error"
 ```
 
-**返回:** `string, nil` - `payload.format.*` 常量之一
+**返回:** `string` - `payload.format.*` 常量之一
 
 ## 提取数据
 

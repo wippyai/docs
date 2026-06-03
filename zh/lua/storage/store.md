@@ -133,6 +133,8 @@ cache:delete("session:" .. session_id)
 
 ## 错误
 
+`store.get()` 以及存储句柄上的所有方法（`get`、`set`、`has`、`delete`）都返回结构化错误（使用 `err:kind()`）。
+
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 资源 ID 为空 | `errors.INVALID` | 否 |

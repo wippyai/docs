@@ -68,7 +68,7 @@ Erstellt einen neuen Executor zum Aufbauen von Funktionsaufrufen mit benutzerdef
 local exec = funcs.new()
 ```
 
-**Gibt zurück:** `Executor, error`
+**Gibt zurück:** `Executor`
 
 ## Executor
 
@@ -248,6 +248,8 @@ Bricht die asynchrone Operation ab.
 ```lua
 future:cancel()
 ```
+
+**Gibt zurück:** `boolean, error`
 
 ## Parallele Operationen
 

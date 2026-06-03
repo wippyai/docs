@@ -279,8 +279,10 @@ resp.stream:close()
 
 | Stream Method | Returns | Description |
 |---------------|---------|-------------|
-| `read(size)` | string, error | Read up to `size` bytes |
-| `close()` | - | Close the stream |
+| `read(n?)` | string, error | Read up to `n` bytes (default: implementation buffer) |
+| `close()` | boolean, error | Close the stream |
+
+`resp.stream` is a full [stream](lua/core/stream.md) object — `seek`, `stat`, and `scanner` are also available.
 
 ## Batch Requests
 

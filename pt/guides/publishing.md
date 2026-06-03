@@ -206,6 +206,10 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--protected` | Marca a versão publicada como protegida (não pode ser excluída ou sobrescrita) |
 | `--registry <url>` | Sobrescreve a URL do registro para esta publicação |
 | `--config <dir>` | Diretório contendo `wippy.yaml` (padrão: diretório atual) |
+| `--create` | Registra o módulo no hub caso ainda não exista e então publica |
+| `--module-visibility <v>` | Visibilidade para `--create`: `private` (padrão) ou `public` |
+| `--module-type <t>` | Tipo para `--create`: `application` (padrão), `library`, `agent` ou `plugin` |
+| `--module-display-name <n>` | Nome de exibição para `--create` |
 
 ### Embutindo Arquivos Estáticos
 
@@ -217,6 +221,34 @@ wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
 A flag `--embed` aceita IDs de entrada ou nomes que correspondam a entradas `fs.directory`. A mesma flag está disponível em `wippy pack`.
+
+### Primeira Publicação
+
+Na primeira vez que você publica um módulo ele é registrado no hub automaticamente (privado por padrão) e a publicação é repetida uma vez. Passe `--create` para registrá-lo antecipadamente e definir suas propriedades:
+
+```bash
+wippy publish --create --version 0.1.0 \
+  --module-visibility public \
+  --module-type library \
+  --module-display-name "HTTP Utils"
+```
+
+`--create` é idempotente — para um módulo já registrado a etapa de criação é um no-op. Se sua conta não puder criar módulos na organização, o hub retorna um erro de permissão em vez de publicar.
+
+### Publicando em um Hub Local
+
+Aponte `--registry` para um hub rodando localmente para publicar e instalar sem o registro público. HTTP puro é permitido apenas para hosts locais — `localhost`, `127.0.0.1` e os aliases de container `host.docker.internal` (Docker Desktop / OrbStack) e `host.containers.internal` (Podman); qualquer outro host deve usar HTTPS.
+
+```bash
+wippy auth login --registry http://localhost:8080 --token wpy_xxx
+wippy publish --registry http://localhost:8080 --create --version 0.1.0
+```
+
+O registro e o token também podem vir das variáveis de ambiente `WIPPY_REGISTRY` e `WIPPY_TOKEN`. Quando não definido, o registro usa por padrão `https://hub.wippy.ai`.
+
+### Cotas
+
+Se a cota de módulos privados da organização estiver esgotada, a publicação falha com uma mensagem como `cannot publish: Private-module quota exhausted (5 of 5)...`. Torne o módulo público ou peça a um admin da organização para aumentar a cota. Uploads e downloads são repetidos automaticamente em erros transitórios de rede.
 
 ## Usando Módulos Publicados
 

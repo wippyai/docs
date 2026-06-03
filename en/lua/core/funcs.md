@@ -68,7 +68,7 @@ Creates a new Executor for building function calls with custom context. Use this
 local exec = funcs.new()
 ```
 
-**Returns:** `Executor, error`
+**Returns:** `Executor`
 
 ## Executor
 
@@ -248,6 +248,8 @@ Cancels the async operation.
 ```lua
 future:cancel()
 ```
+
+**Returns:** `boolean, error`
 
 ## Parallel Operations
 

@@ -128,7 +128,8 @@ local events = process.events()  -- 来自 @events 主题的生命周期事件
 |------|------|------|
 | `kind` | string | 事件类型常量 |
 | `from` | string | 源 PID |
-| `result` | table | EXIT 时：`{value: any}` 或 `{error: string}` |
+| `result` | any | EXIT 时：返回的值（正常退出时存在） |
+| `error` | any | EXIT 时：错误（异常退出时存在） |
 | `reason` | string | CANCEL 时：进程被取消的原因 |
 
 ## 主题订阅
@@ -214,6 +215,7 @@ spawner:with_actor(actor)         -- 设置安全 actor
 spawner:with_scope(scope)         -- 设置安全作用域
 spawner:with_name(name)           -- 设置进程名称
 spawner:with_message(topic, ...)  -- 排队启动后发送的消息
+spawner:with_options(options)     -- 合并启动时选项（如 network）
 ```
 
 **权限:** 对 `:with_actor()` 和 `:with_scope()`，需要 "security" 上的 `process.security`

@@ -22,11 +22,18 @@ Almacenamiento de objetos compatible con S3 con URLs prefirmadas.
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `region` | string | Sí | Región AWS |
+| `region` | string | Condicional | Región AWS. Requerido salvo que se establezca `region_env` |
+| `region_env` | string | Condicional | Nombre de variable de entorno que contiene la región |
 | `access_key_id_env` | string | No | Nombre de variable de entorno para access key |
 | `secret_access_key_env` | string | No | Nombre de variable de entorno para secret key |
 
-Las credenciales se cargan desde las variables de entorno especificadas. Si se omiten, recurre a la cadena de credenciales por defecto del SDK de AWS (roles IAM, perfiles de instancia, etc.).
+Las credenciales se cargan desde las variables de entorno especificadas. Tanto `access_key_id_env` como `secret_access_key_env` deben resolverse a valores no vacíos para que se apliquen credenciales estáticas; en caso contrario se usa la cadena de credenciales por defecto del SDK de AWS (roles IAM, perfiles de instancia, etc.).
+
+Las solicitudes son firmadas con AWS Signature Version 4 por el SDK de AWS usando las credenciales resueltas. No se requiere configuración de firma.
+
+<note>
+Usa las variantes <code>_env</code> (<code>region_env</code>, y <code>bucket_env</code>/<code>endpoint_env</code> más abajo) cuando un valor difiere por despliegue. El nombre de la variable se resuelve desde el registro de entorno en el arranque.
+</note>
 
 <note>
 La configuración AWS está planeada para compartirse con otros servicios AWS (SQS, etc.) en futuras versiones.
@@ -43,9 +50,11 @@ La configuración AWS está planeada para compartirse con otros servicios AWS (S
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `bucket` | string | Sí | Nombre del bucket S3 |
+| `bucket` | string | Condicional | Nombre del bucket S3. Requerido salvo que se establezca `bucket_env` |
+| `bucket_env` | string | Condicional | Nombre de variable de entorno que contiene el nombre del bucket |
 | `config` | referencia | Sí | Referencia a entrada de config AWS |
 | `endpoint` | string | No | Endpoint personalizado para servicios compatibles con S3 |
+| `endpoint_env` | string | No | Nombre de variable de entorno que contiene el endpoint personalizado |
 
 ### Servicios Compatibles con S3
 

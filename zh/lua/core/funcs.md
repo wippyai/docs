@@ -68,7 +68,7 @@ end
 local exec = funcs.new()
 ```
 
-**返回:** `Executor, error`
+**返回:** `Executor`
 
 ## Executor
 
@@ -248,6 +248,8 @@ end
 ```lua
 future:cancel()
 ```
+
+**返回:** `boolean, error`
 
 ## 并行操作
 

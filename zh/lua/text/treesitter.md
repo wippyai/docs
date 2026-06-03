@@ -375,7 +375,7 @@ cursor:close()
 | `current_node()` | `Node` | 游标位置的节点 |
 | `current_depth()` | `integer` | 深度（0 = 根） |
 | `current_field_name()` | `string?` | 字段名（如果有） |
-| `current_field_id()` | `integer?` | 字段 ID（如果有） |
+| `current_field_id()` | `integer` | 字段 ID（无则为 0） |
 | `current_descendant_index()` | `integer` | 当前节点的后代索引 |
 | `goto_parent()` | `boolean` | 移动到父节点 |
 | `goto_first_child()` | `boolean` | 移动到第一个子节点 |
@@ -398,6 +398,7 @@ local lang = treesitter.language("go")
 print(lang:version())           -- ABI 版本
 print(lang:node_kind_count())   -- 节点类型数量
 print(lang:field_count())       -- 字段数量
+print(lang:parse_state_count()) -- 解析状态数量
 
 -- 节点类型查找
 local kind = lang:node_kind_for_id(1)

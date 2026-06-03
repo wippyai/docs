@@ -675,3 +675,29 @@ entries:
 # Referencia desde otra entrada
 func: app.users:handler
 ```
+
+## Sobrescribir entradas {id="overriding-entries"}
+
+Cualquier campo de una entrada — incluido su `kind` — puede sobrescribirse en el arranque sin editar el YAML de origen, usando la sección de configuración `override:` o el flag de CLI `-o`. Las claves usan el formato `namespace:entry:path`:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # campo de datos (una ruta simple apunta a data.*)
+  app:worker:meta.priority: high    # campo meta
+  app:db:kind: db.sql.postgres      # el kind tipado de la entrada
+  app:db:data.kind: custom          # un campo de payload llamado literalmente "kind"
+```
+
+| Ruta | Apunta a |
+|------|----------|
+| `kind` | El kind tipado de la entrada (debe ser un string no vacío) |
+| `data.<field>` o `<field>` simple | Un campo en el payload de datos de la entrada |
+| `meta.<field>` | Un campo en los metadatos de la entrada |
+
+Las mismas sobrescrituras se aplican desde la CLI:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+Los valores de CLI (`-o`) se convierten según su forma (`true`/`false` a bool, números a números, en otro caso string); los valores de la sección `override:` mantienen su tipo YAML. Para sobrescribir secciones globales de [configuración](guides/configuration.md) en lugar de entradas, usa `--set`.

@@ -368,6 +368,14 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
+## builder.at
+
+Формат плейсхолдеров `@p1, @p2, ...` (стиль SQL Server). Передаётся в `placeholder_format` как форматы выше.
+
+## builder.colon
+
+Формат плейсхолдеров `:1, :2, ...`. Передаётся в `placeholder_format` как форматы выше.
+
 ## Методы соединения
 
 Дескриптор соединения, возвращаемый `sql.get()`.

@@ -63,8 +63,36 @@ storage:release()
 |-----------|------|-----------|
 | `key` | string | Chave/caminho do objeto |
 | `content` | string ou Reader | Conteudo como string ou file reader |
+| `options` | table | Metadados opcionais e opções de escrita condicional |
 
 **Retorna:** `boolean, error`
+
+### Opções de Upload
+
+Anexe metadados ou proteja a escrita com uma tabela de opções:
+
+```lua
+storage:upload_object("reports/daily.json", body, {
+    content_type = "application/json",
+    cache_control = "max-age=3600",
+    metadata = { owner = "team-a", run_id = "1234" },  -- armazenado como x-amz-meta-*
+    only_if_absent = true                              -- falha se a chave já existir
+})
+```
+
+| Opção | Tipo | Descrição |
+|--------|------|-----------|
+| `content_type` | string | Tipo MIME |
+| `cache_control` | string | Header Cache-Control |
+| `content_disposition` | string | Header Content-Disposition |
+| `content_encoding` | string | Header Content-Encoding |
+| `metadata` | table | Metadados do usuário (chaves/valores string), armazenados como `x-amz-meta-*` |
+| `headers` | table | Headers de requisição adicionais (chaves/valores string) |
+| `if_match` | string | Escreve somente se o ETag atual do objeto corresponder |
+| `if_none_match` | string | Escreve somente se nenhum objeto corresponder ao ETag (`"*"` significa qualquer) |
+| `only_if_absent` | boolean | Escreve somente se a chave não existir (alias para `if_none_match = "*"`) |
+
+Uma escrita condicional que falha sua pré-condição retorna um erro `precondition_failed`.
 
 ## Baixando Objetos
 
@@ -94,8 +122,12 @@ storage:release()
 | `key` | string | Chave do objeto para baixar |
 | `writer` | Writer | File writer de destino |
 | `options.range` | string | Faixa de bytes (ex: "bytes=0-1023") |
+| `options.if_match` | string | Baixa somente se o ETag do objeto corresponder |
+| `options.if_none_match` | string | Baixa somente se o ETag não corresponder |
 
 **Retorna:** `boolean, error`
+
+Uma pré-condição que falha (`if_match`/`if_none_match`) retorna um erro `precondition_failed`.
 
 ## Listando Objetos
 
@@ -110,7 +142,7 @@ local result, err = storage:list_objects({
 })
 
 for _, obj in ipairs(result.objects) do
-    print(obj.key, obj.size, obj.content_type)
+    print(obj.key, obj.size, obj.etag)
 end
 
 -- Paginar através de resultados grandes
@@ -135,10 +167,60 @@ storage:release()
 | `options.prefix` | string | Filtrar por prefixo de chave |
 | `options.max_keys` | integer | Maximo de objetos a retornar |
 | `options.continuation_token` | string | Token de paginação |
+| `options.include_owner` | boolean | Inclui o `owner` de cada objeto (`id`, `display_name`) |
+| `options.include_versions` | boolean | Lista versões dos objetos; cada item inclui `version_id` |
 
 **Retorna:** `table, error`
 
-Resultado contem `objects`, `is_truncated`, `next_continuation_token`.
+Resultado contem `objects`, `is_truncated`, `next_continuation_token`. Cada objeto tem `key`, `size`, `etag`, `storage_class` e, opcionalmente, `last_modified`, `version_id` e `owner`.
+
+<note>
+Em resultados de listagem o <code>content_type</code> é sempre vazio — operações de listagem do S3 não o retornam. Use <code>head_object</code> para ler o tipo de conteúdo e os metadados de um objeto.
+</note>
+
+## Metadados do Objeto
+
+Obtenha os metadados de um único objeto sem baixar seu corpo:
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local meta, err = storage:head_object("reports/daily.json")
+if err then
+    return nil, err
+end
+
+print(meta.size, meta.etag, meta.content_type)
+for k, v in pairs(meta.metadata) do
+    print("meta", k, v)
+end
+
+storage:release()
+```
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `key` | string | Chave do objeto |
+
+**Retorna:** `table, error`
+
+Campos do resultado:
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `size` | integer | Tamanho do objeto em bytes |
+| `etag` | string | Entity tag |
+| `content_type` | string | Tipo MIME |
+| `cache_control` | string | Header Cache-Control |
+| `content_disposition` | string | Header Content-Disposition |
+| `content_encoding` | string | Header Content-Encoding |
+| `storage_class` | string | Classe de armazenamento |
+| `version_id` | string | ID da versão (presente quando o versionamento está habilitado) |
+| `last_modified` | integer | Horário da última modificação (segundos Unix) |
+| `metadata` | table | Metadados do usuário (`x-amz-meta-*`) |
+| `headers` | table | Headers brutos da resposta (chaves em minúsculas) |
+
+Um objeto inexistente retorna um erro `not_found`.
 
 ## Deletando Objetos
 
@@ -232,8 +314,9 @@ return {upload_url = url}
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
-| `upload_object(key, content)` | `boolean, error` | Upload de string ou conteudo de arquivo |
+| `upload_object(key, content, opts?)` | `boolean, error` | Upload de string ou conteudo de arquivo |
 | `download_object(key, writer, opts?)` | `boolean, error` | Download para file writer |
+| `head_object(key)` | `table, error` | Obter metadados do objeto |
 | `list_objects(opts?)` | `table, error` | Listar objetos com filtro de prefixo |
 | `delete_objects(keys)` | `boolean, error` | Deletar multiplos objetos |
 | `presigned_get_url(key, opts?)` | `string, error` | Gerar URL temporaria de download |
@@ -260,6 +343,7 @@ Operações de cloud storage estao sujeitas a avaliação de política de segura
 | Conteudo nil | `errors.INVALID` | não |
 | Writer não valido | `errors.INVALID` | não |
 | Objeto não encontrado | `errors.NOT_FOUND` | não |
+| Pré-condição condicional falhou | `errors.CONFLICT` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Operação falhou | `errors.INTERNAL` | não |
 

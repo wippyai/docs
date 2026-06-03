@@ -166,6 +166,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `level` | integer | Nivel de compressao 1-22 (padrão: 3) |
+| `dict` | string? | Bytes do dicionário Zstd de `train_dict` (padrão: nenhum) |
 
 **Retorna:** `string, error`
 
@@ -188,8 +189,36 @@ end
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `max_size` | integer | Tamanho maximo descomprimido em bytes (padrão: 128MB, max: 1GB) |
+| `dict` | string? | Bytes do dicionário Zstd (deve corresponder ao dict usado para codificar) |
 
 **Retorna:** `string, error`
+
+### Dicionários {id="zstd-dictionaries"}
+
+Treine um dicionário a partir de dados de amostra para melhorar a compressão de muitos payloads pequenos e similares. Passe o dicionário treinado como a opção `dict` para `encode`/`decode` — o mesmo dicionário deve ser usado para ambos.
+
+```lua
+local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
+local packed   = compress.zstd.encode(data, { dict = dict })
+local original = compress.zstd.decode(packed, { dict = dict })
+```
+
+#### train_dict(samples, options?)
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `samples` | string[] | Amostras de treinamento (pelo menos uma >= 8 bytes) |
+| `options` | table? | `size` (integer, bytes alvo do dict, 256-1048576, padrão 114688), `id` (integer, padrão 0), `level` (integer, 1-22) |
+
+**Retorna:** `string, error` (os bytes do dicionário)
+
+#### inspect_dict(dict)
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `dict` | string | Bytes do dicionário |
+
+**Retorna:** `table, error` — `{id: integer, content_size: integer}`
 
 ## Deflate
 

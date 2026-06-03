@@ -2,6 +2,8 @@
 
 Wippy se configura mediante archivos `.wippy.yaml`. Todas las opciones tienen valores por defecto razonables.
 
+Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](guides/entry-kinds.md#overriding-entries).
+
 ## Logger
 
 Controla el codificador del logger zap. Los flags de CLI (`-v`, `-c`, `-s`) sobrescriben el nivel/salida; la única opción controlada por yaml es la codificación.

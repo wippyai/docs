@@ -258,10 +258,10 @@ end
 
 ### parse_multipart
 
-Parsea datos de formulario multipart (carga de archivos).
+Parsea datos de formulario multipart (carga de archivos). Acepta un entero opcional `max_memory` (bytes retenidos en memoria antes de volcar a archivos temporales; predeterminado 32MB).
 
 ```lua
-local form, err = req:parse_multipart()
+local form, err = req:parse_multipart()  -- o req:parse_multipart(8 * 1024 * 1024)
 if err then
     res:set_status(400)
     return res:write_json({error = "Invalid form data"})

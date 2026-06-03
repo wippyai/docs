@@ -63,8 +63,36 @@ storage:release()
 |-----------|------|-------------|
 | `key` | string | オブジェクトキー/パス |
 | `content` | string or Reader | 文字列またはファイルリーダーとしてのコンテンツ |
+| `options` | table | オプションのメタデータおよび条件付き書き込みオプション |
 
 **戻り値:** `boolean, error`
+
+### アップロードオプション
+
+オプションテーブルでメタデータを付与したり、書き込みをガードしたりできます:
+
+```lua
+storage:upload_object("reports/daily.json", body, {
+    content_type = "application/json",
+    cache_control = "max-age=3600",
+    metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
+    only_if_absent = true                              -- fail if the key already exists
+})
+```
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `content_type` | string | MIME タイプ |
+| `cache_control` | string | Cache-Control ヘッダー |
+| `content_disposition` | string | Content-Disposition ヘッダー |
+| `content_encoding` | string | Content-Encoding ヘッダー |
+| `metadata` | table | ユーザーメタデータ（string のキー/値）。`x-amz-meta-*` として保存 |
+| `headers` | table | 追加のリクエストヘッダー（string のキー/値） |
+| `if_match` | string | 現在のオブジェクト ETag が一致する場合のみ書き込み |
+| `if_none_match` | string | ETag に一致するオブジェクトがない場合のみ書き込み（`"*"` は任意を意味する） |
+| `only_if_absent` | boolean | キーが存在しない場合のみ書き込み（`if_none_match = "*"` のエイリアス） |
+
+前提条件を満たさない条件付き書き込みは `precondition_failed` エラーを返します。
 
 ## オブジェクトのダウンロード
 
@@ -94,8 +122,12 @@ storage:release()
 | `key` | string | ダウンロードするオブジェクトキー |
 | `writer` | Writer | 宛先ファイルライター |
 | `options.range` | string | バイト範囲（例: "bytes=0-1023"） |
+| `options.if_match` | string | オブジェクト ETag が一致する場合のみダウンロード |
+| `options.if_none_match` | string | ETag が一致しない場合のみダウンロード |
 
 **戻り値:** `boolean, error`
+
+前提条件（`if_match`/`if_none_match`）を満たさない場合は `precondition_failed` エラーを返します。
 
 ## オブジェクトの一覧
 
@@ -110,7 +142,7 @@ local result, err = storage:list_objects({
 })
 
 for _, obj in ipairs(result.objects) do
-    print(obj.key, obj.size, obj.content_type)
+    print(obj.key, obj.size, obj.etag)
 end
 
 -- 大きな結果をページネーション
@@ -135,10 +167,60 @@ storage:release()
 | `options.prefix` | string | キープレフィックスでフィルター |
 | `options.max_keys` | integer | 返す最大オブジェクト数 |
 | `options.continuation_token` | string | ページネーショントークン |
+| `options.include_owner` | boolean | 各オブジェクトの `owner`（`id`、`display_name`）を含める |
+| `options.include_versions` | boolean | オブジェクトバージョンを一覧；各項目に `version_id` が含まれる |
 
 **戻り値:** `table, error`
 
-結果には`objects`、`is_truncated`、`next_continuation_token`が含まれる。
+結果には`objects`、`is_truncated`、`next_continuation_token`が含まれる。各オブジェクトには `key`、`size`、`etag`、`storage_class`、およびオプションの `last_modified`、`version_id`、`owner` がある。
+
+<note>
+リスト結果では <code>content_type</code> は常に空です — S3 のリスト操作はこれを返しません。オブジェクトのコンテンツタイプとメタデータを読み取るには <code>head_object</code> を使用してください。
+</note>
+
+## オブジェクトメタデータ
+
+本体をダウンロードせずに単一オブジェクトのメタデータを取得します:
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local meta, err = storage:head_object("reports/daily.json")
+if err then
+    return nil, err
+end
+
+print(meta.size, meta.etag, meta.content_type)
+for k, v in pairs(meta.metadata) do
+    print("meta", k, v)
+end
+
+storage:release()
+```
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `key` | string | オブジェクトキー |
+
+**戻り値:** `table, error`
+
+結果フィールド:
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `size` | integer | オブジェクトサイズ（バイト） |
+| `etag` | string | エンティティタグ |
+| `content_type` | string | MIME タイプ |
+| `cache_control` | string | Cache-Control ヘッダー |
+| `content_disposition` | string | Content-Disposition ヘッダー |
+| `content_encoding` | string | Content-Encoding ヘッダー |
+| `storage_class` | string | ストレージクラス |
+| `version_id` | string | バージョン ID（バージョニングが有効な場合に存在） |
+| `last_modified` | integer | 最終更新時刻（Unix 秒） |
+| `metadata` | table | ユーザーメタデータ（`x-amz-meta-*`） |
+| `headers` | table | 生のレスポンスヘッダー（キーは小文字化） |
+
+存在しないオブジェクトは `not_found` エラーを返します。
 
 ## オブジェクトの削除
 
@@ -232,8 +314,9 @@ return {upload_url = url}
 
 | メソッド | 戻り値 | 説明 |
 |--------|---------|-------------|
-| `upload_object(key, content)` | `boolean, error` | 文字列またはファイルコンテンツをアップロード |
+| `upload_object(key, content, opts?)` | `boolean, error` | 文字列またはファイルコンテンツをアップロード |
 | `download_object(key, writer, opts?)` | `boolean, error` | ファイルライターにダウンロード |
+| `head_object(key)` | `table, error` | オブジェクトメタデータを取得 |
 | `list_objects(opts?)` | `table, error` | プレフィックスフィルター付きでオブジェクトを一覧 |
 | `delete_objects(keys)` | `boolean, error` | 複数のオブジェクトを削除 |
 | `presigned_get_url(key, opts?)` | `string, error` | 一時ダウンロードURLを生成 |
@@ -260,6 +343,7 @@ return {upload_url = url}
 | コンテンツがnil | `errors.INVALID` | no |
 | ライターが無効 | `errors.INVALID` | no |
 | オブジェクトが見つからない | `errors.NOT_FOUND` | no |
+| 条件付き前提条件の失敗 | `errors.CONFLICT` | no |
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
 | 操作失敗 | `errors.INTERNAL` | no |
 

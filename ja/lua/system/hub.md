@@ -79,6 +79,7 @@ local v, err = hub.versions.get("wippy/http", "1.0.0")
 |----------|-------------|
 | `hub.versions.list(module, opts?)` | モジュールのバージョン一覧 |
 | `hub.versions.get(module, version, opts?)` | 特定のバージョンを取得 |
+| `hub.versions.inspect(module, version, opts?)` | バージョンのアーティファクトを検査（バンドルをダウンロードして読み取る） |
 
 ## 依存関係
 
@@ -98,7 +99,9 @@ local users, err = hub.dependents.get("wippy/http")
 local files, err = hub.files.list("wippy/http", "1.0.0")
 ```
 
-公開済みバージョンのファイル一覧を返します。
+| 関数 | 説明 |
+|----------|-------------|
+| `hub.files.list(module, version, opts?)` | バージョンのファイル一覧（`version` は必須）。`{items, total, page, page_size}` を返す |
 
 ## 関連項目
 

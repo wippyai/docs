@@ -675,3 +675,29 @@ entries:
 # Ссылка из другой записи
 func: app.users:handler
 ```
+
+## Переопределение записей {id="overriding-entries"}
+
+Любые поля записи — включая её `kind` — можно переопределить при запуске без редактирования исходного YAML, используя секцию конфигурации `override:` или CLI-флаг `-o`. Ключи используют формат `namespace:entry:path`:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
+```
+
+| Путь | Цель |
+|------|------|
+| `kind` | Типизированный kind записи (должен быть непустой строкой) |
+| `data.<field>` или просто `<field>` | Поле в data-нагрузке записи |
+| `meta.<field>` | Поле в метаданных записи |
+
+Те же переопределения работают из CLI:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+Значения CLI (`-o`) приводятся по форме (`true`/`false` в bool, числа в числа, иначе строка); значения секции `override:` сохраняют свой YAML-тип. Чтобы переопределить глобальные секции [конфигурации](guides/configuration.md), а не записи, используйте `--set`.

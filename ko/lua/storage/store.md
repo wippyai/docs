@@ -133,6 +133,8 @@ cache:delete("session:" .. session_id)
 
 ## 에러
 
+`store.get()`과 스토어 핸들의 모든 메서드(`get`, `set`, `has`, `delete`)는 구조화된 오류를 반환합니다(`err:kind()` 사용).
+
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
 | 빈 리소스 ID | `errors.INVALID` | 아니오 |

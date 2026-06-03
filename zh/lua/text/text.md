@@ -107,7 +107,7 @@ local positions = re:find_all_string_index("a1b2c3")
 |-----------|------|-------------|
 | `s` | string | 要搜索的字符串 |
 
-**返回值:** `table[]`
+**返回值:** `table[] | nil`（无匹配时为 nil）
 
 ### 替换
 

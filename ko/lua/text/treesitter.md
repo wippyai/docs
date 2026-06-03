@@ -375,7 +375,7 @@ cursor:close()
 | `current_node()` | `Node` | 커서 위치의 노드 |
 | `current_depth()` | `integer` | 깊이 (0 = 루트) |
 | `current_field_name()` | `string?` | 필드 이름 (있는 경우) |
-| `current_field_id()` | `integer?` | 필드 ID (있는 경우) |
+| `current_field_id()` | `integer` | 필드 ID (없으면 0) |
 | `current_descendant_index()` | `integer` | 현재 노드의 후손 인덱스 |
 | `goto_parent()` | `boolean` | 부모로 이동 |
 | `goto_first_child()` | `boolean` | 첫 번째 자식으로 이동 |
@@ -398,6 +398,7 @@ local lang = treesitter.language("go")
 print(lang:version())           -- ABI 버전
 print(lang:node_kind_count())   -- 노드 타입 수
 print(lang:field_count())       -- 필드 수
+print(lang:parse_state_count()) -- 파싱 상태 수
 
 -- 노드 종류 조회
 local kind = lang:node_kind_for_id(1)

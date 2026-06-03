@@ -35,18 +35,18 @@ local t = os.time({
 })
 ```
 
-**시그니처:** `os.time([spec]) -> integer`
+**시그니처:** `os.time([spec]) -> number`
 
 **파라미터:**
 
 | 필드 | 타입 | 기본값 | 설명 |
 |------|------|--------|------|
-| `year` | integer | 현재 연도 | 4자리 연도 (예: 2024) |
-| `month` | integer | 현재 월 | 월 1-12 |
-| `day` | integer | 현재 일 | 월의 일 1-31 |
-| `hour` | integer | 0 | 시 0-23 |
-| `min` | integer | 0 | 분 0-59 |
-| `sec` | integer | 0 | 초 0-59 |
+| `year` | number | 현재 연도 | 4자리 연도 (예: 2024) |
+| `month` | number | 현재 월 | 월 1-12 |
+| `day` | number | 현재 일 | 월의 일 1-31 |
+| `hour` | number | 0 | 시 0-23 |
+| `min` | number | 0 | 분 0-59 |
+| `sec` | number | 0 | 초 0-59 |
 
 인수 없이 호출하면 현재 Unix 타임스탬프를 반환합니다.
 
@@ -87,7 +87,7 @@ local t = os.date("*t", now)
 | 파라미터 | 타입 | 기본값 | 설명 |
 |----------|------|--------|------|
 | `format` | string | `"%c"` | 포맷 문자열, 테이블용 `"*t"` |
-| `timestamp` | integer | 현재 시간 | 포맷할 Unix 타임스탬프 |
+| `timestamp` | number | 현재 시간 | 포맷할 Unix 타임스탬프 |
 
 ### 포맷 지정자
 
@@ -126,14 +126,14 @@ local t = os.date("*t")
 
 | 필드 | 타입 | 설명 | 예시 |
 |------|------|------|------|
-| `year` | integer | 4자리 연도 | 2024 |
-| `month` | integer | 월 (1-12) | 6 |
-| `day` | integer | 월의 일 (1-31) | 15 |
-| `hour` | integer | 시 (0-23) | 14 |
-| `min` | integer | 분 (0-59) | 30 |
-| `sec` | integer | 초 (0-59) | 45 |
-| `wday` | integer | 요일 (1-7, 일요일=1) | 7 |
-| `yday` | integer | 연중 일 (1-366) | 167 |
+| `year` | number | 4자리 연도 | 2024 |
+| `month` | number | 월 (1-12) | 6 |
+| `day` | number | 월의 일 (1-31) | 15 |
+| `hour` | number | 시 (0-23) | 14 |
+| `min` | number | 분 (0-59) | 30 |
+| `sec` | number | 초 (0-59) | 45 |
+| `wday` | number | 요일 (1-7, 일요일=1) | 7 |
+| `yday` | number | 연중 일 (1-366) | 167 |
 | `isdst` | boolean | 일광 절약 시간 | false |
 
 UTC 날짜 테이블은 `"!*t"`를 사용하세요.
@@ -171,8 +171,8 @@ print(days)  -- 365
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
-| `t2` | integer | 나중 타임스탬프 |
-| `t1` | integer | 이전 타임스탬프 |
+| `t2` | number | 나중 타임스탬프 |
+| `t1` | number | 이전 타임스탬프 |
 
 `t2 - t1`을 초 단위로 반환합니다. `t1 > t2`이면 음수가 될 수 있습니다.
 

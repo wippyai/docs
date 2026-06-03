@@ -160,7 +160,7 @@ runner.run({
 
 ### Compiling Programs
 
-Compile once for repeated execution:
+`runner.compile` validates source and reports its entrypoint and modules without running it:
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +170,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+The compiled program is informational; execute by calling `runner.run` with the source and method.
 
 ## Security Model
 

@@ -107,7 +107,7 @@ local positions = re:find_all_string_index("a1b2c3")
 |-----------|------|-------------|
 | `s` | string | String to search |
 
-**Returns:** `table[]`
+**Returns:** `table[] | nil` (nil when there are no matches)
 
 ### Replace
 

@@ -133,6 +133,8 @@ Operações de store estao sujeitas a avaliação de política de segurança.
 
 ## Erros
 
+`store.get()` e todos os métodos do handle do store (`get`, `set`, `has`, `delete`) retornam erros estruturados (use `err:kind()`).
+
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID de recurso vazio | `errors.INVALID` | não |

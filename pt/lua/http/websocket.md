@@ -158,7 +158,7 @@ end
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `type` | string | `"text"` ou `"binary"` |
-| `data` | string | Conteudo da mensagem |
+| `data` | string? | Conteudo da mensagem (nil para tipos de payload desconhecidos) |
 
 ## Fechando Conexão
 

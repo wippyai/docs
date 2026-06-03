@@ -675,3 +675,29 @@ entries:
 # 別のエントリからの参照
 func: app.users:handler
 ```
+
+## エントリの上書き {id="overriding-entries"}
+
+任意のエントリのフィールド（その `kind` を含む）は、ソース YAML を編集することなく、`override:` 設定セクションまたは `-o` CLI フラグを使って起動時に上書きできます。キーは `namespace:entry:path` 形式を使用します。
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
+```
+
+| パス | 対象 |
+|------|------|
+| `kind` | エントリの型付き kind（空でない文字列である必要があります） |
+| `data.<field>` または素の `<field>` | エントリの data ペイロード内のフィールド |
+| `meta.<field>` | エントリのメタデータ内のフィールド |
+
+同じ上書きを CLI からも適用できます。
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+CLI（`-o`）の値は形状に応じて型変換されます（`true`/`false` は bool、数値は数値、それ以外は文字列）。`override:` セクションの値は YAML の型を保持します。エントリではなくグローバルな[設定](guides/configuration.md)セクションを上書きするには、`--set` を使用します。

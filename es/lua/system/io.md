@@ -25,7 +25,7 @@ local ok, err = io.write("text", "more")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `...` | string | Número variable de strings a escribir |
+| `...` | any | Número variable de valores a escribir (convertidos a string) |
 
 **Devuelve:** `boolean, error`
 

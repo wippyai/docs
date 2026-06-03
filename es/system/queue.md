@@ -148,7 +148,7 @@ Las colas son creadas automáticamente por el driver en el primer uso. Use heade
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `driver` | ID de Registro | Sí | Driver de cola |
-| `codec` | string | No | Codificación del payload (e.g. `json/plain`, `msgpack/plain`) |
+| `codec` | string | No | Codificación de transporte para los cuerpos de mensaje. Por defecto `json/plain` (ver [Códecs](#codecs)) |
 | `queue_name` | string | No | Nombre externo de cola (por defecto el nombre de entrada) |
 | `driver_options` | object | No | Sub-bag por driver, indexado por kind del driver |
 | `dead_letter.queue` | ID de Registro | No | ID de cola para mensajes fallidos |
@@ -173,6 +173,17 @@ Las claves bajo `driver_options` están agrupadas por nombre de driver. Un drive
 | `message_ttl` | Override de TTL de mensaje por cola |
 | `queue_expiry` | Expiración de colas no utilizadas |
 | `max_length` | Máximo de mensajes retenidos |
+
+### Códecs {id="codecs"}
+
+El `codec` selecciona cómo se serializa el cuerpo de un mensaje antes de entregarlo al broker. Es una cadena de formato de payload y por defecto es `json/plain`:
+
+| Códec | Formato |
+|-------|---------|
+| `json/plain` | JSON (por defecto) |
+| `application/msgpack` | MessagePack |
+
+El driver AMQP establece un `content-type` correspondiente (`application/json` o `application/msgpack`) en los mensajes publicados. Un códec desconocido falla al declarar la cola, no al publicar.
 
 ## Configuración de Consumidor
 

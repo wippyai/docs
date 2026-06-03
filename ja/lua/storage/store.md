@@ -133,6 +133,8 @@ cache:delete("session:" .. session_id)
 
 ## エラー
 
+`store.get()` とストアハンドルのすべてのメソッド（`get`、`set`、`has`、`delete`）は構造化エラーを返します（`err:kind()` を使用）。
+
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | リソースIDが空 | `errors.INVALID` | no |
