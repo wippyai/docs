@@ -236,7 +236,7 @@ The `wippy.scripts` block in `package.json` maps these script names for the Wipp
 
 ## TypeScript Support — `@wippy-fe/types-global-proxy`
 
-Add this package to `devDependencies` to get TypeScript type definitions for the `window.$W` global and the `getWippyApi()` function:
+Add this package to `devDependencies` to get TypeScript type definitions for the internal proxy globals — the `window.$W` global and the `getWippyApi()` function. You only need it if you reference those globals directly; ordinary proxy usage via `import { host, api, on } from '@wippy-fe/proxy'` is already fully typed by the package itself and needs nothing extra.
 
 ```bash
 npm install --save-dev @wippy-fe/types-global-proxy
@@ -260,7 +260,7 @@ Or add it to the `include` array if you prefer explicit file resolution:
 }
 ```
 
-Without this package, TypeScript will not know the shape of `window.$W` and calls to proxy methods will produce type errors.
+Without this package, TypeScript will not know the shape of the internal proxy globals (`window.$W`, `window.getWippyApi()`, `window.__WIPPY_*`) if you reference them directly. This is only needed for that rare, discouraged case — ordinary proxy usage via `import { host, api, on } from '@wippy-fe/proxy'` is already fully typed by `@wippy-fe/proxy` (with types from `@wippy-fe/shared`) and requires nothing extra.
 
 ## Multi-Project Builds
 

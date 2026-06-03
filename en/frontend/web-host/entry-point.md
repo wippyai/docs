@@ -37,6 +37,8 @@ A simplified version of the page looks like this:
 
 The page fetches its configuration and hands it to the module's init function. The host mounts into the page, takes over routing and browser history, and proceeds with full initialization.
 
+> **Note on the fetch path.** `/facade/config` is the path the facade registers on the public router; the actual URL your page fetches includes that router's prefix. With the example prefix `/api/public`, it is `/api/public/facade/config` — exactly what the shipped facade page fetches. The inline `fetch('/facade/config')` snippets here are shortened for readability.
+
 ## The Config Flow
 
 The config flow has two steps:
@@ -72,6 +74,7 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
   },
   "routePrefix": "https://api.example.com",
   "axiosDefaults": {},
+  "apiRoutes": {},
   "theming": {
     "global": {
       "customCSS": "@import url('https://fonts.googleapis.com/...');",
@@ -105,7 +108,6 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
     "hideNavBar": true,
     "disableRightPanel": false,
     "hideSessionSelector": false,
-    "apiRoutes": {},
     "additionalNavItems": [],
     "stateCache": {},
     "allowAdditionalTags": [],
@@ -139,6 +141,7 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
 | `env` | Runtime URLs injected as top-level `AppConfig.env`. |
 | `routePrefix` | API URL prefix forwarded to child apps. |
 | `axiosDefaults` | Axios instance defaults forwarded to child apps. |
+| `apiRoutes` | Override individual API endpoint paths (top-level `AppConfig` field). |
 | `theming` | CSS customization split into three scopes. |
 | `hostConfig` | Web Host feature flags and UI configuration. |
 | `context` | Initial page or artifact context for the host. |
@@ -171,7 +174,6 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
 | `hideNavBar` | boolean | `false` | Hide left navigation sidebar entirely |
 | `disableRightPanel` | boolean | `false` | Disable right artifact panel |
 | `hideSessionSelector` | boolean | `false` | Hide the chat session picker |
-| `apiRoutes` | object | `{}` | Override individual API endpoint paths |
 | `additionalNavItems` | array | `[]` | Extra items injected into the sidebar |
 | `stateCache` | object | `{}` | LRU cache config for child iframe state |
 | `allowAdditionalTags` | array | `[]` | HTML tags allowed through the chat sanitizer |

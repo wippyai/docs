@@ -891,6 +891,7 @@ Reference: `gold:app-template/frontend/web-components/mermaid/package.json`.
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "@wippy-fe/proxy": "^0.0.28",
+    "@wippy-fe/vite-plugin": "^0.0.32",
     "typescript": "^5.0.0",
     "vite": "^6.0.0",
     "vue": "^3.5.0",
@@ -957,10 +958,11 @@ Reference: `gold:mermaid/vite.config.ts`.
 ```ts
 import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
+import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), wippyComponentPlugin()],
   build: {
     target: 'esnext',
     lib: {
@@ -998,6 +1000,7 @@ Rules:
 - MUST set `entry` (and `input.index`) to your `src/index.ts`.
 - MUST set `preserveEntrySignatures: false`.
 - MUST set entry/chunk/asset file names: `[name].js`, `[name]-[hash].js`, `[name]-[hash][extname]`.
+- MUST include `wippyComponentPlugin()` from `@wippy-fe/vite-plugin` in `plugins` so the build emits `dist/wippy-meta.json` (see [§9.3a](#93a-wippycomponentplugin-web-components)).
 - MUST externalize what the host provides: `vue`, `pinia`, `@iconify/vue`, `@wippy-fe/proxy`.
 - MUST **bundle** (NOT externalize) `@wippy-fe/theme`, `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, `@wippy-fe/pinia-persist` (if used), and your domain libs.
 - DO NOT set `base` (no HTML entry, base is irrelevant).
@@ -1044,7 +1047,7 @@ Rules:
 - MUST extend `WippyVueElement<ComponentProps, Events>` (Vue) or `WippyElement` (vanilla).
 - MUST implement `static get wippyConfig()` returning:
   - `propsSchema: pkg.wippy.props as WippyPropsSchema` — single source of truth from package.json.
-  - `hostCssKeys: [...]` — which host-provided CSS bundles to inject into the shadow root. Use the const names from `@wippy-fe/webcomponent-core`: `themeConfigUrl` (theme tokens), `iframeCssUrl` (layout), `primeVueCssUrl` (PrimeVue components), `markdownCssUrl` (markdown), `preflightCssUrl` (resets). Pick the minimal set you need.
+  - `hostCssKeys: [...]` — which host-provided CSS bundles to inject into the shadow root. Use the const names from `@wippy-fe/webcomponent-core`: `themeConfigUrl` (theme tokens), `iframeCssUrl` (layout), `primeVueCssUrl` (PrimeVue components), `markdownCssUrl` (markdown). Pick the minimal set you need. (`preflightCssUrl` is **not** a member of the `HostCssKey` union — Tailwind v3 preflight is reachable only imperatively via `loadCss(hostCss.preflightCssUrl)`.)
   - `inlineCss: stylesText` — your WC-specific CSS imported via `?inline`.
   - `contentTemplate?: 'text/vnd.foo'` — optional MIME type for WCs that consume `<text>` children (rare).
 - MUST implement `static get vueConfig()` returning `{ rootComponent }`. Add `plugins: [PrimeVuePlugin, ...]` if you use PrimeVue components.
@@ -1573,7 +1576,7 @@ Two endpoints read it:
 | Endpoint | What it serves |
 |---|---|
 | `GET /api/public/pages/content/{id}` | resolved `wippy-meta.json` next to the served `app.html` (view.page) |
-| `GET /api/public/components/list` + `/components/by-tag/<release-tag>` | resolved `wippy-meta.json` next to each `index.js` (view.component) |
+| `GET /api/public/components/list` + `/components/by-tag/{tag}` | resolved `wippy-meta.json` next to each `index.js` (view.component). `{tag}` is the WC's custom-element tag name (e.g. `example-mermaid`), resolved via `loadByTagName()` — not the CDN git release tag. |
 
 **YAML-first priority**: the operator's `_index.yaml` registry entry overlays the bundled meta per-field. If `meta.tag_name`, `meta.title`, `meta.description`, `meta.props`, `meta.events`, or `meta.entry_point` is set in YAML, that wins. Otherwise the bundled meta fills in.
 

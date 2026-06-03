@@ -7,7 +7,7 @@ When something is broken, start here. Each section lists the most common causes 
 **1. Check the Console first:**
 - `Failed to resolve module specifier 'vue'` — the import map is missing. In hosted mode, the host injects it; in host-less mode, confirm your `app.html` `<script type="importmap">` block includes `vue`, `pinia`, and `vue-router`. (Do NOT list `@wippy-fe/proxy` there — the host / dev-proxy injects it.)
 - `Proxy globals not found` (or your `@wippy-fe/proxy` imports come back undefined) — `proxy.js` / `dev-proxy.js` did not load before your app script ran, so the runtime never installed its internal globals. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
-- Silent hang (no errors, no app) — the proxy runtime is stalled waiting for the `SetConfig` PostMessage, so the `@wippy-fe/proxy` getters never resolve. In host-less mode, confirm the dev overlay FAB (floating button) appeared. If not, the proxy script did not load.
+- Silent hang (no errors, no app) — config is injected synchronously as `window.__WIPPY_APP_CONFIG__` before `proxy.js` runs, so the `@wippy-fe/proxy` getters resolve (or throw `Proxy globals not found`) immediately; they do not await `SetConfig`. A true hang means the runtime never mounted — either `proxy.js` / `dev-proxy.js` failed to load and install its globals (see the `Proxy globals not found` bullet above), or, in host-less mode, the dev overlay is sitting in "waiting" because you haven't clicked **Accept**. Confirm the dev overlay FAB (floating button) appeared; if not, the proxy script did not load. (The `SetConfig` / `GetConfig` handshake only applies to the host-level manual `iframe.html?waitForCustomConfig` embedding, not a hosted or host-less micro frontend.)
 
 **2. Check the Network tab:**
 - Confirm `dev-proxy.js` (host-less) or `proxy.js` (hosted) loaded with status 200.
@@ -18,7 +18,7 @@ When something is broken, start here. Each section lists the most common causes 
 // Internal globals — app code never reads these; this is only a console smoke test
 // that the proxy runtime mounted. App/WC code uses `import { ... } from '@wippy-fe/proxy'`.
 window.$W              // should be an object, not undefined
-window.__WIPPY_PROXY__ // likewise — present once the runtime installed
+window.__WIPPY_APP_API__ // the resolved proxy instance — present once the runtime installed
 ```
 If these are present but your `@wippy-fe/proxy` imports still come back undefined, the import map is shadowing `@wippy-fe/proxy` (it must NOT be in your `app.html` importmap).
 

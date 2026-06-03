@@ -70,7 +70,7 @@ entries:
 | `show_admin` | `true` | Show admin panel toggle |
 | `allow_select_model` | `false` | Allow user to select LLM model |
 | `session_type` | `non-persistent` | Auth token storage: `non-persistent` (in-memory) or `cookie`. The Web Host treats any value other than `cookie` as `non-persistent`. |
-| `history_mode` | `hash` | Browser history mode: `hash` or `history` |
+| `history_mode` | `hash` | Browser history mode: `hash` or `browser`. The Web Host treats any value other than `browser` as `hash`. |
 | `hide_session_selector` | `false` | Hide the session picker UI |
 
 ### Theming
@@ -89,22 +89,29 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `children_css_variables` | children | `{}` | CSS custom properties for iframe contents only |
 | `login_path` | — | `/login.html` | Redirect path for unauthenticated users |
 
-### Optional `hostConfig` JSON
+### Optional JSON parameters
 
-Each of the following is a JSON-encoded string parameter; defaults are empty (`{}` or `[]`). They're surfaced verbatim under `hostConfig` for the frontend.
+Each of the following is a JSON-encoded string parameter; defaults are empty (`{}` or `[]`).
+
+These four are surfaced verbatim under `hostConfig` for the frontend:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `api_routes` | `{}` | Route overrides for the frontend |
 | `additional_nav_items` | `[]` | Extra sidebar entries |
 | `state_cache` | `{}` | Frontend state cache configuration |
 | `allow_additional_tags` | `[]` | Extra HTML tags allowed in chat |
 | `chat` | `{}` | Chat UI overrides |
-| `axios_defaults` | `{}` | Frontend axios HTTP client defaults |
+
+These two are emitted as **top-level** `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:
+
+| Parameter | Emitted as | Default | Description |
+|-----------|------------|---------|-------------|
+| `api_routes` | `apiRoutes` | `{}` | Route overrides for the frontend |
+| `axios_defaults` | `axiosDefaults` | `{}` | Frontend axios HTTP client defaults |
 
 ## Config Endpoint
 
-The facade registers `GET /facade/config` on the configured router. The frontend fetches this on load:
+The facade registers `GET /facade/config` on the configured router. That path is registered *on* the public router, so the URL the page actually fetches includes the router's prefix — with the example prefix `/api/public` (see [Setup](#setup)), it is `/api/public/facade/config`, which is exactly what the shipped facade page fetches. The frontend fetches this on load:
 
 ```json
 {
@@ -117,7 +124,8 @@ The facade registers `GET /facade/config` on the configured router. The frontend
         "APP_AUTH_API_URL": "https://api.example.com",
         "APP_WEBSOCKET_URL": "wss://api.example.com"
     },
-    "routePrefix": "https://api.example.com",
+    "routePrefix": "/app",
+    "apiRoutes":     { "...": "..." },
     "axiosDefaults": { "...": "..." },
     "theming": {
         "global":  { "customCSS": "...", "cssVariables": {}, "iconSets": {} },
@@ -133,7 +141,6 @@ The facade registers `GET /facade/config` on the configured router. The frontend
         "hideNavBar": false,
         "disableRightPanel": false,
         "hideSessionSelector": false,
-        "apiRoutes":         { "...": "..." },
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
         "allowAdditionalTags": [],
@@ -142,7 +149,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`, and `axios_defaults`.
+The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. The `api_routes` and `axios_defaults` parameters are emitted as top-level `AppConfig` fields (`apiRoutes`, `axiosDefaults`), siblings of `hostConfig`, not inside it.
 
 The `facade_url`, `iframe_origin`, `iframe_url`, and `login_path` fields are **shell-level** fields used by the embedding page to build itself — they are not part of the child `AppConfig` that the host initializes with. The `iframe_origin`/`iframe_url` fields are consumed only by manual, facade-less iframe embeddings (see [Facade Entry Point](../frontend/web-host/entry-point.md)).
 

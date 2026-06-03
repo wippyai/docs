@@ -28,7 +28,7 @@ Every Wippy web app and web component is built around a small, deliberate constr
 
 What that means in practice:
 
-- The only thing an app or WC touches at runtime is the proxy API surface: the sync getters imported from `@wippy-fe/proxy` (`host`, `api`, `on`, `config`, `state`, `ws`, `logger`). Both apps and WCs use the same imports; under the hood they resolve to the same `ProxyApiInstance` that the runtime installs as internal globals (`window.$W`, `window.__WIPPY_PROXY__` — never read these directly).
+- The only thing an app or WC touches at runtime is the proxy API surface: the sync getters imported from `@wippy-fe/proxy` (`host`, `api`, `on`, `config`, `state`, `ws`, `logger`). Both apps and WCs use the same imports; under the hood they resolve to the same `ProxyApiInstance` that the runtime installs as internal globals (`window.$W`, `window.__WIPPY_APP_API__` — never read these directly).
 - Apps and WCs do **not** import code from neighboring apps, the parent module's Lua side, the Wippy Web Host, or any other module in the project. They live in their own folder, declare their externals (`vue`, `pinia`, `vue-router`, `@iconify/vue`, `axios`, `@wippy-fe/proxy`, etc.) in their own `package.json`, and read their own `wippy.yaml` / `package.json` metadata.
 - The same `app.ts` (or WC `index.ts`) boots correctly in two environments:
   1. **Hosted** — inside a Wippy web host that injects `proxy.js`, AppConfig, importmap, and CSS.
@@ -118,7 +118,7 @@ The canonical pattern is `wippyPagePlugin()` from `@wippy-fe/vite-plugin` ≥ `0
 1. **Resolves `file://` references** in the `wippy` block (any string value of the form `"file://<relative>"` is replaced with the referenced file's UTF-8 contents — see `*.do-not-link.<ext>` naming convention in [build-system.md](./build-system.md)).
 2. **Emits two outputs** with the resolved JSON:
    - `<head>`-injected `<script type="application/json" data-role="@wippy/package">` for host-less / dev-proxy boot.
-   - `dist/wippy-meta.json` for wippy-hosted mode — `wippy/views` ≥ `0.5.0` reads this file when serving `/pages/content/{id}` and `/components/by-tag/<release-tag>` instead of synthesizing from YAML.
+   - `dist/wippy-meta.json` for wippy-hosted mode — `wippy/views` ≥ `0.5.0` reads this file when serving `/pages/content/{id}` and `/components/by-tag/{tag}` instead of synthesizing from YAML.
 
 ```ts
 // vite.config.ts
@@ -180,7 +180,7 @@ The canonical app-template apps ship with the `src="…/dev-proxy.js"` populated
 
 `dev-proxy.js` is the host-less boot bundle, served from the Wippy Web Host CDN at `https://web-host.wippy.ai/<release-tag>/dev-proxy.js`.
 
-Its job is to make the `@wippy-fe/proxy` getters resolve correctly without any host — by installing the same internal globals (`window.$W`, `window.__WIPPY_PROXY__`) the real host would. App and WC code never touches those globals; it just imports from `@wippy-fe/proxy` and the getters work. dev-proxy does this in roughly five steps:
+Its job is to make the `@wippy-fe/proxy` getters resolve correctly without any host — by installing the same internal globals (`window.$W`, `window.__WIPPY_APP_API__`) the real host would. App and WC code never touches those globals; it just imports from `@wippy-fe/proxy` and the getters work. dev-proxy does this in roughly five steps:
 
 1. **Install history guard** (`installHistoryGuard()`) — stubs `pushState` / `replaceState` so vue-router doesn't try to mutate browser history outside an iframe-srcdoc context.
 2. **Resolve a config** (`resolveDevConfig()` in `src/proxy/dev/resolve-dev.ts`):
@@ -194,7 +194,7 @@ Its job is to make the `@wippy-fe/proxy` getters resolve correctly without any h
    - A real axios instance backing `api` from `@wippy-fe/proxy`, configured against the URL the developer entered (`env.APP_API_URL` defaults to `${location.origin}/api`).
    - A logger / state / ws stub that mirrors the production proxy shape.
 4. **Apply CSS injection** based on the proxy config the developer chose:
-   - `theme_config: true` → injects `theme-config.css` from `@wippy-fe/theme`.
+   - `themeConfig: true` → injects `theme-config.css` from `@wippy-fe/theme`.
    - `iframe`, `primevue`, `markdown` → ditto, the inline-CSS bundles from `src/proxy/dev/css-inline.ts`.
    - `customCss` / `customVariables` → applies `appConfig.theming.global.customCSS` / `cssVariables` (including the `@dark`/`@light` blocks described in [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3-per-page-config_overrides-in-registry-yaml)).
 5. **Install the internal proxy globals** with the same shape as `entry.iframe.ts`, so the `@wippy-fe/proxy` getters (`config`, `host`, `api`, `on`, `logger`, `state`, `ws`, `loadWebComponent`) resolve. Any app or WC code that imports from `@wippy-fe/proxy` works unchanged. (The globals themselves — `window.$W` et al. — are internal; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).)
@@ -229,7 +229,7 @@ Visually the dev overlay is a tiny shadow-DOM web component (`<wippy-dev-overlay
   - **Monitor** — live readout of current path, document title, viewport size; "Trigger Refresh" button that fires `@visibility(true)` so the app can re-fetch.
   - **Configuration (collapsible)**:
     - `App Config (JSON)` — full `ChildAppConfig` as editable JSON. Validates on Accept.
-    - `Proxy Injections` — checkboxes for every proxy injection flag (`theme_config`, `iframe`, `primevue`, `markdown`, `customCss`, `customVariables`, `tailwindConfig`, `resizeObserver`, `preventLinkClicks`, `iconifyIcons`, `refreshWhenVisible`, `historyPolyfill`, `errorCapture`).
+    - `Proxy Injections` — checkboxes for every proxy injection flag (`themeConfig`, `iframe`, `primevue`, `markdown`, `customCss`, `customVariables`, `tailwindConfig`, `resizeObserver`, `preventLinkClicks`, `iconifyIcons`, `refreshWhenVisible`, `historyPolyfill`, `errorCapture`).
     - `Options` — "Auto-accept on reload" checkbox (writes the auto-accept flag to localStorage).
   - **Footer** — Reset (clears all `@wippy-dev/*` localStorage keys), Accept (saves config + resolves the boot promise).
 
@@ -270,7 +270,7 @@ The stubs are intentionally chatty: console output is a substitute for the host'
 
 ## Web components — host-less playground and tests
 
-Web components share the same dual-mode design but are loaded as ES modules instead of iframes. The proxy contract for WCs is `import { api, host, on, ... } from '@wippy-fe/proxy'` — and that import resolves at runtime by reading `window.__WIPPY_PROXY__` (set by either the real proxy or dev-proxy).
+Web components share the same dual-mode design but are loaded as ES modules instead of iframes. The proxy contract for WCs is `import { api, host, on, ... } from '@wippy-fe/proxy'` — and that import resolves at runtime by reading `window.__WIPPY_APP_API__` (set by either the real proxy or dev-proxy).
 
 ### Playground / demo HTML page
 
@@ -332,11 +332,11 @@ it('reads host wrapper attached by resolver as __wippyHost', () => {
 })
 ```
 
-The `__wippyHost` property is the contract the managed-layout host uses. Tests that need API or proxy globals can either mount dev-proxy via a vitest setup file, or stub `window.__WIPPY_PROXY__` themselves:
+The `__wippyHost` property is the contract the managed-layout host uses. Tests that need API or proxy globals can either mount dev-proxy via a vitest setup file, or stub `window.__WIPPY_APP_API__` themselves:
 
 ```ts
 // vitest.setup.ts
-;(window as any).__WIPPY_PROXY__ = {
+;(window as any).__WIPPY_APP_API__ = {
   api: mockApi,
   host: mockHost,
   on: mockOn,
@@ -369,7 +369,7 @@ When an app or WC has drifted from the standalone-aware contract, the symptoms a
 ## Troubleshooting
 
 **"Proxy globals not found" error.**
-The WC bundle ran but neither real proxy nor dev-proxy initialized `window.__WIPPY_PROXY__`. Check that `<script src=".../dev-proxy.js" data-role="@wippy/scripts">` is in the page and the URL is reachable. In production-host mode this error means the host failed to inject proxy.js — check the host logs.
+The WC bundle ran but neither real proxy nor dev-proxy initialized `window.__WIPPY_APP_API__`. Check that `<script src=".../dev-proxy.js" data-role="@wippy/scripts">` is in the page and the URL is reachable. In production-host mode this error means the host failed to inject proxy.js — check the host logs.
 
 **Dev overlay never appears.**
 The overlay is a shadow-DOM custom element appended to `document.body` after `DOMContentLoaded`. If you load `dev-proxy.js` from inside `<head>` and the body is missing or has `display: none`, the overlay can't render. Move the script to the bottom of the body, or unhide the body.

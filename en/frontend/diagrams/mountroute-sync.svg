@@ -39,9 +39,9 @@
   <line x1="719.02" y1="130" x2="145.884" y2="130" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
   <text x="432.452" y="120" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">router.afterEach fires</text>
 </g>
-<g class="message" data-from="ChildApp" data-to="ProxyJS" data-label="host.onRouteChanged('/new-path', title)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<g class="message" data-from="ChildApp" data-to="ProxyJS" data-label="host.onRouteChanged('/new-path', navId)" data-line-style="solid" data-arrow-head="filled" data-self="false">
   <line x1="145.884" y1="170" x2="294.67499999999995" y2="170" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
-  <text x="220.27949999999998" y="160" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">host.onRouteChanged(&#39;/new-path&#39;, title)</text>
+  <text x="220.27949999999998" y="160" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">host.onRouteChanged(&#39;/new-path&#39;, navId)</text>
 </g>
 <g class="message" data-from="ProxyJS" data-to="WebHost" data-label="PostMessage: CmdRouteChanged" data-line-style="solid" data-arrow-head="filled" data-self="false">
   <line x1="294.67499999999995" y1="210" x2="434.67499999999995" y2="210" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />

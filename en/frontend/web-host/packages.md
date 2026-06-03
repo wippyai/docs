@@ -66,17 +66,15 @@ Mark `@wippy-fe/proxy` as `external` in your Vite config — the host provides i
 
 ### `@wippy-fe/router`
 
-Drop-in Vue Router helpers that handle the host-navigation awareness that standard `<RouterLink>` does not provide. Provides `createAppRouter()` for creating memory-history routers suitable for srcdoc iframes, `AppRouterLink` (an alias for the standard link component), and `HostRouterLink` which classifies links into `host-nav`, `child-nav`, `external`, or `ignore` and routes them appropriately.
+Drop-in Vue Router helpers that handle the host-navigation awareness that standard `<RouterLink>` does not provide. Provides `createAppRouter()` for creating memory-history routers suitable for srcdoc iframes; `AutoRouterLink` (also exported as the deprecated alias `RouterLink`), a classifying drop-in replacement for vue-router's `<RouterLink>` that inspects each target and routes it as `host-nav`, `child-nav`, `external`, or `ignore`; and `HostRouterLink`, an explicit link that always forwards navigation to the host via `host.navigate()` (use it when you want host-level navigation regardless of nesting).
 
 ```typescript
 import { createAppRouter, HostRouterLink } from '@wippy-fe/router'
 
-const router = createAppRouter({
-  routes: [
-    { path: '/', component: Home },
-    { path: '/settings', component: Settings },
-  ],
-})
+const router = createAppRouter([
+  { path: '/', component: Home },
+  { path: '/settings', component: Settings },
+])
 ```
 
 `createAppRouter()` always uses memory history — required because srcdoc iframes have no real `window.location` and `createWebHistory()` does not work inside them. The router syncs its internal route with the host via `@history` events automatically.
@@ -125,7 +123,9 @@ import type { ProxyApiInstance } from '@wippy-fe/proxy'
 import MyApp from './MyApp.vue'
 
 class MyVueWidget extends WippyVueElement {
-  static vueComponent = MyApp
+  static get vueConfig() {
+    return { rootComponent: MyApp }
+  }
   static get wippyConfig() {
     return { propsSchema: { properties: { label: { type: 'string' } } } }
   }
@@ -148,8 +148,8 @@ Inside `MyApp.vue`:
 const props = useComponentProps<{ label: string }>()
 
 // Emit events to the host
-const events = useComponentEvents()
-events.emit('selected', { id: 42 })
+const emit = useComponentEvents()
+emit('selected', { id: 42 })
 
 // Access the panel-scoped host wrapper
 const host = useHost<ProxyApiInstance['host']>()
@@ -297,6 +297,10 @@ The Web Host injects an import map into every child iframe that resolves the fol
 | `markdown-it` | 14.1.0 | Markdown parser |
 | `markdown-it-async` | 2.2.0 | Async-rule extension for markdown-it |
 | `@wippy-fe/proxy` | — | Proxy API — always external, resolved to host-provided ESM |
+| `@wippy-fe/router` | — | Vue Router helpers — host-provided ESM |
+| `@wippy-fe/log` | — | Structured logger; subpaths `default-receiver`, `logger`, `sentry-transport`, `console-transport`, `gelf-transport` are also mapped |
+| `@wippy-fe/markdown-iframe` | — | Markdown rendering bundle dynamically imported by `<w-artifact>` |
+| `@wippy-fe/vue-utils` | — | Vue 3 utilities (re-exported via `@wippy-fe/proxy`) |
 
 Configure Vite externals to match:
 

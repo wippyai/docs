@@ -6,11 +6,11 @@ Wippy's frontend system is built around three distinct layers. Understanding how
 
 ## The Three Layers
 
-### Layer 1: Frontend Registry
+### Layer 1: Frontend Facade
 
-The backend registers frontend artifacts — micro frontend apps and web components — as registry entries in `_index.yaml`. The `wippy/views` module catalogs these entries, exposes them through REST APIs, and serves their static files. This layer answers the question: *how does a Wippy backend tell the Web Host that a micro frontend app or web component exists?*
+The `wippy/facade` backend module is the entry point for serving a Wippy frontend. It registers a thin HTML page and a `/facade/config` endpoint on your Wippy gateway. When a user opens the application, the facade serves that page, which loads the Web Host JS module from CDN and initialises it with configuration from `/facade/config`. The page itself carries no Vue or React — it exists only to load the Web Host and hand it its config.
 
-See: [Frontend Registry](./frontend-registry/registry-entries.md)
+See: [Web Host — Facade Entry Point](./web-host/entry-point.md)
 
 ### Layer 2: Web Host
 
@@ -28,7 +28,11 @@ See: [Wippy Micro Frontends](./micro-frontends/micro-frontend-app.md)
 
 ---
 
-## Module responsibilities
+## Registration and module responsibilities
+
+The three layers above describe how a Wippy frontend runs. Underpinning them is a registration concern handled by the `wippy/views` backend module. The backend registers frontend artifacts — micro frontend apps and web components — as registry entries in `_index.yaml`. The `wippy/views` module catalogs these entries, exposes them through REST APIs, and serves their static files. This is what tells the Web Host that a micro frontend app or web component exists.
+
+See: [Frontend Registry](./frontend-registry/registry-entries.md)
 
 | Module | Provides |
 |---|---|
@@ -44,8 +48,8 @@ See: [Wippy Micro Frontends](./micro-frontends/micro-frontend-app.md)
 How the Wippy backend connects to the Wippy frontend through the registry.
 
 - [Registry Entries](./frontend-registry/registry-entries.md) — `_index.yaml` format, `specification: wippy-component-1.0`, `wippy-meta.json`
-- [Pages (view.page)](./frontend-registry/view-page.md) — metadata fields, proxy injection flags, `config_overrides`
-- [Components (view.component)](./frontend-registry/view-component.md) — autoload gates, `auto_register`, props/events schemas
+- [Micro Frontend Apps (view.page)](./frontend-registry/view-page.md) — metadata fields, proxy injection flags, `config_overrides`
+- [Web Components (view.component)](./frontend-registry/view-component.md) — autoload gates, `auto_register`, props/events schemas
 - [Dynamic Routing](./frontend-registry/dynamic-routing.md) — mount route sync, `CmdRouteChanged`, `classifyLink`
 
 ### Web Host

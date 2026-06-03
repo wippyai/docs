@@ -67,7 +67,7 @@ These are the flags a micro frontend app typically declares and the value to set
 - `resizeObserver` (`false` for full SPAs) — child body-size updates to the host
 - `preventLinkClicks` (`false` for pages) — route `<a>` clicks through `classifyLink`
 - `iconifyIcons` (`false`) — pre-load host Iconify collections
-- `errorCapture` (`false`) — forward uncaught iframe errors to the host
+- `errorCapture` (`true`) — forward uncaught iframe errors to the host
 
 Most full SPA pages set `resizeObserver: false` and `preventLinkClicks: false` because they manage their own layout and routing. The `main` app in the template sets `errorCapture: true` to surface uncaught errors during development.
 
@@ -105,7 +105,7 @@ The resolved entry URL is `<url>/<base_path>/<entry_point>`. An operator deploys
 |---|---|---|---|
 | `mountRoute` | string | — | Claims a URL path in the host router; the host renders this page when the browser navigates to a matching path |
 
-`mountRoute` uses Vue Router's path syntax. Wildcard suffixes like `/home/:part(.*)*` let the child application manage its own sub-routes while the host keeps ownership of the top-level path.
+`mountRoute` accepts only the v1 catch-all form — `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or a different param name (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict and `GET /api/v2/views/pages/routes` returns HTTP 500, rendered as a fatal fullscreen error. The `:part(.*)*` wildcard lets the child application manage its own sub-routes while the host keeps ownership of the top-level path.
 
 ```yaml
 mountRoute: /home/:part(.*)*

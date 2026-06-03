@@ -282,7 +282,7 @@ this.host?.layout.on('open-chat', ({ payload }) => {
 })
 
 // In the right-panel app (a normal Vue page module)
-const router = createAppRouter({ routes: [...] })
+const router = createAppRouter([...])
 host.on('@history', ({ path }) => {
   router.push(path).catch(() => {})
 })

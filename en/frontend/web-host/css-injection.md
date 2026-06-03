@@ -69,13 +69,13 @@ These flags sit alongside `css` in the `injections` block:
 
 | Flag | Default | What it does |
 |------|---------|--------------|
-| `tailwindConfig` | `false` | Exposes `window.tailwind.config` for apps that use the CDN Tailwind runtime (`<script src="https://cdn.tailwindcss.com">`). Not needed for Vite builds that compile Tailwind at build time. |
-| `resizeObserver` | `false` | Observe the child document body and send size updates to the host. This is a body-size relay, not a browser API polyfill. |
-| `preventLinkClicks` | `false` | Intercept all `<a>` clicks inside the iframe and classify them through `host.classifyLink()` before navigating. Useful for pages with external Markdown content that may contain host-navigable links. |
-| `iconifyIcons` | `false` | Inject registered Iconify icon sets so `<iconify-icon>` elements work offline. |
-| `refreshWhenVisible` | `false` | Notify the child when a previously hidden iframe becomes visible again. |
-| `historyPolyfill` | `false` | Patch history navigation in the child iframe so SPA route changes are observable by the host. |
-| `errorCapture` | `false` | Attach `window.onerror` and `window.onunhandledrejection` handlers that forward uncaught errors to the host via `logger.captureException`. Enable in production for centralized error collection. |
+| `tailwindConfig` | `true` | Exposes `window.tailwind.config` for apps that use the CDN Tailwind runtime (`<script src="https://cdn.tailwindcss.com">`). Not needed for Vite builds that compile Tailwind at build time. |
+| `resizeObserver` | `true` | Observe the child document body and send size updates to the host. This is a body-size relay, not a browser API polyfill. |
+| `preventLinkClicks` | `true` | Intercept all `<a>` clicks inside the iframe and classify them through `host.classifyLink()` before navigating. Useful for pages with external Markdown content that may contain host-navigable links. |
+| `iconifyIcons` | `true` | Inject registered Iconify icon sets so `<iconify-icon>` elements work offline. |
+| `refreshWhenVisible` | `true` | Notify the child when a previously hidden iframe becomes visible again. |
+| `historyPolyfill` | `true` | Patch history navigation in the child iframe so SPA route changes are observable by the host. |
+| `errorCapture` | `true` | Attach `window.onerror` and `window.onunhandledrejection` handlers that forward uncaught errors to the host via `logger.captureException`. Enable in production for centralized error collection. |
 
 If a page omits `wippy.proxy.injections`, the iframe proxy has permissive runtime defaults and enables most injections. Vite micro frontend apps should still declare the explicit values they rely on so a package review can see whether the app expects host CSS, link interception, body-size reporting, or error capture.
 
@@ -120,7 +120,6 @@ Available `hostCss` keys:
 | `hostCss.primeVueCssUrl` | PrimeVue components + Tailwind utilities | Large (~455 KB) |
 | `hostCss.markdownCssUrl` | `.data-body` markdown rendering styles | Small |
 | `hostCss.iframeCssUrl` | Scrollbar styling using `--p-surface-*` | Tiny |
-| `hostCss.preflightCssUrl` | Tailwind v3 preflight reset | Small (legacy CDN Tailwind only) |
 
 For guidance on which keys to request and when — including the decision tree for balancing style fidelity against Shadow DOM bundle size — see [WC Theming § hostCssKeys decision tree](../micro-frontends/web-component-theming.md).
 

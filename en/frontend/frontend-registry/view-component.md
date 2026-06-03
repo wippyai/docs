@@ -33,7 +33,7 @@ Web component packages set `"type": "widget"` or `"type": "component"` (not `"pa
 }
 ```
 
-The `tagName` here is the authoritative source; it is baked into `wippy-meta.json` and `wippy/views` reads it from there. The `tag_name` in `_index.yaml` must match.
+At deploy time the operator's YAML `meta.tag_name` is authoritative and overrides the bundled value; `wippy.tagName` (baked into `wippy-meta.json` from `package.json`) is only the fallback `wippy/views` uses when the YAML entry omits `tag_name` (resolution order: YAML `meta.tag_name` → bundled `wippy.tagName`). Keep the two in sync to avoid surprises, but the YAML wins if they differ.
 
 ### Props Schema
 

@@ -145,7 +145,7 @@ The API returns a component descriptor with the resolved base URL. The Web Host 
 
 ### Proxy Injection
 
-Proxy injection for SPA pages is configured in the FE package.json `wippy.proxy.injections` block (camelCase) and baked into `wippy-meta.json` at build time — it is **not** set in the registry YAML. The operator can override per page via `config_overrides`. See [Pages (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
+Proxy injection for SPA pages is configured in the FE package.json `wippy.proxy.injections` block (camelCase) and baked into `wippy-meta.json` at build time. It can also be overridden per deployment via a snake_case `proxy:` block (a sibling of `meta`) in the registry entry; when present, the YAML value wins per flag. Note that `config_overrides` only deep-merges `customization`, `axiosDefaults`, `routePrefix`, and `apiRoutes` — it never affects `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
 ## View Components
 
@@ -166,7 +166,7 @@ entries:
       entry_point: index.js
 ```
 
-Components use `meta.type: view.component` instead of `view.page`, identify themselves by `meta.tag_name`, and default to `index.js` as the entry point. Proxy injection and theme CSS for components are likewise authored in the FE package.json (camelCase) and, for shadow-DOM CSS, declared via `hostCssKeys` — not in the registry YAML. See [Components (view.component)](../frontend/frontend-registry/view-component.md) and [CSS Injection](../frontend/web-host/css-injection.md).
+Components use `meta.type: view.component` instead of `view.page`, identify themselves by `meta.tag_name`, and default to `index.js` as the entry point. Proxy injection and theme CSS for components are likewise authored in the FE package.json (camelCase) and, for shadow-DOM CSS, declared via `hostCssKeys` — not in the registry YAML. See [Web Components (view.component)](../frontend/frontend-registry/view-component.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
 ## Resources
 
@@ -332,5 +332,5 @@ data:
 - [Security](../system/security.md) - Security actors and access control
 - [Environment](../system/env.md) - Environment variable storage
 - [Framework Overview](./overview.md) - Framework module usage
-- [Pages (view.page)](../frontend/frontend-registry/view-page.md) - Full view.page metadata and proxy injection reference
-- [Components (view.component)](../frontend/frontend-registry/view-component.md) - Full view.component autoload and props reference
+- [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) - Full view.page metadata and proxy injection reference
+- [Web Components (view.component)](../frontend/frontend-registry/view-component.md) - Full view.component autoload and props reference

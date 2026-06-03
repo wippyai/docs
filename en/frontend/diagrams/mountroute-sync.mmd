@@ -7,7 +7,7 @@ sequenceDiagram
 
     ChildApp->>ChildRouter: router.push('/new-path')
     ChildRouter->>ChildApp: router.afterEach fires
-    ChildApp->>ProxyJS: host.onRouteChanged('/new-path', title)
+    ChildApp->>ProxyJS: host.onRouteChanged('/new-path', navId)
     ProxyJS->>WebHost: PostMessage: CmdRouteChanged
     WebHost->>HostRouter: router.push('/mountpath/new-path')
     HostRouter->>WebHost: URL bar updated

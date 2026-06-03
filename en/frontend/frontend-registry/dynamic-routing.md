@@ -12,16 +12,16 @@ When the Web Host application initialises, before it renders any navigation, it 
 GET /api/v2/views/pages/routes
 ```
 
-The response is a list of objects, one per `view.page` entry that has a `mountRoute` field. For each entry in the list, the host calls `router.addRoute()` to register a Vue Router route that maps the declared path to the page's iframe loader component.
+The response is an envelope `{ success, count, routes }`, where `routes` is a map of `mountRoute` pattern → page id (it includes hidden/unannounced pages that still claim a URL). For each entry, the host registers a Vue Router route that maps the declared path to the page loader component, adding it as a child of the `'app'` parent route.
 
 ```typescript
 // Simplified from the Web Host bootstrap
-const routes = await api.get('/api/v2/views/pages/routes')
-for (const route of routes) {
-  router.addRoute({
-    path: route.mountRoute,
-    component: PageFrameLoader,
-    props: { pageId: route.name },
+const { routes } = await api.get('/api/v2/views/pages/routes')
+for (const [mountRoute, pageId] of Object.entries(routes)) {
+  router.addRoute('app', {
+    path: mountRoute,
+    component: MountRoutePage,
+    props: () => ({ pageId }),
   })
 }
 ```
@@ -41,7 +41,7 @@ A `view.page` entry claims a host router path by setting `mountRoute` in its `_i
     ...
 ```
 
-`mountRoute` uses Vue Router 4 path syntax. The wildcard segment `:part(.*)*` lets the child application manage its own sub-routes (e.g. `/home/settings`, `/home/profile/edit`) while the host owns the `/home` prefix.
+`mountRoute` accepts only the catch-all forms `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen literal segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or different param names (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict, the backend's `validate_mount_route_syntax` fails, and `GET /api/v2/views/pages/routes` returns HTTP 500 (rendered as a fatal fullscreen error). The wildcard segment `:part(.*)*` lets the child application manage its own sub-routes (e.g. `/home/settings`, `/home/profile/edit`) while the host owns the `/home` prefix.
 
 Two entries must not claim overlapping routes. If they do, the first one registered wins and the second's mount route is silently ignored.
 
@@ -56,14 +56,25 @@ Once a page is loaded in its iframe, the child application navigates internally 
 When the child application's router commits a navigation (e.g. the user moves from `/home/settings` to `/home/profile`), the child posts a message to its parent window:
 
 ```typescript
-// Posted by the child application on internal route change
-window.parent.postMessage({
-  type: 'CmdRouteChanged',
-  path: '/home/profile',   // full path including the mount prefix
-}, '*')
+// In the child application, on internal route change.
+// App code must never post these messages directly — use the proxy API:
+import { host } from '@wippy-fe/proxy'
+
+host.onRouteChanged('/profile', navId)   // internal route only; the host prepends the mount prefix. navId is an optional number
 ```
 
-The host's message handler intercepts this, calls `router.replace(path)` to update the URL bar without triggering a full navigation, and then posts back:
+Under the hood this serializes to the `@gen2-chat` wire envelope:
+
+```typescript
+window.parent.postMessage(JSON.stringify({
+  type: '@gen2-chat',
+  action: 'cmd-route-changed',
+  internalRoute: '/profile',   // the child's internal route only — the host prepends the mount prefix
+  navId,
+}), '*')
+```
+
+The host's message handler intercepts this, calls `router.push(path)` to update the URL bar via an SPA route change (adding a browser-history entry) without triggering a full page reload, and then posts back:
 
 ### Host → Child: `UrlWasUpdatedInParent`
 
@@ -71,10 +82,11 @@ After the host updates its URL bar, it notifies the child so the child can confi
 
 ```typescript
 // Posted by the host back to the child iframe after URL bar update
-iframeWindow.postMessage({
-  type: 'UrlWasUpdatedInParent',
+iframeWindow.postMessage(JSON.stringify({
+  type: '@gen2-chat',
+  action: 'url-was-updated-in-parent',
   path: '/home/profile',
-}, '*')
+}), '*')
 ```
 
 The child listens for this message via the `@history` event channel and treats it as confirmation that the host's URL is now consistent with the child's internal state.
@@ -85,12 +97,15 @@ The round-trip keeps the host URL bar, the child router, and the browser history
 
 When a page has `preventLinkClicks: true` in its proxy injections (see [view.page](./view-page.md)), the host intercepts `<a>` clicks inside the iframe before the browser handles them. Each intercepted link is passed to `classifyLink`, which decides how to handle it:
 
-| Classification | Condition | Action |
+| `LinkKind` | Condition | Action |
 |---|---|---|
-| `spa` | Target path matches a known `mountRoute` | Host performs a Vue Router SPA navigation, loads the target page's iframe |
-| `reload` | Target path is within the current page's iframe but not a known mount route | Host reloads the current iframe to the new path |
-| `external` | Target is a different origin, or starts with `http://`/`https://` | Host opens the URL in a new tab |
+| `host-nav` | Top path segment matches a known `mountRoute` literal, a baked-in system route (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`), or a root-mount catch-all | `preventDefault` + `host.navigate(normalizedPath)` |
+| `child-nav` | The iframe's own router resolves the path to a real (non-catch-all) route, or nothing else has claimed it | The subapp's `RouterLink` decides in-app; the host does NOT `preventDefault` and does NOT reload the iframe |
+| `external` | Different origin, or a non-`http` scheme (`javascript`/`mailto`/`tel`/`sms`/`ftp`/`file`/`data`/`blob`) | Browser default (e.g. opens in a new tab) |
+| `ignore` | Empty `href` or a pure hash (`#…`) | `preventDefault` |
 
-`classifyLink` consults the same routes list fetched at startup. A link to `/demo/step-2` is classified as `spa` because `/demo/:part(.*)*` is a registered mount route — the host navigates to the `iframe-demo` page rather than doing a full page reload.
+The classifier checks the iframe's own local router first, so a link the child can resolve itself stays in-app.
+
+`classifyLink` consults the same routes list fetched at startup. A link to `/demo/step-2` is classified as `host-nav` because `/demo/:part(.*)*` is a registered mount route — the host navigates to the `iframe-demo` page rather than doing a full page reload.
 
 This means a child application does not need to know about other pages in the system. It can render ordinary `<a href="/demo/step-2">` links and the host's link classifier handles the navigation correctly.

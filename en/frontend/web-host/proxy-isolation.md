@@ -224,7 +224,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 | Attribute | Required | Values | Default | Description |
 |-----------|----------|--------|---------|-------------|
 | `id` | Yes | Artifact / Page UUID | — | Content identifier. |
-| `type` | No | `artifact` \| `page` | `artifact` | Determines the REST endpoint called: `/api/artifact/<id>/content` or `/api/public/pages/content/<id>`. |
+| `type` | No | `artifact` \| `page` | `artifact` | Determines the REST endpoint called: `/api/v1/artifact/<id>/content` or `/api/public/pages/content/<id>`. |
 | `auto-height` | No | boolean flag | `false` | Forwarded to inner `<w-iframe>` for `CmdBodySize` height sync. |
 | `url` | No | Any URL | — | Fetch content directly from this URL; ignores `id`/`type`. |
 | `sub-path` | No | Path string | — | Forwarded to inner `<w-iframe>` as initial child route. |
@@ -265,7 +265,7 @@ w-artifact::part(frame)  { border: 0; }
 | Nav-owner support | Yes | Yes | No |
 | Content-type detection | No | Yes | No |
 | CSS shadow parts | `loader`, `error`, `frame` | `loader`, `error`, `frame` | — |
-| `status` attribute | No | Yes | No |
+| `status` attribute | Yes | Yes | No |
 
 Use `<w-artifact>` when you have a Wippy artifact UUID or page ID and want the platform to handle all resolution. Use `<w-iframe>` when you already have source HTML and want direct runtime injection. Use a raw `<iframe>` only for completely external content that does not need the Wippy API.
 
