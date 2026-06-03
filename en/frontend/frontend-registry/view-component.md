@@ -157,7 +157,13 @@ When a page inside the Web Host finishes mounting, the host runs the following s
 Setting `auto_register: false` excludes the component from the global autoload sweep. This is appropriate when:
 
 - The component is large and should only load on pages that explicitly need it.
-- The component is registered programmatically via `$W.loadByTagName('example-heavy-chart')` at the call site.
+- The component is registered programmatically via `loadWebComponent('example-heavy-chart')` (imported from `@wippy-fe/proxy`) at the call site.
 - The component is an internal building block used only within another bundle, not as a standalone custom element.
 
-Lazy registration lets the initial page load stay lightweight. The component still needs `announced: true` for `$W.loadByTagName()` to resolve it through the API.
+```ts
+import { loadWebComponent } from '@wippy-fe/proxy'
+
+await loadWebComponent('example-heavy-chart')
+```
+
+Lazy registration lets the initial page load stay lightweight. The component still needs `announced: true` for `loadWebComponent()` to resolve it through the API.

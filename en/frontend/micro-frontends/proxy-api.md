@@ -1,76 +1,68 @@
 # Proxy API
 
-Child apps and web components communicate with the Wippy host through the proxy API. Micro Frontend Apps and web components use different loading paths:
+Child apps and web components communicate with the Wippy host through a single proxy runtime (`proxy.js`). Your code never talks to that runtime directly — you import named getters from **`@wippy-fe/proxy`**, a thin synchronous facade over it. The same import works for both surfaces:
 
-- **Micro Frontend Apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`. The canonical API is the global `window.$W`.
-- **Web components (`view.component`)** run as ESM modules in the host page. Import named exports from `@wippy-fe/proxy`; the host provides the module through the import map.
+- **Micro Frontend Apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`.
+- **Web components (`view.component`)** run as ESM modules in the host page; the host provides `@wippy-fe/proxy` through the import map.
 
-For the two proxy adapters and how they are loaded, see [Proxy & Isolation](../web-host/proxy-isolation.md).
+For how the runtime is loaded into each context, see [Proxy & Isolation](../web-host/proxy-isolation.md).
 
 ## Initialization
 
-### Micro Frontend Apps (`view.page`) — preferred
+`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on.
 
-```typescript
-const config = await window.$W.config()
-const host = await window.$W.host()
-const api = await window.$W.api()
-const instance = await window.$W.instance()
+The canonical pattern is identical for micro frontend apps and web components:
+
+```ts
+import { host, api, on, config, state, ws, logger } from '@wippy-fe/proxy'
+
+host.navigate('/dashboard')
+const agents = await api.get('/api/v1/agents')   // api is axios; the await is the HTTP call, not obtaining `api`
+const off = on('@history', ({ path }) => router.replace(path))
+const token = config.auth.token
 ```
 
-`window.$W.config()`, `window.$W.host()`, `window.$W.api()`, and `window.$W.instance()` wait for the `GetConfig`/`SetConfig` PostMessage handshake before resolving. Call them during bootstrap before mounting your SPA.
+These getters are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs. The host injects the child config **synchronously, before** the runtime loads (for both `view.page` apps and `view.component` web components), so the runtime initializes before your script executes. You never `await` to *obtain* a getter, and there is no `GetConfig`/`SetConfig` handshake. The only `await` you write is for an actual async operation (an HTTP call via `api`, a `state` read, etc.).
 
-`window.getWippyApi()` is also available as a global convenience when you want all services at once:
-
-```typescript
-const { config, host, api, on, logger, state, ws } = await window.getWippyApi()
-```
-
-Do not import `getWippyApi` from `@wippy-fe/proxy` in a micro frontend app. It is a global function installed by the injected iframe proxy.
-
-### Web components (`view.component`)
+Mark `@wippy-fe/proxy` as `external` in your Vite config — the host provides it through the import map:
 
 ```typescript
-import { api, host, on, logger, state, ws } from '@wippy-fe/proxy'
-
-// Exports resolve synchronously from window.__WIPPY_APP_API__
-// No await needed — the host guarantees the module is ready before
-// the component's connectedCallback fires.
+// vite.config.ts
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      external: ['@wippy-fe/proxy'],
+    },
+  },
+})
 ```
-
-Mark `@wippy-fe/proxy` as `external` in your Vite config — the host provides it through the import map.
 
 ### TypeScript types
 
-Import types from `@wippy-fe/shared` rather than deriving them from the `$W` global:
+Import types from `@wippy-fe/shared` rather than deriving them from any runtime global:
 
 ```typescript
 import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'
 ```
 
-`@wippy-fe/types-global-proxy` is still useful as a `devDependency` when you need type-checked access to `window.$W` itself (e.g. in `app.html` inline scripts or when writing polyfills).
+### Internals (do not use)
 
-### Global access in micro frontend apps
+The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. They are listed only so you do not accidentally clobber them — see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
 
-Micro Frontend Apps use the global API directly:
-
-```typescript
-const config = await window.$W.config()
-const host   = await window.$W.host()
-const api    = await window.$W.api()
-const all    = await window.$W.instance()
-```
+> The two official JavaScript surfaces are `initWippyApp(config, rootContainer?)` — the host bootstrap that mounts the whole Web Host (module-embed / facade path; **not** called by child app code) — and `@wippy-fe/proxy`, the sync API documented here.
 
 ---
 
 ## Config
 
-### `$W.config()` → `AppConfig`
+### `config`
 
-Returns the child application configuration delivered by the host. New docs target only the current `wippy-context-2.0` contract.
+The child application configuration delivered by the host. It is a plain object (not a function) — imported directly and ready to read synchronously. New docs target only the current `wippy-context-2.0` contract.
 
 ```typescript
-const config = await $W.config()
+import { config } from '@wippy-fe/proxy'
+
+const token = config.auth.token
 ```
 
 ```typescript
@@ -116,12 +108,12 @@ For dynamic pages, if the host URL is `/c/page-id/something/else?foo=1`:
 
 ## Host Control
 
-### `$W.host()` → `HostApi`
+### `host`
 
-Returns the host communication API.
+The host communication API (`HostApi`). Imported directly and used synchronously.
 
 ```typescript
-const host = await $W.host()
+import { host } from '@wippy-fe/proxy'
 ```
 
 ---
@@ -306,7 +298,7 @@ interface LinkClassification {
 
 ```typescript
 // Classifier-aware anchor handler
-const { host } = await window.getWippyApi()
+import { host } from '@wippy-fe/proxy'
 
 document.addEventListener('click', (ev) => {
   const a = (ev.target as HTMLElement)?.closest('a')
@@ -441,14 +433,14 @@ For the full managed-layout model, see [Multi-Panel Layout](../web-host/multi-pa
 
 ## API
 
-### `$W.api()` → `AxiosInstance`
+### `api`
 
-Returns a pre-configured axios instance with:
+A pre-configured axios instance with:
 - Base URL from the deployment environment
 - Automatic `Authorization: Bearer <token>` injection on every request
 
 ```typescript
-const api = await $W.api()
+import { api } from '@wippy-fe/proxy'
 
 const response = await api.get('/api/v1/users')
 const result   = await api.post('/api/v1/items', { name: 'New item' })
@@ -457,7 +449,7 @@ const result   = await api.post('/api/v1/items', { name: 'New item' })
 ### File upload
 
 ```typescript
-const { api } = await window.getWippyApi()
+import { api, on } from '@wippy-fe/proxy'
 
 const formData = new FormData()
 formData.append('file', file)
@@ -523,7 +515,8 @@ The proxy `api` supports server-sent event streams via the fetch adapter. Use th
 > Do not use the browser's native `EventSource` — it cannot attach custom headers and therefore cannot carry the proxy's `Authorization: Bearer` token.
 
 ```typescript
-const { api } = await window.getWippyApi()
+import { api } from '@wippy-fe/proxy'
+
 const abort = new AbortController()
 
 const response = await api.post('/api/v1/agents/stream', { prompt: 'Hello' }, {
@@ -588,9 +581,9 @@ To default all requests to the fetch adapter:
 
 ## Events
 
-### `$W.on(topic, handler)` → `() => void`
+### `on(topic, handler)` → `() => void`
 
-Subscribes to events from the host's WebSocket layer or internal proxy events. Returns an unsubscribe function.
+`on` subscribes to events from the host's WebSocket layer or internal proxy events. Returns an unsubscribe function.
 
 ```typescript
 on(topic: string, handler: (event: unknown) => void): () => void
@@ -599,7 +592,7 @@ on(topic: string, handler: (event: unknown) => void): () => void
 Topics use colon-separated segments. `*` is a single-segment wildcard. The pattern must have the same number of segments as the topic it matches.
 
 ```typescript
-const { on } = await window.getWippyApi()
+import { on } from '@wippy-fe/proxy'
 
 // Unsubscribe when done
 const unsub = on('session:abc:message:*', (msg) => {
@@ -625,11 +618,12 @@ onUnmounted(() => {
 
 ```typescript
 // Vanilla / Web Component
+import { on } from '@wippy-fe/proxy'
+
 class MyEl extends HTMLElement {
   private unsubs: Array<() => void> = []
 
-  async connectedCallback() {
-    const { on } = await window.getWippyApi()
+  connectedCallback() {
     this.unsubs.push(on('session:*:message:*', handler))
   }
 
@@ -672,7 +666,7 @@ Subscribing to the same topic multiple times from the same frame is safe. The pr
 
 ## State
 
-### `$W.state` — cross-iframe key-value persistence
+### `state` — cross-iframe key-value persistence
 
 `state` provides host-mediated storage that survives iframe destruction. State is scoped per page or artifact UUID; each app gets an isolated namespace.
 
@@ -681,7 +675,7 @@ All methods accept an optional `{ scope?: string }` option to override the defau
 > **Scope uniqueness:** scope values are passed as-is by the raw `state` API and must be globally unique across your application. The `@wippy-fe/pinia-persist` plugin automatically prefixes custom scopes with `@custom:` to prevent collisions with system scopes.
 
 ```typescript
-const { state } = await window.getWippyApi()
+import { state } from '@wippy-fe/proxy'
 
 // Write (fire-and-forget; @state-error fires on quota exceeded)
 await state.set('filters', { search: 'john', status: 'active' })
@@ -755,9 +749,9 @@ const useMyStore = defineStore('my-store', () => {
 
 ## WebSocket
 
-### `$W.ws`
+### `ws`
 
-Sends commands through the host's WebSocket connection. Responses arrive via `on()` topic subscriptions.
+`ws` sends commands through the host's WebSocket connection. Responses arrive via `on()` topic subscriptions.
 
 ### `ws.send(command)`
 
@@ -768,7 +762,7 @@ ws.send(command: WsCommand): void
 ```
 
 ```typescript
-const { ws, on } = await window.getWippyApi()
+import { ws, on } from '@wippy-fe/proxy'
 
 on('session:my-session:message:*', (msg) => {
   console.log('Response:', msg.data)
@@ -816,14 +810,14 @@ ws.sendCommand('session-uuid', { command: 'agent', name: 'my-agent' })
 
 ## Logger
 
-### `$W.logger`
+### `logger`
 
 Structured logging that traverses iframe boundaries. Logs flow child → host → parent website where transports (Sentry, Graylog, console) process them. Each child's context (`resourceId`, `resourceType`, nesting depth) is automatically attached to every log entry.
 
 Use `logger` instead of `console.log/error` for anything you want to appear in production monitoring.
 
 ```typescript
-const { logger } = await window.getWippyApi()
+import { logger } from '@wippy-fe/proxy'
 
 logger.debug('Component mounted', { pageId: 'abc' })
 logger.info('User loaded page', { pageId: 'abc' })
@@ -858,36 +852,19 @@ logger.setTag('version', '1.2.0')
 logger.setTag('feature', 'dashboard')
 ```
 
-**Web component usage:**
-
-```typescript
-import { logger } from '@wippy-fe/proxy'
-
-logger.info('Component initialized')
-logger.captureException(error)
-```
-
 ---
 
 ## Web Components
 
-### `$W.loadByTagName(tagName, options?)` → `Promise<void>`
+### `loadByTagName(tagName, options?)` → `Promise<void>`
 
-Loads and registers a peer web component by its HTML tag name. Resolves after `customElements.define` fires — it is safe to `document.createElement(tagName)` immediately after. The tag is added to the `$W.sanitize` allowlist automatically on success.
+Loads and registers a peer web component by its HTML tag name. Resolves after `customElements.define` fires — it is safe to `document.createElement(tagName)` immediately after. The tag is added to the `sanitize` allowlist automatically on success.
 
 ```typescript
-// Pattern A — $W accessor
-const loadByTagName = await $W.loadByTagName()
+import { loadByTagName } from '@wippy-fe/proxy'
+
 await loadByTagName('wc-thread-picker')
 await loadByTagName('wc-slow-pkg', { timeoutMs: 60_000 })
-
-// Pattern B — destructure from instance
-const { loadByTagName } = await $W.instance()
-await loadByTagName('wc-thread-picker')
-
-// Pattern C — ESM import (web component context)
-import { loadByTagName } from '@wippy-fe/proxy'
-await loadByTagName('wc-thread-picker')
 
 // Safe to use immediately
 document.body.appendChild(document.createElement('wc-thread-picker'))
@@ -895,16 +872,13 @@ document.body.appendChild(document.createElement('wc-thread-picker'))
 
 `options.timeoutMs` overrides the default 30-second deadline for waiting on `customElements.define` after the script is appended. Surfaces stuck or broken components (404, parse error, missing `define` call) as a rejection rather than an indefinite hang.
 
-### `$W.loadWebComponent(componentId, tagName?)` → `Promise<void>`
+### `loadWebComponent(componentId, tagName?)` → `Promise<void>`
 
 Loads a web component by its Wippy registry artifact id rather than its tag name. Useful when you have a registry id from a config value or backend response.
 
 ```typescript
-const loadWebComponent = await $W.loadWebComponent()
-await loadWebComponent('wippy.components:my-chart')
+import { loadWebComponent } from '@wippy-fe/proxy'
 
-// Or destructure
-const { loadWebComponent } = await $W.instance()
 await loadWebComponent('wippy.components:my-chart')
 ```
 
@@ -924,12 +898,12 @@ Same deduplication and allowlist auto-update behavior as `loadByTagName`.
 
 ## Utilities
 
-### `$W.sanitize(html, options?)` → `string`
+### `sanitize(html, options?)` → `string`
 
 Default-allowlisted HTML sanitizer scoped to the current proxy context. Combines the chat-rendering defaults (`<p>`, `<a>`, `<code>`, `<table>`, etc.) with every web component tag currently registered in this runtime.
 
 ```typescript
-const sanitize = await $W.sanitize()
+import { sanitize, loadByTagName } from '@wippy-fe/proxy'
 
 const safe = sanitize('<p>hi</p><script>alert(1)</script>')
 // → '<p>hi</p>'
@@ -943,14 +917,14 @@ sanitize('<wc-thread-picker thread-id="42"></wc-thread-picker>')
 sanitize(dialogBody, { extraTags: { 'iconify-icon': ['icon'] } })
 ```
 
-The function re-reads the tag allowlist on every call, so tags registered after the function was obtained are still picked up.
+`sanitize` re-reads the tag allowlist on every call, so tags registered after import are still picked up.
 
-### `$W.html.inject(sourceHtml, options)` → `Promise<string>`
+### `html.inject(sourceHtml, options)` → `Promise<string>`
 
 Applies the source-HTML-to-srcdoc transform without mounting an element. Prefer `<w-iframe>` for normal use; use this only when building custom hosting infrastructure.
 
 ```typescript
-const { html } = await window.getWippyApi()
+import { html } from '@wippy-fe/proxy'
 
 const processed = await html.inject(sourceHtml, {
   baseUrl: 'https://example.com/app/',
@@ -959,8 +933,6 @@ const processed = await html.inject(sourceHtml, {
   route: '/initial',
 })
 ```
-
-Also accessible as `instance.html.inject`, `$W.html`, and `import { html } from '@wippy-fe/proxy'`.
 
 ---
 
@@ -1038,9 +1010,9 @@ Canonical memory-router factory for srcdoc subapps. Replaces the boilerplate eve
 
 ```typescript
 import { createAppRouter } from '@wippy-fe/router'
+import { config } from '@wippy-fe/proxy'
 import { routes } from './routes'
 
-const config = await $W.config()
 const router = createAppRouter(routes, {
   initialPath: config.context?.route,
 })
@@ -1094,10 +1066,11 @@ Both components use Shadow DOM with CSS variables from `@wippy-fe/theme` and inc
   <wippy-loading id="loader" title="Loading..."></wippy-loading>
   <div id="content" style="display:none"><!-- content --></div>
 
-  <script>
+  <script type="module">
+    import { api, host } from '@wippy-fe/proxy'
+
     async function init() {
       try {
-        const { api, host } = await window.getWippyApi()
         // fetch data, set up page...
         document.getElementById('loader').remove()
         document.getElementById('content').style.display = 'block'

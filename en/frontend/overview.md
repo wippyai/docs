@@ -22,7 +22,7 @@ See: [Web Host](./web-host/overview.md)
 
 ### Layer 3: Wippy Micro Frontends
 
-Wippy frontend code runs inside the Web Host's isolation boundary. Micro frontend apps are typically full Vue 3 SPAs mounted in iframes. Web components are custom elements mounted in shadow roots. Both kinds communicate with the Web Host through the Proxy API (`window.$W`), which provides auth-aware HTTP, host navigation, theme-aware CSS, and event subscriptions.
+Wippy frontend code runs inside the Web Host's isolation boundary. Micro frontend apps are typically full Vue 3 SPAs mounted in iframes. Web components are custom elements mounted in shadow roots. Both kinds communicate with the Web Host through **`@wippy-fe/proxy`** — synchronous imports (`host`, `api`, `on`, `config`, …) that provide auth-aware HTTP, host navigation, theme-aware CSS, and event subscriptions.
 
 See: [Wippy Micro Frontends](./micro-frontends/micro-frontend-app.md)
 
@@ -66,7 +66,7 @@ How to build micro frontend apps and web components that run inside the Web Host
 
 - [Micro Frontend App](./micro-frontends/micro-frontend-app.md) — scaffold, Vite config, bootstrap sequence, router sync
 - [Web Component](./micro-frontends/web-component.md) — `WippyVueElement`, props, events, shadow DOM CSS
-- [Proxy API](./micro-frontends/proxy-api.md) — complete `window.$W` reference
+- [Proxy API](./micro-frontends/proxy-api.md) — complete `@wippy-fe/proxy` reference
 - [Theming](./micro-frontends/theming.md) — CSS cascade, semantic variables, `hostCssKeys`
 - [Build System](./micro-frontends/build-system.md) — `@wippy-fe/vite-plugin`, `wippy-meta.json`, externals
 - [Host-less Mode](./micro-frontends/host-less-mode.md) — local development without the Web Host

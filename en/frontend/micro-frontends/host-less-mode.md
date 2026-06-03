@@ -28,7 +28,7 @@ Every Wippy web app and web component is built around a small, deliberate constr
 
 What that means in practice:
 
-- The only thing an app or WC touches at runtime is the `window.$W` global (apps) or the equivalent imports from `@wippy-fe/proxy` (WCs). Both surfaces resolve to the same `ProxyApiInstance`.
+- The only thing an app or WC touches at runtime is the proxy API surface: the sync getters imported from `@wippy-fe/proxy` (`host`, `api`, `on`, `config`, `state`, `ws`, `logger`). Both apps and WCs use the same imports; under the hood they resolve to the same `ProxyApiInstance` that the runtime installs as internal globals (`window.$W`, `window.__WIPPY_PROXY__` — never read these directly).
 - Apps and WCs do **not** import code from neighboring apps, the parent module's Lua side, the Wippy Web Host, or any other module in the project. They live in their own folder, declare their externals (`vue`, `pinia`, `vue-router`, `@iconify/vue`, `axios`, `@wippy-fe/proxy`, etc.) in their own `package.json`, and read their own `wippy.yaml` / `package.json` metadata.
 - The same `app.ts` (or WC `index.ts`) boots correctly in two environments:
   1. **Hosted** — inside a Wippy web host that injects `proxy.js`, AppConfig, importmap, and CSS.
@@ -180,7 +180,7 @@ The canonical app-template apps ship with the `src="…/dev-proxy.js"` populated
 
 `dev-proxy.js` is the host-less boot bundle, served from the Wippy Web Host CDN at `https://web-host.wippy.ai/<release-tag>/dev-proxy.js`.
 
-Its job is to make `window.$W` resolve correctly without any host. It does this in roughly five steps:
+Its job is to make the `@wippy-fe/proxy` getters resolve correctly without any host — by installing the same internal globals (`window.$W`, `window.__WIPPY_PROXY__`) the real host would. App and WC code never touches those globals; it just imports from `@wippy-fe/proxy` and the getters work. dev-proxy does this in roughly five steps:
 
 1. **Install history guard** (`installHistoryGuard()`) — stubs `pushState` / `replaceState` so vue-router doesn't try to mutate browser history outside an iframe-srcdoc context.
 2. **Resolve a config** (`resolveDevConfig()` in `src/proxy/dev/resolve-dev.ts`):
@@ -188,16 +188,16 @@ Its job is to make `window.$W` resolve correctly without any host. It does this 
    - If `localStorage['@wippy-dev/auto-accept'] === 'true'` AND a stored config exists → use it immediately, render the overlay in monitoring mode.
    - Otherwise → render the overlay in *waiting* mode (FAB pulses blue, "Accept config to continue loading" speech bubble) and block boot until the developer clicks Accept.
 3. **Build a fake `ProxyApiInstance`** wired to:
-   - The accepted `ChildAppConfig` (returned by `$W.config()`).
-   - A nanoevents emitter for `instance.on(...)` subscriptions and `@history` / `@visibility` simulations.
+   - The accepted `ChildAppConfig` (what `config` from `@wippy-fe/proxy` returns).
+   - A nanoevents emitter for `on(...)` subscriptions and `@history` / `@visibility` simulations.
    - `host` stubs that console-log every method (`createDevHostAPI()` in `src/proxy/dev/host-stubs.ts`).
-   - A real axios instance for `$W.api()`, configured against the URL the developer entered (`env.APP_API_URL` defaults to `${location.origin}/api`).
+   - A real axios instance backing `api` from `@wippy-fe/proxy`, configured against the URL the developer entered (`env.APP_API_URL` defaults to `${location.origin}/api`).
    - A logger / state / ws stub that mirrors the production proxy shape.
 4. **Apply CSS injection** based on the proxy config the developer chose:
    - `theme_config: true` → injects `theme-config.css` from `@wippy-fe/theme`.
    - `iframe`, `primevue`, `markdown` → ditto, the inline-CSS bundles from `src/proxy/dev/css-inline.ts`.
    - `customCss` / `customVariables` → applies `appConfig.theming.global.customCSS` / `cssVariables` (including the `@dark`/`@light` blocks described in [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3-per-page-config_overrides-in-registry-yaml)).
-5. **Expose `window.$W`** with the same shape as `entry.iframe.ts` — `config()`, `instance()`, `api()`, `host()`, `on()`, `logger()`, `state()`, `ws()`, `loadWebComponent()`. Any app code that uses the proxy API works unchanged.
+5. **Install the internal proxy globals** with the same shape as `entry.iframe.ts`, so the `@wippy-fe/proxy` getters (`config`, `host`, `api`, `on`, `logger`, `state`, `ws`, `loadWebComponent`) resolve. Any app or WC code that imports from `@wippy-fe/proxy` works unchanged. (The globals themselves — `window.$W` et al. — are internal; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).)
 
 Default `ChildAppConfig` (from `getDefaultConfig()` in `config-store.ts`):
 
@@ -247,7 +247,7 @@ Auto-accept makes "iterate against a host-less build" feel near-native: refresh,
 
 ## Host stubs — the standalone `host` API
 
-The `host` API (`window.$W.host()` / `host` import from `@wippy-fe/proxy`) is the surface the app uses to ask the host to do things — toast, navigate, open a session, set context, format URLs, etc. With no real host, dev-proxy substitutes a stub layer in `src/proxy/dev/host-stubs.ts`:
+The `host` API (`import { host } from '@wippy-fe/proxy'`) is the surface the app uses to ask the host to do things — toast, navigate, open a session, set context, format URLs, etc. With no real host, dev-proxy substitutes a stub layer in `src/proxy/dev/host-stubs.ts`:
 
 | Method | Standalone behavior |
 |---|---|
@@ -354,7 +354,7 @@ When an app or WC has drifted from the standalone-aware contract, the symptoms a
 
 | Symptom | Probable cause | Fix |
 |---|---|---|
-| `app.html` has `<script data-role="@wippy/scripts"></script>` with no `src=` | Page can't boot host-less. Loading the file directly produces a blank page (no `window.$W`). | Add `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` to the tag — the URL always requires a release-tag segment. |
+| `app.html` has `<script data-role="@wippy/scripts"></script>` with no `src=` | Page can't boot host-less. Loading the file directly produces a blank page — the proxy runtime never installs, so `@wippy-fe/proxy` imports fail to resolve. | Add `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` to the tag — the URL always requires a release-tag segment. |
 | `app.html` has the dev-proxy `<script src=…>` but **no `<script type="importmap">`** above it | Browser can't resolve the bundle's bare-specifier imports (`vue`, `pinia`, `@iconify/vue`, `axios`, etc.). The first module-script load fails silently with `Failed to resolve module specifier "vue"` and the page never bootstraps Vue. | Declare the importmap inline in `<head>`, BEFORE the dev-proxy script. Mirror your bundler's `external` array exactly — every name listed in `vite.config.ts` `rollupOptions.external` MUST have an entry. Use `https://esm.sh/<pkg>@<major>` for vendor packages. See the [main example](#the-wippyscripts-switchpoint--one-tag-two-boot-paths). |
 | `app.html` body has a custom SVG spinner / `<div>Loading…</div>` instead of `<wippy-loading title="…">` | Pre-bootstrap loader doesn't match the canonical Wippy idiom. The custom markup keeps showing while the WC ecosystem (which would render a styled, theme-aware loader) is fully booted. | Replace with `<wippy-loading title="Loading..."></wippy-loading>`. The `<wippy-loading>` web component is registered by `dev-proxy.js` (it imports `@wippy-fe/loading` synchronously) before the `<body>` parses, so the element resolves correctly even at very early page load. |
 | `import` from a sibling app's source files | Shared code is being copy-pasted across module boundaries. | Extract to a workspace package or duplicate intentionally; never reach across app folders. |
@@ -390,7 +390,7 @@ Tests need to set `el.__wippyHost = fakeWrapper` *before* `connectedCallback` fi
 
 ## Related docs
 
-- [proxy-api.md](./proxy-api.md) — full `window.$W` / `@wippy-fe/proxy` reference (works identically in hosted and host-less mode)
+- [proxy-api.md](./proxy-api.md) — full `@wippy-fe/proxy` reference (works identically in hosted and host-less mode)
 - [micro-frontend-app.md](./micro-frontend-app.md) — building web apps (the boot path is the dual-mode `app.html` pattern this doc covers)
 - [web-component.md](./web-component.md) — building web components (`WippyVueElement`, `define()`, host-less playground/tests)
 - [theming.md](./theming.md) — per-page theme overrides via `config_overrides` (also feed dev-proxy via `theming.global.cssVariables` / `customCSS`)

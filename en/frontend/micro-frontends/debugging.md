@@ -5,18 +5,22 @@ When something is broken, start here. Each section lists the most common causes 
 ## Blank screen on load
 
 **1. Check the Console first:**
-- `Failed to resolve module specifier 'vue'` — the import map is missing. In hosted mode, the host injects it; in host-less mode, confirm your `app.html` `<script type="importmap">` block includes `vue`, `pinia`, `vue-router`, and `@wippy-fe/proxy`.
-- `window.$W is not defined` or `window.getWippyApi is not a function` — `proxy.js` was not loaded before your micro frontend app script ran. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
-- Silent hang (no errors, no app) — `window.$W.config()` / `window.getWippyApi()` is stalled waiting for the `SetConfig` PostMessage. In host-less mode, confirm the dev overlay FAB (floating button) appeared. If not, the proxy script did not load.
+- `Failed to resolve module specifier 'vue'` — the import map is missing. In hosted mode, the host injects it; in host-less mode, confirm your `app.html` `<script type="importmap">` block includes `vue`, `pinia`, and `vue-router`. (Do NOT list `@wippy-fe/proxy` there — the host / dev-proxy injects it.)
+- `Proxy globals not found` (or your `@wippy-fe/proxy` imports come back undefined) — `proxy.js` / `dev-proxy.js` did not load before your app script ran, so the runtime never installed its internal globals. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
+- Silent hang (no errors, no app) — the proxy runtime is stalled waiting for the `SetConfig` PostMessage, so the `@wippy-fe/proxy` getters never resolve. In host-less mode, confirm the dev overlay FAB (floating button) appeared. If not, the proxy script did not load.
 
 **2. Check the Network tab:**
 - Confirm `dev-proxy.js` (host-less) or `proxy.js` (hosted) loaded with status 200.
 - If 404: the `src` in your `<script data-role="@wippy/scripts">` tag points to the wrong URL.
 
-**3. Check the Console directly:**
+**3. Check the runtime installed its globals (internal diagnostic):**
 ```javascript
-window.$W  // should be an object, not undefined
+// Internal globals — app code never reads these; this is only a console smoke test
+// that the proxy runtime mounted. App/WC code uses `import { ... } from '@wippy-fe/proxy'`.
+window.$W              // should be an object, not undefined
+window.__WIPPY_PROXY__ // likewise — present once the runtime installed
 ```
+If these are present but your `@wippy-fe/proxy` imports still come back undefined, the import map is shadowing `@wippy-fe/proxy` (it must NOT be in your `app.html` importmap).
 
 ## Web component never appears
 
@@ -106,11 +110,11 @@ document.baseURI  // should be <url>/<base_path>/ from your registry entry
 ```
 If empty or wrong: the `<base>` tag was not injected. Check that `base_path` in `_index.yaml` matches the actual directory structure of your built output.
 
-**2. Check proxy globals:**
+**2. Check proxy globals (internal diagnostic):**
 ```javascript
-window.__WIPPY_PROXY_CONFIG__  // must exist in iframe-hosted mode
+window.__WIPPY_PROXY_CONFIG__  // internal — must exist in iframe-hosted mode
 ```
-Undefined means the proxy was not injected before your app ran.
+Undefined means the proxy was not injected before your app ran. App code never reads this directly; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
 
 **3. Confirm `base: ''` in vite.config.ts:**
 Without `base: ''`, Vite emits absolute asset paths. The app loads fine on your local dev server (which serves from `/`) but 404s when served from a CDN subdirectory.
@@ -123,12 +127,12 @@ Your `app.html` may have an inline import map that pins specific versions. In ho
 `logger.debug()` and `logger.info()` output appears in the browser Console during development — not just in production transports. Use it to trace the boot sequence:
 
 ```typescript
-export async function createMainApp() {
-  const { logger } = await window.$W.instance()
+import { logger, config, host, api } from '@wippy-fe/proxy'
+
+export function createMainApp() {
   logger.debug('App bootstrap started')
-  const { config, host, api } = await window.getWippyApi()
   logger.debug('Host services resolved', { hasConfig: !!config })
-  // ...
+  // ... use config, host, api directly
 }
 ```
 

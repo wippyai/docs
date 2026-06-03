@@ -32,22 +32,20 @@ A full Vue 3 SPA the Web Host loads inside an iframe. Repo: [`frontend/applicati
 **`src/app.ts`** — resolve host services, mount, and wire the mandatory two-way route sync:
 
 ```ts
-import { getWippyApi } from '@wippy-fe/proxy'
+import { host, on } from '@wippy-fe/proxy'   // sync getters — no await to obtain them
 import { createApp } from 'vue'
 import { createAppRouter } from '@wippy-fe/router'
 import App from './app/app.vue'
 import { routes } from './router'
 
-export async function createMainApp() {
-  const { config, host, instance } = await getWippyApi()
-
+export function createMainApp() {
   const app = createApp(App)
   const router = createAppRouter({ routes })
 
   // MANDATORY: tell the host when the app's route changes…
   router.afterEach(to => host.onRouteChanged(to.fullPath))
   // …and follow host-driven navigation back into the app.
-  instance.on('@history', ({ path }) => router.replace(path))
+  on('@history', ({ path }) => router.replace(path))
 
   app.use(router)
   app.mount('#app')

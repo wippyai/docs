@@ -589,6 +589,8 @@ import { createWippyPersist, preloadWippyState } from '@wippy-fe/pinia-persist'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
+// Sync getters from @wippy-fe/proxy — available immediately, never awaited to obtain.
+import { config, host, api, on } from '@wippy-fe/proxy'
 
 import App from './app/app.vue'
 import { AXIOS_INSTANCE, HOST_API, WIPPY_INSTANCE } from './constants'
@@ -598,11 +600,6 @@ import './styles.css'
 import './tailwind.css'
 
 export async function createMainApp() {
-  const config = await window.$W.config()
-  const hostApi = await window.$W.host()
-  const axios = await window.$W.api()
-  const instance = await window.$W.instance()
-
   const routePath = config.context?.route
   const initialPath = routePath
     ? (routePath.startsWith('/') ? routePath : '/' + routePath)
@@ -627,11 +624,11 @@ export async function createMainApp() {
   app.use(VueQueryPlugin)
   app.use(PrimeVuePlugin)
 
-  app.provide(HOST_API, hostApi)
-  app.provide(AXIOS_INSTANCE, axios)
-  app.provide(WIPPY_INSTANCE, instance)
+  app.provide(HOST_API, host)
+  app.provide(AXIOS_INSTANCE, api)
+  app.provide(WIPPY_INSTANCE, { on })
 
-  const router = createAppRouter(hostApi, instance.on, initialPath)
+  const router = createAppRouter(host, on, initialPath)
   app.use(router)
 
   return app
@@ -646,8 +643,10 @@ export async function mountApp(elementId: string = '#app') {
 mountApp()
 ```
 
+> `config`, `host`, `api`, and `on` are **synchronous** getters from `@wippy-fe/proxy` — the host injects the child config before the runtime loads, so they resolve the moment your code runs. You never `await` to *obtain* them (the only `await` left is `preloadWippyState()`, an actual async op). Providing them via `app.provide(...)` is an ergonomics choice so the rest of the app can `inject(...)`; a component can equally `import { host, api, on } from '@wippy-fe/proxy'` at its own call site. See [Proxy API](./proxy-api.md).
+
 Rules:
-- MUST `await` all four `window.$W.*()` calls (`config`, `host`, `api`, `instance`).
+- MUST obtain `config`, `host`, `api`, `on` via `import { ... } from '@wippy-fe/proxy'` (sync getters — no `await` to obtain them; never `window.$W` / `getWippyApi`).
 - MUST resolve initial path from `config.context?.route`, then fall back to `'/'`.
 - MUST normalize the resolved path to start with `/`.
 - MUST `app.provide(HOST_API, ...)`, `app.provide(AXIOS_INSTANCE, ...)`, `app.provide(WIPPY_INSTANCE, ...)`.
@@ -725,9 +724,9 @@ export const WIPPY_INSTANCE = Symbol('proxy')    as InjectionKey<ProxyApiInstanc
 
 ```ts
 // src/types.ts
-export type HostApi          = Awaited<ReturnType<typeof window.$W.host>>
-export type ProxyApiInstance = Awaited<ReturnType<typeof window.$W.instance>>
-export type WippyConfig      = Awaited<ReturnType<typeof window.$W.config>>
+// Import the canonical types from @wippy-fe/shared — never derive them from a runtime global.
+export type { HostApi, ProxyApiInstance } from '@wippy-fe/shared'
+export type { AppConfig as WippyConfig } from '@wippy-fe/shared'
 ```
 
 Both files are tiny and stable. Copy verbatim into new apps.
@@ -1819,7 +1818,7 @@ REJECT a submission if any of the following are true.
 23. No `<wippy-loading>` (uses custom spinner instead).
 
 ### Bootstrap (§3.4)
-24. `app.ts` does not `await` `window.$W.config()`, `host()`, `api()`, `instance()`.
+24. `app.ts` obtains `config` / `host` / `api` / `on` from anything other than sync `@wippy-fe/proxy` imports (e.g. reaches for `window.$W` / `getWippyApi`, or `await`s to *obtain* a getter).
 25. `app.ts` does not provide `HOST_API`, `AXIOS_INSTANCE`, `WIPPY_INSTANCE` injections.
 26. `app.ts` resolves initial path from a non-canonical source (must be `config.context?.route ?? '/'`, with documented project-specific extensions).
 

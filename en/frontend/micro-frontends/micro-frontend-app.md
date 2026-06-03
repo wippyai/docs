@@ -1,6 +1,6 @@
 # Micro Frontend App (`view.page`)
 
-A Wippy micro frontend app is a Vue 3 SPA bundled into a standalone HTML artifact and loaded by the host inside an iframe. The iframe has no knowledge of the surrounding page — it communicates with the host exclusively through the `$W` proxy API.
+A Wippy micro frontend app is a Vue 3 SPA bundled into a standalone HTML artifact and loaded by the host inside an iframe. The iframe has no knowledge of the surrounding page — it communicates with the host exclusively through `@wippy-fe/proxy`.
 
 > **Isolation is mandatory.** The bundle has zero hardcoded assumptions about where it is served. `vite.config.ts` sets `base: ''`, no `outDir` is hardcoded in config, and the serving path is declared in the BE-side `view.page` registry entry — not in the package itself. The same built artifact ships unchanged to any Wippy instance.
 
@@ -15,7 +15,7 @@ my-app/
 ├── tailwind.config.ts          # If using Tailwind
 ├── postcss.config.js           # Required when using Tailwind
 └── src/
-    ├── app.ts                  # Bootstrap — window.$W, Vue setup, mount
+    ├── app.ts                  # Bootstrap — @wippy-fe/proxy, Vue setup, mount
     ├── constants.ts            # InjectionKey symbols
     ├── types.ts                # HostApi / ProxyApiInstance type aliases
     ├── styles.css              # Base styles (html, body, #app)
@@ -26,7 +26,7 @@ my-app/
     │   └── index.ts            # createAppRouter factory
     ├── pages/                  # Route-level components
     ├── components/             # Shared/reusable components
-    ├── composables/            # useHost(), useApi(), useWippy()
+    ├── composables/            # useHost(), useApi() (or import from @wippy-fe/proxy directly)
     ├── stores/                 # Pinia stores
     └── types/                  # Additional TypeScript types
 ```
@@ -185,7 +185,7 @@ Vite takes `app.html` as its build input. The file serves two purposes: it is th
 </html>
 ```
 
-**The `data-role="@wippy/scripts"` attribute is the switchpoint.** When the host loads this page, it strips the `<script>` element that carries this attribute and injects its own `loading.js` and `proxy.js` scripts in its place — those scripts register the `<wippy-loading>` and `<wippy-error>` custom elements and set up the `$W` proxy global. When the page loads standalone (no host), the `src=` URL falls through and `dev-proxy.js` bootstraps the page with a stubbed `$W`. See [host-less-mode.md](./host-less-mode.md) for the full dual-mode contract.
+**The `data-role="@wippy/scripts"` attribute is the switchpoint.** When the host loads this page, it strips the `<script>` element that carries this attribute and injects its own `loading.js` and `proxy.js` scripts in its place — those scripts register the `<wippy-loading>` and `<wippy-error>` custom elements and install the proxy runtime so the `@wippy-fe/proxy` getters resolve. When the page loads standalone (no host), the `src=` URL falls through and `dev-proxy.js` installs the same runtime so `@wippy-fe/proxy` imports resolve. See [host-less-mode.md](./host-less-mode.md) for the full dual-mode contract.
 
 The import map in `app.html` is used in host-less mode only. In hosted mode, the host injects its own import map before your scripts run.
 
@@ -232,9 +232,10 @@ export default defineConfig({
 
 ## `src/app.ts` — bootstrap sequence
 
-The bootstrap is async because `window.$W.*` waits for the host handshake before returning. The order matters — config must be resolved before the router is created because the initial route comes from the config.
+The proxy API is **synchronous** — `host`, `api`, `on`, and `config` are imported from `@wippy-fe/proxy` and used directly, because the host injects the config before your code runs. `createMainApp` is still `async` only because `preloadWippyState()` (for Pinia persistence) awaits the host. The order matters — read `config` before creating the router, since the initial route comes from it.
 
 ```typescript
+import { host, api, on, config } from '@wippy-fe/proxy'
 import { addCollection } from '@iconify/vue'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import { createWippyPersist, preloadWippyState } from '@wippy-fe/pinia-persist'
@@ -243,18 +244,15 @@ import { createApp } from 'vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 
 import App from './app/app.vue'
-import { AXIOS_INSTANCE, HOST_API, WIPPY_INSTANCE } from './constants'
+import { AXIOS_INSTANCE, HOST_API } from './constants'
 import { createAppRouter } from './router'
 import '@wippy-fe/theme/theme-config.css'
 import './styles.css'
 import './tailwind.css'
 
 export async function createMainApp() {
-  // Step 1: Resolve all host services through the injected iframe proxy.
-  const config = await window.$W.config()
-  const hostApi = await window.$W.host()
-  const axios = await window.$W.api()
-  const instance = await window.$W.instance()
+  // Step 1: host, api, on, config are sync imports — available immediately,
+  // no await to obtain them. (api is an axios instance; await its calls.)
 
   // Step 2: Resolve the initial route.
   // config.context.route is the current host URL path stripped to the app's
@@ -289,13 +287,14 @@ export async function createMainApp() {
   app.use(VueQueryPlugin)
   app.use(PrimeVuePlugin)
 
-  // Step 6: Provide host services for injection in components and composables.
-  app.provide(HOST_API, hostApi)
-  app.provide(AXIOS_INSTANCE, axios)
-  app.provide(WIPPY_INSTANCE, instance)
+  // Step 6: (Optional) provide host/api for ergonomic composables. Components
+  // can also import `host`, `api`, `on`, `state`, `ws` from '@wippy-fe/proxy'
+  // directly anywhere — no provide/inject required.
+  app.provide(HOST_API, host)
+  app.provide(AXIOS_INSTANCE, api)
 
-  // Step 7: Create router — must come after hostApi and instance are available.
-  const router = createAppRouter(hostApi, instance.on, initialPath)
+  // Step 7: Create router with the host and the `on` subscriber.
+  const router = createAppRouter(host, on, initialPath)
   app.use(router)
 
   return app
@@ -310,7 +309,7 @@ export async function mountApp(elementId: string = '#app') {
 mountApp()
 ```
 
-`window.$W` is the proxy global injected by the host. In host-less mode, `dev-proxy.js` provides a stub implementation with the same interface. Type definitions come from `@wippy-fe/types-global-proxy` (add to `tsconfig.json` `types` array).
+The host (and `dev-proxy.js` in host-less mode) installs the proxy runtime so the sync getters imported from `@wippy-fe/proxy` resolve. `window.$W` is an internal global of that runtime — app code never reads it directly; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override). If you must reference the internal globals in types, their definitions come from `@wippy-fe/types-global-proxy` (add to `tsconfig.json` `types` array).
 
 ## Router: mandatory host sync
 
@@ -395,7 +394,9 @@ export function createAppRouter(host: HostApi, on: OnSubscription | null, initia
 
 ## Composables pattern
 
-Provide the three host services in `app.ts` using typed injection keys and consume them via composables. This avoids prop-drilling and makes services available anywhere in the component tree.
+Provide `host` and `api` in `app.ts` using typed injection keys and consume them via composables. This avoids prop-drilling and makes those services available anywhere in the component tree.
+
+For events, state, and the WebSocket channel, import `on` / `state` / `ws` directly from `@wippy-fe/proxy` wherever you need them — they are sync getters, so no provide/inject wiring is required.
 
 ```typescript
 // src/constants.ts
@@ -404,19 +405,18 @@ import type { HostApi, ProxyApiInstance } from './types'
 
 export const HOST_API = Symbol('host_api') as InjectionKey<HostApi>
 export const AXIOS_INSTANCE = Symbol('axios') as InjectionKey<ProxyApiInstance['api']>
-export const WIPPY_INSTANCE = Symbol('proxy') as InjectionKey<ProxyApiInstance>
 ```
 
 ```typescript
 // src/types.ts
-// Re-export from @wippy-fe/shared — no dependency on window.$W globals needed
+// Re-export from @wippy-fe/shared — no dependency on internal globals needed
 export type { HostApi, ProxyApiInstance, AppConfig as WippyConfig } from '@wippy-fe/shared'
 ```
 
 ```typescript
 // src/composables/useWippy.ts
 import { inject } from 'vue'
-import { HOST_API, AXIOS_INSTANCE, WIPPY_INSTANCE } from '../constants'
+import { HOST_API, AXIOS_INSTANCE } from '../constants'
 import type { HostApi, ProxyApiInstance } from '../types'
 
 export function useHost(): HostApi {
@@ -430,23 +430,18 @@ export function useApi(): ProxyApiInstance['api'] {
   if (!api) throw new Error('Axios instance not provided')
   return api
 }
-
-export function useWippy(): ProxyApiInstance {
-  const instance = inject(WIPPY_INSTANCE)
-  if (!instance) throw new Error('WIPPY_INSTANCE not provided')
-  return instance
-}
 ```
+
+> For events/state/ws, import `on` / `state` / `ws` directly from `@wippy-fe/proxy` — no provide/inject needed.
 
 Usage in any component:
 
 ```vue
 <script setup lang="ts">
-import { useHost, useApi, useWippy } from '@/composables/useWippy'
+import { useHost, useApi } from '@/composables/useWippy'
 
 const host = useHost()
 const api = useApi()
-const instance = useWippy()
 </script>
 ```
 
@@ -512,27 +507,26 @@ State is saved on store mutation (debounced), on `@visibility:false`, and on `wi
 
 ## Listening to platform events
 
-Use `instance.on(pattern, callback)` to subscribe to platform events. The return value is an unsubscribe function — always call it in `onUnmounted`.
+Import `on` from `@wippy-fe/proxy` and call `on(pattern, callback)` to subscribe to platform events. The return value is an unsubscribe function — always call it in `onUnmounted`.
 
 ```vue
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import { useWippy } from '@/composables/useWippy'
+import { on } from '@wippy-fe/proxy'
 
-const instance = useWippy()
 const unsubs: Array<() => void> = []
 
 onMounted(() => {
   // Visibility changes — fired when the host shows or hides this iframe
   unsubs.push(
-    instance.on('@visibility', (visible: boolean) => {
+    on('@visibility', (visible: boolean) => {
       if (visible) refreshData()
     })
   )
 
   // Custom messages from agents or other app components
   unsubs.push(
-    instance.on('user:updated', (data) => {
+    on('user:updated', (data) => {
       handleUserUpdate(data)
     })
   )
@@ -687,6 +681,6 @@ For `wippy/views` ≥ 0.5.0, this file is required. Without it the host falls ba
 
 ## Testing without the host
 
-To develop and test the app without a running Wippy instance, use host-less mode. The `dev-proxy.js` script (referenced in `app.html`) provides a stubbed `$W` implementation that lets the app boot normally in a plain browser tab.
+To develop and test the app without a running Wippy instance, use host-less mode. The `dev-proxy.js` script (referenced in `app.html`) installs the proxy runtime so `@wippy-fe/proxy` imports resolve, letting the app boot normally in a plain browser tab.
 
 See [host-less-mode.md](./host-less-mode.md) for setup, the dev-proxy stub contract, and patterns for testing components in isolation.

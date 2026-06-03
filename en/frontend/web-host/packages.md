@@ -8,28 +8,37 @@ Install the packages you need:
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
-## Choose Access by Runtime
+## Accessing the host — `@wippy-fe/proxy`
 
-Micro Frontend Apps (`view.page`) run in srcdoc iframes and use the injected globals `window.$W` / `window.getWippyApi()`. Web components (`view.component`) run as ESM modules in the host page and import named exports from `@wippy-fe/proxy`.
+Both micro frontend apps (`view.page`) and web components (`view.component`) talk to the host the same way: synchronous named imports from `@wippy-fe/proxy`, used directly. No `await` to obtain them and no handshake — the host injects config before your code runs.
 
-| Goal | Micro Frontend App access | Web component access |
-|---|---|---|
-| Authenticated HTTP | `await window.$W.api()` | `import { api } from '@wippy-fe/proxy'` |
-| Host communication | `await window.$W.host()` | `import { host } from '@wippy-fe/proxy'` |
-| Resolve all at once | `await window.$W.instance()` or `await window.getWippyApi()` | import the individual named exports you need |
-| Vue routing | `createAppRouter()` + `<HostRouterLink>` from `@wippy-fe/router` | Usually not needed |
-| Web component base | Not applicable | `WippyVueElement` from `@wippy-fe/webcomponent-vue` |
-| Component props/events | Not applicable | `useComponentProps()` / `useComponentEvents()` from `@wippy-fe/webcomponent-vue` |
-| TypeScript types | `import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'` | Same |
-| Loading/error screens | `<wippy-loading>` / `<wippy-error>` from `@wippy-fe/loading` | Usually not needed |
+| Goal | Import from `@wippy-fe/proxy` |
+|---|---|
+| Authenticated HTTP | `api` (an axios instance) |
+| Host communication | `host` |
+| Event subscriptions | `on` |
+| Cross-iframe state | `state` |
+| WebSocket | `ws` |
+| Logging | `logger` |
+| Child config | `config` |
+
+Related helpers (not proxy access):
+
+| Goal | Where |
+|---|---|
+| Vue routing | `createAppRouter()` + `<HostRouterLink>` from `@wippy-fe/router` |
+| Web component base | `WippyVueElement` from `@wippy-fe/webcomponent-vue` |
+| Component props/events | `useComponentProps()` / `useComponentEvents()` from `@wippy-fe/webcomponent-vue` |
+| TypeScript types | `import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'` |
+| Loading/error screens | `<wippy-loading>` / `<wippy-error>` from `@wippy-fe/loading` |
+
+`window.$W` and `window.getWippyApi` are **internal** globals installed by the runtime — don't use them directly (see [Proxy & Isolation § Internals](./proxy-isolation.md#internals--do-not-read-or-override)).
 
 ## Packages
 
 ### `@wippy-fe/proxy`
 
-The Proxy API module. This is the primary package for child micro-frontends that need to communicate with the Wippy host.
-
-In **srcdoc iframe** context the proxy is loaded as `proxy.js` (UMD) injected by the host, and its API is available on `window.$W` and `window.getWippyApi()`. In **web component** context the proxy is an ESM module loaded via import map and imported directly:
+The Proxy API module — the primary package every child micro-frontend uses to talk to the Wippy host. It is a thin **synchronous** facade over the single proxy runtime (`proxy.js`): the runtime installs the API onto internal globals, and `@wippy-fe/proxy` re-exports it as sync getters. Both micro frontend apps (in their injected iframe) and web components (in the host page) import the same exports — no `await` to obtain them:
 
 ```typescript
 import { host, api, ws, on, state, html, sanitize } from '@wippy-fe/proxy'

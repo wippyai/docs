@@ -428,7 +428,7 @@ Import `@wippy-fe/theme/theme-config.css` in your `styles.css`. This provides fa
 
 ## Proxy API
 
-Web components import `api`, `host`, and `on` directly from `@wippy-fe/proxy`. Unlike micro frontend apps, there is no `$W` global and no inject/provide pattern — the module exports are available immediately.
+Web components import `api`, `host`, and `on` directly from `@wippy-fe/proxy`. The sync getters resolve immediately — no `await`, no inject/provide plumbing. (Micro frontend apps typically wrap the same `@wippy-fe/proxy` getters in Vue `provide`/`inject` for ergonomics; a web component just imports them at the call site.)
 
 ```vue
 <script setup lang="ts">

@@ -1,81 +1,77 @@
 # Proxy & Isolation
 
-The Web Host isolates child micro-frontends by running them in sandboxed contexts and bridging communication through a proxy layer. Two proxy adapters exist, one for each rendering surface. Both expose the same `$W` API contract, but they are initialized differently and serve different host integration patterns.
+The Web Host isolates child micro-frontends by running them in sandboxed contexts and bridging communication through a single proxy runtime. Both micro frontend apps and web components talk to the host the same way: by importing from **`@wippy-fe/proxy`**.
 
 ![Proxy layers](../diagrams/proxy-layers.svg)
 
-## Two Proxy Adapters
+## One runtime, one API
 
-### Iframe proxy (`proxy.js` UMD)
+There is a single proxy runtime — `proxy.js`. It installs the proxy API and the current `AppConfig` onto the page as globals, and exposes the API to your code through the **`@wippy-fe/proxy`** module.
 
-Used by `view.page` apps. The Web Host builds a `srcdoc` document for each page and injects `proxy.js` via the `scripts` array inside that document. `proxy.js` is a UMD bundle that runs at page load, sends `GetConfig` to the parent window, receives `SetConfig` back, and then exposes the full `$W` API on `window`.
+- For a **micro frontend app** (`view.page`), the host injects `proxy.js` into the page's `srcdoc`.
+- For a **web component** (`view.component`), the runtime is already running in the host page (the component mounts in the host DOM, not a separate iframe).
 
-The host always injects `loading.js` before `proxy.js`. Pages do not need to reference either script explicitly — the `<script data-role="@wippy/scripts">` placeholder in the page HTML is replaced by the host with the correct ordered script tags.
+Either way, your code consumes the same thing — the sync getters exported by `@wippy-fe/proxy`:
 
-Config for the proxy is injected as `window.__WIPPY_PROXY_CONFIG__` before the scripts load:
+```ts
+import { host, api, on, config } from '@wippy-fe/proxy'
+
+host.navigate('/dashboard')
+const data = await api.get('/api/v1/agents')   // api is an axios instance; the await is the HTTP call
+on('@history', ({ path }) => router.replace(path))
+```
+
+These are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs; you do not `await` to obtain them. That works because config is injected synchronously (below). Mark `@wippy-fe/proxy` as `external` in your Vite build — the host provides it through the import map. See [Proxy API](../micro-frontends/proxy-api.md) for the full surface.
+
+## How config reaches an app iframe
+
+When the host loads a `view.page`, it builds a `srcdoc` and injects, **in order, before your app's script**:
 
 ```html
-<!-- Injected by the host into the srcdoc before proxy.js -->
-<script>
-  window.__WIPPY_PROXY_CONFIG__ = {
-    injections: {
-      css: {
-        fonts: true,
-        themeConfig: true,
-        primevue: true,
-        iframe: true,
-        markdown: true,
-        customCss: true,
-        customVariables: true
-      }
-    }
-  }
-</script>
+<!-- 1. The child AppConfig — set synchronously, before the runtime loads -->
+<script>window.__WIPPY_APP_CONFIG__ = { /* auth, env, theming, hostConfig, context */ }</script>
+<!-- 2. The CSS-injection flags for this page -->
+<script>window.__WIPPY_PROXY_CONFIG__ = { injections: { css: { themeConfig: true, primevue: true /* … */ } } }</script>
+<!-- 3. The runtime (preceded by loading.js) -->
 <script src="/.../loading.js"></script>
 <script src="/.../proxy.js"></script>
 ```
 
-Per-page config overrides are injected separately as `window.__WIPPY_CONFIG_OVERRIDES__` (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
+Because the config global is set **before** `proxy.js` runs, the runtime initializes synchronously and the `@wippy-fe/proxy` getters work immediately — no handshake. Pages don't reference these scripts directly; the `<script data-role="@wippy/scripts">` placeholder is replaced by the host with the correct ordered tags. Per-page overrides arrive as `window.__WIPPY_CONFIG_OVERRIDES__` (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
 
-### WC proxy (`@wippy-fe/proxy` ESM)
+A web component sees the same globals because it runs in the host page, where the runtime already set them before the component's `connectedCallback` fires.
 
-Used by `view.component` web components. Web components are mounted directly in the host DOM, not inside iframes. The host provides the proxy implementation as an ESM module and maps it through the import map so that `import { api } from '@wippy-fe/proxy'` resolves to the host's own in-process instance.
+## What actually differs between apps and web components
 
-The host sets two globals before the component's `connectedCallback` fires:
+Not the proxy API — both import sync from `@wippy-fe/proxy`. The differences are the execution context and how styles are delivered:
 
-- `window.__WIPPY_APP_API__` — pre-built axios instance with auth headers
-- `window.__WIPPY_APP_CONFIG__` — current `AppConfig` snapshot
+| | Micro Frontend App (`view.page`) | Web Component (`view.component`) |
+|---|---|---|
+| Runs in | its own `srcdoc` iframe | the host page DOM (Shadow DOM) |
+| Runtime delivery | `proxy.js` injected into the iframe | runtime already present in the host page |
+| CSS | full injection pipeline (`themeConfig`, `primevue`, …) — see [CSS Injection](./css-injection.md) | `hostCssKeys` into the Shadow DOM — see [Theming: Web Components](../micro-frontends/web-component-theming.md) |
+| Nesting | can host further `<w-iframe>` children | leaf node |
 
-The WC proxy adapter reads these globals rather than doing a PostMessage handshake. This is intentional: web components are leaf nodes in the host's own DOM, so the synchronous globals are available immediately without a round-trip.
+## Internals — do not read or override
 
-```typescript
-// In a web component (build config marks @wippy-fe/proxy as external)
-import { api, host, on, logger } from '@wippy-fe/proxy'
+`proxy.js` installs the following globals for its own use. **Application and component code should never read or assign them** — use `@wippy-fe/proxy` instead. They are documented only so you don't accidentally clobber them:
 
-class MyComponent extends HTMLElement {
-  async connectedCallback() {
-    const response = await api.get('/api/v1/my-data')
-    // ...
-  }
-}
-```
+| Global | What it is |
+|---|---|
+| `window.$W` | Async accessor object (`$W.host()`, `$W.api()`, …). Internal; `@wippy-fe/proxy` is the supported surface. |
+| `window.getWippyApi` / `window.initWippyApi` | Async "resolve the instance" functions. Internal (`initWippyApi` is deprecated). |
+| `window.__WIPPY_APP_API__` | The resolved proxy instance. |
+| `window.__WIPPY_APP_CONFIG__` | The child `AppConfig` snapshot. |
+| `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | CSS-injection flags and per-page overrides. |
+| `window.__WIPPY_WEB_COMPONENT_CACHE__` | Loaded-component cache. |
 
-### Key differences
+The system has exactly **two official JavaScript surfaces**: `initWippyApp(config, rootContainer?)` — mounts the whole Web Host (the module-embed entry the facade uses; see [Facade Entry Point](./entry-point.md)) — and **`@wippy-fe/proxy`** — the sync API for child apps and components.
 
-| Property | Iframe proxy (`proxy.js`) | WC proxy (`@wippy-fe/proxy`) |
-|----------|--------------------------|------------------------------|
-| Access method | `window.$W` or `window.getWippyApi()` | `import { ... } from '@wippy-fe/proxy'` |
-| Build config | N/A — injected as script tag | Mark `@wippy-fe/proxy` as external in Vite |
-| Initialization | PostMessage `GetConfig`/`SetConfig` handshake | Reads `window.__WIPPY_APP_API__` and `window.__WIPPY_APP_CONFIG__` |
-| Config source | `window.__WIPPY_PROXY_CONFIG__` + `window.__WIPPY_CONFIG_OVERRIDES__` | `window.__WIPPY_APP_CONFIG__` |
-| CSS injections | Full pipeline (fonts, theme, PrimeVue, etc.) | None — host DOM already has styles |
-| Import map | Not used | Host provides `@wippy-fe/proxy` mapping |
-| Nesting | Can host further `<w-iframe>` children | Leaf node only |
-| Use case | `view.page` standalone apps | `view.component` web components |
+## PostMessage Protocol (`IFrameMessageType`) — internal transport
 
-## PostMessage Protocol (`IFrameMessageType`)
+This is the wire protocol the runtime uses internally; **application code never sends or receives these messages** — `@wippy-fe/proxy` handles them for you. The one place it surfaces is the manual, facade-less iframe embedding, where the parent must answer the `get-config` request (see [Facade Entry Point § Manual iframe embedding](./entry-point.md#manual-facade-less-iframe-embedding)). The standard host-injected path needs no handshake — config is already present synchronously.
 
-The iframe proxy communicates with the host through a PostMessage protocol. Every message is a JSON envelope with shape `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`. The `type` field is configurable via `APP_CONFIG_IFRAME_EVENT_TYPE` but defaults to `'@gen2-chat'`.
+Every message is a JSON envelope with shape `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`. The `type` field is configurable via `APP_CONFIG_IFRAME_EVENT_TYPE` but defaults to `'@gen2-chat'`.
 
 All message types are defined in the `IFrameMessageType` enum:
 
@@ -121,7 +117,7 @@ All message types are defined in the `IFrameMessageType` enum:
 | `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Child | Per-panel live state delta |
 | `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Child | Layout bus broadcast delivery |
 
-Application code never sends or receives these messages directly. The proxy handles the protocol transparently and exposes only the `$W` API surface.
+Application code never sends or receives these messages directly. The proxy handles the protocol transparently and exposes only the `@wippy-fe/proxy` API surface.
 
 ## `<w-iframe>` Custom Element
 
@@ -194,7 +190,7 @@ const result = await frame.request('get-selection', undefined, { timeoutMs: 5000
 
 Child side:
 ```typescript
-const { host } = await window.getWippyApi()
+import { host } from '@wippy-fe/proxy'
 
 host.bridge.post('ready', { value: 1 })
 const file = await host.bridge.request('pick-file', { accept: '.csv' })
@@ -266,7 +262,7 @@ Use `<w-artifact>` when you have a Wippy artifact UUID or page ID and want the p
 For cases where you need the source-HTML-to-srcdoc transform without mounting an element, the proxy exposes `html.inject(...)`:
 
 ```typescript
-const { html } = await window.getWippyApi()
+import { html } from '@wippy-fe/proxy'
 
 const processed = await html.inject(sourceHtml, {
   baseUrl: 'https://example.com/app/',

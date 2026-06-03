@@ -1,33 +1,15 @@
-graph LR
-    subgraph WebHost["Web Host (CDN iframe)"]
-        HostAPI["Host API\n(startChat, navigate,\nonRouteChanged...)"]
+graph TB
+    Runtime["proxy.js — the single runtime\ninstalls __WIPPY_APP_API__ + __WIPPY_APP_CONFIG__ (sync)\nplus window.$W (internal)"]
+
+    subgraph App["Micro Frontend App (view.page) · srcdoc iframe"]
+        A["import { host, api, on } from '@wippy-fe/proxy'"]
     end
 
-    subgraph IframeProxy["Iframe Proxy (UMD)"]
-        ProxyJS["proxy.js\nwindow.$W"]
-        Config1["window.__WIPPY_PROXY_CONFIG__"]
+    subgraph Comp["Web Component (view.component) · Shadow DOM in host page"]
+        C["import { host, api, on } from '@wippy-fe/proxy'"]
     end
 
-    subgraph WCProxy["WC Proxy (ESM)"]
-        ProxyESM["@wippy-fe/proxy\nwindow.$W"]
-        Config2["window.__WIPPY_APP_API__\nwindow.__WIPPY_APP_CONFIG__"]
-    end
-
-    subgraph PageIframe["view.page (iframe)"]
-        PageApp["Vue 3 App\nuses window.$W"]
-    end
-
-    subgraph WebComp["view.component (Shadow DOM)"]
-        WCApp["Web Component\nuses window.$W"]
-    end
-
-    WebHost -->|"injects via srcdoc scripts[]"| ProxyJS
-    WebHost -->|"sets globals"| Config1
-    ProxyJS -->|"exposes"| PageApp
-
-    WebHost -->|"provides via import map"| ProxyESM
-    WebHost -->|"sets globals"| Config2
-    ProxyESM -->|"exposes"| WCApp
-
-    PageApp -->|"PostMessage"| HostAPI
-    WCApp -->|"PostMessage"| HostAPI
+    Runtime -->|"injected into the iframe\n(config set before it runs)"| App
+    Runtime -->|"already running in the host page"| Comp
+    A -.->|"sync getters read __WIPPY_APP_API__"| Runtime
+    C -.->|"sync getters read __WIPPY_APP_API__"| Runtime
