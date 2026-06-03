@@ -62,7 +62,7 @@ How a node hosts a child depends on the child's kind:
 
 The child's own code is identical whether it runs at the top level or nested several deep: import from `@wippy-fe/proxy` and use it. There are no special nesting rules.
 
-See [`<w-iframe>`](#ltw-iframegt-custom-element), [`<w-artifact>`](#ltw-artifactgt-custom-element), and [Advanced HTML Injection](#advanced-html-injection) below for the mechanics.
+See [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custom-element), and [Advanced HTML Injection](#advanced-html-injection) below for the mechanics.
 
 ## Internals — do not read or override
 
