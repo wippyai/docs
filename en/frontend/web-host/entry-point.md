@@ -249,7 +249,7 @@ The handshake uses the `@gen2-chat` PostMessage protocol:
 2. The booting iframe posts `{ type: '@gen2-chat', action: 'get-config' }` to the parent.
 3. The parent's `message` listener responds with `{ type: '@gen2-chat', action: 'set-config', ...config }`, targeted at `iframe_origin`.
 
-The Web Host extracts the `AppConfig` payload and proceeds with full initialization. For the full message protocol (`@gen2-chat` envelope and the `IFrameMessageType` enum), see [Proxy & Isolation](./proxy-isolation.md). This was the facade's previous default delivery mechanism; the facade no longer uses it, and it now exists only for manual, facade-less insertions.
+The Web Host extracts the `AppConfig` payload and proceeds with full initialization. For the full message protocol (`@gen2-chat` envelope and the `IFrameMessageType` enum), see [Proxy & Isolation](./proxy-isolation.md). This `SetConfig` handshake is specific to manual, facade-less embedding; the `wippy/facade` module loads the Web Host as a JS module instead.
 
 ## Configuring the Facade Module
 

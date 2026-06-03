@@ -1,6 +1,6 @@
 # Proxy API
 
-Child apps and web components communicate with the Wippy host through a single proxy runtime (`proxy.js`). Your code never talks to that runtime directly — you import named getters from **`@wippy-fe/proxy`**, a thin synchronous facade over it. The same import works for both surfaces:
+Child apps and web components communicate with the Wippy host through the proxy runtime (`proxy.js`). Your code never talks to that runtime directly — you import named getters from **`@wippy-fe/proxy`**, a thin synchronous facade over it. The same import works for both surfaces:
 
 - **Micro Frontend Apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`.
 - **Web components (`view.component`)** run as ESM modules in the host page; the host provides `@wippy-fe/proxy` through the import map.
@@ -49,7 +49,7 @@ import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'
 
 The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. They are listed only so you do not accidentally clobber them — see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
 
-> The two official JavaScript surfaces are `initWippyApp(config, rootContainer?)` — the host bootstrap that mounts the whole Web Host (module-embed / facade path; **not** called by child app code) — and `@wippy-fe/proxy`, the sync API documented here.
+> `@wippy-fe/proxy` (documented here) is the API your child code uses. The host's own bootstrap, `initWippyApp(config, rootContainer?)`, mounts the whole Web Host on the module-embed / facade path — child app code never calls it.
 
 ---
 

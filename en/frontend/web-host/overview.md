@@ -33,7 +33,7 @@ Each entry is served from the CDN at `<release-tag>/<entry>` (e.g. `/<release-ta
 |-------|----------|
 | `module.js` | Full app in **compat** mode — the standard nav-sidebar + page-area + chat-right-panel shell. Mounted directly into the page via `window.initWippyApp()`; takes over the whole page and its browser history. This is the entry the current `wippy/facade` serves by default. |
 | `managed-layout.js` | Full app in **managed** mode — the declarative multi-panel layout. Served by the facade when `fe_mode = managed`. Early access (see [Multi-Panel Layout](./multi-panel-layout.md)). |
-| `iframe.html` | Full app run **inside an iframe** for isolation or partial-page embedding. Used for manual, facade-less embeddings where you deliver config via a `SetConfig` PostMessage handshake. Was the facade's previous default; no longer used by the facade. |
+| `iframe.html` | Full app run **inside an iframe** for isolation or partial-page embedding. Use it for manual, facade-less embeddings where you supply config via a `SetConfig` PostMessage handshake. The facade itself loads the JS-module entries above, not this one. |
 | `chat-iframe.html` | Minimal chat interface without sidebar or pages. Useful for embedding a focused chat widget. |
 | `chat.js` | Headless ESM module exposing chat stores and WebSocket client. Use for building completely custom UIs. |
 | `ws.js` | Standalone WebSocket service with no Vue or Pinia dependency. Use for low-level real-time integrations. |

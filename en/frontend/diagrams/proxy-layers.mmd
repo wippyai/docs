@@ -1,15 +1,10 @@
 graph TB
-    Runtime["proxy.js — the single runtime\ninstalls __WIPPY_APP_API__ + __WIPPY_APP_CONFIG__ (sync)\nplus window.$W (internal)"]
+    Host["Wippy Web Host\nProxy API: api · navigate · state · ws · chat"]
+    Child["Child node\nMicro Frontend App (iframe) · Web Component (host page)\nimport { host, api, on } from '@wippy-fe/proxy'"]
+    Nested["Nested child\nMicro Frontend App · Web Component\nsame import, same Proxy API"]
 
-    subgraph App["Micro Frontend App (view.page) · srcdoc iframe"]
-        A["import { host, api, on } from '@wippy-fe/proxy'"]
-    end
-
-    subgraph Comp["Web Component (view.component) · Shadow DOM in host page"]
-        C["import { host, api, on } from '@wippy-fe/proxy'"]
-    end
-
-    Runtime -->|"injected into the iframe\n(config set before it runs)"| App
-    Runtime -->|"already running in the host page"| Comp
-    A -.->|"sync getters read __WIPPY_APP_API__"| Runtime
-    C -.->|"sync getters read __WIPPY_APP_API__"| Runtime
+    Host -->|"injects the Proxy API"| Child
+    Child -->|"uses it → host · api · on · state · ws"| Host
+    Child -->|"hosts more children:\n&lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject\n(re-inject the runtime; web components just render their tag)"| Nested
+    Nested -->|"uses the Proxy API\n(bridges up through its parent)"| Child
+    Nested -.->|"…hosts its own children, indefinitely"| Nested

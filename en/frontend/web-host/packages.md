@@ -38,7 +38,7 @@ Related helpers (not proxy access):
 
 ### `@wippy-fe/proxy`
 
-The Proxy API module — the primary package every child micro-frontend uses to talk to the Wippy host. It is a thin **synchronous** facade over the single proxy runtime (`proxy.js`): the runtime installs the API onto internal globals, and `@wippy-fe/proxy` re-exports it as sync getters. Both micro frontend apps (in their injected iframe) and web components (in the host page) import the same exports — no `await` to obtain them:
+The Proxy API module — the primary package every child micro-frontend uses to talk to the Wippy host. It is a thin **synchronous** facade over the proxy runtime (`proxy.js`): the runtime installs the API onto internal globals, and `@wippy-fe/proxy` re-exports it as sync getters. Micro frontend apps (in their injected iframe) and web components (in the host page) import the same getters — synchronous, no `await` to obtain them:
 
 ```typescript
 import { host, api, ws, on, state, html, sanitize } from '@wippy-fe/proxy'

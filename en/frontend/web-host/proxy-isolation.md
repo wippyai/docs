@@ -1,17 +1,17 @@
 # Proxy & Isolation
 
-The Web Host isolates child micro-frontends by running them in sandboxed contexts and bridging communication through a single proxy runtime. Both micro frontend apps and web components talk to the host the same way: by importing from **`@wippy-fe/proxy`**.
+The Web Host runs each child micro-frontend in a sandboxed context and bridges it to the host through the **Proxy API**. Micro frontend apps and web components both reach the host by importing from **`@wippy-fe/proxy`**.
 
-![Proxy layers](../diagrams/proxy-layers.svg)
+![Proxy API injection and nesting](../diagrams/proxy-layers.svg)
 
-## One runtime, one API
+## The Proxy API
 
-There is a single proxy runtime — `proxy.js`. It installs the proxy API and the current `AppConfig` onto the page as globals, and exposes the API to your code through the **`@wippy-fe/proxy`** module.
+The Proxy API is your entry point to the host. A runtime — `proxy.js` — delivers it: it puts the API and the current `AppConfig` on the page and exposes them through the **`@wippy-fe/proxy`** module.
 
 - For a **micro frontend app** (`view.page`), the host injects `proxy.js` into the page's `srcdoc`.
-- For a **web component** (`view.component`), the runtime is already running in the host page (the component mounts in the host DOM, not a separate iframe).
+- For a **web component** (`view.component`), the runtime is already present in the host page — the component mounts in the host DOM, not a separate iframe.
 
-Either way, your code consumes the same thing — the sync getters exported by `@wippy-fe/proxy`:
+Your code consumes it through the sync getters exported by `@wippy-fe/proxy`:
 
 ```ts
 import { host, api, on, config } from '@wippy-fe/proxy'
@@ -21,7 +21,7 @@ const data = await api.get('/api/v1/agents')   // api is an axios instance; the 
 on('@history', ({ path }) => router.replace(path))
 ```
 
-These are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs; you do not `await` to obtain them. That works because config is injected synchronously (below). Mark `@wippy-fe/proxy` as `external` in your Vite build — the host provides it through the import map. See [Proxy API](../micro-frontends/proxy-api.md) for the full surface.
+These getters are **synchronous**: `host`, `api`, `on`, `config`, and the rest are ready the moment your code runs — config is in place before the runtime initializes (see below), so there is no handshake to await. Mark `@wippy-fe/proxy` as `external` in your Vite build — the host provides it through the import map. See [Proxy API](../micro-frontends/proxy-api.md) for the full surface.
 
 ## How config reaches an app iframe
 
@@ -41,16 +41,28 @@ Because the config global is set **before** `proxy.js` runs, the runtime initial
 
 A web component sees the same globals because it runs in the host page, where the runtime already set them before the component's `connectedCallback` fires.
 
-## What actually differs between apps and web components
+## How apps and web components differ
 
-Not the proxy API — both import sync from `@wippy-fe/proxy`. The differences are the execution context and how styles are delivered:
+Both import the same API from `@wippy-fe/proxy`. They differ in execution context and how styles are delivered:
 
 | | Micro Frontend App (`view.page`) | Web Component (`view.component`) |
 |---|---|---|
 | Runs in | its own `srcdoc` iframe | the host page DOM (Shadow DOM) |
 | Runtime delivery | `proxy.js` injected into the iframe | runtime already present in the host page |
 | CSS | full injection pipeline (`themeConfig`, `primevue`, …) — see [CSS Injection](./css-injection.md) | `hostCssKeys` into the Shadow DOM — see [Theming: Web Components](../micro-frontends/web-component-theming.md) |
-| Nesting | can host further `<w-iframe>` children | leaf node |
+
+## Composition & nesting
+
+Children compose. A micro frontend app or a web component can itself host children — again micro frontend apps or web components — which can host their own, to any depth. Every level uses the same `@wippy-fe/proxy` API.
+
+How a node hosts a child depends on the child's kind:
+
+- **An iframe child** — a micro frontend app, an artifact, or arbitrary Wippy HTML — goes through `<w-iframe>`, `<w-artifact>`, or `html.inject`. These inject the runtime (base URL, import map, `loading.js`, `proxy.js`, and config) into the child's `srcdoc`, so it gets the Proxy API exactly as a top-level app does. Its proxy bridges up through the parent to the host.
+- **A web component child** needs none of that. Render its tag — or load it with `loadWebComponent` / `loadByTagName` — and it runs in the same DOM, importing the Proxy API directly.
+
+The child's own code is identical whether it runs at the top level or nested several deep: import from `@wippy-fe/proxy` and use it. There are no special nesting rules.
+
+See [`<w-iframe>`](#ltw-iframegt-custom-element), [`<w-artifact>`](#ltw-artifactgt-custom-element), and [Advanced HTML Injection](#advanced-html-injection) below for the mechanics.
 
 ## Internals — do not read or override
 
@@ -65,7 +77,7 @@ Not the proxy API — both import sync from `@wippy-fe/proxy`. The differences a
 | `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | CSS-injection flags and per-page overrides. |
 | `window.__WIPPY_WEB_COMPONENT_CACHE__` | Loaded-component cache. |
 
-The system has exactly **two official JavaScript surfaces**: `initWippyApp(config, rootContainer?)` — mounts the whole Web Host (the module-embed entry the facade uses; see [Facade Entry Point](./entry-point.md)) — and **`@wippy-fe/proxy`** — the sync API for child apps and components.
+Two entry points make up the public JavaScript API: `initWippyApp(config, rootContainer?)` mounts the whole Web Host (the module-embed entry the facade uses; see [Facade Entry Point](./entry-point.md)), and **`@wippy-fe/proxy`** is the sync API for child apps and components. Everything in the table above is internal.
 
 ## PostMessage Protocol (`IFrameMessageType`) — internal transport
 
