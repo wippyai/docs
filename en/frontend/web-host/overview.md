@@ -50,14 +50,16 @@ https://web-host.wippy.ai/<release-tag>/
 
 Where `<release-tag>` is the Web Host git release tag — either a stable release or a feature-branch preview deploy. The staging CDN is at `https://web-host.staging.wippy.ai/<release-tag>/`.
 
-In a `wippy/facade` configuration the version is set via the `fe_facade_url` parameter:
+Normally you don't set the version at all. The `wippy/facade` module ships with a default `fe_facade_url` pointing at a matching Web Host build, so **the Web Host version moves with the facade module** — updating `wippy/facade` is how you move to a newer Web Host. Child apps that share vendor libraries via the import map receive exactly the versions that build provides.
+
+To pin a specific Web Host version — to stay on a known-good build, or to opt into a feature-branch / early-access tag — override the `fe_facade_url` parameter:
 
 ```yaml
 - name: fe_facade_url
   value: https://web-host.wippy.ai/<release-tag>
 ```
 
-This parameter pins the entire deployment to a specific Web Host build. Child apps that use shared vendor libraries via import maps receive exactly the library versions that correspond to that build. When you upgrade the Web Host version you update this single parameter and redeploy the facade module.
+This pins the entire deployment to that build. See [CLI overrides](../../guides/cli.md) for the `-o` / `--override` syntax to set it at runtime instead.
 
 ## Tech Stack
 
