@@ -81,7 +81,11 @@ Two entry points make up the public JavaScript API: `initWippyApp(config, rootCo
 
 ## PostMessage Protocol (`IFrameMessageType`) — internal transport
 
-This is the wire protocol the runtime uses internally; **application code never sends or receives these messages** — `@wippy-fe/proxy` handles them for you. The one place it surfaces is the manual, facade-less iframe embedding, where the parent must answer the `get-config` request (see [Facade Entry Point § Manual iframe embedding](./entry-point.md#manual-facade-less-iframe-embedding)). The standard host-injected path needs no handshake — config is already present synchronously.
+This is the wire protocol the runtime uses internally; **application code never sends or receives these messages** — `@wippy-fe/proxy` handles them for you.
+
+The standard host-injected path needs no handshake to start up — config is already present synchronously as `window.__WIPPY_APP_CONFIG__` before `proxy.js` runs, so the runtime builds its instance immediately. The `get-config`/`set-config` exchange still happens on this path, but only as a **non-blocking re-sync and live-update channel**: after the synchronous instance is built, the iframe runtime always sends `get-config`, the host answers with `set-config`, and it re-pushes `set-config` on every later config update. Nested `<w-iframe>` children behave the same way. Your code never waits on any of this — the sync getters are already live.
+
+The handshake is **the sole, blocking config source** in exactly one scenario: the manual, facade-less iframe embedding (`iframe.html?waitForCustomConfig`), where there is no pre-injected `window.__WIPPY_APP_CONFIG__`, so initialization blocks on the first `set-config` and the parent must answer the `get-config` request (see [Facade Entry Point § Manual iframe embedding](./entry-point.md#manual-facade-less-iframe-embedding)).
 
 Every message is a JSON envelope with shape `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`. The `type` field is configurable via `APP_CONFIG_IFRAME_EVENT_TYPE` but defaults to `'@gen2-chat'`.
 
@@ -166,7 +170,7 @@ frame.srcdoc = sourceHtml
 | `loading` | — | Fired before fetch/process/render starts. |
 | `load` | — | Fired after the sandbox iframe loads. |
 | `error` | Original error | Fired when fetch, injection, or load fails. |
-| `nav-owner-route` | `{ path: string, navId?: number }` | Child route change when `nav-owner` is set. |
+| `nav-owner-route` | `{ path: string, navId?: number }` | Child route change when `nav-owner` is set. The event bubbles and is `composed`. |
 | `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | Bridge message from the child. |
 
 | Method | Description |
@@ -175,6 +179,16 @@ frame.srcdoc = sourceHtml
 | `request<T>(channel, payload?, { timeoutMs }?)` | Request/response bridge message; resolves with handler return value. |
 
 Shadow parts: `loader`, `error`, `frame`.
+
+When `nav-owner` is set, the default route-sync round-trip is fully suppressed: the host does **not** update its own URL bar and does **not** post `UrlWasUpdatedInParent` back to the child. Navigation ownership is delegated entirely to the parent code listening for `nav-owner-route`. The `path` in the event detail is the child's **raw internal route** exactly as the child passed it to `host.onRouteChanged(internalRoute, navId?)` — it is **not** mount-prefixed (unlike the default `CmdRouteChanged` path, where the host prepends the page's mount prefix). The embedding parent is responsible for any prefixing or router mapping:
+
+```typescript
+const frame = document.querySelector('w-iframe')
+frame.addEventListener('nav-owner-route', (event) => {
+  const { path, navId } = event.detail
+  myRouter.push(path)
+})
+```
 
 ### Parent-child bridge
 
@@ -213,7 +227,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 })
 ```
 
-`host.bridge.on()` returns an unsubscribe function. If multiple handlers are registered for a channel, the most recently registered one responds to requests.
+`host.bridge.on()` returns an unsubscribe function (`() => void`). **One channel = one active handler.** If multiple handlers are registered for the same channel, the most recently registered one wins and handles **all** incoming messages on that channel — both fire-and-forget `post()` and `request()`. `on()` is not additive: earlier handlers are shadowed (not removed) and do not run while a newer handler exists, and the proxy logs a `console.warn` on duplicate registration. If the newest handler unsubscribes, the previous handler for that channel becomes active again. Use distinct channel names if you need multiple independent listeners.
 
 ## `<w-artifact>` Custom Element
 

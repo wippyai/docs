@@ -39,11 +39,20 @@ export default defineConfig({
 
 ### TypeScript types
 
-Import types from `@wippy-fe/shared` rather than deriving them from any runtime global:
+The proxy types — `AppConfig`, `ProxyApiInstance`, `StateApi`, `ProxyWsApi`, and the WebSocket message types — ship as **ambient declarations** in `@wippy-fe/types-global-proxy`, not as named exports of any package. Add it to your `tsconfig.json` `types` (or use a triple-slash reference) and they are available globally — no import:
+
+```jsonc
+// tsconfig.json
+{ "compilerOptions": { "types": ["@wippy-fe/types-global-proxy"] } }
+```
 
 ```typescript
-import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'
+// AppConfig, ProxyApiInstance, … are ambient globals — annotate with them directly, no import:
+function render(cfg: AppConfig) { /* … */ }
+type HostApi = ProxyApiInstance['host']   // HostApi is this indexed type, not a separate export
 ```
+
+There is **no** `import … from '@wippy-fe/shared'` for these — `@wippy-fe/shared` only carries the layout-bus types and the `GLOBAL_*` name constants.
 
 ### Internals (do not use)
 

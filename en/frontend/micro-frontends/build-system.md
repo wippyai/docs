@@ -192,7 +192,24 @@ export { webComponent } from './index-abc123.js'
 
 The autoload system that registers web components appends a `?declare-tag=<tag>` query parameter to the module URL when importing it. This query ends up on `index.js`, not on the sub-chunk URL. When the component calls `define(import.meta.url, ...)`, it reads `import.meta.url` — which is the sub-chunk URL without the query — and the tag registration is silently skipped.
 
-The fix is to keep `preserveEntrySignatures` at its Vite default for lib mode (which is `false` — i.e. Vite merges everything into the entry). Verify your build output contains the actual component code in `index.js` and not a one-liner re-export.
+> **Note:** The `?declare-tag=<tag>` query — attached to the **component module URL** so `define()` can read the tag — is a different mechanism from the `?auto_register=true` query that appears on the `/api/public/components/list` endpoint (see [Debugging](debugging.md)). Don't conflate the two: one carries the tag to the module, the other gates whether the registry endpoint includes auto-registered components.
+
+The fix is to set `preserveEntrySignatures: false` **explicitly** under `build.rollupOptions`. Do not rely on the default: Rollup's own default is `'strict'`, and Vite's lib-mode handling of this option has varied across versions, so a developer who omits the line can still hit the facade bug.
+
+```ts
+build: {
+  // ...
+  rollupOptions: {
+    // ...
+    // Merge deps into the entry chunk instead of emitting a facade +
+    // sub-chunk, so define(import.meta.url, ...) stays in the entry where
+    // the ?declare-tag= query is attached.
+    preserveEntrySignatures: false,
+  },
+},
+```
+
+Verify your build output contains the actual component code in `index.js` and not a one-liner re-export.
 
 ## Build Output Location
 
@@ -260,7 +277,7 @@ Or add it to the `include` array if you prefer explicit file resolution:
 }
 ```
 
-Without this package, TypeScript will not know the shape of the internal proxy globals (`window.$W`, `window.getWippyApi()`, `window.__WIPPY_*`) if you reference them directly. This is only needed for that rare, discouraged case — ordinary proxy usage via `import { host, api, on } from '@wippy-fe/proxy'` is already fully typed by `@wippy-fe/proxy` (with types from `@wippy-fe/shared`) and requires nothing extra.
+Without this package, TypeScript will not know the shape of the internal proxy globals (`window.$W`, `window.getWippyApi()`, `window.__WIPPY_*`) if you reference them directly. This is only needed for that rare, discouraged case — ordinary proxy usage via `import { host, api, on } from '@wippy-fe/proxy'` is already fully typed by `@wippy-fe/proxy` itself and requires nothing extra.
 
 ## Multi-Project Builds
 

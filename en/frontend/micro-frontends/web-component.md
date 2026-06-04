@@ -496,7 +496,7 @@ class MyWidgetElement extends WippyVueElement<ComponentProps, Events> {
 }
 ```
 
-Note: unlike micro frontend apps, web components do not call `preloadWippyState()` — the `WippyVueElement` base class handles pre-hydration internally.
+Note: web components do not call `preloadWippyState()` because the `WippyVueElement` lifecycle (`connectedCallback` → `onMount`) is synchronous by design — custom-element upgrade must run synchronously, so there is no app-owned async bootstrap to await a preload in, and hence no pre-hydration step. Instead, `createWippyPersist()` hydrates each store **asynchronously** on creation: when no preloaded state is provided it falls back to `state.get(<key>).then(store.$patch)`. This is fine for most components but can cause a one-frame flash of the store's initial state before the persisted values patch in. If you need synchronous hydration you must `await preloadWippyState()` yourself and pass the result to `createWippyPersist({ preloadedState })`; the base class does not do this for you.
 
 When multiple instances of the same component appear on the same page, use a `persist-key` prop to give each instance its own scope:
 

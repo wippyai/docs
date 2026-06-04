@@ -75,19 +75,21 @@ Full flag reference and runtime defaults: [CSS Injection](../web-host/css-inject
 
 ## Operator Configuration (_index.yaml)
 
-These fields are set by the operator in the `meta` block of the `_index.yaml` registry entry. They represent deployment policy — routing, access control, and serving — that only makes sense at deploy time and cannot be authored in `package.json`.
+These fields are set by the operator in the `meta` block of the `_index.yaml` registry entry. Most of them — `announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline` — represent deployment policy (routing, access control, and serving) that only makes sense at deploy time and has no `package.json` authoring surface. The one exception is `entry_point`: it is **FE-authored** (the vite plugin requires `wippy.path` in `package.json` and bakes it into `wippy-meta.json`), and the `meta.entry_point` field is only an **optional per-deployment override** of that baked default.
 
-> **These fields are deployment policy. They cannot be set in package.json — they are set by the operator for each environment.**
+> **The deployment-policy fields (`announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline`) cannot be set in `package.json` — they are set by the operator for each environment. `entry_point` is different: it is authored as `wippy.path` in `package.json` and the YAML value only overrides that default.**
 
 ### URL and File Serving
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `url` | string | — | Base URL prefix where the bundle is mounted (CDN origin or local `http.static` path) |
-| `base_path` | string | — | Subdirectory within the static mount |
-| `entry_point` | string | `index.html` | HTML file to load; combined with `url` and `base_path` |
+| `url` | string | — | Base URL prefix where the bundle is mounted (CDN origin or local `http.static` path). YAML-only — no `package.json` surface |
+| `base_path` | string | — | Subdirectory within the static mount. YAML-only — no `package.json` surface |
+| `entry_point` | string | `index.html` | HTML file to load; combined with `url` and `base_path`. FE-authored as `wippy.path` in `package.json` (baked into `wippy-meta.json`); the YAML value is an optional per-deployment override |
 
 The resolved entry URL is `<url>/<base_path>/<entry_point>`. An operator deploys the same bundle under multiple entries by pointing different `_index.yaml` entries at the same `base_path` with different `entry_point` or `config_overrides` values.
+
+Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is authored by the FE developer as `wippy.path` in the `package.json` `wippy` block and baked into `wippy-meta.json` by the vite plugin — the plugin **requires** it and throws `wippy.path is required for a page package` if it is omitted. The `meta.entry_point` field in `_index.yaml` only overrides that baked default per deployment; the resolution order is YAML `entry_point` → bundled `wippy.path` → `index.html`.
 
 ### Visibility and Access
 

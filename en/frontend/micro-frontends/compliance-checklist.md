@@ -724,9 +724,12 @@ export const WIPPY_INSTANCE = Symbol('proxy')    as InjectionKey<ProxyApiInstanc
 
 ```ts
 // src/types.ts
-// Import the canonical types from @wippy-fe/shared — never derive them from a runtime global.
-export type { HostApi, ProxyApiInstance } from '@wippy-fe/shared'
-export type { AppConfig as WippyConfig } from '@wippy-fe/shared'
+// HostApi / ProxyApiInstance / AppConfig are not named exports of any @wippy-fe package.
+// Derive them at the type level from $W (typeof only — no runtime access to the internal
+// global). The $W typings ship with @wippy-fe/types-global-proxy (add it to tsconfig "types").
+export type HostApi = Awaited<ReturnType<typeof window.$W.host>>
+export type ProxyApiInstance = Awaited<ReturnType<typeof window.$W.instance>>
+export type WippyConfig = Awaited<ReturnType<typeof window.$W.config>>
 ```
 
 Both files are tiny and stable. Copy verbatim into new apps.
@@ -1268,7 +1271,7 @@ Canonical:
 
 ### 5.4 `@light` / `@dark` blocks
 
-The host SUPPORTS `@light` and `@dark` keys in `cssVariables` maps — they compile to `@media (prefers-color-scheme: light/dark)` rules and `[data-theme]` overrides at injection time.
+The host SUPPORTS `@light` and `@dark` keys in `cssVariables` maps — they compile to `@media (prefers-color-scheme: light/dark) { :root { ... } }` blocks ONLY. They are NOT a `[data-theme]` attribute and do not emit any attribute-scoped selector at injection time — binding is solely on the OS color-scheme preference (see `createCssVariables` in `src/shared/util/createStyle.ts`).
 
 Example:
 ```yaml
@@ -1282,6 +1285,8 @@ cssVariables:
     --p-content-background: '#1c1a19'
     --p-text-color: '#fafafa'
 ```
+
+An app that toggles themes via `document.documentElement.setAttribute('data-theme', ...)` will NOT trigger these overrides; the host injects no `[data-theme]` CSS. To support a manual toggle, document it as a project-specific extension and emit your own `[data-theme]`-scoped variable block. See also [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) and [host-less-mode.md](./host-less-mode.md).
 
 ### 5.5 `customCSS` scoping
 

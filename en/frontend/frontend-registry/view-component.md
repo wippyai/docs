@@ -93,18 +93,18 @@ The Web Host's chat message sanitizer allowlists component attributes from `prop
 
 ## Operator Configuration (_index.yaml)
 
-These fields are set by the operator in the `meta` block of the `_index.yaml` registry entry. They represent deployment policy — routing, access control, and serving — that only makes sense at deploy time and cannot be authored in `package.json`.
+These fields are set by the operator in the `meta` block of the `_index.yaml` registry entry. Most represent pure deployment policy — routing, access control, and serving — that only makes sense at deploy time and has no `package.json` authoring surface (`announced`, `secure`, `url`, `auto_register`). Two fields, `tag_name` and `entry_point`, are different: they are **FE-authored** in `package.json` (baked into `wippy-meta.json`) and the YAML keys are only **optional per-deployment overrides** of those bundled values.
 
-> **These fields are deployment policy and cannot be set in package.json — they are set by the operator for each environment.**
+> **`announced`, `secure`, `url`, and `auto_register` are pure deployment policy and cannot be set in package.json — they are set by the operator for each environment. `tag_name` and `entry_point` are FE-authored defaults that the operator may override in YAML.**
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `tag_name` | string | — | Custom element name as deployed; must contain a hyphen per the HTML spec |
+| `tag_name` | string | `wippy.tagName` | FE-authored as `wippy.tagName` in `package.json` (required by the vite plugin); the YAML key overrides the bundled value. Custom element name; must contain a hyphen per the HTML spec |
 | `announced` | boolean | `false` | Must be `true` for the component to appear in `/api/public/components/list`. Falls back to `meta.public` if that is set. |
 | `auto_register` | boolean | `false` | `true` → Web Host autoloads and registers the component at startup |
 | `secure` | boolean | `false` | Requires authentication |
 | `url` | string | — | Static mount path for the component's built bundle |
-| `entry_point` | string | `index.js` | Entry module file; the host injects this as a `<script type="module">` |
+| `entry_point` | string | `wippy.browser` → `index.js` | FE-authored as the top-level `browser` field in `package.json` (baked into `wippy-meta.json`); the YAML key overrides the bundled value, falling back to `index.js`. Entry module file; the host injects this as a `<script type="module">` |
 
 A minimal entry looks like this:
 

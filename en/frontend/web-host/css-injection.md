@@ -6,7 +6,7 @@ This page documents the injection pipeline, all available flags, and how to cust
 
 ## The Injection Pipeline
 
-Styles are injected in this fixed order. Later layers can override earlier ones because they appear later in the `<head>`:
+Styles are injected in this logical layering. The first four layers are plain `<style>`/`<link>` elements; the last two (`customCSS` and `cssVariables`) are not — they are placed in the iframe document's `adoptedStyleSheets` (see [Override mechanism](#override-mechanism-adopted-stylesheets) below), so they always win regardless of `<head>` source order:
 
 ```
 1. theme-config.css      — CSS custom properties (--p-primary-*, --p-surface-*, --p-secondary-*)
@@ -14,9 +14,11 @@ Styles are injected in this fixed order. Later layers can override earlier ones 
    tailwind.css          — Tailwind utility classes (same bundle as primevue.css)
 3. iframe.css            — Scrollbar styling and base iframe reset
 4. markdown.css          — .data-body rendering styles for Markdown content
-5. customCSS             — Raw CSS from the child-projected AppConfig.theming.global.customCSS
-6. cssVariables          — :root { --key: value } from AppConfig.theming.global.cssVariables
+5. cssVariables          — :root { --key: value } from AppConfig.theming.global.cssVariables (adopted stylesheet)
+6. customCSS             — Raw CSS from the child-projected AppConfig.theming.global.customCSS (adopted stylesheet)
 ```
+
+This list shows the logical override order, not the literal `<head>` insertion order. In the production proxy the two adopted-stylesheet layers (`cssVariables`, then `customCSS`) are actually inserted *before* `theme-config.css` and PrimeVue, yet still override them — because adopted stylesheets cascade after all document `<style>`/`<link>` elements. See [Override mechanism](#override-mechanism-adopted-stylesheets).
 
 Each child iframe gets an independent copy of all styles, not inheritance through the cascade. Host and all children render with the same visual theme because they receive identical injected assets from the same source.
 
@@ -142,7 +144,13 @@ theming: {
 }
 ```
 
-The variables are injected as a `:root { ... }` block at the end of the style pipeline (step 6), so they override `theme-config.css` values (step 1) for all components in that layer.
+The variables are injected as a `:root { ... }` block in the iframe's `adoptedStyleSheets`, so they override `theme-config.css` values for all components in that layer. This override does not depend on `<head>` source order — see [Override mechanism](#override-mechanism-adopted-stylesheets).
+
+### Override mechanism: adopted stylesheets
+
+`customCSS` and `cssVariables` are **not** ordinary `<head>` `<style>`/`<link>` elements. The proxy places them in the iframe document's [`adoptedStyleSheets`](https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets) (constructable stylesheets). Per the CSS cascade, adopted stylesheets always order **after** all `<style>`/`<link>` document stylesheets regardless of insertion order, so they always win over `theme-config.css`, `primevue.css`, `iframe.css`, and `markdown.css`. In the production proxy these custom layers are in fact inserted *before* `theme-config.css` and PrimeVue; the override still holds because it comes from the adopted-stylesheet cascade position, not from `<head>` source order.
+
+Between the two custom layers, **`customCSS` overrides `cssVariables`**: the adopted sheets are ordered `cssVariables` first, then `customCSS`, and later adopted sheets have higher priority. If the same `--p-*` token is set in both, the `customCSS` value wins.
 
 ### Three theming scopes
 

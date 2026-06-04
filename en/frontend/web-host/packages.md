@@ -29,7 +29,7 @@ Related helpers (not proxy access):
 | Vue routing | `createAppRouter()` + `<HostRouterLink>` from `@wippy-fe/router` |
 | Web component base | `WippyVueElement` from `@wippy-fe/webcomponent-vue` |
 | Component props/events | `useComponentProps()` / `useComponentEvents()` from `@wippy-fe/webcomponent-vue` |
-| TypeScript types | `import type { HostApi, ProxyApiInstance, AppConfig } from '@wippy-fe/shared'` |
+| TypeScript types | ambient via `@wippy-fe/types-global-proxy` (add to tsconfig `types`) — `AppConfig` / `ProxyApiInstance` become globals; `HostApi` = `ProxyApiInstance['host']` |
 | Loading/error screens | `<wippy-loading>` / `<wippy-error>` from `@wippy-fe/loading` |
 
 `window.$W` and `window.getWippyApi` are **internal** globals installed by the runtime — don't use them directly (see [Proxy & Isolation § Internals](./proxy-isolation.md#internals--do-not-read-or-override)).
@@ -119,7 +119,7 @@ Vue 3 integration layer for Wippy web components. Provides `WippyVueElement` (a 
 
 ```typescript
 import { define, WippyVueElement, useComponentProps, useComponentEvents, useHost } from '@wippy-fe/webcomponent-vue'
-import type { ProxyApiInstance } from '@wippy-fe/proxy'
+// ProxyApiInstance is an ambient global type from @wippy-fe/types-global-proxy (tsconfig "types") — no import
 import MyApp from './MyApp.vue'
 
 class MyVueWidget extends WippyVueElement {
@@ -177,11 +177,11 @@ Vue 3 composables wrapping the proxy layout API in reactive refs for use inside 
 
 ### `@wippy-fe/shared`
 
-Shared TypeScript types and global name constants used across the `@wippy-fe/*` ecosystem. Pure types, zero runtime code. Provides type definitions for `HostLayoutDeclaration`, `HostPanelDef`, `AppConfig`, `ProxyApiInstance`, and the `IFrameMessageType` enum. Import from here rather than re-declaring types in your own code.
+Cross-boundary contract types and global-name constants shared between the host and the `@wippy-fe/*` packages. Pure types, zero runtime code. Exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and the global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
 
 ### `@wippy-fe/types-global-proxy`
 
-TypeScript ambient declarations for the proxy globals available in srcdoc iframes: `window.$W`, `window.getWippyApi()`, `window.__WIPPY_APP_CONFIG__`, `window.__WIPPY_APP_API__`, and `window.__WIPPY_PROXY_CONFIG__`. Add this package to your `devDependencies` and reference it in `tsconfig.json` to get type-checked access to these globals without importing anything at runtime.
+TypeScript ambient declarations for the proxy globals available in srcdoc iframes: `window.$W`, `window.getWippyApi()`, `window.__WIPPY_APP_CONFIG__`, `window.__WIPPY_APP_API__`, and `window.__WIPPY_PROXY_CONFIG__`. Add this package to your `devDependencies` and reference it in `tsconfig.json` to get type-checked access to these globals without importing anything at runtime. It also makes the proxy types themselves — `AppConfig`, `ProxyApiInstance`, `StateApi`, `ProxyWsApi`, and the WebSocket message types — available as **ambient types** you can annotate with directly (no import).
 
 ```json
 {

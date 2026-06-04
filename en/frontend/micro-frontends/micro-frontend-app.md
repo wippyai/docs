@@ -409,8 +409,12 @@ export const AXIOS_INSTANCE = Symbol('axios') as InjectionKey<ProxyApiInstance['
 
 ```typescript
 // src/types.ts
-// Re-export from @wippy-fe/shared — no dependency on internal globals needed
-export type { HostApi, ProxyApiInstance, AppConfig as WippyConfig } from '@wippy-fe/shared'
+// HostApi / ProxyApiInstance / AppConfig are not named exports of any @wippy-fe package.
+// Derive them at the type level from $W (typeof only — no runtime access); the $W typings
+// ship with @wippy-fe/types-global-proxy (add it to tsconfig "types").
+export type HostApi = Awaited<ReturnType<typeof window.$W.host>>
+export type ProxyApiInstance = Awaited<ReturnType<typeof window.$W.instance>>
+export type WippyConfig = Awaited<ReturnType<typeof window.$W.config>>
 ```
 
 ```typescript

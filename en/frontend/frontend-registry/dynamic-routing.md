@@ -43,7 +43,9 @@ A `view.page` entry claims a host router path by setting `mountRoute` in its `_i
 
 `mountRoute` accepts only the catch-all forms `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen literal segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or different param names (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict, the backend's `validate_mount_route_syntax` fails, and `GET /api/v2/views/pages/routes` returns HTTP 500 (rendered as a fatal fullscreen error). The wildcard segment `:part(.*)*` lets the child application manage its own sub-routes (e.g. `/home/settings`, `/home/profile/edit`) while the host owns the `/home` prefix.
 
-Two entries must not claim overlapping routes. If they do, the first one registered wins and the second's mount route is silently ignored.
+Two entries must not claim the same route. If two `view.page` entries claim the **same** `mountRoute`, the backend validator (`validate_mount_routes` in `page_registry.lua`) records a duplicate-route conflict in the same issues list as syntax errors, so `GET /api/v2/views/pages/routes` returns HTTP 500 and the Web Host renders a fatal fullscreen `<wippy-error>` — exactly like a malformed `mountRoute`. It is **not** silently ignored.
+
+The only first-wins behavior is Vue Router runtime priority between a root catch-all (`/:part(.*)*`) and a more-specific system route (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) or a longer literal-prefix mount — the more-specific route matches first. That is route-resolution precedence, not duplicate-route handling.
 
 ## The URL Sync Loop
 
