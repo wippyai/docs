@@ -983,7 +983,7 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 | `routePrefix` | **Replaced** |
 | `apiRoutes` | **Deep merged** |
 
-Nested `<w-artifact>` iframes inherit the merged config automatically.
+Every nested child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.inject` content — is built from the page's already-merged config and inherits it automatically, recursively down the sub-tree. So a page's overrides (especially theming) propagate to everything beneath it, not just to the page itself.
 
 ---
 

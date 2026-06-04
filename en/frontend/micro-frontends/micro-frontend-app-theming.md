@@ -30,7 +30,7 @@ CSS set in `children_css_variables` or `children_custom_css` reaches your micro 
 
 ### L3 — Per-page (`config_overrides` in registry YAML)
 
-Override specific CSS vars for one page by setting `config_overrides.customization.cssVariables` in the page's registry entry YAML. This affects only the iframe that hosts that page — nothing else.
+Give a page its own theme by setting `config_overrides.customization.cssVariables` / `customCSS` in the page's registry entry YAML. The override is projected into the page's `theming.global`, so it themes the page **and everything the page embeds** — nested `<w-artifact>` / `<w-iframe>` / `html.inject` content is built from the page's already-merged config and inherits the theme, recursively down the sub-tree. This is the tool for shipping a **self-themed sub-tree**: e.g. an admin module whose pages carry a distinct theme that propagates to all the artifacts and sub-apps they host. It does not touch sibling pages or the rest of the app shell.
 
 ```yaml
 - name: iframe-demo-themed

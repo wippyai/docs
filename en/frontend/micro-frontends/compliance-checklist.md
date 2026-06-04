@@ -204,7 +204,7 @@ A registry.entry is what the host actually reads at navigation/render time. The 
 | `meta.hidden` | MAY | Soft-hide from announced nav. |
 | `meta.order` | MAY | Sort position in nav (when announced). |
 | `meta.group` / `meta.group_icon` / `meta.group_order` | MAY | Nav grouping. |
-| `meta.config_overrides` | MAY | **Per-page ISOLATION override only.** The MAIN way to set up themes/config is the host's facade module — the facade owns `cssVariables` / `customCSS` / `host_custom_css` / `css_variables` for the whole app shell. Reach for `config_overrides` only when you explicitly want THIS specific iframe to look or behave different from the rest of the app. |
+| `meta.config_overrides` | MAY | **Per-page + sub-tree override.** The MAIN way to theme the whole app is the host's facade module — the facade owns `cssVariables` / `customCSS` / `host_custom_css` / `css_variables` for the app shell. Reach for `config_overrides` when you want a page — **and everything it embeds** — to look or behave differently from the rest of the app: the override is merged into that page's `theming.global` and propagates to all its nested children. Typical use: a module that ships pages carrying their own theme (e.g. an admin UI) that cascades to their whole sub-tree. |
 | `proxy` (sibling of `meta`, NOT inside meta) | SHOULD | Per-entry proxy injection config. Snake_case keys: `theme_config`, `prime_vue`, `custom_css`, `custom_variables`, `tailwind_config`, `iconify_icons`. |
 
 **VERIFY** at runtime that the host registry recognizes your entry:
@@ -281,7 +281,7 @@ interface AppConfigOverrides {
 
 **Isolation depends on the field.** `config_overrides` are NOT uniformly "isolation-only" — behaviour is field-specific:
 
-- **`cssVariables` / `customCSS` (REPLACE)** → isolating. Legitimate cases: per-iframe brand identity for a portable module that ships its own palette, demo pages with deliberately divergent themes, artifact viewers with a fixed brand, debug pages on alternate API routes.
+- **`cssVariables` / `customCSS` (REPLACE)** → the page's theme replaces the inherited one and then **propagates to everything the page embeds** (it is merged into the page's `theming.global`, which all nested children inherit). Use it to theme a **sub-tree**, not just one iframe: a module shipping pages with their own palette (e.g. an admin UI whose theme cascades to its artifacts/sub-apps), demo pages with divergent themes, artifact viewers with a fixed brand, debug pages on alternate API routes.
 - **`icons` / `iconSets` (MERGE)** → additive, NON-isolating. Adding icons via `config_overrides.customization.icons` augments the child-projected icon set without isolating the iframe. At runtime the page reads the result from `config.theming.global.icons` / `iconSets`.
 
 ### 2.4 The `proxy:` entry-level block (page only)
@@ -1195,7 +1195,7 @@ A Wippy module composes itself from `ns.dependency` entries. **One of those is `
 ### 5.1.1 Three levels of override (priority, low → high)
 
 1. **Facade global** — set in the host's `wippy/facade` `ns.dependency` parameters. Affects the whole user shell + every page inheriting from the facade. **This is where 95%+ of theming should live.**
-2. **Page configOverrides** — YAML registry entry's `meta.config_overrides` (canonical) AND/OR `package.json` `wippy.configOverrides` (host-less mirror). For `cssVariables`/`customCSS` this is **isolation-only** (see §2.3). For `icons`/`iconSets` it is the canonical additive registration path.
+2. **Page configOverrides** — YAML registry entry's `meta.config_overrides` (canonical) AND/OR `package.json` `wippy.configOverrides` (host-less mirror). For `cssVariables`/`customCSS` this **replaces** the inherited theme for the page and **cascades to its nested sub-tree** (see §2.3). For `icons`/`iconSets` it is the canonical additive registration path.
 3. **Runtime overlay** — `window.__WIPPY_CONFIG_OVERRIDES__` set BEFORE proxy.js loads. Rare; for query-string or feature-flag theming.
 
 See [theming.md](./theming.md) for the full three-level guide with examples, escalation criteria, and anti-patterns.

@@ -179,7 +179,7 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 }
 ```
 
-`config_overrides.customization` is the compatibility-shaped authoring surface for per-page overrides. The host migrates it into the effective child `theming.global` scope before the page receives `AppConfig`. Per-page `cssVariables` and `customCSS` **replace** the inherited child values for that page. Nested `<w-artifact>` iframes inherit the merged config automatically.
+`config_overrides.customization` is the compatibility-shaped authoring surface for per-page overrides. The host migrates it into the effective child `theming.global` scope before the page receives `AppConfig`. Per-page `cssVariables` and `customCSS` **replace** the inherited child values for that page. Because the override is merged into `theming.global`, it **propagates down the whole nested sub-tree**: every child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.inject` content — is built from the page's already-merged config and inherits the theme, recursively. So a page (or a module shipping several such pages) themes everything beneath it, not just itself.
 
 ## `--wippy-host-*` Variables
 
