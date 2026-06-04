@@ -386,6 +386,8 @@ host.bridge.on(
 ): () => void  // returns unsubscribe
 ```
 
+If you omit `options.timeoutMs`, `host.bridge.request()` defaults to a 10-second (`10000` ms) deadline. On timeout the returned promise rejects with an `Error` whose message is `` Bridge request <id> timed out after <ms>ms ``. A request to a channel the parent has no handler for rejects immediately with `` No handler registered for channel "<channel>" `` rather than waiting out the deadline.
+
 ---
 
 ### `host.layout`
@@ -413,8 +415,8 @@ layout.collapsePanel('nav')
 layout.expandPanel('nav')
 layout.movePanel('right', { relativeTo: 'main', position: 'after' })
 layout.removePanel('right')
-layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })
-layout.updatePanel('right', { props: { artifactId: 'abc-123' } })
+layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })  // {kind,id} replaces content wholesale
+layout.updatePanel('right', { props: { artifactId: 'abc-123' } })  // {props} shallow-merges into existing props
 
 layout.addFloating('flap', {
   kind: 'component',

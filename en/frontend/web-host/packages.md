@@ -28,7 +28,7 @@ Related helpers (not proxy access):
 |---|---|
 | Vue routing | `createAppRouter()` + `<HostRouterLink>` from `@wippy-fe/router` |
 | Web component base | `WippyVueElement` from `@wippy-fe/webcomponent-vue` |
-| Component props/events | `useComponentProps()` / `useComponentEvents()` from `@wippy-fe/webcomponent-vue` |
+| Component props/events | `useProps()` / `useEvents()` from `@wippy-fe/webcomponent-vue` (commonly wrapped as `useComponentProps()` / `useComponentEvents()` in your `src/constants.ts`) |
 | TypeScript types | ambient via `@wippy-fe/types-global-proxy` (add to tsconfig `types`) — `AppConfig` / `ProxyApiInstance` become globals; `HostApi` = `ProxyApiInstance['host']` |
 | Loading/error screens | `<wippy-loading>` / `<wippy-error>` from `@wippy-fe/loading` |
 
@@ -115,10 +115,10 @@ Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)
 
 ### `@wippy-fe/webcomponent-vue`
 
-Vue 3 integration layer for Wippy web components. Provides `WippyVueElement` (a `WippyElement` subclass that mounts a Vue app into a shadow root), `define()` for registering the custom element, and composables for accessing host context inside Vue components.
+Vue 3 integration layer for Wippy web components. Provides `WippyVueElement` (a `WippyElement` subclass that mounts a Vue app into a shadow root), `define()` for registering the custom element, and composables for accessing host context inside Vue components. The exported composables are `useProps`, `useEvents`, `usePropsErrors`, `useContent`, `useHost`, `usePanelId`, and `useLayoutBus`.
 
 ```typescript
-import { define, WippyVueElement, useComponentProps, useComponentEvents, useHost } from '@wippy-fe/webcomponent-vue'
+import { define, WippyVueElement, useProps, useEvents, useHost } from '@wippy-fe/webcomponent-vue'
 // ProxyApiInstance is an ambient global type from @wippy-fe/types-global-proxy (tsconfig "types") — no import
 import MyApp from './MyApp.vue'
 
@@ -144,17 +144,21 @@ define(import.meta.url, MyVueWidget)
 
 Inside `MyApp.vue`:
 ```typescript
+import { useProps, useEvents, useHost } from '@wippy-fe/webcomponent-vue'
+
 // Read props declared in wippyConfig.propsSchema
-const props = useComponentProps<{ label: string }>()
+const props = useProps<{ label: string }>()
 
 // Emit events to the host
-const emit = useComponentEvents()
+const emit = useEvents()
 emit('selected', { id: 42 })
 
 // Access the panel-scoped host wrapper
 const host = useHost<ProxyApiInstance['host']>()
 host?.layout.broadcast('my-event', { data: 'hello' })
 ```
+
+`useProps()` and `useEvents()` are the library composables. Projects commonly add thin type-bound wrappers — `useComponentProps()` / `useComponentEvents()` — in their own `src/constants.ts` (e.g. `export const useComponentProps = () => useProps<ComponentProps>()`); those names are project-local, not exports of `@wippy-fe/webcomponent-vue`.
 
 `useContent()` is also available for reading `slot`-like content injected by the host into the component.
 
@@ -166,12 +170,12 @@ Provides `LayoutManager` — the core class that manages the panel tree, handles
 
 ### `@wippy-fe/vue-host`
 
-Vue 3 composables wrapping the proxy layout API in reactive refs for use inside page modules running in managed-layout panels. Composables clean up automatically on component unmount and return `null` safely when no managed-layout host is present (useful for testing).
+Vue 3 composables wrapping the proxy layout API in reactive refs for use inside page modules running in managed-layout panels. The composables never return `null` — they always return objects/refs whose inner `.value` degrades when no managed-layout host is present: `snapshot.value` is `null` and `isManaged.value` is `false` (mutations become silent no-ops), `useWippyBreakpoint().value` and `useWippyMainRoute().value` are empty strings, and `useWippyPanel(id).value` is `null` for an absent id. Guard host presence with `layout.isManaged.value` (or `layout.snapshot.value !== null`), not a `=== null` check on the return value. The underlying layout subscription is module-scoped and lives for the iframe's lifetime — there is no per-component cleanup on unmount.
 
 | Composable | Returns |
 |------------|---------|
-| `useWippyLayout()` | Full layout state and all mutation methods |
-| `useWippyPanel()` | The current panel's live state as a reactive ref |
+| `useWippyLayout()` | Reactive `snapshot`, `activeBreakpoint`, `panels`, and `isManaged`, plus the surfaced mutations: `resizePanel`, `collapsePanel`, `expandPanel`, `movePanel`, `removePanel`, `closeModal`, `removeFloating` |
+| `useWippyPanel(panelId)` | A `ComputedRef` to the named panel's live state (or `null` if absent); `panelId` is a required `string \| Ref<string> \| getter` |
 | `useWippyBreakpoint()` | Active breakpoint name |
 | `useWippyMainRoute()` | Reactive ref to the main panel's current route |
 
@@ -197,13 +201,14 @@ Pinia plugin for cross-iframe state persistence. Routes Pinia store writes throu
 
 ```typescript
 import { createPinia } from 'pinia'
-import { createWippyPersistPlugin } from '@wippy-fe/pinia-persist'
+import { createWippyPersist, preloadWippyState } from '@wippy-fe/pinia-persist'
 
 const pinia = createPinia()
-pinia.use(createWippyPersistPlugin())
+const preloaded = await preloadWippyState()
+pinia.use(createWippyPersist(preloaded))
 ```
 
-Stores opt in by declaring `persist: true` in their `defineStore` options.
+Stores opt in by declaring `wippyPersist: true` in their `defineStore` options (not `persist: true`). Custom `scope` values are auto-prefixed with `@custom:` to avoid collisions with system (page/artifact UUID) scopes and must be globally unique; give two store instances separate buckets by passing a distinct per-instance `scope`.
 
 ### `@wippy-fe/vue-utils`
 

@@ -229,6 +229,8 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 `host.bridge.on()` returns an unsubscribe function (`() => void`). **One channel = one active handler.** If multiple handlers are registered for the same channel, the most recently registered one wins and handles **all** incoming messages on that channel — both fire-and-forget `post()` and `request()`. `on()` is not additive: earlier handlers are shadowed (not removed) and do not run while a newer handler exists, and the proxy logs a `console.warn` on duplicate registration. If the newest handler unsubscribes, the previous handler for that channel becomes active again. Use distinct channel names if you need multiple independent listeners.
 
+If you omit `options.timeoutMs`, `host.bridge.request()` (and the parent-side `frame.request()`) default to a 10-second (`10000` ms) deadline. On timeout the returned Promise rejects with an `Error` whose message is `Bridge request <id> timed out after <ms>ms`. A request to a channel the other side has no handler for rejects immediately with `No handler registered for channel "<channel>"` rather than waiting out the deadline.
+
 ## `<w-artifact>` Custom Element
 
 `<w-artifact>` resolves artifact or page metadata and content, then delegates iframe-backed types to `<w-iframe>` internally. It handles content-type detection (HTML, Markdown, web page packages, ESM packages, direct-tag components) and provides a higher-level API than raw `<w-iframe>`.

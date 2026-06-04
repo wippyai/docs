@@ -221,7 +221,7 @@ this.host?.layout.broadcast('open-chat', { token: 'abc' })
 
 // Vue component
 import { useHost } from '@wippy-fe/webcomponent-vue'
-import type { ProxyApiInstance } from '@wippy-fe/proxy'
+// ProxyApiInstance is an ambient global type (from @wippy-fe/types-global-proxy) — reference it without an import.
 const host = useHost<ProxyApiInstance['host']>()
 host?.layout.broadcast('open-chat', { token: 'abc' })
 ```
@@ -242,23 +242,40 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
+| `.openModal(id, def)` | Open a runtime modal (`HostModalDef`). Renders via native `<dialog>.showModal()` by default (top-layer, focus trap, inert backdrop); pass `def.useNativeDialog: false` for the legacy div-overlay path. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |
 | `.on(channel, handler)` | Subscribe to a bus channel |
 
+### `updatePanel` Merge Semantics
+
+`host.layout.updatePanel(id, def)` patches an existing panel def — it does not replace it. The `props` object is **shallow-merged** into the panel's current props: supplied keys are added or overwritten, omitted keys are preserved. Every **other** top-level field of `def` (`route`, `kind`, `id`, `tagName`, `title`, `icon`, …) **replaces** the current value wholesale.
+
+Given a panel whose current props are `{ artifactId: 'old', zoom: 2 }`:
+
+```typescript
+// props shallow-merges → { artifactId: 'abc', zoom: 2 }
+host.layout.updatePanel('right', { props: { artifactId: 'abc' } })
+
+// route replaces wholesale; props left untouched
+host.layout.updatePanel('right', { route: '/x' })
+```
+
+Two caveats: the props merge is **shallow** — a nested object inside `props` is replaced entirely, not deep-merged — and a shallow merge cannot delete a prop key (you can only overwrite it).
+
 ## Vue Composables — `@wippy-fe/vue-host`
 
-These composables wrap the proxy layout API in reactive Vue 3 refs and clean up automatically on unmount:
+These composables wrap the proxy layout API in reactive Vue 3 refs. The underlying subscription is module-scoped and lives for the iframe's lifetime, so there is no per-component cleanup on unmount:
 
 | Composable | Returns |
 |------------|---------|
 | `useWippyLayout()` | Full layout state and mutation methods |
-| `useWippyPanel()` | Current panel's live state |
+| `useWippyPanel(panelId)` | Named panel's live state (`panelId` is required — `string`, `Ref<string>`, or getter) |
 | `useWippyBreakpoint()` | Active breakpoint name as a reactive ref |
 | `useWippyMainRoute()` | Reactive ref to the main panel's current route |
 
-All composables return `null`-safe values — they work correctly in standalone playgrounds and unit tests where no managed-layout host is present.
+The composables never return `null` — they always hand back objects/refs whose inner `.value` degrades when no managed-layout host is present: `useWippyLayout().snapshot.value` is `null` (and `isManaged.value` is `false`, so mutations are silent no-ops), `useWippyBreakpoint().value` and `useWippyMainRoute().value` are empty strings, and `useWippyPanel(id).value` is `null` when the id is absent. Guard host presence with `layout.isManaged.value` (or `layout.snapshot.value !== null`) rather than a `=== null` check on the return value. This keeps the composables usable in standalone playgrounds and unit tests where no managed-layout host is present.
 
 ## State Management Approach
 
@@ -294,7 +311,7 @@ Keep coordinators thin. Keep panels owning their own UI.
 
 As of Draft 1, the following are not yet implemented:
 
-- **`openModal` / `addPanel` / `setLayout` over the proxy** — not shipped. Modals can be approximated by swapping a panel's content to a route whose component renders a modal-style view.
+- **`addPanel` / `setLayout` over the proxy** — not shipped. These exist only on the internal `@wippy-fe/layout` `LayoutManager` and are not exposed across the iframe proxy boundary. (`openModal`, `closeModal`, and `movePanel` are shipped — see the Layout API Reference.)
 - **Panel drag-to-rearrange UI** — the data model and `movePanel()` API work; user-facing drag is not yet implemented.
 - **Tab primitive** — not yet implemented.
 - **Grid-tile container** — tracked for a follow-up.
