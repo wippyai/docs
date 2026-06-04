@@ -54,7 +54,7 @@ hostConfig:
       main: { kind: page,    id: home }
 ```
 
-When the managed entry is selected, the facade serves `managed-layout.js` instead of `module.js`. `fe_mode` is a current facade requirement parameter (default `compat`, opt-in `managed`); it is set on the `wippy.facade` requirement, not carried inside the `AppConfig` payload. There is no `AppConfig.feature` field — the managed layout is conveyed to the child entirely through `AppConfig.hostConfig.layout`. Consumer code using the proxy API is identical in both modes.
+When the managed entry is selected, the facade serves `managed-layout.js` instead of `module.js`. `fe_mode` is a current facade requirement parameter (default `compat`, opt-in `managed`); it is set on the `wippy.facade` requirement, not carried inside the `AppConfig` payload. There is no `AppConfig.feature` field — the managed layout is conveyed to the child entirely through `AppConfig.hostConfig.layout`. The proxy API *surface* is identical in both modes, but some commands only take effect in one mode — see [What works in which mode](#what-works-in-which-mode).
 
 ## The `HostLayoutDeclaration`
 
@@ -276,6 +276,37 @@ These composables wrap the proxy layout API in reactive Vue 3 refs. The underlyi
 | `useWippyMainRoute()` | Reactive ref to the main panel's current route |
 
 The composables never return `null` — they always hand back objects/refs whose inner `.value` degrades when no managed-layout host is present: `useWippyLayout().snapshot.value` is `null` (and `isManaged.value` is `false`, so mutations are silent no-ops), `useWippyBreakpoint().value` and `useWippyMainRoute().value` are empty strings, and `useWippyPanel(id).value` is `null` when the id is absent. Guard host presence with `layout.isManaged.value` (or `layout.snapshot.value !== null`) rather than a `=== null` check on the return value. This keeps the composables usable in standalone playgrounds and unit tests where no managed-layout host is present.
+
+## What works in which mode
+
+The proxy API *surface* is identical in compat and managed mode — the same `@wippy-fe/proxy` imports resolve in both — but two parts of it are **mode-specific in effect**. This mismatch is the main thing to watch when moving an app onto managed layout (and a reason managed is still early access).
+
+### `host.layout` takes effect only in managed mode
+
+The host installs the layout receiver **only when a layout is declared** (the managed entry, gated on `hostConfig.layout`). In compat mode `host.layout` still exists, but `host.layout.snapshot` is `null` and every mutation and bus call (`resizePanel`, `updatePanel`, `movePanel`, `openModal`, `addFloating`, `broadcast`, `send`, `on`, …) is a **silent no-op** — the message is posted but nothing on the host is listening. Gate on the snapshot before mutating:
+
+```typescript
+if (host.layout.snapshot) {
+  host.layout.updatePanel('right', { route: '/details' })   // managed only
+}
+// Vue: const { isManaged } = useWippyLayout(); if (isManaged.value) { … }
+```
+
+(Separately — a different axis — `addPanel` and `setLayout` are not exposed over the proxy *at all*, in either mode; see [Known Limitations](#known-limitations).)
+
+### `host.*` commands that assume the compat shell
+
+The managed shell renders **only your declared layout** — it mounts no built-in nav sidebar, right artifact panel, modal host, or root `<RouterView>`. So `host.*` commands whose visible effect lands in that standard chrome have nowhere to render in managed mode unless you declare a panel for it:
+
+| `host.*` command | Compat (default) | Managed |
+|---|---|---|
+| `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, top-level `state` / `ws` / `on` | Works | **Works** — mode-agnostic (managed mounts `<Toast>` / `<ConfirmDialogTemplate>` so `toast`/`confirm` still surface) |
+| `openArtifact(id, …)` | Opens in the right panel or a modal | **No visible effect** — managed mounts no right panel or modal host |
+| `startChat(token)` / `openSession(uuid)` | Opens the chat session and shows it | The session really opens **over WebSocket**, but nothing renders — there is no chat route or right panel. Declare a `kind: page` panel bound to the session to display it |
+| `navigate(url)` | Pushes the route under the host's root `<RouterView>` | The route changes but **does not render** — managed has no root `<RouterView>`. Drive panels via `mountRoute` / `updatePanel` instead |
+| `onRouteChanged(route, navId?)` | Drives the host browser URL | Works, **different semantics**: the host writes the child's route into that panel's live state (the snapshot), not the browser URL |
+
+Rule of thumb: the WebSocket / state / bus / toast primitives are mode-agnostic, but anything that shows the standard Wippy chrome (chat, right-panel artifacts, top-level routing) is effectively compat-only. In a managed layout, render those through declared panels rather than the shell commands.
 
 ## State Management Approach
 

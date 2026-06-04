@@ -180,6 +180,8 @@ host.navigate('/chat/session-uuid')
 host.navigate('/keeper')
 ```
 
+> **Managed-layout caveat.** `startChat`, `openSession`, `openArtifact`, and `navigate` target the standard compat shell (the chat view, right panel, and root route). In `fe_mode = managed` they still dispatch but have no built-in rendering surface — render chat, artifacts, and sub-routes through declared panels instead. See [Multi-Panel Layout § What works in which mode](../web-host/multi-panel-layout.md#what-works-in-which-mode).
+
 ---
 
 ### `host.onRouteChanged(internalRoute, navId?)` — MANDATORY for SPA apps
