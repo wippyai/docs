@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|-------------|
 | `store.memory` | 인메모리 키-값 스토어 |
 | `store.sql` | SQL 기반 키-값 스토어 |
+| `store.kv.raft` | 클러스터 복제, 강한 일관성 KV (공유 Raft) |
+| `store.kv.crdt` | 클러스터 복제, 최종 일관성 KV (gossip/CRDT) |
 
 ```yaml
 # 메모리 스토어
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# 클러스터 복제 스토어 (클러스터링 필요)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+`store.kv.*` 종류는 [클러스터링](guides/cluster.md)이 활성화되어 있어야 합니다. 일관성 트레이드오프는 [스토어](system/store.md#cluster-kv-stores)를 참조하세요.
 
 **Lua API:** [Store 모듈](lua/storage/store.md) 참조
 

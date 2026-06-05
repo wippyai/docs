@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |-----|----------|
 | `store.memory` | In-memory хранилище |
 | `store.sql` | Хранилище на базе SQL |
+| `store.kv.raft` | Реплицируемое в кластере, строго согласованное KV (общий Raft) |
+| `store.kv.crdt` | Реплицируемое в кластере, согласованное в конечном счёте KV (gossip/CRDT) |
 
 ```yaml
 # Memory store
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# Cluster-replicated store (requires clustering)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+Типы `store.kv.*` требуют включённой [кластеризации](guides/cluster.md). См. [Store](system/store.md#cluster-kv-stores) для компромиссов согласованности.
 
 **Lua API:** См. [Модуль Store](lua/storage/store.md)
 

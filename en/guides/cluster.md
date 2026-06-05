@@ -10,6 +10,7 @@ Clustering is off until you set `cluster.enabled: true`. Everything below is ine
 - **Cluster-wide process names** — register a process under a name that resolves from any node, with a choice of consistency guarantees (see [Naming](#naming-and-name-scopes)).
 - **Distributed locks** — `system.lock` provides cluster-wide mutual exclusion with automatic release when the holder dies (see [Distributed locks](#distributed-locks)).
 - **Process groups** — publish to every member of a named group across all nodes (see [Process groups](#process-groups)).
+- **Replicated key-value stores** — `store.kv.raft` (strong) and `store.kv.crdt` (eventual) replicate KV data across nodes (see [Store](system/store.md#cluster-kv-stores)).
 - **A consensus core** — a small, bounded Raft cluster provides the linearizable backbone the naming and lock primitives build on.
 
 ## Architecture: bounded Raft
@@ -80,7 +81,7 @@ Nodes that start later see an already-formed cluster and skip bootstrap entirely
 
 ## Raft consensus core
 
-The consensus core is **diskless**: Raft logs and snapshots live in memory only, so there is no data directory to provision. On restart, a node rejoins gossip and replays state from its peers. This deliberately removes the persistence-versus-quorum failure modes that on-disk Raft introduces, and matches the model of in-memory coordination systems (Erlang global, Akka distributed data). The trade-off: the cluster's durability comes from having a live quorum, not from disk — see [Recovery](#recovery-and-failure-modes).
+Raft state is **fs-durable by default**: logs and snapshots are persisted under `cluster.raft.data_dir` (default `~/.wippy/store`, in `_sys/raft`), and [`store.kv.raft`](system/store.md#cluster-kv-stores) replicates through the same core. A restarting node still rejoins gossip and catches up from its peers, so the cluster also tolerates losing a node's disk; durability comes from both the live quorum and on-disk state. A node runs diskless only when no data directory resolves (no configured path and no home directory) — see [Recovery](#recovery-and-failure-modes).
 
 Raft does not open its own listening port. It rides the **internode mesh** — the same TCP connections used for relay traffic between nodes — multiplexed with yamux. The internode port is auto-selected at boot (range 7950-7959, then ephemeral), pinned, and advertised in gossip so peers can reach it. The only port you normally expose is the gossip port.
 
@@ -203,7 +204,7 @@ Built-in liveness checks (wired to the liveness endpoint):
 
 ## Recovery and failure modes
 
-Because the consensus core is diskless, durability comes from a live quorum rather than from disk. The practical rules:
+Raft state is fs-durable, but the cluster's primary durability still comes from a live quorum. The practical rules:
 
 - Keep a voter majority alive. With 5 voters you tolerate 2 simultaneous voter failures; standbys are promoted to refill open slots. Drop below a majority and writes (new Consistent/Strong registrations and lock acquisitions) stall until quorum returns. Existing names and lookups continue to serve from local replicas.
 - The leader proactively evicts a voter that is both heartbeat-silent and gossip-dead, so a dead voter does not permanently block quorum while a standby is promoted in.

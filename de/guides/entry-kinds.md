@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|--------------|
 | `store.memory` | In-Memory-Key-Value-Store |
 | `store.sql` | SQL-basierter Key-Value-Store |
+| `store.kv.raft` | Cluster-replizierter, stark konsistenter KV (geteiltes Raft) |
+| `store.kv.crdt` | Cluster-replizierter, letztlich konsistenter KV (Gossip/CRDT) |
 
 ```yaml
 # Memory-Store
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# Cluster-replizierter Store (erfordert Clustering)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+Die `store.kv.*`-Typen benötigen aktiviertes [Clustering](guides/cluster.md). Siehe [Store](system/store.md#cluster-kv-stores) für die Konsistenz-Abwägungen.
 
 **Lua-API:** Siehe [Store-Modul](lua/storage/store.md)
 

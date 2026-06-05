@@ -10,6 +10,7 @@ El clustering está desactivado hasta que se establece `cluster.enabled: true`. 
 - **Nombres de proceso a nivel de cluster** — registrar un proceso bajo un nombre que se resuelve desde cualquier nodo, con una elección de garantías de consistencia (ver [Naming](#naming-and-name-scopes)).
 - **Bloqueos distribuidos** — `system.lock` proporciona exclusión mutua a nivel de cluster con liberación automática cuando el titular falla (ver [Bloqueos distribuidos](#distributed-locks)).
 - **Grupos de proceso** — publicar a todos los miembros de un grupo con nombre en todos los nodos (ver [Grupos de proceso](#process-groups)).
+- **Almacenes clave-valor replicados** — `store.kv.raft` (fuerte) y `store.kv.crdt` (eventual) replican datos KV entre nodos (ver [Store](system/store.md#cluster-kv-stores)).
 - **Un núcleo de consenso** — un cluster Raft pequeño y acotado proporciona el soporte linealizable sobre el que se construyen las primitivas de naming y bloqueo.
 
 ## Arquitectura: Raft acotado
@@ -80,7 +81,7 @@ Los nodos que arrancan más tarde ven un cluster ya formado y omiten el bootstra
 
 ## Núcleo de consenso Raft
 
-El núcleo de consenso es **sin disco**: los logs y snapshots de Raft residen solo en memoria, por lo que no hay directorio de datos que aprovisionar. Al reiniciar, un nodo se reintegra al gossip y repite el estado desde sus peers. Esto elimina deliberadamente los modos de fallo de persistencia-versus-quórum que introduce el Raft en disco, y coincide con el modelo de sistemas de coordinación en memoria (Erlang global, Akka distributed data). El compromiso: la durabilidad del cluster proviene de tener un quórum activo, no del disco — ver [Recuperación](#recovery-and-failure-modes).
+El estado de Raft es **persistente en disco por defecto**: los logs y snapshots se persisten bajo `cluster.raft.data_dir` (por defecto `~/.wippy/store`, en `_sys/raft`), y [`store.kv.raft`](system/store.md#cluster-kv-stores) replica a través del mismo núcleo. Un nodo que reinicia aún se reintegra al gossip y se pone al día desde sus peers, por lo que el cluster también tolera perder el disco de un nodo; la durabilidad proviene tanto del quórum activo como del estado en disco. Un nodo se ejecuta sin disco solo cuando no se resuelve ningún directorio de datos (sin ruta configurada y sin directorio home) — ver [Recuperación](#recovery-and-failure-modes).
 
 Raft no abre su propio puerto de escucha. Viaja por la **malla internodo** — las mismas conexiones TCP usadas para el tráfico de relay entre nodos — multiplexado con yamux. El puerto internodo se selecciona automáticamente al arrancar (rango 7950-7959, luego efímero), se fija y se anuncia en gossip para que los peers puedan alcanzarlo. El único puerto que normalmente se expone es el puerto de gossip.
 
@@ -203,7 +204,7 @@ Verificaciones de liveness incorporadas (conectadas al endpoint de liveness):
 
 ## Recuperación y modos de fallo
 
-Dado que el núcleo de consenso no tiene disco, la durabilidad proviene de un quórum activo en lugar del disco. Las reglas prácticas:
+El estado de Raft es persistente en disco, pero la durabilidad principal del cluster sigue proviniendo de un quórum activo. Las reglas prácticas:
 
 - Mantener una mayoría de voters activos. Con 5 voters se toleran 2 fallos simultáneos de voters; los standbys se promueven para llenar los slots abiertos. Caer por debajo de una mayoría detiene las escrituras (nuevos registros Consistent/Strong y adquisiciones de bloqueos) hasta que el quórum regresa. Los nombres existentes y las búsquedas continúan sirviéndose desde réplicas locales.
 - El líder desaloja proactivamente un voter que está silente en heartbeat y muerto en gossip, de modo que un voter muerto no bloquee permanentemente el quórum mientras se promueve un standby.

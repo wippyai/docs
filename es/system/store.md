@@ -1,6 +1,6 @@
 # Store (Clave-Valor)
 
-Almacenes clave-valor en memoria y respaldados por SQL con soporte TTL.
+Almacenes clave-valor con soporte TTL: en memoria, respaldados por SQL y replicados en cluster (Raft y CRDT).
 
 ## Tipos de Entrada
 
@@ -8,6 +8,8 @@ Almacenes clave-valor en memoria y respaldados por SQL con soporte TTL.
 |------|-------------|
 | `store.memory` | Almacén en memoria con limpieza automática |
 | `store.sql` | Almacén respaldado por SQL con persistencia |
+| `store.kv.raft` | KV replicado en cluster, fuertemente consistente, sobre el Raft compartido |
+| `store.kv.crdt` | KV replicado en cluster, eventualmente consistente, sobre gossip (CRDT) |
 
 ## Almacén en Memoria
 
@@ -60,13 +62,51 @@ CREATE TABLE kv_store (
 CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL;
 ```
 
+## Almacenes KV de Cluster {id=cluster-kv-stores}
+
+`store.kv.raft` y `store.kv.crdt` replican datos clave-valor entre los nodos del cluster. Ambos requieren que el [clustering](guides/cluster.md) esté habilitado y reutilizan la misma API Lua del [Módulo Store](lua/storage/store.md). Cada entrada es una vista con namespace sobre un único motor a nivel de nodo; `namespace` aísla las claves de esta entrada y debe coincidir con `^[a-z][a-z0-9._-]*$` (no puede comenzar con `_`).
+
+### Raft (consistencia fuerte)
+
+```yaml
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|----------|-------------|
+| `namespace` | string | Sí | Namespace de claves en el motor compartido |
+
+Las escrituras se proponen a través del Raft compartido (los seguidores las reenvían al líder); las lecturas son linealizables. Se soportan escrituras condicionales (`put` con `only_if_absent`/`if_version`). El estado de Raft es durable en disco por defecto bajo `cluster.raft.data_dir` (por defecto `~/.wippy/store`); ver [Configuración](guides/configuration.md#cluster).
+
+### CRDT (consistencia eventual)
+
+```yaml
+- name: sessions
+  kind: store.kv.crdt
+  namespace: sess
+  durable: false
+```
+
+| Campo | Tipo | Requerido | Por Defecto | Descripción |
+|-------|------|----------|---------|-------------|
+| `namespace` | string | Sí | - | Namespace de claves |
+| `durable` | bool | No | false | Persiste snapshots en disco para que el namespace sobreviva a un reinicio completo del cluster |
+
+Las escrituras mutan el estado local y se diseminan por gossip; las escrituras concurrentes en conflicto convergen mediante last-writer-wins. Las lecturas son locales. No se soportan escrituras condicionales. Con `durable: false` el almacén está en memoria y se reconstruye desde los peers; con `durable: true` toma snapshots en `<data_dir>/_sys/kvcrdt`.
+
+<note>
+<code>data_dir</code> es a nivel de nodo (<code>cluster.raft.data_dir</code>), no por entrada. El estado de Raft compartido y los snapshots durables de CRDT residen bajo <code>&lt;data_dir&gt;/_sys/</code>.
+</note>
+
 ## Comportamiento TTL
 
 Ambos almacenes soportan tiempo de vida. Las entradas expiradas persisten brevemente hasta que la limpieza se ejecuta en `cleanup_interval`. Establezca a `0` para deshabilitar la limpieza automática.
 
 ## API Lua
 
-Consulte el [Módulo Store](lua/storage/store.md) para operaciones (get, set, delete, exists, clear).
+Consulte el [Módulo Store](lua/storage/store.md) para operaciones: `get`, `set`, `has`, `delete`, además de `put`, `entry`, `list` e `info` para acceso versionado y condicional.
 
 ## Ver También
 

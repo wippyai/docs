@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|-----------|
 | `store.memory` | Armazenamento chave-valor em memória |
 | `store.sql` | Armazenamento chave-valor com backend SQL |
+| `store.kv.raft` | KV replicado em cluster, fortemente consistente (Raft compartilhado) |
+| `store.kv.crdt` | KV replicado em cluster, eventualmente consistente (gossip/CRDT) |
 
 ```yaml
 # Armazenamento em memória
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# Armazenamento replicado em cluster (requer clustering)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+Os tipos `store.kv.*` precisam do [clustering](guides/cluster.md) habilitado. Veja [Store](system/store.md#cluster-kv-stores) para os tradeoffs de consistência.
 
 **API Lua:** Veja [Módulo Store](lua/storage/store.md)
 

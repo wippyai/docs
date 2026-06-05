@@ -109,14 +109,118 @@ cache:delete("session:" .. session_id)
 
 削除された場合は`true`、キーが存在しなかった場合は`false`を返す。
 
+## エントリメタデータの読み取り
+
+`entry` は値とその `version` を返します。`version` は楽観的並行性制御に使われる不透明な文字列です:
+
+```lua
+local e, err = cache:entry("user:123")
+if e then
+    print(e.key, e.value, e.version)
+end
+```
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `key` | string | 読み取るキー |
+
+**戻り値:** `Entry, error` — `{key: string, value: any, version: string}`
+
+## キーの一覧
+
+エントリを決定的なキー順でページング付きで一覧します:
+
+```lua
+local page, err = cache:list({ prefix = "session:", limit = 100 })
+for _, e in ipairs(page.items) do
+    print(e.key, e.value)
+end
+
+-- 次のページ
+if page.has_more then
+    page = cache:list({ prefix = "session:", after = page.cursor })
+end
+```
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `prefix` | string | このプレフィックスを持つキーのみ |
+| `after` | string | このカーソル以降から継続（前のページから） |
+| `limit` | integer | ページあたりの最大アイテム数 |
+
+**戻り値:** `Page, error` — `{items: Entry[], cursor: string, has_more: boolean}`
+
+## 条件付き書き込み
+
+`put` は値を書き込み、新しい `Entry` を返します。オプションで楽観的並行性制御が可能です:
+
+```lua
+-- キーが存在しない場合のみ作成
+local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
+if err and err:kind() == "ALREADY_EXISTS" then
+    -- 他の誰かが保持している
+end
+
+-- compare-and-set: バージョンがまだ一致する場合のみ書き込み
+local cur = cache:entry("config")
+local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
+if err2 and err2:kind() == "CONFLICT" then
+    -- 並行ライターが変更した。再読み取りして再試行
+end
+```
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `ttl` | number | TTL（秒） |
+| `only_if_absent` | boolean | キーが存在しない場合のみ書き込み |
+| `if_version` | string | 現在のバージョンが一致する場合のみ書き込み |
+
+`only_if_absent` と `if_version` は相互に排他的です。
+
+**戻り値:** `Entry, error`
+
+<warning>
+条件付き書き込みには <code>info().conditional_put</code> が true のストアが必要です（メモリストアと <code>store.kv.raft</code> ストア）。<code>store.kv.crdt</code> と <code>store.sql</code> では <code>errors.INVALID</code> エラーを返します。条件付き書き込みが必要な場合は <code>store.kv.raft</code> を使用してください。
+</warning>
+
+## ストア機能
+
+`info` はバックエンドとそのサポート内容を報告します。これによりコードはバインドされたストアに適応できます:
+
+```lua
+local info = cache:info()
+-- info.backend      -> store.backend.* のいずれか（例: "kv.raft"）
+-- info.consistency  -> store.consistency.* のいずれか（例: "linearizable"）
+-- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  （ブール値）
+```
+
+**戻り値:** `Info, error` — `{id, backend, consistency, durable, list, versioned, conditional_put, ttl}`
+
+### 定数
+
+| 定数 | 値 |
+|----------|--------|
+| `store.backend` | `MEMORY`, `SQL`, `KV_RAFT`, `KV_CRDT`, `UNKNOWN` |
+| `store.consistency` | `LINEARIZABLE`, `EVENTUAL`, `LOCAL`, `UNKNOWN` |
+
+```lua
+if cache:info().consistency == store.consistency.LINEARIZABLE then
+    -- compare-and-set を安全に使用できる
+end
+```
+
 ## ストアメソッド
 
 | メソッド | 戻り値 | 説明 |
 |--------|---------|-------------|
 | `get(key)` | `any, error` | キーで値を取得 |
+| `entry(key)` | `Entry, error` | バージョンメタデータ付きで値を取得 |
 | `set(key, value, ttl?)` | `boolean, error` | オプションのTTL付きで値を保存 |
+| `put(key, value, opts?)` | `Entry, error` | 条件付き/バージョン管理付き書き込み、新しいエントリを返す |
+| `list(opts?)` | `Page, error` | キー順のページング付き一覧 |
 | `has(key)` | `boolean, error` | キーが存在するか確認 |
 | `delete(key)` | `boolean, error` | キーを削除 |
+| `info()` | `Info, error` | バックエンド、整合性、機能フラグ |
 | `release()` | `boolean` | ストアをプールに戻す |
 
 ## 権限
@@ -141,6 +245,9 @@ cache:delete("session:" .. session_id)
 | リソースが見つからない | `errors.NOT_FOUND` | no |
 | ストアが解放済み | `errors.INVALID` | no |
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| `only_if_absent` でキーが存在する | `errors.ALREADY_EXISTS` | no |
+| `if_version` 不一致 | `errors.CONFLICT` | yes |
+| サポートのないストアでの条件付き書き込み | `errors.INVALID` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

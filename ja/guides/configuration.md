@@ -293,10 +293,11 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 
 ### Raft（コンセンサス）
 
-有界かつディスクレス Raft。状態はメモリ内のみ。再起動時にノードはクォーラムに再参加してピアからリプレイします。`data_dir` はありません。ブートストラップはゴシップ駆動（Consul/Nomad の `bootstrap_expect` スタイル）です。
+有界 Raft。Raft の状態はデフォルトで fs 永続化され、`raft.data_dir`（デフォルト `~/.wippy/store`）の下に保存されます。再起動したノードでもピアからクォーラムに再参加します。[`store.kv.raft`](system/store.md#cluster-kv-stores) エントリはこれを通じてレプリケートされます。ブートストラップはゴシップ駆動（Consul/Nomad の `bootstrap_expect` スタイル）です。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
+| `raft.data_dir` | string | `~/.wippy/store` | fs 永続化された Raft 状態と永続 CRDT スナップショットのディレクトリ（`<data_dir>/_sys/` の下）。パスが解決されない場合（ホームディレクトリがなく未設定）のみディスクレス |
 | `raft.enabled` | bool | true | Raft ノードを実行。`false` にするとゴシップのみのクライアントになる |
 | `raft.role` | string | server | `server` は Raft ノードを実行。`client` はゴシップのみ |
 | `raft.eligible` | bool | true | このノードが投票ノードとして選択される可能性があるかどうか |

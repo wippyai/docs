@@ -293,10 +293,11 @@ TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh (y
 
 ### Raft (Konsens)
 
-Begrenztes, festplatten-loses Raft. Zustand liegt im Speicher; beim Neustart tritt ein Knoten dem Quorum wieder bei und spielt von Peers ab. Kein `data_dir`. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
+Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unter `raft.data_dir` (Standard `~/.wippy/store`) gespeichert; ein neugestarteter Knoten tritt dem Quorum dennoch von Peers wieder bei. [`store.kv.raft`](system/store.md#cluster-kv-stores)-Einträge replizieren darüber. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
+| `raft.data_dir` | string | `~/.wippy/store` | Verzeichnis für fs-dauerhaften Raft-Zustand und dauerhafte CRDT-Snapshots (unter `<data_dir>/_sys/`). Festplatten-los nur, wenn kein Pfad aufgelöst wird (kein Home-Verzeichnis und keiner gesetzt) |
 | `raft.enabled` | bool | true | Raft-Knoten betreiben; `false` macht diesen zum reinen Gossip-Client |
 | `raft.role` | string | server | `server` betreibt einen Raft-Knoten; `client` ist nur Gossip |
 | `raft.eligible` | bool | true | Ob dieser Knoten als Voter ausgewählt werden darf |

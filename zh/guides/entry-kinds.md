@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|------|
 | `store.memory` | 内存键值存储 |
 | `store.sql` | SQL 后端键值存储 |
+| `store.kv.raft` | 集群复制、强一致性 KV（共享 Raft） |
+| `store.kv.crdt` | 集群复制、最终一致性 KV（gossip/CRDT） |
 
 ```yaml
 # 内存存储
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# 集群复制存储（需要启用集群）
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+`store.kv.*` 类型需要启用[集群](guides/cluster.md)。一致性权衡参见 [Store](system/store.md#cluster-kv-stores)。
 
 **Lua API：** 参见 [Store 模块](lua/storage/store.md)
 

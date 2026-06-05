@@ -293,10 +293,11 @@ Malha TCP que transporta o tráfego de relay e Raft entre nós. O Raft usa esta 
 
 ### Raft (consenso)
 
-Raft limitado e sem disco. O estado fica em memória; ao reiniciar um nó, ele rejoina o quórum e reproduz a partir dos peers. Sem `data_dir`. O bootstrap é conduzido por gossip (estilo `bootstrap_expect` do Consul/Nomad).
+Raft limitado. O estado do Raft é durável em disco por padrão, armazenado sob `raft.data_dir` (padrão `~/.wippy/store`); um nó reiniciado ainda rejoina o quórum a partir dos peers. As entradas [`store.kv.raft`](system/store.md#cluster-kv-stores) replicam através dele. O bootstrap é conduzido por gossip (estilo `bootstrap_expect` do Consul/Nomad).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
+| `raft.data_dir` | string | `~/.wippy/store` | Diretório para o estado durável do Raft em disco e snapshots duráveis do CRDT (sob `<data_dir>/_sys/`). Sem disco apenas quando nenhum caminho é resolvido (sem diretório home e nenhum definido) |
 | `raft.enabled` | bool | true | Executa um nó Raft; `false` torna este um cliente apenas gossip |
 | `raft.role` | string | server | `server` executa um nó Raft; `client` é apenas gossip |
 | `raft.eligible` | bool | true | Se este nó pode ser selecionado como voter |

@@ -293,10 +293,11 @@ prometheus:
 
 ### Raft（共识）
 
-有界、无磁盘的 Raft。状态存储在内存中；重启后节点重新加入 quorum 并从对等节点重放。无需 `data_dir`。引导通过 gossip 驱动（Consul/Nomad `bootstrap_expect` 风格）。
+有界的 Raft。Raft 状态默认在文件系统持久化，存储于 `raft.data_dir`（默认 `~/.wippy/store`）下；重启后的节点仍会从对等节点重新加入 quorum。[`store.kv.raft`](system/store.md#cluster-kv-stores) entry 通过它进行复制。引导通过 gossip 驱动（Consul/Nomad `bootstrap_expect` 风格）。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
+| `raft.data_dir` | string | `~/.wippy/store` | 文件系统持久化 Raft 状态和持久化 CRDT 快照的目录（位于 `<data_dir>/_sys/` 下）。仅当无路径可解析时（无 home 目录且未设置）才无磁盘运行 |
 | `raft.enabled` | bool | true | 运行 Raft 节点；`false` 使此节点成为仅 gossip 客户端 |
 | `raft.role` | string | server | `server` 运行 Raft 节点；`client` 仅参与 gossip |
 | `raft.eligible` | bool | true | 此节点是否可被选为选民 |

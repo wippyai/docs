@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|------|
 | `store.memory` | インメモリキーバリューストア |
 | `store.sql` | SQLバックエンドキーバリューストア |
+| `store.kv.raft` | クラスタレプリケート、強整合性 KV（共有 Raft） |
+| `store.kv.crdt` | クラスタレプリケート、最終的整合性 KV（ゴシップ/CRDT） |
 
 ```yaml
 # メモリストア
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# クラスタレプリケートストア（クラスタリングが必要）
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+`store.kv.*` 種別は[クラスタリング](guides/cluster.md)が有効である必要があります。整合性のトレードオフについては[ストア](system/store.md#cluster-kv-stores)を参照。
 
 **Lua API:** [ストアモジュール](lua/storage/store.md)を参照
 
