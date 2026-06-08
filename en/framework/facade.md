@@ -89,7 +89,30 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `children_css_variables` | children | `{}` | CSS custom properties for iframe contents only |
 | `login_path` | — | `/login.html` | Redirect path for unauthenticated users |
 
-> **Keep `custom_css` / `css_variables` in separate files so non-host pages can reuse them.** Rather than inlining long CSS strings, point these parameters at standalone files with `fs://` plus a `content_fs` filesystem — e.g. `custom_css: fs://custom-css.facade.css`, `css_variables: fs://css-variables.facade.json`, `content_fs: app:app_fs`. Keep those files in the same static folder your `login_path` page is served from (in `app-template`, `static/` served at `/app`). Then a standalone page served **outside** the Web Host — your `login.html`, an error page, an email-confirm page — can `<link>` the *same* brand CSS, so your tokens and overrides live in one place instead of being duplicated. Use `fs://` (resolved by `content_fs` at runtime), **not** `file://`, which the wippy loader inlines relative to the YAML at load time.
+#### Reusing facade theming on non-Web-Host pages
+
+A page served **outside** the Web Host — your `login.html`, an error page, an email-confirm page — can reuse the *same* facade brand theme instead of duplicating it, so your tokens and custom rules live in one place.
+
+First, keep `custom_css` and `css_variables` in standalone files rather than inlining them, and point the parameters at those files with `fs://` plus a `content_fs` filesystem:
+
+```yaml
+custom_css:    fs://custom-css.facade.css
+css_variables: fs://css-variables.facade.json
+content_fs:    app:app_fs
+```
+
+Use `fs://` (resolved by `content_fs` at runtime), **not** `file://` — `file://` is inlined by the wippy loader relative to the YAML at load time. Keep the files in the same static folder your `login_path` page is served from (in `app`, `static/` served at `/app`).
+
+A standalone page then links both:
+
+- **`custom_css`** — already a `.css` file, so link it directly from where it is served.
+- **`css_variables`** — JSON, so it is not linkable as-is. The facade renders it as a stylesheet at **`GET /facade/variables.css`** (a `text/css` `:root { … }` sheet, with `@dark` / `@light` compiled to `@media (prefers-color-scheme: …)`, cached 1h). It is registered on the same public router as `/facade/config`, so it carries the router prefix.
+
+```html
+<!-- in login.html, served outside the Web Host -->
+<link rel="stylesheet" href="/api/public/facade/variables.css">  <!-- css_variables, generated CSS -->
+<link rel="stylesheet" href="/app/custom-css.facade.css">        <!-- custom_css file -->
+```
 
 ### Optional JSON parameters
 
@@ -113,7 +136,7 @@ These two are emitted as **top-level** `AppConfig` fields (siblings of `hostConf
 
 ## Config Endpoint
 
-The facade registers `GET /facade/config` on the configured router. That path is registered *on* the public router, so the URL the page actually fetches includes the router's prefix — with the example prefix `/api/public` (see [Setup](#setup)), it is `/api/public/facade/config`, which is exactly what the shipped facade page fetches. The frontend fetches this on load:
+The facade registers `GET /facade/config` on the configured router. That path is registered *on* the public router, so the URL the page actually fetches includes the router's prefix — with the example prefix `/api/public` (see [Setup](#setup)), it is `/api/public/facade/config`, which is exactly what the shipped facade page fetches. (The facade registers one more route on the same router — `GET /facade/variables.css`, the `css_variables` rendered as a `text/css` stylesheet for non-Web-Host pages; see [Reusing facade theming on non-Web-Host pages](#reusing-facade-theming-on-non-web-host-pages).) The frontend fetches the config on load:
 
 ```json
 {
