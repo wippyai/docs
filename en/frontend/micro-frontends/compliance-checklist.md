@@ -1371,7 +1371,7 @@ grep -r "window.confirm" src/  # should = 0
 | `@visibility` | boolean | iframe visibility changed |
 | `@layout-change` | `LayoutSnapshot` | layout tree changed |
 | `@layout-panel-changed` | `{ panelId, ... }` | single panel changed |
-| `@layout-breakpoint` | `{ breakpoint }` | breakpoint changed |
+| `@layout-breakpoint` | `{ name, width }` | breakpoint changed (`name` = new breakpoint, `width` = threshold px) |
 | `@message` | wildcard | catch all WebSocket messages |
 | `@state-error` | `{ error, key }` | state save failed |
 

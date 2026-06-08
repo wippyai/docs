@@ -313,6 +313,8 @@ The host (and `dev-proxy.js` in host-less mode) installs the proxy runtime so th
 
 Micro Frontend Apps must use `createMemoryHistory`. Browser history is not available — the app runs in an iframe loaded as `srcdoc`, not at a real URL. Memory history also avoids polluting the parent window's history stack.
 
+> **Naming note.** The `createAppRouter` in this deep-dive is a thin **project-local** wrapper (`src/router/index.ts`, signature `(host, on, initialPath)`) — distinct from the `@wippy-fe/router` **factory** the [Quickstart](./quickstart.md) imports directly, whose signature is positional `(routes, options?)`. The wrapper just adapts that factory (shown at the end of this section).
+
 Two sync hooks are required on every router:
 
 ```typescript

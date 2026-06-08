@@ -53,6 +53,7 @@ entries:
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 | `fe_mode` | no | `compat` | Which shell the facade page loads: `compat` loads `module.js` (the default chat shell); `managed` loads `managed-layout.js` (opt-in declarative multi-panel layout). Surfaced on `/facade/config` as `mode`/`module_file`. |
 | `host_config_layout` | no | `{}` | JSON layout config emitted as `hostConfig.layout`; consumed by the **managed** shell only. |
+| `login_path` | no | `/login.html` | Path on the page's origin to redirect unauthenticated users to; works with `login_redirect_param`. |
 | `login_redirect_param` | no | `""` (off) | Query-parameter name to append the post-login return URL to when redirecting to `login_path`. Empty disables the return-URL append. |
 | `extra_scripts` | no | `[]` | JSON array of extra script URLs the facade page loads; emitted on `/facade/config` as `extraScripts`. |
 
@@ -91,7 +92,6 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `host_icon_sets` | host | `[]` | Icon sets for host only |
 | `children_custom_css` | children | `""` | CSS for iframe contents only |
 | `children_css_variables` | children | `{}` | CSS custom properties for iframe contents only |
-| `login_path` | — | `/login.html` | Redirect path for unauthenticated users |
 
 #### Reusing facade theming on non-Web-Host pages
 
@@ -148,8 +148,10 @@ The facade registers `GET /facade/config` on the configured router. That path is
     "iframe_origin": "https://web-host.wippy.ai",
     "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
+    "login_redirect_param": null,
     "mode": "compat",
     "module_file": "/module.js",
+    "extraScripts": null,
     "env": {
         "APP_API_URL": "https://api.example.com",
         "APP_AUTH_API_URL": "https://api.example.com",

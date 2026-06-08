@@ -251,9 +251,9 @@ export default {
 Structured logger with zero production dependencies. Provides `debug`, `info`, `warn`, `error` log functions, `captureException` for error reporting, and a breadcrumb trail. Supports pluggable transports: console (default), Sentry, and GELF. All log calls include context tags that the host can use to correlate log entries from child iframes with their parent session.
 
 ```typescript
-import { createLogger } from '@wippy-fe/log'
+import { createChildLogger } from '@wippy-fe/log/logger'
 
-const log = createLogger({ name: 'my-widget' })
+const log = createChildLogger({ resourceId: 'my-widget' })
 log.info('Widget mounted', { panelId: 'main' })
 log.error('Request failed', { url: '/api/data', status: 500 })
 ```

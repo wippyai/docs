@@ -658,6 +658,7 @@ class MyEl extends HTMLElement {
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
 | `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
+| `@layout-breakpoint` | `{ name: string, width: number }` | Active managed-layout breakpoint changed; `name` is the new breakpoint, `width` its threshold (px). |
 
 ### Wildcard patterns
 

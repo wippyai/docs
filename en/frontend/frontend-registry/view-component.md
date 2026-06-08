@@ -149,7 +149,7 @@ When a page inside the Web Host finishes mounting, the host runs the following s
 
    The `?declare-tag=` query parameter is the channel that tells the entry chunk which custom element name to register under.
 
-3. The entry chunk imports `@wippy-fe/proxy` (resolved via the iframe's import map) and calls `define(import.meta.url, ElementClass)`. The `define` helper reads `new URL(import.meta.url).searchParams.get('declare-tag')` and calls `customElements.define(tagName, ElementClass)`.
+3. The entry chunk calls `define(import.meta.url, ElementClass)`. Component authors import `define` from `@wippy-fe/webcomponent-vue` (or `@wippy-fe/webcomponent-core`), which re-export the proxy's `define`; at runtime the import map resolves it to the single `@wippy-fe/proxy` instance. The `define` helper reads `new URL(import.meta.url).searchParams.get('declare-tag')` and calls `customElements.define(tagName, ElementClass)`.
 
 4. Vue (or any framework) renders a `<example-reaction-bar>` element. The browser upgrades the element, `connectedCallback` fires, and `WippyVueElement` mounts its Vue app inside a shadow root.
 

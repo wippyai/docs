@@ -145,7 +145,7 @@ The API returns a component descriptor with the resolved base URL. The Web Host 
 
 ### Proxy Injection
 
-Proxy injection for SPA pages is configured in the FE package.json `wippy.proxy.injections` block (camelCase) and baked into `wippy-meta.json` at build time. It can also be overridden per deployment via a snake_case `proxy:` block (a sibling of `meta`) in the registry entry; when present, the YAML value wins per flag. Note that `config_overrides` only deep-merges `customization`, `axiosDefaults`, `routePrefix`, and `apiRoutes` — it never affects `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
+Proxy injection for SPA pages is configured in the FE package.json `wippy.proxy.injections` block (camelCase) and baked into `wippy-meta.json` at build time. It can also be overridden per deployment via a camelCase `proxy:` block nested under `meta:` in the registry entry (same shape and `injections` wrapper as the package.json `wippy.proxy` block); the host deep-merges it over the bundled `wippy.proxy`, and the YAML value wins per nested key. There is no snake_case form and no casing normalization. Note that `config_overrides` only deep-merges `customization`, `axiosDefaults`, `routePrefix`, and `apiRoutes` — it never affects `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
 ## View Components
 
@@ -273,7 +273,7 @@ The views module registers these endpoints on the configured router:
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/pages/list` | List accessible, announced pages |
-| GET | `/components/list` | List view components |
+| GET | `/components/list` | List accessible, announced view components |
 | GET | `/pages/content/{id}` | Render page or return component descriptor |
 | GET | `/pages/public/{id}` | Get component base URL |
 | GET | `/components/by-tag/{tag}` | Resolve a custom-element tag name to its `view.component` descriptor (used by host `loadByTagName`) |

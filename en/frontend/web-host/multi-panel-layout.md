@@ -331,9 +331,8 @@ this.host?.layout.on('open-chat', ({ payload }) => {
 
 // In the right-panel app (a normal Vue page module)
 const router = createAppRouter([...])
-on('@history', ({ path }) => {
-  router.push(path).catch(() => {})
-})
+// createAppRouter already mirrors host @history events into the router
+// (with an echo/current-route guard) — no manual on('@history') needed.
 ```
 
 Keep coordinators thin. Keep panels owning their own UI.

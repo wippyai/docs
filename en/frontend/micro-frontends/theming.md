@@ -83,7 +83,7 @@ These **flip with dark mode** — use these for theme-dependent styling. Do not 
 | `--p-text-hover-color` | `surface-800` | `surface-0` |
 | `--p-text-muted-color` | `surface-500` | `surface-400` |
 | `--p-text-hover-muted-color` | `surface-600` | `surface-300` |
-| `--p-content-background` | — | `surface-900` (via host) |
+| `--p-content-background` | `surface-0` | `surface-900` |
 | `--p-content-border-color` | `surface-200` | `surface-700` |
 | `--p-content-hover-background` | `surface-100` | `surface-800` |
 | `--p-content-hover-color` | `surface-800` | `surface-0` |
@@ -101,7 +101,7 @@ Variables switch at `@media (prefers-color-scheme: dark)`. Key changes:
 
 - `--p-primary` base shifts from `rgb(0, 95, 178)` to `rgb(0, 125, 178)` (brighter)
 - `--p-primary-color` shifts from `primary-500` to `primary-400`
-- `--p-content-background` shifts to `surface-900` (via host injection)
+- `--p-content-background` shifts from `surface-0` to `surface-900`
 - `--p-text-color` shifts from `surface-700` to `surface-0`
 - Surface levels diverge between modes — light uses neutral gray, dark uses a separate warm ramp (only `0` and `50` are shared); levels 600–950 carry the warmest undertones
 

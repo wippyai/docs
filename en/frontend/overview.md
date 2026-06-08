@@ -24,7 +24,7 @@ See: [Web Host](./web-host/overview.md)
 
 Wippy frontend code runs inside the Web Host's isolation boundary. Micro frontend apps are typically full Vue 3 SPAs mounted in iframes. Web components are custom elements mounted in shadow roots. Both kinds communicate with the Web Host through **`@wippy-fe/proxy`** — synchronous imports (`host`, `api`, `on`, `config`, …) that provide auth-aware HTTP, host navigation, theme-aware CSS, and event subscriptions.
 
-See: [Wippy Micro Frontends](./micro-frontends/micro-frontend-app.md)
+See: [Wippy Micro Frontends](./micro-frontends/overview.md)
 
 ---
 
@@ -62,7 +62,7 @@ How the CDN-delivered Web Host receives configuration, initialises, and manages 
 - [Multi-Panel Layout](./web-host/multi-panel-layout.md) — managed-layout mode, `HostLayoutDeclaration`, layout API
 - [Proxy & Isolation](./web-host/proxy-isolation.md) — iframe proxy vs WC proxy, `IFrameMessageType`, `<w-iframe>`, `<w-artifact>`
 - [CSS Injection](./web-host/css-injection.md) — injection pipeline, per-flag reference, `--wippy-host-*` variables
-- [@wippy-fe Packages](./web-host/packages.md) — all 14 `@wippy-fe/*` packages, host import map
+- [@wippy-fe Packages](./web-host/packages.md) — every `@wippy-fe/*` package, host import map
 
 ### Wippy Micro Frontends
 

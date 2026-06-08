@@ -87,11 +87,11 @@ After the host updates its URL bar, it notifies the child so the child can confi
 iframeWindow.postMessage(JSON.stringify({
   type: '@gen2-chat',
   action: 'url-was-updated-in-parent',
-  path: '/home/profile',
+  path: '/profile',   // the child's OWN internal route (the mount tail) — not the full host path
 }), '*')
 ```
 
-The child listens for this message via the `@history` event channel and treats it as confirmation that the host's URL is now consistent with the child's internal state.
+The host sends back the child's **internal** route (the sub-path after the mount prefix), not the full host path — so the round-trip is symmetric: the child posts `internalRoute: '/profile'`, the host sets its URL bar to `/home/profile`, and echoes `path: '/profile'` back, which the child's memory router pushes verbatim. The child listens via the `@history` event channel and treats it as confirmation that the host's URL is now consistent with its internal state.
 
 The round-trip keeps the host URL bar, the child router, and the browser history entry in sync without the host needing to know anything about the child's internal routing structure.
 
