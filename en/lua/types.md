@@ -22,9 +22,10 @@ local u: unknown = something  -- must narrow before use
 local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
 
--- unknown: safe unknown, must narrow before use
+-- unknown: safe unknown, must narrow before use as a concrete type
 local u: unknown = get_data()
-u.foo                        -- ERROR: cannot access property of unknown
+u.foo                        -- no error: member access on unknown behaves like any
+local n: number = u          -- ERROR: unknown not assignable to number, narrow first
 if type(u) == "table" then
     -- u narrowed to table here
 end

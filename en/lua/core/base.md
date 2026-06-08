@@ -324,44 +324,6 @@ err:details()    -- Get details table or nil
 err:stack()      -- Get stack trace as string
 ```
 
-## UTF-8 Unicode
-
-Unicode UTF-8 string handling:
-
-### Constants {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Pattern matching a single UTF-8 character
-```
-
-### Functions {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Create string from Unicode codepoints
-utf8.codes(s)            -- Iterator over codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Get codepoints at positions i to j
-utf8.len(s [,i [,j]])    -- Count UTF-8 characters (not bytes)
-utf8.offset(s, n [,i])   -- Byte position of n-th character from position i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Count characters (not bytes)
-print(utf8.len(s))  -- 9
-
--- Iterate over codepoints
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Get codepoint at position
-local code = utf8.codepoint(s, 8)  -- First Chinese character
-
--- Create string from codepoints
-local emoji = utf8.char(0x1F600)  -- Grinning face
-```
-
 ## Restricted Features
 
 The following standard Lua features are NOT available for security:
@@ -374,6 +336,7 @@ The following standard Lua features are NOT available for security:
 | `io.*` | Use [File System](lua/storage/filesystem.md) module |
 | `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) modules |
 | `debug.*` | Not available |
+| `utf8.*` | Not available |
 | `package.loadlib` | Native libraries not supported |
 
 ## See Also

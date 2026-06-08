@@ -151,8 +151,8 @@ Queues are auto-created by the driver on first use. Use SQS-prefixed headers to 
 | `codec` | string | No | Wire encoding for message bodies. Defaults to `json/plain` (see [Codecs](#codecs)) |
 | `queue_name` | string | No | External queue name (defaults to entry name) |
 | `driver_options` | object | No | Per-driver sub-bag, keyed by driver kind |
-| `dead_letter.queue` | Registry ID | No | Queue ID for failed messages |
-| `dead_letter.max_attempts` | int | No | Attempts before routing to DLQ |
+| `dead_letter.queue` | Registry ID | No | Queue ID for failed messages (accepted but not yet enforced by any built-in driver) |
+| `dead_letter.max_attempts` | int | No | Attempts before routing to DLQ (accepted but not yet enforced by any built-in driver) |
 
 ### Driver Options
 
@@ -257,7 +257,7 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return false  -- nack: redelivery per driver
     end
     return true       -- ack: remove from queue
 end
@@ -282,14 +282,14 @@ The runtime auto-settles based on the handler return:
 | Handler Result | Action |
 |----------------|--------|
 | `true` or non-false return | Ack |
-| `false` | Nack (redeliver or dead-letter per driver) |
+| `false` | Nack (redeliver per driver) |
 | Raised error | Nack |
 
 Call `msg:ack()` or `msg:nack()` explicitly only to settle early. Settlement is single-shot: whichever call lands first wins.
 
 ### Dead-Letter Routing
 
-When `dead_letter` is configured on the queue, a message that nacks beyond `max_attempts` is routed to the DLQ with `x_dead_letter_reason` and `x_original_queue` headers set by the driver. Publishers must not set any `x_*` header — those are reserved for DLQ bookkeeping.
+Dead-letter routing is not yet implemented. The `dead_letter` block (see [Queue Configuration](#queue-configuration)) is accepted in config, but no built-in driver currently counts attempts, routes nacked messages to the configured DLQ, or sets `x_dead_letter_*` headers. A nacked message is redelivered per the driver's own policy. The `x_*` header namespace is reserved for future DLQ bookkeeping, so publishers should avoid setting `x_*` headers.
 
 ## Publishing Messages
 

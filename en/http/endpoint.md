@@ -70,7 +70,7 @@ end
 
 ## Wildcard Paths
 
-Capture remaining path with `{path...}`:
+Use `{path...}` to match any remaining path segments:
 
 ```yaml
 - name: file_handler
@@ -80,13 +80,7 @@ Capture remaining path with `{path...}`:
   func: serve_file
 ```
 
-```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
-```
+This catch-all segment makes the route match requests like `/files/docs/readme.md`. The captured tail is not currently exposed to Lua: `req:param("path")` returns `nil` for the wildcard value. Read `req:path()` if you need the full request path.
 
 ## Handler Function
 

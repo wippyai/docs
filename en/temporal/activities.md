@@ -173,7 +173,7 @@ Configure automatic retry behavior for failed activities:
 
 ## Local Activities
 
-Local activities execute in the workflow worker process without separate task queue polling:
+The `local` field is accepted on an activity:
 
 ```yaml
 - name: validate_input
@@ -189,14 +189,7 @@ Local activities execute in the workflow worker process without separate task qu
         local: true
 ```
 
-Characteristics:
-- Execute in workflow worker process
-- Lower latency (no task queue roundtrip)
-- No separate task queue overhead
-- Best suited for short execution times
-- No heartbeating
-
-Use local activities for fast, short operations like input validation, data transformation, or cache lookups. For long-running work, use a regular activity instead.
+Currently `local: true` is parsed but behaves identically to a regular activity: it is registered and executed through the standard activity path. There is no distinct local-activity execution yet, so it does not change latency, task queue behavior, or heartbeating.
 
 ## Activity Naming
 
