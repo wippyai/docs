@@ -49,7 +49,6 @@ entries:
   - name: processes
     kind: process.host
     host:
-      max_processes: 1000
       workers: 8
 
   - name: embeddings

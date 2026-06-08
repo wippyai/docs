@@ -5,7 +5,7 @@ Build a real-time crypto ticker with API key authentication and WebSocket stream
 ## Overview
 
 - **API key exchange** — POST an API key, receive an HMAC-signed bearer token
-- **Token middleware** — Gates WebSocket upgrades with the token store
+- **Token middleware** — Validates the bearer token and restores the security context (actor + policies) when present; the endpoint handler enforces auth by rejecting requests with no actor
 - **WebSocket fan-out** — One ticker process broadcasts to many connection handlers
 - **Static assets** — `http.static` serves the browser client
 - **SQLite** — Stores API keys; memory store backs the token store

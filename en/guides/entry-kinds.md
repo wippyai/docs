@@ -83,7 +83,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Databases
@@ -241,13 +242,18 @@ local queue = require("queue")
 -- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- In consumer handler, access current message
-local msg = queue.message()
-local data = msg:body_json()
+-- In a consumer handler: the message body is the handler's argument
+local function main(data)
+    -- access delivery metadata via the current message
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-The consumer's <code>func</code> is invoked for each message. Use <code>queue.message()</code> inside the handler to access the current message.
+The consumer's <code>func</code> is invoked once per message with the message body as its argument. Use <code>queue.message()</code> inside the handler for the delivery's <code>id()</code>, <code>header()</code>/<code>headers()</code>, and <code>ack()</code>/<code>nack()</code>.
 </note>
 
 ## Process Management
@@ -349,7 +355,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- seconds, default 3600
 ```
 
 <tip>

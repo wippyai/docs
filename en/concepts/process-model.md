@@ -67,7 +67,7 @@ process.send(target_pid, "topic", payload)
 Messages from the same sender arrive in order. Messages from different senders may interleave. Delivery is fire-and-forget—use request-response patterns when you need confirmation.
 
 <note>
-Processes can register in a local name registry and be addressed by name instead of PID (e.g., `session_manager`). Global registry for cross-node addressing is planned.
+Processes can register in a local name registry and be addressed by name instead of PID (e.g., `session_manager`). Names can also be registered cluster-wide for cross-node addressing via `process.registry` using EVENTUAL (gossip-based), CONSISTENT, or STRONG (both Raft-backed) scopes.
 </note>
 
 ## Supervision

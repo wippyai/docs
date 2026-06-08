@@ -74,7 +74,6 @@ table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
 table.remove(t [,pos])         -- Remove and return element at pos (default: last)
 table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
 table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
-table.pack(...)                -- Pack varargs into table with 'n' field
 table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
 ```
 
@@ -119,7 +118,7 @@ string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
 string.len(s)              -- String length (or use #s)
 string.byte(s [,i [,j]])   -- Numeric codes of characters
 string.char(...)           -- Create string from character codes
-string.rep(s, n [,sep])    -- Repeat string n times with separator
+string.rep(s, n)           -- Repeat string n times
 string.reverse(s)          -- Reverse string
 ```
 
@@ -203,14 +202,16 @@ math.fmod(x, y)       -- Floating-point remainder
 math.sqrt(x)          -- Square root
 math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Natural log (or log base n)
+math.log(x)           -- Natural log
+math.log10(x)         -- Base-10 log
 ```
 
 ### Trigonometry
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Arc tangent of y/x
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
 math.deg(r)   -- Radians to degrees
 math.rad(d)   -- Degrees to radians
@@ -372,7 +373,7 @@ The following standard Lua features are NOT available for security:
 | `rawlen` | Use `#` operator |
 | `io.*` | Use [File System](lua/storage/filesystem.md) module |
 | `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) modules |
-| `debug.*` (except traceback) | Not available |
+| `debug.*` | Not available |
 | `package.loadlib` | Native libraries not supported |
 
 ## See Also

@@ -128,8 +128,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 |-------|------|-------------|
 | `kind` | string | Event type constant |
 | `from` | string | Source PID |
-| `result` | any | For EXIT: the returned value (present on normal exit) |
-| `error` | any | For EXIT: the error (present on abnormal exit) |
+| `result` | table | For EXIT/LINK_DOWN: a {value, error} record; the process return value is at `result.value` and any error at `result.error` |
 | `reason` | string | For CANCEL: why the process is being cancelled |
 
 ## Topic Subscription

@@ -13,7 +13,7 @@ Wippy's isolation layer gives a process no ambient authority. A fresh Lua or WAS
 
 On top of that, access to registry capabilities is governed by attribute-based access control (ABAC). Every guarded operation is checked against the current actor's security scope, a set of policies that allow or deny an action on a resource, optionally conditioned on actor and resource metadata. This is declarative: you define policies in configuration, not in application code.
 
-By default the policy layer is permissive, allowing access when no policy matches. Production deployments enable **strict mode**, which flips the default to deny, so a process can only do what a policy explicitly permits. Combined with least-privilege policies, strict mode gives you deny-by-default authorization on top of deny-by-absence isolation. See the [Security reference](system/security.md) for policy syntax and evaluation rules.
+When a process runs with both an actor and a scope, access is deny-by-default: a request is allowed only if a policy explicitly permits it and none denies it. **Strict mode** (off by default, enabled via `security.strict_mode`) governs the incomplete case, when no actor or scope is established: strict mode denies it, the permissive default allows it. Production deployments turn strict mode on so that an unauthenticated context fails closed. Combined with least-privilege policies, strict mode gives you fail-closed authorization on top of deny-by-absence isolation. See the [Security reference](system/security.md) for policy syntax and evaluation rules.
 
 ## Process Isolation
 
@@ -35,7 +35,7 @@ The registry is Wippy's capability store, and security policies are its authoriz
 
 **Entry IDs are namespaced.** An ID has the form `namespace:name` with a single colon, and namespaces are hierarchical via dot-separated segments, for example `tenant_acme.tools:read` (namespace `tenant_acme.tools`, name `read`). Policies match actions and resources, and resource patterns can target a namespace prefix, so a single rule can cover an entire namespace.
 
-**Policies decide access.** Each capability access (a registry lookup, a function call, a database handle, a file open) is checked against the actor's scope. A policy declares the actions and resources it covers, an allow or deny effect, and optional conditions on actor and resource metadata. Evaluation happens per access, not once at startup: if any policy denies, access is denied; if at least one allows and none denies, it is allowed; if none matches, the result depends on strict mode.
+**Policies decide access.** Each capability access (a registry lookup, a function call, a database handle, a file open) is checked against the actor's scope. A policy declares the actions and resources it covers, an allow or deny effect, and optional conditions on actor and resource metadata. Evaluation happens per access, not once at startup: if any policy denies, access is denied; if at least one allows and none denies, it is allowed; if no policy matches, access is denied. (When the context has no actor or scope at all, that incomplete case is resolved by strict mode rather than by policy evaluation.)
 
 **Tool arguments are schema-shaped.** A tool declares a JSON Schema for its inputs. That schema is given to the model so it generates conforming arguments, and access to the tool is policy-checked before the call runs.
 
@@ -43,7 +43,7 @@ The registry is Wippy's capability store, and security policies are its authoriz
 
 **Database connections are registry entries.** A process does not assemble its own connection string. It requests a connection by registry ID, and that request is policy-checked before a handle is returned. A process whose policies do not grant Tenant B's database entry cannot obtain a handle to it.
 
-**LLM API keys live in the environment system.** Keys for Claude, GPT, and other providers are read from the environment system (for example OS environment variables exposed through an `env.storage.os` entry, referenced by `env.variable` entries that can be marked private). The provider reads them internally; they are not passed in process arguments or returned to calling code.
+**LLM API keys live in the environment system.** Keys for Claude, GPT, and other providers are read from the environment system (for example OS environment variables exposed through an `env.storage.os` entry, referenced by `env.variable` entries whose reads are policy-checked via the `env.get` action). The provider reads them internally; they are not passed in process arguments or returned to calling code.
 
 **File and blob storage follow the same model.** A process reads or writes through filesystem or cloud-storage registry entries, each access policy-checked. WASM processes access files only through filesystem entries explicitly mounted for that entry.
 
@@ -110,7 +110,7 @@ Tools consumed over MCP run through the same function-call path and policy check
 | Concern | Wippy's approach |
 |---------|------------------|
 | Process isolation | Separate interpreter per process (Lua or WASM), no shared memory |
-| Default access | Permissive by default; enable strict mode for deny-by-default, with least-privilege policies |
+| Default access | Unmatched policies deny when both an actor and a scope are set; strict mode additionally denies when no actor or scope is established. Use least-privilege policies plus strict mode for fail-closed authorization. |
 | Capability control | Registry entries governed by attribute-based security policies (actor, scope, action, resource) |
 | Data boundaries | Connections and storage are registry entries; each access is policy-checked by entry ID |
 | API key management | Stored in the environment system, read internally by providers, not exposed to process code |

@@ -663,7 +663,7 @@ local event = events_ch:receive()
 if event.result.error then
     local child_err = event.result.error
     -- Error objects have kind(), retryable(), message() methods
-    print(child_err:kind())       -- e.g. "NOT_FOUND"
+    print(child_err:kind())       -- e.g. "NotFound"
     print(child_err:retryable())  -- false
     print(child_err:message())    -- error message text
 end
@@ -848,7 +848,7 @@ local now = time.now()
 local id = uuid.v4()
 
 -- Crypto operations
-local bytes = crypto.random_bytes(32)
+local bytes = crypto.random.bytes(32)
 
 -- Child workflows
 local result = workflow.exec("app:child", input)
@@ -882,7 +882,7 @@ Activity errors carry structured metadata:
 ```lua
 local result, err = funcs.call("app:risky_activity", order)
 if err then
-    print(err:kind())       -- error classification (e.g. "NOT_FOUND", "INTERNAL")
+    print(err:kind())       -- error classification (e.g. "NotFound", "Internal")
     print(err:retryable())  -- whether the error is retryable
     print(err:message())    -- human-readable error message
 end
@@ -901,7 +901,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:unreliable_activity", input)
 if err then
-    local kind = err:kind()         -- "INTERNAL" for runtime errors
+    local kind = err:kind()         -- "Internal" for runtime errors
     local retryable = err:retryable()
 end
 ```
@@ -913,7 +913,7 @@ Errors from child workflows (via `process.exec` or EXIT events) carry the same m
 ```lua
 local result, err = process.exec("app:error_workflow", "app:worker")
 if err then
-    print(err:kind())       -- e.g. "NOT_FOUND"
+    print(err:kind())       -- e.g. "NotFound"
     print(err:retryable())  -- false
     print(err:message())    -- error details
 end

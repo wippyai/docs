@@ -116,10 +116,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-The default elastic pool maximum is 100 workers when `max_size` is not specified.
+The 100-worker default applies only to the implicitly selected pool (when no `type` is set). When you explicitly set `type: lazy` or `type: adaptive` without `max_size`, the default maximum is 16 workers.
 
 ## Transports
 

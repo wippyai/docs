@@ -127,7 +127,7 @@ For AWS SQS and SQS-compatible endpoints (LocalStack, ElasticMQ). Credentials, r
 | `use_fips` | bool | `false` | Use FIPS-compliant endpoints |
 | `use_dual_stack` | bool | `false` | Use dual-stack (IPv4 + IPv6) endpoints |
 
-Queues are auto-created by the driver on first use. Use SQS-prefixed headers (`sqs.*`) to address SQS-specific attributes on publish; neutral keys like `correlation_id` and `content_type` are translated to SQS system attributes where possible.
+Queues are auto-created by the driver on first use. Use SQS-prefixed headers to address SQS-specific fields on publish: `sqs.delay_seconds`, `sqs.message_group_id`, and `sqs.message_deduplication_id` map to typed SQS message fields. All other headers (neutral keys like `correlation_id` and `content_type`, plus any `sqs.message_attributes.*` keys) are carried verbatim as SQS message attributes.
 
 ## Queue Configuration
 
@@ -162,7 +162,7 @@ Keys under `driver_options` are scoped by driver name. A driver reads only its o
 
 | Key | Description |
 |-----|-------------|
-| `max_length` | Bounded buffer size (0 = unbounded) |
+| `max_length` | Bounded buffer size (0 or unset = default 1000) |
 
 **amqp:**
 
@@ -210,7 +210,7 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
 | `queue` | required | Queue registry ID |
 | `func` | required | Handler function registry ID |
 | `concurrency` | 1 | Parallel worker count |
-| `prefetch` | 10 | Per-worker buffer size |
+| `prefetch` | 10 | Total delivery buffer / max in-flight messages shared across workers |
 | `auto_ack` | false | When true, the runtime does not call broker ack; handler success/failure is the only settle signal |
 | `driver_options` | - | Per-driver sub-bag (same structure as queue) |
 

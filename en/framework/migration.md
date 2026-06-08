@@ -97,11 +97,11 @@ end)
 | `meta.timestamp` | no | ISO-8601 timestamp used for ordering when multiple migrations target the same database |
 | `meta.tags` | no | Array of tags; the runner can filter migrations by tag |
 
-Migrations for a database run in ascending `meta.timestamp` order.
+Migrations for a database run in ascending `meta.timestamp` order. `meta.timestamp` is optional; the full entry id is the tie-breaker, so migrations with equal or absent timestamps still run in a stable, deterministic order.
 
 ## DSL
 
-Inside the function passed to `migration.define`, three nested functions are available:
+Inside the function passed to `migration.define`, the following nested functions are available:
 
 | Function | Description |
 |----------|-------------|
@@ -151,7 +151,7 @@ local runner = require("runner").setup("app:app_db")
 
 local result = runner:run()      -- apply all pending migrations
 local result = runner:run_next() -- apply the next pending migration
-local result = runner:rollback({ id = "app:01_create_users_table" })
+local result = runner:rollback() -- roll back the most recently applied migration
 local status = runner:status()   -- list applied + pending migrations
 ```
 
@@ -180,15 +180,41 @@ Options:
 
 ### `runner:rollback(options)`
 
-Rolls a single migration back by id (required):
+Rolls back applied migrations in reverse order of application. With no options it reverts the single most recently applied migration:
 
 ```lua
-runner:rollback({ id = "app:01_create_users_table" })
+runner:rollback()                                            -- roll back the last migration
+runner:rollback({ count = 3 })                               -- roll back the last 3
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict to specific ids
 ```
+
+Options:
+
+| Option | Description |
+|--------|-------------|
+| `count` | Number of migrations to roll back; defaults to `1` |
+| `allowed_ids` | Array of migration ids; only these are eligible for rollback |
 
 ### `runner:status(options)`
 
-Returns `{ applied = {...}, pending = {...} }`, sorted by `applied_at` and `meta.timestamp` respectively.
+Returns a status report describing every migration for the database:
+
+```lua
+{
+    database_id        = "app:app_db",
+    db_type            = "sqlite",
+    total_migrations   = 3,
+    applied_migrations = 2,
+    pending_migrations = 1,
+    migrations = {
+        { id = "app:01_...", description = "...", timestamp = "...",
+          tags = {}, status = "applied", applied_at = ... },
+        -- ...
+    },
+}
+```
+
+Applied migrations are listed first (ordered by `applied_at`), followed by pending ones (ordered by `meta.timestamp`, then by id).
 
 ## Registry API
 
@@ -205,7 +231,7 @@ The bootloader uses these to discover the full set of target databases at startu
 
 ## Migration Tracking
 
-The runner creates a `wippy_migrations` table in each target database on first run. Applied migrations are recorded by id so subsequent runs skip them. The tracking table is created automatically; do not write your own migration to create it.
+The runner creates a `_migrations` table in each target database on first run. Applied migrations are recorded by id so subsequent runs skip them. The tracking table is created automatically; do not write your own migration to create it.
 
 ## Best Practices
 

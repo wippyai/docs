@@ -104,7 +104,8 @@ Environment access is subject to security policy evaluation.
 |--------|----------|-------------|
 | `env.get` | Variable name | Read environment variable |
 | `env.set` | Variable name | Write environment variable |
-| `env.get_all` | `*` | List all variables |
+
+`get_all` has no dedicated security action: it returns only the variables for which the `env.get` action is permitted, filtering each variable name through `env.get`.
 
 ### Checking Access
 

@@ -44,7 +44,7 @@ Clustering exposes a small set of building blocks. Each is documented in full on
 - **Distributed locks** — cluster-wide mutual exclusion with at most one holder, released automatically if the holder dies. See [`system.lock`](lua/system/system.md).
 - **Process groups** — join named groups and broadcast to every member across all nodes, Erlang-style. See [Process Groups](lua/core/pg.md).
 
-These are deliberately primitive: locks and named singletons are built on the Strong naming scope, process groups on gossip, and all of them on the same membership and routing described above — so they compose predictably rather than each inventing its own distribution.
+These are deliberately primitive: named singletons are the Consistent (and, for the strictest control-plane names, Strong) naming scope, distributed locks are linearizable entries in the shared Raft store, process groups ride gossip, and all of them build on the same membership and routing described above — so they compose predictably rather than each inventing its own distribution.
 
 ## See Also
 

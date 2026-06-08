@@ -178,11 +178,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -227,10 +227,10 @@ Use `!` to assert an expression is non-nil:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- assert user is non-nil
+local name = (user!).name            -- assert user is non-nil
 ```
 
-If the value is nil at runtime, an error is raised. Use when you know a value cannot be nil but the type checker cannot prove it.
+`!` is a type-checker assertion only - it narrows the type to non-nil but emits no runtime check. If the value is actually nil, the following operation fails with the usual error (e.g. indexing nil). Use when you know a value cannot be nil but the type checker cannot prove it.
 
 ## Type Casts
 
@@ -419,9 +419,6 @@ local x: number @min(0) @max(100) = 50
 
 -- String pattern
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- No-arg validator
-local x: number @integer = 42
 ```
 
 ### Built-in Validators

@@ -32,7 +32,7 @@ entries:
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `api_router` | yes | — | HTTP router for view API endpoints |
-| `env_storage` | no | internal | Environment storage backing the `PUBLIC_API_URL` variable |
+| `env_storage` | yes | — | Environment storage backing the `PUBLIC_API_URL` variable |
 
 ## Template Pages
 
@@ -280,6 +280,7 @@ The views module registers these endpoints on the configured router:
 | GET | `/components/list` | List view components |
 | GET | `/pages/content/{id}` | Render page or return component descriptor |
 | GET | `/pages/public/{id}` | Get component base URL |
+| GET | `/pages/routes` | Map of mountRoute pattern -> page ID for pages claiming top-level URLs |
 
 ### Render Response
 

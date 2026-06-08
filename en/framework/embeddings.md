@@ -11,7 +11,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-Declare the dependency and point the `target_db` requirement at your application database:
+Declare the dependency and point the `target_db` requirement at your application database via the dependency's `parameters`:
 
 ```yaml
 version: "1.0"
@@ -20,20 +20,18 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.embeddings
     kind: ns.dependency
     component: wippy/embeddings
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.embeddings.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-On startup, `wippy/migration` picks up the `01_create_embeddings_table` migration and creates the `embeddings` table with the appropriate vector index for your database driver.
+On startup, `wippy/migration` picks up the `01_create_embeddings_table` migration and creates the `embeddings_512` table with the appropriate vector index for your database driver.
 
 ## Configuration Constants
 
@@ -81,7 +79,7 @@ Generates an embedding for `content` and persists it.
 | `context_id` | string | no | Additional scoping key (section, chat, tenant) |
 | `meta` | table | no | Arbitrary JSON-serialisable metadata |
 
-Returns `{ id, content, content_type, origin_id, context_id, meta }` or `nil, err`.
+Returns `{ entry_id, origin_id, content_type, context_id }` or `nil, err`.
 
 ### add_batch
 
@@ -146,8 +144,8 @@ Use the repository directly when you already have a vector and want to skip embe
 
 The migration creates the schema appropriate for the database driver at `target_db`:
 
-- **PostgreSQL** - `embeddings` table with a `vector(512)` column and an IVFFlat index. Requires the `pgvector` extension.
-- **SQLite** - `embeddings` table with the vector stored as text plus a companion `sqlite-vec` virtual table for KNN search.
+- **PostgreSQL** - `embeddings_512` table with a `vector(512)` column and an IVFFlat index. Requires the `pgvector` extension.
+- **SQLite** - `embeddings_512` `vec0` virtual table holding the `embedding float[512]` vector column alongside the metadata and content columns for KNN search.
 
 Vectors are always round-tripped through a plain JSON array at the API layer.
 

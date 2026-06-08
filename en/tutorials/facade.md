@@ -87,11 +87,9 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "mode": "compat",
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.32",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.32/iframe.html?waitForCustomConfig",
-  "module_file": "/module.js",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "theming": {

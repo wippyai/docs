@@ -47,7 +47,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and iframe serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.23` | Base URL for iframe frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
 
 ### App Identity
@@ -116,6 +116,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
         "APP_WEBSOCKET_URL": "wss://api.example.com"
     },
     "routePrefix": "https://api.example.com",
+    "apiRoutes": { "...": "..." },
     "axiosDefaults": { "...": "..." },
     "theming": {
         "global":  { "customCSS": "...", "cssVariables": {}, "iconSets": {} },
@@ -131,7 +132,6 @@ The facade registers `GET /facade/config` on the configured router. The frontend
         "hideNavBar": false,
         "disableRightPanel": false,
         "hideSessionSelector": false,
-        "apiRoutes":         { "...": "..." },
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
         "allowAdditionalTags": [],
@@ -140,7 +140,7 @@ The facade registers `GET /facade/config` on the configured router. The frontend
 }
 ```
 
-The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`, and `axios_defaults`.
+The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. The `api_routes` (`apiRoutes`) and `axios_defaults` (`axiosDefaults`) parameters are emitted as top-level config keys, not under `hostConfig`.
 
 ## Navigation Sidebar
 

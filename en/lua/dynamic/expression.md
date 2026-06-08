@@ -5,16 +5,9 @@
 
 Evaluate dynamic expressions using [expr-lang](https://expr-lang.org/) syntax. Compile and execute safe expressions for filtering, validation, and rule evaluation without full Lua execution.
 
-## Configuration
+## Caching
 
-Expression cache is configured at boot:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # Enable expression caching
-    capacity: 5000        # Cache capacity
-```
+`expr.eval` keeps an internal LRU cache of compiled expressions (default capacity 1000). The cache is built into the module and requires no configuration.
 
 ## Loading
 
@@ -134,7 +127,7 @@ expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+expr.eval('"hello" contains "ell"')  -- true
 
 -- Array functions
 expr.eval("len(items)", {items = {1,2,3}})  -- 3

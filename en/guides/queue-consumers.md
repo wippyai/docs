@@ -84,7 +84,7 @@ return handler
 
 - Workers run as concurrent goroutines
 - Each worker processes one message at a time
-- Messages distributed round-robin from delivery channel
+- Workers pull from a shared delivery channel; whichever worker is idle receives the next message (no guaranteed ordering or rotation across workers)
 - Prefetch buffer allows driver to deliver ahead
 
 ### Example
@@ -140,7 +140,7 @@ On stop:
 | `driver_options` | Driver-specific settings keyed by driver name |
 
 <note>
-Dead-letter routing is driver-dependent. AMQP honors broker-level DLX configuration; the memory driver does not route to a DLQ.
+Dead-letter routing is driver-dependent. The runtime does not translate the dead_letter block into AMQP arguments. Dead-letter routing occurs only if a dead-letter exchange is configured directly on the broker (outside Wippy); the memory driver does not route to a DLQ.
 </note>
 
 ## Memory Driver

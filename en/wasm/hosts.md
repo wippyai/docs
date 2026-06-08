@@ -7,7 +7,8 @@ WASM modules access runtime capabilities through host function imports. Each imp
 | Import | Description |
 |--------|-------------|
 | `wasi:cli` | Environment, exit, stdin/stdout/stderr, terminal |
-| `wasi:io` | Streams, error handling, polling |
+| `wasi:io` | Streams and error handling |
+| `wasi:poll` | Async polling / cooperative yielding (interface `wasi:io/poll`) |
 | `wasi:clocks` | Wall clock and monotonic clock |
 | `wasi:filesystem` | File system access through mounted directories |
 | `wasi:random` | Cryptographically secure random numbers |
@@ -46,13 +47,19 @@ Wall clock and monotonic clock for time operations. Monotonic clock integrates w
 
 ### wasi:io
 
-**Interfaces:** `wasi:io/error`, `wasi:io/streams`, `wasi:io/poll`
+**Interfaces:** `wasi:io/error`, `wasi:io/streams`
 
-Stream read/write operations and async polling. The poll interface enables cooperative yielding through the dispatcher.
+Stream read/write operations and error handling. The `wasi:io/poll` interface is provided separately by the `wasi:poll` import.
+
+### wasi:poll
+
+**Interfaces:** `wasi:io/poll`
+
+Async polling. The poll interface enables cooperative yielding through the dispatcher.
 
 ### wasi:cli
 
-**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`
+**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 Access to environment variables, process exit codes, and standard I/O streams. Environment variables are mapped from the Wippy environment registry through WASI configuration.
 
@@ -78,7 +85,7 @@ Cryptographically secure and insecure random number generation.
 
 ### wasi:sockets
 
-**Interfaces:** `wasi:sockets/network`, `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`
+**Interfaces:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
 
 TCP and UDP networking with DNS resolution. Socket operations integrate with the dispatcher for async I/O.
 

@@ -79,7 +79,7 @@ local function get_user(id)
 
     local rows, err = db:query("SELECT * FROM users WHERE id = $1", id)
     if err then return nil, err end
-    if #rows == 0 then return nil, errors.new(errors.NOT_FOUND, "user not found") end
+    if #rows == 0 then return nil, errors.new({kind = errors.NOT_FOUND, message = "user not found"}) end
 
     return rows[1]
 end

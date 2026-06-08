@@ -249,7 +249,7 @@ The central hub runs under its own security group (`wippy.relay.security:root`) 
 | `ws.leave` | Client → Central/User Hub | Disconnection |
 | `ws.message` | Client → User Hub | WebSocket message |
 | `ws.cancel` | Central → User Hub | Graceful shutdown |
-| `ws.control` | Central → User Hub | Routing control |
+| `ws.control` | Central → Client | Redirects the client connection's target PID to its user hub |
 | `hub.activity_update` | User Hub → Central | Client count update |
 
 ## See Also

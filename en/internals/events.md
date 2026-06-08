@@ -173,7 +173,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -221,21 +221,24 @@ defer router.Stop()
 
 Each handler implements `Pattern()` and `Handle()`. The router creates a Subscriber for each and closes all on Stop.
 
-### Awaiter
+### AwaitService
 
-Synchronous wait for a specific event:
+Request-response over pub/sub. It keeps a single subscription per `(system, kind)` pair and routes events to waiters by `Path`:
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // blocks until match or timeout
+result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 ```
 
-The Prepare-then-Wait pattern avoids race conditions: subscribe before triggering the event that produces the response.
+`Prepare` registers the waiter before the triggering event is sent, avoiding the race where the response arrives before the wait is registered. `Wait` blocks until a matching `Path` event arrives or the timeout (default `DefaultAwaitTimeout`, 30s, when non-positive) expires. `Accepted` is true when the event kind is `accept`, `*.accept`, or `*.accepted`; otherwise the kind is treated as a rejection and any `error` in `Data` surfaces as `Error`. The convenience `Await(ctx, system, kind, path, timeout)` combines Prepare and Wait. The boot infrastructure registers an AwaitService on the context (`event.GetAwaitService`).
 
 ## Shutdown
 

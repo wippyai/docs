@@ -290,11 +290,11 @@ curl -X POST http://localhost:8080/api/ask \
 
 ## Operational Notes
 
-- **Chunk size**: 500–1000 tokens is a good starting point. Too small loses local context; too large dilutes similarity scores. Use `chunk_overlap` (~10–20% of chunk size) to preserve sentences across boundaries.
+- **Chunk size**: `chunk_size` and `chunk_overlap` count characters, not tokens (the splitter measures length with `utf8.RuneCountInString`). Roughly 2000–4000 characters is a good starting point. Too small loses local context; too large dilutes similarity scores. Use `chunk_overlap` (~10–20% of chunk size) to preserve sentences across boundaries.
 - **Content types**: Use distinct `content_type` values (`doc_chunk`, `faq`, `code_snippet`) so search can filter by type.
 - **Re-indexing**: Delete and re-ingest per document via `embedding_repo.delete_by_origin(doc_id)` before adding new chunks.
 - **Hybrid search**: For exact-term recall (names, IDs), combine vector search with full-text search over your source table and re-rank.
-- **Model choice**: The default 512-dimension `text-embedding-3-small` is cost-efficient. Upgrade to 1024 or 3072 dimensions only if recall is insufficient — bigger vectors mean bigger storage and slower search.
+- **Model choice**: `wippy/embeddings` is fixed to `text-embedding-3-small` at 512 dimensions, and the `embeddings_512` table stores `vector(512)`/`float[512]`. A different model or vector size means changing the library constants and the migration table.
 
 ## Next Steps
 

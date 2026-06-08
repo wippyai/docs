@@ -83,7 +83,7 @@ Nodes that start later see an already-formed cluster and skip bootstrap entirely
 
 Raft state is **fs-durable by default**: logs and snapshots are persisted under `cluster.raft.data_dir` (default `~/.wippy/store`, in `_sys/raft`), and [`store.kv.raft`](system/store.md#cluster-kv-stores) replicates through the same core. A restarting node still rejoins gossip and catches up from its peers, so the cluster also tolerates losing a node's disk; durability comes from both the live quorum and on-disk state. A node runs diskless only when no data directory resolves (no configured path and no home directory) — see [Recovery](#recovery-and-failure-modes).
 
-Raft does not open its own listening port. It rides the **internode mesh** — the same TCP connections used for relay traffic between nodes — multiplexed with yamux. The internode port is auto-selected at boot (range 7950-7959, then ephemeral), pinned, and advertised in gossip so peers can reach it. The only port you normally expose is the gossip port.
+Raft does not open its own listening port. It rides the **internode mesh** — the same TCP connections used for relay traffic between nodes — carrying its RPCs as internode request/reply frames over the mesh's reliable per-class channels. The internode port is auto-selected at boot (range 7950-7959, then ephemeral), pinned, and advertised in gossip so peers can reach it. The only port you normally expose is the gossip port.
 
 The Raft FSM holds the global name registry: active `name -> PID` bindings plus in-flight strong reservations. That is what the naming primitives below read and write.
 
@@ -103,7 +103,7 @@ How to choose:
 - **Local** — names meaningful only on one node (a per-node helper). Released the moment the process exits. Zero cost.
 - **Eventual** — cluster-wide service, group, and presence names where a brief stale window is acceptable. The binding set is fully replicated to every node, so it fits a bounded namespace — not one name per high-cardinality entity such as a per-session process (address those directly by PID). When two origins register the same name, conflict resolution picks a winner and the losing process receives a cancel event (`process.event.CANCEL`) carrying the reason `name revoked: <name>`; it keeps running and can re-register. Names release when the owning node leaves.
 - **Consistent** — the standard choice for cluster-wide named singletons. First-write-wins: a second registration of the same name to a different PID fails with "already exists" and returns the current owner. Writes need a quorum, so they stall in a minority partition. Reads come from the local Raft replica and may lag a write by a few milliseconds.
-- **Strong** — the small set of control-plane singletons where even a momentary stale read is dangerous. On top of the Consistent guarantee, the registration opens a reservation that every live node must acknowledge before the name becomes authoritative; any node already holding a conflicting binding rejects it immediately. If the deadline passes before all nodes ack, the registration expires and reports which nodes were missing. This is the basis for [distributed locks](#distributed-locks).
+- **Strong** — the small set of control-plane singletons where even a momentary stale read is dangerous. On top of the Consistent guarantee, the registration opens a reservation that every live node must acknowledge before the name becomes authoritative; any node already holding a conflicting binding rejects it immediately. If the deadline passes before all nodes ack, the registration expires and reports which nodes were missing.
 
 Names are released automatically: Local on process exit; Consistent and Strong on process exit (via topology monitoring) and on node departure; Eventual on node departure. Resolution for messaging (`process.send`, `process.terminate`, and similar) consults the planes most-authoritative first — Consistent and Strong (Raft), then Eventual (gossip), then Local — so a cluster-wide name shadows a local one with the same string.
 
@@ -119,7 +119,7 @@ See [Process Groups](lua/core/pg.md) for the Lua API and the [`pg.scope` entry k
 
 ## Distributed locks
 
-`system.lock` is cluster-wide mutual exclusion built directly on the Strong name scope. Acquiring a lock registers its name under Strong scope owned by the calling process; releasing unregisters it. Because Strong requires every live node to acknowledge, at most one holder can exist cluster-wide.
+`system.lock` is cluster-wide mutual exclusion built on a raft-linearizable conditional write in the shared key-value store. Acquiring a lock performs a set-if-absent of the holder PID at `_sys:lock:<name>`; releasing deletes that entry if it is still held by the caller. Because the conditional write goes through Raft (with off-leader writes forwarded to the leader), it is linearizable, so at most one holder can exist cluster-wide.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")

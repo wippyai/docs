@@ -120,10 +120,10 @@ binds the framework, `calc` binds the unit under test.
 wippy run test
 ```
 
-Filter to a single suite (matches the entry id or suite name) while iterating:
+Filter by entry id substring (namespace:name) while iterating:
 
 ```bash
-wippy run test calculator
+wippy run test calc_test
 ```
 
 Output for the suite above:

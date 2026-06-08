@@ -75,7 +75,7 @@ end
 
 **Returns:** `any, error`
 
-Returns `nil` if key doesn't exist.
+Returns `nil` and an `errors.NOT_FOUND` error if the key doesn't exist or has expired.
 
 ## Checking Existence
 
@@ -157,14 +157,14 @@ end
 ```lua
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- someone else holds it
 end
 
 -- compare-and-set: write only if the version still matches
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- a concurrent writer changed it; re-read and retry
 end
 ```
@@ -230,14 +230,16 @@ Store operations are subject to security policy evaluation.
 | Action | Resource | Attributes | Description |
 |--------|----------|------------|-------------|
 | `store.get` | Store ID | - | Acquire a store resource |
-| `store.key.get` | Store ID | `key` | Read a key value |
-| `store.key.set` | Store ID | `key` | Write a key value |
+| `store.info` | Store ID | - | Inspect store capabilities |
+| `store.key.get` | Store ID | `key` | Read a key value (also `entry`) |
+| `store.key.set` | Store ID | `key` | Write a key value (also `put`) |
 | `store.key.delete` | Store ID | `key` | Delete a key |
 | `store.key.has` | Store ID | `key` | Check key existence |
+| `store.key.list` | Store ID | `prefix` | List entries |
 
 ## Errors
 
-`store.get()` and all methods on the store handle (`get`, `set`, `has`, `delete`) return structured errors (use `err:kind()`).
+`store.get()` and all methods on the store handle (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) return structured errors (use `err:kind()`).
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|

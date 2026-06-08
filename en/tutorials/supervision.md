@@ -380,6 +380,9 @@ Child worker that links to parent:
 
 ```lua
 local function linker_child_main()
+    -- Enable trap_links to receive LINK_DOWN events
+    process.set_options({ trap_links = true })
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
@@ -628,7 +631,7 @@ return { main = main }
 
 ## Process Host Configuration
 
-The process host controls how many OS threads execute processes:
+The process host controls how many worker goroutines execute processes:
 
 ```yaml
 # src/_index.yaml
@@ -639,7 +642,7 @@ entries:
   - name: processes
     kind: process.host
     host:
-      workers: 16  # Number of OS threads
+      workers: 16  # Worker goroutines (default: NumCPU)
     lifecycle:
       auto_start: true
 ```
@@ -647,7 +650,7 @@ entries:
 Workers setting:
 - Controls parallelism for CPU-bound work
 - Typically set to number of CPU cores
-- All processes share this thread pool
+- All processes share this scheduler worker pool
 
 ## Event Types
 
@@ -666,14 +669,14 @@ wippy init
 wippy run
 ```
 
-The supervisor autostarts, spawns four workers, and logs restarts when any of them dies. Trigger a restart by killing a worker from another process:
+The supervisor autostarts, spawns four workers, and logs restarts when any of them dies. `LINK_DOWN` is only delivered when a linked process exits with an error, so trigger a restart by forcefully terminating a worker from another process:
 
 ```lua
 -- in an ad-hoc process or chat command
-process.cancel("<pid-from-supervisor-log>")
+process.terminate("<pid-from-supervisor-log>")
 ```
 
-The pool receives `LINK_DOWN`, waits 100 ms, and respawns the worker under the same id.
+The pool receives `LINK_DOWN`, waits 100 ms, and respawns the worker under the same id. A graceful `process.cancel()` lets the worker exit cleanly, which does not raise `LINK_DOWN` and therefore does not trigger a restart.
 
 ## Next Steps
 

@@ -147,7 +147,7 @@ res:set_header("X-SSE-Relay", json.encode({
 The client receives a `ready` event:
 
 ```json
-{"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
+{"stream_pid": "{n1@app:processes|sse-1}", "message_topic": "sse.message"}
 ```
 
 ## Message Topics

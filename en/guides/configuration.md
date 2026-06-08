@@ -95,7 +95,7 @@ Message routing between processes across nodes.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `node_name` | string | local | Identifier for this relay node |
+| `node_name` | string | derived per-instance ID | Identifier for this relay node (default: UUIDv5 of machine-id/hostname + working dir; overridable via `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -135,8 +135,8 @@ Lua VM caching and expression evaluation.
 | `proto_cache_size` | int | 60000 | Compiled prototype cache |
 | `main_cache_size` | int | 10000 | Main chunk cache |
 | `cache.enabled` | bool | false | Persist compiled bytecode/typecheck cache to disk |
-| `cache.dir` | string | (system cache dir) | Cache directory path |
-| `cache.mode` | string | `read_write` | Cache mode: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Cache directory path (relative to the config/working directory) |
+| `cache.mode` | string | `readwrite` | Cache mode: `readwrite` (default), `readonly`, `off` |
 | `type_system.enabled` | bool | false | Enable static type checking |
 | `type_system.strict` | bool | false | Treat type warnings as errors |
 
@@ -244,7 +244,7 @@ Prometheus metrics endpoint.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Start metrics server |
-| `address` | string | localhost:9090 | Listen address |
+| `address` | string | | Listen address; must be set explicitly when `enabled: true`, otherwise the metrics server does not start |
 
 ```yaml
 prometheus:
@@ -448,7 +448,7 @@ extensions:
 
 | Variable | Description |
 |----------|-------------|
-| `GOMEMLIMIT` | Memory limit (overrides `--memory-limit` flag) |
+| `GOMEMLIMIT` | Memory limit fallback when `--memory-limit` flag is not set (precedence: `--memory-limit` flag > `GOMEMLIMIT` > 1G default) |
 
 ## See Also
 

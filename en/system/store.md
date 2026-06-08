@@ -24,7 +24,7 @@ Key-value stores with TTL support: in-memory, SQL-backed, and cluster-replicated
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `max_size` | int | 10000 | Maximum entries (0 = unlimited) |
+| `max_size` | int | 10000 | Maximum entries; 0 is replaced with the default (10000) |
 | `cleanup_interval` | duration | 5m | Expired entry cleanup interval |
 
 When `max_size` is reached, new entries are rejected. Data is lost on restart.

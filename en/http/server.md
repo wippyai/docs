@@ -41,7 +41,7 @@ Configure timeouts to prevent resource exhaustion:
 
 ```yaml
 timeouts:
-  read: "10s"    # Max time to read request headers
+  read: "10s"    # Max time to read the entire request (headers + body)
   write: "60s"   # Max time to write response
   idle: "120s"   # Keep-alive timeout
 ```
