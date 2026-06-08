@@ -104,6 +104,7 @@ These fields are set by the operator in the `meta` block of the `_index.yaml` re
 | `auto_register` | boolean | `false` | `true` → Web Host autoloads and registers the component at startup |
 | `secure` | boolean | `false` | Requires authentication |
 | `url` | string | — | Static mount path for the component's built bundle |
+| `base_path` | string | `""` | Optional subpath appended to `url` to form the project root; the resolved bundle URL composes as `<url>/<base_path>/<entry_point>`. Honored identically to pages, though current app-template component entries omit it |
 | `entry_point` | string | `wippy.browser` → `index.js` | FE-authored as the top-level `browser` field in `package.json` (baked into `wippy-meta.json`); the YAML key overrides the bundled value, falling back to `index.js`. Entry module file; the host injects this as a `<script type="module">` |
 
 A minimal entry looks like this:
@@ -157,13 +158,13 @@ When a page inside the Web Host finishes mounting, the host runs the following s
 Setting `auto_register: false` excludes the component from the global autoload sweep. This is appropriate when:
 
 - The component is large and should only load on pages that explicitly need it.
-- The component is registered programmatically via `loadWebComponent('example-heavy-chart')` (imported from `@wippy-fe/proxy`) at the call site.
+- The component is registered programmatically via `loadByTagName('example-heavy-chart')` (imported from `@wippy-fe/proxy`) at the call site.
 - The component is an internal building block used only within another bundle, not as a standalone custom element.
 
 ```ts
-import { loadWebComponent } from '@wippy-fe/proxy'
+import { loadByTagName } from '@wippy-fe/proxy'
 
-await loadWebComponent('example-heavy-chart')
+await loadByTagName('example-heavy-chart')
 ```
 
-Lazy registration lets the initial page load stay lightweight. The component still needs `announced: true` for `loadWebComponent()` to resolve it through the API.
+Lazy registration lets the initial page load stay lightweight. The component still needs `announced: true` for `loadByTagName()` to resolve it through the API — the `GET /components/by-tag/{tag}` endpoint returns `404 "Component is not announced"` when the flag is `false`.

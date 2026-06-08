@@ -102,10 +102,10 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
     // example values — defaults shown in table below
     "session": { "type": "non-persistent" },
     "history": "hash",
-    "showAdmin": false,
+    "showAdmin": true,
     "allowSelectModel": false,
     "startNavOpen": false,
-    "hideNavBar": true,
+    "hideNavBar": false,
     "disableRightPanel": false,
     "hideSessionSelector": false,
     "additionalNavItems": [],

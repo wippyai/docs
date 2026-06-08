@@ -32,26 +32,27 @@ Base: `--p-primary` (default: `rgb(0, 95, 178)`)
 
 Base: `--p-secondary` (default: `#6f7385`)
 
-Same numbered scale pattern as primary (50–950) using `color-mix`.
+Same 50–950 structure as primary, derived via `color-mix` on `--p-secondary`, but with its own percentage ladder — steps 300/400/700/800/950 use different mix percentages than primary, so do not assume primary's exact step values when overriding the secondary base.
 
 ### Surface palette (13 vars)
 
-**Fixed light-to-dark scale** — 0 is always lightest, 950 always darkest. The scale does NOT flip with dark mode. In dark mode, only 600–950 get warmer undertones.
+**Fixed light-to-dark scale** — 0 is always lightest, 950 always darkest. The scale does NOT flip with dark mode. The light scale is the neutral Tailwind gray (no warm cast); the dark scale is a separate warm-toned ramp, so most levels differ between modes — only `0` and `50` are shared. Dark levels 600–950 carry the warmest undertones.
 
 | Variable | Light value | Dark value |
 |---|---|---|
-| `--p-surface-0` | `#fff` | `#fff` |
+| `--p-surface-0` | `#ffffff` | `#fff` |
 | `--p-surface-50` | `#fafafa` | `#fafafa` |
-| `--p-surface-100` | `#f4f4f5` | `#f4f4f5` |
-| `--p-surface-200` | `#e4e4e7` | `#e4e4e7` |
-| `--p-surface-300` | `#d4d4d8` | `#d4d4d8` |
-| `--p-surface-400` | `#a1a1aa` | `#a1a1aa` |
-| `--p-surface-500` | `#71717a` | `#71717a` |
-| `--p-surface-600` | `#52525b` | `#545250` (warm) |
-| `--p-surface-700` | `#3f3f46` | `#403e3c` (warm) |
-| `--p-surface-800` | `#27272a` | `#2b2927` (warm) |
-| `--p-surface-900` | `#18181b` | `#1c1a19` (warm) |
-| `--p-surface-950` | `#09090b` | `#0f0e0d` (warm) |
+| `--p-surface-100` | `#f5f5f5` | `#f4f4f5` |
+| `--p-surface-200` | `#e5e5e5` | `#e4e4e7` |
+| `--p-surface-300` | `#d4d4d4` | `#d4d4d8` |
+| `--p-surface-400` | `#a3a3a3` | `#a1a1aa` |
+| `--p-surface-500` | `#737373` | `#71717a` |
+| `--p-surface-600` | `#525252` | `#545250` (warm) |
+| `--p-surface-700` | `#404040` | `#403e3c` (warm) |
+| `--p-surface-800` | `#262626` | `#2b2927` (warm) |
+| `--p-surface-850` | `color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900))` | `color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900))` |
+| `--p-surface-900` | `#171717` | `#1c1a19` (warm) |
+| `--p-surface-950` | `#0a0a0a` | `#0f0e0d` (warm) |
 
 ### Danger / Warn / Success / Info / Help / Accent palettes
 
@@ -102,7 +103,7 @@ Variables switch at `@media (prefers-color-scheme: dark)`. Key changes:
 - `--p-primary-color` shifts from `primary-500` to `primary-400`
 - `--p-content-background` shifts to `surface-900` (via host injection)
 - `--p-text-color` shifts from `surface-700` to `surface-0`
-- Surface 600–950 get warmer undertones in dark mode
+- Surface levels diverge between modes — light uses neutral gray, dark uses a separate warm ramp (only `0` and `50` are shared); levels 600–950 carry the warmest undertones
 
 **Universal rule:** every level of custom CSS must produce a sensible result in both light and dark modes.
 
@@ -203,7 +204,7 @@ Always scope class-based overrides to `.wippy-host-app` to prevent leaking into 
 | `--wippy-host-message-padding-x` | `1rem` | Message horizontal padding |
 | `--wippy-host-message-padding-y` | `0.5rem` | Message vertical padding |
 | `--wippy-host-message-user-bg` | `var(--p-primary-50)` | User message background |
-| `--wippy-host-message-agent-bg` | `var(--p-warn-50)` (light) / `var(--p-surface-800)` (dark) | Agent message background |
+| `--wippy-host-message-agent-bg` | `var(--p-yellow-50)` (light) / `var(--p-surface-800)` (dark) | Agent message background — note `--p-yellow-50` is undefined in `theme-config.css`, so set this var (e.g. to `var(--p-warn-50)`) for a valid light background |
 | `--wippy-host-tool-bg` | `var(--p-help-50)` | Tool call background |
 | `--wippy-host-tool-border` | `var(--p-help-300)` | Tool call left border |
 | `--wippy-host-avatar-size` | `2rem` | Message avatar diameter |

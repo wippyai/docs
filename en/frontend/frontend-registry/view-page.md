@@ -19,7 +19,7 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 
 ### Proxy Configuration
 
-Proxy injection has two surfaces. The FE developer authors the defaults in the `package.json` `wippy` block using **camelCase** keys (`themeConfig`, `primevue`, `customCss`); the vite plugin bakes them into `wippy-meta.json`. The operator can override them per-deployment with a **snake_case** `proxy:` block in the registry entry YAML (`theme_config`, `prime_vue`, `custom_css`) — the host normalizes between the two casings, and YAML wins. See [Operator proxy override](#operator-proxy-override-_indexyaml) below for the YAML form.
+Proxy injection has two surfaces. The FE developer authors the defaults in the `package.json` `wippy` block using **camelCase** keys (`themeConfig`, `primevue`, `customCss`); the vite plugin bakes them into `wippy-meta.json`. The operator can override them per-deployment with a `proxy:` block under `meta:` in the registry entry YAML, using the **same camelCase shape** — it is deep-merged over the baked defaults and the YAML value wins per nested key. See [Operator proxy override](#operator-proxy-override-_indexyaml) below for the YAML form.
 
 ```json
 {
@@ -29,7 +29,6 @@ Proxy injection has two surfaces. The FE developer authors the defaults in the `
       "enabled": true,
       "injections": {
         "css": {
-          "fonts": true,
           "themeConfig": true,
           "iframe": true,
           "primevue": true,
@@ -56,7 +55,6 @@ If `proxy.injections` is omitted, the iframe proxy uses permissive runtime defau
 
 These are the flags a micro frontend app typically declares and the value to set for a typical Vite SPA. They are not the runtime defaults.
 
-- `css.fonts` (`true`) — platform web font declarations
 - `css.themeConfig` (`true`) — CSS custom properties for the active theme
 - `css.iframe` (`true`) — iframe layout reset styles
 - `css.primevue` (`true`) — PrimeVue component base styles
@@ -70,6 +68,8 @@ These are the flags a micro frontend app typically declares and the value to set
 - `errorCapture` (`true`) — forward uncaught iframe errors to the host
 
 Most full SPA pages set `resizeObserver: false` and `preventLinkClicks: false` because they manage their own layout and routing. The `main` app in the template sets `errorCapture: true` to surface uncaught errors during development.
+
+There is no dedicated web-font injection flag. Google Fonts are delivered through `theming.global.customCSS` (an `@import` in the theme's custom CSS), injected by the existing `css.customCss` flag.
 
 Full flag reference and runtime defaults: [CSS Injection](../web-host/css-injection.md).
 
@@ -107,13 +107,13 @@ Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is au
 |---|---|---|---|
 | `mountRoute` | string | — | Claims a URL path in the host router; the host renders this page when the browser navigates to a matching path |
 
-`mountRoute` accepts only the v1 catch-all form — `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or a different param name (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict and `GET /api/v2/views/pages/routes` returns HTTP 500, rendered as a fatal fullscreen error. The `:part(.*)*` wildcard lets the child application manage its own sub-routes while the host keeps ownership of the top-level path.
+`mountRoute` accepts only the v1 catch-all form — `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or a different param name (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict and `GET /api/public/pages/routes` returns HTTP 500, rendered as a fatal fullscreen error. The `:part(.*)*` wildcard lets the child application manage its own sub-routes while the host keeps ownership of the top-level path.
 
 ```yaml
 mountRoute: /home/:part(.*)*
 ```
 
-When the Web Host starts, it fetches `GET /api/v2/views/pages/routes` and calls `router.addRoute()` for each entry that has a `mountRoute`. See [Dynamic Routing](./dynamic-routing.md) for the full sync mechanism.
+When the Web Host starts, it fetches `GET /api/public/pages/routes` and calls `router.addRoute()` for each entry that has a `mountRoute`. See [Dynamic Routing](./dynamic-routing.md) for the full sync mechanism.
 
 ### Per-Page Configuration Overrides
 
@@ -155,7 +155,7 @@ Note that `announced: false` is valid for `view.page` entries — the page is re
 
 ### Operator proxy override (_index.yaml)
 
-The proxy injection defaults baked into `wippy-meta.json` (from `package.json`, camelCase) can be overridden per-deployment with a `proxy:` block placed as a **sibling of `meta`** in the registry entry. The YAML form uses **snake_case** keys; the host normalizes them against the camelCase package.json form, and the YAML value wins per flag.
+The proxy injection defaults baked into `wippy-meta.json` (from the `package.json` `wippy` block) can be overridden per-deployment with a `proxy:` block placed **under `meta:`** in the registry entry. The YAML uses the **same camelCase shape and `injections` wrapper** as the `package.json` block above (`enabled`, `injections.css.{themeConfig,…}`, `injections.{tailwindConfig,…}`). The host deep-merges this block over the bundled `wippy.proxy`; the YAML value wins per nested key. There is no snake_case form and no casing normalization — the YAML payload must be camelCase.
 
 ```yaml
 - name: dashboard
@@ -166,17 +166,17 @@ The proxy injection defaults baked into `wippy-meta.json` (from `package.json`, 
     url: /app
     base_path: app/dashboard
     entry_point: app.html
-  proxy:
-    enabled: true
-    css:
-      fonts: true
-      theme_config: true
-      iframe: true
-      prime_vue: true
-      custom_css: true
-      custom_variables: true
-    tailwind_config: false
-    iconify_icons: false
+    proxy:
+      enabled: true
+      injections:
+        css:
+          themeConfig: true
+          iframe: true
+          primevue: true
+          customCss: true
+          customVariables: true
+        tailwindConfig: false
+        iconifyIcons: false
 ```
 
-Casing map: `theme_config` ↔ `themeConfig`, `prime_vue` ↔ `primevue`, `custom_css` ↔ `customCss`, `custom_variables` ↔ `customVariables`, `tailwind_config` ↔ `tailwindConfig`, `iconify_icons` ↔ `iconifyIcons`. Full flag reference and runtime defaults: [CSS Injection](../web-host/css-injection.md).
+Only the keys you set are overridden; everything else keeps the value baked into `wippy-meta.json`. Full flag reference and runtime defaults: [CSS Injection](../web-host/css-injection.md).

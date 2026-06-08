@@ -54,7 +54,7 @@ PrimeVue is installed on the Vue app. CSS custom properties from `AppConfig.them
 The root `App.vue` component is mounted into the DOM. Users see the chrome — sidebar, chat panel, layout skeleton — at this point, though page content may still be loading.
 
 **6. Dynamic route registration.**
-The app calls `GET /api/v2/views/pages/routes` to fetch the list of registered view pages. For each page that declares a `mountRoute`, `router.addRoute('app', ...)` is called to add the route to the live router. The `app` named route is the parent layout route that wraps all content.
+The app calls `GET /api/public/pages/routes` to fetch the list of registered view pages. For each page that declares a `mountRoute`, `router.addRoute('app', ...)` is called to add the route to the live router. The `app` named route is the parent layout route that wraps all content.
 
 Any conflict in mount routes (duplicate paths, reserved segments, malformed syntax) at this stage sets a fatal error on the pages store. `App.vue` detects this and renders a fullscreen `<wippy-error>` with a descriptive message instead of the normal UI.
 
@@ -163,7 +163,7 @@ module.js / managed-layout.js loaded on the page
   ├─ Install PrimeVue, inject theme CSS
   ├─ Mount App.vue
   │
-  ├─ GET /api/v2/views/pages/routes
+  ├─ GET /api/public/pages/routes
   │     router.addRoute('app', ...) for each mountRoute
   │
   ├─ Resolve current URL → render matching view

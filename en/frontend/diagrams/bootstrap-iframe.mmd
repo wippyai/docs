@@ -11,7 +11,7 @@ sequenceDiagram
     Host->>Router: createRouter(history mode from hostConfig)
     Host->>Theme: inject theme-config.css, primevue.css
     Host->>App: app.mount('#app')
-    App->>BE: GET /api/v2/views/pages/routes
+    App->>BE: GET /api/public/pages/routes
     BE->>App: mount routes list
     App->>Router: router.addRoute() for each mount route
     App->>App: resolve current URL → render page

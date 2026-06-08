@@ -25,13 +25,13 @@ Opt in to `fe_mode = managed` (early access) only when you need to compose the c
 
 | Component | Minimum version |
 |-----------|----------------|
-| Wippy Web Host | `1.0.38` |
-| wippy-framework facade | `1.0.38` |
-| `@wippy-fe/proxy` | `0.0.38` |
-| `@wippy-fe/webcomponent-core` / `@wippy-fe/webcomponent-vue` | `0.0.38` |
-| `@wippy-fe/layout` / `@wippy-fe/vue-host` | `0.0.38` |
+| Wippy Web Host | `1.0.36` |
+| wippy-framework facade | `1.0.36` |
+| `@wippy-fe/proxy` | `0.0.36` |
+| `@wippy-fe/webcomponent-core` / `@wippy-fe/webcomponent-vue` | `0.0.36` |
+| `@wippy-fe/layout` / `@wippy-fe/vue-host` | `0.0.36` |
 
-Pin to an exact CDN tag — at least `https://web-host.wippy.ai/webcomponents-1.0.38` — until the Draft 1 label is removed.
+Pin to an exact CDN tag — at least `https://web-host.wippy.ai/webcomponents-1.0.36` — until the Draft 1 label is removed.
 
 ## Enabling Managed Layout
 
@@ -331,7 +331,7 @@ this.host?.layout.on('open-chat', ({ payload }) => {
 
 // In the right-panel app (a normal Vue page module)
 const router = createAppRouter([...])
-host.on('@history', ({ path }) => {
+on('@history', ({ path }) => {
   router.push(path).catch(() => {})
 })
 ```
@@ -348,8 +348,8 @@ As of Draft 1, the following are not yet implemented:
 - **Grid-tile container** — tracked for a follow-up.
 - **Runtime mutation persistence** — mutations are not persisted across reloads. Persist manually if needed:
   ```typescript
-  host.on('@layout-change', () =>
-    host.state.set('layout', host.layout.snapshot)
+  on('@layout-change', () =>
+    state.set('layout', host.layout.snapshot)
   )
   ```
 - **`nav-sidebar` header slot extension points** — logo, app-name, and toggle button positions are fixed in this draft.

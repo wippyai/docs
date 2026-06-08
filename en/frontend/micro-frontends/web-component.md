@@ -179,7 +179,7 @@ define(import.meta.url, MyWidgetElement)
 | Field | Type | Description |
 |---|---|---|
 | `propsSchema` | `WippyPropsSchema` | The `wippy.props` JSON Schema object from `package.json`. Drives attribute parsing. |
-| `hostCssKeys` | `readonly string[]` | CSS URLs to request from the host and inject into the shadow root. See the [hostCssKeys reference](#hostcssCsskeys-reference) below. |
+| `hostCssKeys` | `readonly string[]` | CSS URLs to request from the host and inject into the shadow root. See the [hostCssKeys reference](#hostcsskeys-reference) below. |
 | `inlineCss` | `string` | Component's own compiled CSS, loaded via `?inline` Vite import. Injected into the shadow root as a `<style>` element. |
 | `contentTemplate` | `string` (optional) | MIME type to match for `<template data-type="...">` child content extraction. See [Content pattern](#content-slot-pattern). |
 
@@ -220,9 +220,11 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, 'src/index.ts'),
       },
-      // preserveEntrySignatures is intentionally absent (defaults to false in
-      // lib mode) — see explanation above. Do not set it to 'exports' or
-      // 'strict' or define() will silently fail.
+      // Set preserveEntrySignatures: false explicitly — see explanation above.
+      // Do not rely on the lib-mode default: Rollup's own default is 'strict',
+      // and Vite's lib-mode handling has varied across versions, so omitting
+      // this line can still emit a facade and make define() silently fail.
+      preserveEntrySignatures: false,
       external: [
         'vue',
         'pinia',

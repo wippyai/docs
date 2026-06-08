@@ -82,7 +82,6 @@ Use kebab-case for all file names (`recent-sessions.vue`, `user-profile.vue`).
       "enabled": true,
       "injections": {
         "css": {
-          "fonts": true,
           "themeConfig": true,
           "iframe": true,
           "primevue": true,
@@ -135,7 +134,6 @@ The iframe proxy enables most injections when a package omits explicit settings.
 
 | Key | Effect | Recommended explicit value |
 |---|---|---|
-| `css.fonts` | Injects host font definitions | `true` |
 | `css.themeConfig` | Injects CSS custom properties (`--p-primary-*`, `--p-surface-*`, etc.) | `true` |
 | `css.iframe` | Scrollbar and iframe layout styles | `true` |
 | `css.primevue` | PrimeVue component styles (unstyled mode) | `true` |

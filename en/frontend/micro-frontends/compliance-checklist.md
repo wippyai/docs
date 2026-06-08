@@ -174,17 +174,17 @@ A registry.entry is what the host actually reads at navigation/render time. The 
     base_path: app/main
     entry_point: app.html
     mountRoute: /home/:part(.*)*
-  proxy:
-    enabled: true
-    css:
-      fonts: true
-      theme_config: true
-      iframe: true
-      prime_vue: true
-      custom_css: true
-      custom_variables: true
-    tailwind_config: true
-    iconify_icons: true
+    proxy:
+      enabled: true
+      injections:
+        css:
+          themeConfig: true
+          iframe: true
+          primevue: true
+          customCss: true
+          customVariables: true
+        tailwindConfig: true
+        iconifyIcons: true
 ```
 
 **Field-by-field** (`gold:src/app/views/_index.yaml`, `kb:view-page-fields`):
@@ -205,7 +205,7 @@ A registry.entry is what the host actually reads at navigation/render time. The 
 | `meta.order` | MAY | Sort position in nav (when announced). |
 | `meta.group` / `meta.group_icon` / `meta.group_order` | MAY | Nav grouping. |
 | `meta.config_overrides` | MAY | **Per-page + sub-tree override.** The MAIN way to theme the whole app is the host's facade module — the facade owns `cssVariables` / `customCSS` / `host_custom_css` / `css_variables` for the app shell. Reach for `config_overrides` when you want a page — **and everything it embeds** — to look or behave differently from the rest of the app: the override is merged into that page's `theming.global` and propagates to all its nested children. Typical use: a module that ships pages carrying their own theme (e.g. an admin UI) that cascades to their whole sub-tree. |
-| `proxy` (sibling of `meta`, NOT inside meta) | SHOULD | Per-entry proxy injection config. Snake_case keys: `theme_config`, `prime_vue`, `custom_css`, `custom_variables`, `tailwind_config`, `iconify_icons`. |
+| `meta.proxy` | SHOULD | Per-entry proxy injection config, nested under `meta`. camelCase under an `injections` wrapper — same shape as the package.json `wippy.proxy` block: `injections.css.{themeConfig, primevue, customCss, customVariables}`, `injections.tailwindConfig`, `injections.iconifyIcons`. Deep-merged over the bundled `wippy.proxy`; YAML wins per nested key. |
 
 **VERIFY** at runtime that the host registry recognizes your entry:
 ```bash
@@ -249,7 +249,7 @@ curl -fsS http://<host>/api/public/pages/list | jq '.pages[] | select(.id=="<nam
 | `meta.tag_name` | MUST | Custom-element tag. **Must contain a hyphen** (Custom Elements spec). |
 | `meta.entry_point` | MUST | URL relative to bundle root pointing at the entry **JS** file (e.g. `index.js`). |
 | `meta.url` | MUST | URL prefix where the bundle is served. Same semantics as for `view.page`. |
-| `meta.base_path` | N/A | Page-only serving field. Current WC entries are served as `meta.url + meta.entry_point`. |
+| `meta.base_path` | MAY | Supported for components too; composes the same way (`<url>/<base_path>/<entry_point>`). Current app-template WC entries omit it, so they are served as `meta.url + meta.entry_point`. |
 | `meta.announced` | MUST per `kb:view-component-fields` | Default `false` (falls back to `meta.public`). MUST be `true` for the component to appear in `/api/public/components/list`. |
 | `meta.secure` | MUST per kb | Default `false`. |
 | `meta.auto_register` | MUST per kb | Default `false`. MUST be `true` for the host to autoload it; leave/set `false` for lazy-loaded WCs. |
@@ -284,25 +284,26 @@ interface AppConfigOverrides {
 - **`cssVariables` / `customCSS` (REPLACE)** → the page's theme replaces the inherited one and then **propagates to everything the page embeds** (it is merged into the page's `theming.global`, which all nested children inherit). Use it to theme a **sub-tree**, not just one iframe: a module shipping pages with their own palette (e.g. an admin UI whose theme cascades to its artifacts/sub-apps), demo pages with divergent themes, artifact viewers with a fixed brand, debug pages on alternate API routes.
 - **`icons` / `iconSets` (MERGE)** → additive, NON-isolating. Adding icons via `config_overrides.customization.icons` augments the child-projected icon set without isolating the iframe. At runtime the page reads the result from `config.theming.global.icons` / `iconSets`.
 
-### 2.4 The `proxy:` entry-level block (page only)
+### 2.4 The `meta.proxy:` entry-level block (page only)
 
-For `view.page` entries, the **registry-entry's `proxy:` sibling** of `meta` (NOT inside meta) configures host-side proxy injection per page. Keys are snake_case.
+For `view.page` entries, the **registry-entry's `proxy:` block nested under `meta:`** configures host-side proxy injection per page. It is camelCase and uses the `injections` wrapper — the **same shape as the package.json `wippy.proxy` block**. The host reads `entry.meta.proxy` and deep-merges it over the bundled `wippy.proxy`; the YAML wins per nested key.
 
 ```yaml
-proxy:
-  enabled: true
-  css:
-    fonts: true
-    theme_config: true
-    iframe: true
-    prime_vue: true
-    custom_css: true
-    custom_variables: true
-  tailwind_config: true
-  iconify_icons: true
+meta:
+  type: view.page
+  # ...
+  proxy:
+    enabled: true
+    injections:
+      css:
+        themeConfig: true
+        iframe: true
+        primevue: true
+        customCss: true
+        customVariables: true
+      tailwindConfig: true
+      iconifyIcons: true
 ```
-
-YAML uses snake_case (`theme_config`, `prime_vue`); package.json uses camelCase (`themeConfig`, `primevue`). The host normalizes between them.
 
 All injection flags are technically MAY — the host has sane defaults — but micro frontend apps SHOULD declare them explicitly to avoid invisible drift.
 
@@ -332,7 +333,6 @@ Reference: `gold:main/package.json`.
       "enabled": true,
       "injections": {
         "css": {
-          "fonts": true,
           "themeConfig": true,
           "iframe": true,
           "primevue": true,
@@ -420,7 +420,6 @@ All flags are technically MAY (host has defaults). The **recommended set for a t
 | Flag | Recommended | When to set otherwise |
 |---|---|---|
 | `proxy.enabled` | `true` | `false` for pages with no proxy needs (rare) |
-| `injections.css.fonts` | `true` | `false` if you ship your own fonts |
 | `injections.css.themeConfig` | `true` | `false` only if you don't use Wippy theming |
 | `injections.css.iframe` | `true` | `false` only outside iframe context |
 | `injections.css.primevue` | `true` | `false` if you don't use PrimeVue |
@@ -1028,7 +1027,7 @@ class MermaidElement extends WippyVueElement<ComponentProps, Events> {
       propsSchema: pkg.wippy.props as WippyPropsSchema,
       hostCssKeys: ['themeConfigUrl'] as const,
       inlineCss: stylesText,
-      contentTemplate: 'text/vnd.mermaid',  // optional; for WCs that consume <text> children
+      contentTemplate: 'text/vnd.mermaid',  // optional; reads text from a child <template data-type="text/vnd.mermaid"> element
     }
   }
 
@@ -1052,7 +1051,7 @@ Rules:
   - `propsSchema: pkg.wippy.props as WippyPropsSchema` — single source of truth from package.json.
   - `hostCssKeys: [...]` — which host-provided CSS bundles to inject into the shadow root. Use the const names from `@wippy-fe/webcomponent-core`: `themeConfigUrl` (theme tokens), `iframeCssUrl` (layout), `primeVueCssUrl` (PrimeVue components), `markdownCssUrl` (markdown). Pick the minimal set you need. (`preflightCssUrl` is **not** a member of the `HostCssKey` union — Tailwind v3 preflight is reachable only imperatively via `loadCss(hostCss.preflightCssUrl)`.)
   - `inlineCss: stylesText` — your WC-specific CSS imported via `?inline`.
-  - `contentTemplate?: 'text/vnd.foo'` — optional MIME type for WCs that consume `<text>` children (rare).
+  - `contentTemplate?: 'text/vnd.foo'` — optional MIME type; when set, the WC reads text from a child `<template data-type="<mime>">` element, e.g. `<example-mermaid><template data-type="text/vnd.mermaid">graph TD; A --> B</template></example-mermaid>` (rare).
 - MUST implement `static get vueConfig()` returning `{ rootComponent }`. Add `plugins: [PrimeVuePlugin, ...]` if you use PrimeVue components.
 - MUST export async `webComponent()` factory function so the host loader can call it.
 - MUST `define(import.meta.url, ElementClass)` at module level.
@@ -1349,7 +1348,7 @@ import { host, api, on } from '@wippy-fe/proxy'
 | `host.handleError` | report error |
 | `host.formatUrl` | prepend `routePrefix` |
 | `host.classifyLink` | classify nav target |
-| `host.layout` | managed-layout API (null outside managed mode) |
+| `host.layout` | managed-layout API (always present; `host.layout.snapshot` is null outside managed mode) |
 | `host.logout` | sign out |
 
 Rules:
@@ -1380,7 +1379,7 @@ Custom topics use colon-separated parts; `*` is wildcard.
 
 ### 6.4 Layout API
 
-`host.layout` returns `null` outside managed-layout host. Always null-check before use.
+`host.layout` is always present (a `LayoutApi` object). Outside managed-layout mode, `host.layout.snapshot` is `null` and all mutation/bus calls are silent no-ops — gate on `host.layout.snapshot` (or `isManaged` from `useWippyLayout`) before mutating, not a null-check on `host.layout`.
 
 ---
 
@@ -2044,7 +2043,7 @@ interface HostApi {
   handleError(code: 'auth-expired' | 'other', error: Record<string, unknown>): void
   formatUrl(relativeUrl: string): string
   classifyLink(href: string | null | undefined): LinkClassification
-  layout: LayoutApi | null
+  layout: LayoutApi
   logout(): void
 }
 ```
@@ -2075,7 +2074,7 @@ interface LayoutApi {
 }
 ```
 
-`host.layout` returns `null` outside managed-layout host. Always null-check before use.
+`host.layout` is always present (a `LayoutApi` object). Outside managed-layout mode, `host.layout.snapshot` is `null` and all mutation/bus calls are silent no-ops — gate on `host.layout.snapshot` (or `isManaged` from `useWippyLayout`) before mutating, not a null-check on `host.layout`.
 
 ---
 
@@ -2086,7 +2085,6 @@ interface ProxyConfig {
   enabled: boolean
   injections: {
     css: {
-      fonts: boolean             // host fonts
       themeConfig: boolean       // semantic CSS vars
       iframe: boolean            // iframe layout/containment
       primevue: boolean          // PrimeVue component CSS
@@ -2105,19 +2103,22 @@ interface ProxyConfig {
 }
 ```
 
-YAML registry-entry `proxy:` block uses snake_case for the same flags:
+The YAML registry-entry `meta.proxy:` block uses the same camelCase flags under an `injections` wrapper (deep-merged over the bundled `wippy.proxy`):
 ```yaml
-proxy:
-  enabled: true
-  css:
-    fonts: true
-    theme_config: true
-    iframe: true
-    prime_vue: true
-    custom_css: true
-    custom_variables: true
-  tailwind_config: true
-  iconify_icons: true
+meta:
+  type: view.page
+  # ...
+  proxy:
+    enabled: true
+    injections:
+      css:
+        themeConfig: true
+        iframe: true
+        primevue: true
+        customCss: true
+        customVariables: true
+      tailwindConfig: true
+      iconifyIcons: true
 ```
 
 CSS injections are applied in this order: `themeConfig → iframe → primevue → markdown → customVariables → customCss`. A MutationObserver pins the customCss `<style>` tag to the end of `<head>` to preserve precedence.

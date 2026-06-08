@@ -89,13 +89,15 @@ Your micro frontend app must call `host.onRouteChanged` in every `router.afterEa
 
 **Check:**
 ```typescript
+import { host, on } from '@wippy-fe/proxy'
+
 // Must exist in app.ts / router setup
 router.afterEach((to) => {
   host.onRouteChanged(to.fullPath)  // notifies host of new child route
 })
 
 // Must exist to receive host-initiated navigation
-instance.on('@history', ({ path }) => {
+on('@history', ({ path }) => {
   router.push(path)
 })
 ```

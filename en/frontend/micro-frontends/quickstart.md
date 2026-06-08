@@ -40,12 +40,7 @@ import { routes } from './router'
 
 export function createMainApp() {
   const app = createApp(App)
-  const router = createAppRouter({ routes })
-
-  // MANDATORY: tell the host when the app's route changes…
-  router.afterEach(to => host.onRouteChanged(to.fullPath))
-  // …and follow host-driven navigation back into the app.
-  on('@history', ({ path }) => router.replace(path))
+  const router = createAppRouter(routes)
 
   app.use(router)
   app.mount('#app')
@@ -122,6 +117,10 @@ class ReactionBarElement extends WippyVueElement {
   }
 }
 
+export async function webComponent() {
+  return ReactionBarElement
+}
+
 define(import.meta.url, ReactionBarElement)
 ```
 
@@ -187,7 +186,7 @@ The [`app`](https://github.com/wippyai/app) repo ships several runnable web comp
 | `chart-circle` | Bundling a third-party library (Chart.js) in the Shadow DOM |
 | `mermaid` | Children content (`<template data-type="…">`) + a lazy fallback bundle |
 | `markdown` | `markdown-it` + `sanitize-html` |
-| `websocket-log` | Live data via `instance.on(...)` topic subscriptions |
+| `websocket-log` | Live data via `on(...)` topic subscriptions |
 | `model-gallery` | Authenticated API calls through the proxy + PrimeVue in Shadow DOM |
 
 For theming either artifact, read [Theming](./theming.md) → [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) / [Theming: Web Components](./web-component-theming.md). To run locally without the full host, see [Host-less Mode](./host-less-mode.md).

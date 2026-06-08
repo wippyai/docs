@@ -212,14 +212,19 @@ Stores opt in by declaring `wippyPersist: true` in their `defineStore` options (
 
 ### `@wippy-fe/vue-utils`
 
-Small utilities for Vue 3 apps running inside Wippy iframes. Currently exports `installVueWarnSuppressor()`, which silences known non-fatal Vue 3 warnings produced when `<w-artifact>` components unmount nested iframes. Call it once at app boot:
+Small utilities for Vue 3 apps running inside Wippy iframes. Currently exports `installVueWarnSuppressor(app)`, which takes your Vue app and suppresses `[Vue warn]: Failed to resolve component` warnings for kebab-named custom-element tags registered via `customElements.define(...)` (system tags `w-iframe` / `w-artifact` / `wippy-loading` / `wippy-error`, plus autoload tags). Call it once at app boot, passing the app instance:
 
 ```typescript
 import { installVueWarnSuppressor } from '@wippy-fe/vue-utils'
-installVueWarnSuppressor()
+import { createApp } from 'vue'
+import App from './App.vue'
+
+const app = createApp(App)
+installVueWarnSuppressor(app)
+app.mount('#app')
 ```
 
-Without it you may see `[Vue warn]: Component is already mounted` noise in the console when navigating between pages that contain artifact panels. The `@wippy-fe/proxy` package re-exports this for convenience.
+Without it you may see `[Vue warn]: Failed to resolve component` noise in the console for custom-element tags Vue's template compiler does not recognize (the elements render correctly regardless). PascalCase component typos still warn, preserving that signal. Available from `@wippy-fe/proxy` 0.0.33; the `@wippy-fe/proxy` package re-exports this for convenience.
 
 ### `@wippy-fe/vite-plugin`
 

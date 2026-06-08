@@ -69,7 +69,6 @@ In your `package.json` `wippy` block, configure which injections your micro fron
         "primevue":         true,   // PrimeVue component CSS (~455 KB)
         "markdown":         false,  // .data-body markdown styles
         "iframe":           true,   // Scrollbar styling
-        "fonts":            false,  // Host font <link> tags
         "customCss":        true,   // Child-projected theming.global.customCSS
         "customVariables":  true    // Child-projected theming.global.cssVariables
       },
@@ -85,7 +84,6 @@ The iframe proxy has broad runtime defaults when flags are omitted. **Enable the
 - `css.primevue` — PrimeVue component styles. Enable for apps using PrimeVue.
 - `css.customCss` — child-projected `config.theming.global.customCSS`. Enable to receive facade/per-page custom CSS.
 - `css.customVariables` — child-projected `config.theming.global.cssVariables` as `:root { … }`. Enable to receive theme variable overrides.
-- `css.fonts` — facade-configured font `<link>` tags. Enable if you rely on host fonts.
 - `css.markdown` — `.data-body` markdown styles. Enable only if your page renders markdown content.
 
 Full flag reference and runtime defaults: [CSS Injection](../web-host/css-injection.md).

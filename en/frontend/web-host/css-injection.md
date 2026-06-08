@@ -24,7 +24,21 @@ Each child iframe gets an independent copy of all styles, not inheritance throug
 
 ## `ProxyConfig.injections.css` Flags
 
-These flags are set in the `wippy.proxy.injections.css` block of your app's `package.json` (camelCase). They control which style layers are injected into the child iframe. An operator can override any of them per-deployment with a snake_case `proxy:` block in the registry entry YAML (`theme_config`, `prime_vue`, …); the host normalizes the two casings and YAML wins. See [Micro Frontend Apps (view.page) § Operator proxy override](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
+These flags are set in the `wippy.proxy.injections.css` block of your app's `package.json` (camelCase). They control which style layers are injected into the child iframe. An operator can override any of them per-deployment with a camelCase `proxy:` block nested under `meta:` in the registry entry — the same shape as the `package.json` `wippy.proxy` block (including the `injections` wrapper). The override is deep-merged over the bundled `wippy.proxy`, and YAML wins per nested key. See [Micro Frontend Apps (view.page) § Operator proxy override](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
+
+```yaml
+meta:
+  type: view.page
+  # ...
+  proxy:
+    enabled: true
+    injections:
+      css:
+        themeConfig: true
+        primevue: true
+        customCss: true
+      tailwindConfig: false
+```
 
 ```json
 {
@@ -32,7 +46,6 @@ These flags are set in the `wippy.proxy.injections.css` block of your app's `pac
     "proxy": {
       "injections": {
         "css": {
-          "fonts": true,
           "themeConfig": true,
           "iframe": true,
           "primevue": true,
@@ -40,13 +53,13 @@ These flags are set in the `wippy.proxy.injections.css` block of your app's `pac
           "customCss": true,
           "customVariables": true
         },
-        "tailwindConfig": false,
-        "resizeObserver": false,
-        "preventLinkClicks": false,
-        "iconifyIcons": false,
-        "refreshWhenVisible": false,
-        "historyPolyfill": false,
-        "errorCapture": false
+        "tailwindConfig": true,
+        "resizeObserver": true,
+        "preventLinkClicks": true,
+        "iconifyIcons": true,
+        "refreshWhenVisible": true,
+        "historyPolyfill": true,
+        "errorCapture": true
       }
     }
   }
@@ -57,13 +70,14 @@ These flags are set in the `wippy.proxy.injections.css` block of your app's `pac
 
 | Flag | Default | What it injects |
 |------|---------|-----------------|
-| `fonts` | `true` | Host Google Fonts `<link>` tag. Omit if your app bundles its own fonts. |
 | `themeConfig` | `true` | `theme-config.css` — all `--p-primary-*`, `--p-surface-*`, `--p-secondary-*`, and PrimeVue semantic variables. Disabling this removes theme inheritance entirely. |
 | `iframe` | `true` | `iframe.css` — scrollbar styling that uses `--p-surface-*` variables. |
 | `primevue` | `true` | `primevue.css` + `tailwind.css` — PrimeVue component styles and Tailwind v3 utilities (~455 KB combined). Disable if your app uses a different UI framework and does not need PrimeVue. |
 | `markdown` | `true` | `markdown.css` — `.data-body` markdown rendering styles used by chat artifact display. |
 | `customCss` | `true` | The `customCSS` string from the child-projected `AppConfig.theming.global`. |
 | `customVariables` | `true` | The `cssVariables` map from the child-projected `AppConfig.theming.global`, injected as `:root { --key: value; }`. |
+
+There is no dedicated fonts flag. Google Fonts are delivered through `theming.global.customCSS` (an `@import` rule), which the iframe injects via the existing `customCss` flag.
 
 ### Non-CSS injection flags
 
@@ -76,7 +90,7 @@ These flags sit alongside `css` in the `injections` block:
 | `preventLinkClicks` | `true` | Intercept all `<a>` clicks inside the iframe and classify them through `host.classifyLink()` before navigating. Useful for pages with external Markdown content that may contain host-navigable links. |
 | `iconifyIcons` | `true` | Inject registered Iconify icon sets so `<iconify-icon>` elements work offline. |
 | `refreshWhenVisible` | `true` | Notify the child when a previously hidden iframe becomes visible again. |
-| `historyPolyfill` | `true` | Patch history navigation in the child iframe so SPA route changes are observable by the host. |
+| `historyPolyfill` | `true` | **No-op today.** The history polyfill is intentionally disabled for `srcdoc` iframes (`window.location` is non-configurable), so this flag has no runtime effect. The runtime always installs a history *guard* instead, which stubs `window.history` methods and warns to use memory-history routing — apps must use memory mode (e.g. `createAppRouter` memory history). Setting this flag does **not** make SPA route changes observable by the host. |
 | `errorCapture` | `true` | Attach `window.onerror` and `window.onunhandledrejection` handlers that forward uncaught errors to the host via `logger.captureException`. Enable in production for centralized error collection. |
 
 If a page omits `wippy.proxy.injections`, the iframe proxy has permissive runtime defaults and enables most injections. Vite micro frontend apps should still declare the explicit values they rely on so a package review can see whether the app expects host CSS, link interception, body-size reporting, or error capture.
@@ -122,6 +136,9 @@ Available `hostCss` keys:
 | `hostCss.primeVueCssUrl` | PrimeVue components + Tailwind utilities | Large (~455 KB) |
 | `hostCss.markdownCssUrl` | `.data-body` markdown rendering styles | Small |
 | `hostCss.iframeCssUrl` | Scrollbar styling using `--p-surface-*` | Tiny |
+| `hostCss.preflightCssUrl` | Tailwind/PrimeVue preflight base reset (normalize/reset) | Small |
+
+A web component that wants host-faithful rendering may need to fetch `hostCss.preflightCssUrl` explicitly via `loadCss()`, because the host's base preflight reset does **not** cross the shadow boundary.
 
 For guidance on which keys to request and when — including the decision tree for balancing style fidelity against Shadow DOM bundle size — see [WC Theming § hostCssKeys decision tree](../micro-frontends/web-component-theming.md).
 

@@ -192,7 +192,7 @@ export { webComponent } from './index-abc123.js'
 
 The autoload system that registers web components appends a `?declare-tag=<tag>` query parameter to the module URL when importing it. This query ends up on `index.js`, not on the sub-chunk URL. When the component calls `define(import.meta.url, ...)`, it reads `import.meta.url` — which is the sub-chunk URL without the query — and the tag registration is silently skipped.
 
-> **Note:** The `?declare-tag=<tag>` query — attached to the **component module URL** so `define()` can read the tag — is a different mechanism from the `?auto_register=true` query that appears on the `/api/public/components/list` endpoint (see [Debugging](debugging.md)). Don't conflate the two: one carries the tag to the module, the other gates whether the registry endpoint includes auto-registered components.
+> **Note:** The `?declare-tag=<tag>` query — attached to the **component module URL** so `define()` can read the tag — is a different mechanism from the `?auto_register=true` query that appears on the `/api/public/components/list` endpoint (see [Debugging](./debugging.md)). Don't conflate the two: one carries the tag to the module, the other gates whether the registry endpoint includes auto-registered components.
 
 The fix is to set `preserveEntrySignatures: false` **explicitly** under `build.rollupOptions`. Do not rely on the default: Rollup's own default is `'strict'`, and Vite's lib-mode handling of this option has varied across versions, so a developer who omits the line can still hit the facade bug.
 

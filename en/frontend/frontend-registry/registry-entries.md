@@ -59,7 +59,7 @@ The presence of `specification` does not change runtime behavior, but `wippy/vie
 
 `@wippy-fe/vite-plugin` emits a `wippy-meta.json` file alongside the built bundle. This file is the canonical source of truth for the artifact's runtime metadata: its props schema, events schema, title, icon, and proxy injection settings.
 
-When `wippy/views` loads a `registry.entry`, it reads `wippy-meta.json` from the artifact's served bundle root. For pages, that root is the page `url + base_path`; for web components, the current entries serve the component directly from `url`. YAML always wins: `_index.yaml` takes precedence for every field it declares. `wippy-meta.json` provides the defaults that `wippy/views` reads when no YAML override is present for a given field. Deployment-policy fields — `announced`, `secure`, `url`, `mountRoute`, and page-only `base_path` — must be set in `_index.yaml` because they express operator decisions rather than component authorship; there is no `package.json`/`wippy-meta.json` authoring surface for them.
+When `wippy/views` loads a `registry.entry`, it reads `wippy-meta.json` from the artifact's served bundle root. For pages, that root is the page `url + base_path`; for web components, the current entries serve the component directly from `url`. YAML always wins: `_index.yaml` takes precedence for every field it declares. `wippy-meta.json` provides the defaults that `wippy/views` reads when no YAML override is present for a given field. Deployment-policy fields — `announced`, `secure`, `url`, `mountRoute`, and `base_path` — must be set in `_index.yaml` because they express operator decisions rather than component authorship; there is no `package.json`/`wippy-meta.json` authoring surface for them. (`base_path` is honored for both pages and components; the current app-template component entries simply omit it.)
 
 By contrast, `entry_point` is FE-authored *and* YAML-overridable. It is baked into `wippy-meta.json` from the package's `wippy` block — `wippy.path` for pages (which `@wippy-fe/vite-plugin` **requires**; omitting it makes the plugin throw `wippy.path is required for a page package`) or `wippy.tagName`/`browser` for components. The `meta.entry_point` field in `_index.yaml` is an optional per-deployment override on top of that authored default; it is not a YAML-only field.
 
@@ -115,10 +115,10 @@ and `index.html` references `../shared/vendor.js`, then `base_path` must point t
 
 In the common case where all assets sit alongside the entry file, `base_path` and the directory containing `entry_point` are the same level, so the distinction is invisible. It only matters when a bundle shares resources across sibling directories.
 
-For web components, the host serves the entry module from:
+For web components, the host composes the served URL the same way:
 
 ```
-<url>/<entry_point>
+<url>/<base_path>/<entry_point>
 ```
 
-Component entries in the current app-template source use `url` plus `entry_point`; they do not require page-style `base_path` composition.
+The current app-template component entries omit `base_path`, but it is supported and composes the same way (`<url>/<base_path>/<entry_point>`) — so in those entries the URL collapses to `<url>/<entry_point>`. The difference from pages is that a component is injected as a `<script type="module">` rather than getting its own injected HTML `<base>` tag.

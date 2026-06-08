@@ -161,7 +161,7 @@ host.openSession('abc-123-uuid', { sidebar: false })
 
 ---
 
-### `host.navigate(path, options?)`
+### `host.navigate(url)`
 
 Requests SPA navigation from the host. Supported patterns:
 
@@ -406,9 +406,11 @@ if (layout.snapshot) {
   console.log(layout.snapshot.layouts)            // breakpoint-keyed panel trees
 }
 
-// Subscribe to changes
-host.on('@layout-change', () => {
-  const snap = host.layout.snapshot
+// Subscribe to changes (the fresh snapshot is passed to the handler)
+import { on } from '@wippy-fe/proxy'
+
+on('@layout-change', (snapshot) => {
+  console.log(snapshot.activeBreakpoint)
 })
 
 // Mutations
@@ -655,7 +657,7 @@ class MyEl extends HTMLElement {
 | `@visibility` | `boolean` | Iframe visibility changed. `true` = visible, `false` = hidden. |
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
-| `@layout-change` | — | Managed-layout snapshot updated. Read `host.layout.snapshot` in the handler. |
+| `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
 
 ### Wildcard patterns
 

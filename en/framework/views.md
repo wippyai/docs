@@ -138,7 +138,7 @@ The API returns a component descriptor with the resolved base URL. The Web Host 
 | `meta.url` | string | — | Base URL prefix where the bundle is mounted (CDN origin or `http.static` path) |
 | `meta.base_path` | string | — | Subdirectory within the static mount |
 | `meta.entry_point` | string | `index.html` | HTML entry file; combined as `<url>/<base_path>/<entry_point>` |
-| `meta.mountRoute` | string | — | Claims a URL path in the host router (Vue Router syntax) |
+| `meta.mountRoute` | string | — | Claims a URL path in the host router; only the catch-all form `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*` is allowed — arbitrary Vue Router patterns are rejected (HTTP 500). See [view-page.md](../frontend/frontend-registry/view-page.md) / [dynamic-routing.md](../frontend/frontend-registry/dynamic-routing.md) |
 | `meta.announced` | boolean | — | Show in navigation and `pages/list` |
 | `meta.secure` | boolean | `false` | Requires authentication |
 | `meta.config_overrides` | object | — | Per-page AppConfig overrides (camelCase), deep-merged over the bundled defaults |
@@ -276,6 +276,8 @@ The views module registers these endpoints on the configured router:
 | GET | `/components/list` | List view components |
 | GET | `/pages/content/{id}` | Render page or return component descriptor |
 | GET | `/pages/public/{id}` | Get component base URL |
+| GET | `/components/by-tag/{tag}` | Resolve a custom-element tag name to its `view.component` descriptor (used by host `loadByTagName`) |
+| GET | `/pages/routes` | Return the `mountRoute` → `pageId` map; HTTP 500 on invalid or duplicate `mountRoute`. Not filtered by `announced` (hidden pages still need URL resolution); access control applies to secure pages |
 
 ### Render Response
 
@@ -296,7 +298,7 @@ For component pages, returns a descriptor:
         "proxy": {
             "enabled": true,
             "injections": {
-                "css": { "fonts": true, "themeConfig": true, "iframe": true },
+                "css": { "themeConfig": true, "iframe": true },
                 "tailwindConfig": false,
                 "resizeObserver": true,
                 "preventLinkClicks": true
@@ -305,6 +307,8 @@ For component pages, returns a descriptor:
     }
 }
 ```
+
+The `css` injection flags are `themeConfig`, `iframe`, `primevue`, `markdown`, `customCss`, and `customVariables`. There is no `fonts` flag — Google Fonts are delivered via `theming.global.customCSS` (an `@import` rule), injected by `customCss`.
 
 ## Access Control
 
