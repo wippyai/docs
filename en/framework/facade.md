@@ -89,6 +89,8 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `children_css_variables` | children | `{}` | CSS custom properties for iframe contents only |
 | `login_path` | — | `/login.html` | Redirect path for unauthenticated users |
 
+> **Keep `custom_css` / `css_variables` in separate files so non-host pages can reuse them.** Rather than inlining long CSS strings, point these parameters at standalone files with `fs://` plus a `content_fs` filesystem — e.g. `custom_css: fs://custom-css.facade.css`, `css_variables: fs://css-variables.facade.json`, `content_fs: app:app_fs`. Keep those files in the same static folder your `login_path` page is served from (in `app-template`, `static/` served at `/app`). Then a standalone page served **outside** the Web Host — your `login.html`, an error page, an email-confirm page — can `<link>` the *same* brand CSS, so your tokens and overrides live in one place instead of being duplicated. Use `fs://` (resolved by `content_fs` at runtime), **not** `file://`, which the wippy loader inlines relative to the YAML at load time.
+
 ### Optional JSON parameters
 
 Each of the following is a JSON-encoded string parameter; defaults are empty (`{}` or `[]`).

@@ -1,6 +1,6 @@
 # Quickstart
 
-Two end-to-end examples — a **Micro Frontend App** (Vue) and a **Web Component** (Vue) — taken from the public [`wippyai/app-template`](https://github.com/wippyai/app-template) repository. Each shows the minimal files, how to register the artifact with the backend, and how to build it. Follow the links to the repo for the complete, runnable source, and to the deep-dive docs for every option.
+Two end-to-end examples — a **Micro Frontend App** (Vue) and a **Web Component** (Vue) — taken from the public [`wippyai/app`](https://github.com/wippyai/app) repository. Each shows the minimal files, how to register the artifact with the backend, and how to build it. Follow the links to the repo for the complete, runnable source, and to the deep-dive docs for every option.
 
 **Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node 20+, and the `@wippy-fe/*` packages (all provided by the host import map at runtime). See [Build System](./build-system.md) for the toolchain.
 
@@ -8,7 +8,7 @@ Two end-to-end examples — a **Micro Frontend App** (Vue) and a **Web Component
 
 ## Example 1 — Micro Frontend App (Vue)
 
-A full Vue 3 SPA the Web Host loads inside an iframe. Repo: [`frontend/applications/main`](https://github.com/wippyai/app-template/tree/main/frontend/applications/main).
+A full Vue 3 SPA the Web Host loads inside an iframe. Repo: [`frontend/applications/main`](https://github.com/wippyai/app/tree/main/frontend/applications/main).
 
 **`package.json`** — the `wippy` block declares it a page and which CSS the host injects:
 
@@ -74,7 +74,7 @@ Build it (`npm run build`), serve the output where `url + base_path` points, and
 
 ## Example 2 — Web Component (Vue)
 
-A custom element the host mounts in the page DOM (Shadow DOM), embeddable from any page or chat artifact. Repo: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app-template/tree/main/frontend/web-components/reaction-bar).
+A custom element the host mounts in the page DOM (Shadow DOM), embeddable from any page or chat artifact. Repo: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/main/frontend/web-components/reaction-bar).
 
 **`package.json`** — `wippy` block declares the tag, props (HTML attributes), and events:
 
@@ -178,7 +178,7 @@ Full walkthrough: [Web Component](./web-component.md).
 
 ## Explore more
 
-The [`app-template`](https://github.com/wippyai/app-template) repo ships several runnable web components under [`frontend/web-components/`](https://github.com/wippyai/app-template/tree/main/frontend/web-components):
+The [`app`](https://github.com/wippyai/app) repo ships several runnable web components under [`frontend/web-components/`](https://github.com/wippyai/app/tree/main/frontend/web-components):
 
 | Component | Demonstrates |
 |---|---|

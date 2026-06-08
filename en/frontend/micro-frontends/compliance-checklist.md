@@ -23,7 +23,7 @@ When this checklist disagrees with what the gold standards do, the gold standard
 Source references use:
 
 - `docs:<filename>:<line>` — canonical FE docs
-- `gold:<path>` — pattern observed in a gold-standard reference
+- `gold:<path>` — a file in the gold-standard app-template repo, [`wippyai/app`](https://github.com/wippyai/app). Path aliases: `gold:main/…` = [`frontend/applications/main/…`](https://github.com/wippyai/app/tree/main/frontend/applications/main); `gold:mermaid/…` = [`frontend/web-components/mermaid/…`](https://github.com/wippyai/app/tree/main/frontend/web-components/mermaid). Any other `gold:` path is repo-root-relative (e.g. `gold:src/app/views/_index.yaml`)
 - `kb:<topic>` — Wippy KB
 - `incident:<id>` — bug found during a real audit
 
@@ -312,7 +312,7 @@ All injection flags are technically MAY — the host has sane defaults — but m
 
 ### 3.1 `package.json`
 
-Reference: `gold:app-template/frontend/applications/main/package.json`.
+Reference: `gold:main/package.json`.
 
 ```json
 {
@@ -874,7 +874,7 @@ Anti-patterns (REJECT):
 
 ### 4.1 `package.json`
 
-Reference: `gold:app-template/frontend/web-components/mermaid/package.json`.
+Reference: `gold:mermaid/package.json`.
 
 ```json
 {
