@@ -334,6 +334,8 @@ end
 Use <code>funcs.call(tc.registry_id, tc.arguments)</code> to execute tools. The <code>registry_id</code> field maps directly to the tool's entry in the registry.
 </note>
 
+For how agent tool access and observability are secured, see the [Security Model](concepts/security-model.md).
+
 ## Streaming
 
 Stream agent responses in real-time using `stream_target`:

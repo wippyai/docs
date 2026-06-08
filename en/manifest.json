@@ -28,6 +28,7 @@
     "children": [
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Security Model", "path": "concepts/security-model"},
       {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "Cluster", "path": "concepts/cluster"},
       {"title": "Functions", "path": "concepts/functions"},
@@ -38,6 +39,7 @@
     "title": "Lua Runtime",
     "children": [
       {"title": "Overview", "path": "lua/overview"},
+      {"title": "Why Lua", "path": "lua/why-lua"},
       {"title": "Types", "path": "lua/types"},
       {"title": "Entries", "path": "lua/entries"},
       {

@@ -36,6 +36,8 @@ Every process executes under an actor identity and security policy. Typically th
 
 Access control works at multiple levels. Individual processes have their own access levels. Message sending between hosts can be forbidden based on security policy—a sandboxed user process might not be allowed to send messages to system hosts at all. The policy attached to the current actor determines what operations are permitted.
 
+For the security implications of process isolation, see the [Security Model](concepts/security-model.md).
+
 ## Spawning Processes
 
 Create background processes with `process.spawn()`:
