@@ -866,6 +866,7 @@ Anti-patterns (REJECT):
 - Loop-creating subscriptions without storing all unsubs (`incident:3C`).
 - `window.addEventListener('message', ...)` without matching `removeEventListener` in `onUnmounted` (`incident:3I`).
 - Raw `new EventSource(...)` — bypasses host auth bridge; use `instance.on(...)` for an equivalent server-side topic (`incident:3J`).
+- `window.addEventListener('error' | 'unhandledrejection', ...)` / `window.onerror` — installing **window-global error handlers**. The host owns global error capture (the host shell's error handler + the iframe proxy's `errorCapture` injection); a child app or web component adding its own duplicates them. This bites web components especially: multiple instances share one realm, so a single error fires every instance's handler → doubled error reporting and toasts. For your own reporting use `instance.logger.captureException(...)`; for component-scoped failures use Vue's `onErrorCaptured`. **MUST NOT** install global `error`/`unhandledrejection` handlers from a WC.
 
 ---
 
