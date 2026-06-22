@@ -76,6 +76,7 @@ interface AppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: ApiRoutesOverride
+  tanstack?: TanstackConfig    // TanStack Query defaults (global + per role-based category)
   theming: AppTheming
   hostConfig: HostConfig
   context: AppContext
@@ -126,6 +127,26 @@ interface HostConfig {
     }
   }
   layout?: HostLayoutDeclaration
+}
+
+// TanStack Query defaults. A top-level field (shared by host + children, like
+// apiRoutes). Default behavior (no config) is refetchOnWindowFocus: false so
+// alt-tabbing back doesn't reload in-flight content.
+interface TanstackConfig {
+  default?: TanstackQueryOptions   // overrides the global query defaults
+  content?: TanstackQueryOptions   // single-resource renders (page/artifact/session/entry/model/upload)
+  lists?: TanstackQueryOptions     // navigation / index / list queries
+}
+
+// JSON-safe subset of TanStack query options (no functions — config is JSON).
+interface TanstackQueryOptions {
+  refetchOnWindowFocus?: boolean
+  refetchOnReconnect?: boolean
+  refetchOnMount?: boolean
+  staleTime?: number
+  gcTime?: number
+  retry?: boolean | number
+  refetchInterval?: number | false
 }
 
 interface AppContext {

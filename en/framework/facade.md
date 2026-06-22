@@ -131,12 +131,13 @@ These four are surfaced verbatim under `hostConfig` for the frontend:
 | `allow_additional_tags` | `[]` | Extra HTML tags allowed in chat |
 | `chat` | `{}` | Chat UI overrides |
 
-These two are emitted as **top-level** `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:
+These three are emitted as **top-level** `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:
 
 | Parameter | Emitted as | Default | Description |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | Route overrides for the frontend |
 | `axios_defaults` | `axiosDefaults` | `{}` | Frontend axios HTTP client defaults |
+| `tanstack` | `tanstack` | `{}` | TanStack Query defaults: `{ default?, content?, lists? }`. `default` applies to all queries; `content` targets single-resource renders, `lists` targets navigation/index queries. Host default is `refetchOnWindowFocus:false` |
 
 ## Config Endpoint
 
@@ -160,6 +161,7 @@ The facade registers `GET /facade/config` on the configured router. That path is
     "routePrefix": "https://api.example.com",
     "apiRoutes":     { "...": "..." },
     "axiosDefaults": { "...": "..." },
+    "tanstack":      { "lists": { "refetchOnWindowFocus": true } },
     "theming": {
         "global":  { "customCSS": "...", "cssVariables": {}, "iconSets": {} },
         "host":    { "customCSS": "...", "cssVariables": {}, "iconSets": {}, "i18n": { "app": { "title": "Wippy", "icon": "wippy:logo", "appName": "Wippy AI" } } },
@@ -182,7 +184,7 @@ The facade registers `GET /facade/config` on the configured router. That path is
 }
 ```
 
-The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. The `api_routes` and `axios_defaults` parameters are emitted as top-level `AppConfig` fields (`apiRoutes`, `axiosDefaults`), siblings of `hostConfig`, not inside it.
+The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. The `api_routes`, `axios_defaults`, and `tanstack` parameters are emitted as top-level `AppConfig` fields (`apiRoutes`, `axiosDefaults`, `tanstack`), siblings of `hostConfig`, not inside it.
 
 The `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, and `module_file` fields are **shell-level** fields used by the embedding page to build itself — they are not part of the child `AppConfig` that the host initializes with. The `iframe_origin`/`iframe_url` fields are consumed only by manual, facade-less iframe embeddings (see [Facade Entry Point](../frontend/web-host/entry-point.md)). The `mode` field is the normalized `fe_mode` (`compat` or `managed`), and `module_file` is the JS-module entry the facade page loads — `/module.js` for compat, `/managed-layout.js` for managed.
 

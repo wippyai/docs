@@ -75,6 +75,7 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
   "routePrefix": "https://api.example.com",
   "axiosDefaults": {},
   "apiRoutes": {},
+  "tanstack": { "lists": { "refetchOnWindowFocus": true } },
   "theming": {
     "global": {
       "customCSS": "@import url('https://fonts.googleapis.com/...');",
@@ -142,6 +143,7 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
 | `routePrefix` | API URL prefix forwarded to child apps. |
 | `axiosDefaults` | Axios instance defaults forwarded to child apps. |
 | `apiRoutes` | Override individual API endpoint paths (top-level `AppConfig` field). |
+| `tanstack` | TanStack Query defaults — global + per role-based category (`content`/`lists`); top-level `AppConfig` field. Host default is `refetchOnWindowFocus:false`. |
 | `theming` | CSS customization split into three scopes. |
 | `hostConfig` | Web Host feature flags and UI configuration. |
 | `context` | Initial page or artifact context for the host. |
@@ -290,6 +292,8 @@ The `wippy/facade` parameters that produce the config response above are set in 
       value: '{"--p-primary":"#6366f1"}'
     - name: host_custom_css
       value: ".wippy-host-app .chat-container { background: var(--p-surface-100); }"
+    - name: tanstack
+      value: '{"lists":{"refetchOnWindowFocus":true}}'
 ```
 
 For the full list of available parameters and their defaults, see the [Facade module reference](../../framework/facade.md).
