@@ -128,7 +128,7 @@ These four are surfaced verbatim under `hostConfig` for the frontend:
 |-----------|---------|-------------|
 | `additional_nav_items` | `[]` | Extra sidebar entries |
 | `state_cache` | `{}` | Frontend state cache configuration |
-| `allow_additional_tags` | `[]` | Extra HTML tags allowed in chat |
+| `allow_additional_tags` | `{}` | HTML sanitizer tag whitelist (`Record<string, string[]>`, tag → allowed attributes) |
 | `chat` | `{}` | Chat UI overrides |
 
 These three are emitted as **top-level** `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:

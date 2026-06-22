@@ -178,7 +178,7 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
 | `hideSessionSelector` | boolean | `false` | Hide the chat session picker |
 | `additionalNavItems` | array | `[]` | Extra items injected into the sidebar |
 | `stateCache` | object | `{}` | LRU cache config for child iframe state |
-| `allowAdditionalTags` | array | `[]` | HTML tags allowed through the chat sanitizer |
+| `allowAdditionalTags` | object | `{}` | HTML sanitizer tag whitelist (`Record<string, string[]>`, tag → allowed attributes) |
 | `chat` | object | `{}` | Chat UI overrides (paste-to-file behavior, etc.) |
 
 ## Authentication Flow

@@ -118,7 +118,7 @@ interface HostConfig {
   hideSessionSelector?: boolean
   additionalNavItems?: PageApi.Page[]
   stateCache?: { maxPages?: number; maxSizePerPage?: number }
-  allowAdditionalTags?: string[]
+  allowAdditionalTags?: Record<string, string[]>   // tag → allowed attributes
   chat?: {
     convertPasteToFile?: {
       enabled: boolean
