@@ -109,10 +109,7 @@ Capture remaining path segments with `{param...}`:
   func: serve_file
 ```
 
-```lua
--- Request: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
-```
+The wildcard matches the remaining segments for routing purposes, so a request like `GET /api/v1/files/docs/guides/readme.md` is matched and dispatched to the handler. The captured tail itself is not currently retrievable via `req:param`.
 
 The wildcard must be the last segment in the path.
 

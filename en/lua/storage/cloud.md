@@ -63,8 +63,36 @@ storage:release()
 |-----------|------|-------------|
 | `key` | string | Object key/path |
 | `content` | string or Reader | Content as string or file reader |
+| `options` | table | Optional metadata and conditional write options |
 
 **Returns:** `boolean, error`
+
+### Upload Options
+
+Attach metadata or guard the write with an options table:
+
+```lua
+storage:upload_object("reports/daily.json", body, {
+    content_type = "application/json",
+    cache_control = "max-age=3600",
+    metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
+    only_if_absent = true                              -- fail if the key already exists
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `content_type` | string | MIME type |
+| `cache_control` | string | Cache-Control header |
+| `content_disposition` | string | Content-Disposition header |
+| `content_encoding` | string | Content-Encoding header |
+| `metadata` | table | User metadata (string keys/values), stored as `x-amz-meta-*` |
+| `headers` | table | Additional request headers (string keys/values) |
+| `if_match` | string | Write only if the current object ETag matches |
+| `if_none_match` | string | Write only if no object matches the ETag (`"*"` means any) |
+| `only_if_absent` | boolean | Write only if the key does not exist (alias for `if_none_match = "*"`) |
+
+A conditional write that fails its precondition returns a `precondition_failed` error.
 
 ## Downloading Objects
 
@@ -94,8 +122,12 @@ storage:release()
 | `key` | string | Object key to download |
 | `writer` | Writer | Destination file writer |
 | `options.range` | string | Byte range (e.g., "bytes=0-1023") |
+| `options.if_match` | string | Download only if the object ETag matches |
+| `options.if_none_match` | string | Download only if the ETag does not match |
 
 **Returns:** `boolean, error`
+
+A failed precondition (`if_match`/`if_none_match`) returns a `precondition_failed` error.
 
 ## Listing Objects
 
@@ -110,7 +142,7 @@ local result, err = storage:list_objects({
 })
 
 for _, obj in ipairs(result.objects) do
-    print(obj.key, obj.size, obj.content_type)
+    print(obj.key, obj.size, obj.etag)
 end
 
 -- Paginate through large results
@@ -135,10 +167,60 @@ storage:release()
 | `options.prefix` | string | Filter by key prefix |
 | `options.max_keys` | integer | Maximum objects to return |
 | `options.continuation_token` | string | Pagination token |
+| `options.include_owner` | boolean | Include each object's `owner` (`id`, `display_name`) |
+| `options.include_versions` | boolean | List object versions; each item includes `version_id` |
 
 **Returns:** `table, error`
 
-Result contains `objects`, `is_truncated`, `next_continuation_token`.
+Result contains `objects`, `is_truncated`, `next_continuation_token`. Each object has `key`, `size`, `etag`, `storage_class`, and optional `last_modified`, `version_id`, and `owner`.
+
+<note>
+In list results <code>content_type</code> is always empty — S3 list operations do not return it. Use <code>head_object</code> to read an object's content type and metadata.
+</note>
+
+## Object Metadata
+
+Fetch a single object's metadata without downloading its body:
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local meta, err = storage:head_object("reports/daily.json")
+if err then
+    return nil, err
+end
+
+print(meta.size, meta.etag, meta.content_type)
+for k, v in pairs(meta.metadata) do
+    print("meta", k, v)
+end
+
+storage:release()
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `key` | string | Object key |
+
+**Returns:** `table, error`
+
+Result fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `size` | integer | Object size in bytes |
+| `etag` | string | Entity tag |
+| `content_type` | string | MIME type |
+| `cache_control` | string | Cache-Control header |
+| `content_disposition` | string | Content-Disposition header |
+| `content_encoding` | string | Content-Encoding header |
+| `storage_class` | string | Storage class |
+| `version_id` | string | Version ID (present when versioning is enabled) |
+| `last_modified` | integer | Last modified time (Unix seconds) |
+| `metadata` | table | User metadata (`x-amz-meta-*`) |
+| `headers` | table | Raw response headers (lowercased keys) |
+
+A missing object returns a `not_found` error.
 
 ## Deleting Objects
 
@@ -232,8 +314,9 @@ return {upload_url = url}
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `upload_object(key, content)` | `boolean, error` | Upload string or file content |
+| `upload_object(key, content, opts?)` | `boolean, error` | Upload string or file content |
 | `download_object(key, writer, opts?)` | `boolean, error` | Download to file writer |
+| `head_object(key)` | `table, error` | Fetch object metadata |
 | `list_objects(opts?)` | `table, error` | List objects with prefix filter |
 | `delete_objects(keys)` | `boolean, error` | Delete multiple objects |
 | `presigned_get_url(key, opts?)` | `string, error` | Generate temporary download URL |
@@ -260,6 +343,7 @@ Cloud storage operations are subject to security policy evaluation.
 | Content nil | `errors.INVALID` | no |
 | Writer not valid | `errors.INVALID` | no |
 | Object not found | `errors.NOT_FOUND` | no |
+| Conditional precondition failed | `errors.CONFLICT` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 | Operation failed | `errors.INTERNAL` | no |
 

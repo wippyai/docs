@@ -206,6 +206,10 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--protected` | Veröffentlichte Version als geschützt markieren (kann nicht gelöscht oder überschrieben werden) |
 | `--registry <url>` | Registry-URL für diese Veröffentlichung überschreiben |
 | `--config <dir>` | Verzeichnis mit `wippy.yaml` (Standard: aktuelles Verzeichnis) |
+| `--create` | Das Modul auf dem Hub registrieren, falls es noch nicht existiert, und dann veröffentlichen |
+| `--module-visibility <v>` | Sichtbarkeit für `--create`: `private` (Standard) oder `public` |
+| `--module-type <t>` | Typ für `--create`: `application` (Standard), `library`, `agent` oder `plugin` |
+| `--module-display-name <n>` | Anzeigename für `--create` |
 
 ### Statische Dateien einbetten
 
@@ -217,6 +221,34 @@ wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
 Das `--embed`-Flag akzeptiert Eintrags-IDs oder Namen, die mit `fs.directory`-Einträgen übereinstimmen. Dasselbe Flag ist auch für `wippy pack` verfügbar.
+
+### Erste Veröffentlichung
+
+Wenn Sie ein Modul zum ersten Mal veröffentlichen, wird es automatisch auf dem Hub registriert (standardmäßig privat) und die Veröffentlichung einmal wiederholt. Geben Sie `--create` an, um es vorab zu registrieren und seine Eigenschaften zu setzen:
+
+```bash
+wippy publish --create --version 0.1.0 \
+  --module-visibility public \
+  --module-type library \
+  --module-display-name "HTTP Utils"
+```
+
+`--create` ist idempotent — für ein bereits registriertes Modul ist der Erstellungsschritt ein No-op. Wenn Ihr Konto keine Module in der Organisation erstellen kann, gibt der Hub einen Berechtigungsfehler zurück, statt zu veröffentlichen.
+
+### Veröffentlichen auf einem lokalen Hub
+
+Richten Sie `--registry` auf einen lokal laufenden Hub, um ohne die öffentliche Registry zu veröffentlichen und zu installieren. Reines HTTP ist nur für lokale Hosts erlaubt — `localhost`, `127.0.0.1` und die Container-Aliase `host.docker.internal` (Docker Desktop / OrbStack) sowie `host.containers.internal` (Podman); jeder andere Host muss HTTPS verwenden.
+
+```bash
+wippy auth login --registry http://localhost:8080 --token wpy_xxx
+wippy publish --registry http://localhost:8080 --create --version 0.1.0
+```
+
+Registry und Token können auch aus den Umgebungsvariablen `WIPPY_REGISTRY` und `WIPPY_TOKEN` stammen. Wenn nicht gesetzt, ist die Standard-Registry `https://hub.wippy.ai`.
+
+### Kontingente
+
+Wenn das Kontingent der Organisation für private Module erschöpft ist, schlägt die Veröffentlichung mit einer Meldung wie `cannot publish: Private-module quota exhausted (5 of 5)...` fehl. Machen Sie das Modul öffentlich oder bitten Sie einen Org-Admin, das Kontingent zu erhöhen. Uploads und Downloads werden bei vorübergehenden Netzwerkfehlern automatisch wiederholt.
 
 ## Veröffentlichte Module verwenden
 

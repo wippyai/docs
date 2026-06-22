@@ -73,9 +73,9 @@ A bootloader is any `function.lua` entry with `meta.type: bootloader`:
 | Field | Required | Description |
 |-------|----------|-------------|
 | `meta.type` | Yes | Must be `bootloader` |
-| `meta.order` | No | Execution order (default `100`); lower runs first |
+| `meta.order` | No | Execution order (default `999`); lower runs first |
 | `meta.description` | No | Human-readable summary |
-| `meta.requires` | No | Dependency hints surfaced in logs |
+| `meta.requires` | No | Bootloader IDs and/or service IDs that must complete/be available first; the runtime waits for services and fails the bootloader (stopping the boot sequence) if a requirement is unmet |
 
 ### Return Contract
 
@@ -124,9 +124,9 @@ Lower `order` values run first. Reserve low orders for infrastructure:
 | `10` | Secrets and encryption keys (provided by the module) |
 | `20` | Schema migrations (provided by `wippy/migration`) |
 | `50` | Data seeding, search index warmup |
-| `100` | Default — application-level tasks |
+| `100` | Application-level tasks (convention) |
 
-When two bootloaders share an order, execution order between them is not guaranteed.
+When two bootloaders share an order, they run in alphabetical order by their fully-qualified entry ID.
 
 ## Built-in Bootloaders
 

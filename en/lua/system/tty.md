@@ -75,7 +75,7 @@ Subscribe to terminal events and return a channel. Events are delivered as table
 local events = tty.events()
 ```
 
-**Returns:** `EventChannel`
+**Returns:** `EventChannel, error`
 
 ### tty.screen_size()
 

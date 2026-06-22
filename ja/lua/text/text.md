@@ -107,7 +107,7 @@ local positions = re:find_all_string_index("a1b2c3")
 |-----------|------|-------------|
 | `s` | string | 検索する文字列 |
 
-**戻り値:** `table[]`
+**戻り値:** `table[] | nil`（一致がない場合は nil）
 
 ### 置換
 

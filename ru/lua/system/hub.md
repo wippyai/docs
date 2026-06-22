@@ -79,6 +79,7 @@ local v, err = hub.versions.get("wippy/http", "1.0.0")
 |----------|-------------|
 | `hub.versions.list(module, opts?)` | Список версий модуля |
 | `hub.versions.get(module, version, opts?)` | Получить конкретную версию |
+| `hub.versions.inspect(module, version, opts?)` | Проверить артефакт версии (скачивает и читает бандл) |
 
 ## Зависимости
 
@@ -98,7 +99,9 @@ local users, err = hub.dependents.get("wippy/http")
 local files, err = hub.files.list("wippy/http", "1.0.0")
 ```
 
-Возвращает список файлов опубликованной версии.
+| Функция | Описание |
+|----------|-------------|
+| `hub.files.list(module, version, opts?)` | Список файлов версии (`version` обязателен); возвращает `{items, total, page, page_size}` |
 
 ## См. также
 

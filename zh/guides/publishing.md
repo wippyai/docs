@@ -206,6 +206,10 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--protected` | 将发布的版本标记为受保护（不能被删除或覆盖） |
 | `--registry <url>` | 为本次发布覆盖注册表 URL |
 | `--config <dir>` | 包含 `wippy.yaml` 的目录（默认：当前目录） |
+| `--create` | 如果模块在 hub 上尚不存在，则注册该模块，然后发布 |
+| `--module-visibility <v>` | `--create` 的可见性：`private`（默认）或 `public` |
+| `--module-type <t>` | `--create` 的类型：`application`（默认）、`library`、`agent` 或 `plugin` |
+| `--module-display-name <n>` | `--create` 的显示名称 |
 
 ### 嵌入静态文件
 
@@ -217,6 +221,34 @@ wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
 `--embed` 标志接受与 `fs.directory` 入口匹配的入口 ID 或名称。同样的标志也可用于 `wippy pack`。
+
+### 首次发布
+
+首次发布模块时，它会被自动注册到 hub（默认为私有），并且发布会重试一次。传入 `--create` 可提前注册并设置其属性：
+
+```bash
+wippy publish --create --version 0.1.0 \
+  --module-visibility public \
+  --module-type library \
+  --module-display-name "HTTP Utils"
+```
+
+`--create` 是幂等的——对于已注册的模块，create 步骤是空操作。如果你的账户无权在该组织中创建模块，hub 会返回权限错误而不进行发布。
+
+### 发布到本地 Hub
+
+将 `--registry` 指向本地运行的 hub，即可在不使用公共注册表的情况下发布和安装。纯 HTTP 仅对本地主机允许——`localhost`、`127.0.0.1` 以及容器别名 `host.docker.internal`（Docker Desktop / OrbStack）和 `host.containers.internal`（Podman）；任何其他主机都必须使用 HTTPS。
+
+```bash
+wippy auth login --registry http://localhost:8080 --token wpy_xxx
+wippy publish --registry http://localhost:8080 --create --version 0.1.0
+```
+
+注册表和令牌也可以来自 `WIPPY_REGISTRY` 和 `WIPPY_TOKEN` 环境变量。未设置时，注册表默认为 `https://hub.wippy.ai`。
+
+### 配额
+
+如果组织的私有模块配额已用尽，发布会失败并返回类似 `cannot publish: Private-module quota exhausted (5 of 5)...` 的消息。请将模块设为公开，或请组织管理员提高配额。上传和下载在遇到瞬时网络错误时会自动重试。
 
 ## 使用已发布的模块
 

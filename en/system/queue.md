@@ -127,7 +127,7 @@ For AWS SQS and SQS-compatible endpoints (LocalStack, ElasticMQ). Credentials, r
 | `use_fips` | bool | `false` | Use FIPS-compliant endpoints |
 | `use_dual_stack` | bool | `false` | Use dual-stack (IPv4 + IPv6) endpoints |
 
-Queues are auto-created by the driver on first use. Use SQS-prefixed headers (`sqs.*`) to address SQS-specific attributes on publish; neutral keys like `correlation_id` and `content_type` are translated to SQS system attributes where possible.
+Queues are auto-created by the driver on first use. Use SQS-prefixed headers to address SQS-specific fields on publish: `sqs.delay_seconds`, `sqs.message_group_id`, and `sqs.message_deduplication_id` map to typed SQS message fields. All other headers (neutral keys like `correlation_id` and `content_type`, plus any `sqs.message_attributes.*` keys) are carried verbatim as SQS message attributes.
 
 ## Queue Configuration
 
@@ -148,11 +148,11 @@ Queues are auto-created by the driver on first use. Use SQS-prefixed headers (`s
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `driver` | Registry ID | Yes | Queue driver |
-| `codec` | string | No | Payload encoding (e.g. `json/plain`, `msgpack/plain`) |
+| `codec` | string | No | Wire encoding for message bodies. Defaults to `json/plain` (see [Codecs](#codecs)) |
 | `queue_name` | string | No | External queue name (defaults to entry name) |
 | `driver_options` | object | No | Per-driver sub-bag, keyed by driver kind |
-| `dead_letter.queue` | Registry ID | No | Queue ID for failed messages |
-| `dead_letter.max_attempts` | int | No | Attempts before routing to DLQ |
+| `dead_letter.queue` | Registry ID | No | Queue ID for failed messages (accepted but not yet enforced by any built-in driver) |
+| `dead_letter.max_attempts` | int | No | Attempts before routing to DLQ (accepted but not yet enforced by any built-in driver) |
 
 ### Driver Options
 
@@ -162,7 +162,7 @@ Keys under `driver_options` are scoped by driver name. A driver reads only its o
 
 | Key | Description |
 |-----|-------------|
-| `max_length` | Bounded buffer size (0 = unbounded) |
+| `max_length` | Bounded buffer size (0 or unset = default 1000) |
 
 **amqp:**
 
@@ -173,6 +173,17 @@ Keys under `driver_options` are scoped by driver name. A driver reads only its o
 | `message_ttl` | Per-queue message TTL override |
 | `queue_expiry` | Unused-queue expiration |
 | `max_length` | Max messages retained |
+
+### Codecs
+
+The `codec` selects how a message body is serialized before it is handed to the broker. It is a payload format string and defaults to `json/plain`:
+
+| Codec | Format |
+|-------|--------|
+| `json/plain` | JSON (default) |
+| `application/msgpack` | MessagePack |
+
+The AMQP driver sets a matching `content-type` (`application/json` or `application/msgpack`) on published messages. An unknown codec fails when the queue is declared, not at publish time.
 
 ## Consumer Configuration
 
@@ -199,7 +210,7 @@ Keys under `driver_options` are scoped by driver name. A driver reads only its o
 | `queue` | required | Queue registry ID |
 | `func` | required | Handler function registry ID |
 | `concurrency` | 1 | Parallel worker count |
-| `prefetch` | 10 | Per-worker buffer size |
+| `prefetch` | 10 | Total delivery buffer / max in-flight messages shared across workers |
 | `auto_ack` | false | When true, the runtime does not call broker ack; handler success/failure is the only settle signal |
 | `driver_options` | - | Per-driver sub-bag (same structure as queue) |
 
@@ -246,7 +257,7 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return false  -- nack: redelivery per driver
     end
     return true       -- ack: remove from queue
 end
@@ -271,14 +282,14 @@ The runtime auto-settles based on the handler return:
 | Handler Result | Action |
 |----------------|--------|
 | `true` or non-false return | Ack |
-| `false` | Nack (redeliver or dead-letter per driver) |
+| `false` | Nack (redeliver per driver) |
 | Raised error | Nack |
 
 Call `msg:ack()` or `msg:nack()` explicitly only to settle early. Settlement is single-shot: whichever call lands first wins.
 
 ### Dead-Letter Routing
 
-When `dead_letter` is configured on the queue, a message that nacks beyond `max_attempts` is routed to the DLQ with `x_dead_letter_reason` and `x_original_queue` headers set by the driver. Publishers must not set any `x_*` header — those are reserved for DLQ bookkeeping.
+Dead-letter routing is not yet implemented. The `dead_letter` block (see [Queue Configuration](#queue-configuration)) is accepted in config, but no built-in driver currently counts attempts, routes nacked messages to the configured DLQ, or sets `x_dead_letter_*` headers. A nacked message is redelivered per the driver's own policy. The `x_*` header namespace is reserved for future DLQ bookkeeping, so publishers should avoid setting `x_*` headers.
 
 ## Publishing Messages
 

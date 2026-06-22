@@ -75,7 +75,7 @@ local ok, err = tty.stop()
 local events = tty.events()
 ```
 
-**返回：** `EventChannel`
+**返回：** `EventChannel, error`
 
 ### tty.screen_size()
 

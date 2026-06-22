@@ -206,6 +206,10 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--protected` | 公開バージョンを保護対象としてマークする（削除や上書きが不可になる） |
 | `--registry <url>` | この公開時のみレジストリ URL を上書きする |
 | `--config <dir>` | `wippy.yaml` を含むディレクトリ（デフォルト：カレントディレクトリ） |
+| `--create` | モジュールがまだ存在しない場合はハブに登録してから公開する |
+| `--module-visibility <v>` | `--create` 用の可視性：`private`（デフォルト）または `public` |
+| `--module-type <t>` | `--create` 用のタイプ：`application`（デフォルト）、`library`、`agent`、または `plugin` |
+| `--module-display-name <n>` | `--create` 用の表示名 |
 
 ### 静的ファイルの埋め込み
 
@@ -217,6 +221,34 @@ wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
 `--embed` フラグは、エントリ ID または `fs.directory` エントリに一致する名前を受け取ります。同じフラグは `wippy pack` でも利用できます。
+
+### 初回公開
+
+モジュールを初めて公開すると、自動的にハブに登録され（デフォルトでは private）、公開が一度リトライされます。事前に登録してプロパティを設定するには `--create` を渡します。
+
+```bash
+wippy publish --create --version 0.1.0 \
+  --module-visibility public \
+  --module-type library \
+  --module-display-name "HTTP Utils"
+```
+
+`--create` は冪等です — すでに登録済みのモジュールでは create ステップは何もしません。アカウントが組織内でモジュールを作成できない場合、ハブは公開する代わりに権限エラーを返します。
+
+### ローカルハブへの公開
+
+`--registry` をローカルで動作しているハブに向けると、公開とインストールをパブリックレジストリなしで行えます。プレーン HTTP はローカルホストに対してのみ許可されます — `localhost`、`127.0.0.1`、およびコンテナエイリアスの `host.docker.internal`（Docker Desktop / OrbStack）と `host.containers.internal`（Podman）。それ以外のホストは HTTPS を使用する必要があります。
+
+```bash
+wippy auth login --registry http://localhost:8080 --token wpy_xxx
+wippy publish --registry http://localhost:8080 --create --version 0.1.0
+```
+
+レジストリとトークンは、環境変数 `WIPPY_REGISTRY` および `WIPPY_TOKEN` から取得することもできます。未設定の場合、レジストリはデフォルトで `https://hub.wippy.ai` になります。
+
+### クォータ
+
+組織のプライベートモジュールクォータが使い切られている場合、公開は `cannot publish: Private-module quota exhausted (5 of 5)...` のようなメッセージで失敗します。モジュールを public にするか、組織管理者にクォータの引き上げを依頼してください。アップロードとダウンロードは、一時的なネットワークエラー時に自動でリトライされます。
 
 ## 公開モジュールの利用
 

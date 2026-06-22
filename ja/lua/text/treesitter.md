@@ -375,7 +375,7 @@ cursor:close()
 | `current_node()` | `Node` | カーソル位置のノード |
 | `current_depth()` | `integer` | 深度（0 = ルート） |
 | `current_field_name()` | `string?` | フィールド名（あれば） |
-| `current_field_id()` | `integer?` | フィールドID（あれば） |
+| `current_field_id()` | `integer` | フィールドID（なければ 0） |
 | `current_descendant_index()` | `integer` | 現在のノードの子孫インデックス |
 | `goto_parent()` | `boolean` | 親に移動 |
 | `goto_first_child()` | `boolean` | 最初の子に移動 |
@@ -398,6 +398,7 @@ local lang = treesitter.language("go")
 print(lang:version())           -- ABIバージョン
 print(lang:node_kind_count())   -- ノード型の数
 print(lang:field_count())       -- フィールドの数
+print(lang:parse_state_count()) -- パース状態の数
 
 -- ノード種別のルックアップ
 local kind = lang:node_kind_for_id(1)

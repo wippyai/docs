@@ -123,13 +123,18 @@ network_service:
 | `state_dir` | `.wippy/net` | Verzeichnis fuer Treiber-State. Relative Pfade werden gegen das Boot-Config-Verzeichnis aufgeloest. |
 | `default_network` | — | Registry-ID eines Overlays, das auf jede Aufgabe oder jeden Prozess angewendet wird, der sein eigenes Netzwerk nicht ueber Optionen festlegt. |
 
+## Overlays aktualisieren
+
+Overlay-Einträge werden bei einer Registry-Aktualisierung im laufenden Betrieb ausgetauscht. Wenn sich die Konfiguration eines Overlays ändert, baut der Treiber zuerst den Ersatzdienst und tauscht ihn erst ein, sobald er erfolgreich erstellt wurde; schlägt die neue Konfiguration fehl, läuft das bestehende Overlay weiter. Gleichzeitige Aufrufer sehen entweder den alten oder den neuen Dienst, niemals eine Lücke.
+
 ## Berechtigungen
 
 | Aktion | Ressource | Beschreibung |
 |--------|----------|-------------|
 | `network.select` | Netzwerk-Registry-ID | Explizite Overlay-Auswahl bei `funcs.call`, `process.spawn`, `http_client` |
+| `network.bind` | Netzwerk-Registry-ID | Binden eines `http.service`-Listeners über ein Overlay (das Feld `network:`) |
 
-Verweigere `network.select` für einen Scope, um Code innerhalb davon daran zu hindern, explizit ein Overlay zu wählen. Geerbte Overlays sind nicht betroffen — sie wurden beim Aufrufer autorisiert.
+Verweigere `network.select` für einen Scope, um Code innerhalb davon daran zu hindern, explizit ein Overlay zu wählen. Geerbte Overlays sind nicht betroffen — sie wurden beim Aufrufer autorisiert. `network.bind` wird geprüft, wenn ein Server mit einem `network:`-Overlay seinen Listener startet.
 
 ## Siehe auch
 

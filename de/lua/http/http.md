@@ -258,10 +258,10 @@ end
 
 ### parse_multipart
 
-Parst Multipart-Formulardaten (Datei-Uploads).
+Parst Multipart-Formulardaten (Datei-Uploads). Nimmt einen optionalen `max_memory`-Integer (Bytes, die im Speicher gehalten werden, bevor sie in temporäre Dateien ausgelagert werden; Standard 32MB).
 
 ```lua
-local form, err = req:parse_multipart()
+local form, err = req:parse_multipart()  -- oder req:parse_multipart(8 * 1024 * 1024)
 if err then
     res:set_status(400)
     return res:write_json({error = "Invalid form data"})

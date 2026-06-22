@@ -36,6 +36,8 @@ Every process executes under an actor identity and security policy. Typically th
 
 Access control works at multiple levels. Individual processes have their own access levels. Message sending between hosts can be forbidden based on security policy—a sandboxed user process might not be allowed to send messages to system hosts at all. The policy attached to the current actor determines what operations are permitted.
 
+For the security implications of process isolation, see the [Security Model](concepts/security-model.md).
+
 ## Spawning Processes
 
 Create background processes with `process.spawn()`:
@@ -65,7 +67,7 @@ process.send(target_pid, "topic", payload)
 Messages from the same sender arrive in order. Messages from different senders may interleave. Delivery is fire-and-forget—use request-response patterns when you need confirmation.
 
 <note>
-Processes can register in a local name registry and be addressed by name instead of PID (e.g., `session_manager`). Global registry for cross-node addressing is planned.
+Processes can register in a local name registry and be addressed by name instead of PID (e.g., `session_manager`). Names can also be registered cluster-wide for cross-node addressing via `process.registry` using EVENTUAL (gossip-based), CONSISTENT, or STRONG (both Raft-backed) scopes.
 </note>
 
 ## Supervision

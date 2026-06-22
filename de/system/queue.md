@@ -148,7 +148,7 @@ Queues werden vom Driver bei der ersten Verwendung automatisch erstellt. Verwend
 | Feld | Typ | Erforderlich | Beschreibung |
 |------|-----|--------------|--------------|
 | `driver` | Registry-ID | Ja | Queue-Driver |
-| `codec` | string | Nein | Payload-Kodierung (z. B. `json/plain`, `msgpack/plain`) |
+| `codec` | string | Nein | Wire-Kodierung für Nachrichten-Bodies. Standard ist `json/plain` (siehe [Codecs](#codecs)) |
 | `queue_name` | string | Nein | Externer Queue-Name (Standard: Entry-Name) |
 | `driver_options` | object | Nein | Per-Driver-Sub-Bag, indiziert nach Driver-Kind |
 | `dead_letter.queue` | Registry-ID | Nein | Queue-ID für fehlgeschlagene Nachrichten |
@@ -173,6 +173,17 @@ Schlüssel unter `driver_options` sind nach Driver-Name geordnet. Ein Driver lie
 | `message_ttl` | Per-Queue-Message-TTL-Override |
 | `queue_expiry` | Ablauf für ungenutzte Queues |
 | `max_length` | Maximal aufbewahrte Nachrichten |
+
+### Codecs
+
+Der `codec` legt fest, wie ein Nachrichten-Body serialisiert wird, bevor er an den Broker übergeben wird. Es ist ein Payload-Format-String und ist standardmäßig `json/plain`:
+
+| Codec | Format |
+|-------|--------|
+| `json/plain` | JSON (Standard) |
+| `application/msgpack` | MessagePack |
+
+Der AMQP-Driver setzt einen passenden `content-type` (`application/json` oder `application/msgpack`) auf veröffentlichte Nachrichten. Ein unbekannter Codec schlägt fehl, wenn die Queue deklariert wird, nicht beim Veröffentlichen.
 
 ## Consumer-Konfiguration
 

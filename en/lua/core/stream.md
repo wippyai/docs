@@ -23,7 +23,7 @@ local chunk, err = stream:read(size)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `size` | integer | Bytes to read (0 = read all available) |
+| `size` | integer | Bytes to read (0 = default 32KB chunk) |
 
 **Returns:** `string, error` — `nil, nil` on EOF
 

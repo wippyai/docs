@@ -60,7 +60,7 @@ local err_p = payload.new(errors.new("something failed"))
 |----------|------|------|
 | `value` | any | Lua 값 (string, number, boolean, table, nil 또는 error) |
 
-**반환:** `Payload, nil`
+**반환:** `Payload`
 
 ## 형식 가져오기
 
@@ -77,7 +77,7 @@ local err_p = payload.new(errors.new("failed"))
 local format3 = err_p:get_format()  -- "golang/error"
 ```
 
-**반환:** `string, nil` - `payload.format.*` 상수 중 하나
+**반환:** `string` - `payload.format.*` 상수 중 하나
 
 ## 데이터 추출
 

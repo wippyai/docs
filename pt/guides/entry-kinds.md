@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|-----------|
 | `store.memory` | Armazenamento chave-valor em memória |
 | `store.sql` | Armazenamento chave-valor com backend SQL |
+| `store.kv.raft` | KV replicado em cluster, fortemente consistente (Raft compartilhado) |
+| `store.kv.crdt` | KV replicado em cluster, eventualmente consistente (gossip/CRDT) |
 
 ```yaml
 # Armazenamento em memória
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# Armazenamento replicado em cluster (requer clustering)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+Os tipos `store.kv.*` precisam do [clustering](guides/cluster.md) habilitado. Veja [Store](system/store.md#cluster-kv-stores) para os tradeoffs de consistência.
 
 **API Lua:** Veja [Módulo Store](lua/storage/store.md)
 
@@ -675,3 +684,29 @@ entries:
 # Referência de outra entrada
 func: app.users:handler
 ```
+
+## Overriding Entries
+
+Qualquer campo de uma entrada — incluindo seu `kind` — pode ser sobrescrito na inicialização sem editar o YAML de origem, usando a seção de configuração `override:` ou a flag `-o` do CLI. As chaves usam o formato `namespace:entry:path`:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # campo de dados (um path simples mira data.*)
+  app:worker:meta.priority: high    # campo meta
+  app:db:kind: db.sql.postgres      # o kind tipado da entrada
+  app:db:data.kind: custom          # um campo do payload literalmente chamado "kind"
+```
+
+| Path | Mira |
+|------|------|
+| `kind` | O kind tipado da entrada (deve ser uma string não vazia) |
+| `data.<field>` ou `<field>` simples | Um campo no payload de dados da entrada |
+| `meta.<field>` | Um campo nos metadados da entrada |
+
+Os mesmos overrides se aplicam a partir do CLI:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+Valores do CLI (`-o`) são convertidos pela forma (`true`/`false` para bool, números para números, caso contrário string); valores da seção `override:` mantêm seu tipo YAML. Para sobrescrever seções globais de [configuração](guides/configuration.md) em vez de entradas, use `--set`.

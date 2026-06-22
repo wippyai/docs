@@ -375,7 +375,7 @@ cursor:close()
 | `current_node()` | `Node` | Текущий узел |
 | `current_depth()` | `integer` | Глубина (0 = корень) |
 | `current_field_name()` | `string?` | Имя поля, если есть |
-| `current_field_id()` | `integer?` | ID поля, если есть |
+| `current_field_id()` | `integer` | ID поля (0, если нет) |
 | `current_descendant_index()` | `integer` | Индекс потомка для текущего узла |
 | `goto_parent()` | `boolean` | Перейти к родителю |
 | `goto_first_child()` | `boolean` | Перейти к первому потомку |
@@ -398,6 +398,7 @@ local lang = treesitter.language("go")
 print(lang:version())           -- версия ABI
 print(lang:node_kind_count())   -- количество типов узлов
 print(lang:field_count())       -- количество полей
+print(lang:parse_state_count()) -- количество состояний разбора
 
 -- Поиск типов узлов
 local kind = lang:node_kind_for_id(1)

@@ -368,6 +368,14 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
+## builder.at
+
+Formato de marcador para `@p1, @p2, ...` (estilo SQL Server). Se pasa a `placeholder_format` como los formatos anteriores.
+
+## builder.colon
+
+Formato de marcador para `:1, :2, ...`. Se pasa a `placeholder_format` como los formatos anteriores.
+
 ## Métodos de Conexión
 
 Handle de conexión a la base de datos devuelto por `sql.get()`.

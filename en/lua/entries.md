@@ -12,7 +12,7 @@ Configuration for Lua-based entries: functions, processes, workflows, and librar
 | `library.lua` | Shared code imported by other entries |
 | `module.lua` | Module surface (multi-method library) |
 
-Each kind has a precompiled bytecode counterpart (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) produced by `wippy pack --bytecode`. Authors write `.lua` entries; the bytecode kinds are emitted automatically when packing.
+Each kind has a precompiled bytecode counterpart (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) produced by `wippy pack --bytecode '**'` (or a pattern like `--bytecode 'app:**'`). Authors write `.lua` entries; the bytecode kinds are emitted when packing with that flag.
 
 ## Common Fields
 
@@ -163,18 +163,16 @@ Configure execution pool for functions:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # default
-    size: 4           # initial workers
-    max_size: 16      # cap for elastic pools
+    type: adaptive    # explicit; omit to use auto-select (lazy)
+    max_size: 16      # cap for elastic growth
 ```
 
 | Field | Pools | Description |
 |-------|-------|-------------|
 | `type` | all | Scheduler implementation (see table below) |
-| `size` | static, lazy, adaptive | Initial worker count |
-| `workers` | engine v2 | Worker thread count |
-| `buffer` | static, adaptive | Task queue capacity (default: `workers * 64`) |
-| `warm_start` | adaptive | Precompile entries at startup |
+| `workers` | static | Worker thread count (falls back to `size`, then 8) |
+| `size` | static | Worker count when `workers` is unset; also steers auto-select toward a static pool |
+| `buffer` | static | Task queue capacity (default: `workers * 64`) |
 | `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16) |
 
 | Type | Behavior |
@@ -182,7 +180,9 @@ Configure execution pool for functions:
 | `inline` | Synchronous execution in caller's goroutine. Lowest latency, no isolation between calls. |
 | `lazy` | Zero idle workers, spawn on demand, tear down when idle. |
 | `static` | Fixed-size channel-based pool. Predictable under steady load. |
-| `adaptive` | Auto-scaling pool — grows under load, shrinks when idle. Default. |
+| `adaptive` | Auto-scaling pool — grows under load, shrinks when idle. |
+
+When `type` is omitted, the pool is auto-selected from the other fields: a lazy pool by default, a static pool if `workers` is set.
 
 ## Metadata
 
@@ -206,7 +206,7 @@ Metadata is searchable via the registry:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 ## See Also

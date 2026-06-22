@@ -258,10 +258,10 @@ end
 
 ### parse_multipart
 
-マルチパートフォームデータ（ファイルアップロード）をパース。
+マルチパートフォームデータ（ファイルアップロード）をパース。オプションで `max_memory` integer を取ります（一時ファイルへ退避する前にメモリ上に保持するバイト数。デフォルト 32MB）。
 
 ```lua
-local form, err = req:parse_multipart()
+local form, err = req:parse_multipart()  -- または req:parse_multipart(8 * 1024 * 1024)
 if err then
     res:set_status(400)
     return res:write_json({error = "Invalid form data"})

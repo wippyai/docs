@@ -93,22 +93,26 @@ Modules use two separate but complementary typing mechanisms.
 
 ### Type Definitions (Tooling)
 
-The `Types` field provides type signatures for IDE support and documentation:
+The `Types` field provides type signatures for IDE support and documentation. Types are built with the `typ` package's fluent builders:
 
 ```go
-func ModuleTypes() *types.TypeManifest {
-    m := types.NewManifest("mymodule")
+import (
+    "github.com/wippyai/go-lua/types/io"
+    "github.com/wippyai/go-lua/types/typ"
+)
 
-    objectType := &types.InterfaceType{
-        Name: "mymodule.Object",
-        Methods: map[string]*types.FunctionType{
-            "get_value": types.NewFunction(nil, []types.Type{types.String}),
-            "set_value": types.NewFunction([]types.Type{types.String}, nil),
-        },
-    }
+func ModuleTypes() *io.Manifest {
+    m := io.NewManifest("mymodule")
+
+    objectType := typ.NewInterface("mymodule.Object", []typ.Method{
+        {Name: "get_value", Type: typ.Func().Param("self", typ.Self).
+            Returns(typ.String, typ.NewOptional(typ.LuaError)).Build()},
+        {Name: "set_value", Type: typ.Func().Param("self", typ.Self).
+            Param("value", typ.String).Returns(typ.NewOptional(typ.LuaError)).Build()},
+    })
 
     m.DefineType("Object", objectType)
-    m.SetExport(moduleType)
+    m.SetExport(objectType)
     return m
 }
 ```
@@ -117,29 +121,42 @@ func ModuleTypes() *types.TypeManifest {
 
 | Type | Description |
 |------|-------------|
-| `types.String` | String primitive |
-| `types.Number` | Numeric value |
-| `types.Boolean` | Boolean value |
-| `types.Any` | Any Lua value |
-| `types.LuaError` | Error type |
-| `types.Optional(t)` | Optional value of type t |
-| `types.InterfaceType` | Object with methods |
-| `types.FunctionType` | Function signature with params/returns |
-| `types.RecordType` | Struct-like type with fields |
-| `types.TableType` | Table with key/value types |
+| `typ.String` | String primitive |
+| `typ.Number` | Numeric value |
+| `typ.Integer` | Integer value |
+| `typ.Boolean` | Boolean value |
+| `typ.Any` | Any Lua value |
+| `typ.Self` | Receiver type for methods |
+| `typ.LuaError` | Error type |
+| `typ.NewOptional(t)` | Optional value of type t |
+| `typ.NewInterface(name, methods)` | Object with methods |
+| `typ.Func()` | Function signature builder |
+| `typ.NewRecord()` | Struct-like type builder (fields via `.Field`/`.OptField`) |
+| `typ.NewArray(t)` | Array of element type t |
+| `typ.NewMap(k, v)` | Map with key/value types |
 
-Function signatures support variadic parameters:
+Function builders chain `Param`, `OptParam`, `Variadic`, and `Returns`:
 
 ```go
 // (string, ...any) -> (string, error?)
-types.FunctionType{
-    Params:   []types.Type{types.String},
-    Variadic: types.Any,
-    Returns:  []types.Type{types.String, types.Optional(types.LuaError)},
-}
+typ.Func().
+    Param("first", typ.String).
+    Variadic(typ.Any).
+    Returns(typ.String, typ.NewOptional(typ.LuaError)).
+    Build()
 ```
 
-See the `types` package in go-lua for the complete type system.
+Records declare fields with `Field` (required) and `OptField` (optional):
+
+```go
+typ.NewRecord().
+    Field("key", typ.String).
+    Field("value", typ.Any).
+    OptField("ttl", typ.Number).
+    Build()
+```
+
+See the `typ` package in go-lua for the complete type system.
 
 ### UserData Bindings (Runtime)
 
@@ -319,6 +336,14 @@ func newTestScheduler() *testScheduler {
     return ts
 }
 
+// Stop wraps Scheduler.Stop, which requires a context.
+func (ts *testScheduler) Stop() {
+    ts.Scheduler.Stop(context.Background())
+}
+
+// OnStart satisfies process.Lifecycle alongside OnComplete.
+func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
+
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
     ts.mu.Lock()
     ch, ok := ts.pending[p.UniqID]
@@ -353,17 +378,19 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
 Create processes from Lua scripts with the modules you're testing:
 
 ```go
-func bindMyModule(l *lua.LState) {
+func bindMyModule(l *lua.LState) error {
     tbl, _ := mymodule.Module.Build()
     l.SetGlobal(mymodule.Module.Name, tbl)
+    return nil
 }
 
 func newLuaProcess(script string) *engine.Process {
     proto, _ := lua.CompileString(script, "test.lua")
-    return engine.NewProcess(
+    proc, _ := engine.NewProcess(
         engine.WithProto(proto),
         engine.WithModuleBinder(bindMyModule),
     )
+    return proc
 }
 
 func TestMyModuleYields(t *testing.T) {

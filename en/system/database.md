@@ -44,14 +44,14 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
-      max_open: 1
-      max_idle: 1
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+SQLite always runs with a single connection (<code>max_open</code> and <code>max_idle</code> are forced to <code>1</code>) and <code>WAL</code> journal mode. Only <code>max_lifetime</code> from <code>pool</code> is applied.
+</note>
 
 ## Connection Fields
 
@@ -73,8 +73,8 @@ entries:
 | Field | Type | Description |
 |-------|------|-------------|
 | `file` | string | Database file path or `:memory:` |
-| `pool` | object | Connection pool settings |
-| `options` | map | SQLite-specific options |
+| `pool` | object | Only `max_lifetime` is applied (connections are fixed at 1) |
+| `options` | map | Accepted but ignored |
 | `lifecycle` | object | Lifecycle configuration |
 
 ### Environment Variable Fields
@@ -110,7 +110,7 @@ Configure connection pooling behavior. Pool settings map to Go's [database/sql c
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `max_open` | int | 0 | Maximum open connections (0 = unlimited) |
-| `max_idle` | int | 0 | Maximum idle connections (0 = unlimited) |
+| `max_idle` | int | 0 | Maximum idle connections (0 = no idle connections retained) |
 | `max_lifetime` | duration | 1h | Maximum connection lifetime |
 
 ```yaml
@@ -126,25 +126,25 @@ Set <code>max_idle</code> less than or equal to <code>max_open</code>. Connectio
 
 ## DSN Formats
 
-Each database type constructs a DSN from configuration:
+Each database type constructs a DSN from configuration. Any `options` are appended (sorted by key); none are included by default.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host=host port=port user=username password=password dbname=database [option=value ...]
 ```
 
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## Database Options
@@ -171,12 +171,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLite does not apply the `options` map to its DSN. File databases always open with `mode=rwc`, and journal mode is always set to `WAL`. The `options` field is accepted but ignored.
 
 ## Examples
 
@@ -229,12 +224,6 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### Multiple Database Setup
@@ -282,5 +271,5 @@ See [SQL Module](lua/storage/sql.md) for database operations API.
 ## See Also
 
 - [SQL Module](lua/storage/sql.md) - Lua API reference
-- [Store](system/store.md) - Key-value store backed by `database.sql`
+- [Store](system/store.md) - Key-value store backed by a `db.sql.*` database
 - [Queue](system/queue.md) - SQL-backed queue handler

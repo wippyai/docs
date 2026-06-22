@@ -27,7 +27,7 @@ YAML definitions are loaded into the registry at startup. The registry is the so
 
 ### File Structure
 
-Any YAML file with `version` and `namespace` is valid:
+Any YAML file with a `namespace` plus either an `entries` array or a top-level `name`+`kind` is a valid definition file. `version` is optional:
 
 ```yaml
 version: "1.0"
@@ -55,7 +55,7 @@ entries:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `version` | yes | Schema version (currently `"1.0"`) |
+| `version` | no | Schema version (currently `"1.0"`) |
 | `namespace` | yes | Entry namespace for this file |
 | `entries` | yes | Array of entry definitions |
 
@@ -184,6 +184,8 @@ See [Entry Kinds Guide](guides/entry-kinds.md) for complete reference.
 Runtime configuration at project root:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 

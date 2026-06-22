@@ -63,8 +63,36 @@ storage:release()
 |----------|-----|----------|
 | `key` | string | Ключ/путь объекта |
 | `content` | string или Reader | Содержимое как строка или файловый reader |
+| `options` | table | Опциональные метаданные и опции условной записи |
 
 **Возвращает:** `boolean, error`
+
+### Опции загрузки
+
+Прикрепите метаданные или защитите запись с помощью таблицы опций:
+
+```lua
+storage:upload_object("reports/daily.json", body, {
+    content_type = "application/json",
+    cache_control = "max-age=3600",
+    metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
+    only_if_absent = true                              -- fail if the key already exists
+})
+```
+
+| Опция | Тип | Описание |
+|-------|-----|----------|
+| `content_type` | string | MIME-тип |
+| `cache_control` | string | Заголовок Cache-Control |
+| `content_disposition` | string | Заголовок Content-Disposition |
+| `content_encoding` | string | Заголовок Content-Encoding |
+| `metadata` | table | Пользовательские метаданные (строковые ключи/значения), хранятся как `x-amz-meta-*` |
+| `headers` | table | Дополнительные заголовки запроса (строковые ключи/значения) |
+| `if_match` | string | Записать, только если текущий ETag объекта совпадает |
+| `if_none_match` | string | Записать, только если ни один объект не совпадает с ETag (`"*"` означает любой) |
+| `only_if_absent` | boolean | Записать, только если ключ не существует (алиас для `if_none_match = "*"`) |
+
+Условная запись, не прошедшая своё предусловие, возвращает ошибку `precondition_failed`.
 
 ## Скачивание объектов
 
@@ -94,8 +122,12 @@ storage:release()
 | `key` | string | Ключ объекта для скачивания |
 | `writer` | Writer | Файловый writer назначения |
 | `options.range` | string | Диапазон байт (например, "bytes=0-1023") |
+| `options.if_match` | string | Скачать, только если ETag объекта совпадает |
+| `options.if_none_match` | string | Скачать, только если ETag не совпадает |
 
 **Возвращает:** `boolean, error`
+
+Непройденное предусловие (`if_match`/`if_none_match`) возвращает ошибку `precondition_failed`.
 
 ## Перечисление объектов
 
@@ -110,7 +142,7 @@ local result, err = storage:list_objects({
 })
 
 for _, obj in ipairs(result.objects) do
-    print(obj.key, obj.size, obj.content_type)
+    print(obj.key, obj.size, obj.etag)
 end
 
 -- Пагинация для больших результатов
@@ -135,10 +167,60 @@ storage:release()
 | `options.prefix` | string | Фильтр по префиксу ключа |
 | `options.max_keys` | integer | Максимум объектов для возврата |
 | `options.continuation_token` | string | Токен пагинации |
+| `options.include_owner` | boolean | Включить `owner` каждого объекта (`id`, `display_name`) |
+| `options.include_versions` | boolean | Перечислить версии объектов; каждый элемент включает `version_id` |
 
 **Возвращает:** `table, error`
 
-Результат содержит `objects`, `is_truncated`, `next_continuation_token`.
+Результат содержит `objects`, `is_truncated`, `next_continuation_token`. Каждый объект имеет `key`, `size`, `etag`, `storage_class`, а также опциональные `last_modified`, `version_id` и `owner`.
+
+<note>
+В результатах списка <code>content_type</code> всегда пуст — операции списка S3 его не возвращают. Используйте <code>head_object</code>, чтобы прочитать content type и метаданные объекта.
+</note>
+
+## Метаданные объекта
+
+Получить метаданные одного объекта без скачивания его тела:
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local meta, err = storage:head_object("reports/daily.json")
+if err then
+    return nil, err
+end
+
+print(meta.size, meta.etag, meta.content_type)
+for k, v in pairs(meta.metadata) do
+    print("meta", k, v)
+end
+
+storage:release()
+```
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `key` | string | Ключ объекта |
+
+**Возвращает:** `table, error`
+
+Поля результата:
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `size` | integer | Размер объекта в байтах |
+| `etag` | string | Entity tag |
+| `content_type` | string | MIME-тип |
+| `cache_control` | string | Заголовок Cache-Control |
+| `content_disposition` | string | Заголовок Content-Disposition |
+| `content_encoding` | string | Заголовок Content-Encoding |
+| `storage_class` | string | Класс хранения |
+| `version_id` | string | ID версии (присутствует при включённом версионировании) |
+| `last_modified` | integer | Время последнего изменения (Unix-секунды) |
+| `metadata` | table | Пользовательские метаданные (`x-amz-meta-*`) |
+| `headers` | table | Сырые заголовки ответа (ключи в нижнем регистре) |
+
+Отсутствующий объект возвращает ошибку `not_found`.
 
 ## Удаление объектов
 
@@ -232,8 +314,9 @@ return {upload_url = url}
 
 | Метод | Возвращает | Описание |
 |-------|------------|----------|
-| `upload_object(key, content)` | `boolean, error` | Загрузить строку или файл |
+| `upload_object(key, content, opts?)` | `boolean, error` | Загрузить строку или файл |
 | `download_object(key, writer, opts?)` | `boolean, error` | Скачать в файловый writer |
+| `head_object(key)` | `table, error` | Получить метаданные объекта |
 | `list_objects(opts?)` | `table, error` | Список объектов с фильтром по префиксу |
 | `delete_objects(keys)` | `boolean, error` | Удалить несколько объектов |
 | `presigned_get_url(key, opts?)` | `string, error` | Сгенерировать временный URL для скачивания |
@@ -260,6 +343,7 @@ return {upload_url = url}
 | Содержимое nil | `errors.INVALID` | нет |
 | Writer некорректен | `errors.INVALID` | нет |
 | Объект не найден | `errors.NOT_FOUND` | нет |
+| Условное предусловие не выполнено | `errors.CONFLICT` | нет |
 | Доступ запрещён | `errors.PERMISSION_DENIED` | нет |
 | Операция не удалась | `errors.INTERNAL` | нет |
 

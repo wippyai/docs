@@ -166,6 +166,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 | 字段 | 类型 | 描述 |
 |-------|------|-------------|
 | `level` | integer | 压缩级别 1-22（默认：3） |
+| `dict` | string? | 来自 `train_dict` 的 Zstd 字典字节（默认：无） |
 
 **返回:** `string, error`
 
@@ -188,8 +189,36 @@ end
 | 字段 | 类型 | 描述 |
 |-------|------|-------------|
 | `max_size` | integer | 最大解压大小（字节）（默认：128MB，最大：1GB） |
+| `dict` | string? | Zstd 字典字节（必须与编码所用的字典一致） |
 
 **返回:** `string, error`
+
+### 字典 {id="zstd-dictionaries"}
+
+从样本数据训练字典，以提升对大量小型、相似负载的压缩效果。将训练好的字典作为 `dict` 选项传给 `encode`/`decode`——两者必须使用同一字典。
+
+```lua
+local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
+local packed   = compress.zstd.encode(data, { dict = dict })
+local original = compress.zstd.decode(packed, { dict = dict })
+```
+
+#### train_dict(samples, options?)
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `samples` | string[] | 训练样本（至少一个 >= 8 字节） |
+| `options` | table? | `size`（integer，目标字典字节数，256-1048576，默认 114688）、`id`（integer，默认 0）、`level`（integer，1-22） |
+
+**返回:** `string, error`（字典字节）
+
+#### inspect_dict(dict)
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `dict` | string | 字典字节 |
+
+**返回:** `table, error`——`{id: integer, content_size: integer}`
 
 ## Deflate
 

@@ -160,7 +160,7 @@ runner.run({
 
 ### プログラムのコンパイル
 
-繰り返しの実行のために一度コンパイル:
+`runner.compile` はソースを検証し、実行せずにそのエントリポイントとモジュールを報告します:
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +170,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+コンパイル済みプログラムは情報提供用です。実行するには、ソースとメソッドを指定して `runner.run` を呼び出します。
 
 ## セキュリティモデル
 

@@ -35,7 +35,7 @@ entries:
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `api_router` | yes | — | HTTP router for view API endpoints |
-| `env_storage` | no | internal | Environment storage backing the `PUBLIC_API_URL` variable |
+| `env_storage` | yes | — | Environment storage backing the `PUBLIC_API_URL` variable |
 
 ## Template Pages
 

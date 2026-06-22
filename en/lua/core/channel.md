@@ -69,7 +69,7 @@ end
 
 ## Closing Channels
 
-Close the channel. Pending senders get an error, pending receivers get `nil, false`. Raises error if already closed:
+Close the channel. Pending senders get an error, pending receivers get `nil, false`. Closing an already-closed channel is a no-op:
 
 ```lua
 local results = channel.new(10)
@@ -206,7 +206,6 @@ end
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Send on closed channel | runtime error | no |
-| Close of closed channel | runtime error | no |
 | Invalid case in select | runtime error | no |
 
 ## See Also

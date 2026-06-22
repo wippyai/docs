@@ -160,7 +160,7 @@ runner.run({
 
 ### Compilando Programas
 
-Compilar uma vez para execução repetida:
+`runner.compile` valida o código-fonte e reporta seu entrypoint e módulos sem executá-lo:
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +170,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+O programa compilado é informativo; execute chamando `runner.run` com o código-fonte e o método.
 
 ## Modelo de Segurança
 

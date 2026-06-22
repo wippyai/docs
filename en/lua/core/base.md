@@ -74,7 +74,6 @@ table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
 table.remove(t [,pos])         -- Remove and return element at pos (default: last)
 table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
 table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
-table.pack(...)                -- Pack varargs into table with 'n' field
 table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
 ```
 
@@ -119,7 +118,7 @@ string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
 string.len(s)              -- String length (or use #s)
 string.byte(s [,i [,j]])   -- Numeric codes of characters
 string.char(...)           -- Create string from character codes
-string.rep(s, n [,sep])    -- Repeat string n times with separator
+string.rep(s, n)           -- Repeat string n times
 string.reverse(s)          -- Reverse string
 ```
 
@@ -203,14 +202,16 @@ math.fmod(x, y)       -- Floating-point remainder
 math.sqrt(x)          -- Square root
 math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Natural log (or log base n)
+math.log(x)           -- Natural log
+math.log10(x)         -- Base-10 log
 ```
 
 ### Trigonometry
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Arc tangent of y/x
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
 math.deg(r)   -- Radians to degrees
 math.rad(d)   -- Degrees to radians
@@ -323,44 +324,6 @@ err:details()    -- Get details table or nil
 err:stack()      -- Get stack trace as string
 ```
 
-## UTF-8 Unicode
-
-Unicode UTF-8 string handling:
-
-### Constants {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Pattern matching a single UTF-8 character
-```
-
-### Functions {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Create string from Unicode codepoints
-utf8.codes(s)            -- Iterator over codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Get codepoints at positions i to j
-utf8.len(s [,i [,j]])    -- Count UTF-8 characters (not bytes)
-utf8.offset(s, n [,i])   -- Byte position of n-th character from position i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Count characters (not bytes)
-print(utf8.len(s))  -- 9
-
--- Iterate over codepoints
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Get codepoint at position
-local code = utf8.codepoint(s, 8)  -- First Chinese character
-
--- Create string from codepoints
-local emoji = utf8.char(0x1F600)  -- Grinning face
-```
-
 ## Restricted Features
 
 The following standard Lua features are NOT available for security:
@@ -372,7 +335,8 @@ The following standard Lua features are NOT available for security:
 | `rawlen` | Use `#` operator |
 | `io.*` | Use [File System](lua/storage/filesystem.md) module |
 | `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) modules |
-| `debug.*` (except traceback) | Not available |
+| `debug.*` | Not available |
+| `utf8.*` | Not available |
 | `package.loadlib` | Native libraries not supported |
 
 ## See Also

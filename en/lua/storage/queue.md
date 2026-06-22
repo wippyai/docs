@@ -93,17 +93,18 @@ local stats, err = queue.info("app:tasks")
 
 ## Consumer Pattern
 
-Queue consumers are defined as entry points that receive the payload directly:
+A `queue.consumer` entry binds a queue to a handler function (referenced by `func`). The handler receives the message payload directly:
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

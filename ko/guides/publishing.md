@@ -206,6 +206,10 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--protected` | 게시된 버전을 보호됨으로 표시 (삭제 또는 덮어쓰기 불가) |
 | `--registry <url>` | 이 게시에 대해 레지스트리 URL 재정의 |
 | `--config <dir>` | `wippy.yaml`을 포함한 디렉토리 (기본값: 현재 디렉토리) |
+| `--create` | 모듈이 아직 존재하지 않으면 허브에 등록한 뒤 게시 |
+| `--module-visibility <v>` | `--create`에 대한 가시성: `private`(기본값) 또는 `public` |
+| `--module-type <t>` | `--create`에 대한 타입: `application`(기본값), `library`, `agent`, 또는 `plugin` |
+| `--module-display-name <n>` | `--create`에 대한 표시 이름 |
 
 ### 정적 파일 임베딩
 
@@ -217,6 +221,34 @@ wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
 `--embed` 플래그는 `fs.directory` 엔트리와 일치하는 엔트리 ID 또는 이름을 받습니다. `wippy pack`에서도 동일한 플래그를 사용할 수 있습니다.
+
+### 최초 게시
+
+모듈을 처음 게시할 때는 허브에 자동으로 등록되며(기본값은 private), 게시가 한 번 재시도됩니다. `--create`를 전달하면 모듈을 미리 등록하고 속성을 설정할 수 있습니다:
+
+```bash
+wippy publish --create --version 0.1.0 \
+  --module-visibility public \
+  --module-type library \
+  --module-display-name "HTTP Utils"
+```
+
+`--create`는 멱등적입니다 — 이미 등록된 모듈에 대해서는 create 단계가 아무 동작도 하지 않습니다. 계정이 해당 조직에서 모듈을 생성할 수 없는 경우, 허브는 게시 대신 권한 오류를 반환합니다.
+
+### 로컬 허브에 게시
+
+`--registry`를 로컬에서 실행 중인 허브로 지정하면 공개 레지스트리 없이 게시하고 설치할 수 있습니다. 평문 HTTP는 로컬 호스트에서만 허용됩니다 — `localhost`, `127.0.0.1`, 그리고 컨테이너 별칭인 `host.docker.internal`(Docker Desktop / OrbStack)과 `host.containers.internal`(Podman). 그 외의 호스트는 HTTPS를 사용해야 합니다.
+
+```bash
+wippy auth login --registry http://localhost:8080 --token wpy_xxx
+wippy publish --registry http://localhost:8080 --create --version 0.1.0
+```
+
+레지스트리와 토큰은 `WIPPY_REGISTRY` 및 `WIPPY_TOKEN` 환경 변수로도 지정할 수 있습니다. 설정하지 않으면 레지스트리는 기본적으로 `https://hub.wippy.ai`가 됩니다.
+
+### 할당량
+
+조직의 private 모듈 할당량이 소진되면 게시는 `cannot publish: Private-module quota exhausted (5 of 5)...`와 같은 메시지와 함께 실패합니다. 모듈을 public으로 만들거나 조직 관리자에게 할당량 상향을 요청하세요. 업로드와 다운로드는 일시적인 네트워크 오류 발생 시 자동으로 재시도됩니다.
 
 ## 게시된 모듈 사용
 

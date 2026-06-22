@@ -88,7 +88,7 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | 要检查的值 |
 
-**返回值:** `boolean`
+**返回值:** `boolean, error`
 
 ### 获取版本
 

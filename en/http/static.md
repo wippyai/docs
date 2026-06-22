@@ -11,7 +11,6 @@ Serve static files from any filesystem using `http.static`. Static handlers moun
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -23,7 +22,6 @@ Serve static files from any filesystem using `http.static`. Static handlers moun
 | `meta.server` | Registry ID | Parent HTTP server |
 | `path` | string | URL mount path (must start with `/`) |
 | `fs` | Registry ID | Filesystem entry to serve from |
-| `directory` | string | Subdirectory within filesystem |
 | `static_options.spa` | bool | SPA mode - serve index for unmatched paths |
 | `static_options.index` | string | Index file (required when spa=true) |
 | `static_options.cache` | string | Cache-Control header value |
@@ -56,16 +54,20 @@ entries:
 
 Request `/static/css/style.css` serves `./public/css/style.css`.
 
-The `directory` field selects a subdirectory within the filesystem:
+To serve a subdirectory, point the `fs` reference at a filesystem entry rooted there—for example an `fs.directory` with `directory:` set to the subdirectory:
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPA Mode
@@ -111,7 +113,6 @@ entries:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 

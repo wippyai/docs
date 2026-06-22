@@ -63,8 +63,36 @@ storage:release()
 |-----------|------|-------------|
 | `key` | string | 对象键/路径 |
 | `content` | string 或 Reader | 字符串内容或文件读取器 |
+| `options` | table | 可选的元数据和条件写入选项 |
 
 **返回:** `boolean, error`
+
+### 上传选项
+
+通过选项表附加元数据或对写入设置前置条件：
+
+```lua
+storage:upload_object("reports/daily.json", body, {
+    content_type = "application/json",
+    cache_control = "max-age=3600",
+    metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
+    only_if_absent = true                              -- fail if the key already exists
+})
+```
+
+| 选项 | 类型 | 描述 |
+|--------|------|-------------|
+| `content_type` | string | MIME 类型 |
+| `cache_control` | string | Cache-Control 头部 |
+| `content_disposition` | string | Content-Disposition 头部 |
+| `content_encoding` | string | Content-Encoding 头部 |
+| `metadata` | table | 用户元数据（string 键/值），存储为 `x-amz-meta-*` |
+| `headers` | table | 额外的请求头部（string 键/值） |
+| `if_match` | string | 仅当当前对象 ETag 匹配时写入 |
+| `if_none_match` | string | 仅当没有对象匹配该 ETag 时写入（`"*"` 表示任意） |
+| `only_if_absent` | boolean | 仅当键不存在时写入（`if_none_match = "*"` 的别名） |
+
+未满足前置条件的条件写入会返回 `precondition_failed` 错误。
 
 ## 下载对象
 
@@ -94,8 +122,12 @@ storage:release()
 | `key` | string | 要下载的对象键 |
 | `writer` | Writer | 目标文件写入器 |
 | `options.range` | string | 字节范围（例如 "bytes=0-1023"） |
+| `options.if_match` | string | 仅当对象 ETag 匹配时下载 |
+| `options.if_none_match` | string | 仅当 ETag 不匹配时下载 |
 
 **返回:** `boolean, error`
+
+未满足前置条件（`if_match`/`if_none_match`）会返回 `precondition_failed` 错误。
 
 ## 列出对象
 
@@ -110,7 +142,7 @@ local result, err = storage:list_objects({
 })
 
 for _, obj in ipairs(result.objects) do
-    print(obj.key, obj.size, obj.content_type)
+    print(obj.key, obj.size, obj.etag)
 end
 
 -- 分页浏览大量结果
@@ -135,10 +167,60 @@ storage:release()
 | `options.prefix` | string | 按键前缀过滤 |
 | `options.max_keys` | integer | 返回的最大对象数 |
 | `options.continuation_token` | string | 分页令牌 |
+| `options.include_owner` | boolean | 包含每个对象的 `owner`（`id`、`display_name`） |
+| `options.include_versions` | boolean | 列出对象版本；每项包含 `version_id` |
 
 **返回:** `table, error`
 
-结果包含 `objects`、`is_truncated`、`next_continuation_token`。
+结果包含 `objects`、`is_truncated`、`next_continuation_token`。每个对象都有 `key`、`size`、`etag`、`storage_class`，以及可选的 `last_modified`、`version_id` 和 `owner`。
+
+<note>
+在列表结果中 <code>content_type</code> 始终为空——S3 list 操作不返回它。使用 <code>head_object</code> 读取对象的内容类型和元数据。
+</note>
+
+## 对象元数据
+
+在不下载对象正文的情况下获取单个对象的元数据：
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local meta, err = storage:head_object("reports/daily.json")
+if err then
+    return nil, err
+end
+
+print(meta.size, meta.etag, meta.content_type)
+for k, v in pairs(meta.metadata) do
+    print("meta", k, v)
+end
+
+storage:release()
+```
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `key` | string | 对象键 |
+
+**返回:** `table, error`
+
+结果字段：
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `size` | integer | 对象大小（字节） |
+| `etag` | string | 实体标签 |
+| `content_type` | string | MIME 类型 |
+| `cache_control` | string | Cache-Control 头部 |
+| `content_disposition` | string | Content-Disposition 头部 |
+| `content_encoding` | string | Content-Encoding 头部 |
+| `storage_class` | string | 存储类别 |
+| `version_id` | string | 版本 ID（启用版本控制时存在） |
+| `last_modified` | integer | 最后修改时间（Unix 秒） |
+| `metadata` | table | 用户元数据（`x-amz-meta-*`） |
+| `headers` | table | 原始响应头部（键名为小写） |
+
+不存在的对象会返回 `not_found` 错误。
 
 ## 删除对象
 
@@ -232,8 +314,9 @@ return {upload_url = url}
 
 | 方法 | 返回 | 描述 |
 |--------|---------|-------------|
-| `upload_object(key, content)` | `boolean, error` | 上传字符串或文件内容 |
+| `upload_object(key, content, opts?)` | `boolean, error` | 上传字符串或文件内容 |
 | `download_object(key, writer, opts?)` | `boolean, error` | 下载到文件写入器 |
+| `head_object(key)` | `table, error` | 获取对象元数据 |
 | `list_objects(opts?)` | `table, error` | 列出对象并按前缀过滤 |
 | `delete_objects(keys)` | `boolean, error` | 删除多个对象 |
 | `presigned_get_url(key, opts?)` | `string, error` | 生成临时下载 URL |
@@ -260,6 +343,7 @@ return {upload_url = url}
 | 内容为 nil | `errors.INVALID` | 否 |
 | 写入器无效 | `errors.INVALID` | 否 |
 | 对象未找到 | `errors.NOT_FOUND` | 否 |
+| 条件前置条件失败 | `errors.CONFLICT` | 否 |
 | 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
 | 操作失败 | `errors.INTERNAL` | 否 |
 

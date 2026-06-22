@@ -278,8 +278,10 @@ resp.stream:close()
 
 | 스트림 메서드 | 반환 | 설명 |
 |--------------|------|------|
-| `read(size)` | string, error | 최대 `size` 바이트 읽기 |
-| `close()` | - | 스트림 닫기 |
+| `read(n?)` | string, error | 최대 `n` 바이트 읽기 (기본값: 구현 버퍼) |
+| `close()` | boolean, error | 스트림 닫기 |
+
+`resp.stream`은 완전한 [스트림](lua/core/stream.md) 객체입니다 — `seek`, `stat`, `scanner`도 사용할 수 있습니다.
 
 ## 배치 요청
 

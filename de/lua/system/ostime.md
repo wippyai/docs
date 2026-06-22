@@ -35,18 +35,18 @@ local t = os.time({
 })
 ```
 
-**Signatur:** `os.time([spec]) -> integer`
+**Signatur:** `os.time([spec]) -> number`
 
 **Parameter:**
 
 | Feld | Typ | Standard | Beschreibung |
 |-------|------|---------|-------------|
-| `year` | integer | aktuelles Jahr | Vierstelliges Jahr (z.B. 2024) |
-| `month` | integer | aktueller Monat | Monat 1-12 |
-| `day` | integer | aktueller Tag | Tag des Monats 1-31 |
-| `hour` | integer | 0 | Stunde 0-23 |
-| `min` | integer | 0 | Minute 0-59 |
-| `sec` | integer | 0 | Sekunde 0-59 |
+| `year` | number | aktuelles Jahr | Vierstelliges Jahr (z.B. 2024) |
+| `month` | number | aktueller Monat | Monat 1-12 |
+| `day` | number | aktueller Tag | Tag des Monats 1-31 |
+| `hour` | number | 0 | Stunde 0-23 |
+| `min` | number | 0 | Minute 0-59 |
+| `sec` | number | 0 | Sekunde 0-59 |
 
 Ohne Argumente aufgerufen, gibt den aktuellen Unix-Zeitstempel zurück.
 
@@ -87,7 +87,7 @@ local t = os.date("*t", now)
 | Parameter | Typ | Standard | Beschreibung |
 |-----------|------|---------|-------------|
 | `format` | string | `"%c"` | Format-String, `"*t"` für Tabelle |
-| `timestamp` | integer | aktuelle Zeit | Unix-Zeitstempel zum Formatieren |
+| `timestamp` | number | aktuelle Zeit | Unix-Zeitstempel zum Formatieren |
 
 ### Format-Spezifikatoren
 
@@ -126,14 +126,14 @@ local t = os.date("*t")
 
 | Feld | Typ | Beschreibung | Beispiel |
 |-------|------|-------------|---------|
-| `year` | integer | Vierstelliges Jahr | 2024 |
-| `month` | integer | Monat (1-12) | 6 |
-| `day` | integer | Tag des Monats (1-31) | 15 |
-| `hour` | integer | Stunde (0-23) | 14 |
-| `min` | integer | Minute (0-59) | 30 |
-| `sec` | integer | Sekunde (0-59) | 45 |
-| `wday` | integer | Wochentag (1-7, Sonntag=1) | 7 |
-| `yday` | integer | Tag des Jahres (1-366) | 167 |
+| `year` | number | Vierstelliges Jahr | 2024 |
+| `month` | number | Monat (1-12) | 6 |
+| `day` | number | Tag des Monats (1-31) | 15 |
+| `hour` | number | Stunde (0-23) | 14 |
+| `min` | number | Minute (0-59) | 30 |
+| `sec` | number | Sekunde (0-59) | 45 |
+| `wday` | number | Wochentag (1-7, Sonntag=1) | 7 |
+| `yday` | number | Tag des Jahres (1-366) | 167 |
 | `isdst` | boolean | Sommerzeit | false |
 
 Verwenden Sie `"!*t"` für UTC-Datums-Tabelle.
@@ -171,8 +171,8 @@ print(days)  -- 365
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `t2` | integer | Späterer Zeitstempel |
-| `t1` | integer | Früherer Zeitstempel |
+| `t2` | number | Späterer Zeitstempel |
+| `t1` | number | Früherer Zeitstempel |
 
 Gibt `t2 - t1` in Sekunden zurück. Kann negativ sein wenn `t1 > t2`.
 

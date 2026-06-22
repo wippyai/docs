@@ -28,6 +28,7 @@
     "children": [
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Security Model", "path": "concepts/security-model"},
       {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "Cluster", "path": "concepts/cluster"},
       {"title": "Functions", "path": "concepts/functions"},
@@ -38,6 +39,7 @@
     "title": "Lua Runtime",
     "children": [
       {"title": "Overview", "path": "lua/overview"},
+      {"title": "Why Lua", "path": "lua/why-lua"},
       {"title": "Types", "path": "lua/types"},
       {"title": "Entries", "path": "lua/entries"},
       {
@@ -248,11 +250,15 @@
       {"title": "Processes", "path": "tutorials/processes"},
       {"title": "Supervision", "path": "tutorials/supervision"},
       {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "Testing", "path": "tutorials/testing"},
       {"title": "Authentication", "path": "tutorials/auth"},
+      {"title": "Frontend Facade", "path": "tutorials/facade"},
       {"title": "Network Overlays", "path": "tutorials/network"},
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
+      {"title": "Keeper over MCP", "path": "tutorials/keeper-mcp"},
+      {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
       {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },

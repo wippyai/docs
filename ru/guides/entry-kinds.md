@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |-----|----------|
 | `store.memory` | In-memory хранилище |
 | `store.sql` | Хранилище на базе SQL |
+| `store.kv.raft` | Реплицируемое в кластере, строго согласованное KV (общий Raft) |
+| `store.kv.crdt` | Реплицируемое в кластере, согласованное в конечном счёте KV (gossip/CRDT) |
 
 ```yaml
 # Memory store
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# Cluster-replicated store (requires clustering)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+Типы `store.kv.*` требуют включённой [кластеризации](guides/cluster.md). См. [Store](system/store.md#cluster-kv-stores) для компромиссов согласованности.
 
 **Lua API:** См. [Модуль Store](lua/storage/store.md)
 
@@ -675,3 +684,29 @@ entries:
 # Ссылка из другой записи
 func: app.users:handler
 ```
+
+## Переопределение записей {id="overriding-entries"}
+
+Любые поля записи — включая её `kind` — можно переопределить при запуске без редактирования исходного YAML, используя секцию конфигурации `override:` или CLI-флаг `-o`. Ключи используют формат `namespace:entry:path`:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
+```
+
+| Путь | Цель |
+|------|------|
+| `kind` | Типизированный kind записи (должен быть непустой строкой) |
+| `data.<field>` или просто `<field>` | Поле в data-нагрузке записи |
+| `meta.<field>` | Поле в метаданных записи |
+
+Те же переопределения работают из CLI:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+Значения CLI (`-o`) приводятся по форме (`true`/`false` в bool, числа в числа, иначе строка); значения секции `override:` сохраняют свой YAML-тип. Чтобы переопределить глобальные секции [конфигурации](guides/configuration.md), а не записи, используйте `--set`.

@@ -203,11 +203,14 @@
       {"title": "Processes", "path": "tutorials/processes"},
       {"title": "Supervision", "path": "tutorials/supervision"},
       {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "Testing", "path": "tutorials/testing"},
       {"title": "Authentication", "path": "tutorials/auth"},
+      {"title": "Frontend Facade", "path": "tutorials/facade"},
       {"title": "Network Overlays", "path": "tutorials/network"},
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
+      {"title": "Dataflow: Base de Conocimiento Local", "path": "tutorials/dataflow"},
       {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },

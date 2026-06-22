@@ -103,7 +103,7 @@ end
 |-------|------|---------|-------------|
 | `target_pid` | string | required | Process PID to receive messages |
 | `message_topic` | string | `ws.message` | Topic for client messages |
-| `heartbeat_interval` | duration | - | Heartbeat frequency (e.g. `30s`) |
+| `heartbeat_interval` | duration | `30s` | Heartbeat frequency (e.g. `30s`) |
 | `metadata` | object | - | Attached to all messages |
 
 ## Message Topics
@@ -114,7 +114,7 @@ The relay sends these messages to the target process:
 |-------|------|---------|
 | `ws.join` | Client connects | JSON `{client_pid, metadata}` |
 | `ws.message` (or your `message_topic`) | Client sends message | Raw client payload (text frame → string, binary frame → bytes); the source PID of the relay package is the client PID |
-| `ws.heartbeat` | Periodic (if configured) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.heartbeat` | Periodic (every 30s by default; interval overridable via `heartbeat_interval`) | JSON `{client_pid, uptime, message_count, metadata}` |
 | `ws.leave` | Client disconnects | JSON `{client_pid, metadata}` |
 
 ## Receiving Messages
@@ -152,7 +152,7 @@ end
 
 ## Sending to Client
 
-Send messages back using the client PID. Any topic you choose is wrapped as `{topic, data}` JSON and forwarded to the WebSocket. The frame type is decided by the payload format: strings become text frames, bytes become binary frames (base64-encoded inside the JSON wrapper).
+Send messages back using the client PID. Any topic you choose is wrapped as `{topic, data}` JSON and forwarded to the WebSocket. Every server-to-client message is sent as a single WebSocket TEXT frame containing the `{topic, data}` JSON wrapper. Binary payloads are base64-encoded into the `data` field; they are NOT sent as separate binary frames.
 
 ```lua
 -- Send a structured message (any topic name)

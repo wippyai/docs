@@ -278,8 +278,10 @@ resp.stream:close()
 
 | Método Stream | Retorna | Descrição |
 |---------------|---------|-----------|
-| `read(size)` | string, error | Ler até `size` bytes |
-| `close()` | - | Fechar o stream |
+| `read(n?)` | string, error | Ler até `n` bytes (padrão: buffer da implementação) |
+| `close()` | boolean, error | Fechar o stream |
+
+`resp.stream` é um objeto [stream](lua/core/stream.md) completo — `seek`, `stat` e `scanner` também estão disponíveis.
 
 ## Requisicoes em Lote
 

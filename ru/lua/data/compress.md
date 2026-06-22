@@ -166,6 +166,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `level` | integer | Уровень сжатия 1-22 (по умолчанию: 3) |
+| `dict` | string? | Байты Zstd-словаря из `train_dict` (по умолчанию: нет) |
 
 **Возвращает:** `string, error`
 
@@ -188,8 +189,36 @@ end
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `max_size` | integer | Макс. размер после распаковки в байтах (по умолчанию: 128MB, макс: 1GB) |
+| `dict` | string? | Байты Zstd-словаря (должны совпадать со словарём, использованным для кодирования) |
 
 **Возвращает:** `string, error`
+
+### Словари {id="zstd-dictionaries"}
+
+Обучите словарь на образцах данных, чтобы улучшить сжатие множества небольших похожих нагрузок. Передавайте обученный словарь как опцию `dict` в `encode`/`decode` — для обоих должен использоваться один и тот же словарь.
+
+```lua
+local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
+local packed   = compress.zstd.encode(data, { dict = dict })
+local original = compress.zstd.decode(packed, { dict = dict })
+```
+
+#### train_dict(samples, options?)
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `samples` | string[] | Обучающие образцы (хотя бы один >= 8 байт) |
+| `options` | table? | `size` (integer, целевой размер словаря в байтах, 256-1048576, по умолчанию 114688), `id` (integer, по умолчанию 0), `level` (integer, 1-22) |
+
+**Возвращает:** `string, error` (байты словаря)
+
+#### inspect_dict(dict)
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `dict` | string | Байты словаря |
+
+**Возвращает:** `table, error` — `{id: integer, content_size: integer}`
 
 ## Deflate
 

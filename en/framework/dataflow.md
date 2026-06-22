@@ -309,7 +309,7 @@ Executes an agent with tool calling and optional structured exit:
 |--------|------|-------------|
 | `model` | string | Override model |
 | `arena.prompt` | string | System prompt |
-| `arena.max_iterations` | number | Max reasoning loops (default: 64) |
+| `arena.max_iterations` | number | Max reasoning loops (default: 32) |
 | `arena.min_iterations` | number | Min iterations before exit (default: 1) |
 | `arena.tool_calling` | string | `"auto"`, `"any"` (requires `exit_schema`), `"none"` (rejects `exit_schema`) |
 | `arena.tools` | array | Tool registry IDs |
@@ -360,12 +360,14 @@ The cycle function receives on each iteration:
 
 ```lua
 {
-    input = <workflow_input>,
+    input = <workflow_input>,  -- only on the first iteration (iteration == 1); nil thereafter
     state = <accumulated_state>,
     last_result = <previous_iteration_output>,
     iteration = <current_iteration_number>
 }
 ```
+
+`input` carries the workflow input only on the first iteration and is `nil` thereafter; persist anything needed across iterations into `state`.
 
 The function controls continuation:
 
@@ -381,8 +383,9 @@ function my_cycle(cycle_context)
     end
 
     -- spawn child workflow for this iteration
+    -- task is read from state since cycle_context.input is nil after iteration 1
     return flow.create()
-        :with_input({ task = cycle_context.input.task })
+        :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
         :agent("app:qa")
         :run()

@@ -2,6 +2,8 @@
 
 Wippy is configured via `.wippy.yaml` files. All options have sensible defaults.
 
+Any value below can be overridden at launch with `wippy run --set section.path=value` (repeatable, takes precedence over the file). To override individual registry *entries* rather than these config sections, use the `override:` section or `-o` — see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
+
 ## Logger
 
 Controls the zap logger encoder. CLI flags (`-v`, `-c`, `-s`) override level/output; the only yaml-driven option is the encoding.
@@ -93,7 +95,7 @@ Message routing between processes across nodes.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `node_name` | string | local | Identifier for this relay node |
+| `node_name` | string | derived per-instance ID | Identifier for this relay node (default: UUIDv5 of machine-id/hostname + working dir; overridable via `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -133,8 +135,8 @@ Lua VM caching and expression evaluation.
 | `proto_cache_size` | int | 60000 | Compiled prototype cache |
 | `main_cache_size` | int | 10000 | Main chunk cache |
 | `cache.enabled` | bool | false | Persist compiled bytecode/typecheck cache to disk |
-| `cache.dir` | string | (system cache dir) | Cache directory path |
-| `cache.mode` | string | `read_write` | Cache mode: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Cache directory path (relative to the config/working directory) |
+| `cache.mode` | string | `readwrite` | Cache mode: `readwrite` (default), `readonly`, `off` |
 | `type_system.enabled` | bool | false | Enable static type checking |
 | `type_system.strict` | bool | false | Treat type warnings as errors |
 
@@ -242,7 +244,7 @@ Prometheus metrics endpoint.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Start metrics server |
-| `address` | string | localhost:9090 | Listen address |
+| `address` | string | | Listen address; must be set explicitly when `enabled: true`, otherwise the metrics server does not start |
 
 ```yaml
 prometheus:
@@ -291,10 +293,11 @@ TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh
 
 ### Raft (consensus)
 
-Bounded, diskless Raft. State is in-memory; on restart a node rejoins quorum and replays from peers. No `data_dir`. Bootstrap is gossip-driven (Consul/Nomad `bootstrap_expect` style).
+Bounded Raft. Raft state is fs-durable by default, stored under `raft.data_dir` (default `~/.wippy/store`); a restarted node still rejoins quorum from peers. [`store.kv.raft`](system/store.md#cluster-kv-stores) entries replicate through it. Bootstrap is gossip-driven (Consul/Nomad `bootstrap_expect` style).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| `raft.data_dir` | string | `~/.wippy/store` | Directory for fs-durable Raft state and durable CRDT snapshots (under `<data_dir>/_sys/`). Diskless only when no path resolves (no home dir and none set) |
 | `raft.enabled` | bool | true | Run a Raft node; `false` makes this a gossip-only client |
 | `raft.role` | string | server | `server` runs a Raft node; `client` is gossip-only |
 | `raft.eligible` | bool | true | Whether this node may be selected as a voter |
@@ -445,7 +448,7 @@ extensions:
 
 | Variable | Description |
 |----------|-------------|
-| `GOMEMLIMIT` | Memory limit (overrides `--memory-limit` flag) |
+| `GOMEMLIMIT` | Memory limit fallback when `--memory-limit` flag is not set (precedence: `--memory-limit` flag > `GOMEMLIMIT` > 1G default) |
 
 ## See Also
 

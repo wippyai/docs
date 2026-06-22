@@ -144,8 +144,8 @@ Configure automatic retry behavior for failed activities:
     maximum_interval = 300000,       -- max interval between retries (ms)
     maximum_attempts = 10,           -- max retry attempts (0 = unlimited)
     non_retryable_error_types = {    -- errors that skip retries
-        "INVALID",
-        "PERMISSION_DENIED"
+        "Invalid",
+        "PermissionDenied"
     }
 }
 ```
@@ -173,7 +173,7 @@ Configure automatic retry behavior for failed activities:
 
 ## Local Activities
 
-Local activities execute in the workflow worker process without separate task queue polling:
+The `local` field is accepted on an activity:
 
 ```yaml
 - name: validate_input
@@ -189,14 +189,7 @@ Local activities execute in the workflow worker process without separate task qu
         local: true
 ```
 
-Characteristics:
-- Execute in workflow worker process
-- Lower latency (no task queue roundtrip)
-- No separate task queue overhead
-- Limited to short execution times (capped by `local_activity_options.schedule_to_close_timeout`, typically a few seconds)
-- No heartbeating
-
-Use local activities for fast, short operations like input validation, data transformation, or cache lookups. For long-running work, use a regular activity instead.
+Currently `local: true` is parsed but behaves identically to a regular activity: it is registered and executed through the standard activity path. There is no distinct local-activity execution yet, so it does not change latency, task queue behavior, or heartbeating.
 
 ## Activity Naming
 
@@ -253,7 +246,7 @@ local errors = require("errors")
 
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -262,7 +255,7 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response:body())
@@ -287,9 +280,9 @@ end
 | Failure | Error Kind | Retryable | Description |
 |---------|------------|-----------|-------------|
 | Application error | Whatever the activity returned | Inherited from the returned error | Error returned by activity code via `return nil, err` |
-| Runtime crash | `INTERNAL` | true | Unhandled Lua error in activity |
-| Missing activity | `NOT_FOUND` | false | Activity not registered with worker |
-| Timeout | `TIMEOUT` | true | Activity exceeded configured timeout |
+| Runtime crash | `Internal` | false | Unhandled Lua error in activity |
+| Missing activity | `NotFound` | false | Activity not registered with worker |
+| Timeout | `Timeout` | false | Activity exceeded configured timeout |
 
 ```lua
 local executor = funcs.new():with_options({
@@ -298,7 +291,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```

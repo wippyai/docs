@@ -79,6 +79,7 @@ local v, err = hub.versions.get("wippy/http", "1.0.0")
 |----------|-------------|
 | `hub.versions.list(module, opts?)` | 모듈 버전 목록 조회 |
 | `hub.versions.get(module, version, opts?)` | 특정 버전 조회 |
+| `hub.versions.inspect(module, version, opts?)` | 버전의 아티팩트 검사(번들을 다운로드하여 읽음) |
 
 ## 의존성
 
@@ -98,7 +99,9 @@ local users, err = hub.dependents.get("wippy/http")
 local files, err = hub.files.list("wippy/http", "1.0.0")
 ```
 
-게시된 버전의 파일 목록을 반환합니다.
+| 함수 | 설명 |
+|----------|-------------|
+| `hub.files.list(module, version, opts?)` | 버전의 파일 목록 조회(`version` 필수); `{items, total, page, page_size}` 반환 |
 
 ## 참고
 

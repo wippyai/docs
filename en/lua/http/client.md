@@ -163,7 +163,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | no | Original filename |
 | `content` | string | yes* | File content |
 | `reader` | userdata | yes* | Alternative: io.Reader for content |
-| `content_type` | string | no | MIME type (default: `application/octet-stream`) |
+| `content_type` | string | no | Currently ignored: each uploaded part is always sent with `Content-Type: application/octet-stream` regardless of this field |
 
 *Either `content` or `reader` is required.
 
@@ -279,8 +279,10 @@ resp.stream:close()
 
 | Stream Method | Returns | Description |
 |---------------|---------|-------------|
-| `read(size)` | string, error | Read up to `size` bytes |
-| `close()` | - | Close the stream |
+| `read(n?)` | string, error | Read up to `n` bytes (default: implementation buffer) |
+| `close()` | boolean, error | Close the stream |
+
+`resp.stream` is a full [stream](lua/core/stream.md) object — `seek`, `stat`, and `scanner` are also available.
 
 ## Batch Requests
 

@@ -79,6 +79,7 @@ local v, err = hub.versions.get("wippy/http", "1.0.0")
 |----------|-------------|
 | `hub.versions.list(module, opts?)` | Lista las versiones de un módulo |
 | `hub.versions.get(module, version, opts?)` | Obtiene una versión específica |
+| `hub.versions.inspect(module, version, opts?)` | Inspecciona el artefacto de una versión (descarga y lee el bundle) |
 
 ## Dependencias
 
@@ -98,7 +99,9 @@ local users, err = hub.dependents.get("wippy/http")
 local files, err = hub.files.list("wippy/http", "1.0.0")
 ```
 
-Devuelve el listado de archivos de una versión publicada.
+| Función | Descripción |
+|----------|-------------|
+| `hub.files.list(module, version, opts?)` | Lista los archivos de una versión (`version` requerido); devuelve `{items, total, page, page_size}` |
 
 ## Véase también
 

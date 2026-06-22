@@ -22,11 +22,18 @@
 
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|----------|-------------|
-| `region` | string | 예 | AWS 리전 |
+| `region` | string | 조건부 | AWS 리전. `region_env`가 설정되지 않은 경우 필수 |
+| `region_env` | string | 조건부 | 리전을 담은 환경 변수 이름 |
 | `access_key_id_env` | string | 아니오 | 액세스 키용 환경 변수 이름 |
 | `secret_access_key_env` | string | 아니오 | 시크릿 키용 환경 변수 이름 |
 
-자격 증명은 지정된 환경 변수에서 로드됩니다. 생략하면 AWS SDK 기본 자격 증명 체인(IAM 역할, 인스턴스 프로필 등)으로 폴백합니다.
+자격 증명은 지정된 환경 변수에서 로드됩니다. 정적 자격 증명이 적용되려면 `access_key_id_env`와 `secret_access_key_env`가 모두 비어 있지 않은 값으로 해석되어야 합니다. 그렇지 않으면 AWS SDK 기본 자격 증명 체인(IAM 역할, 인스턴스 프로필 등)이 사용됩니다.
+
+요청은 AWS SDK가 해석된 자격 증명을 사용하여 AWS Signature Version 4로 서명합니다. 별도의 서명 설정은 필요하지 않습니다.
+
+<note>
+값이 배포마다 다를 때는 <code>_env</code> 변형(<code>region_env</code>, 아래의 <code>bucket_env</code>/<code>endpoint_env</code>)을 사용하세요. 변수 이름은 시작 시 환경 레지스트리에서 해석됩니다.
+</note>
 
 <note>
 AWS 설정은 향후 릴리스에서 다른 AWS 서비스(SQS 등)와 공유될 예정입니다.
@@ -43,9 +50,11 @@ AWS 설정은 향후 릴리스에서 다른 AWS 서비스(SQS 등)와 공유될 
 
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|----------|-------------|
-| `bucket` | string | 예 | S3 버킷 이름 |
+| `bucket` | string | 조건부 | S3 버킷 이름. `bucket_env`가 설정되지 않은 경우 필수 |
+| `bucket_env` | string | 조건부 | 버킷 이름을 담은 환경 변수 이름 |
 | `config` | reference | 예 | AWS 설정 엔트리 참조 |
 | `endpoint` | string | 아니오 | S3 호환 서비스용 커스텀 엔드포인트 |
+| `endpoint_env` | string | 아니오 | 커스텀 엔드포인트를 담은 환경 변수 이름 |
 
 ### S3 호환 서비스
 

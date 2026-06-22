@@ -35,7 +35,7 @@ type Event struct {
 
 ## Structure
 
-The scheduler spawns `GOMAXPROCS` workers by default. Each worker has a local deque for cache-friendly LIFO access. A global FIFO queue handles new submissions and cross-worker transfers. Processes are tracked by PID for message routing.
+The scheduler spawns `GOMAXPROCS` workers by default. Each worker has a local deque for cache-friendly LIFO access and a per-worker MPSC inject queue for async completions that have affinity to that worker. A global FIFO queue handles new submissions and affinity-less re-queues. Processes are tracked by PID for message routing.
 
 ## Work Finding
 
@@ -43,7 +43,9 @@ The scheduler spawns `GOMAXPROCS` workers by default. Each worker has a local de
 flowchart TD
     W[Worker needs work] --> L{Local deque?}
     L -->|has items| LP[Pop from bottom LIFO]
-    L -->|empty| G{Global queue?}
+    L -->|empty| I{Inject queue?}
+    I -->|has items| IP[Pop + drain up to 16 to local]
+    I -->|empty| G{Global queue?}
     G -->|has items| GP[Pop + batch transfer up to 16]
     G -->|empty| S[Steal from random victim]
     S --> SH[StealHalfInto victim's deque]
@@ -54,10 +56,11 @@ Workers check sources in priority order:
 | Priority | Source | Pattern |
 |----------|--------|---------|
 | 1 | Local deque | LIFO pop, lock-free, cache-friendly |
-| 2 | Global queue | FIFO pop with batch transfer |
-| 3 | Other workers | Steal half from victim's deque |
+| 2 | Inject queue | MPSC pop of affine async completions, drain up to 16 to local |
+| 3 | Global queue | FIFO pop with batch transfer |
+| 4 | Other workers | Steal half from victim's deque |
 
-When popping from global, workers take one item and batch-transfer up to 16 more to their local deque.
+When popping from the inject or global queue, workers take one item and move up to 16 more to their local deque.
 
 ## Chase-Lev Deque
 
@@ -117,7 +120,7 @@ Each process has an MPSC (multi-producer, single-consumer) event queue:
 
 ## Message Routing
 
-The scheduler implements `relay.Receiver` to route messages to processes. When `Send()` is called, it looks up the target PID in `byPID` map, pushes the message as an event to the process queue, and wakes the process if idle by pushing it to the global queue.
+The scheduler implements `relay.Receiver` to route messages to processes. When `Send()` is called, it looks up the target PID in `byPID` map, pushes the message as an event to the process queue, and wakes the process if it is idle or blocked. It re-queues via injectOrGlobal, which pushes to the last worker's per-worker inject queue when the process has a known worker affinity, and falls back to the global queue otherwise.
 
 ## Shutdown
 

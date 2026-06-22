@@ -148,7 +148,7 @@ As filas são criadas automaticamente pelo driver no primeiro uso. Use headers c
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
 | `driver` | ID do Registro | Sim | Driver de fila |
-| `codec` | string | Não | Codificação do payload (e.g. `json/plain`, `msgpack/plain`) |
+| `codec` | string | Não | Codificação de fio para corpos de mensagem. Padrão `json/plain` (veja [Codecs](#codecs)) |
 | `queue_name` | string | Não | Nome externo da fila (padrão é o nome da entrada) |
 | `driver_options` | object | Não | Sub-bag por driver, indexado pelo kind do driver |
 | `dead_letter.queue` | ID do Registro | Não | ID da fila para mensagens com falha |
@@ -173,6 +173,17 @@ As chaves sob `driver_options` são agrupadas por nome do driver. Um driver lê 
 | `message_ttl` | Override de TTL de mensagem por fila |
 | `queue_expiry` | Expiração de fila não utilizada |
 | `max_length` | Máximo de mensagens retidas |
+
+### Codecs
+
+O `codec` seleciona como o corpo de uma mensagem é serializado antes de ser entregue ao broker. É uma string de formato de payload e usa por padrão `json/plain`:
+
+| Codec | Formato |
+|-------|---------|
+| `json/plain` | JSON (padrão) |
+| `application/msgpack` | MessagePack |
+
+O driver AMQP define um `content-type` correspondente (`application/json` ou `application/msgpack`) nas mensagens publicadas. Um codec desconhecido falha quando a fila é declarada, não no momento da publicação.
 
 ## Configuração do Consumidor
 

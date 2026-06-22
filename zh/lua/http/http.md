@@ -258,10 +258,10 @@ end
 
 ### parse_multipart
 
-解析 multipart 表单数据（文件上传）。
+解析 multipart 表单数据（文件上传）。接受一个可选的 `max_memory` 整数参数（在溢出到临时文件前保留在内存中的字节数；默认 32MB）。
 
 ```lua
-local form, err = req:parse_multipart()
+local form, err = req:parse_multipart()  -- or req:parse_multipart(8 * 1024 * 1024)
 if err then
     res:set_status(400)
     return res:write_json({error = "Invalid form data"})

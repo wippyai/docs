@@ -128,7 +128,8 @@ local events = process.events()  -- Eventos de ciclo de vida do tópico @events
 |-------|------|-----------|
 | `kind` | string | Constante de tipo de evento |
 | `from` | string | PID de origem |
-| `result` | table | Para EXIT: `{value: any}` ou `{error: string}` |
+| `result` | any | Para EXIT: o valor retornado (presente em saída normal) |
+| `error` | any | Para EXIT: o erro (presente em saída anormal) |
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 
 ## Inscrição em Tópico
@@ -214,6 +215,7 @@ spawner:with_actor(actor)         -- Definir ator de segurança
 spawner:with_scope(scope)         -- Definir escopo de segurança
 spawner:with_name(name)           -- Definir nome do processo
 spawner:with_message(topic, ...)  -- Enfileirar mensagem para enviar após spawn
+spawner:with_options(options)     -- Mesclar opções de spawn (ex. network)
 ```
 
 **Permissão:** `process.security` em "security" para `:with_actor()` e `:with_scope()`

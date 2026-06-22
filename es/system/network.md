@@ -123,13 +123,18 @@ network_service:
 | `state_dir` | `.wippy/net` | Directorio para el estado del driver. Las rutas relativas se resuelven contra el directorio de configuracion de arranque. |
 | `default_network` | — | Registry ID de una superposicion aplicada a cualquier tarea o proceso que no establezca su propia red mediante opciones. |
 
+## Actualizar Superposiciones
+
+Las entradas de superposición se intercambian en caliente al actualizar el registro. Cuando la configuración de una superposición cambia, el driver construye primero el servicio de reemplazo y solo lo intercambia una vez que se crea con éxito; si la nueva configuración falla, la superposición existente sigue ejecutándose. Los llamantes concurrentes ven el servicio antiguo o el nuevo, nunca un vacío.
+
 ## Permisos
 
 | Acción | Recurso | Descripción |
 |--------|----------|-------------|
 | `network.select` | Registry ID de red | Selección explícita de superposición en `funcs.call`, `process.spawn`, `http_client` |
+| `network.bind` | Registry ID de red | Vincular un listener de `http.service` a través de una superposición (el campo `network:`) |
 
-Deniega `network.select` en un ámbito para impedir que el código dentro de él elija explícitamente una superposición. Las superposiciones heredadas no se ven afectadas — fueron autorizadas en el llamante.
+Deniega `network.select` en un ámbito para impedir que el código dentro de él elija explícitamente una superposición. Las superposiciones heredadas no se ven afectadas — fueron autorizadas en el llamante. `network.bind` se comprueba cuando un servidor con una superposición `network:` inicia su listener.
 
 ## Véase también
 

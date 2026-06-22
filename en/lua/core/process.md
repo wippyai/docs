@@ -128,7 +128,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 |-------|------|-------------|
 | `kind` | string | Event type constant |
 | `from` | string | Source PID |
-| `result` | table | For EXIT: `{value: any}` or `{error: string}` |
+| `result` | table | For EXIT/LINK_DOWN: a {value, error} record; the process return value is at `result.value` and any error at `result.error` |
 | `reason` | string | For CANCEL: why the process is being cancelled |
 
 ## Topic Subscription
@@ -214,6 +214,7 @@ spawner:with_actor(actor)         -- Set security actor
 spawner:with_scope(scope)         -- Set security scope
 spawner:with_name(name)           -- Set process name
 spawner:with_message(topic, ...)  -- Queue message to send after spawn
+spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
 ```
 
 **Permission:** `process.security` on "security" for `:with_actor()` and `:with_scope()`

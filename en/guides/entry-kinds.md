@@ -83,7 +83,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Databases
@@ -164,6 +165,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|-------------|
 | `store.memory` | In-memory key-value store |
 | `store.sql` | SQL-backed key-value store |
+| `store.kv.raft` | Cluster-replicated, strongly-consistent KV (shared Raft) |
+| `store.kv.crdt` | Cluster-replicated, eventually-consistent KV (gossip/CRDT) |
 
 ```yaml
 # Memory store
@@ -179,7 +182,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# Cluster-replicated store (requires clustering)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+The `store.kv.*` kinds need [clustering](guides/cluster.md) enabled. See [Store](system/store.md#cluster-kv-stores) for the consistency tradeoffs.
 
 **Lua API:** See [Store Module](lua/storage/store.md)
 
@@ -232,13 +242,18 @@ local queue = require("queue")
 -- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- In consumer handler, access current message
-local msg = queue.message()
-local data = msg:body_json()
+-- In a consumer handler: the message body is the handler's argument
+local function main(data)
+    -- access delivery metadata via the current message
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-The consumer's <code>func</code> is invoked for each message. Use <code>queue.message()</code> inside the handler to access the current message.
+The consumer's <code>func</code> is invoked once per message with the message body as its argument. Use <code>queue.message()</code> inside the handler for the delivery's <code>id()</code>, <code>header()</code>/<code>headers()</code>, and <code>ack()</code>/<code>nack()</code>.
 </note>
 
 ## Process Management
@@ -340,7 +355,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- seconds, default 3600
 ```
 
 <tip>
@@ -675,3 +690,29 @@ entries:
 # Reference from another entry
 func: app.users:handler
 ```
+
+## Overriding Entries
+
+Any entry's fields — including its `kind` — can be overridden at launch without editing the source YAML, using the `override:` config section or the `-o` CLI flag. Keys use `namespace:entry:path` format:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
+```
+
+| Path | Targets |
+|------|---------|
+| `kind` | The entry's typed kind (must be a non-empty string) |
+| `data.<field>` or bare `<field>` | A field in the entry's data payload |
+| `meta.<field>` | A field in the entry's metadata |
+
+The same overrides apply from the CLI:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+CLI (`-o`) values coerce by shape (`true`/`false` to bool, numbers to numbers, otherwise string); `override:` section values keep their YAML type. To override global [configuration](guides/configuration.md) sections instead of entries, use `--set`.

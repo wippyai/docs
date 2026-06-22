@@ -166,6 +166,7 @@ local fast = compress.zstd.encode(data, {level = 1})
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `level` | integer | 圧縮レベル 1-22（デフォルト: 3） |
+| `dict` | string? | `train_dict` で生成した Zstd 辞書バイト（デフォルト: なし） |
 
 **戻り値:** `string, error`
 
@@ -188,8 +189,36 @@ end
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `max_size` | integer | 最大解凍サイズ（バイト単位）（デフォルト: 128MB、最大: 1GB） |
+| `dict` | string? | Zstd 辞書バイト（エンコードに使用したものと一致する必要があります） |
 
 **戻り値:** `string, error`
+
+### 辞書 {id="zstd-dictionaries"}
+
+サンプルデータから辞書を学習させると、似通った小さなペイロードを多数圧縮する際の圧縮率を改善できます。学習させた辞書を `encode`/`decode` の `dict` オプションとして渡します — エンコードとデコードの両方で同じ辞書を使用する必要があります。
+
+```lua
+local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
+local packed   = compress.zstd.encode(data, { dict = dict })
+local original = compress.zstd.decode(packed, { dict = dict })
+```
+
+#### train_dict(samples, options?)
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `samples` | string[] | 学習サンプル（少なくとも 1 つは 8 バイト以上） |
+| `options` | table? | `size`（integer、目標辞書バイト数、256-1048576、デフォルト 114688）、`id`（integer、デフォルト 0）、`level`（integer、1-22） |
+
+**戻り値:** `string, error`（辞書バイト）
+
+#### inspect_dict(dict)
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `dict` | string | 辞書バイト |
+
+**戻り値:** `table, error` — `{id: integer, content_size: integer}`
 
 ## Deflate
 

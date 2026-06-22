@@ -160,7 +160,7 @@ runner.run({
 
 ### Компиляция программ
 
-Компиляция для многократного выполнения:
+`runner.compile` проверяет исходный код и сообщает его точку входа и модули, не выполняя его:
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +170,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+Скомпилированная программа носит информационный характер; для выполнения вызовите `runner.run` с исходным кодом и методом.
 
 ## Модель безопасности
 

@@ -152,7 +152,7 @@ Events delivered on a subscription channel carry:
 | `path` | string | The group name |
 | `data` | table | `{Group = string, PIDs = string[]}` — the affected members |
 
-Subscription channels are buffered (capacity 64); if a slow consumer fills the buffer, further events for that subscription are dropped.
+Subscription channels are buffered (capacity 64). If a slow consumer fills the buffer, further events are retained in the process mailbox in order and delivered once the consumer drains the channel (the subscription stalls rather than dropping events).
 
 ## Releasing
 
@@ -186,7 +186,7 @@ Frees the instance immediately. Idempotent; after release, every method returns 
 |-----------|------|
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Missing or empty argument | `errors.INVALID` |
-| Scope not found | `errors.NOT_FOUND` |
+| Scope not found | `errors.INTERNAL` |
 | Leave a group with no membership | `errors.INVALID` |
 | Instance released | `errors.INVALID` |
 

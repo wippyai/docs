@@ -91,7 +91,7 @@ local time = require("time")
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
-    "myns:processes",        -- process group
+    "myns:processes",        -- process host
     6, 7                     -- arguments passed to the WASM function
 )
 

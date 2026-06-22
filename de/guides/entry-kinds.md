@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|--------------|
 | `store.memory` | In-Memory-Key-Value-Store |
 | `store.sql` | SQL-basierter Key-Value-Store |
+| `store.kv.raft` | Cluster-replizierter, stark konsistenter KV (geteiltes Raft) |
+| `store.kv.crdt` | Cluster-replizierter, letztlich konsistenter KV (Gossip/CRDT) |
 
 ```yaml
 # Memory-Store
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# Cluster-replizierter Store (erfordert Clustering)
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+Die `store.kv.*`-Typen benötigen aktiviertes [Clustering](guides/cluster.md). Siehe [Store](system/store.md#cluster-kv-stores) für die Konsistenz-Abwägungen.
 
 **Lua-API:** Siehe [Store-Modul](lua/storage/store.md)
 
@@ -675,3 +684,29 @@ entries:
 # Referenz aus anderem Eintrag
 func: app.users:handler
 ```
+
+## Einträge überschreiben
+
+Jedes Feld eines Eintrags — einschließlich seines `kind` — kann beim Start überschrieben werden, ohne die Quell-YAML zu bearbeiten, über den Konfigurationsabschnitt `override:` oder das CLI-Flag `-o`. Schlüssel verwenden das Format `namespace:entry:path`:
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # Datenfeld (ein nackter Pfad zielt auf data.*)
+  app:worker:meta.priority: high    # Meta-Feld
+  app:db:kind: db.sql.postgres      # das typisierte kind des Eintrags
+  app:db:data.kind: custom          # ein Payload-Feld, das wörtlich "kind" heißt
+```
+
+| Pfad | Ziel |
+|------|------|
+| `kind` | Das typisierte kind des Eintrags (muss ein nicht-leerer string sein) |
+| `data.<field>` oder nacktes `<field>` | Ein Feld im Daten-Payload des Eintrags |
+| `meta.<field>` | Ein Feld in den Metadaten des Eintrags |
+
+Dieselben Overrides gelten über die CLI:
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+CLI-Werte (`-o`) werden anhand ihrer Form gecastet (`true`/`false` zu bool, Zahlen zu Zahlen, sonst string); Werte im Abschnitt `override:` behalten ihren YAML-Typ. Um globale [Konfigurations](guides/configuration.md)-Abschnitte statt Einträgen zu überschreiben, verwenden Sie `--set`.

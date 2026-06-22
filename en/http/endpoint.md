@@ -18,7 +18,7 @@ Endpoints (`http.endpoint`) define HTTP route handlers that execute Lua function
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `meta.router` | registry.ID | No | Parent router (defaults to the only router if exactly one is registered) |
+| `meta.router` | registry.ID | Yes | Parent router (referenced by registry ID). |
 | `method` | string | Yes | HTTP method |
 | `path` | string | Yes | URL path pattern |
 | `func` | registry.ID | Yes | Function to execute |
@@ -70,7 +70,7 @@ end
 
 ## Wildcard Paths
 
-Capture remaining path with `{path...}`:
+Use `{path...}` to match any remaining path segments:
 
 ```yaml
 - name: file_handler
@@ -80,13 +80,7 @@ Capture remaining path with `{path...}`:
   func: serve_file
 ```
 
-```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
-```
+This catch-all segment makes the route match requests like `/files/docs/readme.md`. The captured tail is not currently exposed to Lua: `req:param("path")` returns `nil` for the wildcard value. Read `req:path()` if you need the full request path.
 
 ## Handler Function
 
@@ -273,7 +267,22 @@ entries:
 
 ### Protected Endpoint
 
+Authorization middleware is configured on the parent router, not on the endpoint. Post-match middleware (such as `endpoint_firewall`) runs after route matching and applies to every endpoint under the router:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -281,10 +290,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## See Also

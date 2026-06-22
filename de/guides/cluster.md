@@ -10,6 +10,7 @@ Clustering ist deaktiviert, bis `cluster.enabled: true` gesetzt wird. Alles Folg
 - **Clusterweite Prozessnamen** — einen Prozess unter einem Namen registrieren, der von jedem Knoten aus auflösbar ist, mit Wahl der Konsistenzgarantien (siehe [Benennung](#benennung-und-namens-scopes)).
 - **Verteilte Sperren** — `system.lock` bietet clusterweiten gegenseitigen Ausschluss mit automatischer Freigabe, wenn der Halter abstirbt (siehe [Verteilte Sperren](#verteilte-sperren)).
 - **Prozessgruppen** — an jedes Mitglied einer benannten Gruppe über alle Knoten hinweg senden (siehe [Prozessgruppen](#prozessgruppen)).
+- **Replizierte Key-Value-Stores** — `store.kv.raft` (stark) und `store.kv.crdt` (letztlich) replizieren KV-Daten über Knoten hinweg (siehe [Store](system/store.md#cluster-kv-stores)).
 - **Ein Konsenskern** — ein kleiner, begrenzter Raft-Cluster bietet das linearisierbare Fundament, auf dem die Benennungs- und Sperr-Primitive aufbauen.
 
 ## Architektur: begrenztes Raft
@@ -80,7 +81,7 @@ Später startende Knoten sehen einen bereits gebildeten Cluster und überspringe
 
 ## Raft-Konsenskern
 
-Der Konsenskern ist **schreiblos auf Disk**: Raft-Logs und Snapshots leben nur im Speicher, sodass kein Datenverzeichnis bereitgestellt werden muss. Beim Neustart tritt ein Knoten dem Gossip wieder bei und spielt den Zustand von seinen Peers ab. Dies beseitigt bewusst die Persistenz-versus-Quorum-Fehlermodi, die Raft auf Disk einführt, und entspricht dem Modell von In-Memory-Koordinationssystemen (Erlang global, Akka distributed data). Der Kompromiss: die Dauerhaftigkeit des Clusters kommt von einem lebendigen Quorum, nicht von Disk — siehe [Wiederherstellung](#wiederherstellung-und-fehlermodi).
+Der Raft-Zustand ist **standardmäßig fs-dauerhaft**: Logs und Snapshots werden unter `cluster.raft.data_dir` (Standard `~/.wippy/store`, in `_sys/raft`) persistiert, und [`store.kv.raft`](system/store.md#cluster-kv-stores) repliziert über denselben Kern. Ein neustartender Knoten tritt dem Gossip weiterhin wieder bei und holt den Zustand von seinen Peers nach, sodass der Cluster auch den Verlust der Disk eines Knotens toleriert; die Dauerhaftigkeit kommt sowohl vom lebendigen Quorum als auch vom On-Disk-Zustand. Ein Knoten läuft nur dann festplattenlos, wenn sich kein Datenverzeichnis auflösen lässt (kein konfigurierter Pfad und kein Home-Verzeichnis) — siehe [Wiederherstellung](#wiederherstellung-und-fehlermodi).
 
 Raft öffnet keinen eigenen Listener-Port. Es nutzt das **Internode-Mesh** — dieselben TCP-Verbindungen, die für den Relay-Verkehr zwischen Knoten verwendet werden — multiplexiert mit yamux. Der Internode-Port wird beim Start automatisch ausgewählt (Bereich 7950-7959, dann ephemer), festgelegt und im Gossip beworben, damit Peers ihn erreichen können. Der einzige normalerweise freizulegende Port ist der Gossip-Port.
 
@@ -203,7 +204,7 @@ Eingebaute Liveness-Checks (am Liveness-Endpunkt verdrahtet):
 
 ## Wiederherstellung und Fehlermodi
 
-Da der Konsenskern festplattenlos ist, kommt die Dauerhaftigkeit von einem lebendigen Quorum statt von Disk. Die praktischen Regeln:
+Der Raft-Zustand ist fs-dauerhaft, aber die primäre Dauerhaftigkeit des Clusters kommt weiterhin von einem lebendigen Quorum. Die praktischen Regeln:
 
 - Eine Voter-Mehrheit am Leben erhalten. Mit 5 Votern toleriert man 2 gleichzeitige Voter-Ausfälle; Standbys werden befördert, um offene Slots zu füllen. Unter eine Mehrheit zu fallen bedeutet, dass Schreibvorgänge (neue Consistent/Strong-Registrierungen und Sperrerwerbe) blockieren, bis das Quorum zurückkehrt. Bestehende Namen und Lookups werden weiterhin aus lokalen Replikaten bedient.
 - Der Leader entfernt proaktiv einen Voter, der sowohl heartbeat-still als auch gossip-tot ist, damit ein toter Voter das Quorum nicht dauerhaft blockiert, während ein Standby befördert wird.

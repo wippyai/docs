@@ -68,7 +68,7 @@ Cria um novo Executor para construir chamadas de função com contexto customiza
 local exec = funcs.new()
 ```
 
-**Retorna:** `Executor, error`
+**Retorna:** `Executor`
 
 ## Executor
 
@@ -248,6 +248,8 @@ Cancela a operação assíncrona.
 ```lua
 future:cancel()
 ```
+
+**Retorna:** `boolean, error`
 
 ## Operações Paralelas
 

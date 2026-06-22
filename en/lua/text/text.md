@@ -107,7 +107,7 @@ local positions = re:find_all_string_index("a1b2c3")
 |-----------|------|-------------|
 | `s` | string | String to search |
 
-**Returns:** `table[]`
+**Returns:** `table[] | nil` (nil when there are no matches)
 
 ### Replace
 
@@ -315,8 +315,8 @@ local chunks, err = splitter:split_text(long_text)
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `chunk_size` | integer | 4000 | Max characters per chunk |
-| `chunk_overlap` | integer | 200 | Characters repeated between adjacent chunks |
+| `chunk_size` | integer | 512 | Max characters per chunk |
+| `chunk_overlap` | integer | 100 | Characters repeated between adjacent chunks |
 | `keep_separator` | boolean | false | Keep separators in output |
 | `separators` | string[] | nil | Custom separator list |
 
@@ -341,8 +341,8 @@ local chunks, err = splitter:split_text(readme)
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `chunk_size` | integer | 4000 | Max characters per chunk |
-| `chunk_overlap` | integer | 200 | Characters repeated between adjacent chunks |
+| `chunk_size` | integer | 512 | Max characters per chunk |
+| `chunk_overlap` | integer | 100 | Characters repeated between adjacent chunks |
 | `code_blocks` | boolean | false | Keep code blocks together |
 | `reference_links` | boolean | false | Preserve reference links |
 | `heading_hierarchy` | boolean | false | Respect heading levels |

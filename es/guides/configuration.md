@@ -2,6 +2,8 @@
 
 Wippy se configura mediante archivos `.wippy.yaml`. Todas las opciones tienen valores por defecto razonables.
 
+Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](guides/entry-kinds.md#overriding-entries).
+
 ## Logger
 
 Controla el codificador del logger zap. Los flags de CLI (`-v`, `-c`, `-s`) sobrescriben el nivel/salida; la única opción controlada por yaml es la codificación.
@@ -291,10 +293,11 @@ Malla TCP que transporta el tráfico de relay y Raft entre nodos. Raft viaja por
 
 ### Raft (consenso)
 
-Raft acotado y sin disco. El estado reside en memoria; al reiniciar, un nodo se une al quórum y repite el estado desde sus peers. Sin `data_dir`. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`).
+Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo `raft.data_dir` (por defecto `~/.wippy/store`); un nodo reiniciado aún se une al quórum desde sus peers. Las entradas [`store.kv.raft`](system/store.md#cluster-kv-stores) se replican a través de él. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
+| `raft.data_dir` | string | `~/.wippy/store` | Directorio para el estado de Raft durable en disco y los snapshots durables de CRDT (bajo `<data_dir>/_sys/`). Sin disco solo cuando no se resuelve ninguna ruta (sin directorio home y ninguna establecida) |
 | `raft.enabled` | bool | true | Ejecutar un nodo Raft; `false` convierte este nodo en un cliente solo-gossip |
 | `raft.role` | string | server | `server` ejecuta un nodo Raft; `client` es solo-gossip |
 | `raft.eligible` | bool | true | Si este nodo puede ser seleccionado como votante |

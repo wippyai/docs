@@ -60,7 +60,7 @@ local err_p = payload.new(errors.new("something failed"))
 |-----------|------|-------------|
 | `value` | any | Lua-Wert (string, number, boolean, table, nil oder error) |
 
-**Gibt zurück:** `Payload, nil`
+**Gibt zurück:** `Payload`
 
 ## Format abrufen
 
@@ -77,7 +77,7 @@ local err_p = payload.new(errors.new("failed"))
 local format3 = err_p:get_format()  -- "golang/error"
 ```
 
-**Gibt zurück:** `string, nil` - eine der `payload.format.*` Konstanten
+**Gibt zurück:** `string` - eine der `payload.format.*` Konstanten
 
 ## Daten extrahieren
 

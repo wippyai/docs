@@ -148,7 +148,7 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 | フィールド | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
 | `driver` | Registry ID | はい | キュードライバ |
-| `codec` | string | いいえ | ペイロードエンコーディング（例：`json/plain`、`msgpack/plain`）|
+| `codec` | string | いいえ | メッセージ本体のワイヤエンコーディング。デフォルトは `json/plain`（[コーデック](#codecs)を参照）|
 | `queue_name` | string | いいえ | 外部キュー名（デフォルトはエントリ名）|
 | `driver_options` | object | いいえ | ドライバ kind でキー付けされたドライバごとのサブバッグ |
 | `dead_letter.queue` | Registry ID | いいえ | 失敗メッセージのキュー ID |
@@ -173,6 +173,17 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 | `message_ttl` | キューごとのメッセージ TTL 上書き |
 | `queue_expiry` | 未使用キューの期限 |
 | `max_length` | 保持される最大メッセージ数 |
+
+### コーデック {id="codecs"}
+
+`codec` は、メッセージ本体がブローカーに渡される前にどのようにシリアライズされるかを選択します。これはペイロードフォーマット文字列であり、デフォルトは `json/plain` です:
+
+| コーデック | フォーマット |
+|-------|------|
+| `json/plain` | JSON（デフォルト） |
+| `application/msgpack` | MessagePack |
+
+AMQP ドライバは、発行されるメッセージに対応する `content-type`（`application/json` または `application/msgpack`）を設定します。不明なコーデックは、発行時ではなくキューが宣言される時に失敗します。
 
 ## コンシューマ設定
 

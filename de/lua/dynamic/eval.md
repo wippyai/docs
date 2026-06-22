@@ -160,7 +160,7 @@ runner.run({
 
 ### Programme kompilieren
 
-Einmal kompilieren für wiederholte Ausführung:
+`runner.compile` validiert den Quellcode und meldet seinen Entrypoint und seine Module, ohne ihn auszuführen:
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +170,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+Das kompilierte Programm ist informativ; ausgeführt wird durch Aufruf von `runner.run` mit Quellcode und Methode.
 
 ## Sicherheitsmodell
 

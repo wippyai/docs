@@ -258,10 +258,10 @@ end
 
 ### parse_multipart
 
-Разбирает multipart-данные формы (загрузка файлов).
+Разбирает multipart-данные формы (загрузка файлов). Принимает опциональное целое `max_memory` (байты, удерживаемые в памяти перед сбросом во временные файлы; по умолчанию 32MB).
 
 ```lua
-local form, err = req:parse_multipart()
+local form, err = req:parse_multipart()  -- или req:parse_multipart(8 * 1024 * 1024)
 if err then
     res:set_status(400)
     return res:write_json({error = "Invalid form data"})

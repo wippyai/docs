@@ -160,7 +160,7 @@ runner.run({
 
 ### 编译程序
 
-编译一次用于重复执行：
+`runner.compile` 校验源码并报告其入口点和模块，但不运行它：
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +170,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+编译后的程序仅供参考；执行需通过传入源码和方法调用 `runner.run`。
 
 ## 安全模型
 

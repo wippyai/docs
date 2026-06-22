@@ -15,9 +15,11 @@ app:templates             → Template set
 
 Each entry has an `ID` (namespace:name format), a `kind` that determines its handler, arbitrary `meta` fields, and kind-specific `data`.
 
+For how the registry functions as an authorization layer, see the [Security Model](concepts/security-model.md).
+
 ## Kind Handlers
 
-When an entry is submitted, its `kind` determines which handler processes it. The handler validates the configuration and creates runtime resources—an `http.service` entry starts an HTTP server, a `function.lua` entry creates a function pool, a `sql.database` entry establishes a connection pool. See [Entry Kinds Guide](guides/entry-kinds.md) for available kinds and [Custom Entry Kinds](internals/kinds.md) for implementing handlers.
+When an entry is submitted, its `kind` determines which handler processes it. The handler validates the configuration and creates runtime resources—an `http.service` entry starts an HTTP server, a `function.lua` entry creates a function pool, a `db.sql.postgres` entry establishes a connection pool. See [Entry Kinds Guide](guides/entry-kinds.md) for available kinds and [Custom Entry Kinds](internals/kinds.md) for implementing handlers.
 
 ## Live Updates
 

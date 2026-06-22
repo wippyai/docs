@@ -77,8 +77,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -120,6 +121,7 @@ Import entries from the registry:
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -152,7 +154,7 @@ Pass data accessible as `ctx`:
 ```lua
 runner.run({
     source = [[
-        return "Hello, " .. ctx.user
+        return "Hello, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })
@@ -160,7 +162,7 @@ runner.run({
 
 ### Compiling Programs
 
-Compile once for repeated execution:
+`runner.compile` validates source and reports its entrypoint and modules without running it:
 
 ```lua
 local program, err = runner.compile([[
@@ -170,8 +172,11 @@ local program, err = runner.compile([[
     return { process = process }
 ]], "process", {modules = {"json"}})
 
-local result = program:run({10})  -- 20
+program:method()   -- "process"  (string)
+program:modules()  -- {"json"}    (string[])
 ```
+
+The compiled program is informational; execute by calling `runner.run` with the source and method.
 
 ## Security Model
 

@@ -23,7 +23,7 @@ Services register with the supervisor using a `lifecycle` block. For processes, 
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -37,13 +37,13 @@ Services register with the supervisor using a `lifecycle` block. For processes, 
 | `start_timeout` | `10s` | Maximum time allowed for startup |
 | `stop_timeout` | `10s` | Maximum time for graceful shutdown |
 | `stable_threshold` | `5s` | Runtime before service is considered stable |
-| `depends_on` | `[]` | Services that must be running first |
+| `requires` | `[]` | Services that must be running first (legacy alias: `depends_on`) |
 
 ## Dependency Resolution
 
 The supervisor resolves dependencies from two sources:
 
-1. **Explicit dependencies** declared in `depends_on`
+1. **Explicit dependencies** declared in `requires` (or the legacy `depends_on`)
 2. **Registry-extracted dependencies** from entry references (e.g., `database: app:db` in your config)
 
 ```mermaid
@@ -57,7 +57,7 @@ graph LR
 Dependencies start before dependents. If Service C depends on A and B, both A and B must reach `Running` state before C starts.
 
 <tip>
-You don't need to declare infrastructure entries like databases in <code>depends_on</code>. The supervisor automatically extracts dependencies from registry references in your entry configuration.
+You don't need to declare infrastructure entries like databases in <code>requires</code>. The supervisor automatically extracts dependencies from registry references in your entry configuration.
 </tip>
 
 ## Restart Policy
@@ -149,8 +149,8 @@ When no security context is configured, the service runs without an actor. In st
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -159,17 +159,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 The supervisor transitions services through these states:
 
 | State | Description |
 |-------|-------------|
-| `Inactive` | Registered but not started |
+| `Unknown` | Registered but not started |
 | `Starting` | Startup in progress |
 | `Running` | Operating normally |
 | `Stopping` | Graceful shutdown in progress |
 | `Stopped` | Cleanly terminated |
+| `Exited` | Terminated by explicit request or a non-retryable/terminal error |
 | `Failed` | Error occurred, may retry |
 
 ## Startup and Shutdown Order

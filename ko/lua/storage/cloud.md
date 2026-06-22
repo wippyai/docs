@@ -63,8 +63,36 @@ storage:release()
 |----------|------|------|
 | `key` | string | 오브젝트 키/경로 |
 | `content` | string 또는 Reader | 문자열 또는 파일 reader로서의 콘텐츠 |
+| `options` | table | 선택적 메타데이터 및 조건부 쓰기 옵션 |
 
 **반환:** `boolean, error`
+
+### 업로드 옵션
+
+옵션 테이블로 메타데이터를 첨부하거나 쓰기를 보호할 수 있습니다:
+
+```lua
+storage:upload_object("reports/daily.json", body, {
+    content_type = "application/json",
+    cache_control = "max-age=3600",
+    metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
+    only_if_absent = true                              -- fail if the key already exists
+})
+```
+
+| 옵션 | 타입 | 설명 |
+|--------|------|------|
+| `content_type` | string | MIME 타입 |
+| `cache_control` | string | Cache-Control 헤더 |
+| `content_disposition` | string | Content-Disposition 헤더 |
+| `content_encoding` | string | Content-Encoding 헤더 |
+| `metadata` | table | 사용자 메타데이터(문자열 키/값), `x-amz-meta-*`로 저장됨 |
+| `headers` | table | 추가 요청 헤더(문자열 키/값) |
+| `if_match` | string | 현재 오브젝트 ETag가 일치할 때만 쓰기 |
+| `if_none_match` | string | ETag와 일치하는 오브젝트가 없을 때만 쓰기(`"*"`는 모든 오브젝트를 의미) |
+| `only_if_absent` | boolean | 키가 존재하지 않을 때만 쓰기(`if_none_match = "*"`의 별칭) |
+
+조건부 쓰기가 전제 조건을 충족하지 못하면 `precondition_failed` 오류를 반환합니다.
 
 ## 오브젝트 다운로드
 
@@ -94,8 +122,12 @@ storage:release()
 | `key` | string | 다운로드할 오브젝트 키 |
 | `writer` | Writer | 대상 파일 writer |
 | `options.range` | string | 바이트 범위 (예: "bytes=0-1023") |
+| `options.if_match` | string | 오브젝트 ETag가 일치할 때만 다운로드 |
+| `options.if_none_match` | string | ETag가 일치하지 않을 때만 다운로드 |
 
 **반환:** `boolean, error`
+
+전제 조건(`if_match`/`if_none_match`)을 충족하지 못하면 `precondition_failed` 오류를 반환합니다.
 
 ## 오브젝트 목록 조회
 
@@ -110,7 +142,7 @@ local result, err = storage:list_objects({
 })
 
 for _, obj in ipairs(result.objects) do
-    print(obj.key, obj.size, obj.content_type)
+    print(obj.key, obj.size, obj.etag)
 end
 
 -- 대용량 결과 페이징
@@ -135,10 +167,60 @@ storage:release()
 | `options.prefix` | string | 키 접두사로 필터 |
 | `options.max_keys` | integer | 반환할 최대 오브젝트 수 |
 | `options.continuation_token` | string | 페이징 토큰 |
+| `options.include_owner` | boolean | 각 오브젝트의 `owner`(`id`, `display_name`) 포함 |
+| `options.include_versions` | boolean | 오브젝트 버전 나열; 각 항목에 `version_id` 포함 |
 
 **반환:** `table, error`
 
-결과는 `objects`, `is_truncated`, `next_continuation_token`을 포함합니다.
+결과는 `objects`, `is_truncated`, `next_continuation_token`을 포함합니다. 각 오브젝트에는 `key`, `size`, `etag`, `storage_class`가 있으며, 선택적으로 `last_modified`, `version_id`, `owner`가 포함됩니다.
+
+<note>
+목록 결과에서 <code>content_type</code>은 항상 비어 있습니다 — S3 list 작업은 이를 반환하지 않습니다. 오브젝트의 콘텐츠 타입과 메타데이터를 읽으려면 <code>head_object</code>를 사용하세요.
+</note>
+
+## 오브젝트 메타데이터
+
+본문을 다운로드하지 않고 단일 오브젝트의 메타데이터를 가져옵니다:
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local meta, err = storage:head_object("reports/daily.json")
+if err then
+    return nil, err
+end
+
+print(meta.size, meta.etag, meta.content_type)
+for k, v in pairs(meta.metadata) do
+    print("meta", k, v)
+end
+
+storage:release()
+```
+
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| `key` | string | 오브젝트 키 |
+
+**반환:** `table, error`
+
+결과 필드:
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `size` | integer | 오브젝트 크기(바이트) |
+| `etag` | string | 엔티티 태그 |
+| `content_type` | string | MIME 타입 |
+| `cache_control` | string | Cache-Control 헤더 |
+| `content_disposition` | string | Content-Disposition 헤더 |
+| `content_encoding` | string | Content-Encoding 헤더 |
+| `storage_class` | string | 스토리지 클래스 |
+| `version_id` | string | 버전 ID(버전 관리가 활성화된 경우 존재) |
+| `last_modified` | integer | 마지막 수정 시각(Unix 초) |
+| `metadata` | table | 사용자 메타데이터(`x-amz-meta-*`) |
+| `headers` | table | 원시 응답 헤더(소문자 키) |
+
+존재하지 않는 오브젝트는 `not_found` 오류를 반환합니다.
 
 ## 오브젝트 삭제
 
@@ -232,8 +314,9 @@ return {upload_url = url}
 
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
-| `upload_object(key, content)` | `boolean, error` | 문자열 또는 파일 콘텐츠 업로드 |
+| `upload_object(key, content, opts?)` | `boolean, error` | 문자열 또는 파일 콘텐츠 업로드 |
 | `download_object(key, writer, opts?)` | `boolean, error` | 파일 writer로 다운로드 |
+| `head_object(key)` | `table, error` | 오브젝트 메타데이터 가져오기 |
 | `list_objects(opts?)` | `table, error` | 접두사 필터로 오브젝트 목록 |
 | `delete_objects(keys)` | `boolean, error` | 여러 오브젝트 삭제 |
 | `presigned_get_url(key, opts?)` | `string, error` | 임시 다운로드 URL 생성 |
@@ -260,6 +343,7 @@ return {upload_url = url}
 | 콘텐츠 nil | `errors.INVALID` | 아니오 |
 | writer가 유효하지 않음 | `errors.INVALID` | 아니오 |
 | 오브젝트를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
+| 조건부 전제 조건 실패 | `errors.CONFLICT` | 아니오 |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
 | 작업 실패 | `errors.INTERNAL` | 아니오 |
 

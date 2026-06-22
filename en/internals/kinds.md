@@ -19,7 +19,7 @@ Handlers subscribe using patterns:
 |---------|---------|
 | `http.service` | Exact match only |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## Entry Listener Interface
 
@@ -118,9 +118,9 @@ For atomic operations across multiple entries, implement `TransactionListener`:
 
 ```go
 type TransactionListener interface {
-    Begin(ctx context.Context)
-    Commit(ctx context.Context)
-    Discard(ctx context.Context)
+    Begin(ctx context.Context) error
+    Commit(ctx context.Context) error
+    Discard(ctx context.Context) error
 }
 ```
 

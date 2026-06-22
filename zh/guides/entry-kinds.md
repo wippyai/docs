@@ -164,6 +164,8 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 |------|------|
 | `store.memory` | 内存键值存储 |
 | `store.sql` | SQL 后端键值存储 |
+| `store.kv.raft` | 集群复制、强一致性 KV（共享 Raft） |
+| `store.kv.crdt` | 集群复制、最终一致性 KV（gossip/CRDT） |
 
 ```yaml
 # 内存存储
@@ -179,7 +181,14 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   table: kv_store
   lifecycle:
     auto_start: true
+
+# 集群复制存储（需要启用集群）
+- name: deployments
+  kind: store.kv.raft
+  namespace: deploy
 ```
+
+`store.kv.*` 类型需要启用[集群](guides/cluster.md)。一致性权衡参见 [Store](system/store.md#cluster-kv-stores)。
 
 **Lua API：** 参见 [Store 模块](lua/storage/store.md)
 
@@ -675,3 +684,29 @@ entries:
 # 从另一个入口引用
 func: app.users:handler
 ```
+
+## 覆盖入口 {id="overriding-entries"}
+
+任何入口的字段——包括其 `kind`——都可以在启动时覆盖，无需编辑源 YAML，使用 `override:` 配置区段或 `-o` CLI 参数。键采用 `namespace:entry:path` 格式：
+
+```yaml
+override:
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
+```
+
+| 路径 | 目标 |
+|------|------|
+| `kind` | 入口的类型化 kind（必须是非空字符串） |
+| `data.<field>` 或裸 `<field>` | 入口 data 负载中的字段 |
+| `meta.<field>` | 入口元数据中的字段 |
+
+同样的覆盖也可从 CLI 应用：
+
+```bash
+wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
+```
+
+CLI（`-o`）值按形态强制转换（`true`/`false` 转为 bool，数字转为数字，其他转为 string）；`override:` 区段的值保留其 YAML 类型。如需覆盖全局[配置](guides/configuration.md)区段而非入口，请使用 `--set`。

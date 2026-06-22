@@ -21,7 +21,7 @@ The linter validates all Lua entry kinds:
 - `process.lua` - Processes
 - `workflow.lua` - Workflows
 
-Their precompiled `.bc` variants (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) are also linted.
+Bytecode entries hold compiled bytecode (fs/path/hash), not source, so they cannot be parsed or type-checked; the linter only checks source-bearing Lua entries (their `.bc` variants are skipped, though they may still appear in the total entry count).
 
 Each entry is parsed, type-checked, and analyzed for correctness issues.
 

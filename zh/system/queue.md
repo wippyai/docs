@@ -148,7 +148,7 @@ TLS 块：
 | 字段 | 类型 | 必需 | 描述 |
 |------|------|------|------|
 | `driver` | Registry ID | 是 | 队列驱动 |
-| `codec` | string | 否 | Payload 编码（如 `json/plain`、`msgpack/plain`）|
+| `codec` | string | 否 | 消息正文的线格编码。默认为 `json/plain`（参见[编解码器](#codecs)）|
 | `queue_name` | string | 否 | 外部队列名（默认为 entry 名）|
 | `driver_options` | object | 否 | 按驱动 kind 索引的子配置 |
 | `dead_letter.queue` | Registry ID | 否 | 失败消息的队列 ID |
@@ -173,6 +173,17 @@ TLS 块：
 | `message_ttl` | 每队列消息 TTL 覆盖 |
 | `queue_expiry` | 未使用队列的过期时间 |
 | `max_length` | 保留的最大消息数 |
+
+### 编解码器 {id="codecs"}
+
+`codec` 选择消息正文在交给 broker 之前如何序列化。它是一个 payload 格式字符串，默认为 `json/plain`：
+
+| 编解码器 | 格式 |
+|-------|------|
+| `json/plain` | JSON（默认） |
+| `application/msgpack` | MessagePack |
+
+AMQP 驱动在发布的消息上设置相应的 `content-type`（`application/json` 或 `application/msgpack`）。未知的编解码器会在声明队列时失败，而不是在发布时。
 
 ## 消费者配置
 

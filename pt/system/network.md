@@ -123,13 +123,18 @@ network_service:
 | `state_dir` | `.wippy/net` | Diretorio para o estado do driver. Caminhos relativos sao resolvidos contra o diretorio de config de boot. |
 | `default_network` | — | Registry ID de um overlay aplicado a cada tarefa ou processo que nao define sua propria rede via opcoes. |
 
+## Atualizando Overlays
+
+Entradas de overlay são trocadas a quente em atualização do registro. Quando a configuração de um overlay muda, o driver constrói o serviço substituto primeiro e só o troca depois que ele é criado com sucesso; se a nova configuração falhar, o overlay existente continua rodando. Chamadores concorrentes veem o serviço antigo ou o novo, nunca uma lacuna.
+
 ## Permissões
 
 | Ação | Recurso | Descrição |
 |--------|----------|-------------|
 | `network.select` | Registry ID de rede | Seleção explícita de sobreposição em `funcs.call`, `process.spawn`, `http_client` |
+| `network.bind` | Registry ID de rede | Vinculação de um listener `http.service` através de um overlay (o campo `network:`) |
 
-Negue `network.select` em um escopo para impedir que o código dentro dele escolha explicitamente uma sobreposição. As sobreposições herdadas não são afetadas — elas foram autorizadas no chamador.
+Negue `network.select` em um escopo para impedir que o código dentro dele escolha explicitamente uma sobreposição. As sobreposições herdadas não são afetadas — elas foram autorizadas no chamador. `network.bind` é verificado quando um servidor com um overlay `network:` inicia seu listener.
 
 ## Veja também
 

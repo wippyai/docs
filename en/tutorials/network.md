@@ -180,8 +180,6 @@ network_service:
   default_network: app:tor
 ```
 
-Explicit selection with `network = nil` clears the default for that call.
-
 ## Permissions
 
 The `network.select` action gates explicit overlay selection. Deny it on a scope to stop code from choosing an overlay:

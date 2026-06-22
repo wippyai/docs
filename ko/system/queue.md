@@ -148,7 +148,7 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|----------|-------------|
 | `driver` | 레지스트리 ID | 예 | 큐 드라이버 |
-| `codec` | string | 아니오 | 페이로드 인코딩 (예: `json/plain`, `msgpack/plain`) |
+| `codec` | string | 아니오 | 메시지 본문의 와이어 인코딩. 기본값은 `json/plain` ([코덱](#codecs) 참고) |
 | `queue_name` | string | 아니오 | 외부 큐 이름 (기본값은 엔트리 이름) |
 | `driver_options` | object | 아니오 | 드라이버 kind로 키가 지정된 드라이버별 서브 백 |
 | `dead_letter.queue` | Registry ID | 아니오 | 실패한 메시지의 큐 ID |
@@ -173,6 +173,17 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
 | `message_ttl` | 큐별 메시지 TTL 오버라이드 |
 | `queue_expiry` | 사용되지 않는 큐의 만료 시간 |
 | `max_length` | 보존되는 최대 메시지 수 |
+
+### 코덱
+
+`codec`은 메시지 본문이 브로커에 전달되기 전에 직렬화되는 방식을 선택합니다. 페이로드 포맷 문자열이며 기본값은 `json/plain`입니다:
+
+| 코덱 | 포맷 |
+|-------|------|
+| `json/plain` | JSON (기본값) |
+| `application/msgpack` | MessagePack |
+
+AMQP 드라이버는 게시되는 메시지에 일치하는 `content-type`(`application/json` 또는 `application/msgpack`)을 설정합니다. 알 수 없는 코덱은 게시 시점이 아니라 큐가 선언될 때 실패합니다.
 
 ## 컨슈머 설정
 

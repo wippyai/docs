@@ -375,7 +375,7 @@ cursor:close()
 | `current_node()` | `Node` | Nodo en posicion del cursor |
 | `current_depth()` | `integer` | Profundidad (0 = raiz) |
 | `current_field_name()` | `string?` | Nombre de campo si hay |
-| `current_field_id()` | `integer?` | ID de campo si hay |
+| `current_field_id()` | `integer` | ID de campo (0 si no hay) |
 | `current_descendant_index()` | `integer` | Indice de descendiente del nodo actual |
 | `goto_parent()` | `boolean` | Mover al padre |
 | `goto_first_child()` | `boolean` | Mover al primer hijo |
@@ -398,6 +398,7 @@ local lang = treesitter.language("go")
 print(lang:versión())           -- versión ABI
 print(lang:node_kind_count())   -- número de tipos de nodo
 print(lang:field_count())       -- número de campos
+print(lang:parse_state_count()) -- número de estados de análisis
 
 -- Busqueda de tipo de nodo
 local kind = lang:node_kind_for_id(1)

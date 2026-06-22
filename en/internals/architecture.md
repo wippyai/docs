@@ -11,7 +11,7 @@ Wippy is a layered system built on Go. Components initialize in dependency order
 | Layer | Components |
 |-------|------------|
 | Application | Lua processes, functions, workflows |
-| Runtime | Lua engine (gopher-lua), 50+ modules |
+| Runtime | Lua engine (wippyai/go-lua), 50+ modules |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topology, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -79,14 +79,14 @@ Components declare dependencies. The loader builds a directed acyclic graph and 
 | Component | Dependencies | Purpose |
 |-----------|--------------|---------|
 | PIDGen | none | Process ID generation |
-| Dispatcher | PIDGen | Command handler dispatch |
-| Registry | Dispatcher | Entry storage and versioning |
+| Dispatcher | none | Command handler dispatch |
+| Registry | none | Entry storage and versioning |
 | Finder | Registry | Entry lookup and search |
 | Supervisor | Registry | Service restart policies |
-| Topology | Supervisor | Process parent/child tree |
+| Topology | none | Process parent/child tree |
 | Lifecycle | Topology | Service lifecycle management |
-| Factory | Lifecycle | Process spawning |
-| Functions | Factory | Stateless function calls |
+| Factory | none | Process spawning |
+| Functions | Registry | Stateless function calls |
 
 ## Event Bus
 
@@ -131,7 +131,7 @@ Versioned storage for entry definitions.
 ### Features
 
 - **Versioned State** - Each mutation creates new version
-- **History** - SQLite-backed history for audit trail
+- **History** - In-memory history by default; optional SQLite-backed history for a durable audit trail (history_type: sqlite)
 - **Observation** - Watch specific entries for changes
 - **Event-driven** - Publishes events on mutations
 

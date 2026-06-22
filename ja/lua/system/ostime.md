@@ -35,18 +35,18 @@ local t = os.time({
 })
 ```
 
-**シグネチャ:** `os.time([spec]) -> integer`
+**シグネチャ:** `os.time([spec]) -> number`
 
 **パラメータ:**
 
 | フィールド | 型 | デフォルト | 説明 |
 |-------|------|---------|-------------|
-| `year` | integer | 現在の年 | 4桁の年（例: 2024） |
-| `month` | integer | 現在の月 | 月 1-12 |
-| `day` | integer | 現在の日 | 日 1-31 |
-| `hour` | integer | 0 | 時 0-23 |
-| `min` | integer | 0 | 分 0-59 |
-| `sec` | integer | 0 | 秒 0-59 |
+| `year` | number | 現在の年 | 4桁の年（例: 2024） |
+| `month` | number | 現在の月 | 月 1-12 |
+| `day` | number | 現在の日 | 日 1-31 |
+| `hour` | number | 0 | 時 0-23 |
+| `min` | number | 0 | 分 0-59 |
+| `sec` | number | 0 | 秒 0-59 |
 
 引数なしで呼び出すと、現在のUnixタイムスタンプを返す。
 
@@ -87,7 +87,7 @@ local t = os.date("*t", now)
 | パラメータ | 型 | デフォルト | 説明 |
 |-----------|------|---------|-------------|
 | `format` | string | `"%c"` | フォーマット文字列、テーブルには`"*t"` |
-| `timestamp` | integer | 現在時刻 | フォーマットするUnixタイムスタンプ |
+| `timestamp` | number | 現在時刻 | フォーマットするUnixタイムスタンプ |
 
 ### フォーマット指定子
 
@@ -126,14 +126,14 @@ local t = os.date("*t")
 
 | フィールド | 型 | 説明 | 例 |
 |-------|------|-------------|---------|
-| `year` | integer | 4桁の年 | 2024 |
-| `month` | integer | 月 (1-12) | 6 |
-| `day` | integer | 日 (1-31) | 15 |
-| `hour` | integer | 時 (0-23) | 14 |
-| `min` | integer | 分 (0-59) | 30 |
-| `sec` | integer | 秒 (0-59) | 45 |
-| `wday` | integer | 曜日 (1-7, 日曜=1) | 7 |
-| `yday` | integer | 年間日 (1-366) | 167 |
+| `year` | number | 4桁の年 | 2024 |
+| `month` | number | 月 (1-12) | 6 |
+| `day` | number | 日 (1-31) | 15 |
+| `hour` | number | 時 (0-23) | 14 |
+| `min` | number | 分 (0-59) | 30 |
+| `sec` | number | 秒 (0-59) | 45 |
+| `wday` | number | 曜日 (1-7, 日曜=1) | 7 |
+| `yday` | number | 年間日 (1-366) | 167 |
 | `isdst` | boolean | 夏時間 | false |
 
 UTC日付テーブルには`"!*t"`を使用。
@@ -171,8 +171,8 @@ print(days)  -- 365
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `t2` | integer | 後のタイムスタンプ |
-| `t1` | integer | 前のタイムスタンプ |
+| `t2` | number | 後のタイムスタンプ |
+| `t1` | number | 前のタイムスタンプ |
 
 秒単位で`t2 - t1`を返す。`t1 > t2`の場合は負になる。
 

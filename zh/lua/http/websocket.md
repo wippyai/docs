@@ -87,6 +87,8 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | 消息内容 |
 | `type` | number | `websocket.TEXT` (1) 或 `websocket.BINARY` (2) |
 
+在消息发送前会让出。
+
 **返回:** `boolean, error`
 
 ### Ping
@@ -94,6 +96,8 @@ client:send(binary_data, websocket.BINARY)
 ```lua
 client:ping()
 ```
+
+在 ping 发送前会让出。
 
 **返回:** `boolean, error`
 
@@ -158,7 +162,7 @@ end
 | 字段 | 类型 | 描述 |
 |-------|------|-------------|
 | `type` | string | `"text"` 或 `"binary"` |
-| `data` | string | 消息内容 |
+| `data` | string? | 消息内容（未知负载类型时为 nil） |
 
 ## 关闭连接
 

@@ -2,6 +2,8 @@
 
 Wippy wird über `.wippy.yaml`-Dateien konfiguriert. Alle Optionen haben sinnvolle Standardwerte.
 
+Jeder Wert unten kann beim Start mit `wippy run --set section.path=value` überschrieben werden (wiederholbar, hat Vorrang vor der Datei). Um einzelne Registry-*Einträge* statt dieser Konfigurationsabschnitte zu überschreiben, verwenden Sie den Abschnitt `override:` oder `-o` — siehe [Einträge überschreiben](guides/entry-kinds.md#overriding-entries).
+
 ## Logger
 
 Steuert den zap-Logger-Encoder. CLI-Flags (`-v`, `-c`, `-s`) überschreiben Level/Ausgabe; die einzige yaml-gesteuerte Option ist die Kodierung.
@@ -291,10 +293,11 @@ TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh (y
 
 ### Raft (Konsens)
 
-Begrenztes, festplatten-loses Raft. Zustand liegt im Speicher; beim Neustart tritt ein Knoten dem Quorum wieder bei und spielt von Peers ab. Kein `data_dir`. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
+Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unter `raft.data_dir` (Standard `~/.wippy/store`) gespeichert; ein neugestarteter Knoten tritt dem Quorum dennoch von Peers wieder bei. [`store.kv.raft`](system/store.md#cluster-kv-stores)-Einträge replizieren darüber. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
+| `raft.data_dir` | string | `~/.wippy/store` | Verzeichnis für fs-dauerhaften Raft-Zustand und dauerhafte CRDT-Snapshots (unter `<data_dir>/_sys/`). Festplatten-los nur, wenn kein Pfad aufgelöst wird (kein Home-Verzeichnis und keiner gesetzt) |
 | `raft.enabled` | bool | true | Raft-Knoten betreiben; `false` macht diesen zum reinen Gossip-Client |
 | `raft.role` | string | server | `server` betreibt einen Raft-Knoten; `client` ist nur Gossip |
 | `raft.eligible` | bool | true | Ob dieser Knoten als Voter ausgewählt werden darf |
