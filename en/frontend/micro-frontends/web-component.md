@@ -889,3 +889,7 @@ The `wippy.scripts` map in `package.json` tells the platform which npm scripts t
 ## Testing without the host
 
 Web components work host-less the same way micro frontend apps do — `@wippy-fe/proxy` exports fall back to stubs when no host globals are present. See [host-less-mode.md](./host-less-mode.md) for the dev-proxy setup and component test isolation patterns.
+
+## See also
+
+- [Chat Web Components](./chat-web-components.md) — ready-made `<wippy-chat>` & co. custom elements the host ships; drop a live Wippy chat into any child by tag without building a component.

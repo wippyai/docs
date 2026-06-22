@@ -281,6 +281,17 @@ Zero-dependency `<wippy-loading>` and `<wippy-error>` custom elements delivered 
 
 These elements are also registered in the host itself for use in fatal-error states.
 
+### `@wippy-fe/chat`
+
+A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — that drop a live Wippy chat into any child by tag. Like `@wippy-fe/loading`, a tiny shell (`chat.js`) auto-registers all four tags and is injected into every child context via the host `scripts` array, so the elements are available by tag name with no import or registration. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
+
+```html
+<wippy-session-selector></wippy-session-selector>
+<wippy-chat></wippy-chat>
+```
+
+See [Chat Web Components](../micro-frontends/chat-web-components.md) for the full element reference — attributes, events, composition, and theming.
+
 ### `@wippy-fe/markdown-iframe`
 
 Heavy markdown rendering bundle (markdown-it + Shiki syntax highlighting). Dynamically imported by the host's `<w-artifact>` component when it needs to render Markdown content inside an iframe artifact. Child apps that render Markdown themselves can import this package to get the same renderer with consistent styling, though for simple cases `markdown-it` alone (available as an external) is sufficient.

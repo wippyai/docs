@@ -187,6 +187,7 @@
           {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
           {"title": "Micro Frontend App", "path": "frontend/micro-frontends/micro-frontend-app"},
           {"title": "Web Component", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
           {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
           {"title": "Theming", "path": "frontend/micro-frontends/theming"},
           {"title": "Theming: Micro Frontend Apps", "path": "frontend/micro-frontends/micro-frontend-app-theming"},

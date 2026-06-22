@@ -70,6 +70,7 @@ How to build micro frontend apps and web components that run inside the Web Host
 
 - [Micro Frontend App](./micro-frontends/micro-frontend-app.md) — scaffold, Vite config, bootstrap sequence, router sync
 - [Web Component](./micro-frontends/web-component.md) — `WippyVueElement`, props, events, shadow DOM CSS
+- [Chat Web Components](./micro-frontends/chat-web-components.md) — ready-made `<wippy-chat>` & co.; composable chat elements you drop into any child
 - [Proxy API](./micro-frontends/proxy-api.md) — complete `@wippy-fe/proxy` reference
 - [Theming](./micro-frontends/theming.md) — CSS cascade, semantic variables, `hostCssKeys`
 - [Build System](./micro-frontends/build-system.md) — `@wippy-fe/vite-plugin`, `wippy-meta.json`, externals
