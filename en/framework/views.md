@@ -108,6 +108,8 @@ The `data_func` receives `{ params, query }` and returns a table that becomes th
 
 Component pages point to external single-page applications (SPAs, micro-frontends) loaded by the Web Host inside an iframe. The registry entry holds **only registry-routing and deployment-policy fields** — URL serving, access control, mount route, and per-page config overrides:
 
+> **Required registry shape:** component pages are `kind: registry.entry` with `meta.type: view.page`. `view.page` is never a `kind` value. Proxy deployment overrides live at `meta.proxy`, not `data.proxy`.
+
 ```yaml
 entries:
   - name: dashboard
@@ -146,6 +148,24 @@ The API returns a component descriptor with the resolved base URL. The Web Host 
 ### Proxy Injection
 
 Proxy injection for SPA pages is configured in the FE package.json `wippy.proxy.injections` block (camelCase) and baked into `wippy-meta.json` at build time. It can also be overridden per deployment via a camelCase `proxy:` block nested under `meta:` in the registry entry (same shape and `injections` wrapper as the package.json `wippy.proxy` block); the host deep-merges it over the bundled `wippy.proxy`, and the YAML value wins per nested key. There is no snake_case form and no casing normalization. Note that `config_overrides` only deep-merges `customization`, `axiosDefaults`, `routePrefix`, and `apiRoutes` — it never affects `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
+
+Minimal correct deployment override shape:
+
+```yaml
+entries:
+  - name: dashboard
+    kind: registry.entry
+    meta:
+      type: view.page
+      proxy:
+        enabled: true
+        injections:
+          css:
+            themeConfig: true
+            customCss: true
+            customVariables: true
+          tailwindConfig: false
+```
 
 ## View Components
 

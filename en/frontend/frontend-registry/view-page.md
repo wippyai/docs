@@ -77,6 +77,16 @@ Full flag reference and runtime defaults: [CSS Injection](../web-host/css-inject
 
 These fields are set by the operator in the `meta` block of the `_index.yaml` registry entry. Most of them — `announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline` — represent deployment policy (routing, access control, and serving) that only makes sense at deploy time and has no `package.json` authoring surface. The one exception is `entry_point`: it is **FE-authored** (the vite plugin requires `wippy.path` in `package.json` and bakes it into `wippy-meta.json`), and the `meta.entry_point` field is only an **optional per-deployment override** of that baked default.
 
+> **Required YAML shape:** a page entry is `kind: registry.entry` with `meta.type: view.page`. Do not write `kind: view.page`.
+
+```yaml
+- name: main
+  kind: registry.entry
+  meta:
+    type: view.page
+    name: main
+```
+
 > **The deployment-policy fields (`announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline`) cannot be set in `package.json` — they are set by the operator for each environment. `entry_point` is different: it is authored as `wippy.path` in `package.json` and the YAML value only overrides that default.**
 
 ### URL and File Serving
@@ -123,6 +133,8 @@ When the Web Host starts, it fetches `GET /api/public/pages/routes` and calls `r
 
 `config_overrides` is a YAML map whose keys follow camelCase to match the AppConfig shape. It is deep-merged on top of the bundled `wippy.configOverrides` from `wippy-meta.json`; the YAML value wins per nested key.
 
+`config_overrides` changes the page's injected AppConfig. It does **not** change proxy injection flags. In particular, `config_overrides` never affects `proxy.injections`, `wippy.proxy.injections`, or the runtime defaults for CSS/script injection. To override proxy injection flags for a deployment, use `meta.proxy` as described in [Operator proxy override](#operator-proxy-override-_indexyaml).
+
 A typical use case is running the same bundle with a custom colour palette:
 
 ```yaml
@@ -156,6 +168,8 @@ Note that `announced: false` is valid for `view.page` entries — the page is re
 ### Operator proxy override (_index.yaml)
 
 The proxy injection defaults baked into `wippy-meta.json` (from the `package.json` `wippy` block) can be overridden per-deployment with a `proxy:` block placed **under `meta:`** in the registry entry. The YAML uses the **same camelCase shape and `injections` wrapper** as the `package.json` block above (`enabled`, `injections.css.{themeConfig,…}`, `injections.{tailwindConfig,…}`). The host deep-merges this block over the bundled `wippy.proxy`; the YAML value wins per nested key. There is no snake_case form and no casing normalization — the YAML payload must be camelCase.
+
+Short answer: use `meta.proxy`, not `data.proxy`; use camelCase keys, not snake_case keys; keep the `injections` wrapper.
 
 ```yaml
 - name: dashboard

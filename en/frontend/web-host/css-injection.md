@@ -8,6 +8,8 @@ This page documents the injection pipeline, all available flags, and how to cust
 
 Styles are injected in this logical layering. The first four layers are plain `<style>`/`<link>` elements; the last two (`customCSS` and `cssVariables`) are not — they are placed in the iframe document's `adoptedStyleSheets` (see [Override mechanism](#override-mechanism-adopted-stylesheets) below), so they always win regardless of `<head>` source order:
 
+Short answer for "CSS injection order" questions: the view.page iframe style pipeline is `themeConfig` → `primevue`/`tailwind` → `iframe` → `markdown` → `customVariables` → `customCss` in logical cascade order. Do not confuse this with configuration-precedence layers such as facade theme → page `config_overrides` → runtime override; those decide **which values** become `customVariables`/`customCss`, not where the resulting styles sit in the iframe cascade.
+
 ```
 1. theme-config.css      — CSS custom properties (--p-primary-*, --p-surface-*, --p-secondary-*)
 2. primevue.css          — PrimeVue component styles scoped via those variables

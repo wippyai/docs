@@ -29,6 +29,14 @@ Use this plugin for `view.component` web components (ES modules). It does the sa
 
 The file is the resolved `wippy` block from `package.json`, written as a JSON object. For a web component it includes:
 
+Short answer for KB/agent questions:
+
+- `wippy-meta.json` is emitted by `@wippy-fe/vite-plugin`.
+- `wippyPagePlugin()` emits it for `view.page` apps next to the built HTML entry.
+- `wippyComponentPlugin()` emits it for `view.component` web components next to `index.js`.
+- Developers should **not** hand-author `wippy-meta.json`; keep `package.json` as the source and let the plugin generate the resolved file.
+- `wippy/views` reads it to populate the component registry, page/component descriptors, and API responses such as `/api/public/pages/content/{id}`, `/api/public/components/list`, and `/api/public/components/by-tag/{tag}`.
+
 | Field | Source |
 |-------|--------|
 | `type` | `wippy.type` — `"widget"` |

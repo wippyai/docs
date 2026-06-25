@@ -8,6 +8,17 @@ For the `wippy/views` module setup that processes these entries at runtime, see 
 
 Every frontend artifact is declared as a `registry.entry` in the module's `_index.yaml`. The `kind: registry.entry` marker tells the Wippy registry that this entry carries metadata consumed by other modules rather than defining a Lua component directly.
 
+> **Common trap:** `view.page` and `view.component` are **not** `kind` values. Always write `kind: registry.entry` and put the frontend artifact type in `meta.type`. `kind: view.page` and `kind: view.component` are invalid shapes.
+
+Minimal correct shape:
+
+```yaml
+- name: main
+  kind: registry.entry
+  meta:
+    type: view.page
+```
+
 ```yaml
 version: "1.0"
 namespace: app.views
@@ -58,6 +69,13 @@ The presence of `specification` does not change runtime behavior, but `wippy/vie
 ## The `wippy-meta.json` Contract
 
 `@wippy-fe/vite-plugin` emits a `wippy-meta.json` file alongside the built bundle. This file is the canonical source of truth for the artifact's runtime metadata: its props schema, events schema, title, icon, and proxy injection settings.
+
+Short answer for agents and tooling:
+
+- **Who emits it:** `wippyPagePlugin()` for `view.page` apps and `wippyComponentPlugin()` for `view.component` web components.
+- **Who authors it:** nobody hand-authors `wippy-meta.json`; the vite plugin generates it from `package.json`.
+- **Who consumes it:** `wippy/views` reads it from the served bundle root when building page/component descriptors and API responses.
+- **What YAML does:** `_index.yaml` remains authoritative for deployment policy and any field it explicitly overrides.
 
 When `wippy/views` loads a `registry.entry`, it reads `wippy-meta.json` from the artifact's served bundle root. For pages, that root is the page `url + base_path`; for web components, the current entries serve the component directly from `url`. YAML always wins: `_index.yaml` takes precedence for every field it declares. `wippy-meta.json` provides the defaults that `wippy/views` reads when no YAML override is present for a given field. Deployment-policy fields — `announced`, `secure`, `url`, `mountRoute`, and `base_path` — must be set in `_index.yaml` because they express operator decisions rather than component authorship; there is no `package.json`/`wippy-meta.json` authoring surface for them. (`base_path` is honored for both pages and components; the current app-template component entries simply omit it.)
 
