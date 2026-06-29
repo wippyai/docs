@@ -179,6 +179,7 @@
           {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
           {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
           {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
+          {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},
           {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
         ]
       },

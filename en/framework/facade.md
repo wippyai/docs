@@ -93,6 +93,16 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `children_custom_css` | children | `""` | CSS for iframe contents only |
 | `children_css_variables` | children | `{}` | CSS custom properties for iframe contents only |
 
+#### Theme mode & persistence
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `theme_mode` | `auto` | Forced theme for host + children: `auto` (follow OS), `light`, or `dark`. Emitted on `/facade/config` as `themeMode`. |
+| `theme_persist` | `none` | Persist the user's chosen theme across reloads: `none`, `cookie`, or `localStorage`. In `cookie` mode the Jet-rendered shell reads the cookie server-side and applies the `w-theme-*` class before the first paint (no flash). Emitted as `themePersist`. |
+| `theme_storage_key` | `@wippy-theme-mode` | Cookie / localStorage key the mode is stored under. Emitted as `themeStorageKey` and baked into the generated `/facade/theme-persist.js`. |
+
+Theme persistence is **opt-in**: `theme_persist` defaults to `none`, so nothing is stored until a deployment sets it to `cookie` or `localStorage`. When enabled the facade serves a ready-made script at **`GET /facade/theme-persist.js`** with the key and mode baked in; include it on any page that should share the theme. See [Theme Persistence](/frontend/web-host/theme-persistence) for the full model, the `themeChanged` host event, and non-Wippy-page integration.
+
 #### Reusing facade theming on non-Web-Host pages
 
 A page served **outside** the Web Host — your `login.html`, an error page, an email-confirm page — can reuse the *same* facade brand theme instead of duplicating it, so your tokens and custom rules live in one place.
@@ -117,6 +127,15 @@ A standalone page then links both:
 <link rel="stylesheet" href="/api/public/facade/variables.css">  <!-- css_variables, generated CSS -->
 <link rel="stylesheet" href="/app/custom-css.facade.css">        <!-- custom_css file -->
 ```
+
+To also share the **theme mode** (so a `login.html` honours and persists the same light/dark choice as the host), add the generated theme-persist script and call its `write()` from your switcher:
+
+```html
+<script src="/api/public/facade/theme-persist.js"></script>
+<!-- early-applies the stored theme and exposes window.wippyThemePersist -->
+```
+
+See [Theme Persistence → Non-Wippy-hosted pages](/frontend/web-host/theme-persistence) for a complete switcher example.
 
 ### Optional JSON parameters
 
