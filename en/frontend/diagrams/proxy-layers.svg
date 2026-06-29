@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 582.9865 536.4" width="582.9865" height="536.4" style="--bg:transparent;--fg:#374151;--line:#9ca3af;--accent:#6366f1;--muted:#6b7280;--surface:transparent;--border:#e5e7eb">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<polyline class="edge" data-from="Host" data-to="Child" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="injects the Proxy API" points="305.81083333333333,93.80000000000001 305.81083333333333,129.8 279.55949999999996,129.8 279.55949999999996,198.1 291.7318333333333,198.1 291.7318333333333,210.1" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Child" data-to="Host" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="uses it → host · api · on · state · ws" points="417.3591666666666,210.1 417.3591666666666,198.1 429.53150000000005,198.1 429.53150000000005,129.8 403.2801666666667,129.8 403.2801666666667,93.80000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Child" data-to="Nested" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="hosts more children:
+&lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject
+(re-inject the runtime; web components just render their tag)" points="291.7318333333333,280.8 291.7318333333333,316.8 240.99150000000006,316.8 240.99150000000006,413.7 310.3803333333333,413.7 310.3803333333333,425.7" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Nested" data-to="Child" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="uses the Proxy API
+(bridges up through its parent)" points="398.7106666666666,425.7 398.7106666666666,413.7 468.0994999999999,413.7 468.0994999999999,331.09999999999997 417.3591666666666,331.09999999999997 417.3591666666666,280.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Nested" data-to="Nested" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="…hosts its own children, indefinitely" points="222.04999999999998,449.26666666666665 212.04999999999998,449.26666666666665 212.04999999999998,472.8333333333333 222.04999999999998,472.8333333333333" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="Host" data-to="Child" data-label="injects the Proxy API">
+  <rect x="222.05949999999993" y="136.8" width="114.47200000000002" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="279.29549999999995" y="151.95000000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">injects the Proxy API</text>
+</g>
+<g class="edge-label" data-from="Child" data-to="Host" data-label="uses it → host · api · on · state · ws">
+  <rect x="340.5315" y="136.8" width="177.43600000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="429.2495" y="151.95000000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">uses it → host · api · on · state · ws</text>
+</g>
+<g class="edge-label" data-from="Child" data-to="Nested" data-label="hosts more children:
+&lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject
+(re-inject the runtime; web components just render their tag)">
+  <rect x="95.99150000000006" y="323.8" width="289.10799999999983" height="58.900000000000006" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="240.54549999999998" y="353.25" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)"><tspan x="240.54549999999998" dy="-10.450000000000001">hosts more children:</tspan><tspan x="240.54549999999998" dy="14.3">&lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject</tspan><tspan x="240.54549999999998" dy="14.3">(re-inject the runtime; web components just render their tag)</tspan></text>
+</g>
+<g class="edge-label" data-from="Nested" data-to="Child" data-label="uses the Proxy API
+(bridges up through its parent)">
+  <rect x="389.0994999999999" y="338.09999999999997" width="157.83400000000003" height="44.6" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="468.01649999999995" y="360.4" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)"><tspan x="468.01649999999995" dy="-3.3000000000000007">uses the Proxy API</tspan><tspan x="468.01649999999995" dy="14.3">(bridges up through its parent)</tspan></text>
+</g>
+<g class="edge-label" data-from="Nested" data-to="Nested" data-label="…hosts its own children, indefinitely">
+  <rect x="36.02000000000001" y="445.9" width="178.02999999999997" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="125.035" y="461.04999999999995" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">…hosts its own children, indefinitely</text>
+</g>
+<g class="node" data-id="Host" data-label="Wippy Web Host
+Proxy API: api · navigate · state · ws · chat" data-shape="rectangle">
+  <rect x="208.34149999999997" y="40" width="292.408" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="354.54549999999995" y="66.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="354.54549999999995" dy="-3.9000000000000012">Wippy Web Host</tspan><tspan x="354.54549999999995" dy="16.900000000000002">Proxy API: api · navigate · state · ws · chat</tspan></text>
+</g>
+<g class="node" data-id="Child" data-label="Child node
+Micro Frontend App (iframe) · Web Component (host page)
+import { host, api, on } from '@wippy-fe/proxy'" data-shape="rectangle">
+  <rect x="166.10450000000003" y="210.1" width="376.8819999999999" height="70.7" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="354.54549999999995" y="245.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="354.54549999999995" dy="-12.350000000000001">Child node</tspan><tspan x="354.54549999999995" dy="16.900000000000002">Micro Frontend App (iframe) · Web Component (host page)</tspan><tspan x="354.54549999999995" dy="16.900000000000002">import { host, api, on } from &#39;@wippy-fe/proxy&#39;</tspan></text>
+</g>
+<g class="node" data-id="Nested" data-label="Nested child
+Micro Frontend App · Web Component
+same import, same Proxy API" data-shape="rectangle">
+  <rect x="222.04999999999998" y="425.7" width="264.991" height="70.7" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="354.54549999999995" y="461.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="354.54549999999995" dy="-12.350000000000001">Nested child</tspan><tspan x="354.54549999999995" dy="16.900000000000002">Micro Frontend App · Web Component</tspan><tspan x="354.54549999999995" dy="16.900000000000002">same import, same Proxy API</tspan></text>
+</g>
+</svg>

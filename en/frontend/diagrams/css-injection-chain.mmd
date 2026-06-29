@@ -1,0 +1,15 @@
+flowchart TD
+    Facade["wippy/facade\n(builds theming scopes)"]
+    AppConfig["AppConfig.theming\n(global, host, children)"]
+    WebHost["Web Host\n(applies global + host CSS)"]
+    ProxyConfig["ProxyConfig.injections.css\n(per page.package.json wippy block)"]
+    IframeChild["Child iframe / Web Component"]
+
+    Facade -->|"/facade/config"| AppConfig
+    AppConfig --> WebHost
+    WebHost -->|"injects via proxy.js"| ProxyConfig
+    ProxyConfig -->|"theme-config.css"| IframeChild
+    ProxyConfig -->|"primevue.css + tailwind.css"| IframeChild
+    ProxyConfig -->|"iframe.css"| IframeChild
+    ProxyConfig -->|"customCSS"| IframeChild
+    ProxyConfig -->|"cssVariables"| IframeChild

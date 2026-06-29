@@ -1,0 +1,16 @@
+flowchart LR
+    YAML["_index.yaml\n(registry.entry\nkind with meta.type)"]
+    Registry["Frontend Registry\n(wippy/views module)"]
+    API1["/api/public/pages/routes\n(mount routes)"]
+    API2["/api/public/pages/content/:id\nor /components/by-tag/:tag\n(app / component metadata)"]
+    Router["Web Host Router\nrouter.addRoute()"]
+    App["Micro Frontend App\n(WPage / iframe)"]
+    StaticFiles["Static Files\n(app.html, app.js,\nproxy.js)"]
+
+    YAML -->|"registered at startup"| Registry
+    Registry -->|"announced entries"| API1
+    Registry -->|"app/component details"| API2
+    API1 -->|"sync at boot"| Router
+    Router -->|"navigate to /path"| App
+    App -->|"fetch entry_point"| StaticFiles
+    StaticFiles -->|"loads in iframe"| App

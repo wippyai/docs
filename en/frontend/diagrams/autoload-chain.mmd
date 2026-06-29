@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant Views as wippy/views module
+    participant API as /api/public/components/list
+    participant WebHost as Web Host
+    participant DOM as Page DOM
+    participant CE as customElements
+
+    WebHost->>API: GET /api/public/components/list
+    Note over API: filters: announced == true
+    API->>WebHost: [{tag_name, entry_point, url, auto_register}]
+    loop for each auto_register component
+        WebHost->>DOM: inject &lt;script type="module" src="entry_point?declare-tag=tag_name"&gt;
+        DOM->>CE: define(import.meta.url, ElementClass)
+        CE->>CE: customElements.define(tag_name, ElementClass)
+    end
+    Note over DOM: Components now available<br/>as custom HTML elements

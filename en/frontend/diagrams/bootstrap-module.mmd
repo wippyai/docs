@@ -1,0 +1,10 @@
+sequenceDiagram
+    participant Parent as Parent Page
+    participant Module as module.js (CDN)
+    participant App as Vue App
+
+    Parent->>Module: &lt;script src=".../module.js"&gt;
+    Parent->>Module: initWippyApp(AppConfig, container)
+    Note over Module: No PostMessage handshake needed<br/>config provided directly
+    Module->>App: init Pinia, Router, Theme
+    Module->>App: app.mount(container)

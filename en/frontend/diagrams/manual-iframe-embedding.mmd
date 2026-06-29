@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant Parent as Your page<br/>(manual embed)
+    participant FacadeAPI as /facade/config<br/>(Wippy BE)
+    participant Iframe as iframe.html<br/>(?waitForCustomConfig)
+
+    Parent->>FacadeAPI: GET /facade/config
+    FacadeAPI->>Parent: { iframe_url, iframe_origin, ...AppConfig }
+    Parent->>Iframe: create &lt;iframe src=iframe_url&gt;
+    Note over Parent: addEventListener('message', …)<br/>waiting for the @gen2-chat request
+    Iframe->>Parent: postMessage { type:'@gen2-chat', action:'get-config' }
+    Parent->>Iframe: postMessage { type:'@gen2-chat', action:'set-config', ...config }<br/>targetOrigin = iframe_origin
+    Iframe->>Iframe: initialize with AppConfig (isolated, partial-page)

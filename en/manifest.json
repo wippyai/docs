@@ -158,6 +158,52 @@
     ]
   },
   {
+    "title": "Frontend",
+    "children": [
+      {"title": "Overview", "path": "frontend/overview"},
+      {
+        "title": "Frontend Registry",
+        "children": [
+          {"title": "Registry Entries", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Micro Frontend Apps (view.page)", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Web Components (view.component)", "path": "frontend/frontend-registry/view-component"},
+          {"title": "Dynamic Routing", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Overview", "path": "frontend/web-host/overview"},
+          {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
+          {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
+          {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
+          {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
+        ]
+      },
+      {
+        "title": "Wippy Micro Frontends",
+        "children": [
+          {"title": "Overview", "path": "frontend/micro-frontends/overview"},
+          {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "Micro Frontend App", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Web Component", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Theming", "path": "frontend/micro-frontends/theming"},
+          {"title": "Theming: Micro Frontend Apps", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "Theming: Web Components", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "Build System", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Host-less Mode", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "Compliance Checklist", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Debugging", "path": "frontend/micro-frontends/debugging"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},

@@ -1,0 +1,26 @@
+graph LR
+    subgraph L1["Layer 1 · Frontend Facade  (wippy/facade)"]
+        Facade["Bootstrap page +\n/facade/config"]
+    end
+
+    subgraph L2["Layer 2 · Wippy Web Host"]
+        Core["Host Core\nRouter · WC Loader"]
+        Nav["Navigation\n(optional)"]
+        Chat["Chat\n(optional)"]
+        Layout["Layout\npre-defined or custom"]
+    end
+
+    subgraph L3["Layer 3 · Micro Frontends  (indefinitely nestable)"]
+        Page["Micro Frontend App\n(view.page)"]
+        WC["Web Component\n(view.component)"]
+        Deep["↳ nested micro frontends"]
+    end
+
+    Facade -->|"loads JS module"| Core
+    Core --- Nav
+    Core --- Chat
+    Core --- Layout
+    Core -->|"mounts"| Page
+    Core -->|"registers"| WC
+    Page -->|"can contain"| Deep
+    WC -->|"can contain"| Deep

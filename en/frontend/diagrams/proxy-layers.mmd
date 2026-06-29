@@ -1,0 +1,10 @@
+graph TB
+    Host["Wippy Web Host\nProxy API: api · navigate · state · ws · chat"]
+    Child["Child node\nMicro Frontend App (iframe) · Web Component (host page)\nimport { host, api, on } from '@wippy-fe/proxy'"]
+    Nested["Nested child\nMicro Frontend App · Web Component\nsame import, same Proxy API"]
+
+    Host -->|"injects the Proxy API"| Child
+    Child -->|"uses it → host · api · on · state · ws"| Host
+    Child -->|"hosts more children:\n&lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject\n(re-inject the runtime; web components just render their tag)"| Nested
+    Nested -->|"uses the Proxy API\n(bridges up through its parent)"| Child
+    Nested -.->|"…hosts its own children, indefinitely"| Nested
