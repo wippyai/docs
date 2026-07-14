@@ -1,6 +1,6 @@
 ---
 title: "Installation"
-description: "Quick Install"
+description: "Install the Wippy runtime"
 ---
 
 # Installation
