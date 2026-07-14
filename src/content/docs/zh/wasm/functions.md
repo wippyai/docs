@@ -1,5 +1,6 @@
 ---
 title: "WASM 函数"
+description: "WASM 函数是执行 WebAssembly 代码的注册表条目。提供两种条目类型：function.wat 用于内联 WAT 源码，function.wasm 用于预编译二进制文件。"
 ---
 
 # WASM 函数

@@ -46,6 +46,7 @@ function buildHome(manifest) {
 
   return `---
 title: Wippy
+description: "Comprehensive documentation for the Wippy AI platform — durable AI agents, services, and the runtime that runs them."
 ---
 
 # Wippy Documentation

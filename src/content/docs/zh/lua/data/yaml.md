@@ -1,5 +1,6 @@
 ---
 title: "YAML 编码"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
 ---
 
 # YAML 编码

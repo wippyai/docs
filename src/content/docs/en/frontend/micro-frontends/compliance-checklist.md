@@ -1,5 +1,6 @@
 ---
 title: "Wippy FE Compliance Checklist"
+description: "A single, exhaustive checklist for shipping Wippy child apps (view.page) and web components (view.component) — covering YAML registration, FE source,…"
 ---
 
 # Wippy FE Compliance Checklist

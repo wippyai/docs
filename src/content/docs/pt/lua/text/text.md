@@ -1,5 +1,6 @@
 ---
 title: "Processamento de Texto"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Processamento de Texto

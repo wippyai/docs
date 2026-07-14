@@ -1,5 +1,6 @@
 ---
 title: "CLI 参考"
+description: "Wippy 运行时的命令行界面。"
 ---
 
 # CLI 参考

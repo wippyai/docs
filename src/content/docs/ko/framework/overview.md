@@ -1,5 +1,6 @@
 ---
 title: "Framework"
+description: "Wippy provides official framework modules through the hub. These modules are maintained under the wippy organization and can be added to any project."
 ---
 
 # Framework

@@ -1,5 +1,6 @@
 ---
 title: "Entry Handlers"
+description: "Entry handlers processam entradas do registro por tipo. Quando entradas são adicionadas, atualizadas ou deletadas, o registro despacha eventos para…"
 ---
 
 # Entry Handlers

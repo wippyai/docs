@@ -1,5 +1,6 @@
 ---
 title: "Base64 Encoding"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
 ---
 
 # Base64 Encoding

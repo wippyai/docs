@@ -1,5 +1,6 @@
 ---
 title: "Generación Aumentada por Recuperación (RAG)"
+description: "Construye una base de conocimiento que responda preguntas a partir de tus propios documentos. Este tutorial utiliza el módulo wippy/embeddings para…"
 ---
 
 # Generación Aumentada por Recuperación (RAG)

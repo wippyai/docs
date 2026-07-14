@@ -1,5 +1,6 @@
 ---
 title: "E/S de Terminal"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
 ---
 
 # E/S de Terminal

@@ -1,5 +1,6 @@
 ---
 title: "Security Model"
+description: "Wippy implements attribute-based access control. Every request carries an actor (who) and a scope (what policies apply). Policies evaluate access based…"
 ---
 
 # Security Model

@@ -1,5 +1,6 @@
 ---
 title: "Dynamische Auswertung"
+description: "Führen Sie Code dynamisch zur Laufzeit mit Sandbox-Umgebungen und kontrolliertem Modulzugriff aus."
 ---
 
 # Dynamische Auswertung

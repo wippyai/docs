@@ -1,5 +1,6 @@
 ---
 title: "Cluster"
+description: "O Wippy executa como um único nó por padrão. Habilitar o cluster transforma um conjunto de nós em um sistema coordenado que compartilha associação,…"
 ---
 
 # Cluster

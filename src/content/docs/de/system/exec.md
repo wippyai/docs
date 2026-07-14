@@ -1,5 +1,6 @@
 ---
 title: "Executor"
+description: "Befehlsausführer führen externe Prozesse mit kontrollierten Umgebungen aus. Zwei Executor-Typen sind verfügbar: native OS-Prozesse und Docker-Container."
 ---
 
 # Executor

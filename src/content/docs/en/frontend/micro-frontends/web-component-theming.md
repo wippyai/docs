@@ -1,5 +1,6 @@
 ---
 title: "Theming: Web Components"
+description: "Theming reference covers the full CSS variable catalog. This doc covers how a web component receives the theme through shadow DOM."
 ---
 
 # Theming: Web Components

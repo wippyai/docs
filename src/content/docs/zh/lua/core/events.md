@@ -1,5 +1,6 @@
 ---
 title: "事件总线"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 事件总线

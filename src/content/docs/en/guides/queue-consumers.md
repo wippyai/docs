@@ -1,5 +1,6 @@
 ---
 title: "Queue Consumers"
+description: "Queue consumers process messages from queues using worker pools."
 ---
 
 # Queue Consumers

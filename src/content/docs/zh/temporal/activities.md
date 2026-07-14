@@ -1,5 +1,6 @@
 ---
 title: "Activities"
+description: "Activity 是执行非确定性操作的函数。任何 function.lua 或 process.lua 条目都可以通过添加元数据注册为 Temporal activity。"
 ---
 
 # Activities

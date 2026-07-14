@@ -1,5 +1,6 @@
 ---
 title: "Theming: Micro Frontend Apps"
+description: "Theming reference covers the full CSS variable catalog. This doc covers how a micro frontend app receives the theme."
 ---
 
 # Theming: Micro Frontend Apps

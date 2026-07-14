@@ -1,5 +1,6 @@
 ---
 title: "Event Bus"
+description: "The event bus is a pub/sub system using a single dispatcher goroutine. Publishers enqueue actions, the dispatcher processes them sequentially, and…"
 ---
 
 # Event Bus

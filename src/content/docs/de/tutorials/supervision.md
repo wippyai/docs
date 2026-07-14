@@ -1,5 +1,6 @@
 ---
 title: "Prozess-Supervision"
+description: "Prozesse überwachen und verknüpfen, um fehlertolerante Systeme aufzubauen."
 ---
 
 # Prozess-Supervision

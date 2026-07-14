@@ -1,5 +1,6 @@
 ---
 title: "모듈 게시"
+description: "Wippy Hub에서 재사용 가능한 코드를 공유합니다."
 ---
 
 # 모듈 게시

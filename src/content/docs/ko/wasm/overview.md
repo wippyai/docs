@@ -1,5 +1,6 @@
 ---
 title: "WebAssembly 런타임"
+description: "Wippy는 WebAssembly 모듈을 Lua 코드와 함께 일급 레지스트리 엔트리로 실행합니다. WASM 함수와 프로세스는 동일한 스케줄러 내에서 실행되고, 동일한 보안 모델을 공유하며, 함수 레지스트리를 통해 Lua와 상호 운용됩니다."
 ---
 
 # WebAssembly 런타임

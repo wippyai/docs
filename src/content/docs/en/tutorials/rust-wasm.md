@@ -1,5 +1,6 @@
 ---
 title: "Running Rust on Wippy"
+description: "Build a Rust WebAssembly component and run it as functions, CLI commands, and HTTP endpoints."
 ---
 
 # Running Rust on Wippy

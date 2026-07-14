@@ -1,5 +1,6 @@
 ---
 title: "HTTP 미들웨어"
+description: "미들웨어는 라우트 처리 전후로 HTTP 요청을 처리합니다."
 ---
 
 # HTTP 미들웨어

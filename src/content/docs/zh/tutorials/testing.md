@@ -1,5 +1,6 @@
 ---
 title: "测试"
+description: "使用 wippy/test 框架为您的 Lua 代码编写和运行测试 — 这是一个 BDD 风格的运行器，提供断言、生命周期钩子和模拟功能，通过 wippy run test 命令执行。"
 ---
 
 # 测试

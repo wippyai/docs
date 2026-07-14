@@ -1,5 +1,6 @@
 ---
 title: "Arquitetura"
+description: "<note Esta página está em construção. O conteúdo pode estar incompleto ou mudar. </note"
 ---
 
 # Arquitetura

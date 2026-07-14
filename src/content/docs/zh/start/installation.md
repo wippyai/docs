@@ -1,5 +1,6 @@
 ---
 title: "安装"
+description: "快速安装"
 ---
 
 # 安装

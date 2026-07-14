@@ -1,5 +1,6 @@
 ---
 title: "Process Host"
+description: "Process Host 使用工作窃取调度器管理 Lua 进程执行。"
 ---
 
 # Process Host

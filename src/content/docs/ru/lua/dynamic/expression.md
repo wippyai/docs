@@ -1,5 +1,6 @@
 ---
 title: "Язык выражений"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Язык выражений

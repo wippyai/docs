@@ -1,5 +1,6 @@
 ---
 title: "Cluster"
+description: "Wippy runs as a single node by default. Enabling the cluster turns a set of nodes into one coordinated system that shares membership, cluster-wide…"
 ---
 
 # Cluster

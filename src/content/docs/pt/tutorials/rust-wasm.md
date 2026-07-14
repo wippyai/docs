@@ -1,5 +1,6 @@
 ---
 title: "Executando Rust no Wippy"
+description: "Compile um componente Rust WebAssembly e execute-o como funções, comandos CLI e endpoints HTTP."
 ---
 
 # Executando Rust no Wippy

@@ -1,5 +1,6 @@
 ---
 title: "Servidor HTTP"
+description: "O servidor HTTP (http.service) escuta em uma porta e hospeda roteadores, endpoints e handlers de arquivos estáticos."
 ---
 
 # Servidor HTTP

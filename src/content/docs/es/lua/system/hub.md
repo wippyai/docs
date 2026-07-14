@@ -1,5 +1,6 @@
 ---
 title: "Hub"
+description: "Acceso de solo lectura al catálogo de módulos de Wippy Hub: listar módulos, buscar, obtener metadatos, versiones, dependencias y READMEs."
 ---
 
 # Hub

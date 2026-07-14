@@ -1,5 +1,6 @@
 ---
 title: "式言語"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 式言語

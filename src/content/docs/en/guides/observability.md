@@ -1,5 +1,6 @@
 ---
 title: "Observability"
+description: "Configure logging, metrics, and distributed tracing for Wippy applications."
 ---
 
 # Observability

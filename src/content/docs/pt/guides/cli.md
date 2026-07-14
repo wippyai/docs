@@ -1,5 +1,6 @@
 ---
 title: "Referência da CLI"
+description: "Interface de linha de comando para o runtime do Wippy."
 ---
 
 # Referência da CLI

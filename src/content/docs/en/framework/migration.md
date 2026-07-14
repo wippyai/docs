@@ -1,5 +1,6 @@
 ---
 title: "Migrations"
+description: "The wippy/migration module provides a database migration framework with a small DSL for defining schema changes, a runner that discovers and executes…"
 ---
 
 # Migrations

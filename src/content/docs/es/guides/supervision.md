@@ -1,5 +1,6 @@
 ---
 title: "Supervisión"
+description: "El supervisor gestiona los ciclos de vida de los servicios, manejando el orden de inicio, reinicios automáticos, y apagado graceful. Los servicios con…"
 ---
 
 # Supervisión

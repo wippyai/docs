@@ -1,5 +1,6 @@
 ---
 title: "Bootloader"
+description: "El modulo wippy/bootloader orquesta la inicializacion de la aplicacion descubriendo y ejecutando funciones de bootloader en un orden definido al…"
 ---
 
 # Bootloader

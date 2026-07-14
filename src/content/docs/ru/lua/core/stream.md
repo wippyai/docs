@@ -1,5 +1,6 @@
 ---
 title: "Потоки"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
 ---
 
 # Потоки

@@ -1,5 +1,6 @@
 ---
 title: "Procesos WASM"
+description: "Los modulos WASM pueden ejecutarse como procesos a traves del tipo de entrada process.wasm. Los procesos se ejecutan dentro del host de procesos de…"
 ---
 
 # Procesos WASM

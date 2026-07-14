@@ -1,5 +1,6 @@
 ---
 title: "Agents"
+description: "The wippy/agent module provides a framework for building AI agents with tool use, streaming, delegation, traits, and memory. Agents are defined…"
 ---
 
 # Agents

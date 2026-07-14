@@ -1,5 +1,6 @@
 ---
 title: "База данных SQL"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # База данных SQL

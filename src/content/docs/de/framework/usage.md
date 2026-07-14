@@ -1,5 +1,6 @@
 ---
 title: "Nutzungserfassung"
+description: "Das Modul wippy/usage erfasst den LLM-Token-Verbrauch und stellt aggregierte Abfragen gruppiert nach Zeitintervall, Modell oder Benutzer bereit. Es…"
 ---
 
 # Nutzungserfassung

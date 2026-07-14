@@ -1,5 +1,6 @@
 ---
 title: "Host de Procesos"
+description: "Los hosts de procesos gestionan la ejecución de procesos Lua usando un planificador de work-stealing."
 ---
 
 # Host de Procesos

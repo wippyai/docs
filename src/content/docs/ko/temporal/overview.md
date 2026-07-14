@@ -1,5 +1,6 @@
 ---
 title: "Temporal 통합"
+description: "Wippy는 내구성 있는 워크플로우 실행, 자동 리플레이, 재시작을 견디는 장기 실행 프로세스를 위해 Temporal.io와 통합됩니다."
 ---
 
 # Temporal 통합

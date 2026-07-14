@@ -1,5 +1,6 @@
 ---
 title: "安全与访问控制"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 安全与访问控制

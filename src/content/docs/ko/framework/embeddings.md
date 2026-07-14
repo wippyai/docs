@@ -1,5 +1,6 @@
 ---
 title: "임베딩"
+description: "wippy/embeddings 모듈은 PostgreSQL(pgvector)과 SQLite(sqlite-vec) 모두를 위한 벡터 임베딩 저장 및 유사도 검색을 제공합니다. wippy/llm을 래핑하여 임베딩을 생성하고 애플리케이션 데이터베이스에 저장합니다."
 ---
 
 # 임베딩

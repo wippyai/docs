@@ -1,5 +1,6 @@
 ---
 title: "网络覆盖层"
+description: "通过 SOCKS5、Tailscale 或 I2P 覆盖层路由出站 HTTP 调用和生成的进程。"
 ---
 
 # 网络覆盖层

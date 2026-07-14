@@ -1,5 +1,6 @@
 ---
 title: "Command Dispatch"
+description: "The dispatch system routes commands from processes to handlers. Processes yield commands with correlation tags, handlers execute async work, and…"
 ---
 
 # Command Dispatch

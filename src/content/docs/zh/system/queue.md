@@ -1,5 +1,6 @@
 ---
 title: "Queue"
+description: "Wippy 提供队列系统，用于异步消息处理，支持可配置的驱动和消费者。"
 ---
 
 # Queue

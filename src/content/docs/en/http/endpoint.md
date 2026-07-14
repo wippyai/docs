@@ -1,5 +1,6 @@
 ---
 title: "HTTP Endpoints"
+description: "Endpoints (http.endpoint) define HTTP route handlers that execute Lua functions."
 ---
 
 # HTTP Endpoints

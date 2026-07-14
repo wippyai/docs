@@ -1,5 +1,6 @@
 ---
 title: "Consumidores de Cola"
+description: "Los consumidores de cola procesan mensajes de colas usando pools de workers."
 ---
 
 # Consumidores de Cola

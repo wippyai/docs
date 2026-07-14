@@ -1,5 +1,6 @@
 ---
 title: "에러"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 에러

@@ -1,5 +1,6 @@
 ---
 title: "Sobreposições de rede"
+description: "Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposição (proxies SOCKS5, Tor, malha Tailscale, I2P). A seleção de sobreposição é…"
 ---
 
 # Sobreposições de rede

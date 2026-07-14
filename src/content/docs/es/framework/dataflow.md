@@ -1,5 +1,6 @@
 ---
 title: "Dataflow"
+description: "El módulo wippy/dataflow proporciona un motor de orquestación de workflows basado en grafos acíclicos dirigidos (DAG). Los workflows se componen de…"
 ---
 
 # Dataflow

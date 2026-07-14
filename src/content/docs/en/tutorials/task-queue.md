@@ -1,5 +1,6 @@
 ---
 title: "Task Queue"
+description: "Build a REST API that queues tasks for background processing with database persistence."
 ---
 
 # Task Queue

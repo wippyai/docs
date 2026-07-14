@@ -1,5 +1,6 @@
 ---
 title: "Micro AGI"
+description: "Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them…"
 ---
 
 # Micro AGI

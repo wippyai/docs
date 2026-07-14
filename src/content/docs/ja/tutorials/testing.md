@@ -1,5 +1,6 @@
 ---
 title: "Testing"
+description: "wippy/test フレームワークで Lua コードのテストを記述して実行します。これはアサーション、ライフサイクルフック、モックを備えた BDD スタイルのランナーで、wippy run test コマンドによって実行されます。"
 ---
 
 # Testing

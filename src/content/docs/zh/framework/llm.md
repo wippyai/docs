@@ -1,5 +1,6 @@
 ---
 title: "LLM"
+description: "wippy/llm 模块提供了统一的接口，用于与多个提供商（OpenAI、Anthropic、Google、本地模型）的大语言模型进行交互。支持文本生成、工具调用、结构化输出、向量嵌入和流式传输。"
 ---
 
 # LLM

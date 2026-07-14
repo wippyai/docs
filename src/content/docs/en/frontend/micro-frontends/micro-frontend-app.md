@@ -1,5 +1,6 @@
 ---
 title: "Micro Frontend App (`view.page`)"
+description: "A Wippy micro frontend app is a Vue 3 SPA bundled into a standalone HTML artifact and loaded by the host inside an iframe. The iframe has no knowledge…"
 ---
 
 # Micro Frontend App (`view.page`)

@@ -1,5 +1,6 @@
 ---
 title: "Process Groups"
+description: "Process groups let processes join named groups and receive broadcasts addressed to a group, with membership tracked across every node in the cluster.…"
 ---
 
 # Process Groups

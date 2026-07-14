@@ -1,5 +1,6 @@
 ---
 title: "Server-Sent Events"
+description: "SSE 미들웨어는 Server-Sent Events 프로토콜을 사용하여 서버에서 HTTP 클라이언트로 이벤트를 스트리밍합니다."
 ---
 
 # Server-Sent Events

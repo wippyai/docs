@@ -1,5 +1,6 @@
 ---
 title: "Process Host"
+description: "Process hosts manage Lua process execution using a work-stealing scheduler."
 ---
 
 # Process Host

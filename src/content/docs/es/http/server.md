@@ -1,5 +1,6 @@
 ---
 title: "Servidor HTTP"
+description: "El servidor HTTP (http.service) escucha en un puerto y aloja routers, endpoints y manejadores de archivos estáticos."
 ---
 
 # Servidor HTTP

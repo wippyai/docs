@@ -1,5 +1,6 @@
 ---
 title: "时间与时长"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 时间与时长

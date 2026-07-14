@@ -1,5 +1,6 @@
 ---
 title: "Registry Entries"
+description: "A registry entry is how the Wippy backend declares a frontend artifact — either a micro frontend app or a reusable web component — so the Web Host can…"
 ---
 
 # Registry Entries

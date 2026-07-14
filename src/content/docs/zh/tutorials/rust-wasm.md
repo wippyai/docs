@@ -1,5 +1,6 @@
 ---
 title: "在 Wippy 上运行 Rust"
+description: "构建 Rust WebAssembly 组件，并将其作为函数、CLI 命令和 HTTP 端点运行。"
 ---
 
 # 在 Wippy 上运行 Rust

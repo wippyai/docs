@@ -1,5 +1,6 @@
 ---
 title: "Runtime de Lua"
+description: "El runtime de computación principal de Wippy optimizado para cargas de trabajo de I/O y lógica de negocio. El código se ejecuta en procesos aislados…"
 ---
 
 # Runtime de Lua

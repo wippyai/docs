@@ -1,5 +1,6 @@
 ---
 title: "WippyでRustを実行する"
+description: "Rust WebAssemblyコンポーネントをビルドし、関数、CLIコマンド、HTTPエンドポイントとして実行します。"
 ---
 
 # WippyでRustを実行する

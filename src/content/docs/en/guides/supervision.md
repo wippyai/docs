@@ -1,5 +1,6 @@
 ---
 title: "Supervision"
+description: "The supervisor manages service lifecycles, handling startup ordering, automatic restarts, and graceful shutdown. Services with autostart: true are…"
 ---
 
 # Supervision

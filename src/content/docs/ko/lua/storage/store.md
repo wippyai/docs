@@ -1,5 +1,6 @@
 ---
 title: "키-값 스토어"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # 키-값 스토어

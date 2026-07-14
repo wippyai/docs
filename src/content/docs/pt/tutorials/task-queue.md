@@ -1,5 +1,6 @@
 ---
 title: "Fila de Tarefas"
+description: "Construa uma REST API que enfileira tarefas para processamento em background com persistência em banco de dados."
 ---
 
 # Fila de Tarefas

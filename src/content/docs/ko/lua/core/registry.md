@@ -1,5 +1,6 @@
 ---
 title: "엔트리 레지스트리"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 엔트리 레지스트리

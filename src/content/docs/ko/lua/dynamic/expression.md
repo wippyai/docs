@@ -1,5 +1,6 @@
 ---
 title: "표현식 언어"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 표현식 언어

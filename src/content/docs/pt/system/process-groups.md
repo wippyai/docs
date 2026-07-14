@@ -1,5 +1,6 @@
 ---
 title: "Grupos de Processos"
+description: "Grupos de processos permitem que processos entrem em grupos nomeados e recebam broadcasts endereçados a um grupo, com associação rastreada em todos os…"
 ---
 
 # Grupos de Processos

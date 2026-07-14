@@ -1,5 +1,6 @@
 ---
 title: "Grupos de Proceso"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Grupos de Proceso

@@ -1,5 +1,6 @@
 ---
 title: "Funktionen"
+description: "Funktionen sind synchrone, zustandslose Einstiegspunkte. Sie rufen sie auf, sie werden ausgeführt, sie geben ein Ergebnis zurück. Wenn eine Funktion…"
 ---
 
 # Funktionen

@@ -1,5 +1,6 @@
 ---
 title: "Funciones WASM"
+description: "Las funciones WASM son entradas del registro que ejecutan codigo WebAssembly. Hay dos tipos de entrada disponibles: function.wat para fuente WAT en…"
 ---
 
 # Funciones WASM

@@ -1,5 +1,6 @@
 ---
 title: "Dynamic Routing"
+description: "The Web Host's router is not statically configured. At startup it fetches the current set of page mount routes from the backend and adds them to the…"
 ---
 
 # Dynamic Routing

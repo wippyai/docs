@@ -1,5 +1,6 @@
 ---
 title: "Netzwerk-Overlays"
+description: "Leite ausgehenden Verkehr weiter und binde Listener über Overlay-Netzwerke an (SOCKS5-Proxies, Tor, Tailscale-Mesh, I2P). Die Overlay-Auswahl erfolgt…"
 ---
 
 # Netzwerk-Overlays

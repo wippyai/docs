@@ -1,5 +1,6 @@
 ---
 title: "Módulos Lua"
+description: "Módulos de runtime estendem o ambiente Lua com novas funcionalidades. Módulos podem fornecer utilitários determinísticos, operações de I/O ou comandos…"
 ---
 
 # Módulos Lua

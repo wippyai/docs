@@ -1,5 +1,6 @@
 ---
 title: "LLM"
+description: "Das Modul wippy/llm bietet eine einheitliche Schnittstelle zur Arbeit mit Large Language Models verschiedener Anbieter (OpenAI, Anthropic, Google,…"
 ---
 
 # LLM

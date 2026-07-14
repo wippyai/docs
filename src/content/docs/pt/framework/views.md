@@ -1,5 +1,6 @@
 ---
 title: "Views"
+description: "O módulo wippy/views fornece um sistema de páginas e componentes virtuais com renderização de templates, gerenciamento de recursos e mapeamento de…"
 ---
 
 # Views

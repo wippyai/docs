@@ -1,5 +1,6 @@
 ---
 title: "Functions"
+description: "Functions are synchronous, stateless entry points. You call them, they execute, they return a result. When a function runs, it inherits the caller's…"
 ---
 
 # Functions

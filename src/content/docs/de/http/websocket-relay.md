@@ -1,5 +1,6 @@
 ---
 title: "WebSocket-Relay"
+description: "Die WebSocket-Relay-Middleware aktualisiert HTTP-Verbindungen zu WebSocket und leitet Nachrichten an einen Zielprozess weiter."
 ---
 
 # WebSocket-Relay

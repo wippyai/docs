@@ -1,5 +1,6 @@
 ---
 title: "YAML y Estructura del Proyecto"
+description: "Organización del proyecto, archivos de definición YAML y convenciones de nomenclatura."
 ---
 
 # YAML y Estructura del Proyecto

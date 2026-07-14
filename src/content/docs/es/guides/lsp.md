@@ -1,5 +1,6 @@
 ---
 title: "Servidor de Lenguaje"
+description: "Wippy incluye un servidor LSP (Language Server Protocol) integrado que proporciona funcionalidades de IDE para codigo Lua. El servidor se ejecuta como…"
 ---
 
 # Servidor de Lenguaje

@@ -1,5 +1,6 @@
 ---
 title: "Sicherheitsmodell"
+description: "Wippy implementiert attributbasierte Zugriffskontrolle. Jede Anfrage trägt einen Actor (wer) und einen Scope (welche Richtlinien gelten). Richtlinien…"
 ---
 
 # Sicherheitsmodell

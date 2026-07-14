@@ -1,5 +1,6 @@
 ---
 title: "Sistema de Entorno"
+description: "Gestiona variables de entorno a través de backends de almacenamiento configurables."
 ---
 
 # Sistema de Entorno

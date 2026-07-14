@@ -1,5 +1,6 @@
 ---
 title: "클라우드 스토리지"
+description: "<secondary-label ref='external'/"
 ---
 
 # 클라우드 스토리지

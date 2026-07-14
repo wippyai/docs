@@ -1,5 +1,6 @@
 ---
 title: "Hello World"
+description: "最初のWippyアプリケーション - JSONを返すシンプルなHTTP API。"
 ---
 
 # Hello World

@@ -1,5 +1,6 @@
 ---
 title: "Web Component (`view.component`)"
+description: "A Wippy web component is a custom element (view.component) built with WippyVueElement. It runs inside the host page's DOM (not an iframe), communicates…"
 ---
 
 # Web Component (`view.component`)

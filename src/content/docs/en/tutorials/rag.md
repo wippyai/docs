@@ -1,5 +1,6 @@
 ---
 title: "Retrieval-Augmented Generation (RAG)"
+description: "Build a knowledge base that answers questions from your own documents. This tutorial uses the wippy/embeddings module for vector search and the LLM…"
 ---
 
 # Retrieval-Augmented Generation (RAG)

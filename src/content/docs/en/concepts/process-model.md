@@ -1,5 +1,6 @@
 ---
 title: "Process Model"
+description: "Wippy executes code in isolated processes—lightweight state machines that communicate through message passing. This actor-model approach eliminates…"
 ---
 
 # Process Model

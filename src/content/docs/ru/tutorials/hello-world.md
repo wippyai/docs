@@ -1,5 +1,6 @@
 ---
 title: "Hello World"
+description: "Ваше первое приложение на Wippy — простой HTTP API, возвращающий JSON."
 ---
 
 # Hello World

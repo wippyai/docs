@@ -1,5 +1,6 @@
 ---
 title: "Command Dispatch"
+description: "El sistema de dispatch enruta comandos desde procesos a handlers. Los procesos hacen yield de comandos con tags de correlación, los handlers ejecutan…"
 ---
 
 # Command Dispatch

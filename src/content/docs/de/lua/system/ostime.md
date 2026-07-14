@@ -1,5 +1,6 @@
 ---
 title: "OS-Zeit"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # OS-Zeit

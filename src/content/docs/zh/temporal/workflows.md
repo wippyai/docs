@@ -1,5 +1,6 @@
 ---
 title: "Workflows"
+description: "Workflow 是持久化函数，用于编排 activity 并在故障和重启后保持状态。使用 workflow.lua 条目类型定义。"
 ---
 
 # Workflows

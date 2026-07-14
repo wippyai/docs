@@ -1,5 +1,6 @@
 ---
 title: "ターミナルI/O"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
 ---
 
 # ターミナルI/O

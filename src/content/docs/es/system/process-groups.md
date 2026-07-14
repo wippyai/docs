@@ -1,5 +1,6 @@
 ---
 title: "Grupos de Proceso"
+description: "Los grupos de proceso permiten que los procesos se unan a grupos con nombre y reciban difusiones dirigidas a un grupo, con la membresía rastreada en…"
 ---
 
 # Grupos de Proceso

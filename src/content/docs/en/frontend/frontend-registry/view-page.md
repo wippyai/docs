@@ -1,5 +1,6 @@
 ---
 title: "Micro Frontend Apps (view.page)"
+description: "A view.page entry describes a full single-page application that the Web Host loads inside an iframe. Each page entry claims a URL path in the host…"
 ---
 
 # Micro Frontend Apps (view.page)

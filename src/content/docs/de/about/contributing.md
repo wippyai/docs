@@ -1,5 +1,6 @@
 ---
 title: "Mitwirken"
+description: "Wippy wird von Spiral Scout entwickelt. Wir verwenden es in der Produktion für interne Systeme und Kundenprojekte. Die öffentliche Veröffentlichung ist…"
 ---
 
 # Mitwirken

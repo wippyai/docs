@@ -1,5 +1,6 @@
 ---
 title: "Usage Tracking"
+description: "The wippy/usage module records LLM token consumption and provides aggregate queries grouped by time interval, model, or user. It binds to the…"
 ---
 
 # Usage Tracking

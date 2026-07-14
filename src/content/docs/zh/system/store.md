@@ -1,5 +1,6 @@
 ---
 title: "Store（键值存储）"
+description: "支持 TTL 的键值存储：内存、SQL 支持，以及集群复制（Raft 和 CRDT）。"
 ---
 
 # Store（键值存储）

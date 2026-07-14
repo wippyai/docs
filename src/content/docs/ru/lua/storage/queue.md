@@ -1,5 +1,6 @@
 ---
 title: "Очередь сообщений"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # Очередь сообщений

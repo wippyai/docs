@@ -1,5 +1,6 @@
 ---
 title: "Chat Web Components"
+description: "The Wippy chat UI is available as a set of composable custom elements, so any micro frontend (or any page running in a child context) can drop in a…"
 ---
 
 # Chat Web Components

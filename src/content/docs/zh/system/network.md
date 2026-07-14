@@ -1,5 +1,6 @@
 ---
 title: "网络覆盖层"
+description: "通过覆盖网络（SOCKS5 代理、Tor、Tailscale mesh、I2P）路由出站流量并绑定监听器。覆盖层的选择按调用选择性启用，并在函数、进程和 HTTP 边界之间继承。"
 ---
 
 # 网络覆盖层

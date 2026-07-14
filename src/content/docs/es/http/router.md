@@ -1,5 +1,6 @@
 ---
 title: "Routing"
+description: "Los routers agrupan endpoints bajo prefijos de URL y aplican middleware compartido. Los endpoints definen manejadores HTTP."
 ---
 
 # Routing

@@ -1,5 +1,6 @@
 ---
 title: "HTTPエンドポイント"
+description: "エンドポイント（http.endpoint）はLua関数を実行するHTTPルートハンドラを定義します。"
 ---
 
 # HTTPエンドポイント

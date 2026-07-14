@@ -1,5 +1,6 @@
 ---
 title: "Armazenamento em Nuvem"
+description: "Armazenamento de objetos compatível com S3 com URLs pré-assinadas."
 ---
 
 # Armazenamento em Nuvem

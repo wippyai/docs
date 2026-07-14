@@ -1,5 +1,6 @@
 ---
 title: "Internos del Registry"
+description: "El registry es un almacén de estado versionado y orientado a eventos. Mantiene historial de versiones completo, soporta transacciones, y propaga…"
 ---
 
 # Internos del Registry

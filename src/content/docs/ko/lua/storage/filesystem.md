@@ -1,5 +1,6 @@
 ---
 title: "파일시스템"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # 파일시스템

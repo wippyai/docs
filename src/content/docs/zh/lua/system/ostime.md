@@ -1,5 +1,6 @@
 ---
 title: "操作系统时间"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 操作系统时间

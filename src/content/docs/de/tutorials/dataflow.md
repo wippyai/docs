@@ -1,5 +1,6 @@
 ---
 title: "Dataflow: Lokale Wissensbasis"
+description: "Baue eine Wissensbasis auf deiner eigenen Maschine — erstelle den Vector Store und teile dann Dokumente in Chunks auf und lies sie ein. Dies ist das…"
 ---
 
 # Dataflow: Lokale Wissensbasis

@@ -1,5 +1,6 @@
 ---
 title: "Redes de Sobreposição"
+description: "Roteie chamadas HTTP de saída e processos criados através de sobreposições SOCKS5, Tailscale ou I2P."
 ---
 
 # Redes de Sobreposição

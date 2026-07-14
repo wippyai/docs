@@ -1,5 +1,6 @@
 ---
 title: "Registry Internals"
+description: "The registry is a versioned, event-driven state store. It maintains complete version history, supports transactions, and propagates changes through the…"
 ---
 
 # Registry Internals

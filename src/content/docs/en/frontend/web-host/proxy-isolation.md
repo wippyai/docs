@@ -1,5 +1,6 @@
 ---
 title: "Proxy & Isolation"
+description: "The Web Host runs each child micro-frontend in a sandboxed context and bridges it to the host through the Proxy API. Micro frontend apps and web…"
 ---
 
 # Proxy & Isolation

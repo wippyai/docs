@@ -1,5 +1,6 @@
 ---
 title: "ライセンス"
+description: "WippyはMozilla Public License 2.0の下でリリースされています。"
 ---
 
 # ライセンス

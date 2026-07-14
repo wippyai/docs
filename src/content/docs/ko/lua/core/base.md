@@ -1,5 +1,6 @@
 ---
 title: "표준 Lua 라이브러리"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 표준 Lua 라이브러리

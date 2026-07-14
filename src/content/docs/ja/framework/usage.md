@@ -1,5 +1,6 @@
 ---
 title: "Usage Tracking"
+description: "wippy/usage モジュールは LLM のトークン消費を記録し、時間間隔、モデル、またはユーザーでグループ化された集計クエリを提供します。wippy.llm:usagetracker コントラクトにバインドされるため、LLM モジュールを介して呼び出されるコードは自動的に使用量レコードを生成します。"
 ---
 
 # Usage Tracking

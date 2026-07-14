@@ -1,5 +1,6 @@
 ---
 title: "Frontend Facade"
+description: "wippy/facade を使って、バックエンドのみのアプリから Wippy の Web UI を配信します。ファサードは薄い静的シェルです。Wippy Web Host のフロントエンドバンドルを CDN から読み込み、アプリが配信する JSON エンドポイントから構成します —…"
 ---
 
 # Frontend Facade

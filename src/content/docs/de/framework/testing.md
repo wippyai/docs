@@ -1,5 +1,6 @@
 ---
 title: "Test-Framework"
+description: "Das Modul wippy/test bietet ein BDD-Testframework mit Assertions, Lifecycle-Hooks und Mocking."
 ---
 
 # Test-Framework

@@ -1,5 +1,6 @@
 ---
 title: "Supervision"
+description: "Der Supervisor verwaltet Dienstlebenszyklen, behandelt die Startreihenfolge, automatische Neustarts und kontrolliertes Herunterfahren. Dienste mit…"
 ---
 
 # Supervision

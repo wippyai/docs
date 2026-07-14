@@ -1,5 +1,6 @@
 ---
 title: "Netzwerk-Overlays"
+description: "Leite ausgehende HTTP-Anfragen und gestartete Prozesse durch SOCKS5-, Tailscale- oder I2P-Overlays."
 ---
 
 # Netzwerk-Overlays

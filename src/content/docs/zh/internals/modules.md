@@ -1,5 +1,6 @@
 ---
 title: "Lua Modules"
+description: "运行时模块使用新功能扩展 Lua 环境。模块可以提供确定性工具、I/O 操作或 yield 到外部系统的异步命令。"
 ---
 
 # Lua Modules

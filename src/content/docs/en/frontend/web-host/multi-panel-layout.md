@@ -1,5 +1,6 @@
 ---
 title: "Multi-Panel Layout"
+description: "The managed-layout mode replaces the standard Wippy chrome with a fully declarative panel tree. Instead of the fixed chat-and-sidebar shell, you…"
 ---
 
 # Multi-Panel Layout

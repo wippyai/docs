@@ -1,5 +1,6 @@
 ---
 title: "클라우드 스토리지"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
 ---
 
 # 클라우드 스토리지

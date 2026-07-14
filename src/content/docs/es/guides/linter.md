@@ -1,5 +1,6 @@
 ---
 title: "Linter"
+description: "Wippy incluye un linter integrado que realiza verificacion de tipos y analisis estatico en codigo Lua. Ejecutalo con wippy lint."
 ---
 
 # Linter

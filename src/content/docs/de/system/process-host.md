@@ -1,5 +1,6 @@
 ---
 title: "Process Host"
+description: "Process Hosts verwalten die Ausführung von Lua-Prozessen mit einem Work-Stealing-Scheduler."
 ---
 
 # Process Host

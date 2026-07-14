@@ -1,5 +1,6 @@
 ---
 title: "Queue-Konsumenten"
+description: "Queue-Konsumenten verarbeiten Nachrichten aus Queues mittels Worker-Pools."
 ---
 
 # Queue-Konsumenten

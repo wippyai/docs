@@ -1,5 +1,6 @@
 ---
 title: "Typsystem"
+description: "Wippy enthält ein graduelles Typsystem mit flusssensitiver Prüfung. Typen sind standardmäßig nicht-nullbar."
 ---
 
 # Typsystem

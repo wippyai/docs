@@ -1,5 +1,6 @@
 ---
 title: "Host-Funktionen"
+description: "WASM-Module greifen ueber Host-Funktions-Imports auf Runtime-Faehigkeiten zu. Jeder Import wird explizit pro Eintrag in der imports-Liste deklariert."
 ---
 
 # Host-Funktionen

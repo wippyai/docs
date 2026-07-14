@@ -1,5 +1,6 @@
 ---
 title: "Environment System"
+description: "Manages environment variables through configurable storage backends."
 ---
 
 # Environment System

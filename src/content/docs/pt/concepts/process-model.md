@@ -1,5 +1,6 @@
 ---
 title: "Modelo de Processos"
+description: "O Wippy executa código em processos isolados — máquinas de estado leves que se comunicam através de passagem de mensagens. Essa abordagem baseada no…"
 ---
 
 # Modelo de Processos

@@ -1,5 +1,6 @@
 ---
 title: "Channels and Coroutines"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Channels and Coroutines

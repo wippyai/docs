@@ -1,5 +1,6 @@
 ---
 title: "Hub"
+description: "以只读方式访问 Wippy Hub 模块目录：列出模块、搜索、获取元数据、版本、依赖项和 README。"
 ---
 
 # Hub

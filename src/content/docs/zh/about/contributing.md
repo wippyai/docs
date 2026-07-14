@@ -1,5 +1,6 @@
 ---
 title: "贡献"
+description: "Wippy 由 Spiral Scout 开发。我们在内部系统和客户项目中将其用于生产环境。公开发布版本处于 alpha 阶段。"
 ---
 
 # 贡献

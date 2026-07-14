@@ -1,5 +1,6 @@
 ---
 title: "Ejecución de Comandos"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # Ejecución de Comandos

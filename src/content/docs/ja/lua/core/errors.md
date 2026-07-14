@@ -1,5 +1,6 @@
 ---
 title: "エラー"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # エラー

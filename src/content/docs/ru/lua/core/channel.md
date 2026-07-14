@@ -1,5 +1,6 @@
 ---
 title: "Каналы и корутины"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Каналы и корутины

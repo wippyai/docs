@@ -1,5 +1,6 @@
 ---
 title: "SQL 데이터베이스"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # SQL 데이터베이스

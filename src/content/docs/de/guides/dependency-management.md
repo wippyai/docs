@@ -1,5 +1,6 @@
 ---
 title: "Abhangigkeitsverwaltung"
+description: "Wippy verwendet ein Lock-Datei-basiertes Abhangigkeitssystem. Module werden im Hub veroffentlicht, als Abhangigkeiten in Ihrem Quellcode deklariert und…"
 ---
 
 # Abhangigkeitsverwaltung

@@ -1,5 +1,6 @@
 ---
 title: "페이로드 인코딩"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 페이로드 인코딩

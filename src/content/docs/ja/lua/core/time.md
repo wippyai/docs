@@ -1,5 +1,6 @@
 ---
 title: "時間と期間"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 時間と期間

@@ -1,5 +1,6 @@
 ---
 title: "WebSocket 客户端"
+description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # WebSocket 客户端

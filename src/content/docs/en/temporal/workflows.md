@@ -1,5 +1,6 @@
 ---
 title: "Workflows"
+description: "Workflows are durable functions that orchestrate activities and maintain state across failures and restarts. They're defined using the workflow.lua…"
 ---
 
 # Workflows

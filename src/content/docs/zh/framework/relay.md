@@ -1,5 +1,6 @@
 ---
 title: "Relay"
+description: "wippy/relay 模块提供具有两层 hub 架构的 WebSocket 中继基础设施。中央 hub 管理每个用户的 hub，而后者又管理 WebSocket 客户端连接，并将消息路由到插件。"
 ---
 
 # Relay

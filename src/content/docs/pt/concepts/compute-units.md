@@ -1,5 +1,6 @@
 ---
 title: "Unidades de Computação"
+description: "O Wippy fornece três formas de executar código: funções, processos e workflows. Eles compartilham a mesma maquinaria subjacente, mas diferem em quanto…"
 ---
 
 # Unidades de Computação

@@ -1,5 +1,6 @@
 ---
 title: "Testing"
+description: "Write and run tests for your Lua code with the wippy/test framework — a BDD-style runner with assertions, lifecycle hooks, and mocking, executed by the…"
 ---
 
 # Testing

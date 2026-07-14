@@ -1,5 +1,6 @@
 ---
 title: "로깅"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
 ---
 
 # 로깅

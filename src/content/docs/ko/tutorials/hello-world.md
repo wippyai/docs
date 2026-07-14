@@ -1,5 +1,6 @@
 ---
 title: "Hello World"
+description: "첫 번째 Wippy 애플리케이션 - JSON을 반환하는 간단한 HTTP API."
 ---
 
 # Hello World

@@ -1,5 +1,6 @@
 ---
 title: "HTTP 서버"
+description: "HTTP 서버(http.service)는 포트에서 리스닝하고 라우터, 엔드포인트, 정적 파일 핸들러를 호스팅합니다."
 ---
 
 # HTTP 서버

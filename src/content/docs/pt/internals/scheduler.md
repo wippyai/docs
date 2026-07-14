@@ -1,5 +1,6 @@
 ---
 title: "Scheduler"
+description: "O scheduler executa processos usando um design de work-stealing. Workers mantêm deques locais e roubam uns dos outros quando ociosos."
 ---
 
 # Scheduler

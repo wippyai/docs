@@ -1,5 +1,6 @@
 ---
 title: "템플릿 엔진"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
 ---
 
 # 템플릿 엔진

@@ -1,5 +1,6 @@
 ---
 title: "Agents"
+description: "Das Modul wippy/agent bietet ein Framework zum Erstellen von KI-Agenten mit Tool-Nutzung, Streaming, Delegation, Traits und Memory. Agenten werden…"
 ---
 
 # Agents

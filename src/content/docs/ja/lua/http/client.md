@@ -1,5 +1,6 @@
 ---
 title: "HTTPクライアント"
+description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # HTTPクライアント

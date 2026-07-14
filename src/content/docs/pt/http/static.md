@@ -1,5 +1,6 @@
 ---
 title: "Arquivos Estáticos"
+description: "Serve arquivos estáticos de qualquer sistema de arquivos usando http.static. Handlers estáticos montam diretamente no servidor e podem servir SPAs,…"
 ---
 
 # Arquivos Estáticos

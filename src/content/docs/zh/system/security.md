@@ -1,5 +1,6 @@
 ---
 title: "Security 模型"
+description: "Wippy 实现基于属性的访问控制。每个请求携带一个 actor（谁）和一个 scope（应用哪些策略）。策略根据 action、resource 以及来自 actor 和 resource 的元数据评估访问权限。"
 ---
 
 # Security 模型

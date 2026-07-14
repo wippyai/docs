@@ -1,5 +1,6 @@
 ---
 title: "Linter"
+description: "Wippy includes a built-in linter that performs type checking and static analysis on Lua code. Run it with wippy lint."
 ---
 
 # Linter

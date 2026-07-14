@@ -1,5 +1,6 @@
 ---
 title: "LLM 브리프"
+description: "이 페이지는 AI 에이전트와 LLM을 위한 것입니다. Wippy 위에서 빌드하거나 Wippy 프로젝트용 코드를 생성하는 경우, 먼저 이 문서를 읽으세요."
 ---
 
 # LLM 브리프

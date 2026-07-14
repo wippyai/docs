@@ -1,5 +1,6 @@
 ---
 title: "Funções"
+description: "Funções são pontos de entrada síncronos e sem estado. Você as chama, elas executam, elas retornam um resultado. Quando uma função executa, ela herda o…"
 ---
 
 # Funções

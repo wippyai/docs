@@ -1,5 +1,6 @@
 ---
 title: "네트워크 오버레이"
+description: "SOCKS5, Tailscale, 또는 I2P 오버레이를 통해 아웃바운드 HTTP 호출과 스폰된 프로세스를 라우팅합니다."
 ---
 
 # 네트워크 오버레이

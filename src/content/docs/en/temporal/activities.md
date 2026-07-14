@@ -1,5 +1,6 @@
 ---
 title: "Activities"
+description: "Activities are functions that execute non-deterministic operations. Any function.lua or process.lua entry can be registered as a Temporal activity by…"
 ---
 
 # Activities

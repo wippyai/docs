@@ -1,5 +1,6 @@
 ---
 title: "라이선스"
+description: "Wippy는 Mozilla Public License 2.0 하에 릴리스됩니다."
 ---
 
 # 라이선스

@@ -1,5 +1,6 @@
 ---
 title: "Linter"
+description: "Wippy enthalt einen integrierten Linter, der Typprufung und statische Analyse von Lua-Code durchfuhrt. Er wird mit wippy lint ausgefuhrt."
 ---
 
 # Linter

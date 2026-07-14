@@ -1,5 +1,6 @@
 ---
 title: "WASM Functions"
+description: "WASM functions are registry entries that execute WebAssembly code. Two entry kinds are available: function.wat for inline WAT source and function.wasm…"
 ---
 
 # WASM Functions

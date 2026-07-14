@@ -1,5 +1,6 @@
 ---
 title: "Activities"
+description: "Activities sind Funktionen, die nicht-deterministische Operationen ausführen. Jeder function.lua- oder process.lua-Eintrag kann als Temporal-Activity…"
 ---
 
 # Activities

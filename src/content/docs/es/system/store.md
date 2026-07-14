@@ -1,5 +1,6 @@
 ---
 title: "Store (Clave-Valor)"
+description: "Almacenes clave-valor con soporte TTL: en memoria, respaldados por SQL y replicados en cluster (Raft y CRDT)."
 ---
 
 # Store (Clave-Valor)

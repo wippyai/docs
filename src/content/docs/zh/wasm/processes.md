@@ -1,5 +1,6 @@
 ---
 title: "WASM 进程"
+description: "WASM 模块可以通过 process.wasm 条目类型作为进程运行。进程在 Wippy 进程宿主中执行，支持完整的进程生命周期：生成、监控和受管关闭。"
 ---
 
 # WASM 进程

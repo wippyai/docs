@@ -1,5 +1,6 @@
 ---
 title: "Cluster"
+description: "A single Wippy node is a complete runtime. A cluster joins several nodes into one coordinated system: processes can be named and reached from any node,…"
 ---
 
 # Cluster

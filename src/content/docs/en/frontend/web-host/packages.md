@@ -1,5 +1,6 @@
 ---
 title: "@wippy-fe Packages"
+description: "The @wippy-fe/* packages are published to npm and used when building child micro-frontends — view pages (view.page) and web components (view.component)…"
 ---
 
 # @wippy-fe Packages

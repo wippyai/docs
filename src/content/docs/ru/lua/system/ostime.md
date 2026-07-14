@@ -1,5 +1,6 @@
 ---
 title: "Работа со временем (os)"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Работа со временем (os)

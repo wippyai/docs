@@ -1,5 +1,6 @@
 ---
 title: "ターミナル"
+description: "ターミナルホストはstdin/stdout/stderrアクセスを持つLuaスクリプトを実行します。"
 ---
 
 # ターミナル

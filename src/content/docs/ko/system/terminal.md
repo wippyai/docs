@@ -1,5 +1,6 @@
 ---
 title: "터미널"
+description: "터미널 호스트는 stdin/stdout/stderr 접근이 있는 Lua 스크립트를 실행합니다."
 ---
 
 # 터미널

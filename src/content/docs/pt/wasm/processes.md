@@ -1,5 +1,6 @@
 ---
 title: "Processos WASM"
+description: "Modulos WASM podem ser executados como processos atraves do tipo de entrada process.wasm. Processos sao executados dentro do host de processos do Wippy…"
 ---
 
 # Processos WASM

@@ -1,5 +1,6 @@
 ---
 title: "Build System"
+description: "Wippy frontend apps are built with Vite. Every micro frontend app and web component is an independent Vite project — its own package.json,…"
 ---
 
 # Build System

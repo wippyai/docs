@@ -1,5 +1,6 @@
 ---
 title: "进程组"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 进程组

@@ -1,5 +1,6 @@
 ---
 title: "Micro AGI"
+description: "Construa um agente auto-modificável que cria suas próprias ferramentas em tempo de execução — lendo a documentação, escrevendo Lua, registrando…"
 ---
 
 # Micro AGI

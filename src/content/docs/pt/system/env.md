@@ -1,5 +1,6 @@
 ---
 title: "Sistema de Ambiente"
+description: "Gerencia variáveis de ambiente através de backends de armazenamento configuráveis."
 ---
 
 # Sistema de Ambiente

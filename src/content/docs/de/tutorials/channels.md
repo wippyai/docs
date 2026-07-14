@@ -1,5 +1,6 @@
 ---
 title: "Channels und Nebenläufigkeit"
+description: "Go-Style-Channels für nebenläufige Programmierung innerhalb von Prozessen."
 ---
 
 # Channels und Nebenläufigkeit

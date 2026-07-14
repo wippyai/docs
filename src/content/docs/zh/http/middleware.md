@@ -1,5 +1,6 @@
 ---
 title: "HTTP 中间件"
+description: "中间件在路由处理前后对 HTTP 请求进行处理。"
 ---
 
 # HTTP 中间件

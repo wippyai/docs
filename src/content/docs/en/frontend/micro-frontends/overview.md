@@ -1,5 +1,6 @@
 ---
 title: "Wippy Micro Frontends"
+description: "Wippy frontend code runs inside the Web Host's isolation boundary. There are two kinds of artifact you can build: micro frontend apps and web…"
 ---
 
 # Wippy Micro Frontends

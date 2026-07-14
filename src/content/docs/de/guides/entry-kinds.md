@@ -1,5 +1,6 @@
 ---
 title: "Entry-Typen-Referenz"
+description: "Vollständige Referenz aller in Wippy verfügbaren Entry-Typen."
 ---
 
 # Entry-Typen-Referenz

@@ -1,5 +1,6 @@
 ---
 title: "Variaveis de Ambiente"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Variaveis de Ambiente

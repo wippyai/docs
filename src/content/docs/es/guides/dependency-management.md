@@ -1,5 +1,6 @@
 ---
 title: "Gestion de Dependencias"
+description: "Wippy usa un sistema de dependencias basado en archivos de bloqueo. Los modulos se publican en el hub, se declaran como dependencias en tu codigo…"
 ---
 
 # Gestion de Dependencias

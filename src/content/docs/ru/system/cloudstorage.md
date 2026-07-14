@@ -1,5 +1,6 @@
 ---
 title: "Облачное хранилище"
+description: "<secondary-label ref='external'/"
 ---
 
 # Облачное хранилище

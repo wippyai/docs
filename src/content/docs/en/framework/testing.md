@@ -1,5 +1,6 @@
 ---
 title: "Test Framework"
+description: "The wippy/test module provides a BDD-style testing framework with assertions, lifecycle hooks, and mocking."
 ---
 
 # Test Framework

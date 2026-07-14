@@ -1,5 +1,6 @@
 ---
 title: "테스트"
+description: "wippy/test 프레임워크로 Lua 코드의 테스트를 작성하고 실행합니다 — 어설션, 라이프사이클 훅, 모킹을 갖춘 BDD 스타일 러너이며, wippy run test 명령으로 실행됩니다."
 ---
 
 # 테스트

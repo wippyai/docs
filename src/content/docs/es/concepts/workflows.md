@@ -1,5 +1,6 @@
 ---
 title: "Flujos de Trabajo"
+description: "Los flujos de trabajo son operaciones durables y de larga duración que sobreviven fallos y reinicios. Proporcionan garantías de confiabilidad para…"
 ---
 
 # Flujos de Trabajo

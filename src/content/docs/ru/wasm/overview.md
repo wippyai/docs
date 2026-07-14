@@ -1,5 +1,6 @@
 ---
 title: "WebAssembly Runtime"
+description: "Wippy запускает модули WebAssembly как полноценные записи реестра наравне с Lua-кодом. Функции и процессы WASM выполняются в том же планировщике,…"
 ---
 
 # WebAssembly Runtime

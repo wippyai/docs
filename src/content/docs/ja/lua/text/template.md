@@ -1,5 +1,6 @@
 ---
 title: "テンプレートエンジン"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
 ---
 
 # テンプレートエンジン

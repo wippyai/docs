@@ -1,5 +1,6 @@
 ---
 title: "HTTP-Endpunkte"
+description: "Endpunkte (http.endpoint) definieren HTTP-Routen-Handler, die Lua-Funktionen ausführen."
 ---
 
 # HTTP-Endpunkte

@@ -1,5 +1,6 @@
 ---
 title: "Cluster"
+description: "Wippy läuft standardmäßig als einzelner Knoten. Durch die Aktivierung des Clusters wird eine Gruppe von Knoten zu einem koordinierten System…"
 ---
 
 # Cluster

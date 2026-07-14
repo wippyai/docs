@@ -1,5 +1,6 @@
 ---
 title: "Dataflow: Local Knowledge Base"
+description: "Build a knowledge base on your own machine — create the vector store, then chunk and ingest documents into it. This is the data-creation companion to…"
 ---
 
 # Dataflow: Local Knowledge Base

@@ -1,5 +1,6 @@
 ---
 title: "Command Dispatch"
+description: "Dispatch 系统将命令从进程路由到 handler。进程使用关联标签 yield 命令，handler 执行异步工作，结果通过事件队列返回。"
 ---
 
 # Command Dispatch

@@ -1,5 +1,6 @@
 ---
 title: "LLM"
+description: "wippy/llm 모듈은 여러 제공자(OpenAI, Anthropic, Google, 로컬 모델)의 대규모 언어 모델과 작업하기 위한 통합 인터페이스를 제공합니다. 텍스트 생성, 도구 호출, 구조화된 출력, 임베딩, 스트리밍을 지원합니다."
 ---
 
 # LLM

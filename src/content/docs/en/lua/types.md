@@ -1,5 +1,6 @@
 ---
 title: "Type System"
+description: "Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default."
 ---
 
 # Type System

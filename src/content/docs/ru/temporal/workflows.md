@@ -1,5 +1,6 @@
 ---
 title: "Workflow"
+description: "Workflow — это устойчивые функции, оркеструющие activity и сохраняющие состояние при сбоях и перезапусках. Определяются с помощью типа записи workflow.lua."
 ---
 
 # Workflow

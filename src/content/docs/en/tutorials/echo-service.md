@@ -1,5 +1,6 @@
 ---
 title: "Echo Service"
+description: "Build a distributed echo service demonstrating processes, channels, coroutines, message passing, and supervision."
 ---
 
 # Echo Service

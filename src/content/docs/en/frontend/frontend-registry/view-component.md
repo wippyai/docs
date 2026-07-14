@@ -1,5 +1,6 @@
 ---
 title: "Web Components (view.component)"
+description: "A view.component entry describes a reusable custom element (web component) that the Web Host can discover, inject, and register automatically. Unlike a…"
 ---
 
 # Web Components (view.component)

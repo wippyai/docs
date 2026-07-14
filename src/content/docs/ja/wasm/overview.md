@@ -1,5 +1,6 @@
 ---
 title: "WebAssemblyランタイム"
+description: "WippyはWebAssemblyモジュールをLuaコードと並ぶファーストクラスのレジストリエントリとして実行します。WASM関数とプロセスは同一のスケジューラ内で実行され、同一のセキュリティモデルを共有し、関数レジストリを通じてLuaと相互運用されます。"
 ---
 
 # WebAssemblyランタイム

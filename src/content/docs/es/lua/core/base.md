@@ -1,5 +1,6 @@
 ---
 title: "Bibliotecas Estandar de Lua"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Bibliotecas Estandar de Lua

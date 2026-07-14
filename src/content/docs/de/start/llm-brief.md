@@ -1,5 +1,6 @@
 ---
 title: "LLM-Kurzinfo"
+description: "Diese Seite ist fuer KI-Agenten und LLMs gedacht. Wenn du auf Wippy aufbaust oder Code fuer ein Wippy-Projekt generierst, lies dies zuerst."
 ---
 
 # LLM-Kurzinfo

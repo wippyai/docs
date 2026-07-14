@@ -1,5 +1,6 @@
 ---
 title: "Processos e Mensagens"
+description: "Crie processos isolados e comunique-se via passagem de mensagens."
 ---
 
 # Processos e Mensagens

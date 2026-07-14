@@ -1,5 +1,6 @@
 ---
 title: "Gerenciamento de Dependencias"
+description: "O Wippy utiliza um sistema de dependencias baseado em arquivo de lock. Modulos sao publicados no hub, declarados como dependencias no seu codigo-fonte…"
 ---
 
 # Gerenciamento de Dependencias

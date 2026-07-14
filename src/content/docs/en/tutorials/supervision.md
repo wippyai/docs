@@ -1,5 +1,6 @@
 ---
 title: "Process Supervision"
+description: "Monitor and link processes to build fault-tolerant systems."
 ---
 
 # Process Supervision

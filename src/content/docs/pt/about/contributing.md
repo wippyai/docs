@@ -1,5 +1,6 @@
 ---
 title: "Contribuindo"
+description: "O Wippy é desenvolvido pela Spiral Scout. Nós o usamos em produção para sistemas internos e projetos de clientes. O lançamento público está em alfa."
 ---
 
 # Contribuindo

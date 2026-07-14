@@ -1,5 +1,6 @@
 ---
 title: "CSS Injection"
+description: "The Web Host uses a layered injection pipeline to give child iframes the same visual theme as the host itself. Because iframes do not inherit CSS from…"
 ---
 
 # CSS Injection

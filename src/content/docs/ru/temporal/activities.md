@@ -1,5 +1,6 @@
 ---
 title: "Activity"
+description: "Activity — это функции, выполняющие недетерминированные операции. Любую запись function.lua или process.lua можно зарегистрировать как Temporal…"
 ---
 
 # Activity

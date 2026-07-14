@@ -1,5 +1,6 @@
 ---
 title: "WebSocket Relay"
+description: "WebSocket relay 中间件将 HTTP 连接升级为 WebSocket 并将消息中继到目标进程。"
 ---
 
 # WebSocket Relay

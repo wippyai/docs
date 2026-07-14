@@ -1,5 +1,6 @@
 ---
 title: "언어 서버"
+description: "Wippy에는 Lua 코드를 위한 IDE 기능을 제공하는 내장 LSP(Language Server Protocol) 서버가 포함되어 있습니다. 서버는 Wippy 런타임의 일부로 실행되며 TCP 또는 HTTP를 통해 에디터에 연결됩니다."
 ---
 
 # 언어 서버

@@ -1,5 +1,6 @@
 ---
 title: "Lua Runtime"
+description: "Wippy's primary compute runtime optimized for I/O-bound and business logic workloads. Code runs in isolated processes that communicate through message…"
 ---
 
 # Lua Runtime

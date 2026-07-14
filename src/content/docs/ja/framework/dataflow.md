@@ -1,5 +1,6 @@
 ---
 title: "Dataflow"
+description: "The wippy/dataflow module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes —…"
 ---
 
 # Dataflow

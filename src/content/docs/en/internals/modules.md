@@ -1,5 +1,6 @@
 ---
 title: "Lua Modules"
+description: "Runtime modules extend the Lua environment with new functionality. Modules can provide deterministic utilities, I/O operations, or async commands that…"
 ---
 
 # Lua Modules

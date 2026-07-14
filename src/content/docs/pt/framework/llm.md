@@ -1,5 +1,6 @@
 ---
 title: "LLM"
+description: "O modulo wippy/llm fornece uma interface unificada para trabalhar com Modelos de Linguagem de Grande Escala (LLMs) de multiplos provedores (OpenAI,…"
 ---
 
 # LLM

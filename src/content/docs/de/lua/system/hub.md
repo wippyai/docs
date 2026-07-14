@@ -1,5 +1,6 @@
 ---
 title: "Hub"
+description: "Schreibgeschützter Zugriff auf den Wippy Hub-Modulkatalog: Module auflisten, suchen, Metadaten, Versionen, Abhängigkeiten und READMEs abrufen."
 ---
 
 # Hub

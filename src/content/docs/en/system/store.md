@@ -1,5 +1,6 @@
 ---
 title: "Store (Key-Value)"
+description: "Key-value stores with TTL support: in-memory, SQL-backed, and cluster-replicated (Raft and CRDT)."
 ---
 
 # Store (Key-Value)

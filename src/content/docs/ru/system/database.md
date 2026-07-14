@@ -1,5 +1,6 @@
 ---
 title: "База данных"
+description: "Пулы подключений к SQL-базам данных. Поддерживаются PostgreSQL, MySQL и SQLite."
 ---
 
 # База данных

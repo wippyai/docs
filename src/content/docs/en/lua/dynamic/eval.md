@@ -1,5 +1,6 @@
 ---
 title: "Dynamic Evaluation"
+description: "Execute code dynamically at runtime with sandboxed environments and controlled module access."
 ---
 
 # Dynamic Evaluation

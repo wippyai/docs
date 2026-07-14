@@ -1,5 +1,6 @@
 ---
 title: "타입 시스템"
+description: "Wippy는 흐름 민감(flow-sensitive) 검사를 갖춘 점진적 타입 시스템을 포함합니다. 타입은 기본적으로 nullable이 아닙니다."
 ---
 
 # 타입 시스템

@@ -1,5 +1,6 @@
 ---
 title: "WebAssembly-Runtime"
+description: "Wippy fuehrt WebAssembly-Module als vollwertige Registry-Eintraege neben Lua-Code aus. WASM-Funktionen und -Prozesse werden innerhalb desselben…"
 ---
 
 # WebAssembly-Runtime

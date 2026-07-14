@@ -1,5 +1,6 @@
 ---
 title: "检索增强生成 (RAG)"
+description: "构建一个能够从您自己的文档中回答问题的知识库。本教程使用 wippy/embeddings 模块进行向量搜索，并使用 LLM 框架进行生成。"
 ---
 
 # 检索增强生成 (RAG)

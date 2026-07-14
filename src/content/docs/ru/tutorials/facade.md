@@ -1,5 +1,6 @@
 ---
 title: "Frontend Facade"
+description: "Раздавайте веб-UI Wippy из приложения, состоящего только из бэкенда, с помощью wippy/facade. Фасад — это тонкая статическая оболочка: она загружает…"
 ---
 
 # Frontend Facade

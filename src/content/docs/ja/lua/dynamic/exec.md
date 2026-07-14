@@ -1,5 +1,6 @@
 ---
 title: "コマンド実行"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # コマンド実行

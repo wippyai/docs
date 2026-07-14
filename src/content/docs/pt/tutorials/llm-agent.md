@@ -1,5 +1,6 @@
 ---
 title: "Agente LLM"
+description: "Construa um agente de chat no terminal passo a passo, progredindo de uma simples chamada LLM até um agente com streaming e ferramentas."
 ---
 
 # Agente LLM

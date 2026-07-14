@@ -1,5 +1,6 @@
 ---
 title: "Lua Entry-Arten"
+description: "Konfiguration für Lua-basierte Entries: Funktionen, Prozesse, Workflows und Bibliotheken."
 ---
 
 # Lua Entry-Arten

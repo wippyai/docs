@@ -1,5 +1,6 @@
 ---
 title: "Relay"
+description: "The wippy/relay module provides WebSocket relay infrastructure with a two-tier hub architecture. A central hub manages per-user hubs, which in turn…"
 ---
 
 # Relay

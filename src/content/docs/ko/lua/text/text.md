@@ -1,5 +1,6 @@
 ---
 title: "텍스트 처리"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 텍스트 처리

@@ -1,5 +1,6 @@
 ---
 title: "메트릭 및 텔레메트리"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
 ---
 
 # 메트릭 및 텔레메트리

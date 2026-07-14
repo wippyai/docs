@@ -1,5 +1,6 @@
 ---
 title: "WebAssembly Runtime"
+description: "Wippy runs WebAssembly modules as first-class registry entries alongside Lua code. WASM functions and processes execute within the same scheduler,…"
 ---
 
 # WebAssembly Runtime

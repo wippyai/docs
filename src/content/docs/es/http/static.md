@@ -1,5 +1,6 @@
 ---
 title: "Archivos Estáticos"
+description: "Sirva archivos estáticos desde cualquier filesystem usando http.static. Los manejadores estáticos se montan directamente en el servidor y pueden servir…"
 ---
 
 # Archivos Estáticos

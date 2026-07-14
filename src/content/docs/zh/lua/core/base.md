@@ -1,5 +1,6 @@
 ---
 title: "Lua 标准库"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Lua 标准库

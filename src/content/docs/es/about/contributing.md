@@ -1,5 +1,6 @@
 ---
 title: "Contribuir"
+description: "Wippy es desarrollado por Spiral Scout. Lo usamos en producción para sistemas internos y proyectos de clientes. La versión pública está en alpha."
 ---
 
 # Contribuir

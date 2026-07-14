@@ -1,5 +1,6 @@
 ---
 title: "Modelo de Seguridad"
+description: "Wippy implementa control de acceso basado en atributos. Cada solicitud lleva un actor (quién) y un scope (qué políticas aplican). Las políticas evalúan…"
 ---
 
 # Modelo de Seguridad

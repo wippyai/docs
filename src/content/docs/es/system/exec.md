@@ -1,5 +1,6 @@
 ---
 title: "Ejecutor"
+description: "Los ejecutores de comandos ejecutan procesos externos con entornos controlados. Dos tipos de ejecutores están disponibles: procesos nativos del SO y…"
 ---
 
 # Ejecutor

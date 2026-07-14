@@ -1,5 +1,6 @@
 ---
 title: "Registry 内部机制"
+description: "Registry 是一个版本化的事件驱动状态存储。它维护完整的版本历史，支持事务，并通过事件总线传播变更。"
 ---
 
 # Registry 内部机制

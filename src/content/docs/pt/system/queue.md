@@ -1,5 +1,6 @@
 ---
 title: "Fila"
+description: "O Wippy fornece um sistema de filas para processamento assíncrono de mensagens com drivers e consumidores configuráveis."
 ---
 
 # Fila
