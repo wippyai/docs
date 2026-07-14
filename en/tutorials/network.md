@@ -162,7 +162,7 @@ Overlays that support inbound traffic (Tailscale, I2P) can also accept HTTP list
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
-    auth_key_env: TS_AUTHKEY
+    auth_key: ${env:TS_AUTHKEY}
     ephemeral: true
 
   - name: gateway

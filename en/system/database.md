@@ -82,30 +82,26 @@ SQLite always runs with a single connection (<code>max_open</code> and <code>max
 | `options` | map | Accepted but ignored |
 | `lifecycle` | object | Lifecycle configuration |
 
-### Environment Variable Fields
+### Secret and Environment Values
 
-Use `_env` suffix to load values from environment variables or [env.variable](system/env.md) entries:
-
-| Field | Description |
-|-------|-------------|
-| `host_env` | Host from environment variable |
-| `port_env` | Port from environment variable |
-| `database_env` | Database name from environment |
-| `username_env` | Username from environment |
-| `password_env` | Password from environment |
+Pull connection values from the [environment registry](system/env.md) with `${env:NAME}` placeholders, resolved at decode time. `NAME` is a registered variable's public name or its entry ID (e.g. `app.secrets:db_password`); it is not a raw OS env var.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # Reference env.variable entry
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>) that resolves the same way. This form is <b>deprecated</b> — migrate it to the <code>${env:NAME}</code> placeholder shown above.
+</note>
+
 <warning>
-Avoid hardcoding passwords in configuration. Use environment variables or <code>env.variable</code> entries for credentials. See <a href="system/env.md">Environment</a> for secure secret management.
+Avoid hardcoding passwords in configuration. Use <code>env.variable</code> entries for credentials. See <a href="system/env.md">Environment</a> for secure secret management.
 </warning>
 
 ## Connection Pool
@@ -212,7 +208,7 @@ SQLite does not apply the `options` map to its DSN. File databases always open w
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -238,22 +234,22 @@ entries:
   # Primary database
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
   # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 

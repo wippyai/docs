@@ -151,7 +151,7 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-See [Database](system/database.md) for `*_env` suffix variants, TLS options, and connection pool tuning.
+See [Database](system/database.md) for `${env:NAME}` secret references, TLS options, and connection pool tuning.
 
 **Lua API:** See [SQL Module](lua/storage/sql.md)
 
@@ -343,8 +343,8 @@ Use <code>process.service</code> when you need a process to run as a supervised 
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3

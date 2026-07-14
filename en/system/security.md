@@ -375,7 +375,7 @@ entries:
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### Token Store Options
@@ -385,10 +385,9 @@ entries:
 | `store` | required | Backing key-value store reference |
 | `token_length` | 32 | Token size in bytes (256 bits) |
 | `default_expiration` | 24h | Default token TTL |
-| `token_key` | none | HMAC-SHA256 signing key (direct value) |
-| `token_key_env` | none | Environment variable name for signing key |
+| `token_key` | none | HMAC-SHA256 signing key (direct value, or `${env:NAME}` to pull from the [env registry](system/env.md)) |
 
-Use `token_key_env` in production to avoid embedding secrets in entries. See [Environment System](system/env.md) for registering environment variables.
+Use `token_key: ${env:NAME}` in production to avoid embedding secrets in entries. The legacy `token_key_env` directive resolves the same way but is deprecated; prefer `${env:NAME}`.
 
 ### Creating Tokens
 
@@ -563,7 +562,7 @@ local token, err = store:create(actor, scope, {expiration = "24h"})
 1. **Least privilege** - Grant minimum required permissions
 2. **Deny by default** - Use explicit allow policies, enable strict mode
 3. **Use policy groups** - Organize policies by role/function
-4. **Sign tokens** - Always set `token_key_env` in production
+4. **Sign tokens** - Always set `token_key` from an `${env:NAME}` reference in production
 5. **Short expiration** - Use shorter token lifetimes for sensitive operations
 6. **Condition on context** - Use dynamic conditions over static policies
 7. **Audit sensitive actions** - Log security-relevant operations

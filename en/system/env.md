@@ -149,6 +149,35 @@ Variable names must contain only: `a-z`, `A-Z`, `0-9`, `_`
   storage: app.config:secrets
 ```
 
+## Placeholder Interpolation
+
+Registered variables are pulled into entry configuration with `${env:NAME}` placeholders, resolved centrally at decode time against this registry. Any string field in an entry's data may reference a variable this way.
+
+| Syntax | Meaning |
+|--------|---------|
+| `${env:NAME}` | Resolve `NAME` through the env registry; error if unset and no default |
+| `${env:NAME\|default}` | Resolve `NAME`, falling back to `default` when unset |
+| `${NAME\|default}` | Shorthand; `NAME` must be upper-snake (`A-Z0-9_`) and the `\|default` is required — bare `${VAR}` is left untouched so embedded shell/template spans are not mistaken for references |
+| `$${` | Literal `${` (escape) |
+
+`NAME` is a registered variable's public name or its entry ID (registry-id form with dots/colons, e.g. `app.env:tls_cert`). It is **not** a raw OS environment variable: an OS value is reachable only when an `env.storage.os`-backed variable is registered under that name.
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
+```
+
+A field whose entire value is a single placeholder takes the variable's typed value (coerced to bool/int/float when a typed default is given); a placeholder mixed with surrounding text interpolates into a string. A variable's own `default` is honored before the placeholder's inline `|default`. A reference that resolves to nothing and has no default fails decoding.
+
+<note>
+Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (for example <code>cert_env: app.env:tls_cert</code>) that resolves the same way. This form is <b>deprecated</b> — migrate it to the <code>${env:NAME}</code> placeholder.
+</note>
+
 ## Errors
 
 | Condition | Kind | Retryable |

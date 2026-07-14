@@ -69,7 +69,7 @@ Provide the API key via one of these methods:
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # From file
 - name: temporal_client
@@ -81,7 +81,7 @@ Provide the API key via one of these methods:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Fields ending in `_env` reference environment variables that must be defined in the system. See [Environment System](system/env.md) for configuring environment storage and variables.
+Auth and credential fields resolve `${env:NAME}` placeholders through the [environment registry](system/env.md) at decode time. The legacy `api_key_env` / `key_pem_env` directives resolve the same way but are deprecated; prefer `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### TLS Configuration
@@ -198,12 +198,12 @@ Fine-tune worker behavior:
     # Versioning
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Read from environment variable
+    build_id: ${env:BUILD_ID}              # Read from env registry
     use_versioning: false
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Fields ending in `_env` reference environment variables defined via [Environment System](system/env.md) entries.
+Credential and identifier fields resolve `${env:NAME}` placeholders through the [environment registry](system/env.md) at decode time. The legacy `build_id_env` directive resolves the same way but is deprecated; prefer `build_id: ${env:NAME}`.
 
 ### Versioning Behavior
 
@@ -214,7 +214,7 @@ Fields ending in `_env` reference environment variables defined via [Environment
 | `pinned` | Workflow stays on the build ID it started on for its entire run |
 | `auto_upgrade` | Workflow may resume on the latest compatible build ID after each task |
 
-`build_id_env` reads the build ID from the named environment variable when `build_id` is empty.
+`build_id: ${env:NAME}` reads the build ID from the env registry when a literal `build_id` is not supplied.
 
 ### Session Worker
 

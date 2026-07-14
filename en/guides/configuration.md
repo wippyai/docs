@@ -83,13 +83,22 @@ Entry storage and version history. The registry holds all configuration entries.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enable_history` | bool | true | Track entry versions |
-| `history_type` | string | memory | Storage: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLite file path |
+| `history_type` | string | memory | Storage: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | SQLite file path (used when `history_type: sqlite`) |
+| `history_dsn` | string | | Postgres DSN (used when `history_type: postgres`) |
+| `history_schema` | string | | Postgres schema name (used when `history_type: postgres`) |
 
 ```yaml
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 See: [Registry Concept](concepts/registry.md), [Registry Module](lua/core/registry.md)
@@ -142,6 +151,8 @@ Lua VM caching and expression evaluation.
 | `cache.enabled` | bool | false | Persist compiled bytecode/typecheck cache to disk |
 | `cache.dir` | string | `.wippy/cache/lua` | Cache directory path (relative to the config/working directory) |
 | `cache.mode` | string | `readwrite` | Cache mode: `readwrite` (default), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Persist compiled bytecode (when `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Persist typecheck results (when `cache.enabled`) |
 | `type_system.enabled` | bool | false | Enable static type checking |
 | `type_system.strict` | bool | false | Treat type warnings as errors |
 
