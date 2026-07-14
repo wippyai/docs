@@ -29,6 +29,7 @@ Directory and embedded filesystem access.
 | `directory` | string | required | Root path |
 | `auto_init` | bool | false | Create directory if missing |
 | `mode` | string | 0755 | Unix permission mode (octal) |
+| `base` | string | `project` | Relative-path base: `project` (process working directory) or `module` (owning module load root) |
 
 The mode restricts all file operations. Execute bits are added automatically when read bits are present.
 

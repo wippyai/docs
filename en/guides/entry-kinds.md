@@ -99,6 +99,7 @@ resp:write_json({users = get_users()})
 | `db.sql.sqlite` | SQLite database |
 | `db.sql.postgres` | PostgreSQL database |
 | `db.sql.mysql` | MySQL database |
+| `db.cdc.postgres` | Postgres Change Data Capture source (see [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -268,6 +269,7 @@ The consumer's <code>func</code> is invoked once per message with the message bo
 | `process.host` | Process execution host |
 | `process.service` | Supervised process (wraps process.lua) |
 | `terminal.host` | Terminal/CLI host |
+| `pg.scope` | Process-group scope (see [Process Groups](system/process-groups.md)) |
 
 ```yaml
 # Process host (where processes run)
