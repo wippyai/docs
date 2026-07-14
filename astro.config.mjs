@@ -22,7 +22,8 @@ const LOCALES = {
   zh: { label: '简体中文', lang: 'zh-CN' },
 }
 
-const GITHUB_REPO = 'https://github.com/wippyai/docs'
+// The header GitHub link points at the main project repository.
+const PROJECT_REPO = 'https://github.com/wippyai/runtime'
 
 /** Read a language's navigation manifest, or an empty tree when absent. */
 function loadManifest(code) {
@@ -127,7 +128,7 @@ export default defineConfig({
       defaultLocale: 'en',
       locales,
       social: [
-        { icon: 'github', label: 'GitHub', href: GITHUB_REPO },
+        { icon: 'github', label: 'GitHub', href: PROJECT_REPO },
       ],
       customCss: ['./src/styles/custom.css'],
       components: { Head: './src/components/Head.astro' },
