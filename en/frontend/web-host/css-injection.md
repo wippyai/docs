@@ -4,6 +4,28 @@ The Web Host uses a layered injection pipeline to give child iframes the same vi
 
 This page documents the injection pipeline, all available flags, and how to customize styles at the global, host-chrome, or per-page level. It is the **canonical reference for the `proxy.injections` CSS flags and their runtime defaults** — authoring docs that show recommended explicit values link back here. For the developer-facing theming guide (CSS variable tokens, Tailwind mapping, web component patterns), see [Theming](../micro-frontends/theming.md).
 
+## CSS Delivery Matrix
+
+The facade exposes theming through three scopes — **global** (`custom_css`, `css_variables`, `icon_sets`), **host** (`host_custom_css`, `host_css_variables`, `host_icon_sets`), and **children** (`children_custom_css`, `children_css_variables`). The Web Host composes them per surface. Two rules govern everything below:
+
+- **CSS custom properties (`*_css_variables`) inherit across the shadow boundary.** A web component's shadow root sees the `--p-*` (and any other) custom properties set on the `:root` of the document it is mounted in — no injection needed.
+- **CSS selector rules (`*_custom_css`) do not cascade across the shadow boundary.** They apply only where they are injected: into each iframe document for `view.page`, and — **as of Web Host 1.0.43** — into each `view.component` shadow root (opt-out via the component's `customCss` flag). Before 1.0.43, only variables reached it.
+
+| Facade knob | Delivers | Host shell doc | `view.page` iframe | `view.component` shadow root |
+|---|---|---|---|---|
+| `custom_css` (global) | selector rules | ✓ injected | ✓ injected¹ | ✓ injected (1.0.43+, opt-out)¹ |
+| `css_variables` (global) | custom properties | ✓ `:root` | ✓ `:root` | ✓ inherits in |
+| `host_custom_css` (host) | selector rules | ✓ injected | ✗ | ✗ |
+| `host_css_variables` (host) | custom properties | ✓ `:root` | ✗ | host-mounted WCs only² |
+| `children_custom_css` (children) | selector rules | ✗ | ✓ injected¹ | ✓ injected (1.0.43+, opt-out)¹ |
+| `children_css_variables` (children) | custom properties | ✗ | ✓ `:root` | page WCs only² |
+
+¹ The Web Host **composes** what a child receives: both a `view.page` iframe and a `view.component` get **global + children** custom CSS merged into one sheet (`children_custom_css` appended after `custom_css`). The `customCss` flag is a gate, not a literal single-scope inject.
+
+² A web component inherits its custom **properties** from the `:root` of wherever it is mounted: a host-chrome WC inherits **global + host** vars from the host document; a WC inside a `view.page` inherits **global + children** vars from that iframe. Its injected custom **CSS** is always the children scope (global + children). Keep shared styling in `custom_css` / `css_variables` (global) — those reach every surface regardless of mount location.
+
+**`fs://` file support:** the six theming knobs above accept an `fs://<path>` value resolved at request time from the `content_fs` filesystem — see [Facade → Reusing facade theming on non-Web-Host pages](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` and every non-theming JSON parameter are inline-only.
+
 ## The Injection Pipeline
 
 Styles are injected in this logical layering. The first four layers are plain `<style>`/`<link>` elements; the last two (`customCSS` and `cssVariables`) are not — they are placed in the iframe document's `adoptedStyleSheets` (see [Override mechanism](#override-mechanism-adopted-stylesheets) below), so they always win regardless of `<head>` source order:
@@ -118,9 +140,12 @@ A page using React or another framework does not need PrimeVue styles. Disable t
 
 With both disabled the page still receives `customCSS`, `cssVariables`, and `iframe.css` (scrollbar reset) unless those are also turned off. The proxy API, state relay, and WebSocket bridge are unaffected by CSS flags.
 
-## Web Components: `hostCssKeys`
+## Web Components: facade custom CSS + `hostCssKeys`
 
-Web components rendered in the host DOM do not go through the iframe injection pipeline — the host's own `<head>` styles already apply. To use host-provided CSS inside a Shadow DOM, request specific style assets by URL through `wippyConfig.hostCssKeys` and fetch them with `loadCss()` from `@wippy-fe/proxy`.
+Web components do not go through the iframe injection pipeline. Two channels bring the theme into a component's shadow root:
+
+- **Facade custom CSS (automatic, opt-out — Web Host 1.0.43+).** The `@wippy-fe/webcomponent-core` runtime injects the facade custom CSS the host composed for this component — **global + children** (`custom_css` + `children_custom_css`) — into its shadow root at mount, via an **adopted stylesheet**, so it cascades after the component's own styles and the `hostCssKeys` sheets (same "custom CSS wins" rule as the iframe pipeline). A component opts out with `customCss: false` in its `wippyConfig`. Custom **properties** (`--p-*`) already inherit across the shadow boundary and are unaffected by this flag. Before 1.0.43, facade selector rules stayed on the host/iframe documents.
+- **Platform CSS assets (`hostCssKeys`).** `theme-config.css`, PrimeVue, markdown, and iframe/scrollbar styles are **static bundle assets**, not the facade's configured CSS. A component requests the ones it needs by URL through `wippyConfig.hostCssKeys` (or fetches them ad hoc with `loadCss()` from `@wippy-fe/proxy`), and the runtime injects them into the shadow root.
 
 ```typescript
 import { hostCss, loadCss } from '@wippy-fe/proxy'

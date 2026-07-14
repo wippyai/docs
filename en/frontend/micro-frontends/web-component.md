@@ -181,6 +181,7 @@ define(import.meta.url, MyWidgetElement)
 | `propsSchema` | `WippyPropsSchema` | The `wippy.props` JSON Schema object from `package.json`. Drives attribute parsing. |
 | `hostCssKeys` | `readonly string[]` | CSS URLs to request from the host and inject into the shadow root. See the [hostCssKeys reference](#hostcsskeys-reference) below. |
 | `inlineCss` | `string` | Component's own compiled CSS, loaded via `?inline` Vite import. Injected into the shadow root as a `<style>` element. |
+| `customCss` | `boolean` (optional, default `true`) | Inject the composed facade custom CSS (`custom_css` + `children_custom_css`) into the shadow root at mount (Web Host 1.0.43+). Set `false` to opt out for a fully self-styled component. |
 | `contentTemplate` | `string` (optional) | MIME type to match for `<template data-type="...">` child content extraction. See [Content pattern](#content-slot-pattern). |
 
 ### `vueConfig` fields
@@ -371,11 +372,13 @@ const definition = computed(() =>
 
 ## CSS in shadow DOM
 
-Web components use shadow DOM, which isolates styles. No external CSS bleeds in, and your CSS does not bleed out. Host theming is delivered via two mechanisms:
+Web components use shadow DOM, which isolates styles. No external CSS bleeds in, and your CSS does not bleed out. Host theming is delivered via three mechanisms:
 
 **`inlineCss`** — your component's own compiled CSS, provided as a string via the `?inline` Vite import. Injected into the shadow root as a `<style>` element at mount time.
 
-**`hostCssKeys`** — an array of URL keys requested from `@wippy-fe/proxy` at runtime. The base class fetches each URL and injects it as an `<link rel="stylesheet">` in the shadow root.
+**`hostCssKeys`** — an array of URL keys requested from `@wippy-fe/proxy` at runtime. The base class fetches each URL and injects it as an `<link rel="stylesheet">` in the shadow root. These are static platform assets (theme-config, PrimeVue, markdown, iframe), not the facade's configured CSS.
+
+**Facade custom CSS (`customCss`, default on — Web Host 1.0.43+)** — the runtime injects the custom CSS the host composed for children (**global + children** = `custom_css` + `children_custom_css`) into the shadow root via an adopted stylesheet, so it cascades after (and can override) your component's own styles. Set `customCss: false` in `wippyConfig` to opt out — for a fully self-styled component that must not receive host/app custom CSS. Custom properties (`--p-*`) inherit across the boundary independently of this flag.
 
 ### `hostCssKeys` reference
 

@@ -1186,9 +1186,9 @@ A Wippy module composes itself from `ns.dependency` entries. **One of those is `
 | `wippy/facade` parameter | Purpose |
 |---|---|
 | `app_title`, `app_name`, `app_icon` | brand identity |
-| `custom_css` | global CSS injected into the host (and inherited by child iframes). Where 95%+ of your styling lives. |
-| `css_variables` | JSON map of CSS variable overrides (`--p-primary`, `--p-surface-*`, brand-specific `--k-*` tokens, etc.) applied at host root. |
-| `host_custom_css` | host-shell-only CSS (not inherited by child iframes — scoped to `.wippy-host-app`). |
+| `custom_css` | global CSS — reaches the host chrome, `view.page` iframes, and `view.component` shadow roots (1.0.43+). Where 95%+ of your styling lives. |
+| `css_variables` | JSON map of CSS variable overrides (`--p-primary`, `--p-surface-*`, brand-specific `--k-*` tokens, etc.); custom properties inherit into every surface, shadow roots included. |
+| `host_custom_css` | host-chrome-only CSS (not delivered to children — scope class rules to `.wippy-host-app`). Use `children_custom_css` for CSS that should reach those children but not the host chrome. |
 | `hide_nav_bar`, `show_admin`, `history_mode`, `session_type`, `login_path` | UX shell behaviour |
 | `fe_mode`, `host_config_layout` | managed-layout mode + layout declaration |
 
