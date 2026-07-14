@@ -82,7 +82,7 @@ The iframe proxy has broad runtime defaults when flags are omitted. **Enable the
 
 - `css.themeConfig` — the full `--p-*` CSS variable system (`theme-config.css`). Enable to inherit the theme palette.
 - `css.primevue` — PrimeVue component styles. Enable for apps using PrimeVue.
-- `css.customCss` — the child-facing custom CSS the host composed for this page (facade **global + children** custom CSS, merged into `config.theming.global.customCSS`, plus any per-page override). The flag is a gate that lets the host inject whatever custom CSS it composed — not a single named scope. Enable to receive facade/per-page custom CSS.
+- `css.customCss` — the host-composed child-facing custom CSS: facade **global + children** custom CSS merged into `config.theming.global.customCSS`, plus any per-page override. The flag gates this injection rather than naming a single scope. Enable to receive facade/per-page custom CSS.
 - `css.customVariables` — child-projected `config.theming.global.cssVariables` as `:root { … }`. Enable to receive theme variable overrides.
 - `css.markdown` — `.data-body` markdown styles. Enable only if your page renders markdown content.
 

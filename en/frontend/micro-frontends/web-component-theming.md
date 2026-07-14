@@ -21,9 +21,9 @@ Shadow DOM blocks CSS cascade — stylesheets written outside your component do 
 
 **L3 — Per-page config_overrides:** CSS vars set via operator `config_overrides` also reach your shadow root as custom properties, because they are set on `:root` of the host page.
 
-**Facade custom CSS reaches the shadow root (Web Host 1.0.43+, opt-out).** Selector rules (e.g. `.p-button { border-radius: 12px }`) do not *cascade* across the shadow boundary on their own, but the WC runtime **injects** the composed facade custom CSS (`custom_css` + `children_custom_css`) into every component's shadow root at mount — so a facade-level class rule *does* reach PrimeVue components rendered inside the shadow root. This is on by default; opt out with `customCss: false` in `wippyConfig` (see [Web Component § CSS in shadow DOM](./web-component.md#css-in-shadow-dom)) for a fully self-styled component. Custom properties (`--p-*`) inherit regardless of the flag.
+**Facade custom CSS reaches the shadow root (Web Host 1.0.43+, opt-out).** Selector rules (e.g. `.p-button { border-radius: 12px }`) do not *cascade* across the shadow boundary, but the WC runtime **injects** the composed facade custom CSS (`custom_css` + `children_custom_css`) into every component's shadow root at mount — so they *do* apply to PrimeVue components rendered inside. This is on by default; opt out with `customCss: false` in `wippyConfig` (see [Web Component § CSS in shadow DOM](./web-component.md#css-in-shadow-dom)) for a fully self-styled component. Custom properties (`--p-*`) inherit regardless of the flag.
 
-> **Before Web Host 1.0.43**, facade `customCSS` rules did not reach a component's shadow root at all — only custom properties inherited in. On older hosts, replay the rule inside the WC's own styles or lift it to a `--p-*` token form.
+> **Before Web Host 1.0.43**, facade `customCSS` rules did not reach a component's shadow root — only custom properties inherited. On older hosts, replay the rule inside the WC's own styles or lift it to a `--p-*` token form.
 
 ---
 

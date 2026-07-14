@@ -378,7 +378,7 @@ Web components use shadow DOM, which isolates styles. No external CSS bleeds in,
 
 **`hostCssKeys`** — an array of URL keys requested from `@wippy-fe/proxy` at runtime. The base class fetches each URL and injects it as an `<link rel="stylesheet">` in the shadow root. These are static platform assets (theme-config, PrimeVue, markdown, iframe), not the facade's configured CSS.
 
-**Facade custom CSS (`customCss`, default on — Web Host 1.0.43+)** — the runtime injects the facade custom CSS the host composed for children (**global + children** = `custom_css` + `children_custom_css`) into the shadow root via an adopted stylesheet, so it cascades after your component's own styles (app-level custom CSS can override the component's defaults). Set `customCss: false` in `wippyConfig` to opt out (a fully self-styled component that must not receive host/app custom CSS). Custom properties (`--p-*`) inherit across the boundary independently of this flag.
+**Facade custom CSS (`customCss`, default on — Web Host 1.0.43+)** — the runtime injects the custom CSS the host composed for children (**global + children** = `custom_css` + `children_custom_css`) into the shadow root via an adopted stylesheet, so it cascades after (and can override) your component's own styles. Set `customCss: false` in `wippyConfig` to opt out — for a fully self-styled component that must not receive host/app custom CSS. Custom properties (`--p-*`) inherit across the boundary independently of this flag.
 
 ### `hostCssKeys` reference
 

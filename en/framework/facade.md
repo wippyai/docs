@@ -80,11 +80,11 @@ entries:
 
 ### Theming
 
-Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — sidebar, chat, page area), and **children** (both child `view.page` iframes **and** `view.component` web components — all of which are "children" of the host). For exactly which surface each knob reaches and how, see the [CSS Delivery Matrix](/frontend/web-host/css-injection#css-delivery-matrix).
+Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — sidebar, chat, page area), and **children** (both child `view.page` iframes **and** `view.component` web components). For which surface each knob reaches, see the [CSS Delivery Matrix](/frontend/web-host/css-injection#css-delivery-matrix).
 
 | Parameter | Scope | Default | Description |
 |-----------|-------|---------|-------------|
-| `custom_css` | global | Google Fonts import | Global CSS — reaches host chrome, `view.page` iframes, and `view.component` shadow roots (1.0.43+). Where ~95% of styling belongs. |
+| `custom_css` | global | Google Fonts import | Global CSS — reaches host chrome, `view.page` iframes, and `view.component` shadow roots (1.0.43+). |
 | `css_variables` | global | `{}` | JSON map of CSS custom properties; reaches every surface (variables inherit into shadow roots). |
 | `icon_sets` | global | `[]` | Iconify icon-set URLs (inline JSON only — no `fs://`) |
 | `host_custom_css` | host | `""` | CSS for the host chrome only — not children. Scope class-based rules to `.wippy-host-app`. |
@@ -93,7 +93,7 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `children_custom_css` | children | `""` | CSS for children only — injected into `view.page` iframes and `view.component` shadow roots (1.0.43+), not host chrome |
 | `children_css_variables` | children | `{}` | CSS custom properties for children only |
 
-**Default guidance:** put shared/brand styling in `custom_css` and `css_variables` (global) — that is where ~95% of theming belongs, and it reaches every surface. Reserve `host_custom_css` / `host_css_variables` for deliberately host-only chrome (the sidebar, the chat panel, splitters). Facade selector rules (`*_custom_css`) reach `view.component` shadow roots as of **Web Host 1.0.43**; a component opts out with `customCss: false`. Custom properties (`*_css_variables`) inherit into shadow roots on every version.
+**Default guidance:** put shared/brand styling in `custom_css` and `css_variables` (global) — that is where ~95% of theming belongs, and it reaches every surface. Reserve `host_custom_css` / `host_css_variables` for host-only chrome (the sidebar, the chat panel, splitters). A `view.component` opts out of shadow-root `*_custom_css` with `customCss: false`.
 
 #### Theme mode & persistence
 
@@ -119,7 +119,7 @@ content_fs:    app:app_fs
 
 Use `fs://` (resolved by `content_fs` at runtime), **not** `file://` — `file://` is inlined by the wippy loader relative to the YAML at load time. Keep the files in the same static folder your `login_path` page is served from (in `app`, `static/` served at `/app`).
 
-`fs://` resolution applies to exactly the **six theming parameters** — `custom_css`, `css_variables`, `host_custom_css`, `host_css_variables`, `children_custom_css`, `children_css_variables` (CSS strings are read verbatim; JSON `*_css_variables` files are parsed as the variable map). `icon_sets` / `host_icon_sets` and every other JSON parameter (`api_routes`, `chat`, `tanstack`, …) are **inline-only** — an `fs://` value there is not resolved.
+`fs://` resolution applies to exactly the **six theming parameters** — `custom_css`, `css_variables`, `host_custom_css`, `host_css_variables`, `children_custom_css`, `children_css_variables` (CSS strings are read verbatim; JSON `*_css_variables` files are parsed as the variable map). `icon_sets` / `host_icon_sets` and every other JSON parameter (`api_routes`, `chat`, `tanstack`, …) are **inline-only**; `fs://` is not resolved there.
 
 A standalone page then links both:
 

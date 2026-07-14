@@ -9,7 +9,7 @@ This page documents the injection pipeline, all available flags, and how to cust
 The facade exposes theming through three scopes — **global** (`custom_css`, `css_variables`, `icon_sets`), **host** (`host_custom_css`, `host_css_variables`, `host_icon_sets`), and **children** (`children_custom_css`, `children_css_variables`). The Web Host composes them per surface. Two rules govern everything below:
 
 - **CSS custom properties (`*_css_variables`) inherit across the shadow boundary.** A web component's shadow root sees the `--p-*` (and any other) custom properties set on the `:root` of the document it is mounted in — no injection needed.
-- **CSS selector rules (`*_custom_css`) do not cascade across the shadow boundary.** They apply only where they are physically injected: into each iframe document for `view.page`, and — **as of Web Host 1.0.43** — into each `view.component` shadow root (opt-out via the component's `customCss` flag). Before 1.0.43, selector rules never reached a component's shadow root; only variables did.
+- **CSS selector rules (`*_custom_css`) do not cascade across the shadow boundary.** They apply only where they are injected: into each iframe document for `view.page`, and — **as of Web Host 1.0.43** — into each `view.component` shadow root (opt-out via the component's `customCss` flag). Before 1.0.43, only variables reached it.
 
 | Facade knob | Delivers | Host shell doc | `view.page` iframe | `view.component` shadow root |
 |---|---|---|---|---|
@@ -24,7 +24,7 @@ The facade exposes theming through three scopes — **global** (`custom_css`, `c
 
 ² A web component inherits its custom **properties** from the `:root` of wherever it is mounted: a host-chrome WC inherits **global + host** vars from the host document; a WC inside a `view.page` inherits **global + children** vars from that iframe. Its injected custom **CSS** is always the children scope (global + children). Keep shared styling in `custom_css` / `css_variables` (global) — those reach every surface regardless of mount location.
 
-**`fs://` file support:** the six theming knobs above (`custom_css`, `css_variables`, `host_custom_css`, `host_css_variables`, `children_custom_css`, `children_css_variables`) accept an `fs://<path>` value resolved at request time from the `content_fs` filesystem — see [Facade → Reusing facade theming on non-Web-Host pages](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` and every non-theming JSON parameter are inline-only.
+**`fs://` file support:** the six theming knobs above accept an `fs://<path>` value resolved at request time from the `content_fs` filesystem — see [Facade → Reusing facade theming on non-Web-Host pages](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` and every non-theming JSON parameter are inline-only.
 
 ## The Injection Pipeline
 
@@ -142,9 +142,9 @@ With both disabled the page still receives `customCSS`, `cssVariables`, and `ifr
 
 ## Web Components: facade custom CSS + `hostCssKeys`
 
-Web components do not go through the iframe injection pipeline. Two separate channels bring the theme into a component's shadow root:
+Web components do not go through the iframe injection pipeline. Two channels bring the theme into a component's shadow root:
 
-- **Facade custom CSS (automatic, opt-out — Web Host 1.0.43+).** The `@wippy-fe/webcomponent-core` runtime injects the facade custom CSS the host composed for this component — **global + children** (`custom_css` + `children_custom_css`) — into its shadow root at mount, via an **adopted stylesheet**, so it cascades after the component's own styles and the `hostCssKeys` sheets (same "custom CSS wins" rule as the iframe pipeline). On by default; a component opts out with `customCss: false` in its `wippyConfig`. Custom **properties** (`--p-*`) already inherit across the shadow boundary and are unaffected by this flag. Before 1.0.43 this channel did not exist — facade selector rules stayed on the host/iframe documents.
+- **Facade custom CSS (automatic, opt-out — Web Host 1.0.43+).** The `@wippy-fe/webcomponent-core` runtime injects the facade custom CSS the host composed for this component — **global + children** (`custom_css` + `children_custom_css`) — into its shadow root at mount, via an **adopted stylesheet**, so it cascades after the component's own styles and the `hostCssKeys` sheets (same "custom CSS wins" rule as the iframe pipeline). A component opts out with `customCss: false` in its `wippyConfig`. Custom **properties** (`--p-*`) already inherit across the shadow boundary and are unaffected by this flag. Before 1.0.43, facade selector rules stayed on the host/iframe documents.
 - **Platform CSS assets (`hostCssKeys`).** `theme-config.css`, PrimeVue, markdown, and iframe/scrollbar styles are **static bundle assets**, not the facade's configured CSS. A component requests the ones it needs by URL through `wippyConfig.hostCssKeys` (or fetches them ad hoc with `loadCss()` from `@wippy-fe/proxy`), and the runtime injects them into the shadow root.
 
 ```typescript

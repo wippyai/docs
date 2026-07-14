@@ -2,7 +2,7 @@
 
 The host (wippy/facade) provides the theme. Both micro frontend apps and web components consume it. The variable catalog below is the shared vocabulary — delivery specifics are in [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) and [Theming: Web Components](./web-component-theming.md).
 
-YAML always wins. CSS custom properties (`*_css_variables`) set by the facade/host cascade to child iframes and inherit into shadow DOM. Facade selector rules (`*_custom_css`) do not *cascade* across the shadow boundary, but the Web Host **injects** them into `view.component` shadow roots as of Web Host 1.0.43 (opt-out via the component's `customCss` flag) — so facade custom CSS reaches iframes and web components alike. See the [CSS Delivery Matrix](../web-host/css-injection.md#css-delivery-matrix).
+YAML always wins. CSS custom properties (`*_css_variables`) set by the facade/host cascade to child iframes and inherit into shadow DOM. Facade selector rules (`*_custom_css`) do not *cascade* across the shadow boundary, but the Web Host **injects** them into `view.component` shadow roots as of Web Host 1.0.43 (opt-out via the component's `customCss` flag). See the [CSS Delivery Matrix](../web-host/css-injection.md#css-delivery-matrix).
 
 ---
 
