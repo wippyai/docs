@@ -1,12 +1,28 @@
 ---
 import Default from '@astrojs/starlight/components/Head.astro'
 
-// Extend Starlight's <Head> so every page keeps the default behaviour, plus a
-// tiny module script that lazy-renders Mermaid diagrams. The mermaid bundle is
-// dynamically imported, so it only loads on pages that actually contain a
-// diagram — pages without one ship no mermaid JavaScript at all.
+// Extend Starlight's <Head> so every page keeps the default behaviour, plus:
+//  1. an inline ?theme=dark|light hook (runs before Starlight's theme script)
+//     so a theme can be deep-linked / forced for Lighthouse dark-mode testing.
+//  2. a tiny module script that lazy-renders Mermaid diagrams. The mermaid
+//     bundle is dynamically imported, so it only loads on pages that actually
+//     contain a diagram — pages without one ship no mermaid JavaScript at all.
 const props = Astro.props
 ---
+<script is:inline>
+  // Allow ?theme=dark|light to force a theme. Must run before Starlight's own
+  // theme script (below) so it picks up the value from localStorage.
+  ;(function () {
+    var t = new URLSearchParams(location.search).get('theme')
+    if (t === 'dark' || t === 'light') {
+      try {
+        localStorage.setItem('starlight-theme', t)
+      } catch (e) {
+        /* storage unavailable — non-fatal */
+      }
+    }
+  })()
+</script>
 <Default {...props} />
 <script type="module">
   const blocks = document.querySelectorAll('pre[data-language="mermaid"]')
