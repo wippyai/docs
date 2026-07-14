@@ -2,7 +2,7 @@
 
 The host (wippy/facade) provides the theme. Both micro frontend apps and web components consume it. The variable catalog below is the shared vocabulary — delivery specifics are in [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) and [Theming: Web Components](./web-component-theming.md).
 
-YAML always wins. CSS variables set by the facade/host cascade to child iframes and (for custom properties only) into shadow DOM. Stylesheets do not cross shadow DOM boundaries.
+YAML always wins. CSS custom properties (`*_css_variables`) set by the facade/host cascade to child iframes and inherit into shadow DOM. Facade selector rules (`*_custom_css`) do not *cascade* across the shadow boundary, but the Web Host **injects** them into `view.component` shadow roots as of Web Host 1.0.43 (opt-out via the component's `customCss` flag) — so facade custom CSS reaches iframes and web components alike. See the [CSS Delivery Matrix](../web-host/css-injection.md#css-delivery-matrix).
 
 ---
 
@@ -69,6 +69,15 @@ Each has a base var and an 11-step scale (50–950) derived via `color-mix`, sam
 
 Override the base var to retheme the full scale — the 50–950 range auto-derives via `color-mix`. No dark-mode override block is needed.
 
+### The token grammar (predictable naming)
+
+The `--p-*` set follows one small, exceptionless grammar, so a human — or an AI agent generating styles — can *predict* a token name instead of looking it up. Two layers with a hard contract:
+
+- **Numeric scale** — `--p-<family>-{50..950}` and `--p-surface-{0..950}`: the fixed-hue anchor, **never theme-switchable** (identical in light and dark). Use it only when you explicitly do *not* want the value to flip.
+- **Semantic aliases** — `--p-<family>-color` / `-contrast-color` / `-hover-color` / `-active-color`: the theme-switchable layer. `-color` always ships with its `-contrast-color` (the color to place on top of it) plus hover/active states, so no `dark:` pairing is needed.
+
+Those four aliases exist for **all eight** families (`primary`, `secondary`, `danger`, `success`, `warn`, `info`, `help`, `accent`) — zero per-family exceptions. Typography follows the same shape (`--p-font-<role>-<prop>`, below). The generated `tokens.json` manifest shipped in `@wippy-fe/theme` (name, layer, light/dark value, flip flag) is the machine-readable ground truth an agent can load.
+
 ### Semantic variables (mode-aware)
 
 These **flip with dark mode** — use these for theme-dependent styling. Do not use numbered surface vars (`--p-surface-N`) for semantic colors.
@@ -92,6 +101,36 @@ These **flip with dark mode** — use these for theme-dependent styling. Do not 
 | `--p-highlight-focus-background` | `primary-100` | `primary-400 @ 24%` |
 | `--p-highlight-focus-color` | `primary-800` | `white @ 87%` |
 | `--p-content-border-radius` | `6px` | `6px` |
+
+### Family aliases (all families)
+
+The four `--p-primary-*` alias rows above exist identically for every family, remapped the same way per mode:
+
+| Alias | Light | Dark |
+|---|---|---|
+| `--p-<family>-color` | `<family>-500` | `<family>-400` |
+| `--p-<family>-contrast-color` | `surface-0` | `surface-900` |
+| `--p-<family>-hover-color` | `<family>-600` | `<family>-300` |
+| `--p-<family>-active-color` | `<family>-700` | `<family>-200` |
+
+`var(--p-success-color)` + `var(--p-success-contrast-color)` is a mode-correct fill/on-color pair; `--p-success-500` is the fixed anchor that never flips.
+
+### Typography tokens
+
+`--p-font-<role>-<prop>` — roles `heading` / `body` / `mono`, props `family`, `scale` (size multiplier), `line-height`, `letter-spacing`, `stretch`, `variation-settings`. Mode-independent; defaults are visually inert. They steer rendered-content typography (markdown headings/body, code blocks), not host chrome.
+
+| Token | Default | Effect |
+|---|---|---|
+| `--p-font-heading-family` | `--v-font-family-head, Arial` | Heading font |
+| `--p-font-heading-scale` | `1` | Multiplies heading sizes |
+| `--p-font-body-scale` | `1` | Multiplies body sizes |
+| `--p-font-<role>-line-height` | `1.5` | Per-role line-height |
+| `--p-font-<role>-letter-spacing` | `normal` | Per-role tracking |
+| `--p-font-<role>-stretch` | `normal` | Variable-font width |
+| `--p-font-<role>-variation-settings` | `normal` | Variable-font axes |
+| `--p-font-mono-family` | `ui-monospace` | Code / markdown mono |
+
+Which font *files* load (families, weights, `size-adjust`, ascent/descent overrides) is declared via the facade `fonts` theming param and compiled to distributed CSS by the host.
 
 ---
 
