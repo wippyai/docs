@@ -18,12 +18,27 @@ const props = Astro.props
       theme: dark ? 'dark' : 'default',
       securityLevel: 'loose',
     })
+    // Expressive Code renders each source line in its own .ec-line element, so
+    // pre.textContent would join them with no newlines and break parsing.
+    // Reconstruct the source line by line.
+    const targets = []
     for (const pre of blocks) {
+      const lines = pre.querySelectorAll('.ec-line')
+      const src = lines.length
+        ? Array.from(lines, (l) => l.textContent).join('\n')
+        : pre.textContent
       const div = document.createElement('div')
       div.className = 'mermaid'
-      div.textContent = pre.textContent
+      div.textContent = src
       pre.replaceWith(div)
+      targets.push(div)
     }
-    await mermaid.run({ querySelector: '.mermaid' })
+    // suppressErrors + try/catch so a single malformed diagram never throws an
+    // uncaught exception (which would tank Lighthouse Best Practices).
+    try {
+      await mermaid.run({ nodes: targets, suppressErrors: true })
+    } catch (e) {
+      /* ignore: a bad diagram renders as its source text */
+    }
   }
 </script>
