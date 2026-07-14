@@ -67,6 +67,7 @@
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "Base64", "path": "lua/data/base64"},
           {"title": "Compress", "path": "lua/data/compress"},
+          {"title": "Archive", "path": "lua/data/archive"},
           {"title": "Payload", "path": "lua/data/payload"},
           {"title": "Excel", "path": "lua/data/excel"}
         ]
@@ -87,7 +88,8 @@
           {"title": "Store", "path": "lua/storage/store"},
           {"title": "Filesystem", "path": "lua/storage/filesystem"},
           {"title": "Cloud Storage", "path": "lua/storage/cloud"},
-          {"title": "Queue", "path": "lua/storage/queue"}
+          {"title": "Queue", "path": "lua/storage/queue"},
+          {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
       {
@@ -218,6 +220,7 @@
       {"title": "Process Groups", "path": "system/process-groups"},
       {"title": "Terminal", "path": "system/terminal"},
       {"title": "Database", "path": "system/database"},
+      {"title": "Change Data Capture", "path": "system/cdc"},
       {"title": "Store", "path": "system/store"},
       {"title": "Queue", "path": "system/queue"},
       {"title": "Network", "path": "system/network"},

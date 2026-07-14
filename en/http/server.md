@@ -163,11 +163,15 @@ entries:
 
 The server can terminate TLS directly. Set `tls.mode` to `manual` (supply your own certificate) or `auto` (certificate provided by an overlay network driver, e.g. `network.tailscale`). Plain clearnet listeners do not support `auto`. Omit `tls` or leave the mode empty to run plain HTTP.
 
-In `auto` mode the server must not specify `cert`/`key`/`cert_env`/`key_env` — the network driver provides them.
+In `auto` mode the server must not specify `cert`/`key` — the network driver provides them.
 
 ### Manual certificate
 
-Provide cert and key either inline/file-loaded or via environment variables (never both):
+Under `mode: manual`, `cert` and `key` carry PEM content. Supply that content in one of three ways (pick one per field, never mix):
+
+1. **Inline PEM** — the literal PEM string.
+2. **`file://` reference** — manifest-relative path, resolved and inlined at load time (traversal-safe).
+3. **Environment registry reference** — pull the PEM from a registered [env variable](system/env.md) at decode time, using a `${env:NAME}` placeholder.
 
 ```yaml
 - name: api
@@ -185,15 +189,20 @@ Provide cert and key either inline/file-loaded or via environment variables (nev
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+The `${env:NAME}` placeholder resolves `NAME` through the [environment registry](system/env.md) — a registered variable's public name or its entry ID (e.g. `app.env:tls_cert`). It is not a raw OS environment variable; an OS value is only reachable when an `env.storage.os`-backed variable is registered under that name. A default can be supplied with `${env:NAME|default}`.
+
+<note>
+The legacy <code>cert_env</code> / <code>key_env</code> companion fields still resolve through the environment registry the same way, but are <b>deprecated</b> — prefer the <code>${env:NAME}</code> placeholder shown above.
+</note>
 
 | Field | Description |
 |-------|-------------|
 | `mode` | `""` (off), `auto`, or `manual` |
-| `cert` / `key` | PEM content (typically loaded via `file://`) |
-| `cert_env` / `key_env` | Env variable names resolved via the [env registry](system/env.md) |
+| `cert` / `key` | PEM content — inline, `file://` reference, or `${env:NAME}` placeholder |
 
 ### Mutual TLS (mTLS)
 
@@ -202,17 +211,18 @@ Under `mode: manual` the server can additionally verify client certificates:
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
 
+`client_ca` accepts the same three forms as `cert`/`key` (inline PEM, `file://`, or `${env:NAME}`). The legacy `client_ca_env` companion field is likewise deprecated in favor of `client_ca: ${env:NAME}`.
+
 | Field | Description |
 |-------|-------------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | PEM bundle of trusted client CAs |
-| `client_ca_env` | Env variable holding the CA bundle (mutually exclusive with `client_ca`) |
+| `client_ca` | PEM bundle of trusted client CAs (inline, `file://`, or `${env:NAME}`) |
 
 `verify_if_given` and `require_and_verify` require a CA. `request` and `require_any` accept any client cert without CA verification.
 

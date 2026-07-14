@@ -41,7 +41,7 @@ Route outbound traffic and bind listeners through overlay networks (SOCKS5 proxi
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ Route outbound traffic and bind listeners through overlay networks (SOCKS5 proxi
 | Field | Type | Description |
 |-------|------|-------------|
 | `hostname` | string | tsnet node name (used in per-node state directory) |
-| `auth_key` | string | Inline tailnet auth key |
-| `auth_key_env` | string | Env var name holding the auth key (resolved via env registry) |
+| `auth_key` | string | Tailnet auth key — inline or `${env:NAME}` resolved via the [env registry](system/env.md) |
 | `state_dir` | string | Override for tsnet state directory |
 | `control_url` | string | Alternate coordination server |
 | `ephemeral` | bool | Register as an ephemeral tailnet node |
 
-Either `auth_key` or `auth_key_env` is required.
+`auth_key` is required (supply it directly or via `${env:NAME}`). The legacy `auth_key_env` directive resolves the same way but is deprecated; prefer `auth_key: ${env:NAME}`.
 
 ## I2P
 
