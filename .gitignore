@@ -32,7 +32,9 @@ go.work.sum
 .claude/
 /.local
 
-# Local dev server artifacts (generated, not doc content)
-en/index.html
-en/_sidebar.md
-/.cache
+# VitePress build output and cache
+/.vitepress/dist
+/.vitepress/cache
+
+# Generated locale home pages (created by scripts/generate-homes.mjs)
+/*/index.md

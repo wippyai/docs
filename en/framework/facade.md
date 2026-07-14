@@ -80,7 +80,7 @@ entries:
 
 ### Theming
 
-Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — sidebar, chat, page area), and **children** (both child `view.page` iframes **and** `view.component` web components). For which surface each knob reaches, see the [CSS Delivery Matrix](/frontend/web-host/css-injection#css-delivery-matrix).
+Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — sidebar, chat, page area), and **children** (both child `view.page` iframes **and** `view.component` web components). For which surface each knob reaches, see the [CSS Delivery Matrix](../frontend/web-host/css-injection.md#css-delivery-matrix).
 
 | Parameter | Scope | Default | Description |
 |-----------|-------|---------|-------------|
@@ -103,7 +103,7 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `theme_persist` | `none` | Persist the user's chosen theme across reloads: `none`, `cookie`, or `localStorage`. In `cookie` mode the Jet-rendered shell reads the cookie server-side and applies the `w-theme-*` class before the first paint (no flash). Emitted as `themePersist`. |
 | `theme_storage_key` | `@wippy-theme-mode` | Cookie / localStorage key the mode is stored under. Emitted as `themeStorageKey` and baked into the generated `/facade/theme-persist.js`. |
 
-Theme persistence is **opt-in**: `theme_persist` defaults to `none`, so nothing is stored until a deployment sets it to `cookie` or `localStorage`. When enabled the facade serves a ready-made script at **`GET /facade/theme-persist.js`** with the key and mode baked in; include it on any page that should share the theme. See [Theme Persistence](/frontend/web-host/theme-persistence) for the full model, the `themeChanged` host event, and non-Wippy-page integration.
+Theme persistence is **opt-in**: `theme_persist` defaults to `none`, so nothing is stored until a deployment sets it to `cookie` or `localStorage`. When enabled the facade serves a ready-made script at **`GET /facade/theme-persist.js`** with the key and mode baked in; include it on any page that should share the theme. See [Theme Persistence](../frontend/web-host/theme-persistence.md) for the full model, the `themeChanged` host event, and non-Wippy-page integration.
 
 #### Reusing facade theming on non-Web-Host pages
 
@@ -139,7 +139,7 @@ To also share the **theme mode** (so a `login.html` honours and persists the sam
 <!-- early-applies the stored theme and exposes window.wippyThemePersist -->
 ```
 
-See [Theme Persistence → Non-Wippy-hosted pages](/frontend/web-host/theme-persistence) for a complete switcher example.
+See [Theme Persistence → Non-Wippy-hosted pages](../frontend/web-host/theme-persistence.md) for a complete switcher example.
 
 ### Optional JSON parameters
 
