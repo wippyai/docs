@@ -15,7 +15,7 @@ Persistence lives entirely in the facade. The Web Host stays storage-agnostic: i
 
 ## Configuration
 
-Two facade parameters control it (see [Frontend Facade](/framework/facade)):
+Two facade parameters control it (see [Frontend Facade](../../framework/facade.md)):
 
 | Parameter | Default | Values | Description |
 |-----------|---------|--------|-------------|

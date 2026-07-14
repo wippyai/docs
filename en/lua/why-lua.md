@@ -1,6 +1,6 @@
 ---
-title: Why Wippy Uses Lua - Embedded Runtime Language Decision
-description: Wippy uses Lua as its primary runtime language. Here is why: memory footprint, full sandboxability, clean Go embedding, deterministic module loading, and LLM-friendly syntax.
+title: "Why Wippy Uses Lua - Embedded Runtime Language Decision"
+description: "Wippy uses Lua as its primary runtime language. Here is why: memory footprint, full sandboxability, clean Go embedding, deterministic module loading, and LLM-friendly syntax."
 ---
 
 # Why Wippy Uses Lua
