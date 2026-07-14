@@ -1,5 +1,6 @@
 ---
 title: "Dateisystem"
+description: "Verzeichnis- und eingebetteter Dateisystemzugriff."
 ---
 
 # Dateisystem

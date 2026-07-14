@@ -1,5 +1,6 @@
 ---
 title: "Metricas y Telemetria"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
 ---
 
 # Metricas y Telemetria

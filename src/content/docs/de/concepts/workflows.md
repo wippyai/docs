@@ -1,5 +1,6 @@
 ---
 title: "Workflows"
+description: "Workflows sind dauerhafte, langlebige Vorgänge, die Abstürze und Neustarts überleben. Sie bieten Zuverlässigkeitsgarantien für kritische…"
 ---
 
 # Workflows

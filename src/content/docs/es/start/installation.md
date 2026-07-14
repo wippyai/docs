@@ -1,5 +1,6 @@
 ---
 title: "Instalación"
+description: "Instalación Rápida"
 ---
 
 # Instalación

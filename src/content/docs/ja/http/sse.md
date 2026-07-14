@@ -1,5 +1,6 @@
 ---
 title: "Server-Sent Events"
+description: "SSE ミドルウェアは、Server-Sent Events プロトコルを使用してサーバーから HTTP クライアントへイベントをストリーミングします。"
 ---
 
 # Server-Sent Events

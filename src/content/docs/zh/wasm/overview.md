@@ -1,5 +1,6 @@
 ---
 title: "WebAssembly 运行时"
+description: "Wippy 将 WebAssembly 模块作为一等注册表条目运行，与 Lua 代码并行。WASM 函数和进程在同一调度器内执行，共享相同的安全模型，并通过函数注册表与 Lua 互操作。"
 ---
 
 # WebAssembly 运行时

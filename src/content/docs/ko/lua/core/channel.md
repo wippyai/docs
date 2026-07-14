@@ -1,5 +1,6 @@
 ---
 title: "채널과 코루틴"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 채널과 코루틴

@@ -1,5 +1,6 @@
 ---
 title: "標準Luaライブラリ"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 標準Luaライブラリ

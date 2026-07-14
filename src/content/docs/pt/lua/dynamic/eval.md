@@ -1,5 +1,6 @@
 ---
 title: "Avaliação Dinamica"
+description: "Execute código dinamicamente em tempo de execução com ambientes sandboxed e acesso controlado a modulos."
 ---
 
 # Avaliação Dinamica

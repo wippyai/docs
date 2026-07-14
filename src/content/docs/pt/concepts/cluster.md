@@ -1,5 +1,6 @@
 ---
 title: "Cluster"
+description: "Um único nó Wippy é um runtime completo. Um cluster une vários nós em um sistema coordenado: processos podem ser nomeados e alcançados de qualquer nó,…"
 ---
 
 # Cluster

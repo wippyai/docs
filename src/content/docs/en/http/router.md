@@ -1,5 +1,6 @@
 ---
 title: "Routing"
+description: "Routers group endpoints under URL prefixes and apply shared middleware. Endpoints define HTTP handlers."
 ---
 
 # Routing

@@ -1,5 +1,6 @@
 ---
 title: "Sistema de Banco de Dados"
+description: "Pool de conexões e configuração de banco de dados SQL. Suporta PostgreSQL, MySQL e SQLite."
 ---
 
 # Sistema de Banco de Dados

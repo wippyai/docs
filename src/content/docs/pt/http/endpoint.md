@@ -1,5 +1,6 @@
 ---
 title: "Endpoints HTTP"
+description: "Endpoints (http.endpoint) definem handlers de rota HTTP que executam funções Lua."
 ---
 
 # Endpoints HTTP

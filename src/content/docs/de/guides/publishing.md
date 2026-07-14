@@ -1,5 +1,6 @@
 ---
 title: "Module veröffentlichen"
+description: "Teile wiederverwendbaren Code im Wippy Hub."
 ---
 
 # Module veröffentlichen

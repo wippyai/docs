@@ -1,5 +1,6 @@
 ---
 title: "前端 Facade"
+description: "使用 wippy/facade 从一个纯后端应用中提供 Wippy Web UI。Facade 是一个轻量的静态外壳：它从 CDN 加载 Wippy Web Host 前端包，并通过您的应用提供的 JSON 端点进行配置 — 您的项目中无需任何前端构建步骤。品牌、主题和功能开关全部由依赖项参数驱动。"
 ---
 
 # 前端 Facade

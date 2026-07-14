@@ -1,5 +1,6 @@
 ---
 title: "Server-Sent Events"
+description: "SSE 中间件使用 Server-Sent Events 协议从服务器向 HTTP 客户端流式推送事件。"
 ---
 
 # Server-Sent Events

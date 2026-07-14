@@ -1,5 +1,6 @@
 ---
 title: "Workflows"
+description: "Workflows are durable, long-running operations that survive crashes and restarts. They provide reliability guarantees for critical business processes…"
 ---
 
 # Workflows

@@ -1,5 +1,6 @@
 ---
 title: "Network Overlays"
+description: "Route outbound traffic and bind listeners through overlay networks (SOCKS5 proxies, Tor, Tailscale mesh, I2P). Overlay selection is opt-in per call and…"
 ---
 
 # Network Overlays

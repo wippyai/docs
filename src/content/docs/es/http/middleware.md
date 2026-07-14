@@ -1,5 +1,6 @@
 ---
 title: "Middleware HTTP"
+description: "El middleware procesa solicitudes HTTP antes y después del manejo de rutas."
 ---
 
 # Middleware HTTP

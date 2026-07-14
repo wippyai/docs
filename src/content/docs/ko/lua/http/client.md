@@ -1,5 +1,6 @@
 ---
 title: "HTTP 클라이언트"
+description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # HTTP 클라이언트

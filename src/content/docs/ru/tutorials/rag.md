@@ -1,5 +1,6 @@
 ---
 title: "Retrieval-Augmented Generation (RAG)"
+description: "Создайте базу знаний, которая отвечает на вопросы из ваших собственных документов. В этом руководстве используется модуль wippy/embeddings для…"
 ---
 
 # Retrieval-Augmented Generation (RAG)

@@ -1,5 +1,6 @@
 ---
 title: "HTTP-Server"
+description: "Der HTTP-Server (http.service) lauscht auf einem Port und hostet Router, Endpunkte und statische Datei-Handler."
 ---
 
 # HTTP-Server

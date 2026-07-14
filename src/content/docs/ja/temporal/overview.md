@@ -1,5 +1,6 @@
 ---
 title: "Temporal統合"
+description: "WippyはTemporal.ioと統合し、耐久性のあるワークフロー実行、自動リプレイ、再起動を乗り越える長時間実行プロセスを提供します。"
 ---
 
 # Temporal統合

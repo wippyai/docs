@@ -1,5 +1,6 @@
 ---
 title: "Installation"
+description: "Quick Install"
 ---
 
 # Installation

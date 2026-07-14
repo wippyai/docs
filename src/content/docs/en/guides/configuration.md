@@ -1,5 +1,6 @@
 ---
 title: "Configuration Reference"
+description: "Wippy is configured via .wippy.yaml files. All options have sensible defaults."
 ---
 
 # Configuration Reference

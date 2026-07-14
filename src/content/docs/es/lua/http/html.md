@@ -1,5 +1,6 @@
 ---
 title: "Sanitizacion HTML"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Sanitizacion HTML

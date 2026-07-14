@@ -1,5 +1,6 @@
 ---
 title: "WebSocket 클라이언트"
+description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # WebSocket 클라이언트

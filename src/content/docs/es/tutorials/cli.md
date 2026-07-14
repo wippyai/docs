@@ -1,5 +1,6 @@
 ---
 title: "Aplicaciones CLI"
+description: "Construya herramientas de línea de comandos que leen entrada, escriben salida, e interactúan con usuarios."
 ---
 
 # Aplicaciones CLI

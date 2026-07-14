@@ -1,5 +1,6 @@
 ---
 title: "Supervisión de Procesos"
+description: "Monitorear y enlazar procesos para construir sistemas tolerantes a fallos."
 ---
 
 # Supervisión de Procesos

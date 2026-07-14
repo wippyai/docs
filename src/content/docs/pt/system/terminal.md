@@ -1,5 +1,6 @@
 ---
 title: "Terminal"
+description: "Hosts de terminal executam scripts Lua com acesso a stdin/stdout/stderr."
 ---
 
 # Terminal

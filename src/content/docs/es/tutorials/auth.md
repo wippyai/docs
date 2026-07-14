@@ -1,5 +1,6 @@
 ---
 title: "Ticker de Criptomonedas"
+description: "Construya un ticker de criptomonedas en tiempo real con autenticación por API key y streaming WebSocket. Este tutorial demuestra seguridad basada en…"
 ---
 
 # Ticker de Criptomonedas

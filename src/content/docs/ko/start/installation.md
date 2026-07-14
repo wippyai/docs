@@ -1,5 +1,6 @@
 ---
 title: "설치"
+description: "빠른 설치"
 ---
 
 # 설치

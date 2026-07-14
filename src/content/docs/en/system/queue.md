@@ -1,5 +1,6 @@
 ---
 title: "Queue"
+description: "Wippy provides a queue system for asynchronous message processing with configurable drivers and consumers."
 ---
 
 # Queue

@@ -1,5 +1,6 @@
 ---
 title: "Framework de Testes"
+description: "O modulo wippy/test fornece um framework de testes estilo BDD com assercoes, hooks de ciclo de vida e mocking."
 ---
 
 # Framework de Testes

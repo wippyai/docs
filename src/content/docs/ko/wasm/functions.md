@@ -1,5 +1,6 @@
 ---
 title: "WASM 함수"
+description: "WASM 함수는 WebAssembly 코드를 실행하는 레지스트리 엔트리입니다. 인라인 WAT 소스용 function.wat과 사전 컴파일된 바이너리용 function.wasm, 두 가지 엔트리 종류를 사용할 수 있습니다."
 ---
 
 # WASM 함수

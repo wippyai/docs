@@ -1,5 +1,6 @@
 ---
 title: "Theme Persistence"
+description: "By default the Web Host resolves light/dark from thememode (the facade default) and keeps it in memory — so a user's explicit choice is lost on the…"
 ---
 
 # Theme Persistence

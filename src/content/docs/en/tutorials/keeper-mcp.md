@@ -1,5 +1,6 @@
 ---
 title: "Keeper over MCP"
+description: "Wippy Keeper is the control plane for a running Wippy app — a registry workbench, filesystem↔registry governance, agent/task orchestration, Hub…"
 ---
 
 # Keeper over MCP

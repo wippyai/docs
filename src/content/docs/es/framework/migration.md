@@ -1,5 +1,6 @@
 ---
 title: "Migraciones"
+description: "El modulo wippy/migration proporciona un framework de migracion de bases de datos con un pequeno DSL para definir cambios de esquema, un runner que las…"
 ---
 
 # Migraciones

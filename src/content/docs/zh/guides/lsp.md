@@ -1,5 +1,6 @@
 ---
 title: "语言服务器"
+description: "Wippy 内置了 LSP（语言服务器协议）服务器，为 Lua 代码提供 IDE 功能。该服务器作为 Wippy 运行时的一部分运行，通过 TCP 或 HTTP 连接编辑器。"
 ---
 
 # 语言服务器

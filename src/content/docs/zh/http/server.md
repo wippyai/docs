@@ -1,5 +1,6 @@
 ---
 title: "HTTP 服务器"
+description: "HTTP 服务器 (http.service) 监听端口并承载路由器、端点和静态文件处理器。"
 ---
 
 # HTTP 服务器

@@ -1,5 +1,6 @@
 ---
 title: "Terminal I/O"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
 ---
 
 # Terminal I/O

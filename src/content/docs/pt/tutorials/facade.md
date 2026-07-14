@@ -1,5 +1,6 @@
 ---
 title: "Frontend Facade"
+description: "Sirva a UI web do Wippy a partir de uma aplicação somente-backend com wippy/facade. O facade é um shell estático fino: ele carrega o bundle frontend do…"
 ---
 
 # Frontend Facade

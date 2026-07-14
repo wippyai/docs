@@ -1,5 +1,6 @@
 ---
 title: "Nachrichten-Queue"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # Nachrichten-Queue

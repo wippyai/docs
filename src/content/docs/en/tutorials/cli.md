@@ -1,5 +1,6 @@
 ---
 title: "CLI Applications"
+description: "Build command-line tools that read input, write output, and interact with users."
 ---
 
 # CLI Applications

@@ -1,5 +1,6 @@
 ---
 title: "Registry"
+description: "The registry is Wippy's central configuration store. All definitions—entry points, services, resources—live here, and changes propagate reactively…"
 ---
 
 # Registry

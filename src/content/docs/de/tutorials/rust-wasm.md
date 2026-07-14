@@ -1,5 +1,6 @@
 ---
 title: "Rust auf Wippy ausführen"
+description: "Erstellen Sie eine Rust-WebAssembly-Komponente und führen Sie sie als Funktionen, CLI-Befehle und HTTP-Endpunkte aus."
 ---
 
 # Rust auf Wippy ausführen

@@ -1,5 +1,6 @@
 ---
 title: "Almacenamiento en la Nube"
+description: "<secondary-label ref='external'/"
 ---
 
 # Almacenamiento en la Nube

@@ -1,5 +1,6 @@
 ---
 title: "Prozessgruppen"
+description: "Prozessgruppen ermöglichen es Prozessen, benannten Gruppen beizutreten und Broadcasts zu empfangen, die an eine Gruppe gerichtet sind, wobei die…"
 ---
 
 # Prozessgruppen

@@ -1,5 +1,6 @@
 ---
 title: "関数呼び出し"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 関数呼び出し

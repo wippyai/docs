@@ -1,5 +1,6 @@
 ---
 title: "Registry-Interna"
+description: "Die Registry ist ein versionierter, ereignisgesteuerter Zustandsspeicher. Sie pflegt eine vollständige Versionshistorie, unterstützt Transaktionen und…"
 ---
 
 # Registry-Interna

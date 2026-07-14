@@ -1,5 +1,6 @@
 ---
 title: "Sistema de Archivos"
+description: "Acceso a directorio y sistema de archivos embebido."
 ---
 
 # Sistema de Archivos

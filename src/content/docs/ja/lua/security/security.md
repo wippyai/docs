@@ -1,5 +1,6 @@
 ---
 title: "セキュリティ & アクセス制御"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # セキュリティ & アクセス制御

@@ -1,5 +1,6 @@
 ---
 title: "Relay"
+description: "wippy/relay 모듈은 2계층 허브 아키텍처를 갖춘 WebSocket 릴레이 인프라를 제공합니다. 중앙 허브는 사용자별 허브를 관리하고, 사용자별 허브는 WebSocket 클라이언트 연결을 관리하며 메시지를 플러그인으로 라우팅합니다."
 ---
 
 # Relay

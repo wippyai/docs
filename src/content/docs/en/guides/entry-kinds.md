@@ -1,5 +1,6 @@
 ---
 title: "Entry Kinds Reference"
+description: "Complete reference of all entry kinds available in Wippy."
 ---
 
 # Entry Kinds Reference

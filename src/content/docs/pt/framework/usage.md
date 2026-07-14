@@ -1,5 +1,6 @@
 ---
 title: "Rastreamento de Uso"
+description: "O modulo wippy/usage registra o consumo de tokens de LLMs e fornece consultas agregadas agrupadas por intervalo de tempo, modelo ou usuario. Ele se…"
 ---
 
 # Rastreamento de Uso

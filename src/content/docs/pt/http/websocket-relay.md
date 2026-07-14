@@ -1,5 +1,6 @@
 ---
 title: "Relay WebSocket"
+description: "O middleware de relay WebSocket atualiza conexões HTTP para WebSocket e retransmite mensagens para um processo alvo."
 ---
 
 # Relay WebSocket

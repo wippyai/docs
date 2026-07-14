@@ -1,5 +1,6 @@
 ---
 title: "Compute Units"
+description: "Wippy provides three ways to run code: functions, processes, and workflows. They share the same underlying machinery but differ in how long they live,…"
 ---
 
 # Compute Units

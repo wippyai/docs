@@ -1,5 +1,6 @@
 ---
 title: "Facade"
+description: "The wippy/facade module provides a portable iframe facade that loads and configures the Wippy frontend from a CDN. It serves an HTML shell that creates…"
 ---
 
 # Facade

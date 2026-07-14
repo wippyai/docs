@@ -1,5 +1,6 @@
 ---
 title: "Micro AGI"
+description: "Erstelle einen sich selbst modifizierenden Agenten, der seine eigenen Tools zur Laufzeit erstellt — Dokumentation lesen, Lua schreiben, Einträge in der…"
 ---
 
 # Micro AGI

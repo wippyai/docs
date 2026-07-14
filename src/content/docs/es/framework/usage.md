@@ -1,5 +1,6 @@
 ---
 title: "Seguimiento de Uso"
+description: "El modulo wippy/usage registra el consumo de tokens de LLM y proporciona consultas agregadas agrupadas por intervalo de tiempo, modelo o usuario. Se…"
 ---
 
 # Seguimiento de Uso

@@ -1,5 +1,6 @@
 ---
 title: "Host-less Mode"
+description: "Authoritative guide for the standalone-aware design contract that lets every Wippy micro frontend app and web component build, run, and test without…"
 ---
 
 # Host-less Mode

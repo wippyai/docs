@@ -1,5 +1,6 @@
 ---
 title: "Dataflow: Local Knowledge Base"
+description: "Постройте базу знаний на собственной машине — создайте векторное хранилище, затем разбейте документы на чанки и загрузите их в него. Это компаньон по…"
 ---
 
 # Dataflow: Local Knowledge Base

@@ -1,5 +1,6 @@
 ---
 title: "Task-Queue"
+description: "Bauen Sie eine REST-API, die Tasks zur Hintergrundverarbeitung mit Datenbankpersistenz in eine Queue stellt."
 ---
 
 # Task-Queue

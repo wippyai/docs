@@ -1,5 +1,6 @@
 ---
 title: "Excel 스프레드시트"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
 ---
 
 # Excel 스프레드시트

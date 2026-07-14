@@ -1,5 +1,6 @@
 ---
 title: "配置参考"
+description: "Wippy 通过 .wippy.yaml 文件进行配置。所有选项都有合理的默认值。"
 ---
 
 # 配置参考

@@ -1,5 +1,6 @@
 ---
 title: "Лицензия"
+description: "Wippy распространяется под лицензией Mozilla Public License 2.0."
 ---
 
 # Лицензия

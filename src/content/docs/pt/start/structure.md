@@ -1,5 +1,6 @@
 ---
 title: "YAML e Estrutura do Projeto"
+description: "Layout do projeto, arquivos de definição YAML e convenções de nomenclatura."
 ---
 
 # YAML e Estrutura do Projeto

@@ -1,5 +1,6 @@
 ---
 title: "Time & Duration"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Time & Duration

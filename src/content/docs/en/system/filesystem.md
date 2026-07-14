@@ -1,5 +1,6 @@
 ---
 title: "Filesystem"
+description: "Directory and embedded filesystem access."
 ---
 
 # Filesystem

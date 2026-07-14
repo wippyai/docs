@@ -1,5 +1,6 @@
 ---
 title: "Processes and Messaging"
+description: "Spawn isolated processes and communicate via message passing."
 ---
 
 # Processes and Messaging

@@ -1,5 +1,6 @@
 ---
 title: "Routing"
+description: "Router gruppieren Endpunkte unter URL-Präfixen und wenden gemeinsame Middleware an. Endpunkte definieren HTTP-Handler."
 ---
 
 # Routing

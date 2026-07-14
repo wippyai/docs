@@ -1,5 +1,6 @@
 ---
 title: "Environment Variables"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Environment Variables

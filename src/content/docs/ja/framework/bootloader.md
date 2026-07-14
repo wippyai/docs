@@ -1,5 +1,6 @@
 ---
 title: "Bootloader"
+description: "wippy/bootloader…"
 ---
 
 # Bootloader

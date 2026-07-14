@@ -1,5 +1,6 @@
 ---
 title: "WASM-Funktionen"
+description: "WASM-Funktionen sind Registry-Eintraege, die WebAssembly-Code ausfuehren. Zwei Entry Kinds stehen zur Verfuegung: function.wat fuer…"
 ---
 
 # WASM-Funktionen

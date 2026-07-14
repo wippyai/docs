@@ -1,5 +1,6 @@
 ---
 title: "哈希函数"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
 ---
 
 # 哈希函数

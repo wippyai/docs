@@ -1,5 +1,6 @@
 ---
 title: "Ошибки"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Ошибки

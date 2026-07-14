@@ -1,5 +1,6 @@
 ---
 title: "Consumidores de Filas"
+description: "Consumidores de filas processam mensagens de filas usando pools de workers."
 ---
 
 # Consumidores de Filas

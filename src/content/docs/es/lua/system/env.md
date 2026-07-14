@@ -1,5 +1,6 @@
 ---
 title: "Variables de Entorno"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Variables de Entorno

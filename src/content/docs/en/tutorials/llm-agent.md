@@ -1,5 +1,6 @@
 ---
 title: "LLM Agent"
+description: "Build a terminal chat agent step by step, progressing from a simple LLM call to a streaming agent with tools."
 ---
 
 # LLM Agent

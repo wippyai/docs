@@ -1,5 +1,6 @@
 ---
 title: "Debugging Wippy FE"
+description: "When something is broken, start here. Each section lists the most common causes in order of likelihood with the specific DevTools check for each."
 ---
 
 # Debugging Wippy FE

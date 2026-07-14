@@ -1,5 +1,6 @@
 ---
 title: "Streams"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
 ---
 
 # Streams

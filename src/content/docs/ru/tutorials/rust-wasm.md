@@ -1,5 +1,6 @@
 ---
 title: "Запуск Rust на Wippy"
+description: "Сборка Rust WebAssembly-компонента и его запуск как функций, CLI-команд и HTTP-эндпоинтов."
 ---
 
 # Запуск Rust на Wippy

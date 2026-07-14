@@ -1,5 +1,6 @@
 ---
 title: "Scheduler"
+description: "Scheduler 使用工作窃取设计执行进程。Worker 维护本地双端队列，空闲时相互窃取任务。"
 ---
 
 # Scheduler

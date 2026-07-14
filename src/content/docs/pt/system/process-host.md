@@ -1,5 +1,6 @@
 ---
 title: "Host de Processos"
+description: "Hosts de processos gerenciam a execução de processos Lua usando um agendador de roubo de trabalho."
 ---
 
 # Host de Processos

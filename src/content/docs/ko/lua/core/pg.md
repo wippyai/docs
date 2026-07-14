@@ -1,5 +1,6 @@
 ---
 title: "프로세스 그룹"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 프로세스 그룹

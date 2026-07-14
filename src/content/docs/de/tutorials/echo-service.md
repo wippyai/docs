@@ -1,5 +1,6 @@
 ---
 title: "Echo-Service"
+description: "Bauen Sie einen verteilten Echo-Service, der Prozesse, Channels, Coroutines, Message-Passing und Supervision demonstriert."
 ---
 
 # Echo-Service

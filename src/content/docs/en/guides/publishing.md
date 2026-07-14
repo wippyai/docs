@@ -1,5 +1,6 @@
 ---
 title: "Publishing Modules"
+description: "Share reusable code on the Wippy Hub."
 ---
 
 # Publishing Modules

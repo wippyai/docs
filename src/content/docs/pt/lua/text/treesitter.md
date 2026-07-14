@@ -1,5 +1,6 @@
 ---
 title: "Parsing Tree-sitter"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Parsing Tree-sitter

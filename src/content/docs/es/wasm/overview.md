@@ -1,5 +1,6 @@
 ---
 title: "Runtime de WebAssembly"
+description: "Wippy ejecuta modulos WebAssembly como entradas de registro de primera clase junto al codigo Lua. Las funciones y procesos WASM se ejecutan dentro del…"
 ---
 
 # Runtime de WebAssembly

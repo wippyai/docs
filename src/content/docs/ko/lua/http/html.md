@@ -1,5 +1,6 @@
 ---
 title: "HTML 새니타이제이션"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # HTML 새니타이제이션

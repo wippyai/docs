@@ -1,5 +1,6 @@
 ---
 title: "Publicando Módulos"
+description: "Compartilhe código reutilizável no Wippy Hub."
 ---
 
 # Publicando Módulos

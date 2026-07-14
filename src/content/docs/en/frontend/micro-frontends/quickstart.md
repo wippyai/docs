@@ -1,5 +1,6 @@
 ---
 title: "Quickstart"
+description: "Two end-to-end examples — a Micro Frontend App (Vue) and a Web Component (Vue) — taken from the public wippyai/app repository. Each shows the minimal…"
 ---
 
 # Quickstart

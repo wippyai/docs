@@ -1,5 +1,6 @@
 ---
 title: "LLM-Agent"
+description: "Erstelle Schritt für Schritt einen Terminal-Chat-Agenten, von einem einfachen LLM-Aufruf bis zu einem Streaming-Agenten mit Tools."
 ---
 
 # LLM-Agent

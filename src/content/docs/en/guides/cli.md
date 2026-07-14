@@ -1,5 +1,6 @@
 ---
 title: "CLI Reference"
+description: "Command-line interface for the Wippy runtime."
 ---
 
 # CLI Reference

@@ -1,5 +1,6 @@
 ---
 title: "HTTP Middleware"
+description: "Middleware processes HTTP requests before and after route handling."
 ---
 
 # HTTP Middleware

@@ -12,7 +12,7 @@
     "titles": "node scripts/add-titles.mjs",
     "homes": "node scripts/generate-homes.mjs",
     "dev": "astro dev",
-    "build": "node scripts/add-titles.mjs && node scripts/generate-homes.mjs && astro build",
+    "build": "node scripts/generate-homes.mjs && node scripts/add-titles.mjs && node scripts/add-descriptions.mjs && astro build",
     "preview": "astro preview",
     "check": "astro check"
   },

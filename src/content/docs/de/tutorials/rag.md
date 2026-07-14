@@ -1,5 +1,6 @@
 ---
 title: "Retrieval-Augmented Generation (RAG)"
+description: "Baue eine Wissensbasis auf, die Fragen aus deinen eigenen Dokumenten beantwortet. Dieses Tutorial verwendet das Modul wippy/embeddings für die…"
 ---
 
 # Retrieval-Augmented Generation (RAG)

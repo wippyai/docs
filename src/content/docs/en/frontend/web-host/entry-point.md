@@ -1,5 +1,6 @@
 ---
 title: "Facade Entry Point"
+description: "The wippy/facade backend module is the entry point that delivers the Web Host to users. It serves an HTML page that loads the Web Host JS module,…"
 ---
 
 # Facade Entry Point

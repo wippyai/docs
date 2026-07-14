@@ -1,5 +1,6 @@
 ---
 title: "CLI 레퍼런스"
+description: "Wippy 런타임의 커맨드라인 인터페이스입니다."
 ---
 
 # CLI 레퍼런스

@@ -1,5 +1,6 @@
 ---
 title: "CLI-Anwendungen"
+description: "Bauen Sie Kommandozeilen-Tools, die Eingaben lesen, Ausgaben schreiben und mit Benutzern interagieren."
 ---
 
 # CLI-Anwendungen

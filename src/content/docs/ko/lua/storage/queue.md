@@ -1,5 +1,6 @@
 ---
 title: "메시지 큐"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # 메시지 큐

@@ -1,5 +1,6 @@
 ---
 title: "Crypto Ticker"
+description: "Build a real-time crypto ticker with API key authentication and WebSocket streaming. This tutorial demonstrates token-based security, middleware…"
 ---
 
 # Crypto Ticker

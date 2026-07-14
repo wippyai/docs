@@ -1,5 +1,6 @@
 ---
 title: "Language Server"
+description: "Wippy includes a built-in LSP (Language Server Protocol) server that provides IDE features for Lua code. The server runs as part of the Wippy runtime…"
 ---
 
 # Language Server

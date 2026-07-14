@@ -1,5 +1,6 @@
 ---
 title: "Event-Bus"
+description: "Der Event-Bus ist ein Pub/Sub-System mit einer einzelnen Dispatcher-Goroutine. Publisher reihen Actions ein, der Dispatcher verarbeitet sie…"
 ---
 
 # Event-Bus

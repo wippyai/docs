@@ -1,5 +1,6 @@
 ---
 title: "Supervisão"
+description: "O supervisor gerencia ciclos de vida de serviços, tratando ordenação de inicialização, reinicializações automáticas e encerramento gracioso. Serviços…"
 ---
 
 # Supervisão

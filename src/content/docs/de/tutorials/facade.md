@@ -1,5 +1,6 @@
 ---
 title: "Frontend Facade"
+description: "Liefere die Wippy-Web-UI aus einer reinen Backend-App mit wippy/facade aus. Die Facade ist eine schlanke statische Hülle: Sie lädt das Frontend-Bundle…"
 ---
 
 # Frontend Facade

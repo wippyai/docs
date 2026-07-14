@@ -1,5 +1,6 @@
 ---
 title: "データベースシステム"
+description: "SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLiteをサポート。"
 ---
 
 # データベースシステム

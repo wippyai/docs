@@ -1,5 +1,6 @@
 ---
 title: "Base64エンコーディング"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
 ---
 
 # Base64エンコーディング

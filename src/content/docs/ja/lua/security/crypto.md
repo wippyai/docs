@@ -1,5 +1,6 @@
 ---
 title: "暗号化 & 署名"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
 ---
 
 # 暗号化 & 署名

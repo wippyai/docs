@@ -1,5 +1,6 @@
 ---
 title: "Dataflow：本地知识库"
+description: "在您自己的机器上构建知识库 — 创建向量存储，然后将文档分块并摄取到其中。这是 RAG 教程 的数据创建伴侣篇：在这里您搭建并填充一个本地 KB；在那里您从中检索并生成答案。两者都使用由本地 SQLite 向量存储支撑的 wippy/embeddings 模块。"
 ---
 
 # Dataflow：本地知识库

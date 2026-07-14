@@ -1,5 +1,6 @@
 ---
 title: "Entry Handler"
+description: "Entry handler 按 kind 处理 registry entry。当 entry 被添加、更新或删除时，registry 将事件分发给匹配的 handler。"
 ---
 
 # Entry Handler

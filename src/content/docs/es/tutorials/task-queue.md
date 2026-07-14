@@ -1,5 +1,6 @@
 ---
 title: "Cola de Tareas"
+description: "Construya una API REST que encola tareas para procesamiento en background con persistencia en base de datos."
 ---
 
 # Cola de Tareas

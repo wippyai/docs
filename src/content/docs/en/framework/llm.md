@@ -1,5 +1,6 @@
 ---
 title: "LLM"
+description: "The wippy/llm module provides a unified interface for working with Large Language Models from multiple providers (OpenAI, Anthropic, Google, local…"
 ---
 
 # LLM

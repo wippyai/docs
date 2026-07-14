@@ -1,5 +1,6 @@
 ---
 title: "Superposiciones de red"
+description: "Enruta el tráfico saliente y vincula escuchadores a través de redes de superposición (proxies SOCKS5, Tor, malla Tailscale, I2P). La selección de…"
 ---
 
 # Superposiciones de red

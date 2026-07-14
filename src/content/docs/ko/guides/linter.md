@@ -1,5 +1,6 @@
 ---
 title: "린터"
+description: "Wippy에는 Lua 코드에 대한 타입 검사 및 정적 분석을 수행하는 내장 린터가 포함되어 있습니다. wippy lint로 실행합니다."
 ---
 
 # 린터

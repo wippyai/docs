@@ -1,5 +1,6 @@
 ---
 title: "Endpoints HTTP"
+description: "Los endpoints (http.endpoint) definen manejadores de rutas HTTP que ejecutan funciones Lua."
 ---
 
 # Endpoints HTTP

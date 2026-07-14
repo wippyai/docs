@@ -1,5 +1,6 @@
 ---
 title: "LLM 简介"
+description: "此页面面向 AI 代理和 LLM。如果你基于 Wippy 进行构建或为 Wippy 项目生成代码，请先阅读本页。"
 ---
 
 # LLM 简介

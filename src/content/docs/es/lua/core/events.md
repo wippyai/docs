@@ -1,5 +1,6 @@
 ---
 title: "Bus de Eventos"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Bus de Eventos

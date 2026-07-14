@@ -1,5 +1,6 @@
 ---
 title: "Workflows"
+description: "Workflows sind dauerhafte Funktionen, die Activities orchestrieren und Zustand über Fehler und Neustarts hinweg beibehalten. Sie werden mit dem…"
 ---
 
 # Workflows

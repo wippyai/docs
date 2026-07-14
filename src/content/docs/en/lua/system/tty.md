@@ -1,5 +1,6 @@
 ---
 title: "TTY"
+description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
 ---
 
 # TTY

@@ -1,5 +1,6 @@
 ---
 title: "Static Files"
+description: "Serve static files from any filesystem using http.static. Static handlers mount directly on the server and can serve SPAs, assets, or user uploads from…"
 ---
 
 # Static Files

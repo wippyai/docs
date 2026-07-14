@@ -1,5 +1,6 @@
 ---
 title: "YAML & Projektstruktur"
+description: "Projektlayout, YAML-Definitionsdateien und Namenskonventionen."
 ---
 
 # YAML & Projektstruktur

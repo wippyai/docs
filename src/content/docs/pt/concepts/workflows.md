@@ -1,5 +1,6 @@
 ---
 title: "Workflows"
+description: "Workflows são operações duráveis e de longa duração que sobrevivem a crashes e reinicializações. Eles fornecem garantias de confiabilidade para…"
 ---
 
 # Workflows

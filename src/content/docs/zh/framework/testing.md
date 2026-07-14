@@ -1,5 +1,6 @@
 ---
 title: "测试框架"
+description: "wippy/test 模块提供 BDD 风格的测试框架，支持断言、生命周期钩子和 Mock。"
 ---
 
 # 测试框架

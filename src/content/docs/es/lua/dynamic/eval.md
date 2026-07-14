@@ -1,5 +1,6 @@
 ---
 title: "Evaluacion Dinamica"
+description: "Ejecutar código dinamicamente en tiempo de ejecución con entornos aislados y acceso controlado a modulos."
 ---
 
 # Evaluacion Dinamica

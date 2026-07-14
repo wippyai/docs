@@ -1,5 +1,6 @@
 ---
 title: "Database System"
+description: "SQL database connection pooling and configuration. Supports PostgreSQL, MySQL, and SQLite."
 ---
 
 # Database System

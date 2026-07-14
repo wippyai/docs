@@ -1,5 +1,6 @@
 ---
 title: "Cluster"
+description: "Ein einzelner Wippy-Knoten ist eine vollständige Laufzeitumgebung. Ein Cluster verbindet mehrere Knoten zu einem koordinierten System: Prozesse können…"
 ---
 
 # Cluster

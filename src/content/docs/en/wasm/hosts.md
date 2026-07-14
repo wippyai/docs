@@ -1,5 +1,6 @@
 ---
 title: "Host Functions"
+description: "WASM modules access runtime capabilities through host function imports. Each import is declared explicitly per entry in the imports list."
 ---
 
 # Host Functions

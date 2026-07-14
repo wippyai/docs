@@ -1,5 +1,6 @@
 ---
 title: "Roteamento"
+description: "Roteadores agrupam endpoints sob prefixos de URL e aplicam middleware compartilhado. Endpoints definem handlers HTTP."
 ---
 
 # Roteamento

@@ -1,5 +1,6 @@
 ---
 title: "YAML-Kodierung"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
 ---
 
 # YAML-Kodierung

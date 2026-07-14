@@ -1,5 +1,6 @@
 ---
 title: "WebSocketリレー"
+description: "WebSocketリレーミドルウェアはHTTP接続をWebSocketにアップグレードし、ターゲットプロセスにメッセージをリレーします。"
 ---
 
 # WebSocketリレー

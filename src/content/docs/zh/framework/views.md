@@ -1,5 +1,6 @@
 ---
 title: "Views"
+description: "wippy/views 模块提供了一个虚拟页面和组件系统，具有模板渲染、资源管理和环境变量映射功能。页面可以由 Jet 模板支持，或由外部组件（SPA、微前端）支持。"
 ---
 
 # Views

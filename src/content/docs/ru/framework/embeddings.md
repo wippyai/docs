@@ -1,5 +1,6 @@
 ---
 title: "Embeddings"
+description: "Модуль wippy/embeddings предоставляет хранилище векторных эмбеддингов и поиск по сходству для PostgreSQL (pgvector) и SQLite (sqlite-vec). Он…"
 ---
 
 # Embeddings

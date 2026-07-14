@@ -1,5 +1,6 @@
 ---
 title: "Store (Chave-Valor)"
+description: "Armazenamentos chave-valor com suporte a TTL: em memória, com backend SQL e replicados em cluster (Raft e CRDT)."
 ---
 
 # Store (Chave-Valor)

@@ -1,5 +1,6 @@
 ---
 title: "CLI リファレンス"
+description: "Wippy ランタイムのコマンドラインインターフェース。"
 ---
 
 # CLI リファレンス

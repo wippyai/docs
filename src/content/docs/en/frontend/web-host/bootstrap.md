@@ -1,5 +1,6 @@
 ---
 title: "Bootstrap Sequence"
+description: "After the Web Host receives its configuration it runs a fixed initialization sequence before rendering any UI. The sequence differs slightly depending…"
 ---
 
 # Bootstrap Sequence

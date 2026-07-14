@@ -1,5 +1,6 @@
 ---
 title: "Workflows"
+description: "Workflows são funções duráveis que orquestram atividades e mantêm estado através de falhas e reinicializações. São definidos usando o tipo de entrada…"
 ---
 
 # Workflows

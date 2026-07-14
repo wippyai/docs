@@ -1,5 +1,6 @@
 ---
 title: "Echo 服务"
+description: "构建一个分布式 echo 服务，演示进程、通道、协程、消息传递和监督。"
 ---
 
 # Echo 服务

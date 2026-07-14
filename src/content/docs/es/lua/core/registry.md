@@ -1,5 +1,6 @@
 ---
 title: "Registro de Entradas"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Registro de Entradas

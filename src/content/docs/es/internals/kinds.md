@@ -1,5 +1,6 @@
 ---
 title: "Entry Handlers"
+description: "Los entry handlers procesan entradas de registry por kind. Cuando las entradas son agregadas, actualizadas, o eliminadas, el registry despacha eventos…"
 ---
 
 # Entry Handlers

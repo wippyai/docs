@@ -1,5 +1,6 @@
 ---
 title: "Стандартные библиотеки Lua"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Стандартные библиотеки Lua

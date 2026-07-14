@@ -1,5 +1,6 @@
 ---
 title: "Security & Access Control"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Security & Access Control

@@ -1,5 +1,6 @@
 ---
 title: "加密货币行情"
+description: "构建具有 API 密钥认证和 WebSocket 流式传输的实时加密货币行情。本教程演示基于 Token 的安全性、中间件配置和基于进程的 WebSocket 处理。"
 ---
 
 # 加密货币行情

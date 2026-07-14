@@ -1,5 +1,6 @@
 ---
 title: "Activities"
+description: "Las activities son funciones que ejecutan operaciones no determinísticas. Cualquier entrada function.lua o process.lua puede registrarse como activity…"
 ---
 
 # Activities

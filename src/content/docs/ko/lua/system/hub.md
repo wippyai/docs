@@ -1,5 +1,6 @@
 ---
 title: "Hub"
+description: "Wippy Hub 모듈 카탈로그에 대한 읽기 전용 액세스: 모듈 목록 조회, 검색, 메타데이터, 버전, 의존성, README 조회."
 ---
 
 # Hub

@@ -1,5 +1,6 @@
 ---
 title: "Dependency Management"
+description: "Wippy uses a lock file-based dependency system. Modules are published to the hub, declared as dependencies in your source, and resolved into a…"
 ---
 
 # Dependency Management

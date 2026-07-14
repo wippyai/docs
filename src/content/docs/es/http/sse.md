@@ -1,5 +1,6 @@
 ---
 title: "Server-Sent Events"
+description: "El middleware SSE transmite eventos desde el servidor a clientes HTTP usando el protocolo Server-Sent Events."
 ---
 
 # Server-Sent Events

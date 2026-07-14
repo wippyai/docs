@@ -1,5 +1,6 @@
 ---
 title: "许可证"
+description: "Wippy 基于 Mozilla Public License 2.0 发布。"
 ---
 
 # 许可证

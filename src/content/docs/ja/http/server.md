@@ -1,5 +1,6 @@
 ---
 title: "HTTPサーバー"
+description: "HTTPサーバー（http.service）はポートをリッスンし、ルーター、エンドポイント、静的ファイルハンドラをホストします。"
 ---
 
 # HTTPサーバー

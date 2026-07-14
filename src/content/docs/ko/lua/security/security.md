@@ -1,5 +1,6 @@
 ---
 title: "보안 및 접근 제어"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 보안 및 접근 제어

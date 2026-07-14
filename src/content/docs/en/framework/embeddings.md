@@ -1,5 +1,6 @@
 ---
 title: "Embeddings"
+description: "The wippy/embeddings module provides vector embedding storage and similarity search for both PostgreSQL (pgvector) and SQLite (sqlite-vec). It wraps…"
 ---
 
 # Embeddings

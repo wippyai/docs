@@ -1,5 +1,6 @@
 ---
 title: "Channels and Concurrency"
+description: "Go-style channels for concurrent programming within processes."
 ---
 
 # Channels and Concurrency

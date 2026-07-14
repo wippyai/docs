@@ -1,5 +1,6 @@
 ---
 title: "Statische Dateien"
+description: "Stellen Sie statische Dateien aus jedem Dateisystem mit http.static bereit. Statische Handler mounten direkt auf dem Server und können SPAs, Assets…"
 ---
 
 # Statische Dateien

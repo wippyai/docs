@@ -1,5 +1,6 @@
 ---
 title: "WASM Processes"
+description: "WASM modules can run as processes through the process.wasm entry kind. Processes execute within the Wippy process host and support the full process…"
 ---
 
 # WASM Processes

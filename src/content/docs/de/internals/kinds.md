@@ -1,5 +1,6 @@
 ---
 title: "Entry-Handler"
+description: "Entry-Handler verarbeiten Registry-Einträge nach Kind. Wenn Einträge hinzugefügt, aktualisiert oder gelöscht werden, dispatcht die Registry Events an…"
 ---
 
 # Entry-Handler

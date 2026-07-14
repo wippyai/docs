@@ -1,5 +1,6 @@
 ---
 title: "環境変数"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 環境変数

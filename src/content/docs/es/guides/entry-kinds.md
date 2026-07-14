@@ -1,5 +1,6 @@
 ---
 title: "Referencia de Tipos de Entrada"
+description: "Referencia completa de todos los tipos de entrada disponibles en Wippy."
 ---
 
 # Referencia de Tipos de Entrada

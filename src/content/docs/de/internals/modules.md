@@ -1,5 +1,6 @@
 ---
 title: "Lua-Module"
+description: "Laufzeitmodule erweitern die Lua-Umgebung um neue Funktionalität. Module können deterministische Hilfsfunktionen, E/A-Operationen oder asynchrone…"
 ---
 
 # Lua-Module

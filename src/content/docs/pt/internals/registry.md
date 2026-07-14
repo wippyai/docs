@@ -1,5 +1,6 @@
 ---
 title: "Registry Internals"
+description: "O registry é um armazenamento de estado versionado e orientado a eventos. Ele mantém histórico completo de versões, suporta transações e propaga…"
 ---
 
 # Registry Internals

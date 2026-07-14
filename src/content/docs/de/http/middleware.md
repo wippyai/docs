@@ -1,5 +1,6 @@
 ---
 title: "HTTP-Middleware"
+description: "Middleware verarbeitet HTTP-Anfragen vor und nach der Routen-Behandlung."
 ---
 
 # HTTP-Middleware

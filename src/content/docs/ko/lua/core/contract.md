@@ -1,5 +1,6 @@
 ---
 title: "계약"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
 ---
 
 # 계약

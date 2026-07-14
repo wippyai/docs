@@ -1,5 +1,6 @@
 ---
 title: "Wippy에서 Rust 실행하기"
+description: "Rust WebAssembly 컴포넌트를 빌드하고 함수, CLI 명령, HTTP 엔드포인트로 실행합니다."
 ---
 
 # Wippy에서 Rust 실행하기

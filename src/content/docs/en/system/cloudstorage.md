@@ -1,5 +1,6 @@
 ---
 title: "Cloud Storage"
+description: "<secondary-label ref='external'/"
 ---
 
 # Cloud Storage

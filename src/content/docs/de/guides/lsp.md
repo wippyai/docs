@@ -1,5 +1,6 @@
 ---
 title: "Sprachserver"
+description: "Wippy enthalt einen integrierten LSP-Server (Language Server Protocol), der IDE-Funktionen fur Lua-Code bereitstellt. Der Server lauft als Teil der…"
 ---
 
 # Sprachserver

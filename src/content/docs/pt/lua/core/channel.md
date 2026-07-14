@@ -1,5 +1,6 @@
 ---
 title: "Channels e Corrotinas"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Channels e Corrotinas

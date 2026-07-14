@@ -1,5 +1,6 @@
 ---
 title: "通道与协程"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # 通道与协程

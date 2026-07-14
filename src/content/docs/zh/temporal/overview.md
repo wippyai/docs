@@ -1,5 +1,6 @@
 ---
 title: "Temporal 集成"
+description: "Wippy 集成 Temporal.io 以实现持久化 workflow 执行、自动重放以及可在重启后继续运行的长时间运行进程。"
 ---
 
 # Temporal 集成

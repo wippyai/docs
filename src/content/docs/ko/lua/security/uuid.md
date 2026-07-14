@@ -1,5 +1,6 @@
 ---
 title: "UUID 생성"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # UUID 생성

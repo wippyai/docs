@@ -1,5 +1,6 @@
 ---
 title: "Prozesse und Messaging"
+description: "Starten Sie isolierte Prozesse und kommunizieren Sie via Message-Passing."
 ---
 
 # Prozesse und Messaging

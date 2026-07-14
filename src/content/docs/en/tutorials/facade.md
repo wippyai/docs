@@ -1,5 +1,6 @@
 ---
 title: "Frontend Facade"
+description: "Serve the Wippy web UI from a backend-only app with wippy/facade. The facade is a thin static shell: it loads the Wippy Web Host frontend bundle from a…"
 ---
 
 # Frontend Facade

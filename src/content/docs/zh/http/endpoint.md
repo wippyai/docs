@@ -1,5 +1,6 @@
 ---
 title: "HTTP 端点"
+description: "端点 (http.endpoint) 定义执行 Lua 函数的 HTTP 路由处理器。"
 ---
 
 # HTTP 端点

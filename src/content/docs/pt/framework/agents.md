@@ -1,5 +1,6 @@
 ---
 title: "Agentes"
+description: "O modulo wippy/agent fornece um framework para construir agentes de IA com uso de ferramentas, streaming, delegacao, traits e memoria. Agentes sao…"
 ---
 
 # Agentes

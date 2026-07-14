@@ -1,5 +1,6 @@
 ---
 title: "이벤트 버스"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 이벤트 버스

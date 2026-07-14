@@ -1,5 +1,6 @@
 ---
 title: "Servicio de Eco"
+description: "Construya un servicio de eco distribuido demostrando procesos, canales, coroutines, paso de mensajes y supervisión."
 ---
 
 # Servicio de Eco

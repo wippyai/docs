@@ -1,5 +1,6 @@
 ---
 title: "SQL Database"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # SQL Database

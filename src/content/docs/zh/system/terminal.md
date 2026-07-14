@@ -1,5 +1,6 @@
 ---
 title: "Terminal"
+description: "Terminal Host 执行具有 stdin/stdout/stderr 访问权限的 Lua 脚本。"
 ---
 
 # Terminal

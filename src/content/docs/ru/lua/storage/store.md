@@ -1,5 +1,6 @@
 ---
 title: "Key-Value хранилище"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # Key-Value хранилище

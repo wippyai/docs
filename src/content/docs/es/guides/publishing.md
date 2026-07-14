@@ -1,5 +1,6 @@
 ---
 title: "Publicación de Módulos"
+description: "Comparta código reutilizable en el Wippy Hub."
 ---
 
 # Publicación de Módulos

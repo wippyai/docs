@@ -1,5 +1,6 @@
 ---
 title: "Serviço de Eco"
+description: "Construa um serviço de echo distribuído demonstrando processos, channels, corrotinas, passagem de mensagens e supervisão."
 ---
 
 # Serviço de Eco

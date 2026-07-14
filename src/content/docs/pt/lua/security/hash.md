@@ -1,5 +1,6 @@
 ---
 title: "Funções de Hash"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
 ---
 
 # Funções de Hash

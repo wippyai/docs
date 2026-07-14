@@ -1,5 +1,6 @@
 ---
 title: "Migrations"
+description: "Das Modul wippy/migration stellt ein Datenbankmigrations-Framework bereit mit einer kleinen DSL zur Definition von Schema-Aenderungen, einem Runner,…"
 ---
 
 # Migrations

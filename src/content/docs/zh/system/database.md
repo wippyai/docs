@@ -1,5 +1,6 @@
 ---
 title: "Database 系统"
+description: "SQL 数据库连接池和配置。支持 PostgreSQL、MySQL 和 SQLite。"
 ---
 
 # Database 系统

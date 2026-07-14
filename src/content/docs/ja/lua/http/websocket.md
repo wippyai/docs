@@ -1,5 +1,6 @@
 ---
 title: "WebSocketクライアント"
+description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # WebSocketクライアント

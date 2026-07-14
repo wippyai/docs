@@ -1,5 +1,6 @@
 ---
 title: "Testing"
+description: "Escribe y ejecuta tests para tu código Lua con el framework wippy/test — un runner de estilo BDD con aserciones, hooks de ciclo de vida y mocking,…"
 ---
 
 # Testing

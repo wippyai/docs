@@ -1,5 +1,6 @@
 ---
 title: "Funciones Host"
+description: "Los modulos WASM acceden a las capacidades del runtime a traves de imports de funciones host. Cada import se declara explicitamente por entrada en la…"
 ---
 
 # Funciones Host

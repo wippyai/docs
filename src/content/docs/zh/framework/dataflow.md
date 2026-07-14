@@ -1,5 +1,6 @@
 ---
 title: "Dataflow"
+description: "wippy/dataflow 模块提供了一个基于有向无环图（DAG）的工作流编排引擎。工作流由节点组成——函数、代理、循环和并行处理器——通过类型化的数据路由连接。编排器管理执行、状态持久化和恢复。"
 ---
 
 # Dataflow

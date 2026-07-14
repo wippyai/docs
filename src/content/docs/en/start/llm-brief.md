@@ -1,5 +1,6 @@
 ---
 title: "LLM Brief"
+description: "This page is for AI agents and LLMs. If you are building on Wippy or generating code for a Wippy project, read this first."
 ---
 
 # LLM Brief

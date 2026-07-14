@@ -1,5 +1,6 @@
 ---
 title: "데이터베이스 시스템"
+description: "SQL 데이터베이스 연결 풀링 및 설정. PostgreSQL, MySQL, SQLite를 지원합니다."
 ---
 
 # 데이터베이스 시스템

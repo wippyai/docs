@@ -1,5 +1,6 @@
 ---
 title: "Embeddings"
+description: "wippy/embeddings 模块为 PostgreSQL（pgvector）和 SQLite（sqlite-vec）提供向量嵌入存储和相似度搜索。它封装 wippy/llm 以生成嵌入，并将其持久化到应用数据库。"
 ---
 
 # Embeddings

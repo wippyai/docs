@@ -1,5 +1,6 @@
 ---
 title: "Cloud-Speicher"
+description: "<secondary-label ref='external'/"
 ---
 
 # Cloud-Speicher

@@ -1,5 +1,6 @@
 ---
 title: "Theming Reference"
+description: "The host (wippy/facade) provides the theme. Both micro frontend apps and web components consume it. The variable catalog below is the shared vocabulary…"
 ---
 
 # Theming Reference

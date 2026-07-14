@@ -1,5 +1,6 @@
 ---
 title: "WASM関数"
+description: "WASM関数はWebAssemblyコードを実行するレジストリエントリです。インラインWATソース用のfunction.watとプリコンパイル済みバイナリ用のfunction.wasmの2つのエントリ種別が利用できます。"
 ---
 
 # WASM関数

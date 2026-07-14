@@ -1,5 +1,6 @@
 ---
 title: "Canales y Concurrencia"
+description: "Canales estilo Go para programación concurrente dentro de procesos."
 ---
 
 # Canales y Concurrencia

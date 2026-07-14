@@ -1,5 +1,6 @@
 ---
 title: "Embeddings"
+description: "wippy/embeddings モジュールは、PostgreSQL（pgvector）と SQLite（sqlite-vec）の両方に対応するベクトルエンベディングのストレージと類似度検索を提供します。wippy/llm をラップしてエンベディングを生成し、アプリケーションデータベースに永続化します。"
 ---
 
 # Embeddings

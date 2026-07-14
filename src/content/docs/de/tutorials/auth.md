@@ -1,5 +1,6 @@
 ---
 title: "Krypto-Ticker"
+description: "Bauen Sie einen Echtzeit-Crypto-Ticker mit API-Schlüssel-Authentifizierung und WebSocket-Streaming. Dieses Tutorial demonstriert Token-basierte…"
 ---
 
 # Krypto-Ticker

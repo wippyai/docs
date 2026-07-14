@@ -1,5 +1,6 @@
 ---
 title: "HTTP 엔드포인트"
+description: "엔드포인트(http.endpoint)는 Lua 함수를 실행하는 HTTP 라우트 핸들러를 정의합니다."
 ---
 
 # HTTP 엔드포인트

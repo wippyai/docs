@@ -1,5 +1,6 @@
 ---
 title: "액티비티"
+description: "액티비티는 비결정론적 작업을 실행하는 함수입니다. 모든 function.lua 또는 process.lua 엔트리는 메타데이터를 추가하여 Temporal 액티비티로 등록할 수 있습니다."
 ---
 
 # 액티비티

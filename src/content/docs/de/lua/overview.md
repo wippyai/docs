@@ -1,5 +1,6 @@
 ---
 title: "Lua-Laufzeitumgebung"
+description: "Die primäre Laufzeitumgebung von Wippy, optimiert für E/A-gebundene Workloads und Geschäftslogik. Code läuft in isolierten Prozessen, die über…"
 ---
 
 # Lua-Laufzeitumgebung

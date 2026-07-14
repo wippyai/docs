@@ -1,5 +1,6 @@
 ---
 title: "WebSocket 릴레이"
+description: "WebSocket 릴레이 미들웨어는 HTTP 연결을 WebSocket으로 업그레이드하고 대상 프로세스로 메시지를 릴레이합니다."
 ---
 
 # WebSocket 릴레이

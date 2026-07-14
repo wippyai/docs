@@ -1,5 +1,6 @@
 ---
 title: "Executor"
+description: "命令执行器在受控环境中运行外部进程。有两种执行器类型：原生 OS 进程和 Docker 容器。"
 ---
 
 # Executor

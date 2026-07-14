@@ -1,5 +1,6 @@
 ---
 title: "Время и длительности"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Время и длительности

@@ -1,5 +1,6 @@
 ---
 title: "Файловая система"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
 ---
 
 # Файловая система

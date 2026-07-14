@@ -1,5 +1,6 @@
 ---
 title: "Resumen para LLM"
+description: "Esta página es para agentes de IA y LLM. Si estás construyendo sobre Wippy o generando código para un proyecto Wippy, lee esto primero."
 ---
 
 # Resumen para LLM

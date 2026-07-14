@@ -1,5 +1,6 @@
 ---
 title: "Registry"
+description: "Die Registry ist Wippys zentraler Konfigurationsspeicher. Alle Definitionen — Einstiegspunkte, Dienste, Ressourcen — befinden sich hier, und Änderungen…"
 ---
 
 # Registry

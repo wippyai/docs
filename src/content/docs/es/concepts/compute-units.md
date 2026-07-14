@@ -1,5 +1,6 @@
 ---
 title: "Unidades de Cómputo"
+description: "Wippy proporciona tres formas de ejecutar código: funciones, procesos y flujos de trabajo. Comparten la misma maquinaria subyacente pero difieren en…"
 ---
 
 # Unidades de Cómputo

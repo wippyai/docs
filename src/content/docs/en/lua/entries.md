@@ -1,5 +1,6 @@
 ---
 title: "Lua Entry Kinds"
+description: "Configuration for Lua-based entries: functions, processes, workflows, and libraries."
 ---
 
 # Lua Entry Kinds

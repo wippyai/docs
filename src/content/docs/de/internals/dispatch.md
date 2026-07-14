@@ -1,5 +1,6 @@
 ---
 title: "Command-Dispatch"
+description: "Das Dispatch-System routet Commands von Prozessen zu Handlern. Prozesse yielden Commands mit Korrelationstags, Handler führen asynchrone Arbeit aus,…"
 ---
 
 # Command-Dispatch

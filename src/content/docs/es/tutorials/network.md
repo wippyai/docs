@@ -1,5 +1,6 @@
 ---
 title: "Redes Superpuestas"
+description: "Enruta llamadas HTTP salientes y procesos generados a través de superposiciones SOCKS5, Tailscale o I2P."
 ---
 
 # Redes Superpuestas

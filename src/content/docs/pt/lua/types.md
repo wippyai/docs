@@ -1,5 +1,6 @@
 ---
 title: "Sistema de Tipos"
+description: "O Wippy inclui um sistema de tipos gradual com verificação sensível ao fluxo. Tipos são não-anuláveis por padrão."
 ---
 
 # Sistema de Tipos

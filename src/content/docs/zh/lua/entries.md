@@ -1,5 +1,6 @@
 ---
 title: "Lua 记录类型"
+description: "Lua 相关记录的配置：函数、进程、工作流和库。"
 ---
 
 # Lua 记录类型

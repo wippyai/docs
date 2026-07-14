@@ -1,5 +1,6 @@
 ---
 title: "Dataflow: Base de Conhecimento Local"
+description: "Construa uma base de conhecimento na sua própria máquina — crie o store vetorial, depois divida em chunks e ingira documentos nele. Este é o…"
 ---
 
 # Dataflow: Base de Conhecimento Local

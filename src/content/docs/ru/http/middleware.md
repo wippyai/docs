@@ -1,5 +1,6 @@
 ---
 title: "HTTP Middleware"
+description: "Middleware обрабатывают HTTP-запросы до и после выполнения обработчика маршрута."
 ---
 
 # HTTP Middleware

@@ -1,5 +1,6 @@
 ---
 title: "Proxy API"
+description: "Child apps and web components communicate with the Wippy host through the proxy runtime (proxy.js). Your code never talks to that runtime directly —…"
 ---
 
 # Proxy API

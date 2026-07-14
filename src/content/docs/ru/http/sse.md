@@ -1,5 +1,6 @@
 ---
 title: "Server-Sent Events"
+description: "Middleware SSE стримит события с сервера к HTTP-клиентам, используя протокол Server-Sent Events."
 ---
 
 # Server-Sent Events

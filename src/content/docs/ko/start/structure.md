@@ -1,5 +1,6 @@
 ---
 title: "YAML 및 프로젝트 구조"
+description: "프로젝트 레이아웃, YAML 정의 파일, 명명 규칙."
 ---
 
 # YAML 및 프로젝트 구조

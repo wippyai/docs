@@ -1,5 +1,6 @@
 ---
 title: "Dataflow: Local Knowledge Base"
+description: "自分のマシン上にナレッジベースを構築します — ベクトルストアを作成し、ドキュメントをチャンクに分割して取り込みます。これは RAG チュートリアル のデータ作成版です。ここではローカル KB を立ち上げて満たし、あちらではそこから取得して回答を生成します。どちらもローカル SQLite…"
 ---
 
 # Dataflow: Local Knowledge Base

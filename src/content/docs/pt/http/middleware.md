@@ -1,5 +1,6 @@
 ---
 title: "Middleware HTTP"
+description: "Middleware processa requisições HTTP antes e depois do tratamento de rotas."
 ---
 
 # Middleware HTTP

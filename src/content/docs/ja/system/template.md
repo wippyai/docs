@@ -1,5 +1,6 @@
 ---
 title: "テンプレートエンジン"
+description: "CloudyKit Jetを使用したテンプレートレンダリング。"
 ---
 
 # テンプレートエンジン

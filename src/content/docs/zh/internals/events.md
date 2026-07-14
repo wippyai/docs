@@ -1,5 +1,6 @@
 ---
 title: "Event Bus"
+description: "Event bus 是使用单个 dispatcher goroutine 的发布/订阅系统。发布者将动作入队，dispatcher 按顺序处理它们，订阅者在 channel 上接收匹配的事件。"
 ---
 
 # Event Bus

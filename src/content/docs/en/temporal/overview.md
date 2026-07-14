@@ -1,5 +1,6 @@
 ---
 title: "Temporal Integration"
+description: "Wippy integrates with Temporal.io for durable workflow execution, automatic replay, and long-running processes that survive restarts."
 ---
 
 # Temporal Integration

@@ -1,5 +1,6 @@
 ---
 title: "Linguagem de Expressao"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
 # Linguagem de Expressao

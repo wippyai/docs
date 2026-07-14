@@ -1,5 +1,6 @@
 ---
 title: "Cola"
+description: "Wippy proporciona un sistema de colas para procesamiento asíncrono de mensajes con drivers y consumidores configurables."
 ---
 
 # Cola

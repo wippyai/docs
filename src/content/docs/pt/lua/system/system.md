@@ -1,5 +1,6 @@
 ---
 title: "System"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # System

@@ -1,5 +1,6 @@
 ---
 title: "Umgebungssystem"
+description: "Verwaltet Umgebungsvariablen durch konfigurierbare Speicher-Backends."
 ---
 
 # Umgebungssystem

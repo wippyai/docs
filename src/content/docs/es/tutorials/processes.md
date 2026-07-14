@@ -1,5 +1,6 @@
 ---
 title: "Procesos y Mensajería"
+description: "Genere procesos aislados y comuníquese mediante paso de mensajes."
 ---
 
 # Procesos y Mensajería

@@ -1,5 +1,6 @@
 ---
 title: "Datenbanksystem"
+description: "SQL-Datenbankverbindungs-Pooling und Konfiguration. Unterstützt PostgreSQL, MySQL und SQLite."
 ---
 
 # Datenbanksystem

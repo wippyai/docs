@@ -1,5 +1,6 @@
 ---
 title: "Environment 系统"
+description: "通过可配置的存储后端管理环境变量。"
 ---
 
 # Environment 系统

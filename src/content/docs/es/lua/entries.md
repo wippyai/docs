@@ -1,5 +1,6 @@
 ---
 title: "Tipos de Entrada Lua"
+description: "Configuración para entradas basadas en Lua: funciones, procesos, flujos de trabajo y bibliotecas."
 ---
 
 # Tipos de Entrada Lua

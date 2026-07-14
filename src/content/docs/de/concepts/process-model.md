@@ -1,5 +1,6 @@
 ---
 title: "Prozessmodell"
+description: "Wippy führt Code in isolierten Prozessen aus — leichtgewichtigen Zustandsautomaten, die über Nachrichtenübermittlung kommunizieren. Dieser…"
 ---
 
 # Prozessmodell

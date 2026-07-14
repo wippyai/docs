@@ -1,5 +1,6 @@
 ---
 title: "Переменные окружения"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # Переменные окружения

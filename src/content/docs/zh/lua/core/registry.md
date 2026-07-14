@@ -1,5 +1,6 @@
 ---
 title: "条目注册表"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
 ---
 
 # 条目注册表

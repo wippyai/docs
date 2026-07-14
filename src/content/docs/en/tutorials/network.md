@@ -1,5 +1,6 @@
 ---
 title: "Network Overlays"
+description: "Route outbound HTTP calls and spawned processes through SOCKS5, Tailscale, or I2P overlays."
 ---
 
 # Network Overlays

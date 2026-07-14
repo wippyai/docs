@@ -1,5 +1,6 @@
 ---
 title: "Web Host Overview"
+description: "The Wippy Web Host is a Vue 3 single-page application built with the Feature-Sliced Design methodology and delivered from a CDN at…"
 ---
 
 # Web Host Overview

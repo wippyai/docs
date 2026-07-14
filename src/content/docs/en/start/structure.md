@@ -1,5 +1,6 @@
 ---
 title: "YAML & Project Structure"
+description: "Project layout, YAML definition files, and naming conventions."
 ---
 
 # YAML & Project Structure

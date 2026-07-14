@@ -1,5 +1,6 @@
 ---
 title: "Registro"
+description: "El registro es el almacén de configuración central de Wippy. Todas las definiciones (puntos de entrada, servicios, recursos) viven aquí, y los cambios…"
 ---
 
 # Registro

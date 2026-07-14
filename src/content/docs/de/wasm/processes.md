@@ -1,5 +1,6 @@
 ---
 title: "WASM-Prozesse"
+description: "WASM-Module koennen als Prozesse ueber den Entry Kind process.wasm ausgefuehrt werden. Prozesse laufen innerhalb des Wippy-Process-Hosts und…"
 ---
 
 # WASM-Prozesse

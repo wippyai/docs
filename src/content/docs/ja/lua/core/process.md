@@ -1,5 +1,6 @@
 ---
 title: "プロセス管理"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
 ---
 
 # プロセス管理

@@ -1,5 +1,6 @@
 ---
 title: "스트림"
+description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
 ---
 
 # 스트림

@@ -1,5 +1,6 @@
 ---
 title: "Command Dispatch"
+description: "O sistema de despacho roteia comandos de processos para handlers. Processos cedem comandos com tags de correlação, handlers executam trabalho…"
 ---
 
 # Command Dispatch

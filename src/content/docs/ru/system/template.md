@@ -1,5 +1,6 @@
 ---
 title: "Шаблонизатор"
+description: "<secondary-label ref='external'/"
 ---
 
 # Шаблонизатор

@@ -1,5 +1,6 @@
 ---
 title: "言語サーバー"
+description: "Wippyには、LuaコードのIDE機能を提供するビルトインLSP (Language Server Protocol) サーバーが含まれています。サーバーはWippyランタイムの一部として動作し、TCPまたはHTTP経由でエディタに接続します。"
 ---
 
 # 言語サーバー

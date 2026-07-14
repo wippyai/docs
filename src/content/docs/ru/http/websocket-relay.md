@@ -1,5 +1,6 @@
 ---
 title: "WebSocket Relay"
+description: "Middleware WebSocket relay переключает HTTP-соединения на WebSocket и передаёт сообщения целевому процессу."
 ---
 
 # WebSocket Relay

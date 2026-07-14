@@ -1,5 +1,6 @@
 ---
 title: "Frontend"
+description: "Wippy's frontend system is built around three distinct layers. Understanding how they relate to each other is the starting point for all frontend work."
 ---
 
 # Frontend

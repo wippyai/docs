@@ -1,5 +1,6 @@
 ---
 title: "Filesystem"
+description: "目录和嵌入式文件系统访问。"
 ---
 
 # Filesystem

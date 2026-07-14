@@ -1,5 +1,6 @@
 ---
 title: "使用量跟踪"
+description: "wippy/usage 模块记录 LLM 令牌消耗，并提供按时间区间、模型或用户分组的聚合查询。它绑定 wippy.llm:usagetracker 契约，因此任何通过 LLM 模块调用的代码都会自动产生使用量记录。"
 ---
 
 # 使用量跟踪

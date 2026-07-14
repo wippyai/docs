@@ -1,5 +1,6 @@
 ---
 title: "代码检查器"
+description: "Wippy 内置了代码检查器，可对 Lua 代码执行类型检查和静态分析。使用 wippy lint 运行。"
 ---
 
 # 代码检查器
