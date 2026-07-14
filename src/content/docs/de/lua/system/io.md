@@ -1,0 +1,134 @@
+---
+title: "Terminal-I/O"
+---
+
+# Terminal-I/O
+<secondary-label ref="function"/>
+<secondary-label ref="process"/>
+<secondary-label ref="io"/>
+
+Lesen von stdin und Schreiben zu stdout/stderr für CLI-Anwendungen.
+
+<note>
+Dieses Modul funktioniert nur im Terminal-Kontext. Sie können es nicht aus regularen Funktionen verwenden—nur aus Prozessen, die auf einem <a href="system/terminal.md">Terminal-Host</a> laufen.
+</note>
+
+## Laden
+
+```lua
+local io = require("io")
+```
+
+## Schreiben zu Stdout
+
+Schreibt Strings zu stdout ohne Zeilenumbruch:
+
+```lua
+local ok, err = io.write("text", "more")
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `...` | any | Variable Anzahl von Werten zum Schreiben (zu string gecastet) |
+
+**Gibt zurück:** `boolean, error`
+
+## Print mit Zeilenumbruch
+
+Schreibt Werte zu stdout mit Tabs dazwischen und Zeilenumbruch am Ende:
+
+```lua
+io.print("value1", "value2", 123)
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `...` | any | Variable Anzahl von Werten zum Ausgeben |
+
+**Gibt zurück:** `boolean, error`
+
+## Schreiben zu Stderr
+
+Schreibt Werte zu stderr mit Tabs dazwischen und Zeilenumbruch am Ende:
+
+```lua
+io.eprint("Error:", message)
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `...` | any | Variable Anzahl von Werten zum Ausgeben |
+
+**Gibt zurück:** `boolean, error`
+
+## Bytes lesen
+
+Liest bis zu n Bytes von stdin:
+
+```lua
+local data, err = io.read(1024)
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `n` | integer | Anzahl der zu lesenden Bytes (Standard: 1024, Werte <= 0 werden zu 1024) |
+
+**Gibt zurück:** `string, error`
+
+## Zeile lesen
+
+Liest eine Zeile von stdin bis zum Zeilenumbruch:
+
+```lua
+local line, err = io.readline()
+```
+
+**Gibt zurück:** `string, error`
+
+## Raw-Modus
+
+Aktiviert oder deaktiviert den Raw-Terminal-Modus (deaktiviert Zeilenpufferung und Echo):
+
+```lua
+local ok, err = io.raw(true)   -- aktivieren
+local ok, err = io.raw(false)  -- deaktivieren
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|------|-------------|
+| `enable` | boolean | `true` zum Aktivieren, `false` zum Deaktivieren (Standard: `true`) |
+
+**Gibt zurueck:** `boolean, error`
+
+Der Raw-Modus ist referenzgezaehlt — jedes `io.raw(true)` muss durch ein `io.raw(false)` ausgeglichen werden. Das Terminal wird beim Prozessende automatisch in den Normalmodus zurueckgesetzt.
+
+## Ausgabe flushen
+
+Flusht den stdout-Puffer:
+
+```lua
+local ok, err = io.flush()
+```
+
+**Gibt zurück:** `boolean, error`
+
+## Kommandozeilenargumente
+
+Holt Kommandozeilenargumente:
+
+```lua
+local args = io.args()
+```
+
+**Gibt zurück:** `string[]`
+
+## Fehler
+
+| Bedingung | Art | Wiederholbar |
+|-----------|------|-----------|
+| Kein Terminal-Kontext | `errors.UNAVAILABLE` | nein |
+| Schreiboperation fehlgeschlagen | `errors.INTERNAL` | nein |
+| Leseoperation fehlgeschlagen | `errors.INTERNAL` | nein |
+| Flush-Operation fehlgeschlagen | `errors.INTERNAL` | nein |
+
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

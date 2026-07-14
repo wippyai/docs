@@ -1,2 +1,5 @@
 allowBuilds:
   esbuild: true
+  sharp: true
+# The user wants the latest releases; do not gate on minimum release age.
+minimumReleaseAge: 0

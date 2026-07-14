@@ -1,18 +1,16 @@
 /**
- * Generate a VitePress home page (`<locale>/index.md`) for every language,
- * derived from that language's `manifest.json`.
+ * Generate a Starlight home page (`src/content/docs/<locale>/index.md`) for
+ * every language, derived from that language's `manifest.json`.
  *
- * Run automatically by the `dev`/`build` npm scripts. Output is gitignored.
+ * Run via `pnpm homes`. Output is committed (it is real content).
  */
 import fs from 'node:fs'
 import path from 'node:path'
 
-const root = process.cwd()
-const languages = JSON.parse(
-  fs.readFileSync(path.join(root, 'languages.json'), 'utf8'),
-)
+const DOCS = path.join('src', 'content', 'docs')
+const languages = JSON.parse(fs.readFileSync('languages.json', 'utf8'))
 
-/** Collect every leaf title beneath a manifest node. */
+/** Every leaf title beneath a manifest node. */
 function leafTitles(node) {
   const out = []
   for (const child of node.children ?? []) {
@@ -22,7 +20,7 @@ function leafTitles(node) {
   return out
 }
 
-/** First leaf path beneath a node, for the "read more" link. */
+/** First leaf path beneath a node. */
 function firstLeafPath(node) {
   if (node.path) return node.path
   for (const child of node.children ?? []) {
@@ -32,51 +30,43 @@ function firstLeafPath(node) {
   return undefined
 }
 
-function buildHome(code, manifest) {
-  const prefix = `/${code}/`
-  const startLink = prefix + (firstLeafPath(manifest[0] ?? {}) ?? '')
-  const features = manifest
+function buildHome(manifest) {
+  const start = firstLeafPath(manifest[0] ?? {}) ?? ''
+  const cards = manifest
     .map((section) => {
-      const link = prefix + (firstLeafPath(section) ?? '')
-      const titles = leafTitles(section).slice(0, 4)
+      const link = firstLeafPath(section) ?? ''
+      const titles = leafTitles(section)
       const details =
         titles.length > 0
-          ? titles.join(' · ') + (leafTitles(section).length > 4 ? ' …' : '')
-          : section.title
-      return `  - title: ${JSON.stringify(section.title)}\n    details: ${JSON.stringify(details)}\n    link: ${JSON.stringify(link)}`
+          ? titles.slice(0, 4).join(' · ') + (titles.length > 4 ? ' …' : '')
+          : ''
+      return `- **[${section.title}](${link})**${details ? ` — ${details}` : ''}`
     })
     .join('\n')
 
   return `---
-layout: home
-
-hero:
-  name: Wippy
-  text: Durable AI agents and services
-  tagline: Comprehensive documentation for the Wippy AI platform.
-  image:
-    src: https://github.com/wippyai/.github/raw/main/logo/wippy-text-light.svg
-    alt: Wippy
-  actions:
-    - theme: brand
-      text: Get Started
-      link: ${JSON.stringify(startLink)}
-    - theme: alt
-      text: GitHub
-      link: https://github.com/wippyai/docs
-
-features:
-${features}
+title: Wippy
 ---
+
+# Wippy Documentation
+
+Comprehensive documentation for the Wippy AI platform — durable AI agents,
+services, and the runtime that runs them.
+
+## Explore
+
+${cards}
+
+Start with **[Getting Started](${start})** if you are new here.
 `
 }
 
 let generated = 0
 for (const code of Object.keys(languages)) {
-  const manifestPath = path.join(root, code, 'manifest.json')
+  const manifestPath = path.join(DOCS, code, 'manifest.json')
   if (!fs.existsSync(manifestPath)) continue
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-  fs.writeFileSync(path.join(root, code, 'index.md'), buildHome(code, manifest))
+  fs.writeFileSync(path.join(DOCS, code, 'index.md'), buildHome(manifest))
   generated += 1
 }
 

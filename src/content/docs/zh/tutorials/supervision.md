@@ -1,0 +1,686 @@
+---
+title: "进程监管"
+---
+
+# 进程监管
+
+监控和链接进程以构建容错系统。
+
+## 监控 vs 链接
+
+**监控**提供单向观察：
+- 父进程监控子进程
+- 子进程退出，父进程收到 EXIT 事件
+- 父进程继续运行
+
+**链接**创建双向命运共享：
+- 父进程和子进程被链接
+- 任一进程失败，两者都终止
+- 除非设置了 `trap_links=true`
+
+```mermaid
+flowchart TB
+    subgraph Monitoring["MONITORING (one-way)"]
+        direction TB
+        P1[Parent monitors] -->|EXIT event<br/>parent continues| C1[Child exits]
+    end
+
+    subgraph Linking["LINKING (bidirectional)"]
+        direction TB
+        P2[Parent linked] <-->|LINK_DOWN<br/>both die| C2[Child exits]
+    end
+```
+
+## 进程监控
+
+### 带监控的生成
+
+使用 `process.spawn_monitored()` 一次调用完成生成和监控：
+
+```lua
+local function main()
+    local events_ch = process.events()
+
+    -- Spawn worker and start monitoring
+    local worker_pid, err = process.spawn_monitored(
+        "app.workers:task_worker",
+        "app:processes"
+    )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
+
+    -- Wait for worker to complete
+    local event = events_ch:receive()
+
+    if event.kind == process.event.EXIT then
+        print("Worker exited:", event.from)
+        if event.result then
+            print("Result:", event.result.value)
+        end
+        if event.result and event.result.error then
+            print("Error:", event.result.error)
+        end
+    end
+end
+```
+
+### 监控现有进程
+
+调用 `process.monitor()` 开始监控已运行的进程：
+
+```lua
+local function main()
+    local time = require("time")
+    local events_ch = process.events()
+
+    -- Spawn without monitoring
+    local worker_pid, err = process.spawn(
+        "app.workers:long_worker",
+        "app:processes"
+    )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
+
+    -- Start monitoring later
+    local ok, monitor_err = process.monitor(worker_pid)
+    if monitor_err then
+        return nil, "monitor failed: " .. tostring(monitor_err)
+    end
+
+    -- Cancel the worker
+    time.sleep("5ms")
+    process.cancel(worker_pid)
+
+    -- Receive EXIT event
+    local event = events_ch:receive()
+    if event.kind == process.event.EXIT then
+        print("Worker terminated:", event.from)
+    end
+end
+```
+
+### 停止监控
+
+使用 `process.unmonitor()` 停止接收 EXIT 事件：
+
+```lua
+local function main()
+    local time = require("time")
+    local events_ch = process.events()
+
+    -- Spawn and monitor
+    local worker_pid, err = process.spawn_monitored(
+        "app.workers:long_worker",
+        "app:processes"
+    )
+
+    time.sleep("5ms")
+
+    -- Stop monitoring
+    local ok, unmon_err = process.unmonitor(worker_pid)
+    if unmon_err then
+        return nil, "unmonitor failed: " .. tostring(unmon_err)
+    end
+
+    -- Cancel worker
+    process.cancel(worker_pid)
+
+    -- No EXIT event will be received (we unmonitored)
+    local timeout = time.after("200ms")
+    local result = channel.select {
+        events_ch:case_receive(),
+        timeout:case_receive(),
+    }
+
+    if result.channel == events_ch then
+        return nil, "should not receive event after unmonitor"
+    end
+end
+```
+
+## 进程链接
+
+### 显式链接
+
+使用 `process.link()` 创建双向链接：
+
+```lua
+-- Worker that links to a target process
+local function worker_main()
+    local time = require("time")
+    local events_ch = process.events()
+    local inbox_ch = process.inbox()
+
+    -- Enable trap_links to receive LINK_DOWN events
+    process.set_options({ trap_links = true })
+
+    -- Receive target PID from sender
+    local msg = inbox_ch:receive()
+    local target_pid = msg:payload():data()
+    local sender = msg:from()
+
+    -- Create bidirectional link
+    local ok, err = process.link(target_pid)
+    if err then
+        return nil, "link failed: " .. tostring(err)
+    end
+
+    -- Notify sender we're linked
+    process.send(sender, "linked", process.pid())
+
+    -- Wait for LINK_DOWN when target exits
+    local timeout = time.after("3s")
+    local result = channel.select {
+        events_ch:case_receive(),
+        timeout:case_receive(),
+    }
+
+    if result.channel == events_ch then
+        local event = result.value
+        if event.kind == process.event.LINK_DOWN then
+            return "LINK_DOWN_RECEIVED"
+        end
+    end
+
+    return nil, "no LINK_DOWN received"
+end
+```
+
+### 带链接的生成
+
+使用 `process.spawn_linked()` 一次调用完成生成和链接：
+
+```lua
+local function parent_main()
+    -- Enable trap_links to handle child death
+    process.set_options({ trap_links = true })
+
+    local events_ch = process.events()
+
+    -- Spawn and link to child
+    local child_pid, err = process.spawn_linked(
+        "app.workers:child_worker",
+        "app:processes"
+    )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
+
+    -- If child dies, we receive LINK_DOWN
+    local event = events_ch:receive()
+    if event.kind == process.event.LINK_DOWN then
+        print("Child died:", event.from)
+    end
+end
+```
+
+## Trap Links
+
+默认情况下，当链接的进程失败时，当前进程也会失败。设置 `trap_links=true` 以接收 LINK_DOWN 事件代替。
+
+### 默认行为（trap_links=false）
+
+不使用 `trap_links`，链接进程失败会终止当前进程：
+
+```lua
+local function worker_main()
+    local events_ch = process.events()
+
+    -- trap_links is false by default
+    local opts = process.get_options()
+    print("trap_links:", opts.trap_links)  -- false
+
+    -- Spawn linked worker that will fail
+    local child_pid, err = process.spawn_linked(
+        "app.workers:error_worker",
+        "app:processes"
+    )
+
+    -- When child errors, THIS process terminates
+    -- We never reach this point
+    local event = events_ch:receive()
+end
+```
+
+### 使用 trap_links=true
+
+启用 `trap_links` 以接收 LINK_DOWN 事件并存活：
+
+```lua
+local function worker_main()
+    -- Enable trap_links
+    process.set_options({ trap_links = true })
+
+    local events_ch = process.events()
+
+    -- Spawn linked worker that will fail
+    local child_pid, err = process.spawn_linked(
+        "app.workers:error_worker",
+        "app:processes"
+    )
+
+    -- Wait for LINK_DOWN event
+    local event = events_ch:receive()
+
+    if event.kind == process.event.LINK_DOWN then
+        print("Child failed, handling gracefully")
+        return "LINK_DOWN_RECEIVED"
+    end
+end
+```
+
+## 取消
+
+### 发送取消信号
+
+使用 `process.cancel()` 优雅地终止进程：
+
+```lua
+local function main()
+    local time = require("time")
+    local events_ch = process.events()
+
+    -- Spawn and monitor worker
+    local worker_pid, err = process.spawn_monitored(
+        "app.workers:long_worker",
+        "app:processes"
+    )
+
+    time.sleep("5ms")
+
+    -- Cancel the worker
+    local ok, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
+
+    -- Wait for EXIT event
+    local event = events_ch:receive()
+    if event.kind == process.event.EXIT then
+        print("Worker cancelled:", event.from)
+    end
+end
+```
+
+### 处理取消
+
+Worker 通过 `process.events()` 接收 CANCEL 事件：
+
+```lua
+local function worker_main()
+    local events_ch = process.events()
+    local inbox_ch = process.inbox()
+
+    while true do
+        local result = channel.select {
+            inbox_ch:case_receive(),
+            events_ch:case_receive(),
+        }
+
+        if result.channel == events_ch then
+            local event = result.value
+            if event.kind == process.event.CANCEL then
+                -- Cleanup resources
+                cleanup()
+                return "cancelled gracefully"
+            end
+        else
+            -- Process inbox message
+            handle_message(result.value)
+        end
+    end
+end
+```
+
+## 监管拓扑
+
+### 星形拓扑
+
+父进程与多个子进程链接：
+
+```lua
+-- Parent worker spawns children that link TO parent
+local function star_parent_main()
+    local time = require("time")
+    local events_ch = process.events()
+    local child_count = 10
+
+    -- Enable trap_links to see children die
+    process.set_options({ trap_links = true })
+
+    local children = {}
+
+    -- Spawn children
+    for i = 1, child_count do
+        local child_pid, err = process.spawn(
+            "app.workers:linker_child",
+            "app:processes"
+        )
+        if err then
+            error("spawn child failed: " .. tostring(err))
+        end
+
+        -- Send parent PID to child
+        process.send(child_pid, "inbox", process.pid())
+        children[child_pid] = true
+    end
+
+    -- Wait for all children to confirm link
+    for i = 1, child_count do
+        local msg = process.inbox():receive()
+        if msg:topic() ~= "linked" then
+            error("expected linked confirmation")
+        end
+    end
+
+    -- Trigger failure - all children should receive LINK_DOWN
+    error("PARENT_STAR_FAILURE")
+end
+```
+
+链接到父进程的子 worker：
+
+```lua
+local function linker_child_main()
+    local events_ch = process.events()
+    local inbox_ch = process.inbox()
+
+    -- Receive parent PID
+    local msg = inbox_ch:receive()
+    local parent_pid = msg:payload():data()
+
+    -- Link to parent
+    process.link(parent_pid)
+
+    -- Confirm link
+    process.send(parent_pid, "linked", process.pid())
+
+    -- Wait for LINK_DOWN when parent dies
+    local event = events_ch:receive()
+    if event.kind == process.event.LINK_DOWN then
+        return "parent_died"
+    end
+end
+```
+
+### 链式拓扑
+
+线性链，每个节点链接到其父节点：
+
+```lua
+-- Chain root: A -> B -> C -> D -> E
+local function chain_root_main()
+    local time = require("time")
+
+    -- Spawn first child
+    local child_pid, err = process.spawn_linked(
+        "app.workers:chain_node",
+        "app:processes",
+        4  -- depth remaining
+    )
+    if err then
+        error("spawn failed: " .. tostring(err))
+    end
+
+    -- Wait for chain to build
+    time.sleep("100ms")
+
+    -- Trigger cascade - all linked processes die
+    error("CHAIN_ROOT_FAILURE")
+end
+```
+
+链节点生成下一个节点并链接：
+
+```lua
+local function chain_node_main(depth)
+    local time = require("time")
+
+    if depth > 0 then
+        -- Spawn next in chain
+        local child_pid, err = process.spawn_linked(
+            "app.workers:chain_node",
+            "app:processes",
+            depth - 1
+        )
+        if err then
+            error("spawn failed: " .. tostring(err))
+        end
+    end
+
+    -- Block until parent death kills us via LINK_DOWN (default trap_links=false)
+    process.inbox():receive()
+end
+```
+
+## 带监管的 Worker 池
+
+### 配置
+
+```yaml
+# src/_index.yaml
+version: "1.0"
+namespace: app
+
+entries:
+  - name: processes
+    kind: process.host
+    host:
+      workers: 16
+    lifecycle:
+      auto_start: true
+```
+
+```yaml
+# src/supervisor/_index.yaml
+version: "1.0"
+namespace: app.supervisor
+
+entries:
+  - name: pool
+    kind: process.lua
+    source: file://pool.lua
+    method: main
+    modules:
+      - time
+    lifecycle:
+      auto_start: true
+```
+
+### Supervisor 实现
+
+```lua
+-- src/supervisor/pool.lua
+local function main(worker_count)
+    local time = require("time")
+    worker_count = worker_count or 4
+
+    -- Enable trap_links to handle worker deaths
+    process.set_options({ trap_links = true })
+
+    local events_ch = process.events()
+    local workers = {}
+
+    local function start_worker(id)
+        local pid, err = process.spawn_linked(
+            "app.workers:task_worker",
+            "app:processes",
+            id
+        )
+        if err then
+            print("Failed to start worker " .. id .. ": " .. tostring(err))
+            return nil
+        end
+
+        workers[pid] = {id = id, started_at = os.time()}
+        print("Worker " .. id .. " started: " .. pid)
+        return pid
+    end
+
+    -- Start initial pool
+    for i = 1, worker_count do
+        start_worker(i)
+    end
+
+    print("Supervisor started with " .. worker_count .. " workers")
+
+    -- Supervision loop
+    while true do
+        local timeout = time.after("60s")
+        local result = channel.select {
+            events_ch:case_receive(),
+            timeout:case_receive(),
+        }
+
+        if result.channel == timeout then
+            -- Periodic health check
+            local count = 0
+            for _ in pairs(workers) do count = count + 1 end
+            print("Health check: " .. count .. " active workers")
+
+        elseif result.channel == events_ch then
+            local event = result.value
+
+            if event.kind == process.event.LINK_DOWN then
+                local dead_worker = workers[event.from]
+                if dead_worker then
+                    workers[event.from] = nil
+                    local uptime = os.time() - dead_worker.started_at
+                    print("Worker " .. dead_worker.id .. " died after " .. uptime .. "s, restarting")
+
+                    -- Brief delay before restart
+                    time.sleep("100ms")
+                    start_worker(dead_worker.id)
+                end
+            end
+        end
+    end
+end
+
+return { main = main }
+```
+
+## 进程配置
+
+### Worker 定义
+
+```yaml
+# src/workers/_index.yaml
+version: "1.0"
+namespace: app.workers
+
+entries:
+  - name: task_worker
+    kind: process.lua
+    source: file://task_worker.lua
+    method: main
+    modules:
+      - time
+```
+
+### Worker 实现
+
+```lua
+-- src/workers/task_worker.lua
+local function main(worker_id)
+    local time = require("time")
+    local events_ch = process.events()
+    local inbox_ch = process.inbox()
+
+    print("Task worker " .. worker_id .. " started")
+
+    while true do
+        local timeout = time.after("5s")
+        local result = channel.select {
+            inbox_ch:case_receive(),
+            events_ch:case_receive(),
+            timeout:case_receive(),
+        }
+
+        if result.channel == events_ch then
+            local event = result.value
+            if event.kind == process.event.CANCEL then
+                print("Worker " .. worker_id .. " cancelled")
+                return "cancelled"
+            elseif event.kind == process.event.LINK_DOWN then
+                print("Worker " .. worker_id .. " linked process died")
+                return nil, "linked_process_died"
+            end
+
+        elseif result.channel == inbox_ch then
+            local msg = result.value
+            local topic = msg:topic()
+            local payload = msg:payload():data()
+
+            if topic == "work" then
+                print("Worker " .. worker_id .. " processing: " .. payload)
+                time.sleep("100ms")
+                process.send(msg:from(), "result", "completed: " .. payload)
+            end
+
+        elseif result.channel == timeout then
+            -- Idle timeout
+            print("Worker " .. worker_id .. " idle")
+        end
+    end
+end
+
+return { main = main }
+```
+
+## 进程宿主配置
+
+进程宿主控制多少个 OS 线程执行进程：
+
+```yaml
+# src/_index.yaml
+version: "1.0"
+namespace: app
+
+entries:
+  - name: processes
+    kind: process.host
+    host:
+      workers: 16  # Number of OS threads
+    lifecycle:
+      auto_start: true
+```
+
+Workers 设置：
+- 控制 CPU 密集型工作的并行度
+- 通常设置为 CPU 核心数
+- 所有进程共享此线程池
+
+## 事件类型
+
+| 事件 | 触发条件 | 所需设置 |
+|------|----------|----------|
+| `EXIT` | 被监控进程退出 | `spawn_monitored()` 或 `monitor()` |
+| `LINK_DOWN` | 链接的进程失败 | `spawn_linked()` 或 `link()` 并启用 `trap_links=true` |
+| `CANCEL` | 调用了 `process.cancel()` | 无（始终投递） |
+
+## 运行监管池
+
+将池文件放入[配置](#配置)中所示的结构中，然后：
+
+```bash
+wippy init
+wippy run
+```
+
+监管器自动启动，生成四个 worker，并在任意 worker 死亡时记录重启日志。通过在另一个进程中取消某个 worker 来触发重启：
+
+```lua
+-- in an ad-hoc process or chat command
+process.cancel("<pid-from-supervisor-log>")
+```
+
+池收到 `LINK_DOWN` 事件，等待 100 毫秒，然后以相同 id 重新生成该 worker。
+
+## 下一步
+
+- [进程](tutorials/processes.md) - 进程基础
+- [通道](tutorials/channels.md) - 消息传递模式
+- [进程模块](lua/core/process.md) - API 参考
