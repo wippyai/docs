@@ -1,7 +1,11 @@
 /* Wippy brand palette for Starlight.
    Starlight exposes CSS custom properties; override the accent to the Wippy
    blue used across the product so links, the sidebar active item, and the
-   theme toggle stay on-brand. */
+   theme toggle stay on-brand.
+
+   In dark mode the accent is shifted lighter so link text keeps at least the
+   AA contrast ratio (4.5:1) against Starlight's dark background — required
+   for a 100 Lighthouse Accessibility score. */
 
 :root {
   --sl-color-accent-low: #1d4ed8;
@@ -12,7 +16,7 @@
 
 :root[data-theme='dark'] {
   --sl-color-accent-low: #1e3a8a;
-  --sl-color-accent: #3b82f6;
-  --sl-color-accent-high: #60a5fa;
+  --sl-color-accent: #60a5fa;
+  --sl-color-accent-high: #93c5fd;
   --sl-color-accent-text-over: #0b1220;
 }
