@@ -1,0 +1,29 @@
+---
+import Default from '@astrojs/starlight/components/Head.astro'
+
+// Extend Starlight's <Head> so every page keeps the default behaviour, plus a
+// tiny module script that lazy-renders Mermaid diagrams. The mermaid bundle is
+// dynamically imported, so it only loads on pages that actually contain a
+// diagram — pages without one ship no mermaid JavaScript at all.
+const props = Astro.props
+---
+<Default {...props} />
+<script type="module">
+  const blocks = document.querySelectorAll('pre[data-language="mermaid"]')
+  if (blocks.length) {
+    const { default: mermaid } = await import('mermaid')
+    const dark = document.documentElement.dataset.theme === 'dark'
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: dark ? 'dark' : 'default',
+      securityLevel: 'loose',
+    })
+    for (const pre of blocks) {
+      const div = document.createElement('div')
+      div.className = 'mermaid'
+      div.textContent = pre.textContent
+      pre.replaceWith(div)
+    }
+    await mermaid.run({ querySelector: '.mermaid' })
+  }
+</script>

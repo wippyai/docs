@@ -1,0 +1,137 @@
+---
+title: "Variaveis de Ambiente"
+---
+
+# Variaveis de Ambiente
+<secondary-label ref="function"/>
+<secondary-label ref="process"/>
+<secondary-label ref="permissions"/>
+
+Acesse variaveis de ambiente para valores de configuração, secrets e configuracoes de runtime.
+
+Variaveis devem ser definidas no [Environment System](system/env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (OS, arquivo, memoria) fornecem valores e se variaveis sao somente leitura.
+
+## Carregamento
+
+```lua
+local env = require("env")
+```
+
+## get
+
+Obtem um valor de variavel de ambiente.
+
+```lua
+-- Obter string de conexão do banco
+local db_url = env.get("DATABASE_URL")
+if not db_url then
+    return nil, errors.new("INVALID", "DATABASE_URL not configured")
+end
+
+-- Obter com fallback
+local port = env.get("PORT") or "8080"
+local host = env.get("HOST") or "localhost"
+
+-- Obter secrets
+local api_key = env.get("API_SECRET_KEY")
+local jwt_secret = env.get("JWT_SECRET")
+
+-- Configuração
+local log_level = env.get("LOG_LEVEL") or "info"
+local debug_mode = env.get("DEBUG") == "true"
+```
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `key` | string | Nome da variavel |
+
+**Retorna:** `string, error`
+
+Retorna `nil, error` se variavel não existe.
+
+## set
+
+Define uma variavel de ambiente.
+
+```lua
+-- Definir configuração de runtime
+env.set("APP_MODE", "production")
+
+-- Sobrescrever para testes
+env.set("API_URL", "http://localhost:8080")
+
+-- Definir baseado em condicoes
+if is_development then
+    env.set("LOG_LEVEL", "debug")
+end
+```
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `key` | string | Nome da variavel |
+| `value` | string | Valor a definir |
+
+**Retorna:** `boolean, error`
+
+## get_all
+
+Obtem todas as variaveis de ambiente acessiveis.
+
+```lua
+local vars = env.get_all()
+
+-- Logar configuração (cuidado para não logar secrets)
+for key, value in pairs(vars) do
+    if not key:match("SECRET") and not key:match("KEY") then
+        logger.debug("env", {[key] = value})
+    end
+end
+
+-- Verificar variaveis obrigatorias
+local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
+for _, key in ipairs(required) do
+    if not vars[key] then
+        return nil, errors.new("INVALID", "Missing required env var: " .. key)
+    end
+end
+```
+
+**Retorna:** `table, error`
+
+## Permissões
+
+Acesso a ambiente está sujeito a avaliação de política de segurança.
+
+### Acoes de Segurança
+
+| Ação | Recurso | Descrição |
+|------|---------|-----------|
+| `env.get` | Nome da variavel | Ler variavel de ambiente |
+| `env.set` | Nome da variavel | Escrever variavel de ambiente |
+| `env.get_all` | `*` | Listar todas as variaveis |
+
+### Verificando Acesso
+
+```lua
+local security = require("security")
+
+if security.can("env.get", "DATABASE_URL") then
+    local url = env.get("DATABASE_URL")
+end
+```
+
+Veja [Security Model](system/security.md) para configuração de políticas.
+
+## Erros
+
+| Condição | Tipo | Retentável |
+|----------|------|------------|
+| Chave vazia | `errors.INVALID` | não |
+| Variavel não encontrada | `errors.NOT_FOUND` | não |
+| Permissão negada | `errors.PERMISSION_DENIED` | não |
+
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+
+## Veja Também
+
+- [Environment System](system/env.md) - Configurar backends de armazenamento e definicoes de variaveis

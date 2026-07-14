@@ -1,0 +1,26 @@
+---
+title: Wippy
+---
+
+# Wippy Documentation
+
+Comprehensive documentation for the Wippy AI platform — durable AI agents,
+services, and the runtime that runs them.
+
+## Explore
+
+- **[Getting Started](start/about)** — What is Wippy · Installation · Project Structure
+- **[Guides](guides/cli)** — CLI · Configuration · Кластер · Linter …
+- **[Core Concepts](concepts/compute-units)** — Compute Units · Registry · Process Model · Кластер …
+- **[Lua Runtime](lua/overview)** — Overview · Types · Entries · Base …
+- **[WASM Runtime](wasm/overview)** — Overview · Functions · Host Functions · Processes
+- **[Framework](framework/overview)** — Overview · LLM · Agents · Testing …
+- **[Temporal](temporal/overview)** — Overview · Activities · Workflows
+- **[System Components](system/process-host)** — Process Host · Группы процессов · Terminal · Database …
+- **[HTTP](http/server)** — Server · Router · Endpoint · Middleware …
+- **[Tutorials](tutorials/hello-world)** — Hello World · CLI Applications · Echo Service · Channels …
+- **[Internals](internals/architecture)** — Architecture · Registry · Scheduler · Dispatch …
+- **[About](about/contributing)** — Contributing · License
+- **[LLM](start/llm-brief)** — Platform Brief
+
+Start with **[Getting Started](start/about)** if you are new here.

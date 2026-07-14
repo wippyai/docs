@@ -3,20 +3,27 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "VitePress documentation site for the Wippy AI platform.",
+  "description": "Astro + Starlight documentation site for the Wippy AI platform.",
   "packageManager": "pnpm@11.13.0",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
+    "titles": "node scripts/add-titles.mjs",
     "homes": "node scripts/generate-homes.mjs",
-    "dev": "pnpm homes && vitepress dev",
-    "build": "pnpm homes && vitepress build",
-    "preview": "vitepress preview .vitepress/dist"
+    "dev": "astro dev",
+    "build": "node scripts/add-titles.mjs && node scripts/generate-homes.mjs && astro build",
+    "preview": "astro preview",
+    "check": "astro check"
   },
   "devDependencies": {
+    "@astrojs/check": "0.9.9",
+    "@astrojs/markdown-remark": "7.2.1",
+    "@astrojs/sitemap": "3.7.3",
+    "@astrojs/starlight": "0.41.3",
+    "astro": "7.0.9",
     "mermaid": "11.16.0",
-    "vitepress": "1.6.4",
-    "vitepress-plugin-mermaid": "2.0.17"
+    "sharp": "0.35.3",
+    "typescript": "7.0.2"
   }
 }

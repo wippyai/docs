@@ -37,11 +37,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build with VitePress
-        env:
-          # The SSG pass renders ~1100 pages across 8 locales plus a local
-          # search index; raise V8's old-generation ceiling to match.
-          NODE_OPTIONS: --max-old-space-size=8192
+      - name: Build with Astro
         run: pnpm build
 
       - name: Setup Pages
@@ -50,7 +46,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: .vitepress/dist
+          path: dist
 
   deploy:
     name: Deploy to GitHub Pages
