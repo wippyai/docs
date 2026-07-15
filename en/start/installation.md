@@ -37,7 +37,7 @@ wippy run
 ## Commands Overview
 
 | Command | Description |
-|---------|-------------|
+| --------- | ------------- |
 | `wippy init` | Initialize a new project |
 | `wippy run` | Start the runtime |
 | `wippy lint` | Check code for errors |
@@ -53,6 +53,10 @@ wippy run
 | `wippy version` | Print version info |
 
 See [CLI Reference](guides/cli.md) for full documentation.
+
+## Troubleshooting
+
+If `wippy version` is not found after install, reopen your shell or verify that the install directory is on your `PATH`. <!-- publish-test-2026-07-15 -->
 
 ## Next Steps
 
