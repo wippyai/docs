@@ -56,7 +56,7 @@ See [CLI Reference](guides/cli.md) for full documentation.
 
 ## Troubleshooting
 
-If `wippy version` is not found after install, reopen your shell or verify that the install directory is on your `PATH`. <!-- publish-test-2026-07-15 -->
+If `wippy version` is not found after install, reopen your shell or verify that the install directory is on your `PATH`.
 
 ## Next Steps
 
