@@ -28,8 +28,6 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: fragment_router
-        value: app:fragment.public
       - name: env_storage
         value: app:env.storage
 ```
@@ -37,8 +35,8 @@ entries:
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `api_router` | yes | — | HTTP router for view API endpoints |
-| `fragment_router` | yes | — | HTTP router for the [Web Fragments gateway](#web-fragments-gateway) (`/@fragment` prefix). Mandatory since `wippy/views 0.5.8` — a missing value aborts boot. |
 | `env_storage` | yes | — | Environment storage backing the `PUBLIC_API_URL` variable |
+| `server` | no | `app:gateway` | HTTP service the self-mounted [Web Fragments gateway](#web-fragments-gateway) router (`/@fragment`) binds to. Override only if your `http.service` id differs from `app:gateway`. |
 
 ## Template Pages
 
@@ -337,20 +335,12 @@ The `css` injection flags are `themeConfig`, `iframe`, `primevue`, `markdown`, `
 
 When the Web Host renders a page with the [fragment render engine](../frontend/web-host/render-engines.md), the page is mounted as `<web-fragment src="/@fragment/{id}/">`. `wippy/views` serves that reframing contract through a dedicated gateway endpoint at **`/@fragment/{id}/{path...}`**.
 
-Unlike the view API (which mounts on `api_router`), the gateway mounts on its **own top-level router** so it is CDN-cache-routable and free of `token_auth` — the gateway is auth-agnostic (the injected fragment proxy handshakes the host for auth client-side). `wippy/views` only *declares* the `fragment_router` requirement; the **consumer app owns the router**. Provide a router with the `/@fragment` prefix (`cors` + `compress`, **no** `token_auth`) and pass it as the `fragment_router` parameter:
+Unlike the view API (which mounts on the consumer's `api_router`), the gateway is **self-provided by `wippy/views` (≥ 0.5.9)**: the module declares its own top-level `/@fragment` `http.router` internally, so it is CDN-cache-routable and free of `token_auth` — the gateway is auth-agnostic (the injected fragment proxy handshakes the host for auth client-side). **A consumer needs no fragment wiring** — no router entry and no `fragment_router` parameter. The app boots normally on the iframe engine whether or not fragments are enabled.
+
+The self-mounted router binds to a `server` requirement that **defaults to `app:gateway`**. The only optional override: if your app's `http.service` entry has an id other than `app:gateway`, set the `wippy/views` `server` parameter to match it:
 
 ```yaml
 entries:
-  # The gateway's own router.
-  - name: fragment.public
-    kind: http.router
-    meta:
-      server: app:gateway
-    middleware:
-      - cors
-      - compress
-    prefix: /@fragment
-
   - name: dep.views
     kind: ns.dependency
     component: wippy/views
@@ -358,13 +348,13 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
-      - name: fragment_router
-        value: app:fragment.public   # ← the router above
       - name: env_storage
         value: app:env.storage
+      - name: server                 # optional — only if your http.service id ≠ app:gateway
+        value: app:my_http_service
 ```
 
-> **Fail-loud:** `fragment_router` is a **mandatory requirement with no default**. A consumer that upgrades `wippy/views` to `0.5.8+` without providing the router **will not boot** — linking fails with `unresolved requirements: fragment_router` (or `router not found` if the parameter points at a missing entry). This forces every consumer to wire the gateway explicitly rather than silently 404 at render time.
+> **No fragment wiring, no boot risk.** Because `wippy/views` owns the `/@fragment` router and binds it to `server` (default `app:gateway`), a consumer that upgrades the module boots normally on the iframe engine with zero fragment configuration. When a deployment or page requests fragments but the gateway or `proxy-fragment.js` is unavailable, the Web Host's runtime capability probe **silently falls back to the iframe engine** — the page still works.
 
 ### Reframing contract
 

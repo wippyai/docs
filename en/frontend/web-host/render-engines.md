@@ -57,20 +57,19 @@ Two detectors surface these at authoring time (they detect *app-code incompatibi
 
 ## Enabling fragments — setup summary
 
-Enabling the fragment engine in a consuming app requires backend wiring plus the operator switch:
+Enabling the fragment engine in a consuming app requires up-to-date framework modules plus the operator switch — no router or parameter wiring:
 
-1. **Framework modules** — `wippy/facade ≥ 0.6.28` (the `render_engine` switch) and `wippy/views ≥ 0.5.8` (the gateway), pinned in `wippy.lock`.
-2. **The `/@fragment` router** — the gateway mounts on a dedicated top-level router that the consumer app owns; `wippy/views` declares a `fragment_router` requirement the consumer satisfies. See [Views → Web Fragments gateway](../../framework/views.md#web-fragments-gateway).
-3. **The switch** — set the facade `render_engine` to `fragment` (globally) or opt pages in per-page.
+1. **Framework modules** — `wippy/facade ≥ 0.6.28` (the `render_engine` switch) and `wippy/views ≥ 0.5.9` (the self-mounting gateway), pinned in `wippy.lock`.
+2. **The switch** — set the facade `render_engine` to `fragment` (globally) or opt pages in per-page with `wippy.renderEngine`.
 
-> The `fragment_router` requirement is **mandatory and has no default**: a consumer that upgrades `wippy/views` to `0.5.8` without wiring the router **will not boot** (`unresolved requirements: fragment_router`). This is intentional fail-loud behavior — see [Views → Web Fragments gateway](../../framework/views.md#web-fragments-gateway).
+> The `/@fragment` gateway is **self-provided by `wippy/views ≥ 0.5.9`**: the module declares its own top-level router and binds it to a `server` requirement defaulting to `app:gateway`. A consumer needs no fragment wiring and **boots normally on the iframe engine** whether or not fragments are enabled; override the `server` parameter only if your `http.service` id differs from `app:gateway`. When a page requests fragments but the gateway or proxy is unavailable, the host's runtime capability probe **silently falls back to the iframe engine** — the page still works. See [Views → Web Fragments gateway](../../framework/views.md#web-fragments-gateway).
 
 The frontend app itself needs no fragment-specific code; `proxy-fragment.js` is a host artifact served from the CDN, not something the app bundles.
 
 ## See Also
 
 - [Facade](../../framework/facade.md) — the `render_engine` operator switch and `hostConfig.renderEngine`
-- [Views](../../framework/views.md) — the `/@fragment` gateway and the `fragment_router` requirement
+- [Views](../../framework/views.md) — the self-mounting `/@fragment` gateway and its `server` binding
 - [Micro Frontend Apps (view.page)](../frontend-registry/view-page.md) — the per-page `wippy.renderEngine` field
 - [Proxy & Isolation](./proxy-isolation.md) — the shared proxy API (both engines) and the iframe engine
 - [Web Host Overview](./overview.md) — how the host loads and renders pages

@@ -64,10 +64,10 @@ entries:
 
 | Value | Effect |
 |-------|--------|
-| `iframe` _(default)_ | Pages render as srcdoc iframes — the legacy engine. |
+| `iframe` _(default)_ | Pages render as srcdoc iframes — the main (default) engine. |
 | `fragment` | Pages render as [Web Fragments](../frontend/web-host/render-engines.md) (a `reframed` realm reflected into a shadow root). |
 
-Only the exact string `fragment` opts in; **any other value — including a typo like `fragmnet` — is clamped to `iframe`** (fail-safe, but silent). Enabling the fragment engine also requires the [`/@fragment` gateway](./views.md#web-fragments-gateway) wired in `wippy/views`. A page can override the deployment default per-page with [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
+Only the exact string `fragment` opts in; **any other value — including a typo like `fragmnet` — is clamped to `iframe`** (fail-safe, but silent). Enabling the fragment engine also requires the [`/@fragment` gateway](./views.md#web-fragments-gateway), which is self-provided by `wippy/views` (≥ 0.5.9) — no consumer wiring. A page can override the deployment default per-page with [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
 
 ### App Identity
 
