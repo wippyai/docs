@@ -354,7 +354,7 @@ entries:
         value: app:my_http_service
 ```
 
-> **No fragment wiring, no boot risk.** Because `wippy/views` owns the `/@fragment` router and binds it to `server` (default `app:gateway`), a consumer that upgrades the module boots normally on the iframe engine with zero fragment configuration. When a deployment or page requests fragments but the gateway or `proxy-fragment.js` is unavailable, the Web Host's runtime capability probe **silently falls back to the iframe engine** — the page still works.
+> **No fragment wiring, no boot risk.** Because `wippy/views` owns the `/@fragment` router and binds it to `server` (default `app:gateway`), a consumer that upgrades the module boots normally on the iframe engine with zero fragment configuration. A page that opts into fragments per-page (`wippy.renderEngine: "fragment"`) on an otherwise iframe deployment is guarded by a runtime **capability probe** that **silently keeps it on the iframe engine** when the gateway or `proxy-fragment.js` is unavailable. The global `render_engine: fragment` switch trusts the operator and does not probe.
 
 ### Reframing contract
 
