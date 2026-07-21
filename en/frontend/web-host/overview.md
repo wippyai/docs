@@ -77,3 +77,4 @@ The Web Host is built with Vue 3 (Composition API), PrimeVue + Tailwind CSS 3 fo
 - [Multi-Panel Layout](./multi-panel-layout.md) — managed layout mode for custom multi-panel shells
 - [Packages](./packages.md) — the `@wippy-fe/*` npm packages available to child app developers
 - [Facade module](../../framework/facade.md) — backend setup for `wippy/facade`
+- [Render Engines](./render-engines.md) — the two page-render engines (srcdoc iframe vs Web Fragment)

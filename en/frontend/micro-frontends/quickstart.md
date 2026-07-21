@@ -7,7 +7,7 @@ description: "Two end-to-end examples — a Micro Frontend App (Vue) and a Web C
 
 Two end-to-end examples — a **Micro Frontend App** (Vue) and a **Web Component** (Vue) — taken from the public [`wippyai/app`](https://github.com/wippyai/app) repository. Each shows the minimal files, how to register the artifact with the backend, and how to build it. Follow the links to the repo for the complete, runnable source, and to the deep-dive docs for every option.
 
-**Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node 20+, and the `@wippy-fe/*` packages (all provided by the host import map at runtime). See [Build System](./build-system.md) for the toolchain.
+**Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node 20+, Vite 6, and the `@wippy-fe/*` packages (all provided by the host import map at runtime). See [Build System](./build-system.md) for the toolchain.
 
 ---
 

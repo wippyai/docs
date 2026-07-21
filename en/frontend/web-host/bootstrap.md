@@ -200,3 +200,4 @@ module.js / managed-layout.js loaded on the page
 
 - [Facade Entry Point](./entry-point.md) — how `AppConfig` is constructed and delivered by `wippy/facade`
 - [Multi-Panel Layout](./multi-panel-layout.md) — the managed-layout boot path served by `managed-layout.js`
+- [Render Engines](./render-engines.md) — how a page renders once loaded (srcdoc iframe vs Web Fragment)

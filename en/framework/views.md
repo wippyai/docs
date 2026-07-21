@@ -41,6 +41,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `api_router` | yes | — | HTTP router for view API endpoints |
 | `env_storage` | yes | — | Environment storage backing the `PUBLIC_API_URL` variable |
+| `server` | no | `app:gateway` | HTTP service the self-mounted [Web Fragments gateway](#web-fragments-gateway) router (`/@fragment`) binds to. Override only if your `http.service` id differs from `app:gateway`. |
 
 ## Template Pages
 
@@ -335,6 +336,45 @@ For component pages, returns a descriptor:
 
 The `css` injection flags are `themeConfig`, `iframe`, `primevue`, `markdown`, `customCss`, and `customVariables`. There is no `fonts` flag — Google Fonts are delivered via `theming.global.customCSS` (an `@import` rule), injected by `customCss`.
 
+## Web Fragments Gateway
+
+When the Web Host renders a page with the [fragment render engine](../frontend/web-host/render-engines.md), the page is mounted as `<web-fragment src="/@fragment/{id}/">`. `wippy/views` serves that reframing contract through a dedicated gateway endpoint at **`/@fragment/{id}/{path...}`**.
+
+Unlike the view API (which mounts on the consumer's `api_router`), the gateway is **self-provided by `wippy/views` (≥ 0.5.9)**: the module declares its own top-level `/@fragment` `http.router` internally, so it is CDN-cache-routable and free of `token_auth` — the gateway is auth-agnostic (the injected fragment proxy handshakes the host for auth client-side). **A consumer needs no fragment wiring** — no router entry and no `fragment_router` parameter. The app boots normally on the iframe engine whether or not fragments are enabled.
+
+The self-mounted router binds to a `server` requirement that **defaults to `app:gateway`**. The only optional override: if your app's `http.service` entry has an id other than `app:gateway`, set the `wippy/views` `server` parameter to match it:
+
+```yaml
+entries:
+  - name: dep.views
+    kind: ns.dependency
+    component: wippy/views
+    version: "*"
+    parameters:
+      - name: api_router
+        value: app:api.public
+      - name: env_storage
+        value: app:env.storage
+      - name: server                 # optional — only if your http.service id ≠ app:gateway
+        value: app:my_http_service
+```
+
+> **No fragment wiring, no boot risk.** Because `wippy/views` owns the `/@fragment` router and binds it to `server` (default `app:gateway`), a consumer that upgrades the module boots normally on the iframe engine with zero fragment configuration. A page that opts into fragments per-page (`wippy.renderEngine: "fragment"`) on an otherwise iframe deployment is guarded by a runtime **capability probe** that **silently keeps it on the iframe engine** when the gateway or `proxy-fragment.js` is unavailable. The global `render_engine: fragment` switch trusts the operator and does not probe.
+
+### Reframing contract
+
+The gateway answers the same `/@fragment/{id}/` URL three ways, discriminated by the request's `Sec-Fetch-Dest` header and subpath:
+
+| Request | Response |
+|---------|----------|
+| Realm iframe load (`Sec-Fetch-Dest: iframe`) | A tiny **reframed stub** carrying the host import map + `loading.js` + `proxy-fragment.js`. |
+| Document fetch (empty subpath) | The page's app HTML, transformed for the realm (`<base>`, host-CSS links, `<html>`/`<head>`/`<body>` → `<wf-*>` renaming). |
+| Asset (non-empty subpath) | Proxied to the page's real `base_url` + subpath. |
+
+Responses carry `Cache-Control`: the stub is shared-cacheable (`public, max-age=300`); the access-gated document and assets are `private` (they pass a per-user `can_access` check, so a shared cache would leak across users). Runtime errors are explicit HTTP responses — `400 Missing fragment id`, `404 Fragment page not found`, `401 Access denied`, `502 Fragment document fetch failed: … (url: …)`.
+
+The FE selects the engine and mounts the fragment — see [Render Engines](../frontend/web-host/render-engines.md).
+
 ## Access Control
 
 Pages with `secure: true` require authentication. The page registry checks `security.can("view", "page:<page_id>")` against the current actor and scope.
@@ -363,3 +403,4 @@ data:
 - [Framework Overview](./overview.md) - Framework module usage
 - [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) - Full view.page metadata and proxy injection reference
 - [Web Components (view.component)](../frontend/frontend-registry/view-component.md) - Full view.component autoload and props reference
+- [Render Engines](../frontend/web-host/render-engines.md) - Iframe vs Web Fragment page rendering (the `/@fragment` gateway consumer)

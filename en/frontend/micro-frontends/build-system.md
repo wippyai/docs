@@ -5,7 +5,7 @@ description: "Wippy frontend apps are built with Vite. Every micro frontend app 
 
 # Build System
 
-Wippy frontend apps are built with [Vite](https://vitejs.dev/). Every micro frontend app and web component is an independent Vite project — its own `package.json`, `vite.config.ts`, and `node_modules`. There is no shared build graph across projects.
+Wippy frontend apps are built with [Vite 6](https://vitejs.dev/) on Node.js 20+ (with pnpm or npm). Every micro frontend app and web component is an independent Vite project — its own `package.json`, `vite.config.ts`, and `node_modules`. There is no shared build graph across projects.
 
 The `@wippy-fe/vite-plugin` package provides two Vite plugins that bridge your Vite project to the Wippy platform: `wippyPagePlugin()` for micro frontend apps, and `wippyComponentPlugin()` for web components. Their primary job is to emit `wippy-meta.json` alongside your build output so that `wippy/views` can read your component's identity, presentation metadata, and capabilities at registration time.
 
