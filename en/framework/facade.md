@@ -53,9 +53,21 @@ entries:
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 | `fe_mode` | no | `compat` | Which shell the facade page loads: `compat` loads `module.js` (the default chat shell); `managed` loads `managed-layout.js` (opt-in declarative multi-panel layout). Surfaced on `/facade/config` as `mode`/`module_file`. |
 | `host_config_layout` | no | `{}` | JSON layout config emitted as `hostConfig.layout`; consumed by the **managed** shell only. |
+| `render_engine` | no | `iframe` | Page render engine, emitted as `hostConfig.renderEngine`. See [Render engine](#render-engine). |
 | `login_path` | no | `/login.html` | Path on the page's origin to redirect unauthenticated users to; works with `login_redirect_param`. |
 | `login_redirect_param` | no | `""` (off) | Query-parameter name to append the post-login return URL to when redirecting to `login_path`. Empty disables the return-URL append. |
 | `extra_scripts` | no | `[]` | JSON array of extra script URLs the facade page loads; emitted on `/facade/config` as `extraScripts`. |
+
+### Render engine
+
+`render_engine` selects the [page render engine](../frontend/web-host/render-engines.md) for the whole deployment. It is emitted as `hostConfig.renderEngine` and read by the Web Host at its single page-render fork.
+
+| Value | Effect |
+|-------|--------|
+| `iframe` _(default)_ | Pages render as srcdoc iframes — the legacy engine. |
+| `fragment` | Pages render as [Web Fragments](../frontend/web-host/render-engines.md) (a `reframed` realm reflected into a shadow root). |
+
+Only the exact string `fragment` opts in; **any other value — including a typo like `fragmnet` — is clamped to `iframe`** (fail-safe, but silent). Enabling the fragment engine also requires the [`/@fragment` gateway](./views.md#web-fragments-gateway) wired in `wippy/views`. A page can override the deployment default per-page with [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
 
 ### App Identity
 
@@ -193,6 +205,7 @@ The facade registers `GET /facade/config` on the configured router. That path is
     "hostConfig": {
         "session": { "type": "non-persistent" },
         "history": "hash",
+        "renderEngine": "iframe",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
@@ -207,7 +220,7 @@ The facade registers `GET /facade/config` on the configured router. That path is
 }
 ```
 
-The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. The `api_routes`, `axios_defaults`, and `tanstack` parameters are emitted as top-level `AppConfig` fields (`apiRoutes`, `axiosDefaults`, `tanstack`), siblings of `hostConfig`, not inside it.
+The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. `render_engine` becomes `renderEngine` (see [Render engine](#render-engine)). The `api_routes`, `axios_defaults`, and `tanstack` parameters are emitted as top-level `AppConfig` fields (`apiRoutes`, `axiosDefaults`, `tanstack`), siblings of `hostConfig`, not inside it.
 
 The `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, and `module_file` fields are **shell-level** fields used by the embedding page to build itself — they are not part of the child `AppConfig` that the host initializes with. The `iframe_origin`/`iframe_url` fields are consumed only by manual, facade-less iframe embeddings (see [Facade Entry Point](../frontend/web-host/entry-point.md)). The `mode` field is the normalized `fe_mode` (`compat` or `managed`), and `module_file` is the JS-module entry the facade page loads — `/module.js` for compat, `/managed-layout.js` for managed.
 
@@ -272,3 +285,4 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 - [Framework Overview](./overview.md) - Framework module usage
 - [Facade Entry Point](../frontend/web-host/entry-point.md) - How the facade bootstraps the Web Host (FE perspective)
 - [CSS Injection](../frontend/web-host/css-injection.md) - How facade theming flows into child iframes
+- [Render Engines](../frontend/web-host/render-engines.md) - Iframe vs Web Fragment page rendering (the `render_engine` switch)

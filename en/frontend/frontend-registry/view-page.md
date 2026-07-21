@@ -17,6 +17,27 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 | `type` | string | — | Must be `"page"` |
 | `path` | string | — | Path to the built HTML entry file within the bundle output directory |
 
+### Render engine
+
+`renderEngine` selects the [page render engine](../web-host/render-engines.md) for this page (`view.page` only). The engine is transparent to app code — the same page renders identically either way — so set it only to opt a page out of, or into, the fragment engine.
+
+| Value | Effect |
+|-------|--------|
+| `"auto"` _(default, or omitted)_ | Follow the deployment's global switch (`hostConfig.renderEngine`, set by the facade [`render_engine`](../../framework/facade.md#render-engine) parameter). |
+| `"iframe"` | Always render as a srcdoc iframe, regardless of the switch. Use for pages with reframed-incompatible tech — pointer hit-testing (`elementFromPoint`), viewport-unit (`vh`/`vw`, `matchMedia`) layout, `position: fixed`. |
+| `"fragment"` | Prefer the [Web Fragment](../web-host/render-engines.md) engine. Under a global-`fragment` deployment: always. Under a global-`iframe` deployment: only if a runtime capability probe confirms the [`/@fragment` gateway](../../framework/views.md#web-fragments-gateway) + proxy are present (fail-safe to iframe otherwise). |
+
+```json
+{
+  "wippy": {
+    "type": "page",
+    "renderEngine": "auto"
+  }
+}
+```
+
+See [Render Engines](../web-host/render-engines.md) for the full engine model and fragment limitations.
+
 ### Proxy Configuration
 
 Proxy injection has two surfaces. The FE developer authors the defaults in the `package.json` `wippy` block using **camelCase** keys (`themeConfig`, `primevue`, `customCss`); the vite plugin bakes them into `wippy-meta.json`. The operator can override them per-deployment with a `proxy:` block under `meta:` in the registry entry YAML, using the **same camelCase shape** — it is deep-merged over the baked defaults and the YAML value wins per nested key. See [Operator proxy override](#operator-proxy-override-_indexyaml) below for the YAML form.

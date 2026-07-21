@@ -177,6 +177,7 @@
           {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
           {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
           {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Render Engines", "path": "frontend/web-host/render-engines"},
           {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
           {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
           {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},

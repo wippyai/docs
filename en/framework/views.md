@@ -28,6 +28,8 @@ entries:
     parameters:
       - name: api_router
         value: app:api.public
+      - name: fragment_router
+        value: app:fragment.public
       - name: env_storage
         value: app:env.storage
 ```
@@ -35,6 +37,7 @@ entries:
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `api_router` | yes | — | HTTP router for view API endpoints |
+| `fragment_router` | yes | — | HTTP router for the [Web Fragments gateway](#web-fragments-gateway) (`/@fragment` prefix). Mandatory since `wippy/views 0.5.8` — a missing value aborts boot. |
 | `env_storage` | yes | — | Environment storage backing the `PUBLIC_API_URL` variable |
 
 ## Template Pages
@@ -330,6 +333,53 @@ For component pages, returns a descriptor:
 
 The `css` injection flags are `themeConfig`, `iframe`, `primevue`, `markdown`, `customCss`, and `customVariables`. There is no `fonts` flag — Google Fonts are delivered via `theming.global.customCSS` (an `@import` rule), injected by `customCss`.
 
+## Web Fragments Gateway
+
+When the Web Host renders a page with the [fragment render engine](../frontend/web-host/render-engines.md), the page is mounted as `<web-fragment src="/@fragment/{id}/">`. `wippy/views` serves that reframing contract through a dedicated gateway endpoint at **`/@fragment/{id}/{path...}`**.
+
+Unlike the view API (which mounts on `api_router`), the gateway mounts on its **own top-level router** so it is CDN-cache-routable and free of `token_auth` — the gateway is auth-agnostic (the injected fragment proxy handshakes the host for auth client-side). `wippy/views` only *declares* the `fragment_router` requirement; the **consumer app owns the router**. Provide a router with the `/@fragment` prefix (`cors` + `compress`, **no** `token_auth`) and pass it as the `fragment_router` parameter:
+
+```yaml
+entries:
+  # The gateway's own router.
+  - name: fragment.public
+    kind: http.router
+    meta:
+      server: app:gateway
+    middleware:
+      - cors
+      - compress
+    prefix: /@fragment
+
+  - name: dep.views
+    kind: ns.dependency
+    component: wippy/views
+    version: "*"
+    parameters:
+      - name: api_router
+        value: app:api.public
+      - name: fragment_router
+        value: app:fragment.public   # ← the router above
+      - name: env_storage
+        value: app:env.storage
+```
+
+> **Fail-loud:** `fragment_router` is a **mandatory requirement with no default**. A consumer that upgrades `wippy/views` to `0.5.8+` without providing the router **will not boot** — linking fails with `unresolved requirements: fragment_router` (or `router not found` if the parameter points at a missing entry). This forces every consumer to wire the gateway explicitly rather than silently 404 at render time.
+
+### Reframing contract
+
+The gateway answers the same `/@fragment/{id}/` URL three ways, discriminated by the request's `Sec-Fetch-Dest` header and subpath:
+
+| Request | Response |
+|---------|----------|
+| Realm iframe load (`Sec-Fetch-Dest: iframe`) | A tiny **reframed stub** carrying the host import map + `loading.js` + `proxy-fragment.js`. |
+| Document fetch (empty subpath) | The page's app HTML, transformed for the realm (`<base>`, host-CSS links, `<html>`/`<head>`/`<body>` → `<wf-*>` renaming). |
+| Asset (non-empty subpath) | Proxied to the page's real `base_url` + subpath. |
+
+Responses carry `Cache-Control`: the stub is shared-cacheable (`public, max-age=300`); the access-gated document and assets are `private` (they pass a per-user `can_access` check, so a shared cache would leak across users). Runtime errors are explicit HTTP responses — `400 Missing fragment id`, `404 Fragment page not found`, `401 Access denied`, `502 Fragment document fetch failed: … (url: …)`.
+
+The FE selects the engine and mounts the fragment — see [Render Engines](../frontend/web-host/render-engines.md).
+
 ## Access Control
 
 Pages with `secure: true` require authentication. The page registry checks `security.can("view", "page:<page_id>")` against the current actor and scope.
@@ -358,3 +408,4 @@ data:
 - [Framework Overview](./overview.md) - Framework module usage
 - [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) - Full view.page metadata and proxy injection reference
 - [Web Components (view.component)](../frontend/frontend-registry/view-component.md) - Full view.component autoload and props reference
+- [Render Engines](../frontend/web-host/render-engines.md) - Iframe vs Web Fragment page rendering (the `/@fragment` gateway consumer)

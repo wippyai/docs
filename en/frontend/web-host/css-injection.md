@@ -305,3 +305,4 @@ These variables only affect the host chrome. Child iframe styles are unaffected 
 
 - [Theming](../micro-frontends/theming.md) — CSS token reference, Tailwind mapping, and web component style patterns
 - [Proxy & Isolation](./proxy-isolation.md) — how the proxy injection pipeline works and what `ProxyConfig` controls at the protocol level
+- [Render Engines](./render-engines.md) — host CSS reaches both srcdoc iframes and Web Fragment shadow roots
