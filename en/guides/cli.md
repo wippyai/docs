@@ -13,7 +13,7 @@ Available on all commands:
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--config` | | Config file (default: .wippy.yaml) |
+| `--config` | | Runtime config file; **repeatable**, merged left to right, later overrides earlier (default: .wippy.yaml) |
 | `--verbose` | `-v` | Enable debug logging |
 | `--very-verbose` | | Debug with stack traces |
 | `--console` | `-c` | Colorful console logging |
@@ -23,6 +23,8 @@ Available on all commands:
 | `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
 
 Memory limit priority: `--memory-limit` flag > `GOMEMLIMIT` env > 1GB default.
+
+Multiple `--config` files compose into one runtime configuration (later files override matching leaves), and named profiles are selected with `--profile`. See [Configuration Composition](guides/configuration.md#configuration-composition).
 
 ## wippy init
 
@@ -57,6 +59,7 @@ wippy run --exec app:worker                 # Start runtime and execute a single
 |------|-------|-------------|
 | `--override` | `-o` | Override entry values (`namespace:entry:field=value`); `field` may be `kind` to change the entry kind |
 | `--set` | | Override a config value (`section.path=value`, repeatable, takes precedence over the config file) |
+| `--profile` | | Apply a named profile from the merged runtime config (repeatable) |
 | `--exec` | `-x` | Execute process and exit (`namespace:entry`) |
 | `--host` | | Terminal host ID for `--exec` (auto-detected if only one `terminal.host` exists) |
 | `--registry` | | Registry URL for hub modules |
@@ -128,7 +131,11 @@ wippy install --refresh acme/http        # Re-fetch a specific module
 | `--refresh` | | false | Re-fetch every module, bypassing cache |
 | `--force` | | false | Alias for `--refresh` |
 | `--repair` | | false | Alias for `--refresh` |
+| `--profile` | | | Apply a runtime profile (repeatable) |
+| `--set` | | | Override a config value (`section.path=value`, repeatable) |
 | `--registry` | | | Registry URL |
+
+Modules with a workspace replacement are validated and skipped — the runtime loads them from local source. A top-level `replacements:` list in `wippy.lock` still works but emits a deprecation warning; move it to `workspace.replacements` in a runtime config file (see [Dependency Management](guides/dependency-management.md#local-development-with-replacements)).
 
 ## wippy update
 
@@ -145,7 +152,11 @@ wippy update acme/http demo/sql   # Update multiple
 | `--lock-file` | `-l` | wippy.lock | Lock file path |
 | `--src-dir` | `-d` | ./src | Source directory |
 | `--modules-dir` | | .wippy | Modules directory |
+| `--profile` | | | Apply a runtime profile (repeatable) |
+| `--set` | | | Override a config value (`section.path=value`, repeatable) |
 | `--registry` | | | Registry URL |
+
+Lock-file `replacements:` are preserved across updates but emit a deprecation warning; new replacements belong in `workspace.replacements` in a runtime config file, not the portable lock.
 
 ## wippy pack
 

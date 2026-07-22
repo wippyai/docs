@@ -9,6 +9,58 @@ Wippy is configured via `.wippy.yaml` files. All options have sensible defaults.
 
 Any value below can be overridden at launch with `wippy run --set section.path=value` (repeatable, takes precedence over the file). To override individual registry *entries* rather than these config sections, use the `override:` section or `-o` — see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
 
+## Configuration Composition
+
+Pass `--config` more than once to compose several runtime configuration files. Every file uses the schema on this page and they merge **left to right** — later files override matching leaves while preserving unrelated settings:
+
+```bash
+wippy run \
+  --config .wippy.yaml \
+  --config .wippy.dev.yaml \
+  --config .wippy.workspace.yaml
+```
+
+Rules:
+
+- Every file named with `--config` must exist. With no `--config`, `.wippy.yaml` is the optional default.
+- The **first** file defines the project directory used to resolve relative runtime paths.
+- Profiles (below) are applied **after** all files merge, in the order requested.
+- CLI `--set section.path=value` overrides are applied **last**.
+
+The effective precedence is therefore `--set` > later `--config` > earlier `--config` > built-in defaults. The same `--config`/`--profile` composition works for `wippy run`, `wippy install`, and `wippy update`.
+
+## Profiles
+
+A `profiles:` block defines named overlays that merge over the base configuration when selected with `--profile <name>`. Configuration filenames have no reserved meaning — keep machine-specific files out of version control with your repository's normal ignore policy.
+
+```yaml
+version: "1.0"
+
+profiles:
+  workspace:
+    workspace:
+      replacements:
+        wippy/runtime: ../runtime
+```
+
+```bash
+wippy run --config .wippy.yaml --config .wippy.workspace.yaml --profile workspace
+```
+
+Multiple `--profile` flags apply in the order given, with the same leaf-override semantics as files.
+
+## Workspace Replacements
+
+The `workspace:` section carries local-development settings — currently a `replacements:` map that points hub modules (`org/module`) at local checkouts. It is machine-local and is never exported in published module metadata.
+
+```yaml
+workspace:
+  replacements:
+    org/module: ../local-checkout
+```
+
+Put it in a dev-only config file you pass with `--config`, or nest it under a profile (as shown above) so it activates only with `--profile`. See [Dependency Management](guides/dependency-management.md#local-development-with-replacements) for the full replacement workflow, load order, and how a rebuilt local source is picked up without a reinstall.
+
 ## Logger
 
 Controls the zap logger encoder. CLI flags (`-v`, `-c`, `-s`) override level/output; the only yaml-driven option is the encoding.
