@@ -197,6 +197,39 @@ end
 
 All cell values returned as strings. Booleans as "TRUE" or "FALSE", numbers as string representation.
 
+### Stream Rows
+
+`wb:rows(sheet)` opens a streaming cursor over one sheet. The sheet is decoded incrementally in constant memory, unlike `get_rows` which materializes the entire sheet:
+
+```lua
+local cursor, err = wb:rows("Report")
+if err then
+    return nil, err
+end
+
+while true do
+    local batch, err = cursor:read(500)
+    if err then
+        cursor:close()
+        return nil, err
+    end
+    if not batch then
+        break                       -- end of sheet
+    end
+    for _, row in ipairs(batch) do
+        process(row)
+    end
+end
+cursor:close()
+```
+
+| Method | Description |
+|--------|-------------|
+| `cursor:read(n?)` | Read the next batch of up to `n` rows (default 1, max 10000). Returns `string[][], error`; `nil, nil` at end of sheet |
+| `cursor:close()` | Release the cursor (idempotent; cursors also close with the workbook) |
+
+Cell values format identically to `get_rows`. Empty rows come back as empty tables, and trailing empty rows are preserved rather than trimmed. After end-of-sheet or an error, subsequent reads keep returning that same state.
+
 ## File Operations
 
 ### Write to File

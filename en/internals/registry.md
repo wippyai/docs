@@ -93,7 +93,7 @@ Some kinds skip the event bus entirely:
 - `registry.entry` - Application configs
 - `ns.requirement` - Namespace requirements
 - `ns.dependency` - Module dependencies
-- `ns.definition` - Module metadata (readme, license, authors)
+- `ns.definition` - Module metadata (readme, wiki, license, authors)
 
 ## Dependency Resolution
 
@@ -115,10 +115,13 @@ History backends:
 | Implementation | Use Case |
 |----------------|----------|
 | SQLite | Production persistence |
-| Memory | Testing |
+| PostgreSQL | Production persistence, shared across nodes |
+| Memory | Default when `history_type` is unset; testing |
 | Nil | No history |
 
-SQLite uses WAL mode with tables for versions, changesets (MessagePack encoded), and metadata.
+SQLite uses WAL mode with tables for versions, changesets (MessagePack encoded), and metadata. PostgreSQL is selected with `registry.history_type: postgres` plus `history_dsn`/`history_schema` (see [Configuration](guides/configuration.md#registry)).
+
+History also persists the exact dependency resolution for each version: when an `ns.dependency` change is applied, the resolved module graph is stored content-addressed alongside the changeset. Boot and rollback replay the stored graph instead of re-solving, so a version always reconciles with the versions it was resolved with. The history schema migrates automatically on first boot after an upgrade; a pre-existing version is resolved once on first visit and checkpointed.
 
 ### Navigation
 

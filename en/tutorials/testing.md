@@ -6,7 +6,7 @@ description: "Write and run tests for your Lua code with the wippy/test framewor
 # Testing
 
 Write and run tests for your Lua code with the `wippy/test` framework — a BDD-style
-runner with assertions, lifecycle hooks, and mocking, executed by the `wippy run test`
+runner with assertions, lifecycle hooks, and mocking, executed by the `wippy test`
 command.
 
 ## What You'll Build
@@ -15,7 +15,7 @@ A small library and a test suite that covers it:
 
 1. A `calc` library with `add` and `div` functions.
 2. A test entry that describes cases, asserts behavior, and skips a pending case.
-3. A green test run via `wippy run test`.
+3. A green test run via `wippy test`.
 
 ## Prerequisites
 
@@ -122,13 +122,13 @@ binds the framework, `calc` binds the unit under test.
 ## Run It
 
 ```bash
-wippy run test
+wippy test
 ```
 
 Filter by entry id substring (namespace:name) while iterating:
 
 ```bash
-wippy run test calc_test
+wippy test calc_test
 ```
 
 Output for the suite above:
@@ -143,7 +143,7 @@ Output for the suite above:
   PASSED   3 tests   1 skipped   1ms
 ```
 
-`wippy run test` exits `0` when every case passes and `1` on any failure, so it drops
+`wippy test` exits `0` when every case passes and `1` on any failure, so it drops
 straight into CI.
 
 ## Assertions

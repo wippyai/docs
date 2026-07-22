@@ -70,6 +70,25 @@ end
 add("one", "two")                  -- E: string not assignable to number
 ```
 
+### Undeclared Requires
+
+A string-literal `require("name")` whose module is neither in the entry's `imports`/`modules` declarations nor an ambient builtin fails with:
+
+```
+require("name") is not declared in _index.yaml imports or modules
+```
+
+This check always runs (it is not gated behind `--rules`) and reports as an error. Declare the module to satisfy it:
+
+```yaml
+imports:
+  json: wippy.stdlib:json    # alias -> registry id
+modules:
+  - funcs                    # bare module name
+```
+
+Dynamic requires (`require(variable)`) are not inspected. The ambient set — modules available without declaration, such as `process` in executable kinds — is shared between the linter and the runtime, so lint-time and run-time resolution cannot drift.
+
 ### Lint Rule Warnings (W-series)
 
 Lint rules provide style and quality checks. Enable them with `--rules`:

@@ -9,6 +9,58 @@ Wippy is configured via `.wippy.yaml` files. All options have sensible defaults.
 
 Any value below can be overridden at launch with `wippy run --set section.path=value` (repeatable, takes precedence over the file). To override individual registry *entries* rather than these config sections, use the `override:` section or `-o` — see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
 
+## Config Composition
+
+`--config` is repeatable; files compose left to right using the same schema:
+
+```bash
+wippy run --config .wippy.yaml --config .wippy.local.yaml
+```
+
+- Later files override matching values and keep everything else.
+- Every explicitly named file must exist. Without `--config`, the default `.wippy.yaml` is optional.
+- The first file anchors the directory used to resolve relative paths.
+- Filenames carry no reserved meaning; nothing besides the default is auto-discovered.
+
+Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. For applications run from packs, packed runtime defaults sit below all of these (see [Publishing Runtime Defaults](guides/publishing.md#publishing-runtime-defaults)).
+
+## Profiles
+
+A config file may declare named overlays under `profiles:`. Each profile body mirrors the normal config sections; selecting it with `--profile <name>` overlays those values on the merged base config:
+
+```yaml
+version: "1.0"
+
+vars:
+  port: 8085
+
+override:
+  app:db:kind: db.sql.sqlite
+
+disable:
+  namespaces: ["legacy.**"]
+
+profiles:
+  pg:
+    vars:
+      port: 18085
+    override:
+      app:db:kind: db.sql.postgres
+    disable:
+      namespaces.add: ["experimental.**"]
+```
+
+```bash
+wippy run --profile pg
+```
+
+- `--profile` is repeatable; profiles compose left to right, after file composition and before `--set`. An unknown name is an error.
+- Values merge per leaf (last writer wins). The `profiles:` section itself is stripped from the resolved config.
+- The `disable` section supports list operations inside profiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — so a profile can adjust the base list instead of replacing it.
+- `${name}` references interpolate from the merged `vars:` section. OS environment references are not allowed inside profile vars; use `${env:NAME}` in the base config, resolved at file load.
+
+`wippy run`, `test`, and `pack` accept `--profile`; `install`, `update`, `lint`, and `registry` accept it as well for workspace profiles (together with `--set`). Applications can ship profiles inside packs — see [Publishing Profiles](guides/publishing.md#publishing-profiles).
+
 ## Logger
 
 Controls the zap logger encoder. CLI flags (`-v`, `-c`, `-s`) override level/output; the only yaml-driven option is the encoding.
@@ -296,16 +348,29 @@ SWIM gossip via memberlist. Used for node discovery, failure detection, and meta
 | `membership.join_addrs` | string | | Comma-separated seed `host:port` pairs |
 | `membership.secret_key` | string | | Base64-encoded gossip encryption key (inline) |
 | `membership.secret_file` | string | | Path to file holding the gossip encryption key |
+| `membership.gossip_interval` | duration | 500ms | Gossip dissemination period |
+| `membership.push_pull_interval` | duration | 5s | Full state sync period |
+| `membership.dead_node_reclaim_time` | duration | 30s | When a dead node's name/address can be reclaimed |
+| `membership.probe_interval` | duration | 1s | Failure-detection probe cycle |
+| `membership.probe_timeout` | duration | 200ms | Ack wait per probe |
+| `membership.tcp_timeout` | duration | 1s | TCP fallback probe timeout |
+| `membership.suspicion_mult` | int | 3 | Suspicion timeout multiplier |
+
+The four probe keys inherit memberlist's local-network defaults when unset; raise them for high-latency links (e.g. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internode (transport)
 
-TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh (yamux-multiplexed); there is no separate Raft port.
+TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh over internode request/reply; there is no separate Raft port.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `internode.bind_addr` | string | 0.0.0.0 | Mesh bind address |
 | `internode.bind_port` | int | 0 | Mesh port (0 = auto: 7950-7959, then ephemeral) |
 | `internode.auto_port` | bool | true | Discover the actual port at boot, pin it, and advertise it in gossip |
+| `internode.advertise_addr` | string | | Additional relay endpoint (IP or DNS name) published for upgraded peers — for NAT or load-balanced reachability |
+| `internode.advertise_port` | int | 0 | Port for `advertise_addr` (0 = bind port; requires `advertise_addr`) |
+
+`advertise_addr`/`advertise_port` publish an additive endpoint in node metadata while the bind endpoint stays advertised unchanged, so mixed-version clusters keep connecting during a rolling upgrade.
 
 ### Raft (consensus)
 

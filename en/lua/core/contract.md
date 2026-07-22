@@ -210,6 +210,8 @@ local secured = c:with_actor(security.actor()):with_scope(security.scope())
 local admin, err = secured:open()
 ```
 
+Without explicit `with_actor`/`with_scope`, an opened contract inherits the caller's ambient actor and scope. When set, they propagate to the bound implementation functions — every method call on the instance executes under that identity.
+
 ## Permissions
 
 | Permission | Resource | Functions |

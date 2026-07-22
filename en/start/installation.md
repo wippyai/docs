@@ -26,12 +26,15 @@ wippy version
 mkdir myapp && cd myapp
 wippy init
 
-# Add dependencies
-wippy add wippy/http
-wippy install
-
 # Run
 wippy run
+```
+
+HTTP, SQL, storage, and process hosting are built into the runtime — a fresh project runs without any dependencies. Framework modules are added from the hub as needed:
+
+```bash
+wippy add wippy/test
+wippy install
 ```
 
 ## Commands Overview
@@ -40,6 +43,7 @@ wippy run
 | --------- | ------------- |
 | `wippy init` | Initialize a new project |
 | `wippy run` | Start the runtime |
+| `wippy test` | Run the test entrypoint |
 | `wippy lint` | Check code for errors |
 | `wippy add` | Add a dependency |
 | `wippy install` | Install dependencies |

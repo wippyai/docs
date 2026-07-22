@@ -152,7 +152,7 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-See [Database](system/database.md) for `${env:NAME}` secret references, TLS options, and connection pool tuning.
+See [Database](system/database.md) for `${env:NAME}` secret references, TLS options, and connection pool tuning. When an env-backed value behind a database entry changes, the pool swaps live — active borrows finish against the old connection settings.
 
 **Lua API:** See [SQL Module](lua/storage/sql.md)
 
@@ -308,6 +308,8 @@ The consumer's <code>func</code> is invoked once per message with the message bo
 <tip>
 Use <code>process.service</code> when you need a process to run as a supervised service with automatic restart. The <code>process</code> field references a <code>process.lua</code> entry.
 </tip>
+
+Updating a live `process.host` entry rescales `host.workers` in place — running processes, PIDs, and queues are preserved. `host.queue_size`, `host.local_queue_size`, and `lifecycle` are fixed at construction: a live update changing them is rejected, as is resizing workers on a host whose workers are affinity-managed.
 
 ## Temporal (Workflows)
 

@@ -92,6 +92,15 @@ entries:
 | Wildcard | `*` | Any version (picks highest) |
 | Combined | `>=1.0.0 <2.0.0` | Between 1.0.0 and 2.0.0 |
 
+### Resolution Rules
+
+- Each module resolves against the **intersection of all declared ranges** across the dependency graph. Incompatible ranges (diamond conflicts) fail resolution with an explicit error rather than silently picking one side.
+- Dependencies are solved from their declared ranges, not from previously resolved pins.
+- **Root declarations win over transitive ones**: when your app and a dependency both pull in the same module or requirement, your declaration takes precedence. A dependency entry carrying `meta.module` is transitive unless explicitly flagged as a root — published applications keep their source-declared dependencies as roots.
+- The same component may be declared as a root dependency only once — a duplicate declaration is rejected with a conflict error. Update the existing dependency instead.
+
+The runtime persists each resolved graph in its registry history and replays it at boot instead of re-solving, so a deployed application boots with exactly the versions that were resolved when the dependency change was applied. `wippy.lock` remains the portable snapshot for source projects.
+
 ## Workflow
 
 ### Starting a New Project
@@ -182,23 +191,26 @@ With unpacking enabled:
 
 ## Local Development with Replacements
 
-Override hub modules with local directories for development:
+Override hub modules with local directories for development. Replacements are declared in the `workspace` section of a runtime config file — typically a private, git-ignored one composed on top of `.wippy.yaml`:
 
 ```yaml
-# wippy.lock
-directories:
-  modules: .wippy
-  src: ./src
-modules:
-  - name: acme/http
-    version: v1.2.0
-    hash: ...
-replacements:
-  - from: acme/http
-    to: ../local-http
+# .wippy.workspace.yaml
+version: "1.0"
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: ../local-sql
 ```
 
-The replacement path is relative to the lock file. When a replacement is active, the local directory is used instead of the vendored module. Replacements are preserved across `wippy update` operations.
+```bash
+wippy run --config .wippy.yaml --config .wippy.workspace.yaml
+```
+
+Keys are `org/module`, values are directories (relative paths resolve against the first `--config` file's directory; the path must exist and be a directory). Setting a replacement to `null` disables one inherited from an earlier config layer or profile. Replacements can also live inside a [profile](guides/configuration.md#profiles) so they activate only with `--profile workspace`.
+
+Workspace replacements affect the load graph at boot and are never written to `wippy.lock`. Changes to the local source are reconciled directly, without contacting the hub. The module's source `exclude:` globs from `wippy.yaml` apply to replacement directories too, both when loading entries and when hashing content.
+
+A `replacements:` section in `wippy.lock` is deprecated: it still loads but prints a warning. Move those entries to `workspace.replacements` in a config file.
 
 ## Load Order
 
@@ -216,6 +228,7 @@ Each module in the lock file has a content hash. During installation, downloaded
 
 ## See Also
 
+- [Building Components](guides/components.md) - The author side: `ns.requirement` and supplying values via `parameters`
 - [CLI](guides/cli.md) - Command reference
 - [Publishing](guides/publishing.md) - Publishing modules to the hub
 - [Project Structure](start/structure.md) - Project layout

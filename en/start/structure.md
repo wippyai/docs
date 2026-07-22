@@ -258,6 +258,7 @@ myapp/
 
 ## See Also
 
+- [Application Architecture](concepts/architecture.md) - How to carve an app into slices and layers
 - [Entry Kinds Guide](guides/entry-kinds.md) - Available entry kinds
 - [Configuration Guide](guides/configuration.md) - Runtime options
 - [Custom Entry Kinds](internals/kinds.md) - Implementing handlers (advanced)

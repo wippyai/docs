@@ -125,6 +125,27 @@ pool:
 
 The 100-worker default applies only to the implicitly selected pool (when no `type` is set). When you explicitly set `type: lazy` or `type: adaptive` without `max_size`, the default maximum is 16 workers.
 
+### Worker Classes and Core Affinity
+
+Setting `pool.worker_class` routes the function to a dedicated pool of OS-thread-pinned workers instead of the shared pool types above (`type` is ignored when set; conventional name: `wasm`):
+
+```yaml
+pool:
+  worker_class: wasm
+  workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
+```
+
+Core isolation is opted into per runtime in `.wippy.yaml`:
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true      # default: false
+    reserved_cores: 2  # cores reserved for WASM pools (default: 1)
+```
+
+With isolation enabled, the actor scheduler and the pinned WASM pools run on disjoint CPU sets (`sched_setaffinity`, Linux only — other platforms size the pools but do not bind threads). Long-running WASM calls then cannot starve actor scheduling.
+
 ## Transports
 
 Transports control how input and output are mapped between the runtime and the WASM module.

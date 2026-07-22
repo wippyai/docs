@@ -137,6 +137,25 @@ runner.run({
 })
 ```
 
+### Privileged Imports
+
+An import can be granted modules the eval'd code itself cannot see. Use the table form with `id` and `modules`:
+
+```lua
+runner.run({
+    source = [[
+        local pricing = require("pricing")
+        return pricing.quote(...)
+    ]],
+    modules = {"json"},
+    imports = {
+        pricing = { id = "app.lib:pricing", modules = {"funcs"} }
+    },
+})
+```
+
+The `pricing` library executes in its own scoped environment where `funcs` is available; the eval'd source cannot require or reach `funcs` directly. Granting a module to an import requires the caller to hold `eval.module` permission for that module — capabilities cannot be delegated beyond what the caller itself is allowed.
+
 ### Custom Modules
 
 Inject custom tables:
@@ -218,11 +237,23 @@ The system checks permissions for:
 
 - `eval.compile` - Before compilation
 - `eval.run` - Before execution
-- `eval.module` - For each module in whitelist
+- `eval.module` - For each module in whitelist, and for each module granted to a privileged import
 - `eval.import` - For each registry import
 - `eval.class` - For each allowed class
 
 Configure in security policies.
+
+## Compile Cache
+
+Compiled programs are cached in an LRU keyed by source, method, modules, and allowed classes — repeated runs of identical code skip recompilation. Imports and context are bound at run time and do not affect the cache key.
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    cache_size: 256   # entries; 0 or less disables caching (default: 256)
+    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+```
 
 ## Error Handling
 

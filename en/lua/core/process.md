@@ -109,6 +109,7 @@ local ok, err = process.set_options({trap_links = true})
 | Field | Type | Description |
 |-------|------|-------------|
 | `trap_links` | boolean | Whether LINK_DOWN events are delivered to events channel |
+| `upgradable` | boolean | Opt in to OUTDATED events when the process's code is invalidated |
 
 ## Inbox and Events
 
@@ -126,6 +127,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 | `process.event.CANCEL` | Cancellation requested |
 | `process.event.EXIT` | Monitored process exited |
 | `process.event.LINK_DOWN` | Linked process terminated abnormally |
+| `process.event.OUTDATED` | The process's code or an imported dependency changed in the registry |
 
 ### Event Fields
 
@@ -135,6 +137,9 @@ local events = process.events()  -- Lifecycle events from @events topic
 | `from` | string | Source PID |
 | `result` | table | For EXIT/LINK_DOWN: a {value, error} record; the process return value is at `result.value` and any error at `result.error` |
 | `reason` | string | For CANCEL: why the process is being cancelled |
+| `sources` | string[] | For OUTDATED: registry IDs that changed or were transitively affected |
+
+OUTDATED is delivered only to processes that opted in with `process.set_options({upgradable = true})`; other processes never see it. Multiple invalidations coalesce into a single pending event with the union of `sources`. The intended reaction is a hot swap via [`process.upgrade`](#process-upgrade).
 
 ## Topic Subscription
 
@@ -234,6 +239,16 @@ spawner:spawn_linked_monitored(id, host, ...)
 ```
 
 Same permissions as module-level spawn functions.
+
+### Spawner Exec
+
+```lua
+local result, err = spawner:exec(id, host, ...)
+```
+
+Runs the target process synchronously under the builder's context, actor, and scope, and returns its result value — the bounded counterpart of module-level `process.exec`. A deferred worker can rebuild an owner identity with `with_actor`/`with_scope` and execute on its behalf.
+
+**Permissions:** `process.exec` on process id, `process.host` on host id
 
 ## Name Registry
 
