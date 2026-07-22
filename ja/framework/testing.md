@@ -16,7 +16,7 @@ wippy add wippy/test
 wippy install
 ```
 
-このモジュールは`test`コマンドを自動的に登録します。インストール後、`wippy run test`でプロジェクト内の全テストエントリを検出して実行します。
+このモジュールはテストエントリポイント（`use_case: test`を持つコマンド）を自動的に登録します。インストール後、`wippy test`でプロジェクト内の全テストエントリを検出して実行します。
 
 ## テストの定義
 
@@ -268,14 +268,14 @@ test.restore_all_mocks()                  -- restore all mocks
 ### 全テストの実行
 
 ```bash
-wippy run test
+wippy test
 ```
 
 ### パターンによるフィルタ
 
 ```bash
-wippy run test math
-wippy run test user validation
+wippy test math
+wippy test user validation
 ```
 
 フィルタはエントリIDに対してマッチします。複数のパターンは組み合わされます。
@@ -327,7 +327,7 @@ return { main = main }
       - funcs
 ```
 
-ランナーはテストがBDDケースイベントを使用しているか、シンプルな値を返しているかを検出します。両方のパターンが`wippy run test`で動作します。
+ランナーはテストがBDDケースイベントを使用しているか、シンプルな値を返しているかを検出します。両方のパターンが`wippy test`で動作します。
 
 ## プロジェクト構造
 

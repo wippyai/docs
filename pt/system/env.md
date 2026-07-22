@@ -149,6 +149,37 @@ Nomes de variáveis devem conter apenas: `a-z`, `A-Z`, `0-9`, `_`
   storage: app.config:secrets
 ```
 
+## Interpolação de Placeholders
+
+Variáveis registradas são trazidas para a configuração de entradas com placeholders `${env:NAME}`, resolvidos centralmente no momento do decode contra este registro. Qualquer campo string nos dados de uma entrada pode referenciar uma variável dessa forma.
+
+| Sintaxe | Significado |
+|---------|-------------|
+| `${env:NAME}` | Resolve `NAME` pelo registro de env; erro se não definida e sem default |
+| `${env:NAME\|default}` | Resolve `NAME`, recorrendo a `default` quando não definida |
+| `${NAME\|default}` | Forma abreviada; `NAME` deve ser upper-snake (`A-Z0-9_`) e o `\|default` é obrigatório — um `${VAR}` puro é deixado intacto para que trechos de shell/template embutidos não sejam confundidos com referências |
+| `$${` | `${` literal (escape) |
+
+`NAME` é o nome público de uma variável registrada ou seu ID de entrada (forma de id de registro com pontos/dois-pontos, p. ex. `app.env:tls_cert`). **Não** é uma variável de ambiente crua do SO: um valor do SO só é alcançável quando uma variável com backend `env.storage.os` está registrada sob esse nome.
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
+```
+
+Um campo cujo valor inteiro é um único placeholder recebe o valor tipado da variável (coagido para bool/int/float quando um default tipado é dado); um placeholder misturado com texto ao redor interpola para uma string. O `default` próprio da variável é honrado antes do `|default` inline do placeholder. Uma referência que resolve para nada e não tem default falha o decode.
+
+A resolução acontece apenas no momento do decode: a entrada armazenada no registro mantém os placeholders crus, então segredos resolvidos nunca aparecem em resultados de `registry.get` nem em estado persistido. Entradas que referenciam `${env:...}` são ordenadas automaticamente depois dos armazenamentos e variáveis de env dos quais dependem no boot.
+
+<note>
+Configurações mais antigas usam uma diretiva irmã <code>&lt;campo&gt;_env</code> (por exemplo <code>cert_env: app.env:tls_cert</code>) que resolve da mesma forma. Essa forma está <b>obsoleta</b> — migre-a para o placeholder <code>${env:NAME}</code>. Uma chave <code>&lt;campo&gt;_env</code> que nomeia uma variável não registrada não é tratada como diretiva e é deixada como está; uma que nomeia uma variável registrada mas vazia mantém o valor inline de <code>&lt;campo&gt;</code>. Apenas um <code>${env:NAME}</code> explícito sem default falha de forma definitiva com uma variável ausente.
+</note>
+
 ## Erros
 
 | Condição | Tipo | Retentável |

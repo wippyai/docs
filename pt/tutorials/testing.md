@@ -7,7 +7,7 @@ description: "Escreva e execute testes para seu código Lua com o framework wipp
 
 Escreva e execute testes para seu código Lua com o framework `wippy/test` — um runner
 estilo BDD com asserções, hooks de ciclo de vida e mocking, executado pelo comando
-`wippy run test`.
+`wippy test`.
 
 ## O que você construirá
 
@@ -15,7 +15,7 @@ Uma pequena biblioteca e uma suíte de testes que a cobre:
 
 1. Uma biblioteca `calc` com as funções `add` e `div`.
 2. Uma entrada de teste que descreve casos, verifica comportamento e pula um caso pendente.
-3. Uma execução de teste verde via `wippy run test`.
+3. Uma execução de teste verde via `wippy test`.
 
 ## Pré-requisitos
 
@@ -122,14 +122,14 @@ o framework, `calc` vincula a unidade sob teste.
 ## Execute
 
 ```bash
-wippy run test
+wippy test
 ```
 
 Filtre para uma única suíte (corresponde ao id da entrada ou ao nome da suíte) enquanto
 itera:
 
 ```bash
-wippy run test calculator
+wippy test calculator
 ```
 
 Saída para a suíte acima:
@@ -144,7 +144,7 @@ Saída para a suíte acima:
   PASSED   3 tests   1 skipped   1ms
 ```
 
-`wippy run test` sai com `0` quando todos os casos passam e `1` em qualquer falha, então
+`wippy test` sai com `0` quando todos os casos passam e `1` em qualquer falha, então
 ele se encaixa diretamente em CI.
 
 ## Asserções

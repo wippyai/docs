@@ -149,6 +149,37 @@ Los nombres de variables deben contener solo: `a-z`, `A-Z`, `0-9`, `_`
   storage: app.config:secrets
 ```
 
+## Interpolación de Placeholders
+
+Las variables registradas se incorporan a la configuración de las entradas con placeholders `${env:NAME}`, resueltos centralmente en el momento de la decodificación contra este registro. Cualquier campo string en los datos de una entrada puede referenciar una variable de esta forma.
+
+| Sintaxis | Significado |
+|----------|-------------|
+| `${env:NAME}` | Resuelve `NAME` a través del registro env; error si no está definida y no hay valor por defecto |
+| `${env:NAME\|default}` | Resuelve `NAME`, recurriendo a `default` cuando no está definida |
+| `${NAME\|default}` | Forma abreviada; `NAME` debe ser upper-snake (`A-Z0-9_`) y el `\|default` es obligatorio — un `${VAR}` simple se deja intacto para que los fragmentos de shell/plantillas incrustados no se confundan con referencias |
+| `$${` | `${` literal (escape) |
+
+`NAME` es el nombre público de una variable registrada o su ID de entrada (forma de id de registro con puntos/dos puntos, ej. `app.env:tls_cert`). **No** es una variable de entorno cruda del SO: un valor del SO solo es alcanzable cuando una variable respaldada por `env.storage.os` está registrada bajo ese nombre.
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
+```
+
+Un campo cuyo valor completo es un único placeholder toma el valor tipado de la variable (convertido a bool/int/float cuando se da un valor por defecto tipado); un placeholder mezclado con texto circundante se interpola en un string. El `default` propio de la variable se respeta antes que el `|default` en línea del placeholder. Una referencia que no resuelve a nada y no tiene valor por defecto hace fallar la decodificación.
+
+La resolución ocurre solo en el momento de la decodificación: la entrada almacenada en el registro conserva los placeholders sin resolver, de modo que los secretos resueltos nunca aparecen en los resultados de `registry.get` ni en el estado persistido. Las entradas que referencian `${env:...}` se ordenan automáticamente en el arranque después de los almacenes env y las variables de las que dependen.
+
+<note>
+Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env</code> (por ejemplo <code>cert_env: app.env:tls_cert</code>) que se resuelve de la misma forma. Esta forma está <b>deprecada</b> — migrala al placeholder <code>${env:NAME}</code>. Una clave <code>&lt;field&gt;_env</code> que nombra una variable no registrada no se trata como directiva y se deja tal cual; una que nombra una variable registrada pero vacía conserva el valor en línea de <code>&lt;field&gt;</code>. Solo un <code>${env:NAME}</code> explícito sin valor por defecto falla de forma estricta ante una variable ausente.
+</note>
+
 ## Errores
 
 | Condición | Tipo | Reintentable |

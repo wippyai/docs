@@ -210,6 +210,8 @@ local secured = c:with_actor(security.actor()):with_scope(security.scope())
 local admin, err = secured:open()
 ```
 
+明示的な`with_actor`/`with_scope`がない場合、開かれたコントラクトは呼び出し元のアンビエントなアクターとスコープを継承します。設定した場合、それらはバインドされた実装関数に伝播します — インスタンスに対するすべてのメソッド呼び出しがそのアイデンティティのもとで実行されます。
+
 ## 権限
 
 | 権限 | リソース | 関数 |

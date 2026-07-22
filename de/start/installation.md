@@ -26,12 +26,15 @@ wippy version
 mkdir myapp && cd myapp
 wippy init
 
-# Abhängigkeiten hinzufügen
-wippy add wippy/http
-wippy install
-
 # Ausführen
 wippy run
+```
+
+HTTP, SQL, Storage und Prozess-Hosting sind in die Runtime eingebaut — ein frisches Projekt läuft ohne jede Abhängigkeit. Framework-Module werden bei Bedarf aus dem Hub hinzugefügt:
+
+```bash
+wippy add wippy/test
+wippy install
 ```
 
 ## Befehlsübersicht
@@ -40,6 +43,7 @@ wippy run
 |--------|--------------|
 | `wippy init` | Neues Projekt initialisieren |
 | `wippy run` | Runtime starten |
+| `wippy test` | Test-Entrypoint ausführen |
 | `wippy lint` | Code auf Fehler prüfen |
 | `wippy add` | Abhängigkeit hinzufügen |
 | `wippy install` | Abhängigkeiten installieren |

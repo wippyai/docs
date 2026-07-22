@@ -9,6 +9,58 @@ O Wippy é configurado via arquivos `.wippy.yaml`. Todas as opções têm padrõ
 
 Qualquer valor abaixo pode ser sobrescrito na inicialização com `wippy run --set section.path=value` (repetível, tem precedência sobre o arquivo). Para sobrescrever *entradas* individuais do registro em vez destas seções de configuração, use a seção `override:` ou `-o` — veja [Sobrescrevendo Entradas](guides/entry-kinds.md#overriding-entries).
 
+## Composição de Configuração {#config-composition}
+
+`--config` é repetível; os arquivos compõem da esquerda para a direita usando o mesmo schema:
+
+```bash
+wippy run --config .wippy.yaml --config .wippy.local.yaml
+```
+
+- Arquivos posteriores sobrescrevem valores correspondentes e mantêm todo o resto.
+- Todo arquivo nomeado explicitamente deve existir. Sem `--config`, o `.wippy.yaml` padrão é opcional.
+- O primeiro arquivo ancora o diretório usado para resolver caminhos relativos.
+- Nomes de arquivo não carregam significado reservado; nada além do padrão é descoberto automaticamente.
+
+A configuração aplica-se nesta ordem: composição de arquivos, depois seleções de `--profile`, depois overrides de `--set`. Para aplicações executadas a partir de packs, os defaults de runtime empacotados ficam abaixo de todos esses (veja [Publicando Defaults de Runtime](guides/publishing.md#publishing-runtime-defaults)).
+
+## Perfis {#profiles}
+
+Um arquivo de configuração pode declarar overlays nomeados sob `profiles:`. Cada corpo de profile espelha as seções normais de configuração; selecioná-lo com `--profile <name>` sobrepõe esses valores à configuração base mesclada:
+
+```yaml
+version: "1.0"
+
+vars:
+  port: 8085
+
+override:
+  app:db:kind: db.sql.sqlite
+
+disable:
+  namespaces: ["legacy.**"]
+
+profiles:
+  pg:
+    vars:
+      port: 18085
+    override:
+      app:db:kind: db.sql.postgres
+    disable:
+      namespaces.add: ["experimental.**"]
+```
+
+```bash
+wippy run --profile pg
+```
+
+- `--profile` é repetível; profiles compõem da esquerda para a direita, depois da composição de arquivos e antes de `--set`. Um nome desconhecido é um erro.
+- Valores mesclam por folha (o último escritor vence). A seção `profiles:` em si é removida da configuração resolvida.
+- A seção `disable` suporta operações de lista dentro de profiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — para que um profile possa ajustar a lista base em vez de substituí-la.
+- Referências `${name}` interpolam a partir da seção `vars:` mesclada. Referências a variáveis de ambiente do SO não são permitidas dentro de vars de profile; use `${env:NAME}` na configuração base, resolvido no carregamento do arquivo.
+
+`wippy run`, `test` e `pack` aceitam `--profile`; `install`, `update`, `lint` e `registry` também o aceitam para profiles de workspace (junto com `--set`). Aplicações podem embarcar profiles dentro de packs — veja [Publicando Profiles](guides/publishing.md#publishing-profiles).
+
 ## Logger
 
 Controla o encoder do logger zap. Flags do CLI (`-v`, `-c`, `-s`) sobrescrevem nível/saída; a única opção controlada por yaml é a codificação.
@@ -285,16 +337,29 @@ Gossip SWIM via memberlist. Usado para descoberta de nós, detecção de falhas 
 | `membership.join_addrs` | string | | Pares seed `host:port` separados por vírgula |
 | `membership.secret_key` | string | | Chave de criptografia gossip codificada em base64 (inline) |
 | `membership.secret_file` | string | | Caminho para arquivo contendo a chave de criptografia gossip |
+| `membership.gossip_interval` | duration | 500ms | Período de disseminação do gossip |
+| `membership.push_pull_interval` | duration | 5s | Período de sincronização completa de estado |
+| `membership.dead_node_reclaim_time` | duration | 30s | Quando o nome/endereço de um nó morto pode ser reaproveitado |
+| `membership.probe_interval` | duration | 1s | Ciclo de probe de detecção de falhas |
+| `membership.probe_timeout` | duration | 200ms | Espera por ack por probe |
+| `membership.tcp_timeout` | duration | 1s | Timeout do probe de fallback TCP |
+| `membership.suspicion_mult` | int | 3 | Multiplicador do timeout de suspeita |
+
+As quatro chaves de probe herdam os defaults de rede local do memberlist quando não definidas; aumente-as para links de alta latência (p. ex. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internós (transporte)
 
-Malha TCP que transporta o tráfego de relay e Raft entre nós. O Raft usa esta malha (multiplexado com yamux); não há porta Raft separada.
+Malha TCP que transporta o tráfego de relay e Raft entre nós. O Raft usa esta malha via request/reply internó; não há porta Raft separada.
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `internode.bind_addr` | string | 0.0.0.0 | Endereço de bind da malha |
 | `internode.bind_port` | int | 0 | Porta da malha (0 = auto: 7950-7959, depois efêmera) |
 | `internode.auto_port` | bool | true | Descobrir a porta real no boot, fixá-la e anunciá-la via gossip |
+| `internode.advertise_addr` | string | | Endpoint de relay adicional (IP ou nome DNS) publicado para peers atualizados — para alcançabilidade via NAT ou balanceador de carga |
+| `internode.advertise_port` | int | 0 | Porta para `advertise_addr` (0 = porta de bind; requer `advertise_addr`) |
+
+`advertise_addr`/`advertise_port` publicam um endpoint aditivo nos metadados do nó enquanto o endpoint de bind continua anunciado sem mudança, de modo que clusters com versões mistas continuam se conectando durante um rolling upgrade.
 
 ### Raft (consenso)
 

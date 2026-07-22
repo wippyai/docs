@@ -93,7 +93,7 @@ Einige Arten überspringen den Event-Bus komplett:
 - `registry.entry` - Anwendungskonfigurationen
 - `ns.requirement` - Namespace-Requirements
 - `ns.dependency` - Modul-Abhängigkeiten
-- `ns.definition` - Modul-Metadaten (Readme, Lizenz, Autoren)
+- `ns.definition` - Modul-Metadaten (Readme, Wiki, Lizenz, Autoren)
 
 ## Abhängigkeitsauflösung
 
@@ -115,10 +115,13 @@ History-Backends:
 | Implementierung | Anwendungsfall |
 |-----------------|----------------|
 | SQLite | Produktions-Persistenz |
-| Memory | Testen |
+| PostgreSQL | Produktions-Persistenz, geteilt über Knoten |
+| Memory | Standard, wenn `history_type` nicht gesetzt ist; Testen |
 | Nil | Keine Historie |
 
-SQLite verwendet WAL-Modus mit Tabellen für Versionen, ChangeSets (MessagePack-kodiert) und Metadaten.
+SQLite verwendet WAL-Modus mit Tabellen für Versionen, ChangeSets (MessagePack-kodiert) und Metadaten. PostgreSQL wird mit `registry.history_type: postgres` plus `history_dsn`/`history_schema` ausgewählt (siehe [Konfiguration](guides/configuration.md#registry)).
+
+Die Historie persistiert auch die exakte Abhängigkeitsauflösung jeder Version: Wenn eine `ns.dependency`-Änderung angewendet wird, wird der aufgelöste Modulgraph inhaltsadressiert neben dem ChangeSet gespeichert. Boot und Rollback spielen den gespeicherten Graphen wieder ab, statt neu aufzulösen, sodass eine Version stets mit den Versionen abgeglichen wird, mit denen sie aufgelöst wurde. Das Historie-Schema migriert automatisch beim ersten Boot nach einem Upgrade; eine bereits vorhandene Version wird beim ersten Besuch einmal aufgelöst und als Checkpoint gespeichert.
 
 ### Navigation
 

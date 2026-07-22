@@ -150,7 +150,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-Siehe [Datenbank](system/database.md) fuer `*_env`-Suffix-Varianten, TLS-Optionen und Verbindungs-Pool-Tuning.
+Siehe [Datenbank](system/database.md) fuer `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
 
 **Lua-API:** Siehe [SQL-Modul](lua/storage/sql.md)
 
@@ -300,6 +300,8 @@ Die <code>func</code> des Consumers wird für jede Nachricht aufgerufen. Verwend
 <tip>
 Verwenden Sie <code>process.service</code> wenn ein Prozess als überwachter Dienst mit automatischem Neustart laufen soll. Das <code>process</code>-Feld referenziert einen <code>process.lua</code>-Eintrag.
 </tip>
+
+Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers` im laufenden Betrieb — laufende Prozesse, PIDs und Queues bleiben erhalten. `host.queue_size`, `host.local_queue_size` und `lifecycle` sind bei der Konstruktion fixiert: Ein Live-Update, das sie ändert, wird abgelehnt, ebenso das Anpassen der Worker-Anzahl auf einem Host, dessen Worker affinitäts-verwaltet sind.
 
 ## Temporal (Workflows)
 

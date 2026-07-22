@@ -26,12 +26,15 @@ wippy version
 mkdir myapp && cd myapp
 wippy init
 
-# 依存関係を追加
-wippy add wippy/http
-wippy install
-
 # 実行
 wippy run
+```
+
+HTTP、SQL、ストレージ、プロセスホスティングはランタイムに組み込まれているため、新規プロジェクトは依存関係なしで実行できます。フレームワークモジュールは必要に応じてハブから追加します：
+
+```bash
+wippy add wippy/test
+wippy install
 ```
 
 ## コマンド一覧
@@ -40,6 +43,7 @@ wippy run
 |---------|------|
 | `wippy init` | 新しいプロジェクトを初期化 |
 | `wippy run` | ランタイムを起動 |
+| `wippy test` | テストエントリポイントを実行 |
 | `wippy lint` | コードのエラーをチェック |
 | `wippy add` | 依存関係を追加 |
 | `wippy install` | 依存関係をインストール |

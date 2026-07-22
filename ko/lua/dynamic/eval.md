@@ -135,6 +135,25 @@ runner.run({
 })
 ```
 
+### 특권 임포트
+
+임포트에는 eval된 코드 자체가 볼 수 없는 모듈을 부여할 수 있습니다. `id`와 `modules`를 가진 테이블 형식을 사용하세요:
+
+```lua
+runner.run({
+    source = [[
+        local pricing = require("pricing")
+        return pricing.quote(...)
+    ]],
+    modules = {"json"},
+    imports = {
+        pricing = { id = "app.lib:pricing", modules = {"funcs"} }
+    },
+})
+```
+
+`pricing` 라이브러리는 `funcs`를 사용할 수 있는 자체 스코프 환경에서 실행됩니다; eval된 소스는 `funcs`를 직접 require하거나 접근할 수 없습니다. 임포트에 모듈을 부여하려면 호출자가 해당 모듈에 대한 `eval.module` 권한을 보유해야 합니다 — 능력은 호출자 자신에게 허용된 범위를 넘어 위임될 수 없습니다.
+
 ### 커스텀 모듈
 
 커스텀 테이블 주입:
@@ -216,11 +235,23 @@ runner.run({
 
 - `eval.compile` - 컴파일 전
 - `eval.run` - 실행 전
-- `eval.module` - 화이트리스트의 각 모듈
+- `eval.module` - 화이트리스트의 각 모듈, 그리고 특권 임포트에 부여된 각 모듈
 - `eval.import` - 각 레지스트리 임포트
 - `eval.class` - 각 허용된 클래스
 
 보안 정책에서 설정합니다.
+
+## 컴파일 캐시
+
+컴파일된 프로그램은 소스, 메서드, 모듈, 허용된 클래스를 키로 하는 LRU에 캐시됩니다 — 동일한 코드를 반복 실행하면 재컴파일을 건너뜁니다. 임포트와 컨텍스트는 실행 시점에 바인딩되며 캐시 키에 영향을 주지 않습니다.
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    cache_size: 256   # entries; 0 or less disables caching (default: 256)
+    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+```
 
 ## 에러 처리
 

@@ -16,6 +16,7 @@
       {"title": "Linter", "path": "guides/linter"},
       {"title": "Language Server", "path": "guides/lsp"},
       {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Создание компонентов", "path": "guides/components"},
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
       {"title": "Queue Consumers", "path": "guides/queue-consumers"},
@@ -27,6 +28,7 @@
     "title": "Core Concepts",
     "children": [
       {"title": "Compute Units", "path": "concepts/compute-units"},
+      {"title": "Архитектура", "path": "concepts/architecture"},
       {"title": "Registry", "path": "concepts/registry"},
       {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "Кластер", "path": "concepts/cluster"},

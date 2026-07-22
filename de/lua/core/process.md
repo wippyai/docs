@@ -109,6 +109,7 @@ local ok, err = process.set_options({trap_links = true})
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `trap_links` | boolean | Ob LINK_DOWN-Events an den Events-Channel geliefert werden |
+| `upgradable` | boolean | Opt-in für OUTDATED-Events, wenn der Code des Prozesses invalidiert wird |
 
 ## Inbox und Events
 
@@ -126,6 +127,7 @@ local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
 | `process.event.CANCEL` | Kanzellierung angefordert |
 | `process.event.EXIT` | Überwachter Prozess beendet |
 | `process.event.LINK_DOWN` | Gelinkter Prozess abnormal beendet |
+| `process.event.OUTDATED` | Der Code des Prozesses oder eine importierte Abhängigkeit hat sich in der Registry geändert |
 
 ### Event-Felder
 
@@ -136,6 +138,9 @@ local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
 | `result` | any | Für EXIT: der zurückgegebene Wert (bei normalem Exit vorhanden) |
 | `error` | any | Für EXIT: der Fehler (bei abnormalem Exit vorhanden) |
 | `reason` | string | Für CANCEL: Grund der Kanzellierung |
+| `sources` | string[] | Für OUTDATED: Registry-IDs, die sich geändert haben oder transitiv betroffen sind |
+
+OUTDATED wird nur an Prozesse geliefert, die sich mit `process.set_options({upgradable = true})` dafür angemeldet haben; andere Prozesse sehen es nie. Mehrere Invalidierungen verschmelzen zu einem einzigen ausstehenden Event mit der Vereinigung der `sources`. Die vorgesehene Reaktion ist ein Hot Swap via [`process.upgrade`](#prozess-upgrade).
 
 ## Topic-Subscription
 
@@ -235,6 +240,16 @@ spawner:spawn_linked_monitored(id, host, ...)
 ```
 
 Gleiche Berechtigungen wie Modul-Level-Spawn-Funktionen.
+
+### Spawner-Exec
+
+```lua
+local result, err = spawner:exec(id, host, ...)
+```
+
+Führt den Zielprozess synchron unter Kontext, Actor und Scope des Builders aus und gibt dessen Ergebniswert zurück — das gebundene Gegenstück zum Modul-Level-`process.exec`. Ein deferred Worker kann mit `with_actor`/`with_scope` eine Owner-Identität rekonstruieren und in deren Namen ausführen.
+
+**Berechtigungen:** `process.exec` auf der Prozess-ID, `process.host` auf der Host-ID
 
 ## Namensregistrierung
 

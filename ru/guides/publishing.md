@@ -31,6 +31,7 @@ mymodule/
 ```yaml
 organization: acme
 module: http-utils
+type: library
 description: HTTP utilities and helpers
 license: MIT
 repository: https://github.com/acme/http-utils
@@ -44,11 +45,14 @@ keywords:
 |-------|----------|-------------|
 | `organization` | Да | Имя вашей организации в hub |
 | `module` | Да | Имя модуля |
+| `type` | Нет | Тип модуля: `library`, `application`, `agent` или `plugin` |
 | `description` | Нет | Краткое описание |
 | `license` | Нет | Идентификатор SPDX (MIT, Apache-2.0) |
 | `repository` | Нет | URL репозитория исходников |
 | `homepage` | Нет | Главная страница проекта |
 | `keywords` | Нет | Поисковые ключевые слова |
+
+`type` — источник истины для того, как хаб классифицирует модуль; его можно изменить при последующей публикации, а `--module-type` переопределяет его для одной публикации. Если он опущен, новые модули по умолчанию получают тип `application` с предупреждением об устаревании.
 
 ## Определения записей
 
@@ -64,6 +68,10 @@ entries:
     meta:
       title: HTTP Utilities
       description: Helpers for HTTP operations
+    readme: file://README.md
+    wiki:
+      GUIDE.md: file://docs/GUIDE.md
+      examples/auth.md: file://docs/auth.md
 
   - name: client
     kind: library.lua
@@ -72,6 +80,8 @@ entries:
       - http_client
       - json
 ```
+
+Карта `wiki:` на `ns.definition` публикует дополнительные страницы документации рядом с readme: ключи — пути страниц, значения — ссылки `file://`. Содержимое встраивается при упаковке и обслуживается хабом как просматриваемая вики модуля.
 
 ## Зависимости
 
@@ -115,6 +125,8 @@ entries:
 Targets указывают, куда внедряется значение:
 - `entry` — полный ID записи для конфигурирования
 - `path` — JSONPath для внедрения значения
+
+`default` принимает любой скалярный тип — `default: 20` попадает в числовой target как число, а не строка. То же относится к `parameters[].value` записей `ns.dependency`; оба принимают ссылки `${env:NAME}`, которые переносятся дословно и разрешаются при декодировании целевой записи.
 
 Потребители настраивают через override. Флаг `-o` принимает тройку `namespace:entry:field=value`:
 
@@ -213,7 +225,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--config <dir>` | Каталог, содержащий `wippy.yaml` (по умолчанию: текущий) |
 | `--create` | Зарегистрировать модуль на хабе, если он ещё не существует, затем опубликовать |
 | `--module-visibility <v>` | Видимость для `--create`: `private` (по умолчанию) или `public` |
-| `--module-type <t>` | Тип для `--create`: `application` (по умолчанию), `library`, `agent` или `plugin` |
+| `--module-type <t>` | Тип модуля: `library`, `application`, `agent` или `plugin` (переопределяет `type:` в wippy.yaml) |
 | `--module-display-name <n>` | Отображаемое имя для `--create` |
 
 ### Встраивание статических файлов
@@ -254,6 +266,48 @@ wippy publish --registry http://localhost:8080 --create --version 0.1.0
 ### Квоты
 
 Если квота организации на приватные модули исчерпана, публикация завершается с сообщением вроде `cannot publish: Private-module quota exhausted (5 of 5)...`. Сделайте модуль публичным или попросите администратора организации увеличить квоту. Загрузки и скачивания автоматически повторяются при временных сетевых ошибках.
+
+## Публикация значений по умолчанию среды выполнения {#publishing-runtime-defaults}
+
+Приложения (только `type: application`) могут поставлять значения по умолчанию конфигурации среды выполнения внутри своих pack-файлов через `publish.runtime` в `wippy.yaml`:
+
+```yaml
+type: application
+publish:
+  runtime:
+    source: .wippy.yaml            # default: .wippy.yaml
+    sections: [security, registry, override]
+    vars: [public_url]
+```
+
+| Поле | Описание |
+|------|----------|
+| `source` | Файл конфигурации, из которого читаются секции (по умолчанию: `.wippy.yaml`) |
+| `sections` | Секции конфигурации среды выполнения, копируемые в метаданные пакета как значения по умолчанию |
+| `vars` | Явный список переменных, упаковываемых даже без ссылок на них |
+
+Правила:
+
+- Упаковываются только переменные, на которые ссылаются выбранные секции или публикуемые профили (с транзитивным следованием); всё остальное требует записи в `vars`.
+- Ссылки `${env:...}` в экспортируемой конфигурации отклоняются — окружение публикующего никогда не утекает в пакет.
+- Машинно-локальные секции `boot`, `extensions` и `workspace` экспортировать нельзя.
+- Значения по умолчанию среды выполнения хоста даёт только пакет основного приложения; runtime-метаданные в пакетах зависимостей игнорируются.
+
+На стороне получателя конфигурация применяется от низшего приоритета к высшему: значения по умолчанию из пакета приложения, встроенные значения по умолчанию среды выполнения, локальные файлы конфигурации, выбранные профили, переопределения CLI.
+
+## Публикация профилей {#publishing-profiles}
+
+Профили корневого приложения экспортируются в метаданные пакета `runtime.profiles`. Публикация не выбирает и не фиксирует профиль — потребители выбирают его при запуске через `wippy run --profile <name>`:
+
+```yaml
+publish:
+  profiles:
+    enabled: true
+    source: config/profiles.yaml   # default: .wippy.yaml
+    include: [production]          # omit to publish all non-workspace profiles
+```
+
+`include: []` не публикует ни одного профиля; неизвестное имя приводит к ошибке публикации. Подсекции `workspace` никогда не экспортируются, даже внутри публикуемого профиля. Об объявлении профилей см. [Конфигурация](guides/configuration.md#profiles).
 
 ## Использование опубликованных модулей
 
@@ -328,7 +382,7 @@ entries:
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
-    default: "1000"
+    default: 1000
 
   - name: cache
     kind: library.lua

@@ -210,6 +210,8 @@ local secured = c:with_actor(security.actor()):with_scope(security.scope())
 local admin, err = secured:open()
 ```
 
+Sem `with_actor`/`with_scope` explícitos, um contract aberto herda o ator e o escopo ambientes do chamador. Quando definidos, eles se propagam às funções de implementação vinculadas — cada chamada de método na instância executa sob essa identidade.
+
 ## Permissões
 
 | Permissão | Recurso | Funções |

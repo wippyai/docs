@@ -109,6 +109,7 @@ local ok, err = process.set_options({trap_links = true})
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `trap_links` | boolean | Se eventos LINK_DOWN são entregues ao channel de eventos |
+| `upgradable` | boolean | Opta por receber eventos OUTDATED quando o código do processo é invalidado |
 
 ## Inbox e Eventos
 
@@ -126,6 +127,7 @@ local events = process.events()  -- Eventos de ciclo de vida do tópico @events
 | `process.event.CANCEL` | Cancelamento solicitado |
 | `process.event.EXIT` | Processo monitorado saiu |
 | `process.event.LINK_DOWN` | Processo linked terminou anormalmente |
+| `process.event.OUTDATED` | O código do processo ou uma dependência importada mudou no registro |
 
 ### Campos de Evento
 
@@ -136,6 +138,9 @@ local events = process.events()  -- Eventos de ciclo de vida do tópico @events
 | `result` | any | Para EXIT: o valor retornado (presente em saída normal) |
 | `error` | any | Para EXIT: o erro (presente em saída anormal) |
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
+| `sources` | string[] | Para OUTDATED: IDs de registro que mudaram ou foram afetados transitivamente |
+
+OUTDATED é entregue apenas a processos que optaram por ele com `process.set_options({upgradable = true})`; os demais processos nunca o veem. Múltiplas invalidações são coalescidas em um único evento pendente com a união de `sources`. A reação pretendida é um hot swap via [`process.upgrade`](#upgrade-de-processo).
 
 ## Inscrição em Tópico
 
@@ -235,6 +240,16 @@ spawner:spawn_linked_monitored(id, host, ...)
 ```
 
 Mesmas permissões que funções spawn do módulo.
+
+### Exec do Spawner
+
+```lua
+local result, err = spawner:exec(id, host, ...)
+```
+
+Executa o processo alvo de forma síncrona sob o contexto, ator e escopo do builder, e retorna seu valor de resultado — a contraparte vinculada do `process.exec` de nível de módulo. Um worker deferido pode reconstruir a identidade de um dono com `with_actor`/`with_scope` e executar em nome dele.
+
+**Permissões:** `process.exec` no id do processo, `process.host` no id do host
 
 ## Registro de Nomes
 

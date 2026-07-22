@@ -16,7 +16,7 @@ wippy add wippy/test
 wippy install
 ```
 
-El modulo registra un comando `test` automaticamente. Una vez instalado, `wippy run test` descubre y ejecuta todas las entradas de test en tu proyecto.
+El modulo registra el punto de entrada de test automaticamente (un comando con `use_case: test`). Una vez instalado, `wippy test` descubre y ejecuta todas las entradas de test en tu proyecto.
 
 ## Definir Tests
 
@@ -268,14 +268,14 @@ Todos los mocks se restauran automaticamente despues de cada test mediante el ho
 ### Ejecutar Todos los Tests
 
 ```bash
-wippy run test
+wippy test
 ```
 
 ### Filtrar por Patron
 
 ```bash
-wippy run test math
-wippy run test user validation
+wippy test math
+wippy test user validation
 ```
 
 Los filtros coinciden contra los IDs de las entradas. Multiples patrones se combinan.
@@ -327,7 +327,7 @@ return { main = main }
       - funcs
 ```
 
-El runner detecta si un test usa eventos de casos BDD o retorna un valor simple. Ambos patrones funcionan con `wippy run test`.
+El runner detecta si un test usa eventos de casos BDD o retorna un valor simple. Ambos patrones funcionan con `wippy test`.
 
 ## Estructura del Proyecto
 

@@ -197,6 +197,39 @@ end
 
 すべてのセル値は文字列として返される。booleanは"TRUE"または"FALSE"、数値は文字列表現。
 
+### 行のストリーミング
+
+`wb:rows(sheet)`は1つのシートに対するストリーミングカーソルを開きます。シート全体をメモリに展開する`get_rows`とは異なり、シートは一定のメモリ使用量でインクリメンタルにデコードされます：
+
+```lua
+local cursor, err = wb:rows("Report")
+if err then
+    return nil, err
+end
+
+while true do
+    local batch, err = cursor:read(500)
+    if err then
+        cursor:close()
+        return nil, err
+    end
+    if not batch then
+        break                       -- end of sheet
+    end
+    for _, row in ipairs(batch) do
+        process(row)
+    end
+end
+cursor:close()
+```
+
+| メソッド | 説明 |
+|---------|------|
+| `cursor:read(n?)` | 最大`n`行の次のバッチを読み取る（デフォルト1、最大10000）。`string[][], error`を返す。シート終端では`nil, nil` |
+| `cursor:close()` | カーソルを解放する（冪等。カーソルはワークブックと共に閉じられる） |
+
+セル値のフォーマットは`get_rows`と同一です。空の行は空のテーブルとして返され、末尾の空行はトリムされずに保持されます。シート終端またはエラーの後、以降の読み取りは同じ状態を返し続けます。
+
 ## ファイル操作
 
 ### ファイルへの書き込み

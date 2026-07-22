@@ -126,6 +126,27 @@ pool:
 
 O maximo padrao do pool elastico e 100 workers quando `max_size` nao e especificado.
 
+### Classes de Workers e Afinidade de Core
+
+Definir `pool.worker_class` roteia a funcao para um pool dedicado de workers fixados em threads do SO em vez dos tipos de pool compartilhados acima (`type` e ignorado quando definido; nome convencional: `wasm`):
+
+```yaml
+pool:
+  worker_class: wasm
+  workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
+```
+
+O isolamento de cores e ativado por runtime em `.wippy.yaml`:
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true      # default: false
+    reserved_cores: 2  # cores reserved for WASM pools (default: 1)
+```
+
+Com o isolamento ativado, o scheduler de atores e os pools WASM fixados executam em conjuntos de CPU disjuntos (`sched_setaffinity`, apenas Linux — outras plataformas dimensionam os pools mas nao vinculam threads). Chamadas WASM de longa duracao entao nao conseguem privar o escalonamento de atores.
+
 ## Transportes
 
 Transportes controlam como entrada e saida sao mapeados entre o runtime e o modulo WASM.

@@ -93,7 +93,7 @@ sequenceDiagram
 - `registry.entry` - アプリケーション設定
 - `ns.requirement` - 名前空間要件
 - `ns.dependency` - モジュール依存関係
-- `ns.definition` - モジュールメタデータ（readme、ライセンス、著者）
+- `ns.definition` - モジュールメタデータ（readme、wiki、ライセンス、著者）
 
 ## 依存関係解決
 
@@ -115,10 +115,13 @@ resolver.RegisterPattern(registry.DependencyPattern{
 | 実装 | ユースケース |
 |-----|-----------|
 | SQLite | 本番永続化 |
-| Memory | テスト |
+| PostgreSQL | 本番永続化、ノード間で共有 |
+| Memory | `history_type`未設定時のデフォルト。テスト |
 | Nil | 履歴なし |
 
-SQLiteはWALモードを使用し、バージョン、チェンジセット（MessagePackエンコード）、メタデータ用のテーブルを持つ。
+SQLiteはWALモードを使用し、バージョン、チェンジセット（MessagePackエンコード）、メタデータ用のテーブルを持つ。PostgreSQLは`registry.history_type: postgres`に`history_dsn`/`history_schema`を加えて選択する（[設定](guides/configuration.md#registry)を参照）。
+
+履歴は各バージョンの正確な依存関係解決も永続化する。`ns.dependency`の変更が適用されると、解決されたモジュールグラフはチェンジセットと並んでコンテンツアドレスで保存される。ブートとロールバックは再解決する代わりに保存済みのグラフをリプレイするため、あるバージョンは常にそれが解決された時点のバージョン群と整合する。履歴スキーマはアップグレード後の初回ブートで自動的にマイグレーションされる。既存のバージョンは初回アクセス時に一度だけ解決され、チェックポイントされる。
 
 ### ナビゲーション
 

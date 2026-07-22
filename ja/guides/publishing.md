@@ -31,6 +31,7 @@ mymodule/
 ```yaml
 organization: acme
 module: http-utils
+type: library
 description: HTTP utilities and helpers
 license: MIT
 repository: https://github.com/acme/http-utils
@@ -44,11 +45,14 @@ keywords:
 |-------|----------|-------------|
 | `organization` | はい | Hub 上の組織名 |
 | `module` | はい | モジュール名 |
+| `type` | いいえ | モジュールタイプ：`library`、`application`、`agent`、または `plugin` |
 | `description` | いいえ | 短い説明 |
 | `license` | いいえ | SPDX 識別子（MIT、Apache-2.0） |
 | `repository` | いいえ | ソースリポジトリ URL |
 | `homepage` | いいえ | プロジェクトホームページ |
 | `keywords` | いいえ | 検索キーワード |
+
+`type` は、ハブがモジュールをどう分類するかの信頼できる情報源であり、後の公開で変更できます。`--module-type` は単一の公開に対してこれを上書きします。省略した場合、新規作成されるモジュールは非推奨警告とともにデフォルトで `application` になります。
 
 ## エントリ定義
 
@@ -64,6 +68,10 @@ entries:
     meta:
       title: HTTP Utilities
       description: Helpers for HTTP operations
+    readme: file://README.md
+    wiki:
+      GUIDE.md: file://docs/GUIDE.md
+      examples/auth.md: file://docs/auth.md
 
   - name: client
     kind: library.lua
@@ -72,6 +80,8 @@ entries:
       - http_client
       - json
 ```
+
+`ns.definition` の `wiki:` マップは、readme に加えて追加のドキュメントページを公開します：キーはページパス、値は `file://` 参照です。内容はパック時にインライン化され、ハブがモジュールごとの閲覧可能な wiki として提供します。
 
 ## 依存関係
 
@@ -115,6 +125,8 @@ entries:
 ターゲットは値が注入される場所を指定します：
 - `entry` - 設定対象のエントリ ID
 - `path` - 値を注入する JSONPath
+
+`default` は任意のスカラー型を受け付けます — `default: 20` は数値ターゲットに文字列ではなく数値として流れ込みます。同じことは `ns.dependency` エントリの `parameters[].value` にも当てはまり、どちらも `${env:NAME}` 参照を受け付けます。参照はそのまま保持され、ターゲットエントリのデコード時に解決されます。
 
 利用者はオーバーライドで設定します。`-o` フラグは `namespace:entry:field=value` のトリプルを受け取ります：
 
@@ -213,7 +225,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--config <dir>` | `wippy.yaml` を含むディレクトリ（デフォルト：カレントディレクトリ） |
 | `--create` | モジュールがまだ存在しない場合はハブに登録してから公開する |
 | `--module-visibility <v>` | `--create` 用の可視性：`private`（デフォルト）または `public` |
-| `--module-type <t>` | `--create` 用のタイプ：`application`（デフォルト）、`library`、`agent`、または `plugin` |
+| `--module-type <t>` | モジュールタイプ：`library`、`application`、`agent`、または `plugin`（wippy.yaml の `type:` を上書き） |
 | `--module-display-name <n>` | `--create` 用の表示名 |
 
 ### 静的ファイルの埋め込み
@@ -254,6 +266,48 @@ wippy publish --registry http://localhost:8080 --create --version 0.1.0
 ### クォータ
 
 組織のプライベートモジュールクォータが使い切られている場合、公開は `cannot publish: Private-module quota exhausted (5 of 5)...` のようなメッセージで失敗します。モジュールを public にするか、組織管理者にクォータの引き上げを依頼してください。アップロードとダウンロードは、一時的なネットワークエラー時に自動でリトライされます。
+
+## ランタイムデフォルトの公開 {#publishing-runtime-defaults}
+
+アプリケーション（`type: application` のみ）は、`wippy.yaml` の `publish.runtime` を通じて、ランタイム設定のデフォルトをパック内に同梱できます：
+
+```yaml
+type: application
+publish:
+  runtime:
+    source: .wippy.yaml            # default: .wippy.yaml
+    sections: [security, registry, override]
+    vars: [public_url]
+```
+
+| フィールド | 説明 |
+|-------|-------------|
+| `source` | セクションの読み取り元となる設定ファイル（デフォルト：`.wippy.yaml`） |
+| `sections` | デフォルトとしてパックメタデータにコピーされるランタイム設定セクション |
+| `vars` | 参照されていなくてもパックする変数の明示的な許可リスト |
+
+ルール：
+
+- パックされるのは、選択されたセクションまたは公開されるプロファイルから参照される変数のみです（推移的に辿られます）。それ以外はすべて `vars` エントリが必要です。
+- エクスポートされる設定内の `${env:...}` 参照は拒否されます — 公開者の環境がパックに漏れることはありません。
+- マシンローカルのセクション `boot`、`extensions`、`workspace` はエクスポートできません。
+- ホストのランタイムデフォルトを提供するのはメインのアプリケーションパックのみで、依存パック内のランタイムメタデータは無視されます。
+
+デプロイ先では、設定は低い方から高い方の順に適用されます：アプリパックのデフォルト、ランタイムの組み込みデフォルト、ローカル設定ファイル、選択されたプロファイル、CLI の上書き。
+
+## プロファイルの公開 {#publishing-profiles}
+
+ルートアプリケーションのプロファイルは、パックの `runtime.profiles` メタデータにエクスポートされます。公開時にプロファイルが選択されたり焼き込まれたりすることはありません — 利用者が実行時に `wippy run --profile <name>` で選択します：
+
+```yaml
+publish:
+  profiles:
+    enabled: true
+    source: config/profiles.yaml   # default: .wippy.yaml
+    include: [production]          # omit to publish all non-workspace profiles
+```
+
+`include: []` は何も公開しません。未知の名前は公開を失敗させます。`workspace` サブセクションは、公開されるプロファイルの中にあってもエクスポートされることはありません。プロファイルの宣言については[設定](guides/configuration.md#profiles)を参照してください。
 
 ## 公開モジュールの利用
 
@@ -328,7 +382,7 @@ entries:
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
-    default: "1000"
+    default: 1000
 
   - name: cache
     kind: library.lua

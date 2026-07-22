@@ -93,7 +93,7 @@ Handler 有 30 秒时间来接受或拒绝每个操作。如果被拒绝，regis
 - `registry.entry` - 应用配置
 - `ns.requirement` - 命名空间需求
 - `ns.dependency` - 模块依赖
-- `ns.definition` - 模块元数据（readme、许可证、作者）
+- `ns.definition` - 模块元数据（readme、wiki、许可证、作者）
 
 ## 依赖解析
 
@@ -115,10 +115,13 @@ resolver.RegisterPattern(registry.DependencyPattern{
 | 实现 | 用例 |
 |----------------|----------|
 | SQLite | 生产环境持久化 |
-| Memory | 测试 |
+| PostgreSQL | 生产环境持久化，可跨节点共享 |
+| Memory | `history_type` 未设置时的默认值；测试 |
 | Nil | 无历史 |
 
-SQLite 使用 WAL 模式，包含版本表、changeset（MessagePack 编码）和元数据表。
+SQLite 使用 WAL 模式，包含版本表、changeset（MessagePack 编码）和元数据表。PostgreSQL 通过 `registry.history_type: postgres` 加上 `history_dsn`/`history_schema` 选择（参见[配置](guides/configuration.md#registry)）。
+
+历史还会持久化每个版本的精确依赖解析结果：当应用一个 `ns.dependency` 变更时，解析出的模块图会以内容寻址方式与 changeset 一同存储。启动和回滚时重放已存储的图而不是重新求解，因此每个版本始终与其解析时所用的版本保持一致。历史 schema 在升级后的首次启动时自动迁移；已存在的旧版本会在首次访问时解析一次并建立检查点。
 
 ### 导航
 

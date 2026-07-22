@@ -93,7 +93,7 @@ Alguns tipos pulam o event bus completamente:
 - `registry.entry` - Configs de aplicação
 - `ns.requirement` - Requirements de namespace
 - `ns.dependency` - Dependências de módulo
-- `ns.definition` - Metadados do módulo (readme, licença, autores)
+- `ns.definition` - Metadados do módulo (readme, wiki, licença, autores)
 
 ## Resolução de Dependências
 
@@ -115,10 +115,13 @@ Backends de histórico:
 | Implementação | Caso de Uso |
 |---------------|-------------|
 | SQLite | Persistência de produção |
-| Memory | Testes |
+| PostgreSQL | Persistência de produção, compartilhada entre nós |
+| Memory | Default quando `history_type` não está definido; testes |
 | Nil | Sem histórico |
 
-SQLite usa modo WAL com tabelas para versões, changesets (codificados em MessagePack) e metadados.
+SQLite usa modo WAL com tabelas para versões, changesets (codificados em MessagePack) e metadados. PostgreSQL é selecionado com `registry.history_type: postgres` mais `history_dsn`/`history_schema` (veja [Configuração](guides/configuration.md#registry)).
+
+O histórico também persiste a resolução exata de dependências de cada versão: quando uma mudança de `ns.dependency` é aplicada, o grafo de módulos resolvido é armazenado endereçado por conteúdo junto ao changeset. Boot e rollback reproduzem o grafo armazenado em vez de resolver de novo, então uma versão sempre se reconcilia com as versões com que foi resolvida. O schema do histórico migra automaticamente no primeiro boot após um upgrade; uma versão pré-existente é resolvida uma vez na primeira visita e registrada como checkpoint.
 
 ### Navegação
 

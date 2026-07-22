@@ -26,12 +26,15 @@ wippy version
 mkdir myapp && cd myapp
 wippy init
 
-# 添加依赖
-wippy add wippy/http
-wippy install
-
 # 运行
 wippy run
+```
+
+HTTP、SQL、存储和进程托管都内置在运行时中 — 新项目无需任何依赖即可运行。框架模块按需从 Hub 添加：
+
+```bash
+wippy add wippy/test
+wippy install
 ```
 
 ## 命令概览
@@ -40,6 +43,7 @@ wippy run
 |------|------|
 | `wippy init` | 初始化新项目 |
 | `wippy run` | 启动运行时 |
+| `wippy test` | 运行测试入口点 |
 | `wippy lint` | 检查代码错误 |
 | `wippy add` | 添加依赖 |
 | `wippy install` | 安装依赖 |

@@ -135,6 +135,25 @@ runner.run({
 })
 ```
 
+### Privilegierte Imports
+
+Einem Import können Module gewährt werden, die der evaluierte Code selbst nicht sehen kann. Verwenden Sie die Tabellenform mit `id` und `modules`:
+
+```lua
+runner.run({
+    source = [[
+        local pricing = require("pricing")
+        return pricing.quote(...)
+    ]],
+    modules = {"json"},
+    imports = {
+        pricing = { id = "app.lib:pricing", modules = {"funcs"} }
+    },
+})
+```
+
+Die `pricing`-Bibliothek läuft in ihrer eigenen abgegrenzten Umgebung, in der `funcs` verfügbar ist; der evaluierte Quellcode kann `funcs` weder requiren noch direkt erreichen. Das Gewähren eines Moduls an einen Import erfordert, dass der Aufrufer die `eval.module`-Berechtigung für dieses Modul besitzt — Capabilities können nicht über das hinaus delegiert werden, was dem Aufrufer selbst erlaubt ist.
+
 ### Benutzerdefinierte Module
 
 Benutzerdefinierte Tabellen injizieren:
@@ -216,11 +235,23 @@ Das System prüft Berechtigungen für:
 
 - `eval.compile` - Vor Kompilierung
 - `eval.run` - Vor Ausführung
-- `eval.module` - Für jedes Modul in Whitelist
+- `eval.module` - Für jedes Modul in Whitelist und für jedes einem privilegierten Import gewährte Modul
 - `eval.import` - Für jeden Registry-Import
 - `eval.class` - Für jede erlaubte Klasse
 
 In Sicherheitsrichtlinien konfigurieren.
+
+## Compile-Cache
+
+Kompilierte Programme werden in einem LRU gecacht, geschlüsselt nach Quelle, Methode, Modulen und erlaubten Klassen — wiederholte Läufe identischen Codes überspringen die Neukompilierung. Imports und Kontext werden zur Laufzeit gebunden und beeinflussen den Cache-Schlüssel nicht.
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    cache_size: 256   # entries; 0 or less disables caching (default: 256)
+    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+```
 
 ## Fehlerbehandlung
 

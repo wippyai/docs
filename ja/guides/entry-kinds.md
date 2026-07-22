@@ -150,7 +150,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-`*_env` サフィックスのバリアント、TLSオプション、接続プールの調整については[Database](system/database.md)を参照してください。
+`${env:NAME}`シークレット参照、TLSオプション、接続プールの調整については[Database](system/database.md)を参照してください。データベースエントリの背後にあるenvベースの値が変更されると、プールはライブで入れ替わります — アクティブな貸出は古い接続設定のまま完了します。
 
 **Lua API:** [SQLモジュール](lua/storage/sql.md)を参照
 
@@ -300,6 +300,8 @@ local data = msg:body_json()
 <tip>
 プロセスを自動再起動付きの監督されたサービスとして実行する必要がある場合は<code>process.service</code>を使用します。<code>process</code>フィールドは<code>process.lua</code>エントリを参照します。
 </tip>
+
+稼働中の`process.host`エントリを更新すると、`host.workers`はその場で再スケールされます — 実行中のプロセス、PID、キューは保持されます。`host.queue_size`、`host.local_queue_size`、`lifecycle`は構築時に固定されており、これらを変更するライブ更新は拒否されます。ワーカーがアフィニティ管理されているホストでのワーカー数の変更も同様に拒否されます。
 
 ## Temporal（ワークフロー）
 

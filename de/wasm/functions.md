@@ -126,6 +126,27 @@ pool:
 
 Das Standard-Maximum fuer elastische Pools betraegt 100 Worker, wenn `max_size` nicht angegeben ist.
 
+### Worker-Klassen und Core-Affinitaet
+
+Das Setzen von `pool.worker_class` leitet die Funktion an einen dedizierten Pool von auf OS-Threads gepinnten Workern statt an die obigen geteilten Pool-Typen (`type` wird ignoriert, wenn gesetzt; konventioneller Name: `wasm`):
+
+```yaml
+pool:
+  worker_class: wasm
+  workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
+```
+
+Core-Isolation wird pro Runtime in `.wippy.yaml` aktiviert:
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true      # default: false
+    reserved_cores: 2  # cores reserved for WASM pools (default: 1)
+```
+
+Mit aktivierter Isolation laufen der Actor-Scheduler und die gepinnten WASM-Pools auf disjunkten CPU-Mengen (`sched_setaffinity`, nur Linux — andere Plattformen dimensionieren die Pools, binden aber keine Threads). Langlaufende WASM-Aufrufe koennen das Actor-Scheduling dann nicht aushungern.
+
 ## Transports
 
 Transports steuern, wie Input und Output zwischen der Runtime und dem WASM-Modul abgebildet werden.

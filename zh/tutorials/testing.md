@@ -1,11 +1,11 @@
 ---
 title: "测试"
-description: "使用 wippy/test 框架为您的 Lua 代码编写和运行测试 — 这是一个 BDD 风格的运行器，提供断言、生命周期钩子和模拟功能，通过 wippy run test 命令执行。"
+description: "使用 wippy/test 框架为您的 Lua 代码编写和运行测试 — 这是一个 BDD 风格的运行器，提供断言、生命周期钩子和模拟功能，通过 wippy test 命令执行。"
 ---
 
 # 测试
 
-使用 `wippy/test` 框架为您的 Lua 代码编写和运行测试 — 这是一个 BDD 风格的运行器，提供断言、生命周期钩子和模拟功能，通过 `wippy run test` 命令执行。
+使用 `wippy/test` 框架为您的 Lua 代码编写和运行测试 — 这是一个 BDD 风格的运行器，提供断言、生命周期钩子和模拟功能，通过 `wippy test` 命令执行。
 
 ## 您将构建什么
 
@@ -13,7 +13,7 @@ description: "使用 wippy/test 框架为您的 Lua 代码编写和运行测试 
 
 1. 一个包含 `add` 和 `div` 函数的 `calc` 库。
 2. 一个测试入口，用于描述用例、断言行为并跳过一个待定用例。
-3. 通过 `wippy run test` 进行一次全绿的测试运行。
+3. 通过 `wippy test` 进行一次全绿的测试运行。
 
 ## 先决条件
 
@@ -115,13 +115,13 @@ entries:
 ## 运行
 
 ```bash
-wippy run test
+wippy test
 ```
 
 在迭代时过滤到单个套件（匹配入口 id 或套件名称）：
 
 ```bash
-wippy run test calculator
+wippy test calculator
 ```
 
 上述套件的输出：
@@ -136,7 +136,7 @@ wippy run test calculator
   PASSED   3 tests   1 skipped   1ms
 ```
 
-当每个用例都通过时，`wippy run test` 退出码为 `0`，任何失败时为 `1`，因此可以直接接入 CI。
+当每个用例都通过时，`wippy test` 退出码为 `0`，任何失败时为 `1`，因此可以直接接入 CI。
 
 ## 断言
 

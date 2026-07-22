@@ -7,7 +7,7 @@ description: "Schreibe und führe Tests für deinen Lua-Code mit dem Framework w
 
 Schreibe und führe Tests für deinen Lua-Code mit dem Framework `wippy/test` aus — ein
 Runner im BDD-Stil mit Assertions, Lifecycle-Hooks und Mocking, ausgeführt über den
-Befehl `wippy run test`.
+Befehl `wippy test`.
 
 ## Was du bauen wirst
 
@@ -15,7 +15,7 @@ Eine kleine Bibliothek und eine Test-Suite, die sie abdeckt:
 
 1. Eine `calc`-Bibliothek mit den Funktionen `add` und `div`.
 2. Ein Test-Entry, das Fälle beschreibt, Verhalten prüft und einen ausstehenden Fall überspringt.
-3. Ein grüner Testlauf via `wippy run test`.
+3. Ein grüner Testlauf via `wippy test`.
 
 ## Voraussetzungen
 
@@ -123,14 +123,14 @@ Die `imports`-Map steuert, worauf `require(...)` innerhalb des Tests aufgelöst 
 ## Ausführen
 
 ```bash
-wippy run test
+wippy test
 ```
 
 Filtere während des Iterierens auf eine einzelne Suite (passt zur Entry-ID oder zum
 Suite-Namen):
 
 ```bash
-wippy run test calculator
+wippy test calculator
 ```
 
 Ausgabe für die obige Suite:
@@ -145,7 +145,7 @@ Ausgabe für die obige Suite:
   PASSED   3 tests   1 skipped   1ms
 ```
 
-`wippy run test` beendet sich mit `0`, wenn jeder Fall besteht, und mit `1` bei
+`wippy test` beendet sich mit `0`, wenn jeder Fall besteht, und mit `1` bei
 jedem Fehlschlag, sodass es sich direkt in CI einfügt.
 
 ## Assertions

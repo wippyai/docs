@@ -31,6 +31,7 @@ mymodule/
 ```yaml
 organization: acme
 module: http-utils
+type: library
 description: HTTP utilities and helpers
 license: MIT
 repository: https://github.com/acme/http-utils
@@ -44,11 +45,14 @@ keywords:
 |-------|----------|-------------|
 | `organization` | 是 | 你在 hub 上的组织名 |
 | `module` | 是 | 模块名 |
+| `type` | 否 | 模块类型：`library`、`application`、`agent` 或 `plugin` |
 | `description` | 否 | 简短描述 |
 | `license` | 否 | SPDX 标识符（MIT、Apache-2.0） |
 | `repository` | 否 | 源代码仓库 URL |
 | `homepage` | 否 | 项目主页 |
 | `keywords` | 否 | 搜索关键词 |
+
+`type` 是 hub 对模块进行分类的权威来源，可以在后续发布时更改；`--module-type` 仅对单次发布覆盖它。省略时，新建模块默认为 `application` 并给出弃用警告。
 
 ## 入口定义
 
@@ -64,6 +68,10 @@ entries:
     meta:
       title: HTTP Utilities
       description: Helpers for HTTP operations
+    readme: file://README.md
+    wiki:
+      GUIDE.md: file://docs/GUIDE.md
+      examples/auth.md: file://docs/auth.md
 
   - name: client
     kind: library.lua
@@ -72,6 +80,8 @@ entries:
       - http_client
       - json
 ```
+
+`ns.definition` 上的 `wiki:` 映射会在 readme 旁边发布额外的文档页面：键为页面路径，值为 `file://` 引用。内容在打包时内联，由 hub 作为可浏览的每模块 wiki 提供。
 
 ## 依赖
 
@@ -115,6 +125,8 @@ entries:
 Targets 指定值注入的位置：
 - `entry` - 要配置的完整入口 ID
 - `path` - 用于值注入的 JSONPath
+
+`default` 接受任意标量类型 — `default: 20` 以数字而非字符串流入数值目标。`ns.dependency` 条目上的 `parameters[].value` 同理，二者都接受 `${env:NAME}` 引用，原样携带并在目标条目解码时解析。
 
 消费者通过覆盖来配置。`-o` 标志接受 `namespace:entry:field=value` 三元组：
 
@@ -213,7 +225,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--config <dir>` | 包含 `wippy.yaml` 的目录（默认：当前目录） |
 | `--create` | 如果模块在 hub 上尚不存在，则注册该模块，然后发布 |
 | `--module-visibility <v>` | `--create` 的可见性：`private`（默认）或 `public` |
-| `--module-type <t>` | `--create` 的类型：`application`（默认）、`library`、`agent` 或 `plugin` |
+| `--module-type <t>` | 模块类型：`library`、`application`、`agent` 或 `plugin`（覆盖 wippy.yaml 中的 `type:`） |
 | `--module-display-name <n>` | `--create` 的显示名称 |
 
 ### 嵌入静态文件
@@ -254,6 +266,48 @@ wippy publish --registry http://localhost:8080 --create --version 0.1.0
 ### 配额
 
 如果组织的私有模块配额已用尽，发布会失败并返回类似 `cannot publish: Private-module quota exhausted (5 of 5)...` 的消息。请将模块设为公开，或请组织管理员提高配额。上传和下载在遇到瞬时网络错误时会自动重试。
+
+## 发布运行时默认值
+
+应用（仅限 `type: application`）可以通过 `wippy.yaml` 中的 `publish.runtime` 在其包内附带运行时配置默认值：
+
+```yaml
+type: application
+publish:
+  runtime:
+    source: .wippy.yaml            # default: .wippy.yaml
+    sections: [security, registry, override]
+    vars: [public_url]
+```
+
+| 字段 | 说明 |
+|-------|-------------|
+| `source` | 读取这些区段的配置文件（默认：`.wippy.yaml`） |
+| `sections` | 作为默认值复制到包元数据中的运行时配置区段 |
+| `vars` | 即使未被引用也要打包的变量的显式允许列表 |
+
+规则：
+
+- 只有被所选区段或已发布 profile 引用的变量才会被打包（传递性跟随）；其余变量都需要 `vars` 条目。
+- 导出配置中的 `${env:...}` 引用会被拒绝 — 发布者的环境绝不会泄漏到包中。
+- 机器本地区段 `boot`、`extensions` 和 `workspace` 不能被导出。
+- 只有主应用包提供宿主运行时默认值；依赖包中的运行时元数据会被忽略。
+
+在目标环境中，配置从低到高依次应用：应用包默认值、运行时内置默认值、本地配置文件、所选 profile、CLI 覆盖。
+
+## 发布 Profile
+
+根应用的 profile 会导出到包的 `runtime.profiles` 元数据中。发布不会选择或固化某个 profile — 使用者在运行时通过 `wippy run --profile <name>` 选择：
+
+```yaml
+publish:
+  profiles:
+    enabled: true
+    source: config/profiles.yaml   # default: .wippy.yaml
+    include: [production]          # omit to publish all non-workspace profiles
+```
+
+`include: []` 表示不发布任何 profile；未知名称会使发布失败。`workspace` 子区段永远不会被导出，即使位于已发布的 profile 内。声明 profile 参见[配置](guides/configuration.md#profiles)。
 
 ## 使用已发布的模块
 
@@ -328,7 +382,7 @@ entries:
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
-    default: "1000"
+    default: 1000
 
   - name: cache
     kind: library.lua

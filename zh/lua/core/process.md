@@ -109,6 +109,7 @@ local ok, err = process.set_options({trap_links = true})
 | 字段 | 类型 | 描述 |
 |------|------|------|
 | `trap_links` | boolean | LINK_DOWN 事件是否传递到事件通道 |
+| `upgradable` | boolean | 选择加入：当进程的代码失效时接收 OUTDATED 事件 |
 
 ## 收件箱和事件
 
@@ -126,6 +127,7 @@ local events = process.events()  -- 来自 @events 主题的生命周期事件
 | `process.event.CANCEL` | 请求取消 |
 | `process.event.EXIT` | 被监控进程退出 |
 | `process.event.LINK_DOWN` | 链接进程异常终止 |
+| `process.event.OUTDATED` | 进程的代码或某个导入的依赖在注册表中发生了变更 |
 
 ### 事件字段
 
@@ -136,6 +138,9 @@ local events = process.events()  -- 来自 @events 主题的生命周期事件
 | `result` | any | EXIT 时：返回的值（正常退出时存在） |
 | `error` | any | EXIT 时：错误（异常退出时存在） |
 | `reason` | string | CANCEL 时：进程被取消的原因 |
+| `sources` | string[] | OUTDATED 时：发生变更或受传递性影响的注册表 ID |
+
+OUTDATED 仅投递给通过 `process.set_options({upgradable = true})` 选择加入的进程；其他进程永远不会看到它。多次失效会合并为一个待处理事件，`sources` 取并集。预期的响应方式是通过 [`process.upgrade`](#process-upgrade) 进行热替换。
 
 ## 主题订阅
 
@@ -235,6 +240,16 @@ spawner:spawn_linked_monitored(id, host, ...)
 ```
 
 与模块级 spawn 函数权限相同。
+
+### 启动器的 Exec
+
+```lua
+local result, err = spawner:exec(id, host, ...)
+```
+
+在构建器的上下文、actor 和 scope 下同步运行目标进程，并返回其结果值 — 模块级 `process.exec` 的受限对应版本。延迟执行的 worker 可以通过 `with_actor`/`with_scope` 重建所有者身份并代其执行。
+
+**权限:** 进程 id 上的 `process.exec`，主机 id 上的 `process.host`
 
 ## 名称注册表
 

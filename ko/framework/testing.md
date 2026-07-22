@@ -16,7 +16,7 @@ wippy add wippy/test
 wippy install
 ```
 
-모듈은 `test` 명령을 자동으로 등록합니다. 설치 후 `wippy run test`로 프로젝트의 모든 테스트 엔트리를 검색하고 실행합니다.
+모듈은 테스트 엔트리포인트(`use_case: test`를 가진 명령)를 자동으로 등록합니다. 설치 후 `wippy test`로 프로젝트의 모든 테스트 엔트리를 검색하고 실행합니다.
 
 ## 테스트 정의하기
 
@@ -268,14 +268,14 @@ test.restore_all_mocks()                  -- restore all mocks
 ### 전체 테스트 실행
 
 ```bash
-wippy run test
+wippy test
 ```
 
 ### 패턴으로 필터링
 
 ```bash
-wippy run test math
-wippy run test user validation
+wippy test math
+wippy test user validation
 ```
 
 필터는 엔트리 ID와 매칭됩니다. 여러 패턴이 결합됩니다.
@@ -327,7 +327,7 @@ return { main = main }
       - funcs
 ```
 
-러너는 테스트가 BDD 케이스 이벤트를 사용하는지 단순 값을 반환하는지 감지합니다. 두 패턴 모두 `wippy run test`에서 동작합니다.
+러너는 테스트가 BDD 케이스 이벤트를 사용하는지 단순 값을 반환하는지 감지합니다. 두 패턴 모두 `wippy test`에서 동작합니다.
 
 ## 프로젝트 구조
 

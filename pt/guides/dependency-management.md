@@ -92,6 +92,15 @@ entries:
 | Curinga | `*` | Qualquer versao (seleciona a mais alta) |
 | Combinada | `>=1.0.0 <2.0.0` | Entre 1.0.0 e 2.0.0 |
 
+### Regras de Resolucao
+
+- Cada modulo resolve contra a **intersecao de todas as faixas declaradas** no grafo de dependencias. Faixas incompativeis (conflitos de diamante) falham a resolucao com um erro explicito em vez de escolher silenciosamente um dos lados.
+- Dependencias sao resolvidas a partir de suas faixas declaradas, nao de pins resolvidos anteriormente.
+- **Declaracoes raiz vencem as transitivas**: quando sua aplicacao e uma dependencia puxam o mesmo modulo ou requirement, sua declaracao tem precedencia. Uma entrada de dependencia carregando `meta.module` e transitiva a menos que explicitamente marcada como raiz — aplicacoes publicadas mantem suas dependencias declaradas no codigo-fonte como raizes.
+- O mesmo componente pode ser declarado como dependencia raiz apenas uma vez — uma declaracao duplicada e rejeitada com um erro de conflito. Atualize a dependencia existente em vez disso.
+
+O runtime persiste cada grafo resolvido no historico do seu registro e o reproduz no boot em vez de resolver de novo, entao uma aplicacao implantada inicia exatamente com as versoes que foram resolvidas quando a mudanca de dependencia foi aplicada. O `wippy.lock` continua sendo o snapshot portavel para projetos de codigo-fonte.
+
 ## Fluxo de Trabalho
 
 ### Iniciando um Novo Projeto
@@ -182,23 +191,26 @@ Com a extracao habilitada:
 
 ## Desenvolvimento Local com Substituicoes
 
-Substitua modulos do hub por diretorios locais para desenvolvimento:
+Substitua modulos do hub por diretorios locais para desenvolvimento. Substituicoes sao declaradas na secao `workspace` de um arquivo de configuracao do runtime — tipicamente um arquivo privado, ignorado pelo git, composto sobre `.wippy.yaml`:
 
 ```yaml
-# wippy.lock
-directories:
-  modules: .wippy
-  src: ./src
-modules:
-  - name: acme/http
-    version: v1.2.0
-    hash: ...
-replacements:
-  - from: acme/http
-    to: ../local-http
+# .wippy.workspace.yaml
+version: "1.0"
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: ../local-sql
 ```
 
-O caminho de substituicao e relativo ao arquivo de lock. Quando uma substituicao esta ativa, o diretorio local e usado em vez do modulo vendorizado. Substituicoes sao preservadas entre operacoes de `wippy update`.
+```bash
+wippy run --config .wippy.yaml --config .wippy.workspace.yaml
+```
+
+As chaves sao `org/module`, os valores sao diretorios (caminhos relativos resolvem contra o diretorio do primeiro arquivo `--config`; o caminho deve existir e ser um diretorio). Definir uma substituicao como `null` desativa uma herdada de uma camada de configuracao ou profile anterior. Substituicoes tambem podem viver dentro de um [profile](guides/configuration.md#profiles) para ativarem apenas com `--profile workspace`.
+
+Substituicoes de workspace afetam o grafo de carga no boot e nunca sao gravadas no `wippy.lock`. Mudancas no codigo-fonte local sao reconciliadas diretamente, sem contatar o hub. Os globs `exclude:` do `wippy.yaml` do modulo aplicam-se tambem a diretorios de substituicao, tanto ao carregar entradas quanto ao calcular o hash do conteudo.
+
+Uma secao `replacements:` no `wippy.lock` esta obsoleta: ela ainda carrega, mas imprime um aviso. Mova essas entradas para `workspace.replacements` em um arquivo de configuracao.
 
 ## Ordem de Carregamento
 
@@ -216,6 +228,7 @@ Cada modulo no arquivo de lock possui um hash de conteudo. Durante a instalacao,
 
 ## Veja Tambem
 
+- [Construindo Componentes](guides/components.md) - O lado do autor: `ns.requirement` e fornecimento de valores via `parameters`
 - [CLI](guides/cli.md) - Referencia de comandos
 - [Publicacao](guides/publishing.md) - Publicando modulos no hub
 - [Estrutura do Projeto](start/structure.md) - Layout do projeto

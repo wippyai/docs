@@ -149,6 +149,16 @@ Variablennamen dürfen nur enthalten: `a-z`, `A-Z`, `0-9`, `_`
   storage: app.config:secrets
 ```
 
+## Konfigurationsreferenzen in Einträgen
+
+Registrierte Variablen werden mit `${env:NAME}`-Platzhaltern in die Entry-Konfiguration gezogen; `NAME` ist der öffentliche Name einer Variable oder ihre Entry-ID.
+
+Die Auflösung geschieht nur zur Dekodierzeit: Der gespeicherte Registry-Eintrag behält die rohen Platzhalter, sodass aufgelöste Secrets nie in `registry.get`-Ergebnissen oder persistiertem Zustand erscheinen. Einträge, die `${env:...}` referenzieren, ordnen sich beim Boot automatisch hinter den env-Speichern und -Variablen ein, von denen sie abhängen.
+
+<note>
+Ältere Konfigurationen verwenden eine benachbarte <code>&lt;field&gt;_env</code>-Direktive (zum Beispiel <code>cert_env: app.env:tls_cert</code>), die auf dieselbe Weise auflöst. Diese Form ist <b>veraltet</b> — migrieren Sie sie zum <code>${env:NAME}</code>-Platzhalter. Ein <code>&lt;field&gt;_env</code>-Schlüssel, der eine nicht registrierte Variable benennt, wird nicht als Direktive behandelt und bleibt unverändert; einer, der eine registrierte, aber leere Variable benennt, behält den Inline-<code>&lt;field&gt;</code>-Wert. Nur ein explizites <code>${env:NAME}</code> ohne Default schlägt bei einer fehlenden Variable hart fehl.
+</note>
+
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |

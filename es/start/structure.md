@@ -251,6 +251,7 @@ myapp/
 
 ## Ver También
 
+- [Arquitectura de Aplicaciones](concepts/architecture.md) - Cómo dividir una app en slices y capas
 - [Guía de Tipos de Entrada](guides/entry-kinds.md) - Tipos de entrada disponibles
 - [Guía de Configuración](guides/configuration.md) - Opciones del runtime
 - [Tipos de Entrada Personalizados](internals/kinds.md) - Implementar manejadores (avanzado)

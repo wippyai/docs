@@ -126,6 +126,27 @@ pool:
 
 `max_size`が指定されていない場合、デフォルトの弾力的プール最大値は100ワーカーです。
 
+### ワーカークラスとコアアフィニティ
+
+`pool.worker_class`を設定すると、上記の共有プールタイプの代わりに、OSスレッドに固定された専用ワーカープールへ関数がルーティングされます（設定時は`type`は無視されます。慣例的な名前は`wasm`）：
+
+```yaml
+pool:
+  worker_class: wasm
+  workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
+```
+
+コア分離はランタイムごとに`.wippy.yaml`でオプトインします：
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true      # default: false
+    reserved_cores: 2  # cores reserved for WASM pools (default: 1)
+```
+
+分離を有効にすると、アクタースケジューラと固定されたWASMプールは互いに素なCPUセット上で動作します（`sched_setaffinity`、Linuxのみ — 他のプラットフォームではプールのサイズ設定のみ行われ、スレッドはバインドされません）。これにより、長時間実行されるWASM呼び出しがアクターのスケジューリングを飢餓させることはなくなります。
+
 ## トランスポート
 
 トランスポートはランタイムとWASMモジュール間の入出力マッピング方法を制御します。

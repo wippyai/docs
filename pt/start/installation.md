@@ -26,12 +26,15 @@ wippy version
 mkdir myapp && cd myapp
 wippy init
 
-# Adicionar dependências
-wippy add wippy/http
-wippy install
-
 # Executar
 wippy run
+```
+
+HTTP, SQL, storage e hospedagem de processos são nativos do runtime — um projeto novo executa sem nenhuma dependência. Módulos do framework são adicionados do hub conforme necessário:
+
+```bash
+wippy add wippy/test
+wippy install
 ```
 
 ## Visão Geral dos Comandos
@@ -40,6 +43,7 @@ wippy run
 |---------|-----------|
 | `wippy init` | Inicializa um novo projeto |
 | `wippy run` | Inicia o runtime |
+| `wippy test` | Executa o entrypoint de teste |
 | `wippy lint` | Verifica o código em busca de erros |
 | `wippy add` | Adiciona uma dependência |
 | `wippy install` | Instala dependências |

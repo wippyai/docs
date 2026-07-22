@@ -70,6 +70,25 @@ end
 add("one", "two")                  -- E: string not assignable to number
 ```
 
+### 未声明的 Require
+
+字符串字面量形式的 `require("name")`，若其模块既不在条目的 `imports`/`modules` 声明中，也不是环境内建模块，会报错：
+
+```
+require("name") is not declared in _index.yaml imports or modules
+```
+
+此检查始终运行（不受 `--rules` 控制）并作为错误报告。声明该模块即可通过：
+
+```yaml
+imports:
+  json: wippy.stdlib:json    # alias -> registry id
+modules:
+  - funcs                    # bare module name
+```
+
+动态 require（`require(variable)`）不会被检查。环境模块集合 — 无需声明即可用的模块，例如可执行类型中的 `process` — 由 linter 和运行时共享，因此 lint 时与运行时的解析不会产生偏差。
+
 ### Lint 规则警告 (W 系列)
 
 Lint 规则提供代码风格和质量检查。使用 `--rules` 启用：

@@ -150,7 +150,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-Veja [Database](system/database.md) para variantes com sufixo `*_env`, opções TLS e ajuste do pool de conexões.
+Veja [Database](system/database.md) para referências de segredos `${env:NAME}`, opções TLS e ajuste do pool de conexões. Quando um valor vindo de env por trás de uma entrada de banco de dados muda, o pool é trocado ao vivo — empréstimos ativos terminam com as configurações de conexão antigas.
 
 **API Lua:** Veja [Módulo SQL](lua/storage/sql.md)
 
@@ -300,6 +300,8 @@ O <code>func</code> do consumidor é invocado para cada mensagem. Use <code>queu
 <tip>
 Use <code>process.service</code> quando precisar que um processo execute como serviço supervisionado com reinicialização automática. O campo <code>process</code> referencia uma entrada <code>process.lua</code>.
 </tip>
+
+Atualizar uma entrada `process.host` ao vivo redimensiona `host.workers` no lugar — processos em execução, PIDs e filas são preservados. `host.queue_size`, `host.local_queue_size` e `lifecycle` são fixados na construção: uma atualização ao vivo que os altere é rejeitada, assim como redimensionar workers em um host cujos workers são gerenciados por afinidade.
 
 ## Temporal (Workflows)
 

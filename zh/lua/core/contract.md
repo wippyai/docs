@@ -210,6 +210,8 @@ local secured = c:with_actor(security.actor()):with_scope(security.scope())
 local admin, err = secured:open()
 ```
 
+未显式调用 `with_actor`/`with_scope` 时，打开的 contract 继承调用方的环境 actor 和 scope。设置后，它们会传播到绑定的实现函数 — 实例上的每次方法调用都在该身份下执行。
+
 ## 权限
 
 | 权限 | 资源 | 函数 |

@@ -135,6 +135,25 @@ runner.run({
 })
 ```
 
+### 特権インポート
+
+インポートには、eval対象のコード自体からは見えないモジュールを付与できます。`id`と`modules`を持つテーブル形式を使用します：
+
+```lua
+runner.run({
+    source = [[
+        local pricing = require("pricing")
+        return pricing.quote(...)
+    ]],
+    modules = {"json"},
+    imports = {
+        pricing = { id = "app.lib:pricing", modules = {"funcs"} }
+    },
+})
+```
+
+`pricing`ライブラリは`funcs`が利用可能な独自のスコープ付き環境で実行されます。eval対象のソースは`funcs`を直接requireしたり到達したりできません。インポートにモジュールを付与するには、呼び出し元がそのモジュールに対する`eval.module`権限を保持している必要があります — 呼び出し元自身に許可されている範囲を超えてケイパビリティを委譲することはできません。
+
 ### カスタムモジュール
 
 カスタムテーブルを注入します:
@@ -216,11 +235,23 @@ runner.run({
 
 - `eval.compile` - コンパイル前
 - `eval.run` - 実行前
-- `eval.module` - ホワイトリスト内の各モジュール
+- `eval.module` - ホワイトリスト内の各モジュール、および特権インポートに付与された各モジュール
 - `eval.import` - 各レジストリインポート
 - `eval.class` - 各許可されたクラス
 
 これらはセキュリティポリシーで設定します。
+
+## コンパイルキャッシュ
+
+コンパイル済みプログラムは、ソース、メソッド、モジュール、許可クラスをキーとするLRUにキャッシュされます — 同一コードの繰り返し実行では再コンパイルがスキップされます。インポートとコンテキストは実行時にバインドされ、キャッシュキーには影響しません。
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    cache_size: 256   # entries; 0 or less disables caching (default: 256)
+    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+```
 
 ## エラー処理
 

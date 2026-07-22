@@ -16,7 +16,7 @@ wippy add wippy/test
 wippy install
 ```
 
-该模块自动注册 `test` 命令。安装后，`wippy run test` 会发现并运行项目中的所有测试条目。
+该模块自动注册测试入口点（一个带有 `use_case: test` 的命令）。安装后，`wippy test` 会发现并运行项目中的所有测试条目。
 
 ## 定义测试
 
@@ -268,14 +268,14 @@ Mock 路径使用点号表示法：`"process.send"` 替换 `_G.process.send`。
 ### 运行所有测试
 
 ```bash
-wippy run test
+wippy test
 ```
 
 ### 按模式过滤
 
 ```bash
-wippy run test math
-wippy run test user validation
+wippy test math
+wippy test user validation
 ```
 
 过滤器匹配条目 ID。多个模式会被组合。
@@ -327,7 +327,7 @@ return { main = main }
       - funcs
 ```
 
-运行器会检测测试使用的是 BDD 用例事件还是返回简单值。两种模式均可与 `wippy run test` 配合使用。
+运行器会检测测试使用的是 BDD 用例事件还是返回简单值。两种模式均可与 `wippy test` 配合使用。
 
 ## 项目结构
 

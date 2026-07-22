@@ -251,6 +251,7 @@ myapp/
 
 ## 另请参阅
 
+- [应用架构](concepts/architecture.md) — 如何将应用切分为切片与分层
 - [记录类型指南](guides/entry-kinds.md) — 可用的记录类型
 - [配置指南](guides/configuration.md) — 运行时选项
 - [自定义记录类型](internals/kinds.md) — 实现处理器（高级）

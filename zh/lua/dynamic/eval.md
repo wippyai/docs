@@ -135,6 +135,25 @@ runner.run({
 })
 ```
 
+### 特权导入
+
+可以为导入授予 eval 代码本身无法看到的模块。使用带 `id` 和 `modules` 的表形式：
+
+```lua
+runner.run({
+    source = [[
+        local pricing = require("pricing")
+        return pricing.quote(...)
+    ]],
+    modules = {"json"},
+    imports = {
+        pricing = { id = "app.lib:pricing", modules = {"funcs"} }
+    },
+})
+```
+
+`pricing` 库在自己的作用域环境中执行，其中 `funcs` 可用；eval 的源码无法直接 require 或访问 `funcs`。为导入授予模块要求调用方持有该模块的 `eval.module` 权限 — 能力的委派不能超出调用方自身被允许的范围。
+
 ### 自定义模块
 
 注入自定义表：
@@ -216,11 +235,23 @@ runner.run({
 
 - `eval.compile` - 编译前
 - `eval.run` - 执行前
-- `eval.module` - 白名单中的每个模块
+- `eval.module` - 白名单中的每个模块，以及授予特权导入的每个模块
 - `eval.import` - 每个注册表导入
 - `eval.class` - 每个允许的类
 
 在安全策略中配置。
+
+## 编译缓存
+
+编译后的程序缓存在一个 LRU 中，键由源码、方法、模块和允许的类组成 — 重复运行相同代码会跳过重新编译。导入和上下文在运行时绑定，不影响缓存键。
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    cache_size: 256   # entries; 0 or less disables caching (default: 256)
+    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+```
 
 ## 错误处理
 

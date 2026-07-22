@@ -197,6 +197,39 @@ end
 
 所有单元格值以字符串形式返回。布尔值为 "TRUE" 或 "FALSE"，数字为字符串表示。
 
+### 流式读取行
+
+`wb:rows(sheet)` 在单个工作表上打开一个流式游标。工作表以常量内存增量解码，不同于会将整个工作表物化的 `get_rows`：
+
+```lua
+local cursor, err = wb:rows("Report")
+if err then
+    return nil, err
+end
+
+while true do
+    local batch, err = cursor:read(500)
+    if err then
+        cursor:close()
+        return nil, err
+    end
+    if not batch then
+        break                       -- end of sheet
+    end
+    for _, row in ipairs(batch) do
+        process(row)
+    end
+end
+cursor:close()
+```
+
+| 方法 | 描述 |
+|--------|-------------|
+| `cursor:read(n?)` | 读取下一批最多 `n` 行（默认 1，最大 10000）。返回 `string[][], error`；工作表结束时返回 `nil, nil` |
+| `cursor:close()` | 释放游标（幂等；游标也会随工作簿一起关闭） |
+
+单元格值的格式与 `get_rows` 完全相同。空行以空表返回，末尾的空行会被保留而不会被裁剪。到达工作表末尾或出错后，后续读取会持续返回同一状态。
+
 ## 文件操作
 
 ### 写入文件

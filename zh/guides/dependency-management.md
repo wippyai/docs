@@ -92,6 +92,15 @@ entries:
 | 通配符 | `*` | 任意版本（选择最高版本） |
 | 组合 | `>=1.0.0 <2.0.0` | 1.0.0 到 2.0.0 之间 |
 
+### 解析规则
+
+- 每个模块根据依赖图中**所有已声明范围的交集**解析。不兼容的范围（菱形冲突）会以明确的错误使解析失败，而不是悄悄选择某一边。
+- 依赖从其声明的范围求解，而不是从先前解析的固定版本求解。
+- **根声明优先于传递声明**：当你的应用和某个依赖都引入同一个模块或需求时，你的声明优先。携带 `meta.module` 的依赖条目是传递性的，除非显式标记为根 — 已发布的应用会将其源码中声明的依赖保留为根。
+- 同一个组件只能作为根依赖声明一次 — 重复声明会以冲突错误被拒绝。请改为更新已有的依赖。
+
+运行时将每次解析出的依赖图持久化到其注册表历史中，并在启动时重放而不是重新求解，因此已部署的应用启动时使用的正是应用依赖变更时解析出的版本。`wippy.lock` 仍然是源码项目的可移植快照。
+
 ## 工作流程
 
 ### 创建新项目
@@ -182,23 +191,26 @@ options:
 
 ## 使用替换进行本地开发
 
-使用本地目录覆盖 hub 模块以进行开发：
+使用本地目录覆盖 hub 模块以进行开发。替换在运行时配置文件的 `workspace` 区段中声明 — 通常放在一个私有的、被 git 忽略、组合在 `.wippy.yaml` 之上的文件中：
 
 ```yaml
-# wippy.lock
-directories:
-  modules: .wippy
-  src: ./src
-modules:
-  - name: acme/http
-    version: v1.2.0
-    hash: ...
-replacements:
-  - from: acme/http
-    to: ../local-http
+# .wippy.workspace.yaml
+version: "1.0"
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: ../local-sql
 ```
 
-替换路径相对于锁定文件。当替换处于活动状态时，使用本地目录代替供应商模块。替换在 `wippy update` 操作后会被保留。
+```bash
+wippy run --config .wippy.yaml --config .wippy.workspace.yaml
+```
+
+键为 `org/module`，值为目录（相对路径相对于第一个 `--config` 文件所在目录解析；路径必须存在且为目录）。将替换设为 `null` 会禁用从先前配置层或 profile 继承的替换。替换也可以放在 [profile](guides/configuration.md#profiles) 中，从而只在 `--profile workspace` 时生效。
+
+工作区替换在启动时影响加载图，且永远不会写入 `wippy.lock`。对本地源码的更改会被直接调和，无需联系 hub。模块 `wippy.yaml` 中的源码 `exclude:` glob 同样适用于替换目录 — 在加载条目和对内容做哈希时都生效。
+
+`wippy.lock` 中的 `replacements:` 区段已弃用：它仍会加载，但会打印警告。请将这些条目移到配置文件中的 `workspace.replacements`。
 
 ## 加载顺序
 
@@ -216,6 +228,7 @@ replacements:
 
 ## 另请参阅
 
+- [构建组件](guides/components.md) - 作者侧：`ns.requirement` 与通过 `parameters` 提供值
 - [CLI](guides/cli.md) - 命令参考
 - [发布](guides/publishing.md) - 将模块发布到 hub
 - [项目结构](start/structure.md) - 项目布局

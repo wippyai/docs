@@ -210,6 +210,8 @@ local secured = c:with_actor(security.actor()):with_scope(security.scope())
 local admin, err = secured:open()
 ```
 
+Ohne explizites `with_actor`/`with_scope` erbt ein geöffneter Contract den ambienten Actor und Scope des Aufrufers. Sind sie gesetzt, propagieren sie zu den gebundenen Implementierungsfunktionen — jeder Methodenaufruf auf der Instanz läuft unter dieser Identität.
+
 ## Berechtigungen
 
 | Berechtigung | Ressource | Funktionen |

@@ -24,13 +24,14 @@ mymodule/
 └── README.md       # 문서 (선택)
 ```
 
-## wippy.yaml
+## wippy.yaml {#wippy-yaml}
 
 모듈 매니페스트:
 
 ```yaml
 organization: acme
 module: http-utils
+type: library
 description: HTTP utilities and helpers
 license: MIT
 repository: https://github.com/acme/http-utils
@@ -44,11 +45,14 @@ keywords:
 |-------|----------|-------------|
 | `organization` | 예 | Hub의 조직 이름 |
 | `module` | 예 | 모듈 이름 |
+| `type` | 아니오 | 모듈 타입: `library`, `application`, `agent`, 또는 `plugin` |
 | `description` | 아니오 | 짧은 설명 |
 | `license` | 아니오 | SPDX 식별자 (MIT, Apache-2.0) |
 | `repository` | 아니오 | 소스 저장소 URL |
 | `homepage` | 아니오 | 프로젝트 홈페이지 |
 | `keywords` | 아니오 | 검색 키워드 |
+
+`type`은 허브가 모듈을 분류하는 방식의 원천이며 이후 게시에서 변경할 수 있습니다; `--module-type`은 단일 게시에 한해 이를 재정의합니다. 생략하면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
 
 ## 엔트리 정의
 
@@ -64,6 +68,10 @@ entries:
     meta:
       title: HTTP Utilities
       description: Helpers for HTTP operations
+    readme: file://README.md
+    wiki:
+      GUIDE.md: file://docs/GUIDE.md
+      examples/auth.md: file://docs/auth.md
 
   - name: client
     kind: library.lua
@@ -72,6 +80,8 @@ entries:
       - http_client
       - json
 ```
+
+`ns.definition`의 `wiki:` 맵은 readme 옆에 추가 문서 페이지를 게시합니다: 키는 페이지 경로, 값은 `file://` 참조입니다. 내용은 팩 시점에 인라인되며 허브가 모듈별로 탐색 가능한 위키로 제공합니다.
 
 ## 의존성
 
@@ -115,6 +125,8 @@ entries:
 타겟은 값이 주입될 위치를 지정합니다:
 - `entry` - 설정할 전체 엔트리 ID
 - `path` - 값 주입을 위한 JSONPath
+
+`default`는 모든 스칼라 타입을 받습니다 — `default: 20`은 숫자 타겟에 문자열이 아닌 숫자로 흘러갑니다. `ns.dependency` 엔트리의 `parameters[].value`에도 동일하게 적용되며, 둘 다 `${env:NAME}` 참조를 받습니다 — 참조는 그대로 전달되고 타겟 엔트리가 디코드될 때 해석됩니다.
 
 소비자는 오버라이드를 통해 설정합니다. `-o` 플래그는 `namespace:entry:field=value` 트리플을 받습니다:
 
@@ -213,7 +225,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--config <dir>` | `wippy.yaml`을 포함한 디렉토리 (기본값: 현재 디렉토리) |
 | `--create` | 모듈이 아직 존재하지 않으면 허브에 등록한 뒤 게시 |
 | `--module-visibility <v>` | `--create`에 대한 가시성: `private`(기본값) 또는 `public` |
-| `--module-type <t>` | `--create`에 대한 타입: `application`(기본값), `library`, `agent`, 또는 `plugin` |
+| `--module-type <t>` | 모듈 타입: `library`, `application`, `agent`, 또는 `plugin` (wippy.yaml의 `type:`을 재정의) |
 | `--module-display-name <n>` | `--create`에 대한 표시 이름 |
 
 ### 정적 파일 임베딩
@@ -254,6 +266,48 @@ wippy publish --registry http://localhost:8080 --create --version 0.1.0
 ### 할당량
 
 조직의 private 모듈 할당량이 소진되면 게시는 `cannot publish: Private-module quota exhausted (5 of 5)...`와 같은 메시지와 함께 실패합니다. 모듈을 public으로 만들거나 조직 관리자에게 할당량 상향을 요청하세요. 업로드와 다운로드는 일시적인 네트워크 오류 발생 시 자동으로 재시도됩니다.
+
+## 런타임 기본값 게시 {#publishing-runtime-defaults}
+
+애플리케이션(`type: application` 전용)은 `wippy.yaml`의 `publish.runtime`을 통해 팩 안에 런타임 설정 기본값을 실어 보낼 수 있습니다:
+
+```yaml
+type: application
+publish:
+  runtime:
+    source: .wippy.yaml            # default: .wippy.yaml
+    sections: [security, registry, override]
+    vars: [public_url]
+```
+
+| 필드 | 설명 |
+|-------|-------------|
+| `source` | 섹션을 읽어올 설정 파일 (기본값: `.wippy.yaml`) |
+| `sections` | 기본값으로 팩 메타데이터에 복사되는 런타임 설정 섹션 |
+| `vars` | 참조되지 않아도 팩에 포함할 변수의 명시적 허용 목록 |
+
+규칙:
+
+- 선택된 섹션이나 게시된 프로파일이 참조하는 변수만 팩에 포함됩니다 (전이적으로 추적됨); 그 외에는 `vars` 항목이 필요합니다.
+- 내보내는 설정 안의 `${env:...}` 참조는 거부됩니다 — 게시자의 환경은 절대 팩으로 유출되지 않습니다.
+- 머신 로컬 섹션인 `boot`, `extensions`, `workspace`는 내보낼 수 없습니다.
+- 메인 애플리케이션 팩만 호스트 런타임 기본값을 제공합니다; 의존성 팩의 런타임 메타데이터는 무시됩니다.
+
+대상 환경에서 설정은 낮은 것부터 높은 것 순으로 적용됩니다: 앱 팩 기본값, 런타임 내장 기본값, 로컬 설정 파일, 선택된 프로파일, CLI 오버라이드.
+
+## 프로파일 게시 {#publishing-profiles}
+
+루트 애플리케이션 프로파일은 팩의 `runtime.profiles` 메타데이터로 내보내집니다. 게시는 프로파일을 선택하거나 굽지 않습니다 — 소비자가 실행 시점에 `wippy run --profile <name>`으로 선택합니다:
+
+```yaml
+publish:
+  profiles:
+    enabled: true
+    source: config/profiles.yaml   # default: .wippy.yaml
+    include: [production]          # omit to publish all non-workspace profiles
+```
+
+`include: []`는 아무것도 게시하지 않습니다; 알 수 없는 이름은 게시를 실패시킵니다. `workspace` 하위 섹션은 게시된 프로파일 안에서도 절대 내보내지지 않습니다. 프로파일 선언은 [설정](guides/configuration.md#profiles)을 참조하세요.
 
 ## 게시된 모듈 사용
 
@@ -328,7 +382,7 @@ entries:
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
-    default: "1000"
+    default: 1000
 
   - name: cache
     kind: library.lua

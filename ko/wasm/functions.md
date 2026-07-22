@@ -126,6 +126,27 @@ pool:
 
 `max_size`가 지정되지 않은 경우 기본 탄력적 풀 최대값은 워커 100개입니다.
 
+### 워커 클래스와 코어 어피니티
+
+`pool.worker_class`를 설정하면 함수가 위의 공유 풀 타입 대신 OS 스레드에 고정된 전용 워커 풀로 라우팅됩니다 (설정 시 `type`은 무시됩니다; 관례적 이름: `wasm`):
+
+```yaml
+pool:
+  worker_class: wasm
+  workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
+```
+
+코어 격리는 `.wippy.yaml`에서 런타임별로 옵트인합니다:
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true      # default: false
+    reserved_cores: 2  # cores reserved for WASM pools (default: 1)
+```
+
+격리가 활성화되면 액터 스케줄러와 고정된 WASM 풀이 서로 겹치지 않는 CPU 집합에서 실행됩니다 (`sched_setaffinity`, Linux 전용 — 다른 플랫폼은 풀 크기만 조정하고 스레드를 바인딩하지 않습니다). 그러면 오래 실행되는 WASM 호출이 액터 스케줄링을 굶주리게 만들 수 없습니다.
+
 ## 트랜스포트
 
 트랜스포트는 런타임과 WASM 모듈 간의 입출력 매핑 방식을 제어합니다.

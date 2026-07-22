@@ -109,6 +109,7 @@ local ok, err = process.set_options({trap_links = true})
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `trap_links` | boolean | Si los eventos LINK_DOWN se entregan al canal de eventos |
+| `upgradable` | boolean | Optar por recibir eventos OUTDATED cuando el código del proceso se invalida |
 
 ## Buzón y Eventos
 
@@ -126,6 +127,7 @@ local events = process.events()  -- Eventos de ciclo de vida del tema @events
 | `process.event.CANCEL` | Cancelación solicitada |
 | `process.event.EXIT` | Proceso monitorizado ha salido |
 | `process.event.LINK_DOWN` | Proceso enlazado terminó de forma anormal |
+| `process.event.OUTDATED` | El código del proceso o una dependencia importada cambió en el registro |
 
 ### Campos del Evento
 
@@ -136,6 +138,9 @@ local events = process.events()  -- Eventos de ciclo de vida del tema @events
 | `result` | any | Para EXIT: el valor devuelto (presente en salida normal) |
 | `error` | any | Para EXIT: el error (presente en salida anormal) |
 | `reason` | string | Para CANCEL: por qué se está cancelando el proceso |
+| `sources` | string[] | Para OUTDATED: IDs del registro que cambiaron o fueron afectados transitivamente |
+
+OUTDATED se entrega solo a los procesos que optaron por él con `process.set_options({upgradable = true})`; los demás procesos nunca lo ven. Múltiples invalidaciones se fusionan en un único evento pendiente con la unión de `sources`. La reacción prevista es un intercambio en caliente vía [`process.upgrade`](#process-upgrade).
 
 ## Suscripción a Temas
 
@@ -174,7 +179,7 @@ local result, err = process.exec(id, host, ...)
 
 **Permisos:** `process.exec` sobre el id del proceso, `process.host` sobre el id del host
 
-## Actualización de Proceso
+## Actualización de Proceso {#process-upgrade}
 
 Actualizar el proceso actual a una nueva definición preservando el PID:
 
@@ -235,6 +240,16 @@ spawner:spawn_linked_monitored(id, host, ...)
 ```
 
 Mismos permisos que las funciones de spawn a nivel de módulo.
+
+### Exec del Spawner
+
+```lua
+local result, err = spawner:exec(id, host, ...)
+```
+
+Ejecuta el proceso destino de forma síncrona bajo el contexto, actor y scope del builder, y devuelve su valor de resultado — la contraparte acotada del `process.exec` a nivel de módulo. Un worker diferido puede reconstruir una identidad de propietario con `with_actor`/`with_scope` y ejecutar en su nombre.
+
+**Permisos:** `process.exec` sobre el id del proceso, `process.host` sobre el id del host
 
 ## Registro de Nombres
 

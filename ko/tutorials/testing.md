@@ -1,11 +1,11 @@
 ---
 title: "테스트"
-description: "wippy/test 프레임워크로 Lua 코드의 테스트를 작성하고 실행합니다 — 어설션, 라이프사이클 훅, 모킹을 갖춘 BDD 스타일 러너이며, wippy run test 명령으로 실행됩니다."
+description: "wippy/test 프레임워크로 Lua 코드의 테스트를 작성하고 실행합니다 — 어설션, 라이프사이클 훅, 모킹을 갖춘 BDD 스타일 러너이며, wippy test 명령으로 실행됩니다."
 ---
 
 # 테스트
 
-`wippy/test` 프레임워크로 Lua 코드의 테스트를 작성하고 실행합니다 — 어설션, 라이프사이클 훅, 모킹을 갖춘 BDD 스타일 러너이며, `wippy run test` 명령으로 실행됩니다.
+`wippy/test` 프레임워크로 Lua 코드의 테스트를 작성하고 실행합니다 — 어설션, 라이프사이클 훅, 모킹을 갖춘 BDD 스타일 러너이며, `wippy test` 명령으로 실행됩니다.
 
 ## 무엇을 구축할 것인가
 
@@ -13,7 +13,7 @@ description: "wippy/test 프레임워크로 Lua 코드의 테스트를 작성하
 
 1. `add` 및 `div` 함수가 있는 `calc` 라이브러리.
 2. 케이스를 설명하고, 동작을 어설트하며, 보류 중인 케이스를 건너뛰는 테스트 엔트리.
-3. `wippy run test`를 통한 그린 테스트 실행.
+3. `wippy test`를 통한 그린 테스트 실행.
 
 ## 전제 조건
 
@@ -115,13 +115,13 @@ entries:
 ## 실행하기
 
 ```bash
-wippy run test
+wippy test
 ```
 
 반복 작업 중에 단일 스위트로 필터링합니다 (엔트리 id 또는 스위트 이름과 매칭):
 
 ```bash
-wippy run test calculator
+wippy test calculator
 ```
 
 위 스위트의 출력:
@@ -136,7 +136,7 @@ wippy run test calculator
   PASSED   3 tests   1 skipped   1ms
 ```
 
-`wippy run test`는 모든 케이스가 통과하면 `0`으로, 실패가 있으면 `1`로 종료되므로 CI에 바로 적용됩니다.
+`wippy test`는 모든 케이스가 통과하면 `0`으로, 실패가 있으면 `1`로 종료되므로 CI에 바로 적용됩니다.
 
 ## 어설션
 

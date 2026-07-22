@@ -70,6 +70,25 @@ end
 add("one", "two")                  -- E: string not assignable to number
 ```
 
+### 未宣言のrequire
+
+文字列リテラルの `require("name")` で、そのモジュールがエントリの `imports`/`modules` 宣言にもアンビエントな組み込みにも含まれていない場合、次のエラーで失敗します：
+
+```
+require("name") is not declared in _index.yaml imports or modules
+```
+
+このチェックは常に実行され（`--rules` の背後にゲートされていません）、エラーとして報告されます。モジュールを宣言して解消します：
+
+```yaml
+imports:
+  json: wippy.stdlib:json    # alias -> registry id
+modules:
+  - funcs                    # bare module name
+```
+
+動的なrequire（`require(variable)`）は検査されません。アンビエントセット — 実行可能な種別における `process` のように、宣言なしで利用できるモジュール — はリンターとランタイムで共有されているため、リント時と実行時の解決が乖離することはありません。
+
 ### リントルール警告 (Wシリーズ)
 
 リントルールはコードスタイルと品質のチェックを提供します。`--rules` で有効にします：

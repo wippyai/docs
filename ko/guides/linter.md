@@ -70,6 +70,25 @@ end
 add("one", "two")                  -- E: string not assignable to number
 ```
 
+### 선언되지 않은 Require
+
+모듈이 엔트리의 `imports`/`modules` 선언에도 없고 앰비언트 빌트인도 아닌 문자열 리터럴 `require("name")`는 다음 오류로 실패합니다:
+
+```
+require("name") is not declared in _index.yaml imports or modules
+```
+
+이 검사는 항상 실행되며 (`--rules` 뒤에 게이트되지 않음) 오류로 보고됩니다. 모듈을 선언하여 해결합니다:
+
+```yaml
+imports:
+  json: wippy.stdlib:json    # alias -> registry id
+modules:
+  - funcs                    # bare module name
+```
+
+동적 require(`require(variable)`)는 검사하지 않습니다. 앰비언트 집합 — 실행 가능한 종류의 `process`처럼 선언 없이 사용 가능한 모듈 — 은 린터와 런타임이 공유하므로, 린트 시점과 실행 시점의 해석이 어긋날 수 없습니다.
+
 ### 린트 규칙 경고 (W 시리즈)
 
 린트 규칙은 코드 스타일과 품질 검사를 제공합니다. `--rules`로 활성화합니다:

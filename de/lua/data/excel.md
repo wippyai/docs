@@ -197,6 +197,39 @@ end
 
 Alle Zellwerte werden als Strings zurückgegeben. Booleans als "TRUE" oder "FALSE", Zahlen als String-Darstellung.
 
+### Zeilen streamen
+
+`wb:rows(sheet)` öffnet einen streamenden Cursor über ein Tabellenblatt. Das Blatt wird inkrementell mit konstantem Speicher dekodiert, anders als `get_rows`, das das gesamte Blatt materialisiert:
+
+```lua
+local cursor, err = wb:rows("Report")
+if err then
+    return nil, err
+end
+
+while true do
+    local batch, err = cursor:read(500)
+    if err then
+        cursor:close()
+        return nil, err
+    end
+    if not batch then
+        break                       -- end of sheet
+    end
+    for _, row in ipairs(batch) do
+        process(row)
+    end
+end
+cursor:close()
+```
+
+| Methode | Beschreibung |
+|---------|--------------|
+| `cursor:read(n?)` | Den nächsten Batch von bis zu `n` Zeilen lesen (Standard 1, max 10000). Gibt `string[][], error` zurück; `nil, nil` am Blattende |
+| `cursor:close()` | Cursor freigeben (idempotent; Cursor schließen auch mit der Arbeitsmappe) |
+
+Zellwerte werden identisch zu `get_rows` formatiert. Leere Zeilen kommen als leere Tabellen zurück, und abschließende leere Zeilen bleiben erhalten statt abgeschnitten zu werden. Nach dem Blattende oder einem Fehler geben nachfolgende Reads weiterhin denselben Zustand zurück.
+
 ## Datei-Operationen
 
 ### In Datei schreiben

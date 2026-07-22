@@ -9,6 +9,58 @@ Wippy wird über `.wippy.yaml`-Dateien konfiguriert. Alle Optionen haben sinnvol
 
 Jeder Wert unten kann beim Start mit `wippy run --set section.path=value` überschrieben werden (wiederholbar, hat Vorrang vor der Datei). Um einzelne Registry-*Einträge* statt dieser Konfigurationsabschnitte zu überschreiben, verwenden Sie den Abschnitt `override:` oder `-o` — siehe [Einträge überschreiben](guides/entry-kinds.md#overriding-entries).
 
+## Konfigurations-Komposition {#config-composition}
+
+`--config` ist wiederholbar; Dateien komponieren von links nach rechts mit demselben Schema:
+
+```bash
+wippy run --config .wippy.yaml --config .wippy.local.yaml
+```
+
+- Spätere Dateien überschreiben übereinstimmende Werte und behalten alles andere bei.
+- Jede explizit benannte Datei muss existieren. Ohne `--config` ist die Standarddatei `.wippy.yaml` optional.
+- Die erste Datei verankert das Verzeichnis, gegen das relative Pfade aufgelöst werden.
+- Dateinamen tragen keine reservierte Bedeutung; nichts außer dem Standard wird automatisch entdeckt.
+
+Die Konfiguration wird in dieser Reihenfolge angewendet: Datei-Komposition, dann `--profile`-Auswahlen, dann `--set`-Überschreibungen. Für aus Packs ausgeführte Anwendungen liegen die gepackten Runtime-Defaults unter all diesen (siehe [Runtime-Defaults veröffentlichen](guides/publishing.md#publishing-runtime-defaults)).
+
+## Profile {#profiles}
+
+Eine Konfigurationsdatei kann benannte Overlays unter `profiles:` deklarieren. Jeder Profilkörper spiegelt die normalen Konfigurationsabschnitte; die Auswahl mit `--profile <name>` legt diese Werte über die zusammengeführte Basiskonfiguration:
+
+```yaml
+version: "1.0"
+
+vars:
+  port: 8085
+
+override:
+  app:db:kind: db.sql.sqlite
+
+disable:
+  namespaces: ["legacy.**"]
+
+profiles:
+  pg:
+    vars:
+      port: 18085
+    override:
+      app:db:kind: db.sql.postgres
+    disable:
+      namespaces.add: ["experimental.**"]
+```
+
+```bash
+wippy run --profile pg
+```
+
+- `--profile` ist wiederholbar; Profile komponieren von links nach rechts, nach der Datei-Komposition und vor `--set`. Ein unbekannter Name ist ein Fehler.
+- Werte werden pro Blatt zusammengeführt (der letzte Schreiber gewinnt). Der Abschnitt `profiles:` selbst wird aus der aufgelösten Konfiguration entfernt.
+- Der Abschnitt `disable` unterstützt Listenoperationen innerhalb von Profilen — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — sodass ein Profil die Basisliste anpassen kann, statt sie zu ersetzen.
+- `${name}`-Referenzen interpolieren aus dem zusammengeführten `vars:`-Abschnitt. OS-Umgebungsreferenzen sind innerhalb von Profil-Vars nicht erlaubt; verwenden Sie `${env:NAME}` in der Basiskonfiguration, aufgelöst beim Laden der Datei.
+
+`wippy run`, `test` und `pack` akzeptieren `--profile`; `install`, `update`, `lint` und `registry` akzeptieren es ebenfalls für Workspace-Profile (zusammen mit `--set`). Anwendungen können Profile in Packs ausliefern — siehe [Profile veröffentlichen](guides/publishing.md#publishing-profiles).
+
 ## Logger
 
 Steuert den zap-Logger-Encoder. CLI-Flags (`-v`, `-c`, `-s`) überschreiben Level/Ausgabe; die einzige yaml-gesteuerte Option ist die Kodierung.
@@ -285,16 +337,29 @@ SWIM-Gossip über memberlist. Wird für Knotenentdeckung, Fehlererkennung und Me
 | `membership.join_addrs` | string | | Kommagetrennte Seed-`host:port`-Paare |
 | `membership.secret_key` | string | | Base64-kodierter Gossip-Verschlüsselungsschlüssel (inline) |
 | `membership.secret_file` | string | | Pfad zur Datei mit dem Gossip-Verschlüsselungsschlüssel |
+| `membership.gossip_interval` | duration | 500ms | Gossip-Verbreitungsperiode |
+| `membership.push_pull_interval` | duration | 5s | Periode der vollständigen Zustandssynchronisation |
+| `membership.dead_node_reclaim_time` | duration | 30s | Wann Name/Adresse eines toten Knotens wiederverwendet werden können |
+| `membership.probe_interval` | duration | 1s | Zyklus der Fehlererkennungs-Probes |
+| `membership.probe_timeout` | duration | 200ms | Ack-Wartezeit pro Probe |
+| `membership.tcp_timeout` | duration | 1s | Timeout der TCP-Fallback-Probe |
+| `membership.suspicion_mult` | int | 3 | Multiplikator des Suspicion-Timeouts |
+
+Die vier Probe-Schlüssel erben die Local-Network-Defaults von memberlist, wenn sie nicht gesetzt sind; erhöhen Sie sie für Verbindungen mit hoher Latenz (z.B. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internode (Transport)
 
-TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh (yamux-multiplexiert); es gibt keinen separaten Raft-Port.
+TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh über Internode-Request/Reply; es gibt keinen separaten Raft-Port.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `internode.bind_addr` | string | 0.0.0.0 | Mesh-Bind-Adresse |
 | `internode.bind_port` | int | 0 | Mesh-Port (0 = auto: 7950-7959, dann ephemer) |
 | `internode.auto_port` | bool | true | Tatsächlichen Port beim Start ermitteln, festlegen und im Gossip bewerben |
+| `internode.advertise_addr` | string | | Zusätzlicher Relay-Endpunkt (IP oder DNS-Name), veröffentlicht für aktualisierte Peers — für NAT- oder Load-Balancer-Erreichbarkeit |
+| `internode.advertise_port` | int | 0 | Port für `advertise_addr` (0 = Bind-Port; erfordert `advertise_addr`) |
+
+`advertise_addr`/`advertise_port` veröffentlichen einen additiven Endpunkt in den Knoten-Metadaten, während der Bind-Endpunkt unverändert beworben bleibt, sodass Cluster mit gemischten Versionen während eines Rolling Upgrades verbunden bleiben.
 
 ### Raft (Konsens)
 

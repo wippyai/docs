@@ -92,6 +92,15 @@ entries:
 | Platzhalter | `*` | Jede Version (wahlt die hochste) |
 | Kombiniert | `>=1.0.0 <2.0.0` | Zwischen 1.0.0 und 2.0.0 |
 
+### Auflosungsregeln
+
+- Jedes Modul wird gegen die **Schnittmenge aller deklarierten Bereiche** im Abhangigkeitsgraphen aufgelost. Inkompatible Bereiche (Diamond-Konflikte) lassen die Auflosung mit einem expliziten Fehler fehlschlagen, statt stillschweigend eine Seite zu wahlen.
+- Abhangigkeiten werden aus ihren deklarierten Bereichen gelost, nicht aus zuvor aufgelosten Pins.
+- **Root-Deklarationen gewinnen gegen transitive**: Wenn Ihre App und eine Abhangigkeit dasselbe Modul oder dieselbe Anforderung einziehen, hat Ihre Deklaration Vorrang. Ein Abhangigkeits-Eintrag mit `meta.module` ist transitiv, sofern er nicht explizit als Root markiert ist — veroffentlichte Anwendungen behalten ihre im Quellcode deklarierten Abhangigkeiten als Roots.
+- Dieselbe Komponente darf nur einmal als Root-Abhangigkeit deklariert werden — eine doppelte Deklaration wird mit einem Konfliktfehler abgelehnt. Aktualisieren Sie stattdessen die bestehende Abhangigkeit.
+
+Die Runtime persistiert jeden aufgelosten Graphen in ihrer Registry-Historie und spielt ihn beim Start wieder ab, statt neu aufzulosen, sodass eine deployte Anwendung mit genau den Versionen bootet, die beim Anwenden der Abhangigkeitsanderung aufgelost wurden. `wippy.lock` bleibt der portable Snapshot fur Quellprojekte.
+
 ## Arbeitsablauf
 
 ### Neues Projekt starten
@@ -182,23 +191,26 @@ Mit aktiviertem Entpacken:
 
 ## Lokale Entwicklung mit Ersetzungen
 
-Uberschreiben Sie Hub-Module mit lokalen Verzeichnissen fur die Entwicklung:
+Uberschreiben Sie Hub-Module mit lokalen Verzeichnissen fur die Entwicklung. Ersetzungen werden im `workspace`-Abschnitt einer Runtime-Konfigurationsdatei deklariert — typischerweise einer privaten, git-ignorierten, die auf `.wippy.yaml` komponiert wird:
 
 ```yaml
-# wippy.lock
-directories:
-  modules: .wippy
-  src: ./src
-modules:
-  - name: acme/http
-    version: v1.2.0
-    hash: ...
-replacements:
-  - from: acme/http
-    to: ../local-http
+# .wippy.workspace.yaml
+version: "1.0"
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: ../local-sql
 ```
 
-Der Ersetzungspfad ist relativ zur Lock-Datei. Wenn eine Ersetzung aktiv ist, wird das lokale Verzeichnis anstelle des herstellergebundenen Moduls verwendet. Ersetzungen bleiben uber `wippy update`-Operationen hinweg erhalten.
+```bash
+wippy run --config .wippy.yaml --config .wippy.workspace.yaml
+```
+
+Schlussel sind `org/module`, Werte sind Verzeichnisse (relative Pfade werden gegen das Verzeichnis der ersten `--config`-Datei aufgelost; der Pfad muss existieren und ein Verzeichnis sein). Das Setzen einer Ersetzung auf `null` deaktiviert eine aus einer fruheren Konfigurationsschicht oder einem Profil geerbte Ersetzung. Ersetzungen konnen auch in einem [Profil](guides/configuration.md#profiles) liegen, sodass sie nur mit `--profile workspace` aktiv werden.
+
+Workspace-Ersetzungen wirken auf den Ladegraphen beim Start und werden nie in `wippy.lock` geschrieben. Anderungen an der lokalen Quelle werden direkt abgeglichen, ohne den Hub zu kontaktieren. Die `exclude:`-Globs aus der `wippy.yaml` des Moduls gelten auch fur Ersetzungsverzeichnisse, sowohl beim Laden von Eintragen als auch beim Hashen des Inhalts.
+
+Ein `replacements:`-Abschnitt in `wippy.lock` ist veraltet: Er wird noch geladen, gibt aber eine Warnung aus. Verschieben Sie diese Eintrage nach `workspace.replacements` in einer Konfigurationsdatei.
 
 ## Ladereihenfolge
 
@@ -216,6 +228,7 @@ Jedes Modul in der Lock-Datei hat einen Inhalts-Hash. Wahrend der Installation w
 
 ## Siehe auch
 
+- [Komponenten bauen](guides/components.md) - Die Autorenseite: `ns.requirement` und Werte via `parameters` bereitstellen
 - [CLI](guides/cli.md) - Befehlsreferenz
 - [Veroffentlichung](guides/publishing.md) - Module im Hub veroffentlichen
 - [Projektstruktur](start/structure.md) - Projektaufbau

@@ -150,7 +150,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-参见 [Database](system/database.md) 了解 `*_env` 后缀变体、TLS 选项和连接池调优。
+参见 [Database](system/database.md) 了解 `${env:NAME}` 密钥引用、TLS 选项和连接池调优。当数据库条目背后由 env 支持的值发生变化时，连接池会实时切换 — 活跃的借用连接会在旧连接设置下完成。
 
 **Lua API：** 参见 [SQL 模块](lua/storage/sql.md)
 
@@ -300,6 +300,8 @@ local data = msg:body_json()
 <tip>
 当需要将进程作为具有自动重启功能的受监督服务运行时，使用 <code>process.service</code>。<code>process</code> 字段引用一个 <code>process.lua</code> 入口。
 </tip>
+
+实时更新 `process.host` 条目会就地重设 `host.workers` 的规模 — 运行中的进程、PID 和队列都会保留。`host.queue_size`、`host.local_queue_size` 和 `lifecycle` 在构造时固定：实时更新更改它们会被拒绝；对 worker 采用亲和性管理的宿主调整 worker 数量同样会被拒绝。
 
 ## Temporal（工作流）
 

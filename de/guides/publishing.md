@@ -31,6 +31,7 @@ Modul-Manifest:
 ```yaml
 organization: acme
 module: http-utils
+type: library
 description: HTTP utilities and helpers
 license: MIT
 repository: https://github.com/acme/http-utils
@@ -44,11 +45,14 @@ keywords:
 |-------|----------|-------------|
 | `organization` | Ja | Name deiner Organisation im Hub |
 | `module` | Ja | Modulname |
+| `type` | Nein | Modultyp: `library`, `application`, `agent` oder `plugin` |
 | `description` | Nein | Kurzbeschreibung |
 | `license` | Nein | SPDX-Bezeichner (MIT, Apache-2.0) |
 | `repository` | Nein | URL des Quell-Repositories |
 | `homepage` | Nein | Projekt-Homepage |
 | `keywords` | Nein | Suchschlüsselwörter |
+
+`type` ist die maßgebliche Quelle dafür, wie der Hub das Modul klassifiziert, und kann bei einer späteren Veröffentlichung geändert werden; `--module-type` überschreibt es für eine einzelne Veröffentlichung. Wenn es fehlt, erhalten neu erstellte Module standardmäßig den Typ `application` mit einer Deprecation-Warnung.
 
 ## Eintragsdefinitionen
 
@@ -64,6 +68,10 @@ entries:
     meta:
       title: HTTP Utilities
       description: Helpers for HTTP operations
+    readme: file://README.md
+    wiki:
+      GUIDE.md: file://docs/GUIDE.md
+      examples/auth.md: file://docs/auth.md
 
   - name: client
     kind: library.lua
@@ -72,6 +80,8 @@ entries:
       - http_client
       - json
 ```
+
+Die `wiki:`-Map auf `ns.definition` veröffentlicht zusätzliche Dokumentationsseiten neben dem Readme: Schlüssel sind Seitenpfade, Werte sind `file://`-Referenzen. Inhalte werden zur Pack-Zeit eingebettet und vom Hub als durchstöberbares Wiki je Modul bereitgestellt.
 
 ## Abhängigkeiten
 
@@ -115,6 +125,8 @@ entries:
 Targets geben an, wo der Wert eingefügt wird:
 - `entry` - Vollständige Eintrags-ID, die konfiguriert werden soll
 - `path` - JSONPath für die Werteinfügung
+
+`default` akzeptiert jeden skalaren Typ — `default: 20` fließt als Zahl in ein numerisches Target, nicht als String. Dasselbe gilt für `parameters[].value` auf `ns.dependency`-Einträgen, und beide akzeptieren `${env:NAME}`-Referenzen, die wörtlich mitgeführt und beim Dekodieren des Ziel-Eintrags aufgelöst werden.
 
 Konsumenten konfigurieren über Override. Das `-o`-Flag erwartet ein Tripel `namespace:entry:field=value`:
 
@@ -213,7 +225,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--config <dir>` | Verzeichnis mit `wippy.yaml` (Standard: aktuelles Verzeichnis) |
 | `--create` | Das Modul auf dem Hub registrieren, falls es noch nicht existiert, und dann veröffentlichen |
 | `--module-visibility <v>` | Sichtbarkeit für `--create`: `private` (Standard) oder `public` |
-| `--module-type <t>` | Typ für `--create`: `application` (Standard), `library`, `agent` oder `plugin` |
+| `--module-type <t>` | Modultyp: `library`, `application`, `agent` oder `plugin` (überschreibt `type:` in wippy.yaml) |
 | `--module-display-name <n>` | Anzeigename für `--create` |
 
 ### Statische Dateien einbetten
@@ -254,6 +266,48 @@ Registry und Token können auch aus den Umgebungsvariablen `WIPPY_REGISTRY` und 
 ### Kontingente
 
 Wenn das Kontingent der Organisation für private Module erschöpft ist, schlägt die Veröffentlichung mit einer Meldung wie `cannot publish: Private-module quota exhausted (5 of 5)...` fehl. Machen Sie das Modul öffentlich oder bitten Sie einen Org-Admin, das Kontingent zu erhöhen. Uploads und Downloads werden bei vorübergehenden Netzwerkfehlern automatisch wiederholt.
+
+## Runtime-Defaults veröffentlichen {#publishing-runtime-defaults}
+
+Anwendungen (nur `type: application`) können Runtime-Konfigurationsdefaults über `publish.runtime` in `wippy.yaml` in ihren Packs ausliefern:
+
+```yaml
+type: application
+publish:
+  runtime:
+    source: .wippy.yaml            # default: .wippy.yaml
+    sections: [security, registry, override]
+    vars: [public_url]
+```
+
+| Feld | Beschreibung |
+|------|--------------|
+| `source` | Konfigurationsdatei, aus der die Abschnitte gelesen werden (Standard: `.wippy.yaml`) |
+| `sections` | Runtime-Konfigurationsabschnitte, die als Defaults in die Pack-Metadaten kopiert werden |
+| `vars` | Explizite Allowlist von Variablen, die auch unreferenziert gepackt werden |
+
+Regeln:
+
+- Nur Variablen, die von den ausgewählten Abschnitten oder veröffentlichten Profilen referenziert werden, werden gepackt (transitiv verfolgt); alles andere braucht einen `vars`-Eintrag.
+- `${env:...}`-Referenzen in exportierter Konfiguration werden abgelehnt — die Umgebung des Veröffentlichenden gelangt nie in ein Pack.
+- Die maschinenlokalen Abschnitte `boot`, `extensions` und `workspace` können nicht exportiert werden.
+- Nur das Pack der Hauptanwendung liefert Host-Runtime-Defaults; Runtime-Metadaten in Abhängigkeits-Packs werden ignoriert.
+
+Am Zielort wird die Konfiguration von niedrigster zu höchster Priorität angewendet: App-Pack-Defaults, eingebaute Runtime-Defaults, lokale Konfigurationsdateien, ausgewählte Profile, CLI-Überschreibungen.
+
+## Profile veröffentlichen {#publishing-profiles}
+
+Profile der Root-Anwendung werden in die `runtime.profiles`-Metadaten des Packs exportiert. Das Veröffentlichen wählt oder fixiert kein Profil — Konsumenten wählen eines zur Laufzeit mit `wippy run --profile <name>`:
+
+```yaml
+publish:
+  profiles:
+    enabled: true
+    source: config/profiles.yaml   # default: .wippy.yaml
+    include: [production]          # omit to publish all non-workspace profiles
+```
+
+`include: []` veröffentlicht keine; ein unbekannter Name lässt die Veröffentlichung fehlschlagen. `workspace`-Unterabschnitte werden nie exportiert, auch nicht innerhalb eines veröffentlichten Profils. Siehe [Konfiguration](guides/configuration.md#profiles) zum Deklarieren von Profilen.
 
 ## Veröffentlichte Module verwenden
 
@@ -328,7 +382,7 @@ entries:
     targets:
       - entry: acme.cache:cache
         path: ".meta.max_size"
-    default: "1000"
+    default: 1000
 
   - name: cache
     kind: library.lua

@@ -150,7 +150,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-`*_env` 접미사 변형, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참조하세요.
+`*_env` 접미사 변형, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참조하세요. 데이터베이스 엔트리 뒤의 env 기반 값이 변경되면 풀이 라이브로 교체됩니다 — 진행 중인 대여는 이전 연결 설정으로 완료됩니다.
 
 **Lua API:** [SQL 모듈](lua/storage/sql.md) 참조
 
@@ -300,6 +300,8 @@ local data = msg:body_json()
 <tip>
 자동 재시작이 필요한 감독 서비스로 프로세스를 실행할 때 <code>process.service</code>를 사용하세요. <code>process</code> 필드는 <code>process.lua</code> 엔트리를 참조합니다.
 </tip>
+
+라이브 `process.host` 엔트리를 업데이트하면 `host.workers`가 제자리에서 재조정됩니다 — 실행 중인 프로세스, PID, 큐는 보존됩니다. `host.queue_size`, `host.local_queue_size`, `lifecycle`은 생성 시 고정됩니다: 이를 변경하는 라이브 업데이트는 거부되며, 워커가 어피니티로 관리되는 호스트에서 워커 수를 조정하는 것도 마찬가지로 거부됩니다.
 
 ## Temporal (워크플로우)
 

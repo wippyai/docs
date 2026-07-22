@@ -197,6 +197,39 @@ end
 
 모든 셀 값은 문자열로 반환됩니다. 불리언은 "TRUE" 또는 "FALSE", 숫자는 문자열 표현으로.
 
+### 행 스트리밍
+
+`wb:rows(sheet)`는 한 시트에 대한 스트리밍 커서를 엽니다. 전체 시트를 메모리에 올리는 `get_rows`와 달리, 시트를 일정한 메모리로 증분 디코딩합니다:
+
+```lua
+local cursor, err = wb:rows("Report")
+if err then
+    return nil, err
+end
+
+while true do
+    local batch, err = cursor:read(500)
+    if err then
+        cursor:close()
+        return nil, err
+    end
+    if not batch then
+        break                       -- end of sheet
+    end
+    for _, row in ipairs(batch) do
+        process(row)
+    end
+end
+cursor:close()
+```
+
+| 메서드 | 설명 |
+|--------|------|
+| `cursor:read(n?)` | 최대 `n`개 행의 다음 배치를 읽음 (기본값 1, 최대 10000). `string[][], error` 반환; 시트 끝에서는 `nil, nil` |
+| `cursor:close()` | 커서 해제 (멱등; 커서는 워크북과 함께 닫히기도 함) |
+
+셀 값의 형식은 `get_rows`와 동일합니다. 빈 행은 빈 테이블로 반환되며, 끝부분의 빈 행은 잘리지 않고 보존됩니다. 시트 끝이나 에러 이후의 후속 읽기는 같은 상태를 계속 반환합니다.
+
 ## 파일 작업
 
 ### 파일에 쓰기

@@ -210,6 +210,8 @@ local secured = c:with_actor(security.actor()):with_scope(security.scope())
 local admin, err = secured:open()
 ```
 
+명시적인 `with_actor`/`with_scope` 없이 열린 계약은 호출자의 앰비언트 액터와 스코프를 상속합니다. 설정된 경우 바인딩된 구현 함수로 전파됩니다 — 인스턴스의 모든 메서드 호출이 해당 신원 아래에서 실행됩니다.
+
 ## 권한
 
 | 권한 | 리소스 | 함수 |

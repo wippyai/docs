@@ -26,12 +26,15 @@ wippy version
 mkdir myapp && cd myapp
 wippy init
 
-# 의존성 추가
-wippy add wippy/http
-wippy install
-
 # 실행
 wippy run
+```
+
+HTTP, SQL, 스토리지, 프로세스 호스팅은 런타임에 내장되어 있습니다 — 새 프로젝트는 어떤 의존성도 없이 실행됩니다. 프레임워크 모듈은 필요할 때 허브에서 추가합니다:
+
+```bash
+wippy add wippy/test
+wippy install
 ```
 
 ## 명령어 개요
@@ -40,6 +43,7 @@ wippy run
 |---------|-------------|
 | `wippy init` | 새 프로젝트 초기화 |
 | `wippy run` | 런타임 시작 |
+| `wippy test` | 테스트 엔트리포인트 실행 |
 | `wippy lint` | 코드 오류 검사 |
 | `wippy add` | 의존성 추가 |
 | `wippy install` | 의존성 설치 |

@@ -70,6 +70,25 @@ end
 add("one", "two")                  -- E: string not assignable to number
 ```
 
+### Nicht deklarierte Requires
+
+Ein String-Literal-`require("name")`, dessen Modul weder in den `imports`/`modules`-Deklarationen des Eintrags steht noch ein ambienter Builtin ist, schlagt fehl mit:
+
+```
+require("name") is not declared in _index.yaml imports or modules
+```
+
+Diese Prufung lauft immer (sie ist nicht hinter `--rules` gekapselt) und wird als Fehler gemeldet. Deklarieren Sie das Modul, um sie zu erfullen:
+
+```yaml
+imports:
+  json: wippy.stdlib:json    # alias -> registry id
+modules:
+  - funcs                    # bare module name
+```
+
+Dynamische Requires (`require(variable)`) werden nicht untersucht. Die ambiente Menge — Module, die ohne Deklaration verfugbar sind, etwa `process` in ausfuhrbaren Kinds — wird zwischen Linter und Runtime geteilt, sodass Lint-Zeit- und Laufzeitauflosung nicht auseinanderdriften konnen.
+
 ### Lint-Regel-Warnungen (W-Serie)
 
 Lint-Regeln bieten Stil- und Qualitatsprufungen. Aktivieren Sie sie mit `--rules`:

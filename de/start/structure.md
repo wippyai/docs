@@ -251,6 +251,7 @@ myapp/
 
 ## Siehe auch
 
+- [Anwendungsarchitektur](concepts/architecture.md) - Wie eine App in Slices und Schichten zerlegt wird
 - [Entry-Typen-Anleitung](guides/entry-kinds.md) - Verfügbare Entry-Typen
 - [Konfigurationsanleitung](guides/configuration.md) - Runtime-Optionen
 - [Benutzerdefinierte Entry-Typen](internals/kinds.md) - Handler implementieren (fortgeschritten)

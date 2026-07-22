@@ -251,6 +251,7 @@ myapp/
 
 ## 참고
 
+- [애플리케이션 아키텍처](concepts/architecture.md) - 앱을 슬라이스와 레이어로 나누는 방법
 - [엔트리 종류 가이드](guides/entry-kinds.md) - 사용 가능한 엔트리 종류
 - [설정 가이드](guides/configuration.md) - 런타임 옵션
 - [커스텀 엔트리 종류](internals/kinds.md) - 핸들러 구현 (고급)

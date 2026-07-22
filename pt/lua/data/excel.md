@@ -197,6 +197,39 @@ end
 
 Todos os valores de celula retornados como strings. Booleans como "TRUE" ou "FALSE", numeros como representação string.
 
+### Streaming de Linhas
+
+`wb:rows(sheet)` abre um cursor de streaming sobre uma planilha. A planilha é decodificada incrementalmente em memória constante, ao contrário de `get_rows` que materializa a planilha inteira:
+
+```lua
+local cursor, err = wb:rows("Report")
+if err then
+    return nil, err
+end
+
+while true do
+    local batch, err = cursor:read(500)
+    if err then
+        cursor:close()
+        return nil, err
+    end
+    if not batch then
+        break                       -- end of sheet
+    end
+    for _, row in ipairs(batch) do
+        process(row)
+    end
+end
+cursor:close()
+```
+
+| Método | Descrição |
+|--------|-----------|
+| `cursor:read(n?)` | Lê o próximo lote de até `n` linhas (default 1, máx 10000). Retorna `string[][], error`; `nil, nil` no fim da planilha |
+| `cursor:close()` | Libera o cursor (idempotente; cursores também fecham com o workbook) |
+
+Valores de celula são formatados de forma idêntica a `get_rows`. Linhas vazias retornam como tabelas vazias, e linhas vazias finais são preservadas em vez de cortadas. Após o fim da planilha ou um erro, leituras subsequentes continuam retornando esse mesmo estado.
+
 ## Operações de Arquivo
 
 ### Escrever em Arquivo

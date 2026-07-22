@@ -197,6 +197,39 @@ end
 
 Todos los valores de celda se devuelven como strings. Booleanos como "TRUE" o "FALSE", numeros como representacion string.
 
+### Stream de Filas
+
+`wb:rows(sheet)` abre un cursor de streaming sobre una hoja. La hoja se decodifica incrementalmente en memoria constante, a diferencia de `get_rows` que materializa la hoja completa:
+
+```lua
+local cursor, err = wb:rows("Report")
+if err then
+    return nil, err
+end
+
+while true do
+    local batch, err = cursor:read(500)
+    if err then
+        cursor:close()
+        return nil, err
+    end
+    if not batch then
+        break                       -- fin de la hoja
+    end
+    for _, row in ipairs(batch) do
+        process(row)
+    end
+end
+cursor:close()
+```
+
+| Método | Descripción |
+|--------|-------------|
+| `cursor:read(n?)` | Lee el siguiente lote de hasta `n` filas (por defecto 1, máximo 10000). Devuelve `string[][], error`; `nil, nil` al final de la hoja |
+| `cursor:close()` | Libera el cursor (idempotente; los cursores también se cierran con el libro de trabajo) |
+
+Los valores de celda se formatean de forma idéntica a `get_rows`. Las filas vacías se devuelven como tablas vacías, y las filas vacías finales se preservan en lugar de recortarse. Tras el final de la hoja o un error, las lecturas posteriores siguen devolviendo ese mismo estado.
+
 ## Operaciones de Archivo
 
 ### Escribir a Archivo

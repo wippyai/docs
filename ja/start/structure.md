@@ -251,6 +251,7 @@ myapp/
 
 ## 関連項目
 
+- [アプリケーションアーキテクチャ](concepts/architecture.md) - アプリをスライスとレイヤーに分割する方法
 - [エントリ種別ガイド](guides/entry-kinds.md) - 利用可能なエントリ種別
 - [設定ガイド](guides/configuration.md) - ランタイムオプション
 - [カスタムエントリ種別](internals/kinds.md) - ハンドラの実装（上級）

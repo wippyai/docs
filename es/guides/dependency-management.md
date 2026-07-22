@@ -92,6 +92,15 @@ entries:
 | Comodin | `*` | Cualquier version (elige la mas alta) |
 | Combinada | `>=1.0.0 <2.0.0` | Entre 1.0.0 y 2.0.0 |
 
+### Reglas de Resolucion
+
+- Cada modulo se resuelve contra la **interseccion de todos los rangos declarados** en el grafo de dependencias. Los rangos incompatibles (conflictos de diamante) hacen fallar la resolucion con un error explicito en lugar de elegir silenciosamente un lado.
+- Las dependencias se resuelven a partir de sus rangos declarados, no de pins resueltos previamente.
+- **Las declaraciones raiz ganan sobre las transitivas**: cuando tu app y una dependencia traen el mismo modulo o requirement, tu declaracion tiene prioridad. Una entrada de dependencia que lleva `meta.module` es transitiva salvo que se marque explicitamente como raiz — las aplicaciones publicadas conservan como raices las dependencias declaradas en su fuente.
+- El mismo componente puede declararse como dependencia raiz solo una vez — una declaracion duplicada se rechaza con un error de conflicto. Actualiza la dependencia existente en su lugar.
+
+El runtime persiste cada grafo resuelto en su historial del registro y lo reproduce en el arranque en lugar de volver a resolver, de modo que una aplicacion desplegada arranca exactamente con las versiones que se resolvieron cuando se aplico el cambio de dependencias. `wippy.lock` sigue siendo la instantanea portable para proyectos fuente.
+
 ## Flujo de Trabajo
 
 ### Iniciar un Nuevo Proyecto
@@ -182,23 +191,26 @@ Con la extraccion habilitada:
 
 ## Desarrollo Local con Reemplazos
 
-Sustituye modulos del hub con directorios locales para desarrollo:
+Sustituye modulos del hub con directorios locales para desarrollo. Los reemplazos se declaran en la seccion `workspace` de un archivo de configuracion de runtime — tipicamente uno privado, ignorado por git y compuesto sobre `.wippy.yaml`:
 
 ```yaml
-# wippy.lock
-directories:
-  modules: .wippy
-  src: ./src
-modules:
-  - name: acme/http
-    version: v1.2.0
-    hash: ...
-replacements:
-  - from: acme/http
-    to: ../local-http
+# .wippy.workspace.yaml
+version: "1.0"
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: ../local-sql
 ```
 
-La ruta de reemplazo es relativa al archivo de bloqueo. Cuando un reemplazo esta activo, se usa el directorio local en lugar del modulo vendorizado. Los reemplazos se preservan durante las operaciones de `wippy update`.
+```bash
+wippy run --config .wippy.yaml --config .wippy.workspace.yaml
+```
+
+Las claves son `org/module`, los valores son directorios (las rutas relativas se resuelven contra el directorio del primer archivo `--config`; la ruta debe existir y ser un directorio). Establecer un reemplazo en `null` desactiva uno heredado de una capa de configuracion anterior o de un perfil. Los reemplazos tambien pueden vivir dentro de un [perfil](guides/configuration.md#profiles) para que se activen solo con `--profile workspace`.
+
+Los reemplazos de workspace afectan el grafo de carga en el arranque y nunca se escriben en `wippy.lock`. Los cambios en el codigo fuente local se reconcilian directamente, sin contactar al hub. Los globs `exclude:` del `wippy.yaml` fuente del modulo tambien se aplican a los directorios de reemplazo, tanto al cargar entradas como al calcular el hash del contenido.
+
+Una seccion `replacements:` en `wippy.lock` esta deprecada: aun se carga pero imprime una advertencia. Mueve esas entradas a `workspace.replacements` en un archivo de configuracion.
 
 ## Orden de Carga
 
@@ -216,6 +228,7 @@ Cada modulo en el archivo de bloqueo tiene un hash de contenido. Durante la inst
 
 ## Ver Tambien
 
+- [Construccion de Componentes](guides/components.md) - El lado del autor: `ns.requirement` y el suministro de valores via `parameters`
 - [CLI](guides/cli.md) - Referencia de comandos
 - [Publicacion](guides/publishing.md) - Publicacion de modulos en el hub
 - [Estructura del Proyecto](start/structure.md) - Estructura del proyecto

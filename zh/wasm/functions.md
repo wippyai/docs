@@ -126,6 +126,27 @@ pool:
 
 未指定 `max_size` 时，默认弹性池最大值为 100 个工作者。
 
+### Worker 类与核心亲和性
+
+设置 `pool.worker_class` 会将函数路由到一个由固定在 OS 线程上的 worker 组成的专用池，而不是上面的共享池类型（设置后 `type` 被忽略；惯用名称：`wasm`）：
+
+```yaml
+pool:
+  worker_class: wasm
+  workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
+```
+
+核心隔离在 `.wippy.yaml` 中按运行时选择启用：
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true      # default: false
+    reserved_cores: 2  # cores reserved for WASM pools (default: 1)
+```
+
+启用隔离后，actor 调度器与固定的 WASM 池运行在互不相交的 CPU 集合上（`sched_setaffinity`，仅限 Linux — 其他平台会确定池的规模但不绑定线程）。这样，长时间运行的 WASM 调用就无法饿死 actor 调度。
+
 ## 传输方式
 
 传输方式控制运行时与 WASM 模块之间输入和输出的映射方式。

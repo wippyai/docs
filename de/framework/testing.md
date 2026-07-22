@@ -16,7 +16,7 @@ wippy add wippy/test
 wippy install
 ```
 
-Das Modul registriert automatisch einen `test`-Befehl. Nach der Installation erkennt `wippy run test` alle Test-Eintraege in Ihrem Projekt und fuehrt sie aus.
+Das Modul registriert den Test-Entrypoint automatisch (einen Befehl mit `use_case: test`). Nach der Installation erkennt `wippy test` alle Test-Eintraege in Ihrem Projekt und fuehrt sie aus.
 
 ## Tests definieren
 
@@ -268,14 +268,14 @@ Alle Mocks werden nach jedem Test automatisch ueber den `after_each`-Hook wieder
 ### Alle Tests ausfuehren
 
 ```bash
-wippy run test
+wippy test
 ```
 
 ### Nach Muster filtern
 
 ```bash
-wippy run test math
-wippy run test user validation
+wippy test math
+wippy test user validation
 ```
 
 Filter gleichen gegen Entry-IDs ab. Mehrere Muster werden kombiniert.
@@ -327,7 +327,7 @@ return { main = main }
       - funcs
 ```
 
-Der Runner erkennt, ob ein Test BDD-Case-Events verwendet oder einen einfachen Wert zurueckgibt. Beide Muster funktionieren mit `wippy run test`.
+Der Runner erkennt, ob ein Test BDD-Case-Events verwendet oder einen einfachen Wert zurueckgibt. Beide Muster funktionieren mit `wippy test`.
 
 ## Projektstruktur
 

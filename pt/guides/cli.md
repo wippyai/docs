@@ -13,7 +13,7 @@ Disponíveis em todos os comandos:
 
 | Flag | Curta | Descrição |
 |------|-------|-----------|
-| `--config` | | Arquivo de configuração (padrão: .wippy.yaml) |
+| `--config` | | Arquivo de configuração, repetível; arquivos posteriores sobrescrevem os anteriores (padrão: .wippy.yaml) |
 | `--verbose` | `-v` | Ativar logs de depuração |
 | `--very-verbose` | | Depuração com stack traces |
 | `--console` | `-c` | Logs coloridos no console |
@@ -23,6 +23,8 @@ Disponíveis em todos os comandos:
 | `--memory-limit` | `-m` | Limite de memória (ex: 1G, 512M) |
 
 Prioridade do limite de memória: flag `--memory-limit` > variável de ambiente `GOMEMLIMIT` > padrão de 1GB.
+
+`--config` pode ser passado múltiplas vezes para compor arquivos de configuração. Os arquivos mesclam da esquerda para a direita: arquivos posteriores sobrescrevem valores correspondentes e mantêm todo o resto. Todo arquivo nomeado explicitamente deve existir; sem `--config`, o `.wippy.yaml` padrão é opcional. O primeiro arquivo ancora o diretório usado para resolver caminhos relativos. A configuração aplica-se em ordem: composição de arquivos, depois seleções de `--profile`, depois overrides de `--set`. Veja [Configuração](guides/configuration.md#config-composition).
 
 ## wippy init
 
@@ -46,7 +48,7 @@ Iniciar o runtime ou executar um comando.
 ```bash
 wippy run                                   # Iniciar o runtime
 wippy run list                              # Listar comandos disponíveis
-wippy run test                              # Executar testes
+wippy run migrate                           # Executar um comando personalizado nomeado
 wippy run snapshot.wapp                     # Executar a partir de arquivo pack
 wippy run acme/http                         # Executar módulo do hub
 wippy run acme/http@1.2.3                   # Executar versão específica
@@ -60,6 +62,9 @@ wippy run --exec app:worker                 # Iniciar runtime e executar um úni
 | `--exec` | `-x` | Executar processo e encerrar (`namespace:entry`) |
 | `--host` | | ID do host de terminal para `--exec` (detectado automaticamente se existir apenas um `terminal.host`) |
 | `--registry` | | URL do registry para módulos do hub |
+| `--profile` | | Aplicar um profile de runtime do `.wippy.yaml` ou dos metadados de runtime empacotados (repetível, aplicado em ordem) |
+
+Executar um módulo do hub (`wippy run org/module`) o resolve uma vez, registra-o no `wippy.lock` e vendoriza localmente os packs verificados. Execuções subsequentes da mesma referência partem do lock — sem necessidade de rede. Um seletor de versão que não corresponde mais ao lock é rejeitado com uma dica para executar `wippy update`.
 
 `--set` escreve qualquer valor de configuração do runtime pela linha de comando, mesclado sobre `.wippy.yaml` por folha:
 
@@ -70,6 +75,24 @@ wippy run --set cluster.enabled=true \
 ```
 
 Os valores são convertidos pelo formato: `true`/`false` para bool, inteiros e floats para números, o restante permanece string (durações como `5s` são analisadas onde a opção espera uma).
+
+## wippy test
+
+Executar o entrypoint de teste: a entrada de processo que declara o use case `test`. O runtime inicia, executa essa entrada e encerra. `wippy run` não executa automaticamente entrypoints de teste; testes sempre passam por `wippy test`.
+
+```bash
+wippy test                     # Executar testes do projeto local
+wippy test snapshot.wapp       # Executar testes de um arquivo pack
+wippy test acme/module@1.2.3   # Executar testes de um módulo do hub
+```
+
+| Flag | Curta | Descrição |
+|------|-------|-----------|
+| `--override` | `-o` | Sobrescrever valores de entrada (`namespace:entry:field=value`) |
+| `--host` | | ID do host de terminal (detectado automaticamente se existir apenas um `terminal.host`) |
+| `--registry` | | URL do registry para módulos do hub |
+| `--set` | | Sobrescrever um valor de configuração (`section.path=value`, repetível) |
+| `--profile` | | Aplicar um profile de runtime (repetível, aplicado em ordem) |
 
 ## wippy lint
 
@@ -96,6 +119,8 @@ Valida todas as entradas Lua: `function.lua`, `library.lua`, `process.lua`, `wor
 | `--json` | | `false` | Saída em JSON |
 | `--no-color` | | `false` | Desabilitar saída colorida |
 | `--cache-reset` | | `false` | Limpar cache Lua antes do lint |
+| `--profile` | | | Aplicar um profile de workspace da configuração de runtime mesclada (repetível) |
+| `--set` | | | Sobrescrever um valor da configuração de runtime mesclada (`section.path=value`, repetível) |
 
 ## wippy add
 
@@ -129,6 +154,8 @@ wippy install --refresh acme/http        # Re-baixar um módulo específico
 | `--force` | | false | Alias de `--refresh` |
 | `--repair` | | false | Alias de `--refresh` |
 | `--registry` | | | URL do registry |
+| `--profile` | | | Aplicar um profile de workspace da configuração de runtime mesclada (repetível) |
+| `--set` | | | Sobrescrever um valor da configuração de runtime mesclada (`section.path=value`, repetível) |
 
 ## wippy update
 
@@ -146,6 +173,8 @@ wippy update acme/http demo/sql   # Atualizar múltiplos
 | `--src-dir` | `-d` | ./src | Diretório de fontes |
 | `--modules-dir` | | .wippy | Diretório de módulos |
 | `--registry` | | | URL do registry |
+| `--profile` | | | Aplicar um profile de workspace da configuração de runtime mesclada (repetível) |
+| `--set` | | | Sobrescrever um valor da configuração de runtime mesclada (`section.path=value`, repetível) |
 
 ## wippy pack
 
@@ -164,10 +193,14 @@ wippy pack app.wapp --embed app:assets --bytecode **
 | `--tags` | `-t` | Tags do pack (separadas por vírgula) |
 | `--meta` | | Metadados personalizados (chave=valor) |
 | `--embed` | | Incorporar entradas fs.directory (padrões) |
+| `--embed-all` | | Incorporar todas as entradas fs.directory (não pode combinar com `--embed`) |
 | `--list` | | Listar entradas fs.directory (simulação) |
 | `--exclude-ns` | | Excluir namespaces (padrões) |
 | `--exclude` | | Excluir entradas (padrões) |
 | `--bytecode` | | Compilar Lua para bytecode (** para todos) |
+| `--profile` | | Aplicar um profile de runtime do `.wippy.yaml` antes de empacotar (repetível, aplicado em ordem) |
+
+Sem `--embed` nem `--embed-all`, os padrões de incorporação recorrem à seção `embed:` do manifesto de módulo `wippy.yaml`. Empacotar uma aplicação também carrega os recursos incorporados dos packs de suas dependências, e apenas os comandos do módulo principal são expostos pelo pack resultante.
 
 ## wippy publish
 
@@ -193,8 +226,10 @@ Lê a partir do `wippy.yaml` no diretório atual.
 | `--registry` | URL do registry |
 | `--create` | Criar o módulo no registry se ainda não existir |
 | `--module-visibility` | Visibilidade para módulos recém-criados (`--create` apenas): `public` ou `private` (padrão: private) |
-| `--module-type` | Tipo para módulos recém-criados (`--create` apenas): `library`, `application`, `agent` ou `plugin` (padrão: application) |
+| `--module-type` | Tipo do módulo: `library`, `application`, `agent` ou `plugin` (sobrescreve `type:` no wippy.yaml) |
 | `--module-display-name` | Nome de exibição para módulos recém-criados (`--create` apenas) |
+
+O tipo do módulo normalmente é declarado como `type:` no `wippy.yaml` (veja [Publicação](guides/publishing.md#wippy-yaml)); `--module-type` o sobrescreve para uma única publicação. Quando nenhum dos dois está definido, módulos recém-criados assumem `application` com um aviso de obsolescência.
 
 ## wippy search
 
@@ -268,7 +303,7 @@ wippy readme --json wippy/terminal@latest
 
 ## wippy registry
 
-Consultar e inspecionar entradas do registry.
+Consultar e inspecionar entradas do registry. Ambos os subcomandos aceitam `--profile` e `--set` para moldar a configuração de runtime mesclada sob a qual as entradas são carregadas.
 
 ### wippy registry list
 
@@ -329,12 +364,12 @@ Qualquer entrada `process.lua` ou `process.wasm` pode ser registrada como um com
 
 ```yaml
 entries:
-  - name: test_runner
+  - name: migrate_runner
     kind: process.lua
     meta:
       command:
-        name: test
-        short: Run application tests
+        name: migrate
+        short: Run database migrations
     source: file://runner.lua
     method: main
     modules:
@@ -346,7 +381,7 @@ entries:
 Execute com:
 
 ```bash
-wippy run test
+wippy run migrate
 ```
 
 Liste todos os comandos disponíveis:
@@ -362,6 +397,7 @@ wippy run list
 | `name` | Sim | Nome do comando usado com `wippy run <name>` |
 | `short` | Não | Descrição curta exibida em `wippy run list` |
 | `main` | Não | Marca esta entrada como comando padrão (selecionado automaticamente por packs e módulos do hub que entregam um único comando) |
+| `use_case` | Não | Categoria de entrypoint, padrão `run`. A entrada que declara `use_case: test` é a que `wippy test` executa |
 
 Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O nome do comando deve ser único entre todas as entradas carregadas. Argumentos após o nome do comando são passados para o processo como payloads de string.
 
@@ -372,7 +408,7 @@ Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O
 ```bash
 # Inicializar projeto
 wippy init
-wippy add wippy/http wippy/sql
+wippy add wippy/test wippy/llm
 wippy install
 
 # Verificar erros
@@ -431,6 +467,17 @@ wippy publish --dry-run
 # Publicar
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
+
+## Variáveis de Ambiente
+
+| Variável | Efeito |
+|----------|--------|
+| `WIPPY_TOKEN` | Token de autenticação do registry; sobrescreve credenciais armazenadas (um token enviado via `hub.auth.authenticate` tem precedência ainda maior) |
+| `WIPPY_REGISTRY` | URL padrão do registry (sobrescrita por `--registry`) |
+| `WIPPY_CACHE_DIR` | Diretório de cache para módulos do hub executados via `wippy run org/module` (padrão: `~/.wippy/cache`) |
+| `GOMEMLIMIT` | Fallback do limite de memória quando `--memory-limit` não está definido |
+
+Valores no `.wippy.yaml` podem referenciar variáveis de ambiente do SO com `${env:NAME}`, resolvidas no carregamento do arquivo; uma variável ausente falha o carregamento da configuração. Referências `${name}` simples resolvem a partir da seção `vars:` da configuração.
 
 ## Arquivo de Configuração
 
