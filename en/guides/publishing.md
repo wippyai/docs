@@ -227,6 +227,21 @@ wippy publish --version 1.0.0 --embed app:assets,app:templates
 
 The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
 
+### Publishing Runtime Configuration
+
+Runtime configuration is application-owned: by default nothing from your local config stack is published. To carry selected defaults into the pack, declare them in `wippy.yaml`:
+
+```yaml
+publish:
+  profiles:
+    include: [production]   # runtime profiles exported in module metadata
+  runtime:
+    sections: [security, registry, override]
+    vars: [public_url]
+```
+
+The selected `sections`, the `include`d profiles, and any variables they reference (followed transitively) are packaged as defaults; unlisted variables are not. Use `publish.runtime.vars` only for intentionally public values. Publisher environment references and the machine-local `boot`, `extensions`, and `workspace` sections are rejected — in particular, `workspace.replacements` never leaves your machine.
+
 ### First Publish
 
 The first time you publish a module it is registered on the hub automatically (private by default) and the publish retries once. Pass `--create` to register it up-front and set its properties:

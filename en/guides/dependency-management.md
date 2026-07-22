@@ -182,40 +182,48 @@ With unpacking enabled:
 
 ## Local Development with Replacements
 
-Override hub modules with local directories for development:
+Point a hub module at a local checkout so the runtime loads your working copy instead of the vendored download. Replacements live in a **runtime configuration file** under the `workspace.replacements` map (`org/module: path`) and are activated with `--profile`:
 
 ```yaml
-# wippy.lock
-directories:
-  modules: .wippy
-  src: ./src
-modules:
-  - name: acme/http
-    version: v1.2.0
-    hash: ...
-replacements:
-  - from: acme/http
-    to: ../local-http
+# .wippy.workspace.yaml
+version: "1.0"
+
+profiles:
+  workspace:
+    workspace:
+      replacements:
+        acme/http: ../local-http
 ```
 
-The replacement path is relative to the lock file. When a replacement is active, the local directory is used instead of the vendored module. Replacements are preserved across `wippy update` operations.
+```bash
+wippy run --config .wippy.yaml --config .wippy.workspace.yaml --profile workspace
+```
+
+The replacement path is relative to the first runtime config file. The same `--config`/`--profile` composition applies to `wippy install` and `wippy update`, which validate and skip replaced modules — the runtime loads them directly from local source. See [Configuration Composition](guides/configuration.md#configuration-composition) for the merge and precedence rules. Keep the workspace file out of version control; the `workspace` section is never exported in published module metadata.
+
+<note>
+**Deprecated: lock-file replacements.** A top-level `replacements:` list in `wippy.lock` still loads for compatibility but emits a deprecation warning and will be removed. Move them to `workspace.replacements` in a runtime config file; do not add new workspace replacements to the portable lock.
+</note>
 
 ## Load Order
 
 At boot, Wippy loads entries from directories in this order:
 
 1. Source directory (`src`)
-2. Replacement directories
+2. Workspace replacement directories
 3. Vendored module directories
 
-Modules with active replacements skip their vendor path.
+Modules with an active replacement skip their vendor path.
 
 ## Integrity Verification
 
-Each module in the lock file has a content hash. During installation, downloaded modules are verified against their expected hashes. Mismatched modules are rejected and re-downloaded from the registry.
+Each module in the lock file has a content hash. During installation, downloaded modules are verified against their expected hashes; mismatched modules are rejected and re-downloaded from the registry.
+
+Workspace-replaced modules are exempt from this download check — `wippy install` validates and skips them because the runtime loads them directly from local source. Their replacement tree is re-hashed at boot before any cached build state is reused, so **rebuilding a replaced module is picked up on the next `wippy run` with no reinstall or registry wipe**. (Earlier runtimes re-verified a frozen digest and aborted a rebuilt replacement with `replacement content digest mismatch`; that no longer happens.)
 
 ## See Also
 
 - [CLI](guides/cli.md) - Command reference
+- [Configuration](guides/configuration.md) - Runtime config composition, profiles, and workspace replacements
 - [Publishing](guides/publishing.md) - Publishing modules to the hub
 - [Project Structure](start/structure.md) - Project layout
