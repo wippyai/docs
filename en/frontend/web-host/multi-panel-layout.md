@@ -26,24 +26,16 @@ Opt in to `fe_mode = managed` (early access) only when you need to compose the c
 | Per-panel URL-aware routing | Main panel only | Every `kind: page` panel |
 | Cross-panel message bus | No | Yes (`broadcast`/`send`/`on`) |
 
-## Minimum Version Requirements
+## Compatibility
 
-| Component | Minimum version |
-|-----------|----------------|
-| Wippy Web Host | `1.0.36` |
-| wippy-framework facade | `1.0.36` |
-| `@wippy-fe/proxy` | `0.0.36` |
-| `@wippy-fe/webcomponent-core` / `@wippy-fe/webcomponent-vue` | `0.0.36` |
-| `@wippy-fe/layout` / `@wippy-fe/vue-host` | `0.0.36` |
-
-Pin to an exact CDN tag — at least `https://web-host.wippy.ai/webcomponents-1.0.36` — until the Draft 1 label is removed.
+Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. Use one compatible package family for the exact target Web Host release and verify its served import map; do not mix package versions from unrelated releases.
 
 ## Enabling Managed Layout
 
-Enable the managed entry in your facade configuration and provide a `hostConfig.layout` declaration:
+Enable the managed entry in your facade configuration and provide a backend `host_config.layout` declaration:
 
 ```yaml
-hostConfig:
+host_config:
   layout:
     layouts:
       default:
@@ -63,7 +55,7 @@ When the managed entry is selected, the facade serves `managed-layout.js` instea
 
 ## The `HostLayoutDeclaration`
 
-The entire layout is described by a single `HostLayoutDeclaration` object nested under `hostConfig.layout` in your facade configuration. The host validates it before mounting — any `LayoutValidationError` surfaces in the browser console with `{ kind, message, panelId? }`.
+The entire layout is described by a single `HostLayoutDeclaration` object nested under backend `host_config.layout` in your facade configuration and projected to frontend `AppConfig.hostConfig.layout`. The host validates it before mounting — any `LayoutValidationError` surfaces in the browser console with `{ kind, message, panelId? }`.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -86,7 +78,7 @@ Each entry in `panels`, `floating`, `modals`, and `services` is a tagged union o
 | `component` | A web component mounted directly in host DOM | `tagName` |
 | `builtin` | A framework-owned host component (see below) | `id` |
 
-Exactly one panel in the layout tree must carry `main: true`. That panel owns the host's public URL via the mountRoute system. All other panels route independently inside their iframes.
+Exactly one panel in the layout tree must carry `main: true`. That panel owns the host's public URL via the backend `mountRoute` field. All other panels route independently inside their iframes.
 
 ### Built-in Panel IDs
 
@@ -106,7 +98,7 @@ An unknown `@HOST/<id>` causes a `LayoutValidationError` at declaration-load rat
 The `layouts` field maps breakpoint keys to panel trees. `default` is always used unless a narrower breakpoint matches. Breakpoint pixel widths are defined under `breakpoints`:
 
 ```yaml
-hostConfig:
+host_config:
   layout:
     breakpoints:
       sm: 768
@@ -127,7 +119,7 @@ hostConfig:
             main: true
           - panel: side
             display: drawer-left
-            drawerSize: { width: 320px }
+            drawer_size: { width: 320px }
     panels:
       side: { kind: page, id: app-sidebar, route: / }
       main: { kind: page, id: app-home,    route: / }
@@ -154,7 +146,7 @@ Floating panels are free-positioned overlays declared under `floating`. They do 
 floating:
   flap:
     kind: component
-    tagName: my-right-flap
+    tag_name: my-right-flap
     position: { x: 0, y: 200 }
     size: { width: 48, height: 80 }
 ```
@@ -181,7 +173,7 @@ Services are coordinator components mounted in a hidden div. They have no visibl
 services:
   coordinator:
     kind: component
-    tagName: my-coordinator
+    tag_name: my-coordinator
 ```
 
 A service component receives the panel-scoped host wrapper and can subscribe to bus channels immediately in `onMount`:
@@ -253,6 +245,8 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.send(target, channel, payload)` | Publish to one panel |
 | `.on(channel, handler)` | Subscribe to a bus channel |
 
+`openModal()` documents host-internal layout infrastructure, not an application-component recipe. Shipped Vue product UI should use PrimeVue `Dialog` or the host confirmation API rather than cloning this native-dialog behavior with custom modal styling.
+
 ### `updatePanel` Merge Semantics
 
 `host.layout.updatePanel(id, def)` patches an existing panel def — it does not replace it. The `props` object is **shallow-merged** into the panel's current props: supplied keys are added or overwritten, omitted keys are preserved. Every **other** top-level field of `def` (`route`, `kind`, `id`, `tagName`, `title`, `icon`, …) **replaces** the current value wholesale.
@@ -308,7 +302,7 @@ The managed shell renders **only your declared layout** — it mounts no built-i
 | `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, top-level `state` / `ws` / `on` | Works | **Works** — mode-agnostic (managed mounts `<Toast>` / `<ConfirmDialogTemplate>` so `toast`/`confirm` still surface) |
 | `openArtifact(id, …)` | Opens in the right panel or a modal | **No visible effect** — managed mounts no right panel or modal host |
 | `startChat(token)` / `openSession(uuid)` | Opens the chat session and shows it | The session really opens **over WebSocket**, but nothing renders — there is no chat route or right panel. Declare a `kind: page` panel bound to the session to display it |
-| `navigate(url)` | Pushes the route under the host's root `<RouterView>` | The route changes but **does not render** — managed has no root `<RouterView>`. Drive panels via `mountRoute` / `updatePanel` instead |
+| `navigate(url)` | Pushes the route under the host's root `<RouterView>` | The route changes but **does not render** — managed has no root `<RouterView>`. Drive panels via backend `mountRoute` / frontend `updatePanel` instead |
 | `onRouteChanged(route, navId?)` | Drives the host browser URL | Works, **different semantics**: the host writes the child's route into that panel's live state (the snapshot), not the browser URL |
 
 Rule of thumb: the WebSocket / state / bus / toast primitives are mode-agnostic, but anything that shows the standard Wippy chrome (chat, right-panel artifacts, top-level routing) is effectively compat-only. In a managed layout, render those through declared panels rather than the shell commands.
@@ -336,8 +330,8 @@ this.host?.layout.on('open-chat', ({ payload }) => {
 
 // In the right-panel app (a normal Vue page module)
 const router = createAppRouter([...])
-// createAppRouter already mirrors host @history events into the router
-// (with an echo/current-route guard) — no manual on('@history') needed.
+// createAppRouter already mirrors host history events into the router
+// with an echo/current-route guard; add no manual routing subscription.
 ```
 
 Keep coordinators thin. Keep panels owning their own UI.

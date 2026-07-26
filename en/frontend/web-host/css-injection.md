@@ -31,6 +31,8 @@ The facade exposes theming through three scopes — **global** (`custom_css`, `c
 
 **`fs://` file support:** the six theming knobs above accept an `fs://<path>` value resolved at request time from the `content_fs` filesystem — see [Facade → Reusing facade theming on non-Web-Host pages](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` and every non-theming JSON parameter are inline-only.
 
+For more than a few overrides, keep CSS and JSON in separate files behind `content_fs` and reference them with `fs://`. This keeps theme assets reviewable and reusable. Do not substitute `file://`: that is a loader-time inlining mechanism, not the facade's request-time theming contract.
+
 ## The Injection Pipeline
 
 Styles are injected in this logical layering. The first four layers are plain `<style>`/`<link>` elements; the last two (`customCSS` and `cssVariables`) are not — they are placed in the iframe document's `adoptedStyleSheets` (see [Override mechanism](#override-mechanism-adopted-stylesheets) below), so they always win regardless of `<head>` source order:
@@ -41,7 +43,7 @@ Short answer for "CSS injection order" questions: the view.page iframe style pip
 1. theme-config.css      — CSS custom properties (--p-primary-*, --p-surface-*, --p-secondary-*)
 2. primevue.css          — PrimeVue component styles scoped via those variables
    tailwind.css          — Tailwind utility classes (same bundle as primevue.css)
-3. iframe.css            — Scrollbar styling and base iframe reset
+3. iframe.css            — Default themed scrollbar styling (historical name; no iframe layout reset)
 4. markdown.css          — .data-body rendering styles for Markdown content
 5. cssVariables          — :root { --key: value } from AppConfig.theming.global.cssVariables (adopted stylesheet)
 6. customCSS             — Raw CSS from the child-projected AppConfig.theming.global.customCSS (adopted stylesheet)
@@ -53,7 +55,7 @@ Each child iframe gets an independent copy of all styles, not inheritance throug
 
 ## `ProxyConfig.injections.css` Flags
 
-These flags are set in the `wippy.proxy.injections.css` block of your app's `package.json` (camelCase). They control which style layers are injected into the child iframe. An operator can override any of them per-deployment with a camelCase `proxy:` block nested under `meta:` in the registry entry — the same shape as the `package.json` `wippy.proxy` block (including the `injections` wrapper). The override is deep-merged over the bundled `wippy.proxy`, and YAML wins per nested key. See [Micro Frontend Apps (view.page) § Operator proxy override](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
+These nested flags are lower camelCase in both backend registry YAML and frontend `package.json` under `wippy.proxy.injections.css`. Facade requirement names use their documented snake_case names, while registry fields follow their individual schema. Nested proxy objects are passed through without key conversion. YAML wins per nested key. See [Micro Frontend Apps (view.page) § Operator proxy override](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
 
 ```yaml
 meta:
@@ -100,8 +102,8 @@ meta:
 | Flag | Default | What it injects |
 |------|---------|-----------------|
 | `themeConfig` | `true` | `theme-config.css` — all `--p-primary-*`, `--p-surface-*`, `--p-secondary-*`, and PrimeVue semantic variables. Disabling this removes theme inheritance entirely. |
-| `iframe` | `true` | `iframe.css` — scrollbar styling that uses `--p-surface-*` variables. |
-| `primevue` | `true` | `primevue.css` + `tailwind.css` — PrimeVue component styles and Tailwind v3 utilities (~455 KB combined). Disable if your app uses a different UI framework and does not need PrimeVue. |
+| `iframe` | `true` | `iframe.css` — default themed scrollbar styling. The name is historical and does not imply iframe layout rules. Keep enabled for every page for scrollbar consistency. |
+| `primevue` | `true` | `primevue.css` + `tailwind.css` — PrimeVue component styles and Tailwind v3 utilities (~455 KB combined). Disable only while the entire artifact has no PrimeVue-like product UI. Framework choice alone is not an exception. |
 | `markdown` | `true` | `markdown.css` — `.data-body` markdown rendering styles used by chat artifact display. |
 | `customCss` | `true` | The `customCSS` string from the child-projected `AppConfig.theming.global`. |
 | `customVariables` | `true` | The `cssVariables` map from the child-projected `AppConfig.theming.global`, injected as `:root { --key: value; }`. |
@@ -126,7 +128,7 @@ If a page omits `wippy.proxy.injections`, the iframe proxy has permissive runtim
 
 ### Disabling unwanted injections
 
-A page using React or another framework does not need PrimeVue styles. Disable them explicitly to avoid conflicts:
+A page may disable PrimeVue injection only while it contains no standard product controls or surfaces that PrimeVue provides. A canvas/SVG/chart-only page is valid. Once it gains a button, input, form, table, dialog, menu, tag, tooltip, or feedback control, use PrimeVue and keep the injection enabled; framework choice alone is not an omission reason.
 
 ```json
 {
@@ -149,16 +151,18 @@ With both disabled the page still receives `customCSS`, `cssVariables`, and `ifr
 
 Web components do not go through the iframe injection pipeline. Two channels bring the theme into a component's shadow root:
 
-- **Facade custom CSS (automatic, opt-out — Web Host 1.0.43+).** The `@wippy-fe/webcomponent-core` runtime injects the facade custom CSS the host composed for this component — **global + children** (`custom_css` + `children_custom_css`) — into its shadow root at mount, via an **adopted stylesheet**, so it cascades after the component's own styles and the `hostCssKeys` sheets (same "custom CSS wins" rule as the iframe pipeline). A component opts out with `customCss: false` in its `wippyConfig`. Custom **properties** (`--p-*`) already inherit across the shadow boundary and are unaffected by this flag. Before 1.0.43, facade selector rules stayed on the host/iframe documents.
+- **Facade custom CSS (automatic, opt-out — Web Host 1.0.43+).** The `@wippy-fe/webcomponent-core` runtime installs the facade custom CSS composed for the component — **global + children** (`custom_css` + `children_custom_css`) — in its shadow root so it wins over component styling. The runtime may use an adopted stylesheet or a `<style>` fallback; do not couple application code to that detail. A component opts out with `customCss: false` in its `wippyConfig`. Custom **properties** (`--p-*`) already inherit across the shadow boundary and are unaffected by this flag.
 - **Platform CSS assets (`hostCssKeys`).** `theme-config.css`, PrimeVue, markdown, and iframe/scrollbar styles are **static bundle assets**, not the facade's configured CSS. A component requests the ones it needs by URL through `wippyConfig.hostCssKeys` (or fetches them ad hoc with `loadCss()` from `@wippy-fe/proxy`), and the runtime injects them into the shadow root.
 
 ```typescript
-import { hostCss, loadCss } from '@wippy-fe/proxy'
-
-// Fetch PrimeVue styles and embed in Shadow DOM
-const css = await loadCss(hostCss.primeVueCssUrl)
-this.shadowRoot.innerHTML = `<style>${css}</style>` + this.shadowRoot.innerHTML
+static get wippyConfig() {
+  return {
+    hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl'] as const,
+  }
+}
 ```
+
+Use declarative `hostCssKeys` for normal component authoring. `loadCss()` is an integration escape hatch; never rewrite a mounted shadow tree with `shadowRoot.innerHTML`.
 
 Available `hostCss` keys:
 
@@ -228,7 +232,7 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 }
 ```
 
-`config_overrides.customization` is the compatibility-shaped authoring surface for per-page overrides. The host migrates it into the effective child `theming.global` scope before the page receives `AppConfig`. Per-page `cssVariables` and `customCSS` **replace** the inherited child values for that page. Because the override is merged into `theming.global`, it **propagates down the whole nested sub-tree**: every child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.inject` content — is built from the page's already-merged config and inherits the theme, recursively. So a page (or a module shipping several such pages) themes everything beneath it, not just itself.
+Backend YAML `config_overrides.customization` is the per-page authoring surface. Its `cssVariables` and `customCSS` keys project into frontend `theming.global.cssVariables` and `customCSS` before the page receives AppConfig, replacing the inherited child values for that page. Because the override is merged into `theming.global`, it **propagates down the whole nested sub-tree**: every child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.inject` content — is built from the page's already-merged config and inherits the theme, recursively. So a page (or a module shipping several such pages) themes everything beneath it, not just itself.
 
 ## `--wippy-host-*` Variables
 
@@ -242,8 +246,8 @@ theming: {
       --wippy-host-sidebar-width-open: 20rem;
       --wippy-host-splitter-color: transparent;
       --wippy-host-message-radius: 0.5rem;
-      --wippy-host-message-user-bg: #e0f2fe;
-      --wippy-host-message-agent-bg: #fef3c7;
+      --wippy-host-message-user-bg: var(--p-info-100);
+      --wippy-host-message-agent-bg: var(--p-warn-100);
     }
     /* Class selectors must be scoped to .wippy-host-app */
     .wippy-host-app .chat-message__footer { display: none; }

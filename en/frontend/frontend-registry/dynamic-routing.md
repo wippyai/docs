@@ -17,7 +17,7 @@ When the Web Host application initialises, before it renders any navigation, it 
 GET /api/public/pages/routes
 ```
 
-The response is an envelope `{ success, count, routes }`, where `routes` is a map of `mountRoute` pattern → page id (it includes hidden/unannounced pages that still claim a URL). For each entry, the host registers a Vue Router route that maps the declared path to the page loader component, adding it as a child of the `'app'` parent route.
+The response is an envelope `{ success, count, routes }`, where `routes` is a map of mount-route pattern → page id (it includes hidden/unannounced pages that still claim a URL). For each entry, the host registers a Vue Router route that maps the declared path to the page loader component, adding it as a child of the `'app'` parent route.
 
 ```typescript
 // Simplified from the Web Host bootstrap
@@ -46,6 +46,10 @@ A `view.page` entry claims a host router path by setting `mountRoute` in its `_i
     ...
 ```
 
+`mountRoute` is the current compatibility spelling for a backend casing bug.
+The intended backend key is `mount_route`; continue authoring `mountRoute`
+until the backend correction ships.
+
 `mountRoute` accepts only the catch-all forms `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen literal segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or different param names (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict, the backend's `validate_mount_route_syntax` fails, and `GET /api/public/pages/routes` returns HTTP 500 (rendered as a fatal fullscreen error). The wildcard segment `:part(.*)*` lets the child application manage its own sub-routes (e.g. `/home/settings`, `/home/profile/edit`) while the host owns the `/home` prefix.
 
 Two entries must not claim the same route. If two `view.page` entries claim the **same** `mountRoute`, the backend validator (`validate_mount_routes` in `page_registry.lua`) records a duplicate-route conflict in the same issues list as syntax errors, so `GET /api/public/pages/routes` returns HTTP 500 and the Web Host renders a fatal fullscreen `<wippy-error>` — exactly like a malformed `mountRoute`. It is **not** silently ignored.
@@ -70,31 +74,13 @@ import { host } from '@wippy-fe/proxy'
 host.onRouteChanged('/profile', navId)   // internal route only; the host prepends the mount prefix. navId is an optional number
 ```
 
-Under the hood this serializes to the `@gen2-chat` wire envelope:
-
-```typescript
-window.parent.postMessage(JSON.stringify({
-  type: '@gen2-chat',
-  action: 'cmd-route-changed',
-  internalRoute: '/profile',   // the child's internal route only — the host prepends the mount prefix
-  navId,
-}), '*')
-```
+The proxy serializes this over an internal wire envelope. That protocol is not an application API: do not copy it or call `window.parent.postMessage` directly.
 
 The host's message handler intercepts this, calls `router.push(path)` to update the URL bar via an SPA route change (adding a browser-history entry) without triggering a full page reload, and then posts back:
 
 ### Host → Child: `UrlWasUpdatedInParent`
 
-After the host updates its URL bar, it notifies the child so the child can confirm or reconcile:
-
-```typescript
-// Posted by the host back to the child iframe after URL bar update
-iframeWindow.postMessage(JSON.stringify({
-  type: '@gen2-chat',
-  action: 'url-was-updated-in-parent',
-  path: '/profile',   // the child's OWN internal route (the mount tail) — not the full host path
-}), '*')
-```
+After the host updates its URL bar, the proxy emits `@history` to the child. `@wippy-fe/router` consumes that event and reconciles the memory router.
 
 The host sends back the child's **internal** route (the sub-path after the mount prefix), not the full host path — so the round-trip is symmetric: the child posts `internalRoute: '/profile'`, the host sets its URL bar to `/home/profile`, and echoes `path: '/profile'` back, which the child's memory router pushes verbatim. The child listens via the `@history` event channel and treats it as confirmation that the host's URL is now consistent with its internal state.
 

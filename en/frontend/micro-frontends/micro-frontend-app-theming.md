@@ -112,23 +112,7 @@ For `cssVariables`: the override map **replaces** the inherited child map — wr
 
 Set the global before `proxy.js` runs for query-param or feature-flag–driven theming:
 
-```html
-<!-- app.html — BEFORE the proxy script tag -->
-<script>
-  const params = new URLSearchParams(window.location.search)
-  if (params.get('theme') === 'purple') {
-    window.__WIPPY_CONFIG_OVERRIDES__ = {
-      customization: {
-        cssVariables: { '--p-primary': '#9c59d1', '--p-primary-color': '#9c59d1' },
-        customCSS: '.demo-banner { background: var(--p-primary-color); }',
-      },
-    }
-  }
-</script>
-<script type="text/javascript" data-role="@wippy/scripts"></script>
-```
-
-Prefer declarative (`config_overrides` YAML) over runtime when possible — declarative is reproducible across reloads, surfaces in code review, and doesn't depend on script-load order.
+This pre-proxy global is an embedding/host-less integration escape hatch. In a hosted child, `window.location` belongs to the selected page engine—`about:srcdoc` under iframe delivery—and is not host route or query context. Use declarative page `config_overrides` or AppConfig supplied by the host. Never infer host state from child or parent browser locations.
 
 ---
 

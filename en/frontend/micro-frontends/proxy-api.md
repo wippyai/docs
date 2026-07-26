@@ -23,20 +23,30 @@ import { host, api, on, config, state, ws, logger } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
 const agents = await api.get('/api/v1/agents')   // api is axios; the await is the HTTP call, not obtaining `api`
-const off = on('@history', ({ path }) => router.replace(path))
+const off = on('@visibility', (visible) => { /* pause or resume work */ })
 const token = config.auth.token
 ```
 
 These getters are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs. The host injects the child config **synchronously, before** the runtime loads (for both `view.page` apps and `view.component` web components), so the runtime initializes before your script executes. You never `await` to *obtain* a getter, and there is no `GetConfig`/`SetConfig` handshake. The only `await` you write is for an actual async operation (an HTTP call via `api`, a `state` read, etc.).
 
-Mark `@wippy-fe/proxy` as `external` in your Vite config — the host provides it through the import map:
+Fetch the target Web Host release's `import-map.json` once during development
+and use every key in its `imports` object as a Rollup external. This includes
+`@wippy-fe/proxy`; do not maintain a one-package or imported-only external
+list. Re-fetch only when the Web Host tag changes or when adding a dependency
+to check whether its exact specifier can be external:
 
 ```typescript
-// vite.config.ts
+// vite.config.ts (after saving the fetched response as import-map.json)
+import { readFileSync } from 'node:fs'
+
+const hostImportMap = JSON.parse(
+  readFileSync(new URL('./import-map.json', import.meta.url), 'utf8'),
+)
+
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ['@wippy-fe/proxy'],
+      external: Object.keys(hostImportMap.imports),
     },
   },
 })
@@ -189,7 +199,7 @@ host.navigate('/keeper')
 
 ---
 
-### `host.onRouteChanged(internalRoute, navId?)` — MANDATORY for SPA apps
+### `host.onRouteChanged(internalRoute, navId?)` — low-level router integration
 
 Notifies the host when the page's internal route changes. The host updates the browser URL bar to include the child's route. This call is **required** — without it the host URL stays on the page root and the browser back button does not work for child navigation.
 
@@ -197,12 +207,7 @@ Notifies the host when the page's internal route changes. The host updates the b
 host.onRouteChanged(internalRoute: string, navId?: number): void
 ```
 
-```typescript
-// Vue Router — call in every afterEach
-router.afterEach((to) => {
-  host.onRouteChanged(to.fullPath)
-})
-```
+Portable Vue applications use `createAppRouter()` from `@wippy-fe/router`; the package owns this call, the matching `@history` subscription, normalization, and echo-loop suppression. Do not wire those pieces manually in application code. This method remains documented for platform adapter authors and non-Vue integrations.
 
 ---
 
@@ -668,7 +673,6 @@ class MyEl extends HTMLElement {
 ### Wildcard patterns
 
 ```typescript
-on('@history', ({ path }) => { /* host URL changed */ })
 on('@visibility', (visible: boolean) => { /* shown or hidden */ })
 
 // All session messages in a specific session
@@ -680,6 +684,8 @@ on('@message', (msg) => { /* ... */ })
 // Topics whose parts contain ':' must be encoded
 on(`session:${encodeURIComponent('id:with:colons')}:message:*`, handler)
 ```
+
+`@history` is listed for protocol completeness. Portable Vue applications must let `@wippy-fe/router` subscribe to it; do not add a second application-owned handler.
 
 Subscribing to the same topic multiple times from the same frame is safe. The proxy deduplicates at the host level. Each `on()` call still gets its own independent unsubscribe handle.
 
@@ -999,7 +1005,7 @@ Every nested child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.i
 
 ### `installVueWarnSuppressor(app)`
 
-Available from `@wippy-fe/proxy` 0.0.33. Silences `[Vue warn]: Failed to resolve component: foo-bar` for tags registered via `customElements.define(...)` rather than `app.component(...)`. Vue's template compiler emits these warnings for web component tags it does not recognize — the elements render correctly, but the console fills with noise.
+Available in the current coherent `@wippy-fe/proxy` family. Silences `[Vue warn]: Failed to resolve component: foo-bar` for tags registered via `customElements.define(...)` rather than `app.component(...)`. Vue's template compiler emits these warnings for web component tags it does not recognize — the elements render correctly, but the console fills with noise.
 
 ```typescript
 import { installVueWarnSuppressor } from '@wippy-fe/proxy'

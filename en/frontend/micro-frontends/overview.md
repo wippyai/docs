@@ -12,7 +12,7 @@ Wippy frontend code runs inside the Web Host's isolation boundary. There are two
 | | Micro Frontend App (`view.page`) | Web component (`view.component`) |
 |---|---|---|
 | **Rendered as** | Full iframe, isolated browsing context | Custom element in Shadow DOM, inside a page |
-| **Has its own URL / nav entry** | Yes — claims a `mountRoute` | No — embedded inside another page or chat artifact |
+| **Has its own URL / nav entry** | Yes — claims a backend `mountRoute` | No — embedded inside another page or chat artifact |
 | **Internal routing** | Yes — `vue-router` with memory history | No — single component, no router |
 | **Controls the viewport** | Yes | No — sized by the surrounding layout |
 | **Reusable across pages** | No — one URL, one place | Yes — any page can embed the tag |

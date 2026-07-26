@@ -125,7 +125,7 @@ Elements with **no explicit `session-id`** follow the `<wippy-session-selector>`
 
 Each element renders in a shadow root, so host page styles do not leak in or out. Two mechanisms apply theme:
 
-- **Inherited CSS variables.** Theme custom properties (`--p-primary-*`, `--p-text-color`, …) inherit across the shadow boundary from the host theme, so the chat picks up the active palette and dark/light mode for free. Selector-based styles (PrimeVue, markdown, Tailwind) are bundled into a `chat-elements.css` sheet and injected into the shadow root. PrimeVue overlays (the selector dropdown, agent/model menus, the upload dialog) render inside the shadow (`appendTo: 'self'`), and toasts are delegated to the **host's native toast** over the proxy rather than rendered in-shadow.
+- **Inherited CSS variables.** Theme custom properties (`--p-primary-*`, `--p-text-color`, …) inherit across the shadow boundary from the host theme, so the chat picks up the active palette and dark/light mode for free. Selector-based styles (PrimeVue, markdown, Tailwind) are bundled into a `chat-elements.css` sheet and injected into the shadow root. `PrimeVuePlugin` redirects the default body/null Portal target to a pinned overlay layer inside the owning shadow root. Do not set `appendTo: 'self'` routinely: that is an explicit inline-placement opt-in and can clip inside scrolling Dialog or Drawer content. Toasts are delegated to the **host's native toast** over the proxy rather than rendered in-shadow.
 - **Per-instance overrides.** Every element accepts two attributes:
 
 | Attribute | Type | Effect |
@@ -136,10 +136,11 @@ Each element renders in a shadow root, so host page styles do not leak in or out
 ```html
 <wippy-chat
   session-id="019eb2ae-…"
-  css-variables='{"p-primary":"#007acc","p-text-color":"#222"}'
   custom-css=".message-item { max-width: 80%; }"
 ></wippy-chat>
 ```
+
+Omitting `css-variables` is the normal facade-respecting path. Per-instance color overrides are for deliberate embedding isolation, not routine restyling.
 
 For the full theming model — semantic variables, dark/light flipping, and how the host injects shadow-DOM CSS — see [Theming: Web Components](./web-component-theming.md).
 

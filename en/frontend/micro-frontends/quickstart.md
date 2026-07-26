@@ -7,13 +7,13 @@ description: "Two end-to-end examples — a Micro Frontend App (Vue) and a Web C
 
 Two end-to-end examples — a **Micro Frontend App** (Vue) and a **Web Component** (Vue) — taken from the public [`wippyai/app`](https://github.com/wippyai/app) repository. Each shows the minimal files, how to register the artifact with the backend, and how to build it. Follow the links to the repo for the complete, runnable source, and to the deep-dive docs for every option.
 
-**Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node 20+, Vite 6, and the `@wippy-fe/*` packages (all provided by the host import map at runtime). See [Build System](./build-system.md) for the toolchain.
+**Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node 20+, Vite 6, and the current coherent `@wippy-fe/*` package family. Fetch the target Web Host `import-map.json`, externalize every listed key including unused ones, and bundle an imported exact specifier only when it is absent. See [Build System](./build-system.md) for the toolchain.
 
 ---
 
 ## Example 1 — Micro Frontend App (Vue)
 
-A full Vue 3 SPA the Web Host loads inside an iframe. Repo: [`frontend/applications/main`](https://github.com/wippyai/app/tree/main/frontend/applications/main).
+A full Vue 3 SPA the Web Host renders through its selected page engine (an iframe by default, or a Web Fragment). Repo: [`frontend/applications/main`](https://github.com/wippyai/app/tree/main/frontend/applications/main).
 
 **`package.json`** — the `wippy` block declares it a page and which CSS the host injects:
 
@@ -28,7 +28,9 @@ A full Vue 3 SPA the Web Host loads inside an iframe. Repo: [`frontend/applicati
     "path": "dist/app.html",
     "proxy": {
       "enabled": true,
-      "injections": { "css": { "themeConfig": true, "primevue": true } }
+      "injections": {
+        "css": { "themeConfig": true, "iframe": true, "primevue": true }
+      }
     }
   }
 }
@@ -37,7 +39,7 @@ A full Vue 3 SPA the Web Host loads inside an iframe. Repo: [`frontend/applicati
 **`src/app.ts`** — resolve host services, mount, and wire the mandatory two-way route sync:
 
 ```ts
-import { host, on } from '@wippy-fe/proxy'   // sync getters — no await to obtain them
+import { config } from '@wippy-fe/proxy'   // sync getter — no await to obtain it
 import { createApp } from 'vue'
 import { createAppRouter } from '@wippy-fe/router'
 import App from './app/app.vue'
@@ -45,7 +47,8 @@ import { routes } from './router'
 
 export function createMainApp() {
   const app = createApp(App)
-  const router = createAppRouter(routes)
+  const initialPath = config.context?.route ?? '/'
+  const router = createAppRouter(routes, { initialPath })
 
   app.use(router)
   app.mount('#app')
@@ -68,7 +71,7 @@ export function createMainApp() {
     mountRoute: /admin/:part(.*)*
 ```
 
-Build it (`npm run build`), serve the output where `url + base_path` points, and the host renders it at `/admin`. Full walkthrough: [Micro Frontend App](./micro-frontend-app.md).
+Build it into the served directory with `npm run build -- --outDir <abs-or-relative> --emptyOutDir`, serve the output where `url + base_path` points, and the host renders it at `/admin`. The module's `Makefile` and `make.ps1` must run that exact build shape; `make.bat` is only a shim that invokes `make.ps1`. Full walkthrough: [Micro Frontend App](./micro-frontend-app.md).
 
 ---
 
@@ -133,6 +136,7 @@ define(import.meta.url, ReactionBarElement)
 
 ```vue
 <script setup lang="ts">
+import Button from 'primevue/button'
 import { ref, computed } from 'vue'
 import { useComponentProps, useComponentEvents } from '../constants'
 
@@ -149,7 +153,15 @@ function toggle(emoji: string) {
 </script>
 
 <template>
-  <button v-for="e in reactions" :key="e" @click="toggle(e)">{{ e }}</button>
+  <Button
+    v-for="emoji in reactions"
+    :key="emoji"
+    :label="emoji"
+    :aria-label="`Toggle ${emoji} reaction`"
+    :aria-pressed="active.has(emoji)"
+    text
+    @click="toggle(emoji)"
+  />
 </template>
 ```
 

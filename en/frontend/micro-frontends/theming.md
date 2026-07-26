@@ -9,6 +9,19 @@ The host (wippy/facade) provides the theme. Both micro frontend apps and web com
 
 YAML always wins. CSS custom properties (`*_css_variables`) set by the facade/host cascade to child iframes and inherit into shadow DOM. Facade selector rules (`*_custom_css`) do not *cascade* across the shadow boundary, but the Web Host **injects** them into `view.component` shadow roots as of Web Host 1.0.43 (opt-out via the component's `customCss` flag). See the [CSS Delivery Matrix](../web-host/css-injection.md#css-delivery-matrix).
 
+Configuration casing identifies the layer:
+
+| Layer | Naming | CSS example |
+|---|---|---|
+| Backend facade requirement names | documented snake_case | `custom_css`, `children_custom_css`, `host_custom_css`, `css_variables` |
+| Registry metadata | backend schema, with one temporary casing bug | `config_overrides`; current `mountRoute` is planned to become `mount_route` |
+| Nested registry configuration | frontend schema casing, preserved exactly | `proxy.injections.css.customCss`, `config_overrides.customization.customCSS` |
+| Frontend AppConfig/runtime | lower camelCase | `theming.global.customCSS`, `theming.global.cssVariables` |
+| Page frontend metadata | lower camelCase | `configOverrides.customization.customCSS` |
+| Web-component frontend config | lower camelCase | `wippyConfig.customCss`, `hostCssKeys` |
+
+Do not use `customCSS` when naming a facade backend parameter, and do not use `custom_css` in frontend JavaScript or package metadata.
+
 ---
 
 ## Reference — CSS variables
@@ -156,17 +169,14 @@ Variables switch at `@media (prefers-color-scheme: dark)`. Key changes:
   background: var(--p-content-background);
   color: var(--p-text-color);
 }
-/* Only needed when you genuinely require mode-specific raw values: */
-.my-thing { background: #ffffff; color: #111111; }
-@media (prefers-color-scheme: dark) {
-  .my-thing { background: #18181b; color: #e5e5e5; }
-}
 ```
 
-In `cssVariables` YAML, use `@light` / `@dark` keys:
+If the brand requires explicit light and dark palette values, define them in facade or page-level `cssVariables`, not in module CSS.
+
+In backend `css_variables` YAML, use `@light` / `@dark` keys:
 
 ```yaml
-cssVariables:
+css_variables:
   "--p-primary": "#005fb2"
   "@light":
     "--p-content-background": "#fafafa"
@@ -213,7 +223,7 @@ Animation utilities: `.animate-fadein`, `.animate-fadeout`, `.animate-slidedown`
 
 Override host chrome through `AppConfig.theming.host.cssVariables` / `customCSS`. Shared brand theme belongs in `AppConfig.theming.global`; child-only overrides belong in `AppConfig.theming.children` and are projected into each child iframe as `config.theming.global`.
 
-Always scope class-based overrides to `.wippy-host-app` to prevent leaking into child iframes.
+Scope host-chrome-only class overrides to `.wippy-host-app`. Intentionally shared facade selectors, including global `.p-*` PrimeVue rules, remain unscoped when they must apply to both host and child roots. Use `children_custom_css` for child-only selectors.
 
 ### Layout & sidebar
 
@@ -248,7 +258,7 @@ Always scope class-based overrides to `.wippy-host-app` to prevent leaking into 
 | `--wippy-host-message-padding-x` | `1rem` | Message horizontal padding |
 | `--wippy-host-message-padding-y` | `0.5rem` | Message vertical padding |
 | `--wippy-host-message-user-bg` | `var(--p-primary-50)` | User message background |
-| `--wippy-host-message-agent-bg` | `var(--p-yellow-50)` (light) / `var(--p-surface-800)` (dark) | Agent message background — note `--p-yellow-50` is undefined in `theme-config.css`, so set this var (e.g. to `var(--p-warn-50)`) for a valid light background |
+| `--wippy-host-message-agent-bg` | `var(--p-warn-50)` (light) / `var(--p-surface-800)` (dark) | Agent message background |
 | `--wippy-host-tool-bg` | `var(--p-help-50)` | Tool call background |
 | `--wippy-host-tool-border` | `var(--p-help-300)` | Tool call left border |
 | `--wippy-host-avatar-size` | `2rem` | Message avatar diameter |
@@ -343,14 +353,14 @@ These apply to both micro frontend apps and web components.
 
 ### Placement / scope
 
-- `:root { --p-* }` overrides inside a child app's `src/styles.css`. Put `--p-*` overrides in facade theming (`theming.global` / `theming.children`) or per-page `configOverrides.customization.cssVariables`.
-- Raw `.p-button { … }` / `.p-dialog { … }` selectors inside a child app's `src/styles.css`. Put PrimeVue selector overrides in facade theming or per-page `configOverrides.customization.customCSS`.
+- `:root { --p-* }` overrides inside a child app's `src/styles.css`. Put shared values in facade `css_variables`, or page-specific values in frontend `configOverrides.customization.cssVariables`.
+- Raw `.p-button { … }` / `.p-dialog { … }` selectors inside a child app's `src/styles.css`. Put shared PrimeVue selector overrides in facade `custom_css`, or page-specific overrides in frontend `configOverrides.customization.customCSS`.
 - App-side `<style>` blocks defining `@media (prefers-color-scheme: dark)` rules that retune host vars.
 - Theme-related CSS in `src/styles.css` — if it's a host-styled component, it belongs in the facade.
 
 ### Components / API
 
-- Reimplementing a PrimeVue component from scratch (custom Toast, Dialog, Accordion, Select). Use the PrimeVue component + `customCSS` overrides.
+- Reimplementing a PrimeVue component from scratch (custom Toast, Dialog, Accordion, Select). Use the PrimeVue component plus facade `custom_css` or page-level `customCSS` overrides.
 - `useToast()` / `useConfirm()` from PrimeVue in micro frontend app code. Use `host.toast(...)` / `host.confirm(...)`.
 - Components that redeclare `--p-*` vars they should inherit (`:host { --p-primary-500: #abc }`).
 - `<Button icon="pi pi-plus">` — use `<Icon>` from `@iconify/vue` instead of the `pi-*` icon font.
@@ -360,7 +370,7 @@ These apply to both micro frontend apps and web components.
 - Importing `primevue/config` directly to install the PrimeVue plugin. Use `@wippy-fe/theme/primevue-plugin`.
 - Adding `primeVueCssUrl` to a WC's `hostCssKeys` when the WC doesn't render PrimeVue components.
 - Setting `proxy.injections.tailwindConfig: true` in a Vite-built app (legacy runtime-Tailwind path).
-- Externalizing `@wippy-fe/theme` in a WC's Vite config — theme assets must be bundled into the WC.
+- Hand-deciding whether `@wippy-fe/theme` JavaScript is external. Externalization follows the exact pinned Web Host import map; shadow-root CSS delivery follows `hostCssKeys` independently.
 
 ---
 

@@ -37,6 +37,18 @@ Each locale directory contains a `manifest.json` (the navigation tree, with
 use YAML frontmatter (`title`, `description`, `keywords`); mermaid code fences
 and admonitions are supported by the engine.
 
+## Frontend documentation validation
+
+After changing `en/frontend`, run:
+
+```bash
+node scripts/check-frontend-docs.mjs
+```
+
+The dependency-free check rejects known misleading examples such as stale
+Wippy frontend package versions, raw product controls, direct parent-window
+routing, unsafe shadow-root rewrites, and invalid theme guidance.
+
 ## Contributing
 
 We welcome contributions to improve our documentation! Please read the

@@ -57,8 +57,8 @@ const data = await api.get('/api/v1/agents/list')
 // Send a WebSocket command
 ws.sendCommand(sessionId, { text: 'Hello' })
 
-// Subscribe to host events
-on('@history', ({ path }) => router.push(path))
+// Subscribe to a non-routing host event
+on('@visibility', (visible) => { /* pause or resume work */ })
 
 // Cross-iframe state
 state.set('my-key', { value: 42 })
@@ -76,21 +76,22 @@ Drop-in Vue Router helpers that handle the host-navigation awareness that standa
 ```typescript
 import { createAppRouter, HostRouterLink } from '@wippy-fe/router'
 
-const router = createAppRouter([
-  { path: '/', component: Home },
-  { path: '/settings', component: Settings },
-])
+const router = createAppRouter(
+  [
+    { path: '/', component: Home },
+    { path: '/settings', component: Settings },
+  ],
+  { initialPath: config.context?.route ?? '/' },
+)
 ```
 
-`createAppRouter()` always uses memory history — required because srcdoc iframes have no real `window.location` and `createWebHistory()` does not work inside them. The router syncs its internal route with the host via `@history` events automatically.
+`createAppRouter()` uses memory history so the same app remains portable across iframe, Fragment, and `auto` delivery. Pass `config.context?.route` as `initialPath`; the factory synchronizes its internal route with the host via `@history` events. Direct `createWebHistory()` is Fragment-only and must not be used by an app that can fall back to iframe.
 
 ### `@wippy-fe/theme`
 
 Theme CSS variables, the Tailwind CSS configuration object, and PrimeVue styling integration. Exposes `PrimeVuePlugin` for installing PrimeVue into a Vue app with the correct Wippy theme preset. Provides the `theme-config.css` file containing all `--p-primary-*`, `--p-surface-*`, and `--p-secondary-*` palette variables, and the Tailwind config that maps those variables to utility classes.
 
-**Micro Frontend Apps:** mark `@wippy-fe/theme` as `external`. The host injects the same CSS assets into child iframes via the proxy injection pipeline, so bundling your own copy produces duplicate styles.
-
-**Web components:** do NOT externalize `@wippy-fe/theme`. Shadow DOM is isolated — external stylesheets injected into the host document do not cross the shadow boundary. Instead, either bundle the CSS you need directly or declare the relevant keys in `hostCssKeys` inside your `wippyConfig` (e.g. `'themeConfigUrl'`, `'primeVueCssUrl'`) so the host injects them into the shadow root. See [Theming](../micro-frontends/theming.md) for the full injection pipeline.
+JavaScript externalization and CSS delivery are separate decisions. Externalize the `@wippy-fe/theme` JavaScript specifier only when that exact key exists in the pinned Web Host import map; otherwise bundle it when imported. For a web component, separately request the CSS assets its shadow root needs through `hostCssKeys` (for example `themeConfigUrl` or `primeVueCssUrl`). See [Theming](../micro-frontends/theming.md) for the CSS pipeline.
 
 ### `@wippy-fe/webcomponent-core`
 
@@ -229,13 +230,13 @@ installVueWarnSuppressor(app)
 app.mount('#app')
 ```
 
-Without it you may see `[Vue warn]: Failed to resolve component` noise in the console for custom-element tags Vue's template compiler does not recognize (the elements render correctly regardless). PascalCase component typos still warn, preserving that signal. Available from `@wippy-fe/proxy` 0.0.33; the `@wippy-fe/proxy` package re-exports this for convenience.
+Without it you may see `[Vue warn]: Failed to resolve component` noise in the console for custom-element tags Vue's template compiler does not recognize (the elements render correctly regardless). PascalCase component typos still warn, preserving that signal. The `@wippy-fe/proxy` package re-exports this helper for convenience.
 
 ### `@wippy-fe/vite-plugin`
 
 Vite plugins that handle the build-time requirements for Wippy micro-frontends. Provides two plugins:
 
-`wippyPagePlugin()` — for `view.page` modules. Reads the `wippy` field in `package.json`, emits a `wippy-meta.json` file alongside the build output, and configures the correct externals so shared vendor libraries are not bundled.
+`wippyPagePlugin()` — for `view.page` modules. Reads and validates the `wippy` field in `package.json`, resolves supported `file://` references, emits `wippy-meta.json`, and injects host-less package metadata into the built HTML. It does **not** configure Rollup externals; the application must match its externals to the target Web Host import map.
 
 `wippyComponentPlugin()` — for `view.component` modules. Similar to `wippyPagePlugin()` but targets web component output format (ESM, no HTML shell). Also emits `wippy-meta.json` with the component's `tagName` and schema.
 
@@ -305,55 +306,44 @@ Heavy markdown rendering bundle (markdown-it + Shiki syntax highlighting). Dynam
 
 ## Host Import Map
 
-The Web Host injects an import map into every child iframe that resolves the following bare specifiers to CDN-served copies. Declare these as `external` in your Vite config — you should never bundle your own copies because the host guarantees a single shared instance per tab.
+Use the same pinned `<version-tag>` as `fe_facade_url` and fetch the release artifact once during development:
 
-| Specifier | Version | Notes |
-|-----------|---------|-------|
-| `vue` | 3.5.13 | Required by `@wippy-fe/router`, `@wippy-fe/webcomponent-vue` |
-| `pinia` | 2.1.7 | Required by `@wippy-fe/pinia-persist` |
-| `vue-router` | 4.5.0 | Required by `@wippy-fe/router` |
-| `axios` | 1.8.3 | Same instance as `instance.api` |
-| `nanoevents` | 9.1.0 | Tiny event emitter used by `instance.on` |
-| `luxon` | 3.5.0 | Date/time library |
-| `@iconify/vue` | 4.3.0 | Vue Iconify component |
-| `iconify-icon` | 3.0.2 | Framework-agnostic Iconify custom element |
-| `@tanstack/vue-query` | 5.69.0 | Server-state cache for Vue |
-| `@tanstack/query-core` | 5.69.0 | Tanstack Query core |
-| `sanitize-html` | 2.14.0 | HTML sanitizer |
-| `markdown-it` | 14.1.0 | Markdown parser |
-| `markdown-it-async` | 2.2.0 | Async-rule extension for markdown-it |
-| `@wippy-fe/proxy` | — | Proxy API — always external, resolved to host-provided ESM |
-| `@wippy-fe/router` | — | Vue Router helpers — host-provided ESM |
-| `@wippy-fe/log` | — | Structured logger; subpaths `default-receiver`, `logger`, `sentry-transport`, `console-transport`, `gelf-transport` are also mapped |
-| `@wippy-fe/markdown-iframe` | — | Markdown rendering bundle dynamically imported by `<w-artifact>` |
-| `@wippy-fe/vue-utils` | — | Vue 3 utilities (re-exported via `@wippy-fe/proxy`) |
+```bash
+curl.exe -fsS "https://web-host.wippy.ai/<version-tag>/import-map.json" -o import-map.json
+```
 
-Configure Vite externals to match:
+The exact keys of the fetched `imports` object are the JavaScript externalization contract:
+
+- Put **every key** in `build.rollupOptions.external`, including packages the current application does not import. The host map is append-only, so do not maintain a smaller hand-curated subset.
+- Copy the same complete `imports` object into the host-less `app.html`.
+- Bundle an imported specifier only when its exact bare specifier is absent from the pinned map.
+- Re-fetch when the Web Host tag changes or when adding a dependency, to check whether its exact specifier can be external.
+- PrimeVue follows the same exact-subpath rule: `primevue/button` does not imply `primevue/dialog`.
+
+When explaining this contract, do not emit a partial or placeholder
+`<script type="importmap">`. JSON comments and ellipsis entries are invalid and
+misleading. Either show the complete fetched object for one explicit tag or
+tell the reader to fetch and copy it verbatim.
 
 ```typescript
 // vite.config.ts
+import { readFileSync } from 'node:fs'
+
+const hostImportMap = JSON.parse(
+  readFileSync(new URL('./import-map.json', import.meta.url), 'utf8'),
+) as { imports: Record<string, string> }
+
+const hostExternals = Object.keys(hostImportMap.imports)
+
 export default {
   build: {
     rollupOptions: {
-      external: [
-        'vue',
-        'pinia',
-        'vue-router',
-        'axios',
-        'nanoevents',
-        'luxon',
-        '@iconify/vue',
-        'iconify-icon',
-        '@tanstack/vue-query',
-        '@tanstack/query-core',
-        'sanitize-html',
-        'markdown-it',
-        'markdown-it-async',
-        '@wippy-fe/proxy',
-      ],
+      external: hostExternals,
     },
   },
 }
 ```
 
-The exact version pinned to each specifier corresponds to the Web Host release you are targeting. When you upgrade the Web Host version (by changing `fe_facade_url` in the facade config) the import map versions change accordingly — child apps receive whatever the new host provides.
+`peerDependencies` are not an identical copy of this list. Declare only npm package roots the artifact actually imports; import-map subpaths such as `@wippy-fe/log/logger` are not separate peer packages.
+
+This contract does not define a universal host-versus-app merge or override precedence. Hosted mode uses the map delivered by the pinned Web Host release. Standalone mode uses the complete copied map in `app.html`.
