@@ -20,7 +20,10 @@ npm run build -- --outDir <target> --emptyOutDir
 The deployment build owns `<target>`. `vite.config.ts` must not hardcode a deployment output directory.
 
 Platform/package source repositories that are not launched by `wippy.exe`, such
-as Web Host source, use their declared repository package scripts instead.
+as Web Host source, use the exact scripts and arguments declared by that
+repository's `package.json`. The Wippy module `--outDir <target>
+--emptyOutDir` recipe does not apply to package-source repositories unless
+their own declared script explicitly documents those arguments.
 
 ### Makefile
 
