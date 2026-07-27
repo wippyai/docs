@@ -26,15 +26,15 @@ Shadow DOM blocks CSS cascade — stylesheets written outside your component do 
 
 **L3 — Per-page config_overrides:** CSS vars set via operator `config_overrides` also reach your shadow root as custom properties, because they are set on `:root` of the host page.
 
-**Facade custom CSS reaches the shadow root (Web Host 1.0.43+, opt-out).** Selector rules (e.g. `.p-button { border-radius: 12px }`) do not *cascade* across the shadow boundary, but the WC runtime **injects** the composed facade custom CSS (`custom_css` + `children_custom_css`) into every component's shadow root at mount — so they *do* apply to PrimeVue components rendered inside. This is on by default; opt out with `customCss: false` in `wippyConfig` (see [Web Component § CSS in shadow DOM](./web-component.md#css-in-shadow-dom)) for a fully self-styled component. Custom properties (`--p-*`) inherit regardless of the flag.
+**Facade `custom_css` reaches the shadow root (Web Host 1.0.43+, opt-out).** Selector rules (e.g. `.p-button { border-radius: 12px }`) do not *cascade* across the shadow boundary, but the WC runtime **injects** the composed backend facade CSS (`custom_css` + `children_custom_css`) into every component's shadow root at mount — so they *do* apply to PrimeVue components rendered inside. This is on by default; opt out with frontend `customCss: false` in `wippyConfig` for a fully self-styled component. Custom properties (`--p-*`) inherit regardless of the flag.
 
-> **Before Web Host 1.0.43**, facade `customCSS` rules did not reach a component's shadow root — only custom properties inherited. On older hosts, replay the rule inside the WC's own styles or lift it to a `--p-*` token form.
+> **Before Web Host 1.0.43**, facade `custom_css` rules did not reach a component's shadow root — only custom properties inherited. On older hosts, replay the rule inside the WC's own styles or lift it to a `--p-*` token form.
 
 ---
 
 ## Receiving theme CSS
 
-**Do NOT externalize `@wippy-fe/theme`** in your Vite config. Shadow DOM cannot inherit an external stylesheet from the host page. Bundle the theme or load its CSS via `hostCssKeys`. Externalize only `vue`, `pinia`, `@iconify/vue`, and `@wippy-fe/proxy`.
+JavaScript externalization follows the complete pinned Web Host `import-map.json`, including for `@wippy-fe/theme`. CSS delivery is separate: a shadow root receives rule-based theme assets only through `hostCssKeys` or bundled/inline CSS.
 
 ### `hostCssKeys` — runtime CSS loading
 
@@ -52,10 +52,10 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 
 | Key | What it loads | Size | When to include |
 |---|---|---|---|
-| `themeConfigUrl` | `theme-config.css` — the full `--p-*` CSS variable system | ~8 KB | **Always.** Without it, `:host` styles can't reference `--p-*` vars. |
+| `themeConfigUrl` | `theme-config.css` — the full `--p-*` CSS variable system | ~8 KB | When the WC consumes host semantic tokens, dark mode, or themed chrome. A presentation-neutral canvas/SVG/chart can omit it. |
 | `primeVueCssUrl` | All PrimeVue component CSS (unstyled mode) | ~455 KB | Only if the WC renders PrimeVue components (`<Button>`, `<Dialog>`, etc.) inside its shadow root. |
 | `markdownCssUrl` | `.data-body` markdown styles | ~5 KB | Only if the WC renders markdown content. |
-| `iframeCssUrl` | Scrollbar styling | ~1 KB | Recommended for any WC with scrollable content. |
+| `iframeCssUrl` | Default themed scrollbar styling; the name is historical | ~1 KB | Required for any WC that can scroll, for scrollbar consistency. |
 
 `preflightCssUrl` is not in the `HostCssKey` union. If you genuinely need Tailwind v3 preflight inside the shadow root, call `hostCss.preflightCssUrl` + `loadCss()` imperatively. In practice this is rarely needed.
 
@@ -68,7 +68,13 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 | `['themeConfigUrl', 'markdownCssUrl', 'iframeCssUrl']` | ~14 KB |
 | `['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl']` | ~464 KB |
 
-Choose deliberately. A WC that renders a single button with `<Icon>` doesn't need 455 KB of PrimeVue CSS.
+Choose independently:
+
+- A presentation-neutral canvas/SVG/chart with no standard product controls, host semantic tokens, or utility classes may omit PrimeVue, the theme asset, and Tailwind.
+- Any button, input, form, table, dialog, menu, tag, tooltip, or feedback control requires its PrimeVue equivalent, `PrimeVuePlugin`, and `primeVueCssUrl`.
+- Host semantic tokens, dark mode, or themed chrome require `themeConfigUrl`.
+- Tailwind is required when source authors Tailwind utility classes.
+- Scrollable content requires `iframeCssUrl`.
 
 ### `inlineCss` — build-time CSS
 
@@ -150,8 +156,8 @@ const background = styles.getPropertyValue('--p-content-background').trim()
 ## Common patterns
 
 ```typescript
-// Pure-vanilla WC, no PrimeVue, no markdown, no scroll:
-hostCssKeys: ['themeConfigUrl'] as const
+// Presentation-neutral chart-only WC: no controls, host tokens, utilities, or scroll:
+hostCssKeys: [] as const
 
 // WC that renders PrimeVue components inside Shadow DOM:
 hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl'] as const
@@ -169,9 +175,10 @@ hostCssKeys: ['themeConfigUrl'] as const
 
 - Hardcoding hex inside `:host { … }` — use `var(--p-*)` instead.
 - `<style>` blocks with `@media (prefers-color-scheme: dark)` that hardcode dark-mode colors — the vars in `theme-config.css` retune themselves for dark; if you reference `var(--p-*)` correctly, dark mode is free.
-- Requesting `primeVueCssUrl` when the WC doesn't render PrimeVue — adds 455 KB for zero benefit.
+- Requesting `primeVueCssUrl` when the WC doesn't render PrimeVue — adds a large stylesheet for zero benefit.
+- Setting PrimeVue overlays to `appendTo: 'self'` as a routine fix. Install `PrimeVuePlugin` and keep the default target; it redirects to a pinned overlay layer in the owning shadow root. Explicit `self` is inline placement and can clip in scrolling overlays.
 - Forgetting `bubbles: true, composed: true` on `CustomEvent` dispatch — events won't escape shadow DOM.
-- Externalizing `@wippy-fe/theme` in Vite config — theme assets must be bundled.
+- Choosing `@wippy-fe/theme` externalization from CSS assumptions instead of the complete pinned Web Host import map.
 
 ---
 
@@ -180,7 +187,7 @@ hostCssKeys: ['themeConfigUrl'] as const
 To confirm theme variables reach your shadow root: in DevTools, select your custom element's shadow root context (not the outer document), then run:
 
 ```js
-getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
+getComputedStyle(document.querySelector('your-element')).getPropertyValue('--p-primary-color')
 ```
 
 Full debugging workflow: [Debugging](./debugging.md).

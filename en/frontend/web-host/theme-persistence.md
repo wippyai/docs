@@ -102,7 +102,7 @@ events.on('themeChanged', (mode) => {
 ## Non-Wippy-hosted pages
 
 A login page, a marketing page, or any page that isn't the Web Host can honour and persist the same
-theme. Include the generated script and call `write()` from your own switcher:
+theme. This is an intentionally static/non-Vue example, so native buttons are appropriate. Include the generated script and call `write()` from your own switcher:
 
 ```html
 <head>
@@ -112,9 +112,9 @@ theme. Include the generated script and call `write()` from your own switcher:
   <link rel="stylesheet" href="/api/public/facade/variables.css">
 </head>
 <body>
-  <button data-mode="auto">Auto</button>
-  <button data-mode="light">Light</button>
-  <button data-mode="dark">Dark</button>
+  <button type="button" data-mode="auto">Auto</button>
+  <button type="button" data-mode="light">Light</button>
+  <button type="button" data-mode="dark">Dark</button>
 
   <script>
     document.querySelectorAll('[data-mode]').forEach((btn) => {

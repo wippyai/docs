@@ -34,7 +34,11 @@ Every Wippy micro frontend app and web component is built around a small, delibe
 What that means in practice:
 
 - The only thing an app or WC touches at runtime is the proxy API surface: the sync getters imported from `@wippy-fe/proxy` (`host`, `api`, `on`, `config`, `state`, `ws`, `logger`). Both apps and WCs use the same imports; under the hood they resolve to the same `ProxyApiInstance` that the runtime installs as internal globals (`window.$W`, `window.__WIPPY_APP_API__` — never read these directly).
-- Apps and WCs do **not** import code from neighboring apps, the parent module's Lua side, the Wippy Web Host, or any other module in the project. They live in their own folder, declare their externals (`vue`, `pinia`, `vue-router`, `@iconify/vue`, `axios`, `@wippy-fe/proxy`, etc.) in their own `package.json`, and read their own `wippy.yaml` / `package.json` metadata.
+- Apps and WCs do **not** import code from neighboring apps, the parent
+  module's Lua side, the Wippy Web Host, or another project module. They live
+  in their own folder. Vite derives every Rollup external from the pinned
+  target-host `import-map.json`; `package.json` declares only the npm
+  dependencies and peer roots the artifact actually imports.
 - The same `app.ts` (or WC `index.ts`) boots correctly in two environments:
   1. **Hosted** — inside a Wippy Web Host that injects `proxy.js`, AppConfig, importmap, and CSS.
   2. **Host-less** — running its `app.html` directly via Vite dev server, file://, a unit-test page, a Storybook-style playground, etc.
@@ -52,6 +56,10 @@ This isn't an accident or an afterthought. It is what makes:
 ## The `@wippy/scripts` switchpoint — one tag, two boot paths
 
 Every canonical app's `app.html` ships with **one** script tag that decides the boot path at load time:
+
+This is an abbreviated body/boot example. Insert the complete valid import-map
+script from [Compliance Checklist §3.3](./compliance-checklist.md#33-apphtml),
+updated from the fetched response when the pinned Web Host tag changes.
 
 ```html
 <!-- URL MUST include a release-tag segment: https://web-host.wippy.ai/<release-tag>/dev-proxy.js -->
@@ -83,47 +91,36 @@ So the same line of HTML is the host's "inject your scripts here" anchor *and* t
 
 ### What goes in the importmap?
 
-Exactly the packages your bundle declares as **externals**. Open your `vite.config.ts` and look at `build.rollupOptions.external` — every name in that array MUST have a matching entry in the importmap. Concretely:
+Fetch the complete map once during development, using the same tag as `fe_facade_url` and `dev-proxy.js`:
 
-```ts
-// vite.config.ts
-external: ['vue', 'pinia', 'vue-router', '@iconify/vue', 'axios', 'luxon']
+```bash
+curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/import-map.json" -o import-map.json
 ```
 
-```html
-<!-- app.html — must mirror the externals exactly -->
-<script type="importmap">
-{
-  "imports": {
-    "vue": "https://esm.sh/vue@3",
-    "pinia": "https://esm.sh/pinia",
-    "vue-router": "https://esm.sh/vue-router@4",
-    "@iconify/vue": "https://esm.sh/@iconify/vue",
-    "axios": "https://esm.sh/axios",
-    "luxon": "https://esm.sh/luxon"
-  }
-}
-</script>
-```
+Set the text of the `app.html` `<script type="importmap">` element to the
+fetched JSON response verbatim. Do not put comments, ellipsis placeholders, or
+hand-written substitutions inside that JSON. The
+[compliance checklist §3.3](./compliance-checklist.md#33-apphtml) contains a
+valid example for the currently verified release.
 
 Conventions:
-- **Use `https://esm.sh/<pkg>` URLs.** They're the de-facto Wippy default (see canonical app-template apps); no build step or local server needed.
-- **Pin majors only** (`vue@3`, `vue-router@4`) unless you have a reason to lock a minor. esm.sh resolves to the latest patch automatically and the host's importmap (which overrides yours when wrapping) decides the canonical version anyway.
-- **Don't include `@wippy-fe/proxy`.** dev-proxy.js / the host injects it for you. The same goes for `@wippy-fe/markdown-iframe` (only include it explicitly if your app code imports the markdown iframe directly — the canonical app-template main app does).
-- **Don't include packages that are not external.** Anything bundled into your output (your shared utils, internal components) doesn't need an entry.
+- Put **every fetched key** in Rollup externals, including currently unused keys.
+- Keep the same complete key/value object in `app.html`; do not reconstruct it with `esm.sh`.
+- Bundle an imported specifier only when its exact key is absent.
+- Re-fetch when the Web Host tag changes or a new dependency is added, to check whether that exact specifier can be external.
 
-The host's `processWebPage` merges the host's importmap with whatever you declare in `app.html` — keys you declare are kept, host adds the wippy-side entries. So the same `app.html` works in both modes without conditionals.
+Standalone `app.html` resolves the complete copied map. Hosted mode uses the map delivered by the same pinned release.
 
 ### Exposing `package.json` to dev-proxy (canonical scaffold)
 
 Every Wippy app's `package.json` carries metadata that determines runtime defaults — proxy injections (`wippy.proxy.injections.css.*`), per-page theming overrides (`wippy.configOverrides.customization`), iconify icon collections, etc. In hosted mode the host reads these from the registry. In host-less mode dev-proxy needs the same data to apply the same defaults.
 
-The canonical pattern is `wippyPagePlugin()` from `@wippy-fe/vite-plugin` ≥ `0.0.32`, added once to your `vite.config.ts`. The plugin reads your `package.json` at build time and does **two** things:
+The canonical pattern is `wippyPagePlugin()` from the coherent current `@wippy-fe/vite-plugin` family (`0.0.46` at publication), added once to your `vite.config.ts`. The plugin reads your `package.json` at build time and does **two** things:
 
 1. **Resolves `file://` references** in the `wippy` block (any string value of the form `"file://<relative>"` is replaced with the referenced file's UTF-8 contents — see `*.do-not-link.<ext>` naming convention in [build-system.md](./build-system.md)).
 2. **Emits two outputs** with the resolved JSON:
    - `<head>`-injected `<script type="application/json" data-role="@wippy/package">` for host-less / dev-proxy boot.
-   - `dist/wippy-meta.json` for wippy-hosted mode — `wippy/views` ≥ `0.5.0` reads this file when serving `/pages/content/{id}` and `/components/by-tag/{tag}` instead of synthesizing from YAML.
+   - `wippy-meta.json` in the actual Vite output directory for wippy-hosted mode.
 
 ```ts
 // vite.config.ts
@@ -140,7 +137,7 @@ export default defineConfig({
 })
 ```
 
-**For web components** (`view.component`, ESM-only — no HTML entry to inject into) use `wippyComponentPlugin()` from the same package. It only emits `dist/wippy-meta.json`; no `transformIndexHtml` step.
+**For web components** (`view.component`, ESM-only — no HTML entry to inject into) use `wippyComponentPlugin()` from the same package. It only emits `wippy-meta.json` in the actual output directory; no `transformIndexHtml` step.
 
 ```ts
 // vite.config.ts for a web component
@@ -148,7 +145,7 @@ import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 export default defineConfig({ plugins: [wippyComponentPlugin()] })
 ```
 
-> **Renamed in `0.0.31`.** `wippyPackagePlugin` (the old single export) is the predecessor of today's `wippyPagePlugin`. If you're on the old import name, switch — both the rename and the meta-emit landed in `0.0.31` and the old name is gone. The component-only path (`wippyComponentPlugin`) is new in the same release.
+> `wippyPackagePlugin` remains a deprecated compatibility alias. New page code uses `wippyPagePlugin()`; component-only builds use `wippyComponentPlugin()`.
 
 The plugin emits this into the top of `<head>` in the built `app.html`:
 
@@ -284,16 +281,8 @@ Web components share the same dual-mode design but are loaded as ES modules inst
 <!DOCTYPE html>
 <html>
 <head>
-    <script type="importmap">
-    {
-        "imports": {
-            "vue": "https://esm.sh/vue@3",
-            "@iconify/vue": "https://esm.sh/@iconify/vue",
-            "@wippy-fe/proxy": "/path/to/proxy.js"
-        }
-    }
-    </script>
-    <script src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <!-- Required complete import-map script omitted from this abbreviated example. -->
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>
@@ -360,7 +349,7 @@ When an app or WC has drifted from the standalone-aware contract, the symptoms a
 | Symptom | Probable cause | Fix |
 |---|---|---|
 | `app.html` has `<script data-role="@wippy/scripts"></script>` with no `src=` | Page can't boot host-less. Loading the file directly produces a blank page — the proxy runtime never installs, so `@wippy-fe/proxy` imports fail to resolve. | Add `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` to the tag — the URL always requires a release-tag segment. |
-| `app.html` has the dev-proxy `<script src=…>` but **no `<script type="importmap">`** above it | Browser can't resolve the bundle's bare-specifier imports (`vue`, `pinia`, `@iconify/vue`, `axios`, etc.). The first module-script load fails silently with `Failed to resolve module specifier "vue"` and the page never bootstraps Vue. | Declare the importmap inline in `<head>`, BEFORE the dev-proxy script. Mirror your bundler's `external` array exactly — every name listed in `vite.config.ts` `rollupOptions.external` MUST have an entry. Use `https://esm.sh/<pkg>@<major>` for vendor packages. See the [main example](#the-wippyscripts-switchpoint--one-tag-two-boot-paths). |
+| `app.html` has the dev-proxy `<script src=…>` but **no `<script type="importmap">`** above it | Browser can't resolve external bare specifiers. The first module-script load fails with `Failed to resolve module specifier`. | Fetch `<release-tag>/import-map.json`, copy its complete `imports` object into `<head>` before dev-proxy, and use all keys as Rollup externals. |
 | `app.html` body has a custom SVG spinner / `<div>Loading…</div>` instead of `<wippy-loading title="…">` | Pre-bootstrap loader doesn't match the canonical Wippy idiom. The custom markup keeps showing while the WC ecosystem (which would render a styled, theme-aware loader) is fully booted. | Replace with `<wippy-loading title="Loading..."></wippy-loading>`. The `<wippy-loading>` web component is registered by `dev-proxy.js` (it imports `@wippy-fe/loading` synchronously) before the `<body>` parses, so the element resolves correctly even at very early page load. |
 | `import` from a sibling app's source files | Shared code is being copy-pasted across module boundaries. | Extract to a workspace package or duplicate intentionally; never reach across app folders. |
 | Hardcoded `fetch('/api/…')` calls | Bypasses the axios instance the proxy provides; won't pick up `env.APP_API_URL` overrides. | Use `useApi()` (apps) or `import { api } from '@wippy-fe/proxy'` (WCs). |
@@ -386,7 +375,7 @@ If the stored config is broken and auto-accept is on, the overlay still renders 
 By default `getDefaultProxyConfig()` enables `customCss` and `customVariables` but disables `themeConfig`, `iframe`, `primevue`, `markdown`. If your app expects PrimeVue's theme-config CSS, toggle those checkboxes in the panel. Auto-accept will remember.
 
 **Importmap mismatch between hosted and standalone.**
-The Wippy Web Host injects its own importmap at runtime. The standalone `app.html` declares its own importmap inline. Keep the standalone one in sync (same packages, same versions) so a host-less build behaves like a hosted one. The canonical app-template apps demonstrate this.
+Re-fetch the pinned release's `import-map.json`, replace the complete host-less `imports` object, and regenerate the Rollup external keys from it. Do not patch individual entries or maintain a curated subset.
 
 **WC test fails with "host getter returned null".**
 Tests need to set `el.__wippyHost = fakeWrapper` *before* `connectedCallback` fires. Either set it before `document.body.appendChild(el)`, or fake the wrapper through whatever resolver pattern your suite uses.

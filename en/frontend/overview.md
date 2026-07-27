@@ -19,7 +19,7 @@ See: [Web Host — Facade Entry Point](./web-host/entry-point.md)
 
 ### Layer 2: Web Host
 
-The Web Host is a Vue 3 SPA delivered from CDN (`https://web-host.wippy.ai`). The `wippy/facade` backend loads it as a JS module that takes over the page; the host then reads its configuration from `wippy/facade`, builds the navigation sidebar from the registry, mounts each registered micro frontend app in its own isolated iframe, and auto-registers web components that are both `announced: true` and `auto_register: true`. The Web Host is typically invisible to end users — they see only the micro frontends it hosts.
+The Web Host is a Vue 3 SPA delivered from CDN (`https://web-host.wippy.ai`). The `wippy/facade` backend loads it as a JS module that takes over the page; the host then reads its configuration from `wippy/facade`, builds the navigation sidebar from the registry, renders each registered micro frontend app through the selected page engine (an isolated iframe by default, or a Web Fragment), and auto-registers web components that are both `announced: true` and `auto_register: true`. The Web Host is typically invisible to end users — they see only the micro frontends it hosts.
 
 The entry point for deploying the Web Host is the `wippy/facade` backend module, which serves a page that loads the Web Host JS module and supplies its configuration through `/facade/config`.
 
@@ -27,9 +27,22 @@ See: [Web Host](./web-host/overview.md)
 
 ### Layer 3: Wippy Micro Frontends
 
-Wippy frontend code runs inside the Web Host's isolation boundary. Micro frontend apps are typically full Vue 3 SPAs mounted in iframes. Web components are custom elements mounted in shadow roots. Both kinds communicate with the Web Host through **`@wippy-fe/proxy`** — synchronous imports (`host`, `api`, `on`, `config`, …) that provide auth-aware HTTP, host navigation, theme-aware CSS, and event subscriptions.
+Wippy frontend code runs inside the Web Host's isolation boundary. Micro frontend apps are full Vue 3 SPAs rendered through the configured page engine. Web components are custom elements mounted in shadow roots. Both kinds communicate with the Web Host through **`@wippy-fe/proxy`** — synchronous imports (`host`, `api`, `on`, `config`, …) that provide auth-aware HTTP, host navigation, theme-aware CSS, and event subscriptions.
 
 See: [Wippy Micro Frontends](./micro-frontends/overview.md)
+
+---
+
+## Frontend authoring defaults
+
+- **Use platform packages first.** Before building infrastructure, check the current `@wippy-fe/*` packages for the router, proxy, persistence, theming, web-component, loading, and build-plugin APIs.
+- **Use PrimeVue for any PrimeVue-like product UI.** A page or web component may omit PrimeVue only while it contains no standard product controls or surfaces that PrimeVue provides. A canvas/SVG/chart-only component is valid without PrimeVue. As soon as it adds a button, input, form, table, dialog, menu, tag, tooltip, or feedback control, use the applicable PrimeVue component, `PrimeVuePlugin`, and PrimeVue CSS. Framework choice, bundle size, convenience, and minor visual differences are not exceptions.
+- **Add theme and Tailwind by actual styling use.** Load the Wippy theme when the artifact consumes host semantic tokens, dark mode, or themed chrome. Add Tailwind when source authors utility classes. A presentation-neutral chart may omit both; a styled or themed shell may not.
+- **Keep shared appearance in the facade theme.** Backend facade dependency parameters use `lower_case_with_underscores`, so shared PrimeVue appearance belongs in facade `custom_css`. Frontend/runtime configuration uses lower camelCase, including AppConfig `customCSS`. Module CSS is for domain layout and genuinely novel structure, not a private component theme.
+- **Use AppConfig and the router package.** Child code receives host route/context through `@wippy-fe/proxy`; it must not infer host state from `window.location`, `window.parent.location`, or direct `postMessage`. Do not add either browser location as a fallback when AppConfig has no route.
+- **Verify the actual delivery chain.** Fetch the pinned Web Host release's `import-map.json` during development and keep every key as a Rollup external; re-fetch when the host tag changes or a new dependency is added. The Vite plugin emits metadata; the application owns its build configuration; the registry/static mount owns the served URL.
+
+See [Render Engines](./web-host/render-engines.md), [CSS Injection](./web-host/css-injection.md), [@wippy-fe Packages](./web-host/packages.md), and the [Compliance Checklist](./micro-frontends/compliance-checklist.md).
 
 ---
 

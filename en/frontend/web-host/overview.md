@@ -68,7 +68,7 @@ This pins the entire deployment to that build. See [CLI overrides](../../guides/
 
 ## Tech Stack
 
-The Web Host is built with Vue 3 (Composition API), PrimeVue + Tailwind CSS 3 for UI components, Pinia for state management, Vue Router for navigation, and Axios for HTTP. All of these are available to child applications as externals through the host-provided import map — child apps do not need to bundle their own copies.
+The Web Host is built with Vue 3 (Composition API), PrimeVue + Tailwind CSS 3 for UI components, Pinia for state management, Vue Router for navigation, and Axios for HTTP. During development, fetch `<fe_facade_url>/import-map.json` and put every key from its `imports` object in Rollup externals, even if the current artifact does not import that key. Bundle an imported dependency only when its exact specifier is absent. Re-fetch when the Web Host tag changes or a new dependency is added.
 
 ## See Also
 

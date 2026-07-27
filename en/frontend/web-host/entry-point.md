@@ -88,7 +88,7 @@ The config endpoint returns a JSON object carrying both the shell-level fields a
       "iconSets": {}
     },
     "host": {
-      "customCSS": ".wippy-host-app .chat-container { background: var(--p-surface-100); }",
+      "customCSS": ".wippy-host-app .chat-container { background: var(--p-content-background); }",
       "cssVariables": {},
       "iconSets": {},
       "i18n": {
@@ -296,7 +296,7 @@ The `wippy/facade` parameters that produce the config response above are set in 
     - name: css_variables
       value: '{"--p-primary":"#6366f1"}'
     - name: host_custom_css
-      value: ".wippy-host-app .chat-container { background: var(--p-surface-100); }"
+      value: ".wippy-host-app .chat-container { background: var(--p-content-background); }"
     - name: tanstack
       value: '{"lists":{"refetchOnWindowFocus":true}}'
 ```

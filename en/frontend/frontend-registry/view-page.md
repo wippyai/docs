@@ -45,7 +45,14 @@ See [Render Engines](../web-host/render-engines.md) for the full engine model an
 
 ### Proxy Configuration
 
-Proxy injection has two surfaces. The FE developer authors the defaults in the `package.json` `wippy` block using **camelCase** keys (`themeConfig`, `primevue`, `customCss`); the vite plugin bakes them into `wippy-meta.json`. The operator can override them per-deployment with a `proxy:` block under `meta:` in the registry entry YAML, using the **same camelCase shape** — it is deep-merged over the baked defaults and the YAML value wins per nested key. See [Operator proxy override](#operator-proxy-override-_indexyaml) below for the YAML form.
+Proxy injection has two surfaces. The FE developer authors defaults in the
+frontend `package.json` `wippy` block with lower-camel-case keys
+(`themeConfig`, `primevue`, `customCss`); the Vite plugin bakes them into
+`wippy-meta.json`. The operator overrides them with a `proxy:` block under
+`meta:` in registry YAML. Registry fields follow their documented schema rather
+than a universal casing rule. Nested proxy keys retain their defined
+lower-camel-case names, and the host deep-merges that YAML over the baked
+frontend defaults without converting keys.
 
 ```json
 {
@@ -82,7 +89,7 @@ If `proxy.injections` is omitted, the iframe proxy uses permissive runtime defau
 These are the flags a micro frontend app typically declares and the value to set for a typical Vite SPA. They are not the runtime defaults.
 
 - `css.themeConfig` (`true`) — CSS custom properties for the active theme
-- `css.iframe` (`true`) — iframe layout reset styles
+- `css.iframe` (`true`) — required default themed scrollbar styling; `iframe` is a historical name and the current sheet does not provide layout resets
 - `css.primevue` (`true`) — PrimeVue component base styles
 - `css.markdown` (`false`) — markdown rendering styles
 - `css.customCss` (`true`) — child-projected custom CSS
@@ -143,6 +150,11 @@ Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is au
 |---|---|---|---|
 | `mountRoute` | string | — | Claims a URL path in the host router; the host renders this page when the browser navigates to a matching path |
 
+> **Temporary compatibility spelling:** `meta.mountRoute` is a current backend
+> casing bug. The intended backend field is `meta.mount_route`, and a future
+> backend release is expected to change it. Use `meta.mountRoute` until that
+> backend change ships; recheck the target Wippy version when upgrading.
+
 `mountRoute` accepts only the v1 catch-all form — `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or a different param name (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict and `GET /api/public/pages/routes` returns HTTP 500, rendered as a fatal fullscreen error. The `:part(.*)*` wildcard lets the child application manage its own sub-routes while the host keeps ownership of the top-level path.
 
 ```yaml
@@ -157,7 +169,11 @@ When the Web Host starts, it fetches `GET /api/public/pages/routes` and calls `r
 |---|---|---|
 | `config_overrides` | object | Deep-merged over the AppConfig values the Web Host injects into the iframe |
 
-`config_overrides` is a YAML map whose keys follow camelCase to match the AppConfig shape. It is deep-merged on top of the bundled `wippy.configOverrides` from `wippy-meta.json`; the YAML value wins per nested key.
+`config_overrides` is the registry wrapper name. Its nested object already uses
+the frontend schema's lower-camel-case keys, such as
+`customization.customCSS` and `customization.cssVariables`. The Web Host
+deep-merges those exact keys on top of bundled `wippy.configOverrides` from
+`wippy-meta.json`; the YAML value wins per nested key.
 
 `config_overrides` changes the page's injected AppConfig. It does **not** change proxy injection flags. In particular, `config_overrides` never affects `proxy.injections`, `wippy.proxy.injections`, or the runtime defaults for CSS/script injection. To override proxy injection flags for a deployment, use `meta.proxy` as described in [Operator proxy override](#operator-proxy-override-_indexyaml).
 
@@ -185,17 +201,36 @@ A typical use case is running the same bundle with a custom colour palette:
           "--p-primary-color": "#7c9ed9"
           "--p-danger": "#e8a0a0"
         customCSS: |
-          @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600&display=swap');
-          :root { font-family: 'Quicksand', sans-serif !important; }
+          /* Palette values here are an intentional page-theme definition, not module CSS. */
+          :root { font-family: var(--wippy-brand-font, sans-serif); }
 ```
 
 Note that `announced: false` is valid for `view.page` entries — the page is reachable via its `mountRoute` but does not appear in the sidebar.
 
 ### Operator proxy override (_index.yaml)
 
-The proxy injection defaults baked into `wippy-meta.json` (from the `package.json` `wippy` block) can be overridden per-deployment with a `proxy:` block placed **under `meta:`** in the registry entry. The YAML uses the **same camelCase shape and `injections` wrapper** as the `package.json` block above (`enabled`, `injections.css.{themeConfig,…}`, `injections.{tailwindConfig,…}`). The host deep-merges this block over the bundled `wippy.proxy`; the YAML value wins per nested key. There is no snake_case form and no casing normalization — the YAML payload must be camelCase.
+The proxy injection defaults baked into `wippy-meta.json` (from the
+`package.json` `wippy` block) can be overridden per deployment with a `proxy:`
+block placed **under `meta:`** in the registry entry. Facade requirement names
+use their documented snake_case names. Registry fields currently include one
+temporary backend casing bug: the wrapper is `config_overrides`, while the route
+field is still read as `mountRoute` until it is corrected to `mount_route`.
+Nested proxy/config objects are passed through and retain their defined
+lower-camel-case keys. The host deep-merges `meta.proxy` over bundled
+`wippy.proxy`.
 
-Short answer: use `meta.proxy`, not `data.proxy`; use camelCase keys, not snake_case keys; keep the `injections` wrapper.
+Short answer: use `meta.proxy`, not `data.proxy`; keep top-level backend fields
+such as `config_overrides` in snake_case, but preserve nested proxy/config keys
+such as `themeConfig` and `customCss`; keep the `injections` wrapper.
+
+Keep the two frontend spellings distinct:
+
+- Backend `meta.proxy.injections.css.customCss` remains
+  `wippy.proxy.injections.css.customCss`.
+- Backend `meta.config_overrides.customization.customCSS` projects to
+  frontend `wippy.configOverrides.customization.customCSS` and runtime
+  `config.theming.global.customCSS`.
+- Do not invent an `appConfig` wrapper around either frontend shape.
 
 ```yaml
 - name: dashboard

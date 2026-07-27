@@ -1,13 +1,15 @@
 # Render Engines
 
-The Wippy Web Host renders a micro frontend app (`view.page`) through one of **two page-render engines**. The engine is a *delivery* concern — the same app renders identically under either — chosen by an operator switch, with an optional per-page override.
+The Wippy Web Host renders a micro frontend app (`view.page`) through one of **two page-render engines**. The engine is a delivery concern chosen by an operator switch, with an optional per-page override. Portable apps use the Wippy proxy and router APIs so their behavior does not depend on a particular engine.
 
 | Engine | How a page renders | Isolation | Routing |
 |--------|--------------------|-----------|---------|
 | **Iframe** (default) | A srcdoc `<iframe>` with `proxy.js` injected | Full document isolation | Memory-history only (srcdoc has no real URL) |
 | **Web Fragment** | A [`reframed`](https://web-fragments.dev) same-origin realm reflected into a `<web-fragment>` shadow root, with `proxy-fragment.js` | Realm isolation, shared DOM tree | Real `window.history` (URL routers work) |
 
-Both engines are at **feature parity**: authenticated API, WebSocket, host-mediated state, confirm/bridge dialogs, `@history`/`@visibility` events, title propagation, global error capture, host-CSS + theme injection (including dark-in-shadow), content-mode auto-height, and nested `<w-artifact>` embeds — plus a genuine `window.history`, so URL routers (Vue Router `createWebHistory`) need no memory-history shim.
+Both engines provide the same Wippy application services: authenticated API, WebSocket, host-mediated state, confirm/bridge dialogs, `@history`/`@visibility` events, title propagation, global error capture, host-CSS + theme injection (including dark-in-shadow), content-mode auto-height, and nested `<w-artifact>` embeds. Their browser-history capabilities are intentionally different, as shown in the table.
+
+Use `createAppRouter()` from `@wippy-fe/router` for an app that can run under either engine. The current factory uses memory history, receives its initial route from `AppConfig.context.route`, and synchronizes with the host over `@history`. A direct `createWebHistory()` router is Fragment-only and is not portable to iframe or `auto` deployments that may fall back to iframe.
 
 ## How a fragment renders
 
@@ -59,10 +61,10 @@ Two detectors surface these at authoring time (they detect *app-code incompatibi
 
 Enabling the fragment engine in a consuming app requires up-to-date framework modules plus the operator switch — no router or parameter wiring:
 
-1. **Framework modules** — `wippy/facade ≥ 0.6.28` (the `render_engine` switch) and `wippy/views ≥ 0.5.9` (the self-mounting gateway), pinned in `wippy.lock`.
+1. **Framework modules** — use a current compatible `wippy/facade` and `wippy/views` pair that exposes the `render_engine` switch and self-mounting fragment gateway. Verify the exact release in current Wippy module documentation.
 2. **The switch** — set the facade `render_engine` to `fragment` (globally) or opt pages in per-page with `wippy.renderEngine`.
 
-> The `/@fragment` gateway is **self-provided by `wippy/views ≥ 0.5.9`**: the module declares its own top-level router and binds it to a `server` requirement defaulting to `app:gateway`. A consumer needs no fragment wiring and **boots normally on the iframe engine** whether or not fragments are enabled; override the `server` parameter only if your `http.service` id differs from `app:gateway`. When a page opts into fragments per-page (`wippy.renderEngine: "fragment"`) on an otherwise iframe deployment, a runtime **capability probe** confirms the gateway + `proxy-fragment.js` are present before switching — and **silently stays on the iframe engine** if they are not. (The global `render_engine: fragment` switch trusts the operator and does not probe, so enabling it without a working gateway renders broken panels rather than falling back.) See [Views → Web Fragments gateway](../../framework/views.md#web-fragments-gateway).
+> The `/@fragment` gateway is self-provided by current `wippy/views`: the module declares its own top-level router and binds it to a `server` requirement defaulting to `app:gateway`. A consumer needs no fragment wiring and boots normally on the iframe engine whether or not fragments are enabled; override the `server` parameter only if your `http.service` id differs from `app:gateway`. When a page opts into fragments per-page on an otherwise iframe deployment, a runtime capability probe confirms the gateway + `proxy-fragment.js` before switching and otherwise stays on the iframe engine. The global `render_engine: fragment` switch trusts the operator and does not probe. See [Views → Web Fragments gateway](../../framework/views.md#web-fragments-gateway).
 
 The frontend app itself needs no fragment-specific code; `proxy-fragment.js` is a host artifact served from the CDN, not something the app bundles.
 

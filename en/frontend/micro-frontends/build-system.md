@@ -52,18 +52,23 @@ Short answer for KB/agent questions:
 
 For a micro frontend app, `tagName`/`props`/`events` are absent and `path` points to the HTML entry.
 
-`wippy/views` ≥ 0.5.0 reads `wippy-meta.json` from the served directory to populate the component registry and API responses. The file must be present; its absence triggers a per-process deprecation warning and a fallback synthesis path that will be removed in a future release.
+The current metadata contract is `wippy/views` 1.0.31 or newer with the coherent `@wippy-fe/vite-plugin` package family. `wippy-meta.json` must be present in the actual served output directory.
 
-Starting with `@wippy-fe/vite-plugin` 0.0.32, the plugin enforces the shape at build time and throws on violations such as a missing `name`/`version`/`wippy` block, wrong `wippy.type`, or a malformed `tagName`.
+The current plugin validates package shape at build time and throws on violations such as a missing `name`/`version`/`wippy` block, wrong `wippy.type`, or malformed `tagName`. Use the newest coherent `@wippy-fe/*` release family rather than mixing historical package versions.
 
 ## Micro Frontend App Vite Config
 
 ```ts
 // frontend/applications/main/vite.config.ts
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { wippyPagePlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
+
+const hostImportMap = JSON.parse(
+  readFileSync(new URL('./import-map.json', import.meta.url), 'utf8'),
+) as { imports: Record<string, string> }
 
 export default defineConfig({
   plugins: [
@@ -82,18 +87,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: { app: resolve(__dirname, 'app.html') },
-      external: [
-        'vue',
-        'pinia',
-        'vue-router',
-        '@iconify/vue',
-        'nanoevents',
-        'luxon',
-        '@wippy-fe/proxy',
-        'axios',
-        '@tanstack/vue-query',
-        '@tanstack/query-core',
-      ],
+      external: Object.keys(hostImportMap.imports),
       output: {
         entryFileNames: '[name].js',
         assetFileNames: '[name]-[hash][extname]',
@@ -109,35 +103,11 @@ Setting `base` to an empty string makes all asset paths relative (`./app-abc123.
 
 ### External dependencies
 
-The Web Host provides a subset of libraries via a browser import map. Bundling them into your app creates version conflicts and inflates bundle size unnecessarily. Mark them `external` so Rollup leaves the `import` statements intact for the browser to resolve at runtime.
-
-**Must always be external:**
-
-| Package | Why |
-|---------|-----|
-| `vue` | Vue 3 runtime — must be a single instance |
-| `pinia` | Vue store — shared with the host store tree |
-| `@iconify/vue` | Icon component — host loads the icon registry |
-| `@wippy-fe/proxy` | Wippy proxy API (`api`, `host`, `on`) |
-
-**External only if you import them:**
-
-| Package | Version |
-|---------|---------|
-| `vue-router` | 4.5.0 |
-| `axios` | 1.8.3 |
-| `nanoevents` | 9.1.0 |
-| `luxon` | 3.5.0 |
-| `@tanstack/vue-query` | 5.69.0 |
-| `@tanstack/query-core` | 5.69.0 |
-
-> **Note:** `@wippy-fe/pinia-persist` is an npm package but is **not** in the host import map. Bundle it — do not add it to `external`.
-
-> **Note:** PrimeVue is not in the host import map. Bundle it as well.
+Fetch `https://web-host.wippy.ai/<version-tag>/import-map.json` once during development, using the same tag as `fe_facade_url`. Keep every key from its `imports` object in Rollup externals, including unused keys, and copy the complete object into host-less `app.html`. Re-fetch only when the Web Host tag changes or a new dependency is added. Bundle an import only when its exact specifier is absent. PrimeVue follows the same exact-subpath rule.
 
 ### `entryFileNames: '[name].js'`
 
-This produces a predictable output filename (`app.js` for `input: { app: ... }`). The `wippy.path` field in `package.json` must match this filename — for a micro frontend app, `"path": "dist/app.html"` which is the HTML entry that references the compiled `app.js`.
+This produces a predictable output filename (`app.js` for `input: { app: ... }`). The `wippy.path` field must name the HTML entry inside the emitted package. `dist/app.html` is conventional for a local default build, not a universal deployment path.
 
 ### `cssCodeSplit: false`
 
@@ -147,10 +117,15 @@ Produces a single CSS file for the app rather than per-chunk CSS files. Simplifi
 
 ```ts
 // frontend/web-components/reaction-bar/vite.config.ts
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
+
+const hostImportMap = JSON.parse(
+  readFileSync(new URL('./import-map.json', import.meta.url), 'utf8'),
+) as { imports: Record<string, string> }
 
 export default defineConfig({
   plugins: [
@@ -169,12 +144,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, 'src/index.ts'),
       },
-      external: [
-        'vue',
-        'pinia',
-        '@iconify/vue',
-        '@wippy-fe/proxy',
-      ],
+      external: Object.keys(hostImportMap.imports),
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
@@ -192,7 +162,7 @@ export default defineConfig({
 
 **No `base: ''`** — lib mode does not emit an HTML file, so there are no asset path concerns with `base`.
 
-**Slimmer `external` list** — web components do not use `vue-router` (they are not routable pages), so it is omitted.
+**The same complete external list** — pages and web components use every key from the pinned Web Host map. Unused external keys do not add bundle code. Do not maintain a smaller web-component list.
 
 ### `preserveEntrySignatures` and the facade problem
 
@@ -226,15 +196,13 @@ Verify your build output contains the actual component code in `index.js` and no
 
 ## Build Output Location
 
-Vite configs in Wippy FE projects do **not** hardcode `outDir`. The output directory is passed by the build orchestrator on the command line:
+Vite configs in Wippy FE projects do **not** hardcode `outDir`. Every deployable frontend build must pass the verified output directory and clear that exact directory through the canonical command:
 
 ```bash
-npm run build -- --outDir ../../../static/wc/reaction-bar --emptyOutDir
+npm run build -- --outDir <abs-or-relative> --emptyOutDir
 ```
 
-This decouples the build definition from the deployment layout. The same Vite config can target a local `static/` directory for serving via the Wippy backend, a temporary directory for CDN upload, or a staging path — without touching `vite.config.ts`.
-
-The `--emptyOutDir` flag clears the target directory before building, preventing stale files from previous builds from lingering.
+Resolve the registry owner, module/static mount, build owner, and emitted entry before choosing `<abs-or-relative>`. `--emptyOutDir` is mandatory after that safety check; it prevents stale files from surviving in the verified target.
 
 ## npm Scripts
 
@@ -294,22 +262,91 @@ Without this package, TypeScript will not know the shape of the internal proxy g
 
 ## Multi-Project Builds
 
-Repos that contain several apps and web components (like the app template) build each project independently and collect the outputs into a shared `static/` directory. A Makefile is a common orchestrator:
+Every module that publishes frontend artifacts ships a `Makefile`, `make.ps1`, and a delegating `make.bat`. Each frontend entry has one build target, and build/publish chains invoke those targets.
 
 ```makefile
 build: build-app-main build-wc-reaction-bar build-wc-chart-circle
 
 build-app-main:
-    cd frontend/applications/main && npm install && npm run build -- \
-        --outDir ../../../static/app/main --emptyOutDir
+	cd frontend/applications/main && npm install && npm run build -- \
+	    --outDir ../../../static/app/main --emptyOutDir
 
 build-wc-reaction-bar:
-    cd frontend/web-components/reaction-bar && npm install && npm run build -- \
-        --outDir ../../../static/wc/reaction-bar --emptyOutDir
+	cd frontend/web-components/reaction-bar && npm install && npm run build -- \
+	    --outDir ../../../static/wc/reaction-bar --emptyOutDir
 
 build-wc-chart-circle:
-    cd frontend/web-components/chart-circle && npm install && npm run build -- \
-        --outDir ../../../static/wc/chart-circle --emptyOutDir
+	cd frontend/web-components/chart-circle && npm install && npm run build -- \
+	    --outDir ../../../static/wc/chart-circle --emptyOutDir
+```
+
+`make.bat` only forwards arguments and the exit code to its PowerShell counterpart:
+
+```bat
+@echo off
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0make.ps1" %*
+exit /b %ERRORLEVEL%
+```
+
+`make.ps1` mirrors every Makefile target and runs the same canonical build command:
+
+```powershell
+param(
+    [Parameter(Position = 0)]
+    [string]$Target = "build"
+)
+
+$ErrorActionPreference = "Stop"
+
+function Invoke-Npm {
+    param([string[]]$Arguments)
+    & npm.cmd @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "npm failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Build-Frontend {
+    param(
+        [string]$PackagePath,
+        [string]$OutputPath
+    )
+
+    Push-Location (Join-Path $PSScriptRoot $PackagePath)
+    try {
+        Invoke-Npm @("install", "--no-audit", "--no-fund", "--prefer-offline")
+        $resolvedOutput = [IO.Path]::GetFullPath(
+            (Join-Path $PSScriptRoot $OutputPath)
+        )
+        & npm.cmd run build -- --outDir $resolvedOutput --emptyOutDir
+        if ($LASTEXITCODE -ne 0) {
+            throw "frontend build failed with exit code $LASTEXITCODE"
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+switch ($Target) {
+    "build-app-main" {
+        Build-Frontend "frontend/applications/main" "static/app/main"
+    }
+    "build-wc-reaction-bar" {
+        Build-Frontend "frontend/web-components/reaction-bar" "static/wc/reaction-bar"
+    }
+    "build-wc-chart-circle" {
+        Build-Frontend "frontend/web-components/chart-circle" "static/wc/chart-circle"
+    }
+    "build" {
+        Build-Frontend "frontend/applications/main" "static/app/main"
+        Build-Frontend "frontend/web-components/reaction-bar" "static/wc/reaction-bar"
+        Build-Frontend "frontend/web-components/chart-circle" "static/wc/chart-circle"
+    }
+    default {
+        throw "Unknown target: $Target"
+    }
+}
 ```
 
 The `static/` directory is then served by the Wippy backend, and each registry entry's `url` or `base_path` field points into the appropriate subdirectory.

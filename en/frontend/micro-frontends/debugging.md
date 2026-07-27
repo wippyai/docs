@@ -10,7 +10,7 @@ When something is broken, start here. Each section lists the most common causes 
 ## Blank screen on load
 
 **1. Check the Console first:**
-- `Failed to resolve module specifier 'vue'` — the import map is missing. In hosted mode, the host injects it; in host-less mode, confirm your `app.html` `<script type="importmap">` block includes `vue`, `pinia`, and `vue-router`. (Do NOT list `@wippy-fe/proxy` there. It IS a real ES module — it's in your vite `rollupOptions.external` and IS resolved via an importmap entry — but you don't author that entry: in hosted mode the Web Host injects `@wippy-fe/proxy` → `<host>/<tag>/@wippy-fe/proxy.js` into the merged importmap (and the host's entries override yours), and in host-less mode `dev-proxy` provides the mapping. Omit it because the host / dev-proxy OWNS that mapping — not because the proxy is "resolved only via globals.")
+- `Failed to resolve module specifier 'vue'` — the page externalized a specifier that its active import map does not provide. In hosted mode inspect the import map actually served by the target Web Host release; in host-less mode inspect the map in `app.html`. Compare every Rollup external against that exact map instead of assuming a canonical package list or merge precedence.
 - `Proxy globals not found` (or your `@wippy-fe/proxy` imports come back undefined) — `proxy.js` / `dev-proxy.js` did not load before your app script ran, so the runtime never installed its internal globals. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
 - Silent hang (no errors, no app) — config is injected synchronously as `window.__WIPPY_APP_CONFIG__` before `proxy.js` runs, so the `@wippy-fe/proxy` getters resolve (or throw `Proxy globals not found`) immediately; they do not await `SetConfig`. A true hang means the runtime never mounted — either `proxy.js` / `dev-proxy.js` failed to load and install its globals (see the `Proxy globals not found` bullet above), or, in host-less mode, the dev overlay is sitting in "waiting" because you haven't clicked **Accept**. Confirm the dev overlay FAB (floating button) appeared; if not, the proxy script did not load. (The `SetConfig` / `GetConfig` handshake only applies to the host-level manual `iframe.html?waitForCustomConfig` embedding, not a hosted or host-less micro frontend.)
 
@@ -25,7 +25,7 @@ When something is broken, start here. Each section lists the most common causes 
 window.$W              // should be an object, not undefined
 window.__WIPPY_APP_API__ // the resolved proxy instance — present once the runtime installed
 ```
-The `@wippy-fe/proxy` getters READ these globals (`window.__WIPPY_APP_API__` is the live host instance) — that is separate from how the `@wippy-fe/proxy` module URL itself resolves. If these globals are present but your `@wippy-fe/proxy` imports still come back undefined, you have a wrong/stale `@wippy-fe/proxy` entry in your `app.html` importmap pointing the module at a URL that never installs the runtime globals (the host's own entry overrides yours, so this only bites in host-less mode). Remove your entry and let `dev-proxy` / the host supply it.
+The `@wippy-fe/proxy` getters read these globals (`window.__WIPPY_APP_API__` is the live host instance); that is separate from how the module URL resolves. If the globals exist but imports fail, inspect the active import map and the network response for the exact `@wippy-fe/proxy` specifier. Fix the map or externalization decision in the environment that serves the page; do not infer hosted behavior from a successful host-less boot.
 
 ## Web component never appears
 
@@ -90,24 +90,20 @@ See [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) or [Theming:
 
 ## Host URL bar doesn't update
 
-Your micro frontend app must call `host.onRouteChanged` in every `router.afterEach` and subscribe to `@history` events to sync back. If either is missing, the URL bar freezes and the back button breaks.
+Portable micro frontend apps must use the `createAppRouter()` factory from `@wippy-fe/router`. The package owns both directions of host synchronization; application code must not reproduce `router.afterEach` and `@history` wiring.
 
 **Check:**
 ```typescript
-import { host, on } from '@wippy-fe/proxy'
+import { createAppRouter } from '@wippy-fe/router'
+import { config } from '@wippy-fe/proxy'
+import { routes } from './routes'
 
-// Must exist in app.ts / router setup
-router.afterEach((to) => {
-  host.onRouteChanged(to.fullPath)  // notifies host of new child route
-})
-
-// Must exist to receive host-initiated navigation
-on('@history', ({ path }) => {
-  router.push(path)
+const router = createAppRouter(routes, {
+  initialPath: config.context?.route ?? '/',
 })
 ```
 
-In host-less mode: the dev overlay Monitor tab shows the current route the proxy thinks the app is on. If it's not updating, `onRouteChanged` isn't being called.
+If the host URL still does not update, confirm the current `@wippy-fe/router` family is installed coherently and that no local wrapper replaces the factory. In host-less mode, the dev overlay Monitor tab shows the route the package reports.
 
 ## Works locally, breaks when hosted
 
@@ -127,7 +123,11 @@ Undefined means the proxy was not injected before your app ran. App code never r
 Without `base: ''`, Vite emits absolute asset paths. The app loads fine on your local dev server (which serves from `/`) but 404s when served from a CDN subdirectory.
 
 **4. Import map mismatch:**
-Your `app.html` may have an inline import map that pins specific versions. In hosted mode, the host replaces this with its own import map. If your inline map pins different versions, you get conflicts. Remove or keep your inline map in sync with the host's version.
+Re-fetch `<version-tag>/import-map.json` from the Web Host release pinned by
+`fe_facade_url`. Replace the complete `imports` object in host-less `app.html`
+and regenerate Vite externals from all of its keys. Do not remove the host-less
+map or patch individual entries. Bundle a newly imported exact specifier only
+when it is absent from the fetched map.
 
 ## Using the logger as a debugging tool
 

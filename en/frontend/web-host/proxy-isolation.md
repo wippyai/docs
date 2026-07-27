@@ -23,8 +23,10 @@ import { host, api, on, config } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
 const data = await api.get('/api/v1/agents')   // api is an axios instance; the await is the HTTP call
-on('@history', ({ path }) => router.replace(path))
+on('@visibility', (visible) => { /* pause or resume work */ })
 ```
+
+Portable Vue routing is the exception: `@wippy-fe/router` consumes `@history` and reports local navigation for you. Do not add manual routing subscriptions around it.
 
 These getters are **synchronous**: `host`, `api`, `on`, `config`, and the rest are ready the moment your code runs — config is in place before the runtime initializes (see below), so there is no handshake to await. Mark `@wippy-fe/proxy` as `external` in your Vite build — the host provides it through the import map. See [Proxy API](../micro-frontends/proxy-api.md) for the full surface.
 
@@ -267,7 +269,7 @@ The element sets a `status` attribute (`loading`, `ready`, `error`) and exposes 
 
 ```css
 w-artifact[status="loading"] { opacity: 0.5; }
-w-artifact[status="error"]   { border: 1px solid theme('colors.red.500'); }
+w-artifact[status="error"]   { border: 1px solid var(--p-danger-color); }
 
 w-artifact::part(loader) { font-size: 1rem; }
 w-artifact::part(frame)  { border: 0; }

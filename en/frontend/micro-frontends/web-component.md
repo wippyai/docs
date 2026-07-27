@@ -44,23 +44,23 @@ my-widget/
   "browser": "dist/index.js",
   "files": ["dist/", "src/", "package.json"],
   "dependencies": {
-    "@wippy-fe/theme": "^0.0.34",
-    "@wippy-fe/webcomponent-core": "^0.0.34",
-    "@wippy-fe/webcomponent-vue": "^0.0.34"
+    "@wippy-fe/theme": "^0.0.46",
+    "@wippy-fe/webcomponent-core": "^0.0.46",
+    "@wippy-fe/webcomponent-vue": "^0.0.46"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-vue": "^5.0.0",
-    "@wippy-fe/vite-plugin": "^0.0.34",
-    "@wippy-fe/proxy": "^0.0.34",
+    "@wippy-fe/vite-plugin": "^0.0.46",
+    "@wippy-fe/proxy": "^0.0.46",
     "typescript": "^5.0.0",
     "vite": "^6.0.0",
     "vue": "^3.5.0",
     "vue-tsc": "^2.0.0"
   },
   "peerDependencies": {
-    "@wippy-fe/proxy": "^0.0.34",
+    "@wippy-fe/proxy": "^0.0.46",
     "vue": "^3.5.0"
   },
   "wippy": {
@@ -123,7 +123,7 @@ my-widget/
 
 **Package naming:** `@<namespace>/widget-<description>`. Examples: `@acme/widget-data-table`, `@myorg/widget-reaction-bar`.
 
-**Peer dependencies:** `vue` and `@wippy-fe/proxy` are provided by the host import map and must be in `peerDependencies` and marked `external` in `vite.config.ts`. `pinia` and `@iconify/vue` are also host-provided — add them if you use them directly. Never bundle `@wippy-fe/pinia-persist` as an external — it is not in the host import map and must be bundled.
+**Dependency contract:** fetch the target Web Host release's `import-map.json` once during development. Rollup externals are every key in its `imports` object, including keys this component does not currently import. Bundle an imported exact specifier when it is absent from that map. PrimeVue subpaths follow the same exact-key rule. Re-fetch the map when the Web Host tag changes or before adding a dependency, to check whether the new exact specifier can be external. Keep `peerDependencies` limited to the package roots this component actually imports; it is not a copy of the full external list.
 
 ### Props schema and attribute serialization
 
@@ -204,15 +204,20 @@ Vite's default behaviour wraps library entry points in a "facade chunk" that re-
 ## `vite.config.ts`
 
 ```typescript
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
 
+const hostImportMap = JSON.parse(
+  readFileSync(new URL('./import-map.json', import.meta.url), 'utf8'),
+)
+
 export default defineConfig({
   plugins: [
     vue(),
-    wippyComponentPlugin(),  // Emits dist/wippy-meta.json on every build
+    wippyComponentPlugin(),  // Emits wippy-meta.json in the actual output directory
   ],
   build: {
     target: 'esnext',
@@ -231,12 +236,7 @@ export default defineConfig({
       // and Vite's lib-mode handling has varied across versions, so omitting
       // this line can still emit a facade and make define() silently fail.
       preserveEntrySignatures: false,
-      external: [
-        'vue',
-        'pinia',
-        '@iconify/vue',
-        '@wippy-fe/proxy',
-      ],
+      external: Object.keys(hostImportMap.imports),
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
@@ -251,8 +251,8 @@ export default defineConfig({
 Key differences from a micro frontend app's `vite.config.ts`:
 
 - **`lib` mode** — builds a JS module, not an HTML page. No `base: ''` needed.
-- **No `vue-router`** in externals — web components don't use routing.
-- **`wippyComponentPlugin()`** instead of `wippyPagePlugin()` — emits `dist/wippy-meta.json` with `type: "widget"` metadata.
+- **Full target-host external set** — the external list mirrors every key in the fetched import map. It is not reduced to this component's current imports.
+- **`wippyComponentPlugin()`** instead of `wippyPagePlugin()` — emits `wippy-meta.json` in the actual output directory with component metadata.
 - **`entryFileNames: '[name].js'`** — produces `dist/index.js`, the path declared in `browser` and the default path for the `view.component` registry entry.
 
 ## `src/types.ts` and `src/constants.ts`
@@ -381,34 +381,47 @@ Web components use shadow DOM, which isolates styles. No external CSS bleeds in,
 
 **`inlineCss`** — your component's own compiled CSS, provided as a string via the `?inline` Vite import. Injected into the shadow root as a `<style>` element at mount time.
 
-**`hostCssKeys`** — an array of URL keys requested from `@wippy-fe/proxy` at runtime. The base class fetches each URL and injects it as an `<link rel="stylesheet">` in the shadow root. These are static platform assets (theme-config, PrimeVue, markdown, iframe), not the facade's configured CSS.
+**`hostCssKeys`** — an array of URL keys requested from `@wippy-fe/proxy` at runtime. The base class fetches each asset and installs its CSS in the shadow root. Treat the DOM delivery mechanism as an implementation detail; inspect `style[role="@wippy-fe/host-css"]` and adopted stylesheets when debugging. These are static platform assets (theme-config, PrimeVue, markdown, iframe), not the facade's configured CSS.
 
-**Facade custom CSS (`customCss`, default on — Web Host 1.0.43+)** — the runtime injects the custom CSS the host composed for children (**global + children** = `custom_css` + `children_custom_css`) into the shadow root via an adopted stylesheet, so it cascades after (and can override) your component's own styles. Set `customCss: false` in `wippyConfig` to opt out — for a fully self-styled component that must not receive host/app custom CSS. Custom properties (`--p-*`) inherit across the boundary independently of this flag.
+**Facade custom CSS (`customCss`, default on — Web Host 1.0.43+)** — the runtime installs the custom CSS the host composed for children (**global + children** = `custom_css` + `children_custom_css`) in the shadow root so it cascades after the component's own styles. It may use an adopted stylesheet or a `<style>` fallback. Set `customCss: false` only for a deliberately self-styled component that must not receive host/app custom CSS. Custom properties (`--p-*`) inherit independently of this flag.
 
 ### `hostCssKeys` reference
 
 | Key | What it loads | When to include |
 |---|---|---|
-| `themeConfigUrl` | CSS custom properties (`--p-primary-*`, `--p-surface-*`, `--p-text-color`, etc.) | **Always** — required for theme integration and dark mode |
+| `themeConfigUrl` | CSS custom properties (`--p-primary-*`, `--p-surface-*`, `--p-text-color`, etc.) | When the component consumes Wippy semantic tokens, dark mode, or themed chrome |
 | `primeVueCssUrl` | PrimeVue component classes (unstyled mode) | When using any PrimeVue components |
 | `markdownCssUrl` | Styles for rendered markdown blocks | Only if rendering markdown |
-| `iframeCssUrl` | Scrollbar styling, iframe-related layout | Recommended for all components |
+| `iframeCssUrl` | Default themed scrollbar styling; the name is historical | Required when the component can scroll |
 
 Common combinations:
 
 ```typescript
-// Minimal — custom CSS only
+// Themed component without PrimeVue controls
 hostCssKeys: ['themeConfigUrl'] as const
 
-// With PrimeVue
-hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl'] as const
+// PrimeVue product UI that also consumes the Wippy theme
+hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl'] as const
 
 // Markdown renderer
 hostCssKeys: ['themeConfigUrl', 'markdownCssUrl'] as const
 
-// Fully self-styled — skip host CSS
+// Presentation-neutral chart/canvas/SVG with no standard product controls,
+// semantic theme tokens, Tailwind utilities, or scrolling
 hostCssKeys: [] as const
 ```
+
+PrimeVue, Wippy theme assets, Tailwind, and scrollbar CSS are independent
+decisions. A chart-only canvas/SVG component can omit all of them. Once a
+component adds a standard product control such as a button, input, form, table,
+dialog, menu, tag, tooltip, or feedback surface, use the PrimeVue equivalent,
+install `PrimeVuePlugin`, and include `primeVueCssUrl`. Include
+`themeConfigUrl` only when consuming Wippy theme tokens or dark mode, include
+Tailwind only when source code uses Tailwind utilities, and include
+`iframeCssUrl` whenever the component can scroll.
+
+A standard control forces PrimeVue, but does not by itself force
+`themeConfigUrl` or Tailwind. Evaluate those two independently.
 
 ### Writing component CSS
 
@@ -544,7 +557,10 @@ const store = useMyStore(props.value.persistKey)
 
 ## Variant A — minimal (no Tailwind, no PrimeVue)
 
-Use this for components that only need theme variables and custom CSS.
+Use this only for presentation or domain content with no standard product
+control or surface that PrimeVue provides. If this component adds a button,
+input, form, table, dialog, menu, tag, tooltip, or feedback control, use
+Variant B with PrimeVue.
 
 `src/index.ts`:
 
@@ -589,9 +605,9 @@ Additional dependencies in `package.json`:
 ```json
 {
   "dependencies": {
-    "@wippy-fe/theme": "^0.0.34",
-    "@wippy-fe/webcomponent-core": "^0.0.34",
-    "@wippy-fe/webcomponent-vue": "^0.0.34",
+    "@wippy-fe/theme": "^0.0.46",
+    "@wippy-fe/webcomponent-core": "^0.0.46",
+    "@wippy-fe/webcomponent-vue": "^0.0.46",
     "primevue": "^4.3.3"
   },
   "devDependencies": {
@@ -886,13 +902,13 @@ The `wippy.scripts` map in `package.json` tells the platform which npm scripts t
 
 | `wippy.scripts` key | npm script | When called |
 |---|---|---|
-| `"build": "build"` | `npm run build` | Production build |
+| `"build": "build"` | `npm run build -- --outDir <abs-or-relative> --emptyOutDir` | Deployable production build; Makefile and make.ps1 supply the real output path |
 | `"debug": "build:debug"` | `npm run build:debug` | Development build with source maps |
 | `"test": "lint"` | `npm run lint` | Validation / CI |
 
 ## `wippy-meta.json`
 
-`wippyComponentPlugin()` in `vite.config.ts` emits `dist/wippy-meta.json` next to `dist/index.js` on every build. The views API reads this file for tag name, props, and events metadata. For `wippy/views` ≥ 0.5.0 this file is required — without it the host falls back to a deprecated YAML synthesis path.
+`wippyComponentPlugin()` in `vite.config.ts` emits `wippy-meta.json` beside the component entry in the actual Vite output directory. The views API reads this file for tag name, props, and events metadata. For the current contract (`wippy/views` 1.0.31 or newer with the coherent `@wippy-fe/vite-plugin` family), it is required in the served output. Do not rely on historical synthesis fallbacks.
 
 ## Testing without the host
 

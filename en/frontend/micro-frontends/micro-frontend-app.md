@@ -49,12 +49,14 @@ Use kebab-case for all file names (`recent-sessions.vue`, `user-profile.vue`).
   "description": "Dashboard application",
   "files": ["dist/", "src/", "package.json"],
   "dependencies": {
-    "@wippy-fe/theme": "^0.0.34"
+    "@wippy-fe/pinia-persist": "^0.0.46",
+    "@wippy-fe/router": "^0.0.46",
+    "@wippy-fe/theme": "^0.0.46"
   },
   "devDependencies": {
-    "@wippy-fe/shared": "^0.0.34",
-    "@wippy-fe/vite-plugin": "^0.0.34",
-    "@wippy-fe/types-global-proxy": "^0.0.34",
+    "@wippy-fe/shared": "^0.0.46",
+    "@wippy-fe/vite-plugin": "^0.0.46",
+    "@wippy-fe/types-global-proxy": "^0.0.46",
     "@vitejs/plugin-vue": "^5.0.0",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
@@ -68,9 +70,7 @@ Use kebab-case for all file names (`recent-sessions.vue`, `user-profile.vue`).
   },
   "peerDependencies": {
     "@iconify/vue": "^5.0.0",
-    "@wippy-fe/pinia-persist": "^0.0.34",
-    "@wippy-fe/proxy": "^0.0.34",
-    "@wippy-fe/router": "^0.0.34",
+    "@wippy-fe/proxy": "^0.0.46",
     "axios": "^1.0.0",
     "luxon": "^3.5.0",
     "pinia": "^2.1.0",
@@ -131,7 +131,7 @@ Use kebab-case for all file names (`recent-sessions.vue`, `user-profile.vue`).
 
 **Package naming convention:** `@<namespace>/<type>-<description>` where type is `app` for pages. Examples: `@acme/app-analytics-dashboard`, `@myorg/app-user-settings`.
 
-**Peer dependencies:** Libraries provided by the host via import map must be in `peerDependencies` and marked external in the bundler. Never bundle `vue`, `pinia`, `vue-router`, `@wippy-fe/proxy`, `axios`, `@iconify/vue`, `luxon`, `nanoevents`, or `@tanstack/vue-query`.
+**Externalization:** fetch `<fe_facade_url>/import-map.json` once during development and put every `imports` key in Rollup externals. Re-fetch when the tag changes or a new dependency is added. `peerDependencies` contain only imported npm package roots that the pinned map supplies; absent imports remain regular dependencies and are bundled.
 
 ### Proxy injections
 
@@ -140,8 +140,8 @@ The iframe proxy enables most injections when a package omits explicit settings.
 | Key | Effect | Recommended explicit value |
 |---|---|---|
 | `css.themeConfig` | Injects CSS custom properties (`--p-primary-*`, `--p-surface-*`, etc.) | `true` |
-| `css.iframe` | Scrollbar and iframe layout styles | `true` |
-| `css.primevue` | PrimeVue component styles (unstyled mode) | `true` |
+| `css.iframe` | Required default themed scrollbar styling; `iframe` is a historical name | `true` |
+| `css.primevue` | PrimeVue component styles and Tailwind utilities | `true` for this full-UI template; disable only for an artifact with no PrimeVue-like UI |
 | `css.markdown` | Styles for rendered markdown | `true` |
 | `css.customCss` | Host-level custom CSS overrides | `true` |
 | `css.customVariables` | Host-level CSS variable overrides | `true` |
@@ -154,6 +154,11 @@ The iframe proxy enables most injections when a package omits explicit settings.
 
 Vite takes `app.html` as its build input. The file serves two purposes: it is the production iframe document after build, and it boots the app standalone during local development via `dev-proxy.js`.
 
+This abbreviated shell omits the import-map body. Copy the complete valid
+`<script type="importmap">` block from
+[Compliance Checklist §3.3](./compliance-checklist.md#33-apphtml), or replace
+that block with the complete response fetched for your pinned Web Host tag.
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -161,23 +166,12 @@ Vite takes `app.html` as its build input. The file serves two purposes: it is th
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My App</title>
-  <script type="importmap">
-  {
-    "imports": {
-      "vue": "https://esm.sh/vue@3",
-      "pinia": "https://esm.sh/pinia",
-      "vue-router": "https://esm.sh/vue-router@4",
-      "luxon": "https://esm.sh/luxon",
-      "@iconify/vue": "https://esm.sh/@iconify/vue",
-      "axios": "https://esm.sh/axios"
-    }
-  }
-  </script>
+  <!-- Required complete import-map script omitted from this abbreviated shell. -->
   <script
-    src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"
+    src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js"
     data-role="@wippy/scripts"
   ></script>
-  <!-- Replace <release-tag> with the tag matching your facade's fe_facade_url. See host-less-mode.md. -->
+  <!-- Re-fetch and replace both map and script tag when the facade tag changes. -->
 </head>
 <body>
   <div id="app">
@@ -190,7 +184,7 @@ Vite takes `app.html` as its build input. The file serves two purposes: it is th
 
 **The `data-role="@wippy/scripts"` attribute is the switchpoint.** When the host loads this page, it strips the `<script>` element that carries this attribute and injects its own `loading.js` and `proxy.js` scripts in its place — those scripts register the `<wippy-loading>` and `<wippy-error>` custom elements and install the proxy runtime so the `@wippy-fe/proxy` getters resolve. When the page loads standalone (no host), the `src=` URL falls through and `dev-proxy.js` installs the same runtime so `@wippy-fe/proxy` imports resolve. See [host-less-mode.md](./host-less-mode.md) for the full dual-mode contract.
 
-The import map in `app.html` is used in host-less mode only. In hosted mode, the host injects its own import map before your scripts run.
+The import map in `app.html` is used in host-less mode only. It must contain the complete fetched `imports` object, not a curated subset or reconstructed `esm.sh` map. Hosted mode injects the map from the same pinned Web Host release.
 
 `<wippy-loading>` in the initial `#app` div shows a themed loading spinner while `src/app.ts` initialises asynchronously. Replace it by mounting the Vue app to `#app`.
 
@@ -200,38 +194,34 @@ Only the Wippy-critical lines are shown here. Full annotated config in [Build Sy
 
 ```typescript
 import { wippyPagePlugin } from '@wippy-fe/vite-plugin'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
+
+const hostImportMap = JSON.parse(
+  readFileSync(new URL('./import-map.json', import.meta.url), 'utf8'),
+) as { imports: Record<string, string> }
 
 export default defineConfig({
   base: '',  // Mandatory — portable bundle, no CDN prefix assumed
   plugins: [
     vue(),
-    wippyPagePlugin(),  // Emits dist/wippy-meta.json on every build
+    wippyPagePlugin(),  // Emits wippy-meta.json in the actual output directory
   ],
   build: {
     rollupOptions: {
-      external: [
-        'vue',
-        'pinia',
-        'vue-router',
-        '@iconify/vue',
-        '@wippy-fe/proxy',
-        'axios',
-        'luxon',
-        'nanoevents',
-        '@tanstack/vue-query',
-        '@tanstack/query-core',
-      ],
+      external: Object.keys(hostImportMap.imports),
     },
   },
 })
 ```
 
 - **`base: ''`** — the bundle loads at an unknown relative path inside the host. An empty string keeps all asset references relative. Never set this to `/` or a CDN URL.
-- **`rollupOptions.external`** — these libraries are provided by the host via import map. Every import map entry you use in your code must appear here.
-- **`wippyPagePlugin()`** — emits `dist/wippy-meta.json` alongside the built HTML. Without it, the host falls back to a deprecated synthesis path.
+- **`rollupOptions.external`** — contains every key from the complete pinned Web Host map, including unused keys. Every imported specifier absent from that map stays bundled.
+- **`wippyPagePlugin()`** — emits `wippy-meta.json` alongside the built HTML in the actual output directory.
 
-**PrimeVue externals:** PrimeVue is **not** in the host import map. Either bundle it (add it to `dependencies`, don't list it in `external`) or serve it from your app's own `<script type="importmap">` in `app.html`. If you externalize PrimeVue, add each subpath you import (`primevue/config`, `primevue/button`, etc.) to both the import map and the `external` array.
+**PrimeVue externals:** the same exact-key rule applies. A future map entry for `primevue/button` permits that subpath only; it does not imply any other PrimeVue subpath.
+
+This example is a full product UI and therefore includes PrimeVue, `PrimeVuePlugin`, theme assets, and Tailwind. A presentation-neutral chart-only artifact may omit them. Once any standard control or themed/utility-styled shell is added, include the applicable systems.
 
 ## `src/app.ts` — bootstrap sequence
 
@@ -248,8 +238,8 @@ import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 
 import App from './app/app.vue'
 import { AXIOS_INSTANCE, HOST_API } from './constants'
-import { createAppRouter } from './router'
-import '@wippy-fe/theme/theme-config.css'
+import { createAppRouter } from '@wippy-fe/router'
+import { routes } from './router'
 import './styles.css'
 import './tailwind.css'
 
@@ -296,8 +286,8 @@ export async function createMainApp() {
   app.provide(HOST_API, host)
   app.provide(AXIOS_INSTANCE, api)
 
-  // Step 7: Create router with the host and the `on` subscriber.
-  const router = createAppRouter(host, on, initialPath)
+  // Step 7: The package owns memory history and both host-sync directions.
+  const router = createAppRouter(routes, { initialPath })
   app.use(router)
 
   return app
@@ -316,86 +306,24 @@ The host (and `dev-proxy.js` in host-less mode) installs the proxy runtime so th
 
 ## Router: mandatory host sync
 
-Micro Frontend Apps must use `createMemoryHistory`. Browser history is not available — the app runs in an iframe loaded as `srcdoc`, not at a real URL. Memory history also avoids polluting the parent window's history stack.
+Portable, `auto`, and iframe-capable pages use `@wippy-fe/router`, whose factory provides memory history and host synchronization. A direct browser-history router is valid only for an explicitly Fragment-only artifact and makes that artifact non-portable.
 
-> **Naming note.** The `createAppRouter` in this deep-dive is a thin **project-local** wrapper (`src/router/index.ts`, signature `(host, on, initialPath)`) — distinct from the `@wippy-fe/router` **factory** the [Quickstart](./quickstart.md) imports directly, whose signature is positional `(routes, options?)`. The wrapper just adapts that factory (shown at the end of this section).
-
-Two sync hooks are required on every router:
-
-```typescript
-import { createMemoryHistory, createRouter } from 'vue-router'
-import type { Router } from 'vue-router'
-import type { HostApi } from '../types'
-
-type OnSubscription = (
-  pattern: string,
-  callback: (event: { path?: string; message?: unknown }) => void,
-) => void
-
-export function createAppRouter(
-  host: HostApi,
-  on: OnSubscription | null,
-  initialPath?: string,
-): Router {
-  const history = createMemoryHistory()
-  // Set the initial path on the history object before the router is created.
-  // Do NOT pass initialPath to createMemoryHistory() directly — that constructor
-  // argument is the base, not the current path. Do NOT use router.push() after
-  // creation — the router would not yet be mounted and the navigation would fire
-  // against the wrong state.
-  if (initialPath && initialPath !== '/') {
-    history.replace(initialPath)
-  }
-
-  const router = createRouter({
-    history,
-    routes: [
-      {
-        path: '/',
-        name: 'home',
-        component: () => import('../pages/home.vue'),
-      },
-      // Add more routes here
-      {
-        path: '/:pathMatch(.*)*',
-        name: 'not-found',
-        redirect: '/',
-      },
-    ],
-  })
-
-  // Notify the host whenever the in-app route changes.
-  // The host uses this to update its own URL bar and back/forward history.
-  router.afterEach((to) => {
-    host.onRouteChanged(to.fullPath)
-  })
-
-  // Mirror host navigation back into the app.
-  // When the user clicks Back/Forward in the host or navigates to a deep link,
-  // the host emits @history and the app router must respond.
-  if (on) {
-    on('@history', ({ path }) => {
-      if (!path) return
-      const normalized = path.startsWith('/') ? path : '/' + path
-      if (router.currentRoute.value.fullPath !== normalized) {
-        router.push(normalized)
-      }
-    })
-  }
-
-  return router
-}
-```
-
-The real template uses `@wippy-fe/router`'s `createAppRouter` factory, which encapsulates exactly this pattern. You can use it directly:
+Use the package factory directly in `app.ts`, as shown above. It owns memory
+history, initial-route normalization, host synchronization, local-route
+registration, and echo-loop suppression. Keep the local router module to route
+records only:
 
 ```typescript
-import { createAppRouter as createAppRouterFactory } from '@wippy-fe/router'
+// src/router/index.ts
+import type { RouteRecordRaw } from 'vue-router'
 
-export function createAppRouter(host: HostApi, on: OnSubscription | null, initialPath: string): Router {
-  return createAppRouterFactory(routes, { host: host as never, on: on as never, initialPath })
-}
+export const routes: RouteRecordRaw[] = [
+  { path: '/', name: 'home', component: () => import('../pages/home.vue') },
+  { path: '/:pathMatch(.*)*', name: 'not-found', redirect: '/' },
+]
 ```
+
+Do not fall back to `window.location` or `window.parent.location` when AppConfig has no route. Use `/` or an application-owned default. Do not add manual `createMemoryHistory`, `router.afterEach`, or `on('@history', ...)` plumbing around the factory.
 
 ## Composables pattern
 
@@ -487,7 +415,7 @@ host.logout()
 
 Install Pinia in `app.ts` as shown above. To persist store state across iframe reloads (the iframe is destroyed and recreated on navigation in some host configurations), use `@wippy-fe/pinia-persist`.
 
-`@wippy-fe/pinia-persist` is **not** in the host import map. Bundle it — do not add it to `rollupOptions.external`.
+Bundle `@wippy-fe/pinia-persist` unless the exact target host import map explicitly supplies that specifier.
 
 ```typescript
 // src/stores/my-store.ts
@@ -604,7 +532,7 @@ onMounted(loadItems)
 <template>
   <div class="p-6">
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-semibold text-surface-900 dark:text-surface-0">
+      <h1 class="text-xl font-semibold text-[var(--p-text-color)]">
         Items
       </h1>
       <Button size="small" @click="loadItems">
@@ -624,13 +552,14 @@ onMounted(loadItems)
       <li
         v-for="item in items"
         :key="item.id"
-        class="flex items-center justify-between p-3 rounded-lg bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700"
+        class="flex items-center justify-between p-3 rounded-lg bg-[var(--p-content-background)] border border-[var(--p-content-border-color)]"
       >
-        <span class="text-sm text-surface-800 dark:text-surface-100">{{ item.name }}</span>
+        <span class="text-sm text-[var(--p-text-color)]">{{ item.name }}</span>
         <Button
           text
           severity="danger"
           size="small"
+          :aria-label="`Delete ${item.name}`"
           @click="deleteItem(item.id)"
         >
           <Icon icon="tabler:trash" />
@@ -684,9 +613,9 @@ svg.iconify {
 
 ## `wippy-meta.json`
 
-`wippyPagePlugin()` in `vite.config.ts` emits `dist/wippy-meta.json` next to `dist/app.html` on every build. This file is the canonical source of identity and presentation metadata for the views API. Do not hand-author it — let the plugin generate it.
+`wippyPagePlugin()` in `vite.config.ts` emits `wippy-meta.json` beside `app.html` in the actual Vite output directory. This file is the canonical source of identity and presentation metadata for the views API. Do not hand-author it — let the plugin generate it.
 
-For `wippy/views` ≥ 0.5.0, this file is required. Without it the host falls back to a deprecated synthesis path and emits a deprecation warning per process.
+For the current contract (`wippy/views` 1.0.31 or newer with the coherent `@wippy-fe/vite-plugin` family), this file is required in the served output. Do not rely on historical synthesis fallbacks.
 
 ## Testing without the host
 
