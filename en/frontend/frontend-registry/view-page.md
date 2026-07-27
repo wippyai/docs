@@ -222,6 +222,8 @@ lower-camel-case keys. The host deep-merges `meta.proxy` over bundled
 Short answer: use `meta.proxy`, not `data.proxy`; keep top-level backend fields
 such as `config_overrides` in snake_case, but preserve nested proxy/config keys
 such as `themeConfig` and `customCss`; keep the `injections` wrapper.
+Do not invent `meta.config` or `meta.configOverrides`; the exact per-page
+override wrapper is `meta.config_overrides`.
 
 Keep the two frontend spellings distinct:
 
