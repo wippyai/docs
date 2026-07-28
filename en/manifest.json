@@ -164,7 +164,9 @@
   {
     "title": "Frontend",
     "children": [
-      {"title": "Overview", "path": "frontend/overview"},
+      {"title": "Frontend Contract: Start Here", "path": "frontend/overview"},
+      {"title": "Platform Topology", "path": "frontend/platform-topology"},
+      {"title": "Portable UI Contract", "path": "frontend/portable-ui-contract"},
       {
         "title": "Frontend Registry",
         "children": [
@@ -193,16 +195,21 @@
         "children": [
           {"title": "Overview", "path": "frontend/micro-frontends/overview"},
           {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
-          {"title": "Micro Frontend App", "path": "frontend/micro-frontends/micro-frontend-app"},
-          {"title": "Web Component", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Page Recipe", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Web Component Recipe", "path": "frontend/micro-frontends/web-component"},
           {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
           {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
-          {"title": "Theming", "path": "frontend/micro-frontends/theming"},
+          {"title": "Theme Authoring", "path": "frontend/micro-frontends/theming"},
+          {"title": "Tailwind Contract", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "Token Catalogue", "path": "frontend/micro-frontends/token-catalogue"},
           {"title": "Theming: Micro Frontend Apps", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
           {"title": "Theming: Web Components", "path": "frontend/micro-frontends/web-component-theming"},
-          {"title": "Build System", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Build and Dependency Contract", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Configuration and Casing", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "Custom Composites", "path": "frontend/micro-frontends/custom-composites"},
           {"title": "Host-less Mode", "path": "frontend/micro-frontends/host-less-mode"},
-          {"title": "Compliance Checklist", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Compliance Rule Index", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Unsupported Project-Bound Modules", "path": "frontend/micro-frontends/unsupported-project-bound"},
           {"title": "Debugging", "path": "frontend/micro-frontends/debugging"}
         ]
       }

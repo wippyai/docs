@@ -58,8 +58,8 @@ This isn't an accident or an afterthought. It is what makes:
 Every canonical app's `app.html` ships with **one** script tag that decides the boot path at load time:
 
 This is an abbreviated body/boot example. Insert the complete valid import-map
-script from [Compliance Checklist §3.3](./compliance-checklist.md#33-apphtml),
-updated from the fetched response when the pinned Web Host tag changes.
+response described by the [Import-map snapshot algorithm](./build-system.md#import-map-snapshot-algorithm),
+updated when the pinned Web Host tag changes.
 
 ```html
 <!-- URL MUST include a release-tag segment: https://web-host.wippy.ai/<release-tag>/dev-proxy.js -->
@@ -100,8 +100,9 @@ curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/import-map.json" -o impor
 Set the text of the `app.html` `<script type="importmap">` element to the
 fetched JSON response verbatim. Do not put comments, ellipsis placeholders, or
 hand-written substitutions inside that JSON. The
-[compliance checklist §3.3](./compliance-checklist.md#33-apphtml) contains a
-valid example for the currently verified release.
+The [Build and Dependency Contract](./build-system.md#import-map-snapshot-algorithm)
+defines the snapshot and provenance requirements; the fetched release response
+provides the exact `imports` object.
 
 Conventions:
 - Put **every fetched key** in Rollup externals, including currently unused keys.

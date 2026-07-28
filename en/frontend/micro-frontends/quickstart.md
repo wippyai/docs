@@ -7,7 +7,7 @@ description: "Two end-to-end examples — a Micro Frontend App (Vue) and a Web C
 
 Two end-to-end examples — a **Micro Frontend App** (Vue) and a **Web Component** (Vue) — taken from the public [`wippyai/app`](https://github.com/wippyai/app) repository. Each shows the minimal files, how to register the artifact with the backend, and how to build it. Follow the links to the repo for the complete, runnable source, and to the deep-dive docs for every option.
 
-**Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node 20+, Vite 6, and the current coherent `@wippy-fe/*` package family. Fetch the target Web Host `import-map.json`, externalize every listed key including unused ones, and bundle an imported exact specifier only when it is absent. See [Build System](./build-system.md) for the toolchain.
+**Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node.js 22 or newer, Vite 7, and the current coherent `@wippy-fe/*` package family selected for the target Web Host. These toolchain requirements come from the selected Web Host package; verify them again when that package changes. Fetch the target Web Host `import-map.json`, externalize every listed key including unused ones, and bundle an imported exact specifier only when it is absent. See [Build System](./build-system.md) for the toolchain.
 
 ---
 
@@ -71,7 +71,12 @@ export function createMainApp() {
     mountRoute: /admin/:part(.*)*
 ```
 
-Build it into the served directory with `npm run build -- --outDir <abs-or-relative> --emptyOutDir`, serve the output where `url + base_path` points, and the host renders it at `/admin`. The module's `Makefile` and `make.ps1` must run that exact build shape; `make.bat` is only a shim that invokes `make.ps1`. Full walkthrough: [Micro Frontend App](./micro-frontend-app.md).
+Invoke the module's Make target to build into the served directory, then serve
+the output where `url + base_path` points; the host renders it at `/admin`.
+The Makefile recipe uses
+`npm run build -- --outDir <abs-or-relative> --emptyOutDir`; `make.ps1`
+implements the same target for Windows, and `make.bat` only invokes
+`make.ps1`. Full walkthrough: [Micro Frontend App](./micro-frontend-app.md).
 
 ---
 
