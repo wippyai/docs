@@ -505,7 +505,7 @@ if (publicationMode) {
       '--theme-root',
       themeRoot,
       '--check',
-    ], { cwd: process.cwd(), encoding: 'utf8' })
+    ], { cwd: process.cwd(), encoding: 'utf8', windowsHide: true })
     if (generated.status !== 0) {
       errors.push(`publication: generated frontend contract or acceptance evidence failed: ${generated.stderr || generated.stdout}`)
     }
@@ -521,14 +521,14 @@ if (publicationMode) {
         acceptanceEvidence,
         '--evidence-sha256',
         evidenceHash,
-      ], { cwd: themeRepositoryRoot, encoding: 'utf8' })
+      ], { cwd: themeRepositoryRoot, encoding: 'utf8', windowsHide: true })
       if (acceptance.status !== 0) {
         errors.push(`publication: selected theme acceptance gate failed: ${acceptance.stderr || acceptance.stdout}`)
       }
       const visual = spawnSync(process.execPath, [
         join(process.cwd(), 'scripts', 'check-frontend-visual-evidence.mjs'),
         visualEvidence,
-      ], { cwd: process.cwd(), encoding: 'utf8' })
+      ], { cwd: process.cwd(), encoding: 'utf8', windowsHide: true })
       if (visual.status !== 0) {
         errors.push(`publication: external visual evidence failed: ${visual.stderr || visual.stdout}`)
       }
