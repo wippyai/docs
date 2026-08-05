@@ -983,7 +983,7 @@ Reference: `gold:mermaid/package.json`.
 - SHOULD use `useHostVisibilityRefresh(task)` when data loaded on mount can become stale while the element remains mounted in an inactive buffer or closed drawer.
 - MUST refresh every remote dataset loaded by that ordinary mounted task, not an arbitrary subset.
 - MUST keep local UI state and non-idempotent subscriptions outside the refresh task.
-- MUST handle cancellation or stale responses when refresh requests can overlap.
+- MUST handle cancellation on unmount and stale responses when another code path can load the same data. The helper serializes its own task and coalesces intervening reveals.
 - MUST test initial load, exact `false -> true`, duplicate suppression, same-element identity, and local-state preservation.
 
 ### 4.2 `vite.config.ts` (web component, library mode)

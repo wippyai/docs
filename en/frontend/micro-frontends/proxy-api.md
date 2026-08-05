@@ -16,16 +16,20 @@ For how the runtime is loaded into each context, see [Proxy & Isolation](../web-
 
 `@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on.
 
-The canonical pattern is identical for micro frontend apps and web components:
+The synchronous getter pattern is shared by micro frontend apps and web components:
 
 ```ts
-import { host, api, on, config, state, ws, logger } from '@wippy-fe/proxy'
+import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
 const agents = await api.get('/api/v1/agents')   // api is axios; the await is the HTTP call, not obtaining `api`
-const off = on('@visibility', (visible) => { /* pause or resume work */ })
 const token = config.auth.token
 ```
+
+Iframe and Web Fragment apps receive lifecycle visibility through the proxy
+`@visibility` topic. Direct web components do not: use `useHostVisibility()`
+or `useHostVisibilityRefresh()` from `@wippy-fe/webcomponent-vue`, or the
+equivalent `WippyElement` APIs.
 
 These getters are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs. The host injects the child config **synchronously, before** the runtime loads (for both `view.page` apps and `view.component` web components), so the runtime initializes before your script executes. You never `await` to *obtain* a getter, and there is no `GetConfig`/`SetConfig` handshake. The only `await` you write is for an actual async operation (an HTTP call via `api`, a `state` read, etc.).
 
@@ -678,7 +682,6 @@ class MyEl extends HTMLElement {
 ### Wildcard patterns
 
 ```typescript
-on('@history', ({ path }) => { /* host URL changed */ })
 // Iframe/Web Fragment pages only; direct WCs use useHostVisibility().
 on('@visibility', (visible: boolean) => { /* shown or hidden */ })
 

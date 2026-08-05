@@ -22,7 +22,7 @@ Opt in to `fe_mode = managed` (early access) only when you need to compose the c
 | Custom sidebar or coordinator component | Limited | Yes — any panel kind |
 | Responsive layouts per breakpoint | No | Yes |
 | Floating overlay panels | No | Yes |
-| Headless background service component | No | Yes (`services`) |
+| Headless coordinator component | No | Yes (`coordinators`) |
 | Per-panel URL-aware routing | Main panel only | Every `kind: page` panel |
 | Cross-panel message bus | No | Yes (`broadcast`/`send`/`on`) |
 
@@ -85,12 +85,13 @@ The entire layout is described by a single `HostLayoutDeclaration` object nested
 | `panels` | `Record<string, HostPanelDef>` | Named panel content definitions. |
 | `floating?` | `Record<string, HostFloatingDef>` | Boot-time floating overlay panels. |
 | `modals?` | `Record<string, HostModalDef>` | Boot-time modal definitions. |
-| `services?` | `Record<string, HostServiceDef>` | Headless coordinator components. |
+| `coordinators?` | `Record<string, HostCoordinatorDef>` | Headless coordinator components. |
+| `services?` | `Record<string, HostCoordinatorDef>` | Deprecated alias for `coordinators`; new declarations must use `coordinators`. |
 | `dragEnabled?` | boolean | Allow user-driven splitter drag. Default `true`. |
 
 ## Panel Kinds
 
-Each entry in `panels`, `floating`, `modals`, and `services` is a tagged union on `kind`:
+Each entry in `panels`, `floating`, `modals`, and `coordinators` is a tagged union on `kind`:
 
 | Kind | Description | Required fields |
 |------|-------------|-----------------|
@@ -99,7 +100,7 @@ Each entry in `panels`, `floating`, `modals`, and `services` is a tagged union o
 | `component` | A web component mounted directly in host DOM | `tagName` |
 | `builtin` | A framework-owned host component (see below) | `id` |
 
-Exactly one panel in the layout tree must carry `main: true`. That panel owns the host's public URL via the backend `mountRoute` field. All other panels route independently inside their iframes.
+Exactly one panel in the layout tree must carry `main: true`. Browser URL ownership still requires route synchronization through `@HOST/compat-coordinator` or equivalent consumer coordination. All other panels route independently inside their iframes.
 
 ### Built-in Panel IDs
 
@@ -111,6 +112,8 @@ Exactly one panel in the layout tree must carry `main: true`. That panel owns th
 | `@HOST/chat-wrapper` | Standard Wippy chat panel for the active session |
 | `@HOST/artifact-viewer` | Generic artifact viewer (pair with route `/:uuid`) |
 | `@HOST/session-selector` | Session list and picker |
+| `@HOST/compat-coordinator` | Headless compat-intent and main-route coordinator; declare under `coordinators` |
+| `@HOST/panel-tab` | Edge tab for revealing a collapsed panel; declare under `floating` |
 
 An unknown `@HOST/<id>` causes a `LayoutValidationError` at declaration-load rather than silently rendering an empty slot.
 
@@ -140,13 +143,13 @@ host_config:
             main: true
           - panel: side
             display: drawer-left
-            drawer_size: { width: 320px }
+            drawerSize: { width: 320px }
     panels:
       side: { kind: page, id: app-sidebar, route: / }
       main: { kind: page, id: app-home,    route: / }
 ```
 
-When the breakpoint changes, the active layout switches synchronously and panels with the same `id` in both layouts are teleported (not remounted) — iframe `contentWindow`, Vue state, and scroll position are preserved across the transition.
+When the breakpoint changes, panels with the same `id` keep one stable content host that visually tracks the active slot without reparenting. Iframe `contentWindow`, web-component state, Vue state, and scroll position survive the transition; reparenting via Teleport is intentionally avoided because removing and reinserting an iframe reloads it.
 
 ### Drawer-Mode Panels
 
@@ -167,7 +170,7 @@ Floating panels are free-positioned overlays declared under `floating`. They do 
 floating:
   flap:
     kind: component
-    tag_name: my-right-flap
+    tagName: my-right-flap
     position: { x: 0, y: 200 }
     size: { width: 48, height: 80 }
 ```
@@ -186,18 +189,18 @@ host.layout.addFloating('inspector', {
 host.layout.removeFloating('inspector')
 ```
 
-## Headless Services
+## Headless Coordinators
 
-Services are coordinator components mounted in a hidden div. They have no visible slot but receive the full proxy API. Use them for cross-cutting logic (translating bus events to panel updates, managing WebSocket subscriptions) so display panels stay focused on rendering:
+Coordinators are components mounted in a hidden host. They have no visible slot but receive the panel-scoped host API. Use them for cross-cutting logic so display panels stay focused on rendering. The older `services` field remains a deprecated compatibility alias.
 
 ```yaml
-services:
+coordinators:
   coordinator:
     kind: component
-    tag_name: my-coordinator
+    tagName: my-coordinator
 ```
 
-A service component receives the panel-scoped host wrapper and can subscribe to bus channels immediately in `onMount`:
+A coordinator component receives the panel-scoped host wrapper and can subscribe to bus channels immediately in `onMount`:
 
 ```typescript
 import { WippyElement } from '@wippy-fe/webcomponent-core'
@@ -214,6 +217,41 @@ class MyCoordinator extends WippyElement {
 }
 customElements.define('my-coordinator', MyCoordinator)
 ```
+
+### Shipped compat coordinator
+
+Managed layout contains only declared surfaces. Calls such as
+`host.openArtifact()`, `host.startChat()`, `host.openSession()`, and
+`host.navigate()` therefore publish typed intents on the reserved
+`@HOST/intent` channel. Declare the shipped coordinator to act on them and to
+bind the browser URL to the main panel:
+
+```yaml
+coordinators:
+  compat:
+    kind: builtin
+    id: '@HOST/compat-coordinator'
+    props:
+      artifactPanel: right
+      chatPanel: chat
+      modalId: artifact-modal
+      routeSync: true
+      wsActions: true
+```
+
+Keep `routeSync: true` when using the standard navigation contract. Without a
+coordinator or equivalent consumer logic, deep links, Back/Forward, and
+`@HOST/nav-sidebar` navigation have no panel route to drive. Intents raised
+during child boot are held in a bounded queue until the first coordinator
+subscribes.
+
+`@HOST/` is reserved in both directions: ordinary panels cannot publish system
+traffic, and only entries under `coordinators` receive it through supported
+host APIs. This boundary is enforced for iframe/Web Fragment panels. A direct
+component mounted in the host realm shares the host DOM and is not a security
+sandbox. At boot the host prints a parity table when coordinator handling, a
+modal target surface, main-panel URL binding, or a declared coordinator tag is
+missing; a complete declaration produces no warning.
 
 ## The In-Tab Broadcast Bus
 
@@ -260,7 +298,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def)` | Open a runtime modal (`HostModalDef`). Renders via native `<dialog>.showModal()` by default (top-layer, focus trap, inert backdrop); pass `def.useNativeDialog: false` for the legacy div-overlay path. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def?)` | Open a declared modal by id, optionally overriding its definition. Runtime-only modals require `def`. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |
@@ -297,6 +335,54 @@ These composables wrap the proxy layout API in reactive Vue 3 refs. The underlyi
 
 The composables never return `null` — they always hand back objects/refs whose inner `.value` degrades when no managed-layout host is present: `useWippyLayout().snapshot.value` is `null` (and `isManaged.value` is `false`, so mutations are silent no-ops), `useWippyBreakpoint().value` and `useWippyMainRoute().value` are empty strings, and `useWippyPanel(id).value` is `null` when the id is absent. Guard host presence with `layout.isManaged.value` (or `layout.snapshot.value !== null`) rather than a `=== null` check on the return value. This keeps the composables usable in standalone playgrounds and unit tests where no managed-layout host is present.
 
+## Swap buffering without remounts
+
+`useSwapBuffer()` from `@wippy-fe/layout` keeps the outgoing surface mounted
+until incoming content reports readiness, with an explicit timeout ceiling.
+Use immutable `slot.index` as the DOM key, pass both index and content key to
+`markReady()` / `markFailed()` so stale async signals are rejected, and keep
+errors scoped per buffer. Content identity belongs in `keyOf`; changing the DOM
+key would reinsert an iframe and destroy the state buffering is meant to retain.
+
+```typescript
+const swap = useSwapBuffer<Surface>({
+  keyOf: surface => surface.ownerId,
+  buffers: 2,
+  readyTimeoutMs: 8_000,
+  loaderDelayMs: 250,
+  loaderMinMs: 400,
+})
+
+const slot = swap.push(surface)
+swap.markReady(slot.index, slot.key)
+// or: swap.markFailed(slot.index, error, slot.key)
+```
+
+The values shown are the defaults. A readiness timeout reveals the content by
+default rather than leaving stale content behind a loader. Bind loading UI to
+`swap.showLoader`, not directly to readiness. A failed buffer remains isolated
+from its sibling; after handling the error, call `clearError(index)` to retry.
+
+## Splitter and handle styling
+
+The splitter hit area is wider than its visible line and lives in the package's
+isolated layer stack. `--wippy-layout-splitter-z-index` defaults to `700`, below
+drawers and modal backdrops. The circular handle is opt-in:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `--wippy-layout-splitter-size` | `1px` | Visible splitter line thickness |
+| `--wippy-layout-splitter-hit-size` | `12px` | Pointer hit area around the line |
+| `--wippy-layout-splitter-z-index` | `700` | Splitter and handle layer |
+| `--wippy-layout-splitter-handle-size` | `0` | Handle diameter; `0` disables it |
+| `--wippy-layout-splitter-handle-bg` | `transparent` | Handle fill |
+| `--wippy-layout-splitter-handle-border` | `0 solid transparent` | Border shorthand |
+| `--wippy-layout-splitter-handle-shadow` | `none` | Handle shadow |
+| `--wippy-layout-splitter-handle-icon-color` | `transparent` | Theme-aware SVG color via `currentColor` |
+
+Set size, fill, border/shadow, and icon color together when opting in. The SVG
+rotates 90 degrees for vertical splitters and remains hidden for locked splits.
+
 ## What works in which mode
 
 The proxy API *surface* is identical in compat and managed mode — the same `@wippy-fe/proxy` imports resolve in both — but two parts of it are **mode-specific in effect**. This mismatch is the main thing to watch when moving an app onto managed layout (and a reason managed is still early access).
@@ -316,17 +402,17 @@ if (host.layout.snapshot) {
 
 ### `host.*` commands that assume the compat shell
 
-The managed shell renders **only your declared layout** — it mounts no built-in nav sidebar, right artifact panel, modal host, or root `<RouterView>`. So `host.*` commands whose visible effect lands in that standard chrome have nowhere to render in managed mode unless you declare a panel for it:
+The managed shell renders **only your declared layout**. Starting with Web Host 1.0.50, commands that normally target compat chrome publish typed `@HOST/intent` messages instead of failing silently. Declare `@HOST/compat-coordinator` or implement an equivalent coordinator to map those intents to your panels:
 
 | `host.*` command | Compat (default) | Managed |
 |---|---|---|
-| `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, top-level `state` / `ws` / `on` | Works | **Works** — mode-agnostic (managed mounts `<Toast>` / `<ConfirmDialogTemplate>` so `toast`/`confirm` still surface) |
-| `openArtifact(id, …)` | Opens in the right panel or a modal | **No visible effect** — managed mounts no right panel or modal host |
-| `startChat(token)` / `openSession(uuid)` | Opens the chat session and shows it | The session really opens **over WebSocket**, but nothing renders — there is no chat route or right panel. Declare a `kind: page` panel bound to the session to display it |
-| `navigate(url)` | Pushes the route under the host's root `<RouterView>` | The route changes but **does not render** — managed has no root `<RouterView>`. Drive panels via backend `mountRoute` / frontend `updatePanel` instead |
-| `onRouteChanged(route, navId?)` | Drives the host browser URL | Works, **different semantics**: the host writes the child's route into that panel's live state (the snapshot), not the browser URL |
+| `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, top-level `state` / `ws` / `on` | Works | Works directly; managed mounts the global toast and confirmation surfaces |
+| `openArtifact(id, ...)` | Opens in the right panel or a modal | Publishes an intent; the compat coordinator targets `artifactPanel` or `modalId` |
+| `startChat(token)` / `openSession(uuid)` | Opens and displays the session | Publishes an intent; the compat coordinator resolves start tokens and updates the declared `chatPanel` |
+| `navigate(url)` | Pushes the compat root router | Publishes an intent; `routeSync` applies it to the main panel and keeps browser history aligned |
+| `onRouteChanged(route, navId?)` | Drives the host browser URL | Updates panel route state; `routeSync` projects the main panel route to the browser URL |
 
-Rule of thumb: the WebSocket / state / bus / toast primitives are mode-agnostic, but anything that shows the standard Wippy chrome (chat, right-panel artifacts, top-level routing) is effectively compat-only. In a managed layout, render those through declared panels rather than the shell commands.
+If no coordinator is available yet, boot-time intents are held in a bounded queue for the first coordinator subscription. A declaration with no handler is reported by the boot parity table. Reserved intents are readable only by `coordinators` entries and cannot be forged by ordinary panels.
 
 ## State Management Approach
 

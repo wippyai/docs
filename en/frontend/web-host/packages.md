@@ -171,6 +171,8 @@ host?.layout.broadcast('my-event', { data: 'hello' })
 `useHostVisibility()` returns the host-owned logical activity ref for a retained
 custom element. `useHostVisibilityRefresh(task)` runs `task` after mount and
 again only on an exact `false -> true` reveal, without replacing the element.
+It serializes an in-flight task and coalesces intervening reveals into one
+trailing refresh.
 These exports require `@wippy-fe/webcomponent-vue` `0.0.52` or newer.
 
 ### `@wippy-fe/layout`

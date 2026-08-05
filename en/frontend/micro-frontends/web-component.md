@@ -479,10 +479,12 @@ useHostVisibilityRefresh(loadData)
 
 `useHostVisibilityRefresh()` returns the same `Ref<boolean | null>` as
 `useHostVisibility()`. Initial `true`, `null -> true`, `true -> false`, and
-duplicate values do not add refreshes. The callback owns cancellation and
-stale-response handling when requests can overlap. Put every remote dataset
-loaded by the ordinary mounted task in the callback; keep local UI state and
-non-idempotent subscription setup outside it.
+duplicate values do not add refreshes. The helper serializes an in-flight task
+and coalesces intervening reveals into one trailing refresh. The callback owns
+cancellation on unmount and stale-response handling when the same data can load
+through another path. Put every remote dataset loaded by the ordinary mounted
+task in the callback; keep local UI state and non-idempotent subscription setup
+outside it.
 
 Host API methods available in web components:
 
