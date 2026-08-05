@@ -117,11 +117,11 @@ class MyWidget extends WippyElement {
 customElements.define('my-widget', MyWidget)
 ```
 
-Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)` for raw `HTMLElement` subclasses that do not extend `WippyElement`.
+Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)` for raw `HTMLElement` subclasses that do not extend `WippyElement`. In `0.0.52+`, `WippyElement.hostVisible`, `onHostVisibilityChanged(visible, previous)`, and `reactive.hostVisibility` expose retained logical activity without treating the reserved attribute as a component prop.
 
 ### `@wippy-fe/webcomponent-vue`
 
-Vue 3 integration layer for Wippy web components. Provides `WippyVueElement` (a `WippyElement` subclass that mounts a Vue app into a shadow root), `define()` for registering the custom element, and composables for accessing host context inside Vue components. The exported composables are `useProps`, `useEvents`, `usePropsErrors`, `useContent`, `useHost`, `usePanelId`, and `useLayoutBus`.
+Vue 3 integration layer for Wippy web components. Provides `WippyVueElement` (a `WippyElement` subclass that mounts a Vue app into a shadow root), `define()` for registering the custom element, and composables for accessing host context inside Vue components. The exported composables are `useProps`, `useEvents`, `usePropsErrors`, `useContent`, `useHost`, `useHostVisibility`, `useHostVisibilityRefresh`, `usePanelId`, and `useLayoutBus`.
 
 ```typescript
 import { define, WippyVueElement, useProps, useEvents, useHost } from '@wippy-fe/webcomponent-vue'
@@ -168,6 +168,11 @@ host?.layout.broadcast('my-event', { data: 'hello' })
 
 `useContent()` is also available for reading `slot`-like content injected by the host into the component.
 
+`useHostVisibility()` returns the host-owned logical activity ref for a retained
+custom element. `useHostVisibilityRefresh(task)` runs `task` after mount and
+again only on an exact `false -> true` reveal, without replacing the element.
+These exports require `@wippy-fe/webcomponent-vue` `0.0.52` or newer.
+
 ### `@wippy-fe/layout`
 
 Pure, framework-agnostic layout primitives used internally by the Web Host's managed-layout engine. Most child app developers use this indirectly through `@wippy-fe/vue-host` composables. Direct use is appropriate when building layout-aware tooling or custom shells.
@@ -187,7 +192,7 @@ Vue 3 composables wrapping the proxy layout API in reactive refs for use inside 
 
 ### `@wippy-fe/shared`
 
-Cross-boundary contract types and global-name constants shared between the host and the `@wippy-fe/*` packages. Pure types, zero runtime code. Exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and the global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
+Cross-boundary contract types, global-name constants, and dependency-free DOM helpers shared between the host and the `@wippy-fe/*` packages. It exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). In `0.0.52+`, it also exports `readWippyVisibility`, `setWippyVisibility`, and `WIPPY_VISIBILITY_ATTRIBUTE` for the retained-WC contract. It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
 
 ### `@wippy-fe/types-global-proxy`
 

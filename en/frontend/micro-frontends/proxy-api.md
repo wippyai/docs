@@ -67,7 +67,12 @@ function render(cfg: AppConfig) { /* … */ }
 type HostApi = ProxyApiInstance['host']   // HostApi is this indexed type, not a separate export
 ```
 
-There is **no** `import … from '@wippy-fe/shared'` for these — `@wippy-fe/shared` only carries the layout-bus types and the `GLOBAL_*` name constants.
+There is **no** `import … from '@wippy-fe/shared'` for the proxy APIs above. `@wippy-fe/shared` carries cross-package types and `GLOBAL_*` name constants; starting with `0.0.52`, it also exports the runtime retained-WC
+helpers `readWippyVisibility`, `setWippyVisibility`, and
+`WIPPY_VISIBILITY_ATTRIBUTE`. Direct WC authors normally use
+`useHostVisibility()` or `useHostVisibilityRefresh()` from
+`@wippy-fe/webcomponent-vue`; the proxy `@visibility` event remains an
+iframe/Web Fragment channel.
 
 ### Internals (do not use)
 
@@ -664,7 +669,7 @@ class MyEl extends HTMLElement {
 | Topic | Handler payload | Description |
 |-------|-----------------|-------------|
 | `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
-| `@visibility` | `boolean` | Iframe visibility changed. `true` = visible, `false` = hidden. |
+| `@visibility` | `boolean` | Iframe/Web Fragment visibility changed. Direct web components use the typed host-visibility contract instead. |
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
 | `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
@@ -673,6 +678,8 @@ class MyEl extends HTMLElement {
 ### Wildcard patterns
 
 ```typescript
+on('@history', ({ path }) => { /* host URL changed */ })
+// Iframe/Web Fragment pages only; direct WCs use useHostVisibility().
 on('@visibility', (visible: boolean) => { /* shown or hidden */ })
 
 // All session messages in a specific session
@@ -734,7 +741,7 @@ state.clear(options?: { scope?: string }): Promise<void>
 state.getAll(options?: { scope?: string }): Promise<Record<string, unknown>>
 ```
 
-**Recommended save pattern** — save when the page goes to background rather than on every change:
+**Recommended iframe/Web Fragment save pattern** — save when the page goes to background rather than on every change. Direct WCs use `useHostVisibility()` for the same lifecycle decision:
 
 ```typescript
 on('@visibility', async (visible) => {

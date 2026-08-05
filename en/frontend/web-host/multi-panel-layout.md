@@ -30,6 +30,27 @@ Opt in to `fe_mode = managed` (early access) only when you need to compose the c
 
 Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. Use one compatible package family for the exact target Web Host release and verify its served import map; do not mix package versions from unrelated releases.
 
+Retained direct-web-component visibility requires Web Host `1.0.52` and
+`@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, and
+`@wippy-fe/shared` `0.0.52`. Earlier managed-layout releases do not provide the
+typed `data-wippy-visible` contract or `useHostVisibilityRefresh()`.
+
+### Retained web-component activity
+
+Managed layouts keep panels mounted across buffer swaps, breakpoint changes,
+and drawer close/open cycles. The host sets
+`data-wippy-visible="true" | "false"` before connecting a direct custom element
+and updates it in place when logical ownership changes. This is not CSS,
+viewport, or document visibility, and it never implies a remount.
+
+Vue components read the state with `useHostVisibility()` or combine ordinary
+initial loading with reveal refreshes through `useHostVisibilityRefresh(task)`.
+The latter runs after mount and then only on exact `false -> true`. Do not use
+the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
+message channel.
+
+Pin to an exact CDN tag — at least `https://web-host.wippy.ai/webcomponents-1.0.52` — until the Draft 1 label is removed.
+
 ## Enabling Managed Layout
 
 Enable the managed entry in your facade configuration and provide a backend `host_config.layout` declaration:
