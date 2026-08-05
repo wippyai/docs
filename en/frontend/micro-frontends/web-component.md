@@ -44,23 +44,23 @@ my-widget/
   "browser": "dist/index.js",
   "files": ["dist/", "src/", "package.json"],
   "dependencies": {
-    "@wippy-fe/theme": "^0.0.46",
-    "@wippy-fe/webcomponent-core": "^0.0.46",
-    "@wippy-fe/webcomponent-vue": "^0.0.46"
+    "@wippy-fe/theme": "^0.0.52",
+    "@wippy-fe/webcomponent-core": "^0.0.52",
+    "@wippy-fe/webcomponent-vue": "^0.0.52"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-vue": "^5.0.0",
-    "@wippy-fe/vite-plugin": "^0.0.46",
-    "@wippy-fe/proxy": "^0.0.46",
+    "@wippy-fe/vite-plugin": "^0.0.52",
+    "@wippy-fe/proxy": "^0.0.52",
     "typescript": "^5.0.0",
     "vite": "^6.0.0",
     "vue": "^3.5.0",
     "vue-tsc": "^2.0.0"
   },
   "peerDependencies": {
-    "@wippy-fe/proxy": "^0.0.46",
+    "@wippy-fe/proxy": "^0.0.52",
     "vue": "^3.5.0"
   },
   "wippy": {
@@ -451,40 +451,73 @@ Import `@wippy-fe/theme/theme-config.css` in your `styles.css`. This provides fa
 
 ## Proxy API
 
-Web components import `api`, `host`, and `on` directly from `@wippy-fe/proxy`. The sync getters resolve immediately — no `await`, no inject/provide plumbing. (Micro frontend apps typically wrap the same `@wippy-fe/proxy` getters in Vue `provide`/`inject` for ergonomics; a web component just imports them at the call site.)
+Web components import `api` and `host` directly from `@wippy-fe/proxy`. The sync getters resolve immediately — no `await`, no inject/provide plumbing. (Micro frontend apps typically wrap the same `@wippy-fe/proxy` getters in Vue `provide`/`inject` for ergonomics; a web component just imports them at the call site.)
 
 ```vue
 <script setup lang="ts">
-import { api, host, on } from '@wippy-fe/proxy'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { api, host } from '@wippy-fe/proxy'
+import { onMounted, ref } from 'vue'
 
 const data = ref(null)
-const unsubs: Array<() => void> = []
 
 onMounted(async () => {
   // HTTP calls via the host-authenticated axios instance
   const response = await api.get('/api/v1/resource')
   data.value = response.data
+})
+</script>
+```
 
-  // Subscribe to events
-  unsubs.push(
-    on('@visibility', (visible: boolean) => {
-      if (visible) refresh()
-    })
-  )
+## Host activity and retained components
+
+In a managed layout, the host can keep a web component connected while another
+surface is active. The host records its logical ownership on the custom element
+as `data-wippy-visible="true"` or `"false"`. This is **not** CSS paint state,
+viewport intersection, or `document.visibilityState`: a retiring surface may
+remain painted during a double-buffer transition even though it is already
+inactive.
+
+Use `useHostVisibility()` in a Vue component. It returns `true`, `false`, or
+`null`; `null` means that the element is unmanaged or the embedding host does
+not provide activity information. Treat that state as unknown, not hidden.
+
+This visibility SDK requires Web Host `1.0.52` or later and
+`@wippy-fe/webcomponent-core` plus `@wippy-fe/webcomponent-vue` `0.0.52` or
+later.
+
+```vue
+<script setup lang="ts">
+import { watch } from 'vue'
+import { useHostVisibility } from '@wippy-fe/webcomponent-vue'
+
+const hostVisible = useHostVisibility()
+
+watch(hostVisible, (next, previous) => {
+  // The first load belongs to onMounted. Refresh retained data only when the
+  // same component becomes active again.
+  if (previous === false && next === true) {
+    void refreshRetainedData()
+  }
 })
 
-onUnmounted(() => {
-  unsubs.forEach(fn => fn())
-  unsubs.length = 0
-})
-
-async function refresh() {
-  const response = await api.get('/api/v1/resource')
-  data.value = response.data
+async function refreshRetainedData() {
+  // Make requests cancellable or discard stale responses when needed.
 }
 </script>
 ```
+
+The update does not remount, reparent, or reload the element, so keep local
+state such as scroll position and form input intact. Component code must not
+write `data-wippy-visible`; the host owns it.
+
+For a non-Vue `WippyElement`, use the protected
+`onHostVisibilityChanged(next, previous)` hook and apply the same
+`false → true` rule. Raw custom elements may observe the host-owned attribute,
+but should preserve the `null`/absent distinction.
+
+`on('@visibility', ...)` is the iframe/page lifecycle topic. Do not use it for
+web-component activity; a web component runs in the host document and receives
+its own element-level activity state instead.
 
 Host API methods available in web components:
 
@@ -605,9 +638,9 @@ Additional dependencies in `package.json`:
 ```json
 {
   "dependencies": {
-    "@wippy-fe/theme": "^0.0.46",
-    "@wippy-fe/webcomponent-core": "^0.0.46",
-    "@wippy-fe/webcomponent-vue": "^0.0.46",
+    "@wippy-fe/theme": "^0.0.52",
+    "@wippy-fe/webcomponent-core": "^0.0.52",
+    "@wippy-fe/webcomponent-vue": "^0.0.52",
     "primevue": "^4.3.3"
   },
   "devDependencies": {

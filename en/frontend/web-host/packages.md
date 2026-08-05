@@ -57,7 +57,7 @@ const data = await api.get('/api/v1/agents/list')
 // Send a WebSocket command
 ws.sendCommand(sessionId, { text: 'Hello' })
 
-// Subscribe to a non-routing host event
+// view.page iframe only: subscribe to a non-routing host event
 on('@visibility', (visible) => { /* pause or resume work */ })
 
 // Cross-iframe state
@@ -117,11 +117,16 @@ class MyWidget extends WippyElement {
 customElements.define('my-widget', MyWidget)
 ```
 
+`WippyElement` exposes `hostVisible` as `boolean | null` and calls the protected
+`onHostVisibilityChanged(next, previous)` hook when the host changes the
+element's logical activity. `null` means the element is unmanaged. The host
+owns `data-wippy-visible`; component code observes it but does not set it.
+
 Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)` for raw `HTMLElement` subclasses that do not extend `WippyElement`.
 
 ### `@wippy-fe/webcomponent-vue`
 
-Vue 3 integration layer for Wippy web components. Provides `WippyVueElement` (a `WippyElement` subclass that mounts a Vue app into a shadow root), `define()` for registering the custom element, and composables for accessing host context inside Vue components. The exported composables are `useProps`, `useEvents`, `usePropsErrors`, `useContent`, `useHost`, `usePanelId`, and `useLayoutBus`.
+Vue 3 integration layer for Wippy web components. Provides `WippyVueElement` (a `WippyElement` subclass that mounts a Vue app into a shadow root), `define()` for registering the custom element, and composables for accessing host context inside Vue components. The exported composables are `useProps`, `useEvents`, `usePropsErrors`, `useContent`, `useHost`, `usePanelId`, `useLayoutBus`, and `useHostVisibility`.
 
 ```typescript
 import { define, WippyVueElement, useProps, useEvents, useHost } from '@wippy-fe/webcomponent-vue'

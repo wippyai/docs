@@ -16,16 +16,21 @@ For how the runtime is loaded into each context, see [Proxy & Isolation](../web-
 
 `@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on.
 
-The canonical pattern is identical for micro frontend apps and web components:
+The canonical proxy pattern is shared by micro frontend apps and web components:
 
 ```ts
-import { host, api, on, config, state, ws, logger } from '@wippy-fe/proxy'
+import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
 const agents = await api.get('/api/v1/agents')   // api is axios; the await is the HTTP call, not obtaining `api`
-const off = on('@visibility', (visible) => { /* pause or resume work */ })
 const token = config.auth.token
 ```
+
+`@visibility` is intentionally omitted: it is a lifecycle topic for a
+`view.page` iframe. A `view.component` receives managed-layout activity on its
+element through `data-wippy-visible` and, for Vue components,
+`useHostVisibility()` from `@wippy-fe/webcomponent-vue`. See [Web
+Component](./web-component.md#host-activity-and-retained-components).
 
 These getters are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs. The host injects the child config **synchronously, before** the runtime loads (for both `view.page` apps and `view.component` web components), so the runtime initializes before your script executes. You never `await` to *obtain* a getter, and there is no `GetConfig`/`SetConfig` handshake. The only `await` you write is for an actual async operation (an HTTP call via `api`, a `state` read, etc.).
 
@@ -664,7 +669,7 @@ class MyEl extends HTMLElement {
 | Topic | Handler payload | Description |
 |-------|-----------------|-------------|
 | `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
-| `@visibility` | `boolean` | Iframe visibility changed. `true` = visible, `false` = hidden. |
+| `@visibility` | `boolean` | `view.page` iframe activity changed. `true` = active, `false` = inactive. Web components use `data-wippy-visible` / `useHostVisibility()` instead. |
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
 | `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
@@ -673,7 +678,8 @@ class MyEl extends HTMLElement {
 ### Wildcard patterns
 
 ```typescript
-on('@visibility', (visible: boolean) => { /* shown or hidden */ })
+// view.page iframe only
+on('@visibility', (visible: boolean) => { /* active or inactive */ })
 
 // All session messages in a specific session
 on('session:abc-123:message:*', (msg) => { /* ... */ })
@@ -734,7 +740,7 @@ state.clear(options?: { scope?: string }): Promise<void>
 state.getAll(options?: { scope?: string }): Promise<Record<string, unknown>>
 ```
 
-**Recommended save pattern** — save when the page goes to background rather than on every change:
+**Recommended `view.page` save pattern** — save when the iframe goes inactive rather than on every change:
 
 ```typescript
 on('@visibility', async (visible) => {

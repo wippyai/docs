@@ -19,12 +19,17 @@ The Proxy API is your entry point to the host. A runtime — `proxy.js` — deli
 Your code consumes it through the sync getters exported by `@wippy-fe/proxy`:
 
 ```ts
-import { host, api, on, config } from '@wippy-fe/proxy'
+import { host, api, config } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
 const data = await api.get('/api/v1/agents')   // api is an axios instance; the await is the HTTP call
-on('@visibility', (visible) => { /* pause or resume work */ })
 ```
+
+For a `view.page` iframe, `on('@visibility', ...)` reports page activity. A
+`view.component` is not an iframe: the host exposes its logical activity on
+the element as `data-wippy-visible`, or through `useHostVisibility()` for Vue.
+That activity is independent from whether a retained component is still painted
+during a double-buffer transition. See [Web Component lifecycle guidance](../micro-frontends/web-component.md#host-activity-and-retained-components).
 
 Portable Vue routing is the exception: `@wippy-fe/router` consumes `@history` and reports local navigation for you. Do not add manual routing subscriptions around it.
 
