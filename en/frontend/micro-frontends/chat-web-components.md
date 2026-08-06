@@ -30,6 +30,10 @@ The heavy internals — the Vue tree plus PrimeVue, Shiki, and the markdown rend
 
 ## `<wippy-chat>`
 
+Reactive session control requires Web Host `1.0.51` or newer. Pin the matching
+`@wippy-fe/*` `0.0.51+` package family; older injected chat elements only
+support the initial mount reliably.
+
 The full chat surface: header, scrollable message list, and composer.
 
 | Attribute | Type | Default | Description |
@@ -64,6 +68,36 @@ document.querySelector('wippy-chat')
     console.log('session:', e.detail.sessionId)
   })
 ```
+
+### Reactive control without remounting
+
+Keep one `<wippy-chat>` element mounted and update its attributes. A changed
+`session-id` opens that session in place. Setting `session-id=""` or removing a
+previously controlled attribute is an explicit **New Chat** transition: it
+clears both the pinned and shared active session. An element that never had a
+`session-id` remains selector-driven instead; absence on first mount is not a
+clear command.
+
+When a `start-token` is present, clearing `session-id` starts from that token
+again. Changing the token also starts in place. The element consumes a token
+once per custom-element host, so reconnecting or moving the same element does
+not replay a live start. If a newer token, controlled session, manual selection,
+or disconnect supersedes an in-flight start, the stale result cannot replace
+the current session; any late-created session is closed.
+
+```javascript
+const chat = document.querySelector('wippy-chat')
+
+chat.setAttribute('session-id', existingSessionId)
+
+// New Chat with an agent. No element replacement is required.
+chat.setAttribute('start-token', agentStartToken)
+chat.removeAttribute('session-id')
+```
+
+Managed-layout component resolvers update and remove props on the existing
+custom element. They remount only when `tagName` changes, preserving the chat
+input, scroll position, and element-owned lifecycle state across panel updates.
 
 ## `<wippy-chat-messages>` and `<wippy-chat-input>`
 

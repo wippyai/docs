@@ -177,6 +177,13 @@ These exports require `@wippy-fe/webcomponent-vue` `0.0.52` or newer.
 
 ### `@wippy-fe/layout`
 
+Direct shell authors use `LayoutManagerView` for stable panel mounts and
+`useSwapBuffer()` for no-flash retained content swaps. In `0.0.52+`, async
+readiness can be guarded by both immutable buffer index and content key, and
+the splitter stack exposes `--wippy-layout-splitter-z-index`. The circular
+splitter handle remains opt-in through
+`--wippy-layout-splitter-handle-size` (`0` by default).
+
 Pure, framework-agnostic layout primitives used internally by the Web Host's managed-layout engine. Most child app developers use this indirectly through `@wippy-fe/vue-host` composables. Direct use is appropriate when building layout-aware tooling or custom shells.
 
 Provides `LayoutManager` — the core class that manages the panel tree, handles breakpoint switching, validates `HostLayoutDeclaration`, and executes mutations like `resizePanel` and `collapsePanel`. Zero Vue dependency.
@@ -295,6 +302,11 @@ Zero-dependency `<wippy-loading>` and `<wippy-error>` custom elements delivered 
 These elements are also registered in the host itself for use in fatal-error states.
 
 ### `@wippy-fe/chat`
+
+In `0.0.51+`, `<wippy-chat>` reacts to `session-id` and `start-token` without
+requiring element replacement. Clearing or removing a previously controlled
+session starts a new token-backed chat when a token is present, while reconnects
+do not replay an already consumed token. Superseded starts are race-safe.
 
 A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — that drop a live Wippy chat into any child by tag. Like `@wippy-fe/loading`, a tiny shell (`chat.js`) auto-registers all four tags and is injected into every child context via the host `scripts` array, so the elements are available by tag name with no import or registration. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
 

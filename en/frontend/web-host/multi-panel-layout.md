@@ -363,6 +363,34 @@ default rather than leaving stale content behind a loader. Bind loading UI to
 `swap.showLoader`, not directly to readiness. A failed buffer remains isolated
 from its sibling; after handling the error, call `clearError(index)` to retry.
 
+### Web Host page readiness
+
+Web Host uses the same keyed readiness discipline for managed page surfaces,
+with a 14-second final reveal ceiling. Iframe and direct Web Component renderers
+emit `load` / `error` through Vue event listeners and include the immutable
+content key owned by that renderer. Painted content is therefore revealed
+immediately; the ceiling is only a fallback for content that never reports.
+A late event from an evicted renderer is rejected when its buffer index has
+already been reused.
+
+Do not use the 14-second host ceiling as an application loading delay, and do
+not add a second timer around normal page readiness. A page that regularly
+reaches the ceiling has a broken readiness or lifecycle path that should be
+fixed at its owner.
+
+### Stable component updates and panel sizing
+
+For `kind: component`, changing panel `props` updates or removes attributes on
+the existing custom element. The host replaces the element only when `tagName`
+changes. This preserves element-owned state during `updatePanel()` calls and
+breakpoint transitions.
+
+`minSize` and `maxSize` constrain only the active split axis: width in a
+horizontal tree and height in a vertical tree. They do not cap the cross axis,
+so navigation, chat, and other full-height mounts can fill their track. Drawer
+mounts follow the animated drawer geometry and are promoted above their anchor
+and backdrop only while open, without remounting their content.
+
 ## Splitter and handle styling
 
 The splitter hit area is wider than its visible line and lives in the package's
@@ -372,7 +400,7 @@ drawers and modal backdrops. The circular handle is opt-in:
 | Variable | Default | Purpose |
 |---|---|---|
 | `--wippy-layout-splitter-size` | `1px` | Visible splitter line thickness |
-| `--wippy-layout-splitter-hit-size` | `12px` | Pointer hit area around the line |
+| `--wippy-layout-splitter-hit-size` | `10px` | Pointer hit area around the line; `24px` on coarse pointers |
 | `--wippy-layout-splitter-z-index` | `700` | Splitter and handle layer |
 | `--wippy-layout-splitter-handle-size` | `0` | Handle diameter; `0` disables it |
 | `--wippy-layout-splitter-handle-bg` | `transparent` | Handle fill |
