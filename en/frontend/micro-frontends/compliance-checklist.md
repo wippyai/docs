@@ -978,6 +978,14 @@ Reference: `gold:mermaid/package.json`.
 - `peerDependencies`: only imported npm package roots expected from the host.
   Rollup externals separately contain every key from the fetched import map.
 
+**Retained visibility (`0.0.52+`)**:
+- MUST NOT use proxy `on('@visibility', ...)` in a direct web component; that topic belongs to iframe/Web Fragment pages.
+- SHOULD use `useHostVisibilityRefresh(task)` when data loaded on mount can become stale while the element remains mounted in an inactive buffer or closed drawer.
+- MUST refresh every remote dataset loaded by that ordinary mounted task, not an arbitrary subset.
+- MUST keep local UI state and non-idempotent subscriptions outside the refresh task.
+- MUST handle cancellation on unmount and stale responses when another code path can load the same data. The helper serializes its own task and coalesces intervening reveals.
+- MUST test initial load, exact `false -> true`, duplicate suppression, same-element identity, and local-state preservation.
+
 ### 4.2 `vite.config.ts` (web component, library mode)
 
 Reference: `gold:mermaid/vite.config.ts`.
@@ -1394,7 +1402,7 @@ grep -r "window.confirm" src/  # should = 0
 | Pattern | Payload | Meaning |
 |---|---|---|
 | `@history` | `{ path?, navId? }` | host pushed a route |
-| `@visibility` | boolean | iframe visibility changed |
+| `@visibility` | boolean | iframe/Web Fragment visibility changed; not the retained direct-WC signal |
 | `@layout-change` | `LayoutSnapshot` | layout tree changed |
 | `@layout-panel-changed` | `{ panelId, ... }` | single panel changed |
 | `@layout-breakpoint` | `{ name, width }` | breakpoint changed (`name` = new breakpoint, `width` = threshold px) |

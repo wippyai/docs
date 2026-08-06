@@ -16,16 +16,20 @@ For how the runtime is loaded into each context, see [Proxy & Isolation](../web-
 
 `@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on.
 
-The canonical pattern is identical for micro frontend apps and web components:
+The synchronous getter pattern is shared by micro frontend apps and web components:
 
 ```ts
-import { host, api, on, config, state, ws, logger } from '@wippy-fe/proxy'
+import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
 const agents = await api.get('/api/v1/agents')   // api is axios; the await is the HTTP call, not obtaining `api`
-const off = on('@visibility', (visible) => { /* pause or resume work */ })
 const token = config.auth.token
 ```
+
+Iframe and Web Fragment apps receive lifecycle visibility through the proxy
+`@visibility` topic. Direct web components do not: use `useHostVisibility()`
+or `useHostVisibilityRefresh()` from `@wippy-fe/webcomponent-vue`, or the
+equivalent `WippyElement` APIs.
 
 These getters are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs. The host injects the child config **synchronously, before** the runtime loads (for both `view.page` apps and `view.component` web components), so the runtime initializes before your script executes. You never `await` to *obtain* a getter, and there is no `GetConfig`/`SetConfig` handshake. The only `await` you write is for an actual async operation (an HTTP call via `api`, a `state` read, etc.).
 
@@ -67,7 +71,12 @@ function render(cfg: AppConfig) { /* … */ }
 type HostApi = ProxyApiInstance['host']   // HostApi is this indexed type, not a separate export
 ```
 
-There is **no** `import … from '@wippy-fe/shared'` for these — `@wippy-fe/shared` only carries the layout-bus types and the `GLOBAL_*` name constants.
+There is **no** `import … from '@wippy-fe/shared'` for the proxy APIs above. `@wippy-fe/shared` carries cross-package types and `GLOBAL_*` name constants; starting with `0.0.52`, it also exports the runtime retained-WC
+helpers `readWippyVisibility`, `setWippyVisibility`, and
+`WIPPY_VISIBILITY_ATTRIBUTE`. Direct WC authors normally use
+`useHostVisibility()` or `useHostVisibilityRefresh()` from
+`@wippy-fe/webcomponent-vue`; the proxy `@visibility` event remains an
+iframe/Web Fragment channel.
 
 ### Internals (do not use)
 
@@ -664,7 +673,7 @@ class MyEl extends HTMLElement {
 | Topic | Handler payload | Description |
 |-------|-----------------|-------------|
 | `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
-| `@visibility` | `boolean` | Iframe visibility changed. `true` = visible, `false` = hidden. |
+| `@visibility` | `boolean` | Iframe/Web Fragment visibility changed. Direct web components use the typed host-visibility contract instead. |
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
 | `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
@@ -673,6 +682,7 @@ class MyEl extends HTMLElement {
 ### Wildcard patterns
 
 ```typescript
+// Iframe/Web Fragment pages only; direct WCs use useHostVisibility().
 on('@visibility', (visible: boolean) => { /* shown or hidden */ })
 
 // All session messages in a specific session
@@ -734,7 +744,7 @@ state.clear(options?: { scope?: string }): Promise<void>
 state.getAll(options?: { scope?: string }): Promise<Record<string, unknown>>
 ```
 
-**Recommended save pattern** — save when the page goes to background rather than on every change:
+**Recommended iframe/Web Fragment save pattern** — save when the page goes to background rather than on every change. Direct WCs use `useHostVisibility()` for the same lifecycle decision:
 
 ```typescript
 on('@visibility', async (visible) => {

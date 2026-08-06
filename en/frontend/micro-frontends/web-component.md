@@ -451,40 +451,40 @@ Import `@wippy-fe/theme/theme-config.css` in your `styles.css`. This provides fa
 
 ## Proxy API
 
+> Direct web components must not subscribe to the iframe-only
+> `on('@visibility', ...)` proxy topic. Use `useHostVisibility()` or
+> `useHostVisibilityRefresh(task)` from `@wippy-fe/webcomponent-vue` for
+> retained host activity. This contract requires Web Host `1.0.52` and
+> Wippy FE packages `0.0.52` or newer.
+
 Web components import `api`, `host`, and `on` directly from `@wippy-fe/proxy`. The sync getters resolve immediately — no `await`, no inject/provide plumbing. (Micro frontend apps typically wrap the same `@wippy-fe/proxy` getters in Vue `provide`/`inject` for ergonomics; a web component just imports them at the call site.)
 
 ```vue
 <script setup lang="ts">
-import { api, host, on } from '@wippy-fe/proxy'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { api, host } from '@wippy-fe/proxy'
+import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
+import { ref } from 'vue'
 
 const data = ref(null)
-const unsubs: Array<() => void> = []
-
-onMounted(async () => {
-  // HTTP calls via the host-authenticated axios instance
-  const response = await api.get('/api/v1/resource')
-  data.value = response.data
-
-  // Subscribe to events
-  unsubs.push(
-    on('@visibility', (visible: boolean) => {
-      if (visible) refresh()
-    })
-  )
-})
-
-onUnmounted(() => {
-  unsubs.forEach(fn => fn())
-  unsubs.length = 0
-})
-
-async function refresh() {
+async function loadData() {
   const response = await api.get('/api/v1/resource')
   data.value = response.data
 }
+
+// Runs once after mount, then once per exact false -> true host reveal.
+// The custom element stays mounted and keeps its local UI state.
+useHostVisibilityRefresh(loadData)
 </script>
 ```
+
+`useHostVisibilityRefresh()` returns the same `Ref<boolean | null>` as
+`useHostVisibility()`. Initial `true`, `null -> true`, `true -> false`, and
+duplicate values do not add refreshes. The helper serializes an in-flight task
+and coalesces intervening reveals into one trailing refresh. The callback owns
+cancellation on unmount and stale-response handling when the same data can load
+through another path. Put every remote dataset loaded by the ordinary mounted
+task in the callback; keep local UI state and non-idempotent subscription setup
+outside it.
 
 Host API methods available in web components:
 
