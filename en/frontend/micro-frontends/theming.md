@@ -9,6 +9,8 @@ The host (wippy/facade) provides the theme. Both micro frontend apps and web com
 
 YAML always wins. CSS custom properties (`*_css_variables`) are compiled into effective Auto/forced mode blocks for pages and bridged generically through WippyElement shadow roots. Facade selector rules (`*_custom_css`) do not cascade across the shadow boundary, but the Web Host injects them into `view.component` shadow roots as of Web Host 1.0.43 (opt-out via the component's `customCss` flag). See the [CSS Delivery Matrix](../web-host/css-injection.md#css-delivery-matrix).
 
+> **Wippy does not use PrimeVue presets to author palettes.** PrimeVue runs with `theme: 'none'`. Configure independent Wippy palette seeds (`--p-primary`, `--p-secondary`, `--p-accent`, `--p-danger`, `--p-success`, `--p-warn`, `--p-info`, and `--p-help`) through facade or page `cssVariables`. Let Wippy's canonical `color-mix()` formulas derive each 50–950 ladder. Do not use `definePreset`, duplicate a full primitive palette, or bridge only `--p-primary`.
+
 Configuration casing identifies the layer:
 
 | Layer | Naming | CSS example |
@@ -177,13 +179,22 @@ In backend `css_variables` YAML, use top-level values for all modes and `@light`
 
 ```yaml
 css_variables:
-  "--p-primary": "#005fb2"
-  "--p-secondary": "#6f7385"
-  "--p-danger": "#dc2626"
+  "--p-primary": "#dc2626"
+  "--p-secondary": "#7c3aed"
+  "--p-accent": "#0d9488"
+  "--p-danger": "#be123c"
+  "--p-success": "#15803d"
+  "--p-warn": "#c2410c"
+  "--p-info": "#0369a1"
+  "--p-help": "#9333ea"
+  "--p-warn-700": "#9a3412"                # deliberate direct shade
+  "--p-help-active-color": "#6b21a8"       # deliberate direct alias
   "@light":
     "--p-content-background": "#fafafa"
+    "--p-primary": "#ef4444"
   "@dark":
     "--p-content-background": "#1c1a19"
+    "--p-primary": "#f87171"
 ```
 
 The compiler emits effective Auto-light, Auto-dark, forced Light, and forced Dark blocks. For CSS intentionally authored for both a page root and a possible Web Fragment host, use paired anchors:
