@@ -1220,7 +1220,7 @@ A Wippy module composes itself from `ns.dependency` entries. **One of those is `
 |---|---|
 | `app_title`, `app_name`, `app_icon` | brand identity |
 | `custom_css` | shared facade-theme CSS — reaches the host chrome, `view.page` documents, and `view.component` shadow roots on supported hosts. Put shared PrimeVue appearance here; keep necessary domain layout and novel structure in module CSS. |
-| `css_variables` | JSON map of CSS variable overrides (`--p-primary`, `--p-surface-*`, brand-specific `--k-*` tokens, etc.); custom properties inherit into every surface, shadow roots included. |
+| `css_variables` | JSON map of arbitrary custom-property overrides. The compiler emits effective Auto/forced mode blocks, and WippyElement bridges every configured name into its inner theme root before `customCSS`. |
 | `host_custom_css` | host-chrome-only CSS (not delivered to children — scope class rules to `.wippy-host-app`). Use `children_custom_css` for CSS that should reach those children but not the host chrome. |
 | `hide_nav_bar`, `show_admin`, `history_mode`, `session_type`, `login_path` | UX shell behaviour |
 | `fe_mode`, `host_config_layout` | managed-layout mode + layout declaration |
@@ -1268,7 +1268,7 @@ Mismatched placement is the #1 source of theme drift. The rule:
 Anti-pattern (REJECT):
 ```css
 .card { background: var(--p-surface-100); }   /* fixed; doesn't flip */
-.card { background: var(--p-primary); }       /* invalid token; --p-primary-color is the right one */
+.card { background: var(--p-primary); }       /* valid palette seed, wrong semantic consumer; use --p-primary-color */
 ```
 
 Canonical:
@@ -1304,7 +1304,7 @@ Canonical:
 
 ### 5.4 `@light` / `@dark` blocks
 
-The host SUPPORTS `@light` and `@dark` keys in `cssVariables` maps — they compile to `@media (prefers-color-scheme: light/dark) { :root { ... } }` blocks ONLY. They are NOT a `[data-theme]` attribute and do not emit any attribute-scoped selector at injection time — binding is solely on the OS color-scheme preference (see `createCssVariables` in `src/shared/util/createStyle.ts`).
+The host supports `@light` and `@dark` keys in `cssVariables`. Top-level variables apply to every mode; mode maps replace only their named entries. The compiler emits effective Auto-light/Auto-dark media blocks and forced `.w-theme-light` / `.w-theme-dark` selectors, with shadow-aware anchors for Web Fragments.
 
 Example:
 ```yaml
@@ -1319,7 +1319,13 @@ css_variables:
     --p-text-color: '#fafafa'
 ```
 
-An app that toggles themes via `document.documentElement.setAttribute('data-theme', ...)` will NOT trigger these overrides; the host injects no `[data-theme]` CSS. To support a manual toggle, document it as a project-specific extension and emit your own `[data-theme]`-scoped variable block. See also [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) and [host-less-mode.md](./host-less-mode.md).
+Applications must use the host theme mode and `.w-theme-light` / `.w-theme-dark` protocol; do not invent `data-theme` selectors. Pages that may also render as Web Fragments pair `:root.w-theme-*` with `:host(.w-theme-*)`; a pure shadow-DOM component may use `:host(.w-theme-*)` alone. See also [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) and [host-less-mode.md](./host-less-mode.md).
+
+### 5.4.1 Exact propagation acceptance
+
+For any configured palette, static presence checks are insufficient. Drive the inventory from `@wippy-fe/theme/tokens.json` and verify `primary`, `secondary`, `accent`, `danger`, `success`, `warn`, `info`, and `help` independently. For each family assert its base, every 50–950 shade, the four semantic aliases, and one direct shade/alias override. Also cover a surface token and an arbitrary sentinel property.
+
+Run the same assertions in Auto-light, Auto-dark, forced Light, and forced Dark. Compare exact values at page root, WC host, and WC inner `[data-wippy-theme-root]`, then use rendered color probes so the browser physically resolves `color-mix()`. Changing primary must not change any severity family. Reject a primary-only bridge, a hand-maintained family whitelist, or advice to duplicate complete palettes in application CSS.
 
 ### 5.5 `customCSS` scoping
 
@@ -1879,7 +1885,7 @@ REJECT a submission if any of the following are true.
 42b. ANY child-app `.css` file contains `:root { --p-* … }` or `:root { --<other-host-var> … }` redefinition (§5.1.2). Move to facade theming or per-page YAML `config_overrides.customization.cssVariables`.
 43. PrimeVue component tokens are restyled with `!important` in `styles.css`.
 43a. A child module duplicates shared PrimeVue appearance in local `.p-*` rules. Move shared appearance to facade `custom_css`; retain module CSS only for justified domain layout or novel structure.
-44. Any Vue file uses `var(--p-primary)` (invalid token; must be `--p-primary-color`).
+44. Any rendered UI uses palette seed `var(--p-primary)` where the mode-aware semantic consumer `--p-primary-color` is required.
 45. Any Vue file uses raw Tailwind color names (`bg-red-*`, `bg-sky-*`, etc.) for semantic meaning.
 46. Any hardcoded hex/rgb in Vue source for semantic colors (use `--p-danger-*` etc., or `color-mix()`).
 46a. Page renders correctly in only one of `prefers-color-scheme: dark` / `light`. Verify in a browser emulator before claiming the page is shippable (§10.7).
@@ -2062,7 +2068,7 @@ interface ProxyConfig {
       primevue: boolean          // PrimeVue component CSS
       markdown: boolean          // markdown typography
       customCss: boolean         // theming.global.customCSS
-      customVariables: boolean   // theming.global.cssVariables → :root
+      customVariables: boolean   // theming.global.cssVariables → effective Auto/forced mode blocks
     }
     tailwindConfig: boolean      // window.tailwind.config
     resizeObserver: boolean      // report iframe size

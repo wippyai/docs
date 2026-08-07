@@ -19,7 +19,7 @@ CSS vars set in the facade's global theming scope reach the host and all iframes
 
 ```yaml
 - name: css_variables
-  value: '{"--p-primary":"#4f8ef7","--p-primary-color":"#4f8ef7"}'
+  value: '{"--p-primary":"#4f8ef7","--p-secondary":"#6f7385","--p-danger":"#dc2626"}'
 ```
 
 ### L2 — Scoped (host or children scope)
@@ -54,7 +54,7 @@ Give a page its own theme by setting `config_overrides.customization.cssVariable
           .demo-banner { background: var(--p-primary-color); color: var(--p-primary-contrast-color); }
 ```
 
-`@dark` and `@light` keys compile to `@media (prefers-color-scheme: dark/light)` blocks — they are OS-preference based, not a `[data-theme]` attribute.
+Top-level entries apply in every theme mode. `@dark` and `@light` replace selected entries and compile to both Auto-mode media blocks and forced `.w-theme-dark` / `.w-theme-light` selectors. The host owns those classes; applications do not invent a parallel `data-theme` protocol.
 
 A `package.json` mirror under `wippy.configOverrides` provides the same shape for host-less rendering (standalone dev preview, unit tests). Keep both in sync; the YAML wins when a host is present.
 
@@ -88,7 +88,7 @@ The iframe proxy has broad runtime defaults when flags are omitted. **Enable the
 - `css.themeConfig` — the full `--p-*` CSS variable system (`theme-config.css`). Enable to inherit the theme palette.
 - `css.primevue` — PrimeVue component styles. Enable for apps using PrimeVue.
 - `css.customCss` — the host-composed child-facing custom CSS: facade **global + children** custom CSS merged into `config.theming.global.customCSS`, plus any per-page override. The flag gates this injection rather than naming a single scope. Enable to receive facade/per-page custom CSS.
-- `css.customVariables` — child-projected `config.theming.global.cssVariables` as `:root { … }`. Enable to receive theme variable overrides.
+- `css.customVariables` — child-projected `config.theming.global.cssVariables` as effective base, Auto-light, Auto-dark, forced Light, and forced Dark blocks. Enable to receive theme variable overrides.
 - `css.markdown` — `.data-body` markdown styles. Enable only if your page renders markdown content.
 
 Full flag reference and runtime defaults: [CSS Injection](../web-host/css-injection.md).
@@ -124,7 +124,7 @@ To confirm CSS variables are active in your running page: open DevTools, select 
 getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
 ```
 
-A non-empty result confirms `themeConfig` injection is working. Full debugging workflow: [Debugging](./debugging.md).
+A non-empty result proves only that some theme CSS loaded. Compare the exact configured value at the page root, WC host, WC inner root, and rendered semantic color; verify every configured family. Full workflow: [Debugging](./debugging.md).
 
 ---
 

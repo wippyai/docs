@@ -7,7 +7,7 @@ description: "The host (wippy/facade) provides the theme. Both micro frontend ap
 
 The host (wippy/facade) provides the theme. Both micro frontend apps and web components consume it. The variable catalog below is the shared vocabulary — delivery specifics are in [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) and [Theming: Web Components](./web-component-theming.md).
 
-YAML always wins. CSS custom properties (`*_css_variables`) set by the facade/host cascade to child iframes and inherit into shadow DOM. Facade selector rules (`*_custom_css`) do not *cascade* across the shadow boundary, but the Web Host **injects** them into `view.component` shadow roots as of Web Host 1.0.43 (opt-out via the component's `customCss` flag). See the [CSS Delivery Matrix](../web-host/css-injection.md#css-delivery-matrix).
+YAML always wins. CSS custom properties (`*_css_variables`) are compiled into effective Auto/forced mode blocks for pages and bridged generically through WippyElement shadow roots. Facade selector rules (`*_custom_css`) do not cascade across the shadow boundary, but the Web Host injects them into `view.component` shadow roots as of Web Host 1.0.43 (opt-out via the component's `customCss` flag). See the [CSS Delivery Matrix](../web-host/css-injection.md#css-delivery-matrix).
 
 Configuration casing identifies the layer:
 
@@ -26,7 +26,7 @@ Do not use `customCSS` when naming a facade backend parameter, and do not use `c
 
 ## Reference — CSS variables
 
-All variables are defined in `theme-config.css` and set on `:root`. At runtime, the host injects the real theme — these serve as the dev-time fallback and contract.
+The generated `theme-config.css` defines the canonical defaults and formulas. Facade and page `cssVariables` are compiled as a later, variable-agnostic override layer: top-level values apply in every mode, while `@light` and `@dark` replace selected values in the corresponding Auto and forced modes. Web components receive the same configured names through the WippyElement inheritance bridge before facade `custom_css` is injected.
 
 ### Primary palette (11 vars)
 
@@ -74,7 +74,7 @@ Same 50–950 structure as primary, derived via `color-mix` on `--p-secondary`, 
 
 ### Danger / Warn / Success / Info / Help / Accent palettes
 
-Each has a base var and an 11-step scale (50–950) derived via `color-mix`, same pattern as primary.
+Each has an independent base var and an 11-step scale (50–950) derived via the canonical `color-mix` formulas in the generated `@wippy-fe/theme` token manifest. Do not assume that every family uses the primary percentage ladder.
 
 | Family | Base variable | Default color | Purpose |
 |--------|--------------|---------------|---------|
@@ -85,13 +85,13 @@ Each has a base var and an 11-step scale (50–950) derived via `color-mix`, sam
 | `help` | `--p-help` | `rgb(168, 85, 247)` (purple-500) | Help, hints |
 | `accent` | `--p-accent` | `rgb(20, 184, 166)` (teal-500) | Highlights, special callouts |
 
-Override the base var to retheme the full scale — the 50–950 range auto-derives via `color-mix`. No dark-mode override block is needed.
+Override a family base to retheme only that family; its 50–950 range auto-derives via `color-mix`. Changing `--p-primary` must not recolor danger, success, warn, info, help, secondary, or accent. Use `@light` / `@dark` only when a family needs different mode-specific values. Direct shade and alias overrides are supported for deliberate exceptions.
 
 ### The token grammar (predictable naming)
 
 The `--p-*` set follows one small, exceptionless grammar, so a human — or an AI agent generating styles — can *predict* a token name instead of looking it up. Two layers with a hard contract:
 
-- **Numeric scale** — `--p-<family>-{50..950}` and `--p-surface-{0..950}`: the fixed-hue anchor, **never theme-switchable** (identical in light and dark). Use it only when you explicitly do *not* want the value to flip.
+- **Numeric scale** — `--p-<family>-{50..950}` and `--p-surface-{0..950}`: canonical shade anchors. Defaults may be formulas or mode-specific values, and configured `@light` / `@dark` maps may override a base or an individual shade. Use semantic aliases for ordinary UI meaning.
 - **Semantic aliases** — `--p-<family>-color` / `-contrast-color` / `-hover-color` / `-active-color`: the theme-switchable layer. `-color` always ships with its `-contrast-color` (the color to place on top of it) plus hover/active states, so no `dark:` pairing is needed.
 
 Those four aliases exist for **all eight** families (`primary`, `secondary`, `danger`, `success`, `warn`, `info`, `help`, `accent`) — zero per-family exceptions. Typography follows the same shape (`--p-font-<role>-<prop>`, below). The generated `tokens.json` manifest shipped in `@wippy-fe/theme` (name, layer, light/dark value, flip flag) is the machine-readable ground truth an agent can load.
@@ -154,7 +154,7 @@ Which font *files* load (families, weights, `size-adjust`, ascent/descent overri
 
 ## Reference — Dark mode
 
-Variables switch at `@media (prefers-color-scheme: dark)`. Key changes:
+Auto mode follows `prefers-color-scheme`. Forced mode uses the host-applied `.w-theme-light` / `.w-theme-dark` classes. The generated defaults and configured-variable layer support both paths. Key changes:
 
 - `--p-primary` base shifts from `rgb(0, 95, 178)` to `rgb(0, 125, 178)` (brighter)
 - `--p-primary-color` shifts from `primary-500` to `primary-400`
@@ -173,16 +173,27 @@ Variables switch at `@media (prefers-color-scheme: dark)`. Key changes:
 
 If the brand requires explicit light and dark palette values, define them in facade or page-level `cssVariables`, not in module CSS.
 
-In backend `css_variables` YAML, use `@light` / `@dark` keys:
+In backend `css_variables` YAML, use top-level values for all modes and `@light` / `@dark` for selected replacements:
 
 ```yaml
 css_variables:
   "--p-primary": "#005fb2"
+  "--p-secondary": "#6f7385"
+  "--p-danger": "#dc2626"
   "@light":
     "--p-content-background": "#fafafa"
   "@dark":
     "--p-content-background": "#1c1a19"
 ```
+
+The compiler emits effective Auto-light, Auto-dark, forced Light, and forced Dark blocks. For CSS intentionally authored for both a page root and a possible Web Fragment host, use paired anchors:
+
+```css
+:root.w-theme-dark,
+:host(.w-theme-dark) { /* forced-dark rule */ }
+```
+
+A component that is always a shadow-DOM web component may use `:host(.w-theme-dark)` alone. Do not put palette configuration in module-level `:root`; use facade or page `cssVariables`.
 
 ---
 

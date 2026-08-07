@@ -68,23 +68,39 @@ The dev overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe` 
 
 Open the dev overlay FAB → toggle the CSS injections you need → check "Auto-accept on reload".
 
-**2. Verify CSS variables are active:**
+**2. Compare the complete effective chain:**
 
-For micro frontend apps — open DevTools, select the **inner iframe** context (not the outer page) in the frame selector:
-```javascript
-getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
-// non-empty = themeConfig injection is working
+A non-empty token is not sufficient. Use distinct values so a stock-palette reset or accidental family alias is obvious:
+
+```yaml
+css_variables:
+  "--p-primary": "#dc2626"
+  "--p-secondary": "#7c3aed"
+  "--p-accent": "#0d9488"
+  "--p-danger": "#be123c"
+  "--p-success": "#15803d"
+  "--p-warn": "#c2410c"
+  "--p-info": "#0369a1"
+  "--p-help": "#9333ea"
+  "--theme-diagnostic-sentinel": "#123456"
 ```
 
-For web components — in DevTools, select your custom element's **shadow root** context:
-```javascript
-getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
-// custom properties cross shadow boundary; empty = something wrong upstream
-```
+Then compare, in this order:
+
+1. **Effective configured map:** inspect `config.theming.global.cssVariables` and confirm the base plus the active `@light` / `@dark` replacements.
+2. **Page root:** read the exact token with `getComputedStyle(document.documentElement).getPropertyValue(name).trim()`.
+3. **WC host:** read the same token from `getComputedStyle(customElement)`.
+4. **WC inner root:** read it from `getComputedStyle(customElement.shadowRoot.querySelector('[data-wippy-theme-root]'))`.
+5. **Rendered semantic color:** put `background-color: var(--p-<family>-color)` on a probe and compare its computed `backgroundColor`; this physically resolves `color-mix()`.
+
+Repeat in Auto-light, Auto-dark, forced Light, and forced Dark. For each configured family verify its base, all 50–950 shades, `color`, `contrast-color`, `hover-color`, and `active-color`; also verify a direct shade/alias override, a surface token, and the sentinel. Page, host, and inner values must agree.
+
+Interpret the first divergence: wrong effective map means configuration/merge; wrong page root means variable compilation/injection; correct page but wrong WC host means host propagation; correct WC host but wrong inner root means the forced-theme bridge or local defaults; equal tokens but wrong rendered color means the consuming selector or semantic alias is wrong.
 
 **3. Web component specific:**
-- If CSS vars are empty inside shadow root: check that `hostCssKeys` includes `'themeConfigUrl'` in your `wippyConfig`
-- If PrimeVue components render unstyled: add `'primeVueCssUrl'` to `hostCssKeys`
+- If the platform defaults are absent, check that `hostCssKeys` includes `'themeConfigUrl'`.
+- If the host is correct but the inner root resets to stock values, verify a current `@wippy-fe/webcomponent-core`; do not copy a palette into component CSS.
+- If PrimeVue components render unstyled, add `'primeVueCssUrl'` to `hostCssKeys`.
 
 See [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) or [Theming: Web Components](./web-component-theming.md) for the full injection pipeline.
 
