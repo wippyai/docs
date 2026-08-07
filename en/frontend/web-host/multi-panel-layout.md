@@ -30,6 +30,19 @@ Opt in to `fe_mode = managed` (early access) only when you need to compose the c
 
 Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. Use one compatible package family for the exact target Web Host release and verify its served import map; do not mix package versions from unrelated releases.
 
+### Release map
+
+| Release | Managed-layout additions |
+|---|---|
+| Web Host `1.0.50`, Wippy FE `0.0.50` | Typed compat intents, `@HOST/compat-coordinator`, browser URL and Back/Forward synchronization, built-in panel tabs, anchored floating panels, and `useSwapBuffer()`. |
+| Web Host `1.0.51`, Wippy FE `0.0.51` | Reactive and race-safe `<wippy-chat>` session/token control, opt-in themed splitter handles, split-axis-only size constraints, drawer geometry/stacking fixes, and the packaged proxy source map. |
+| Web Host `1.0.52`, Wippy FE `0.0.52` | Typed retained-WC visibility and `useHostVisibilityRefresh()`, immediate page readiness instead of waiting for the 14-second fallback, stale renderer-key rejection, in-place component prop updates, and the isolated splitter layer with `--wippy-layout-splitter-z-index`. |
+
+The 14-second page reveal is a Web Host `1.0.52` fallback, not a 1.0.51
+feature or an application loading delay. Split-axis sizing and reactive chat
+landed in 1.0.51; retained visibility, keyed readiness, and splitter layering
+landed in 1.0.52.
+
 Retained direct-web-component visibility requires Web Host `1.0.52` and
 `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, and
 `@wippy-fe/shared` `0.0.52`. Earlier managed-layout releases do not provide the

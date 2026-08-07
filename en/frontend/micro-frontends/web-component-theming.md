@@ -13,20 +13,22 @@ description: "Theming reference covers the full CSS variable catalog. This doc c
 
 Shadow DOM blocks CSS cascade — stylesheets written outside your component do not apply inside it. However, CSS custom properties (variables) **do** cross the shadow boundary. This means:
 
-- `--p-primary-500` and all other `--p-*` vars from the host are available inside your shadow root automatically — no configuration needed.
+- Custom properties inherit across the shadow boundary. WippyElement also bridges every configured variable name through its forced-theme inner root, so locally loaded `theme-config.css` defaults cannot reset configured values.
 - PrimeVue component styles, Tailwind utilities, and other rule-based stylesheets do **not** cascade in — you must load them explicitly via `hostCssKeys`.
 
 ---
 
 ## Customization levels
 
-**L1 — Global:** CSS custom properties (`--p-*` vars) cross the shadow boundary automatically. No action needed to receive L1 vars inside your WC.
+**L1 — Global:** CSS custom properties cross the shadow boundary. WippyElement enumerates the effective global/children/page variable maps, including `@light` / `@dark`, and installs a generic inheritance bridge before the injected custom CSS layer.
 
 **L2 — Scoped:** Same as L1 for custom properties. Stylesheet-based CSS (PrimeVue, Tailwind) does not cascade — use `hostCssKeys` to load these explicitly into the shadow root.
 
-**L3 — Per-page config_overrides:** CSS vars set via operator `config_overrides` also reach your shadow root as custom properties, because they are set on `:root` of the host page.
+**L3 — Per-page config_overrides:** CSS vars set via operator `config_overrides` reach the WC host and inner theme root through the same generic bridge.
 
-**Facade `custom_css` reaches the shadow root (Web Host 1.0.43+, opt-out).** Selector rules (e.g. `.p-button { border-radius: 12px }`) do not *cascade* across the shadow boundary, but the WC runtime **injects** the composed backend facade CSS (`custom_css` + `children_custom_css`) into every component's shadow root at mount — so they *do* apply to PrimeVue components rendered inside. This is on by default; opt out with frontend `customCss: false` in `wippyConfig` for a fully self-styled component. Custom properties (`--p-*`) inherit regardless of the flag.
+**Facade `custom_css` reaches the shadow root (Web Host 1.0.43+, opt-out).** Selector rules do not cascade across the boundary, so the runtime injects composed global + children custom CSS.
+
+The configured-variable bridge is independent of the frontend `customCss` opt-out and remains active. Ordering is platform theme defaults → configured-variable inheritance bridge → injected custom CSS.
 
 > **Before Web Host 1.0.43**, facade `custom_css` rules did not reach a component's shadow root — only custom properties inherited. On older hosts, replay the rule inside the WC's own styles or lift it to a `--p-*` token form.
 
@@ -111,7 +113,7 @@ This provides the default `--p-*` values so your component renders correctly in 
 
 ## Writing component CSS
 
-Use semantic vars — they flip with dark mode automatically:
+Request `themeConfigUrl`, consume semantic vars, and do not redeclare inherited palette defaults. Semantic aliases switch with Auto and forced modes:
 
 ```css
 :host {
@@ -184,11 +186,16 @@ hostCssKeys: ['themeConfigUrl'] as const
 
 ## Verifying
 
-To confirm theme variables reach your shadow root: in DevTools, select your custom element's shadow root context (not the outer document), then run:
+Do not stop at a non-empty token. Compare the exact configured value on the element host and inner theme root, then verify the browser-resolved color used by the rendered control:
 
 ```js
-getComputedStyle(document.querySelector('your-element')).getPropertyValue('--p-primary-color')
+const el = document.querySelector('your-element')
+const inner = el.shadowRoot.querySelector('[data-wippy-theme-root]')
+getComputedStyle(el).getPropertyValue('--p-primary-color')
+getComputedStyle(inner).getPropertyValue('--p-primary-color')
 ```
+
+Repeat across every configured family in Auto-light, Auto-dark, forced Light, and forced Dark. A WC requests `themeConfigUrl` and consumes semantic tokens; it does not redeclare inherited palette defaults.
 
 Full debugging workflow: [Debugging](./debugging.md).
 
