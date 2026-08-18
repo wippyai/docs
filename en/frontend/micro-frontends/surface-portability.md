@@ -139,11 +139,14 @@ Engine behavior is a separate matter: in the Web Fragment engine `position: fixe
 Sizing an overlay is a different question from anchoring it. For a backdrop or drawer that should cover exactly the surface, drop viewport units and use `inset: 0` — but pair it with the positioning scheme that matches how portable the app must be:
 
 ```css
-/* Portable across BOTH engines: resolves against the app's own root,
-   which is the surface, so it never depends on what `fixed` is relative to. */
-.app-root { position: relative; }
+/* Portable across BOTH engines: resolves against the app's own root rather
+   than against whatever `fixed` happens to be relative to.
+   `min-block-size: 100%` is load-bearing — see below. */
+.app-root { position: relative; min-block-size: 100%; }
 .backdrop { position: absolute; inset: 0; }
 ```
+
+The containing block is the **app's root**, not the surface, so the overlay covers the surface only if that root does. In content sizing it does automatically (the content *is* the height). In container sizing the host imposes a height on the query box that the app's root does not inherit, so without `min-block-size: 100%` the backdrop quietly stops short — failing in exactly the mode where the `fixed` version would have looked correct. The two also differ in behavior: `absolute` scrolls with the content, `fixed` stays pinned.
 
 ```css
 /* Iframe engine only. `fixed` resolves against the child viewport, which IS
