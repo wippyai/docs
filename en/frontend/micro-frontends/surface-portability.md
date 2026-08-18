@@ -126,7 +126,8 @@ Engine behavior is a separate matter: in the Web Fragment engine `position: fixe
 ## Limitations
 
 - **Body box.** In the iframe engine the host zeroes `margin`, `padding` and `border` on the app's `body` so the allocated surface is well defined. Put page padding on your own root element. The fragment engine does not do this, so an app relying on body padding renders slightly differently between engines. There is no build-time diagnostic for this yet.
-- **`body > *` selectors.** The host wraps body content in the surface box, so direct-child selectors rooted at `body` no longer match app elements — and `body`/`html` are **ancestors** of the query box, so a `@container` rule targeting them never applies.
+- **`body > *` selectors, and rules targeting `html`/`body`.** In the **iframe** engine the host wraps body content in the surface box, so direct-child selectors rooted at `body` no longer match app elements, and `body`/`html` become *ancestors* of the query box — a `@container` rule targeting them never applies. The **fragment** engine has the opposite topology (the query box sits above the reflected tree), but a literal `body` selector still fails there because the reflected document is renamed `wf-html`/`wf-body`. Put such rules on your own root element inside the surface; that is correct in both engines.
+- **Pages embedded via `<w-iframe>` / `<w-artifact>` get no surface.** Nested embeds deliberately opt out until nested-surface support ships, so `host.surface` reports `width: 0` and `sizing: 'content'` there — but with `engine: 'iframe'`, not `engine: 'host'`. Check `snapshot.width` rather than `engine` if your component can be embedded that way.
 - **No block axis in content sizing.**
 - **Not an isolation boundary.** The contract governs layout. It does not give a fragment an independent document, viewport, selection, top layer, or origin.
 

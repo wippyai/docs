@@ -660,6 +660,8 @@ Prefer `supports()` over branching on `engine` — what matters is whether a cap
 
 Read-only shortcuts for the same values on the snapshot. `engine: 'host'` means the code is mounted directly into the host document (or running under the standalone dev proxy) with no allocated surface; the snapshot reports `width: 0` and `sizing: 'content'` by design.
 
+`engine` is not a reliable test for "was a surface allocated". A page embedded via `<w-iframe>`/`<w-artifact>` also receives no surface — nested embeds opt out until nested-surface support ships — yet reports `engine: 'iframe'` with `width: 0`. Check `snapshot.width` when that distinction matters.
+
 ---
 
 ## Events

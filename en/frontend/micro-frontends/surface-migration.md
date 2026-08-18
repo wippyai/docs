@@ -170,11 +170,20 @@ features only. Converting these produces a rule that never matches.
 **container's** font size. If those differ, your breakpoint moves silently.
 Convert to `px`, or verify the container's computed `font-size` first.
 
-## 15. `rem` breakpoints — **conditional**
+## 15. `rem` breakpoints — **manual**
 
-`rem` is root-relative in both, so conversion is safe **only under an explicit
-root-font policy** — i.e. nothing in your page or the host changes the root font
-size. If the host theme ever adjusts it, prefer `px`.
+`rem` is **not** root-relative inside `@media`. Media-query conditions resolve
+both `em` and `rem` against the *initial* font size — the browser default,
+independent of any author CSS — while `@container` resolves them the ordinary
+way, against the actual computed root/container font size.
+
+So the two are already unequal the moment your root font size differs from the
+browser default, with nothing changing at runtime. The common `html { font-size:
+62.5% }` reset is enough to move a converted breakpoint from 640px to 400px.
+
+"Nothing changes the root font size" is therefore **not** a sufficient
+precondition. Convert to `px`, exactly as for `em` (recipe 14), unless the
+root's computed font size provably equals the browser default.
 
 ## 16. Viewport vs content-box scrollbar boundary — **conditional**
 
@@ -184,10 +193,19 @@ converted value is narrower by the scrollbar width — which is usually the
 correction you wanted (`100vw` causing horizontal overflow is a classic bug),
 but check any pixel-exact alignment.
 
-## 17. Rules targeting the query box itself — **manual**
+## 17. Rules targeting `html` / `body` — **manual**
 
-A container query cannot style its own container, and the host wraps your body
-content in the surface box — so `html` and `body` are **ancestors** of it:
+A container query never styles its own container, and a rule aimed at `html` or
+`body` fails in both engines — for different reasons:
+
+- **Iframe engine:** the host wraps your body content in the surface box, so
+  `html` and `body` are *ancestors* of the query container. A `@container` rule
+  cannot reach an ancestor.
+- **Fragment engine:** the opposite topology — the query box is a host-document
+  wrapper *above* your content — but a literal `body` selector still fails,
+  because the reflected document is renamed to `wf-html` / `wf-body`.
+
+Either way the fix is the same, and it is engine-safe:
 
 ```css
 /* ✗ silently never matches */
