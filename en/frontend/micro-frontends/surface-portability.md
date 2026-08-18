@@ -46,6 +46,10 @@ The values inherit, so any element in the app can read them. They report the que
 
 Applications must **not** declare or assign these four names. A descendant declaration shadows the inherited value and silently unpins the app from the surface.
 
+They must also stay **unregistered**. Do not describe them with `@property` or `CSS.registerProperty()`. The host marks the block axis unavailable by assigning a guaranteed-invalid value, which computes to the empty string only while the property is unregistered. Give one an `initial-value` and it computes to that instead, so a content-sized app reports itself as container-sized and `supports('block-size')` starts returning `true` — with no error anywhere.
+
+Two caveats before comparing these values to `100cqw` pixel-for-pixel. The **first frame can be wider**: the boot value is seeded from the host-side `<iframe>` element before the app's document exists, so it cannot know whether the content will raise a scrollbar. That value is baked into the document's CSS, so the first layout uses it and is corrected one frame later. And values are **quantized to 1/64 px**, so compare with a tolerance.
+
 ## Container sizing and content sizing
 
 | | Inline axis | Block axis |
@@ -54,6 +58,15 @@ Applications must **not** declare or assign these four names. A descendant decla
 | **Content sizing** — the app's content decides the height | available | **not available** |
 
 In content sizing the height properties are deliberately invalid, so `var(--wippy-surface-height, 400px)` falls back rather than reporting a number, and `@container wippy-surface (min-height: …)` never matches.
+
+**Which one an app gets is not the author's choice**, and nothing in `package.json` changes it. Sizing is set by *where the Web Host renders the app*:
+
+| Rendered as | Sizing |
+|---|---|
+| a routed page, a layout panel, the right panel, a registry tab | **container** |
+| an embedded artifact, an inline artifact block, a navbar widget | **content** |
+
+So the same package is container-sized on its own route and content-sized when someone embeds it. An app that needs the block axis must therefore tolerate not having it, or declare the requirement (below) so it is refused rather than rendered broken. Read the current mode with `host.surface.snapshot.sizing`, and gate behavior on `host.surface.supports('block-size')` — never assume.
 
 `cqh` behaves worse than "unavailable": container units fall back to the **small viewport** when no container supplies the axis they need, so `cqh` silently produces a plausible number unrelated to the surface. Prefer `var(--wippy-surface-height, <fallback>)`, which is root-pinned and visibly falls back. The same trap appears inside an app that declares `container-type: inline-size` on an intermediate element and then uses `cqh` below it.
 
@@ -123,12 +136,33 @@ The surface contract does **not** capture `position: fixed`. `container-type` es
 
 Engine behavior is a separate matter: in the Web Fragment engine `position: fixed` resolves against the **host window** rather than the app's panel. See [Render Engines](../web-host/render-engines.md) and pin the app with `wippy.renderEngine: "iframe"` if exact viewport anchoring matters.
 
+Sizing an overlay is a different question from anchoring it. For a backdrop or drawer that should cover exactly the surface, drop viewport units and use `inset: 0` — but pair it with the positioning scheme that matches how portable the app must be:
+
+```css
+/* Portable across BOTH engines: resolves against the app's own root,
+   which is the surface, so it never depends on what `fixed` is relative to. */
+.app-root { position: relative; }
+.backdrop { position: absolute; inset: 0; }
+```
+
+```css
+/* Iframe engine only. `fixed` resolves against the child viewport, which IS
+   the surface there — but against the HOST WINDOW in the fragment engine,
+   where this covers the whole application instead of the panel. */
+.backdrop { position: fixed; inset: 0; }
+```
+
+Avoid `var(--wippy-surface-height)` for this: it is unavailable in content sizing, so a backdrop written that way collapses on exactly the pages where it is hardest to notice.
+
 ## Limitations
 
 - **Body box.** In the iframe engine the host zeroes `margin`, `padding` and `border` on the app's `body` so the allocated surface is well defined. Put page padding on your own root element. The fragment engine does not do this, so an app relying on body padding renders slightly differently between engines. There is no build-time diagnostic for this yet.
 - **`body > *` selectors, and rules targeting `html`/`body`.** In the **iframe** engine the host wraps body content in the surface box, so direct-child selectors rooted at `body` no longer match app elements, and `body`/`html` become *ancestors* of the query box — a `@container` rule targeting them never applies. The **fragment** engine has the opposite topology (the query box sits above the reflected tree), but a literal `body` selector still fails there because the reflected document is renamed `wf-html`/`wf-body`. Put such rules on your own root element inside the surface; that is correct in both engines.
 - **Pages embedded via `<w-iframe>` / `<w-artifact>` get no surface.** Nested embeds deliberately opt out until nested-surface support ships, so `host.surface` reports `width: 0` and `sizing: 'content'` there — but with `engine: 'iframe'`, not `engine: 'host'`. Check `snapshot.width` rather than `engine` if your component can be embedded that way.
 - **No block axis in content sizing.**
+- **The fragment engine requires the app's root element to be `#app`.** It binds the page height chain to that selector and measures content height through it, because the reflected document exposes `wf-html`/`wf-body` rather than `html`/`body`, so an app cannot build its own chain from the root the way it can inside an iframe. A content-sized fragment app with a different root (`#root`, `<main>`) cannot be measured: the host logs an error naming the requirement and the panel renders at zero height. The iframe engine is unaffected — it takes height from `CmdBodySize`.
+- **The deprecated `/page/:id` route gets no surface.** It renders into a bare iframe that never measures anything, so it opts out completely — no query box, no wrapper, no change to the app's DOM. An app behaves there exactly as it did before this contract existed. Use `/c/:id` to get a surface. Like nested embeds, it still reports `engine: 'iframe'`, so test `snapshot.width` rather than the engine name.
+- **The two engines can differ by a scrollbar.** The iframe engine measures the inline axis from the query box *inside* the app's document, so a document scrollbar narrows it. The fragment engine measures a host-document wrapper, which the reflected content's scrolling does not narrow. Same allocated panel and scrolling content: the fragment engine reports the slightly wider number.
 - **Not an isolation boundary.** The contract governs layout. It does not give a fragment an independent document, viewport, selection, top layer, or origin.
 
 ## Migration

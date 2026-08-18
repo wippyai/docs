@@ -187,11 +187,17 @@ root's computed font size provably equals the browser default.
 
 ## 16. Viewport vs content-box scrollbar boundary — **conditional**
 
-`100vw` includes the classic scrollbar gutter; the surface width is the query
-box's **content box** and does not. On a page with a document scrollbar, the
-converted value is narrower by the scrollbar width — which is usually the
-correction you wanted (`100vw` causing horizontal overflow is a classic bug),
-but check any pixel-exact alignment.
+`100vw` includes the classic scrollbar gutter. In the **iframe engine** the
+surface width is the query box's **content box** inside the app's document, so
+it does not: on a page with a document scrollbar the converted value is narrower
+by the scrollbar width, which is usually the correction you wanted (`100vw`
+causing horizontal overflow is a classic bug).
+
+The **fragment engine** measures a host-document wrapper that the content's
+scrolling does not narrow, so it does not apply that correction. Same panel,
+same scrolling content, widths differing by a scrollbar. The condition on this
+recipe is therefore *which engine the app runs in*, not merely whether the
+alignment is pixel-exact.
 
 ## 17. Rules targeting `html` / `body` — **manual**
 
@@ -241,7 +247,7 @@ Keep `matchMedia` for preference queries — it is only geometry that is wrong.
 Prefer emitting `@container wippy-surface (...)` rules and letting CSS respond.
 If you compute pixels in JS, regenerate from `onChange` — a value read once from
 `snapshot` is frozen and desyncs on the next resize. Never emit the four
-reserved `--wippy-surface-*` names yourself; a descendant declaration shadows the
+reserved `--wippy-surface-*` names yourself, and never register them with `@property` / `CSS.registerProperty()` — registration defeats the host's "block axis unavailable" signal, so a content-sized app silently reports itself as container-sized; a descendant declaration shadows the
 inherited value and unpins your page from the surface.
 
 ## 21. Third-party bundled CSS — **manual**
@@ -323,7 +329,15 @@ The surface contract does **not** capture `position: fixed` — `container-type`
 establishes an independent formatting context without layout containment, so a
 query container computes `contain: none` and anchors nothing. This is verified
 across Chromium, Firefox and WebKit. PrimeVue overlays and hand-rolled fixed
-overlays both keep working; no migration needed.
+overlays both keep working, so **positioning needs no migration**.
+
+Their *sizing* does. An overlay meant to cover the surface should use `inset: 0`
+— not `100vw`/`100vh`, which measure the browser window and overshoot in a
+multi-panel host, and not `var(--wippy-surface-height)`, which is unavailable in
+content sizing. Pair `inset: 0` with `position: absolute` inside a
+`position: relative` root of the app's own if it must work in both engines;
+`position: fixed` is correct only in the iframe engine, for the reason directly
+below.
 
 What does need attention is the engine, not the contract: in the Web Fragment
 engine `position: fixed` resolves against the **host window**, not your panel.
