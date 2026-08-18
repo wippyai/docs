@@ -148,6 +148,8 @@ Sizing an overlay is a different question from anchoring it. For a backdrop or d
 
 The containing block is the **app's root**, not the surface, so the overlay covers the surface only if that root does. In content sizing it does automatically (the content *is* the height). In container sizing the host imposes a height on the query box that the app's root does not inherit, so without `min-block-size: 100%` the backdrop quietly stops short — failing in exactly the mode where the `fixed` version would have looked correct. The two also differ in behavior: `absolute` scrolls with the content, `fixed` stays pinned.
 
+Put `min-block-size: 100%` on the **outermost** element inside the surface. A percentage height needs an unbroken chain of definite heights above it, so applying it to a component root nested inside an auto-height `#app` resolves to zero and reintroduces the same gap. Verified across Chromium, Firefox and WebKit, with the no-`min` case as a control.
+
 ```css
 /* Iframe engine only. `fixed` resolves against the child viewport, which IS
    the surface there — but against the HOST WINDOW in the fragment engine,
