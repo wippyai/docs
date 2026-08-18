@@ -298,8 +298,10 @@ to the page's area from inside a nested container.
 
 ```css
 /* before */ block-size: calc(100vh - 4rem);
-/* after  */ block-size: calc(var(--wippy-surface-height, 100vh) - 4rem);
+/* after  */ block-size: calc(var(--wippy-surface-height, 400px) - 4rem);
 ```
+
+The fallback is deliberately fixed and obviously wrong rather than `100vh` — see "Do not hide a missing contract behind a fallback" below. That matters more on the block axis than the inline one: the height is invalid on **every** content-sized placement, not only where the contract is absent, so a `100vh` fallback silently renders window height the first time the app is embedded.
 
 `min()`/`max()`/`clamp()` convert unchanged; substitute the units inside them.
 
