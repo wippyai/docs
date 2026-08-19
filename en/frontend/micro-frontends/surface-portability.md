@@ -159,11 +159,42 @@ Put `min-block-size: 100%` on the **outermost** element inside the surface. A pe
 
 Avoid `var(--wippy-surface-height)` for this: it is unavailable in content sizing, so a backdrop written that way collapses on exactly the pages where it is hardest to notice.
 
+## The app root element (`#app`)
+
+**The Web Fragment engine requires your root element to be `id="app"`.** Not
+`#root`, not `#main`, not `<main>` — the id is matched literally.
+
+The engine binds the page height chain to that selector and measures your
+content height through it. The reflected document exposes `wf-html`/`wf-body`
+rather than `html`/`body`, so you cannot build the chain from the document root
+the way you can inside an iframe.
+
+**Symptom when it is wrong:** a content-sized fragment page whose root is
+`#root` (or anything else) renders at **zero height** — blank panel, no error in
+your own code. The host logs an error naming the requirement. The iframe engine
+is unaffected, because it takes height from `CmdBodySize`, so the same package
+can look fine there and be blank as a fragment.
+
+```html
+<!-- correct -->
+<body><div id="app"></div></body>
+```
+
+```js
+createApp(App).mount('#app')
+```
+
+**Do not try to fix a zero-height fragment by giving `#root` a height.** Adding
+`height: 100%`, `min-height: 100dvh` or `100vh` to a differently-named root does
+not make the engine measure it, and viewport units are wrong here for the reason
+this whole page exists — they describe the browser window, not your surface.
+Rename the element to `app` instead.
+
 ## Limitations
 
 - **Body box.** In the iframe engine the host zeroes `margin`, `padding` and `border` on the app's `body` so the allocated surface is well defined. Put page padding on your own root element. The fragment engine does not do this, so an app relying on body padding renders slightly differently between engines. There is no build-time diagnostic for this yet.
 - **`body > *` selectors, and rules targeting `html`/`body`.** In the **iframe** engine the host wraps body content in the surface box, so direct-child selectors rooted at `body` no longer match app elements, and `body`/`html` become *ancestors* of the query box — a `@container` rule targeting them never applies. The **fragment** engine has the opposite topology (the query box sits above the reflected tree), but a literal `body` selector still fails there because the reflected document is renamed `wf-html`/`wf-body`. Put such rules on your own root element inside the surface; that is correct in both engines.
-- **Pages embedded via `<w-iframe>` / `<w-artifact>` get no surface.** Nested embeds deliberately opt out until nested-surface support ships, so `host.surface` reports `width: 0` and `sizing: 'content'` there — but with `engine: 'iframe'`, not `engine: 'host'`. Check `snapshot.width` rather than `engine` if your component can be embedded that way.
+- **Anything rendered through `<w-iframe>` / `<w-artifact>` gets no surface — including a top-level managed panel.** These elements always build their child document with the surface bootstrap disabled and nothing measures them, so `host.surface` reports `width: 0` and `sizing: 'content'` — but with `engine: 'iframe'`, not `engine: 'host'`. Check `snapshot.width` rather than `engine` if your component can be embedded that way. That is expected for a *nested* embed; it is easy to miss for a managed layout panel declared as `{ kind: 'component', tagName: 'w-artifact' }`, which is a full-size top-level slot yet still gets no contract. Use `kind: 'page'` for content that needs one.
 - **No block axis in content sizing.**
 - **The fragment engine requires the app's root element to be `#app`.** It binds the page height chain to that selector and measures content height through it, because the reflected document exposes `wf-html`/`wf-body` rather than `html`/`body`, so an app cannot build its own chain from the root the way it can inside an iframe. A content-sized fragment app with a different root (`#root`, `<main>`) cannot be measured: the host logs an error naming the requirement and the panel renders at zero height. The iframe engine is unaffected — it takes height from `CmdBodySize`.
 - **The deprecated `/page/:id` route gets no surface.** It renders into a bare iframe that never measures anything, so it opts out completely — no query box, no wrapper, no change to the app's DOM. An app behaves there exactly as it did before this contract existed. Use `/c/:id` to get a surface. Like nested embeds, it still reports `engine: 'iframe'`, so test `snapshot.width` rather than the engine name.
