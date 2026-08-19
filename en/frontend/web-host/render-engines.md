@@ -52,6 +52,8 @@ Some browser APIs behave **incorrectly — and silently — inside a reframed re
 | `window.scrollX/Y`, `scrollTo` | Target the hidden realm window (always `0`) | Scroll-driven UI reads the wrong geometry |
 | Web Workers, Canvas, WebGL, WASM | **Work normally** | — |
 
+`vh`/`vw` and `matchMedia` appear here because they ask about the **window**. An app that sizes itself against its allocated *surface* instead — container queries on `wippy-surface`, and the `--wippy-surface-*` variables — resolves identically under both engines and needs no pinning. See [Surface Portability](../micro-frontends/surface-portability.md), and [Surface Migration](../micro-frontends/surface-migration.md) to convert an existing app. `position: fixed` and `elementFromPoint` have no portable form and remain genuine reasons to pin.
+
 Two detectors surface these at authoring time (they detect *app-code incompatibility*, not deployment mistakes):
 
 - **Build-time** (`@wippy-fe/vite-plugin`): scans page source and emits a build **warning** naming the API, suggesting `wippy.renderEngine: "iframe"`.

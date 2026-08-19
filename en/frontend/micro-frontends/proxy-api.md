@@ -613,6 +613,57 @@ To default all requests to the fetch adapter:
 
 ---
 
+## Surface
+
+Geometry of the area the Web Host allocated to this app. That area is usually **not** the browser window — the app may be one panel of several — so `window.innerWidth` and viewport units are the wrong things to size against. See [Surface Portability](./surface-portability.md) for the full contract and [Surface Migration](./surface-migration.md) for conversion recipes.
+
+### `host.surface.snapshot`
+
+Current geometry, read back out of the same computed custom properties the app's CSS resolves — so it cannot drift from what `@container wippy-surface (…)` and `cqw` see.
+
+```typescript
+const { contract, revision, engine, sizing, width, widthUnit, height, heightUnit } = host.surface.snapshot
+```
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `contract` | `1` | contract version |
+| `revision` | `number` | monotonic; advances when the geometry changes |
+| `engine` | `'iframe' \| 'fragment' \| 'host'` | `host` means no surface was allocated |
+| `sizing` | `'container' \| 'content'` | |
+| `width` / `widthUnit` | `number` | full width, and 1% of it, in CSS pixels |
+| `height` / `heightUnit` | `number \| null` | `null` in content sizing — the block axis is genuinely unavailable |
+
+### `host.surface.onChange(listener)` → `() => void`
+
+Subscribe to geometry changes. Returns an idempotent unsubscribe that **must** be called on teardown.
+
+```typescript
+const off = host.surface.onChange((snapshot) => {
+  canvas.width = snapshot.width
+})
+```
+
+### `host.surface.supports(capability)` → `boolean`
+
+```typescript
+if (host.surface.supports('block-size')) {
+  // the block axis is available (container sizing)
+}
+```
+
+Capabilities: `block-size` and `surface-scroll` are answered truthfully today. `registered-hit-testing`, `native-document-hit-testing` and `owner-visibility` are reserved vocabulary and always report `false`.
+
+Prefer `supports()` over branching on `engine` — what matters is whether a capability is available, not which engine is rendering.
+
+### `host.surface.engine` and `host.surface.sizing`
+
+Read-only shortcuts for the same values on the snapshot. `engine: 'host'` means the code is mounted directly into the host document (or running under the standalone dev proxy) with no allocated surface; the snapshot reports `width: 0` and `sizing: 'content'` by design.
+
+`engine` is not a reliable test for "was a surface allocated". A page embedded via `<w-iframe>`/`<w-artifact>` also receives no surface — nested embeds opt out until nested-surface support ships — yet reports `engine: 'iframe'` with `width: 0`. Check `snapshot.width` when that distinction matters.
+
+---
+
 ## Events
 
 ### `on(topic, handler)` → `() => void`
