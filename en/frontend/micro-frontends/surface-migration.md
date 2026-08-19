@@ -110,8 +110,15 @@ that is a media query — keep it (recipe 13).
 ## 8. Height / aspect / orientation in content sizing — **not convertible**
 
 There is no block axis to query. Restructure so the layout depends on the inline
-axis, or move the page to container sizing. Do not fake it with `cqh` — see
-recipe 22.
+axis. Do not fake it with `cqh` — see recipe 22.
+
+You cannot switch the app to container sizing yourself: sizing is set by where
+the Web Host renders the app, not by anything in its package. If the layout truly
+cannot work without the block axis, declare `requirements: ["block-size"]` so a
+content-sized placement is refused outright instead of rendering wrong, and get
+the app rendered in a container-sized context (its own route or a layout panel).
+See "Container sizing and content sizing" in
+[Surface Portability](./surface-portability.md).
 
 ## 9. Geometry nested inside an environmental media query — **manual**
 
@@ -359,4 +366,8 @@ Host-mediated overlay placement and `host.surface` scroll helpers are
 4. Move any rule that targeted `html`/`body` onto your own root element.
 5. Re-check `em` breakpoints.
 6. Declare `requirements` if you depend on the block axis.
-7. Run the page in both engines.
+7. Run the page in both engines **and in both sizings** — container and content
+   are what this migration actually turns on, and an app is content-sized
+   whenever it is embedded rather than routed. Check which one you are in with
+   `host.surface.snapshot.sizing`, and gate block-axis behavior on
+   `host.surface.supports('block-size')`.
