@@ -153,11 +153,11 @@ end
 
 ## Sending to Client
 
-Send messages back using the client PID. Any topic you choose is wrapped as `{topic, data}` JSON and forwarded to the WebSocket. Every server-to-client message is sent as a single WebSocket text frame containing the `{topic, data}` JSON wrapper. Binary payloads are base64-encoded into the `data` field; they are not sent as separate binary frames.
+Send messages back using the client PID. Any topic you choose is wrapped as `{topic, data}` JSON and forwarded to the WebSocket. Every server-to-client message is sent as a single WebSocket text frame containing the wrapper. Tables remain JSON objects in `data`; strings remain strings. Binary payloads are base64-encoded into `data`; they are not sent as separate binary frames.
 
 ```lua
 -- Send a structured message (any topic name)
-process.send(client_pid, "update", json.encode({event = "update", value = 42}))
+process.send(client_pid, "update", {event = "update", value = 42})
 
 -- Send binary
 process.send(client_pid, "data", binary_content)

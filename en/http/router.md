@@ -69,7 +69,7 @@ Entries reference parents via metadata:
 | Field | Type | Description |
 |-------|------|-------------|
 | `meta.router` | Registry ID | Parent router |
-| `method` | string | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` |
+| `method` | string | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE`, or `*` for every method |
 | `path` | string | URL path pattern (starts with `/`) |
 | `func` | Registry ID | Handler function |
 
@@ -115,7 +115,7 @@ Capture remaining path segments with `{param...}`:
   func: serve_file
 ```
 
-The wildcard matches the remaining segments for routing purposes, so a request like `GET /api/v1/files/docs/guides/readme.md` is matched and dispatched to the handler. The captured tail itself is not currently retrievable via `req:param`.
+The wildcard matches the remaining segments, so a request like `GET /api/v1/files/docs/guides/readme.md` is dispatched with `req:param("filepath")` set to `docs/guides/readme.md`.
 
 The wildcard must be the last segment in the path.
 
@@ -167,22 +167,22 @@ post_options:
   endpoint_firewall.action: "access"
 ```
 
-## Pre-Match and Post-Match Middleware
+## Pre-Handler and Post-Match Middleware
 
-**Pre-match** (`middleware`) runs before route matching:
+**Pre-handler** (`middleware`) runs after the server selects a route but before route parameters and endpoint metadata are attached to the request context:
 - CORS (handles OPTIONS preflight)
 - Compression
 - Rate limiting
 - Real IP detection
 - Token authentication (context enrichment)
 
-**Post-match** (`post_middleware`) runs after route is matched:
+**Post-match** (`post_middleware`) runs after route parameters and endpoint metadata are attached:
 - Endpoint firewall (needs route info for authorization)
 - Resource firewall
 - WebSocket relay
 
 ```yaml
-middleware:        # Pre-match: all requests to this router
+middleware:        # Before endpoint metadata: matched routes only
   - cors
   - compress
   - token_auth     # Enriches context with actor/scope
@@ -192,10 +192,12 @@ post_middleware:   # Post-match: matched routes only
 ```
 
 <tip>
-Token authentication can be pre-match because it only enriches context—it doesn't block requests. Authorization happens in post-match middleware like <code>endpoint_firewall</code> which uses the actor set by <code>token_auth</code>.
+Token authentication belongs in the pre-handler chain because it enriches the request context before authorization. Authorization middleware such as <code>endpoint_firewall</code> belongs in the post-match chain because it needs the matched endpoint ID. Unmatched requests do not run either router chain.
 </tip>
 
-## Complete Example
+## Router and Endpoint Wiring
+
+This example defines the list handler entry. The `app:get_user_by_id` and `app:create_user` function IDs refer to handlers defined elsewhere in the same namespace.
 
 ```yaml
 version: "1.0"

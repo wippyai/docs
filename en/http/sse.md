@@ -163,7 +163,7 @@ The relay uses these topics for communication between the stream and target proc
 |-------|-----------|------|---------|
 | `sse.join` | stream → target | Client connects | `client_pid`, `metadata` |
 | `sse.message` | target → stream | Default event topic | Forwarded as SSE event |
-| `sse.heartbeat` | stream → target | Periodic (if configured) | `client_pid`, `uptime`, `message_count` |
+| `sse.heartbeat` | stream → target | Periodic (if configured) | `client_pid`, `uptime`, `message_count`, `metadata` |
 | `sse.leave` | stream → target | Client disconnects | `client_pid`, `metadata` |
 | `sse.control` | any → stream | Control command | Relay config fields |
 | `sse.close` | any → stream | Force close | Optional reason string |
@@ -225,7 +225,7 @@ process.send(stream_pid, "sse.control", {
 })
 ```
 
-When the target changes, the relay sends `sse.leave` to the old target and `sse.join` to the new one. Set `target_pid` to an empty string to detach without reattaching.
+When the target changes, the relay first monitors and sends `sse.join` to the new target, then stops monitoring and sends `sse.leave` to the old one. Set `target_pid` to an empty string to detach without reattaching.
 
 ## See Also
 

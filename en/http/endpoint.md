@@ -42,6 +42,7 @@ Supported methods:
 | `HEAD` | Headers only |
 | `OPTIONS` | CORS preflight (auto-handled) |
 | `TRACE` | Diagnostic loopback |
+| `*` | Match every HTTP method |
 
 ## Path Parameters
 
@@ -50,12 +51,16 @@ Use `{param}` syntax for URL parameters:
 ```yaml
 - name: get_user
   kind: http.endpoint
+  meta:
+    router: api
   method: GET
   path: /users/{id}
   func: get_user
 
 - name: get_user_post
   kind: http.endpoint
+  meta:
+    router: api
   method: GET
   path: /users/{user_id}/posts/{post_id}
   func: get_user_post
@@ -85,7 +90,7 @@ Use `{path...}` to match any remaining path segments:
   func: serve_file
 ```
 
-This catch-all segment makes the route match requests like `/files/docs/readme.md`. The captured tail is not currently exposed to Lua: `req:param("path")` returns `nil` for the wildcard value. Read `req:path()` if you need the full request path.
+This catch-all segment makes the route match requests like `/files/docs/readme.md`. In that request, `req:param("path")` returns `docs/readme.md`.
 
 ## Handler Function
 
@@ -121,37 +126,37 @@ return { handler = handler }
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `req:method()` | string | HTTP method |
-| `req:path()` | string | Request path |
-| `req:param(name)` | string | URL parameter |
-| `req:params()` | table | All path parameters |
-| `req:query(name)` | string | Query parameter |
-| `req:query_params()` | table | All query parameters |
-| `req:header(name)` | string | Request header |
-| `req:body()` | string | Request body |
-| `req:body_json()` | table, error | Parse JSON body |
-| `req:has_body()` | boolean | Check if body exists |
-| `req:content_type()` | string | Content type |
-| `req:content_length()` | number | Body size in bytes |
-| `req:host()` | string | Hostname |
-| `req:remote_addr()` | string | Client IP address |
-| `req:accepts(type)` | boolean | Content negotiation |
-| `req:is_content_type(type)` | boolean | Check content type |
-| `req:stream()` | Stream | Body as stream for large files |
+| `req:method()` | string, error | HTTP method |
+| `req:path()` | string, error | Request path |
+| `req:param(name)` | string or nil, error | URL parameter |
+| `req:params()` | table, error | All path parameters |
+| `req:query(name)` | string or nil, error | Query parameter |
+| `req:query_params()` | table, error | All query parameters |
+| `req:header(name)` | string or nil, error | Request header |
+| `req:body()` | string, error | Request body |
+| `req:body_json()` | value, error | Parse JSON body |
+| `req:has_body()` | boolean, error | Check if body exists |
+| `req:content_type()` | string or nil, error | Content type |
+| `req:content_length()` | number, error | Body size in bytes |
+| `req:host()` | string, error | Host header |
+| `req:remote_addr()` | string, error | Client address in `IP:port` form unless middleware rewrites it |
+| `req:accepts(type)` | boolean, error | Content negotiation |
+| `req:is_content_type(type)` | boolean, error | Check content type |
+| `req:stream()` | Stream, error | Body as stream for large files |
 | `req:parse_multipart(max?)` | table, error | Parse multipart form |
 
 ### Response Object
 
 | Method | Description |
 |--------|-------------|
-| `res:set_status(code)` | Set HTTP status code |
-| `res:set_header(name, value)` | Set response header |
-| `res:set_content_type(type)` | Set content type |
-| `res:write(data)` | Write raw body |
-| `res:write_json(data)` | Write JSON response |
-| `res:write_event(data)` | Send SSE event |
-| `res:set_transfer(encoding)` | Set transfer mode (SSE, chunked) |
-| `res:flush()` | Flush response to client |
+| `res:set_status(code)` | Set HTTP status code; returns an error if headers were sent |
+| `res:set_header(name, value)` | Set response header; returns an error if headers were sent |
+| `res:set_content_type(type)` | Set content type; returns an error if headers were sent |
+| `res:write(data)` | Write raw body; returns an error on failure |
+| `res:write_json(data)` | Write a JSON response; returns an error on failure |
+| `res:write_event(data)` | Send and flush an SSE event; returns an error on failure |
+| `res:set_transfer(encoding)` | Set `chunked` or `sse` transfer mode; returns an error if headers were sent |
+| `res:flush()` | Flush the response; returns an error value |
 
 ## JSON API Pattern
 
@@ -224,6 +229,8 @@ return { handler = handler }
 entries:
   - name: users_router
     kind: http.router
+    meta:
+      server: gateway
     prefix: /api/users
     middleware:
       - cors
