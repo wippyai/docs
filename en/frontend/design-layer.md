@@ -1,147 +1,226 @@
 ---
 title: "The design layer"
-description: "Theme, shared design layer, module-local — where a piece of frontend belongs when several modules need the same idea but the theme has no seat for it."
+description: "Theme, shared design layer, module-local — what goes where when several modules need the same thing and the theme has no seat for it, with worked good and bad examples."
 ---
 
 # The design layer
 
 A Wippy frontend is many independently published modules rendering into one
-application. Two homes for styling are obvious: the **theme**, which every
-surface consumes, and the **module**, which owns itself. The gap between them is
-not obvious, and it is where duplication accumulates: an idea that several
-modules genuinely share, which the theme has no component for.
+application. Two homes are obvious: the **theme**, which every surface
+consumes, and the **module**, which owns itself. The gap between them is not
+obvious, and it is where duplication accumulates — an idea several modules
+genuinely share that the theme has no component for.
 
-This page names the three layers and gives a test for deciding between them.
+This page names the three layers, gives a test for choosing between them, and
+shows what each choice looks like when it goes right and wrong.
 
-## The three layers
+## The layers
 
-| Layer | Owns | Delivered by |
+| Layer | Reaches | Owns |
 |---|---|---|
-| **Theme** | Values, and the painting of components the theme ships | `@wippy-fe/theme` + the app's facade |
-| **Shared design layer** | Vocabulary several modules share that the theme has no component for | A published package, materialized into each consumer |
-| **Module** | What is genuinely specific to one surface | The module's own `ui/src` |
+| **Theme** | *Every* surface, including modules you do not own | PrimeVue components, the shared semantic tokens, documented classes |
+| **Shared design layer** | Only the modules that opt in | Vocabulary those modules share that has no themed component behind it |
+| **Module** | Itself | What is genuinely specific to one surface |
 
-### Theme
+### The theme is universal, and that is the constraint
 
-The theme owns every **value** — colour, radius, spacing, elevation, focus ring
-— as `--p-*` tokens, and it owns the appearance of every component it ships.
-If PrimeVue has a `Button`, the way buttons look is a theme concern, and a
-module that wants a different button is asking the wrong question.
+The theme styles markup **you do not own**. Any module — including a
+third-party plugin written by someone who has never seen your app — renders
+into the same host and is painted by the same theme. That is what makes the
+theme the universal layer, and it cuts both ways:
 
-Severity lives here too. `success` / `danger` / `warn` / `info` are theme
-semantics with published ramps; a module must never re-derive them.
+**Nothing app-specific may go into the theme**, because it would be imposed on
+every module that never asked for it.
 
-### Shared design layer
+**A module may not depend on anything app-specific being in the theme.** The
+contract is *PrimeVue components + the shared Wippy semantic tokens +
+documented classes* — nothing an application added on top. Note that PrimeVue's
+own presets are not the contract either: Wippy runs PrimeVue with
+`theme: 'none'`, so it is the Wippy semantic tokens you rely on.
 
-Some ideas recur across modules and have no component in the theme. A content
-card. A surface header row. What a surface shows when it has nothing. The two
-sizes a tag comes in. These are real, shared, and homeless — so they get a
-layer of their own: a **published package**, consumed the same way in every
-module.
+```css
+/* GOOD — shared Wippy semantic tokens, present for every module */
+.my-panel {
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+}
 
-It must be a published package rather than a path alias, because consumers live
-in different repositories. A path alias only works inside one repo, which is
-exactly the constraint that makes this a distribution problem and not a
-refactor.
+/* BAD — an application-specific token. Your module now only works inside
+   one app, and silently loses the declaration anywhere else: an undefined
+   custom property makes the declaration invalid at computed-value time, so
+   it drops and the element quietly inherits instead. */
+.my-panel { background: var(--kx-surface-2); }
+```
 
-### Module
+This is also the answer to *"can I put our shared vocabulary in the facade?"*
+Only if it must genuinely reach arbitrary, unowned markup. If it is scoped to
+*your* set of modules, it does not belong in the theme — it belongs in the
+layer below.
 
-Everything else. A layout only this surface has, a rule that exists because of
-one component's markup, a deliberate divergence from the shared vocabulary.
+### The shared design layer
 
-## Deciding where a rule belongs
+Some ideas recur across a known set of modules and have no component in the
+theme: a content card, a surface header row, what a surface shows when it has
+nothing, the sizes a tag comes in. Real, shared, and homeless.
 
-Ask in this order. The first "yes" wins.
+They ship as a **published package**, materialized into each consumer. It must
+be a package rather than a path alias, because consumers live in different
+repositories — the falsifiable test for this layer is that a module in a
+*different repo*, with no path access to the producer, consumes the vocabulary
+and builds.
 
-1. **Is it a value?** A colour, a radius, a spacing step, a severity, an
-   elevation. → **Theme.** Add or read a `--p-*` token. Never a literal.
-2. **Does the theme ship a component for this?** A button, a dialog, a select,
-   a tag. → **Theme.** Style it through the theme or the facade. A class that
-   restyles a themed component is a theme override wearing a class name, and it
-   will drift from every other module that does the same.
-3. **Do two or more modules need this same concept, with no themed component
-   behind it?** → **Shared design layer.**
+### The module
+
+Everything else, plus every deliberate divergence from the shared vocabulary.
+
+## Deciding where something belongs
+
+Ask in order. First yes wins.
+
+1. **Is it a value?** Colour, radius, spacing, elevation, severity.
+   → **Theme.** Read a semantic token. Never a literal.
+2. **Does the theme already ship a component for this?** Button, Dialog,
+   Select, Tag. → **Theme.** Use the component. Style it by putting a class
+   *on* it — never rebuild it.
+3. **Do two or more of your modules need this same concept, with no themed
+   component behind it?** → **Shared design layer.**
 4. Otherwise → **Module.**
 
-Question 2 is the one that catches people. It is worth answering honestly per
-class: *is this a concept the theme has no seat for, or is it the theme's
-component with my paint on it?*
+Question 2 is the one that catches people, and it has a sharp rule behind it.
 
-## What goes wrong without this layer
+## Worked examples
 
-The layer is not bookkeeping. Kickside ran without one, and three things
-followed — each of which had to be undone rather than simply tidied:
+The examples below are from Kickside, a Wippy application whose module CSS was
+15.4% exact-clone duplication before it grew this layer.
 
-- **Duplication became the norm.** 15.4% of all module CSS was exact-clone
-  duplication across modules, and most copies had drifted apart. One selector
-  had nineteen definitions in seventeen distinct bodies.
-- **A second component library appeared.** Nine modules opted out of the
-  theme's `Button` and hand-rolled their own on native `<button>`, while seven
-  used the themed component. Neither dialect was wrong locally; there was
-  simply no shared place to put a button, so half the app invented one. The two
-  agreed on font-size and line-height and nothing else.
-- **Severity was reimplemented as decoration.** Sixteen classes across four
-  naming schemes carried `success`/`danger`/`warn` colour under module-local
-  names. The same class name meant three different colours in three modules,
-  so publishing any one definition would have silently repainted the others.
+### Never rebuild a themed component
 
-The correction in each case was the same: severity is the theme's, the button
-is the theme's, and what survived — card, header, empty state, tag scales,
-derived tokens — is the genuinely shared vocabulary that belongs in the middle
-layer.
+PrimeVue ships `Button`. Nine Kickside modules opted out of it and hand-rolled
+`.kx-btn` on a native `<button>`; seven other modules used the component. Both
+dialects were locally reasonable — there was simply no shared place to put a
+button, so half the app invented one. Measured against each other they agreed
+on font-size and line-height and nothing else.
 
-## Rules for the shared layer
+**Bad:** a native `button` element carrying `.kx-btn .kx-btn-primary` — a second
+implementation of a component the theme already ships. (Written as a selector
+here on purpose: the documentation gate rejects native product controls in
+example code, which is this rule enforced one layer up.)
 
-**Adopting means importing *and deleting* the local rule.** A CSS `@import`
-must precede every other rule in a sheet, so the shared sheet always lands
-first and the module's own copy wins at equal specificity. A module that
-imports the package and keeps its copy has changed nothing.
+**Good:** the themed component, with a class on it when you need to adjust it.
 
-**Keep deliberate divergence as an override after the import — the delta only.**
-Never restate the whole body. A module that needs a two-line clamp where the
-shared rule truncates to one writes those two properties and nothing else, with
-a comment saying why.
+```vue
+<Button label="Save" class="kx-save" />
+```
 
-**Never fold two intents into one name.** If the same class name means
-different things in two modules, that is two concepts wearing one name. Split
-the name; do not pick a winner and repaint the loser.
+When the themed component does not fit, that is not a licence to rebuild it.
+Put a class on the component and style that class — in the facade if the
+adjustment is app-wide, in the module if it is local. Kickside's `knowledge`
+module still carries `.kn-btn` / `.kn-primary` on native buttons; that is a
+migration outstanding, not a pattern to copy.
 
-**Normalising is a visual change.** Consolidating drifted copies moves pixels.
-Diff every body, pick the canon, record why, and look at the result — unit
-tests cannot see it.
+### Severity is the theme's, not yours
 
-## The cascade facts you need
+Severity — `success`, `danger`, `warn`, `info` — is theme semantics with
+published ramps. Kickside re-derived it **sixteen times across four naming
+schemes** (`tone-gn`, `t-ok`, `kx-tone-success`, `tone-success`). The same
+class name meant three different colours in three modules, so publishing any
+one definition would have silently repainted the others.
 
-Two ordering rules decide whether your rule applies at all.
+```css
+/* BAD — severity re-derived under a module-local name */
+.tone-gn { color: #16a34a; }
 
-**Inside a module sheet, `@import` comes first.** That is a CSS requirement, not
-a convention. The shared vocabulary is therefore always earliest, and anything
-the module declares afterwards beats it at equal specificity — which is what
-makes "import and delete" load-bearing rather than tidy.
+/* GOOD — severity from the theme */
+.status-dot.success { background: var(--p-success-500); }
+```
 
-**The theme's stylesheet is appended to the shadow root after the module's.**
-The module's CSS is injected when the component connects; the theme's PrimeVue
-sheet arrives afterwards and is appended as a `<style>`. Both are `<style>`
-elements, so document order decides and the theme is second. A module rule that
-must beat a themed component class needs *more specificity*, not a later
-position in the file. (`adoptedStyleSheets` carries the facade's custom CSS,
-not the theme — reaching for an adopted sheet does not win this.)
+A *tone* may still exist in the shared layer — but only as **decorative
+category colour**, never as severity. If it can mean "this failed", it is
+severity and it is the theme's.
 
-## Distribution
+### Shared vocabulary the theme has no seat for
 
-The shared layer is a package, so it needs a way to reach a module in another
-repository. Wippy modules do this by publishing the package as an **artifact**
-inside the module that owns it, and materializing it into each consumer at
-build time. See [Dependency Management](../guides/dependency-management.md) for
-how a module declares and resolves what it consumes.
+```css
+/* GOOD — PrimeVue ships no Card, no surface Header, no EmptyState.
+   These recur across modules with nothing themed behind them, so they are
+   exactly what the shared layer is for. */
+@import "@kickside/ui-kit/kx-card.css";
+@import "@kickside/ui-kit/kx-state.css";
+```
 
-The test that the layer actually works is not that the monorepo builds. It is
-that a module in a **different repository**, with no path access to the
-producer, consumes the vocabulary and builds.
+### Adopting means import *and delete*
+
+A CSS `@import` must precede every other rule in a sheet. The shared sheet
+therefore always lands **first**, and anything the module declares afterwards
+beats it at equal specificity. A module that imports the package and keeps its
+own copy has changed nothing at all.
+
+```css
+/* BAD — the import is inert; the local copy still wins */
+@import "@kickside/ui-kit/kx-card.css";
+.kx-card { border-radius: 14px; border: 1px solid var(--p-content-border-color); }
+
+/* GOOD — import, delete the local copy, keep only a documented delta */
+@import "@kickside/ui-kit/kx-card.css";
+/* This surface's cards are inline in a dense list, so they lose the lift. */
+.kx-card:hover { transform: none; }
+```
+
+Keep the **delta only** — never restate the whole body. And never fold two
+intents into one name: if a class name means different things in two modules,
+that is two concepts wearing one name. Split the name; do not pick a winner and
+repaint the loser.
+
+### Specificity against the theme
+
+The module's CSS is injected into the shadow root first; the theme's PrimeVue
+sheet is appended afterwards. Both are `<style>` elements, so **document order
+decides and the theme is second**. A module rule that must beat a themed
+component class needs more *specificity* — not a later line in the file.
+(`adoptedStyleSheets` carries the facade's custom CSS, not the theme, so
+reaching for an adopted sheet does not win this either.)
+
+This bites hardest with pass-through classes, where your class lands *on* a
+themed element:
+
+```css
+/* BAD — this class is applied to PrimeVue's own footer element, so at equal
+   specificity the theme wins and the padding never applies. */
+.kx-modal-foot { padding: 14px 18px; }
+
+/* GOOD — scoped under the dialog root, so it out-specifies the theme */
+.kx-modal > .kx-modal-foot { padding: 14px 18px; }
+```
+
+## What the shared layer may contain
+
+Everything a set of modules genuinely shares and the theme does not own: CSS
+vocabulary, derived tokens, internal components, helpers, test harness. The
+duplication is identical in kind — Kickside had nineteen copies of one test
+bootstrap alongside its cloned CSS.
+
+**Ship it in semantic chunks.** Each unit should be one named concept a
+consumer can reason about — `kx-card`, `kx-state`, `kx-tag`. Prefer
+finer-grained packages so a consumer takes only what it needs; a single package
+shipping several clearly-named units is workable, but it is not the shape to
+aim for.
+
+**Never a catch-all.** No `common`, no `shared`, no `misc`, no `utils`. A unit
+whose name does not say what is inside it will accumulate everything that had
+nowhere else to go, and you will have rebuilt the problem this layer exists to
+solve.
+
+## Normalising is a visual change
+
+Consolidating drifted copies moves pixels. Kickside had one selector with
+**nineteen definitions in seventeen distinct bodies**. Diff every body, pick
+the canon, record why you picked it, keep deliberate divergence as a documented
+override — and look at the result. Unit tests cannot see layout.
 
 ## Related
 
-- [Theming](./micro-frontends/theming.md) — the token catalogue and how the
+- [Theming](./micro-frontends/theming.md) — the token catalogue, and how the
   theme reaches both host and children
 - [Compliance checklist](./micro-frontends/compliance-checklist.md) — the
   per-module rules a frontend is checked against
