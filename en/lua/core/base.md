@@ -1,6 +1,6 @@
 ---
 title: "Standard Lua Libraries"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Built-in Lua globals, table, string, math, coroutine, and structured-error APIs available to Wippy entries."
 ---
 
 # Standard Lua Libraries
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Core Lua libraries automatically available in all Wippy processes. No `require()` needed.
+These core Lua libraries are available in every Wippy process without `require()`.
 
-## Global Functions
+## Built-in Global Functions
 
 ### Type and Conversion
 
@@ -72,7 +72,7 @@ _VERSION  -- Lua version string
 
 ## Table Manipulation
 
-Functions for modifying tables:
+The `table` library provides in-place array operations, sorting, concatenation, and unpacking:
 
 ```lua
 table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
@@ -98,7 +98,7 @@ end)
 
 ## String Operations
 
-String manipulation functions. Also available as methods on string values:
+String functions are also available as methods on string values.
 
 ### Pattern Matching
 
@@ -178,7 +178,7 @@ Uppercase versions (`%A`, `%D`, etc.) match the complement.
 
 ## Math Functions
 
-Mathematical functions and constants:
+The `math` library provides numeric constants and common mathematical operations.
 
 ### Constants {id="math-constants"}
 
@@ -241,7 +241,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## Coroutines
 
-Coroutine creation and control. See [Channels and Coroutines](lua/core/channel.md) for channels and concurrent patterns:
+The `coroutine` library provides coroutine creation and control. See [Channels and Coroutines](lua/core/channel.md) for channel-based concurrency patterns.
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -254,7 +254,7 @@ coroutine.wrap(fn)          -- Create coroutine as callable function
 
 ### Spawning Concurrent Coroutines
 
-Spawn a concurrent coroutine that runs independently (Wippy-specific):
+Wippy adds `coroutine.spawn` for scheduler-managed concurrent work:
 
 ```lua
 coroutine.spawn(fn)         -- Spawn function as concurrent coroutine
@@ -275,7 +275,7 @@ process_request()
 
 ## Error Handling
 
-Structured error creation and classification. See [Error Handling](lua/core/errors.md) for full documentation:
+The global `errors` table creates and classifies structured errors. See [Error Handling](lua/core/errors.md) for the complete API.
 
 ### Constants {id="error-constants"}
 
@@ -331,7 +331,7 @@ err:stack()      -- Get stack trace as string
 
 ## Restricted Features
 
-The following standard Lua features are NOT available for security:
+The following standard Lua features are unavailable in Wippy processes:
 
 | Feature | Alternative |
 |---------|-------------|

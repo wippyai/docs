@@ -5,7 +5,7 @@ description: "Configuration for Lua-based entries: functions, processes, workflo
 
 # Lua Entry Kinds
 
-Configuration for Lua-based entries: functions, processes, workflows, and libraries.
+Lua entry kinds define how source code is loaded and executed as a function, process, workflow, library, or module surface.
 
 ## Entry Kinds
 
@@ -33,9 +33,9 @@ All Lua entries share these fields:
 | `imports` | no | Other entries as local modules |
 | `meta` | no | Searchable metadata |
 
-## function.lua
+## `function.lua`
 
-Stateless function called on demand. Each invocation is independent.
+A `function.lua` entry runs on demand, with each invocation handled independently.
 
 ```yaml
 - name: handler
@@ -47,11 +47,11 @@ Stateless function called on demand. Each invocation is independent.
     - json
 ```
 
-Use for: HTTP handlers, data transformations, utilities.
+Typical uses include HTTP handlers, data transformations, and utilities.
 
-## process.lua
+## `process.lua`
 
-Long-running actor that maintains state across messages. Communicates via message passing.
+A `process.lua` entry is a long-running actor that maintains state and communicates through messages.
 
 ```yaml
 - name: worker
@@ -63,7 +63,7 @@ Long-running actor that maintains state across messages. Communicates via messag
     - sql
 ```
 
-Use for: Background workers, service daemons, stateful actors.
+Typical uses include background workers, service daemons, and stateful actors.
 
 To run as a supervised service:
 
@@ -78,9 +78,9 @@ To run as a supervised service:
       max_attempts: 10
 ```
 
-## workflow.lua
+## `workflow.lua`
 
-Durable workflow that survives restarts. State is persisted to Temporal.
+A `workflow.lua` entry defines a durable workflow whose state is persisted to Temporal.
 
 ```yaml
 - name: order_processor
@@ -92,11 +92,11 @@ Durable workflow that survives restarts. State is persisted to Temporal.
     - time
 ```
 
-Use for: Multi-step business processes, long-running orchestrations.
+Typical uses include multi-step business processes and long-running orchestration.
 
-## library.lua
+## `library.lua`
 
-Shared code that can be imported by other entries.
+A `library.lua` entry provides shared code that other entries can import.
 
 ```yaml
 - name: helpers
@@ -139,10 +139,7 @@ modules:
 
 `channel`, `print`, `subscribe`, and `unsubscribe` are loaded as Lua globals — they don't need to appear in `modules:`.
 
-Only listed modules are available. This provides:
-- Security: Prevent access to system modules
-- Explicit dependencies: Clear what code needs
-- Determinism: Workflows only get deterministic modules
+Only listed modules are available. The allowlist limits access to system modules, makes dependencies explicit, and restricts workflows to deterministic modules.
 
 See [Lua Runtime](lua/overview.md) for available modules.
 
@@ -158,9 +155,9 @@ imports:
 
 The key becomes the module name in Lua code. The value is the entry ID (`namespace:name`).
 
-## Pool Configuration
+## Function Pools
 
-Configure execution pool for functions:
+Use `pool` to configure how a function entry executes:
 
 ```yaml
 - name: handler
@@ -182,16 +179,16 @@ Configure execution pool for functions:
 
 | Type | Behavior |
 |------|----------|
-| `inline` | Synchronous execution in caller's goroutine. Lowest latency, no isolation between calls. |
+| `inline` | Synchronous execution in the caller's goroutine. No isolation between calls. |
 | `lazy` | Zero idle workers, spawn on demand, tear down when idle. |
 | `static` | Fixed-size channel-based pool. Predictable under steady load. |
 | `adaptive` | Auto-scaling pool — grows under load, shrinks when idle. |
 
-When `type` is omitted, the pool is auto-selected from the other fields: a lazy pool by default, a static pool if `workers` is set.
+When `type` is omitted, the runtime selects a lazy pool by default or a static pool when `workers` is set.
 
 ## Metadata
 
-Use `meta` for routing and discovery:
+Use `meta` to attach searchable routing and discovery fields:
 
 ```yaml
 - name: api_handler
@@ -216,6 +213,6 @@ local handlers = registry.find({["meta.type"] = "handler"})
 
 ## See Also
 
-- [Entry Kinds](guides/entry-kinds.md) - All entry kinds reference
+- [Entry Kinds](guides/entry-kinds.md) - Reference for all entry kinds
 - [Compute Units](concepts/compute-units.md) - Functions vs processes vs workflows
 - [Lua Runtime](lua/overview.md) - Available modules

@@ -1,6 +1,6 @@
 ---
 title: "Errors"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Create, wrap, inspect, and classify structured errors in Lua entries."
 ---
 
 # Errors
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Structured error handling with categorization and retry metadata. Global `errors` table available without require.
+The global `errors` table creates and inspects structured errors with categories, details, and retry metadata. It is available without `require`.
 
 ## Creating Errors
 
@@ -29,7 +29,7 @@ local err = errors.new({
 
 ## Wrapping Errors
 
-Add context while preserving kind, retryable, and details:
+Wrap an error to add context while preserving its kind, retry metadata, and details:
 
 ```lua
 local data, err = db.query("SELECT * FROM users")
@@ -80,7 +80,7 @@ end
 
 ## Call Stack
 
-Get structured call stack:
+Use `errors.call_stack` to inspect a structured call stack:
 
 ```lua
 local stack = errors.call_stack(err)

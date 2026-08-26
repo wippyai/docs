@@ -1,13 +1,13 @@
 ---
 title: "Type System"
-description: "Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default."
+description: "Syntax and runtime behavior for Wippy's gradual type system, including unions, records, generics, validation, and reflection."
 ---
 
 # Type System
 
-> **Experimental.** Some limitations are expected.
+> **Experimental.** The type system is still evolving, and some limitations are expected.
 
-Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
+Wippy's gradual type system supports incremental annotations and flow-sensitive checking. Types are non-nullable by default.
 
 ## Primitives
 
@@ -20,7 +20,7 @@ local a: any = "anything"     -- explicit dynamic (opt-out of checking)
 local u: unknown = something  -- must narrow before use
 ```
 
-### any vs unknown
+### `any` and `unknown`
 
 ```lua
 -- any: opt-out of type checking
@@ -205,7 +205,7 @@ end
 
 ## The never Type
 
-`never` is the bottom type - no values exist:
+`never` is the bottom type: it has no possible values.
 
 ```lua
 function fail(msg: string): never
@@ -215,7 +215,7 @@ end
 
 ## Error Handling Pattern
 
-The checker understands the Lua error idiom:
+The checker understands the common Lua `value, error` return pattern:
 
 ```lua
 local value, err = call()
@@ -240,9 +240,9 @@ local name = (user!).name            -- assert user is non-nil
 
 ## Type Casts
 
-### Safe Cast (Validation)
+### Validated Cast
 
-Call a type as a function to validate and cast:
+Call a type as a function to validate a value and return it with the requested type:
 
 ```lua
 local data: any = get_json()
@@ -264,7 +264,7 @@ local p = Point(data)                -- validates record structure
 
 ### Type:is() Method
 
-Validate without throwing, returns `(value, nil)` or `(nil, error)`:
+`Type:is` validates without throwing and returns either `(value, nil)` or `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -300,7 +300,7 @@ Use sparingly. Unsafe casts bypass validation and can cause runtime errors if th
 
 ## Type Reflection
 
-Types are first-class values with introspection methods.
+Types are first-class values that provide introspection methods.
 
 ### Kind and Name
 
@@ -476,7 +476,7 @@ local id: number @min(1) | string @min_len(1) = 1
 
 ## Gradual Adoption
 
-Add types incrementally - untyped code continues to work:
+Types can be added incrementally; untyped code continues to work:
 
 ```lua
 -- Existing code works unchanged
@@ -490,17 +490,18 @@ function new_function(x: number): number
 end
 ```
 
-Start by adding types to:
+Useful starting points include:
+
 1. Function signatures at API boundaries
 2. HTTP handlers and queue consumers
 3. Critical business logic
 
 ## Type Checking
 
-Run the type checker:
+Run the type checker with:
 
 ```bash
 wippy lint
 ```
 
-Reports type errors without executing code.
+The command reports type errors without executing the code.

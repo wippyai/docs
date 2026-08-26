@@ -1,22 +1,22 @@
 ---
 title: "Lua Runtime"
-description: "Wippy's primary compute runtime optimized for I/O-bound and business logic workloads. Code runs in isolated processes that communicate through message…"
+description: "How Lua code runs in Wippy processes, communicates through channels, loads modules, and handles errors."
 ---
 
 # Lua Runtime
 
-Wippy's primary compute runtime optimized for I/O-bound and business logic workloads. Code runs in isolated processes that communicate through message passing—no shared memory, no locks.
+Lua is Wippy's primary runtime for I/O-bound work and business logic. Code runs in isolated processes that communicate through message passing rather than shared memory.
 
 Wippy is designed as a polyglot runtime. While Lua is the primary language, future versions will support additional languages through WebAssembly and Temporal integration for compute-intensive or specialized workloads.
 
 ## Processes
 
-Your Lua code runs inside **processes**—isolated execution contexts managed by the scheduler. Each process:
+Lua code runs inside **processes**: isolated execution contexts managed by the scheduler. Each process:
 
-- Has its own memory space
-- Yields on blocking operations (I/O, channels)
-- Can be monitored and supervised
-- Scales to thousands per machine
+- has its own memory space;
+- yields during blocking operations such as I/O and channel access;
+- can be monitored and supervised; and
+- can run alongside thousands of other processes on one machine.
 
 <note>
 A typical Lua process has a baseline memory overhead of ~13 KB.
@@ -31,7 +31,7 @@ See [Process Management](lua/core/process.md) for spawning, linking, and supervi
 
 ## Channels
 
-Go-style channels for communication:
+Channels provide communication between concurrent tasks:
 
 ```lua
 local ch = channel.new()        -- unbuffered
@@ -45,7 +45,7 @@ See [Channels](lua/core/channel.md) for select and patterns.
 
 ## Coroutines
 
-Within a process, spawn lightweight coroutines:
+Within a process, use lightweight coroutines for concurrent work:
 
 ```lua
 coroutine.spawn(function()
@@ -56,11 +56,11 @@ end)
 do_other_work()  -- continues immediately
 ```
 
-Spawned coroutines are scheduler-managed—no manual yield/resume.
+The scheduler manages spawned coroutines, so callers do not manually yield or resume them.
 
 ## Select
 
-Handle multiple event sources:
+Use `channel.select` to wait for multiple event sources:
 
 ```lua
 local r = channel.select {
@@ -80,7 +80,7 @@ end
 
 ## Globals
 
-These are always available without `require` and don't need to be listed in `modules:`:
+The following globals are available without `require` and do not need to be listed in `modules:`:
 
 - `process` - spawn, message, monitor, and link processes
 - `channel` - Go-style channels
@@ -100,9 +100,9 @@ local http = require("http_client")
 
 Available modules depend on entry configuration. See [Entry Definitions](lua/entries.md).
 
-## External Libraries
+## Language and Library Support
 
-Wippy uses Lua 5.3 syntax with a [gradual type system](lua/types.md) inspired by Luau. Types are first-class runtime values—callable for validation, passable as arguments, and introspectable—replacing the need for schema libraries like Zod or Pydantic.
+Wippy uses Lua 5.3 syntax with a [gradual type system](lua/types.md) inspired by Luau. Types are first-class runtime values that can be used for validation, passed as arguments, and inspected at runtime.
 
 External Lua libraries (LuaRocks, etc.) are not supported. The runtime provides its own module system with built-in extensions for I/O, networking, and system integration.
 
@@ -110,7 +110,7 @@ For custom extensions, see [Modules](internals/modules.md) in the internals docu
 
 ## Error Handling
 
-Functions return `result, error` pairs:
+Functions commonly return `result, error` pairs:
 
 ```lua
 local data, err = json.decode(input)
