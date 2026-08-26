@@ -1,6 +1,6 @@
 ---
 title: "Server-Sent Events"
-description: "The SSE middleware streams events from the server to HTTP clients using the Server-Sent Events protocol."
+description: "Stream short-lived handler events or long-lived process-backed events over Server-Sent Events."
 ---
 
 # Server-Sent Events

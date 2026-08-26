@@ -5,7 +5,7 @@ description: "The WebSocket relay middleware upgrades HTTP connections to WebSoc
 
 # WebSocket Relay
 
-The WebSocket relay middleware upgrades HTTP connections to WebSocket and relays messages to a target process.
+The `websocket_relay` middleware upgrades an HTTP connection and relays WebSocket messages to a target process.
 
 ## How It Works
 
@@ -157,7 +157,7 @@ end
 
 ## Sending to Client
 
-Send messages back using the client PID. Any topic you choose is wrapped as `{topic, data}` JSON and forwarded to the WebSocket. Every server-to-client message is sent as a single WebSocket TEXT frame containing the `{topic, data}` JSON wrapper. Binary payloads are base64-encoded into the `data` field; they are NOT sent as separate binary frames.
+Send messages back using the client PID. Any topic you choose is wrapped as `{topic, data}` JSON and forwarded to the WebSocket. Every server-to-client message is sent as a single WebSocket text frame containing the `{topic, data}` JSON wrapper. Binary payloads are base64-encoded into the `data` field; they are not sent as separate binary frames.
 
 ```lua
 -- Send a structured message (any topic name)

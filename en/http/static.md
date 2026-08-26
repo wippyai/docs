@@ -1,11 +1,11 @@
 ---
 title: "Static Files"
-description: "Serve static files from any filesystem using http.static. Static handlers mount directly on the server and can serve SPAs, assets, or user uploads from…"
+description: "Serve SPAs, assets, and user uploads from filesystem entries with http.static."
 ---
 
 # Static Files
 
-Serve static files from any filesystem using `http.static`. Static handlers mount directly on the server and can serve SPAs, assets, or user uploads from any path.
+An `http.static` handler mounts directly on a server and serves SPAs, assets, or user uploads from a filesystem entry.
 
 ## Configuration
 
@@ -28,7 +28,7 @@ Serve static files from any filesystem using `http.static`. Static handlers moun
 | `path` | string | URL mount path (must start with `/`) |
 | `fs` | Registry ID | Filesystem entry to serve from |
 | `static_options.spa` | bool | SPA mode - serve index for unmatched paths |
-| `static_options.index` | string | Index file (required when spa=true) |
+| `static_options.index` | string | Index file (required when `spa=true`) |
 | `static_options.cache` | string | Cache-Control header value |
 | `middleware` | []string | Middleware chain |
 | `options` | map | Middleware options (dot notation) |
@@ -135,6 +135,7 @@ entries:
 ```
 
 Common cache patterns:
+
 - **Versioned assets**: `public, max-age=31536000, immutable`
 - **HTML/index**: `public, max-age=0, must-revalidate`
 - **User uploads**: `private, max-age=3600`

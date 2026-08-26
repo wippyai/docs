@@ -5,7 +5,7 @@ description: "Routers group endpoints under URL prefixes and apply shared middle
 
 # Routing
 
-Routers group endpoints under URL prefixes and apply shared middleware. Endpoints define HTTP handlers.
+An `http.router` groups endpoints under a URL prefix and applies shared middleware. Each `http.endpoint` defines an HTTP handler.
 
 ## Architecture
 
@@ -24,6 +24,7 @@ flowchart TB
 ```
 
 Entries reference parents via metadata:
+
 - Routers: `meta.server: app:gateway`
 - Endpoints: `meta.router: app:api`
 
@@ -166,7 +167,7 @@ post_options:
   endpoint_firewall.action: "access"
 ```
 
-## Pre-Match vs Post-Match Middleware
+## Pre-Match and Post-Match Middleware
 
 **Pre-match** (`middleware`) runs before route matching:
 - CORS (handles OPTIONS preflight)
@@ -261,7 +262,7 @@ entries:
 
 ## Protected Routes
 
-Common pattern with authentication:
+The following configuration separates public routes from routes that require authentication and authorization:
 
 ```yaml
 entries:

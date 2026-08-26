@@ -5,7 +5,7 @@ description: "Middleware processes HTTP requests before and after route handling
 
 # HTTP Middleware
 
-Middleware processes HTTP requests before and after route handling.
+HTTP middleware adds request processing before route matching or after a route is matched.
 
 ## How Middleware Works
 
@@ -22,7 +22,7 @@ options:
 
 Options use dot notation: `middleware_name.option.name`. Legacy underscore format is supported for backward compatibility.
 
-## Pre-Match vs Post-Match
+## Pre-Match and Post-Match
 
 <tip>
 <b>Pre-match</b> runs before route matching—for cross-cutting concerns like CORS and compression.

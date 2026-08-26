@@ -5,7 +5,7 @@ description: "Endpoints (http.endpoint) define HTTP route handlers that execute 
 
 # HTTP Endpoints
 
-Endpoints (`http.endpoint`) define HTTP route handlers that execute Lua functions.
+An `http.endpoint` maps an HTTP method and path to a Lua handler function.
 
 ## Definition
 
@@ -155,7 +155,7 @@ return { handler = handler }
 
 ## JSON API Pattern
 
-Common pattern for JSON APIs:
+A JSON API handler can parse the request body, reject invalid input, and write a JSON result:
 
 ```lua
 local http = require("http")
