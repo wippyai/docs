@@ -1,6 +1,6 @@
 ---
 title: "Contracts"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Open typed service bindings, inspect contracts, call implementations, and propagate call or security context."
 ---
 
 # Contracts
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Invoke services through typed contracts. Call remote APIs, workflows, and functions with schema validation and async execution support.
+The `contract` module opens typed service bindings for remote APIs, workflows, and functions. Contracts support schema validation, asynchronous calls, and call-context propagation.
 
 ## Loading
 
@@ -19,7 +19,7 @@ local contract = require("contract")
 
 ## Opening a Binding
 
-Open a binding directly by ID:
+Open a binding by its registry ID:
 
 ```lua
 local greeter, err = contract.open("app.services:greeter")
@@ -30,7 +30,7 @@ end
 local result, err = greeter:say_hello("Alice")
 ```
 
-With scope context or query parameters:
+Bindings can also receive scope values, query parameters, or call options:
 
 ```lua
 -- With scope table
@@ -50,7 +50,7 @@ local inst, err = contract.open("app.services:flaky", nil, {
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `binding_id` | string | Binding ID, supports query params |
+| `binding_id` | string | Binding ID; query parameters are supported |
 | `scope` | table | Context values (optional, overrides query params) |
 | `options` | table | Call options (optional) — e.g. `retry.max_attempts`, `retry.initial_delay` |
 
@@ -58,7 +58,7 @@ local inst, err = contract.open("app.services:flaky", nil, {
 
 ## Getting a Contract
 
-Retrieve contract definition for introspection:
+Retrieve a contract definition for introspection:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
@@ -84,7 +84,7 @@ local method, err = c:method("say_hello")
 
 ## Finding Implementations
 
-List all bindings that implement a contract:
+List the bindings that implement a contract:
 
 ```lua
 local bindings, err = contract.find_implementations("app.services:greeter")
@@ -94,7 +94,7 @@ for _, binding_id in ipairs(bindings) do
 end
 ```
 
-Or via contract object:
+The same lookup is available on a contract object:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
@@ -103,7 +103,7 @@ local bindings, err = c:implementations()
 
 ## Checking Implementation
 
-Check if instance implements a contract:
+Check whether an instance implements a contract:
 
 ```lua
 if contract.is(instance, "app.services:greeter") then
@@ -113,7 +113,7 @@ end
 
 ## Calling Methods
 
-Sync call - blocks until complete:
+A synchronous method call blocks until it completes:
 
 ```lua
 local calc, err = contract.open("app.services:calculator")
@@ -124,7 +124,7 @@ local product, err = calc:multiply(5, 6)
 
 ## Async Calls
 
-Add `_async` suffix for async execution:
+Append `_async` to a method name to start it asynchronously:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
@@ -145,7 +145,7 @@ See [Futures](lua/core/future.md) for future methods.
 
 ## Opening via Contract
 
-Open binding through contract object:
+Open a binding through a contract object:
 
 ```lua
 local c, err = contract.get("app.services:user")
@@ -163,7 +163,7 @@ local instance, err = c:open("app.services:user_impl", {user_id = 123})
 
 ## Adding Context
 
-Create wrapper with pre-configured context:
+Create a wrapper with preconfigured context values:
 
 ```lua
 local c, err = contract.get("app.services:user")
@@ -178,7 +178,7 @@ local instance, err = wrapped:open()
 
 ## Call Options
 
-Configure retry and other call behavior via `with_options`:
+Use `with_options` to configure retries and other call behavior:
 
 ```lua
 local c, err = contract.get("app.services:flaky")
@@ -190,7 +190,7 @@ local inst, err = c
 local result, err = inst:call()
 ```
 
-Options apply to every method call on the returned instance. Only retryable errors trigger retries; non-retryable errors surface immediately. Chainable with `with_context`, `with_actor`, `with_scope`.
+Options apply to every method call on the returned instance. Only retryable errors trigger retries; non-retryable errors return immediately. `with_options` can be chained with `with_context`, `with_actor`, and `with_scope`.
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -199,7 +199,7 @@ Options apply to every method call on the returned instance. Only retryable erro
 
 ## Security Context
 
-Set actor and scope for authorization:
+Set the actor and scope used for authorization:
 
 ```lua
 local security = require("security")

@@ -1,6 +1,6 @@
 ---
 title: "Event Bus"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Publish and observe best-effort runtime and application events."
 ---
 
 # Event Bus
@@ -8,10 +8,10 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publish and subscribe to events for observability — monitoring runtime and application activity and reacting to it.
+The event bus publishes runtime and application activity for monitoring, logging, metrics, and reactive side effects.
 
 <note>
-Use the event bus for observation only: monitoring, logging, metrics, and reactive side effects. It is a best-effort publish/subscribe channel, not a reliable transport — do not build business logic on it or depend on it for guaranteed delivery. For business-critical messaging use process messaging (`process.send`), channels, or the [message queue](lua/storage/queue.md).
+The event bus is a best-effort publish/subscribe channel, not a reliable transport. Do not depend on it for business-critical delivery. Use process messaging (`process.send`), channels, or the [message queue](lua/storage/queue.md) when delivery is part of application correctness.
 </note>
 
 ## Loading
@@ -22,7 +22,7 @@ local events = require("events")
 
 ## Subscribing to Events
 
-Subscribe to events from the event bus:
+Subscribe to one system or a system pattern, with an optional event-kind filter:
 
 ```lua
 -- Subscribe to all order events
@@ -59,9 +59,9 @@ end
 
 **Returns:** `Subscription, error`
 
-## Sending Events
+## Publishing Events
 
-Send an event to the event bus:
+Publish an event to the event bus:
 
 ```lua
 -- Send order created event
@@ -104,9 +104,9 @@ events.send("system", "heartbeat", "/health")
 
 ## Subscription Methods
 
-### Getting the Channel
+### Receive Channel
 
-Get the channel for receiving events:
+Use the subscription channel to receive events:
 
 ```lua
 local ch = sub:channel()
@@ -120,11 +120,11 @@ if ok then
 end
 ```
 
-Event fields: `system`, `kind`, `path`, `data`
+Each event contains `system`, `kind`, `path`, and `data` fields.
 
-### Closing Subscription
+### Close a Subscription
 
-Unsubscribe and close the channel:
+Close the subscription to unsubscribe and close its channel:
 
 ```lua
 sub:close()
@@ -147,4 +147,3 @@ sub:close()
 | Policy denied | `errors.INVALID` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
-

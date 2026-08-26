@@ -1,6 +1,6 @@
 ---
 title: "Process Groups"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Manage cluster-wide process groups, membership, broadcasts, and membership subscriptions."
 ---
 
 # Process Groups
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Join processes into named groups and broadcast to every member across the cluster. Modeled on Erlang/OTP `pg`: groups are dynamic, a process can belong to many groups, and membership is tracked cluster-wide and is eventually consistent.
+Process groups organize processes under dynamic names and broadcast messages to group members across the cluster. A process can join multiple groups, and cluster-wide membership is eventually consistent.
 
 For the scope entry kind and its configuration, see [Process Groups](system/process-groups.md). For the broader clustering model, see the [Cluster Guide](guides/cluster.md).
 
@@ -20,7 +20,7 @@ local pg = require("pg")
 
 ## Opening a Scope
 
-A process group lives inside a **scope** — a `pg.scope` registry entry. Open it to get an instance you operate on:
+A process group belongs to a **scope**, represented by a `pg.scope` registry entry. Open the scope to obtain an instance for group operations:
 
 ```lua
 local group, err = pg.open("app:pg")
@@ -37,7 +37,7 @@ end
 
 **Permission:** `pg.open` on the scope `id`
 
-The instance is released automatically when the process exits; call `release()` to free it earlier. All other operations are methods on the instance, called with `:`.
+The instance is released automatically when the process exits. Call `release()` to release it earlier. Other operations are methods on the instance and use `:` syntax.
 
 ## Joining and Leaving
 
@@ -53,7 +53,7 @@ local ok, err = group:leave("workers")
 
 **Returns:** `boolean, error`
 
-A process may join the same group more than once; it must leave the same number of times to fully depart (multi-join semantics). `leave` is best-effort across a batch and returns an error only when the process was a member of none of the named groups.
+A process can join the same group more than once and must leave the same number of times to depart fully. For a batch, `leave` is best-effort and returns an error only when the process was not a member of any named group.
 
 **Permissions:** `pg.join` / `pg.leave` on each group name
 
@@ -85,7 +85,7 @@ local local_groups, err = group:which_local_groups()  -- groups with a local mem
 
 ## Broadcasting
 
-Send a message to every member of a group. Each member receives it under `topic` from the calling process — handle it with `process.listen(topic)`.
+Broadcast sends a message from the calling process to every group member under `topic`. Members receive it with `process.listen(topic)`.
 
 ```lua
 local ok, err = group:broadcast("workers", "task", {id = 42})   -- all nodes
@@ -104,7 +104,7 @@ local ok, err = group:broadcast_local("workers", "task", {id = 42})  -- this nod
 
 ## Monitoring a Group
 
-`monitor` subscribes to join/leave events for one group and returns the current members atomically — no membership change can slip between the snapshot and the subscription.
+`monitor` subscribes to join and leave events for one group and returns an atomic snapshot of its current members. No membership change can occur between the snapshot and subscription setup without being observed.
 
 ```lua
 local sub, members, err = group:monitor("workers")
@@ -132,7 +132,7 @@ sub:close()  -- unsubscribe; sub:close({flush = true}) drains queued events firs
 
 ## Watching All Groups
 
-`events` subscribes to membership changes across every group in the scope and returns a snapshot of all groups to their members.
+`events` subscribes to membership changes for every group in the scope and returns a snapshot mapping groups to their members.
 
 ```lua
 local sub, snapshot, err = group:events()
@@ -165,7 +165,7 @@ Subscription channels are buffered (capacity 64). If a slow consumer fills the b
 group:release()
 ```
 
-Frees the instance immediately. Idempotent; after release, every method returns an error. Cleanup also runs automatically when the process exits.
+`release` frees the instance immediately and is idempotent. After release, every method returns an error. Cleanup also runs automatically when the process exits.
 
 **Returns:** `boolean`
 

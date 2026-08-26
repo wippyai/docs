@@ -1,17 +1,17 @@
 ---
 title: "Futures"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Receive, inspect, and cancel results from asynchronous function and contract calls."
 ---
 
 # Futures
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Asynchronous operation results. Futures are returned by `funcs.async()` and contract async calls.
+Futures represent asynchronous operation results. They are returned by `funcs.async()` and asynchronous contract calls.
 
 ## Loading
 
-Not a loadable module. Futures are created by async operations:
+Futures are not loaded as a module; asynchronous operations create them:
 
 ```lua
 local funcs = require("funcs")
@@ -20,7 +20,7 @@ local future, err = funcs.async("app.compute:task", data)
 
 ## Response Channel
 
-Get channel for receiving result:
+Use the response channel to receive the result:
 
 ```lua
 local ch = future:response()
@@ -34,7 +34,7 @@ end
 
 ## Completion Check
 
-Non-blocking check if future completed:
+Check whether the future has completed without blocking:
 
 ```lua
 if future:is_complete() then
@@ -44,7 +44,7 @@ end
 
 ## Cancellation Check
 
-Check if `cancel()` was called:
+Check whether `cancel()` was called:
 
 ```lua
 if future:is_canceled() then
@@ -54,13 +54,14 @@ end
 
 ## Getting Result
 
-Get cached result (non-blocking):
+Read the cached result without blocking:
 
 ```lua
 local val, err = future:result()
 ```
 
 **Returns:**
+
 - Not complete: `nil, nil`
 - Canceled: `nil, error` (kind `CANCELED`)
 - Error: `nil, error`
@@ -68,7 +69,7 @@ local val, err = future:result()
 
 ## Getting Error
 
-Get error if future failed:
+Read the error when the future has failed:
 
 ```lua
 local err, has_error = future:error()
@@ -81,13 +82,13 @@ end
 
 ## Canceling
 
-Cancel async operation (best-effort):
+Request cancellation of the asynchronous operation on a best-effort basis:
 
 ```lua
 future:cancel()
 ```
 
-Operation may still complete if already in progress.
+The operation may still complete if it is already in progress.
 
 ## Timeout Pattern
 

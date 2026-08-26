@@ -1,6 +1,6 @@
 ---
 title: "Function Invocation"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Call registered functions synchronously or asynchronously and propagate request, security, and call options."
 ---
 
 # Function Invocation
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The primary way to call other functions in Wippy. Execute registered functions synchronously or asynchronously across processes, with full support for context propagation, security credentials, and timeouts. This module is central to building distributed applications where components need to communicate.
+The `funcs` module calls registered functions synchronously or asynchronously. An executor can propagate request context, security identity, and implementation-specific call options.
 
 ## Loading
 
@@ -16,9 +16,9 @@ The primary way to call other functions in Wippy. Execute registered functions s
 local funcs = require("funcs")
 ```
 
-## call
+## `call`
 
-Calls a registered function synchronously. Use this when you need an immediate result and can wait for it.
+Calls a registered function synchronously and waits for its result.
 
 ```lua
 local result, err = funcs.call("app.api:get_user", user_id)
@@ -35,11 +35,11 @@ print(result.name)
 
 **Returns:** `result, error`
 
-The target string follows the pattern `namespace:name` where namespace identifies the module and name identifies the specific function.
+The target uses the `namespace:name` format.
 
-## async
+## `async`
 
-Starts an async function call and returns immediately with a Future. Use this for long-running operations where you don't want to block, or when you want to run multiple operations in parallel.
+Starts a function call and returns a `Future` immediately. Futures allow other work to continue while the call runs and support multiple concurrent calls.
 
 ```lua
 -- Start heavy computation without blocking
@@ -65,9 +65,9 @@ end
 
 **Returns:** `Future, error`
 
-## new
+## `new`
 
-Creates a new Executor for building function calls with custom context. Use this when you need to propagate request context, set security credentials, or configure timeouts.
+Creates an `Executor` for calls that need custom context, security identity, or call options.
 
 ```lua
 local exec = funcs.new()
@@ -77,11 +77,11 @@ local exec = funcs.new()
 
 ## Executor
 
-Builder for function calls with custom context options. Methods return new Executor instances (immutable chaining), so you can reuse a base configuration.
+An executor stores call context and options. Its configuration methods return new executor instances, allowing a base configuration to be reused.
 
-### with_context
+### `with_context`
 
-Adds context values that will be available to the called function. Use this to propagate request-scoped data like trace IDs, user sessions, or feature flags.
+Adds request-scoped values that will be available to the called function, such as trace IDs, session data, or feature flags.
 
 ```lua
 -- Propagate request context to downstream services
@@ -99,9 +99,9 @@ local user, err = exec:call("app.api:get_user", user_id)
 
 **Returns:** `Executor, error`
 
-### with_actor
+### `with_actor`
 
-Sets the security actor for authorization checks in the called function. Use this when calling a function on behalf of a specific user.
+Sets the security actor used for authorization checks in the called function.
 
 ```lua
 local security = require("security")
@@ -121,9 +121,9 @@ end
 
 **Returns:** `Executor, error`
 
-### with_scope
+### `with_scope`
 
-Sets the security scope for called functions. Scopes define the permissions available for the call.
+Sets the security scope for called functions. The scope defines the permissions available to the call.
 
 ```lua
 local security = require("security")
@@ -138,9 +138,9 @@ local exec = funcs.new():with_scope(scope)
 
 **Returns:** `Executor, error`
 
-### with_options
+### `with_options`
 
-Sets call options like timeout and priority. Use this for operations that need time limits.
+Sets implementation-specific call options such as timeout and priority.
 
 ```lua
 -- Set a 5 second timeout for external API call
@@ -157,9 +157,9 @@ end
 
 **Returns:** `Executor, error`
 
-### call / async
+### `call` and `async`
 
-Executor versions of call and async that use the configured context.
+The executor versions of `call` and `async` use its configured context and options.
 
 ```lua
 -- Build reusable executor with context
@@ -174,11 +174,11 @@ local posts, _ = exec:call("app.api:list_posts")
 
 ## Future
 
-Returned by `async()` calls. Represents an in-progress async operation.
+`async()` returns a future representing an in-progress operation.
 
-### response / channel
+### `response` and `channel`
 
-Returns the underlying channel for receiving the result.
+Returns the channel used to receive the result.
 
 ```lua
 local future, _ = funcs.async("app.api:slow_operation", data)
@@ -192,9 +192,9 @@ local result = channel.select {
 
 **Returns:** `Channel`
 
-### is_complete
+### `is_complete`
 
-Non-blocking check if the future has completed.
+Checks whether the future has completed without blocking.
 
 ```lua
 while not future:is_complete() do
@@ -206,9 +206,9 @@ local result, err = future:result()
 
 **Returns:** `boolean`
 
-### is_canceled
+### `is_canceled`
 
-Returns true if `cancel()` was called on this future.
+Returns `true` if `cancel()` was called on the future.
 
 ```lua
 if future:is_canceled() then
@@ -218,9 +218,9 @@ end
 
 **Returns:** `boolean`
 
-### result
+### `result`
 
-Returns the cached result if complete, or nil if still pending.
+Returns the cached result when complete or `nil` while the operation is pending.
 
 ```lua
 local value, err = future:result()
@@ -233,9 +233,9 @@ end
 
 **Returns:** `Payload|nil, error|nil`
 
-### error
+### `error`
 
-Returns the error if the future failed.
+Returns the operation error when the future has failed.
 
 ```lua
 local err, has_error = future:error()
@@ -246,9 +246,9 @@ end
 
 **Returns:** `error|nil, boolean`
 
-### cancel
+### `cancel`
 
-Cancels the async operation.
+Requests cancellation of the asynchronous operation.
 
 ```lua
 future:cancel()
@@ -258,7 +258,7 @@ future:cancel()
 
 ## Parallel Operations
 
-Run multiple operations concurrently using async and channel.select.
+Combine `async` with `channel.select` to run and collect multiple calls concurrently.
 
 ```lua
 -- Start multiple operations in parallel

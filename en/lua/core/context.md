@@ -1,6 +1,6 @@
 ---
 title: "Request Context"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Read request-scoped values propagated through function and process calls."
 ---
 
 # Request Context
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Access request-scoped context values. Context is set via [Funcs](lua/core/funcs.md) or [Process](lua/core/process.md).
+The `ctx` module reads request-scoped values propagated through [function calls](lua/core/funcs.md) or [process operations](lua/core/process.md).
 
 ## Loading
 
@@ -18,7 +18,7 @@ local ctx = require("ctx")
 
 ## Context Access
 
-### Get Value
+### Get a Value
 
 ```lua
 local value, err = ctx.get("key")
