@@ -5,7 +5,7 @@ description: "Wippy integrates with Temporal.io for durable workflow execution, 
 
 # Temporal Integration
 
-Wippy integrates with [Temporal.io](https://temporal.io) for durable workflow execution, automatic replay, and long-running processes that survive restarts.
+The `temporal.client` and `temporal.worker` entry kinds connect Wippy workflows and activities to [Temporal](https://temporal.io).
 
 ## Client Configuration
 
@@ -153,7 +153,7 @@ The `temporal.worker` entry kind defines a worker that executes workflows and ac
 
 ### Worker Options
 
-Fine-tune worker behavior:
+Configure worker behavior:
 
 ```yaml
 - name: worker

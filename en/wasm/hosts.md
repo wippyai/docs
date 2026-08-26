@@ -5,7 +5,7 @@ description: "WASM modules access runtime capabilities through host function imp
 
 # Host Functions
 
-WASM modules access runtime capabilities through host function imports. Each import is declared explicitly per entry in the `imports` list.
+WASM modules access runtime capabilities through the host imports declared by each entry's `imports` list.
 
 ## Import Types
 

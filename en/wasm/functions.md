@@ -1,15 +1,15 @@
 ---
 title: "WASM Functions"
-description: "WASM functions are registry entries that execute WebAssembly code. Two entry kinds are available: function.wat for inline WAT source and function.wasm…"
+description: "Configure inline WAT functions and precompiled WASM functions as registry entries."
 ---
 
 # WASM Functions
 
-WASM functions are registry entries that execute WebAssembly code. Two entry kinds are available: `function.wat` for inline WAT source and `function.wasm` for precompiled binaries.
+Use `function.wat` for inline WebAssembly Text source and `function.wasm` for precompiled binaries.
 
 ## Inline WAT Functions
 
-Define small WASM functions directly in your `_index.yaml` using WebAssembly Text format:
+Define a WAT function directly in `_index.yaml`:
 
 ```yaml
 entries:

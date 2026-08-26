@@ -1,11 +1,11 @@
 ---
 title: "WASM Processes"
-description: "WASM modules can run as processes through the process.wasm entry kind. Processes execute within the Wippy process host and support the full process…"
+description: "Run WASM modules under a Wippy process host with process.wasm."
 ---
 
 # WASM Processes
 
-WASM modules can run as processes through the `process.wasm` entry kind. Processes execute within the Wippy process host and support the full process lifecycle: spawning, monitoring, and supervised shutdown.
+A `process.wasm` entry runs a WASM module under a Wippy process host with spawning, monitoring, and supervised shutdown.
 
 ## Entry Configuration
 

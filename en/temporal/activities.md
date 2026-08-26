@@ -1,11 +1,11 @@
 ---
 title: "Activities"
-description: "Activities are functions that execute non-deterministic operations. Any function.lua or process.lua entry can be registered as a Temporal activity by…"
+description: "Register function.lua or process.lua entries as Temporal activities for non-deterministic operations."
 ---
 
 # Activities
 
-Activities are functions that execute non-deterministic operations. Any `function.lua` or `process.lua` entry can be registered as a Temporal activity by adding metadata.
+Temporal activities execute non-deterministic operations. Register a `function.lua` or `process.lua` entry as an activity through its metadata.
 
 ## Registering Activities
 

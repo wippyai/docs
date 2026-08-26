@@ -1,13 +1,13 @@
 ---
 title: "WebAssembly Runtime"
-description: "Wippy runs WebAssembly modules as first-class registry entries alongside Lua code. WASM functions and processes execute within the same scheduler,…"
+description: "Run WAT and WASM functions or WASM processes alongside Lua through registry entries."
 ---
 
 # WebAssembly Runtime
 
 > The WASM runtime is an experimental extension. Configuration is stable, but runtime internals may change between releases.
 
-Wippy runs WebAssembly modules as first-class registry entries alongside Lua code. WASM functions and processes execute within the same scheduler, share the same security model, and interoperate with Lua through the function registry.
+Wippy registers WebAssembly modules alongside Lua code. WASM functions and processes use the same scheduler and security model and interoperate with Lua through the function registry.
 
 ## Entry Kinds
 
@@ -27,7 +27,7 @@ Wippy runs WebAssembly modules as first-class registry entries alongside Lua cod
 
 ## Component Model
 
-Wippy supports the WebAssembly Component Model with WIT (WebAssembly Interface Types). Component modules get full type mapping between the host and guest:
+Wippy supports the WebAssembly Component Model with WIT (WebAssembly Interface Types). Component modules map these types between the host and guest:
 
 - Records map to Lua tables with named fields
 - Lists map to Lua arrays
@@ -38,7 +38,7 @@ Raw/core WASM modules are also supported with explicit WIT signatures.
 
 ## Calling WASM from Lua
 
-WASM functions are called the same way as any other function in the registry:
+Call a WASM function by its registry ID through `funcs.call()`:
 
 ```lua
 local funcs = require("funcs")

@@ -1,11 +1,11 @@
 ---
 title: "Workflows"
-description: "Workflows are durable functions that orchestrate activities and maintain state across failures and restarts. They're defined using the workflow.lua…"
+description: "Define durable Temporal workflows with workflow.lua entries, activities, signals, child workflows, timers, and replay-safe operations."
 ---
 
 # Workflows
 
-Workflows are durable functions that orchestrate activities and maintain state across failures and restarts. They're defined using the `workflow.lua` entry kind.
+A `workflow.lua` entry defines a durable Temporal workflow that orchestrates activities and maintains state across failures and restarts.
 
 ## Definition
 
@@ -100,7 +100,7 @@ if err then
 end
 ```
 
-This is the simplest way to run child workflows when you need to wait for the result inline.
+Use this form when the parent must wait for the child result inline.
 
 ### workflow.version()
 
@@ -355,7 +355,7 @@ local pid, err = spawner:spawn_monitored(
 )
 ```
 
-Startup messages are especially useful with `use_existing` conflict policy. When a second spawn resolves to an existing workflow, the startup messages are still delivered:
+With the `use_existing` conflict policy, startup messages are still delivered when a second spawn resolves to an existing workflow:
 
 ```lua
 -- First spawn starts the workflow with initial messages
