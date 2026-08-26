@@ -54,7 +54,7 @@ A single <code>config.aws</code> entry can be reused across AWS-backed services.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `bucket` | string | Conditional | S3 bucket name. Supply via `${env:NAME}` when it differs per deployment |
+| `bucket` | string | Yes | S3 bucket name. Supply via `${env:NAME}` when it differs per deployment |
 | `config` | reference | Yes | AWS config entry reference |
 | `endpoint` | string | No | Custom endpoint for S3-compatible services (inline or `${env:NAME}`) |
 
