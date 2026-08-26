@@ -1,15 +1,15 @@
 ---
 title: "Workflows"
-description: "Workflows are durable, long-running operations that survive crashes and restarts. They provide reliability guarantees for critical business processes…"
+description: "How Wippy persists long-running workflows, replays execution, receives signals, and recovers from failures."
 ---
 
 # Workflows
 
-Workflows are durable, long-running operations that survive crashes and restarts. They provide reliability guarantees for critical business processes like payments, order fulfillment, and multi-step approvals.
+Workflows persist the state of long-running operations so execution can recover after crashes and restarts. They suit processes such as payments, order fulfillment, and multi-step approvals.
 
-## Why Workflows?
+## Why Use Workflows
 
-Functions are ephemeral - if the host crashes, in-flight work is lost. Workflows persist their state:
+Functions keep in-flight state in memory, while workflows persist execution state:
 
 | Aspect | Functions | Workflows |
 |--------|-----------|-----------|
@@ -35,7 +35,7 @@ if status == "failed" then
 end
 ```
 
-The workflow engine intercepts calls and records results. If the process crashes, execution replays from history - same code, same results.
+The workflow engine intercepts calls and records their results. After a crash, it replays execution from the recorded history.
 
 <note>
 Wippy handles determinism automatically. Operations like <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code>, and <code>time.now()</code> are intercepted and their results recorded. On replay, recorded values are returned instead of re-executing.
@@ -105,7 +105,7 @@ end
 
 ## Starting Workflows
 
-Workflows are spawned the same way as processes - using `process.spawn()` with a different host:
+Workflows use `process.spawn()` with a workflow host:
 
 ```lua
 -- Spawn workflow on temporal worker
@@ -115,7 +115,7 @@ local pid = process.spawn("app.workflows:order_processor", "app:temporal_worker"
 process.send(pid, "update", {status = "approved"})
 ```
 
-From the caller's perspective, the API is identical. The difference is the host: workflows run on a `temporal.worker` instead of a `process.host`.
+The caller uses the same spawn API. The host determines whether the entry runs on a `temporal.worker` or a `process.host`.
 
 <tip>
 When a workflow spawns children via <code>process.spawn()</code>, they become child workflows on the same provider, maintaining durability guarantees.
@@ -143,7 +143,7 @@ Processes can run as supervised services using `process.service`:
       max_attempts: 10
 ```
 
-Workflows don't use supervision trees - they're automatically managed by the workflow provider (Temporal). The provider handles persistence, retries, and recovery.
+Workflows do not use process supervision trees. The workflow provider manages their persistence, retries, and recovery.
 
 ## Configuration
 
@@ -174,6 +174,6 @@ See [Temporal](https://temporal.io) for production workflow infrastructure.
 
 ## See Also
 
-- [Functions](concepts/functions.md) - Stateless request handling
-- [Process Model](concepts/process-model.md) - Stateful background work
-- [Supervision](guides/supervision.md) - Process restart policies
+- [Functions](concepts/functions.md) — Stateless request handling
+- [Process Model](concepts/process-model.md) — Stateful background work
+- [Supervision](guides/supervision.md) — Process restart policies

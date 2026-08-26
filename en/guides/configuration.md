@@ -1,13 +1,13 @@
 ---
 title: "Configuration Reference"
-description: "Wippy is configured via .wippy.yaml files. All options have sensible defaults."
+description: "Runtime configuration fields, profiles, composition rules, environment references, and command-line overrides."
 ---
 
 # Configuration Reference
 
-Wippy is configured via `.wippy.yaml` files. All options have sensible defaults.
+Wippy reads runtime configuration from `.wippy.yaml` files.
 
-Any value below can be overridden at launch with `wippy run --set section.path=value` (repeatable, takes precedence over the file). To override individual registry *entries* rather than these config sections, use the `override:` section or `-o` — see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
+Use the repeatable `wippy run --set section.path=value` option to override the configuration fields below at launch. To override individual registry *entries* rather than configuration sections, use the `override:` section or `-o`; see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
 
 ## Config Composition
 
@@ -22,11 +22,11 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - The first file anchors the directory used to resolve relative paths.
 - Filenames carry no reserved meaning; nothing besides the default is auto-discovered.
 
-Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. For applications run from packs, packed runtime defaults sit below all of these (see [Publishing Runtime Defaults](guides/publishing.md#publishing-runtime-defaults)).
+Configuration applies in this order: composed files, selected `--profile` overlays, and then `--set` overrides. For applications run from packs, packed runtime defaults have lower precedence than all three; see [Publishing Runtime Defaults](guides/publishing.md#publishing-runtime-defaults).
 
 ## Profiles
 
-A config file may declare named overlays under `profiles:`. Each profile body mirrors the normal config sections; selecting it with `--profile <name>` overlays those values on the merged base config:
+A configuration file may declare named overlays under `profiles:`. Each profile body mirrors the standard configuration sections. Selecting it with `--profile <name>` applies those values over the merged base configuration:
 
 ```yaml
 version: "1.0"
@@ -63,7 +63,7 @@ wippy run --profile pg
 
 ## Logger
 
-Controls the zap logger encoder. CLI flags (`-v`, `-c`, `-s`) override level/output; the only yaml-driven option is the encoding.
+Controls the zap logger encoder. CLI flags (`-v`, `-c`, `-s`) override the level and output; encoding is the only YAML-configured option.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -111,7 +111,7 @@ profiler:
   address: "localhost:6060"
 ```
 
-Access at `http://localhost:6060/debug/pprof/`
+When enabled with the default address, the profiler is available at `http://localhost:6060/debug/pprof/`.
 
 ## Security
 
@@ -374,7 +374,7 @@ TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh
 
 ### Raft (consensus)
 
-Bounded Raft. Raft state is fs-durable by default, stored under `raft.data_dir` (default `~/.wippy/store`); a restarted node still rejoins quorum from peers. [`store.kv.raft`](system/store.md#cluster-kv-stores) entries replicate through it. Bootstrap is gossip-driven (Consul/Nomad `bootstrap_expect` style).
+The bounded Raft core stores durable state under `raft.data_dir` by default (`~/.wippy/store`). A restarted node rejoins quorum from its peers. [`store.kv.raft`](system/store.md#cluster-kv-stores) entries replicate through this core, and gossip coordinates bootstrap using a `bootstrap_expect` model.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -533,7 +533,7 @@ extensions:
 
 ## See Also
 
-- [CLI Reference](guides/cli.md) - Command line options
-- [Cluster Guide](guides/cluster.md) - Clustering architecture and operations
-- [Entry Kinds](guides/entry-kinds.md) - All entry types
-- [Observability Guide](guides/observability.md) - Logging, metrics, tracing
+- [CLI Reference](guides/cli.md) — Command-line options
+- [Cluster Guide](guides/cluster.md) — Clustering architecture and operations
+- [Entry Kinds](guides/entry-kinds.md) — Entry types and fields
+- [Observability Guide](guides/observability.md) — Logging, metrics, and tracing

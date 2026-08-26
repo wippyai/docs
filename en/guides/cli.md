@@ -1,11 +1,11 @@
 ---
 title: "CLI Reference"
-description: "Command-line interface for the Wippy runtime."
+description: "Commands, flags, configuration overrides, and common workflows for the Wippy CLI."
 ---
 
 # CLI Reference
 
-Command-line interface for the Wippy runtime.
+Use the Wippy CLI to initialize projects, run the runtime, manage dependencies, inspect registry entries, and publish modules.
 
 ## Global Flags
 
@@ -22,7 +22,7 @@ Available on all commands:
 | `--profiler` | `-p` | Enable pprof on localhost:6060 |
 | `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
 
-Memory limit priority: `--memory-limit` flag > `GOMEMLIMIT` env > 1GB default.
+Memory-limit precedence is `--memory-limit`, then `GOMEMLIMIT`, then the 1 GB default.
 
 `--config` may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
 
@@ -66,7 +66,7 @@ wippy run --exec app:worker                 # Start runtime and execute a single
 
 Running a hub module (`wippy run org/module`) resolves it once, records it in `wippy.lock`, and vendors the verified packs locally. Subsequent runs of the same reference start from the lock — no network needed. A version selector that no longer matches the lock is rejected with a hint to run `wippy update`.
 
-`--set` writes any runtime configuration value from the command line, merged over `.wippy.yaml` per leaf:
+`--set` overrides runtime configuration values from the command line and merges them over `.wippy.yaml` per leaf:
 
 ```bash
 wippy run --set cluster.enabled=true \
@@ -74,7 +74,7 @@ wippy run --set cluster.enabled=true \
           --set cluster.raft.bootstrap_expect=3
 ```
 
-Values coerce by shape: `true`/`false` to bool, integers and floats to numbers, everything else stays a string (durations like `5s` are parsed where the option expects one).
+Values are coerced by shape: `true` and `false` become booleans, integers and floats become numbers, and other values remain strings. Fields that expect durations parse values such as `5s`.
 
 ## wippy test
 
@@ -212,7 +212,7 @@ wippy publish --version 1.0.0
 wippy publish --dry-run
 ```
 
-Reads from `wippy.yaml` in current directory.
+This command reads `wippy.yaml` from the current directory.
 
 | Flag | Description |
 |------|-------------|
@@ -303,7 +303,7 @@ wippy readme --json wippy/terminal@latest
 
 ## wippy registry
 
-Query and inspect registry entries. Both subcommands accept `--profile` and `--set` to shape the merged runtime config the entries are loaded under.
+Query and inspect registry entries. Both subcommands accept `--profile` and `--set` to control the merged runtime configuration used to load entries.
 
 ### wippy registry list
 
@@ -501,5 +501,5 @@ override:
 
 ## See Also
 
-- [Configuration](guides/configuration.md) - Config file reference
-- [Observability](guides/observability.md) - Monitoring and logging
+- [Configuration](guides/configuration.md) — Configuration file reference
+- [Observability](guides/observability.md) — Monitoring and logging

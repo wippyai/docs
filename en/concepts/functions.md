@@ -1,11 +1,11 @@
 ---
 title: "Functions"
-description: "Functions are synchronous, stateless entry points. You call them, they execute, they return a result. When a function runs, it inherits the caller's…"
+description: "How to define and call stateless functions, propagate context, configure pools, and apply interceptors."
 ---
 
 # Functions
 
-Functions are synchronous, stateless entry points. You call them, they execute, they return a result. When a function runs, it inherits the caller's context—if the caller cancels, the function cancels too. This makes functions ideal for HTTP handlers, API endpoints, and any operation that should complete within a request lifecycle.
+Functions are stateless entry points that execute a call and return a result. A function inherits its caller's context and is canceled when the caller is canceled. Use functions for HTTP handlers, API endpoints, and other operations that complete within a request lifecycle.
 
 ## Calling Functions
 
@@ -68,9 +68,9 @@ Functions can be invoked by other runtime components—HTTP handlers, queue cons
 
 Functions run on pools that manage execution. The pool type determines scaling behavior.
 
-**Inline** runs in the caller's goroutine. No concurrency, zero allocation overhead. Used for embedded contexts.
+**Inline** runs in the caller's goroutine without a worker pool. It is used for embedded contexts.
 
-**Static** maintains a fixed number of workers. Requests queue when all workers are busy. Predictable resource usage.
+**Static** maintains a fixed number of workers. Requests queue when all workers are busy, which keeps worker concurrency fixed.
 
 ```yaml
 pool:
@@ -79,7 +79,7 @@ pool:
   buffer: 512
 ```
 
-**Lazy** starts empty and creates workers on demand. Idle workers get destroyed after a timeout. Efficient for variable traffic.
+**Lazy** starts without workers and creates them on demand. Idle workers are removed after a timeout.
 
 ```yaml
 pool:
@@ -87,7 +87,7 @@ pool:
   max_size: 32
 ```
 
-**Adaptive** scales automatically based on throughput. The controller measures performance and adjusts worker count to optimize for the current load.
+**Adaptive** adjusts the worker count based on measured throughput and current load.
 
 ```yaml
 pool:
@@ -101,7 +101,7 @@ If you don't specify a pool type, the runtime selects one based on your configur
 
 ## Interceptors
 
-Function calls pass through an interceptor chain. Interceptors handle cross-cutting concerns without touching business logic.
+Function calls pass through an interceptor chain. Interceptors can handle cross-cutting concerns separately from the function implementation.
 
 ```yaml
 - name: my_function
@@ -131,10 +131,10 @@ local email = sender:open("app.email:sender_impl")
 email:send({to = "user@example.com", subject = "Hello"})
 ```
 
-This abstraction lets you swap implementations without changing calling code—useful for testing, multi-tenant deployments, or gradual migrations.
+Contracts allow callers to use an interface while selecting an implementation separately. This supports testing, multi-tenant deployments, and gradual migrations.
 
 ## Functions vs Processes
 
-Functions inherit caller context and tie to caller lifecycle. When the caller cancels, functions cancel. This enables edge execution—running directly in HTTP handlers and queue consumers.
+Functions inherit the caller's context and lifecycle. When the caller is canceled, its function calls are canceled as well. This suits execution within HTTP handlers and queue consumers.
 
 Processes run independently with host context. They outlive their creator and communicate through messages. Use processes for background work; use functions for request-scoped operations.
