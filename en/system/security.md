@@ -1,11 +1,11 @@
 ---
 title: "Security Model"
-description: "Wippy implements attribute-based access control. Every request carries an actor (who) and a scope (what policies apply). Policies evaluate access based…"
+description: "Configure attribute-based access control with actors, policy scopes, conditions, token stores, and strict mode."
 ---
 
 # Security Model
 
-Wippy implements attribute-based access control. Every request carries an actor (who) and a scope (what policies apply). Policies evaluate access based on the action, resource, and metadata from both actor and resource.
+Wippy implements attribute-based access control with actors and policy scopes. Policies evaluate actions and resources using actor and resource metadata.
 
 ```mermaid
 flowchart LR
@@ -24,7 +24,7 @@ flowchart LR
 
 ## Actors
 
-An actor represents who is performing an action.
+An actor identifies the principal performing an action.
 
 ```lua
 local security = require("security")
@@ -164,7 +164,7 @@ For complex logic, use expression policies:
 
 ## Conditions
 
-Conditions allow dynamic policy evaluation based on actor, action, resource, and metadata.
+Conditions evaluate actor, action, resource, and metadata fields at runtime.
 
 ### Field Paths
 
@@ -242,7 +242,7 @@ conditions:
 
 ## Scopes
 
-Scopes combine multiple policies into a security context.
+A scope combines policies into a security context.
 
 ```lua
 local security = require("security")
@@ -261,7 +261,7 @@ scope = scope:with(readonly_policy)
 
 ### Named Scopes (Policy Groups)
 
-Load all policies from a group:
+Load the policies assigned to a group:
 
 ```lua
 -- Load scope with all policies in group
@@ -344,7 +344,7 @@ end
 
 ## Token Stores
 
-Token stores provide secure token creation, validation, and revocation.
+Token stores create, validate, and revoke authentication tokens.
 
 ### Configuration
 
@@ -450,7 +450,7 @@ store:close()
 
 ## Context Flow
 
-Security context propagates through function calls.
+Security context propagates through function calls but not automatically to spawned processes.
 
 ### Setting Context
 
@@ -476,7 +476,7 @@ Functions inherit caller's security context. Spawned processes start fresh.
 
 ## Service-Level Security
 
-Configure default security for services:
+Configure a default actor and policies for a service:
 
 ```yaml
 - name: worker_service
@@ -498,7 +498,7 @@ Configure default security for services:
 
 ## Strict Mode
 
-Enable strict mode to deny access when security context is missing:
+Enable strict mode to deny access when the security context is missing:
 
 ```yaml
 # wippy.yaml

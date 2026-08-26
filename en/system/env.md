@@ -1,11 +1,11 @@
 ---
 title: "Environment System"
-description: "Manages environment variables through configurable storage backends."
+description: "Define environment variables backed by memory, files, the operating system, static values, or storage routers."
 ---
 
 # Environment System
 
-Manages environment variables through configurable storage backends.
+The environment system defines variables backed by memory, files, operating-system values, static configuration, or storage routers.
 
 ## Overview
 
@@ -18,7 +18,7 @@ Variables can be referenced by:
 - **Public name** - The `variable` field value (must be unique across the system)
 - **Entry ID** - Full `namespace:name` reference
 
-If you don't want a variable to be publicly accessible by name, omit the `variable` field.
+Omit the `variable` field when a variable should be accessible only by entry ID.
 
 ## Entry Kinds
 
@@ -75,7 +75,7 @@ Always read-only. Set operations return `PERMISSION_DENIED`.
 
 ### Static Storage
 
-Read-only storage with values defined directly in configuration. Values are baked into the entry and cannot be changed at runtime. Useful for public configuration constants that ship with a module or pack.
+Static storage defines values directly in configuration. The values are part of the entry, are read-only at runtime, and can hold public constants shipped with a module or pack.
 
 ```yaml
 - name: defaults
@@ -94,7 +94,7 @@ Always read-only. Set operations return `PERMISSION_DENIED`.
 
 ### Router Storage
 
-Chains multiple storages. Reads search in order until found. Writes go to first storage only.
+A router chains several storages. Reads search them in order until a value is found, while writes target only the first storage.
 
 ```yaml
 - name: config
@@ -111,7 +111,7 @@ Chains multiple storages. Reads search in order until found. Writes go to first 
 
 ## Variables
 
-Variables provide named access to storage values.
+Variables map public names or entry IDs to values in a storage backend.
 
 ```yaml
 - name: DATABASE_URL

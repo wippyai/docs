@@ -5,7 +5,7 @@ description: "Command executors run external processes with controlled environme
 
 # Executor
 
-Command executors run external processes with controlled environments. Two executor types are available: native OS processes and Docker containers.
+Executor entries run external commands as native operating-system processes or in Docker containers.
 
 ## Entry Kinds
 
@@ -16,7 +16,7 @@ Command executors run external processes with controlled environments. Two execu
 
 ## Native Executor
 
-Runs commands directly on the host operating system.
+The native executor runs commands directly on the host operating system.
 
 ```yaml
 - name: shell
@@ -43,7 +43,7 @@ Native executors use a clean environment by default. Only explicitly configured 
 
 ## Docker Executor
 
-Runs commands inside isolated Docker containers.
+The Docker executor runs commands inside Docker containers.
 
 ```yaml
 - name: sandbox
@@ -86,7 +86,7 @@ Runs commands inside isolated Docker containers.
 
 ## Command Whitelist
 
-Both executor types support command whitelisting. When configured, only exact command matches are allowed:
+Both executor types support command allowlists. When configured, only exact command matches are allowed:
 
 ```yaml
 command_whitelist:
@@ -94,7 +94,7 @@ command_whitelist:
   - cat /etc/passwd
 ```
 
-Commands not in the whitelist are rejected with an error.
+Commands absent from the allowlist are rejected with an error.
 
 ## Lua API
 

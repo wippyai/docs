@@ -1,12 +1,12 @@
 ---
 title: "Template Engine"
-description: "<secondary-label ref='external'/"
+description: "Configure Jet template sets, sources, names, inheritance, and shared engine settings."
 ---
 
 # Template Engine
 <secondary-label ref="external"/>
 
-Template rendering using [CloudyKit Jet](https://github.com/CloudyKit/jet).
+Template entries configure [CloudyKit Jet](https://github.com/CloudyKit/jet) sets and template sources.
 
 ## Entry Kinds
 
@@ -24,7 +24,7 @@ A set is a namespace containing related templates. Templates within a set share 
   kind: template.set
 ```
 
-All configuration is optional with sensible defaults:
+All template-set configuration is optional:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -66,7 +66,7 @@ Templates belong to a set and are identified by name for internal resolution.
 
 ## Template Resolution
 
-Templates reference each other using names, not registry IDs. The resolution works like a virtual filesystem within the set:
+Templates reference one another by name rather than registry ID. Names are resolved within the set:
 
 1. By default, the registry entry name (`entry.ID.Name`) becomes the template name
 2. Override with `meta.name` for custom naming:

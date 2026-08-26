@@ -1,11 +1,11 @@
 ---
 title: "Filesystem"
-description: "Directory and embedded filesystem access."
+description: "Configure directory-backed and read-only embedded filesystems."
 ---
 
 # Filesystem
 
-Directory and embedded filesystem access.
+Filesystem entries expose directory-backed or read-only embedded storage to runtime modules.
 
 ## Entry Kinds
 
@@ -47,7 +47,7 @@ Paths are normalized and validated. It is not possible to access files outside t
 Embedded filesystems load from pack resources using the entry ID. They are read-only.
 
 <warning>
-Embedded filesystems are an internal mechanism. Manual configuration is typically not required.
+Embedded filesystems are used internally and normally do not require manual configuration.
 </warning>
 
 ## Operations

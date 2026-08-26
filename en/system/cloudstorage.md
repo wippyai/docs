@@ -1,12 +1,12 @@
 ---
 title: "Cloud Storage"
-description: "<secondary-label ref='external'/"
+description: "Configure AWS credentials and S3-compatible object storage."
 ---
 
 # Cloud Storage
 <secondary-label ref="external"/>
 
-S3-compatible object storage with presigned URLs.
+Cloud storage entries configure AWS credentials and S3-compatible buckets used by the Lua storage API.
 
 ## Entry Kinds
 
@@ -31,7 +31,7 @@ S3-compatible object storage with presigned URLs.
 | `access_key_id` | string | No | AWS access key ID (inline or `${env:NAME}`) |
 | `secret_access_key` | string | No | AWS secret access key (inline or `${env:NAME}`) |
 
-Credentials resolve from the [environment registry](system/env.md) at decode time. Both `access_key_id` and `secret_access_key` must resolve to non-empty values for static credentials to apply; otherwise the AWS SDK default credential chain is used (IAM roles, instance profiles, etc.).
+Credentials resolve from the [environment registry](system/env.md) at decode time. Static credentials apply only when both `access_key_id` and `secret_access_key` resolve to non-empty values. Otherwise, the AWS SDK default credential chain is used, including IAM roles and instance profiles.
 
 Requests are signed with AWS Signature Version 4 by the AWS SDK using the resolved credentials. No signing configuration is required.
 
@@ -60,7 +60,7 @@ A single <code>config.aws</code> entry can be reused across AWS-backed services.
 
 ### S3-Compatible Services
 
-For MinIO or other S3-compatible services, set a custom endpoint:
+Set a custom endpoint for MinIO or another S3-compatible service:
 
 ```yaml
 - name: local_storage

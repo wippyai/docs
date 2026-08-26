@@ -1,11 +1,11 @@
 ---
 title: "Network Overlays"
-description: "Route outbound traffic and bind listeners through overlay networks (SOCKS5 proxies, Tor, Tailscale mesh, I2P). Overlay selection is opt-in per call and…"
+description: "Route outbound connections and bind listeners through SOCKS5, Tor, Tailscale, or I2P overlays."
 ---
 
 # Network Overlays
 
-Route outbound traffic and bind listeners through overlay networks (SOCKS5 proxies, Tor, Tailscale mesh, I2P). Overlay selection is opt-in per call and inherits across function, process, and HTTP boundaries.
+Network overlay entries route outbound connections or bind listeners through SOCKS5, Tor, Tailscale, or I2P. A selected overlay propagates across function, process, and HTTP boundaries.
 
 ## Entry Kinds
 
@@ -74,7 +74,7 @@ Route outbound traffic and bind listeners through overlay networks (SOCKS5 proxi
 
 ## Selecting an Overlay
 
-### On http.service
+### On `http.service`
 
 Bind the server listener through an overlay (Tailscale, I2P):
 
@@ -108,7 +108,7 @@ The `http_client` module accepts the same overlay selection on per-call options 
 
 ## Inheritance
 
-Overlay selection flows through the call stack. A function called via `funcs.new():with_options({network=...})` sees the overlay on every inner dial, every nested `funcs.call`, and every `process.spawn` it performs — until a descendant explicitly selects a different overlay or clears it.
+Overlay selection propagates through the call stack. A function called through `funcs.new():with_options({network=...})` uses the overlay for inner dials, nested `funcs.call` operations, and spawned processes until a descendant selects a different overlay or clears it.
 
 Ambient inheritance bypasses the descendant's own `network.select` deny rules. Only explicit selection at a Lua edge is gated.
 
@@ -129,7 +129,7 @@ network_service:
 
 ## Updating Overlays
 
-Overlay entries hot-swap on registry update. When an overlay's configuration changes, the driver builds the replacement service first and only swaps it in once it is created successfully; if the new configuration fails, the existing overlay keeps running. Concurrent callers see either the old or the new service, never a gap.
+Overlay entries are replaced on registry update. The driver builds the replacement before switching to it; if creation fails, the existing overlay continues running. Concurrent callers use either the old or the new service.
 
 ## Permissions
 
