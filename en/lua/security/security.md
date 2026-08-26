@@ -1,6 +1,6 @@
 ---
 title: "Security & Access Control"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Inspect the current actor and scope, evaluate policies, and manage authentication tokens."
 ---
 
 # Security & Access Control
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Manage authentication actors, authorization scopes, and access policies.
+The `security` module exposes authentication actors, authorization scopes, policies, and token stores.
 
 ## Loading
 
@@ -16,9 +16,9 @@ Manage authentication actors, authorization scopes, and access policies.
 local security = require("security")
 ```
 
-## actor
+## `actor`
 
-Returns the current security actor from the execution context.
+Return the current security actor from the execution context.
 
 ```lua
 local actor = security.actor()
@@ -35,9 +35,9 @@ end
 
 **Returns:** `Actor|nil`
 
-## scope
+## `scope`
 
-Returns the current security scope from the execution context.
+Return the current security scope from the execution context.
 
 ```lua
 local scope = security.scope()
@@ -51,9 +51,9 @@ end
 
 **Returns:** `Scope|nil`
 
-## can
+## `can`
 
-Checks if the current context allows an action on a resource.
+Check whether the current context allows an action on a resource.
 
 ```lua
 -- Check read permission
@@ -81,9 +81,9 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 
 **Returns:** `boolean`
 
-## new_actor
+## `new_actor`
 
-Creates a new actor with ID and metadata.
+Create an actor with an ID and metadata.
 
 ```lua
 -- Create user actor
@@ -107,9 +107,9 @@ local service_actor = security.new_actor("service:payment-processor", {
 
 **Returns:** `Actor`
 
-## new_scope
+## `new_scope`
 
-Creates a new custom scope.
+Create a custom scope.
 
 ```lua
 -- Empty scope
@@ -128,9 +128,9 @@ scope = scope:with(policy1):with(policy2)
 
 **Returns:** `Scope`
 
-## policy
+## `policy`
 
-Retrieves a policy from the registry.
+Retrieve a policy from the registry.
 
 ```lua
 local policy, err = security.policy("app:admin-access")
@@ -155,9 +155,9 @@ end
 
 **Returns:** `Policy, error`
 
-## named_scope
+## `named_scope`
 
-Retrieves a pre-defined policy group.
+Retrieve a predefined policy group.
 
 ```lua
 -- Get admin scope
@@ -176,9 +176,9 @@ local result = admin_scope:evaluate(actor, "delete", "user:123")
 
 **Returns:** `Scope, error`
 
-## token_store
+## `token_store`
 
-Acquires a token store for managing authentication tokens.
+Acquire a token store for managing authentication tokens.
 
 ```lua
 local store, err = security.token_store("app:tokens")
@@ -205,7 +205,7 @@ store:close()
 
 ## Scope Methods
 
-### with / without
+### `with` / `without`
 
 Add or remove policies from scope.
 
@@ -220,7 +220,7 @@ scope = scope:with(write_policy)
 scope = scope:without("app:read-only")
 ```
 
-### evaluate
+### `evaluate`
 
 Evaluate all policies in scope.
 
@@ -233,9 +233,9 @@ if result ~= "allow" then
 end
 ```
 
-### contains
+### `contains`
 
-Check if scope contains a policy.
+Check whether the scope contains a policy.
 
 ```lua
 if scope:contains("app:admin") then
@@ -243,9 +243,9 @@ if scope:contains("app:admin") then
 end
 ```
 
-### policies
+### `policies`
 
-Returns all policies in scope.
+Return all policies in the scope.
 
 ```lua
 local policies = scope:policies()
@@ -265,9 +265,9 @@ end
 
 ## TokenStore Methods
 
-### create
+### `create`
 
-Create authentication token.
+Create an authentication token.
 
 ```lua
 local actor = security.new_actor("user:123", {role = "user"})
@@ -291,9 +291,9 @@ local token, err = store:create(actor, scope, {
 
 **Returns:** `string, error`
 
-### validate
+### `validate`
 
-Validate token and get actor/scope.
+Validate a token and return its actor and scope.
 
 ```lua
 local actor, scope, err = store:validate(token)
@@ -304,7 +304,7 @@ end
 
 **Returns:** `Actor, Scope, error`
 
-### revoke
+### `revoke`
 
 Invalidate a token.
 
@@ -314,7 +314,7 @@ local ok, err = store:revoke(token)
 
 **Returns:** `boolean, error`
 
-### close
+### `close`
 
 Release the token store resource.
 
@@ -326,7 +326,7 @@ store:close()
 
 ## Permissions
 
-Security operations are subject to security policy evaluation.
+Security policy evaluation applies to security operations.
 
 ### Security Actions
 

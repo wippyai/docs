@@ -1,6 +1,6 @@
 ---
 title: "Text Processing"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Compile regular expressions, compare text, create patches, and split documents into chunks."
 ---
 
 # Text Processing
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Regular expressions, text diffing, and semantic text splitting.
+The `text` module provides regular expressions, text comparison and patching, and document splitting.
 
 ## Loading
 
@@ -166,9 +166,9 @@ local pattern = re:string()
 
 ## Text Diffing
 
-Compare text versions and generate patches. Based on [go-diff](https://github.com/sergi/go-diff) (Google's diff-match-patch).
+Compare text versions and generate patches with [go-diff](https://github.com/sergi/go-diff), an implementation of Google's diff-match-patch algorithm.
 
-### Create Differ
+### Creating a Differ
 
 ```lua
 local diff, err = text.diff.new()
@@ -190,7 +190,7 @@ local diff, err = text.diff.new(options)
 
 ### Compare
 
-Find differences between two texts. Returns an array of operations describing how to transform text1 into text2.
+Compare two strings and return operations that transform `text1` into `text2`.
 
 ```lua
 local diff, _ = text.diff.new()
@@ -213,7 +213,7 @@ Operations: `"equal"`, `"delete"`, `"insert"`
 
 ### Summarize
 
-Count characters changed between versions.
+Count the unchanged, inserted, and deleted characters.
 
 ```lua
 local diffs, _ = diff:compare("hello world", "hello there")
@@ -232,7 +232,7 @@ local summary = diff:summarize(diffs)
 
 ### Pretty Text
 
-Format diff with ANSI colors for terminal display.
+Format a diff with ANSI colors for terminal output.
 
 ```lua
 local formatted, err = diff:pretty_text(diffs)
@@ -247,7 +247,7 @@ print(formatted)
 
 ### Pretty HTML
 
-Format diff as HTML with `<del>` and `<ins>` tags.
+Format a diff as HTML with `<del>` and `<ins>` elements.
 
 ```lua
 local html, err = diff:pretty_html(diffs)
@@ -262,7 +262,7 @@ local html, err = diff:pretty_html(diffs)
 
 ### Create Patches
 
-Generate patches that can be applied to transform one text into another. Patches can be serialized and applied later.
+Create patches that transform one string into another. The patches can be serialized and applied later.
 
 ```lua
 local text1 = "The quick brown fox jumps over the lazy dog"
@@ -280,7 +280,7 @@ local patches, err = diff:patch_make(text1, text2)
 
 ### Apply Patches
 
-Apply patches to transform text. Returns the result and whether all patches applied successfully.
+Apply patches to a string and return the result and whether every patch succeeded.
 
 ```lua
 local result, success = diff:patch_apply(patches, text1)
@@ -297,11 +297,11 @@ local result, success = diff:patch_apply(patches, text1)
 
 ## Text Splitting
 
-Split large documents into smaller chunks while preserving semantic boundaries. Based on [langchaingo](https://github.com/tmc/langchaingo) text splitter.
+Split documents into chunks while preserving semantic boundaries. The splitters are based on the [langchaingo](https://github.com/tmc/langchaingo) implementation.
 
 ### Recursive Splitter
 
-Splits text using a hierarchy of separators. First tries to split on double newlines (paragraphs), then single newlines, then spaces, then characters. Falls back to smaller separators when chunks exceed the size limit.
+The recursive splitter tries double newlines, single newlines, spaces, and then individual characters. It moves to the next separator when a chunk exceeds the size limit.
 
 ```lua
 local splitter, err = text.splitter.recursive({
@@ -327,7 +327,7 @@ local chunks, err = splitter:split_text(long_text)
 
 ### Markdown Splitter
 
-Splits markdown documents while respecting structure. Tries to keep headings with their content, code blocks intact, and table rows together.
+The Markdown splitter can keep headings with their content, preserve code blocks, and group table rows.
 
 ```lua
 local splitter, err = text.splitter.markdown({
@@ -374,7 +374,7 @@ end
 
 ### Split Batch
 
-Split multiple documents while preserving their metadata. Each input document can produce multiple output chunks. All chunks inherit the metadata from their source document.
+Split multiple documents while preserving their metadata. One input document can produce several chunks, each with the source document's metadata.
 
 ```lua
 -- Input: pages from a PDF with page numbers

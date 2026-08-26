@@ -1,6 +1,6 @@
 ---
 title: "Expression Language"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Compile and evaluate expr-lang expressions from Lua."
 ---
 
 # Expression Language
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Evaluate dynamic expressions using [expr-lang](https://expr-lang.org/) syntax. Compile and execute safe expressions for filtering, validation, and rule evaluation without full Lua execution.
+The `expr` module compiles and evaluates safe [expr-lang](https://expr-lang.org/) expressions for filtering, validation, calculations, and rule evaluation without running Lua source code.
 
 ## Caching
 
@@ -22,7 +22,7 @@ local expr = require("expr")
 
 ## Evaluating Expressions
 
-Evaluate an expression string and return the result. Uses internal LRU cache for compiled expressions:
+Evaluate an expression string and return its result. The function uses the internal cache of compiled expressions:
 
 ```lua
 -- Simple math
@@ -63,7 +63,7 @@ local has_admin = expr.eval('"admin" in roles', {
 
 ## Compiling Expressions
 
-Compile an expression into a reusable Program object for repeated evaluation:
+Compile an expression into a reusable `Program` for repeated evaluation:
 
 ```lua
 -- Compile once for repeated use
@@ -87,7 +87,7 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 
 ## Running Compiled Programs
 
-Execute a compiled expression with provided environment:
+Run a compiled expression with the provided environment:
 
 ```lua
 -- Validation rule
@@ -117,7 +117,7 @@ local order_total = pricer:run({
 
 ## Built-in Functions
 
-Expr-lang provides many built-in functions:
+Expr-lang includes built-in functions for common operations:
 
 ```lua
 -- Math functions
@@ -149,4 +149,3 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Result conversion fails | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
-

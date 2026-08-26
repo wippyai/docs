@@ -1,6 +1,6 @@
 ---
 title: "Hash Functions"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Compute cryptographic hashes, HMAC values, and FNV hashes."
 ---
 
 # Hash Functions
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Cryptographic hash functions and HMAC message authentication.
+The `hash` module computes cryptographic hashes, HMAC values, and non-cryptographic FNV hashes.
 
 ## Loading
 
@@ -141,7 +141,7 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 ### FNV-32
 
-Fast hash for hash tables and partitioning.
+Compute a hash for uses such as hash tables and partitioning.
 
 ```lua
 local n = hash.fnv32("data")
@@ -155,7 +155,7 @@ local n = hash.fnv32("data")
 
 ### FNV-64
 
-Fast hash with larger output for reduced collisions.
+Compute a wider hash for uses such as hash tables and partitioning, reducing collision probability.
 
 ```lua
 local n = hash.fnv64("data")

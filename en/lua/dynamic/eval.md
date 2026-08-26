@@ -1,15 +1,15 @@
 ---
 title: "Dynamic Evaluation"
-description: "Execute code dynamically at runtime with sandboxed environments and controlled module access."
+description: "Evaluate expressions or run Lua code in sandboxed environments with configured module and registry access."
 ---
 
 # Dynamic Evaluation
 
-Execute code dynamically at runtime with sandboxed environments and controlled module access.
+Wippy provides expression evaluation and sandboxed Lua execution for code supplied at runtime.
 
-## Two Systems
+## Choosing an Evaluation System
 
-Wippy provides two evaluation systems:
+Choose the evaluation system according to the code being run:
 
 | System | Purpose | Use Case |
 |--------|---------|----------|
@@ -18,7 +18,7 @@ Wippy provides two evaluation systems:
 
 ## expr Module
 
-Lightweight expression evaluation using the expr-lang syntax.
+The `expr` module evaluates expressions written in expr-lang syntax.
 
 ```lua
 local expr = require("expr")
@@ -29,7 +29,7 @@ local result, err = expr.eval("x + y * 2", {x = 10, y = 5})
 
 ### Compiling Expressions
 
-Compile once, run many times:
+Compile an expression for repeated evaluation:
 
 ```lua
 local program, err = expr.compile("price * quantity")
@@ -72,7 +72,7 @@ expr.eval("'hello' + ' ' + 'world'")
 
 ## eval_runner Module
 
-Full Lua execution with security controls.
+The `eval_runner` module executes Lua with configured module and registry access.
 
 ```lua
 local runner = require("eval_runner")
@@ -105,7 +105,7 @@ local result, err = runner.run({
 
 ### Module Access
 
-Whitelist allowed modules:
+Provide an allowlist of modules:
 
 ```lua
 runner.run({
@@ -139,7 +139,7 @@ runner.run({
 
 ### Privileged Imports
 
-An import can be granted modules the eval'd code itself cannot see. Use the table form with `id` and `modules`:
+An import can use modules that are unavailable to the evaluated source. Use the table form with `id` and `modules`:
 
 ```lua
 runner.run({
@@ -154,11 +154,11 @@ runner.run({
 })
 ```
 
-The `pricing` library executes in its own scoped environment where `funcs` is available; the eval'd source cannot require or reach `funcs` directly. Granting a module to an import requires the caller to hold `eval.module` permission for that module — capabilities cannot be delegated beyond what the caller itself is allowed.
+The `pricing` library executes in a scoped environment where `funcs` is available; the evaluated source cannot require or access `funcs` directly. Granting a module to an import requires the caller to hold `eval.module` permission for that module, so the import cannot receive a module unavailable to the caller.
 
 ### Custom Modules
 
-Inject custom tables:
+Expose custom tables as modules:
 
 ```lua
 runner.run({
@@ -173,7 +173,7 @@ runner.run({
 
 ### Context Values
 
-Pass data accessible as `ctx`:
+Pass values through `ctx`:
 
 ```lua
 runner.run({
@@ -200,7 +200,7 @@ program:method()   -- "process"  (string)
 program:modules()  -- {"json"}    (string[])
 ```
 
-The compiled program is informational; execute by calling `runner.run` with the source and method.
+The compiled program describes the source but does not execute it. Call `runner.run` with the source and method to run the program.
 
 ## Security Model
 
@@ -241,11 +241,11 @@ The system checks permissions for:
 - `eval.import` - For each registry import
 - `eval.class` - For each allowed class
 
-Configure in security policies.
+Configure these actions in security policies.
 
 ## Compile Cache
 
-Compiled programs are cached in an LRU keyed by source, method, modules, and allowed classes — repeated runs of identical code skip recompilation. Imports and context are bound at run time and do not affect the cache key.
+Compiled programs are cached in an LRU keyed by source, method, modules, and allowed classes. Repeated runs of identical code skip compilation. Imports and context are bound at run time and do not affect the cache key.
 
 ```yaml
 # .wippy.yaml

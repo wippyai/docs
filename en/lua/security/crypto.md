@@ -1,6 +1,6 @@
 ---
 title: "Encryption & Signing"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Generate random values, authenticate data, encrypt content, verify JWTs, and derive keys."
 ---
 
 # Encryption & Signing
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-Cryptographic operations including encryption, HMAC, JWT, and key derivation. Adapted for workflows.
+The `crypto` module generates random values, computes HMACs, encrypts and decrypts data, encodes and verifies JWTs, and derives keys. Its operations are adapted for workflow execution.
 
 ## Loading
 

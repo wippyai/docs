@@ -1,6 +1,6 @@
 ---
 title: "Command Execution"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Start external processes, exchange stream data, wait for completion, and send signals."
 ---
 
 # Command Execution
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Execute external commands and shell scripts with full control over I/O streams.
+The `exec` module starts external commands and shell scripts and provides access to their input, output, lifecycle, and signals.
 
 For executor configuration, see [Executor](system/exec.md).
 
@@ -21,7 +21,7 @@ local exec = require("exec")
 
 ## Acquiring an Executor
 
-Get a process executor resource by ID:
+Acquire a process executor by registry ID:
 
 ```lua
 local executor, err = exec.get("app:exec")
@@ -45,7 +45,7 @@ executor:release()
 
 ## Creating a Process
 
-Create a new process with the specified command:
+Create a process for the specified command:
 
 ```lua
 -- Simple command
@@ -83,7 +83,7 @@ local proc = executor:exec("./deploy.sh production", {
 
 **Returns:** `Process, error`
 
-## start / wait
+## `start` / `wait`
 
 Start the process and wait for completion.
 
@@ -105,9 +105,9 @@ if exit_code ~= 0 then
 end
 ```
 
-## stdout_stream / stderr_stream
+## `stdout_stream` / `stderr_stream`
 
-Get streams to read process output.
+Open streams for reading process output.
 
 ```lua
 local proc = executor:exec("./process-data.sh")
@@ -146,7 +146,7 @@ end
 return result
 ```
 
-## write_stdin
+## `write_stdin`
 
 Write data to process stdin.
 
@@ -169,7 +169,7 @@ proc:wait()
 stdout:close()
 ```
 
-## signal / close
+## `signal` / `close`
 
 Send signals or close the process.
 
@@ -192,7 +192,7 @@ proc:signal(SIGINT)
 
 ## Permissions
 
-Exec operations are subject to security policy evaluation.
+Security policy evaluation applies to command execution.
 
 | Action | Resource | Description |
 |--------|----------|-------------|
@@ -210,4 +210,3 @@ Exec operations are subject to security policy evaluation.
 | Already started | `errors.INVALID` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
-

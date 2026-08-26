@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Render Jet templates from configured template sets."
 ---
 
 # Template Engine
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="external"/>
 
-Render dynamic content using the [Jet template engine](https://github.com/CloudyKit/jet). Build HTML pages, emails, and documents with template inheritance and includes.
+The `templates` module renders [Jet](https://github.com/CloudyKit/jet) templates from configured sets. Templates can use inheritance and includes.
 
 For template set configuration, see [Template Engine](system/template.md).
 
@@ -20,7 +20,7 @@ local templates = require("templates")
 
 ## Acquiring Template Sets
 
-Get a template set by registry ID to start rendering:
+Acquire a template set by registry ID:
 
 ```lua
 local set, err = templates.get("app.views:emails")
@@ -76,7 +76,7 @@ return html
 
 ## Jet Syntax Reference
 
-Jet uses `{{ }}` for expressions and control structures, `{* *}` for comments.
+Jet uses `{{ }}` for expressions and control structures and `{* *}` for comments.
 
 ### Variables
 

@@ -1,6 +1,6 @@
 ---
 title: "UUID Generation"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Generate, validate, inspect, parse, and format UUIDs."
 ---
 
 # UUID Generation
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Generate universally unique identifiers. Adapted for workflows - random UUIDs return consistent values on replay.
+The `uuid` module generates, validates, inspects, parses, and formats UUIDs. In workflows, random UUIDs return their recorded values during replay.
 
 ## Loading
 

@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitter Parsing"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Parse source code, inspect concrete syntax trees, and run Tree-sitter queries."
 ---
 
 # Tree-sitter Parsing
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Parse source code into concrete syntax trees using [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Based on [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter) bindings.
+The `treesitter` module parses source code into concrete syntax trees with [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) through the [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter) bindings.
 
-Tree-sitter produces syntax trees that:
+The resulting syntax trees:
 - Represent the full structure of source code
 - Update incrementally as code changes
 - Are robust to syntax errors (partial parsing)
@@ -23,7 +23,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-The treesitter module is optional — it is only present in builds that include the `treesitter` build tag. Official Wippy binaries include it; to build from source, use `make build-wippy` or `go build -tags treesitter`. Without the tag, `require("treesitter")` is unavailable.
+The `treesitter` module is optional and is present only in builds that include the `treesitter` build tag. Official Wippy binaries include it. Source builds can use `make build-wippy` or `go build -tags treesitter`; without the tag, `require("treesitter")` is unavailable.
 </note>
 
 ## Supported Languages
@@ -96,7 +96,7 @@ end
 
 ### Simple Parse
 
-Parse source code into a syntax tree. Creates a temporary parser internally.
+Parse source code with a temporary internal parser.
 
 ```lua
 local tree, err = treesitter.parse("go", code)
@@ -111,7 +111,7 @@ local tree, err = treesitter.parse("go", code)
 
 ### Reusable Parser
 
-Create a parser for repeated parsing or incremental updates.
+Create a reusable parser for repeated parsing or incremental updates.
 
 ```lua
 local parser = treesitter.parser()
@@ -168,7 +168,7 @@ print(root:text())  -- "package main"
 
 ### Incremental Editing
 
-Update the tree when source code changes:
+Apply an edit before reparsing changed source code:
 
 ```lua
 local code = "func main() { x := 1 }"
@@ -272,7 +272,7 @@ local sexp = node:to_sexp()
 
 ## Queries
 
-Pattern matching using Tree-sitter's query language (S-expressions).
+Tree-sitter queries match syntax-tree patterns written as S-expressions.
 
 ### Create Query
 
@@ -347,7 +347,7 @@ local id = query:capture_index_for_name("func_name")
 
 ## Tree Cursor
 
-Efficient traversal without creating node objects at each step.
+A tree cursor traverses a tree without creating a node object at every step.
 
 ### Basic Traversal
 
