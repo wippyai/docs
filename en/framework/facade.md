@@ -102,7 +102,7 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | Parameter | Scope | Default | Description |
 |-----------|-------|---------|-------------|
 | `custom_css` | global | Google Fonts import | Global CSS — reaches host chrome, `view.page` iframes, and `view.component` shadow roots (1.0.43+). |
-| `css_variables` | global | `{}` | JSON map of CSS custom properties; reaches every surface (variables inherit into shadow roots). |
+| `css_variables` | global | `{}` | JSON map of arbitrary CSS custom properties; compiled for Auto and forced modes and bridged into component shadow roots. |
 | `icon_sets` | global | `[]` | Iconify icon-set URLs (inline JSON only — no `fs://`) |
 | `host_custom_css` | host | `""` | CSS for the host chrome only — not children. Scope class-based rules to `.wippy-host-app`. |
 | `host_css_variables` | host | `{}` | CSS custom properties for the host chrome only |
@@ -141,7 +141,7 @@ Use `fs://` (resolved by `content_fs` at runtime), **not** `file://` — `file:/
 A standalone page then links both:
 
 - **`custom_css`** — already a `.css` file, so link it directly from where it is served.
-- **`css_variables`** — JSON, so it is not linkable as-is. The facade renders it as a stylesheet at **`GET /facade/variables.css`** (a `text/css` `:root { … }` sheet, with `@dark` / `@light` compiled to `@media (prefers-color-scheme: …)`, cached 1h). It is registered on the same public router as `/facade/config`, so it carries the router prefix.
+- **`css_variables`** — JSON, so it is not linkable as-is. The facade renders it at **`GET /facade/variables.css`** as base plus effective Auto-light, Auto-dark, forced Light, and forced Dark blocks. Top-level values apply everywhere; `@light` / `@dark` replace selected names. The sheet is cached for 1h and registered on the same public router as `/facade/config`, so it carries the router prefix.
 
 ```html
 <!-- in login.html, served outside the Web Host -->

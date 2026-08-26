@@ -199,6 +199,8 @@
           {"title": "Web Component Recipe", "path": "frontend/micro-frontends/web-component"},
           {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
           {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Surface Portability", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "Surface Migration", "path": "frontend/micro-frontends/surface-migration"},
           {"title": "Theme Authoring", "path": "frontend/micro-frontends/theming"},
           {"title": "Tailwind Contract", "path": "frontend/micro-frontends/tailwind-contract"},
           {"title": "Token Catalogue", "path": "frontend/micro-frontends/token-catalogue"},

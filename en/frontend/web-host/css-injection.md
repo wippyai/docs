@@ -13,13 +13,13 @@ This page documents the injection pipeline, all available flags, and how to cust
 
 The facade exposes theming through three scopes — **global** (`custom_css`, `css_variables`, `icon_sets`), **host** (`host_custom_css`, `host_css_variables`, `host_icon_sets`), and **children** (`children_custom_css`, `children_css_variables`). The Web Host composes them per surface. Two rules govern everything below:
 
-- **CSS custom properties (`*_css_variables`) inherit across the shadow boundary.** A web component's shadow root sees the `--p-*` (and any other) custom properties set on the `:root` of the document it is mounted in — no injection needed.
+- **CSS custom properties (`*_css_variables`) inherit to a WC host and are bridged through its forced-theme inner root.** WippyElement enumerates every effective configured name so local theme defaults cannot reset it. This is generic and independent of `customCss`.
 - **CSS selector rules (`*_custom_css`) do not cascade across the shadow boundary.** They apply only where they are injected: into each iframe document for `view.page`, and — **as of Web Host 1.0.43** — into each `view.component` shadow root (opt-out via the component's `customCss` flag). Before 1.0.43, only variables reached it.
 
 | Facade knob | Delivers | Host shell doc | `view.page` iframe | `view.component` shadow root |
 |---|---|---|---|---|
 | `custom_css` (global) | selector rules | ✓ injected | ✓ injected¹ | ✓ injected (1.0.43+, opt-out)¹ |
-| `css_variables` (global) | custom properties | ✓ `:root` | ✓ `:root` | ✓ inherits in |
+| `css_variables` (global) | custom properties | ✓ effective mode blocks | ✓ effective mode blocks | ✓ inherited + bridged |
 | `host_custom_css` (host) | selector rules | ✓ injected | ✗ | ✗ |
 | `host_css_variables` (host) | custom properties | ✓ `:root` | ✗ | host-mounted WCs only² |
 | `children_custom_css` (children) | selector rules | ✗ | ✓ injected¹ | ✓ injected (1.0.43+, opt-out)¹ |
@@ -45,7 +45,7 @@ Short answer for "CSS injection order" questions: the view.page iframe style pip
    tailwind.css          — Tailwind utility classes (same bundle as primevue.css)
 3. iframe.css            — Default themed scrollbar styling (historical name; no iframe layout reset)
 4. markdown.css          — .data-body rendering styles for Markdown content
-5. cssVariables          — :root { --key: value } from AppConfig.theming.global.cssVariables (adopted stylesheet)
+5. cssVariables          — effective base + Auto/forced mode blocks from AppConfig.theming.global.cssVariables (adopted stylesheet)
 6. customCSS             — Raw CSS from the child-projected AppConfig.theming.global.customCSS (adopted stylesheet)
 ```
 
@@ -106,7 +106,7 @@ meta:
 | `primevue` | `true` | `primevue.css` + `tailwind.css` — PrimeVue component styles and Tailwind v3 utilities (~455 KB combined). Disable only while the entire artifact has no PrimeVue-like product UI. Framework choice alone is not an exception. |
 | `markdown` | `true` | `markdown.css` — `.data-body` markdown rendering styles used by chat artifact display. |
 | `customCss` | `true` | The `customCSS` string from the child-projected `AppConfig.theming.global`. |
-| `customVariables` | `true` | The `cssVariables` map from the child-projected `AppConfig.theming.global`, injected as `:root { --key: value; }`. |
+| `customVariables` | `true` | The child-projected `cssVariables` map, compiled as effective base, Auto-light/dark, and forced Light/Dark blocks for every configured custom-property name. |
 
 There is no dedicated fonts flag. Google Fonts are delivered through `theming.global.customCSS` (an `@import` rule), which the iframe injects via the existing `customCss` flag.
 
@@ -151,7 +151,7 @@ With both disabled the page still receives `customCSS`, `cssVariables`, and `ifr
 
 Web components do not go through the iframe injection pipeline. Two channels bring the theme into a component's shadow root:
 
-- **Facade custom CSS (automatic, opt-out — Web Host 1.0.43+).** The `@wippy-fe/webcomponent-core` runtime installs the facade custom CSS composed for the component — **global + children** (`custom_css` + `children_custom_css`) — in its shadow root so it wins over component styling. The runtime may use an adopted stylesheet or a `<style>` fallback; do not couple application code to that detail. A component opts out with `customCss: false` in its `wippyConfig`. Custom **properties** (`--p-*`) already inherit across the shadow boundary and are unaffected by this flag.
+- **Configured variables + facade custom CSS.** `@wippy-fe/webcomponent-core` enumerates every effective global/children/page custom-property name, including names under `@light` / `@dark`, and installs a generic inheritance bridge after platform theme defaults. It then installs composed global + children `customCSS` as the final layer. `customCss: false` disables only the selector-rule layer; it does not disable configured-variable propagation.
 - **Platform CSS assets (`hostCssKeys`).** `theme-config.css`, PrimeVue, markdown, and iframe/scrollbar styles are **static bundle assets**, not the facade's configured CSS. A component requests the ones it needs by URL through `wippyConfig.hostCssKeys` (or fetches them ad hoc with `loadCss()` from `@wippy-fe/proxy`), and the runtime injects them into the shadow root.
 
 ```typescript
@@ -197,7 +197,7 @@ theming: {
 }
 ```
 
-The variables are injected as a `:root { ... }` block in the iframe's `adoptedStyleSheets`, so they override `theme-config.css` values for all components in that layer. This override does not depend on `<head>` source order — see [Override mechanism](#override-mechanism-adopted-stylesheets).
+The compiler normalizes leading `--`, merges the top-level base with `@light` / `@dark`, and emits effective Auto-light, Auto-dark, forced Light, and forced Dark blocks in the iframe's adopted stylesheet. It is variable-agnostic: palette bases, direct shades/aliases, surfaces, typography, host tokens, and application-specific properties follow the same path. The override does not depend on `<head>` source order — see [Override mechanism](#override-mechanism-adopted-stylesheets).
 
 ### Override mechanism: adopted stylesheets
 
