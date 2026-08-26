@@ -1,19 +1,15 @@
 ---
 title: "Dataflow: Local Knowledge Base"
-description: "Build a knowledge base on your own machine — create the vector store, then chunk and ingest documents into it. This is the data-creation companion to…"
+description: "Create a local SQLite vector store, split Markdown into chunks, and ingest embeddings for later retrieval."
 ---
 
 # Dataflow: Local Knowledge Base
 
-Build a knowledge base on your own machine — create the vector store, then chunk and
-ingest documents into it. This is the data-creation companion to the
-[RAG tutorial](tutorials/rag.md): here you stand up and fill a local KB; there you
-retrieve from it and generate answers. Both use the `wippy/embeddings` module backed by
-a local SQLite vector store.
+Create and populate a local knowledge base backed by SQLite. This page covers vector-store setup and document ingestion; the [RAG tutorial](tutorials/rag.md) covers retrieval and answer generation. Both use `wippy/embeddings`.
 
 ## What You'll Build
 
-1. A local app whose database holds a 512-dimension vector store.
+1. A local application with a 512-dimension vector store.
 2. The migration that creates the `embeddings_512` table on startup.
 3. An ingest function that chunks markdown and writes embeddings into the store.
 
@@ -183,7 +179,7 @@ Register the function:
     embeddings: wippy.embeddings:embeddings
 ```
 
-Key points:
+The ingestion fields control grouping and retrieval:
 
 - `origin_id` groups all chunks from one source document — delete and re-ingest per
   document with `embedding_repo.delete_by_origin(doc_id)`.
@@ -210,17 +206,17 @@ LLM for grounded answers.
 
 ## Operational Notes
 
-- **Chunk size**: 500–1000 tokens is a good default. Use `chunk_overlap` (~10–20% of
+- **Chunk size** — 500–1000 tokens is a good default. Use `chunk_overlap` (~10–20% of
   chunk size) so sentences aren't cut across boundaries.
-- **Dimensions**: `text-embedding-3-small` at 512 dimensions is cost-efficient and
+- **Dimensions** — `text-embedding-3-small` at 512 dimensions is cost-efficient and
   matches the `embeddings_512` table. Larger vectors mean larger storage and slower
   search.
-- **Local vs. shared**: SQLite (`vec0`) keeps the whole KB in one local file — ideal for
+- **Local vs. shared** — SQLite (`vec0`) keeps the whole KB in one local file, suitable for
   development and single-node apps. Point `target_db` at a `db.sql.postgres` with
   `pgvector` for a shared, production store; the ingest code is unchanged.
 
 ## Next Steps
 
-- [RAG](tutorials/rag.md) — retrieve from this store and generate grounded answers
-- [LLM Framework](framework/llm.md) — `llm.embed`, embedding models, providers
-- [Text Module](lua/text/text.md) — splitters and tokenization
+- [RAG](tutorials/rag.md) — Retrieve from this store and generate grounded answers
+- [LLM Framework](framework/llm.md) — `llm.embed`, embedding models, and providers
+- [Text Module](lua/text/text.md) — Splitters and tokenization

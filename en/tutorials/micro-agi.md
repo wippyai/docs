@@ -1,20 +1,21 @@
 ---
 title: "Micro AGI"
-description: "Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them…"
+description: "Build an agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session."
 ---
 
 # Micro AGI
 
-Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them into the active session.
+Build an agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session.
 
 ## What We're Building
 
 A terminal agent that:
-- Answers questions using an LLM with streaming
-- Searches Wippy documentation to learn APIs
-- Inspects the registry to discover existing capabilities
-- Builds new tools on the fly when it lacks a capability
-- Manages its own context window via compression
+
+- Streams answers from an LLM.
+- Searches Wippy documentation for APIs.
+- Inspects the registry for existing capabilities.
+- Creates and loads tools when a capability is missing.
+- Compresses conversation history when it approaches the context limit.
 
 ```mermaid
 flowchart LR
@@ -64,7 +65,7 @@ sequenceDiagram
     A->>U: stream response
 ```
 
-The key insight: tools are registry entries. Creating a tool is just writing a `function.lua` entry with inline Lua source in `data.source`. The agent runtime compiles and loads it like any other entry.
+Tools are registry entries. To create one, the agent writes a `function.lua` entry with inline Lua source in `data.source`; the runtime then compiles and loads that entry.
 
 ## Project Structure
 
@@ -215,7 +216,7 @@ Two models serve different purposes:
         provider_model: gpt-4.1-nano
 ```
 
-GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression at 25x lower cost.
+GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression.
 
 ### Agent Definition
 
@@ -246,10 +247,11 @@ GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression
       - "app.tools:*"
 ```
 
-The prompt is deliberately terse. Key rules:
-- **No hallucination** — the agent must use tools for real data
-- **Self-modification** — build tools instead of refusing
-- **Action over explanation** — do first, explain if asked
+The prompt gives the agent three operating rules:
+
+- **Use retrieved data** — use tools for external facts.
+- **Create missing capabilities** — build a tool when an allowed capability is absent.
+- **Prioritize actions** — perform the requested operation before explaining it.
 
 ### Process
 
@@ -272,8 +274,9 @@ The prompt is deliberately terse. Key rules:
 The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
 
 Imports:
-- `prompt` — conversation builder
-- `agent_context` — agent loading and dynamic tool management
+
+- `prompt` — Conversation builder
+- `agent_context` — Agent loading and dynamic tool management
 - `compress` — LLM-based text compression for context management
 
 ## Tools
@@ -351,7 +354,7 @@ return { handler = handler }
 
 ### create_tool
 
-The core of self-modification. Evaluates namespace deny policies and creates a `function.lua` entry in the registry with inline Lua source.
+This tool evaluates namespace deny policies and creates a `function.lua` registry entry with inline Lua source.
 
 The `modules` field on the generated entry controls what the tool can access. Modules not listed simply do not exist for that entry — there is nothing to block or scan for.
 
@@ -417,7 +420,7 @@ end
 changes:apply()
 ```
 
-No files on disk. The tool lives entirely in the registry.
+The generated tool is stored in the registry rather than written to a source file.
 
 ### load_tool
 
@@ -529,7 +532,7 @@ session.conversation:add_system("Conversation summary:\n\n" .. summary)
 
 ## Security Model
 
-The agent is secured through namespace deny policies and module-level access control.
+Namespace deny policies and module-level access controls constrain generated tools.
 
 ```mermaid
 flowchart TD
@@ -600,6 +603,6 @@ Your IP is 203.0.113.42.
 
 - [LLM Agent](tutorials/llm-agent.md) — Build a basic agent from scratch
 - [Agent Module](framework/agents.md) — Agent framework reference
-- [Registry](concepts/registry.md) — How the registry works
+- [Registry](concepts/registry.md) — Registry concepts
 - [Security Model](system/security.md) — Declarative security policies
 - [Entry Kinds](guides/entry-kinds.md) — Available entry types

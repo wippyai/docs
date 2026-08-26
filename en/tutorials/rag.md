@@ -1,19 +1,19 @@
 ---
 title: "Retrieval-Augmented Generation (RAG)"
-description: "Build a knowledge base that answers questions from your own documents. This tutorial uses the wippy/embeddings module for vector search and the LLM…"
+description: "Ingest documents, retrieve relevant chunks with vector search, and generate answers grounded in that context."
 ---
 
 # Retrieval-Augmented Generation (RAG)
 
-Build a knowledge base that answers questions from your own documents. This tutorial uses the `wippy/embeddings` module for vector search and the LLM framework for generation.
+Build a retrieval-augmented generation pipeline over your own documents. The example uses `wippy/embeddings` for vector search and the LLM framework for answer generation.
 
 ## What You'll Build
 
 A minimal RAG pipeline:
 
-1. Ingest markdown documents — split into chunks, embed, persist.
-2. Retrieve — vector search returns the most relevant chunks for a query.
-3. Generate — an LLM call uses the retrieved chunks as grounding context.
+1. Ingest Markdown documents by splitting, embedding, and persisting chunks.
+2. Retrieve the most relevant chunks for a query with vector search.
+3. Generate an answer using the retrieved chunks as context.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ A minimal RAG pipeline:
 
 ## Dependencies
 
-Declare the `wippy/embeddings` dependency and point it at your database. The `target_db` parameter is the registry ID of the database entry the embeddings table will live in:
+Declare the `wippy/embeddings` dependency and set `target_db` to the registry ID of the database that will hold the embeddings table:
 
 ```yaml
 version: "1.0"
@@ -49,7 +49,7 @@ entries:
 
 ## Ingest Documents
 
-Splitting is handled by the `text` module; embedding and persistence by the `embeddings` library.
+The `text` module splits documents, while the `embeddings` library generates and persists their vectors.
 
 ```lua
 -- app/ingest.lua
@@ -100,7 +100,7 @@ Register the function and its imports:
     embeddings: wippy.embeddings:embeddings
 ```
 
-Key points:
+The ingestion fields control grouping and retrieval:
 
 - `origin_id` groups chunks that belong to the same source document.
 - `context_id` is an optional sub-key (section, page, chunk index).
@@ -184,9 +184,9 @@ return { answer = answer }
     prompt: wippy.llm:prompt
 ```
 
-## End-to-End Example
+## HTTP Endpoint Example
 
-Putting it together behind an HTTP endpoint:
+Expose the answer function through an HTTP endpoint:
 
 ```yaml
 version: "1.0"
@@ -295,15 +295,15 @@ curl -X POST http://localhost:8080/api/ask \
 
 ## Operational Notes
 
-- **Chunk size**: `chunk_size` and `chunk_overlap` count characters, not tokens (the splitter measures length with `utf8.RuneCountInString`). Roughly 2000–4000 characters is a good starting point. Too small loses local context; too large dilutes similarity scores. Use `chunk_overlap` (~10–20% of chunk size) to preserve sentences across boundaries.
-- **Content types**: Use distinct `content_type` values (`doc_chunk`, `faq`, `code_snippet`) so search can filter by type.
-- **Re-indexing**: Delete and re-ingest per document via `embedding_repo.delete_by_origin(doc_id)` before adding new chunks.
-- **Hybrid search**: For exact-term recall (names, IDs), combine vector search with full-text search over your source table and re-rank.
-- **Model choice**: `wippy/embeddings` is fixed to `text-embedding-3-small` at 512 dimensions, and the `embeddings_512` table stores `vector(512)`/`float[512]`. A different model or vector size means changing the library constants and the migration table.
+- **Chunk size** — `chunk_size` and `chunk_overlap` count characters, not tokens (the splitter measures length with `utf8.RuneCountInString`). Roughly 2000–4000 characters is a good starting point. Too small loses local context; too large dilutes similarity scores. Use `chunk_overlap` (~10–20% of chunk size) to preserve sentences across boundaries.
+- **Content types** — Use distinct `content_type` values (`doc_chunk`, `faq`, `code_snippet`) so search can filter by type.
+- **Re-indexing** — Delete and re-ingest per document via `embedding_repo.delete_by_origin(doc_id)` before adding new chunks.
+- **Hybrid search** — For exact-term recall (names, IDs), combine vector search with full-text search over your source table and re-rank.
+- **Model choice** — `wippy/embeddings` is fixed to `text-embedding-3-small` at 512 dimensions, and the `embeddings_512` table stores `vector(512)`/`float[512]`. A different model or vector size means changing the library constants and the migration table.
 
 ## Next Steps
 
-- [LLM Framework](framework/llm.md) — `llm.generate`, `llm.embed`, prompt construction
-- [Agents](framework/agents.md) — wrap the retriever as an agent tool
-- [SQL Module](lua/storage/sql.md) — underlying database access
-- [Text Module](lua/text/text.md) — splitters and tokenization
+- [LLM Framework](framework/llm.md) — `llm.generate`, `llm.embed`, and prompt construction
+- [Agents](framework/agents.md) — Wrap the retriever as an agent tool
+- [SQL Module](lua/storage/sql.md) — Underlying database access
+- [Text Module](lua/text/text.md) — Splitters and tokenization

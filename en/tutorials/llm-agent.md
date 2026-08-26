@@ -5,15 +5,16 @@ description: "Build a terminal chat agent step by step, progressing from a simpl
 
 # LLM Agent
 
-Build a terminal chat agent step by step, progressing from a simple LLM call to a streaming agent with tools.
+Build a terminal chat agent in five phases, from a single LLM call to streaming responses and tool execution.
 
 ## What We're Building
 
 A terminal chat agent that:
-- Generates text with an LLM
-- Maintains multi-turn conversations
-- Streams responses in real-time
-- Uses tools to access external capabilities
+
+- Generates text with an LLM.
+- Maintains multi-turn conversations.
+- Streams responses incrementally.
+- Calls registered tools.
 
 ## Project Structure
 
@@ -78,8 +79,9 @@ entries:
 ```
 
 The LLM module needs two infrastructure entries:
-- `env.storage.os` provides API keys from environment variables
-- `process.host` provides the process runtime the LLM module uses internally
+
+- `env.storage.os` provides API keys from environment variables.
+- `process.host` provides the process runtime used internally by the LLM module.
 
 ### Generation Code
 
@@ -141,7 +143,7 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-This calls the function directly and prints the result. The model definition tells the LLM module which provider to use and what model name to send to the API.
+This executes the function directly and prints its result. The model definition selects the provider and the model name sent to its API.
 
 ## Phase 2: Conversations
 
@@ -233,7 +235,7 @@ The prompt builder maintains the full conversation history. Each turn appends th
 
 ## Phase 3: Agent Framework
 
-The agent module provides a higher-level abstraction over raw LLM calls. Agents are defined declaratively with a prompt, model, and tools, then loaded and executed through a context/runner pattern.
+The agent module defines prompts, models, and tools declaratively, then loads and executes the resulting agent through a context and runner.
 
 ### Add Agent Dependency
 
@@ -339,11 +341,11 @@ end
 return { main = main }
 ```
 
-The agent framework separates the agent definition (prompt, model, parameters) from the execution logic. The same agent can be loaded with different contexts, tools, and models at runtime.
+The agent definition contains the prompt, model, and parameters, while the process controls execution. A context can add tools or override the model at runtime.
 
 ## Phase 4: Streaming
 
-Stream responses token-by-token instead of waiting for the full response.
+Process response chunks as they arrive instead of waiting for the full response.
 
 ### Streaming Implementation
 
@@ -446,10 +448,11 @@ return { main = main }
 ```
 
 Key patterns:
-- `coroutine.spawn` runs `runner:step()` in a separate coroutine so the main coroutine can process stream chunks
-- `channel.select` multiplexes the stream channel and done channel
-- A single `process.listen()` is created once and reused across turns
-- Text is accumulated for adding to the conversation history
+
+- `coroutine.spawn` runs `runner:step()` separately so the main coroutine can process stream chunks.
+- `channel.select` waits on both the stream channel and completion channel.
+- One `process.listen()` channel is reused across turns.
+- The process accumulates streamed text for the conversation history.
 
 ## Phase 5: Tools
 
@@ -501,10 +504,11 @@ entries:
     method: handler
 ```
 
-Tool metadata tells the LLM what the tool does:
-- `input_schema` is a JSON Schema defining the arguments
-- `llm_alias` is the function name the LLM sees
-- `llm_description` explains when to use the tool
+Tool metadata describes the callable interface to the LLM:
+
+- `input_schema` defines the arguments with JSON Schema.
+- `llm_alias` is the function name presented to the LLM.
+- `llm_description` explains when to use the tool.
 
 ### Implement Tools
 
@@ -730,12 +734,13 @@ end
 return { main = main }
 ```
 
-The tool execution loop:
-1. Call `runner:step()` with streaming
-2. If the response contains `tool_calls`, execute each tool via `funcs.call()`
-3. Add the tool calls and results to the conversation
-4. Loop back to step 1 for the agent to incorporate the results
-5. When no more tool calls, return the final text
+The tool-execution loop:
+
+1. Call `runner:step()` with streaming.
+2. If the response contains `tool_calls`, execute each tool with `funcs.call()`.
+3. Add the tool calls and results to the conversation.
+4. Call the runner again so it can incorporate the results.
+5. Return the final text when the response contains no more tool calls.
 
 ### Run the Agent
 
@@ -761,7 +766,7 @@ Bye!
 
 ## Next Steps
 
-- [LLM Module](framework/llm.md) - Complete LLM API reference
-- [Agent Module](framework/agents.md) - Agent framework reference
-- [CLI Applications](tutorials/cli.md) - Terminal I/O patterns
-- [Processes](tutorials/processes.md) - Process model and communication
+- [LLM Module](framework/llm.md) — LLM API reference
+- [Agent Module](framework/agents.md) — Agent framework reference
+- [CLI Applications](tutorials/cli.md) — Terminal I/O patterns
+- [Processes](tutorials/processes.md) — Process model and communication

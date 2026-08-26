@@ -1,20 +1,15 @@
 ---
 title: "Keeper over MCP"
-description: "Wippy Keeper is the control plane for a running Wippy app — a registry workbench, filesystem↔registry governance, agent/task orchestration, Hub…"
+description: "Add Wippy Keeper to an application, mint a scoped token, and connect an MCP client to its operator tools."
 ---
 
 # Keeper over MCP
 
-Wippy Keeper is the control plane for a running Wippy app — a registry workbench,
-filesystem↔registry governance, agent/task orchestration, Hub install, knowledge base,
-logs and process inspection, and a Git review/push flow, all behind a built-in UI. Its
-defining feature is that it exposes those operator capabilities to AI clients (Claude,
-Codex, …) over **MCP (Model Context Protocol)**. This page adds Keeper to an app and
-connects an MCP client to it.
+Wippy Keeper provides a UI for registry operations, filesystem-to-registry governance, task and agent orchestration, Hub installation, knowledge-base management, runtime inspection, and Git workflows. It also exposes operator capabilities to compatible clients through the Model Context Protocol (MCP). This page adds Keeper to an application and configures an MCP connection.
 
 ## What You'll Build
 
-1. Keeper added to an app scaffolded from `app-template`.
+1. Keeper added to an application scaffolded from `app-template`.
 2. The Keeper UI at `/app/keeper` and the MCP endpoint at `/keeper-mcp/`.
 3. A scoped MCP token, and an MCP client configured to drive the app through Keeper.
 
@@ -32,9 +27,7 @@ connects an MCP client to it.
 
 ## Add Keeper
 
-Declare the dependency and bind it to the app's resources. Only `admin_scope` is
-required (no default); the rest default to the names `app-template` already uses, shown
-here explicitly for clarity:
+Declare the dependency and bind it to the application's resources. `admin_scope` is required and has no default. The other parameters default to the entry names used by `app-template`, but the example supplies them explicitly:
 
 ```yaml
 # src/app/deps/_index.yaml
@@ -57,7 +50,7 @@ Start the app:
 wippy run
 ```
 
-Keeper auto-mounts three surfaces:
+Keeper mounts three surfaces:
 
 - **UI** — `/app/keeper`
 - **MCP transport** — `/keeper-mcp/` on the public gateway
@@ -107,9 +100,7 @@ environment.
 
 ## How the MCP Surface Works
 
-Keeper does not expose a flat, fixed tool list. It presents a few **meta-tools** plus
-**traits** that activate concrete tools on demand, so the surface stays small until you
-opt into a capability:
+Keeper exposes a small set of **meta-tools** and uses **traits** to activate capability-specific tools on demand:
 
 - `session_info` — always available; reports the session's scopes and active traits.
 - `list_traits` / `describe_trait` — discover what's available.
@@ -123,7 +114,7 @@ What a token can activate is bounded by its **scopes** — roughly `registry.*`,
 admin bypass). The token's `access_mode` (`any` / `traits` / `tools_only`) further
 constrains how it may call tools.
 
-## Notes
+## Operational and Security Notes
 
 - **Governance scope** — set `GOV_MANAGED_NAMESPACES=app` so Keeper's
   filesystem↔registry sync only governs your app's namespace. Do not add `keeper`,
@@ -136,6 +127,6 @@ constrains how it may call tools.
 
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) — the minimal project layout
-- [Authentication](tutorials/auth.md) — the admin identity that issues tokens
-- [Agents](framework/agents.md) — the agents and tools Keeper traits expose
+- [Hello World](tutorials/hello-world.md) — Minimal project layout
+- [Authentication](tutorials/auth.md) — Admin identity and token concepts
+- [Agents](framework/agents.md) — Agents and tools exposed by Keeper traits
