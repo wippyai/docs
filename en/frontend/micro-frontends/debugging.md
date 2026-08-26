@@ -12,7 +12,12 @@ Use these checks to isolate common Wippy frontend failures before changing appli
 **1. Check the Console first:**
 - `Failed to resolve module specifier 'vue'` — the page externalized a specifier that its active import map does not provide. In hosted mode inspect the import map actually served by the target Web Host release; in host-less mode inspect the map in `app.html`. Compare every Rollup external against that exact map instead of assuming a canonical package list or merge precedence.
 - `Proxy globals not found` (or your `@wippy-fe/proxy` imports come back undefined) — `proxy.js` / `dev-proxy.js` did not load before your app script ran, so the runtime never installed its internal globals. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
-- Silent hang (no errors, no app) — config is injected synchronously as `window.__WIPPY_APP_CONFIG__` before `proxy.js` runs, so the `@wippy-fe/proxy` getters resolve (or throw `Proxy globals not found`) immediately; they do not await `SetConfig`. A true hang means the runtime never mounted — either `proxy.js` / `dev-proxy.js` failed to load and install its globals (see the `Proxy globals not found` bullet above), or, in host-less mode, the dev overlay is sitting in "waiting" because you haven't clicked **Accept**. Confirm the dev overlay FAB (floating button) appeared; if not, the proxy script did not load. (The `SetConfig` / `GetConfig` handshake only applies to the host-level manual `iframe.html?waitForCustomConfig` embedding, not a hosted or host-less micro frontend.)
+- Silent hang (no errors, no app) — in host-less mode, the dev overlay may be waiting for you to click **Accept**. Confirm that its FAB (floating button) appeared. If it did not, `proxy.js` / `dev-proxy.js` failed to load or install its globals; follow the `Proxy globals not found` check above.
+
+Hosted and host-less micro frontends do not wait for a `GetConfig`/`SetConfig`
+handshake: config is injected synchronously as `window.__WIPPY_APP_CONFIG__`
+before `proxy.js` runs. The blocking handshake applies only to the host-level
+manual `iframe.html?waitForCustomConfig` embedding.
 
 **2. Check the Network tab:**
 - Confirm `dev-proxy.js` (host-less) or `proxy.js` (hosted) loaded with status 200.

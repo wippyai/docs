@@ -78,14 +78,12 @@ Two attributes on that one tag carry the entire dual-mode contract:
 | `data-role="@wippy/scripts"` | Marker for the host. When present, the host removes this `<script>` element before serving the iframe and injects its own `loading.js` + `proxy.js` + importmap + AppConfig **before** the marker. The element disappears in hosted mode. | Wippy Web Host |
 | `src="…/dev-proxy.js"` | Fallback URL. Used when no host is present — the browser loads `dev-proxy.js` directly and that script bootstraps the page. The `src=` attribute is irrelevant in hosted mode (the `<script>` element no longer exists). | Standalone browser load |
 
-**Choose a URL that matches your environment.** The Web Host URL always requires a release-tag segment in the path. `/dev-proxy.js` directly under the host root is not valid; address a specific build at `/<release-tag>/dev-proxy.js`. This pins each development boot to a known bundle.
+**Choose a URL that matches your environment.** The Web Host URL requires a release-tag segment in the path and must match the release used by the facade's `fe_facade_url`. `/dev-proxy.js` directly under the host root is not valid; pin a specific build at `/<release-tag>/dev-proxy.js`. The same bundle works for local iteration, CI, and shareable preview links.
 
 | Environment | Sample `src=` value |
 |---|---|
 | Public CDN (standard) | `https://web-host.wippy.ai/<release-tag>/dev-proxy.js` |
 | Self-hosted Wippy deployment | `https://<your-wippy-host>/<release-tag>/dev-proxy.js` |
-
-The tag must match the release version used by the facade's `fe_facade_url`. Pin it explicitly — `/dev-proxy.js` without a tag segment is not valid. The same bundle works for local iteration, CI, and shareable preview links.
 
 The same HTML element is both the host's script-injection anchor and the host-less fallback boot.
 

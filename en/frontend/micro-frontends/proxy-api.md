@@ -14,9 +14,7 @@ For how the runtime is loaded into each context, see [Proxy & Isolation](../web-
 
 ## Initialization
 
-`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on.
-
-The synchronous getter pattern is shared by micro frontend apps and web components:
+`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. The host injects the child config before the runtime loads for both `view.page` apps and `view.component` web components, so the getters are available when application code runs. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on. Await only actual asynchronous operations such as HTTP calls and state reads.
 
 ```ts
 import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
@@ -30,8 +28,6 @@ Iframe and Web Fragment apps receive lifecycle visibility through the proxy
 `@visibility` topic. Direct web components do not: use `useHostVisibility()`
 or `useHostVisibilityRefresh()` from `@wippy-fe/webcomponent-vue`, or the
 equivalent `WippyElement` APIs.
-
-These getters are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs. The host injects the child config **synchronously, before** the runtime loads (for both `view.page` apps and `view.component` web components), so the runtime initializes before your script executes. You never `await` to *obtain* a getter, and there is no `GetConfig`/`SetConfig` handshake. The only `await` you write is for an actual async operation (an HTTP call via `api`, a `state` read, etc.).
 
 Fetch the target Web Host release's `import-map.json` once during development
 and use every key in its `imports` object as a Rollup external. This includes

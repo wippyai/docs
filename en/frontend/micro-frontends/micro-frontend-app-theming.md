@@ -110,7 +110,8 @@ For `cssVariables`: the override map **replaces** the inherited child map — wr
 
 ### Runtime overrides (`window.__WIPPY_CONFIG_OVERRIDES__`)
 
-Set the global before `proxy.js` runs for query-param or feature-flag–driven theming:
+For query-param or feature-flag–driven theming, set
+`window.__WIPPY_CONFIG_OVERRIDES__` before `proxy.js` runs.
 
 This pre-proxy global is an embedding/host-less integration escape hatch. In a hosted child, `window.location` belongs to the selected page engine—`about:srcdoc` under iframe delivery—and is not host route or query context. Use declarative page `config_overrides` or AppConfig supplied by the host. Never infer host state from child or parent browser locations.
 

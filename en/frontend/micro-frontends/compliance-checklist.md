@@ -1,13 +1,15 @@
 ---
-title: "Frontend Compliance Rule Index"
-description: "Concise index of canonical frontend rules and deterministic checker ownership."
+title: "Frontend Compliance and Publication Gates"
+description: "Normative frontend compliance rules, checker ownership, publication gates, and deterministic visual evidence requirements."
 ---
 
-# Frontend Compliance Rule Index
+# Frontend Compliance and Publication Gates
 
-This page is an index, not a second copy of the contract. The
-[Portable UI Contract](../portable-ui-contract.md) owns the normative rule
-statements; the links below provide detailed implementation guidance.
+This page owns the deterministic checker and publication requirements below.
+The [Portable UI Contract](../portable-ui-contract.md) owns the underlying
+portability and UI rule statements, while the linked guides provide detailed
+implementation guidance. The index maps each rule to its source and required
+checker result.
 
 | Rule | Detailed guidance | Deterministic result |
 |---|---|---|
