@@ -1,11 +1,11 @@
 ---
 title: "Debugging Wippy FE"
-description: "When something is broken, start here. Each section lists the most common causes in order of likelihood with the specific DevTools check for each."
+description: "DevTools checks for common Wippy frontend startup, component, API, theme, routing, and hosted-runtime failures."
 ---
 
 # Debugging Wippy FE
 
-When something is broken, start here. Each section lists the most common causes in order of likelihood with the specific DevTools check for each.
+Use these checks to isolate common Wippy frontend failures before changing application code.
 
 ## Blank screen on load
 
@@ -91,7 +91,7 @@ Then compare, in this order:
 2. **Page root:** read the exact token with `getComputedStyle(document.documentElement).getPropertyValue(name).trim()`.
 3. **WC host:** read the same token from `getComputedStyle(customElement)`.
 4. **WC inner root:** read it from `getComputedStyle(customElement.shadowRoot.querySelector('[data-wippy-theme-root]'))`.
-5. **Rendered semantic color:** put `background-color: var(--p-<family>-color)` on a probe and compare its computed `backgroundColor`; this physically resolves `color-mix()`.
+5. **Rendered semantic color:** put `background-color: var(--p-<family>-color)` on a probe and compare its computed `backgroundColor`; this resolves `color-mix()` in the browser.
 
 Repeat in Auto-light, Auto-dark, forced Light, and forced Dark. For each configured family verify its base, all 50–950 shades, `color`, `contrast-color`, `hover-color`, and `active-color`; also verify a direct shade/alias override, a surface token, and the sentinel. Page, host, and inner values must agree.
 
