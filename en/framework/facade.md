@@ -1,13 +1,13 @@
 ---
 title: "Facade"
-description: "The wippy/facade module provides a portable facade that loads and configures the Wippy frontend from a CDN. It serves a thin HTML page that loads the…"
+description: "Serve and configure the Wippy Web Host from a CDN with authentication, navigation, theming, and deployment settings."
 ---
 
 # Facade
 
-The `wippy/facade` module provides a portable facade that loads and configures the Wippy frontend from a CDN. It serves a thin HTML page that loads the Web Host JS-module entry (`module.js` for the default compat shell, or `managed-layout.js` for managed mode), handles authentication, and bridges configuration between the backend and frontend. The loaded module takes over the whole page and its browser history.
+The `wippy/facade` module serves a page that loads and configures the Wippy Web Host from a CDN. The page loads `module.js` for the default compatibility shell or `managed-layout.js` for managed mode, handles authentication, and passes backend configuration to the frontend. The loaded module controls the page and its browser history.
 
-The iframe-based delivery (`iframe.html` + a `SetConfig` PostMessage handshake) remains available for manual, facade-less embeddings where you embed the host yourself for isolation or partial-page use, but the facade itself no longer uses it.
+For isolated or partial-page integrations, the host can still be embedded manually through `iframe.html` and a `SetConfig` postMessage handshake. The facade itself does not use this delivery mode.
 
 ## Setup
 
@@ -63,7 +63,7 @@ entries:
 | `login_redirect_param` | no | `""` (off) | Query-parameter name to append the post-login return URL to when redirecting to `login_path`. Empty disables the return-URL append. |
 | `extra_scripts` | no | `[]` | JSON array of extra script URLs the facade page loads; emitted on `/facade/config` as `extraScripts`. |
 
-### Render engine
+### Render Engine
 
 `render_engine` selects the [page render engine](../frontend/web-host/render-engines.md) for the whole deployment. It is emitted as `hostConfig.renderEngine` and read by the Web Host at its single page-render fork.
 
@@ -110,9 +110,9 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 | `children_custom_css` | children | `""` | CSS for children only — injected into `view.page` iframes and `view.component` shadow roots (1.0.43+), not host chrome |
 | `children_css_variables` | children | `{}` | CSS custom properties for children only |
 
-**Default guidance:** put shared/brand styling in `custom_css` and `css_variables` (global) — that is where ~95% of theming belongs, and it reaches every surface. Reserve `host_custom_css` / `host_css_variables` for host-only chrome (the sidebar, the chat panel, splitters). A `view.component` opts out of shadow-root `*_custom_css` with `customCss: false`.
+Put shared brand styling in the global `custom_css` and `css_variables` parameters so it reaches every surface. Use `host_custom_css` and `host_css_variables` for host-only elements such as the sidebar, chat panel, and splitters. A `view.component` can opt out of shadow-root `*_custom_css` with `customCss: false`.
 
-#### Theme mode & persistence
+#### Theme Mode and Persistence
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -122,9 +122,9 @@ Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — s
 
 Theme persistence is **opt-in**: `theme_persist` defaults to `none`, so nothing is stored until a deployment sets it to `cookie` or `localStorage`. When enabled the facade serves a ready-made script at **`GET /facade/theme-persist.js`** with the key and mode baked in; include it on any page that should share the theme. See [Theme Persistence](../frontend/web-host/theme-persistence.md) for the full model, the `themeChanged` host event, and non-Wippy-page integration.
 
-#### Reusing facade theming on non-Web-Host pages
+#### Reusing Facade Theming on Non-Web-Host Pages
 
-A page served **outside** the Web Host — your `login.html`, an error page, an email-confirm page — can reuse the *same* facade brand theme instead of duplicating it, so your tokens and custom rules live in one place.
+A page served outside the Web Host, such as `login.html`, an error page, or an email confirmation page, can reuse the facade theme. This keeps brand tokens and custom rules in one place.
 
 First, keep `custom_css` and `css_variables` in standalone files rather than inlining them, and point the parameters at those files with `fs://` plus a `content_fs` filesystem:
 
@@ -158,7 +158,7 @@ To also share the **theme mode** (so a `login.html` honours and persists the sam
 
 See [Theme Persistence → Non-Wippy-hosted pages](../frontend/web-host/theme-persistence.md) for a complete switcher example.
 
-### Optional JSON parameters
+### Optional JSON Parameters
 
 Each of the following is a JSON-encoded string parameter; defaults are empty (`{}` or `[]`).
 
@@ -181,7 +181,7 @@ These three are emitted as **top-level** `AppConfig` fields (siblings of `hostCo
 
 ## Config Endpoint
 
-The facade registers `GET /facade/config` on the configured router. That path is registered *on* the public router, so the URL the page actually fetches includes the router's prefix — with the example prefix `/api/public` (see [Setup](#setup)), it is `/api/public/facade/config`, which is exactly what the shipped facade page fetches. (The facade registers one more route on the same router — `GET /facade/variables.css`, the `css_variables` rendered as a `text/css` stylesheet for non-Web-Host pages; see [Reusing facade theming on non-Web-Host pages](#reusing-facade-theming-on-non-web-host-pages).) The frontend fetches the config on load:
+The facade registers `GET /facade/config` on the configured public router, so the effective URL includes that router's prefix. With the `/api/public` prefix from [Setup](#setup), the page fetches `/api/public/facade/config`. The same router exposes `GET /facade/variables.css`, which renders `css_variables` as a `text/css` stylesheet for pages outside the Web Host. See [Reusing Facade Theming on Non-Web-Host Pages](#reusing-facade-theming-on-non-web-host-pages). The frontend fetches the configuration on load:
 
 ```json
 {
@@ -285,9 +285,9 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 
 ## See Also
 
-- [Views](./views.md) - Page and component system
-- [HTTP Server](../http/server.md) - HTTP service configuration
-- [Framework Overview](./overview.md) - Framework module usage
-- [Facade Entry Point](../frontend/web-host/entry-point.md) - How the facade bootstraps the Web Host (FE perspective)
-- [CSS Injection](../frontend/web-host/css-injection.md) - How facade theming flows into child iframes
-- [Render Engines](../frontend/web-host/render-engines.md) - Iframe vs Web Fragment page rendering (the `render_engine` switch)
+- [Views](./views.md) — Page and component system
+- [HTTP Server](../http/server.md) — HTTP service configuration
+- [Framework Overview](./overview.md) — Framework module usage
+- [Facade Entry Point](../frontend/web-host/entry-point.md) — How the facade starts the Web Host
+- [CSS Injection](../frontend/web-host/css-injection.md) — How facade theming reaches child iframes
+- [Render Engines](../frontend/web-host/render-engines.md) — Iframe and Web Fragment page rendering

@@ -1,11 +1,11 @@
 ---
 title: "Embeddings"
-description: "The wippy/embeddings module provides vector embedding storage and similarity search for both PostgreSQL (pgvector) and SQLite (sqlite-vec). It wraps…"
+description: "Generate, store, and search vector embeddings with PostgreSQL pgvector or SQLite sqlite-vec."
 ---
 
 # Embeddings
 
-The `wippy/embeddings` module provides vector embedding storage and similarity search for both PostgreSQL (pgvector) and SQLite (sqlite-vec). It wraps `wippy/llm` to generate embeddings and persists them to an application database.
+The `wippy/embeddings` module generates embeddings through `wippy/llm`, stores them in an application database, and performs vector similarity searches. It supports PostgreSQL with pgvector and SQLite with sqlite-vec.
 
 ## Setup
 
@@ -16,7 +16,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-Declare the dependency and point the `target_db` requirement at your application database via the dependency's `parameters`:
+Declare the dependency and set its `target_db` parameter to the application database:
 
 ```yaml
 version: "1.0"
@@ -38,9 +38,9 @@ entries:
 
 On startup, `wippy/migration` picks up the `01_create_embeddings_table` migration and creates the `embeddings_512` table with the appropriate vector index for your database driver.
 
-## Configuration Constants
+## Default Configuration
 
-The default configuration is embedded in the module:
+The module defines these defaults:
 
 | Constant | Default | Description |
 |----------|---------|-------------|
@@ -95,7 +95,7 @@ local result, err = embeddings.add_batch({
 })
 ```
 
-Embeds and stores many items in one call. If the total estimated token count exceeds `MAX_TOKENS_PER_REQUEST`, the batch is split and processed in chunks. Returns `{ count, items = { ... } }`.
+Embeds and stores multiple items in one call. If the total estimated token count exceeds `MAX_TOKENS_PER_REQUEST`, the method splits the batch into chunks. Returns `{ count, items = { ... } }`.
 
 ### search
 
@@ -116,7 +116,7 @@ Embeds the query string and performs a similarity search against stored vectors.
 local hits, err = embeddings.find_by_type(query, content_type, { limit = 10 })
 ```
 
-Convenience wrapper for `search` scoped to a single `content_type`.
+Calls `search` with a single `content_type`.
 
 ### find_by_origin
 
@@ -128,7 +128,7 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 })
 ```
 
-Convenience wrapper scoped to a single `origin_id`, optionally narrowed further.
+Calls `search` with a single `origin_id` and optional additional filters.
 
 ## Repository API (`wippy.embeddings:embedding_repo`)
 
@@ -149,13 +149,13 @@ Use the repository directly when you already have a vector and want to skip embe
 
 The migration creates the schema appropriate for the database driver at `target_db`:
 
-- **PostgreSQL** - `embeddings_512` table with a `vector(512)` column and an IVFFlat index. Requires the `pgvector` extension.
-- **SQLite** - `embeddings_512` `vec0` virtual table holding the `embedding float[512]` vector column alongside the metadata and content columns for KNN search.
+- **PostgreSQL** — `embeddings_512` table with a `vector(512)` column and an IVFFlat index. Requires the `pgvector` extension.
+- **SQLite** — `embeddings_512` `vec0` virtual table holding the `embedding float[512]` vector column alongside the metadata and content columns for KNN search.
 
 Vectors are always round-tripped through a plain JSON array at the API layer.
 
 ## See Also
 
-- [LLM](framework/llm.md) - `llm.embed(...)` for raw embedding generation
-- [Migrations](framework/migration.md) - Migration runner that provisions the table
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [LLM](framework/llm.md) — `llm.embed(...)` for raw embedding generation
+- [Migrations](framework/migration.md) — Migration runner that provisions the table
+- [Framework Overview](framework/overview.md) — Framework module usage

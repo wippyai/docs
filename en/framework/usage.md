@@ -1,11 +1,11 @@
 ---
 title: "Usage Tracking"
-description: "The wippy/usage module records LLM token consumption and provides aggregate queries grouped by time interval, model, or user. It binds to the…"
+description: "Record LLM token consumption and query usage totals by time interval, model, or user."
 ---
 
 # Usage Tracking
 
-The `wippy/usage` module records LLM token consumption and provides aggregate queries grouped by time interval, model, or user. It binds to the `wippy.llm:usage_tracker` contract, so any code that calls through the LLM module automatically produces usage records.
+The `wippy/usage` module records LLM token consumption and provides aggregate queries by time interval, model, or user. It is the default implementation of the `wippy.llm:usage_tracker` contract, so calls made through the LLM module produce usage records automatically.
 
 ## Setup
 
@@ -16,7 +16,7 @@ wippy add wippy/usage
 wippy install
 ```
 
-Declare the dependency and point the `target_db` requirement at the database where usage records should live:
+Declare the dependency and set `target_db` to the database that will store usage records:
 
 ```yaml
 version: "1.0"
@@ -73,7 +73,7 @@ Every successful LLM call invokes `track_usage` with the model id, token counts,
 
 ## Tracker API
 
-Import the tracker directly when you need to record usage outside of the LLM flow:
+Import the tracker directly to record usage outside the LLM flow:
 
 ```yaml
 imports:
@@ -153,7 +153,7 @@ Both the tracker and the repository accept UNIX timestamps at the public API bou
 
 ## Metadata and Context
 
-The `meta` column stores a free-form JSON blob. Use it to correlate records with application events:
+The `meta` column stores free-form JSON for correlating records with application events:
 
 ```lua
 tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
@@ -170,6 +170,6 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
 
 ## See Also
 
-- [LLM](framework/llm.md) - LLM generation and the `usage_tracker` contract
-- [Migrations](framework/migration.md) - Migration runner that creates the schema
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [LLM](framework/llm.md) — LLM generation and the `usage_tracker` contract
+- [Migrations](framework/migration.md) — Migration runner that creates the schema
+- [Framework Overview](framework/overview.md) — Framework module usage

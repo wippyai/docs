@@ -1,13 +1,13 @@
 ---
 title: "Migrations"
-description: "The wippy/migration module provides a database migration framework with a small DSL for defining schema changes, a runner that discovers and executes…"
+description: "Define, apply, inspect, and roll back ordered database migrations for SQLite, PostgreSQL, and MySQL."
 ---
 
 # Migrations
 
-The `wippy/migration` module provides a database migration framework with a small DSL for defining schema changes, a runner that discovers and executes them, and a bootloader that runs pending migrations for every `target_db` registered in the project.
+The `wippy/migration` module provides a DSL for schema changes, a runner that discovers and executes migrations, and a bootloader that applies pending migrations to every registered `target_db`.
 
-Migrations support SQLite, PostgreSQL, and MySQL, with per-driver `up`/`down` implementations defined side by side.
+Migrations support SQLite, PostgreSQL, and MySQL. Each migration can define driver-specific `up` and `down` implementations together.
 
 ## Setup
 
@@ -240,14 +240,14 @@ The runner creates a `_migrations` table in each target database on first run. A
 
 ## Best Practices
 
-- **One logical change per migration** - create one table, add one column, create one index.
-- **Write a real `down`** - if rollback is impossible (data loss), document that and raise an error rather than silently succeeding.
-- **Prefer idempotency** - `CREATE TABLE IF NOT EXISTS` and `DROP TABLE IF EXISTS` survive reruns without special handling.
-- **Keep DDL and DML separate** - don't seed data in the same migration that creates a table when you can avoid it.
-- **Test both directions** - apply the migration, roll it back, and verify the schema matches the starting state.
+- **One logical change per migration** — create one table, add one column, or create one index.
+- **Write a real `down`** — if rollback would cause data loss or is otherwise impossible, document that limitation and raise an error instead of reporting success.
+- **Prefer idempotency** — `CREATE TABLE IF NOT EXISTS` and `DROP TABLE IF EXISTS` tolerate reruns without special handling.
+- **Keep DDL and DML separate** — avoid seeding data in the same migration that creates a table.
+- **Test both directions** — apply the migration, roll it back, and verify that the schema matches its starting state.
 
 ## See Also
 
-- [SQL Driver](system/database.md) - Database resource configuration
-- [Bootloader](framework/bootloader.md) - Bootloader ordering and hooks
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [SQL Driver](system/database.md) — Database resource configuration
+- [Bootloader](framework/bootloader.md) — Bootloader ordering and hooks
+- [Framework Overview](framework/overview.md) — Framework module usage

@@ -1,14 +1,14 @@
 ---
 title: "Views"
-description: "The wippy/views module provides a virtual page and component system with template rendering, resource management, and environment variable mapping.…"
+description: "Define server-rendered pages, frontend applications, web components, resources, and environment mappings with wippy/views."
 ---
 
 # Views
 
-The `wippy/views` module provides a virtual page and component system with template rendering, resource management, and environment variable mapping. Pages come in two distinct flavors:
+The `wippy/views` module defines pages and components, manages their resources, and maps environment variables into rendered output. It supports two page models:
 
-- **Jet template pages** (`kind: template.jet`) — server-side rendered HTML. The page's data and resources are assembled and injected server-side, then the Jet engine renders the final HTML. This is the legacy, server-rendered model. See [Template Pages](#template-pages).
-- **Registry-entry frontends** (`kind: registry.entry`) — two kinds: micro frontend apps (`view.page`, full SPAs) and reusable web components (`view.component`), served from a CDN or static mount. The registry entry holds only routing and deployment policy; proxy/CSS injection is authored in the frontend package's `package.json`. See [Component Pages](#component-pages) and [View Components](#view-components).
+- **Jet template pages** (`kind: template.jet`) render HTML on the server after assembling the page's data and resources. See [Template Pages](#template-pages).
+- **Registry-entry frontends** (`kind: registry.entry`) describe micro frontend applications (`view.page`) and reusable web components (`view.component`) served from a CDN or static mount. The registry entry contains routing and deployment policy; proxy and CSS injection are defined in the frontend package's `package.json`. See [Component Pages](#component-pages) and [View Components](#view-components).
 
 ## Setup
 
@@ -45,7 +45,7 @@ entries:
 
 ## Template Pages
 
-> **Server-rendered model.** Template pages are the legacy, server-side rendering mechanism: `wippy/views` assembles the page data and resources on the server and renders the final HTML with the Jet template engine. There is no iframe proxy and no client-side micro-frontend — the response is plain HTML. For external SPAs and components, see [Component Pages](#component-pages).
+> **Server-rendered model.** `wippy/views` assembles template data and resources on the server, then renders the final HTML with Jet. The response is plain HTML and does not use an iframe proxy or client-side micro frontend. For external SPAs and components, see [Component Pages](#component-pages).
 
 Template pages render server-side using Jet templates. Data is injected via `data.set`, `data.data_func`, and `data.resources` (server-side resource injection):
 
@@ -112,7 +112,7 @@ The `data_func` receives `{ params, query }` and returns a table that becomes th
 
 ## Component Pages
 
-Component pages point to external single-page applications (SPAs, micro-frontends) loaded by the Web Host inside an iframe. The registry entry holds **only registry-routing and deployment-policy fields** — URL serving, access control, mount route, and per-page config overrides:
+Component pages point to external single-page applications (SPAs or micro frontends) that the Web Host loads inside an iframe. Their registry entries define URL serving, access control, the mount route, and per-page configuration overrides:
 
 > **Required registry shape:** component pages are `kind: registry.entry` with `meta.type: view.page`. `view.page` is never a `kind` value. Proxy deployment overrides live at `meta.proxy`, not `data.proxy`.
 
@@ -153,9 +153,9 @@ The API returns a component descriptor with the resolved base URL. The Web Host 
 
 ### Proxy Injection
 
-Proxy injection for SPA pages is configured in the FE package.json `wippy.proxy.injections` block (camelCase) and baked into `wippy-meta.json` at build time. It can also be overridden per deployment via a camelCase `proxy:` block nested under `meta:` in the registry entry (same shape and `injections` wrapper as the package.json `wippy.proxy` block); the host deep-merges it over the bundled `wippy.proxy`, and the YAML value wins per nested key. There is no snake_case form and no casing normalization. Note that `config_overrides` only deep-merges `customization`, `axiosDefaults`, `routePrefix`, and `apiRoutes` — it never affects `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
+For SPA pages, configure proxy injection in the frontend package's camelCase `wippy.proxy.injections` block. The build records this configuration in `wippy-meta.json`. A deployment can override it with a camelCase `proxy:` block under the registry entry's `meta:` field, using the same shape and `injections` wrapper as the package's `wippy.proxy` block. The host deep-merges the deployment value over the bundled configuration, with YAML values taking precedence at each nested key. There is no snake_case form or casing normalization. `config_overrides` deep-merges only `customization`, `axiosDefaults`, `routePrefix`, and `apiRoutes`; it does not affect `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
-Minimal correct deployment override shape:
+Deployment override example:
 
 ```yaml
 entries:
@@ -175,7 +175,7 @@ entries:
 
 ## View Components
 
-View components are reusable custom elements (web components, micro-frontends) that the Web Host discovers and registers — they are not pages and have no navigation entry. Like component pages, the registry entry carries only routing and deployment policy:
+View components are reusable custom elements (web components or micro frontends) that the Web Host discovers and registers. They are not pages and do not have navigation entries. As with component pages, their registry entries define routing and deployment policy:
 
 ```yaml
 entries:
@@ -340,9 +340,9 @@ The `css` injection flags are `themeConfig`, `iframe`, `primevue`, `markdown`, `
 
 When the Web Host renders a page with the [fragment render engine](../frontend/web-host/render-engines.md), the page is mounted as `<web-fragment src="/@fragment/{id}/">`. `wippy/views` serves that reframing contract through a dedicated gateway endpoint at **`/@fragment/{id}/{path...}`**.
 
-Unlike the view API (which mounts on the consumer's `api_router`), the gateway is **self-provided by `wippy/views` (≥ 0.5.9)**: the module declares its own top-level `/@fragment` `http.router` internally, so it is CDN-cache-routable and free of `token_auth` — the gateway is auth-agnostic (the injected fragment proxy handshakes the host for auth client-side). **A consumer needs no fragment wiring** — no router entry and no `fragment_router` parameter. The app boots normally on the iframe engine whether or not fragments are enabled.
+Unlike the view API, which mounts on the consumer's `api_router`, the gateway is provided by `wippy/views` version 0.5.9 and later. The module declares its own top-level `/@fragment` `http.router`, making it CDN-cache-routable and independent of `token_auth`. Authentication is handled client-side through the injected fragment proxy's handshake with the host. Consumers do not need a router entry or `fragment_router` parameter, and applications using the iframe engine do not require fragment configuration.
 
-The self-mounted router binds to a `server` requirement that **defaults to `app:gateway`**. The only optional override: if your app's `http.service` entry has an id other than `app:gateway`, set the `wippy/views` `server` parameter to match it:
+The self-mounted router binds to a `server` requirement that defaults to `app:gateway`. If the application's `http.service` entry has another ID, set the `wippy/views` `server` parameter to that entry:
 
 ```yaml
 entries:
@@ -359,9 +359,9 @@ entries:
         value: app:my_http_service
 ```
 
-> **No fragment wiring, no boot risk.** Because `wippy/views` owns the `/@fragment` router and binds it to `server` (default `app:gateway`), a consumer that upgrades the module boots normally on the iframe engine with zero fragment configuration. A page that opts into fragments per-page (`wippy.renderEngine: "fragment"`) on an otherwise iframe deployment is guarded by a runtime **capability probe** that **silently keeps it on the iframe engine** when the gateway or `proxy-fragment.js` is unavailable. The global `render_engine: fragment` switch trusts the operator and does not probe.
+> **Fragment availability.** A page that sets `wippy.renderEngine: "fragment"` in an otherwise iframe-based deployment uses a runtime capability probe. If the gateway or `proxy-fragment.js` is unavailable, the page remains on the iframe engine without reporting an error. The global `render_engine: fragment` setting does not perform this probe.
 
-### Reframing contract
+### Reframing Contract
 
 The gateway answers the same `/@fragment/{id}/` URL three ways, discriminated by the request's `Sec-Fetch-Dest` header and subpath:
 
@@ -396,11 +396,11 @@ data:
 
 ## See Also
 
-- [Facade](./facade.md) - Frontend iframe facade and navigation sidebar
-- [Template](../system/template.md) - Jet template engine
-- [Security](../system/security.md) - Security actors and access control
-- [Environment](../system/env.md) - Environment variable storage
-- [Framework Overview](./overview.md) - Framework module usage
-- [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) - Full view.page metadata and proxy injection reference
-- [Web Components (view.component)](../frontend/frontend-registry/view-component.md) - Full view.component autoload and props reference
-- [Render Engines](../frontend/web-host/render-engines.md) - Iframe vs Web Fragment page rendering (the `/@fragment` gateway consumer)
+- [Facade](./facade.md) — Frontend facade and navigation sidebar
+- [Template](../system/template.md) — Jet template engine
+- [Security](../system/security.md) — Security actors and access control
+- [Environment](../system/env.md) — Environment variable storage
+- [Framework Overview](./overview.md) — Framework module usage
+- [Micro Frontend Apps (`view.page`)](../frontend/frontend-registry/view-page.md) — Full `view.page` metadata and proxy injection reference
+- [Web Components (`view.component`)](../frontend/frontend-registry/view-component.md) — Full `view.component` autoload and props reference
+- [Render Engines](../frontend/web-host/render-engines.md) — Iframe and Web Fragment page rendering

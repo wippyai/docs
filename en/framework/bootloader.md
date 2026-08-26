@@ -1,11 +1,11 @@
 ---
 title: "Bootloader"
-description: "The wippy/bootloader module orchestrates application initialization by discovering and running bootloader functions in a defined order at startup.…"
+description: "Discover and run ordered application initialization functions at startup with wippy/bootloader."
 ---
 
 # Bootloader
 
-The `wippy/bootloader` module orchestrates application initialization by discovering and running bootloader functions in a defined order at startup. Other framework modules (migrations, encryption, index refresh) register bootloaders to run their own initialization steps.
+The `wippy/bootloader` module discovers and runs application initialization functions in a defined order at startup. Framework modules use bootloaders for tasks such as migrations, encryption setup, and index refreshes.
 
 ## Setup
 
@@ -42,7 +42,7 @@ entries:
         value: app:os_env
 ```
 
-The bootloader itself runs as `wippy.bootloader:bootloader.service` (a `process.service` with `auto_start: true`). Nothing else is required to activate it.
+The dependency activates `wippy.bootloader:bootloader.service`, a `process.service` with `auto_start: true`.
 
 ## How It Works
 
@@ -52,9 +52,9 @@ At startup the bootloader:
 2. Sorts them by `meta.order` ascending (lowest first).
 3. Executes each one sequentially as a Lua function.
 4. Stops on the first error that returns `status = "error"`.
-5. Reports total / success / failed / skipped counts when finished.
+5. Reports total, successful, failed, and skipped counts when finished.
 
-Bootloaders are autonomous — each one checks its own conditions, does its work, and reports a structured result.
+Each bootloader checks its own conditions, performs its work, and reports a structured result.
 
 ## Defining a Bootloader
 
@@ -153,6 +153,6 @@ Keep bootloaders idempotent. They may run again after a crash restart, so check 
 
 ## See Also
 
-- [Migrations](framework/migration.md) - Migration bootloader and DSL
-- [Supervision](guides/supervision.md) - Service lifecycle and restart policy
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Migrations](framework/migration.md) — Migration bootloader and DSL
+- [Supervision](guides/supervision.md) — Service lifecycle and restart policy
+- [Framework Overview](framework/overview.md) — Framework module usage
