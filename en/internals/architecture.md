@@ -5,10 +5,6 @@ description: "How Wippy boots infrastructure, loads components and entries, sche
 
 # Architecture
 
-<note>
-This page is a work in progress. Content may be incomplete or change.
-</note>
-
 Wippy is a layered system built on Go. Components initialize in dependency order, communicate through an event bus, and execute Lua processes via a work-stealing scheduler.
 
 ## Layers
@@ -16,7 +12,7 @@ Wippy is a layered system built on Go. Components initialize in dependency order
 | Layer | Components |
 |-------|------------|
 | Application | Lua processes, functions, workflows |
-| Runtime | Lua engine (wippyai/go-lua), 50+ modules |
+| Runtime | Lua engine (wippyai/go-lua) and runtime modules |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topology, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -203,7 +199,7 @@ Sealed dictionary for component references.
 | Duplicate keys | Panic |
 | Type safety | Typed getter functions |
 
-Components attach services during Load phase. After boot completes, AppContext is sealed for optimal read performance.
+Components attach services during the Load phase. After boot completes, AppContext is sealed, allowing lock-free reads and preventing further writes.
 
 ## Shutdown
 

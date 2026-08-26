@@ -7,8 +7,6 @@ description: "Define typed Lua runtime modules with synchronous functions, userd
 
 Runtime modules add deterministic utilities, I/O operations, or asynchronous commands to the Lua environment.
 
-> The Lua runtime implementation may change in future versions.
-
 ## Module Definition
 
 Every module uses `luaapi.ModuleDef`:
@@ -161,7 +159,7 @@ typ.NewRecord().
     Build()
 ```
 
-See the `typ` package in go-lua for the complete type system.
+See the `typ` package in go-lua for additional builders and type definitions.
 
 ### UserData Bindings (Runtime)
 
@@ -419,7 +417,7 @@ func TestMyModuleYields(t *testing.T) {
 }
 ```
 
-See `runtime/lua/modules/time/integration_test.go` for a complete example.
+See `runtime/lua/modules/time/integration_test.go` for an integration-test example.
 
 ## See Also
 

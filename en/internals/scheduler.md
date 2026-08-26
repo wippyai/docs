@@ -1,6 +1,6 @@
 ---
 title: "Scheduler"
-description: "The scheduler executes processes using a work-stealing design. Workers maintain local deques and steal from each other when idle."
+description: "How Wippy schedules process work, routes events, manages worker queues, and shuts processes down."
 ---
 
 # Scheduler
@@ -25,7 +25,7 @@ type Process interface {
 | `Step` | Advance state machine with incoming events, write yields to output |
 | `Close` | Release resources |
 
-The `method` parameter in `Init` specifies which entry point to invoke. A process instance can expose multiple entry points, and the caller selects which one to execute. This also serves as verification that the scheduler is initiating the process correctly.
+The `method` parameter in `Init` specifies which entry point to invoke. A process instance can expose multiple entry points, and the caller selects which one to execute.
 
 The scheduler calls `Step()` repeatedly, passing events (yield completions, messages) and collecting yields (commands to dispatch). The process writes its status and any yields to the `StepOutput` buffer.
 

@@ -1,9 +1,9 @@
 ---
-title: "Entry Handlers"
-description: "Entry handlers process registry entries by kind. When entries are added, updated, or deleted, the registry dispatches events to matching handlers."
+title: "Entry Listeners and Observers"
+description: "How listeners and observers handle registry mutations for matching entry-kind patterns."
 ---
 
-# Entry Handlers
+# Entry Listeners and Observers
 
 Entry listeners and observers process registry mutations for matching entry-kind patterns.
 

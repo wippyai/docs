@@ -5,7 +5,7 @@ description: "Contribution scope, stability expectations, security reporting, an
 
 # Contributing
 
-Wippy is developed by [Spiral Scout](https://spiralscout.com) and used in production for internal systems and client projects. The public release is currently in alpha.
+Wippy is developed by [Spiral Scout](https://spiralscout.com). The public release is currently in alpha.
 
 ## Stability
 
@@ -20,12 +20,6 @@ Wippy is developed by [Spiral Scout](https://spiralscout.com) and used in produc
 We accept pull requests for Lua module improvements, API stabilization, and documentation.
 
 Pull requests for high-level architectural changes or core design decisions are not accepted during this phase so that the project's direction remains consistent.
-
-Issues and feedback are always welcome.
-
-## Other Projects
-
-Spiral Scout maintains several open-source projects, including [RoadRunner](https://github.com/roadrunner-server/roadrunner), [Spiral Framework](https://github.com/spiral/framework), and [Cycle ORM](https://github.com/cycle/orm).
 
 ## Security
 
