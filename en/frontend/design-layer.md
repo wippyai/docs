@@ -58,6 +58,37 @@ Only if it must genuinely reach arbitrary, unowned markup. If it is scoped to
 *your* set of modules, it does not belong in the theme — it belongs in the
 layer below.
 
+### The backbone, and when a component may opt out
+
+PrimeVue and Tailwind, as shipped by the host, are the recommended backbone for
+any component. A component **may** opt out — but the opt-out narrows the moment
+it renders anything conventional, and the ladder only goes one way:
+
+| The component… | Then it must load |
+|---|---|
+| is presentation-neutral — canvas, SVG, a chart with no controls, no tokens, no utilities, no scrolling | nothing: `hostCssKeys: []` |
+| consumes semantic tokens or dark mode | `themeConfigUrl` |
+| can scroll | `iframeCssUrl` |
+| renders markdown | `markdownCssUrl` |
+| renders anything **Tailwind** can express | Tailwind — write utilities, not hand-rolled CSS |
+| renders anything **PrimeVue** ships a component for — button, input, form, table, dialog, menu, tag, tooltip, any feedback control | `primeVueCssUrl` **and** `PrimeVuePlugin` |
+
+A chart on a canvas is the archetypal legitimate opt-out: it has no classic UI,
+so it needs none of the backbone. Give that same chart a toolbar and it is no
+longer presentation-neutral — the button is a PrimeVue button, and the whole
+integration comes with it.
+
+Note the coupling: **Tailwind utilities are delivered with `primeVueCssUrl`.**
+There is no separate Tailwind host CSS key, so in practice a component that
+needs Tailwind is loading the PrimeVue asset too. (`preflightCssUrl` is not
+part of the key union; if Tailwind preflight is genuinely required inside the
+shadow root, load it imperatively — rarely needed.)
+
+The practical consequence for this page: **most of what a module wants already
+exists in the backbone.** The shared design layer is a narrow band above it, not
+a place to re-do what PrimeVue and Tailwind already cover. See
+[CSS Injection](./web-host/css-injection.md) for the mechanics.
+
 ### The shared design layer
 
 Some ideas recur across a known set of modules and have no component in the
