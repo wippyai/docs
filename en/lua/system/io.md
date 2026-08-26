@@ -1,6 +1,6 @@
 ---
 title: "Terminal I/O"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Read terminal input and write to standard output and standard error."
 ---
 
 # Terminal I/O
@@ -8,10 +8,10 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Read from stdin and write to stdout/stderr for CLI applications.
+The `io` module reads from standard input and writes to standard output and standard error in terminal applications.
 
 <note>
-This module only works inside terminal context. You cannot use it from regular functions—only from processes running on a <a href="system/terminal.md">Terminal Host</a>.
+This module is available only to processes running on a <a href="system/terminal.md">Terminal Host</a>, not to regular functions.
 </note>
 
 ## Loading
@@ -22,7 +22,7 @@ local io = require("io")
 
 ## Writing to Stdout
 
-Write strings to stdout without newline:
+Write values to standard output without a trailing newline:
 
 ```lua
 local ok, err = io.write("text", "more")
@@ -36,7 +36,7 @@ local ok, err = io.write("text", "more")
 
 ## Print with Newline
 
-Write values to stdout with tabs between and newline at end:
+Write values to standard output, separated by tabs and followed by a newline:
 
 ```lua
 io.print("value1", "value2", 123)
@@ -50,7 +50,7 @@ io.print("value1", "value2", 123)
 
 ## Writing to Stderr
 
-Write values to stderr with tabs between and newline at end:
+Write values to standard error, separated by tabs and followed by a newline:
 
 ```lua
 io.eprint("Error:", message)
@@ -64,7 +64,7 @@ io.eprint("Error:", message)
 
 ## Reading Bytes
 
-Read up to n bytes from stdin:
+Read up to `n` bytes from standard input:
 
 ```lua
 local data, err = io.read(1024)
@@ -78,7 +78,7 @@ local data, err = io.read(1024)
 
 ## Reading a Line
 
-Read a line from stdin up to newline:
+Read one line from standard input:
 
 ```lua
 local line, err = io.readline()
@@ -88,7 +88,7 @@ local line, err = io.readline()
 
 ## Raw Mode
 
-Enable or disable raw terminal mode (disables line buffering and echo):
+Enable or disable raw terminal mode, which disables line buffering and echo:
 
 ```lua
 local ok, err = io.raw(true)   -- enable
@@ -101,11 +101,11 @@ local ok, err = io.raw(false)  -- disable
 
 **Returns:** `boolean, error`
 
-Raw mode is reference-counted — each `io.raw(true)` must be matched by an `io.raw(false)`. The terminal resets to normal mode automatically on process exit.
+Raw mode is reference-counted: each `io.raw(true)` call must be matched by an `io.raw(false)` call. The terminal returns to normal mode automatically when the process exits.
 
 ## Flushing Output
 
-Flush stdout buffer:
+Flush the standard-output buffer:
 
 ```lua
 local ok, err = io.flush()
@@ -115,7 +115,7 @@ local ok, err = io.flush()
 
 ## Command Line Arguments
 
-Get command line arguments:
+Retrieve the command-line arguments:
 
 ```lua
 local args = io.args()

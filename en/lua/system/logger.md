@@ -1,6 +1,6 @@
 ---
 title: "Logging"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Write structured log messages and create child loggers with persistent context."
 ---
 
 # Logging
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-Structured logging with debug, info, warn, and error levels.
+The `logger` module writes structured messages at debug, info, warn, and error levels.
 
 ## Loading
 
@@ -65,9 +65,9 @@ logger:error("message", {key = "value"})
 
 ## Logger Customization
 
-### With Fields
+### Persistent Fields
 
-Create a child logger with persistent fields.
+Create a child logger that adds the same fields to every message.
 
 ```lua
 local child = logger:with({request_id = id})
@@ -82,7 +82,7 @@ child:info("message")
 
 ### Named Logger
 
-Create a named child logger.
+Create a child logger with a name.
 
 ```lua
 local named = logger:named("auth")

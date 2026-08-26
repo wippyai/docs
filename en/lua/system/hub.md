@@ -1,11 +1,11 @@
 ---
 title: "Hub"
-description: "Read-only access to the Wippy Hub module catalog: list modules, search, fetch metadata, versions, dependencies, and READMEs."
+description: "Read Wippy Hub module metadata, versions, dependencies, files, artifacts, and READMEs from Lua."
 ---
 
 # Hub
 
-Read-only access to the Wippy Hub module catalog: list modules, search, fetch metadata, versions, dependencies, and READMEs.
+The `hub` module provides read-only access to Wippy Hub modules, versions, dependencies, files, artifacts, and READMEs. Its authentication API manages the runtime's Hub credential override.
 
 ## Loading
 
@@ -15,7 +15,7 @@ local hub = require("hub")
 
 ## Per-call Options
 
-Every call accepts an optional options table. Keys common to all calls:
+Each call accepts an optional options table. These keys are common to all calls:
 
 | Key | Type | Description |
 |-----|------|-------------|
@@ -89,7 +89,7 @@ local v, err = hub.versions.get("wippy/terminal", "1.0.0")
 
 ### Package Handle
 
-`hub.versions.open` downloads the artifact and returns a handle with fields `version`, `digest`, `packed`:
+`hub.versions.open` downloads an artifact and returns a handle with the fields `version`, `digest`, and `packed`:
 
 ```lua
 local pkg, err = hub.versions.open("wippy/terminal", "1.2.3")
@@ -111,7 +111,7 @@ pkg:close()
 | `pkg:fs(resource)` | Filesystem handle for an embedded resource |
 | `pkg:close()` | Release the handle |
 
-Entry `data` is returned raw — `${env:...}` references are not resolved.
+Entry `data` is returned without resolving `${env:...}` references.
 
 ## Dependencies
 
@@ -137,7 +137,7 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 
 ## Authentication
 
-Push a registry token into the running process — every hub consumer picks it up on its next call, without a restart:
+Install a registry token as a runtime override. Hub consumers use it on subsequent calls without requiring a restart:
 
 ```lua
 local status, err = hub.auth.authenticate("wpy_xxx")          -- default registry
@@ -153,7 +153,7 @@ local ok, err = hub.auth.logout()
 | `hub.auth.status(registry?)` | Live-validate the current credential |
 | `hub.auth.logout(registry?)` | Clear the runtime token override |
 
-`status` contains `authenticated`, `registry`, and `orgs`; identity fields (`username`, `user_id`, `scope`, `expires_at`, `expired`) are present only when authenticated. A token that fails validation is not stored — `authenticate` returns `authenticated = false`. The override takes precedence over `WIPPY_TOKEN` and stored credentials.
+`status` contains `authenticated`, `registry`, and `orgs`. Identity fields (`username`, `user_id`, `scope`, `expires_at`, `expired`) are present only when authenticated. A token that fails validation is not stored; `authenticate` returns `authenticated = false`. The runtime override takes precedence over `WIPPY_TOKEN` and stored credentials.
 
 **Permissions:** `hub.auth.authenticate`, `hub.auth.status`, `hub.auth.logout`
 

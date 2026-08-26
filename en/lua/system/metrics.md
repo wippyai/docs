@@ -1,6 +1,6 @@
 ---
 title: "Metrics & Telemetry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Record application counters, gauges, and histogram observations."
 ---
 
 # Metrics & Telemetry
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Record application metrics using counters, gauges, and histograms.
+The `metrics` module records application counters, gauges, and histogram observations.
 
 ## Loading
 

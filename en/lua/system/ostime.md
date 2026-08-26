@@ -1,6 +1,6 @@
 ---
 title: "OS Time"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Read wall-clock time, format dates, and calculate time differences with Lua's global os table."
 ---
 
 # OS Time
@@ -8,11 +8,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Standard Lua `os` time functions. Provides real wall-clock time for timestamps, date formatting, and time calculations.
+The global `os` table provides wall-clock timestamps, date formatting, elapsed-time measurement, and time-difference calculations.
 
 ## Loading
 
-Global `os` table. No require needed.
+The `os` table is global and does not require loading with `require`.
 
 ```lua
 os.time()
@@ -23,7 +23,7 @@ os.difftime()
 
 ## Getting Timestamps
 
-Get Unix timestamp (seconds since Jan 1, 1970 UTC):
+Read a Unix timestamp in seconds since January 1, 1970 UTC:
 
 ```lua
 -- Current timestamp
@@ -53,9 +53,9 @@ local t = os.time({
 | `min` | number | 0 | Minute 0-59 |
 | `sec` | number | 0 | Second 0-59 |
 
-When called with no arguments, returns current Unix timestamp.
+With no arguments, `os.time()` returns the current Unix timestamp.
 
-When called with a table, any missing field uses defaults shown above. The `year`, `month`, and `day` fields default to current date if not specified.
+When called with a table, missing fields use the defaults shown above. The `year`, `month`, and `day` fields use the current date when omitted.
 
 ```lua
 -- Just date (time defaults to midnight)
@@ -67,7 +67,7 @@ os.time({day = 1})  -- first of current month
 
 ## Formatting Dates
 
-Format a timestamp as string or return a date table:
+Format a timestamp as a string or return its date fields in a table:
 
 <code-block lang="lua">
 local now = os.time()
@@ -123,7 +123,7 @@ local t = os.date("*t", now)
 
 ### Date Table
 
-When format is `"*t"`, returns a table:
+When the format is `"*t"`, `os.date()` returns a table:
 
 ```lua
 local t = os.date("*t")
@@ -145,7 +145,7 @@ Use `"!*t"` for UTC date table.
 
 ## Measuring Elapsed Time
 
-Get seconds elapsed since Lua runtime started:
+Read the seconds elapsed since the Lua runtime started:
 
 ```lua
 local start = os.clock()
@@ -161,7 +161,7 @@ print(string.format("Took %.3f seconds", elapsed))
 
 ## Time Difference
 
-Get difference between two timestamps in seconds:
+Calculate the difference between two timestamps in seconds:
 
 ```lua
 local t1 = os.time({year = 2024, month = 1, day = 1})
@@ -179,11 +179,11 @@ print(days)  -- 365
 | `t2` | number | Later timestamp |
 | `t1` | number | Earlier timestamp |
 
-Returns `t2 - t1` in seconds. Can be negative if `t1 > t2`.
+The result is `t2 - t1` in seconds and is negative when `t1 > t2`.
 
 ## Platform Constant
 
-Constant identifying the runtime:
+The `os.platform` constant identifies the runtime:
 
 ```lua
 os.platform  -- "wippy"

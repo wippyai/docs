@@ -1,16 +1,16 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Handle terminal input events and render styled terminal layouts."
 ---
 
 # TTY
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Terminal UI module for raw input events, styled output, and layout utilities.
+The `tty` module handles raw terminal input events and provides styled-output and layout utilities.
 
 <note>
-This module only works inside terminal context. You cannot use it from regular functions—only from processes running on a <a href="system/terminal.md">Terminal Host</a>.
+This module is available only to processes running on a <a href="system/terminal.md">Terminal Host</a>, not to regular functions.
 </note>
 
 ## Loading
@@ -52,7 +52,7 @@ end
 
 ## Input Control
 
-### tty.start()
+### `tty.start()`
 
 Enable raw terminal input mode. The terminal switches to raw mode and begins emitting events.
 
@@ -62,7 +62,7 @@ local ok, err = tty.start()
 
 **Returns:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 Disable raw input and restore the terminal to normal mode.
 
@@ -72,9 +72,9 @@ local ok, err = tty.stop()
 
 **Returns:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
-Subscribe to terminal events and return a channel. Events are delivered as tables with a `type` field.
+Subscribe to terminal events and return their channel. Each event is a table with a `type` field.
 
 ```lua
 local events = tty.events()
@@ -82,9 +82,9 @@ local events = tty.events()
 
 **Returns:** `EventChannel, error`
 
-### tty.screen_size()
+### `tty.screen_size()`
 
-Query current terminal dimensions.
+Read the current terminal dimensions.
 
 ```lua
 local width, height, err = tty.screen_size()
@@ -92,7 +92,7 @@ local width, height, err = tty.screen_size()
 
 **Returns:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 Enable or disable mouse event tracking.
 
@@ -183,7 +183,7 @@ if quit:matches(ev) then
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -203,7 +203,7 @@ end
 
 ## Styles
 
-Create styled text output using lipgloss-based styling. All style methods return a new style (immutable).
+Create styled terminal output. Style values are immutable, so each style method returns a new value.
 
 ```lua
 local tty = require("tty")
@@ -223,9 +223,9 @@ local box = tty.style()
 io.print(box:render(title:render("Hello"), "World"))
 ```
 
-### tty.style()
+### `tty.style()`
 
-Create a new empty style.
+Create an empty style.
 
 **Returns:** `Style`
 
@@ -296,7 +296,7 @@ tty.align.RIGHT   -- 1
 
 ## Text Utilities
 
-Layout and measurement functions for styled text. Available under `tty.text`.
+The `tty.text` subtable provides layout and measurement functions for styled text.
 
 ### Measurement
 
@@ -325,7 +325,7 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 
 ### Placement
 
-Place a string within a box of given dimensions:
+Place a string within a box with the given dimensions:
 
 ```lua
 -- Center in a 80x24 box
