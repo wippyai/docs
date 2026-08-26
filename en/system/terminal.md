@@ -5,7 +5,7 @@ description: "Terminal hosts execute Lua scripts with stdin/stdout/stderr access
 
 # Terminal
 
-Terminal hosts execute Lua scripts with stdin/stdout/stderr access.
+A `terminal.host` executes Lua scripts with standard input, output, and error streams.
 
 <note>
 A terminal host runs exactly one process at a time. The process itself is a regular Lua process with access to terminal I/O context.
@@ -35,10 +35,10 @@ A terminal host runs exactly one process at a time. The process itself is a regu
 
 Scripts running on a terminal host receive a terminal context with:
 
-- **stdin** - Standard input reader
-- **stdout** - Standard output writer
-- **stderr** - Standard error writer
-- **args** - Command-line arguments
+- **stdin** — Standard input reader
+- **stdout** — Standard output writer
+- **stderr** — Standard error writer
+- **args** — Command-line arguments
 
 ## Lua API
 

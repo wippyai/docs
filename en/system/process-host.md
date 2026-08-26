@@ -5,7 +5,7 @@ description: "Process hosts manage Lua process execution using a work-stealing s
 
 # Process Host
 
-Process hosts manage Lua process execution using a work-stealing scheduler.
+A `process.host` runs Lua processes on a work-stealing scheduler.
 
 <note>
 Each host schedules processes independently. Load is not distributed between hosts automatically.
@@ -40,9 +40,9 @@ Each host schedules processes independently. Load is not distributed between hos
 
 The scheduler uses work-stealing: each worker has a local deque, and idle workers steal from the global queue or other workers. This balances load automatically.
 
-- **Workers** execute processes concurrently
-- **Global queue** holds pending processes when all workers are busy
-- **Local queues** reduce contention by keeping work close to workers
+- **Workers** execute processes concurrently.
+- **Global queue** holds pending processes when all workers are busy.
+- **Local queues** reduce contention by keeping work close to workers.
 
 ## Process Types
 

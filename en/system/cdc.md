@@ -5,7 +5,7 @@ description: "Stream row-level changes from Postgres logical replication with db
 
 # Change Data Capture
 
-Stream row-level changes from a Postgres database using logical replication (`pgoutput` plugin). A CDC source creates a replication slot, optionally snapshots existing rows, then emits insert/update/delete changes as they happen. Sources are addressable by their entry ID and consumed from Lua via the [`cdc` module](lua/storage/cdc.md).
+A `db.cdc.postgres` source streams row-level changes from Postgres logical replication through the `pgoutput` plugin. It creates a replication slot, can snapshot existing rows, and then emits insert, update, and delete changes. Sources are addressed by entry ID and consumed from Lua through the [`cdc` module](lua/storage/cdc.md).
 
 ## Configuration
 

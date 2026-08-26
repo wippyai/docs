@@ -5,7 +5,7 @@ description: "SQL database connection pooling and configuration. Supports Postgr
 
 # Database System
 
-SQL database connection pooling and configuration. Supports PostgreSQL, MySQL, and SQLite.
+Wippy provides pooled SQL database entries for PostgreSQL and MySQL, plus a single-connection SQLite entry.
 
 ## Entry Kinds
 

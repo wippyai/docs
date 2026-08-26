@@ -1,11 +1,11 @@
 ---
 title: "Process Groups"
-description: "Process groups let processes join named groups and receive broadcasts addressed to a group, with membership tracked across every node in the cluster.…"
+description: "Configure cluster-aware named process groups with decentralized membership, broadcasts, monitoring, and reconciliation."
 ---
 
 # Process Groups
 
-Process groups let processes join named groups and receive broadcasts addressed to a group, with membership tracked across every node in the cluster. The model follows Erlang/OTP `pg`: groups are created on first join, a process can belong to many groups (and join one group multiple times), and membership is decentralized — each node maintains its own state and reconciles with peers over the internode mesh.
+A `pg.scope` lets processes join named groups and receive broadcasts addressed to a group. The model follows Erlang/OTP `pg`: groups are created on first join, a process can belong to many groups and join one group multiple times, and each cluster node maintains its own membership state and reconciles with peers over the internode mesh.
 
 The Lua API is documented in [Process Groups](lua/core/pg.md); this page covers the scope entry kind and its configuration. See the [Cluster Guide](guides/cluster.md) for the surrounding membership model.
 
@@ -26,7 +26,7 @@ Each scope is isolated: groups and members in one scope are invisible to another
 
 ## Configuration
 
-All fields are optional and have defaults tuned for a typical cluster.
+All fields are optional. The table lists their defaults.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

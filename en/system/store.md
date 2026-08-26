@@ -5,7 +5,7 @@ description: "Key-value stores with TTL support: in-memory, SQL-backed, and clus
 
 # Store (Key-Value)
 
-Key-value stores with TTL support: in-memory, SQL-backed, and cluster-replicated (Raft and CRDT).
+Wippy provides TTL-aware key-value stores backed by memory, SQL, Raft, or a CRDT.
 
 ## Entry Kinds
 

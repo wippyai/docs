@@ -5,7 +5,7 @@ description: "Wippy provides a queue system for asynchronous message processing 
 
 # Queue
 
-Wippy provides a queue system for asynchronous message processing with configurable drivers and consumers.
+The queue system connects asynchronous message publishers, drivers, queues, consumers, and handler functions.
 
 ## Architecture
 
@@ -18,10 +18,10 @@ flowchart LR
     W --> F[Function]
 ```
 
-- **Driver** - Backend implementation (memory, AMQP, SQS)
-- **Queue** - Logical queue bound to a driver
-- **Consumer** - Connects queue to handler with concurrency settings
-- **Worker Pool** - Concurrent message processors
+- **Driver** — Backend implementation (memory, AMQP, or SQS)
+- **Queue** — Logical queue bound to a driver
+- **Consumer** — Connects a queue to a handler with concurrency settings
+- **Worker pool** — Concurrent message processors
 
 Multiple queues can share a driver. Multiple consumers can process from the same queue.
 
@@ -39,7 +39,7 @@ Multiple queues can share a driver. Multiple consumers can process from the same
 
 ### Memory Driver
 
-In-process driver for development and single-node deployments. No external dependencies.
+The in-process driver is intended for development and single-node deployments and has no external dependencies.
 
 ```yaml
 - name: memory_driver
@@ -87,7 +87,7 @@ For RabbitMQ and AMQP 0-9-1 compatible brokers.
 | `channel_max` | int | - | Max channels per connection |
 | `tls` | object | - | TLS settings (see below) |
 
-TLS block:
+Configure TLS under `tls`:
 
 ```yaml
   tls:
@@ -234,7 +234,7 @@ Consumers respect call context and can be subject to security policies. Configur
 
 ### Worker Pool
 
-Workers run as concurrent goroutines:
+Workers run concurrently:
 
 ```
 concurrency: 3, prefetch: 10
