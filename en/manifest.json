@@ -16,6 +16,7 @@
       {"title": "Linter", "path": "guides/linter"},
       {"title": "Language Server", "path": "guides/lsp"},
       {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Build-time Artifacts", "path": "guides/artifacts"},
       {"title": "Building Components", "path": "guides/components"},
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},

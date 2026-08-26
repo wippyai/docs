@@ -101,14 +101,11 @@ different repositories — the falsifiable test for this layer is that a module
 in a *different repo*, with no path access to the producer, consumes the
 vocabulary and builds.
 
-> **Documentation gap.** The producing module declares the package as an
-> artifact and each consumer materializes it during its build. That mechanism —
-> the artifact declaration, `wippy artifacts materialize`, and how a consumer
-> wires the materialized path into its package resolution — is not documented
-> yet. [Dependency Management](../guides/dependency-management.md) covers module
-> dependencies and `workspace.replacements`, but not artifact materialization.
-> Until that page exists, treat the distribution step as the one part of this
-> layer you cannot follow from the docs alone.
+The producing module declares the package as a **build-time artifact** and each
+consumer materializes it into its own tree. See
+[Build-time Artifacts](../guides/artifacts.md) for the declaration, the
+`node-package` format, what the runtime reconciles for you, and the glue a
+build still has to supply itself.
 
 ### The module
 
@@ -264,5 +261,7 @@ override — and look at the result. Unit tests cannot see layout.
   theme reaches both host and children
 - [Compliance checklist](./micro-frontends/compliance-checklist.md) — the
   per-module rules a frontend is checked against
+- [Build-time Artifacts](../guides/artifacts.md) — declaring the package, and
+  materializing it into a consumer
 - [Dependency Management](../guides/dependency-management.md) — declaring and
   resolving what a module consumes
