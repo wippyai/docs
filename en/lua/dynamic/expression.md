@@ -8,17 +8,17 @@ description: "Compile and evaluate expr-lang expressions from Lua."
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `expr` module compiles and evaluates safe [expr-lang](https://expr-lang.org/) expressions for filtering, validation, calculations, and rule evaluation without running Lua source code.
-
-## Caching
-
-`expr.eval` keeps an internal LRU cache of compiled expressions (default capacity 1000). The cache is built into the module and requires no configuration.
+The `expr` module compiles and evaluates safe [expr-lang](https://expr-lang.org/) expressions for filtering, validation, calculations, and rule evaluation without running Lua source code. This page is the canonical Lua reference for the expression API and syntax; see [Dynamic Evaluation](lua/dynamic/eval.md) when choosing between expressions and sandboxed Lua.
 
 ## Loading
 
 ```lua
 local expr = require("expr")
 ```
+
+## Caching
+
+`expr.eval` keeps an internal LRU cache of compiled expressions (default capacity 1000). The cache is built into the module and requires no configuration.
 
 ## Evaluating Expressions
 

@@ -5,7 +5,7 @@ description: "Evaluate expressions or run Lua code in sandboxed environments wit
 
 # Dynamic Evaluation
 
-Wippy provides expression evaluation and sandboxed Lua execution for code supplied at runtime.
+Wippy provides expression evaluation and sandboxed Lua execution for code supplied at runtime. This page compares the two systems and documents `eval_runner` module access, imports, context, security controls, and caching.
 
 ## Choosing an Evaluation System
 
@@ -16,9 +16,9 @@ Choose the evaluation system according to the code being run:
 | `expr` | Expression evaluation | Config, templates, simple calculations |
 | `eval_runner` | Full Lua execution | Plugins, user scripts, dynamic code |
 
-## expr Module
+## Expression Evaluation with `expr`
 
-The `expr` module evaluates expressions written in expr-lang syntax.
+The `expr` module evaluates expressions written in expr-lang syntax. Use it for expressions rather than full Lua programs. [Expression Language](lua/dynamic/expression.md) is the complete Lua API and syntax reference.
 
 ```lua
 local expr = require("expr")
@@ -27,7 +27,7 @@ local result, err = expr.eval("x + y * 2", {x = 10, y = 5})
 -- result = 20
 ```
 
-### Compiling Expressions
+### Reusing Compiled Expressions
 
 Compile an expression for repeated evaluation:
 
@@ -38,7 +38,7 @@ local total1 = program:run({price = 10, quantity = 5})
 local total2 = program:run({price = 20, quantity = 3})
 ```
 
-### Supported Syntax
+### Syntax at a Glance
 
 ```lua
 -- Arithmetic
@@ -70,7 +70,7 @@ expr.eval("[1, 2, 3][0]")        -- 1
 expr.eval("'hello' + ' ' + 'world'")
 ```
 
-## eval_runner Module
+## Sandboxed Lua with `eval_runner`
 
 The `eval_runner` module executes Lua with configured module and registry access.
 
@@ -202,7 +202,7 @@ program:modules()  -- {"json"}    (string[])
 
 The compiled program describes the source but does not execute it. Call `runner.run` with the source and method to run the program.
 
-## Security Model
+## Sandbox Controls
 
 ### Module Classes
 
@@ -218,7 +218,7 @@ Modules are categorized by capability:
 | `storage` | File, database | Blocked |
 | `network` | HTTP, sockets | Blocked |
 
-### Enabling Blocked Classes
+### Allowing Additional Classes
 
 ```lua
 runner.run({
@@ -243,7 +243,7 @@ The system checks permissions for:
 
 Configure these actions in security policies.
 
-## Compile Cache
+## Compiled Program Cache
 
 Compiled programs are cached in an LRU keyed by source, method, modules, and allowed classes. Repeated runs of identical code skip compilation. Imports and context are bound at run time and do not affect the cache key.
 
@@ -255,7 +255,7 @@ lua:
     cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
 ```
 
-## Error Handling
+## Handling Evaluation Errors
 
 ```lua
 local result, err = runner.run({...})
@@ -270,9 +270,9 @@ if err then
 end
 ```
 
-## Use Cases
+## Choosing by Use Case
 
-### Plugin System
+### Plugins
 
 ```lua
 local plugins = registry.find({meta = {type = "plugin"}})

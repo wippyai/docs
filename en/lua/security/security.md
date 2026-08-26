@@ -196,14 +196,14 @@ store:close()
 
 **Returns:** `TokenStore, error`
 
-## Actor Methods
+## `Actor` Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `actor:id()` | string | Actor identifier |
 | `actor:meta()` | table | Actor metadata |
 
-## Scope Methods
+## `Scope` Methods
 
 ### `with` / `without`
 
@@ -256,14 +256,14 @@ end
 
 **Returns:** `Policy[]`
 
-## Policy Methods
+## `Policy` Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `policy:id()` | string | Policy identifier |
 | `policy:evaluate(actor, action, resource, meta?)` | string | `"allow"`, `"deny"`, or `"undefined"` |
 
-## TokenStore Methods
+## `TokenStore` Methods
 
 ### `create`
 

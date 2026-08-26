@@ -43,7 +43,7 @@ executor:release()
 
 **Returns:** `Executor, error`
 
-## Creating a Process
+## Creating Processes
 
 Create a process for the specified command:
 

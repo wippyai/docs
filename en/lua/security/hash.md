@@ -75,7 +75,7 @@ local raw = hash.sha512("data", true)
 
 **Returns:** `string, error`
 
-## HMAC Authentication
+## HMACs
 
 ### HMAC-MD5
 

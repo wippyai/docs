@@ -40,7 +40,7 @@ local id, err = uuid.v4()
 
 ### Version 7
 
-Time-ordered UUID. Sortable by creation time.
+A time-ordered UUID that sorts by creation time.
 
 ```lua
 local id, err = uuid.v7()
@@ -83,7 +83,7 @@ local id, err = uuid.v5(NS_URL, "https://example.com/resource")
 
 ## Inspection
 
-### Validate
+### `validate`
 
 ```lua
 local valid = uuid.validate(input)
@@ -95,7 +95,7 @@ local valid = uuid.validate(input)
 
 **Returns:** `boolean, error`
 
-### Get Version
+### `version`
 
 ```lua
 local ver, err = uuid.version(id)
@@ -107,7 +107,7 @@ local ver, err = uuid.version(id)
 
 **Returns:** `integer, error`
 
-### Get Variant
+### `variant`
 
 ```lua
 local var, err = uuid.variant(id)
@@ -119,7 +119,7 @@ local var, err = uuid.variant(id)
 
 **Returns:** `string, error` (RFC4122, Reserved, Microsoft, Future, NCS, or Invalid)
 
-### Parse
+### `parse`
 
 ```lua
 local info, err = uuid.parse(id)
@@ -137,7 +137,7 @@ Returned table fields:
 - `timestamp` (integer): Unix timestamp (v1 and v7 only)
 - `node` (string): Node ID (v1 only)
 
-### Format
+### `format`
 
 ```lua
 local formatted, err = uuid.format(id, "standard")
