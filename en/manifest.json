@@ -167,6 +167,7 @@
       {"title": "Frontend Contract: Start Here", "path": "frontend/overview"},
       {"title": "Platform Topology", "path": "frontend/platform-topology"},
       {"title": "Portable UI Contract", "path": "frontend/portable-ui-contract"},
+      {"title": "The Design Layer", "path": "frontend/design-layer"},
       {
         "title": "Frontend Registry",
         "children": [
