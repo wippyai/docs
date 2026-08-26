@@ -19,11 +19,12 @@ Wippy currently runs PrimeVue with `theme: 'none'`. Component appearance is supp
 | Page-only theme override | Page configuration using supported frontend casing |
 | Domain layout or novel structure | Module CSS or Tailwind |
 | A necessary non-PrimeVue custom part | Module CSS, reusing public tokens and documented invariant utilities |
+| The same non-PrimeVue part needed by several of your own modules | A shared package — see [The Design Layer](../design-layer.md) |
 | An arbitrary class expected from one facade | Not portable; prohibited by FE-STYLE-001 |
 
 A global `.p-drawer-content` rule is valid theme implementation when it is intended for every Drawer in host and child roots. `.wippy-host-app .p-drawer-content` is appropriate only when the rule is host-specific.
 
-Moving duplicated module CSS into facade CSS does not eliminate the dependency. If the selector is not part of the shared PrimeVue theme vocabulary, it creates a private facade contract.
+Moving duplicated module CSS into facade CSS does not eliminate the dependency. If the selector is not part of the shared PrimeVue theme vocabulary, it creates a private facade contract. The place for vocabulary shared by your own modules but absent from the theme is a published package: see [The Design Layer](../design-layer.md).
 
 ## Semantic equality
 

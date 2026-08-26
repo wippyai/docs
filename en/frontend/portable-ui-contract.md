@@ -17,6 +17,8 @@ A compliant module works with another compliant facade theme without module edit
 
 Portable modules cannot require arbitrary classes or selectors defined only by one facade. Shared PrimeVue `.p-*` theme rules are not private classes. Non-PrimeVue styling required by one module belongs in that module, but should be minimized by conforming to shared components and semantics.
 
+When *several* of your own modules need the same non-PrimeVue styling, it belongs in neither the facade nor each module: see [The Design Layer](./design-layer.md).
+
 ## Components and affordance
 
 ### FE-UI-001: Use PrimeVue when it satisfies the control

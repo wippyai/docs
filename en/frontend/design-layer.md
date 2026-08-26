@@ -95,11 +95,17 @@ Some ideas recur across a known set of modules and have no component in the
 theme: a content card, a surface header row, what a surface shows when it has
 nothing, the sizes a tag comes in. Real, shared, and homeless.
 
-They ship as a **published package**, materialized into each consumer. It must
-be a package rather than a path alias, because consumers live in different
-repositories — the falsifiable test for this layer is that a module in a
-*different repo*, with no path access to the producer, consumes the vocabulary
-and builds.
+They ship as a **published package**, materialized into each consumer at build
+time. It must be a package rather than a path alias, because consumers live in
+different repositories — the falsifiable test for this layer is that a module
+in a *different repo*, with no path access to the producer, consumes the
+vocabulary and builds.
+
+The producing module declares the package as a **build-time artifact** and each
+consumer materializes it into its own tree. See
+[Build-time Artifacts](../guides/artifacts.md) for the declaration, the
+`node-package` format, what the runtime reconciles for you, and the glue a
+build still has to supply itself.
 
 ### The module
 
@@ -255,5 +261,7 @@ override — and look at the result. Unit tests cannot see layout.
   theme reaches both host and children
 - [Compliance checklist](./micro-frontends/compliance-checklist.md) — the
   per-module rules a frontend is checked against
+- [Build-time Artifacts](../guides/artifacts.md) — declaring the package, and
+  materializing it into a consumer
 - [Dependency Management](../guides/dependency-management.md) — declaring and
   resolving what a module consumes
