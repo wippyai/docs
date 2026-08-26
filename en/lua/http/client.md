@@ -119,6 +119,8 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `tls` | table | Per-request TLS configuration (see [TLS Options](#tls-options)) |
 | `overlay_network` | string | Route through a [network overlay](system/network.md) — registry ID of a `network.socks5` / `network.tailscale` / `network.i2p` entry |
 
+Selecting `overlay_network` requires `network.select` permission on that network ID.
+
 ### Query Parameters
 
 ```lua
@@ -213,8 +215,10 @@ For mutual TLS, provide `cert` and `key` together. The `ca` field replaces the s
 #### mTLS Authentication
 
 ```lua
-local cert_pem = fs.read("/certs/client.crt")
-local key_pem = fs.read("/certs/client.key")
+local fs = require("fs")
+local certs = assert(fs.get("app:certs"))
+local cert_pem = assert(certs:readfile("client.crt"))
+local key_pem = assert(certs:readfile("client.key"))
 
 local resp, err = http_client.get("https://secure.example.com/api", {
     tls = {
@@ -227,7 +231,9 @@ local resp, err = http_client.get("https://secure.example.com/api", {
 #### Custom CA
 
 ```lua
-local ca_pem = fs.read("/certs/internal-ca.crt")
+local fs = require("fs")
+local certs = assert(fs.get("app:certs"))
+local ca_pem = assert(certs:readfile("internal-ca.crt"))
 
 local resp, err = http_client.get("https://internal.example.com/api", {
     tls = {
@@ -372,6 +378,7 @@ HTTP requests are evaluated against the active security policy.
 | `http_client.unix_socket` | Socket path | Allow/deny Unix socket connections |
 | `http_client.private_ip` | IP address | Allow/deny access to private IP ranges |
 | `http_client.insecure_tls` | URL | Allow/deny insecure TLS (skip verification) |
+| `network.select` | Network ID | Allow/deny explicit `overlay_network` selection |
 
 ### Checking Access
 

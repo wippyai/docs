@@ -123,7 +123,9 @@ print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
 -- Parse from file content
-local content = fs.read("config.yaml")
+local fs = require("fs")
+local config_fs = assert(fs.get("app:config"))
+local content = assert(config_fs:readfile("config.yaml"))
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")

@@ -364,7 +364,9 @@ local splitter, err = text.splitter.markdown({
     heading_hierarchy = true
 })
 
-local readme = fs.read("README.md")
+local fs = require("fs")
+local docs = assert(fs.get("app:docs"))
+local readme = assert(docs:readfile("README.md"))
 local chunks, err = splitter:split_text(readme)
 ```
 

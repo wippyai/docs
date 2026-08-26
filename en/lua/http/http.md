@@ -265,8 +265,10 @@ Return the client's remote network address.
 ```lua
 local addr = req:remote_addr()  -- "192.168.1.100:54321"
 
--- Extract IP only
-local ip = addr:match("^([^:]+)")
+-- Extract the host from IPv4 and bracketed IPv6 addresses
+local ip = addr:match("^%[([^%]]+)%]:%d+$")
+    or addr:match("^([^:]+):%d+$")
+    or addr
 
 -- Rate limiting by IP
 if rate_limiter:is_limited(ip) then
@@ -297,13 +299,19 @@ if form.files.avatar then
     local size = file:size()            -- 102400
     local content_type = file:header("Content-Type")  -- "image/jpeg"
 
-    -- Read file content
-    local stream = file:stream()
-    local content = stream:read(0)
-    stream:close()
+    -- Stream the upload to a configured filesystem volume
+    local fs = require("fs")
+    local uploads, fs_err = fs.get("app:avatars")
+    if fs_err then
+        return nil, fs_err
+    end
 
-    -- Save to storage
-    storage.write("avatars/" .. filename, content)
+    local stream = file:stream()
+    local _, write_err = uploads:writefile(filename, stream)
+    stream:close()
+    if write_err then
+        return nil, write_err
+    end
 end
 
 -- Handle multiple files
