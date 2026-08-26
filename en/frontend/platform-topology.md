@@ -47,8 +47,6 @@ re-broadcasts AppConfig to live `about:srcdoc` iframes, and mirrors the mode int
 web-component roots. Never force `w-theme-dark` or `w-theme-light` classes
 directly.
 
-Never force `w-theme-dark` or `w-theme-light` classes directly.
-
 PrimeVue overlays may be teleported. Verify the actual overlay root in the top document, iframe documents, and recursively discovered shadow roots. Do not assume generic PrimeVue placement.
 
 ## Runtime debugging order

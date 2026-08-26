@@ -1,15 +1,14 @@
 ---
-title: "The design layer"
-description: "Theme, shared design layer, module-local — what goes where when several modules need the same thing and the theme has no seat for it, with worked good and bad examples."
+title: "The Design Layer"
+description: "How to place frontend styles and components in the theme, a shared design package, or an individual module."
 ---
 
-# The design layer
+# The Design Layer
 
-A Wippy frontend is many independently published modules rendering into one
-application. Two homes are obvious: the **theme**, which every surface
-consumes, and the **module**, which owns itself. The gap between them is not
-obvious, and it is where duplication accumulates — an idea several modules
-genuinely share that the theme has no component for.
+A Wippy frontend can contain many independently published modules in one
+application. The **theme** reaches every surface, while each **module** owns its
+local presentation. A **shared design layer** covers the narrower case where
+several modules share a concept that the theme does not provide.
 
 This page names the three layers, gives a test for choosing between them, and
 shows what each choice looks like when it goes right and wrong.
@@ -92,14 +91,13 @@ a place to re-do what PrimeVue and Tailwind already cover. See
 ### The shared design layer
 
 Some ideas recur across a known set of modules and have no component in the
-theme: a content card, a surface header row, what a surface shows when it has
-nothing, the sizes a tag comes in. Real, shared, and homeless.
+theme: a content card, a surface header row, an empty state, or a set of tag
+sizes. These concepts belong in the shared design layer.
 
 They ship as a **published package**, materialized into each consumer at build
-time. It must be a package rather than a path alias, because consumers live in
-different repositories — the falsifiable test for this layer is that a module
-in a *different repo*, with no path access to the producer, consumes the
-vocabulary and builds.
+time. It must be a package rather than a path alias because consumers live in
+different repositories. A module in another repository, with no path access to
+the producer, must be able to consume the vocabulary and build.
 
 The producing module declares the package as a **build-time artifact** and each
 consumer materializes it into its own tree. See
@@ -124,25 +122,19 @@ Ask in order. First yes wins.
    component behind it?** → **Shared design layer.**
 4. Otherwise → **Module.**
 
-Question 2 is the one that catches people, and it has a sharp rule behind it.
-
 ## Worked examples
 
-The examples below are from Kickside, a Wippy application whose module CSS was
-15.4% exact-clone duplication before it grew this layer.
+The examples use the `kx-` prefix for application-specific classes and
+stylesheet names. The placement rules apply to any Wippy application.
 
 ### Never rebuild a themed component
 
-PrimeVue ships `Button`. Nine Kickside modules opted out of it and hand-rolled
-`.kx-btn` on a native `<button>`; seven other modules used the component. Both
-dialects were locally reasonable — there was simply no shared place to put a
-button, so half the app invented one. Measured against each other they agreed
-on font-size and line-height and nothing else.
+PrimeVue ships `Button`. Replacing it with `.kx-btn` on a native `<button>`
+creates a second implementation whose interaction and appearance can drift
+from the themed component.
 
 **Bad:** a native `button` element carrying `.kx-btn .kx-btn-primary` — a second
-implementation of a component the theme already ships. (Written as a selector
-here on purpose: the documentation gate rejects native product controls in
-example code, which is this rule enforced one layer up.)
+implementation of a component the theme already ships.
 
 **Good:** the themed component, with a class on it when you need to adjust it.
 
@@ -152,17 +144,13 @@ example code, which is this rule enforced one layer up.)
 
 When the themed component does not fit, that is not a licence to rebuild it.
 Put a class on the component and style that class — in the facade if the
-adjustment is app-wide, in the module if it is local. Kickside's `knowledge`
-module still carries `.kn-btn` / `.kn-primary` on native buttons; that is a
-migration outstanding, not a pattern to copy.
+adjustment is app-wide, in the module if it is local.
 
 ### Severity is the theme's, not yours
 
 Severity — `success`, `danger`, `warn`, `info` — is theme semantics with
-published ramps. Kickside re-derived it **sixteen times across four naming
-schemes** (`tone-gn`, `t-ok`, `kx-tone-success`, `tone-success`). The same
-class name meant three different colours in three modules, so publishing any
-one definition would have silently repainted the others.
+published ramps. Re-deriving it under module-local names creates competing
+definitions that can diverge across modules.
 
 ```css
 /* BAD — severity re-derived under a module-local name */
@@ -218,7 +206,7 @@ component class needs more *specificity* — not a later line in the file.
 (`adoptedStyleSheets` carries the facade's custom CSS, not the theme, so
 reaching for an adopted sheet does not win this either.)
 
-This bites hardest with pass-through classes, where your class lands *on* a
+This is most visible with pass-through classes, where your class lands *on* a
 themed element:
 
 ```css
@@ -233,27 +221,25 @@ themed element:
 ## What the shared layer may contain
 
 Everything a set of modules genuinely shares and the theme does not own: CSS
-vocabulary, derived tokens, internal components, helpers, test harness. The
-duplication is identical in kind — Kickside had nineteen copies of one test
-bootstrap alongside its cloned CSS.
+vocabulary, derived tokens, internal components, helpers, and test harnesses.
 
-**Ship it in semantic chunks.** Each unit should be one named concept a
+**Use semantic chunks.** Each unit should be one named concept a
 consumer can reason about — `kx-card`, `kx-state`, `kx-tag`. Prefer
 finer-grained packages so a consumer takes only what it needs; a single package
 shipping several clearly-named units is workable, but it is not the shape to
 aim for.
 
-**Never a catch-all.** No `common`, no `shared`, no `misc`, no `utils`. A unit
-whose name does not say what is inside it will accumulate everything that had
-nowhere else to go, and you will have rebuilt the problem this layer exists to
-solve.
+**Use specific names.** Avoid catch-all units such as `common`, `shared`,
+`misc`, or `utils`. A unit whose name does not describe its contents will
+accumulate unrelated concepts and recreate the duplication this layer is meant
+to remove.
 
 ## Normalising is a visual change
 
-Consolidating drifted copies moves pixels. Kickside had one selector with
-**nineteen definitions in seventeen distinct bodies**. Diff every body, pick
-the canon, record why you picked it, keep deliberate divergence as a documented
-override — and look at the result. Unit tests cannot see layout.
+Consolidating drifted copies can change rendering. Compare every definition,
+choose the canonical version, record the reason, keep deliberate divergence as
+a documented override, and inspect the result visually. Unit tests cannot see
+layout.
 
 ## Related
 

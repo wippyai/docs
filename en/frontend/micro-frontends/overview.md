@@ -1,13 +1,17 @@
 ---
 title: "Wippy Micro Frontends"
-description: "Wippy frontend code runs inside the Web Host's isolation boundary. There are two kinds of artifact you can build: micro frontend apps and web…"
+description: "Choose between a micro frontend app and a web component, then follow the relevant build, routing, proxy, and theming guides."
 ---
 
 # Wippy Micro Frontends
 
-Wippy frontend code runs inside the Web Host's isolation boundary. There are two kinds of artifact you can build: **micro frontend apps** and **web components**. Both are independent Vite projects, both communicate with the platform through `@wippy-fe/proxy`, and both are declared to the backend via a `_index.yaml` registry entry. The difference is how they are rendered and what they are suitable for.
+Wippy frontend code runs inside the Web Host's isolation boundary. You can
+build two artifact types: **micro frontend apps** and **web components**. Both
+are independent Vite projects, communicate with the platform through
+`@wippy-fe/proxy`, and are declared to the backend in a `_index.yaml` registry
+entry. They differ in how they are rendered and where they are used.
 
-## Micro Frontend App vs web component
+## Micro frontend app vs web component
 
 | | Micro Frontend App (`view.page`) | Web component (`view.component`) |
 |---|---|---|
@@ -20,27 +24,32 @@ Wippy frontend code runs inside the Web Host's isolation boundary. There are two
 | **Emits typed events** | No — communicates via proxy API | Yes — schema-declared `CustomEvent`s |
 | **CSS isolation** | iframe boundary | Shadow DOM (full encapsulation) |
 
-**Quick rule:** if it needs `vue-router`, a dedicated URL, or owns the full viewport — it is a micro frontend app. If it is embeddable, reusable, and self-contained — it is a web component.
-
-When in doubt, start with a web component. It is easier to promote to a micro frontend app later than the reverse.
+**Quick rule:** use a micro frontend app when it needs `vue-router`, a
+dedicated URL, or ownership of the full viewport. Use a web component when it
+must be embeddable, reusable, and self-contained.
 
 ## What to read next
 
-In a hurry? [Quickstart](./quickstart.md) has minimal end-to-end examples for both a Vue micro frontend app and a Vue web component, with links to the public [`app`](https://github.com/wippyai/app) repo.
+[Quickstart](./quickstart.md) provides minimal end-to-end examples for a Vue
+micro frontend app and a Vue web component, with links to the public
+[`app`](https://github.com/wippyai/app) repository.
 
 Build a micro frontend app:
+
 1. [Micro Frontend App](./micro-frontend-app.md) — scaffold, `package.json` wippy block, Vite config, bootstrap sequence, router sync
 2. [Build System](./build-system.md) — `@wippy-fe/vite-plugin`, `wippy-meta.json`, externals
 3. [Proxy API](./proxy-api.md) — `@wippy-fe/proxy` reference for communicating with the host
 4. [Theming](./theming.md) → [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) — CSS variable catalog, then how to receive it via proxy injections
 
 Build a web component:
+
 1. [Web Component](./web-component.md) — scaffold, `WippyVueElement`, props, events, shadow DOM CSS
 2. [Build System](./build-system.md) — same Vite toolchain, different plugin and output format
 3. [Proxy API](./proxy-api.md) — same API, imported directly from `@wippy-fe/proxy`
 4. [Theming](./theming.md) → [Theming: Web Components](./web-component-theming.md) — CSS variable catalog, then how to receive it across the shadow DOM boundary
 
 Both:
+
 - [Host-less Mode](./host-less-mode.md) — develop and test without running the full Web Host
 - [Compliance Rule Index](./compliance-checklist.md) — canonical rule owners and deterministic gates
 - [Debugging](./debugging.md) — symptom-first guide for the most common failure scenarios
