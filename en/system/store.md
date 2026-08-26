@@ -107,7 +107,11 @@ Writes mutate local state and disseminate over gossip; conflicting concurrent wr
 
 ## TTL Behavior
 
-Both stores support time-to-live. Expired entries persist briefly until cleanup runs at `cleanup_interval`. Set to `0` to disable automatic cleanup.
+All four store kinds support time-to-live values. Reads treat an expired key as missing even before background cleanup removes its storage.
+
+- `store.memory` removes expired entries on its `cleanup_interval`, which defaults to `5m`. A configured zero value is replaced by that default.
+- `store.sql` removes expired rows on `cleanup_interval`; its default of `0` disables background cleanup.
+- `store.kv.raft` and `store.kv.crdt` attach expiring keys to leases managed by the shared cluster store and have no per-entry cleanup interval.
 
 ## Lua API
 

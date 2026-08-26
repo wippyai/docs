@@ -79,9 +79,9 @@ For RabbitMQ and AMQP 0-9-1 compatible brokers.
 | `connection_timeout` | duration | - | Dial timeout |
 | `reconnect_delay` | duration | `1s` | Initial reconnect backoff |
 | `reconnect_max_delay` | duration | `30s` | Max reconnect backoff |
-| `default_message_ttl` | duration | - | Default message TTL applied to declared queues |
-| `default_queue_ttl` | duration | - | Default TTL applied to declared queues |
-| `default_queue_expiry` | duration | - | Default queue-expiry for declared queues |
+| `default_message_ttl` | duration | - | Per-message expiration used when a publisher does not set one |
+| `default_queue_ttl` | duration | - | Default queue-level message TTL (`x-message-ttl`) |
+| `default_queue_expiry` | duration | - | Default unused-queue expiration (`x-expires`) |
 | `prefetch_count` | int | - | Channel-level prefetch ceiling |
 | `frame_size` | int | - | AMQP frame size limit |
 | `channel_max` | int | - | Max channels per connection |
@@ -216,7 +216,7 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
 | `func` | required | Handler function registry ID |
 | `concurrency` | 1 | Parallel worker count |
 | `prefetch` | 10 | Total delivery buffer / max in-flight messages shared across workers |
-| `auto_ack` | false | When true, the runtime does not call broker ack; handler success/failure is the only settle signal |
+| `auto_ack` | false | Backend-specific auto-ack option; for AMQP, `true` asks the broker to acknowledge on delivery |
 | `driver_options` | - | Per-driver sub-bag (same structure as queue) |
 
 **amqp consumer options:**
@@ -260,11 +260,14 @@ local function main(body)
         correlation_id = msg:header("correlation_id")
     })
 
-    local ok, err = process_task(body)
+    local _, err = process_task(body)
     if err then
-        return false  -- nack: redelivery per driver
+        local _, nack_err = msg:nack()
+        if nack_err then
+            logger:error("failed to nack", {error = tostring(nack_err)})
+        end
+        return
     end
-    return true       -- ack: remove from queue
 end
 
 return { main = main }
@@ -282,15 +285,14 @@ return { main = main }
 
 ### Acknowledgment
 
-The runtime auto-settles based on the handler return:
+Unless the handler settles explicitly, the consumer settles from the function invocation result:
 
-| Handler Result | Action |
-|----------------|--------|
-| `true` or non-false return | Ack |
-| `false` | Nack (redeliver per driver) |
-| Raised error | Nack |
+| Handler Outcome | Action |
+|-----------------|--------|
+| Completes without an invocation error | Ack |
+| Returns or raises an invocation error | Nack (redeliver per driver) |
 
-Call `msg:ack()` or `msg:nack()` explicitly only to settle early. Settlement is single-shot: whichever call lands first wins.
+Ordinary return values, including `false`, do not select acknowledgment behavior. Call `msg:ack()` or `msg:nack()` to settle explicitly. Settlement is single-shot: whichever call lands first wins.
 
 ### Dead-Letter Routing
 

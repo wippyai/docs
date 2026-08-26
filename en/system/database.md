@@ -185,7 +185,7 @@ SQLite does not apply the `options` map to its DSN. File databases always open w
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
