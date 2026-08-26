@@ -1,6 +1,6 @@
 ---
 title: "Base64 Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Encode strings and binary data as standard RFC 4648 Base64 and decode them back to bytes."
 ---
 
 # Base64 Encoding
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Encode binary data to base64 strings and decode base64 back to binary. Uses standard base64 encoding per RFC 4648.
+The `base64` module encodes strings and binary data using standard RFC 4648 Base64 and decodes them back to bytes.
 
 ## Loading
 
@@ -19,9 +19,9 @@ local base64 = require("base64")
 
 ## Encoding
 
-### Encode Data
+### `encode`
 
-Encodes a string (including binary data) to base64.
+Encodes a string, including binary data, as Base64.
 
 ```lua
 -- Encode text
@@ -46,13 +46,13 @@ local auth_header = "Basic " .. credentials
 |-----------|------|-------------|
 | `data` | string | Data to encode (text or binary) |
 
-**Returns:** `string, error` - Empty string input returns empty string.
+**Returns:** `string, error` — an empty input returns an empty string
 
 ## Decoding
 
-### Decode Data
+### `decode`
 
-Decodes a base64 string back to original data.
+Decodes a Base64 string to its original bytes.
 
 ```lua
 -- Decode text
@@ -81,9 +81,9 @@ local payload = json.decode(base64.decode(parts[2]))
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `data` | string | Base64 encoded string |
+| `data` | string | Base64-encoded string |
 
-**Returns:** `string, error` - Empty string input returns empty string.
+**Returns:** `string, error` — an empty input returns an empty string
 
 ## Errors
 

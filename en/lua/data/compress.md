@@ -1,6 +1,6 @@
 ---
 title: "Compression"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Compress and decompress strings with gzip, Brotli, Zstandard, raw DEFLATE, and zlib."
 ---
 
 # Compression
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Compress and decompress data using gzip, deflate, zlib, brotli, and zstd algorithms.
+The `compress` module encodes and decodes strings with gzip, Brotli, Zstandard, raw DEFLATE, and zlib.
 
 ## Loading
 
@@ -19,7 +19,7 @@ local compress = require("compress")
 
 ## GZIP
 
-Most widely supported format (RFC 1952).
+Gzip is defined by RFC 1952.
 
 ### Compress {id="gzip-compress"}
 
@@ -91,7 +91,7 @@ end
 
 ## Brotli
 
-Best compression ratio for text (RFC 7932).
+Brotli is defined by RFC 7932 and is commonly used for compressed text content.
 
 ### Compress {id="brotli-compress"}
 
@@ -146,7 +146,7 @@ local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 
 ## Zstandard
 
-Fast compression with good ratios (RFC 8878).
+Zstandard is a general-purpose compression format defined by RFC 8878.
 
 ### Compress {id="zstd-compress"}
 
@@ -200,7 +200,7 @@ end
 
 ### Dictionaries {id="zstd-dictionaries"}
 
-Train a dictionary from sample data to improve compression of many small, similar payloads. Pass the trained dictionary as the `dict` option to `encode`/`decode` — the same dictionary must be used for both.
+Train a dictionary from similar sample payloads, then pass it through the `dict` option to `encode` and `decode`. Decoding requires the same dictionary used for encoding.
 
 ```lua
 local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
@@ -227,7 +227,7 @@ local original = compress.zstd.decode(packed, { dict = dict })
 
 ## Deflate
 
-Raw DEFLATE compression (RFC 1951). Used internally by other formats.
+Raw DEFLATE is defined by RFC 1951 and is also used inside other formats.
 
 ### Compress {id="deflate-compress"}
 
@@ -269,7 +269,7 @@ local decompressed = compress.deflate.decode(compressed)
 
 ## Zlib
 
-DEFLATE with header and checksum (RFC 1950).
+Zlib wraps DEFLATE data with a header and checksum as defined by RFC 1950.
 
 ### Compress {id="zlib-compress"}
 

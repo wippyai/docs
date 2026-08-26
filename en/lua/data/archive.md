@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "Read, scan, extract, and create ZIP, TAR, gzip-compressed TAR, and Zstandard-compressed TAR archives."
 ---
 
 # Archive
@@ -18,7 +18,7 @@ local archive = require("archive")
 
 ## Formats
 
-Built-in formats are detected by magic bytes, or forced with `opts.format`:
+The module detects built-in formats from magic bytes or uses the format supplied in `opts.format`.
 
 | Format | Random read | Sequential scan | Write |
 |--------|:-----------:|:---------------:|:-----:|
@@ -35,7 +35,7 @@ local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
 
 ## Options
 
-All entrypoints accept an optional `opts` table:
+Every entry point accepts an optional `opts` table:
 
 | Key | Default | Meaning |
 |-----|---------|---------|
@@ -68,9 +68,9 @@ local r, err = archive.open(fs.get("app:uploads"), "incoming.zip")
 
 **Permission:** `archive.read`
 
-### entries
+### `entries`
 
-Iterate the directory (metadata only — no decompression):
+Iterate over entry metadata without decompressing entry contents:
 
 ```lua
 for e in r:entries() do
@@ -79,15 +79,15 @@ for e in r:entries() do
 end
 ```
 
-### stat
+### `stat`
 
-Get entry metadata by name (no decompression):
+Read entry metadata by name without decompressing its contents:
 
 ```lua
 local info, err = r:stat("docs/readme.md")
 ```
 
-### read
+### `read`
 
 Materialize a single entry as a Lua string. Errors (`kind = Invalid`) above `max_inline_bytes` — for anything large, use `stream()` or `extract()`:
 
@@ -95,9 +95,9 @@ Materialize a single entry as a Lua string. Errors (`kind = Invalid`) above `max
 local data, err = r:read("docs/readme.md")  -- small entries only
 ```
 
-### stream
+### `stream`
 
-Return the entry as a `stream.Stream` that decompresses on demand. Composes everywhere a stream does — `:scanner()`, `fs:writefile()`, or handed to another module:
+Return an entry as a `stream.Stream` that decompresses on demand. The result can be scanned, passed to `fs:writefile()`, or supplied to another stream consumer:
 
 ```lua
 local es, err = r:stream("big.csv")
@@ -109,7 +109,7 @@ end
 es:close()
 ```
 
-### extract
+### `extract`
 
 Stream one entry into a destination filesystem:
 
@@ -119,7 +119,7 @@ local ok, err = r:extract("docs/readme.md", fs.get("app:out"))
 -- r:extract("docs/readme.md", fs.get("app:out"), "readme.md")
 ```
 
-### extract_all
+### `extract_all`
 
 Stream every entry into a destination filesystem:
 
@@ -133,9 +133,9 @@ local count, err = r:extract_all(fs.get("app:out"), {
 
 Entry names are sanitized on extract — `..` segments, absolute paths, and Windows drive/UNC prefixes are rejected (zip-slip defense).
 
-### close
+### `close`
 
-Close the reader. Idempotent; also auto-closed at task scope.
+Close the reader. The operation is idempotent, and the reader also closes automatically at task scope.
 
 ```lua
 r:close()
@@ -143,7 +143,7 @@ r:close()
 
 ## Reading — Sequential Scan
 
-`archive.scan(source, opts?)` opens a **forward-only** stream (an HTTP upload body, a multipart file stream). Entries are visited in archive order; each entry's reader is valid only until you advance. No random `read(name)`.
+`archive.scan(source, opts?)` opens a **forward-only** source such as an HTTP upload body or multipart file stream. Entries are visited in archive order, and each entry reader remains valid only until the walk advances. Random `read(name)` access is unavailable.
 
 ```lua
 local up = form.files.upload[1]:stream()        -- stream.Stream
@@ -174,7 +174,7 @@ dst:remove("u.zip")
 
 ## Writing
 
-`archive.create(dest, ...)` builds an archive by streaming entries into a destination — a file in an fs (with a path) or a writable `stream.Stream` (e.g. an HTTP response), so a download `.zip` is generated straight to the wire with bounded memory.
+`archive.create(dest, ...)` streams entries into a filesystem path or writable `stream.Stream`, such as an HTTP response.
 
 ```lua
 local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
@@ -186,7 +186,7 @@ local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
 
 **Permission:** `archive.write`
 
-### add
+### `add`
 
 Add an entry from a string, bytes, reader, or `stream.Stream`:
 
@@ -195,7 +195,7 @@ w:add("notes.txt", "hello")
 w:add("from_upload", some_stream, { method = "deflate", mode = 0644 })
 ```
 
-### add_file
+### `add_file`
 
 Stream an entry from a file in a filesystem:
 
@@ -203,7 +203,7 @@ Stream an entry from a file in a filesystem:
 w:add_file("data/big.bin", fs.get("app:data"), "big.bin")
 ```
 
-### add_dir
+### `add_dir`
 
 Add a directory entry:
 
@@ -211,9 +211,9 @@ Add a directory entry:
 w:add_dir("empty/")
 ```
 
-### close
+### `close`
 
-Finalize the archive (writes the central directory for zip). Idempotent; also auto-closed at task scope.
+Finalize the archive, including the ZIP central directory. The operation is idempotent, and the writer also closes automatically at task scope.
 
 ```lua
 w:close()

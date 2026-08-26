@@ -1,6 +1,6 @@
 ---
 title: "Process Management"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Spawn, monitor, link, message, name, and upgrade Wippy processes."
 ---
 
 # Process Management
@@ -9,13 +9,13 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Spawn, monitor, and communicate with child processes. Implements actor-model patterns with message passing, supervision, and lifecycle management.
+The `process` global provides process spawning, messaging, monitoring, linking, naming, and lifecycle control.
 
-The `process` global is always available — it does not require `require()` and does not need to be listed in `modules:`.
+It is available without `require()` and does not need to be listed in `modules:`.
 
 ## Process Information
 
-Get the current frame ID or process ID:
+Read the current frame ID or process ID:
 
 ```lua
 local frame_id = process.id()  -- Call chain identifier
@@ -24,7 +24,7 @@ local pid = process.pid()       -- Process ID
 
 ## Sending Messages
 
-Send message(s) to a process by PID or registered name:
+Send one or more payload values to a process by PID or registered name:
 
 ```lua
 local ok, err = process.send(destination, topic, ...)
@@ -61,6 +61,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 | `...` | any | Arguments passed to spawned process |
 
 **Permissions:**
+
 - `process.spawn` on process id
 - `process.host` on host id
 - `process.spawn.monitored` on process id (for monitored variants)
@@ -85,7 +86,7 @@ local ok, err = process.cancel(destination, "shutting down")
 
 ## Monitoring and Linking
 
-Monitor or link to an existing process:
+Add or remove monitoring and links for an existing process:
 
 ```lua
 -- Monitoring: receive EXIT events when target exits
@@ -113,7 +114,7 @@ local ok, err = process.set_options({trap_links = true})
 
 ## Inbox and Events
 
-Get channels for receiving messages and lifecycle events:
+Use the inbox and event channels to receive messages and lifecycle events:
 
 ```lua
 local inbox = process.inbox()    -- Message objects from @inbox topic
@@ -139,11 +140,11 @@ local events = process.events()  -- Lifecycle events from @events topic
 | `reason` | string | For CANCEL: why the process is being cancelled |
 | `sources` | string[] | For OUTDATED: registry IDs that changed or were transitively affected |
 
-OUTDATED is delivered only to processes that opted in with `process.set_options({upgradable = true})`; other processes never see it. Multiple invalidations coalesce into a single pending event with the union of `sources`. The intended reaction is a hot swap via [`process.upgrade`](#process-upgrade).
+`OUTDATED` is delivered only to processes that opt in with `process.set_options({upgradable = true})`. Multiple invalidations are combined into one pending event containing the union of their `sources`. Handle the event by calling [`process.upgrade`](#process-upgrade).
 
 ## Topic Subscription
 
-Subscribe to custom topics:
+Subscribe to a custom message topic:
 
 ```lua
 local ch = process.listen(topic, options)
@@ -157,7 +158,7 @@ process.unlisten(ch)
 
 ## Message Objects
 
-When receiving from inbox or with `{message = true}`:
+The inbox and listeners configured with `{message = true}` return message objects:
 
 ```lua
 local msg = inbox:receive()
@@ -170,7 +171,7 @@ msg:payload():data()   -- any: actual payload value
 
 ## Synchronous Call
 
-Spawn a process, wait for its result, and return:
+`process.exec` spawns a process and waits for its result:
 
 ```lua
 local result, err = process.exec(id, host, ...)
@@ -180,7 +181,7 @@ local result, err = process.exec(id, host, ...)
 
 ## Process Upgrade
 
-Upgrade the current process to a new definition while preserving PID:
+Upgrade the current process while preserving its PID:
 
 ```lua
 -- Upgrade to new version, passing state
@@ -192,7 +193,7 @@ process.upgrade(nil, preserved_state)
 
 ## Context Spawner
 
-Create a spawner with custom context for child processes:
+Create a spawner that supplies custom context to child processes:
 
 ```lua
 local spawner = process.with_context({request_id = "123"})
@@ -202,7 +203,7 @@ local spawner = process.with_context({request_id = "123"})
 
 ### Spawner with Options
 
-`process.with_options(options)` creates a spawner that carries spawn-time options (e.g., a network selector) instead of context values:
+`process.with_options(options)` creates a spawner with spawn-time options, such as a network selector, rather than context values:
 
 ```lua
 local spawner = process.with_options({network = "app:tor_proxy"})
@@ -216,7 +217,7 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 
 ### SpawnBuilder Methods
 
-SpawnBuilder is immutable - each method returns a new instance:
+`SpawnBuilder` is immutable; each configuration method returns a new instance:
 
 ```lua
 spawner:with_context(values)      -- Add context values
@@ -238,7 +239,7 @@ spawner:spawn_linked(id, host, ...)
 spawner:spawn_linked_monitored(id, host, ...)
 ```
 
-Same permissions as module-level spawn functions.
+These methods require the same permissions as their module-level counterparts.
 
 ### Spawner Exec
 
@@ -246,13 +247,13 @@ Same permissions as module-level spawn functions.
 local result, err = spawner:exec(id, host, ...)
 ```
 
-Runs the target process synchronously under the builder's context, actor, and scope, and returns its result value — the bounded counterpart of module-level `process.exec`. A deferred worker can rebuild an owner identity with `with_actor`/`with_scope` and execute on its behalf.
+This method runs the target process synchronously with the builder's context, actor, and scope, then returns its result. A deferred worker can use `with_actor` and `with_scope` to execute with an owner's identity.
 
 **Permissions:** `process.exec` on process id, `process.host` on host id
 
 ## Name Registry
 
-Register a process under a name and reach it by that name instead of its PID. Any function that takes a `destination` (`send`, `terminate`, `cancel`, `monitor`, `link`, ...) accepts a registered name in place of a PID.
+Register a process under a name so callers can use the name instead of its PID. Functions that accept a `destination`, including `send`, `terminate`, `cancel`, `monitor`, and `link`, also accept registered names.
 
 ```lua
 local ok, err = process.registry.register(name)               -- self, local scope
@@ -262,7 +263,7 @@ local ok, err = process.registry.unregister(name)
 
 ### Scope
 
-The optional `scope` argument selects the consistency guarantee of the name. It defaults to `LOCAL`. The four scopes and their guarantees are described in the [Cluster Guide](guides/cluster.md#naming-and-name-scopes); in short:
+The optional `scope` argument selects the name's consistency guarantee and defaults to `LOCAL`. See the [Cluster Guide](guides/cluster.md#naming-and-name-scopes) for the complete model.
 
 | Constant | Visibility | Guarantee |
 |----------|------------|-----------|
@@ -271,7 +272,7 @@ The optional `scope` argument selects the consistency guarantee of the name. It 
 | `process.registry.CONSISTENT` | cluster-wide | Linearizable singleton (Raft) |
 | `process.registry.STRONG` | cluster-wide | Consistent + every live node acknowledges |
 
-On a standalone node only `LOCAL` is meaningful; the cluster scopes require [clustering](guides/cluster.md).
+On a standalone node, only `LOCAL` is available; cluster scopes require [clustering](guides/cluster.md).
 
 ### register
 
@@ -285,7 +286,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | no | self | PID to register; defaults to the calling process |
 | `scope` | number | no | `LOCAL` | One of the scope constants above |
 
-Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID under a cluster scope) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration blocks until every live node acknowledges or the reservation deadline expires; on timeout it returns an error.
+Returns `true` on success or `nil, error` on failure. A cluster-scope conflict, where the name belongs to a different PID, returns `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration waits until every live node acknowledges it or the reservation deadline expires.
 
 Registering on behalf of a different PID additionally requires the `process.registry.foreign` permission on the target PID.
 
@@ -307,11 +308,12 @@ local ok, err = process.registry.unregister(name, scope)
 
 ## Permissions
 
-Permissions control what a calling process can do. All checks use the caller's security context (actor) against the target resource.
+Permission checks evaluate the caller's security actor against the target resource.
 
 ### Policy Evaluation
 
-Policies can allow/deny based on:
+Policies can allow or deny an operation based on:
+
 - **Actor**: The security principal making the request
 - **Action**: The operation being performed (e.g., `process.send`)
 - **Resource**: The target (PID, process id, host id, or name)

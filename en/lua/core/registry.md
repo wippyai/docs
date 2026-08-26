@@ -1,6 +1,6 @@
 ---
 title: "Entry Registry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Read registry entries and metadata, inspect versions and snapshots, and apply changesets."
 ---
 
 # Entry Registry
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Query and modify registered entries. Access metadata, snapshots, and version history.
+The `registry` module reads and modifies entries and provides access to snapshots and version history.
 
 ## Loading
 
@@ -27,7 +27,7 @@ local registry = require("registry")
 }
 ```
 
-## Get Entry
+## Get an Entry
 
 ```lua
 local entry, err = registry.get("app.lib:assert")
@@ -53,7 +53,7 @@ local id = registry.parse_id("app.lib:assert")
 
 ## Snapshots
 
-Point-in-time view of the registry:
+A snapshot is a point-in-time view of the registry:
 
 ```lua
 local snap, err = registry.snapshot()           -- current state
@@ -94,7 +94,7 @@ local snap, err = hist:snapshot_at(version)
 
 ## Changesets
 
-Build and apply modifications:
+Build a changeset from create, update, and delete operations, then apply it:
 
 ```lua
 local snap, err = registry.snapshot()
@@ -133,7 +133,7 @@ local new_version, err = changes:apply()
 
 ## Apply Version
 
-Roll back or forward to a specific version:
+Apply a specific version to move the registry backward or forward:
 
 ```lua
 local prev = current_version:previous()
@@ -144,7 +144,7 @@ local ok, err = registry.apply_version(prev)
 
 ## Build Delta
 
-Compute operations to transition between states:
+Compute the operations required to transition between two entry sets:
 
 ```lua
 local from = {{id = "test:a", kind = "test", meta = {}, data = {}}}

@@ -1,6 +1,6 @@
 ---
 title: "Excel Spreadsheets"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Create, open, read, stream, modify, and write Microsoft Excel XLSX workbooks."
 ---
 
 # Excel Spreadsheets
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="external"/>
 
-Read and write Microsoft Excel files (.xlsx). Create workbooks, manage sheets, read cell values, and generate reports with formatting support.
+The `excel` module creates and reads Microsoft Excel `.xlsx` workbooks, manages sheets and cells, and writes workbooks to stream-compatible files.
 
 ## Loading
 
@@ -19,9 +19,9 @@ local excel = require("excel")
 
 ## Creating Workbooks
 
-### New Workbook
+### Create a Workbook
 
-Creates a new empty Excel workbook.
+Create an empty workbook:
 
 ```lua
 local wb, err = excel.new()
@@ -38,9 +38,9 @@ wb:close()
 
 **Returns:** `Workbook, error`
 
-### Open Workbook
+### Open a Workbook
 
-Opens an Excel workbook from a reader object.
+Open a workbook from a reader object:
 
 ```lua
 local fs = require("fs")
@@ -79,9 +79,9 @@ file:close()
 
 ## Sheet Operations
 
-### Create Sheet
+### Create a Sheet
 
-Creates a new sheet or returns existing sheet index.
+Create a sheet or return the index of an existing sheet with the same name:
 
 ```lua
 local wb = excel.new()
@@ -103,7 +103,7 @@ local existing = wb:new_sheet("Summary")  -- returns same as idx1
 
 ### List Sheets
 
-Returns list of all sheet names in workbook.
+Return the names of all sheets in the workbook:
 
 ```lua
 local wb = excel.new()
@@ -123,9 +123,9 @@ end
 
 ## Cell Operations
 
-### Set Cell Value
+### Set a Cell Value
 
-Sets value of a single cell.
+Set the value of one cell:
 
 ```lua
 local wb = excel.new()
@@ -159,7 +159,7 @@ wb:set_cell_value("Data", "AB100", "Far cell")
 
 ### Get All Rows
 
-Gets all rows from a sheet as 2D array.
+Read all rows from a sheet into a two-dimensional array:
 
 ```lua
 local wb = excel.new()
@@ -195,11 +195,11 @@ end
 
 **Returns:** `string[][], error`
 
-All cell values returned as strings. Booleans as "TRUE" or "FALSE", numbers as string representation.
+All cell values are returned as strings. Booleans use `"TRUE"` or `"FALSE"`, and numbers use their string representation.
 
 ### Stream Rows
 
-`wb:rows(sheet)` opens a streaming cursor over one sheet. The sheet is decoded incrementally in constant memory, unlike `get_rows` which materializes the entire sheet:
+`wb:rows(sheet)` opens a streaming cursor over one sheet. It decodes the sheet incrementally in constant memory, while `get_rows` materializes the full sheet:
 
 ```lua
 local cursor, err = wb:rows("Report")
@@ -228,13 +228,13 @@ cursor:close()
 | `cursor:read(n?)` | Read the next batch of up to `n` rows (default 1, max 10000). Returns `string[][], error`; `nil, nil` at end of sheet |
 | `cursor:close()` | Release the cursor (idempotent; cursors also close with the workbook) |
 
-Cell values format identically to `get_rows`. Empty rows come back as empty tables, and trailing empty rows are preserved rather than trimmed. After end-of-sheet or an error, subsequent reads keep returning that same state.
+Cell values use the same format as `get_rows`. Empty rows are returned as empty tables, and trailing empty rows are preserved. After the end of the sheet or an error, later reads continue to return that state.
 
 ## File Operations
 
-### Write to File
+### Write to a File
 
-Writes workbook to a writer object.
+Write a workbook to a writer object:
 
 ```lua
 local fs = require("fs")
@@ -277,9 +277,9 @@ end
 
 **Returns:** `error`
 
-### Close Workbook
+### Close a Workbook
 
-Closes workbook and releases resources.
+Close a workbook and release its resources:
 
 ```lua
 local wb = excel.new()

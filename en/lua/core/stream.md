@@ -1,15 +1,15 @@
 ---
 title: "Streams"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Read, write, seek, inspect, scan, and close stream objects returned by I/O modules."
 ---
 
 # Streams
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Stream read/write operations for handling data efficiently. Stream objects are obtained from other modules (HTTP, filesystem, etc.).
+Streams provide incremental I/O for HTTP, filesystem, and other modules. The modules that own the underlying data create stream objects.
 
-## Loading
+## Obtaining a Stream
 
 ```lua
 -- From HTTP request body
@@ -63,9 +63,9 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
-Flush buffered data to underlying storage.
+`flush` writes buffered data to the underlying destination.
 
-## Stream Info
+## Stream Information
 
 ```lua
 local info, err = stream:stat()
@@ -85,11 +85,11 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-Close stream and release resources. Safe to call multiple times.
+`close` releases the stream's resources and can be called more than once.
 
 ## Scanner
 
-Create a tokenizer for stream content:
+Create a scanner that tokenizes stream content:
 
 ```lua
 local scanner, err = stream:scanner(split)
