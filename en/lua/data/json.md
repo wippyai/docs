@@ -1,6 +1,6 @@
 ---
 title: "JSON Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Encode Lua values as JSON, decode JSON strings, and validate values or strings with JSON Schema."
 ---
 
 # JSON Encoding
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Encode Lua tables to JSON and decode JSON strings to Lua values. Includes JSON Schema validation for data verification and API contract enforcement.
+The `json` module encodes Lua values as JSON, decodes JSON strings, and validates data with JSON Schema.
 
 ## Loading
 
@@ -19,9 +19,9 @@ local json = require("json")
 
 ## Encoding
 
-### Encode Value
+### `encode`
 
-Encodes a Lua value into a JSON string.
+Encode a Lua value as a JSON string:
 
 ```lua
 -- Simple values
@@ -57,7 +57,8 @@ json.encode(order)
 
 **Returns:** `string, error`
 
-Encoding rules:
+Encoding follows these rules:
+
 - `nil` becomes `null`
 - Empty tables become `[]` (or `{}` if created with string keys)
 - Tables with sequential 1-based keys become arrays
@@ -70,9 +71,9 @@ Encoding rules:
 
 ## Decoding
 
-### Decode String
+### `decode`
 
-Decodes a JSON string into a Lua value.
+Decode a JSON string into a Lua value:
 
 ```lua
 -- Parse object
@@ -118,9 +119,9 @@ end
 
 ## Schema Validation
 
-### Validate Value
+### `validate`
 
-Validates a Lua value against a JSON Schema. Use this to enforce API contracts or validate user input.
+Validate a Lua value against a JSON Schema:
 
 ```lua
 -- Define a schema
@@ -165,9 +166,9 @@ local valid = json.validate(schema_json, 42)
 
 Schemas are cached by content hash for performance.
 
-### Validate JSON String
+### `validate_string`
 
-Validates a JSON string against a schema without decoding first. Useful when you need to validate before parsing.
+Validate a JSON string against a schema without first returning a decoded value:
 
 ```lua
 local schema = {

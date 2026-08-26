@@ -1,6 +1,6 @@
 ---
 title: "HTTP Client"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Send HTTP requests with headers, authentication, forms, uploads, TLS options, streaming, and batching."
 ---
 
 # HTTP Client
@@ -8,7 +8,7 @@ description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <second
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Make HTTP requests to external services. Supports all HTTP methods, headers, query parameters, form data, file uploads, streaming responses, and concurrent batch requests.
+The `http_client` module sends HTTP requests with headers, query parameters, forms, file uploads, authentication, TLS options, streaming responses, and concurrent batches.
 
 ## Loading
 
@@ -18,9 +18,9 @@ local http_client = require("http_client")
 
 ## HTTP Methods
 
-All methods share the same signature: `method(url, options?)` returning `Response, error`.
+Convenience methods use the `method(url, options?)` signature and return `Response, error`.
 
-### GET Request
+### GET
 
 ```lua
 local resp, err = http_client.get("https://api.example.com/users")
@@ -32,7 +32,7 @@ print(resp.status_code)  -- 200
 print(resp.body)         -- response body
 ```
 
-### POST Request
+### POST
 
 ```lua
 local resp, err = http_client.post("https://api.example.com/users", {
@@ -41,7 +41,7 @@ local resp, err = http_client.post("https://api.example.com/users", {
 })
 ```
 
-### PUT Request
+### PUT
 
 ```lua
 local resp, err = http_client.put("https://api.example.com/users/123", {
@@ -50,7 +50,7 @@ local resp, err = http_client.put("https://api.example.com/users/123", {
 })
 ```
 
-### PATCH Request
+### PATCH
 
 ```lua
 local resp, err = http_client.patch("https://api.example.com/users/123", {
@@ -58,7 +58,7 @@ local resp, err = http_client.patch("https://api.example.com/users/123", {
 })
 ```
 
-### DELETE Request
+### DELETE
 
 ```lua
 local resp, err = http_client.delete("https://api.example.com/users/123", {
@@ -66,16 +66,16 @@ local resp, err = http_client.delete("https://api.example.com/users/123", {
 })
 ```
 
-### HEAD Request
+### HEAD
 
-Returns headers only, no body.
+A `HEAD` request returns headers without a response body.
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
 local size = resp.headers["Content-Length"]
 ```
 
-### Custom Method
+### Custom Methods
 
 ```lua
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
@@ -170,7 +170,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `reader` | userdata | yes* | Alternative: io.Reader for content |
 | `content_type` | string | no | Currently ignored: each uploaded part is always sent with `Content-Type: application/octet-stream` regardless of this field |
 
-*Either `content` or `reader` is required.
+\* Either `content` or `reader` is required.
 
 ### Timeout
 
@@ -186,7 +186,7 @@ local resp, err = http_client.get(url, {timeout = "1h"})
 
 ### TLS Options
 
-Configure per-request TLS settings for mTLS (mutual TLS) and custom CA certificates.
+Configure mutual TLS and custom CA certificates for one request.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -196,7 +196,7 @@ Configure per-request TLS settings for mTLS (mutual TLS) and custom CA certifica
 | `server_name` | string | Server name for SNI verification |
 | `insecure_skip_verify` | boolean | Skip TLS certificate verification |
 
-Both `cert` and `key` must be provided together for mTLS. The `ca` field overrides the system certificate pool with a custom CA.
+For mutual TLS, provide `cert` and `key` together. The `ca` field replaces the system certificate pool with a custom CA.
 
 #### mTLS Authentication
 
@@ -227,7 +227,7 @@ local resp, err = http_client.get("https://internal.example.com/api", {
 
 #### Insecure Skip Verify
 
-Skip TLS verification for development environments. Requires the `http_client.insecure_tls` security permission.
+`insecure_skip_verify` disables TLS verification and requires the `http_client.insecure_tls` security permission.
 
 ```lua
 local resp, err = http_client.get("https://localhost:8443/api", {
@@ -263,7 +263,7 @@ end
 
 ## Streaming Responses
 
-For large responses, use streaming to avoid loading entire body into memory.
+Set `stream = true` to process a response incrementally rather than buffering its full body.
 
 ```lua
 local resp, err = http_client.get("https://cdn.example.com/large-file.zip", {
@@ -291,7 +291,7 @@ resp.stream:close()
 
 ## Batch Requests
 
-Execute multiple requests concurrently.
+`request_batch` executes multiple requests concurrently.
 
 ```lua
 local responses, errors = http_client.request_batch({
@@ -318,9 +318,10 @@ end
 |-----------|------|-------------|
 | `requests` | table | Array of `{method, url, options?}` |
 
-**Returns:** `responses, errors` - arrays indexed by request position
+**Returns:** `responses, errors` — arrays indexed by request position
 
 **Notes:**
+
 - Requests execute concurrently
 - Streaming (`stream = true`) is not supported in batch
 - Result arrays match request order (1-indexed)
@@ -345,7 +346,7 @@ local decoded, err = http_client.decode_uri("hello+world")
 
 ## Permissions
 
-HTTP requests are subject to security policy evaluation.
+HTTP requests are evaluated against the active security policy.
 
 ### Security Actions
 

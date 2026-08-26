@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Read server-side HTTP requests and build status, header, JSON, streamed, and event-stream responses."
 ---
 
 # HTTP
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Handle HTTP requests and build responses. Access request data, route parameters, headers, and body content. Build responses with status codes, headers, and streaming support.
+The `http` module reads the current server-side request and builds its response, including headers, route data, body content, streaming output, and Server-Sent Events.
 
 For server configuration, see [HTTP Server](http/server.md).
 
@@ -20,7 +20,7 @@ local http = require("http")
 
 ## Accessing the Request
 
-Get the current HTTP request context:
+Read the current HTTP request context:
 
 ```lua
 local req = http.request()
@@ -41,7 +41,7 @@ local req = http.request({
 
 ## Accessing the Response
 
-Get the current HTTP response context:
+Read the current HTTP response context:
 
 ```lua
 local res = http.response()
@@ -51,7 +51,7 @@ local res = http.response()
 
 ## Request Methods
 
-### method
+### `method`
 
 ```lua
 local method = req:method()
@@ -67,7 +67,7 @@ elseif method == http.METHOD.DELETE then
 end
 ```
 
-### path
+### `path`
 
 ```lua
 local path = req:path()
@@ -79,9 +79,9 @@ if path:match("^/api/") then
 end
 ```
 
-### query
+### `query`
 
-Gets a single query parameter.
+Return one query parameter:
 
 ```lua
 -- GET /search?q=hello&page=2&limit=10
@@ -95,9 +95,9 @@ local limit = tonumber(req:query("limit")) or 20
 local sort = req:query("sort") or "created_at"
 ```
 
-### query_params
+### `query_params`
 
-Gets all query parameters. Multiple values for the same key are joined with commas.
+Return all query parameters. Multiple values for one key are joined with commas.
 
 ```lua
 -- GET /search?tags=lua&tags=go&active=true
@@ -109,7 +109,7 @@ for key, value in pairs(params) do
 end
 ```
 
-### header
+### `header`
 
 ```lua
 local auth = req:header("Authorization")
@@ -122,33 +122,33 @@ local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
 
-### content_type
+### `content_type`
 
-Gets the Content-Type header.
+Return the `Content-Type` header:
 
 ```lua
 local ct = req:content_type()  -- "application/json; charset=utf-8" or nil
 ```
 
-### content_length
+### `content_length`
 
-Gets the Content-Length header value.
+Return the `Content-Length` header value:
 
 ```lua
 local length = req:content_length()  -- number of bytes
 ```
 
-### host
+### `host`
 
-Gets the Host header.
+Return the `Host` header:
 
 ```lua
 local host = req:host()  -- "example.com:8080"
 ```
 
-### param
+### `param`
 
-Gets URL route parameters (from path patterns like `/users/:id`).
+Return one route parameter from a path pattern such as `/users/:id`:
 
 ```lua
 -- Route: /users/:id/posts/:post_id
@@ -163,9 +163,9 @@ if not id or not uuid.validate(id) then
 end
 ```
 
-### params
+### `params`
 
-Gets all route parameters.
+Return all route parameters:
 
 ```lua
 -- Route: /orgs/:org/repos/:repo/issues/:issue
@@ -175,9 +175,9 @@ local p = req:params()
 local issue = get_issue(p.org, p.repo, p.issue)
 ```
 
-### body
+### `body`
 
-Reads the full request body as string.
+Read the full request body as a string:
 
 ```lua
 local body = req:body()
@@ -191,9 +191,9 @@ end
 logger.debug("Request body", {body = body, length = #body})
 ```
 
-### body_json
+### `body_json`
 
-Reads and parses body as JSON.
+Read and parse the request body as JSON:
 
 ```lua
 local data, err = req:body_json()
@@ -211,7 +211,7 @@ end
 local user = create_user(data)
 ```
 
-### has_body
+### `has_body`
 
 ```lua
 if req:has_body() then
@@ -223,7 +223,7 @@ else
 end
 ```
 
-### is_content_type
+### `is_content_type`
 
 ```lua
 if not req:is_content_type("application/json") then
@@ -232,7 +232,7 @@ if not req:is_content_type("application/json") then
 end
 ```
 
-### accepts
+### `accepts`
 
 ```lua
 if req:accepts("application/json") then
@@ -246,7 +246,7 @@ else
 end
 ```
 
-### remote_addr
+### `remote_addr`
 
 ```lua
 local addr = req:remote_addr()  -- "192.168.1.100:54321"
@@ -261,9 +261,9 @@ if rate_limiter:is_limited(ip) then
 end
 ```
 
-### parse_multipart
+### `parse_multipart`
 
-Parses multipart form data (file uploads). Takes an optional `max_memory` integer (bytes held in memory before spilling to temp files; default 32MB).
+Parse multipart form data, including file uploads. The optional `max_memory` argument sets the number of bytes held in memory before data spills to temporary files; the default is 32 MB.
 
 ```lua
 local form, err = req:parse_multipart()  -- or req:parse_multipart(8 * 1024 * 1024)
@@ -300,9 +300,9 @@ if form.files.documents then
 end
 ```
 
-### stream
+### `stream`
 
-Gets request body as a stream for large files.
+Read the request body as a stream:
 
 ```lua
 local stream = req:stream()
@@ -318,7 +318,7 @@ stream:close()
 
 ## Response Methods
 
-### set_status
+### `set_status`
 
 ```lua
 res:set_status(200)
@@ -334,7 +334,7 @@ res:set_status(404)  -- Not Found
 res:set_status(500)  -- Internal Server Error
 ```
 
-### set_header
+### `set_header`
 
 ```lua
 res:set_header("X-Request-ID", correlation_id)
@@ -347,7 +347,7 @@ res:set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
 res:set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 ```
 
-### set_content_type
+### `set_content_type`
 
 ```lua
 res:set_content_type("application/json")
@@ -356,9 +356,9 @@ res:set_content_type("text/html; charset=utf-8")
 res:set_content_type("application/pdf")
 ```
 
-### write
+### `write`
 
-Writes to response body.
+Write to the response body:
 
 ```lua
 res:write("Hello, World!")
@@ -370,9 +370,9 @@ res:write("<p>Content</p>")
 res:write("</body></html>")
 ```
 
-### write_json
+### `write_json`
 
-Encodes value as JSON and writes it.
+Encode a value as JSON and write it to the response:
 
 ```lua
 -- Success response
@@ -394,9 +394,9 @@ res:write_json({
 })
 ```
 
-### flush
+### `flush`
 
-Flushes buffered data to client.
+Flush buffered response data to the client:
 
 <code-block lang="lua">
 -- Stream progress updates
@@ -407,9 +407,9 @@ for i = 1, 100 do
 end
 </code-block>
 
-### set_transfer
+### `set_transfer`
 
-Sets transfer encoding for streaming.
+Set the transfer mode for a streaming response:
 
 ```lua
 -- Chunked transfer
@@ -423,9 +423,9 @@ end
 res:set_transfer(http.TRANSFER.SSE)
 ```
 
-### write_event
+### `write_event`
 
-Writes a Server-Sent Event.
+Write a Server-Sent Event:
 
 ```lua
 -- Real-time updates
@@ -520,7 +520,7 @@ http.TRANSFER.SSE       -- "sse"
 
 ### Error Types
 
-Module-specific error type constants for precise error handling.
+The module also provides error-type constants for HTTP-specific failures.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Form/multipart parse error

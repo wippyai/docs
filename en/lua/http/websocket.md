@@ -1,6 +1,6 @@
 ---
 title: "WebSocket Client"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Connect to WebSocket servers, send and receive messages, use compression, and close connections."
 ---
 
 # WebSocket Client
@@ -8,7 +8,7 @@ description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <second
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-WebSocket client for real-time bidirectional communication with servers.
+The `websocket` module creates bidirectional client connections to WebSocket servers.
 
 ## Loading
 
@@ -27,7 +27,7 @@ if err then
 end
 ```
 
-### With Options
+### Connection Options Example
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws", {
@@ -62,7 +62,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `read_limit` | number | Max message size (0-128MB) |
 | `channel_capacity` | number | Receive channel buffer (1-10000) |
 
-**Timeout format:** Numbers are milliseconds, strings use Go duration format ("5s", "1m").
+**Timeout format:** Numbers are milliseconds. Strings use Go duration syntax such as `"5s"` or `"1m"`.
 
 ## Sending Messages
 
@@ -89,7 +89,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Message content |
 | `type` | number | `websocket.TEXT` (1) or `websocket.BINARY` (2) |
 
-Yields until the message is sent.
+The call yields until the message is sent.
 
 **Returns:** `boolean, error`
 
@@ -99,13 +99,13 @@ Yields until the message is sent.
 client:ping()
 ```
 
-Yields until the ping is sent.
+The call yields until the ping is sent.
 
 **Returns:** `boolean, error`
 
 ## Receiving Messages
 
-The `channel()` method returns a channel for receiving messages. `receive()` is an alias for `channel()`. Works with `channel.select` for multiplexing.
+`channel()` returns the receive channel, and `receive()` is an alias. The channel can be used with `channel.select`.
 
 ### Basic Receive
 
@@ -184,7 +184,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Close code (1000-4999), default 1000 |
 | `reason` | string | Close reason (optional) |
 
-Yields until the close frame is sent.
+The call yields until the close frame is sent.
 
 ## Constants
 
@@ -304,7 +304,7 @@ client:close()
 
 ## Permissions
 
-WebSocket connections are subject to security policy evaluation.
+WebSocket connections are evaluated against the active security policy.
 
 ### Security Actions
 

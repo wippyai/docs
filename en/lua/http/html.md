@@ -1,6 +1,6 @@
 ---
 title: "HTML Sanitization"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Sanitize untrusted HTML with preset or custom element, attribute, and URL policies."
 ---
 
 # HTML Sanitization
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Sanitize untrusted HTML to prevent XSS attacks. Based on [bluemonday](https://github.com/microcosm-cc/bluemonday).
+The `html` module sanitizes untrusted HTML with policies based on [bluemonday](https://github.com/microcosm-cc/bluemonday).
 
-Sanitization works by parsing HTML and filtering it through a whitelist policy. Elements and attributes not explicitly allowed are removed. The output is always well-formed HTML.
+Sanitization parses HTML and filters it through an allowlist policy. Elements and attributes that the policy does not allow are removed. The output is well-formed HTML.
 
 ## Loading
 
@@ -20,7 +20,7 @@ local html = require("html")
 
 ## Preset Policies
 
-Three built-in policies for common use cases:
+The module provides three preset policy constructors:
 
 | Policy | Use Case | Allows |
 |--------|----------|--------|
@@ -30,7 +30,7 @@ Three built-in policies for common use cases:
 
 ### Empty Policy
 
-Creates a policy that allows nothing. Use this to build a custom whitelist from scratch.
+Create an empty policy, then add the elements and attributes it should allow:
 
 ```lua
 local policy, err = html.sanitize.new_policy()
@@ -45,7 +45,7 @@ local clean = policy:sanitize(user_input)
 
 ### User Content Policy
 
-Pre-configured for user-generated content. Allows common formatting elements.
+Create a policy configured for common user-generated formatting:
 
 ```lua
 local policy = html.sanitize.ugc_policy()
@@ -61,7 +61,7 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 
 ### Strict Policy
 
-Strips all HTML, returns plain text only.
+Create a strict policy that removes HTML and returns plain text:
 
 ```lua
 local policy = html.sanitize.strict_policy()
@@ -76,7 +76,7 @@ local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 
 ### Allow Elements
 
-Whitelist specific HTML elements.
+Allow specific HTML elements:
 
 ```lua
 local policy = html.sanitize.new_policy()
@@ -98,7 +98,7 @@ local result = policy:sanitize('<p>Hello <strong>world</strong></p>')
 
 ### Allow Attributes
 
-Start attribute permission. Chain with `on_elements()` or `globally()`.
+Start an attribute rule, then apply it with `on_elements()` or `globally()`:
 
 ```lua
 policy:allow_attrs("href"):on_elements("a")
@@ -114,7 +114,7 @@ policy:allow_attrs("class", "id"):globally()
 
 ### On Specific Elements
 
-Allow attributes only on specific elements.
+Allow attributes only on specified elements:
 
 ```lua
 policy:allow_elements("a", "img")
@@ -130,7 +130,7 @@ policy:allow_attrs("src", "alt", "width", "height"):on_elements("img")
 
 ### On All Elements
 
-Allow attributes globally on any permitted element.
+Allow attributes on every permitted element:
 
 ```lua
 policy:allow_attrs("class"):globally()
@@ -141,7 +141,7 @@ policy:allow_attrs("id"):globally()
 
 ### With Pattern Matching
 
-Validate attribute values against regex pattern.
+Require attribute values to match a regular expression:
 
 ```lua
 -- Only allow hex colors in style
@@ -168,7 +168,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 ### Standard URLs
 
-Enable URL handling with security defaults.
+Enable the standard URL-handling policy:
 
 ```lua
 policy:allow_elements("a")
@@ -180,7 +180,7 @@ policy:allow_standard_urls()
 
 ### URL Schemes
 
-Restrict which URL schemes are allowed.
+Restrict the allowed URL schemes:
 
 ```lua
 policy:allow_url_schemes("https", "mailto")
@@ -200,7 +200,7 @@ policy:sanitize('<a href="javascript:alert(1)">XSS</a>')
 
 ### Relative URLs
 
-Allow or disallow relative URLs.
+Configure whether relative URLs are allowed:
 
 ```lua
 policy:allow_relative_urls(true)
@@ -231,7 +231,7 @@ policy:require_parseable_urls(true)
 
 ### Nofollow Links
 
-Add `rel="nofollow"` to all links. Prevents SEO spam.
+Add `rel="nofollow"` to links:
 
 ```lua
 policy:allow_attrs("href", "rel"):on_elements("a")
@@ -249,7 +249,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 ### Noreferrer Links
 
-Add `rel="noreferrer"` to all links. Prevents referrer leakage.
+Add `rel="noreferrer"` to links:
 
 ```lua
 policy:require_noreferrer_on_links(true)
@@ -263,7 +263,7 @@ policy:require_noreferrer_on_links(true)
 
 ### External Links in New Tab
 
-Add `target="_blank"` to fully qualified URLs.
+Add `target="_blank"` to fully qualified URLs:
 
 ```lua
 policy:allow_attrs("href", "target"):on_elements("a")
@@ -296,7 +296,7 @@ policy:sanitize('<img src="photo.jpg" alt="Photo">')
 
 ### Allow Data URI Images
 
-Permit base64 embedded images.
+Permit Base64-encoded data URI images:
 
 ```lua
 policy:allow_elements("img")
@@ -351,7 +351,7 @@ policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
 
 ## Sanitize
 
-Apply policy to HTML string.
+Apply a policy to an HTML string:
 
 ```lua
 local policy = html.sanitize.ugc_policy()
