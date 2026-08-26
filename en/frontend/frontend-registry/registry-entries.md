@@ -1,11 +1,14 @@
 ---
 title: "Registry Entries"
-description: "A registry entry is how the Wippy backend declares a frontend artifact — either a micro frontend app or a reusable web component — so the Web Host can…"
+description: "How registry YAML, package metadata, and wippy-meta.json declare frontend pages and web components to the Web Host."
 ---
 
 # Registry Entries
 
-A registry entry is how the Wippy backend declares a frontend artifact — either a micro frontend app or a reusable web component — so the Web Host can discover and serve it. This document explains the contract between a module's `_index.yaml`, its `package.json` `wippy` block, and the `wippy-meta.json` file that connects them.
+A registry entry declares a frontend artifact to the Wippy backend so the Web
+Host can discover and serve it. The artifact can be a micro frontend app or a
+reusable web component. Its declaration spans the module's `_index.yaml`, the
+`wippy` block in `package.json`, and the generated `wippy-meta.json` file.
 
 For the `wippy/views` module setup that processes these entries at runtime, see [Views](../../framework/views.md).
 
@@ -73,20 +76,25 @@ The presence of `specification` does not change runtime behavior, but `wippy/vie
 
 ## The `wippy-meta.json` Contract
 
-`@wippy-fe/vite-plugin` emits a `wippy-meta.json` file alongside the built bundle. This file is the canonical source of truth for the artifact's runtime metadata: its props schema, events schema, title, icon, and proxy injection settings.
+`@wippy-fe/vite-plugin` emits a `wippy-meta.json` file alongside the built
+bundle. It is the canonical source for the artifact-authored runtime metadata:
+props schema, events schema, title, icon, and proxy injection settings.
 
-Short answer for agents and tooling:
+Metadata responsibilities:
 
-- **Who emits it:** `wippyPagePlugin()` for `view.page` apps and `wippyComponentPlugin()` for `view.component` web components.
-- **Who authors it:** nobody hand-authors `wippy-meta.json`; the vite plugin generates it from `package.json`.
-- **Who consumes it:** `wippy/views` reads it from the served bundle root when building page/component descriptors and API responses.
-- **What YAML does:** `_index.yaml` remains authoritative for deployment policy and any field it explicitly overrides.
+- **Emitted by:** `wippyPagePlugin()` for `view.page` apps and `wippyComponentPlugin()` for `view.component` web components.
+- **Generated from:** `package.json`; do not hand-author `wippy-meta.json`.
+- **Consumed by:** `wippy/views`, which reads it from the served bundle root when building page/component descriptors and API responses.
+- **Overridden by:** `_index.yaml`, which remains authoritative for deployment policy and every field it explicitly declares.
 
 When `wippy/views` loads a `registry.entry`, it reads `wippy-meta.json` from the artifact's served bundle root. For pages, that root is the page `url + base_path`; for web components, the current entries serve the component directly from `url`. YAML always wins: `_index.yaml` takes precedence for every field it declares. `wippy-meta.json` provides the defaults that `wippy/views` reads when no YAML override is present for a given field. Deployment-policy fields — `announced`, `secure`, `url`, `mountRoute`, and `base_path` — must be set in `_index.yaml` because they express operator decisions rather than component authorship; there is no `package.json`/`wippy-meta.json` authoring surface for them. (`base_path` is honored for both pages and components; the current app-template component entries simply omit it.)
 
 By contrast, `entry_point` is FE-authored *and* YAML-overridable. It is baked into `wippy-meta.json` from the package's `wippy` block — `wippy.path` for pages (which `@wippy-fe/vite-plugin` **requires**; omitting it makes the plugin throw `wippy.path is required for a page package`) or `wippy.tagName`/`browser` for components. The `meta.entry_point` field in `_index.yaml` is an optional per-deployment override on top of that authored default; it is not a YAML-only field.
 
-This split means a component author writes display metadata once in `package.json`'s `wippy` block, and the vite plugin bakes it into `wippy-meta.json` at build time as author defaults. The operator who deploys the component sets routing and access policy in YAML, and can override any display-level field there too.
+A component author writes display metadata once in the `wippy` block of
+`package.json`, and the vite plugin records it in `wippy-meta.json` as the
+author defaults. The operator sets routing and access policy in YAML and can
+also override display fields there.
 
 ## Common Fields
 

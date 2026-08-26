@@ -1,17 +1,25 @@
 ---
 title: "Facade Entry Point"
-description: "The wippy/facade backend module is the entry point that delivers the Web Host to users. It serves an HTML page that loads the Web Host JS module,…"
+description: "How wippy/facade serves the Web Host, constructs AppConfig, handles authentication, and supports manual iframe embedding."
 ---
 
 # Facade Entry Point
 
-The `wippy/facade` backend module is the entry point that delivers the Web Host to users. It serves an HTML page that loads the Web Host JS module, handles authentication redirects, exposes a `/facade/config` endpoint, and bridges deployment-specific configuration into the CDN-hosted frontend bundle. No configuration is baked into the bundle itself — every deployment provides its own config through this mechanism.
+The `wippy/facade` backend module delivers the Web Host to users. It serves the
+HTML page that loads the Web Host JS module, handles authentication redirects,
+exposes `/facade/config`, and passes deployment-specific configuration to the
+CDN-hosted frontend bundle. The bundle itself contains no deployment-specific
+configuration.
 
 ![Facade entry point](../diagrams/facade-entry-point.svg)
 
 ## The HTML Page
 
-When a user navigates to a Wippy application, `wippy/facade` serves an HTML page. This page is thin: it loads a Web Host JS module from the CDN and initializes the host with the configuration returned from `/facade/config`. The module takes over the entire page — including its browser history — so the host runs as the whole application rather than inside an iframe.
+When a user navigates to a Wippy application, `wippy/facade` serves a small HTML
+page. It loads a Web Host JS module from the CDN and initializes the host with
+configuration returned from `/facade/config`. The module takes over the page,
+including its browser history, so the host runs as the application rather than
+inside an iframe.
 
 The facade loads one of two JS-module entries depending on the configured `fe_mode`:
 
@@ -40,9 +48,13 @@ A simplified version of the page looks like this:
 </html>
 ```
 
-The page fetches its configuration and hands it to the module's init function. The host mounts into the page, takes over routing and browser history, and proceeds with full initialization.
+The page passes its configuration to the module's init function. The host then
+mounts, takes over routing and browser history, and completes initialization.
 
-> **Note on the fetch path.** `/facade/config` is the path the facade registers on the public router; the actual URL your page fetches includes that router's prefix. With the example prefix `/api/public`, it is `/api/public/facade/config` — exactly what the shipped facade page fetches. The inline `fetch('/facade/config')` snippets here are shortened for readability.
+> **Fetch path.** `/facade/config` is the path the facade registers on the
+> public router. The requested URL also includes that router's prefix. With the
+> example prefix `/api/public`, request `/api/public/facade/config`, as the
+> shipped facade page does. The examples use the registry-local path.
 
 ## The Config Flow
 
@@ -53,7 +65,8 @@ The config flow has two steps:
 
 The Web Host extracts the `AppConfig` payload from the config object and proceeds with full initialization. From this point forward the page script is passive — all user interaction happens inside the mounted host.
 
-This pattern means the CDN-hosted bundle never contains deployment-specific URLs, tokens, or branding. The bundle is identical for every deployment. Only the config payload differs.
+The CDN-hosted bundle is identical across deployments; deployment-specific
+URLs, tokens, and branding arrive in the config payload.
 
 > **Shell fields vs child `AppConfig`.** The `/facade/config` response carries both. Fields like `facade_url`, `iframe_origin`, `iframe_url`, and `login_path` are **shell-level** fields consumed by the embedding page to build itself — they are not part of the child `AppConfig`. The `AppConfig` the host actually initializes with is `auth`, `env`, `theming`, `hostConfig`, `context`, and the other fields documented below.
 
@@ -262,7 +275,8 @@ The Web Host extracts the `AppConfig` payload and proceeds with full initializat
 
 ## Configuring the Facade Module
 
-The `wippy/facade` parameters that produce the config response above are set in your `_index.yaml`. A real example from `app-template`:
+Set the `wippy/facade` parameters that produce the config response in
+`_index.yaml`. This example comes from `app-template`:
 
 ```yaml
 - name: facade

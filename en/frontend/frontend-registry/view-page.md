@@ -1,11 +1,14 @@
 ---
 title: "Micro Frontend Apps (view.page)"
-description: "A view.page entry describes a full single-page application that the Web Host loads inside an iframe. Each page entry claims a URL path in the host…"
+description: "Reference for declaring, routing, serving, and configuring a view.page micro frontend application."
 ---
 
 # Micro Frontend Apps (view.page)
 
-A `view.page` entry describes a full single-page application that the Web Host loads inside an iframe. Each page entry claims a URL path in the host router, gets its own isolated browsing context, and receives injected CSS and configuration from the host through the proxy layer.
+A `view.page` entry describes a full single-page application that the Web Host
+loads inside an iframe. Each entry claims a path in the host router, receives
+an isolated browsing context, and gets CSS and configuration through the host's
+proxy layer.
 
 ## Frontend Fields (package.json wippy block)
 
@@ -120,8 +123,6 @@ These fields are set by the operator in the `meta` block of the `_index.yaml` re
     name: main
 ```
 
-> **The deployment-policy fields (`announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline`) cannot be set in `package.json` — they are set by the operator for each environment. `entry_point` is different: it is authored as `wippy.path` in `package.json` and the YAML value only overrides that default.**
-
 ### URL and File Serving
 
 | Field | Type | Default | Description |
@@ -219,7 +220,7 @@ Nested proxy/config objects are passed through and retain their defined
 lower-camel-case keys. The host deep-merges `meta.proxy` over bundled
 `wippy.proxy`.
 
-Short answer: use `meta.proxy`, not `data.proxy`; keep top-level backend fields
+Use `meta.proxy`, not `data.proxy`. Keep top-level backend fields
 such as `config_overrides` in snake_case, but preserve nested proxy/config keys
 such as `themeConfig` and `customCss`; keep the `injections` wrapper.
 Do not invent `meta.config` or `meta.configOverrides`; the exact per-page

@@ -1,11 +1,14 @@
 ---
 title: "Dynamic Routing"
-description: "The Web Host's router is not statically configured. At startup it fetches the current set of page mount routes from the backend and adds them to the…"
+description: "How the Web Host registers backend mount routes, synchronizes child navigation, and classifies links at runtime."
 ---
 
 # Dynamic Routing
 
-The Web Host's router is not statically configured. At startup it fetches the current set of page mount routes from the backend and adds them to the Vue Router instance. This means a new `view.page` entry with a `mountRoute` claim takes effect without any change to the Web Host bundle itself.
+The Web Host's router is not statically configured. At startup, it fetches the
+current page mount routes from the backend and adds them to the Vue Router
+instance. A new `view.page` entry with a `mountRoute` claim therefore takes
+effect without a Web Host bundle change.
 
 ![Mount route sync](../diagrams/mountroute-sync.svg)
 
@@ -52,13 +55,21 @@ until the backend correction ships.
 
 `mountRoute` accepts only the catch-all forms `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen literal segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or different param names (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict, the backend's `validate_mount_route_syntax` fails, and `GET /api/public/pages/routes` returns HTTP 500 (rendered as a fatal fullscreen error). The wildcard segment `:part(.*)*` lets the child application manage its own sub-routes (e.g. `/home/settings`, `/home/profile/edit`) while the host owns the `/home` prefix.
 
-Two entries must not claim the same route. If two `view.page` entries claim the **same** `mountRoute`, the backend validator (`validate_mount_routes` in `page_registry.lua`) records a duplicate-route conflict in the same issues list as syntax errors, so `GET /api/public/pages/routes` returns HTTP 500 and the Web Host renders a fatal fullscreen `<wippy-error>` — exactly like a malformed `mountRoute`. It is **not** silently ignored.
+Two entries must not claim the same route. If two `view.page` entries claim the
+**same** `mountRoute`, the backend validator (`validate_mount_routes` in
+`page_registry.lua`) records a duplicate-route conflict in the same issues list
+as syntax errors. `GET /api/public/pages/routes` then returns HTTP 500, and the
+Web Host renders a fatal fullscreen `<wippy-error>`, as it does for a malformed
+`mountRoute`. The duplicate is **not** silently ignored.
 
 The only first-wins behavior is Vue Router runtime priority between a root catch-all (`/:part(.*)*`) and a more-specific system route (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) or a longer literal-prefix mount — the more-specific route matches first. That is route-resolution precedence, not duplicate-route handling.
 
 ## The URL Sync Loop
 
-Once a page is loaded in its iframe, the child application navigates internally using its own router. Those internal navigations need to be reflected in the host's URL bar so that the browser's back button, bookmarks, and copy-URL all work correctly. This is done through a PostMessage pair.
+Once a page is loaded in its iframe, the child application navigates internally
+with its own router. The host reflects those navigations in its URL bar so the
+browser's back button, bookmarks, and copied URLs work correctly. A PostMessage
+pair synchronizes the two routers.
 
 ![Frontend Registry](../diagrams/frontend-registry.svg)
 

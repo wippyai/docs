@@ -1,15 +1,20 @@
 ---
 title: "Bootstrap Sequence"
-description: "After the Web Host receives its configuration it runs a fixed initialization sequence before rendering any UI. The sequence differs slightly depending…"
+description: "How the Web Host receives AppConfig and initializes stores, routing, theming, rendering, and real-time services."
 ---
 
 # Bootstrap Sequence
 
-After the Web Host receives its configuration it runs a fixed initialization sequence before rendering any UI. The sequence differs slightly depending on whether the Web Host is loaded as a JS module that takes over the page (the standard facade path) or runs inside an iframe (the manual, facade-less path), but the internal steps after configuration is available are identical.
+After receiving its configuration, the Web Host runs a fixed initialization
+sequence before rendering the full interface. Configuration arrives either
+through a JS module that takes over the page or through a manually embedded
+iframe. The internal steps are identical once configuration is available.
 
 ## Path A — JS Module (Standard, facade path)
 
-This is the path the current `wippy/facade` uses. The facade serves a page that loads a Web Host JS-module entry — `module.js` for **compat** mode or `managed-layout.js` for **managed** mode — and the module takes over the whole page and its browser history.
+The current `wippy/facade` uses this path. It serves a page that loads a Web
+Host JS-module entry: `module.js` for **compat** mode or `managed-layout.js` for
+**managed** mode. The module then takes over the page and its browser history.
 
 1. **Page loads the module.** The script registers `window.initWippyApp` on the page's `window`.
 
@@ -23,7 +28,10 @@ This is the path the current `wippy/facade` uses. The facade serves a page that 
 
 ## Path B — Iframe (manual, facade-less)
 
-This is the path taken when you embed the full host inside an iframe yourself — for partial-page embedding with stronger isolation. It loads `iframe.html?waitForCustomConfig` and receives config via a `SetConfig` PostMessage. The current facade does not produce this; it exists for manual insertions.
+Use this path to embed the full host inside an iframe for partial-page rendering
+with stronger isolation. It loads `iframe.html?waitForCustomConfig` and receives
+configuration through a `SetConfig` PostMessage. The current facade does not
+produce this embedding.
 
 1. **Iframe loads.** The Web Host loads in the browser. Because `?waitForCustomConfig` is present in the URL, the app mounts a minimal skeleton and suspends — it does not attempt to read auth tokens or call any API endpoints yet.
 

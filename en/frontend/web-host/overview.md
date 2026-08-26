@@ -1,11 +1,15 @@
 ---
 title: "Web Host Overview"
-description: "The Wippy Web Host is a Vue 3 single-page application built with the Feature-Sliced Design methodology and delivered from a CDN at…"
+description: "How the CDN-hosted Web Host, facade page, and child micro frontends fit together in a Wippy application."
 ---
 
 # Web Host Overview
 
-The Wippy Web Host is a Vue 3 single-page application built with the Feature-Sliced Design methodology and delivered from a CDN at `https://web-host.wippy.ai`. It hosts all user-facing pages and UI components for a Wippy application. You do not build or deploy it — you configure it through the `wippy/facade` backend module and it loads automatically.
+The Wippy Web Host is a Vue 3 single-page application built with the
+Feature-Sliced Design methodology and delivered from
+`https://web-host.wippy.ai`. It hosts the user-facing pages and UI components
+of a Wippy application. Configure it through the `wippy/facade` backend module;
+you do not build or deploy it with the application.
 
 ![Wippy FE architecture](../diagrams/fe-arch-overview.svg)
 
@@ -15,7 +19,13 @@ A running Wippy application is composed of three nested layers:
 
 **Layer 1 — Page served by `wippy/facade`.** This is your backend-rendered HTML page. The `wippy/facade` module registers a static file server and a `/facade/config` endpoint on your Wippy gateway. When a user navigates to your application, `wippy/facade` serves a thin HTML page that loads the Web Host JS-module entry from the CDN (`module.js` for compat, `managed-layout.js` for managed) and initializes it with config from `/facade/config`. The page itself carries no Vue or React — it is intentionally thin.
 
-**Layer 2 — Web Host.** The Web Host bundle loads as a JS module that takes over the entire page and its browser history. It owns the Wippy chrome: the navigation sidebar, chat panel, session management, and the page rendering surface. It receives its full configuration from the page's init call and never contains deployment-specific URLs or tokens in the bundle itself. This is what makes the CDN-hosted bundle portable across deployments. (For manual, facade-less embeddings the same host can instead run inside an iframe via the `iframe.html` entry — see the entry-points table below.)
+**Layer 2 — Web Host.** The Web Host bundle loads as a JS module that takes over
+the entire page and its browser history. It owns the Wippy chrome: navigation,
+chat, session management, and the page rendering surface. It receives its full
+configuration from the page's init call and contains no deployment-specific
+URLs or tokens. The same CDN bundle can therefore serve different deployments.
+For manual, facade-less embeddings, the host can run inside an iframe through
+the `iframe.html` entry described below.
 
 **Layer 3 — Child micro-frontends.** The Web Host in turn embeds user-defined views as either nested iframes (`view.page` modules) or web components (`view.component` modules). Each child runs in isolation. The Web Host injects a proxy script that gives children access to the Wippy API, authentication context, theme CSS, and communication channels — all without the child needing to know where it is deployed.
 
@@ -30,9 +40,9 @@ Page (wippy/facade HTML — loads module.js / managed-layout.js)
 
 ## Entry Points
 
-The Web Host CDN serves several entry points from the same versioned directory. The right one depends on how you are integrating:
-
-Each entry is served from the CDN at `<release-tag>/<entry>` (e.g. `/<release-tag>/module.js`).
+The Web Host CDN serves several entry points from the same versioned directory.
+Choose one according to the integration. Each entry is available at
+`<release-tag>/<entry>`, such as `/<release-tag>/module.js`.
 
 | Entry | Use case |
 |-------|----------|
@@ -55,7 +65,11 @@ https://web-host.wippy.ai/<release-tag>/
 
 Where `<release-tag>` is the Web Host git release tag — either a stable release or a feature-branch preview deploy. The staging CDN is at `https://web-host.staging.wippy.ai/<release-tag>/`.
 
-Normally you don't set the version at all. The `wippy/facade` module ships with a default `fe_facade_url` pointing at a matching Web Host build, so **the Web Host version moves with the facade module** — updating `wippy/facade` is how you move to a newer Web Host. Child apps that share vendor libraries via the import map receive exactly the versions that build provides.
+Normally, the `wippy/facade` module selects the version through its default
+`fe_facade_url`, which points to a matching Web Host build. Updating
+`wippy/facade` therefore moves the deployment to its corresponding Web Host
+version. Child apps that share vendor libraries through the import map receive
+the versions provided by that build.
 
 To pin a specific Web Host version — to stay on a known-good build, or to opt into a feature-branch / early-access tag — override the `fe_facade_url` parameter:
 

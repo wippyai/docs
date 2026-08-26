@@ -1,11 +1,14 @@
 ---
 title: "Web Components (view.component)"
-description: "A view.component entry describes a reusable custom element (web component) that the Web Host can discover, inject, and register automatically. Unlike a…"
+description: "Reference for declaring, serving, and registering a reusable view.component custom element in the Web Host."
 ---
 
 # Web Components (view.component)
 
-A `view.component` entry describes a reusable custom element (web component) that the Web Host can discover, inject, and register automatically. Unlike a page, a component has no iframe of its own — it is a custom HTML tag that can appear anywhere a page's or host's template places it.
+A `view.component` entry describes a reusable custom element that the Web Host
+can discover, inject, and register automatically. Unlike a page, a component
+has no iframe of its own. It is a custom HTML tag that can appear wherever a
+page or host template places it.
 
 For guidance on writing the component implementation, see [Web Component](../micro-frontends/web-component.md).
 
@@ -38,7 +41,11 @@ Web component packages set `"type": "widget"` or `"type": "component"` (not `"pa
 }
 ```
 
-At deploy time the operator's YAML `meta.tag_name` is authoritative and overrides the bundled value; `wippy.tagName` (baked into `wippy-meta.json` from `package.json`) is only the fallback `wippy/views` uses when the YAML entry omits `tag_name` (resolution order: YAML `meta.tag_name` → bundled `wippy.tagName`). Keep the two in sync to avoid surprises, but the YAML wins if they differ.
+At deploy time, the operator's YAML `meta.tag_name` is authoritative and
+overrides the bundled value. `wippy.tagName`, baked into `wippy-meta.json` from
+`package.json`, is the fallback when the YAML entry omits `tag_name` (resolution
+order: YAML `meta.tag_name` → bundled `wippy.tagName`). Keep the values
+synchronized; YAML wins if they differ.
 
 ### Props Schema
 
@@ -100,8 +107,6 @@ The Web Host's chat message sanitizer allowlists component attributes from `prop
 
 These fields are set by the operator in the `meta` block of the `_index.yaml` registry entry. Most represent pure deployment policy — routing, access control, and serving — that only makes sense at deploy time and has no `package.json` authoring surface (`announced`, `secure`, `url`, `auto_register`). Two fields, `tag_name` and `entry_point`, are different: they are **FE-authored** in `package.json` (baked into `wippy-meta.json`) and the YAML keys are only **optional per-deployment overrides** of those bundled values.
 
-> **`announced`, `secure`, `url`, and `auto_register` are pure deployment policy and cannot be set in package.json — they are set by the operator for each environment. `tag_name` and `entry_point` are FE-authored defaults that the operator may override in YAML.**
-
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `tag_name` | string | `wippy.tagName` | FE-authored as `wippy.tagName` in `package.json` (required by the vite plugin); the YAML key overrides the bundled value. Custom element name; must contain a hyphen per the HTML spec |
@@ -158,7 +163,7 @@ When a page inside the Web Host finishes mounting, the host runs the following s
 
 4. Vue (or any framework) renders a `<example-reaction-bar>` element. The browser upgrades the element, `connectedCallback` fires, and `WippyVueElement` mounts its Vue app inside a shadow root.
 
-## Why `auto_register: false` Is Useful
+## When to use `auto_register: false`
 
 Setting `auto_register: false` excludes the component from the global autoload sweep. This is appropriate when:
 
