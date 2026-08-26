@@ -19,16 +19,17 @@ Or download directly from [hub.wippy.ai/releases](https://hub.wippy.ai/releases)
 wippy version
 ```
 
-## Initialize a Project
+## Initialize Dependency Metadata
 
 ```bash
-# Create a new project
+# Create a project directory
 mkdir myapp && cd myapp
-wippy init
 
-# Run
-wippy run
+# Create or update wippy.lock
+wippy init
 ```
+
+`wippy init` writes the dependency lock and its source and module directory settings. It does not scaffold application source files or registry entries. Follow [Hello World](tutorials/hello-world.md) to create a runnable application, then start it with `wippy run`.
 
 The runtime includes HTTP, SQL, storage, and process-hosting capabilities. Add framework modules from the Hub when the application needs them:
 
@@ -41,7 +42,7 @@ wippy install
 
 | Command | Description |
 | --------- | ------------- |
-| `wippy init` | Initialize a new project |
+| `wippy init` | Create or update `wippy.lock` |
 | `wippy run` | Start the runtime |
 | `wippy test` | Run the test entrypoint |
 | `wippy lint` | Check code for errors |

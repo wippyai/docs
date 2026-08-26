@@ -13,7 +13,7 @@ Available on all commands:
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--config` | | Config file, repeatable; later files override earlier ones (default: .wippy.yaml) |
+| `--config` | | Config file, repeatable; later files override earlier ones (default: .wippy.yaml). `wippy publish` defines a different command-local option. |
 | `--verbose` | `-v` | Enable debug logging |
 | `--very-verbose` | | Debug with stack traces |
 | `--console` | `-c` | Colorful console logging |
@@ -24,11 +24,13 @@ Available on all commands:
 
 Memory-limit precedence is `--memory-limit`, then `GOMEMLIMIT`, then the 1 GB default.
 
-`--config` may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
+The global `--config` option may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
+
+`wippy publish` shadows the global option with a command-local `--config <dir>` option. For that command, the value is the directory containing `wippy.yaml`, not a repeatable runtime configuration file.
 
 ## wippy init
 
-Create a new lock file.
+Create `wippy.lock`, or update its source and module directory settings if it already exists. This command does not scaffold application source files or registry entries.
 
 ```bash
 wippy init
@@ -406,7 +408,7 @@ Any process entry kind works (`process.lua`, `process.wasm`). The command name m
 ### Development Workflow
 
 ```bash
-# Initialize project
+# Initialize dependency lock metadata
 wippy init
 wippy add wippy/test wippy/llm
 wippy install
