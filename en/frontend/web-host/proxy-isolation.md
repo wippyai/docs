@@ -144,8 +144,6 @@ All message types are defined in the `IFrameMessageType` enum:
 | `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Child | Per-panel live state delta |
 | `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Child | Layout bus broadcast delivery |
 
-Application code never sends or receives these messages directly. The proxy handles the protocol transparently and exposes only the `@wippy-fe/proxy` API surface.
-
 ## `<w-iframe>` Custom Element
 
 `<w-iframe>` is the low-level iframe primitive built into `proxy.js`. It accepts raw source HTML, injects the full Wippy runtime (base URL, import map, `loading.js`, `proxy.js`, child config), and renders the result as a sandboxed `srcdoc` iframe.

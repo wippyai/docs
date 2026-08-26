@@ -49,9 +49,7 @@ Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. U
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Typed retained-WC visibility and `useHostVisibilityRefresh()`, immediate page readiness instead of waiting for the 14-second fallback, stale renderer-key rejection, in-place component prop updates, and the isolated splitter layer with `--wippy-layout-splitter-z-index`. |
 
 The 14-second page reveal is a Web Host `1.0.52` fallback, not a 1.0.51
-feature or an application loading delay. Split-axis sizing and reactive chat
-landed in 1.0.51; retained visibility, keyed readiness, and splitter layering
-landed in 1.0.52.
+feature or an application loading delay.
 
 Retained direct-web-component visibility requires Web Host `1.0.52` and
 `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, and
@@ -504,7 +502,7 @@ As of Draft 1, the following are not yet implemented:
 - **`addPanel` / `setLayout` over the proxy** — not shipped. These exist only on the internal `@wippy-fe/layout` `LayoutManager` and are not exposed across the iframe proxy boundary. (`openModal`, `closeModal`, and `movePanel` are shipped — see the Layout API Reference.)
 - **Panel drag-to-rearrange UI** — the data model and `movePanel()` API work; user-facing drag is not yet implemented.
 - **Tab primitive** — not yet implemented.
-- **Grid-tile container** — tracked for a follow-up.
+- **Grid-tile container** — not yet implemented.
 - **Runtime mutation persistence** — mutations are not persisted across reloads. Persist manually if needed:
   ```typescript
   on('@layout-change', () =>

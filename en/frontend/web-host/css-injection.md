@@ -57,7 +57,7 @@ iframe cascade.
 6. customCSS             — Raw CSS from the child-projected AppConfig.theming.global.customCSS (adopted stylesheet)
 ```
 
-This list shows the logical override order, not the literal `<head>` insertion order. In the production proxy the two adopted-stylesheet layers (`cssVariables`, then `customCSS`) are actually inserted *before* `theme-config.css` and PrimeVue, yet still override them — because adopted stylesheets cascade after all document `<style>`/`<link>` elements. See [Override mechanism](#override-mechanism-adopted-stylesheets).
+This list shows the logical override order, not the literal `<head>` insertion order. The adopted-stylesheet cascade determines the custom layers' precedence; see [Override mechanism](#override-mechanism-adopted-stylesheets).
 
 Each child iframe gets an independent copy of all styles, not inheritance through the cascade. Host and all children render with the same visual theme because they receive identical injected assets from the same source.
 

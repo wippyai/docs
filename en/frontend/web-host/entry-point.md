@@ -15,10 +15,8 @@ configuration.
 
 ## The HTML Page
 
-When a user navigates to a Wippy application, `wippy/facade` serves a small HTML
-page. It loads a Web Host JS module from the CDN and initializes the host with
-configuration returned from `/facade/config`. The module takes over the page,
-including its browser history, so the host runs as the application rather than
+When a user navigates to a Wippy application, the Web Host module takes over the
+page and its browser history, so the host runs as the application rather than
 inside an iframe.
 
 The facade loads one of two JS-module entries depending on the configured `fe_mode`:
@@ -47,9 +45,6 @@ A simplified version of the page looks like this:
 </body>
 </html>
 ```
-
-The page passes its configuration to the module's init function. The host then
-mounts, takes over routing and browser history, and completes initialization.
 
 > **Fetch path.** `/facade/config` is the path the facade registers on the
 > public router. The requested URL also includes that router's prefix. With the
@@ -207,7 +202,9 @@ Because the config endpoint is served by the same authenticated session that ser
 
 ## The Module Init Function
 
-The JS-module entry registers `window.initWippyApp` on the page. The facade page calls it with the config object fetched from `/facade/config`. `fe_mode` selects which module the facade loads — `module.js` for **compat**, `managed-layout.js` for **managed** — and both expose the same `initWippyApp` entry function. The choice of module is about which shell renders; it is independent of the embedding style (JS-module page vs manual iframe).
+Both JS-module entries register the same `window.initWippyApp` function. The
+choice of module determines which shell renders and is independent of the
+embedding style (JS-module page vs manual iframe).
 
 `initWippyApp(config, rootContainer?)` returns a simple event emitter:
 
@@ -217,7 +214,7 @@ events.on('ready', () => console.log('Wippy loaded'))
 events.on('error', err => console.error('Failed to load:', err))
 ```
 
-When called without a root container, the host mounts into a default element. The host takes over the page and its browser history from this point forward.
+When called without a root container, the host mounts into a default element.
 
 ## Manual (facade-less) iframe embedding
 

@@ -10,9 +10,6 @@ application. The **theme** reaches every surface, while each **module** owns its
 local presentation. A **shared design layer** covers the narrower case where
 several modules share a concept that the theme does not provide.
 
-This page names the three layers, gives a test for choosing between them, and
-shows what each choice looks like when it goes right and wrong.
-
 ## The layers
 
 | Layer | Reaches | Owns |
