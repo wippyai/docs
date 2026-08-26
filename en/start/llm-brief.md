@@ -133,7 +133,7 @@ local function worker(initial_config)
 
         if r.channel == events then
             local ev = r.value
-            if ev.type == process.event.CANCEL then
+            if ev.kind == process.event.CANCEL then
                 break
             end
         elseif r.channel == inbox then
