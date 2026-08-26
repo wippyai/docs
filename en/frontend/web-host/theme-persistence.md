@@ -101,8 +101,11 @@ events.on('themeChanged', (mode) => {
 
 ## Non-Wippy-hosted pages
 
-A login page, a marketing page, or any page that isn't the Web Host can honour and persist the same
-theme. This is an intentionally static/non-Vue example, so native buttons are appropriate. Include the generated script and call `write()` from your own switcher:
+A document outside the Wippy portable-module contract can honour and persist
+the same theme. The native buttons below are appropriate only for such an
+external static document. A Wippy page or component with these controls must
+use PrimeVue under the [Portable UI Contract](../portable-ui-contract.md).
+Include the generated script and call `write()` from your own switcher:
 
 ```html
 <head>

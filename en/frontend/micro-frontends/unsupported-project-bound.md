@@ -1,0 +1,34 @@
+---
+title: "Unsupported Project-Bound Modules"
+description: "Advanced warning for modules that intentionally abandon Wippy frontend portability."
+---
+
+# Unsupported Project-Bound Modules
+
+Wippy’s supported frontend contract is portable. A module that intentionally requires project-private facade CSS, private classes, or another deployment-specific frontend assumption is `UNSUPPORTED`.
+
+This is not a normal exception:
+
+- Standard compliance returns exactly `UNSUPPORTED`.
+- Standard CI fails.
+- Reuse, theme portability, upgrades, and support are not guaranteed.
+- The module owner is responsible for every consuming facade and migration.
+
+Do not label this mode “discouraged,” “partially compliant,” or “non-compliant but accepted.” The canonical status is `UNSUPPORTED`.
+
+Project-bound mode is advanced-only and is not presented in Quickstart or standard recipes. It cannot waive accessibility, HTML validity, security, or backend schema requirements.
+
+An entire project being intended for one deployment does not silently relax the contract. The unsupported status must be explicit in project policy and module metadata, with the standard CI failure deliberately handled outside Wippy’s supported compliance workflow.
+
+Declare the status in the module-root `wippy-fe.contract.json` with the exact
+field and value below:
+
+```json
+{
+  "portability": "project-bound"
+}
+```
+
+`mode` and other aliases are not accepted. This marker makes the standard
+compliance command return `UNSUPPORTED` and exit unsuccessfully; it does not
+grant an exemption.

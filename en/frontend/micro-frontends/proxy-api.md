@@ -114,6 +114,7 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
       customCSS?: string
@@ -148,6 +149,59 @@ The host communication API (`HostApi`). Imported directly and used synchronously
 ```typescript
 import { host } from '@wippy-fe/proxy'
 ```
+
+---
+
+### `host.setThemeMode(mode)` and `host.getThemeMode()`
+
+Theme mode is host state carried by AppConfig. Switch it only through the
+public proxy API:
+
+```typescript
+import { host, on } from '@wippy-fe/proxy'
+
+async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
+  await new Promise<void>((resolve, reject) => {
+    const unsubscribe = on('@theme', (appliedMode) => {
+      if (appliedMode !== mode) return
+      unsubscribe()
+      const currentMode = host.getThemeMode()
+      if (currentMode !== mode) {
+        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
+        return
+      }
+      resolve()
+    })
+
+    // Subscribe before the command so a fast propagation event cannot be lost.
+    host.setThemeMode(mode)
+  })
+}
+
+await setThemeMode('dark')
+```
+
+The accepted modes are `auto`, `light`, and `dark`. `auto` follows the
+operating-system preference. A change is applied to the host, written back to
+AppConfig, broadcast to live page iframes and web components, and forwarded
+through nested Wippy containers. Subscribe to `@theme` when code needs to wait
+for the applied child state. Release the subscription during component
+unmount.
+
+The host does not own persistence. The embedding facade listens for the host
+theme-change event and persists the user choice as described in
+[Theme Persistence](../web-host/theme-persistence.md).
+
+Do not add or remove `w-theme-dark` / `w-theme-light` classes, call the internal
+`applyThemeMode`, mutate AppConfig stores, synthesize proxy messages, or use
+`window.getWippyApi`. Those are Web Host implementation details, not application
+or browser-test APIs. Runtime tests must exercise `host.setThemeMode()`, wait
+for the propagated `@theme` event, and verify `host.getThemeMode()` before
+capturing appearance. AppConfig is the host-to-child transport; do not mutate
+its internal store or rely on an earlier imported config snapshot as the
+completion signal.
+
+There is no `host.applyTheme()` method.
 
 ---
 
