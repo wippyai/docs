@@ -12,6 +12,11 @@ The `time` module provides time values, durations, time-zone handling, parsing, 
 
 In workflows, `time.now()` returns a recorded time reference for deterministic replay.
 
+**Short answer:** use `time.now()` and the `Time` methods for time values and
+time-zone conversion; use `time.sleep()`, `time.after()`, `time.timer()`, and
+`time.ticker()` for scheduling. Workflow calls to the supported time APIs are
+recorded so they can replay deterministically.
+
 ## Loading
 
 ```lua
