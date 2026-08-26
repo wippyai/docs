@@ -1,11 +1,11 @@
 ---
 title: "Test Framework"
-description: "The wippy/test module provides a BDD-style testing framework with assertions, lifecycle hooks, and mocking."
+description: "Define and run Wippy tests with BDD suites, assertions, lifecycle hooks, mocks, and simple test functions."
 ---
 
 # Test Framework
 
-The `wippy/test` module provides a BDD-style testing framework with assertions, lifecycle hooks, and mocking.
+The `wippy/test` module provides BDD suites, assertions, lifecycle hooks, mocks, and a runner for test entries.
 
 ## Setup
 
@@ -84,7 +84,7 @@ return { run = run }
 
 ### Nested Suites
 
-Suites can be nested for organization:
+Suites can be nested to group related behavior:
 
 ```lua
 test.describe("user", function()
@@ -114,7 +114,7 @@ test.it_skip("not implemented yet", function()
 end)
 ```
 
-Skipped tests appear in the output but don't count as failures.
+Skipped tests appear in the output but do not count as failures.
 
 ### Suite Aliases
 
@@ -229,7 +229,7 @@ Hooks in nested suites execute in order: parent `before_each` runs before child 
 
 ## Mocking
 
-The mock system replaces global object fields and automatically restores them after each test.
+The mock system replaces global object fields and restores them after each test.
 
 ### Basic Mocking
 
@@ -296,7 +296,7 @@ Filters match against entry IDs. Multiple patterns are combined.
 
 ## Simple Tests
 
-For tests that don't need the BDD framework, define a simple function that returns `true` or raises an error:
+For tests that do not need BDD suites, define a function that returns `true` or raises an error:
 
 ```lua
 local funcs = require("funcs")
@@ -374,7 +374,7 @@ entries:
 
 ## Infrastructure Requirements
 
-The test runner needs a `process.host` and `terminal.host` in your application. These are typically already present. If not, add them:
+The test runner requires a `process.host` and `terminal.host`. Add them if the application does not already define them:
 
 ```yaml
 entries:
@@ -391,6 +391,6 @@ entries:
 
 ## See Also
 
-- [Framework Overview](framework/overview.md) - Framework module usage
-- [CLI Reference](guides/cli.md) - CLI commands
-- [Functions](concepts/functions.md) - Function registry
+- [Framework Overview](framework/overview.md) — Install and import framework modules
+- [CLI Reference](guides/cli.md) — Test command and flags
+- [Functions](concepts/functions.md) — Function entries and invocation

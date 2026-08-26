@@ -1,11 +1,11 @@
 ---
 title: "LLM"
-description: "The wippy/llm module provides a unified interface for working with Large Language Models from multiple providers (OpenAI, Anthropic, Google, local…"
+description: "Use wippy/llm for generation, prompts, streaming, tools, structured output, model selection, and embeddings."
 ---
 
 # LLM
 
-The `wippy/llm` module provides a unified interface for working with Large Language Models from multiple providers (OpenAI, Anthropic, Google, local models). It supports text generation, tool calling, structured output, embeddings, and streaming.
+The `wippy/llm` module provides one interface for language models from OpenAI, Anthropic, Google, and local providers. It supports text generation, tool calling, structured output, embeddings, and streaming.
 
 ## Setup
 
@@ -42,7 +42,7 @@ entries:
         value: app:processes
 ```
 
-The `env.storage.os` entry exposes OS environment variables to the LLM providers. Set your API keys as environment variables (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`).
+The `env.storage.os` entry exposes operating-system environment variables to the LLM providers. Set provider API keys through variables such as `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
 
 ## Text Generation
 
@@ -106,7 +106,7 @@ The first argument to `generate()` can be a string prompt, a prompt builder, or 
 
 ## Prompt Builder
 
-For multi-turn conversations and complex prompts, use the prompt builder:
+Use the prompt builder to construct multi-turn conversations and structured messages:
 
 ```yaml
 imports:
@@ -200,7 +200,7 @@ conversation:add_message(prompt.ROLE.USER, {
 
 ### Cloning
 
-Clone a builder to create variations without modifying the original:
+Clone a builder to create independent variations:
 
 ```lua
 local base = prompt.new()
@@ -215,7 +215,7 @@ conv2:add_user("What is ML?")
 
 ## Streaming
 
-Stream responses in real-time using process communication. This requires a `process.lua` entry:
+Stream responses through process communication. Streaming requires a `process.lua` entry:
 
 ```lua
 local llm = require("llm")
@@ -269,7 +269,7 @@ Streaming requires a <code>process.lua</code> entry because it uses Wippy's proc
 
 ## Tool Calling
 
-Define tools as inline schemas and pass them to `generate()`:
+Define tools with inline schemas and pass them to `generate()`:
 
 ```lua
 local llm = require("llm")
@@ -334,7 +334,7 @@ end
 
 ## Structured Output
 
-Generate validated JSON matching a schema:
+Generate JSON validated against a schema:
 
 ```lua
 local llm = require("llm")
@@ -369,7 +369,7 @@ For OpenAI models, all properties must be in the <code>required</code> array. Us
 
 ## Model Configuration
 
-Models are defined as registry entries with `meta.type: llm.model`:
+Define models as registry entries with `meta.type: llm.model`:
 
 ```yaml
 entries:
@@ -512,7 +512,7 @@ local response = llm.embed({
 
 ## Provider Status
 
-Probe a provider before sending work. Useful for readiness checks and lightweight health monitoring:
+Probe a provider before sending work, such as during readiness checks:
 
 ```lua
 local status, err = llm.status({
@@ -579,6 +579,6 @@ io.print(response.result)
 
 ## See Also
 
-- [Agents](framework/agents.md) - Agent framework with tools, delegates, and memory
-- [Building an LLM Agent](tutorials/llm-agent.md) - Step-by-step tutorial
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Agents](framework/agents.md) — Agent framework with tools, delegates, and memory
+- [Building an LLM Agent](tutorials/llm-agent.md) — Build an agent step by step
+- [Framework Overview](framework/overview.md) — Install and import framework modules

@@ -1,11 +1,11 @@
 ---
 title: "Relay"
-description: "The wippy/relay module provides WebSocket relay infrastructure with a two-tier hub architecture. A central hub manages per-user hubs, which in turn…"
+description: "Configure Wippy Relay hubs, WebSocket clients, prefixed plugins, user isolation, and connection lifecycle."
 ---
 
 # Relay
 
-The `wippy/relay` module provides WebSocket relay infrastructure with a two-tier hub architecture. A central hub manages per-user hubs, which in turn manage WebSocket client connections and route messages to plugins.
+The `wippy/relay` module routes WebSocket connections through a central hub and per-user hubs. User hubs manage client connections and dispatch messages to prefixed plugins.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ Central Hub
 └── ...
 ```
 
-The central hub runs as a service. When a WebSocket client connects, the central hub looks up or creates a user hub for that user. The user hub manages the client's lifetime and routes messages to plugins based on command prefixes.
+The central hub runs as a service. When a WebSocket client connects, it finds or creates a hub for that user. The user hub manages the connection lifecycle and routes messages by command prefix.
 
 ## Setup
 
@@ -90,7 +90,7 @@ entries:
 }
 ```
 
-Plugin `status` is one of `"not_started"` (registered, never spawned), `"pending"` (spawn in progress), `"running"`, `"failed"`, or `"stopped"`.
+Plugin `status` can be `"not_started"` (registered but never spawned), `"pending"` (spawn in progress), `"running"`, `"failed"`, or `"stopped"`.
 
 ## Message Routing
 
@@ -100,7 +100,7 @@ Clients send JSON messages with a `type` field. The user hub matches the type pr
 { "type": "session_get_state", "data": { "key": "value" } }
 ```
 
-The `session_` prefix matches the session plugin. The hub strips the prefix and sends the message to the plugin process with the stripped type as the topic:
+The `session_` prefix selects the session plugin. The hub removes the prefix and sends the message to the plugin process, using the remaining type as the topic:
 
 ```lua
 -- process topic: "get_state"
@@ -144,7 +144,7 @@ entries:
 
 ### Plugin Lifecycle
 
-Plugins are spawned by the user hub. On startup, the plugin receives:
+The user hub spawns each plugin with these startup arguments:
 
 ```lua
 function run(args)
@@ -166,7 +166,7 @@ Plugins get 1 automatic restart on crash. After a second crash, the plugin is ma
 
 ### Plugin Implementation
 
-Plugins receive messages on their process inbox. Each message has a topic (the stripped command prefix) and a payload containing the original message data along with `conn_pid` for sending responses back to the client.
+Plugins receive messages through their process inbox. Each message has a topic derived from the command type and a payload containing the original message data and `conn_pid` for responses.
 
 ```lua
 local json = require("json")
@@ -218,7 +218,7 @@ return { run = run }
 
 ## Error Handling
 
-The relay sends structured error messages to clients:
+The relay reports client errors using these codes:
 
 | Error Code | Description |
 |------------|-------------|
@@ -234,7 +234,7 @@ The relay sends structured error messages to clients:
 
 ### User Hub Creation
 
-User hubs are created on demand when the first client for a user connects. The hub spawns with the user's security actor and scope.
+The first client connection for a user creates that user's hub. The hub runs with the user's security actor and scope.
 
 ### Garbage Collection
 
@@ -259,7 +259,7 @@ The central hub runs under its own security group (`wippy.relay.security:root`) 
 
 ## See Also
 
-- [WebSocket Relay](http/websocket-relay.md) - HTTP WebSocket endpoint configuration
-- [Process Model](concepts/process-model.md) - Process lifecycle and messaging
-- [Security](system/security.md) - Security actors and scopes
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [WebSocket Relay](http/websocket-relay.md) — HTTP WebSocket endpoint configuration
+- [Process Model](concepts/process-model.md) — Process lifecycle and messaging
+- [Security](system/security.md) — Security actors and scopes
+- [Framework Overview](framework/overview.md) — Install and import framework modules

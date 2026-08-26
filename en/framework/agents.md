@@ -1,11 +1,11 @@
 ---
 title: "Agents"
-description: "The wippy/agent module provides a framework for building AI agents with tool use, streaming, delegation, traits, and memory. Agents are defined…"
+description: "Define and run Wippy agents with tools, streaming, delegates, traits, memory, and custom resolution."
 ---
 
 # Agents
 
-The `wippy/agent` module provides a framework for building AI agents with tool use, streaming, delegation, traits, and memory. Agents are defined declaratively and executed through a context/runner pattern.
+The `wippy/agent` module defines agents declaratively and runs them through a context and runner. Agents can use tools, stream responses, delegate work, apply traits, and recall memory.
 
 ## Setup
 
@@ -90,7 +90,7 @@ entries:
 
 ## Agent Context
 
-The agent context is the main entry point. Create a context, optionally configure it, then load an agent:
+Create an agent context, configure it as needed, and then load an agent:
 
 ```yaml
 imports:
@@ -157,7 +157,7 @@ local runner, err = ctx:load_agent({
 
 ## Running Steps
 
-The runner executes a single reasoning step. Pass a prompt builder with the conversation:
+The runner executes one agent step from a prompt-builder conversation:
 
 ```lua
 local prompt = require("prompt")
@@ -294,7 +294,7 @@ Tools can also be referenced with custom aliases and context:
 
 ## Tool Execution
 
-When an agent step returns `tool_calls`, execute them and feed results back:
+When an agent step returns `tool_calls`, execute the calls and add their results to the conversation:
 
 ```lua
 local json = require("json")
@@ -343,7 +343,7 @@ For how agent tool access and observability are secured, see the [Security Model
 
 ## Streaming
 
-Stream agent responses in real-time using `stream_target`:
+Stream agent responses through `stream_target`:
 
 ```lua
 local TOPIC = "agent_stream"
@@ -448,7 +448,7 @@ ctx:add_delegates({
 
 ## Traits
 
-Traits are reusable capabilities that contribute prompts, tools, and behavior to agents:
+Traits are reusable definitions that contribute prompts, tools, and behavior to agents:
 
 ```yaml
   - name: assistant
@@ -493,7 +493,7 @@ Traits are registry entries with `meta.type: agent.trait`. They can contribute:
 
 ### Static Memory
 
-Simple memory items appended to the system prompt:
+Static memory items are appended to the system prompt:
 
 ```yaml
   - name: assistant
@@ -510,7 +510,7 @@ Simple memory items appended to the system prompt:
 
 ### Dynamic Memory Contract
 
-Configure dynamic memory recall from an external source:
+Configure dynamic memory recall through an external implementation:
 
 ```yaml
     memory_contract:
@@ -612,10 +612,10 @@ return {
 3. Try registry lookup by name
 4. Return error if not found
 
-This pattern enables multi-tenant applications where agents are configured per-user or per-workspace and stored outside the framework's registry.
+Custom resolution can load agent definitions outside the framework registry, including definitions scoped by user or workspace.
 
 ## See Also
 
-- [LLM](framework/llm.md) - Underlying LLM module
-- [Building an LLM Agent](tutorials/llm-agent.md) - Step-by-step tutorial
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [LLM](framework/llm.md) — Underlying model interface
+- [Building an LLM Agent](tutorials/llm-agent.md) — Build an agent step by step
+- [Framework Overview](framework/overview.md) — Install and import framework modules

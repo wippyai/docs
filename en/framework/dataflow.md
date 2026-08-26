@@ -1,11 +1,11 @@
 ---
 title: "Dataflow"
-description: "The wippy/dataflow module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes —…"
+description: "Compose and run DAG workflows with Wippy Dataflow nodes, routing, persistence, signals, templates, and client APIs."
 ---
 
 # Dataflow
 
-The `wippy/dataflow` module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes — functions, agents, cycles, and parallel processors — connected by typed data routes. The orchestrator manages execution, state persistence, and recovery.
+The `wippy/dataflow` module orchestrates directed acyclic graph (DAG) workflows. Functions, agents, cycles, parallel processors, and other nodes exchange data through typed routes, while the orchestrator manages execution, persisted state, and recovery.
 
 ## Setup
 
@@ -35,7 +35,7 @@ The module publishes an `env.variable` entry `userspace.dataflow.env:web_host_or
 
 ## Flow Builder
 
-The flow builder provides a fluent interface for composing workflows. Import it into your entry:
+The flow builder provides a fluent interface for composing workflows. Import it into the entry that defines the flow:
 
 ```yaml
 imports:
@@ -68,7 +68,7 @@ flow.template()
 
 ### Linear Pipeline
 
-Nodes chain automatically when no explicit routing is defined. Output of each node flows to the next:
+Without explicit routes, nodes form a linear chain and each node's output becomes the next node's input:
 
 ```lua
 local result, err = flow.create()
@@ -81,7 +81,7 @@ local result, err = flow.create()
 
 ### Named Routing
 
-Use `:as()` to name nodes and `:to()` to route data between them. Only use `:as()` when the node needs to be referenced:
+Use `:as()` to name a node and `:to()` to route data to another node. A node needs a name when another route references it:
 
 ```lua
 local result, err = flow.create()
@@ -129,7 +129,7 @@ flow.create()
     :run()
 ```
 
-Use `:with_input()` for external data entering the workflow. Use `:with_data()` for config, constants, and reference data shared across multiple nodes. Static data uses reference optimization — the first route creates actual data, subsequent routes create lightweight references.
+Use `:with_input()` for external workflow data and `:with_data()` for configuration, constants, and reference data shared by multiple nodes. Static data uses reference optimization: the first route creates the data, and later routes create references.
 
 ### Conditional Routing
 
@@ -185,11 +185,11 @@ Use `:error_to()` to route node errors to a handler. Errors can be routed as nor
 }):as("consolidator")
 ```
 
-This pattern runs both planners in parallel — if one fails, its error becomes the input for the consolidator, which proceeds with whatever results are available.
+In this graph, both planners can run in parallel. A planner error follows the same route to the consolidator as its successful output.
 
 ## Input Merging
 
-How nodes receive inputs depends on discriminators and whether `args` is configured.
+Input shape depends on route discriminators and whether the node defines `args`.
 
 **Without args — single default input:**
 
@@ -262,7 +262,7 @@ The third parameter to `:to()` is an inline transform expression:
 
 ### Function Node
 
-Executes a registered `function.lua` entry:
+Executes a registered `function.lua` entry.
 
 ```lua
 :func("app:my_function", {
@@ -286,7 +286,7 @@ If the function returns `{ _control = { commands = [...] } }`, the orchestrator 
 
 ### Agent Node
 
-Executes an agent with tool calling and optional structured exit:
+Executes an agent with tool calling and an optional structured exit.
 
 ```lua
 :agent("app:content_writer", {
@@ -346,7 +346,7 @@ Executes an agent with tool calling and optional structured exit:
 
 ### Cycle Node
 
-Iterates a function or template repeatedly with persistent state:
+Repeats a function or template while carrying state between iterations.
 
 ```lua
 :cycle({
@@ -418,7 +418,7 @@ end
 
 ### Parallel Node
 
-Map-reduce pattern over arrays:
+Processes array items through a reusable template.
 
 ```lua
 :parallel({
@@ -479,7 +479,7 @@ Map-reduce pattern over arrays:
 
 ### Signal Node
 
-Pauses execution until an external signal arrives. Use for human approvals, external events, or staged workflows:
+Pauses a node until an external signal arrives. This supports human approvals, external events, and staged workflows:
 
 ```lua
 :signal({
@@ -577,7 +577,7 @@ Collects multiple inputs before proceeding:
 
 ## Templates
 
-Templates define reusable sub-workflows. Use `flow.template()` to create, `:use()` to inline:
+Templates define reusable sub-workflows. Create one with `flow.template()` and inline it with `:use()`:
 
 ```lua
 local preprocessor = flow.template()
@@ -637,7 +637,7 @@ local dataflow_id, err = flow.create()
 
 ## Client API
 
-For programmatic workflow management:
+Use the client API for programmatic workflow management:
 
 ```yaml
 imports:
@@ -691,7 +691,7 @@ Title defaults to "Flow Builder Workflow" if not provided.
 
 ## Validation Rules
 
-The compiler validates workflows at compile time:
+The compiler validates the workflow graph before execution:
 
 - All `:as(name)` names must be unique
 - All `:to()` and `:error_to()` targets must reference existing names (except `@success`, `@fail`)
@@ -734,6 +734,6 @@ Error categories: compilation errors, client errors, workflow creation errors, e
 
 ## See Also
 
-- [Agents](framework/agents.md) - Agent framework used by agent nodes
-- [LLM](framework/llm.md) - LLM module
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Agents](framework/agents.md) — Agent framework used by agent nodes
+- [LLM](framework/llm.md) — Model interface used by agents
+- [Framework Overview](framework/overview.md) — Install and import framework modules

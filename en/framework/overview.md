@@ -1,11 +1,11 @@
 ---
 title: "Framework"
-description: "Wippy provides official framework modules through the hub. These modules are maintained under the wippy organization and can be added to any project."
+description: "Install, declare, and import official Wippy framework modules published through the Hub."
 ---
 
 # Framework
 
-Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
+Official framework modules are published through the Wippy Hub under the `wippy` organization.
 
 ## Adding Framework Modules
 
@@ -73,7 +73,7 @@ The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namesp
 | `wippy/security` | Actor scopes, policy bundles, and security helpers |
 | `wippy/usage` | Token and cost usage accounting for LLM calls |
 
-More modules are available and being published regularly. Search the hub:
+Search the Hub for the current module catalog:
 
 ```bash
 wippy search wippy
@@ -81,6 +81,6 @@ wippy search wippy
 
 ## See Also
 
-- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
-- [Publishing](guides/publishing.md) - Publishing your own modules
-- [CLI Reference](guides/cli.md) - CLI commands
+- [Dependency Management](guides/dependency-management.md) — Lock files and version constraints
+- [Publishing](guides/publishing.md) — Publish a module
+- [CLI Reference](guides/cli.md) — Module-management commands
