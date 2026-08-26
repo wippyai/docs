@@ -46,9 +46,14 @@ local meta = actor:meta()    -- {role="admin", ...}
 
 ```lua
 -- Get current actor from context
+local errors = require("errors")
+
 local actor = security.actor()
 if not actor then
-    return nil, errors.new("UNAUTHORIZED", "No actor in context")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "No actor in context"
+    })
 end
 ```
 
@@ -316,6 +321,8 @@ local policies = scope:policies()
 | `undefined` | No policy matched |
 
 ```lua
+local errors = require("errors")
+
 -- Evaluate directly
 local result = scope:evaluate(actor, "read", "document:123", {
     owner = "user:456",
@@ -323,28 +330,42 @@ local result = scope:evaluate(actor, "read", "document:123", {
 })
 
 if result == "deny" then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Access denied"
+    })
 elseif result == "undefined" then
-    -- No policy matched - depends on strict mode
+    -- No policy matched; treat this as denied unless the caller handles it explicitly.
 end
 ```
 
 ### Quick Permission Check
 
 ```lua
+local errors = require("errors")
+
 -- Check against current context's actor and scope
 local allowed = security.can("read", "document:123", {
     owner = "user:456"
 })
 
 if not allowed then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Access denied"
+    })
 end
 ```
 
 ## Token Stores
 
 Token stores create, validate, and revoke authentication tokens.
+
+The Lua operations are permission-gated. The active scope must allow
+`security.token_store.get` for acquisition and `security.token.create`,
+`security.token.validate`, or `security.token.revoke` for the corresponding
+operation. This applies in the default strict mode as well as in explicitly
+configured security contexts.
 
 ### Configuration
 
@@ -428,10 +449,15 @@ end
 ### Validating Tokens
 
 ```lua
+local errors = require("errors")
+
 -- Validate token
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Invalid token")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Invalid token"
+    })
 end
 
 -- Actor and scope are reconstructed from stored data
@@ -450,7 +476,10 @@ store:close()
 
 ## Context Flow
 
-Security context propagates through function calls but not automatically to spawned processes.
+Actor and scope are inheritable frame context. Function calls and spawned
+processes inherit both unless the caller supplies a replacement context.
+Explicitly changing a spawned process's actor or scope requires the
+`process.security` permission.
 
 ### Setting Context
 
@@ -468,11 +497,9 @@ local result, err = funcs.new()
 
 | Component | Inherits |
 |-----------|----------|
-| Actor | Yes - passes to child calls |
-| Scope | Yes - passes to child calls |
+| Actor | Yes - passes to child calls and spawned processes |
+| Scope | Yes - passes to child calls and spawned processes |
 | Strict mode | No - application-wide |
-
-Functions inherit caller's security context. Spawned processes start fresh.
 
 ## Service-Level Security
 
@@ -498,18 +525,24 @@ Configure a default actor and policies for a service:
 
 ## Strict Mode
 
-Enable strict mode to deny access when the security context is missing:
+Strict mode is enabled by default and denies access when either actor or scope
+is missing. Set it to `false` only when a deployment intentionally needs the
+legacy permissive behavior:
 
 ```yaml
-# wippy.yaml
+# .wippy.yaml
 security:
   strict_mode: true
 ```
 
-| Mode | Missing Context | Behavior |
+| `strict_mode` | Missing Context | Behavior |
 |------|-----------------|----------|
-| Normal | No actor/scope | Allow (permissive) |
-| Strict | No actor/scope | Deny (secure default) |
+| `false` | Actor or scope missing | Allow (permissive) |
+| `true` (default) | Actor or scope missing | Deny |
+
+When both actor and scope are present, policies are always evaluated. An
+`undefined` result is not converted to allow by disabling strict mode;
+`security.can(...)` returns `false` unless evaluation returns `allow`.
 
 ## Authentication Flow
 
@@ -530,14 +563,19 @@ local function protected_handler()
     end
 
     local token = auth:gsub("^Bearer%s+", "")
-    local store, _ = security.token_store("app.auth:tokens")
+    local store, store_err = security.token_store("app.auth:tokens")
+    if store_err then
+        return res:set_status(500):write_json({error = "Token store unavailable"})
+    end
+
     local actor, scope, err = store:validate(token)
+    store:close()
     if err then
         return res:set_status(401):write_json({error = "Invalid token"})
     end
 
-    -- Check permission
-    if not security.can("api.users.read", "users") then
+    -- Evaluate the actor and scope reconstructed from this token.
+    if scope:evaluate(actor, "api.users.read", "users") ~= "allow" then
         return res:set_status(403):write_json({error = "Forbidden"})
     end
 

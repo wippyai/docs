@@ -29,7 +29,7 @@ A terminal host runs exactly one process at a time. The process itself is a regu
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `hide_logs` | bool | false | Suppress log output to event bus |
+| `hide_logs` | bool | false | Stream logs to the event bus while suppressing downstream log propagation |
 
 ## Terminal Context
 

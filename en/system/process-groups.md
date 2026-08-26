@@ -32,10 +32,10 @@ All fields are optional. The table lists their defaults.
 |-------|------|---------|-------------|
 | `protocol_timeout` | duration | 5s | Timeout for inter-node sync/discover operations |
 | `broadcast_timeout` | duration | 5s | Timeout for delivering a broadcast to a single member |
-| `anti_entropy_interval` | duration | 30s | Cadence of the reconcile loop; one peer is synced per tick (0 disables) |
+| `anti_entropy_interval` | duration | 30s | Cadence of the reconcile loop; one peer is synced per tick |
 | `circuit_breaker_failures` | int | 3 | Consecutive send failures to a node before its circuit opens |
 | `circuit_breaker_reset_time` | duration | 10s | Wait before an open circuit moves to half-open for a test send |
-| `max_retries` | int | 3 | Retry attempts for a failed broadcast (0 disables retries) |
+| `max_retries` | int | 3 | Retry attempts for a failed broadcast |
 | `retry_base_delay` | duration | 100ms | Initial backoff delay between retries |
 | `retry_max_delay` | duration | 1s | Maximum backoff delay |
 | `action_queue_size` | int | 256 | Depth at which an "approaching capacity" warning is logged |
