@@ -7,10 +7,10 @@ description: "How Wippy processes execute, communicate, isolate capabilities, an
 
 Wippy executes code in isolated processes: lightweight state machines that communicate through messages rather than shared memory. This actor model gives each process its own state and lifecycle.
 
-This page explains the lifecycle and isolation model. For exact spawn,
-messaging, monitoring, registry, and upgrade APIs, use the
-[Process Management reference](lua/core/process.md); for runtime-managed service
-fields, use [Process Host and Services](system/process-host.md).
+This page explains the lifecycle and isolation model. Use the [Process
+Management reference](lua/core/process.md) for spawn, messaging, monitoring,
+registry, and upgrade APIs. See [Process Host and
+Services](system/process-host.md) for runtime-managed service fields.
 
 ## State Machine Execution
 
@@ -121,7 +121,7 @@ process.upgrade("app.workers:v2", current_state)
 
 The first argument is the new registry entry (or nil to reload the current definition). Additional arguments pass to the new version, letting you carry state across the upgrade. The process resumes execution with the new code immediately.
 
-This mechanism supports hot code reload during development and process upgrades in production. The runtime caches compiled prototypes to avoid repeated compilation. If an upgrade fails, the process crashes and normal supervision behavior applies; a monitoring parent can restart it or escalate the failure.
+The runtime caches compiled prototypes to avoid repeated compilation. If an upgrade fails, the process crashes and normal supervision behavior applies; a monitoring parent can restart it or escalate the failure.
 
 ## Scheduling
 

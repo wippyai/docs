@@ -178,7 +178,7 @@ Use `registry.entry` kind for application-level configuration:
 | `http.endpoint` | HTTP handler |
 | `process.host` | Process supervisor |
 
-See [Entry Kinds Guide](guides/entry-kinds.md) for complete reference.
+See the [Entry Kinds Guide](guides/entry-kinds.md) for the entry-kind reference.
 
 ## Configuration Files
 
@@ -200,7 +200,7 @@ supervisor:
     worker_count: 16
 ```
 
-See [Configuration Guide](guides/configuration.md) for all options.
+See the [Configuration Guide](guides/configuration.md) for runtime configuration fields.
 
 ### wippy.lock
 

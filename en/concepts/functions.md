@@ -25,7 +25,7 @@ local ch = future:response()
 local result, ok = ch:receive()
 ```
 
-See the [funcs module](lua/core/funcs.md) for the complete API.
+See the [funcs module](lua/core/funcs.md) for function invocation and executor options.
 
 ## Context Propagation
 
@@ -96,7 +96,7 @@ pool:
 ```
 
 <tip>
-If you don't specify a pool type, the runtime selects one based on your configuration. Set `workers` for static, `max_size` for lazy, or explicitly set `type` for full control.
+If you don't specify a pool type, the runtime selects one based on your configuration. Set `workers` for a static pool, `max_size` for a lazy pool, or set `type` to select the pool explicitly.
 </tip>
 
 ## Interceptors

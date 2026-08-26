@@ -358,7 +358,7 @@ Each entry declares which modules it can `require()`. Modules not listed are una
 modules: [sql, json, http, time, funcs, store]
 ```
 
-This is also how workflow determinism works — workflow entries only receive deterministic modules. The runtime intercepts `time.now()`, `uuid.v4()`, and other non-deterministic calls at the module level, recording results for replay.
+Workflow entries receive only deterministic modules. The runtime intercepts `time.now()`, `uuid.v4()`, and other non-deterministic calls at the module level, recording results for replay.
 
 ## Framework Modules
 
@@ -379,7 +379,7 @@ Framework capabilities are distributed as dependencies:
 - Functions return `result, error` — always check the error
 - Processes communicate via message passing, never shared state
 - Use `channel.select` to multiplex multiple event sources
-- Supervision trees handle failures — design for "let it crash"
+- Let supervision trees handle process failures instead of adding local recovery around every operation
 - Context (trace IDs, user info, security) propagates automatically through function calls
 - Workflows must not use non-deterministic operations directly — the runtime handles this for `funcs.call`, `time.sleep`, `uuid.v4`, `time.now`
 

@@ -90,7 +90,7 @@ else
 end
 ```
 
-## When to Use What
+## Choosing a Compute Model
 
 | Use Case | Choose |
 |----------|--------|

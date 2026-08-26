@@ -7,8 +7,6 @@ description: Learn how Wippy uses actors, a central registry, and durable workfl
 
 Wippy is an open-source actor-model runtime for applications whose behavior changes while they run. It is designed for automation systems, AI agents, plugin architectures, and other applications that need to evolve without rebuilding or redeploying the runtime.
 
-For a full product overview including what Wippy replaces, what it is not, and who builds it, see the [About page](https://wippy.ai/about).
-
 The foundation is the actor model. Code runs in isolated processes that communicate through messages, with each process managing its own state. Supervision trees can restart processes after failures.
 
 ```lua

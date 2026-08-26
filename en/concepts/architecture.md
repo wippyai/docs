@@ -9,7 +9,7 @@ A Wippy application is a **graph of registry entries** represented by source fil
 
 This page explains one way to organize that graph. For file format, naming, and `_index.yaml` placement, see [YAML & Project Structure](start/structure.md). For entry definitions, see the [Entry Kinds Guide](guides/entry-kinds.md).
 
-## The unit is a slice
+## Feature Slices
 
 A useful default is to organize by **feature** rather than file type. A slice owns one capability end to end—its database access, long-running processes, HTTP surface, and shared vocabulary—and lives under one namespace prefix:
 
@@ -47,7 +47,7 @@ Namespace boundaries provide the seams used for dependency injection and boot-or
 
 A small slice can use one `_index.yaml` for its libraries and endpoint. The important property is the **import direction**, not the number of folders.
 
-## The shared vocabulary
+## Shared Vocabulary
 
 Three files commonly appear at the root of a slice. They contain definitions shared by the slice's layers:
 
@@ -61,7 +61,7 @@ Three files commonly appear at the root of a slice. They contain definitions sha
 
 Keep this vocabulary **slice-private**. Place constants and types shared across slices in a common parent namespace and import them rather than copying them.
 
-## Capabilities sort by layer
+## Capabilities by Layer
 
 Each entry declares the host capabilities it needs in `modules:`. A layered slice can assign them by responsibility:
 
@@ -72,7 +72,7 @@ Each entry declares the host capabilities it needs in `modules:`. A layered slic
 
 This limits each capability to a known layer. To review code that can write to the database, for example, inspect `persist/` and its declared modules.
 
-## Applications and components
+## Applications and Components
 
 The same shape can support a single application or a published library; the difference is **who supplies its dependencies**.
 
@@ -80,10 +80,10 @@ An **application** is the top-level, deployable graph. It owns the concrete infr
 
 A **component** is a publishable module mounted into a host. Because it does not know the host's database or router IDs, it declares an interface of `ns.requirement` entries that the host supplies. Internally, a component can use the same layers, vocabulary, and import direction as an application slice.
 
-This is a spectrum, not two categories:
+These are two points on a spectrum:
 
-- **Single app, internal slices** — slices live under `src/app/`, share the app's infrastructure directly by referencing `app:db`, `app:processes`. No requirement interface needed; nothing external mounts them. (This is how a focused service is built.)
-- **Multi-component composition** — each component is its own publishable module with an `ns.definition` and an `ns.requirement` interface, composed by a host through `ns.dependency`. The host fills each requirement (database, process host, router) once. (This is how a platform of reusable parts is built.)
+- **Single app, internal slices** — slices live under `src/app/`, share the app's infrastructure directly by referencing `app:db`, `app:processes`. No requirement interface is needed because nothing external mounts them.
+- **Multi-component composition** — each component is its own publishable module with an `ns.definition` and an `ns.requirement` interface, composed by a host through `ns.dependency`. The host fills each requirement (database, process host, router) once.
 
 Choose based on whether the slice will be **consumed by a host you do not control**. Reusable components need a requirement interface; internal slices can reference application infrastructure directly. The packaging changes with reuse, while the internal layering can remain the same.
 
@@ -100,8 +100,6 @@ This structure supports composition, capability review, and boot-order analysis:
 **Capabilities scoped by layer have a clear boundary.** Host capabilities are granted per entry. When persistence entries alone declare `sql`, the code that can reach the database is easier to identify and audit.
 
 **The layering supports different test scopes.** Vocabulary can be tested without infrastructure. Persistence tests can use a database without starting workers. A whole-module **mount test** then checks the integration seams: every supervised service points to a process, every spawned ID resolves, and every requirement is filled.
-
-This layout aligns requirement injection, capability scoping, and acyclic boot resolution. It provides a practical structure for applications that must remain understandable as their registry graph grows.
 
 ## See Also
 
