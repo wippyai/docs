@@ -15,18 +15,18 @@ entry. They differ in how they are rendered and where they are used.
 
 | | Micro Frontend App (`view.page`) | Web component (`view.component`) |
 |---|---|---|
-| **Rendered as** | Full iframe, isolated browsing context | Custom element in Shadow DOM, inside a page |
+| **Rendered as** | Page surface: srcdoc iframe or Web Fragment | Custom element in Shadow DOM, inside a page |
 | **Has its own URL / nav entry** | Yes — claims a backend `mountRoute` | No — embedded inside another page or chat artifact |
 | **Internal routing** | Yes — `vue-router` with memory history | No — single component, no router |
-| **Controls the viewport** | Yes | No — sized by the surrounding layout |
+| **Controls its allocated surface** | Yes — the surface may be one panel, not the browser viewport | No — sized by the surrounding layout |
 | **Reusable across pages** | No — one URL, one place | Yes — any page can embed the tag |
 | **Receives typed props** | No — reads `AppConfig` | Yes — schema-declared HTML attributes |
 | **Emits typed events** | No — communicates via proxy API | Yes — schema-declared `CustomEvent`s |
-| **CSS isolation** | iframe boundary | Shadow DOM (full encapsulation) |
+| **CSS isolation** | Engine-dependent: iframe boundary; a Web Fragment shares the host document | Shadow DOM selector boundary |
 
 **Quick rule:** use a micro frontend app when it needs `vue-router`, a
-dedicated URL, or ownership of the full viewport. Use a web component when it
-must be embeddable, reusable, and self-contained.
+dedicated URL, or ownership of a routed page surface. Use a web component when
+it must be embeddable, reusable, and self-contained.
 
 ## What to read next
 

@@ -13,14 +13,20 @@ description: "How Wippy frontend source becomes a routed page or web component a
 | Artifact location | Deployment build target | The build command receives `--outDir`; Vite does not hardcode it. |
 | Registry entry | Backend module | `view.page` or `view.component` points at the emitted entry. |
 | Served URL | Filesystem and HTTP registry entries | A direct asset request returns the built JavaScript or HTML. |
-| Runtime container | Web Host | A page uses `about:srcdoc`; a component uses a custom element, normally with shadow DOM. |
+| Runtime container | Web Host | A page uses the configured page engine: a legacy `about:srcdoc` iframe or a Web Fragment. A component uses a custom element, normally with shadow DOM. |
 | Context | AppConfig and Wippy packages | Routing, API access, and theme data arrive through supported packages. |
 
 The presence of source, a successful build, or a valid registry entry does not prove the next stage. Verify each boundary.
 
 ## Pages
 
-A `view.page` runs in an `about:srcdoc` iframe. The iframe URL is not the host route. Do not inspect `window.location`, `window.parent.location`, or query parameters to discover host state. Use AppConfig and `@wippy-fe/router`; the package handles Wippy route integration.
+A `view.page` runs through one of two engines: a legacy `about:srcdoc` iframe or
+a Web Fragment. The global `hostConfig.renderEngine` setting selects the
+baseline; a page's `wippy.renderEngine` can follow it, opt out to `iframe`, or
+request `fragment` when the deployment supports it. Application code stays
+engine-agnostic. In neither engine is browser location the supported child-route
+contract. Use AppConfig and `@wippy-fe/router`; the package handles Wippy route
+integration.
 
 The `iframe` CSS injection currently provides default themed scrollbar styling. Its name is historical and broader than its present purpose. Keep it enabled for scrollbar consistency; do not describe it as a layout reset.
 
@@ -43,9 +49,9 @@ fixtures, and browser tests switch mode with
 `host.setThemeMode('auto' | 'light' | 'dark')` from `@wippy-fe/proxy`, then wait
 for `@theme` and verify `host.getThemeMode()`. AppConfig carries the change
 through the host-to-child transport. The host updates its document,
-re-broadcasts AppConfig to live `about:srcdoc` iframes, and mirrors the mode into
-web-component roots. Never force `w-theme-dark` or `w-theme-light` classes
-directly.
+re-broadcasts AppConfig to live iframe and Web Fragment page realms, and mirrors
+the mode into web-component roots.
+Never force `w-theme-dark` or `w-theme-light` classes directly.
 
 PrimeVue overlays may be teleported. Verify the actual overlay root in the top document, iframe documents, and recursively discovered shadow roots. Do not assume generic PrimeVue placement.
 

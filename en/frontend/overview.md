@@ -9,7 +9,7 @@ Wippy frontend modules are portable by default. A module must continue to work w
 
 ## Choose the correct path
 
-1. Use a `view.page` for an application rendered in an `about:srcdoc` iframe.
+1. Use a `view.page` for an application rendered by the configured page engine: a legacy `about:srcdoc` iframe or a Web Fragment.
 2. Use a `view.component` for a custom element rendered in the host document, normally with a shadow root.
 3. If the UI renders a button, input, form field, menu, overlay, or another PrimeVue-like control, use PrimeVue unless it cannot provide the required semantics and affordance.
 4. A content-only component, such as a Chart.js visualization with no controls, may omit PrimeVue and Tailwind.
@@ -26,7 +26,7 @@ module source
   -> registry owner
   -> served URL
   -> Web Host
-  -> page srcdoc iframe or component shadow root
+  -> page surface (srcdoc iframe or Web Fragment) or component shadow root
   -> AppConfig / router / theme delivery
 ```
 

@@ -47,6 +47,10 @@ Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. U
 | Web Host `1.0.50`, Wippy FE `0.0.50` | Typed compat intents, `@HOST/compat-coordinator`, browser URL and Back/Forward synchronization, built-in panel tabs, anchored floating panels, and `useSwapBuffer()`. |
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Reactive and race-safe `<wippy-chat>` session/token control, opt-in themed splitter handles, split-axis-only size constraints, drawer geometry/stacking fixes, and the packaged proxy source map. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Typed retained-WC visibility and `useHostVisibilityRefresh()`, immediate page readiness instead of waiting for the 14-second fallback, stale renderer-key rejection, in-place component prop updates, and the isolated splitter layer with `--wippy-layout-splitter-z-index`. |
+| Web Host `1.0.53`, Wippy FE `0.0.53` | Configured theme tokens propagate correctly when light or dark mode is forced. |
+| Web Host `1.0.54`, Wippy FE `0.0.54` | Surface portability contract v1 for iframe and Web Fragment pages, including managed-layout registration and reactive sizing changes. |
+| Web Host `1.0.55`, Wippy FE `0.0.55` | Managed artifact and standalone chat contracts, cold deep-link preservation, stable managed artifact rendering, and themed splitter handles. |
+| Web Host `1.0.56`, Wippy FE `0.0.56` | Managed artifact/modal rendering fixes, published artifact-open reasons, and chat selector and slot-lifecycle fixes. |
 
 The 14-second page reveal is a Web Host `1.0.52` fallback, not a 1.0.51
 feature or an application loading delay.
@@ -70,7 +74,10 @@ The latter runs after mount and then only on exact `false -> true`. Do not use
 the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
 message channel.
 
-Pin to an exact CDN tag — at least `https://web-host.wippy.ai/webcomponents-1.0.52` — until the Draft 1 label is removed.
+Pin to an exact CDN tag until the Draft 1 label is removed. This reference is
+validated against `https://web-host.wippy.ai/webcomponents-1.0.56` and the
+matching `@wippy-fe/*` `0.0.56` family. Retained direct-web-component visibility
+still requires at least 1.0.52/0.0.52.
 
 ## Enabling Managed Layout
 
@@ -116,12 +123,12 @@ Each entry in `panels`, `floating`, `modals`, and `coordinators` is a tagged uni
 
 | Kind | Description | Required fields |
 |------|-------------|-----------------|
-| `page` | A Wippy page module mounted in a srcdoc iframe | `id` (page registry id) |
-| `artifact` | A Wippy artifact mounted in a srcdoc iframe | `id` (artifact UUID) |
+| `page` | A Wippy page module mounted through its selected iframe or Web Fragment engine | `id` (page registry id) |
+| `artifact` | A Wippy artifact rendered through the host artifact/page resolver | `id` (artifact UUID) |
 | `component` | A web component mounted directly in host DOM | `tagName` |
 | `builtin` | A framework-owned host component (see below) | `id` |
 
-Exactly one panel in the layout tree must carry `main: true`. Browser URL ownership still requires route synchronization through `@HOST/compat-coordinator` or equivalent consumer coordination. All other panels route independently inside their iframes.
+Exactly one panel in the layout tree must carry `main: true`. Browser URL ownership still requires route synchronization through `@HOST/compat-coordinator` or equivalent consumer coordination. All other page panels route independently inside their selected page realms.
 
 ### Built-in Panel IDs
 
@@ -387,7 +394,7 @@ from its sibling; after handling the error, call `clearError(index)` to retry.
 ### Web Host page readiness
 
 Web Host uses the same keyed readiness discipline for managed page surfaces,
-with a 14-second final reveal ceiling. Iframe and direct Web Component renderers
+with a 14-second final reveal ceiling. Page and direct Web Component renderers
 emit `load` / `error` through Vue event listeners and include the immutable
 content key owned by that renderer. Painted content is therefore revealed
 immediately; the ceiling is only a fallback for content that never reports.
@@ -501,7 +508,7 @@ As of Draft 1, the following are not yet implemented:
 
 - **`addPanel` / `setLayout` over the proxy** — not shipped. These exist only on the internal `@wippy-fe/layout` `LayoutManager` and are not exposed across the iframe proxy boundary. (`openModal`, `closeModal`, and `movePanel` are shipped — see the Layout API Reference.)
 - **Panel drag-to-rearrange UI** — the data model and `movePanel()` API work; user-facing drag is not yet implemented.
-- **Tab primitive** — not yet implemented.
+- **Tabbed-container primitive** — not yet implemented. The shipped `@HOST/panel-tab` is an edge control for revealing a collapsed panel, not a general tabbed layout container.
 - **Grid-tile container** — not yet implemented.
 - **Runtime mutation persistence** — mutations are not persisted across reloads. Persist manually if needed:
   ```typescript

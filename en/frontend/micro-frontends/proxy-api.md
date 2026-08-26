@@ -7,7 +7,7 @@ description: "Reference for the configuration, host controls, API access, events
 
 Child apps and web components communicate with the Wippy host through the proxy runtime (`proxy.js`). Application code uses named getters from **`@wippy-fe/proxy`**, its thin synchronous facade. The same imports work for both surfaces:
 
-- **Micro Frontend Apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`.
+- **Micro Frontend Apps (`view.page`)** run through the selected srcdoc iframe or Web Fragment adapter, which provides the same proxy contract.
 - **Web components (`view.component`)** run as ESM modules in the host page; the host provides `@wippy-fe/proxy` through the import map.
 
 For how the runtime is loaded into each context, see [Proxy & Isolation](../web-host/proxy-isolation.md).
@@ -179,10 +179,10 @@ await setThemeMode('dark')
 
 The accepted modes are `auto`, `light`, and `dark`. `auto` follows the
 operating-system preference. A change is applied to the host, written back to
-AppConfig, broadcast to live page iframes and web components, and forwarded
-through nested Wippy containers. Subscribe to `@theme` when code needs to wait
-for the applied child state. Release the subscription during component
-unmount.
+AppConfig, broadcast to live iframe and Web Fragment page realms and direct web
+components, and forwarded through nested Wippy containers. Subscribe to
+`@theme` when code needs to wait for the applied child state. Release the
+subscription during component unmount.
 
 The host does not own persistence. The embedding facade listens for the host
 theme-change event and persists the user choice as described in
@@ -254,7 +254,13 @@ host.navigate('/chat/session-uuid')
 host.navigate('/keeper')
 ```
 
-> **Managed-layout caveat.** `startChat`, `openSession`, `openArtifact`, and `navigate` target the standard compat shell (the chat view, right panel, and root route). In `fe_mode = managed` they still dispatch but have no built-in rendering surface — render chat, artifacts, and sub-routes through declared panels instead. See [Multi-Panel Layout § What works in which mode](../web-host/multi-panel-layout.md#what-works-in-which-mode).
+> **Managed-layout caveat.** `startChat`, `openSession`, `openArtifact`, and
+> `navigate` act directly on the standard compat shell. In `fe_mode = managed`
+> they publish typed `@HOST/intent` messages. Declare the shipped
+> `@HOST/compat-coordinator`, or an equivalent coordinator, to map those intents
+> to declared chat, artifact, modal, and main-route panels. Managed mode has no
+> implicit compat chrome; without a coordinator the intents are published but
+> nothing renders them. See [Multi-Panel Layout § What works in which mode](../web-host/multi-panel-layout.md#what-works-in-which-mode).
 
 ---
 
@@ -804,9 +810,9 @@ Subscribing to the same topic multiple times from the same frame is safe. The pr
 
 ## State
 
-### `state` — cross-iframe key-value persistence
+### `state` — host-mediated key-value persistence
 
-`state` provides host-mediated storage that survives iframe destruction. State is scoped per page or artifact UUID; each app gets an isolated namespace.
+`state` provides host-mediated storage that survives page-realm destruction. State is scoped per page or artifact UUID; each app gets an isolated namespace.
 
 All methods accept an optional `{ scope?: string }` option to override the default scope. Use `scope` when multiple instances of the same component need separate state buckets.
 
@@ -950,7 +956,7 @@ ws.sendCommand('session-uuid', { command: 'agent', name: 'my-agent' })
 
 ### `logger`
 
-Structured logging that traverses iframe boundaries. Logs flow child → host → parent website where transports (Sentry, Graylog, console) process them. Each child's context (`resourceId`, `resourceType`, nesting depth) is automatically attached to every log entry.
+Structured logging that traverses child-to-host boundaries. Logs flow child → host → parent website where transports (Sentry, Graylog, console) process them. Each child's context (`resourceId`, `resourceType`, nesting depth) is automatically attached to every log entry.
 
 Use `logger` instead of `console.log/error` for anything you want to appear in production monitoring.
 
@@ -1144,7 +1150,7 @@ If a `warnHandler` was already installed, it is preserved as `previous` and call
 
 ### `createAppRouter(routes, options?)` from `@wippy-fe/router`
 
-Memory-router factory for srcdoc subapps. It provides memory history, `afterEach` route synchronization with the host, and an `@history` subscription:
+Memory-router factory for `view.page` applications in either render engine. It provides memory history, `afterEach` route synchronization with the host, and an `@history` subscription:
 
 ```typescript
 import { createAppRouter } from '@wippy-fe/router'

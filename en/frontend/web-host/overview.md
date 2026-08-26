@@ -27,14 +27,21 @@ URLs or tokens. The same CDN bundle can therefore serve different deployments.
 For manual, facade-less embeddings, the host can run inside an iframe through
 the `iframe.html` entry described below.
 
-**Layer 3 — Child micro-frontends.** The Web Host in turn embeds user-defined views as either nested iframes (`view.page` modules) or web components (`view.component` modules). Each child runs in isolation. The Web Host injects a proxy script that gives children access to the Wippy API, authentication context, theme CSS, and communication channels — all without the child needing to know where it is deployed.
+**Layer 3 — Child micro-frontends.** The Web Host renders `view.page` modules
+through the configured page engine: a legacy srcdoc iframe or a Web Fragment.
+It mounts `view.component` modules as custom elements. The iframe engine provides
+a separate browsing context. A Web Fragment uses a reframed realm reflected
+into the host document and is not an isolation boundary; a component's shadow
+root isolates selectors, not authority. Each surface receives the appropriate
+proxy adapter for Wippy API access, authentication context, theme delivery, and
+communication without needing deployment-specific URLs.
 
 ```
 Page (wippy/facade HTML — loads module.js / managed-layout.js)
   └─ Web Host (takes over the page + browser history)
        ├─ Chat UI, navigation, sidebar
        └─ Child micro-frontends
-            ├─ view.page  → srcdoc iframe + proxy.js
+            ├─ view.page → srcdoc iframe or Web Fragment + proxy adapter
             └─ view.component → custom element + @wippy-fe/proxy ESM
 ```
 
