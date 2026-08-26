@@ -39,6 +39,7 @@ Do not infer one stage from another. Before debugging a missing asset, identify 
 - [Theme Authoring](./micro-frontends/theming.md): what belongs in facade `custom_css`, PrimeVue theme CSS, or a module.
 - [Tailwind Contract](./micro-frontends/tailwind-contract.md): runtime-backed utilities versus compiled constants.
 - [Token Catalogue](./micro-frontends/token-catalogue.md): generated token reference and provenance.
+- [The Design Layer](./design-layer.md): where something belongs when several of your own modules need it and the theme has no component for it.
 - [Page Recipe](./micro-frontends/micro-frontend-app.md) and [Web Component Recipe](./micro-frontends/web-component.md).
 - [Build and Dependency Contract](./micro-frontends/build-system.md).
 - [Configuration and Casing](./micro-frontends/configuration-casing.md).

@@ -95,11 +95,20 @@ Some ideas recur across a known set of modules and have no component in the
 theme: a content card, a surface header row, what a surface shows when it has
 nothing, the sizes a tag comes in. Real, shared, and homeless.
 
-They ship as a **published package**, materialized into each consumer. It must
-be a package rather than a path alias, because consumers live in different
-repositories — the falsifiable test for this layer is that a module in a
-*different repo*, with no path access to the producer, consumes the vocabulary
-and builds.
+They ship as a **published package**, materialized into each consumer at build
+time. It must be a package rather than a path alias, because consumers live in
+different repositories — the falsifiable test for this layer is that a module
+in a *different repo*, with no path access to the producer, consumes the
+vocabulary and builds.
+
+> **Documentation gap.** The producing module declares the package as an
+> artifact and each consumer materializes it during its build. That mechanism —
+> the artifact declaration, `wippy artifacts materialize`, and how a consumer
+> wires the materialized path into its package resolution — is not documented
+> yet. [Dependency Management](../guides/dependency-management.md) covers module
+> dependencies and `workspace.replacements`, but not artifact materialization.
+> Until that page exists, treat the distribution step as the one part of this
+> layer you cannot follow from the docs alone.
 
 ### The module
 
