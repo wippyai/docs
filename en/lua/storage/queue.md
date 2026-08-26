@@ -1,6 +1,6 @@
 ---
 title: "Message Queue"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Publish messages and process deliveries from configured queues."
 ---
 
 # Message Queue
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Publish and consume messages from distributed queues. Supports multiple backends including RabbitMQ and other AMQP-compatible brokers.
+The `queue` module publishes messages and processes deliveries from configured distributed queues, including RabbitMQ and other AMQP-compatible brokers.
 
 For queue configuration, see [Queue](system/queue.md).
 
@@ -21,7 +21,7 @@ local queue = require("queue")
 
 ## Publishing Messages
 
-Send messages to a queue by ID:
+Publish a message to a queue by ID:
 
 ```lua
 local ok, err = queue.publish("app:tasks", {
@@ -44,7 +44,7 @@ end
 
 ### Message Headers
 
-Headers enable routing, priority, and tracing:
+Headers carry routing, priority, and tracing metadata:
 
 ```lua
 queue.publish("app:notifications", {
@@ -58,7 +58,7 @@ queue.publish("app:notifications", {
 
 ## Accessing Delivery Context
 
-Within a queue consumer, access the current message:
+Access the current delivery from within a queue consumer:
 
 ```lua
 local msg, err = queue.message()
@@ -73,7 +73,7 @@ local all_headers = msg:headers()
 
 **Returns:** `Message, error`
 
-Only available when processing queue messages in consumer context.
+This function is available only while a queue consumer is processing a message.
 
 ## Message Methods
 
@@ -98,7 +98,7 @@ local stats, err = queue.info("app:tasks")
 
 ## Consumer Pattern
 
-A `queue.consumer` entry binds a queue to a handler function (referenced by `func`). The handler receives the message payload directly:
+A `queue.consumer` entry binds a queue to the handler referenced by `func`. The handler receives the message payload directly:
 
 ```yaml
 entries:
@@ -127,14 +127,14 @@ end
 
 ## Permissions
 
-Queue operations are subject to security policy evaluation.
+Security policy evaluation applies to queue operations.
 
 | Action | Resource | Description |
 |--------|----------|-------------|
 | `queue.publish` | - | General permission to publish messages |
 | `queue.publish.queue` | Queue ID | Publish to specific queue |
 
-Both permissions are checked: first the general permission, then the queue-specific one.
+The runtime checks the general permission first and the queue-specific permission second.
 
 ## Errors
 

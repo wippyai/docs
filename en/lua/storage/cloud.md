@@ -1,6 +1,6 @@
 ---
 title: "Cloud Storage"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "Upload, download, list, and manage objects in S3-compatible storage."
 ---
 
 # Cloud Storage
@@ -10,7 +10,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-Access S3-compatible object storage. Upload, download, list, and manage files with presigned URL support.
+The `cloudstorage` module uploads, downloads, lists, and manages objects in S3-compatible storage. It also creates presigned URLs for direct access.
 
 For storage configuration, see [Cloud Storage](system/cloudstorage.md).
 
@@ -22,7 +22,7 @@ local cloudstorage = require("cloudstorage")
 
 ## Acquiring Storage
 
-Get a cloud storage resource by registry ID:
+Acquire a cloud storage resource by registry ID:
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -42,7 +42,7 @@ storage:release()
 
 ## Uploading Objects
 
-Upload content from string or file:
+Upload content from a string or file:
 
 ```lua
 local storage = cloudstorage.get("app.infra:files")
@@ -251,7 +251,7 @@ storage:release()
 
 ## Download URLs
 
-Create a temporary URL that allows downloading an object without credentials. Useful for sharing files with external users or serving content through your application.
+Create a temporary URL that permits downloading an object without storage credentials. A client can use the URL until it expires.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -282,7 +282,7 @@ return {download_url = url}
 
 ## Upload URLs
 
-Create a temporary URL that allows uploading an object without credentials. Enables clients to upload files directly to storage without proxying through your server.
+Create a temporary URL that permits uploading an object without storage credentials. A client can upload directly to storage until the URL expires.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -330,7 +330,7 @@ return {upload_url = url}
 
 ## Permissions
 
-Cloud storage operations are subject to security policy evaluation.
+Security policy evaluation applies to cloud storage operations.
 
 | Action | Resource | Description |
 |--------|----------|-------------|

@@ -1,6 +1,6 @@
 ---
 title: "Key-Value Store"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Store and retrieve values with optional expiration and conditional writes."
 ---
 
 # Key-Value Store
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Fast key-value storage with TTL support. Ideal for caching, sessions, and temporary state.
+The `store` module provides key-value storage with optional TTLs. It can hold cached data, sessions, and other temporary state.
 
 For store configuration, see [Store](system/store.md).
 
@@ -21,7 +21,7 @@ local store = require("store")
 
 ## Acquiring a Store
 
-Get a store resource by registry ID:
+Acquire a store resource by registry ID:
 
 ```lua
 local cache, err = store.get("app:cache")
@@ -43,7 +43,7 @@ cache:release()
 
 ## Storing Values
 
-Store a value with optional TTL:
+Store a value with an optional TTL:
 
 ```lua
 local cache = store.get("app:cache")
@@ -65,7 +65,7 @@ cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 
 ## Retrieving Values
 
-Get a value by key:
+Retrieve a value by key:
 
 ```lua
 local user = cache:get("user:123")
@@ -80,11 +80,11 @@ end
 
 **Returns:** `any, error`
 
-Returns `nil` and an `errors.NOT_FOUND` error if the key doesn't exist or has expired.
+The method returns `nil` and an `errors.NOT_FOUND` error when the key does not exist or has expired.
 
 ## Checking Existence
 
-Check if a key exists without retrieving:
+Check whether a key exists without retrieving its value:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
@@ -112,7 +112,7 @@ cache:delete("session:" .. session_id)
 
 **Returns:** `boolean, error`
 
-Returns `true` if deleted, `false` if key didn't exist.
+The method returns `true` when it deletes the key and `false` when the key does not exist.
 
 ## Reading Entry Metadata
 
@@ -133,7 +133,7 @@ end
 
 ## Listing Keys
 
-List entries in deterministic key order, with paging:
+List entries in deterministic key order with pagination:
 
 ```lua
 local page, err = cache:list({ prefix = "session:", limit = 100 })
@@ -230,7 +230,7 @@ end
 
 ## Permissions
 
-Store operations are subject to security policy evaluation.
+Security policy evaluation applies to store operations.
 
 | Action | Resource | Attributes | Description |
 |--------|----------|------------|-------------|

@@ -1,6 +1,6 @@
 ---
 title: "CDC"
-description: "<secondary-label ref='storage'/ <secondary-label ref='stream'/ <secondary-label ref='nondeterministic'/"
+description: "Subscribe to PostgreSQL change data capture streams and receive row-level events."
 ---
 
 # CDC
@@ -8,7 +8,7 @@ description: "<secondary-label ref='storage'/ <secondary-label ref='stream'/ <se
 <secondary-label ref="stream"/>
 <secondary-label ref="nondeterministic"/>
 
-Subscribe to Postgres Change Data Capture streams from [`db.cdc.postgres`](system/cdc.md) sources. List configured sources, open a stream, and receive row-level change events over a channel.
+The `cdc` module subscribes to PostgreSQL change data capture streams from [`db.cdc.postgres`](system/cdc.md) sources. It lists configured sources, opens streams, and delivers row-level change events through channels.
 
 ## Loading
 
@@ -16,9 +16,9 @@ Subscribe to Postgres Change Data Capture streams from [`db.cdc.postgres`](syste
 local cdc = require("cdc")
 ```
 
-## list_sources
+## `list_sources`
 
-List all configured CDC sources:
+List the configured CDC sources:
 
 ```lua
 local sources, err = cdc.list_sources()
@@ -31,9 +31,9 @@ Each source is a table: `name`, `slot`, `publication`, `tables`, `streaming`, `f
 
 **Returns:** `table, error`
 
-## source
+## `source`
 
-Get a single source by name (its entry ID):
+Retrieve one source by name (its entry ID):
 
 ```lua
 local info, err = cdc.source("app:pg_cdc")
@@ -44,9 +44,9 @@ end
 
 **Returns:** `table, error` (source info, or `nil` if not found)
 
-## stream
+## `stream`
 
-Open a change stream on a source. Returns a `cdc.Stream` whose channel delivers change events:
+Open a change stream on a source. The returned `cdc.Stream` exposes a channel that delivers change events:
 
 ```lua
 local stream, err = cdc.stream("app:pg_cdc", {
@@ -67,9 +67,9 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 ## Stream Methods
 
-### channel
+### `channel`
 
-Return the channel that receives change events. The first call subscribes to the source (yields); subsequent calls return the same channel. `:receive()` blocks until the next change arrives, or returns `nil` when the stream ends:
+Return the channel that receives change events. The first call subscribes to the source and yields; subsequent calls return the same channel. `:receive()` blocks until the next change arrives or returns `nil` when the stream ends:
 
 ```lua
 local stream = cdc.stream("app:pg_cdc")
@@ -91,9 +91,9 @@ end
 
 `receive` is an alias for `channel`.
 
-### close
+### `close`
 
-Stop the subscription and release the stream. Idempotent; also auto-closed at task scope. `release` is an alias for `close`.
+Stop the subscription and release the stream. The method is idempotent, and the runtime also closes the stream at the end of the task scope. `release` is an alias for `close`.
 
 ```lua
 stream:close()

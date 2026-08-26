@@ -1,6 +1,6 @@
 ---
 title: "Filesystem"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Read, write, and manage files in a configured filesystem volume."
 ---
 
 # Filesystem
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Read, write, and manage files within sandboxed filesystem volumes.
+The `fs` module reads, writes, and manages files within configured filesystem volumes.
 
 For filesystem configuration, see [Filesystem](system/filesystem.md).
 
@@ -21,7 +21,7 @@ local fs = require("fs")
 
 ## Acquiring a Volume
 
-Get a filesystem volume by registry ID:
+Acquire a filesystem volume by registry ID:
 
 ```lua
 local vol, err = fs.get("app:storage")
@@ -39,12 +39,12 @@ local content = vol:readfile("/config.json")
 **Returns:** `FS, error`
 
 <note>
-Volumes don't require explicit release. They're managed at the system level and become unavailable if the filesystem is detached from the registry.
+Volumes do not require explicit release. The system manages them, and a volume becomes unavailable when its filesystem is detached from the registry.
 </note>
 
 ## Reading Files
 
-Read entire file contents:
+Read an entire file:
 
 ```lua
 local vol = fs.get("app:config")
@@ -57,7 +57,7 @@ end
 local config = json.decode(data)
 ```
 
-For large files, use streaming with `open()`:
+Use `open()` to stream a large file:
 
 ```lua
 local file = vol:open("/data/large.csv", "r")
@@ -94,7 +94,7 @@ local ok, err = vol:writefile("/lock.pid", tostring(pid), "wx")
 | `"a"` | Append |
 | `"wx"` | Exclusive write (fails if file exists) |
 
-For streaming writes:
+Use a file handle for streaming writes:
 
 ```lua
 local file = vol:open("/output/report.txt", "w")
@@ -159,11 +159,11 @@ When using `vol:open()` for streaming:
 | `close()` | Release file handle |
 | `scanner(split?)` | Create line/word scanner |
 
-Always call `close()` when done with a file handle.
+Call `close()` after finishing with a file handle.
 
 ## Scanner
 
-For line-by-line processing:
+Use a scanner for line-by-line processing:
 
 ```lua
 local file = vol:open("/data/users.csv", "r")
@@ -210,7 +210,7 @@ fs.seek.END       -- from end
 
 ## Permissions
 
-Filesystem access is subject to security policy evaluation.
+Security policy evaluation applies when a volume is acquired.
 
 | Action | Resource | Description |
 |--------|----------|-------------|
