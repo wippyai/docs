@@ -1,11 +1,11 @@
 ---
 title: "Theming: Micro Frontend Apps"
-description: "Theming reference covers the full CSS variable catalog. This doc covers how a micro frontend app receives the theme."
+description: "How iframe-delivered micro frontend apps receive facade, child-scope, and per-page theme configuration."
 ---
 
 # Theming: Micro Frontend Apps
 
-[Theming reference](./theming.md) covers the full CSS variable catalog. This doc covers how a micro frontend app receives the theme.
+Micro frontend apps receive theme configuration through the host's CSS injection pipeline. See [Theme Authoring](./theming.md) for the shared authoring contract.
 
 ---
 
@@ -15,7 +15,7 @@ The host injects CSS into your micro frontend app's iframe through the proxy inj
 
 ### L1 — Global (facade level)
 
-CSS vars set in the facade's global theming scope reach the host and all iframes automatically via the `themeConfig` and custom-variable proxy injections. This is the primary place for brand palette, accent color, and any styling that must apply consistently everywhere.
+CSS variables set in the facade's global theming scope reach the host and all iframes through the `themeConfig` and custom-variable proxy injections. Use this scope for the brand palette, accent color, and styling that must apply consistently everywhere.
 
 ```yaml
 - name: css_variables
@@ -35,7 +35,7 @@ CSS set in `children_css_variables` or `children_custom_css` reaches your micro 
 
 ### L3 — Per-page (`config_overrides` in registry YAML)
 
-Give a page its own theme by setting `config_overrides.customization.cssVariables` / `customCSS` in the page's registry entry YAML. The override is projected into the page's `theming.global`, so it themes the page **and everything the page embeds** — nested `<w-artifact>` / `<w-iframe>` / `html.inject` content is built from the page's already-merged config and inherits the theme, recursively down the sub-tree. This is the tool for shipping a **self-themed sub-tree**: e.g. an admin module whose pages carry a distinct theme that propagates to all the artifacts and sub-apps they host. It does not touch sibling pages or the rest of the app shell.
+Give a page its own theme by setting `config_overrides.customization.cssVariables` / `customCSS` in the page's registry entry YAML. The override is projected into the page's `theming.global`, so it themes the page **and everything the page embeds**. Nested `<w-artifact>` / `<w-iframe>` / `html.inject` content is built from the page's already-merged config and inherits the theme recursively. Use this for a **self-themed sub-tree**, such as an admin module whose theme propagates to its artifacts and sub-apps. It does not affect sibling pages or the rest of the app shell.
 
 ```yaml
 - name: iframe-demo-themed
@@ -56,7 +56,7 @@ Give a page its own theme by setting `config_overrides.customization.cssVariable
 
 Top-level entries apply in every theme mode. `@dark` and `@light` replace selected entries and compile to both Auto-mode media blocks and forced `.w-theme-dark` / `.w-theme-light` selectors. The host owns those classes; applications do not invent a parallel `data-theme` protocol.
 
-A `package.json` mirror under `wippy.configOverrides` provides the same shape for host-less rendering (standalone dev preview, unit tests). Keep both in sync; the YAML wins when a host is present.
+A `package.json` mirror under `wippy.configOverrides` provides the same shape for host-less rendering (standalone development preview and unit tests). Keep both synchronized; the YAML takes precedence when a host is present.
 
 ---
 
@@ -93,7 +93,7 @@ The iframe proxy has broad runtime defaults when flags are omitted. **Enable the
 
 Full flag reference and runtime defaults: [CSS Injection](../web-host/css-injection.md).
 
-> **Dev mode note:** The dev overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe` DISABLED by default. Enable them in the overlay to see real theme styling locally. Check "Auto-accept on reload" to persist across reloads.
+> **Development mode:** The development overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe` disabled. Enable them to preview the injected theme locally. Select "Auto-accept on reload" to preserve the selection across reloads.
 
 ---
 

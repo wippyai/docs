@@ -1,11 +1,11 @@
 ---
 title: "Theming: Web Components"
-description: "Theming reference covers the full CSS variable catalog. This doc covers how a web component receives the theme through shadow DOM."
+description: "How Wippy web components inherit theme variables and load rule-based CSS inside shadow roots."
 ---
 
 # Theming: Web Components
 
-[Theming reference](./theming.md) covers the full CSS variable catalog. This doc covers how a web component receives the theme through shadow DOM.
+Web components inherit theme variables across the shadow boundary and load rule-based theme assets explicitly. See [Theme Authoring](./theming.md) for the shared authoring contract.
 
 ---
 
@@ -107,7 +107,7 @@ For local development without a host, import `theme-config.css` directly in your
 }
 ```
 
-This provides the default `--p-*` values so your component renders correctly in host-less mode. At runtime the real theme is delivered via `hostCssKeys: ['themeConfigUrl']` and takes precedence.
+This provides default `--p-*` values in host-less mode. At runtime, the host theme is delivered through `hostCssKeys: ['themeConfigUrl']` and takes precedence.
 
 ---
 
@@ -176,8 +176,8 @@ hostCssKeys: ['themeConfigUrl'] as const
 ## Anti-patterns specific to WCs
 
 - Hardcoding hex inside `:host { … }` — use `var(--p-*)` instead.
-- `<style>` blocks with `@media (prefers-color-scheme: dark)` that hardcode dark-mode colors — the vars in `theme-config.css` retune themselves for dark; if you reference `var(--p-*)` correctly, dark mode is free.
-- Requesting `primeVueCssUrl` when the WC doesn't render PrimeVue — adds a large stylesheet for zero benefit.
+- `<style>` blocks with `@media (prefers-color-scheme: dark)` that hardcode dark-mode colors — the variables in `theme-config.css` retune for dark mode, so references to `var(--p-*)` do not need a separate hardcoded palette.
+- Requesting `primeVueCssUrl` when the WC does not render PrimeVue — adds a large unused stylesheet.
 - Setting PrimeVue overlays to `appendTo: 'self'` as a routine fix. Install `PrimeVuePlugin` and keep the default target; it redirects to a pinned overlay layer in the owning shadow root. Explicit `self` is inline placement and can clip in scrolling overlays.
 - Forgetting `bubbles: true, composed: true` on `CustomEvent` dispatch — events won't escape shadow DOM.
 - Choosing `@wippy-fe/theme` externalization from CSS assumptions instead of the complete pinned Web Host import map.
