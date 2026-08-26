@@ -5,13 +5,13 @@ description: "Route outbound HTTP calls and spawned processes through SOCKS5, Ta
 
 # Network Overlays
 
-Route outbound HTTP calls and spawned processes through SOCKS5, Tailscale, or I2P overlays.
+Configure a SOCKS5 overlay for outbound HTTP calls, then review inheritance, inbound listeners, application defaults, and permissions.
 
 ## Overview
 
-Wippy supports overlay networks that transparently carry traffic originating from functions, processes, and HTTP clients. Each overlay is a registry entry; code opts in per call, and the selection inherits to inner calls until a descendant explicitly overrides it.
+Wippy represents overlay networks as registry entries. Code can select an overlay for a call, and that selection propagates to nested calls until a descendant overrides it.
 
-Supported overlays:
+This page covers three overlay entries:
 
 - `network.socks5` — generic SOCKS5 proxy (also Tor's SOCKS5 listener)
 - `network.tailscale` — tsnet overlay node
@@ -67,7 +67,7 @@ entries:
       - json
 ```
 
-`isolate_streams: true` makes the SOCKS5 driver mint random credentials per connection so Tor opens a fresh circuit for each dial.
+With `isolate_streams: true`, the SOCKS5 driver creates random credentials for each connection so Tor can open a fresh circuit for each dial.
 
 ## Step 2: Route Outbound Calls
 
@@ -117,7 +117,7 @@ end
 return { main = main }
 ```
 
-The `overlay_network` option on `http_client` picks the overlay for that call only. Without it the dial goes through the process default (either `network_service.default_network` in `.wippy.yaml` or direct).
+The `overlay_network` option selects the overlay for that HTTP call. Without it, the dial uses the process default: `network_service.default_network` from `.wippy.yaml`, or a direct connection when no default is set.
 
 ## Step 3: Run It
 
@@ -137,7 +137,7 @@ If Tor is not running, the `tor IP` line will report a dial error — the SOCKS5
 
 ## Inheritance
 
-Overlay selection flows through nested calls. Pick the overlay once at a `funcs.call` or `process.spawn` edge and every inner HTTP call, nested `funcs.call`, and `process.spawn` underneath uses it until an explicit override:
+Overlay selection propagates through nested calls. Selecting an overlay at a `funcs.call` or `process.spawn` boundary applies it to nested HTTP calls, function calls, and process spawns until one explicitly overrides it:
 
 ```lua
 local funcs = require("funcs")
@@ -204,7 +204,7 @@ Inherited overlays bypass this check — they were authorized at the caller's ed
 
 ## Next Steps
 
-- [Network System](system/network.md) - Entry kind reference
-- [HTTP Client](lua/http/client.md) - Per-call overlay options
-- [Security Model](system/security.md) - Policies and scopes
-- [Authentication](tutorials/auth.md) - Token-based security
+- [Network System](system/network.md) — Entry-kind reference
+- [HTTP Client](lua/http/client.md) — Per-call overlay options
+- [Security Model](system/security.md) — Policies and scopes
+- [Authentication](tutorials/auth.md) — Token-based security

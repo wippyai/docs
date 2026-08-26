@@ -1,22 +1,19 @@
 ---
 title: "Frontend Facade"
-description: "Serve the Wippy web UI from a backend-only app with wippy/facade. The facade is a thin static shell: it loads the Wippy Web Host frontend bundle from a…"
+description: "Serve and configure the Wippy Web Host from a backend application with wippy/facade."
 ---
 
 # Frontend Facade
 
-Serve the Wippy web UI from a backend-only app with `wippy/facade`. The facade is a
-thin static shell: it loads the Wippy Web Host frontend bundle from a CDN and
-configures it from a JSON endpoint your app serves — no frontend build step in your
-project. Branding, theming, and feature flags are all driven by dependency parameters.
+Use `wippy/facade` to serve the Wippy Web Host from a backend application. The facade loads the frontend bundle from a CDN and configures it through a JSON endpoint served by the application, without requiring a frontend build step. Dependency parameters control branding, theming, and feature flags.
 
 ## What You'll Build
 
 A backend app that serves the Wippy UI:
 
-1. An HTTP server and a public router.
-2. The `wippy/facade` dependency, wired to that server and router, with custom branding.
-3. A running shell at `/` and its config at `/api/public/facade/config`.
+1. An HTTP server and public router.
+2. A `wippy/facade` dependency connected to the server and router, with custom branding.
+3. The facade shell at `/` and its configuration at `/api/public/facade/config`.
 
 ## Prerequisites
 
@@ -37,13 +34,11 @@ A backend app that serves the Wippy UI:
 4. It imports the Web Host bundle from the CDN (`facade_url + '/module.js'`) and calls
    `initWippyApp(...)` with the config.
 
-Your app only ships the shell and the config; the UI itself comes from the CDN.
+The application serves the shell and its configuration; the UI bundle comes from the CDN.
 
 ## Dependencies
 
-The facade needs two things from your app: an `http.service` to serve files from, and
-the `http.router` its config endpoint mounts on. Everything else is optional branding
-with sensible defaults.
+The facade requires an `http.service` for the shell and an `http.router` for its configuration endpoint. Other parameters customize branding and behavior.
 
 ```yaml
 version: "1.0"
@@ -107,7 +102,7 @@ curl http://localhost:8087/api/public/facade/config
 }
 ```
 
-Note how the `app_title` parameter surfaces as `theming.host.i18n.app.title`.
+The `app_title` parameter appears as `theming.host.i18n.app.title` in the response.
 
 ## Configuration
 
@@ -129,7 +124,7 @@ Two values are derived at runtime from the `PUBLIC_API_URL` environment variable
 than parameters: the API base URL and the WebSocket URL (`http`→`ws`, `https`→`wss`). If
 unset, the browser falls back to `window.location.origin`.
 
-## Notes
+## Limitations
 
 - The facade does not provide authentication. It expects an auth flow that writes a
   token to `localStorage`; without one it redirects to `login_path`. Pair it with
@@ -139,6 +134,6 @@ unset, the browser falls back to `window.location.origin`.
 
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) — the minimal project layout
-- [Authentication](tutorials/auth.md) — wire up the login flow the shell expects
-- [HTTP Endpoints](http/endpoint.md) — routers, static files, and handlers
+- [Hello World](tutorials/hello-world.md) — Minimal project layout
+- [Authentication](tutorials/auth.md) — Add the login flow expected by the shell
+- [HTTP Endpoints](http/endpoint.md) — Routers, static files, and handlers

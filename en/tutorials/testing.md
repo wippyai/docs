@@ -1,13 +1,11 @@
 ---
 title: "Testing"
-description: "Write and run tests for your Lua code with the wippy/test framework — a BDD-style runner with assertions, lifecycle hooks, and mocking, executed by the…"
+description: "Write and run Lua tests with wippy/test assertions, lifecycle hooks, mocking, filtering, and exit codes."
 ---
 
 # Testing
 
-Write and run tests for your Lua code with the `wippy/test` framework — a BDD-style
-runner with assertions, lifecycle hooks, and mocking, executed by the `wippy test`
-command.
+Use the `wippy/test` framework to define Lua test cases with assertions, lifecycle hooks, and mocks, then execute them with `wippy test`.
 
 ## What You'll Build
 
@@ -15,7 +13,7 @@ A small library and a test suite that covers it:
 
 1. A `calc` library with `add` and `div` functions.
 2. A test entry that describes cases, asserts behavior, and skips a pending case.
-3. A green test run via `wippy test`.
+3. A successful test run with `wippy test`.
 
 ## Prerequisites
 
@@ -131,7 +129,7 @@ Filter by entry id substring (namespace:name) while iterating:
 wippy test calc_test
 ```
 
-Output for the suite above:
+Expected output for the suite:
 
 ```
   calculator (4)  3/4  1 skipped  1ms
@@ -143,8 +141,7 @@ Output for the suite above:
   PASSED   3 tests   1 skipped   1ms
 ```
 
-`wippy test` exits `0` when every case passes and `1` on any failure, so it drops
-straight into CI.
+`wippy test` exits with `0` when every case passes and `1` when any case fails, allowing CI to use the command's exit status.
 
 ## Assertions
 
@@ -179,6 +176,6 @@ Nested `describe` blocks inherit parent hooks (outer `before_*` first, inner
 
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) — the minimal project layout
-- [Entry Kinds](guides/entry-kinds.md) — `function.lua`, `library.lua`, and friends
-- [Test Framework](framework/testing.md) — full reference for the runner and event protocol
+- [Hello World](tutorials/hello-world.md) — Minimal project layout
+- [Entry Kinds](guides/entry-kinds.md) — `function.lua`, `library.lua`, and related entries
+- [Test Framework](framework/testing.md) — Runner and event-protocol reference

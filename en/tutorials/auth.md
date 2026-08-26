@@ -1,19 +1,19 @@
 ---
 title: "Crypto Ticker"
-description: "Build a real-time crypto ticker with API key authentication and WebSocket streaming. This tutorial demonstrates token-based security, middleware…"
+description: "Build a streaming ticker demo with API-key exchange, bearer-token authentication, WebSockets, and process messaging."
 ---
 
 # Crypto Ticker
 
-Build a real-time crypto ticker with API key authentication and WebSocket streaming. This tutorial demonstrates token-based security, middleware configuration, and process-based WebSocket handling.
+Build a streaming ticker demo with API-key authentication and WebSocket delivery. The example covers token-based security, middleware configuration, and process-based connection handling.
 
 ## Overview
 
-- **API key exchange** — POST an API key, receive an HMAC-signed bearer token
-- **Token middleware** — Validates the bearer token and restores the security context (actor + policies) when present; the endpoint handler enforces auth by rejecting requests with no actor
-- **WebSocket fan-out** — One ticker process broadcasts to many connection handlers
-- **Static assets** — `http.static` serves the browser client
-- **SQLite** — Stores API keys; memory store backs the token store
+- **API-key exchange** — Submit an API key and receive an HMAC-signed bearer token
+- **Token middleware** — Validate a bearer token and restore its security context; the endpoint rejects requests without an actor
+- **WebSocket fan-out** — Broadcast from one ticker process to multiple connection handlers
+- **Static assets** — Serve the browser client with `http.static`
+- **Storage** — Keep API keys in SQLite and token data in memory
 
 ## Project Structure
 
@@ -114,17 +114,17 @@ flowchart TB
 
 ## Security Flow
 
-1. **API Key Exchange**: Client POSTs API key to `/auth/token`. Handler validates against database, creates an actor with the `user_policy`, and issues an HMAC-signed token.
+1. **API-key exchange:** The client posts an API key to `/auth/token`. The handler validates it against the database, creates an actor with `user_policy`, and issues an HMAC-signed token.
 
-2. **Token Authentication**: WebSocket connections go through `token_auth` middleware which validates the Bearer token and restores the security context (actor + policies).
+2. **Token authentication:** WebSocket connections pass through `token_auth`, which validates the bearer token and restores its actor and policies.
 
-3. **Process Spawning**: The WebSocket endpoint spawns a handler process. Because the token includes the `user_policy`, the spawn is authorized.
+3. **Process spawning:** The WebSocket endpoint spawns a handler process. The token's `user_policy` authorizes the spawn.
 
-4. **Message Routing**: The `websocket_relay` middleware routes WebSocket frames to the handler process as messages.
+4. **Message routing:** The `websocket_relay` middleware routes WebSocket frames to the handler process as messages.
 
 ## Configuration
 
-Complete `_index.yaml`:
+Create `src/_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -287,7 +287,7 @@ For production, use `token_key_env` to read the HMAC key from an environment var
 
 ## Token Exchange
 
-`auth_token.lua` - validates API keys and issues HMAC-signed tokens:
+`auth_token.lua` validates API keys and issues HMAC-signed tokens:
 
 ```lua
 local http = require("http")
@@ -381,7 +381,7 @@ return { handler = handler }
 
 ## WebSocket Endpoint
 
-`ws_ticker.lua` - spawns a handler process for each authenticated connection:
+`ws_ticker.lua` spawns a handler process for each authenticated connection:
 
 ```lua
 local http = require("http")
@@ -430,12 +430,13 @@ return { handler = handler }
 
 ## Connection Handler
 
-The `websocket_relay` middleware automatically sends lifecycle messages to the handler process:
-- `ws.join` - Connection established, includes `client_pid` for sending responses
-- `ws.message` - Client sent a message
-- `ws.leave` - Connection closed (sent automatically on disconnect)
+The `websocket_relay` middleware sends lifecycle messages to the handler process:
 
-`ws_handler.lua` - handles these lifecycle messages:
+- `ws.join` — Connection established; includes `client_pid` for responses
+- `ws.message` — Client sent a message
+- `ws.leave` — Connection closed
+
+`ws_handler.lua` handles these lifecycle messages:
 
 ```lua
 local logger = require("logger")
@@ -500,7 +501,7 @@ return { main = main }
 
 ## Broadcasting
 
-`ticker.lua` - maintains subscriptions and broadcasts price updates:
+`ticker.lua` maintains subscriptions and broadcasts price updates:
 
 ```lua
 local logger = require("logger")
@@ -611,7 +612,7 @@ return { main = main }
 
 ## Database Migration
 
-`migrate.lua` - creates the API keys table and generates a demo key:
+`migrate.lua` creates the API-keys table and generates a demo key:
 
 ```lua
 local sql = require("sql")
@@ -677,6 +678,6 @@ Open http://localhost:8081 and enter the demo API key shown in logs.
 
 ## Next Steps
 
-- [WebSocket Relay](http/websocket-relay.md) - Middleware configuration
-- [Security Module](lua/security/security.md) - Actors, policies, token stores
-- [Process Management](lua/core/process.md) - Spawning and messaging
+- [WebSocket Relay](http/websocket-relay.md) — Middleware configuration
+- [Security Module](lua/security/security.md) — Actors, policies, and token stores
+- [Process Management](lua/core/process.md) — Process spawning and messaging

@@ -5,17 +5,17 @@ description: "Build a REST API that queues tasks for background processing with 
 
 # Task Queue
 
-Build a REST API that queues tasks for background processing with database persistence.
+Build a REST API that publishes tasks to an in-memory queue, processes them in background workers, and stores completed results in SQLite.
 
 ## Overview
 
 This tutorial creates a task management API demonstrating:
 
-- **REST endpoints** - POST tasks, GET results
-- **Queue publishing** - Async job dispatch
-- **Queue consumers** - Background workers
-- **Database persistence** - SQLite storage
-- **Migrations** - One-shot process that exits
+- **REST endpoints** — Submit tasks and list results
+- **Queue publishing** — Dispatch jobs asynchronously
+- **Queue consumers** — Process jobs in background workers
+- **Database persistence** — Store completed results in SQLite
+- **Schema setup** — Create the database table in a one-shot process
 
 ```mermaid
 flowchart LR
@@ -377,7 +377,7 @@ The consumer auto-acks when the handler returns normally and auto-nacks when it 
 
 ## Running the Service
 
-Initialize and run:
+Create the data directory, initialize the project, and start the runtime:
 
 ```bash
 mkdir -p data
@@ -385,7 +385,7 @@ wippy init
 wippy run
 ```
 
-Test the API:
+Submit a task and query its result:
 
 ```bash
 # Create a task
@@ -406,14 +406,14 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## Message Flow
 
-1. **POST /tasks** receives request, generates UUID, publishes to queue
-2. **Queue consumer** picks up message (2 concurrent workers)
-3. **Worker** processes task, writes result to SQLite
-4. **GET /tasks** reads completed tasks from database
+1. **POST /tasks** receives the request, generates a UUID, and publishes the task.
+2. A **queue consumer** receives the message; up to two handlers run concurrently.
+3. The **worker** processes the task and writes its result to SQLite.
+4. **GET /tasks** reads completed tasks from the database.
 
 ## Next Steps
 
-- [HTTP Module](lua/http/http.md) - Request/response handling
-- [Queue Module](lua/storage/queue.md) - Message queue operations
-- [SQL Module](lua/storage/sql.md) - Database access
-- [Queue Consumers](guides/queue-consumers.md) - Queue configuration
+- [HTTP Module](lua/http/http.md) — Request and response handling
+- [Queue Module](lua/storage/queue.md) — Message queue operations
+- [SQL Module](lua/storage/sql.md) — Database access
+- [Queue Consumers](guides/queue-consumers.md) — Queue configuration

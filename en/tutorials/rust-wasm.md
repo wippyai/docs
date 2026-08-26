@@ -5,18 +5,18 @@ description: "Build a Rust WebAssembly component and run it as functions, CLI co
 
 # Running Rust on Wippy
 
-Build a Rust WebAssembly component and run it as functions, CLI commands, and HTTP endpoints.
+Build a Rust WebAssembly component, register it with Wippy, and expose it through function, CLI, and HTTP entries.
 
 ## What We're Building
 
 A Rust component with four exported functions:
 
-- **greet** - Takes a name, returns a greeting
-- **add** - Adds two integers
-- **fibonacci** - Computes the nth Fibonacci number
-- **list-files** - Lists files in a mounted directory
+- **greet** — Accepts a name and returns a greeting
+- **add** — Adds two integers
+- **fibonacci** — Computes the nth Fibonacci number
+- **list-files** — Lists files in a mounted directory
 
-We'll expose these as callable functions, a CLI command, and an HTTP endpoint.
+The Wippy application registers these exports as callable functions, CLI commands, and an HTTP endpoint.
 
 ## Prerequisites
 
@@ -51,7 +51,7 @@ rust-wasm-demo/
 
 ## Step 1: Create the WIT Interface
 
-WIT (WebAssembly Interface Types) defines the contract between host and guest:
+WebAssembly Interface Types (WIT) defines the contract between the host and guest component.
 
 Create `demo/wit/world.wit`:
 
@@ -277,10 +277,11 @@ entries:
 ```
 
 Key points:
-- A single `fs.directory` entry provides the WASM binary
-- Multiple functions reference the same binary with different `method` values
-- The `hash` field verifies binary integrity at load time
-- `inline` pool creates a fresh instance per call
+
+- A single `fs.directory` entry provides the WASM binary.
+- Multiple functions reference the same binary with different `method` values.
+- The `hash` field verifies binary integrity at load time.
+- The `inline` pool creates a fresh instance for each call.
 
 ### Functions with WASI
 
@@ -445,8 +446,8 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 
 ## Next Steps
 
-- [WASM Overview](wasm/overview.md) - WebAssembly runtime overview
-- [WASM Functions](wasm/functions.md) - Function configuration reference
-- [WASM Processes](wasm/processes.md) - Process configuration reference
-- [Host Functions](wasm/hosts.md) - Available WASI imports
-- [CLI Reference](guides/cli.md) - CLI command documentation
+- [WASM Overview](wasm/overview.md) — WebAssembly runtime overview
+- [WASM Functions](wasm/functions.md) — Function configuration reference
+- [WASM Processes](wasm/processes.md) — Process configuration reference
+- [Host Functions](wasm/hosts.md) — Available WASI imports
+- [CLI Reference](guides/cli.md) — CLI command documentation
