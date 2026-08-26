@@ -1,24 +1,25 @@
 ---
 title: "Processes and Messaging"
-description: "Spawn isolated processes and communicate via message passing."
+description: "Learn the process APIs for spawning, messaging, monitoring, linking, and name registration."
 ---
 
 # Processes and Messaging
 
-Spawn isolated processes and communicate via message passing.
+Learn the process APIs for spawning isolated work, exchanging messages, monitoring lifecycles, linking failures, and registering process names.
 
 ## Overview
 
 Processes provide isolated execution units that communicate through message passing. Each process has its own inbox and can subscribe to specific message topics.
 
-This page is a primer: each snippet shows one API in isolation. For a complete runnable application that wires spawning, monitoring, and messaging together, see the [Echo Service](tutorials/echo-service.md) tutorial.
+This page is an API primer: each snippet illustrates one operation in isolation. For an end-to-end application that combines spawning, monitoring, and messaging, see the [Echo Service](tutorials/echo-service.md) tutorial.
 
 Key concepts:
-- Spawn processes with `process.spawn()` and variants
-- Send messages to PIDs or registered names via topics
-- Receive messages using `process.listen()` or `process.inbox()`
-- Monitor process lifecycle with events
-- Link processes for coordinated failure handling
+
+- Spawn processes with `process.spawn()` and its variants.
+- Send topic-based messages to PIDs or registered names.
+- Receive messages with `process.listen()` or `process.inbox()`.
+- Monitor process lifecycles with events.
+- Link processes for coordinated failure handling.
 
 ## Spawning Processes
 
@@ -333,9 +334,9 @@ local pid, err = process.registry.lookup(test_name)
 
 Names are automatically released when the process exits.
 
-## Complete Example: Monitored Worker Pool
+## Example: Monitored Worker Pool
 
-This example shows a parent process spawning multiple monitored workers and tracking their completion.
+This example illustrates a parent process spawning multiple monitored workers and tracking their completion.
 
 ```lua
 -- Parent process
@@ -418,5 +419,5 @@ return { main = main }
 
 ## Next Steps
 
-- [Process Module Reference](lua/core/process.md) - Full API documentation
-- [Channels](tutorials/channels.md) - Channel operations for message handling
+- [Process Module Reference](lua/core/process.md) — Process API documentation
+- [Channels](tutorials/channels.md) — Channel operations for message handling

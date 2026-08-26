@@ -1,23 +1,25 @@
 ---
 title: "Process Supervision"
-description: "Monitor and link processes to build fault-tolerant systems."
+description: "Monitor, link, cancel, and restart processes with explicit lifecycle handling."
 ---
 
 # Process Supervision
 
-Monitor and link processes to build fault-tolerant systems.
+Use monitoring and linking to observe process exits, propagate failures, handle cancellation, and restart workers.
 
 ## Monitoring vs Linking
 
 **Monitoring** provides one-way observation:
-- Parent monitors child
-- Child exits, parent receives EXIT event
-- Parent continues running
+
+- A parent monitors a child.
+- When the child exits, the parent receives an `EXIT` event.
+- The parent continues running.
 
 **Linking** creates bidirectional fate-sharing:
-- Parent and child are linked
-- Either process fails, both terminate
-- Unless `trap_links=true` is set
+
+- A parent and child are linked.
+- If either process fails, both terminate.
+- Setting `trap_links=true` changes failures into events that the process can handle.
 
 ```mermaid
 flowchart TB
@@ -307,7 +309,7 @@ end
 
 ### Handle Cancellation
 
-Worker receives CANCEL event through `process.events()`:
+The worker receives the `CANCEL` event through `process.events()`:
 
 ```lua
 local function worker_main()
@@ -339,7 +341,7 @@ end
 
 ### Star Topology
 
-Parent with multiple children linking back to it:
+A parent can coordinate multiple children that link back to it:
 
 ```lua
 -- Parent worker spawns children that link TO parent
@@ -411,7 +413,7 @@ end
 
 ### Chain Topology
 
-Linear chain where each node links to its parent:
+In a linear chain, each node links to its parent:
 
 ```lua
 -- Chain root: A -> B -> C -> D -> E
@@ -652,10 +654,11 @@ entries:
       auto_start: true
 ```
 
-Workers setting:
-- Controls parallelism for CPU-bound work
-- Typically set to number of CPU cores
-- All processes share this scheduler worker pool
+The `workers` setting:
+
+- Controls parallelism for CPU-bound work.
+- Is typically set to the number of CPU cores.
+- Applies to the scheduler pool shared by all processes on the host.
 
 ## Event Types
 
@@ -667,7 +670,7 @@ Workers setting:
 
 ## Running the Supervisor Pool
 
-Drop the pool files into the structure shown in [Configuration](#configuration), then:
+After creating the pool files shown in [Configuration](#configuration), initialize and run the project:
 
 ```bash
 wippy init
@@ -685,6 +688,6 @@ The pool receives `LINK_DOWN`, waits 100 ms, and respawns the worker under the s
 
 ## Next Steps
 
-- [Processes](tutorials/processes.md) - Process fundamentals
-- [Channels](tutorials/channels.md) - Message passing patterns
-- [Process Module](lua/core/process.md) - API reference
+- [Processes](tutorials/processes.md) — Process fundamentals
+- [Channels](tutorials/channels.md) — Message-passing patterns
+- [Process Module](lua/core/process.md) — Process API reference

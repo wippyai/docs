@@ -1,15 +1,15 @@
 ---
 title: "Channels and Concurrency"
-description: "Go-style channels for concurrent programming within processes."
+description: "Use channels to coordinate coroutines with buffering, selection, fan-out, and fan-in patterns."
 ---
 
 # Channels and Concurrency
 
-Go-style channels for concurrent programming within processes.
+This page introduces channels for coordinating coroutines within a process. The examples cover buffering, selection, producer-consumer flows, fan-out, fan-in, and channel closure.
 
 ## Creating Channels
 
-Channels are communication pipes for coroutines. Create with `channel.new(capacity)`:
+Channels pass values between coroutines. Create one with `channel.new(capacity)`:
 
 ```lua
 local ch = channel.new(1)  -- buffered channel, capacity 1
@@ -17,7 +17,7 @@ local ch = channel.new(1)  -- buffered channel, capacity 1
 
 ### Buffered Channels
 
-Buffered channels allow sends without blocking until buffer is full:
+A send to a buffered channel blocks only when its buffer is full:
 
 ```lua
 local ch = channel.new(3)  -- buffer holds 3 items
@@ -52,7 +52,7 @@ local completed = done:receive()
 
 ## Channel Select
 
-`channel.select` waits on multiple channels, returns the first ready operation:
+`channel.select` waits on multiple channel operations and returns the first one that is ready:
 
 ```lua
 local ch1 = channel.new(1)
@@ -234,17 +234,17 @@ local total = done:receive()
 
 ## Channel Methods
 
-Available operations:
+Channel operations:
 
-- `channel.new(capacity)` - Create channel with buffer size
-- `ch:send(value)` - Send value (blocks if buffer full)
-- `ch:receive()` - Receive value, returns `value, ok`
-- `ch:close()` - Close channel
-- `ch:case_send(value)` - Create send case for select
-- `ch:case_receive()` - Create receive case for select
-- `channel.select{cases...}` - Wait on multiple operations
+- `channel.new(capacity)` — Create a channel with the specified buffer size
+- `ch:send(value)` — Send a value, blocking if the buffer is full
+- `ch:receive()` — Receive a value and return `value, ok`
+- `ch:close()` — Close the channel
+- `ch:case_send(value)` — Create a send case for `select`
+- `ch:case_receive()` — Create a receive case for `select`
+- `channel.select{cases...}` — Wait on multiple operations
 
 ## Next Steps
 
-- [Channel Module Reference](lua/core/channel.md) - Complete API documentation
-- [Processes](tutorials/processes.md) - Inter-process communication
+- [Channel Module Reference](lua/core/channel.md) — Channel API documentation
+- [Processes](tutorials/processes.md) — Inter-process communication

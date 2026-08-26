@@ -1,11 +1,11 @@
 ---
 title: "Hello World"
-description: "Your first Wippy application - a simple HTTP API that returns JSON."
+description: "Build and run a minimal Wippy HTTP API that returns JSON."
 ---
 
 # Hello World
 
-Your first Wippy application - a simple HTTP API that returns JSON.
+Build a minimal Wippy application with one HTTP endpoint that returns JSON.
 
 ## What We're Building
 
@@ -73,12 +73,12 @@ entries:
     path: /hello
 ```
 
-**Four entries work together:**
+The application uses four entries:
 
-1. `gateway` - HTTP server listening on port 8080
-2. `api` - Router attached to gateway via `meta.server`
-3. `hello` - Lua function that handles requests
-4. `hello.endpoint` - Routes `GET /hello` to the function
+1. `gateway` — HTTP server listening on port 8080
+2. `api` — Router attached to the gateway through `meta.server`
+3. `hello` — Lua function that handles requests
+4. `hello.endpoint` — Route from `GET /hello` to the function
 
 ## Step 3: Handler Code
 
@@ -112,7 +112,7 @@ wippy init
 wippy run -c
 ```
 
-You'll see output like:
+The startup output includes the runtime-ready message and the listening address:
 
 ```
 ╦ ╦╦╔═╗╔═╗╦ ╦  Adaptive Application Runtime
@@ -129,7 +129,7 @@ You'll see output like:
 curl http://localhost:8080/hello
 ```
 
-Response:
+Expected response:
 
 ```json
 {"message":"hello world"}
@@ -137,10 +137,10 @@ Response:
 
 ## How It Works
 
-1. `gateway` accepts the TCP connection on port 8080
-2. `api` router matches the path prefix `/`
-3. `hello.endpoint` matches `GET /hello`
-4. `hello` function executes and writes JSON response
+1. `gateway` accepts the TCP connection on port 8080.
+2. The `api` router matches the `/` path prefix.
+3. `hello.endpoint` matches `GET /hello`.
+4. The `hello` function writes the JSON response.
 
 ## CLI Reference
 
@@ -154,6 +154,6 @@ Response:
 
 ## Next Steps
 
-- [Echo Service](tutorials/echo-service.md) - Handle request parameters
-- [Task Queue](tutorials/task-queue.md) - REST API with background processing
-- [HTTP Router](http/router.md) - Routing patterns
+- [Echo Service](tutorials/echo-service.md) — Build a multi-process CLI service
+- [Task Queue](tutorials/task-queue.md) — Combine a REST API with background processing
+- [HTTP Router](http/router.md) — Review routing patterns

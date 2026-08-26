@@ -5,11 +5,11 @@ description: "Build command-line tools that read input, write output, and intera
 
 # CLI Applications
 
-Build command-line tools that read input, write output, and interact with users.
+Build a command-line process that writes to the terminal, then extend it with input, color, system information, and named commands.
 
 ## What We're Building
 
-A simple CLI that greets the user:
+A CLI process that prints a greeting:
 
 ```
 $ wippy run -x app:cli
@@ -83,7 +83,7 @@ wippy init
 wippy run -x app:cli
 ```
 
-Output:
+Expected output:
 ```
 Hello from CLI!
 ```
@@ -177,7 +177,7 @@ return { main = main }
 
 ## Named Commands
 
-Instead of using `-x app:cli`, you can register your process as a named command:
+To invoke the process by name instead of using `-x app:cli`, add command metadata:
 
 ```yaml
   - name: cli
@@ -192,7 +192,7 @@ Instead of using `-x app:cli`, you can register your process as a named command:
       - io
 ```
 
-Now run it by name:
+Run the named command:
 
 ```bash
 wippy run greet
@@ -211,7 +211,7 @@ Available commands:
 
 ## Exit Codes
 
-Return from `main()` to set the exit code:
+Return a number from `main()` to set the process exit code:
 
 ```lua
 local function main()
@@ -242,6 +242,6 @@ end
 
 ## Next Steps
 
-- [I/O Module](lua/system/io.md) - Complete I/O reference
-- [System Module](lua/system/system.md) - Runtime and system info
-- [Echo Service](tutorials/echo-service.md) - Multi-process applications
+- [I/O Module](lua/system/io.md) — I/O API reference
+- [System Module](lua/system/system.md) — Runtime and system information
+- [Echo Service](tutorials/echo-service.md) — Build a multi-process application

@@ -1,22 +1,22 @@
 ---
 title: "Echo Service"
-description: "Build a distributed echo service demonstrating processes, channels, coroutines, message passing, and supervision."
+description: "Build a multi-process echo service with channels, coroutines, message passing, and process monitoring."
 ---
 
 # Echo Service
 
-Build a distributed echo service demonstrating processes, channels, coroutines, message passing, and supervision.
+Build a CLI echo service that uses multiple Wippy processes, channels, coroutines, message passing, and process monitoring.
 
 ## Overview
 
 This tutorial creates a CLI client that sends messages to a relay service, which spawns workers to process each message. It demonstrates:
 
-- **Process spawning** - Creating child processes dynamically
-- **Message passing** - Communication between processes via send/receive
-- **Channels and select** - Multiplexing multiple event sources
-- **Coroutines** - Concurrent execution within a process
-- **Process registration** - Finding processes by name
-- **Monitoring** - Tracking child process lifecycle
+- **Process spawning** — Create child processes dynamically
+- **Message passing** — Communicate between processes with send and receive operations
+- **Channels and select** — Wait on multiple event sources
+- **Coroutines** — Run concurrent work within a process
+- **Process registration** — Find processes by name
+- **Monitoring** — Track child-process lifecycles
 
 ## Architecture
 
@@ -189,7 +189,7 @@ return { main = main }
 coroutine.spawn(stats_reporter)
 ```
 
-Creates a concurrent coroutine sharing memory with the main function. Coroutines yield at I/O operations like `time.sleep`.
+This starts a coroutine that shares memory with the main function. Coroutines yield at I/O operations such as `time.sleep`.
 
 **Channel Select**
 
@@ -200,7 +200,7 @@ local r = channel.select {
 }
 ```
 
-Waits on multiple channels. `r.channel` identifies which fired, `r.value` contains the data.
+This waits on multiple channels. `r.channel` identifies the selected channel, and `r.value` contains its data.
 
 **Payload Extraction**
 
@@ -216,7 +216,7 @@ Messages have `msg:topic()` for the topic string and `msg:payload():data()` for 
 local worker_pid, err = process.spawn_monitored("app:worker", "app:processes", ...)
 ```
 
-Combines spawn and monitor. When the worker exits, we receive an EXIT event.
+This spawns the worker and starts monitoring it. When the worker exits, the relay receives an `EXIT` event.
 
 ## The Worker Process
 
@@ -241,7 +241,7 @@ return { main = main }
 
 ## The CLI Process
 
-The CLI sends messages by registered name and waits for responses with timeout.
+The CLI sends messages to the relay's registered name and waits for each response with a timeout.
 
 Create `src/cli.lua`:
 
@@ -322,7 +322,7 @@ return { main = main }
 process.send("relay", "echo", msg)
 ```
 
-`process.send` accepts registered names directly. Returns error if not found.
+`process.send` accepts a registered name as its target and returns an error when that name cannot be resolved.
 
 **Timeout Pattern**
 
@@ -357,6 +357,6 @@ Type messages to echo. Ctrl+C to exit.
 
 ## Next Steps
 
-- [Process Management](lua/core/process.md)
-- [Channels](lua/core/channel.md)
-- [Time and Duration](lua/core/time.md)
+- [Process Management](lua/core/process.md) — Process API reference
+- [Channels](lua/core/channel.md) — Channel API reference
+- [Time and Duration](lua/core/time.md) — Time API reference
