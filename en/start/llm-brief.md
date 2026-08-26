@@ -1,19 +1,19 @@
 ---
 title: "LLM Brief"
-description: "This page is for AI agents and LLMs. If you are building on Wippy or generating code for a Wippy project, read this first."
+description: "Core Wippy concepts, project structure, APIs, and conventions for agents that generate Wippy code."
 ---
 
 # LLM Brief
 
-This page is for AI agents and LLMs. If you are building on Wippy or generating code for a Wippy project, read this first.
+Use this brief as the starting context when generating code for a Wippy project.
 
 ## What Wippy Is
 
-Wippy is a single-binary application runtime built on the actor model. It runs Lua code in isolated processes with message passing — no shared memory, no locks. Three compute models exist: functions (stateless, request-scoped), processes (long-lived actors with state), and workflows (durable actors backed by Temporal that survive crashes). The system is designed so that agents can generate code, register it, and improve applications without redeployment.
+Wippy is a single-binary application runtime built on the actor model. It runs Lua code in isolated processes that communicate through messages rather than shared memory. Its three compute models are functions (stateless and request-scoped), processes (long-lived actors with state), and workflows (durable actors backed by Temporal). Registry-backed behavior can be added or updated without redeploying the runtime.
 
 ## Mental Model
 
-Everything in Wippy is a **registry entry**. Entries have an ID (`namespace:name`), a kind (which determines behavior), metadata, and data. YAML files are one way to declare entries, but the registry is the runtime source of truth and entries can be created, updated, or deleted while the system is running.
+Everything in Wippy is a **registry entry**. An entry has an ID (`namespace:name`), a kind that determines its behavior, metadata, and data. YAML files are one way to declare entries, but the registry is the runtime source of truth. Entries can also be created, updated, or deleted while the system is running.
 
 Kinds determine what an entry does:
 
@@ -71,7 +71,7 @@ entries:
 
 ## Writing Functions
 
-Functions are stateless. They receive arguments, do work, return results. They inherit the caller's context and cancel if the caller cancels.
+Functions are stateless: they receive arguments, perform work, and return results. They inherit the caller's context and are canceled when the caller is canceled.
 
 ```lua
 local sql = require("sql")
@@ -118,7 +118,7 @@ return handler
 
 ## Writing Processes
 
-Processes are actors. They have their own PID, receive messages via inbox, and maintain state across messages. They yield on blocking I/O, allowing thousands to run concurrently.
+Processes are actors. Each process has a PID, receives messages through an inbox, and can maintain state across messages. Processes yield while waiting for I/O so other processes can run.
 
 ```lua
 local function worker(initial_config)
@@ -157,7 +157,7 @@ process.send(pid, "work", {item_id = 123})
 
 ## Writing Workflows
 
-Workflows are durable — they survive crashes and restarts. Code looks like normal Lua. The runtime automatically records function call results, sleeps, and random values so replay is deterministic.
+Workflows persist execution history so they can resume after crashes or restarts. Workflow code uses normal Lua syntax, while the runtime records function results, sleeps, and random values for deterministic replay.
 
 ```lua
 local function order_flow(order)
@@ -352,7 +352,7 @@ local evt = ch:receive()
 
 ## Module Access Control
 
-Each entry declares which modules it can `require()`. Modules not listed are simply unavailable — there is no `os.execute`, `io.open`, `debug.*`, or `package.*` unless you explicitly grant them. The runtime does not scan or validate source code; it controls access at the module level. If a module is not in the list, it does not exist for that entry.
+Each entry declares which modules it can `require()`. Modules not listed are unavailable to that entry. This includes `os.execute`, `io.open`, `debug.*`, and `package.*` unless they are explicitly granted. The runtime controls access at the module level rather than by scanning source code.
 
 ```yaml
 modules: [sql, json, http, time, funcs, store]
@@ -362,7 +362,7 @@ This is also how workflow determinism works — workflow entries only receive de
 
 ## Framework Modules
 
-Wippy has framework modules installed via dependencies:
+Framework capabilities are distributed as dependencies:
 
 - **wippy/llm** — LLM integration (OpenAI, Anthropic, Google). `llm.generate()`, structured output, embeddings, streaming.
 - **wippy/agent** — Agent framework with tool use, delegation, traits, memory. Agents defined as registry entries.

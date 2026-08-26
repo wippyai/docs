@@ -5,8 +5,6 @@ description: "Project layout, YAML definition files, and naming conventions."
 
 # YAML & Project Structure
 
-Project layout, YAML definition files, and naming conventions.
-
 ## Directory Layout
 
 ```
@@ -27,12 +25,12 @@ myapp/
 ## YAML Definition Files
 
 <note>
-YAML definitions are loaded into the registry at startup. The registry is the source of truth - YAML files are one way to populate it. Entries can also come from other sources or be created programmatically.
+YAML definitions are loaded into the registry at startup. The registry is the source of truth; YAML files are one way to populate it. Entries can also come from other sources or be created programmatically.
 </note>
 
-### File Structure
+### Definition File Format
 
-Any YAML file with a `namespace` plus either an `entries` array or a top-level `name`+`kind` is a valid definition file. `version` is optional:
+A definition file contains a `namespace` and either an `entries` array or top-level `name` and `kind` fields. The `version` field is optional:
 
 ```yaml
 version: "1.0"
@@ -60,9 +58,9 @@ entries:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `version` | no | Schema version (currently `"1.0"`) |
-| `namespace` | yes | Entry namespace for this file |
-| `entries` | yes | Array of entry definitions |
+| `version` | No | Schema version (currently `"1.0"`) |
+| `namespace` | Yes | Entry namespace for this file |
+| `entries` | Yes | Array of entry definitions |
 
 ### Naming Convention
 
@@ -84,7 +82,7 @@ Use dots (`.`) for semantic separation and underscores (`_`) for words:
 ```
 
 <tip>
-Pattern: <code>base_name.variant</code> - dots separate semantic parts, underscores separate words within a part.
+Pattern: <code>base_name.variant</code> — dots separate semantic parts, while underscores separate words within a part.
 </tip>
 
 ### Namespaces
@@ -114,7 +112,7 @@ Wippy recursively scans these directories for YAML files.
 
 ## Entry Definitions
 
-Each entry in the `entries` array. Properties are at root level (no `data:` wrapper):
+Each item in the `entries` array defines one entry. Its properties are at the root level, without a `data:` wrapper:
 
 ```yaml
 entries:
@@ -150,7 +148,7 @@ Use `meta` for UI-friendly information:
   source: file://payment.lua
 ```
 
-Convention: `meta.title` and `meta.comment` render nicely in management UIs.
+Use `meta.title` and `meta.comment` for text displayed in management interfaces.
 
 ### Application Entries
 
@@ -258,7 +256,7 @@ myapp/
 
 ## See Also
 
-- [Application Architecture](concepts/architecture.md) - How to carve an app into slices and layers
-- [Entry Kinds Guide](guides/entry-kinds.md) - Available entry kinds
-- [Configuration Guide](guides/configuration.md) - Runtime options
-- [Custom Entry Kinds](internals/kinds.md) - Implementing handlers (advanced)
+- [Application Architecture](concepts/architecture.md) — Organize an application into slices and layers
+- [Entry Kinds Guide](guides/entry-kinds.md) — Review available entry kinds
+- [Configuration Guide](guides/configuration.md) — Configure runtime options
+- [Custom Entry Kinds](internals/kinds.md) — Implement handlers (advanced)

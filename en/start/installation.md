@@ -1,11 +1,11 @@
 ---
 title: "Installation"
-description: "Install the Wippy runtime"
+description: "Install the Wippy runtime and verify that the command is available."
 ---
 
 # Installation
 
-## Quick Install
+## Install
 
 ```bash
 curl -fsSL https://hub.wippy.ai/install.sh | bash
@@ -19,7 +19,7 @@ Or download directly from [hub.wippy.ai/releases](https://hub.wippy.ai/releases)
 wippy version
 ```
 
-## Quick Start
+## Initialize a Project
 
 ```bash
 # Create a new project
@@ -30,7 +30,7 @@ wippy init
 wippy run
 ```
 
-HTTP, SQL, storage, and process hosting are built into the runtime — a fresh project runs without any dependencies. Framework modules are added from the hub as needed:
+The runtime includes HTTP, SQL, storage, and process-hosting capabilities. Add framework modules from the Hub when the application needs them:
 
 ```bash
 wippy add wippy/test
@@ -60,10 +60,10 @@ See [CLI Reference](guides/cli.md) for full documentation.
 
 ## Troubleshooting
 
-If `wippy version` is not found after install, reopen your shell or verify that the install directory is on your `PATH`.
+If the shell cannot find `wippy` after installation, reopen the shell and verify that the installation directory is on `PATH`.
 
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) - Create your first project
-- [Project Structure](start/structure.md) - Understand the layout
-- [CLI Reference](guides/cli.md) - All commands and options
+- [Hello World](tutorials/hello-world.md) — Create your first application
+- [Project Structure](start/structure.md) — Understand the project layout
+- [CLI Reference](guides/cli.md) — Review all commands and options

@@ -1,6 +1,6 @@
 ---
 title: "Compute Units"
-description: "Wippy provides three ways to run code: functions, processes, and workflows. They share the same underlying machinery but differ in how long they live,…"
+description: "Compare Wippy functions, processes, and workflows by lifetime, state, communication, and failure handling."
 ---
 
 # Compute Units
@@ -9,13 +9,13 @@ Wippy provides three ways to run code: functions, processes, and workflows. They
 
 ## Functions
 
-Functions are the simplest model. You call them, they run, they return a result. No state persists between calls.
+Functions run when called and return a result. They do not retain state between calls.
 
 ```lua
 local result = funcs.call("app.math:add", 2, 3)
 ```
 
-Functions execute in the caller's context. If the caller cancels or exits, any running functions get canceled too. This keeps things simple—you don't have to think about cleanup.
+Functions execute in the caller's context. If the caller is canceled or exits, its running function calls are canceled as well.
 
 <tip>
 Use functions for HTTP handlers, data transformations, and anything that should complete quickly and return a result.
@@ -30,7 +30,7 @@ local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "job", {task = "process_data"})
 ```
 
-When you spawn a process, it keeps running even after your code finishes. Processes can monitor each other, link together, and form supervision trees that automatically restart failed children.
+After being spawned, a process runs independently of the code that created it. Processes can monitor or link to one another and can participate in supervision trees that restart failed children.
 
 The scheduler multiplexes thousands of processes across a worker pool. Each process yields when waiting for I/O, letting others run.
 
@@ -40,17 +40,17 @@ Use processes for background jobs, service daemons, and anything that needs to o
 
 ## Workflows
 
-Workflows are for operations that absolutely cannot fail. They persist their state to a workflow provider (Temporal or others) and can resume exactly where they left off after crashes, restarts, or infrastructure changes.
+Workflows are for durable operations that must recover from interruptions. They persist execution state to a workflow provider, such as Temporal, and can resume after crashes, restarts, or infrastructure changes.
 
 ```lua
 -- This can run for days, survive restarts, and never lose progress
 process.spawn("app.orders:process", "app:temporal_worker", order_id)
 ```
 
-The trade-off is latency. Every step gets recorded, so workflows are slower than functions or processes. But for multi-step business processes or long-running orchestrations, that durability is worth it.
+Durability adds latency because workflow operations are recorded. Use workflows when recovery is more important than the lower latency of functions or processes, such as for multi-step business processes and long-running orchestration.
 
 <note>
-Wippy automatically handles determinism for workflows. You don't need to learn any special techniques—write normal code and the runtime ensures it behaves correctly during replay.
+Wippy records supported workflow operations so they produce the same results during replay. Workflow code uses the same Lua syntax as other compute units.
 </note>
 
 ## How They Compare
@@ -58,7 +58,7 @@ Wippy automatically handles determinism for workflows. You don't need to learn a
 | | Functions | Processes | Workflows |
 |---|---|---|---|
 | **State** | None | In memory | Persisted |
-| **Lifetime** | Single call | Until exit or crash | Survives everything |
+| **Lifetime** | Single call | Until exit or crash | Persists across restarts |
 | **Communication** | Return value + messages | Message passing | Activity calls + messages |
 | **Failure handling** | Caller handles | Supervision trees | Automatic retry |
 | **Latency** | Lowest | Low | Higher |
@@ -66,4 +66,3 @@ Wippy automatically handles determinism for workflows. You don't need to learn a
 ## Same Code, Different Behavior
 
 Many modules adapt to their context automatically. For example, `time.sleep()` in a function blocks the worker, in a process it yields to let others run, and in a workflow it records a timer that replays correctly on recovery.
-
