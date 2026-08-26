@@ -18,7 +18,7 @@ For template set configuration, see [Template Engine](system/template.md).
 local templates = require("templates")
 ```
 
-## Acquiring Template Sets
+## `templates.get`
 
 Acquire a template set by registry ID:
 
@@ -39,7 +39,7 @@ set:release()
 
 **Returns:** `Set, error`
 
-## Rendering Templates
+## `set:render`
 
 Render a template by name with data:
 
@@ -67,7 +67,9 @@ return html
 
 **Returns:** `string, error`
 
-## Set Methods
+## Set Method Summary
+
+The set handle provides these methods:
 
 | Method | Returns | Description |
 |--------|---------|-------------|

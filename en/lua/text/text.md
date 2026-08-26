@@ -18,7 +18,9 @@ local text = require("text")
 
 ## Regular Expressions
 
-### Compile
+### `text.regexp.compile`
+
+Compile an RE2-compatible regular expression.
 
 ```lua
 local re, err = text.regexp.compile("[0-9]+")
@@ -30,7 +32,9 @@ local re, err = text.regexp.compile("[0-9]+")
 
 **Returns:** `Regexp, error`
 
-### Match
+### `re:match_string`
+
+Match a string against the compiled expression.
 
 ```lua
 local ok = re:match_string("abc123")
@@ -42,7 +46,9 @@ local ok = re:match_string("abc123")
 
 **Returns:** `boolean`
 
-### Find
+### `re:find_string`
+
+Find the first matching substring.
 
 ```lua
 local match = re:find_string("abc123def")
@@ -54,7 +60,9 @@ local match = re:find_string("abc123def")
 
 **Returns:** `string | nil`
 
-### Find All
+### `re:find_all_string`
+
+Find all matching substrings.
 
 ```lua
 local matches = re:find_all_string("a1b2c3")
@@ -66,7 +74,9 @@ local matches = re:find_all_string("a1b2c3")
 
 **Returns:** `string[]`
 
-### Find with Groups
+### `re:find_string_submatch`
+
+Find the first match and its capture groups.
 
 ```lua
 local match = re:find_string_submatch("user@example.com")
@@ -78,7 +88,9 @@ local match = re:find_string_submatch("user@example.com")
 
 **Returns:** `string[] | nil` (full match + capture groups)
 
-### Find All with Groups
+### `re:find_all_string_submatch`
+
+Find all matches and their capture groups.
 
 ```lua
 local matches = re:find_all_string_submatch("a=1 b=2")
@@ -90,7 +102,9 @@ local matches = re:find_all_string_submatch("a=1 b=2")
 
 **Returns:** `string[][]`
 
-### Find Index
+### `re:find_string_index`
+
+Find the 1-based bounds of the first match.
 
 ```lua
 local pos = re:find_string_index("abc123")
@@ -102,7 +116,9 @@ local pos = re:find_string_index("abc123")
 
 **Returns:** `table | nil` ({start, end}, 1-based)
 
-### Find All Index
+### `re:find_all_string_index`
+
+Find the bounds of all matches.
 
 ```lua
 local positions = re:find_all_string_index("a1b2c3")
@@ -114,7 +130,9 @@ local positions = re:find_all_string_index("a1b2c3")
 
 **Returns:** `table[] | nil` (nil when there are no matches)
 
-### Replace
+### `re:replace_all_string`
+
+Replace every matching substring.
 
 ```lua
 local result = re:replace_all_string("a1b2", "X")
@@ -127,7 +145,9 @@ local result = re:replace_all_string("a1b2", "X")
 
 **Returns:** `string`
 
-### Split
+### `re:split`
+
+Split a string at matches of the compiled expression.
 
 ```lua
 local parts = re:split("a,b,c", -1)
@@ -140,7 +160,9 @@ local parts = re:split("a,b,c", -1)
 
 **Returns:** `string[]`
 
-### Subexpression Count
+### `re:num_subexp`
+
+Return the number of capturing subexpressions.
 
 ```lua
 local count = re:num_subexp()
@@ -148,7 +170,9 @@ local count = re:num_subexp()
 
 **Returns:** `number`
 
-### Subexpression Names
+### `re:subexp_names`
+
+Return the names of capturing subexpressions.
 
 ```lua
 local names = re:subexp_names()
@@ -156,7 +180,9 @@ local names = re:subexp_names()
 
 **Returns:** `string[]`
 
-### Pattern String
+### `re:string`
+
+Return the compiled pattern string.
 
 ```lua
 local pattern = re:string()
@@ -168,7 +194,9 @@ local pattern = re:string()
 
 Compare text versions and generate patches with [go-diff](https://github.com/sergi/go-diff), an implementation of Google's diff-match-patch algorithm.
 
-### Creating a Differ
+### `text.diff.new`
+
+Create a text differ with default or custom options.
 
 ```lua
 local diff, err = text.diff.new()
@@ -188,7 +216,7 @@ local diff, err = text.diff.new(options)
 | `patch_delete_threshold` | number | 0.5 | Delete threshold |
 | `patch_margin` | integer | 4 | Context margin |
 
-### Compare
+### `diff:compare`
 
 Compare two strings and return operations that transform `text1` into `text2`.
 
@@ -211,7 +239,7 @@ local diffs, err = diff:compare("hello world", "hello there")
 
 Operations: `"equal"`, `"delete"`, `"insert"`
 
-### Summarize
+### `diff:summarize`
 
 Count the unchanged, inserted, and deleted characters.
 
@@ -230,7 +258,7 @@ local summary = diff:summarize(diffs)
 
 **Returns:** `table` ({insertions, deletions, equals})
 
-### Pretty Text
+### `diff:pretty_text`
 
 Format a diff with ANSI colors for terminal output.
 
@@ -245,7 +273,7 @@ print(formatted)
 
 **Returns:** `string, error`
 
-### Pretty HTML
+### `diff:pretty_html`
 
 Format a diff as HTML with `<del>` and `<ins>` elements.
 
@@ -260,7 +288,7 @@ local html, err = diff:pretty_html(diffs)
 
 **Returns:** `string, error`
 
-### Create Patches
+### `diff:patch_make`
 
 Create patches that transform one string into another. The patches can be serialized and applied later.
 
@@ -278,7 +306,7 @@ local patches, err = diff:patch_make(text1, text2)
 
 **Returns:** `table, error`
 
-### Apply Patches
+### `diff:patch_apply`
 
 Apply patches to a string and return the result and whether every patch succeeded.
 
@@ -299,7 +327,7 @@ local result, success = diff:patch_apply(patches, text1)
 
 Split documents into chunks while preserving semantic boundaries. The splitters are based on the [langchaingo](https://github.com/tmc/langchaingo) implementation.
 
-### Recursive Splitter
+### `text.splitter.recursive`
 
 The recursive splitter tries double newlines, single newlines, spaces, and then individual characters. It moves to the next separator when a chunk exceeds the size limit.
 
@@ -325,7 +353,7 @@ local chunks, err = splitter:split_text(long_text)
 | `keep_separator` | boolean | false | Keep separators in output |
 | `separators` | string[] | nil | Custom separator list |
 
-### Markdown Splitter
+### `text.splitter.markdown`
 
 The Markdown splitter can keep headings with their content, preserve code blocks, and group table rows.
 
@@ -353,7 +381,7 @@ local chunks, err = splitter:split_text(readme)
 | `heading_hierarchy` | boolean | false | Respect heading levels |
 | `join_table_rows` | boolean | false | Keep table rows together |
 
-### Split Text
+### `splitter:split_text`
 
 Split a single document into an array of chunks.
 
@@ -372,7 +400,7 @@ end
 
 **Returns:** `string[], error`
 
-### Split Batch
+### `splitter:split_batch`
 
 Split multiple documents while preserving their metadata. One input document can produce several chunks, each with the source document's metadata.
 

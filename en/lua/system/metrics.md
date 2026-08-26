@@ -18,7 +18,9 @@ local metrics = require("metrics")
 
 ## Counters
 
-### Increment Counter
+### `metrics.counter_inc`
+
+Increment a counter by one.
 
 ```lua
 metrics.counter_inc("requests_total", {method = "POST"})
@@ -31,7 +33,9 @@ metrics.counter_inc("requests_total", {method = "POST"})
 
 **Returns:** `boolean, error`
 
-### Add to Counter
+### `metrics.counter_add`
+
+Add a value to a counter.
 
 ```lua
 metrics.counter_add("bytes_total", 1024, {direction = "out"})
@@ -47,7 +51,9 @@ metrics.counter_add("bytes_total", 1024, {direction = "out"})
 
 ## Gauges
 
-### Set Gauge
+### `metrics.gauge_set`
+
+Set a gauge to the current value.
 
 ```lua
 metrics.gauge_set("queue_depth", 42, {queue = "emails"})
@@ -61,7 +67,9 @@ metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 
 **Returns:** `boolean, error`
 
-### Increment Gauge
+### `metrics.gauge_inc`
+
+Increment a gauge by one.
 
 ```lua
 metrics.gauge_inc("connections", {pool = "db"})
@@ -74,7 +82,9 @@ metrics.gauge_inc("connections", {pool = "db"})
 
 **Returns:** `boolean, error`
 
-### Decrement Gauge
+### `metrics.gauge_dec`
+
+Decrement a gauge by one.
 
 ```lua
 metrics.gauge_dec("connections", {pool = "db"})
@@ -89,7 +99,9 @@ metrics.gauge_dec("connections", {pool = "db"})
 
 ## Histograms
 
-### Record Observation
+### `metrics.histogram`
+
+Record a histogram observation.
 
 ```lua
 metrics.histogram("duration_seconds", 0.123, {method = "GET"})

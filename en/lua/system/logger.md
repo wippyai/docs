@@ -19,44 +19,39 @@ local logger = require("logger")
 
 ## Log Levels
 
-### Debug
+### `logger:debug`
+
+Write a debug-level log message.
 
 ```lua
 logger:debug("message", {key = "value"})
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `message` | string | Log message |
-| `fields` | table? | Contextual key-value pairs |
+### `logger:info`
 
-### Info
+Write an info-level log message.
 
 ```lua
 logger:info("message", {key = "value"})
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `message` | string | Log message |
-| `fields` | table? | Contextual key-value pairs |
+### `logger:warn`
 
-### Warn
+Write a warning-level log message.
 
 ```lua
 logger:warn("message", {key = "value"})
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `message` | string | Log message |
-| `fields` | table? | Contextual key-value pairs |
+### `logger:error`
 
-### Error
+Write an error-level log message.
 
 ```lua
 logger:error("message", {key = "value"})
 ```
+
+All four log-level methods accept the same parameters:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -65,7 +60,7 @@ logger:error("message", {key = "value"})
 
 ## Logger Customization
 
-### Persistent Fields
+### `logger:with`
 
 Create a child logger that adds the same fields to every message.
 
@@ -80,7 +75,7 @@ child:info("message")
 
 **Returns:** `Logger`
 
-### Named Logger
+### `logger:named`
 
 Create a child logger with a name.
 
