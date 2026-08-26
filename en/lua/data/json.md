@@ -183,7 +183,10 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new({
+        message = "Invalid request: " .. err:message(),
+        kind = errors.INVALID
+    })
 end
 
 -- Now safe to decode

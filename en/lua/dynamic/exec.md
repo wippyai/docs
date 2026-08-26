@@ -101,7 +101,10 @@ if err then
 end
 
 if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", "Build failed with exit code: " .. exit_code)
+    return nil, errors.new({
+        message = "Build failed with exit code: " .. exit_code,
+        kind = errors.INTERNAL
+    })
 end
 ```
 
@@ -140,7 +143,10 @@ stdout:close()
 stderr:close()
 
 if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", table.concat(err_output))
+    return nil, errors.new({
+        message = table.concat(err_output),
+        kind = errors.INTERNAL
+    })
 end
 
 return result
@@ -148,22 +154,27 @@ return result
 
 ## `write_stdin`
 
-Write data to process stdin.
+Write data to process stdin. `write_stdin` does not close stdin, so use a command with a bounded input contract when completion depends on the input stream.
 
 ```lua
--- Pipe data to command
-local proc = executor:exec("sort")
+-- This command exits after reading three lines; it does not require an EOF signal
+local proc = executor:exec("head -n 3")
 local stdout = proc:stdout_stream()
 
 proc:start()
 
--- Write input
-proc:write_stdin("banana\napple\ncherry\n")
-proc:write_stdin("")  -- Signal EOF
+proc:write_stdin("banana\n")
+proc:write_stdin("apple\n")
+proc:write_stdin("cherry\n")
 
--- Read sorted output
-local sorted = stdout:read()
-print(sorted)  -- "apple\nbanana\ncherry\n"
+-- Read until the bounded command exits and closes stdout
+local chunks = {}
+while true do
+    local chunk = stdout:read(4096)
+    if not chunk then break end
+    table.insert(chunks, chunk)
+end
+print(table.concat(chunks))  -- "banana\napple\ncherry\n"
 
 proc:wait()
 stdout:close()

@@ -64,7 +64,10 @@ if content_encoding == "gzip" then
     local body = req:body()
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.new("INVALID", "Invalid gzip data")
+        return nil, errors.new({
+            message = "Invalid gzip data",
+            kind = errors.INVALID
+        })
     end
     body = decompressed
 end
@@ -72,7 +75,10 @@ end
 -- Decompress with size limit (prevent zip bombs)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.new("INVALID", "Decompressed size exceeds 10MB limit")
+    return nil, errors.new({
+        message = "Decompressed size exceeds 10MB limit",
+        kind = errors.INVALID
+    })
 end
 ```
 

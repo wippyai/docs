@@ -111,7 +111,10 @@ local actor = security.actor()  -- Get current user's actor
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
+    return nil, errors.new({
+        message = "User cannot delete records",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 ```
 
@@ -140,7 +143,7 @@ local exec = funcs.new():with_scope(scope)
 
 ### `with_options`
 
-Sets implementation-specific call options such as timeout and priority.
+Sets call options. Implementations may define their own options; the runtime also recognizes `network` for selecting an outbound network.
 
 ```lua
 -- Set a 5 second timeout for external API call
@@ -155,7 +158,15 @@ end
 |-----------|------|-------------|
 | `options` | table | Implementation-specific options |
 
+The runtime-defined option is:
+
+| Recognized option | Type | Description |
+|-------------------|------|-------------|
+| `network` | string | Registry ID of the outbound `network.*` entry |
+
 **Returns:** `Executor, error`
+
+Selecting a network requires `network.select` permission on that network ID.
 
 ### `call` and `async`
 
@@ -297,6 +308,7 @@ Function operations are subject to security policy evaluation.
 | `funcs.call` | Function ID | Call a specific function |
 | `funcs.context` | `context` | Use `with_context()` to set custom context |
 | `funcs.security` | `security` | Use `with_actor()` or `with_scope()` |
+| `network.select` | Network ID | Select an outbound network with `with_options()` |
 
 ## Errors
 

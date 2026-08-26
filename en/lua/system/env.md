@@ -26,7 +26,10 @@ Retrieve an environment variable.
 -- Get database connection string
 local db_url = env.get("DATABASE_URL")
 if not db_url then
-    return nil, errors.new("INVALID", "DATABASE_URL not configured")
+    return nil, errors.new({
+        message = "DATABASE_URL not configured",
+        kind = errors.INVALID
+    })
 end
 
 -- Get with fallback
@@ -92,7 +95,10 @@ end
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new("INVALID", "Missing required env var: " .. key)
+        return nil, errors.new({
+            message = "Missing required env var: " .. key,
+            kind = errors.INVALID
+        })
     end
 end
 ```

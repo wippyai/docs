@@ -88,7 +88,10 @@ Check whether a key exists without retrieving its value:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({
+        message = "Resource is locked",
+        kind = errors.CONFLICT
+    })
 end
 ```
 

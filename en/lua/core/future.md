@@ -103,7 +103,10 @@ local r = channel.select {
 
 if r.channel == timeout then
     future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
 end
 
 return r.value:data()

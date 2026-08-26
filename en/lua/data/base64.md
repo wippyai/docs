@@ -28,8 +28,10 @@ Encodes a string, including binary data, as Base64.
 local encoded = base64.encode("Hello, World!")
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
--- Encode binary data (e.g., from file)
-local image_data = fs.read_binary("photo.jpg")
+-- Encode binary data from a configured filesystem volume
+local fs = require("fs")
+local assets = assert(fs.get("app:assets"))
+local image_data = assert(assets:readfile("photo.jpg"))
 local image_b64 = base64.encode(image_data)
 
 -- Encode JSON for transport
@@ -62,7 +64,10 @@ print(decoded)  -- "Hello, World!"
 -- Decode with error handling
 local data, err = base64.decode(user_input)
 if err then
-    return nil, errors.new("INVALID", "Invalid base64 data")
+    return nil, errors.new({
+        message = "Invalid base64 data",
+        kind = errors.INVALID
+    })
 end
 
 -- Decode binary data
@@ -71,12 +76,17 @@ local image_data, err = base64.decode(image_b64)
 if err then
     return nil, err
 end
-fs.write_binary("output.jpg", image_data)
+local fs = require("fs")
+local output = assert(fs.get("app:output"))
+local ok, write_err = output:writefile("output.jpg", image_data)
+if write_err then
+    return nil, write_err
+end
 
--- Decode JWT parts
-local parts = string.split(jwt_token, ".")
-local header = json.decode(base64.decode(parts[1]))
-local payload = json.decode(base64.decode(parts[2]))
+-- Decode the first field from a dot-delimited value
+local value = base64.encode("header") .. "." .. base64.encode("payload")
+local encoded_field = assert(value:match("^([^.]+)"))
+local field, err = base64.decode(encoded_field)
 ```
 
 | Parameter | Type | Description |

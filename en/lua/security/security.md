@@ -58,12 +58,18 @@ Check whether the current context allows an action on a resource.
 ```lua
 -- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
+    return nil, errors.new({
+        message = "Cannot read user data",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 
 -- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
+    return nil, errors.new({
+        message = "Cannot modify order",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 
 -- Check with metadata
@@ -229,7 +235,10 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Access denied")
+    return nil, errors.new({
+        message = "Access denied",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 ```
 
@@ -298,7 +307,7 @@ Validate a token and return its actor and scope.
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Invalid token")
+    return nil, err
 end
 ```
 
