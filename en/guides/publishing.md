@@ -1,17 +1,17 @@
 ---
 title: "Publishing Modules"
-description: "Share reusable code on the Wippy Hub."
+description: "Prepare, validate, publish, configure, and consume modules through the Wippy Hub."
 ---
 
 # Publishing Modules
 
-Share reusable code on the Wippy Hub.
+Publishing packages a module and makes a version or mutable label available through the Wippy Hub.
 
 ## Prerequisites
 
-1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
-2. Create an organization or join one
-3. Register your module name under your organization
+1. Create an account on [hub.wippy.ai](https://hub.wippy.ai).
+2. Create or join an organization.
+3. Register the module name under that organization.
 
 ## Module Structure
 
@@ -26,7 +26,7 @@ mymodule/
 
 ## wippy.yaml
 
-Module manifest:
+Define module metadata in `wippy.yaml`:
 
 ```yaml
 organization: acme
@@ -43,7 +43,7 @@ keywords:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `organization` | Yes | Your org name on the hub |
+| `organization` | Yes | Organization name on the Hub |
 | `module` | Yes | Module name |
 | `type` | No | Module type: `library`, `application`, `agent`, or `plugin` |
 | `description` | No | Short description |
@@ -52,11 +52,11 @@ keywords:
 | `homepage` | No | Project homepage |
 | `keywords` | No | Search keywords |
 
-`type` is the source of truth for how the hub classifies the module and can be changed on a later publish; `--module-type` overrides it for a single publish. When omitted, newly created modules default to `application` with a deprecation warning.
+`type` controls how the Hub classifies the module and can be changed in a later publish. The `--module-type` flag overrides it for one publish. When omitted, a newly created module defaults to `application` with a deprecation warning.
 
 ## Entry Definitions
 
-Entries are defined in `_index.yaml`:
+Define the module's entries in `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -81,7 +81,7 @@ entries:
       - json
 ```
 
-The `wiki:` map on `ns.definition` publishes additional documentation pages next to the readme: keys are page paths, values are `file://` references. Contents are inlined at pack time and served by the hub as a browsable per-module wiki.
+The `wiki:` map on `ns.definition` publishes documentation pages alongside the README. Keys are page paths, and values are `file://` references. Contents are inlined during packing and served by the Hub as a module wiki.
 
 ## Dependencies
 
@@ -123,12 +123,13 @@ entries:
 ```
 
 Targets specify where the value is injected:
-- `entry` - Full entry ID to configure
-- `path` - JSONPath for value injection
+
+- `entry` — Full entry ID to configure
+- `path` — JSONPath for value injection
 
 `default` accepts any scalar type — `default: 20` flows into a numeric target as a number, not a string. The same applies to `parameters[].value` on `ns.dependency` entries, and both accept `${env:NAME}` references, carried verbatim and resolved when the target entry is decoded.
 
-Consumers configure via override. The `-o` flag takes a `namespace:entry:field=value` triple:
+Consumers can configure the target through an override. The `-o` flag accepts a `namespace:entry:field=value` value:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
@@ -181,7 +182,7 @@ Define public interfaces:
         post: acme.http:post_handler
 ```
 
-## Publishing Workflow
+## Publish Workflow
 
 ### 1. Authenticate
 
@@ -215,7 +216,7 @@ With release notes:
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### Additional Flags
+### Publish Flags
 
 | Flag | Description |
 |------|-------------|
@@ -228,7 +229,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--module-type <t>` | Module type: `library`, `application`, `agent`, or `plugin` (overrides `type:` in wippy.yaml) |
 | `--module-display-name <n>` | Display name for `--create` |
 
-### Embedding Static Files
+### Embed Static Files
 
 Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
 
@@ -241,7 +242,7 @@ The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. T
 
 ### First Publish
 
-The first time you publish a module it is registered on the hub automatically (private by default) and the publish retries once. Pass `--create` to register it up-front and set its properties:
+On its first publish, a module is registered on the Hub as private by default, and the publish retries once. Use `--create` to register it before publishing and set its properties:
 
 ```bash
 wippy publish --create --version 0.1.0 \
@@ -254,7 +255,7 @@ wippy publish --create --version 0.1.0 \
 
 ### Publishing to a Local Hub
 
-Point `--registry` at a locally running hub to publish and install without the public registry. Plain HTTP is allowed only for local hosts — `localhost`, `127.0.0.1`, and the container aliases `host.docker.internal` (Docker Desktop / OrbStack) and `host.containers.internal` (Podman); any other host must use HTTPS.
+Point `--registry` at a locally running Hub to publish and install without using the public registry. Plain HTTP is allowed only for local hosts: `localhost`, `127.0.0.1`, and the container aliases `host.docker.internal` (Docker Desktop or OrbStack) and `host.containers.internal` (Podman). Other hosts must use HTTPS.
 
 ```bash
 wippy auth login --registry http://localhost:8080 --token wpy_xxx
@@ -265,11 +266,11 @@ The registry and token can also come from the `WIPPY_REGISTRY` and `WIPPY_TOKEN`
 
 ### Quotas
 
-If the organization's private-module quota is exhausted, publish fails with a message such as `cannot publish: Private-module quota exhausted (5 of 5)...`. Make the module public or ask an org admin to raise the quota. Uploads and downloads retry automatically on transient network errors.
+If the organization's private-module quota is exhausted, publishing fails with a message such as `cannot publish: Private-module quota exhausted (5 of 5)...`. Make the module public or ask an organization administrator to raise the quota. Uploads and downloads retry automatically after transient network errors.
 
 ## Publishing Runtime Defaults
 
-Applications (`type: application` only) can ship runtime configuration defaults inside their packs via `publish.runtime` in `wippy.yaml`:
+Applications with `type: application` can include runtime configuration defaults in their packs through `publish.runtime` in `wippy.yaml`:
 
 ```yaml
 type: application
@@ -293,7 +294,7 @@ Rules:
 - The machine-local sections `boot`, `extensions`, and `workspace` cannot be exported.
 - Only the main application pack provides host runtime defaults; runtime metadata in dependency packs is ignored.
 
-At the destination, configuration applies lowest to highest: app pack defaults, runtime built-in defaults, local config files, selected profiles, CLI overrides.
+At the destination, configuration precedence runs from application-pack defaults through runtime defaults, local configuration files, selected profiles, and finally CLI overrides.
 
 ## Publishing Profiles
 
@@ -351,7 +352,7 @@ entries:
       http: acme.http:client
 ```
 
-## Complete Example
+## Example Module
 
 **wippy.yaml:**
 ```yaml
@@ -433,6 +434,6 @@ wippy publish --version 1.0.0
 
 ## See Also
 
-- [CLI Reference](guides/cli.md)
-- [Entry Kinds](guides/entry-kinds.md)
-- [Configuration](guides/configuration.md)
+- [CLI Reference](guides/cli.md) — Publishing commands and flags
+- [Entry Kinds](guides/entry-kinds.md) — Module and dependency entries
+- [Configuration](guides/configuration.md) — Runtime configuration and profiles

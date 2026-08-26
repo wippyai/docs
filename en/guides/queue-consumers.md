@@ -1,11 +1,11 @@
 ---
 title: "Queue Consumers"
-description: "Queue consumers process messages from queues using worker pools."
+description: "Configure queue consumers, worker pools, acknowledgments, shutdown behavior, and the in-memory driver."
 ---
 
 # Queue Consumers
 
-Queue consumers process messages from queues using worker pools.
+Queue consumers deliver messages from a queue to function handlers through a configurable worker pool.
 
 ## Overview
 
@@ -87,10 +87,10 @@ return handler
 
 ## Worker Pool
 
-- Workers run as concurrent goroutines
-- Each worker processes one message at a time
-- Workers pull from a shared delivery channel; whichever worker is idle receives the next message (no guaranteed ordering or rotation across workers)
-- Prefetch buffer allows driver to deliver ahead
+- Workers run as concurrent goroutines.
+- Each worker processes one message at a time.
+- Workers pull from a shared delivery channel. The next idle worker receives the next message, without guaranteed ordering or rotation across workers.
+- The prefetch buffer allows the driver to deliver messages ahead of processing.
 
 ### Example
 
@@ -107,7 +107,8 @@ Flow:
 
 ## Graceful Shutdown
 
-On stop:
+During shutdown, the consumer:
+
 1. Stop accepting new deliveries
 2. Cancel worker contexts
 3. Wait for in-flight messages (with timeout)
@@ -150,16 +151,16 @@ Dead-letter routing is driver-dependent. The runtime does not translate the dead
 
 ## Memory Driver
 
-Built-in in-memory queue for development/testing:
+The built-in in-memory driver is intended for development and testing:
 
-- Kind: `queue.driver.memory`
-- Messages stored in memory
-- Nack re-enqueues the message to the tail of the queue
-- No persistence across restarts
+- Its kind is `queue.driver.memory`.
+- Messages are stored in memory.
+- Nack re-enqueues a message at the end of the queue.
+- Messages do not persist across restarts.
 
 ## See Also
 
-- [Message Queue](lua/storage/queue.md) - Queue module reference
-- [Queue Configuration](system/queue.md) - Queue drivers and entry definitions
-- [Supervision Trees](guides/supervision.md) - Consumer lifecycle
-- [Process Management](lua/core/process.md) - Process spawning and communication
+- [Message Queue](lua/storage/queue.md) — Queue module reference
+- [Queue Configuration](system/queue.md) — Queue drivers and entry definitions
+- [Supervision](guides/supervision.md) — Consumer lifecycle
+- [Process Management](lua/core/process.md) — Process spawning and communication

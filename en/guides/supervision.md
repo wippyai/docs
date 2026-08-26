@@ -1,11 +1,11 @@
 ---
 title: "Supervision"
-description: "The supervisor manages service lifecycles, handling startup ordering, automatic restarts, and graceful shutdown. Services with autostart: true are…"
+description: "Configure service startup order, restart policies, security context, state transitions, and graceful shutdown."
 ---
 
 # Supervision
 
-The supervisor manages service lifecycles, handling startup ordering, automatic restarts, and graceful shutdown. Services with `auto_start: true` are started when the application boots.
+The supervisor manages service startup, dependency order, restarts, and graceful shutdown. Services with `auto_start: true` start when the application boots.
 
 ## Lifecycle Configuration
 
@@ -59,7 +59,7 @@ graph LR
     C --> E[Cache]
 ```
 
-Dependencies start before dependents. If Service C depends on A and B, both A and B must reach `Running` state before C starts.
+Dependencies start before their dependents. If Service C depends on A and B, both dependencies must reach the `Running` state before C starts.
 
 <tip>
 You don't need to declare infrastructure entries like databases in <code>requires</code>. The supervisor automatically extracts dependencies from registry references in your entry configuration.
@@ -88,7 +88,7 @@ lifecycle:
 | ... | ... | ... |
 | N | 90s | 81s - 99s (capped) |
 
-When a service runs longer than `stable_threshold`, the retry counter resets. This prevents transient failures from permanently escalating delays.
+When a service runs longer than `stable_threshold`, its retry counter resets, so later failures start from the initial retry delay.
 
 ### Terminal Errors
 
@@ -127,7 +127,7 @@ Services can run with a specific security identity:
         - app:data_access
 ```
 
-The security context sets:
+The security context defines:
 
 | Field | Description |
 |-------|-------------|
@@ -136,7 +136,7 @@ The security context sets:
 | `groups` | Policy groups to apply |
 | `policies` | Individual policies to apply |
 
-Code running in the service inherits this security context. The `security` module can then check permissions:
+Code running in the service inherits this security context. The `security` module can use it for permission checks:
 
 ```lua
 local security = require("security")
@@ -183,9 +183,9 @@ The supervisor transitions services through these states:
 
 ## Startup and Shutdown Order
 
-**Startup**: Dependencies first, then dependents. Services at the same dependency level can start in parallel.
+**Startup:** Dependencies start before dependents. Services at the same dependency level can start in parallel.
 
-**Shutdown**: Dependents first, then dependencies. This ensures dependent services finish before their dependencies stop.
+**Shutdown:** Dependents stop before dependencies, allowing dependent services to finish first.
 
 ```
 Startup:  database → cache → handler → http_server
@@ -194,6 +194,6 @@ Shutdown: http_server → handler → cache → database
 
 ## See Also
 
-- [Process Model](concepts/process-model.md) - Process lifecycle
-- [Configuration](guides/configuration.md) - YAML configuration format
-- [Security Module](lua/security/security.md) - Permission checks in Lua
+- [Process Model](concepts/process-model.md) — Process lifecycle
+- [Configuration](guides/configuration.md) — YAML configuration format
+- [Security Module](lua/security/security.md) — Permission checks in Lua

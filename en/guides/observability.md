@@ -1,15 +1,15 @@
 ---
 title: "Observability"
-description: "Configure logging, metrics, and distributed tracing for Wippy applications."
+description: "Configure Wippy logging, Prometheus metrics, OpenTelemetry tracing, and runtime statistics."
 ---
 
 # Observability
 
-Configure logging, metrics, and distributed tracing for Wippy applications.
+Wippy exposes application and runtime behavior through logging, metrics, distributed tracing, and runtime statistics.
 
 ## Overview
 
-Wippy provides three observability pillars configured at boot time:
+Three observability areas are configured at boot:
 
 | Pillar | Backend | Configuration |
 |--------|---------|---------------|
@@ -19,14 +19,14 @@ Wippy provides three observability pillars configured at boot time:
 
 ## Logger Configuration
 
-### Basic Logger
+### Logger Encoding
 
 ```yaml
 logger:
   encoding: json       # json or console
 ```
 
-Level and output are controlled by CLI flags (`-v`, `-c`, `-s`) — only `encoding` is read from yaml.
+Level and output are controlled by CLI flags (`-v`, `-c`, `-s`); only `encoding` is read from YAML.
 
 ### Log Manager
 
@@ -73,7 +73,7 @@ For the Lua metrics API, see [Metrics Module](lua/system/metrics.md).
 
 ## OpenTelemetry
 
-OTEL provides distributed tracing and optional metrics export.
+OpenTelemetry (OTEL) provides distributed tracing and optional metrics export.
 
 ### Basic Configuration
 
@@ -140,7 +140,8 @@ otel:
 
 When enabled, the Temporal SDK's tracing interceptor is registered for both client and worker operations.
 
-Traced operations:
+Traced operations include:
+
 - Workflow starts and completions
 - Activity executions
 - Child workflow calls
@@ -158,7 +159,7 @@ Traced operations:
 
 ### Context Propagation
 
-Trace context propagates automatically:
+The configured integrations propagate trace context through:
 
 - **HTTP → Function**: W3C Trace Context headers
 - **Function → Function**: Frame context inheritance
@@ -199,6 +200,6 @@ local states = system.supervisor.states()
 
 ## See Also
 
-- [Logger Module](lua/system/logger.md) - Lua logging API
-- [Metrics Module](lua/system/metrics.md) - Lua metrics API
-- [System Module](lua/system/system.md) - Runtime statistics
+- [Logger Module](lua/system/logger.md) — Lua logging API
+- [Metrics Module](lua/system/metrics.md) — Lua metrics API
+- [System Module](lua/system/system.md) — Runtime statistics
