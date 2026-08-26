@@ -42,11 +42,12 @@ Build a web component:
 
 Both:
 - [Host-less Mode](./host-less-mode.md) — develop and test without running the full Web Host
-- [Compliance Checklist](./compliance-checklist.md) — MUST/SHOULD rules before shipping
+- [Compliance Rule Index](./compliance-checklist.md) — canonical rule owners and deterministic gates
 - [Debugging](./debugging.md) — symptom-first guide for the most common failure scenarios
 
 ## Prerequisites
 
 - Wippy backend module with `wippy/views` declared as a dependency (see [Views](../../framework/views.md))
 - `wippy/facade` for the Web Host entry point (see [Facade Entry Point](../web-host/entry-point.md))
-- Node.js 20+, pnpm or npm, Vite 6
+- Node.js 22 or newer and Vite 7, as declared by the selected Web Host source;
+  re-check its package when the target release changes
