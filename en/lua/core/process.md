@@ -13,13 +13,6 @@ The `process` global provides process spawning, messaging, monitoring, linking, 
 
 It is available without `require()` and does not need to be listed in `modules:`.
 
-**Core API map:** use `process.spawn*` to start processes, `process.send` to
-send messages, `process.monitor` and `process.link` to observe lifecycle,
-`process.registry.register` to assign a name, and `process.upgrade` to replace
-the current process definition. `SpawnBuilder` supports only the methods listed
-in [SpawnBuilder Methods](#spawnbuilder-methods); it has no `with_name` or
-`with_message` helper.
-
 ## Process Information
 
 Read the current frame ID or process ID:
