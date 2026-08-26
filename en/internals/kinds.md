@@ -5,7 +5,7 @@ description: "Entry handlers process registry entries by kind. When entries are 
 
 # Entry Handlers
 
-Entry handlers process registry entries by kind. When entries are added, updated, or deleted, the registry dispatches events to matching handlers.
+Entry listeners and observers process registry mutations for matching entry-kind patterns.
 
 ## How It Works
 

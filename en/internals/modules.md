@@ -1,11 +1,11 @@
 ---
 title: "Lua Modules"
-description: "Runtime modules extend the Lua environment with new functionality. Modules can provide deterministic utilities, I/O operations, or async commands that…"
+description: "Define typed Lua runtime modules with synchronous functions, userdata, yields, errors, security checks, and tests."
 ---
 
 # Lua Modules
 
-Runtime modules extend the Lua environment with new functionality. Modules can provide deterministic utilities, I/O operations, or async commands that yield to external systems.
+Runtime modules add deterministic utilities, I/O operations, or asynchronous commands to the Lua environment.
 
 > The Lua runtime implementation may change in future versions.
 

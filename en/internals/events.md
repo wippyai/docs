@@ -1,11 +1,11 @@
 ---
 title: "Event Bus"
-description: "The event bus is a pub/sub system using a single dispatcher goroutine. Publishers enqueue actions, the dispatcher processes them sequentially, and…"
+description: "Event bus actions, wildcard subscriptions, delivery, Lua process bridging, request-response helpers, and shutdown."
 ---
 
 # Event Bus
 
-The event bus is a pub/sub system using a single dispatcher goroutine. Publishers enqueue actions, the dispatcher processes them sequentially, and subscribers receive matching events on channels.
+The event bus processes queued pub/sub actions on one dispatcher goroutine and delivers matching events to subscriber channels.
 
 ## Event Structure
 

@@ -1,11 +1,11 @@
 ---
 title: "Registry Internals"
-description: "The registry is a versioned, event-driven state store. It maintains complete version history, supports transactions, and propagates changes through the…"
+description: "Versioned registry storage, changesets, transactions, dependency resolution, history, and entry search."
 ---
 
 # Registry Internals
 
-The registry is a versioned, event-driven state store. It maintains complete version history, supports transactions, and propagates changes through the event bus.
+The registry stores versioned entry state, supports transactions and history, and propagates changes through the event bus.
 
 ## Entry Storage
 

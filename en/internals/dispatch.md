@@ -1,11 +1,11 @@
 ---
 title: "Command Dispatch"
-description: "The dispatch system routes commands from processes to handlers. Processes yield commands with correlation tags, handlers execute async work, and…"
+description: "How process yields are routed to command handlers and returned through correlated completion events."
 ---
 
 # Command Dispatch
 
-The dispatch system routes commands from processes to handlers. Processes yield commands with correlation tags, handlers execute async work, and results flow back via event queues.
+Command dispatch routes process yields to handlers and returns correlated results through process event queues.
 
 ## Flow
 

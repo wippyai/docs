@@ -1,6 +1,6 @@
 ---
 title: "Architecture"
-description: "<note This page is a work in progress. Content may be incomplete or change. </note"
+description: "How Wippy boots infrastructure, loads components and entries, schedules work, routes messages, and shuts down."
 ---
 
 # Architecture

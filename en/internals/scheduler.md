@@ -5,7 +5,7 @@ description: "The scheduler executes processes using a work-stealing design. Wor
 
 # Scheduler
 
-The scheduler executes processes using a work-stealing design. Workers maintain local deques and steal from each other when idle.
+The scheduler executes processes on workers with local deques, inject queues, a global queue, and work stealing.
 
 ## Process Interface
 
