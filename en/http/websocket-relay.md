@@ -14,10 +14,6 @@ The `websocket_relay` middleware upgrades an HTTP connection and relays WebSocke
 3. Relay attaches to the target process and monitors it
 4. Messages flow bidirectionally between client and process
 
-<warning>
-The WebSocket connection is bound to the target process. If the process exits, the connection closes automatically.
-</warning>
-
 ## Process Semantics
 
 WebSocket connections are full processes with their own PID. They integrate with the process system:

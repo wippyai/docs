@@ -1,6 +1,6 @@
 ---
 title: "Executor"
-description: "Command executors run external processes with controlled environments. Two executor types are available: native OS processes and Docker containers."
+description: "Configure native or Docker command executors, working directories, environments, allowlists, and resource controls."
 ---
 
 # Executor

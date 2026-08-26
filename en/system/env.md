@@ -5,11 +5,11 @@ description: "Define environment variables backed by memory, files, the operatin
 
 # Environment System
 
-The environment system defines variables backed by memory, files, operating-system values, static configuration, or storage routers.
+Environment entries let runtime code reference configuration by public variable name or registry entry ID.
 
-## Overview
+## Storage and Access
 
-The environment system separates storage from access:
+The model separates storage from access:
 
 - **Storages** - Where values are stored (OS, files, memory)
 - **Variables** - Named references to values in storages

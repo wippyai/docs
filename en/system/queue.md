@@ -1,6 +1,6 @@
 ---
 title: "Queue"
-description: "Wippy provides a queue system for asynchronous message processing with configurable drivers and consumers."
+description: "Configure memory, AMQP, or SQS queue drivers, logical queues, consumers, acknowledgments, and publishing."
 ---
 
 # Queue
@@ -310,7 +310,7 @@ queue.publish("app.queue:tasks", {
 })
 ```
 
-See [Queue Module](lua/storage/queue.md) for full API.
+See [Queue Module](lua/storage/queue.md) for the Lua publishing and message API.
 
 ## Graceful Shutdown
 

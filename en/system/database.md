@@ -263,11 +263,11 @@ entries:
 
 ## Runtime Registration
 
-Databases can be registered at runtime using the [registry module](lua/core/registry.md), enabling dynamic database configuration based on application state or external configuration.
+Databases can be registered at runtime using the [registry module](lua/core/registry.md).
 
 ## Lua API
 
-See [SQL Module](lua/storage/sql.md) for database operations API.
+See [SQL Module](lua/storage/sql.md) for query, transaction, and connection operations.
 
 ## See Also
 

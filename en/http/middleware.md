@@ -5,11 +5,11 @@ description: "Middleware processes HTTP requests before and after route handling
 
 # HTTP Middleware
 
-HTTP middleware adds request processing before route matching or after a route is matched.
+HTTP middleware runs before route matching or after a route is matched.
 
 ## How Middleware Works
 
-Middleware wraps HTTP handlers to add processing logic. Each middleware receives an options map and returns a handler wrapper:
+Each middleware receives an options map and returns a handler wrapper:
 
 ```yaml
 middleware:
