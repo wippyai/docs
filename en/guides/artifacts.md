@@ -1,22 +1,22 @@
 ---
-title: "Build-time artifacts"
-description: "Declaring a filesystem resource as a format-aware artifact, materializing it into a consuming project, and what the runtime reconciles automatically."
+title: "Build-Time Artifacts"
+description: "Declare, validate, publish, and materialize format-aware filesystem artifacts for consuming projects."
 ---
 
-# Build-time artifacts
+# Build-Time Artifacts
 
 A module can ship a directory that consumers use **at build time** rather than
-at runtime — most usefully, a package that other modules compile against. Wippy
-calls these **artifacts**: ordinary WAPP filesystem resources marked with
+at runtime, such as a package that other modules compile against. Wippy calls
+these **artifacts**: WAPP filesystem resources marked with
 `meta.artifact.format`.
 
-This is how a shared package reaches a module in a different repository. A path
-alias only resolves inside one repo; an artifact travels with the module.
+Artifacts allow a shared package to travel with a module across repository
+boundaries, where a repository-local path alias cannot resolve it.
 
 [The Design Layer](../frontend/design-layer.md) explains *what* belongs in such
 a package and what does not; this page is the mechanism that ships it.
 
-## Declaring an artifact
+## Declaring an Artifact
 
 The producer declares a normal `fs.directory` and marks it with a format:
 
@@ -32,7 +32,7 @@ entries:
     directory: ./package
 ```
 
-Nothing else changes: the resource is packed into the WAPP as usual. Declared
+The resource is packed into the WAPP as usual. Declared
 artifacts are **validated during module publish and application pack**, so a
 malformed one fails at publish rather than in a consumer.
 
@@ -53,10 +53,9 @@ materialized package may not execute anything on install. It writes to
 The format must be registered in the binary doing the work. Hosts may register
 additional formats; duplicate names and overlapping roots are rejected.
 
-## Materializing
+## Materialization
 
-Most of the time you do not run anything. Materialized outputs are reconciled
-automatically during:
+Materialized outputs are reconciled automatically during:
 
 - full and targeted `wippy install` and `wippy update`
 - cold boot
@@ -70,7 +69,7 @@ Local module replacements go through the same validation and materialization
 lifecycle as packed resources, so a replaced module's artifact behaves like a
 published one.
 
-### Materializing explicitly
+### Explicit Materialization
 
 For a build step that needs the artifact before the runtime is involved, the
 CLI exposes it directly:
@@ -82,12 +81,12 @@ wippy artifacts materialize <pack.wapp> <namespace:name> [--root <directory>]
 `--root` defaults to `.wippy`. The resource must declare `meta.artifact.format`
 and that format must be registered in this CLI.
 
-Be clear about what this command deliberately does **not** do: it does not
+This command does **not**
 resolve module dependencies, does not mutate `wippy.lock`, does not invoke
 package managers, and does not participate in runtime composition. It validates
 one artifact out of one WAPP and writes it to disk.
 
-### Where output lands
+### Output Location
 
 `artifact.materialization_root` configures the application-owned output root.
 Its default is the parent of the dependency vendor directory. Each format owns
@@ -99,10 +98,9 @@ roots are swapped atomically under a process lock, a failure rolls back with
 the surrounding registry transaction, and an interrupted swap is recovered on
 the next run.
 
-## Worked example: a shared frontend package
+## Worked Example: A Shared Frontend Package
 
-A producer module whose only job is to publish a package — it serves nothing at
-runtime:
+A producer module can publish a package without serving a runtime resource:
 
 ```yaml
 # platform/ui-kit/src/_index.yaml
@@ -138,7 +136,7 @@ ordinary workspaces glob, so resolution is plain node resolution from there on:
 npm install
 ```
 
-Two things worth copying from this shape:
+This arrangement has two important properties:
 
 - **The package is its own module, not a directory inside a bigger one.** The
   artifact carries its own `package.json` version, and tying it to a module
@@ -148,12 +146,12 @@ Two things worth copying from this shape:
   is no Wippy-specific import path, which is what lets the same source build
   inside the monorepo and outside it.
 
-## End to end: authoring, dev loop, CI
+## End-to-End Workflow
 
-### Authoring the producer
+### Authoring the Producer
 
-For a package artifact there is usually **nothing to build** — the directory is
-the deliverable. A CSS vocabulary package is just files plus a manifest:
+For a package artifact, the directory itself can be the deliverable. A CSS
+vocabulary package consists of its files and manifest:
 
 ```text
 platform/ui-kit/
@@ -200,10 +198,10 @@ wippy publish --create --module-type library --module-visibility public --versio
 Declared artifacts are validated as part of publish, so a package.json that
 fails the format's rules is rejected here rather than in a consumer's build.
 
-### The dev loop
+### Development Loop
 
-Publishing on every edit is not a dev loop. Pack the producer locally and point
-the consumer's materialize step at that file instead:
+During development, pack the producer locally and point the consumer's
+materialization step at that file:
 
 ```bash
 # from the producer module
@@ -213,15 +211,13 @@ wippy pack /tmp/ui-kit-dev.wapp
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
 ```
 
-Keep that override as the *only* difference between the dev path and CI — an
-environment variable that selects the pack file, with everything downstream
-identical. A dev loop that materializes differently from CI stops predicting
-CI.
+Keep the pack-file override as the only difference between development and CI.
+An environment variable can select the local pack while leaving downstream
+materialization and build steps unchanged.
 
-### Wiring it into make and CI
+### Build and CI Integration
 
-Make the materialize step a **prerequisite of the consumer's build**, not a
-thing a person remembers to run:
+Make materialization a **prerequisite of the consumer's build**:
 
 ```make
 UI_KIT_WAPP ?=
@@ -231,22 +227,20 @@ build:
 	cd $(call fe_dir,$(MOD)) && npm run build
 ```
 
-CI then needs no artifact-specific step at all: it runs the same `make build`,
+CI can then run the same `make build` without an additional artifact step.
 `UI_KIT_WAPP` is unset, so the fetch-and-materialize path runs against the
 published version pinned in `build-inputs`. A fresh checkout cannot compile
 against a stale or missing package, and a contributor who has never heard of
 artifacts still gets a correct build.
 
-## What you still have to hand-roll
+## Consumer Integration Steps
 
-`wippy artifacts materialize` is deliberately narrow, so a build that consumes
-an artifact currently glues four steps together itself. Knowing which four
-saves rediscovering them:
+Because `wippy artifacts materialize` handles one resource from one pack, a
+consumer build must coordinate four steps:
 
-**1. Getting the `.wapp`.** The command takes a *pack file path*, not a module
-reference, and does not resolve dependencies — so something has to fetch the
-producer first. The workable pattern is a tiny Wippy project whose only job is
-to pin and download it:
+**1. Fetch the `.wapp`.** The command takes a *pack file path*, not a module
+reference, and does not resolve dependencies. One approach is a small Wippy
+project that pins and downloads the producer:
 
 ```yaml
 # build-inputs/wippy.lock — a project that exists only to fetch
@@ -264,14 +258,14 @@ wapp=$(ls build-inputs/.wippy/vendor/kickside/ui-kit-*.wapp | grep -v sha256 | s
 Pinning it here rather than in the application lock keeps a build-time input
 out of the runtime dependency graph.
 
-**2. Materializing once per consumer**, into a root the consumer's package
+**2. Materialize once per consumer** into a root the consumer's package
 manager can see:
 
 ```bash
 wippy artifacts materialize "$wapp" kickside.ui_kit:package_fs --root ./ui/.wippy
 ```
 
-**3. Wiring the consumer's `package.json`.** Materializing writes files; it
+**3. Wire the consumer's `package.json`.** Materializing writes files; it
 does not edit manifests. npm links the package only if the consumer declares
 *both* the workspace glob and the dependency:
 
@@ -282,13 +276,13 @@ does not edit manifests. npm links the package only if the consumer declares
 }
 ```
 
-The version is `*` because the materialized package carries its own. Script
-this and make it idempotent — if the wiring is missing, the build fails much
-later with a bare `ENOENT` on a stylesheet, which reads as a missing file
-rather than as missing wiring.
+The version is `*` because the materialized package carries its own. Automate
+this step and make it idempotent. Without the manifest wiring, the build may
+later report an `ENOENT` for a stylesheet instead of identifying the missing
+dependency configuration.
 
-**4. Running the package manager.** `materialize` does not invoke one, so
-`npm install` is yours to call, after step 3.
+**4. Run the package manager.** `materialize` does not invoke one, so run
+`npm install` after step 3.
 
 Together, in a target that takes the consuming module as a parameter:
 
@@ -302,10 +296,10 @@ ui-kit:
 	cd $(DIR) && node ../../scripts/wire-ui-kit.mjs && npm install --no-audit --no-fund
 ```
 
-Make the whole target a prerequisite of the consumer's build, so a fresh
-checkout cannot compile against a stale or absent package.
+Make the whole target a prerequisite of the consumer's build to prevent a fresh
+checkout from compiling against a stale or absent package.
 
-## Out of scope
+## Out of Scope
 
 Artifacts intentionally do not introduce a second resolver, package registry,
 archive format, lock schema, Hub API, or module manifest. Build-only dependency

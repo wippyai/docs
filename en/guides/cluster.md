@@ -1,15 +1,15 @@
 ---
 title: "Cluster"
-description: "Wippy runs as a single node by default. Enabling the cluster turns a set of nodes into one coordinated system that shares membership, cluster-wide…"
+description: "Configure Wippy nodes for gossip membership, bounded Raft consensus, process naming, distributed locks, and process groups."
 ---
 
 # Cluster
 
-Wippy runs as a single node by default. Enabling the cluster turns a set of nodes into one coordinated system that shares membership, cluster-wide process names, distributed locks, and process-group messaging on top of a bounded Raft consensus core.
+Wippy runs as a single node by default. Enabling clustering connects nodes through gossip membership and a bounded Raft consensus core, supporting cluster-wide process names, distributed locks, and process-group messaging.
 
-Clustering is off until you set `cluster.enabled: true`. Everything below is inert on a single node.
+Clustering is disabled until `cluster.enabled` is set to `true`.
 
-## What clustering gives you
+## Cluster Capabilities
 
 - **Membership** — every node knows the live set of peers through gossip, with fast failure detection.
 - **Cluster-wide process names** — register a process under a name that resolves from any node, with a choice of consistency guarantees (see [Naming](#naming-and-name-scopes)).
@@ -18,9 +18,9 @@ Clustering is off until you set `cluster.enabled: true`. Everything below is ine
 - **Replicated key-value stores** — `store.kv.raft` (strong) and `store.kv.crdt` (eventual) replicate KV data across nodes (see [Store](system/store.md#cluster-kv-stores)).
 - **A consensus core** — a small, bounded Raft cluster provides the linearizable backbone the naming and lock primitives build on.
 
-## Architecture: bounded Raft
+## Architecture: Bounded Raft
 
-Making every node a Raft peer scales poorly: the leader replicates every log entry to every peer, so idle leader cost grows with cluster size. Wippy bounds Raft to a fixed-size core and lets the rest of the cluster ride gossip. Each node occupies one of three roles in the Raft configuration:
+Wippy limits Raft membership to a fixed-size core so the leader does not replicate every log entry to every node. Other nodes participate through gossip. Each node has one of three roles in the Raft configuration:
 
 | Role | Count (default) | In Raft config | Receives log replication | Votes |
 |------|-----------------|----------------|--------------------------|-------|
@@ -30,11 +30,11 @@ Making every node a Raft peer scales poorly: the leader replicates every log ent
 
 - **Voters** form the quorum. Writes commit once a majority of voters acknowledge them. The voter count is always odd so a majority is well-defined.
 - **Standbys** are non-voting members kept fully replicated and warm. When a voter departs, the leader promotes the highest-ranked standby into the open voter slot, so quorum recovers without waiting for a fresh node to catch up.
-- **Clients** are every node beyond `voters + standbys`. They are not in the Raft configuration at all, so the leader never sends them log entries. They participate in gossip and route writes to a Raft member. This keeps idle leader CPU flat (O(1)) no matter how large the cluster grows.
+- **Clients** are nodes beyond `voters + standbys`. They are not in the Raft configuration, so the leader does not send them log entries. They participate in gossip and route writes to a Raft member, keeping Raft replication bounded by the configured core size.
 
-Because standbys and clients can absorb the rest of the fleet, a cluster of hundreds of nodes still has a 5-voter consensus core. The `max_voters`/`max_standbys` caps are what make the design "bounded."
+The `max_voters` and `max_standbys` settings cap the consensus core independently of the total cluster size.
 
-### Voter selection
+### Voter Selection
 
 The leader runs a reconciler that, on every membership change (debounced by `raft.reconcile_debounce`, default 2s), recomputes which nodes should be voters and applies the minimal set of promote/demote operations. Selection is deterministic — every node derives the same ordering from the same gossip view — and is driven by three gossip-advertised hints:
 
@@ -44,7 +44,7 @@ The leader runs a reconciler that, on every membership change (debounced by `raf
 
 Operations are applied in a quorum-preserving order: adds and promotions first, then demotions, then removals.
 
-## Membership and gossip
+## Membership and Gossip
 
 Membership uses SWIM gossip (HashiCorp memberlist). Each node binds a gossip port (default **7946**) and continuously exchanges small messages with peers to detect failures and disseminate metadata.
 
@@ -58,7 +58,7 @@ cluster:
     join_addrs: "node-1:7946"
 ```
 
-The first node needs no `join_addrs` — it starts as a seed. Joins retry with backoff, and a node that finds itself isolated periodically re-attempts to rejoin, so a node restarted with a new IP (common in Kubernetes) reconverges quickly.
+The first node needs no `join_addrs`; it starts as a seed. Joins retry with backoff, and an isolated node periodically attempts to rejoin. This supports nodes that restart with a new IP, as commonly occurs in Kubernetes.
 
 Gossip can be encrypted with a shared key, supplied inline or from a file:
 
@@ -72,7 +72,7 @@ Membership changes (`NodeJoined`, `NodeLeft`, `NodeUpdated`) are the events that
 
 ## Bootstrap
 
-The initial cluster forms by gossip, not a static peer list. This follows the Consul/Nomad `bootstrap_expect` pattern: you tell each starting node how many nodes to expect, and they wait until they can all see each other before forming quorum together.
+The initial cluster forms through gossip rather than a static peer list. With the Consul/Nomad-style `bootstrap_expect` setting, each starting node waits for the configured number of peers before forming quorum.
 
 | `bootstrap_expect` | Behavior |
 |--------------------|----------|
@@ -84,7 +84,7 @@ For an `N`-node bootstrap, set the same `bootstrap_expect: N` on every initial n
 
 Nodes that start later see an already-formed cluster and skip bootstrap entirely — the leader's reconciler adds them as voters or standbys.
 
-## Raft consensus core
+## Raft Consensus Core
 
 Raft state is **fs-durable by default**: logs and snapshots are persisted under `cluster.raft.data_dir` (default `~/.wippy/store`, in `_sys/raft`), and [`store.kv.raft`](system/store.md#cluster-kv-stores) replicates through the same core. A restarting node still rejoins gossip and catches up from its peers, so the cluster also tolerates losing a node's disk; durability comes from both the live quorum and on-disk state. A node runs diskless only when no data directory resolves (no configured path and no home directory) — see [Recovery](#recovery-and-failure-modes).
 
@@ -92,9 +92,9 @@ Raft does not open its own listening port. It rides the **internode mesh** — t
 
 The Raft FSM holds the global name registry: active `name -> PID` bindings plus in-flight strong reservations. That is what the naming primitives below read and write.
 
-## Naming and name scopes
+## Naming and Name Scopes
 
-A process can be registered under a name and reached by that name instead of its raw PID. The key decision is the **scope**, which selects the consistency guarantee. Four scopes are available, from cheapest/weakest to strongest:
+A process can be registered and addressed by name instead of its raw PID. Its **scope** selects the consistency and coordination behavior. Four scopes are available, ordered from local to strongest:
 
 | Scope | Backed by | Visibility | Guarantee |
 |-------|-----------|------------|-----------|
@@ -105,7 +105,7 @@ A process can be registered under a name and reached by that name instead of its
 
 How to choose:
 
-- **Local** — names meaningful only on one node (a per-node helper). Released the moment the process exits. Zero cost.
+- **Local** — names meaningful only on one node, such as a per-node helper. Released when the process exits and requires no cluster coordination.
 - **Eventual** — cluster-wide service, group, and presence names where a brief stale window is acceptable. The binding set is fully replicated to every node, so it fits a bounded namespace — not one name per high-cardinality entity such as a per-session process (address those directly by PID). When two origins register the same name, conflict resolution picks a winner and the losing process receives a cancel event (`process.event.CANCEL`) carrying the reason `name revoked: <name>`; it keeps running and can re-register. Names release when the owning node leaves.
 - **Consistent** — the standard choice for cluster-wide named singletons. First-write-wins: a second registration of the same name to a different PID fails with "already exists" and returns the current owner. Writes need a quorum, so they stall in a minority partition. Reads come from the local Raft replica and may lag a write by a few milliseconds.
 - **Strong** — the small set of control-plane singletons where even a momentary stale read is dangerous. On top of the Consistent guarantee, the registration opens a reservation that every live node must acknowledge before the name becomes authoritative; any node already holding a conflicting binding rejects it immediately. If the deadline passes before all nodes ack, the registration expires and reports which nodes were missing.
@@ -114,7 +114,7 @@ Names are released automatically: Local on process exit; Consistent and Strong o
 
 The Lua surface for naming lives on `process.registry` (register/lookup/unregister with a scope) — see the [Process](lua/core/process.md) reference.
 
-## Process groups
+## Process Groups
 
 Process groups are a cluster-aware publish/subscribe and membership facility modeled on Erlang's `pg`. A process joins a named group; a broadcast fans out over the internode mesh to the group's members across all nodes, delivered best-effort. Groups are eventually consistent and independent of Raft — they use the gossip membership view to choose recipients — so they keep working even while the consensus core is converging.
 
@@ -122,7 +122,7 @@ Typical operations: join/leave a group, broadcast to all members (or local membe
 
 See [Process Groups](lua/core/pg.md) for the Lua API and the [`pg.scope` entry kind](system/process-groups.md) for configuration.
 
-## Distributed locks
+## Distributed Locks
 
 `system.lock` is cluster-wide mutual exclusion built on a raft-linearizable conditional write in the shared key-value store. Acquiring a lock performs a set-if-absent of the holder PID at `_sys:lock:<name>`; releasing deletes that entry if it is still held by the caller. Because the conditional write goes through Raft (with off-leader writes forwarded to the leader), it is linearizable, so at most one holder can exist cluster-wide.
 
@@ -134,7 +134,7 @@ if ok then
 end
 ```
 
-Acquire is fail-fast (non-blocking): if the lock is held it returns immediately, so callers add their own retry/backoff. The lock auto-releases if the holder process exits or its node leaves, so cleanup is automatic. See the [System](lua/system/system.md) reference for the exact signatures.
+Acquire is fail-fast (non-blocking): if the lock is held, it returns immediately, so callers provide their own retry and backoff. The lock is released if the holder process exits or its node leaves. See the [System](lua/system/system.md) reference for exact signatures.
 
 ## Configuration
 
@@ -183,7 +183,7 @@ cluster:
 | Gossip (membership) | 7946 | TCP + UDP | `cluster.membership.bind_port` |
 | Internode mesh (relay + Raft) | auto | TCP | `cluster.internode.bind_port` |
 
-There is no separate Raft port — Raft is multiplexed over the internode mesh. The internode port is auto-assigned and advertised through gossip, so only the gossip port needs predictable exposure.
+Raft is multiplexed over the internode mesh rather than using a separate port. The internode port is assigned automatically and advertised through gossip; only the gossip port requires predictable exposure.
 
 ## Observability
 
@@ -197,7 +197,7 @@ Key metrics to watch:
 | `raft_term` | Current Raft term; rapid increases signal election churn |
 | `raft_voters` / `raft_non_voters` | Live voters and standbys in the configuration |
 | `raft_leader_changes_total` | Leader transitions; should be near-flat in a healthy cluster |
-| `raft_voter_churn_burst_total` | Bursts of voter add/remove operations; sustained churn is a red flag |
+| `raft_voter_churn_burst_total` | Bursts of voter add/remove operations; sustained churn indicates instability |
 | `gossip_members{state}` | Counts by state (alive/suspect/dead/left) |
 | `gossip_convergence_seconds` | Time between gossip events |
 
@@ -207,7 +207,7 @@ Built-in liveness checks (wired to the liveness endpoint):
 - **raft last-contact** — a voting follower fails if it has not heard from a leader recently; a standby tolerates a much longer gap; leaders always pass.
 - **process-group broadcast** — fails if a group sees no broadcast traffic for an extended period, catching a wedged event loop or a persistent partition.
 
-## Recovery and failure modes
+## Recovery and Failure Modes
 
 Raft state is fs-durable, but the cluster's primary durability still comes from a live quorum. The practical rules:
 
@@ -215,7 +215,7 @@ Raft state is fs-durable, but the cluster's primary durability still comes from 
 - The leader proactively evicts a voter that is both heartbeat-silent and gossip-dead, so a dead voter does not permanently block quorum while a standby is promoted in.
 - To recover a cluster that has lost quorum, restart the failed nodes. They rejoin gossip and the surviving members fold them back in. Spreading voters across `failure_domain`s is what prevents a single zone failure from causing quorum loss in the first place.
 
-## See also
+## See Also
 
 - [Configuration](guides/configuration.md#cluster) — every cluster config key
 - [Process](lua/core/process.md) — registering and resolving processes by name

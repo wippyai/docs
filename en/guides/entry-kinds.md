@@ -1,18 +1,18 @@
 ---
 title: "Entry Kinds Reference"
-description: "Complete reference of all entry kinds available in Wippy."
+description: "Reference for Wippy entry kinds across runtime, storage, networking, security, execution, and lifecycle systems."
 ---
 
 # Entry Kinds Reference
 
-Complete reference of all entry kinds available in Wippy.
+This page summarizes the available entry kinds and links to their detailed module and system references.
 
-> Entries reference each other using `namespace:name` format. The registry automatically wires dependencies together based on these references, ensuring resources are initialized in the correct order.
+> Entries reference one another using `namespace:name`. The registry uses these references to resolve dependencies and initialization order.
 
 ## See Also
 
-- [Registry](concepts/registry.md) - How entries are stored and resolved
-- [Configuration](guides/configuration.md) - YAML configuration format
+- [Registry](concepts/registry.md) — How entries are stored and resolved
+- [Configuration](guides/configuration.md) — YAML configuration format
 
 ## Lua Runtime
 

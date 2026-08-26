@@ -1,11 +1,11 @@
 ---
 title: "Language Server"
-description: "Wippy includes a built-in LSP (Language Server Protocol) server that provides IDE features for Lua code. The server runs as part of the Wippy runtime…"
+description: "Configure Wippy's built-in Language Server Protocol server for Lua editor features over TCP or HTTP."
 ---
 
 # Language Server
 
-Wippy includes a built-in LSP (Language Server Protocol) server that provides IDE features for Lua code. The server runs as part of the Wippy runtime and connects to editors via TCP or HTTP.
+Wippy includes a Language Server Protocol (LSP) server for Lua editor features. It runs as part of the Wippy runtime and accepts editor connections over TCP or HTTP.
 
 ## Features
 
@@ -52,7 +52,7 @@ The TCP server speaks JSON-RPC 2.0 with standard LSP message framing (Content-Le
 
 ### HTTP Transport
 
-The HTTP transport accepts POST requests with JSON-RPC payloads. Useful for browser-based editors and web tools. CORS headers are included for cross-origin access.
+The HTTP transport accepts POST requests with JSON-RPC payloads. It supports browser-based editors and web tools and includes CORS headers for cross-origin access.
 
 ```yaml
 lsp:
@@ -75,14 +75,14 @@ Editors map these URIs to entry IDs in the registry. Both `wippy://` scheme and 
 
 ## Indexing
 
-The LSP server maintains an index of all code entries for fast lookups. Indexing happens in the background using multiple workers.
+The LSP server maintains an index of code entries. Multiple workers update the index in the background.
 
 Key behaviors:
 
 - Entries are indexed in dependency order (dependencies first)
 - Changes trigger re-indexing of affected entries
 - Unsaved editor changes are stored in an overlay
-- Index is incremental - only changed entries are re-processed
+- Indexing is incremental; only changed entries are reprocessed
 
 ## Supported LSP Methods
 
@@ -125,6 +125,6 @@ Diagnostics update as you type through the document overlay system.
 
 ## See Also
 
-- [Linter](guides/linter.md) - CLI-based code checking
-- [Types](lua/types.md) - Type system documentation
-- [Configuration](guides/configuration.md) - Runtime configuration
+- [Linter](guides/linter.md) — CLI-based code checking
+- [Types](lua/types.md) — Type-system documentation
+- [Configuration](guides/configuration.md) — Runtime configuration
