@@ -203,7 +203,7 @@ local function render(state: LoadState): string
 end
 ```
 
-## The never Type
+## The `never` Type
 
 `never` is the bottom type: it has no possible values.
 

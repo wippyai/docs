@@ -33,31 +33,19 @@ Go is used for Wippy's core runtime. Compiled Go code and plugins do not provide
 
 ### WebAssembly
 
-WebAssembly is Wippy's second runtime and is intended for compiled workloads. It complements Lua when an application needs code produced by Rust, Go, C, or another language that targets WebAssembly. Lua remains the primary authoring language for application logic.
+WebAssembly fills a complementary role rather than replacing Lua as the primary authoring language. Its division of responsibilities is described in [Lua and WebAssembly](#lua-and-webassembly).
 
 ## Why Lua Fits
 
-### Resource Use
+### Host-Controlled Embedding
 
-Wippy documents a baseline overhead of approximately 13 KB for a Lua process. Low per-process overhead is important when many isolated processes run concurrently.
-
-### Capability Boundaries
-
-Wippy controls Lua's global environment and module loader. `require` resolves only modules granted to the process through its registry configuration. File-system, network, and operating-system access are available only through modules that the process is allowed to load.
-
-### Embedding
-
-Lua is designed to run inside a host application. Wippy can create a Lua environment for each process and connect it directly to the scheduler, registry, and runtime modules.
-
-### Module Resolution
-
-The runtime resolves modules from the registry rather than arbitrary paths. Processes with different registry scopes can therefore receive different module sets without application-level loading rules.
+Lua is designed to run inside a host application. Wippy creates an environment for each process, connects it to the scheduler and registry, and controls its globals and module loader. `require` resolves only modules granted through the process's registry configuration, so file-system, network, and operating-system access remains capability-controlled. Different registry scopes can provide different module sets without application-level loading rules.
 
 ### Language Surface
 
 Lua has a compact syntax and a small standard environment. Wippy adds type annotations and linting so code can be checked incrementally without changing the underlying execution model.
 
-### Coroutines
+### Cooperative Scheduling
 
 Lua coroutines map to Wippy's cooperative scheduling model. A process can yield during channel or I/O operations while the scheduler runs other work.
 

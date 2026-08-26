@@ -7,7 +7,7 @@ description: "How Lua code runs in Wippy processes, communicates through channel
 
 Lua is Wippy's primary runtime for I/O-bound work and business logic. Code runs in isolated processes that communicate through message passing rather than shared memory.
 
-Wippy is designed as a polyglot runtime. While Lua is the primary language, future versions will support additional languages through WebAssembly and Temporal integration for compute-intensive or specialized workloads.
+For the design tradeoffs behind Lua and its relationship to WebAssembly, see [Why Wippy Uses Lua](lua/why-lua.md).
 
 ## Processes
 

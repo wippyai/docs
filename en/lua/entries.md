@@ -47,7 +47,7 @@ A `function.lua` entry runs on demand, with each invocation handled independentl
     - json
 ```
 
-Typical uses include HTTP handlers, data transformations, and utilities.
+Use functions for HTTP handlers, data transformations, and utilities.
 
 ## `process.lua`
 
@@ -63,7 +63,7 @@ A `process.lua` entry is a long-running actor that maintains state and communica
     - sql
 ```
 
-Typical uses include background workers, service daemons, and stateful actors.
+Choose a process for background workers, service daemons, and stateful actors.
 
 To run as a supervised service:
 
@@ -92,7 +92,7 @@ A `workflow.lua` entry defines a durable workflow whose state is persisted to Te
     - time
 ```
 
-Typical uses include multi-step business processes and long-running orchestration.
+Use workflows for multi-step business processes and long-running orchestration.
 
 ## `library.lua`
 

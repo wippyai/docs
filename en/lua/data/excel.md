@@ -17,7 +17,7 @@ The `excel` module creates and reads Microsoft Excel `.xlsx` workbooks, manages 
 local excel = require("excel")
 ```
 
-## Creating Workbooks
+## Creating and Opening Workbooks
 
 ### Create a Workbook
 

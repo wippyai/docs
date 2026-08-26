@@ -8,14 +8,7 @@ description: "Create, compare, parse, and format time values; work with duration
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `time` module provides time values, durations, time-zone handling, parsing, formatting, sleeps, and timers.
-
-In workflows, `time.now()` returns a recorded time reference for deterministic replay.
-
-**Short answer:** use `time.now()` and the `Time` methods for time values and
-time-zone conversion; use `time.sleep()`, `time.after()`, `time.timer()`, and
-`time.ticker()` for scheduling. Workflow calls to the supported time APIs are
-recorded so they can replay deterministically.
+The `time` module provides time values, durations, time-zone handling, parsing, formatting, sleeps, and timers. Supported workflow time calls are recorded so they can replay deterministically.
 
 ## Loading
 
