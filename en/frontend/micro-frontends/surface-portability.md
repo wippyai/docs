@@ -1,6 +1,11 @@
+---
+title: "Surface Portability"
+description: "Use container queries, surface variables, and host.surface to size view.page applications independently of the browser viewport."
+---
+
 # Surface Portability
 
-A micro frontend app is given a **surface** — the rectangular area the Web Host allocates to it. That area is usually **not** the browser window: the app may be one panel among several in a [multi-panel layout](../web-host/multi-panel-layout.md), and the same app may be rendered by either [render engine](../web-host/render-engines.md) at different sizes on the same screen.
+A micro frontend app receives a **surface**: the rectangular area the Web Host allocates to it. That area is usually **not** the browser window. The app may be one panel among several in a [multi-panel layout](../web-host/multi-panel-layout.md), and the same app may be rendered by either [render engine](../web-host/render-engines.md) at different sizes on the same screen.
 
 Sizing a layout to the window is therefore wrong in both engines. The surface contract gives you a portable alternative in CSS and in JavaScript.
 
@@ -146,7 +151,7 @@ Sizing an overlay is a different question from anchoring it. For a backdrop or d
 .backdrop { position: absolute; inset: 0; }
 ```
 
-The containing block is the **app's root**, not the surface, so the overlay covers the surface only if that root does. In content sizing it does automatically (the content *is* the height). In container sizing the host imposes a height on the query box that the app's root does not inherit, so without `min-block-size: 100%` the backdrop quietly stops short — failing in exactly the mode where the `fixed` version would have looked correct. The two also differ in behavior: `absolute` scrolls with the content, `fixed` stays pinned.
+The containing block is the **app's root**, not the surface, so the overlay covers the surface only if that root does. In content sizing it does automatically (the content *is* the height). In container sizing the host imposes a height on the query box that the app's root does not inherit, so without `min-block-size: 100%` the backdrop stops short even though the `fixed` version would cover the surface. The two also differ in behavior: `absolute` scrolls with the content, while `fixed` stays pinned.
 
 Put `min-block-size: 100%` on the **outermost** element inside the surface. A percentage height needs an unbroken chain of definite heights above it, so applying it to a component root nested inside an auto-height `#app` resolves to zero and reintroduces the same gap. Verified across Chromium, Firefox and WebKit, with the no-`min` case as a control.
 
@@ -157,7 +162,7 @@ Put `min-block-size: 100%` on the **outermost** element inside the surface. A pe
 .backdrop { position: fixed; inset: 0; }
 ```
 
-Avoid `var(--wippy-surface-height)` for this: it is unavailable in content sizing, so a backdrop written that way collapses on exactly the pages where it is hardest to notice.
+Avoid `var(--wippy-surface-height)` for this: it is unavailable in content sizing, so a backdrop written that way collapses on content-sized pages.
 
 ## The app root element (`#app`)
 
@@ -173,7 +178,7 @@ the way you can inside an iframe.
 `#root` (or anything else) renders at **zero height** — blank panel, no error in
 your own code. The host logs an error naming the requirement. The iframe engine
 is unaffected, because it takes height from `CmdBodySize`, so the same package
-can look fine there and be blank as a fragment.
+may appear correct there and be blank as a fragment.
 
 ```html
 <!-- correct -->
@@ -186,8 +191,8 @@ createApp(App).mount('#app')
 
 **Do not try to fix a zero-height fragment by giving `#root` a height.** Adding
 `height: 100%`, `min-height: 100dvh` or `100vh` to a differently-named root does
-not make the engine measure it, and viewport units are wrong here for the reason
-this whole page exists — they describe the browser window, not your surface.
+not make the engine measure it. Viewport units describe the browser window, not
+the allocated surface.
 Rename the element to `app` instead.
 
 ## Limitations

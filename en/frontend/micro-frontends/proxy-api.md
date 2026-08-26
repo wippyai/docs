@@ -1,11 +1,11 @@
 ---
 title: "Proxy API"
-description: "Child apps and web components communicate with the Wippy host through the proxy runtime (proxy.js). Your code never talks to that runtime directly —…"
+description: "Reference for the configuration, host controls, API access, events, state, WebSocket, logging, and utilities exposed by @wippy-fe/proxy."
 ---
 
 # Proxy API
 
-Child apps and web components communicate with the Wippy host through the proxy runtime (`proxy.js`). Your code never talks to that runtime directly — you import named getters from **`@wippy-fe/proxy`**, a thin synchronous facade over it. The same import works for both surfaces:
+Child apps and web components communicate with the Wippy host through the proxy runtime (`proxy.js`). Application code uses named getters from **`@wippy-fe/proxy`**, its thin synchronous facade. The same imports work for both surfaces:
 
 - **Micro Frontend Apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`.
 - **Web components (`view.component`)** run as ESM modules in the host page; the host provides `@wippy-fe/proxy` through the import map.
@@ -80,7 +80,7 @@ iframe/Web Fragment channel.
 
 ### Internals (do not use)
 
-The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. They are listed only so you do not accidentally clobber them — see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
+The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. The names are listed to prevent collisions; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
 
 > `@wippy-fe/proxy` (documented here) is the API your child code uses. The host's own bootstrap, `initWippyApp(config, rootContainer?)`, mounts the whole Web Host on the module-embed / facade path — child app code never calls it.
 
@@ -90,7 +90,7 @@ The runtime installs a handful of globals for its own use — `window.$W`, `wind
 
 ### `config`
 
-The child application configuration delivered by the host. It is a plain object (not a function) — imported directly and ready to read synchronously. New docs target only the current `wippy-context-2.0` contract.
+The child application configuration delivered by the host. It is a plain object (not a function), imported directly and ready to read synchronously. This page documents only the current `wippy-context-2.0` contract.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -1120,7 +1120,7 @@ Every nested child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.i
 
 ### `installVueWarnSuppressor(app)`
 
-Available in the current coherent `@wippy-fe/proxy` family. Silences `[Vue warn]: Failed to resolve component: foo-bar` for tags registered via `customElements.define(...)` rather than `app.component(...)`. Vue's template compiler emits these warnings for web component tags it does not recognize — the elements render correctly, but the console fills with noise.
+Available in the current coherent `@wippy-fe/proxy` family. Silences `[Vue warn]: Failed to resolve component: foo-bar` for tags registered via `customElements.define(...)` rather than `app.component(...)`. Vue's template compiler emits these warnings for web component tags it does not recognize; the elements render correctly, but the console receives non-actionable warnings.
 
 ```typescript
 import { installVueWarnSuppressor } from '@wippy-fe/proxy'
@@ -1148,7 +1148,7 @@ If a `warnHandler` was already installed, it is preserved as `previous` and call
 
 ### `createAppRouter(routes, options?)` from `@wippy-fe/router`
 
-Canonical memory-router factory for srcdoc subapps. Replaces the boilerplate every subapp currently duplicates (memory history, `afterEach` route sync to host, `@history` subscription):
+Memory-router factory for srcdoc subapps. It provides memory history, `afterEach` route synchronization with the host, and an `@history` subscription:
 
 ```typescript
 import { createAppRouter } from '@wippy-fe/router'

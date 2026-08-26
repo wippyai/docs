@@ -5,7 +5,7 @@ description: "How the facade authors a PrimeVue theme and how modules remain por
 
 # Theme Authoring
 
-The facade authors a PrimeVue theme. Modules consume that theme; they do not create parallel mini design systems.
+The facade authors a PrimeVue theme. Modules consume it rather than defining an independent design system.
 
 Wippy currently runs PrimeVue with `theme: 'none'`. Component appearance is supplied by Wippy’s Tailwind-authored PrimeVue CSS, public runtime variables, and facade customization.
 
@@ -30,7 +30,7 @@ Moving duplicated module CSS into facade CSS does not eliminate the dependency. 
 
 Semantically equivalent controls should look equivalent. Prefer PrimeVue components directly. When a genuinely custom control is needed, identify its PrimeVue visual sibling and use the same public runtime properties for color, border, focus, state, and any geometry classified theme-variable.
 
-The custom part may own only the novel structure that the sibling does not provide. Reuse documented theme padding, dimensions, typography, radius, shadow, focus, and motion contracts wherever they exist. Do not copy a current literal from generated component CSS and call it inheritance.
+The custom part may own only the novel structure that the sibling does not provide. Reuse documented theme padding, dimensions, typography, radius, shadow, focus, and motion contracts wherever they exist. A literal copied from generated component CSS does not inherit future theme changes.
 
 ## Runtime versus invariant properties
 
@@ -39,7 +39,7 @@ Each shared appearance property has one policy:
 - `theme-variable`: it must resolve through a documented public runtime variable.
 - `platform-invariant`: the shared compiled Tailwind value is deliberately stable across every compliant theme.
 
-Do not add runtime tokens for theoretical flexibility. Add or adopt a token only after the effective-contract ledger proves a real runtime gap, an exact supported path, a real consumer, and mutation evidence.
+Do not add runtime tokens for theoretical flexibility. Add or adopt a token only when a real runtime gap, an exact supported path, a real consumer, and mutation evidence are documented.
 
 ## CSS transport is not permission
 

@@ -1,3 +1,8 @@
+---
+title: "Surface Migration"
+description: "Recipes for converting viewport-based responsive rules to the Wippy surface contract."
+---
+
 # Surface Migration
 
 Recipes for converting an existing micro frontend app from viewport-based
@@ -12,9 +17,8 @@ Every recipe is labelled:
 | **manual** | Needs a human decision; there is no single correct rewrite. |
 | **not convertible** | No container-query form exists. Use `host.surface` or keep the viewport behavior deliberately. |
 
-Each recipe below is a technique in isolation. The Web Host repository keeps a
-runnable page combining all of them, executed by its test suite so the recipes
-cannot rot into wrong instructions.
+Each recipe below presents one technique in isolation. The Web Host repository
+includes a runnable page that combines them and is covered by its test suite.
 
 > Recipes that depend on unshipped work — Tailwind `surface-*` variants, build-time
 > diagnostics, host-mediated scrolling, hit testing — are marked **not yet shipped**
@@ -24,8 +28,8 @@ cannot rot into wrong instructions.
 
 ## Decision tree: what is this rule about?
 
-Before converting anything, classify the intent. Most bad migrations are
-correctly-executed conversions of rules that should not have been converted.
+Before converting anything, classify the intent. A mechanically correct
+conversion is still wrong when the original rule was not surface-relative.
 
 ```text
 Does the rule respond to how much room THIS PAGE has?
