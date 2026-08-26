@@ -172,9 +172,9 @@ local users, _ = exec:call("app.api:list_users")
 local posts, _ = exec:call("app.api:list_posts")
 ```
 
-## Future
+## Future Invocation Summary
 
-`async()` returns a future representing an in-progress operation.
+`async()` returns a future representing an in-progress invocation. The methods below cover the caller-facing steps for receiving, inspecting, or canceling that invocation. See [Future](lua/core/future.md) for the Future object reference.
 
 ### `response` and `channel`
 

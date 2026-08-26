@@ -53,6 +53,8 @@ local res = http.response()
 
 ### `method`
 
+Return the request's HTTP method.
+
 ```lua
 local method = req:method()
 
@@ -68,6 +70,8 @@ end
 ```
 
 ### `path`
+
+Return the request path.
 
 ```lua
 local path = req:path()
@@ -110,6 +114,8 @@ end
 ```
 
 ### `header`
+
+Return one request header by name.
 
 ```lua
 local auth = req:header("Authorization")
@@ -213,6 +219,8 @@ local user = create_user(data)
 
 ### `has_body`
 
+Check whether the request has a body.
+
 ```lua
 if req:has_body() then
     local data = req:body_json()
@@ -225,6 +233,8 @@ end
 
 ### `is_content_type`
 
+Check whether the request has the specified content type.
+
 ```lua
 if not req:is_content_type("application/json") then
     res:set_status(415)
@@ -233,6 +243,8 @@ end
 ```
 
 ### `accepts`
+
+Check whether the request accepts the specified content type.
 
 ```lua
 if req:accepts("application/json") then
@@ -247,6 +259,8 @@ end
 ```
 
 ### `remote_addr`
+
+Return the client's remote network address.
 
 ```lua
 local addr = req:remote_addr()  -- "192.168.1.100:54321"
@@ -320,6 +334,8 @@ stream:close()
 
 ### `set_status`
 
+Set the response status code.
+
 ```lua
 res:set_status(200)
 res:set_status(http.STATUS.CREATED)
@@ -336,6 +352,8 @@ res:set_status(500)  -- Internal Server Error
 
 ### `set_header`
 
+Set one response header.
+
 ```lua
 res:set_header("X-Request-ID", correlation_id)
 res:set_header("Cache-Control", "max-age=3600")
@@ -348,6 +366,8 @@ res:set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 ```
 
 ### `set_content_type`
+
+Set the response content type.
 
 ```lua
 res:set_content_type("application/json")

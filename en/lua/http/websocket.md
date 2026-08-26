@@ -18,7 +18,9 @@ local websocket = require("websocket")
 
 ## Connecting
 
-### Basic Connection
+### `connect`
+
+Open a WebSocket connection with the default options:
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws")
@@ -27,7 +29,7 @@ if err then
 end
 ```
 
-### Connection Options Example
+Pass an options table to configure the connection:
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws", {
@@ -48,7 +50,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 
 **Returns:** `Client, error`
 
-### Connection Options
+#### Connection Options
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -68,6 +70,8 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 
 ### Text Messages
 
+Send a text message.
+
 ```lua
 client:send("Hello, Server!")
 
@@ -79,6 +83,8 @@ client:send(json.encode({
 ```
 
 ### Binary Messages
+
+Send a binary message by specifying `websocket.BINARY`.
 
 ```lua
 client:send(binary_data, websocket.BINARY)
@@ -94,6 +100,8 @@ The call yields until the message is sent.
 **Returns:** `boolean, error`
 
 ### Ping
+
+Send a ping frame.
 
 ```lua
 client:ping()
@@ -167,6 +175,8 @@ end
 | `data` | string? | Message content (nil for unknown payload types) |
 
 ## Closing Connection
+
+Close the connection with an optional status code and reason:
 
 ```lua
 -- Normal close (code 1000)

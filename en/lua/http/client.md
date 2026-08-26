@@ -22,6 +22,8 @@ Convenience methods use the `method(url, options?)` signature and return `Respon
 
 ### GET
 
+Send a `GET` request.
+
 ```lua
 local resp, err = http_client.get("https://api.example.com/users")
 if err then
@@ -34,6 +36,8 @@ print(resp.body)         -- response body
 
 ### POST
 
+Send a `POST` request.
+
 ```lua
 local resp, err = http_client.post("https://api.example.com/users", {
     headers = {["Content-Type"] = "application/json"},
@@ -42,6 +46,8 @@ local resp, err = http_client.post("https://api.example.com/users", {
 ```
 
 ### PUT
+
+Send a `PUT` request.
 
 ```lua
 local resp, err = http_client.put("https://api.example.com/users/123", {
@@ -52,6 +58,8 @@ local resp, err = http_client.put("https://api.example.com/users/123", {
 
 ### PATCH
 
+Send a `PATCH` request.
+
 ```lua
 local resp, err = http_client.patch("https://api.example.com/users/123", {
     body = json.encode({status = "active"})
@@ -59,6 +67,8 @@ local resp, err = http_client.patch("https://api.example.com/users/123", {
 ```
 
 ### DELETE
+
+Send a `DELETE` request.
 
 ```lua
 local resp, err = http_client.delete("https://api.example.com/users/123", {
@@ -76,6 +86,8 @@ local size = resp.headers["Content-Length"]
 ```
 
 ### Custom Methods
+
+Send a request using an explicit HTTP method string.
 
 ```lua
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
@@ -330,6 +342,8 @@ end
 
 ### Encode
 
+Encode a string for inclusion in a URL.
+
 ```lua
 local encoded = http_client.encode_uri("hello world")
 -- "hello+world"
@@ -338,6 +352,8 @@ local url = "https://api.example.com/search?q=" .. http_client.encode_uri(query)
 ```
 
 ### Decode
+
+Decode a string previously encoded with `http_client.encode_uri`.
 
 ```lua
 local decoded, err = http_client.decode_uri("hello+world")
