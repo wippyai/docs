@@ -7,6 +7,11 @@ description: "How Wippy processes execute, communicate, isolate capabilities, an
 
 Wippy executes code in isolated processes: lightweight state machines that communicate through messages rather than shared memory. This actor model gives each process its own state and lifecycle.
 
+This page explains the lifecycle and isolation model. For exact spawn,
+messaging, monitoring, registry, and upgrade APIs, use the
+[Process Management reference](lua/core/process.md); for runtime-managed service
+fields, use [Process Host and Services](system/process-host.md).
+
 ## State Machine Execution
 
 Each process initializes, advances through execution, yields on blocking operations, and closes when complete. The scheduler multiplexes processes across a worker pool and runs other work while a process waits for I/O.
