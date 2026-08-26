@@ -1,11 +1,14 @@
 ---
 title: "@wippy-fe Packages"
-description: "The @wippy-fe/* packages are published to npm and used when building child micro-frontends — view pages (view.page) and web components (view.component)…"
+description: "Reference for the @wippy-fe packages used by view.page applications and view.component web components."
 ---
 
 # @wippy-fe Packages
 
-The `@wippy-fe/*` packages are published to npm and used when building child micro-frontends — view pages (`view.page`) and web components (`view.component`) — that run inside the Wippy Web Host. They are not used to build the Web Host itself. Each package is versioned in lockstep; all packages in a given Web Host release share the same `0.0.x` version number.
+The `@wippy-fe/*` packages are published to npm for child micro frontends:
+`view.page` applications and `view.component` web components that run inside
+the Wippy Web Host. They are not used to build the Web Host itself. Packages
+are versioned in lockstep, with one `0.0.x` version across a Web Host release.
 
 Install the packages you need:
 
@@ -37,7 +40,9 @@ Related helpers (not proxy access):
 | TypeScript types | ambient via `@wippy-fe/types-global-proxy` (add to tsconfig `types`) — `AppConfig` / `ProxyApiInstance` become globals; `HostApi` = `ProxyApiInstance['host']` |
 | Loading/error screens | `<wippy-loading>` / `<wippy-error>` from `@wippy-fe/loading` |
 
-`window.$W` and `window.getWippyApi` are **internal** globals installed by the runtime — don't use them directly (see [Proxy & Isolation § Internals](./proxy-isolation.md#internals--do-not-read-or-override)).
+`window.$W` and `window.getWippyApi` are **internal** globals installed by the
+runtime. Do not use them directly (see
+[Proxy & Isolation § Internals](./proxy-isolation.md#internals--do-not-read-or-override)).
 
 ## Packages
 
@@ -177,16 +182,16 @@ These exports require `@wippy-fe/webcomponent-vue` `0.0.52` or newer.
 
 ### `@wippy-fe/layout`
 
-Direct shell authors use `LayoutManagerView` for stable panel mounts and
-`useSwapBuffer()` for no-flash retained content swaps. In `0.0.52+`, async
-readiness can be guarded by both immutable buffer index and content key, and
-the splitter stack exposes `--wippy-layout-splitter-z-index`. The circular
-splitter handle remains opt-in through
-`--wippy-layout-splitter-handle-size` (`0` by default).
-
 Pure, framework-agnostic layout primitives used internally by the Web Host's managed-layout engine. Most child app developers use this indirectly through `@wippy-fe/vue-host` composables. Direct use is appropriate when building layout-aware tooling or custom shells.
 
 Provides `LayoutManager` — the core class that manages the panel tree, handles breakpoint switching, validates `HostLayoutDeclaration`, and executes mutations like `resizePanel` and `collapsePanel`. Zero Vue dependency.
+
+Direct shell authors use `LayoutManagerView` for stable panel mounts and
+`useSwapBuffer()` for retained content swaps without flashing. In `0.0.52+`,
+async readiness can be guarded by both immutable buffer index and content key,
+and the splitter stack exposes `--wippy-layout-splitter-z-index`. The circular
+splitter handle remains opt-in through
+`--wippy-layout-splitter-handle-size` (`0` by default).
 
 ### `@wippy-fe/vue-host`
 
@@ -303,12 +308,12 @@ These elements are also registered in the host itself for use in fatal-error sta
 
 ### `@wippy-fe/chat`
 
+A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — that drop a live Wippy chat into any child by tag. Like `@wippy-fe/loading`, a tiny shell (`chat.js`) auto-registers all four tags and is injected into every child context via the host `scripts` array, so the elements are available by tag name with no import or registration. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
+
 In `0.0.51+`, `<wippy-chat>` reacts to `session-id` and `start-token` without
 requiring element replacement. Clearing or removing a previously controlled
 session starts a new token-backed chat when a token is present, while reconnects
 do not replay an already consumed token. Superseded starts are race-safe.
-
-A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — that drop a live Wippy chat into any child by tag. Like `@wippy-fe/loading`, a tiny shell (`chat.js`) auto-registers all four tags and is injected into every child context via the host `scripts` array, so the elements are available by tag name with no import or registration. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
 
 ```html
 <wippy-session-selector></wippy-session-selector>
@@ -339,10 +344,10 @@ The exact keys of the fetched `imports` object are the JavaScript externalizatio
 - Re-fetch when the Web Host tag changes or when adding a dependency, to check whether its exact specifier can be external.
 - PrimeVue follows the same exact-subpath rule: `primevue/button` does not imply `primevue/dialog`.
 
-When explaining this contract, do not emit a partial or placeholder
-`<script type="importmap">`. JSON comments and ellipsis entries are invalid and
-misleading. Either show the complete fetched object for one explicit tag or
-tell the reader to fetch and copy it verbatim.
+Use a complete import map. A partial or placeholder
+`<script type="importmap">` with JSON comments or ellipsis entries is invalid.
+Use the complete fetched object for one explicit tag, or fetch and copy it
+verbatim.
 
 ```typescript
 // vite.config.ts

@@ -1,11 +1,14 @@
 ---
 title: "CSS Injection"
-description: "The Web Host uses a layered injection pipeline to give child iframes the same visual theme as the host itself. Because iframes do not inherit CSS from…"
+description: "Reference for CSS delivery across the Web Host, page iframes, and web-component shadow roots."
 ---
 
 # CSS Injection
 
-The Web Host uses a layered injection pipeline to give child iframes the same visual theme as the host itself. Because iframes do not inherit CSS from their parent document, the host re-injects each style asset explicitly into the child's `srcdoc`. Each layer is independently toggleable through `ProxyConfig`.
+The Web Host uses a layered injection pipeline to give child iframes the same
+visual theme as the host. Because an iframe does not inherit CSS from its
+parent document, the host injects each style asset into the child's `srcdoc`.
+Each layer can be enabled or disabled independently through `ProxyConfig`.
 
 This page documents the injection pipeline, all available flags, and how to customize styles at the global, host-chrome, or per-page level. It is the **canonical reference for the `proxy.injections` CSS flags and their runtime defaults** — authoring docs that show recommended explicit values link back here. For the developer-facing theming guide (CSS variable tokens, Tailwind mapping, web component patterns), see [Theming](../micro-frontends/theming.md).
 
@@ -37,7 +40,12 @@ For more than a few overrides, keep CSS and JSON in separate files behind `conte
 
 Styles are injected in this logical layering. The first four layers are plain `<style>`/`<link>` elements; the last two (`customCSS` and `cssVariables`) are not — they are placed in the iframe document's `adoptedStyleSheets` (see [Override mechanism](#override-mechanism-adopted-stylesheets) below), so they always win regardless of `<head>` source order:
 
-Short answer for "CSS injection order" questions: the view.page iframe style pipeline is `themeConfig` → `primevue`/`tailwind` → `iframe` → `markdown` → `customVariables` → `customCss` in logical cascade order. Do not confuse this with configuration-precedence layers such as facade theme → page `config_overrides` → runtime override; those decide **which values** become `customVariables`/`customCss`, not where the resulting styles sit in the iframe cascade.
+The `view.page` iframe pipeline is `themeConfig` → `primevue`/`tailwind` →
+`iframe` → `markdown` → `customVariables` → `customCss` in logical cascade
+order. Configuration precedence is separate: facade theme → page
+`config_overrides` → runtime override decides **which values** become
+`customVariables` and `customCss`, not where the resulting styles sit in the
+iframe cascade.
 
 ```
 1. theme-config.css      — CSS custom properties (--p-primary-*, --p-surface-*, --p-secondary-*)

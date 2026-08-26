@@ -1,17 +1,27 @@
 ---
 title: "Multi-Panel Layout"
-description: "The managed-layout mode replaces the standard Wippy chrome with a fully declarative panel tree. Instead of the fixed chat-and-sidebar shell, you…"
+description: "Early-access reference for declaring and controlling the Web Host's managed multi-panel layout."
 ---
 
 # Multi-Panel Layout
 
-> **Status: Draft 1 (preview) — early access, not for production.** The managed-layout API is shipped but not yet battle-tested on a production consumer. Field names, defaults, and validation rules may still change between minor releases. Pin to an exact CDN version until this label is removed. **For nearly all applications the standard `compat` mode is the recommended production mode** — reach for managed layout only when you genuinely need to compose the chrome itself.
+> **Status: Draft 1 preview — early access, not for production.** The
+> managed-layout API is available but has not been validated with a production
+> consumer. Field names, defaults, and validation rules may change between
+> minor releases. Pin an exact CDN version until this label is removed. Use the
+> standard `compat` mode for production unless the application must compose the
+> host chrome itself.
 
-The managed-layout mode replaces the standard Wippy chrome with a fully declarative panel tree. Instead of the fixed chat-and-sidebar shell, you describe a tree of named panels in your backend YAML. The Web Host assembles the layout at boot, validates it, and maintains it reactively at runtime. Panels can be resized, collapsed, swapped, added, and removed without a page reload.
+Managed-layout mode replaces the standard Wippy chrome with a declarative panel
+tree. Define the named panels in backend YAML; the Web Host assembles and
+validates the layout at boot, then maintains it reactively at runtime. Panels
+can be resized, collapsed, swapped, added, and removed without a page reload.
 
 ## When to Use Managed Layout
 
-The standard `compat` mode (the default) gives you the fixed Wippy product: nav sidebar, chat panel, page area, and a right artifact panel. It is the current, most-used production mode and is sufficient for nearly all applications.
+The standard `compat` mode is the default production mode. It provides the
+fixed Wippy shell: navigation sidebar, chat panel, page area, and right artifact
+panel.
 
 Opt in to `fe_mode = managed` (early access) only when you need to compose the chrome itself:
 
@@ -426,7 +436,10 @@ rotates 90 degrees for vertical splitters and remains hidden for locked splits.
 
 ## What works in which mode
 
-The proxy API *surface* is identical in compat and managed mode — the same `@wippy-fe/proxy` imports resolve in both — but two parts of it are **mode-specific in effect**. This mismatch is the main thing to watch when moving an app onto managed layout (and a reason managed is still early access).
+The proxy API *surface* is identical in compat and managed mode: the same
+`@wippy-fe/proxy` imports resolve in both. Two parts of the API are
+**mode-specific in effect**, so account for the active mode when moving an
+application to managed layout.
 
 ### `host.layout` takes effect only in managed mode
 

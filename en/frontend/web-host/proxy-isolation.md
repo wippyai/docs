@@ -1,11 +1,13 @@
 ---
 title: "Proxy & Isolation"
-description: "The Web Host runs each child micro-frontend in a sandboxed context and bridges it to the host through the Proxy API. Micro frontend apps and web…"
+description: "How page applications and web components receive configuration and communicate with the Web Host through the Proxy API."
 ---
 
 # Proxy & Isolation
 
-The Web Host runs each child micro-frontend in a sandboxed context and bridges it to the host through the **Proxy API**. Micro frontend apps and web components both reach the host by importing from **`@wippy-fe/proxy`**.
+The Web Host runs each child micro frontend in a sandboxed context and connects
+it to the host through the **Proxy API**. Page applications and web components
+both import that API from **`@wippy-fe/proxy`**.
 
 ![Proxy API injection and nesting](../diagrams/proxy-layers.svg)
 
@@ -73,7 +75,9 @@ See [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custo
 
 ## Internals — do not read or override
 
-`proxy.js` installs the following globals for its own use. **Application and component code should never read or assign them** — use `@wippy-fe/proxy` instead. They are documented only so you don't accidentally clobber them:
+`proxy.js` installs the following globals for its own use. **Application and
+component code must not read or assign them**; use `@wippy-fe/proxy` instead.
+The names are listed here to prevent collisions:
 
 | Global | What it is |
 |---|---|

@@ -1,22 +1,22 @@
 ---
 title: "Theme Persistence"
-description: "By default the Web Host resolves light/dark from thememode (the facade default) and keeps it in memory — so a user's explicit choice is lost on the…"
+description: "Configure the facade to persist light, dark, or automatic theme mode in a cookie or localStorage."
 ---
 
 # Theme Persistence
 
-By default the Web Host resolves light/dark from `theme_mode` (the facade default) and keeps it
-in memory — so a user's explicit choice is lost on the next reload. Theme persistence lets that
-choice survive reloads by storing it in a **cookie** or in **localStorage**, and loads it as early
-as possible so there is no flash of the wrong theme.
+By default, the Web Host resolves light or dark mode from `theme_mode` (the
+facade default) and keeps the choice in memory. An explicit user choice is
+therefore lost on reload. Theme persistence stores the choice in a **cookie**
+or **localStorage** and loads it early so the wrong theme does not flash.
 
 Persistence lives entirely in the facade. The Web Host stays storage-agnostic: it only emits a
 `themeChanged` event that the facade (or any embedder) uses to persist the choice.
 
 > **Opt-in.** `theme_persist` defaults to **`none`** — persistence is **off** unless a deployment
-> explicitly sets it to `cookie` or `localStorage`. With the default, behavior is exactly as before
-> (the theme always comes from `theme_mode` and is not remembered across reloads). Nothing is stored,
-> no cookie is written, and the generated script is a no-op until you opt in.
+> explicitly sets it to `cookie` or `localStorage`. With the default, the theme
+> comes from `theme_mode` and is not remembered across reloads. Nothing is
+> stored, no cookie is written, and the generated script is a no-op.
 
 ## Configuration
 
@@ -38,11 +38,11 @@ served outside the Web Host can read them too.
   value: "@wippy-theme-mode"
 ```
 
-### cookie vs localStorage
+### Cookie vs localStorage
 
 - **`cookie`** — the Jet-rendered host shell reads the cookie **server-side** and writes the
   `w-theme-*` class onto `<html>` before the response is sent, so the very first paint is already
-  themed. **No flash.** Best default.
+  themed. This avoids a theme flash and is the preferred default.
 - **`localStorage`** — the server can't read localStorage, so the stored value is applied by a
   synchronous inline script as early as possible. A brief flash is technically possible but minimized.
 
@@ -73,9 +73,9 @@ window.wippyThemePersist = {
 }
 ```
 
-The host shell (`index.html` / the Jet `index.jet`) already includes this script, seeds the stored
-value into the app, and persists changes — you don't need to touch it. The sections below are for
-**other** pages.
+The host shell (`index.html` / the Jet `index.jet`) already includes this script,
+seeds the stored value into the application, and persists changes. The sections
+below apply to **other** pages.
 
 ## How it fits together (host shell)
 
@@ -131,12 +131,13 @@ Include the generated script and call `write()` from your own switcher:
 </body>
 ```
 
-Because the key and storage mode are shared (the script is generated from the same facade config),
-a choice made on the login page carries straight into the Web Host, and vice-versa.
+Because the key and storage mode are shared, a choice made on the login page
+carries into the Web Host, and vice versa. The script receives both values from
+the same facade configuration.
 
-> If you'd rather not load the script, you can fetch `/api/public/facade/config`, read
-> `themePersist` / `themeStorageKey`, and implement read/write yourself — but the generated script
-> keeps the storage logic in one place.
+> Alternatively, fetch `/api/public/facade/config`, read `themePersist` and
+> `themeStorageKey`, and implement storage directly. The generated script keeps
+> that logic in one place.
 
 ## Server-side cookie rendering (zero flash)
 

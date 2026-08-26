@@ -1,3 +1,8 @@
+---
+title: "Render Engines"
+description: "How view.page applications run in srcdoc iframes or Web Fragments, including selection rules and compatibility limits."
+---
+
 # Render Engines
 
 The Wippy Web Host renders a micro frontend app (`view.page`) through one of **two page-render engines**. The engine is a delivery concern chosen by an operator switch, with an optional per-page override. Portable apps use the Wippy proxy and router APIs so their behavior does not depend on a particular engine.
@@ -61,7 +66,9 @@ Two detectors surface these at authoring time (they detect *app-code incompatibi
 
 ## Enabling fragments — setup summary
 
-Enabling the fragment engine in a consuming app requires up-to-date framework modules plus the operator switch — no router or parameter wiring:
+Enabling the fragment engine in a consuming application requires compatible
+framework modules plus the operator switch; no additional router or parameter
+wiring is required:
 
 1. **Framework modules** — use a current compatible `wippy/facade` and `wippy/views` pair that exposes the `render_engine` switch and self-mounting fragment gateway. Verify the exact release in current Wippy module documentation.
 2. **The switch** — set the facade `render_engine` to `fragment` (globally) or opt pages in per-page with `wippy.renderEngine`.
