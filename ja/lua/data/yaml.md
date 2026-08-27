@@ -1,6 +1,6 @@
 ---
 title: "YAMLエンコーディング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "LuaテーブルをYAMLとしてエンコードし、YAMLドキュメントをLuaの値にデコードします。"
 ---
 
 # YAMLエンコーディング
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-YAMLドキュメントをLuaテーブルにパースし、Lua値をYAML文字列にシリアライズ。
+`yaml`モジュールは、LuaテーブルをYAMLとしてシリアライズし、YAMLドキュメントをLuaの値として解析します。
+
+これはAPIリファレンスです。出力のみを示す式は成功時のエンコード結果を例示し、値を利用する例では省略可能な2番目の戻り値`error`を受け取ります。
 
 ## ロード
 
@@ -17,32 +19,33 @@ YAMLドキュメントをLuaテーブルにパースし、Lua値をYAML文字列
 local yaml = require("yaml")
 ```
 
+使用する前に、実行可能エントリの`modules:`リストに`yaml`を追加してください。
+
 ## エンコーディング
 
-### 値のエンコード
+### `encode`
 
-LuaテーブルをYAMLフォーマットにエンコード。
+LuaテーブルをYAMLとしてエンコードします。
 
 ```lua
--- シンプルなキー値
+-- Simple key-value
 local config = {
     name = "myapp",
     port = 8080,
     debug = true
 }
-local out = yaml.encode(config)
--- name: myapp
--- port: 8080
--- debug: true
+local out, err = yaml.encode(config)
+if err then return nil, err end
+-- YAML mapping containing name, port, and debug.
 
--- 配列はYAMLリストになる
+-- Arrays become YAML lists
 local items = {"apple", "banana", "cherry"}
 yaml.encode(items)
 -- - apple
 -- - banana
 -- - cherry
 
--- ネストした構造
+-- Nested structures
 local server = {
     http = {
         address = ":8080",
@@ -59,17 +62,17 @@ yaml.encode(server)
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
 | `data` | table | エンコードするLuaテーブル |
-| `options` | table? | オプションのエンコードオプション |
+| `options` | table? | 省略可能なエンコードオプション |
 
 #### オプション
 
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
-| `field_order` | string[] | カスタムフィールド順序 - フィールドはこの順序で表示 |
+| `field_order` | string[] | フィールドの表示順。指定したフィールドがこの順序で並ぶ |
 | `sort_unordered` | boolean | `field_order`にないフィールドをアルファベット順にソート |
 
 ```lua
--- 出力のフィールド順序を制御
+-- Control field order in output
 local entry = {
     zebra = 1,
     alpha = 2,
@@ -77,17 +80,18 @@ local entry = {
     kind = "demo"
 }
 
--- フィールドは指定された順序で表示、残りはアルファベット順にソート
-local result = yaml.encode(entry, {
+-- Fields appear in specified order, remaining sorted alphabetically
+local result, encode_err = yaml.encode(entry, {
     field_order = {"name", "kind"},
     sort_unordered = true
 })
+if encode_err then return nil, encode_err end
 -- name: test
 -- kind: demo
 -- alpha: 2
 -- zebra: 1
 
--- すべてのフィールドをアルファベット順にソート
+-- Just sort all fields alphabetically
 yaml.encode(entry, {sort_unordered = true})
 -- alpha: 2
 -- kind: demo
@@ -99,12 +103,12 @@ yaml.encode(entry, {sort_unordered = true})
 
 ## デコーディング
 
-### 文字列のデコード
+### `decode`
 
-YAML文字列をLuaテーブルにパース。
+YAML文字列をLuaの値として解析します。
 
 ```lua
--- 設定をパース
+-- Parse configuration
 local config, err = yaml.decode([[
 server:
   host: localhost
@@ -122,15 +126,17 @@ print(config.server.host)     -- "localhost"
 print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
--- ファイル内容からパース
-local content = fs.read("config.yaml")
+-- Parse from file content
+local fs = require("fs")
+local config_fs = assert(fs.get("app:config"))
+local content = assert(config_fs:readfile("config.yaml"))
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")
 end
 
--- 混合型を処理
-local data = yaml.decode([[
+-- Handle mixed types
+local data, data_err = yaml.decode([[
 name: test
 count: 42
 ratio: 3.14
@@ -139,6 +145,7 @@ tags:
   - lua
   - wippy
 ]])
+if data_err then return nil, data_err end
 print(type(data.count))    -- "number"
 print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
@@ -148,7 +155,7 @@ print(type(data.tags))     -- "table"
 |-----------|------|-------------|
 | `data` | string | パースするYAML文字列 |
 
-**戻り値:** `any, error` - YAML内容に応じてtable、array、string、number、またはbooleanを返す
+**戻り値:** `any, error` — 値の型はYAMLの内容によって異なります
 
 ## エラー
 
@@ -159,5 +166,4 @@ print(type(data.tags))     -- "table"
 | 空文字列（decode） | `errors.INVALID` | no |
 | 無効なYAML構文 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-
+エラーの処理については、[エラー処理](../core/errors.md)を参照してください。

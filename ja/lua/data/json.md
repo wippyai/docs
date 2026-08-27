@@ -1,6 +1,6 @@
 ---
 title: "JSONエンコーディング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Luaの値をJSONとしてエンコードし、JSON文字列をデコードして、値や文字列をJSON Schemaで検証します。"
 ---
 
 # JSONエンコーディング
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-LuaテーブルをJSONにエンコードし、JSON文字列をLua値にデコード。データ検証とAPIコントラクト強制のためのJSON Schema検証を含む。
+`json`モジュールは、Luaの値をJSONとしてエンコードし、JSON文字列をデコードして、JSON Schemaでデータを検証します。
+
+これはAPIリファレンスです。短い式の例は成功時の戻り値を示し、結果を利用する例では省略可能な2番目の戻り値`error`を受け取ります。
 
 ## ロード
 
@@ -17,28 +19,30 @@ LuaテーブルをJSONにエンコードし、JSON文字列をLua値にデコー
 local json = require("json")
 ```
 
+使用する前に、実行可能エントリの`modules:`リストに`json`を追加してください。
+
 ## エンコーディング
 
-### 値のエンコード
+### `encode`
 
-Lua値をJSON文字列にエンコード。
+Luaの値をJSON文字列としてエンコードします。
 
 ```lua
--- シンプルな値
+-- Simple values
 json.encode("hello")        -- '"hello"'
 json.encode(42)             -- '42'
 json.encode(true)           -- 'true'
 json.encode(nil)            -- 'null'
 
--- 配列（連続した数値キー）
+-- Arrays (sequential numeric keys)
 json.encode({1, 2, 3})      -- '[1,2,3]'
 json.encode({"a", "b"})     -- '["a","b"]'
 
--- オブジェクト（文字列キー）
+-- Objects (string keys)
 local user = {name = "Alice", age = 30}
-json.encode(user)           -- '{"name":"Alice","age":30}'
+json.encode(user)           -- JSON object with name="Alice" and age=30; member order is unspecified
 
--- ネストした構造
+-- Nested structures
 local order = {
     id = "ord-123",
     items = {
@@ -48,7 +52,7 @@ local order = {
     total = 99.50
 }
 json.encode(order)
--- '{"id":"ord-123","items":[{"sku":"ABC","qty":2},{"sku":"XYZ","qty":1}],"total":99.5}'
+-- Structurally equivalent JSON; object-member order is unspecified
 ```
 
 | パラメータ | 型 | 説明 |
@@ -57,7 +61,8 @@ json.encode(order)
 
 **戻り値:** `string, error`
 
-エンコーディング規則:
+エンコーディングは次の規則に従います。
+
 - `nil`は`null`になる
 - 空のテーブルは`[]`になる（文字列キーで作成された場合は`{}`）
 - 1から始まる連続キーを持つテーブルは配列になる
@@ -70,12 +75,12 @@ json.encode(order)
 
 ## デコーディング
 
-### 文字列のデコード
+### `decode`
 
-JSON文字列をLua値にデコード。
+JSON文字列をLuaの値にデコードします。
 
 ```lua
--- オブジェクトをパース
+-- Parse object
 local user, err = json.decode('{"name":"Bob","active":true}')
 if err then
     return nil, err
@@ -83,13 +88,14 @@ end
 print(user.name)    -- "Bob"
 print(user.active)  -- true
 
--- 配列をパース
-local items = json.decode('[10, 20, 30]')
+-- Parse array
+local items, items_err = json.decode('[10, 20, 30]')
+if items_err then return nil, items_err end
 print(items[1])     -- 10
 print(#items)       -- 3
 
--- ネストしたデータをパース
-local response = json.decode([[
+-- Parse nested data
+local response, response_err = json.decode([[
 {
     "status": "ok",
     "data": {
@@ -100,13 +106,14 @@ local response = json.decode([[
     }
 }
 ]])
+if response_err then return nil, response_err end
 print(response.data.users[1].name)  -- "Alice"
 
--- エラーを処理
+-- Handle errors
 local data, err = json.decode("not valid json")
 if err then
     print(err:kind())     -- "INTERNAL"
-    print(err:message())  -- パースエラーの詳細
+    print(err:message())  -- parse error details
 end
 ```
 
@@ -118,12 +125,12 @@ end
 
 ## スキーマ検証
 
-### 値の検証
+### `validate`
 
-Lua値をJSON Schemaに対して検証。APIコントラクトの強制やユーザー入力の検証に使用。
+Luaの値をJSON Schemaに照らして検証します。
 
 ```lua
--- スキーマを定義
+-- Define a schema
 local user_schema = {
     type = "object",
     properties = {
@@ -134,26 +141,28 @@ local user_schema = {
     required = {"name", "email"}
 }
 
--- 有効なデータはパスする
+-- Valid data passes
 local valid, err = json.validate(user_schema, {
     name = "Alice",
     email = "alice@example.com",
     age = 30
 })
+if err then return nil, err end
 print(valid)  -- true
 
--- 無効なデータは詳細とともに失敗
+-- Invalid data fails with details
 local valid, err = json.validate(user_schema, {
     name = "",
     email = "not-an-email"
 })
 if not valid then
-    print(err:message())  -- 検証エラーの詳細
+    print(err:message())  -- validation error details
 end
 
--- スキーマはJSON文字列でも可
+-- Schema can also be a JSON string
 local schema_json = '{"type":"number","minimum":0}'
-local valid = json.validate(schema_json, 42)
+local valid, schema_err = json.validate(schema_json, 42)
+if schema_err then return nil, schema_err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -165,9 +174,9 @@ local valid = json.validate(schema_json, 42)
 
 スキーマはパフォーマンスのためにコンテンツハッシュでキャッシュされる。
 
-### JSON文字列の検証
+### `validate_string`
 
-パース前にスキーマに対してJSON文字列を検証。パース前に検証が必要な場合に便利。
+デコードした値を先に返すことなく、JSON文字列をスキーマに照らして検証します。
 
 ```lua
 local schema = {
@@ -178,15 +187,19 @@ local schema = {
     required = {"action"}
 }
 
--- リクエストボディからの生のJSONを検証
+-- Validate raw JSON from request body
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new({
+        message = "Invalid request: " .. err:message(),
+        kind = errors.INVALID
+    })
 end
 
--- これで安全にデコードできる
-local request = json.decode(body)
+-- Now safe to decode
+local request, decode_err = json.decode(body)
+if decode_err then return nil, decode_err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -208,5 +221,4 @@ local request = json.decode(body)
 | スキーマコンパイル失敗 | `errors.INVALID` | no |
 | 検証失敗 | `errors.INVALID` | no |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-
+エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
