@@ -1,6 +1,6 @@
 ---
 title: "계약"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "타입화된 서비스 바인딩을 열고 계약을 검사하며 구현을 호출하고 호출 또는 보안 컨텍스트를 전파합니다."
 ---
 
 # 계약
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-타입화된 계약을 통해 서비스를 호출합니다. 스키마 검증과 비동기 실행 지원으로 원격 API, 워크플로우, 함수를 호출합니다.
+`contract` 모듈은 원격 API, 워크플로우, 함수를 위한 타입화된 서비스 바인딩을 엽니다. 계약은 스키마 검증, 비동기 호출, 호출 컨텍스트 전파를 지원합니다. 이 페이지는 API 참조이며, `current_user` 같은 ID와 값은 애플리케이션 소유 엔트리 및 주변 핸들러 상태를 나타냅니다.
 
 ## 로딩
 
@@ -19,7 +19,7 @@ local contract = require("contract")
 
 ## 바인딩 열기
 
-ID로 바인딩을 직접 엽니다:
+레지스트리 ID로 바인딩을 엽니다.
 
 ```lua
 local greeter, err = contract.open("app.services:greeter")
@@ -28,21 +28,24 @@ if err then
 end
 
 local result, err = greeter:say_hello("Alice")
+if err then
+    return nil, err
+end
 ```
 
-스코프 컨텍스트 또는 쿼리 파라미터와 함께:
+바인딩에는 스코프 값, 쿼리 파라미터 또는 호출 옵션도 전달할 수 있습니다.
 
 ```lua
--- 스코프 테이블과 함께
+-- With scope table
 local svc, err = contract.open("app.services:user", {
     tenant_id = "acme",
     region = "us-east"
 })
 
--- 쿼리 파라미터와 함께 (자동 변환: "true"->bool, 숫자->int/float)
+-- With query parameters (auto-converted: "true"→bool, numbers→int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
--- 호출 옵션과 함께 (세 번째 인수)
+-- With call options (third argument)
 local inst, err = contract.open("app.services:flaky", nil, {
     retry = { max_attempts = 5, initial_delay = 100 }
 })
@@ -62,6 +65,9 @@ local inst, err = contract.open("app.services:flaky", nil, {
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 
 print(c:id())  -- "app.services:greeter"
 
@@ -71,6 +77,9 @@ for _, m in ipairs(methods) do
 end
 
 local method, err = c:method("say_hello")
+if err then
+    return nil, err
+end
 ```
 
 ### 메서드 정의
@@ -79,8 +88,10 @@ local method, err = c:method("say_hello")
 |------|------|------|
 | `name` | string | 메서드 이름 |
 | `description` | string | 메서드 설명 |
-| `input_schemas` | table[] | 입력 스키마 정의 |
-| `output_schemas` | table[] | 출력 스키마 정의 |
+| `input_schemas` | table[] 또는 nil | 입력 스키마 정의. 비어 있으면 생략 |
+| `output_schemas` | table[] 또는 nil | 출력 스키마 정의. 비어 있으면 생략 |
+
+각 스키마 요소에는 문자열 `format`이 포함되며 `definition` 값이 포함될 수 있습니다.
 
 ## 구현 찾기
 
@@ -88,6 +99,9 @@ local method, err = c:method("say_hello")
 
 ```lua
 local bindings, err = contract.find_implementations("app.services:greeter")
+if err then
+    return nil, err
+end
 
 for _, binding_id in ipairs(bindings) do
     print(binding_id)
@@ -98,7 +112,13 @@ end
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 local bindings, err = c:implementations()
+if err then
+    return nil, err
+end
 ```
 
 ## 구현 확인
@@ -117,9 +137,18 @@ end
 
 ```lua
 local calc, err = contract.open("app.services:calculator")
+if err then
+    return nil, err
+end
 
 local sum, err = calc:add(10, 20)
+if err then
+    return nil, err
+end
 local product, err = calc:multiply(5, 6)
+if err then
+    return nil, err
+end
 ```
 
 ## 비동기 호출
@@ -128,35 +157,49 @@ local product, err = calc:multiply(5, 6)
 
 ```lua
 local processor, err = contract.open("app.services:processor")
+if err then
+    return nil, err
+end
 
 local future, err = processor:process_async(large_dataset)
-
--- 다른 작업 수행...
-
--- 결과 대기
-local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+if err then
+    return nil, err
 end
+
+-- Do other work...
+
+-- Wait for result
+local ch = future:response()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
+end
+
+local payload, result_err = future:result()
+if result_err then return nil, result_err end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
-Future 메서드는 [Futures](lua/core/future.md)를 참조하세요.
+Future 메서드는 [Futures](./future.md)를 참조하세요.
 
 ## 계약을 통해 열기
 
-계약 객체를 통해 바인딩을 엽니다:
+계약 객체를 통해 바인딩을 엽니다. 아래 호출은 대안입니다. 인스턴스를 사용하기 전에 `contract.get()`과 선택한 `open()` 호출에서 반환된 오류를 확인하세요.
 
 ```lua
 local c, err = contract.get("app.services:user")
+if err then
+    return nil, err
+end
 
--- 기본 바인딩
+-- Default binding
 local instance, err = c:open()
 
--- 특정 바인딩
+-- Specific binding
 local instance, err = c:open("app.services:user_impl")
 
--- 스코프와 함께
+-- With scope
 local instance, err = c:open(nil, {user_id = 123})
 local instance, err = c:open("app.services:user_impl", {user_id = 123})
 ```
@@ -166,12 +209,18 @@ local instance, err = c:open("app.services:user_impl", {user_id = 123})
 미리 구성된 컨텍스트로 래퍼를 생성합니다:
 
 ```lua
+local ctx = require("ctx")
 local c, err = contract.get("app.services:user")
+if err then return nil, err end
 
-local wrapped = c:with_context({
-    request_id = ctx.get("request_id"),
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local wrapped, err = c:with_context({
+    request_id = request_id,
     user_id = current_user.id
 })
+if err then return nil, err end
 
 local instance, err = wrapped:open()
 ```
@@ -182,15 +231,18 @@ local instance, err = wrapped:open()
 
 ```lua
 local c, err = contract.get("app.services:flaky")
+if err then return nil, err end
 
-local inst, err = c
-    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
-    :open("app.services:flaky_impl")
+local configured = c:with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
+local inst, err = configured:open("app.services:flaky_impl")
+if err then return nil, err end
 
 local result, err = inst:call()
 ```
 
-옵션은 반환된 인스턴스의 모든 메서드 호출에 적용됩니다. 재시도 가능한 오류만 재시도를 트리거하며, 재시도 불가능한 오류는 즉시 표시됩니다. `with_context`, `with_actor`, `with_scope`와 체이닝 가능합니다.
+옵션은 반환된 인스턴스의 모든 메서드 호출에 적용됩니다. 재시도 가능한 오류만 재시도를 트리거하며, 재시도 불가능한 오류는 즉시 반환됩니다. `with_options`는 `with_context`, `with_actor`, `with_scope`와 체이닝할 수 있습니다.
 
 | 옵션 | 타입 | 설명 |
 |--------|------|------|
@@ -204,10 +256,16 @@ local result, err = inst:call()
 ```lua
 local security = require("security")
 local c, err = contract.get("app.services:admin")
+if err then return nil, err end
 
-local secured = c:with_actor(security.actor()):with_scope(security.scope())
+local secured, err = c:with_actor(security.actor())
+if err then return nil, err end
+
+secured, err = secured:with_scope(security.scope())
+if err then return nil, err end
 
 local admin, err = secured:open()
+if err then return nil, err end
 ```
 
 명시적인 `with_actor`/`with_scope` 없이 열린 계약은 호출자의 앰비언트 액터와 스코프를 상속합니다. 설정된 경우 바인딩된 구현 함수로 전파됩니다 — 인스턴스의 모든 메서드 호출이 해당 신원 아래에서 실행됩니다.
@@ -233,4 +291,5 @@ local admin, err = secured:open()
 | 메서드를 찾을 수 없음 | `errors.NOT_FOUND` |
 | 기본 바인딩 없음 | `errors.NOT_FOUND` |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
-| 호출 실패 | `errors.INTERNAL` |
+| 계약 디스패처 또는 응답 변환 실패 | `errors.INTERNAL` |
+| 구현이 오류 반환 | 구현 오류 종류 유지 |
