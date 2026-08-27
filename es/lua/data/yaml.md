@@ -1,15 +1,17 @@
 ---
-title: "Codificacion YAML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+title: "Codificación YAML"
+description: "Codifica tablas Lua como YAML y decodifica documentos YAML en valores Lua."
 ---
 
-# Codificacion YAML
+# Codificación YAML
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Parsear documentos YAML a tablas Lua y serializar valores Lua a strings YAML.
+El módulo `yaml` serializa tablas Lua como YAML y analiza documentos YAML para convertirlos en valores Lua.
+
+Esta es una referencia de API. Las expresiones que solo producen salida ilustran una codificación correcta; los ejemplos que consumen un valor capturan el segundo valor opcional `error`.
 
 ## Carga
 
@@ -17,32 +19,33 @@ Parsear documentos YAML a tablas Lua y serializar valores Lua a strings YAML.
 local yaml = require("yaml")
 ```
 
-## Codificacion
+Añade `yaml` a la lista `modules:` de la entrada ejecutable antes de requerirlo.
 
-### Codificar Valor
+## Codificación
 
-Codifica una tabla Lua a formato YAML.
+### `encode`
+
+Codifica una tabla Lua como YAML:
 
 ```lua
--- Clave-valor simple
+-- Simple key-value
 local config = {
     name = "myapp",
     port = 8080,
     debug = true
 }
-local out = yaml.encode(config)
--- name: myapp
--- port: 8080
--- debug: true
+local out, err = yaml.encode(config)
+if err then return nil, err end
+-- YAML mapping containing name, port, and debug.
 
--- Arrays se convierten en listas YAML
+-- Arrays become YAML lists
 local items = {"apple", "banana", "cherry"}
 yaml.encode(items)
 -- - apple
 -- - banana
 -- - cherry
 
--- Estructuras anidadas
+-- Nested structures
 local server = {
     http = {
         address = ":8080",
@@ -59,17 +62,17 @@ yaml.encode(server)
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `data` | table | Tabla Lua a codificar |
-| `options` | table? | Opciones de codificacion opcionales |
+| `options` | table? | Opciones de codificación opcionales |
 
 #### Opciones
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `field_order` | string[] | Orden de campos personalizado - campos aparecen en este orden |
-| `sort_unordered` | boolean | Ordenar campos no en `field_order` alfabeticamente |
+| `field_order` | string[] | Orden personalizado; los campos indicados aparecen en este orden |
+| `sort_unordered` | boolean | Ordena alfabéticamente los campos que no están en `field_order` |
 
 ```lua
--- Controlar orden de campos en salida
+-- Control field order in output
 local entry = {
     zebra = 1,
     alpha = 2,
@@ -77,17 +80,18 @@ local entry = {
     kind = "demo"
 }
 
--- Campos aparecen en orden especificado, restantes ordenados alfabeticamente
-local result = yaml.encode(entry, {
+-- Fields appear in specified order, remaining sorted alphabetically
+local result, encode_err = yaml.encode(entry, {
     field_order = {"name", "kind"},
     sort_unordered = true
 })
+if encode_err then return nil, encode_err end
 -- name: test
 -- kind: demo
 -- alpha: 2
 -- zebra: 1
 
--- Solo ordenar todos los campos alfabeticamente
+-- Just sort all fields alphabetically
 yaml.encode(entry, {sort_unordered = true})
 -- alpha: 2
 -- kind: demo
@@ -97,14 +101,14 @@ yaml.encode(entry, {sort_unordered = true})
 
 **Devuelve:** `string, error`
 
-## Decodificacion
+## Decodificación
 
-### Decodificar String
+### `decode`
 
-Parsea un string YAML a una tabla Lua.
+Analiza una cadena YAML y la convierte en un valor Lua:
 
 ```lua
--- Parsear configuración
+-- Parse configuration
 local config, err = yaml.decode([[
 server:
   host: localhost
@@ -122,15 +126,17 @@ print(config.server.host)     -- "localhost"
 print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
--- Parsear desde contenido de archivo
-local content = fs.read("config.yaml")
+-- Parse from file content
+local fs = require("fs")
+local config_fs = assert(fs.get("app:config"))
+local content = assert(config_fs:readfile("config.yaml"))
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")
 end
 
--- Manejar tipos mixtos
-local data = yaml.decode([[
+-- Handle mixed types
+local data, data_err = yaml.decode([[
 name: test
 count: 42
 ratio: 3.14
@@ -139,6 +145,7 @@ tags:
   - lua
   - wippy
 ]])
+if data_err then return nil, data_err end
 print(type(data.count))    -- "number"
 print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
@@ -146,17 +153,17 @@ print(type(data.tags))     -- "table"
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `data` | string | String YAML a parsear |
+| `data` | string | Cadena YAML que se analizará |
 
-**Devuelve:** `any, error` - Devuelve table, array, string, number o boolean dependiendo del contenido YAML
+**Devuelve:** `any, error` — el tipo del valor depende del contenido YAML
 
 ## Errores
 
-| Condición | Tipo | Reintentable |
+| Condición | Clase | Reintentable |
 |-----------|------|--------------|
-| Entrada no es tabla (encode) | `errors.INVALID` | no |
-| Entrada no es string (decode) | `errors.INVALID` | no |
-| String vacio (decode) | `errors.INVALID` | no |
-| Sintaxis YAML invalida | `errors.INTERNAL` | no |
+| La entrada no es una tabla (encode) | `errors.INVALID` | no |
+| La entrada no es una cadena (decode) | `errors.INVALID` | no |
+| Cadena vacía (decode) | `errors.INVALID` | no |
+| Sintaxis YAML no válida | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.

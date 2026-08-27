@@ -69,9 +69,9 @@
           {"title": "JSON", "path": "lua/data/json"},
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "Base64", "path": "lua/data/base64"},
-          {"title": "Compress", "path": "lua/data/compress"},
+          {"title": "Compresión", "path": "lua/data/compress"},
           {"title": "Archivos comprimidos", "path": "lua/data/archive"},
-          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "Payloads", "path": "lua/data/payload"},
           {"title": "Excel", "path": "lua/data/excel"}
         ]
       },
