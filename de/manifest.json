@@ -147,10 +147,10 @@
   {
     "title": "Framework",
     "children": [
-      {"title": "Overview", "path": "framework/overview"},
+      {"title": "Übersicht", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
       {"title": "Agents", "path": "framework/agents"},
-      {"title": "Testing", "path": "framework/testing"},
+      {"title": "Test-Framework", "path": "framework/testing"},
       {"title": "Dataflow", "path": "framework/dataflow"},
       {"title": "Relay", "path": "framework/relay"},
       {"title": "Views", "path": "framework/views", "children": [
@@ -159,7 +159,7 @@
       {"title": "Embeddings", "path": "framework/embeddings"},
       {"title": "Bootloader", "path": "framework/bootloader"},
       {"title": "Migrations", "path": "framework/migration"},
-      {"title": "Usage Tracking", "path": "framework/usage"}
+      {"title": "Nutzungserfassung", "path": "framework/usage"}
     ]
   },
   {

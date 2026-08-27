@@ -1,11 +1,20 @@
 ---
 title: "Relay"
-description: "Das Modul wippy/relay bietet eine WebSocket-Relay-Infrastruktur mit zweistufiger Hub-Architektur. Ein zentraler Hub verwaltet benutzerspezifische Hubs,…"
+description: "Wippy-Relay-Hubs, WebSocket-Clients, präfixbasierte Plugins, Benutzerisolierung und Verbindungslebenszyklen konfigurieren."
 ---
 
 # Relay
 
-Das Modul `wippy/relay` bietet eine WebSocket-Relay-Infrastruktur mit zweistufiger Hub-Architektur. Ein zentraler Hub verwaltet benutzerspezifische Hubs, die wiederum WebSocket-Client-Verbindungen verwalten und Nachrichten an Plugins routen.
+Das Modul `wippy/relay` leitet WebSocket-Verbindungen über einen zentralen Hub und
+benutzerspezifische Hubs. Die Benutzer-Hubs verwalten Clientverbindungen und verteilen
+Nachrichten an Plugins anhand von Präfixen.
+
+Diese Seite ist ein Teilrezept zur Integration und eine Protokollreferenz, keine
+eigenständige WebSocket-Anwendung. Die Konfigurations- und Pluginblöcke setzen ein
+bestehendes Wippy-Projekt, einen echten Sicherheits-Scope am konfigurierten
+`user_security_scope` und einen mit dem Relay verbundenen HTTP-WebSocket-Endpunkt
+gemäß [WebSocket-Relay](../http/websocket-relay.md) voraus. Protokoll-Payloads und
+Lifecycle-Blöcke sind Referenzformen.
 
 ## Architektur
 
@@ -22,18 +31,20 @@ Central Hub
 └── ...
 ```
 
-Der zentrale Hub läuft als Dienst. Wenn ein WebSocket-Client eine Verbindung herstellt, sucht oder erstellt der zentrale Hub einen User-Hub für diesen Benutzer. Der User-Hub verwaltet die Lebensdauer des Clients und routet Nachrichten basierend auf Befehls-Präfixen an Plugins.
+Der zentrale Hub läuft als Service. Wenn sich ein WebSocket-Client verbindet, sucht
+oder erstellt er einen Hub für den Benutzer. Dieser Benutzer-Hub verwaltet den
+Verbindungslebenszyklus und leitet Nachrichten anhand des Befehlspräfixes weiter.
 
-## Setup
+## Einrichtung
 
-Modul zum Projekt hinzufügen:
+Fügen Sie das Modul zum Projekt hinzu:
 
 ```bash
 wippy add wippy/relay
 wippy install
 ```
 
-Abhängigkeit mit erforderlichen Parametern deklarieren:
+Deklarieren Sie die Abhängigkeit mit den erforderlichen Parametern:
 
 ```yaml
 version: "1.0"
@@ -144,7 +155,7 @@ entries:
 
 ### Plugin-Lebenszyklus
 
-Plugins werden vom User-Hub erzeugt. Beim Start empfängt das Plugin:
+Der Benutzer-Hub startet jedes Plugin mit den folgenden Argumenten:
 
 ```lua
 function run(args)
@@ -162,22 +173,39 @@ Das `session_`-Plugin empfängt Lebenszyklus-Nachrichten:
 | `"resume"` | Erster Client verbindet sich mit dem User-Hub |
 | `"shutdown"` | Letzter Client trennt sich vom User-Hub |
 
-Plugins erhalten 1 automatischen Neustart bei einem Absturz. Nach einem zweiten Absturz wird das Plugin als `"failed"` markiert und nicht neu gestartet.
+Plugins erhalten nach einem Absturz einen automatischen Neustart. Nach dem zweiten
+Absturz wird das Plugin als `"failed"` markiert und nicht erneut gestartet.
 
 ### Plugin-Implementierung
 
-Plugins empfangen Nachrichten in ihrer Prozess-Inbox. Jede Nachricht hat ein Topic (der entfernte Befehlspräfix) und ein Payload, das die ursprünglichen Nachrichtendaten zusammen mit `conn_pid` enthält, um Antworten an den Client zurückzusenden.
+Plugins empfangen Nachrichten über ihre Prozess-Inbox. Jede Nachricht besitzt ein aus
+dem Befehlstyp abgeleitetes Topic und einen Payload mit den ursprünglichen Daten sowie
+`conn_pid` für Antworten.
 
 ```lua
 local json = require("json")
 
 local function handle_message(topic, payload)
     if topic == "get_state" then
-        process.send(payload.conn_pid, "ws.message", json.encode({
+        if not payload.conn_pid then
+            return nil, "Relay message is missing conn_pid"
+        end
+
+        local encoded, encode_err = json.encode({
             type = "session_state",
             data = { status = "active" }
-        }))
+        })
+        if encode_err then
+            return nil, encode_err
+        end
+
+        local sent, send_err = process.send(payload.conn_pid, "ws.message", encoded)
+        if not sent then
+            return nil, send_err or "Relay response was not sent"
+        end
     end
+
+    return true
 end
 
 local function run(args)
@@ -198,11 +226,14 @@ local function run(args)
             local payload = msg:payload():data()
 
             if topic == "resume" then
-                -- erster Client verbunden
+                -- first client connected
             elseif topic == "shutdown" then
-                -- letzter Client getrennt
+                -- last client disconnected
             else
-                handle_message(topic, payload)
+                local ok, err = handle_message(topic, payload)
+                if not ok then
+                    error("Failed to handle relay message: " .. tostring(err))
+                end
             end
         elseif result.channel == events then
             local event = result.value
@@ -218,7 +249,7 @@ return { run = run }
 
 ## Fehlerbehandlung
 
-Der Relay sendet strukturierte Fehlermeldungen an Clients:
+Das Relay meldet Clientfehler mit den folgenden Codes:
 
 | Fehlercode | Beschreibung |
 |------------|-------------|
@@ -234,7 +265,8 @@ Der Relay sendet strukturierte Fehlermeldungen an Clients:
 
 ### User-Hub-Erstellung
 
-User-Hubs werden bei Bedarf erstellt, sobald sich der erste Client für einen Benutzer verbindet. Der Hub wird mit dem Sicherheitsaktor und Scope des Benutzers erzeugt.
+Die erste Clientverbindung eines Benutzers erstellt dessen Hub. Er läuft mit dem
+Sicherheitsakteur und Scope des Benutzers.
 
 ### Garbage Collection
 
@@ -254,12 +286,12 @@ Der zentrale Hub läuft unter seiner eigenen Sicherheitsgruppe (`wippy.relay.sec
 | `ws.leave` | Client → Central/User Hub | Verbindungstrennung |
 | `ws.message` | Client → User Hub | WebSocket-Nachricht |
 | `ws.cancel` | Central → User Hub | Sauberes Herunterfahren |
-| `ws.control` | Central → User Hub | Routing-Steuerung |
+| `ws.control` | Central → Client | Leitet die Ziel-PID der Clientverbindung auf den Benutzer-Hub um |
 | `hub.activity_update` | User Hub → Central | Aktualisierung der Client-Anzahl |
 
 ## Siehe auch
 
-- [WebSocket-Relay](http/websocket-relay.md) - Konfiguration des HTTP-WebSocket-Endpunkts
-- [Prozessmodell](concepts/process-model.md) - Prozesslebenszyklus und Messaging
-- [Sicherheit](system/security.md) - Sicherheitsaktoren und Scopes
-- [Framework-Übersicht](framework/overview.md) - Verwendung des Framework-Moduls
+- [WebSocket-Relay](../http/websocket-relay.md) — Konfiguration des HTTP-WebSocket-Endpunkts
+- [Prozessmodell](../concepts/process-model.md) — Prozesslebenszyklus und Messaging
+- [Sicherheit](../system/security.md) — Sicherheitsakteure und Scopes
+- [Framework-Übersicht](./overview.md) — Framework-Module installieren und importieren
