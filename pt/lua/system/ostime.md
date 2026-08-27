@@ -74,18 +74,18 @@ Formatar um timestamp como string ou retornar uma tabela de data:
 <code-block lang="lua">
 local now = os.time()
 
--- Formato padrão
+-- Default format
 os.date()  -- "Sat Jun 15 14:30:45 2024"
 
--- Formato customizado
+-- Custom format
 os.date("%Y-%m-%d", now)           -- "2024-06-15"
 os.date("%H:%M:%S", now)           -- "14:30:45"
 os.date("%Y-%m-%dT%H:%M:%S", now)  -- "2024-06-15T14:30:45"
 
--- Hora UTC (prefixar formato com !)
-os.date("!%Y-%m-%d %H:%M:%S", now)  -- UTC ao inves de local
+-- UTC time (prefix format with !)
+os.date("!%Y-%m-%d %H:%M:%S", now)  -- UTC instead of local
 
--- Tabela de data
+-- Date table
 local t = os.date("*t", now)
 </code-block>
 
