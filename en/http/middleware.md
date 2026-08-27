@@ -7,6 +7,10 @@ description: "Middleware processes HTTP requests before and after route handling
 
 HTTP middleware runs in one of two router chains: before endpoint metadata is attached, or after the route has supplied its parameters and endpoint ID.
 
+**Classification: middleware reference.** Each YAML block is a router fragment;
+it assumes the named middleware is registered and any referenced token store,
+filesystem, endpoint, actor, and policy entries exist.
+
 ## How Middleware Works
 
 Each middleware receives an options map and returns a handler wrapper:
@@ -155,7 +159,7 @@ options:
 
 <note>Pre-handler</note>
 
-Token-based authentication. See [Security](system/security.md) for token store configuration.
+Token-based authentication. See [Security](../system/security.md) for token store configuration.
 
 ```yaml
 middleware:
@@ -265,7 +269,7 @@ Supports range requests for resumable downloads.
 
 <warning>Post-match</warning>
 
-Relay WebSocket connections to processes. See [WebSocket Relay](http/websocket-relay.md).
+Relay WebSocket connections to processes. See [WebSocket Relay](./websocket-relay.md).
 
 ```yaml
 post_middleware:
@@ -280,7 +284,7 @@ post_options:
 
 <warning>Post-match</warning>
 
-Stream Server-Sent Events from processes. See [Server-Sent Events](http/sse.md).
+Stream Server-Sent Events from processes. See [Server-Sent Events](./sse.md).
 
 ```yaml
 post_middleware:
@@ -325,8 +329,8 @@ post_middleware:
 
 ## See Also
 
-- [Routing](http/router.md) - Router configuration
-- [Security](system/security.md) - Token stores and policies
-- [WebSocket Relay](http/websocket-relay.md) - WebSocket handling
-- [Server-Sent Events](http/sse.md) - SSE streaming
-- [Terminal](system/terminal.md) - Terminal service
+- [Routing](./router.md) - Router configuration
+- [Security](../system/security.md) - Token stores and policies
+- [WebSocket Relay](./websocket-relay.md) - WebSocket handling
+- [Server-Sent Events](./sse.md) - SSE streaming
+- [Terminal](../system/terminal.md) - Terminal service

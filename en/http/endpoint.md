@@ -7,6 +7,11 @@ description: "Endpoints (http.endpoint) define HTTP route handlers that execute 
 
 An `http.endpoint` maps an HTTP method and path to a Lua handler function.
 
+**Classification: configuration and API reference.** YAML blocks are registry
+fragments that assume the referenced server, router, middleware, function
+entries, and security policies already exist. Lua blocks focus on handler
+contracts and identify application calls explicitly.
+
 ## Definition
 
 ```yaml
@@ -72,9 +77,13 @@ Access in handler:
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
@@ -98,25 +107,27 @@ Endpoint functions obtain request and response objects from the `http` module:
 
 ```lua
 local http = require("http")
-local json = require("json")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- Read request
-    local body = req:body()
-    local user_id = req:param("id")
-    local page = req:query("page")
-    local auth = req:header("Authorization")
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
 
-    -- Process
-    local user = get_user(user_id)
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
-    -- Write response
-    res:set_content_type(http.CONTENT.JSON)
-    res:set_status(http.STATUS.OK)
-    res:write_json(user)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -164,22 +175,31 @@ A JSON API handler can parse the request body, reject invalid input, and write a
 
 ```lua
 local http = require("http")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
     local data, err = req:body_json()
     if err then
-        res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "Invalid JSON"})
-        return
+        local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+        if status_err then return nil, status_err end
+        local write_err = res:write_json({error = "Invalid JSON"})
+        if write_err then return nil, write_err end
+        return true
     end
 
-    local result = process(data)
+    local result, process_err = funcs.call("app.api:process_request", data)
+    if process_err then return nil, process_err end
 
-    res:set_status(http.STATUS.OK)
-    res:write_json(result)
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(result)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -189,23 +209,30 @@ return { handler = handler }
 
 ```lua
 local http = require("http")
+local funcs = require("funcs")
 
 local function api_error(res, status, code, message)
-    res:set_status(status)
-    res:write_json({
+    local status_err = res:set_status(status)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json({
         error = {
             code = code,
             message = message
         }
     })
+    if write_err then return nil, write_err end
+    return true
 end
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user, err = db.get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, err = funcs.call("app.users:get_user", user_id)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
@@ -214,8 +241,11 @@ local function handler()
         return api_error(res, http.STATUS.INTERNAL_ERROR, "INTERNAL_ERROR", "Server error")
     end
 
-    res:set_status(http.STATUS.OK)
-    res:write_json(user)
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -306,6 +336,6 @@ Authorization middleware is configured on the parent router, not on the endpoint
 
 ## See Also
 
-- [Router](http/router.md) - Route grouping
-- [HTTP Module](lua/http/http.md) - Request/response API
-- [Middleware](http/middleware.md) - Request processing
+- [Router](./router.md) - Route grouping
+- [HTTP Module](../lua/http/http.md) - Request/response API
+- [Middleware](./middleware.md) - Request processing

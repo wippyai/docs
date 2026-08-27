@@ -7,6 +7,10 @@ description: "Routers group endpoints under URL prefixes and apply shared middle
 
 An `http.router` groups endpoints under a URL prefix and applies shared middleware. Each `http.endpoint` defines an HTTP handler.
 
+**Classification: routing reference.** Configuration blocks are partial registry
+fragments unless they include a namespace and every referenced entry. Handler
+blocks use application-owned function IDs rather than defining a data layer.
+
 ## Architecture
 
 ```mermaid
@@ -93,11 +97,14 @@ Access in handler:
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("user_id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
 
-    -- ...
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
@@ -121,20 +128,28 @@ The wildcard must be the last segment in the path.
 
 ## Handler Functions
 
-Endpoint handlers use the `http` module to access request and response objects. See [HTTP Module](lua/http/http.md) for the request and response API reference.
+Endpoint handlers use the `http` module to access request and response objects. See [HTTP Module](../lua/http/http.md) for the request and response API reference.
 
 ```lua
 local http = require("http")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user = get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
-    res:set_status(http.STATUS.OK)
-    res:write_json(user)
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -294,7 +309,7 @@ entries:
 
 ## See Also
 
-- [Server](http/server.md) - HTTP server configuration
-- [Static Files](http/static.md) - Static file serving
-- [Middleware](http/middleware.md) - Available middleware
-- [HTTP Module](lua/http/http.md) - Lua HTTP API
+- [Server](./server.md) - HTTP server configuration
+- [Static Files](./static.md) - Static file serving
+- [Middleware](./middleware.md) - Available middleware
+- [HTTP Module](../lua/http/http.md) - Lua HTTP API

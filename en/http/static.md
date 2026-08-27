@@ -7,6 +7,12 @@ description: "Serve SPAs, assets, and user uploads from filesystem entries with 
 
 An `http.static` handler mounts directly on a server and serves SPAs, assets, or user uploads from a filesystem entry.
 
+**Classification: static-handler reference.** The YAML blocks assume the named
+HTTP server exists. In these host-authored examples, relative `fs.directory`
+paths are resolved from the project working directory. Module-owned entries
+instead resolve relative paths from the owning module's source root unless
+configured with `base: project`. The referenced files must be created separately.
+
 ## Configuration
 
 ```yaml
@@ -167,7 +173,7 @@ Path matching is prefix-based. A handler at <code>/</code> catches all unmatched
 
 ## See Also
 
-- [Server](http/server.md) - HTTP server configuration
-- [Routing](http/router.md) - Routers and endpoints
-- [Filesystem](lua/storage/filesystem.md) - Filesystem module
-- [Middleware](http/middleware.md) - Available middleware
+- [Server](./server.md) - HTTP server configuration
+- [Routing](./router.md) - Routers and endpoints
+- [Filesystem](../lua/storage/filesystem.md) - Filesystem module
+- [Middleware](./middleware.md) - Available middleware

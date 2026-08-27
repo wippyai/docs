@@ -7,6 +7,10 @@ description: "The HTTP server (http.service) listens on a port and hosts routers
 
 An `http.service` owns a listener and hosts routers, endpoints, and static file handlers.
 
+**Classification: server configuration reference.** Blocks are partial registry
+fragments unless they define every referenced network, environment, filesystem,
+router, certificate, actor, and policy entry.
+
 ## Configuration
 
 ```yaml
@@ -37,7 +41,7 @@ An `http.service` owns a listener and hosts routers, endpoints, and static file 
 | `timeouts.idle` | duration | - | Keep-alive connection timeout |
 | `host.buffer_size` | int | 1024 | Message relay buffer size |
 | `host.worker_count` | int | NumCPU | Message relay workers |
-| `network` | Registry ID | - | Bind listener through a [network overlay](system/network.md) (e.g. Tailscale, I2P) |
+| `network` | Registry ID | - | Bind listener through a [network overlay](../system/network.md) (e.g. Tailscale, I2P) |
 | `tls` | object | - | TLS termination (see [TLS](#tls)) |
 
 ## Timeouts
@@ -92,7 +96,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-This sets a baseline actor and policies for all requests. For authenticated requests, the [token_auth middleware](http/middleware.md) overrides the actor based on the validated token, allowing per-user security policies.
+This sets a baseline actor and policies for all requests. For authenticated requests, the [token_auth middleware](./middleware.md) overrides the actor based on the validated token, allowing per-user security policies.
 
 ## Lifecycle
 
@@ -103,7 +107,7 @@ lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
@@ -112,7 +116,7 @@ lifecycle:
 | `auto_start` | Start when application starts |
 | `start_timeout` | Max time to wait for server to start |
 | `stop_timeout` | Max time for graceful shutdown |
-| `depends_on` | Start after these entries are ready |
+| `requires` | Start after these entries are ready (`depends_on` is the legacy spelling) |
 
 ## Connecting Components
 
@@ -171,7 +175,7 @@ Under `mode: manual`, `cert` and `key` carry PEM content. Supply that content in
 
 1. **Inline PEM** — the literal PEM string.
 2. **`file://` reference** — manifest-relative path, resolved and inlined at load time (traversal-safe).
-3. **Environment registry reference** — pull the PEM from a registered [env variable](system/env.md) at decode time, using a `${env:NAME}` placeholder.
+3. **Environment registry reference** — pull the PEM from a registered [env variable](../system/env.md) at decode time, using a `${env:NAME}` placeholder.
 
 ```yaml
 - name: api
@@ -193,7 +197,7 @@ Under `mode: manual`, `cert` and `key` carry PEM content. Supply that content in
     key:  ${env:app.env:tls_key}
 ```
 
-The `${env:NAME}` placeholder resolves `NAME` through the [environment registry](system/env.md) — a registered variable's public name or its entry ID (e.g. `app.env:tls_cert`). It is not a raw OS environment variable; an OS value is only reachable when an `env.storage.os`-backed variable is registered under that name. A default can be supplied with `${env:NAME|default}`.
+The `${env:NAME}` placeholder resolves `NAME` through the [environment registry](../system/env.md) — a registered variable's public name or its entry ID (e.g. `app.env:tls_cert`). It is not a raw OS environment variable; an OS value is only reachable when an `env.storage.os`-backed variable is registered under that name. A default can be supplied with `${env:NAME|default}`.
 
 <note>
 The legacy <code>cert_env</code> / <code>key_env</code> companion fields still resolve through the environment registry the same way, but are <b>deprecated</b> — prefer the <code>${env:NAME}</code> placeholder shown above.
@@ -228,8 +232,8 @@ tls:
 
 ## See Also
 
-- [Routing](http/router.md) - Routers and endpoints
-- [Static Files](http/static.md) - Static file serving
-- [Middleware](http/middleware.md) - Available middleware
-- [Security](system/security.md) - Security policies
-- [WebSocket Relay](http/websocket-relay.md) - WebSocket messaging
+- [Routing](./router.md) - Routers and endpoints
+- [Static Files](./static.md) - Static file serving
+- [Middleware](./middleware.md) - Available middleware
+- [Security](../system/security.md) - Security policies
+- [WebSocket Relay](./websocket-relay.md) - WebSocket messaging
