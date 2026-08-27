@@ -1,11 +1,13 @@
 ---
 title: "Scheduler"
-description: "O scheduler executa processos usando um design de work-stealing. Workers mantêm deques locais e roubam uns dos outros quando ociosos."
+description: "Como o Wippy agenda processos, roteia eventos, gerencia filas de workers e encerra processos."
 ---
 
 # Scheduler
 
-O scheduler executa processos usando um design de work-stealing. Workers mantêm deques locais e roubam uns dos outros quando ociosos.
+O scheduler executa processos em workers com deques locais, filas de injeção, uma fila global e work stealing.
+
+Esta é uma referência de implementação. As estruturas Go e os diagramas descrevem o scheduler da versão fixada do runtime, e não APIs implementadas pelo código da aplicação.
 
 ## Interface Process
 
@@ -25,22 +27,22 @@ type Process interface {
 | `Step` | Avançar máquina de estado com eventos de entrada, escrever yields na saída |
 | `Close` | Liberar recursos |
 
-O parâmetro `method` em `Init` especifica qual ponto de entrada invocar. Uma instância de processo pode expor múltiplos pontos de entrada, e o chamador seleciona qual executar. Isso também serve como verificação de que o scheduler está iniciando o processo corretamente.
+O parâmetro `method` de `Init` especifica qual ponto de entrada invocar. Uma instância de processo pode expor vários pontos de entrada, e o chamador escolhe qual executar.
 
 O scheduler chama `Step()` repetidamente, passando eventos (completações de yield, mensagens) e coletando yields (comandos para despachar). O processo escreve seu status e quaisquer yields no buffer `StepOutput`.
 
 ```go
 type Event struct {
-    Type  EventType  // EventYieldComplete ou EventMessage
-    Tag   uint64     // Tag de correlação para completações de yield
-    Data  any        // Dados de resultado ou payload de mensagem
-    Error error      // Erro se yield falhou
+    Type  EventType  // EventYieldComplete or EventMessage
+    Tag   uint64     // Correlation tag for yield completions
+    Data  any        // Result data or message payload
+    Error error      // Error if yield failed
 }
 ```
 
 ## Estrutura
 
-O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker tem um deque local para acesso LIFO amigável ao cache. Uma fila global FIFO trata novas submissões e transferências entre workers. Processos são rastreados por PID para roteamento de mensagens.
+O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker possui um deque local para acesso LIFO eficiente em cache e uma fila de injeção MPSC por worker para trabalhos reenfileirados que têm afinidade com ele, incluindo conclusões de yield e ativações por mensagem. Uma fila FIFO global recebe novas submissões e reenfileiramentos sem afinidade. Os processos são rastreados por PID para o roteamento de mensagens.
 
 ## Busca de Trabalho
 
@@ -48,10 +50,12 @@ O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker tem um deque loca
 flowchart TD
     W[Worker needs work] --> L{Local deque?}
     L -->|has items| LP[Pop from bottom LIFO]
-    L -->|empty| G{Global queue?}
+    L -->|empty| I{Inject queue?}
+    I -->|has items| IP[Pop + drain up to 16 to local]
+    I -->|empty| G{Global queue?}
     G -->|has items| GP[Pop + batch transfer up to 16]
-    G -->|empty| S[Steal from random victim]
-    S --> SH[StealHalfInto victim's deque]
+    G -->|empty| S[Scan other workers from rotating start]
+    S --> SH[Steal up to half, capped at 32]
 ```
 
 Workers verificam fontes em ordem de prioridade:
@@ -59,10 +63,11 @@ Workers verificam fontes em ordem de prioridade:
 | Prioridade | Fonte | Padrão |
 |------------|-------|--------|
 | 1 | Deque local | LIFO pop, sem lock, amigável ao cache |
-| 2 | Fila global | FIFO pop com transferência em batch |
-| 3 | Outros workers | Roubar metade do deque da vítima |
+| 2 | Fila de injeção | Pop MPSC de eventos e reenfileiramentos com afinidade; drena até 16 para o deque local |
+| 3 | Fila global | Pop FIFO com transferência em lote |
+| 4 | Outros workers | Varredura a partir de um índice inicial rotativo; rouba até metade, limitado a 32 itens por tentativa |
 
-Ao fazer pop da global, workers pegam um item e transferem em batch até 16 mais para seu deque local.
+Ao retirar um item da fila de injeção ou da fila global, o worker pega esse item e move até 16 adicionais para seu deque local.
 
 ## Deque Chase-Lev
 
@@ -71,14 +76,14 @@ Cada worker possui um deque de work-stealing Chase-Lev:
 ```go
 type Deque struct {
     buffer atomic.Pointer[dequeBuffer]
-    top    atomic.Int64  // Ladrões roubam daqui (CAS)
-    bottom atomic.Int64  // Dono faz push/pop aqui
+    top    atomic.Int64  // Thieves steal from here (CAS)
+    bottom atomic.Int64  // Owner pushes/pops here
 }
 ```
 
-O dono faz push e pop do fundo (LIFO) sem sincronização. Ladrões roubam do topo (FIFO) usando CAS. Isso dá ao dono acesso amigável ao cache para itens recentemente empurrados enquanto distribui trabalho mais antigo para ladrões.
+O proprietário insere e remove itens pelo fundo (LIFO) sem mutex; a remoção do último item usa CAS para coordenar com os workers que tentam roubá-lo. Esses workers roubam pelo topo (FIFO) usando CAS. Isso dá ao proprietário acesso eficiente em cache aos itens inseridos recentemente e distribui o trabalho mais antigo entre os demais workers.
 
-`StealHalfInto` pega metade dos itens em uma operação CAS, reduzindo contenção.
+`StealHalfInto` retira até metade dos itens disponíveis em uma operação CAS, limitado pelo buffer de destino. As tentativas de roubo dos workers usam um buffer de 32 itens.
 
 ## Spinning Adaptativo
 
@@ -86,8 +91,8 @@ Antes de bloquear na variável de condição, workers fazem spinning adaptativo:
 
 | Contagem de Spin | Ação |
 |------------------|------|
-| < 4 | Loop tight |
-| 4-15 | Yield de thread (`runtime.Gosched`) |
+| < 4 | Loop apertado |
+| 4-15 | Cede a thread (`runtime.Gosched`) |
 | >= 16 | Bloquear na variável de condição |
 
 ## Estados de Processo
@@ -122,13 +127,13 @@ Cada processo tem uma fila de eventos MPSC (multi-producer, single-consumer):
 
 ## Roteamento de Mensagens
 
-O scheduler implementa `relay.Receiver` para rotear mensagens para processos. Quando `Send()` é chamado, ele busca o PID alvo no mapa `byPID`, empurra a mensagem como um evento na fila do processo, e acorda o processo se ocioso empurrando-o para a fila global.
+O scheduler implementa `relay.Receiver` para rotear mensagens aos processos. Quando `Send()` é chamado, ele procura o PID de destino no mapa `byPID`, insere a mensagem como evento na fila do processo e o acorda se estiver idle ou blocked. O reenfileiramento usa injectOrGlobal: quando o processo tem afinidade conhecida, ele é inserido na fila de injeção do último worker; caso contrário, volta para a fila global.
 
 ## Shutdown
 
-No shutdown, o scheduler envia eventos de cancelamento para todos os processos em execução e aguarda eles completarem ou timeout. Workers saem quando não há mais trabalho.
+Durante o encerramento, o scheduler envia eventos de cancelamento a todos os processos rastreados e aguarda que terminem ou que o timeout expire. Os workers saem quando não há mais trabalho.
 
-## Veja Também
+## Consulte também
 
-- [Command Dispatch](internals/dispatch.md) - Como yields chegam aos handlers
-- [Process Model](concepts/process-model.md) - Conceitos de alto nível
+- [Despacho de comandos](./dispatch.md) — Como os yields chegam aos handlers
+- [Modelo de processos](../concepts/process-model.md) — Conceitos de alto nível
