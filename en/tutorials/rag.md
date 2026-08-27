@@ -55,7 +55,6 @@ The `text` module splits documents, while the `embeddings` library generates and
 -- app/ingest.lua
 local text = require("text")
 local embeddings = require("embeddings")
-local uuid = require("uuid")
 
 local function ingest(doc_id, title, markdown)
     local splitter, err = text.splitter.markdown({
@@ -95,14 +94,15 @@ Register the function and its imports:
   method: ingest
   modules:
     - text
-    - uuid
   imports:
     embeddings: wippy.embeddings:embeddings
 ```
 
 The ingestion fields control grouping and retrieval:
 
-- `origin_id` groups chunks that belong to the same source document.
+- `origin_id` groups chunks that belong to the same source document. PostgreSQL
+  stores this field as `UUID`, so use UUID values when the tutorial must work on
+  both PostgreSQL and SQLite.
 - `context_id` is an optional sub-key (section, page, chunk index).
 - `add_batch` auto-splits if total tokens exceed the 8000-token request limit.
 
@@ -124,7 +124,11 @@ local results, err = embeddings.search("how do I configure TLS?", {
 Filter by origin when you want to ground the answer in a specific document:
 
 ```lua
-local hits = embeddings.find_by_origin("refund policy", "doc-42", { limit = 3 })
+local hits = embeddings.find_by_origin(
+    "refund policy",
+    "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
+    { limit = 3 }
+)
 ```
 
 ## Generate an Answer
@@ -213,7 +217,6 @@ entries:
     method: ingest
     modules:
       - text
-      - uuid
     imports:
       embeddings: wippy.embeddings:embeddings
 
@@ -306,4 +309,4 @@ curl -X POST http://localhost:8080/api/ask \
 - [LLM Framework](framework/llm.md) — `llm.generate`, `llm.embed`, and prompt construction
 - [Agents](framework/agents.md) — Wrap the retriever as an agent tool
 - [SQL Module](lua/storage/sql.md) — Underlying database access
-- [Text Module](lua/text/text.md) — Splitters and tokenization
+- [Text Module](lua/text/text.md) — Character-based text splitters

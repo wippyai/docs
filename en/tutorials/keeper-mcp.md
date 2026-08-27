@@ -9,13 +9,13 @@ Wippy Keeper provides a UI for registry operations, filesystem-to-registry gover
 
 ## What You'll Build
 
-1. Keeper added to an application scaffolded from `app-template`.
-2. The Keeper UI at `/app/keeper` and the MCP endpoint at `/keeper-mcp/`.
+1. Keeper added to an application scaffolded from the Wippy application template.
+2. The Keeper UI at `/c/keeper:main` and the MCP endpoint at `/keeper-mcp/`.
 3. A scoped MCP token, and an MCP client configured to drive the app through Keeper.
 
 ## Prerequisites
 
-- An app from [app-template](https://github.com/wippyai/app-template). It already
+- An app from the [Wippy application template](https://github.com/wippyai/app). It already
   provides everything Keeper binds to: `app:gateway`, `app:api`, `app:db`,
   `app:processes`, `app.security:admin`, and `app.env:store`.
 - The Keeper module installed:
@@ -27,7 +27,7 @@ Wippy Keeper provides a UI for registry operations, filesystem-to-registry gover
 
 ## Add Keeper
 
-Declare the dependency and bind it to the application's resources. `admin_scope` is required and has no default. The other parameters default to the entry names used by `app-template`, but the example supplies them explicitly:
+Declare the dependency and bind it to the application's resources. `admin_scope` is required and has no default. The other parameters default to the entry names used by the application template, but the example supplies them explicitly:
 
 ```yaml
 # src/app/deps/_index.yaml
@@ -47,12 +47,12 @@ Declare the dependency and bind it to the application's resources. `admin_scope`
 Start the app:
 
 ```bash
-wippy run
+wippy run -c
 ```
 
 Keeper mounts three surfaces:
 
-- **UI** — `/app/keeper`
+- **UI** — `/c/keeper:main`
 - **MCP transport** — `/keeper-mcp/` on the public gateway
 - **Token API** — on `app:api` (`/keeper/mcp/tokens`, `/keeper/mcp/scopes`)
 
@@ -65,7 +65,7 @@ Tokens are issued by an admin user, scoped, and shown exactly once. Create one v
 token API (or the MCP page in the Keeper UI):
 
 ```bash
-curl -X POST http://localhost:8085/api/v1/keeper/mcp/tokens \
+curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
   -d '{"label": "claude-dev", "preset": "developer"}'
@@ -80,22 +80,37 @@ returned once and stored only as a hash — copy it immediately.
 
 ## Connect a Client
 
-Point an MCP client at the endpoint with the token as a bearer header. For Claude Code /
-Codex, an `.mcp.json` in the project root:
+Point an MCP client at the endpoint with the token as a bearer header. Keep the token out
+of checked-in configuration by exporting it first:
+
+```bash
+export KEEPER_MCP_TOKEN='wkmcp_<token>'
+```
+
+For Claude Code, use a project-scoped `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "keeper": {
       "type": "http",
-      "url": "http://localhost:8085/keeper-mcp/",
-      "headers": { "Authorization": "Bearer wkmcp_<token>" }
+      "url": "http://localhost:8080/keeper-mcp/",
+      "headers": { "Authorization": "Bearer ${KEEPER_MCP_TOKEN}" }
     }
   }
 }
 ```
 
-Use the app's public base URL in place of `http://localhost:8085` in a deployed
+For Codex, use the user-level `~/.codex/config.toml` or a project-scoped
+`.codex/config.toml` in a trusted project:
+
+```toml
+[mcp_servers.keeper]
+url = "http://localhost:8080/keeper-mcp/"
+bearer_token_env_var = "KEEPER_MCP_TOKEN"
+```
+
+Use the app's public base URL in place of `http://localhost:8080` in a deployed
 environment.
 
 ## How the MCP Surface Works
@@ -122,8 +137,8 @@ constrains how it may call tools.
 - **Security** — tokens are bound to the issuing admin identity and a scope set, stored
   as SHA-256, and revocable via `POST /keeper/mcp/tokens/revoke`. The `/keeper-mcp/`
   route runs no auth middleware; the handler enforces the bearer token itself.
-- **Reference app** — `app-keeper` is the worked example that wires Keeper into an app
-  shell; copy its `src/app/deps/_index.yaml` block if you want a known-good setup.
+- **Reference app** — the Wippy application template is the worked example that wires
+  Keeper into an app shell; its `src/app/deps/_index.yaml` contains a known-good binding.
 
 ## Next Steps
 

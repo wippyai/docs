@@ -169,11 +169,13 @@ Replace the `ask` entry with a `chat` process and add the terminal dependency:
     method: main
     modules:
       - io
-      - process
     imports:
       llm: wippy.llm:llm
       prompt: wippy.llm:prompt
 ```
+
+Executable Lua entries receive `process` as an ambient runtime module, so it is used
+directly in the code below and does not belong in the entry's `modules` list.
 
 ### Chat Process
 
@@ -287,7 +289,6 @@ Switch to the agent framework. Update the entry imports:
     method: main
     modules:
       - io
-      - process
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
@@ -577,7 +578,6 @@ Update the chat process modules to include `json` and `funcs`:
     modules:
       - io
       - json
-      - process
       - funcs
 ```
 

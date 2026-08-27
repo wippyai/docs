@@ -184,10 +184,10 @@ Two models serve different purposes:
       capabilities: [generate, tool_use, structured_output, vision, thinking]
       class: [reasoning]
       priority: 210
-    max_tokens: 128000
-    output_tokens: 32768
+    max_tokens: 400000
+    output_tokens: 128000
     pricing:
-      input: 2.5
+      input: 1.25
       output: 10
     providers:
       - id: wippy.llm.openai:provider
@@ -264,7 +264,7 @@ The prompt gives the agent three operating rules:
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, funcs, registry, time, security]
+    modules: [io, json, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
@@ -314,7 +314,7 @@ local function fetch_page(path)
 end
 
 local function search_docs(query)
-    local url = BASE_URL .. "/search?q=" .. query
+    local url = BASE_URL .. "/search?q=" .. http_client.encode_uri(query)
     local resp, err = http_client.get(url, {
         headers = { ["User-Agent"] = "wippy-agent/1.0" },
     })
@@ -356,7 +356,10 @@ return { handler = handler }
 
 This tool evaluates namespace deny policies and creates a `function.lua` registry entry with inline Lua source.
 
-The `modules` field on the generated entry controls what the tool can access. Modules not listed simply do not exist for that entry — there is nothing to block or scan for.
+The `modules` field on the generated entry controls which non-ambient runtime modules the
+tool can require. The `process` module is ambient for every executable Lua entry, so
+omitting it is not a security boundary; process operations still rely on runtime security
+policies.
 
 ```lua
 local registry = require("registry")
@@ -417,7 +420,10 @@ if existing then
 else
     changes:create(entry)
 end
-changes:apply()
+local _, apply_err = changes:apply()
+if apply_err then
+    return { error = "failed to apply registry change: " .. tostring(apply_err) }
+end
 ```
 
 The generated tool is stored in the registry rather than written to a source file.
@@ -472,10 +478,18 @@ end)
 
 ### Tool Execution
 
-Tools are called via `funcs.call()` with `pcall` for safety:
+Tools are called via `funcs.call()`. `pcall` catches raised Lua errors, while the normal
+second return from `funcs.call()` carries invocation errors:
 
 ```lua
-local ok, result = pcall(funcs.call, tc.registry_id, args)
+local ok, result, call_err = pcall(funcs.call, tc.registry_id, args)
+if not ok then
+    results[tc.id] = { error = tostring(result) }
+elseif call_err then
+    results[tc.id] = { error = tostring(call_err) }
+else
+    results[tc.id] = result
+end
 ```
 
 ### Dynamic Tool Loading
@@ -513,7 +527,7 @@ The conversation is preserved across reloads because it lives in the prompt buil
 
 ### Context Compression
 
-When prompt tokens exceed 96K (75% of the 128K context window), the conversation is compressed using GPT-4.1 Nano:
+When prompt tokens exceed 300K (75% of the 400K context window), the conversation is compressed using GPT-4.1 Nano:
 
 ```lua
 if response.tokens and response.tokens.prompt_tokens
@@ -525,7 +539,10 @@ end
 Compression extracts message content, calls `compress.to_size()` targeting 4000 characters, and replaces the conversation with a summary:
 
 ```lua
-local summary = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+local summary, compress_err = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+if compress_err then
+    return nil, compress_err
+end
 session.conversation = prompt.new()
 session.conversation:add_system("Conversation summary:\n\n" .. summary)
 ```
@@ -541,9 +558,10 @@ flowchart TD
     Check -->|app.generated:*| OK[No deny match]
     Check -->|app:* or app.tools:*| Deny[Policy Denied]
 
-    OK --> M{Module Allowlist}
-    M -->|only granted modules| R[Registry write]
+    OK --> M{Non-ambient Module Allowlist}
+    M -->|only listed non-ambient modules| R[Registry write]
     M -->|unknown module requested| Err[Rejected]
+    R --> A[Ambient process API remains available]
 ```
 
 ### Namespace Deny Policies
@@ -562,7 +580,15 @@ This prevents the agent from:
 
 ### Module Access Control
 
-Generated tools declare their `modules` in `data.modules`. Only modules from the `ALLOWED_MODULES` set are permitted. The Wippy runtime enforces this at the module level — if a module is not listed on the entry, `require()` returns an error. There is no source code scanning because there is nothing to scan for: modules that are not granted do not exist in the execution context.
+Generated tools declare non-ambient capabilities in `data.modules`, and `create_tool`
+accepts only names from `ALLOWED_MODULES`. An undeclared non-ambient module cannot be
+required. The runtime still injects `process` into every executable Lua entry, including a
+generated tool, so process operations must be constrained with security policies rather
+than by omitting `process` from `data.modules`.
+
+This tutorial does not define policies for `process.spawn` or `process.exec`. Its generated
+tools are therefore not a complete sandbox: add runtime policies for ambient process
+operations before allowing untrusted tool source.
 
 ## Run
 

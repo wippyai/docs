@@ -15,7 +15,7 @@ Create and populate a local knowledge base backed by SQLite. This page covers ve
 
 ## Prerequisites
 
-- A Wippy project (clone [app-template](https://github.com/wippyai/app-template), or
+- A Wippy project (clone the [Wippy application template](https://github.com/wippyai/app), or
   `wippy init`).
 - An LLM provider with an embedding model configured (e.g. `text-embedding-3-small`) —
   see [LLM Framework](framework/llm.md). The vector store is created locally without it,
@@ -51,6 +51,8 @@ entries:
     kind: process.host
     host:
       workers: 8
+    lifecycle:
+      auto_start: true
 
   - name: embeddings
     kind: ns.dependency
@@ -206,8 +208,9 @@ LLM for grounded answers.
 
 ## Operational Notes
 
-- **Chunk size** — 500–1000 tokens is a good default. Use `chunk_overlap` (~10–20% of
-  chunk size) so sentences aren't cut across boundaries.
+- **Chunk size** — `chunk_size` and `chunk_overlap` count characters, not tokens. The
+  800-character example favors fine-grained chunks; use overlap of roughly 10–20% of the
+  chunk size so sentences are not cut across boundaries.
 - **Dimensions** — `text-embedding-3-small` at 512 dimensions is cost-efficient and
   matches the `embeddings_512` table. Larger vectors mean larger storage and slower
   search.
@@ -219,4 +222,4 @@ LLM for grounded answers.
 
 - [RAG](tutorials/rag.md) — Retrieve from this store and generate grounded answers
 - [LLM Framework](framework/llm.md) — `llm.embed`, embedding models, and providers
-- [Text Module](lua/text/text.md) — Splitters and tokenization
+- [Text Module](lua/text/text.md) — Character-based text splitters
