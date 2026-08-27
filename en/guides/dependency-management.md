@@ -7,6 +7,9 @@ description: "Declare, resolve, install, update, replace, and verify Wippy modul
 
 Wippy resolves module dependencies from source declarations and records exact versions in `wippy.lock`. Published modules are downloaded from the Hub into the project's module directory.
 
+The `acme/*` module names, versions, hashes, and local paths below are illustrative.
+Substitute modules and verified digests from your own project or the Hub.
+
 ## Project Files
 
 ### wippy.lock
@@ -206,7 +209,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-Keys are `org/module`, values are directories (relative paths resolve against the first `--config` file's directory; the path must exist and be a directory). Setting a replacement to `null` disables one inherited from an earlier config layer or profile. Replacements can also live inside a [profile](guides/configuration.md#profiles) so they activate only with `--profile workspace`.
+Keys are `org/module`, values are directories (relative paths resolve against the first `--config` file's directory; the path must exist and be a directory). Setting a replacement to `null` disables one inherited from an earlier config layer or profile. Replacements can also live inside a [profile](./configuration.md#profiles) so they activate only with `--profile workspace`.
 
 Workspace replacements affect the load graph at boot and are never written to `wippy.lock`. Changes to the local source are reconciled directly, without contacting the hub. The module's source `exclude:` globs from `wippy.yaml` apply to replacement directories too, both when loading entries and when hashing content.
 
@@ -232,7 +235,7 @@ downloaded module that fails verification is removed and the install fails.
 
 ## See Also
 
-- [Building Components](guides/components.md) — Author requirements and supply values through `parameters`
-- [CLI](guides/cli.md) — Command reference
-- [Publishing](guides/publishing.md) — Publish modules to the Hub
-- [Project Structure](start/structure.md) — Project layout
+- [Building Components](./components.md) — Author requirements and supply values through `parameters`
+- [CLI](./cli.md) — Command reference
+- [Publishing](./publishing.md) — Publish modules to the Hub
+- [Project Structure](../start/structure.md) — Project layout

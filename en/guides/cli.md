@@ -7,6 +7,10 @@ description: "Commands, flags, configuration overrides, and common workflows for
 
 Use the Wippy CLI to initialize projects, run the runtime, manage dependencies, inspect registry entries, and publish modules.
 
+This is a command reference. The examples assume an existing project or module
+when the command operates on source, a lock file, registry entries, or publish
+metadata; they are not a single end-to-end project.
+
 ## Global Flags
 
 Available on all commands:
@@ -24,7 +28,7 @@ Available on all commands:
 
 Memory-limit precedence is `--memory-limit`, then `GOMEMLIMIT`, then the 1 GB default.
 
-The global `--config` option may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
+The global `--config` option may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](./configuration.md#config-composition).
 
 `wippy publish` shadows the global option with a command-local `--config <dir>` option. For that command, the value is the directory containing `wippy.yaml`, not a repeatable runtime configuration file.
 
@@ -107,7 +111,9 @@ wippy lint --json
 wippy lint --rules
 ```
 
-Validates all Lua entries: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (including their `.bc` variants).
+Validates source-bearing `function.lua`, `library.lua`, `process.lua`, and
+`workflow.lua` entries. Precompiled `.bc` entries do not contain parseable source
+and are skipped.
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
@@ -152,7 +158,7 @@ wippy install --refresh acme/http        # Re-fetch a specific module
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--refresh` | | false | Re-fetch every module, bypassing cache |
+| `--refresh` | | false | Re-fetch the named modules, or every locked module when no names are supplied, bypassing cache |
 | `--force` | | false | Alias for `--refresh` |
 | `--repair` | | false | Alias for `--refresh` |
 | `--registry` | | | Registry URL |
@@ -185,7 +191,7 @@ Create a snapshot pack (.wapp file).
 ```bash
 wippy pack snapshot.wapp
 wippy pack release.wapp --description "Release 1.0"
-wippy pack app.wapp --embed app:assets --bytecode **
+wippy pack app.wapp --embed app:assets --bytecode "**"
 ```
 
 | Flag | Short | Description |
@@ -231,7 +237,7 @@ This command reads `wippy.yaml` from the current directory.
 | `--module-type` | Module type: `library`, `application`, `agent`, or `plugin` (overrides `type:` in wippy.yaml) |
 | `--module-display-name` | Display name for newly created modules (`--create` only) |
 
-The module type is normally declared as `type:` in `wippy.yaml` (see [Publishing](guides/publishing.md#wippy-yaml)); `--module-type` overrides it for a single publish. When neither is set, newly created modules default to `application` with a deprecation warning.
+The module type is normally declared as `type:` in `wippy.yaml` (see [Publishing](./publishing.md#wippyyaml)); `--module-type` overrides it for a single publish. When neither is set, newly created modules default to `application` with a deprecation warning.
 
 ## wippy search
 
@@ -372,6 +378,13 @@ entries:
       command:
         name: migrate
         short: Run database migrations
+        security:
+          actor:
+            id: app:migrations
+          policies:
+            - app.security:migrations
+          groups:
+            - app.security:operators
     source: file://runner.lua
     method: main
     modules:
@@ -400,6 +413,13 @@ wippy run list
 | `short` | No | Short description shown in `wippy run list` |
 | `main` | No | Mark this entry as the default command (picked automatically by packs and hub modules that ship a single command) |
 | `use_case` | No | Entrypoint category, default `run`. The entry declaring `use_case: test` is what `wippy test` executes |
+| `security` | No | CLI-only security context with `actor`, `policies`, and `groups` |
+
+The `security` block belongs inside `meta.command`. The IDs above are
+illustrative and must resolve in the loaded registry. The block is applied only
+when the terminal host launches the entry as a CLI command; ordinary process
+spawns do not inherit it. Malformed or unresolved security metadata prevents
+the command from starting.
 
 Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process as string payloads.
 
@@ -410,7 +430,8 @@ Any process entry kind works (`process.lua`, `process.wasm`). The command name m
 ```bash
 # Initialize dependency lock metadata
 wippy init
-wippy add wippy/test wippy/llm
+wippy add wippy/test
+wippy add wippy/llm
 wippy install
 
 # Check for errors
@@ -427,7 +448,7 @@ wippy run -o app:db:host=localhost -o app:db:port=5432
 
 ```bash
 # Create release pack with bytecode
-wippy pack release.wapp --bytecode ** --exclude-ns test.**
+wippy pack release.wapp --bytecode "**" --exclude-ns "test.**"
 
 # Run from pack with memory limit
 wippy run release.wapp -m 2G
@@ -503,5 +524,5 @@ override:
 
 ## See Also
 
-- [Configuration](guides/configuration.md) — Configuration file reference
-- [Observability](guides/observability.md) — Monitoring and logging
+- [Configuration](./configuration.md) — Configuration file reference
+- [Observability](./observability.md) — Monitoring and logging

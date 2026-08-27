@@ -7,11 +7,15 @@ description: "Prepare, validate, publish, configure, and consume modules through
 
 Publishing packages a module and makes a version or mutable label available through the Wippy Hub.
 
+This is a publishing workflow and reference. The `acme/*` modules, URLs, tokens,
+credentials, and example source are illustrative; replace them with resources owned
+by your organization.
+
 ## Prerequisites
 
 1. Create an account on [hub.wippy.ai](https://hub.wippy.ai).
 2. Create or join an organization.
-3. Register the module name under that organization.
+3. Choose a module name. The first publish can register a missing name if your account has permission; use `--create` to register it before upload and set its properties explicitly.
 
 ## Module Structure
 
@@ -320,7 +324,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []` publishes none; an unknown name fails the publish. `workspace` sub-sections are never exported, even inside a published profile. See [Configuration](guides/configuration.md#profiles) for declaring profiles.
+`include: []` publishes none; an unknown name fails the publish. `workspace` sub-sections are never exported, even inside a published profile. See [Configuration](./configuration.md#profiles) for declaring profiles.
 
 ## Using Published Modules
 
@@ -370,6 +374,7 @@ entries:
 ```yaml
 organization: acme
 module: cache
+type: library
 description: In-memory caching with TTL
 license: MIT
 keywords:
@@ -388,19 +393,8 @@ entries:
     meta:
       title: Cache Module
 
-  - name: max_size
-    kind: ns.requirement
-    meta:
-      description: Maximum cache entries
-    targets:
-      - entry: acme.cache:cache
-        path: ".meta.max_size"
-    default: 1000
-
   - name: cache
     kind: library.lua
-    meta:
-      max_size: 1000
     source: file://cache.lua
     modules:
       - time
@@ -412,12 +406,8 @@ local time = require("time")
 
 local cache = {}
 local store = {}
-local max_size = 1000
 
 function cache.set(key, value, ttl)
-    if #store >= max_size then
-        cache.evict_oldest()
-    end
     store[key] = {
         value = value,
         expires = ttl and (time.now():unix() + ttl) or nil
@@ -440,12 +430,14 @@ return cache
 Publish:
 
 ```bash
-wippy init && wippy update && wippy lint
+wippy init
+wippy update
+wippy lint
 wippy publish --version 1.0.0
 ```
 
 ## See Also
 
-- [CLI Reference](guides/cli.md) — Publishing commands and flags
-- [Entry Kinds](guides/entry-kinds.md) — Module and dependency entries
-- [Configuration](guides/configuration.md) — Runtime configuration and profiles
+- [CLI Reference](./cli.md) — Publishing commands and flags
+- [Entry Kinds](./entry-kinds.md) — Module and dependency entries
+- [Configuration](./configuration.md) — Runtime configuration and profiles

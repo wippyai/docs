@@ -100,7 +100,12 @@ roots are swapped atomically under a process lock, a failure rolls back with
 the surrounding registry transaction, and an interrupted swap is recovered on
 the next run.
 
-## Worked Example: A Shared Frontend Package
+## Worked Integration Example: A Shared Frontend Package
+
+The `kickside/ui-kit` names, Make targets, environment variables, and repository
+paths in this section illustrate one integration pattern. They are not commands or
+helper scripts supplied by Wippy; adapt them to the producer and build system that
+own your artifact.
 
 A producer module can publish a package without serving a runtime resource:
 

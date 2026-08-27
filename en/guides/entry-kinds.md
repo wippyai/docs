@@ -7,12 +7,16 @@ description: "Reference for Wippy entry kinds across runtime, storage, networkin
 
 This page summarizes the available entry kinds and links to their detailed module and system references.
 
+The YAML and Lua blocks are reference fragments, not one application. Registry IDs,
+credentials, data objects, and helpers such as `get_users` or `delete_user` are
+illustrative; use the linked module pages for complete return and error contracts.
+
 > Entries reference one another using `namespace:name`. The registry uses these references to resolve dependencies and initialization order.
 
 ## See Also
 
-- [Registry](concepts/registry.md) — How entries are stored and resolved
-- [Configuration](guides/configuration.md) — YAML configuration format
+- [Registry](../concepts/registry.md) — How entries are stored and resolved
+- [Configuration](./configuration.md) — YAML configuration format
 
 ## Lua Runtime
 
@@ -81,7 +85,7 @@ Use <code>imports</code> to reference other Lua entries. They become available v
   func: list_handler
 ```
 
-**Lua API:** See [HTTP Module](lua/http/http.md)
+**Lua API:** See [HTTP Module](../lua/http/http.md)
 
 ```lua
 local http = require("http")
@@ -99,7 +103,7 @@ resp:write_json({users = get_users()})
 | `db.sql.sqlite` | SQLite database |
 | `db.sql.postgres` | PostgreSQL database |
 | `db.sql.mysql` | MySQL database |
-| `db.cdc.postgres` | Postgres Change Data Capture source (see [CDC](system/cdc.md)) |
+| `db.cdc.postgres` | Postgres Change Data Capture source (see [CDC](../system/cdc.md)) |
 
 ### SQLite
 
@@ -152,16 +156,16 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-See [Database](system/database.md) for `${env:NAME}` secret references, TLS options, and connection pool tuning. When an env-backed value behind a database entry changes, the pool swaps live — active borrows finish against the old connection settings.
+See [Database](../system/database.md) for `${env:NAME}` secret references, TLS options, and connection pool tuning. When an env-backed value behind a database entry changes, the pool swaps live — active borrows finish against the old connection settings.
 
-**Lua API:** See [SQL Module](lua/storage/sql.md)
+**Lua API:** See [SQL Module](../lua/storage/sql.md)
 
 ```lua
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
@@ -195,9 +199,9 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   namespace: deploy
 ```
 
-The `store.kv.*` kinds need [clustering](guides/cluster.md) enabled. See [Store](system/store.md#cluster-kv-stores) for the consistency tradeoffs.
+The `store.kv.*` kinds need [clustering](./cluster.md) enabled. See [Store](../system/store.md#cluster-kv-stores) for the consistency tradeoffs.
 
-**Lua API:** See [Store Module](lua/storage/store.md)
+**Lua API:** See [Store Module](../lua/storage/store.md)
 
 ```lua
 local store = require("store")
@@ -240,7 +244,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua API:** See [Queue Module](lua/storage/queue.md)
+**Lua API:** See [Queue Module](../lua/storage/queue.md)
 
 ```lua
 local queue = require("queue")
@@ -269,7 +273,7 @@ The consumer's <code>func</code> is invoked once per message with the message bo
 | `process.host` | Process execution host |
 | `process.service` | Supervised process (wraps process.lua) |
 | `terminal.host` | Terminal/CLI host |
-| `pg.scope` | Process-group scope (see [Process Groups](system/process-groups.md)) |
+| `pg.scope` | Process-group scope (see [Process Groups](../system/process-groups.md)) |
 
 ```yaml
 # Process host (where processes run)
@@ -357,7 +361,7 @@ Updating a live `process.host` entry rescales `host.workers` in place — runnin
   endpoint: ""  # Optional, for S3-compatible services
 ```
 
-**Lua API:** See [Cloud Storage Module](lua/storage/cloud.md)
+**Lua API:** See [Cloud Storage Module](../lua/storage/cloud.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -386,7 +390,7 @@ Use <code>endpoint</code> to connect to S3-compatible services like MinIO or Dig
   mode: "0755"      # Permissions
 ```
 
-**Lua API:** See [Filesystem Module](lua/storage/filesystem.md)
+**Lua API:** See [Filesystem Module](../lua/storage/filesystem.md)
 
 ```lua
 local fs = require("fs")
@@ -431,7 +435,7 @@ file:close()
     - app:defaults
 ```
 
-**Lua API:** See [Env Module](lua/system/env.md)
+**Lua API:** See [Env Module](../lua/system/env.md)
 
 ```lua
 local env = require("env")
@@ -468,7 +472,7 @@ The router tries storages in order. First match wins for reads; writes go to the
   set: app:templates
 ```
 
-**Lua API:** See [Template Module](lua/text/template.md)
+**Lua API:** See [Template Module](../lua/text/template.md)
 
 ```lua
 local templates = require("templates")
@@ -511,7 +515,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua API:** See [Security Module](lua/security/security.md)
+**Lua API:** See [Security Module](../lua/security/security.md)
 
 ```lua
 local security = require("security")
@@ -593,7 +597,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua API:** See [Contract Module](lua/core/contract.md)
+**Lua API:** See [Contract Module](../lua/core/contract.md)
 
 <tip>
 Mark one binding as <code>default: true</code> to use it when opening a contract without specifying a binding ID (only works when no <code>context_required</code> fields are set).
@@ -639,7 +643,7 @@ Mark one binding as <code>default: true</code> to use it when opening a contract
   transport: payload   # or wasi-http
 ```
 
-See [WASM Overview](wasm/overview.md).
+See [WASM Overview](../wasm/overview.md).
 
 ## Networks
 
@@ -650,7 +654,7 @@ See [WASM Overview](wasm/overview.md).
 | `network.i2p` | I2P network overlay |
 | `network.tailscale` | Tailscale overlay |
 
-Referenced by `http.service` via `network:`, by `funcs`/`process` via the `network` option, and by `http_client` via the `overlay_network` option. See [Network](system/network.md).
+Referenced by `http.service` via `network:`, by `funcs`/`process` via the `network` option, and by `http_client` via the `overlay_network` option. See [Network](../system/network.md).
 
 ## Registry Primitives
 
@@ -725,4 +729,4 @@ The same overrides apply from the CLI:
 wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
 ```
 
-CLI (`-o`) values coerce by shape (`true`/`false` to bool, numbers to numbers, otherwise string); `override:` section values keep their YAML type. To override global [configuration](guides/configuration.md) sections instead of entries, use `--set`.
+CLI (`-o`) values coerce by shape (`true`/`false` to bool, numbers to numbers, otherwise string); `override:` section values keep their YAML type. To override global [configuration](./configuration.md) sections instead of entries, use `--set`.
