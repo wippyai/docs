@@ -21,7 +21,7 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `type` | string | `"widget"` in the runtime descriptor | Optional; when present, must be `"component"` or `"widget"`. Build configuration, not this field, selects the Vite plugin |
-| `tagName` | string | — | Custom element name; must contain a hyphen per the HTML spec |
+| `tagName` | string | — | Custom element name. The 0.0.56 plugin requires a lowercase ASCII name that starts with a letter, contains a hyphen, uses only letters/digits/hyphens, and is not an HTML reserved custom-element name |
 | `props` | object | — | JSON Schema describing the component's accepted attributes |
 | `events` | object | — | JSON Schema describing the custom DOM events the component emits |
 
@@ -110,7 +110,11 @@ The `wippy.events` key mirrors the props shape but describes custom DOM events t
 }
 ```
 
-The Web Host's chat message sanitizer allowlists component attributes from `props.properties` in `wippy-meta.json`. Event schemas document emitted custom events for tooling and consumers; they are not used to allow DOM event listener attributes through sanitized chat content.
+The Web Host's chat message sanitizer allowlists component attributes from the
+projected descriptor's `wippy.props.properties`. Registry `meta.props` overrides
+the bundled `wippy.props` value before that descriptor reaches the Host. Event
+schemas document emitted custom events for tooling and consumers; they are not
+used to allow DOM event listener attributes through sanitized chat content.
 
 ## Operator Configuration (_index.yaml)
 
@@ -118,7 +122,7 @@ These fields are set by the operator in the `meta` block of the `_index.yaml` re
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `tag_name` | string | `wippy.tagName` | FE-authored as `wippy.tagName` in `package.json` (required by the vite plugin); the YAML key overrides the bundled value. Custom element name; must contain a hyphen per the HTML spec |
+| `tag_name` | string | `wippy.tagName` | FE-authored as `wippy.tagName` in `package.json` (required by the vite plugin); the YAML key overrides the bundled value. Keep the override browser-valid and synchronized with the plugin-safe authored name |
 | `announced` | boolean | `false` | Must be `true` for the component to appear in `/api/public/components/list`. Falls back to `meta.public` if that is set. |
 | `auto_register` | boolean | `false` | `true` → Web Host autoloads and registers the component at startup |
 | `secure` | boolean | `false` | Requires authentication |

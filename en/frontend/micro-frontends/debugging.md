@@ -69,7 +69,10 @@ customElements.get('your-tag-name')  // undefined means the element was not regi
 ## Theme looks wrong
 
 **1. In host-less mode:**
-The dev overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe` injection **disabled by default**. Your app will render without any platform CSS until you enable them.
+The dev overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe`
+injection **disabled by default**. The base theme, PrimeVue, Markdown, and
+scrollbar sheets are therefore absent until you enable them; `customCss` and
+`customVariables` remain enabled by default.
 
 Open the dev overlay FAB → toggle the CSS injections you need → check "Auto-accept on reload".
 

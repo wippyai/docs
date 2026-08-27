@@ -7,6 +7,10 @@ description: "Portable view.component recipes for content-only and control-beari
 
 A web component is registered as `view.component` and normally renders in a shadow root. Choose the smallest valid setup.
 
+These are integration recipes for an existing Vue/Vite project. They show the
+Wippy-specific element, metadata, and build configuration rather than a
+standalone project scaffold.
+
 ## Variant A: content-only
 
 A chart, diagram, renderer, or visualization may omit PrimeVue and Tailwind when it renders no control and authors no shared Tailwind utility.
@@ -77,6 +81,7 @@ The package metadata must identify the same custom element:
   "version": "0.1.0",
   "type": "module",
   "specification": "wippy-component-1.0",
+  "browser": "dist/index.js",
   "wippy": {
     "type": "component",
     "tagName": "example-controls",
@@ -108,6 +113,7 @@ export default defineConfig({
     },
     rollupOptions: {
       external: Object.keys(hostImportMap.imports),
+      preserveEntrySignatures: 'strict',
     },
   },
 })

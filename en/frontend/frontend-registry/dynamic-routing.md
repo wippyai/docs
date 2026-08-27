@@ -113,7 +113,10 @@ The classifier returns one of four results:
 
 The classifier checks the page's local router first, so a link the child can resolve itself stays in-app.
 
-`classifyLink` consults the same routes list fetched at startup. A link to `/demo/step-2` is classified as `host-nav` because `/demo/:part(.*)*` is a registered mount route — the host navigates to the `iframe-demo` page rather than doing a full page reload.
+`classifyLink` consults the same routes list fetched at startup. If the child
+router does not claim `/demo/step-2`, the link is classified as `host-nav`
+because `/demo/:part(.*)*` is a registered mount route — the host navigates to
+the `iframe-demo` page rather than doing a full page reload.
 
 This means a child application does not need to know about other pages in the
 system. In an iframe with `preventLinkClicks: true`, an ordinary

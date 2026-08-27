@@ -305,13 +305,19 @@ If `dev-proxy.js` fails to load (or you forget to include it), `entry.web-compon
 
 That error indicates that the host-less boot script is missing.
 
-### Vitest / jsdom tests
+### Partial Vitest / jsdom test excerpt
 
 For unit tests the dev overlay is unnecessary — tests don't have a UI to interact with. The pattern is to **fake the host context directly** by attaching the wrapper object the host would attach:
 
+The excerpt below assumes a `jsdom` test environment and a setup file loaded
+before the test module. That setup must stub `window.__WIPPY_APP_API__` and
+`window.__WIPPY_APP_CONFIG__`; for jsdom versions whose `ElementInternals`
+lacks `states`, it must also provide that `CustomStateSet` surface. This is the
+component-level assertion, not a complete Vitest project.
+
 ```ts
 import { describe, expect, it } from 'vitest'
-import { WippyElement } from './base-element'
+import { WippyElement } from '@wippy-fe/webcomponent-core'
 
 class TestEl extends WippyElement {
   static get wippyConfig() {

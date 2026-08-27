@@ -5,6 +5,10 @@ description: "Canonical output commands, Windows wrappers, Web Host import-map s
 
 # Build and Dependency Contract
 
+This is a reference contract for existing repositories. The Makefile,
+PowerShell, batch, and Vite blocks below are focused fragments; they are not a
+standalone project scaffold.
+
 ## Canonical Wippy production build contract
 
 For a production artifact in a Wippy application or module repository launched

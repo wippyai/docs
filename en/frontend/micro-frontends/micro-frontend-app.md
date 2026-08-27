@@ -9,6 +9,10 @@ A page is a Vite-built application rendered through either the legacy
 `about:srcdoc` iframe engine or the Web Fragment engine. Its route and host
 context come from Wippy AppConfig and packages, not from browser location.
 
+This is an integration recipe for an existing Vue/Vite project. It identifies
+the Wippy-specific entry code and deployment contract; it does not provide a
+standalone project scaffold or backend setup.
+
 ## Required setup
 
 1. Register a `view.page` and its serving filesystem/router entries.
@@ -24,12 +28,15 @@ context come from Wippy AppConfig and packages, not from browser location.
 import { createApp } from 'vue'
 import PrimeVue from '@wippy-fe/theme/primevue-plugin'
 import { createAppRouter } from '@wippy-fe/router'
+import { config } from '@wippy-fe/proxy'
 import App from './App.vue'
 import { routes } from './routes'
 
 const app = createApp(App)
 app.use(PrimeVue)
-app.use(createAppRouter(routes))
+app.use(createAppRouter(routes, {
+  initialPath: config.context?.route ?? '/',
+}))
 app.mount('#app')
 ```
 

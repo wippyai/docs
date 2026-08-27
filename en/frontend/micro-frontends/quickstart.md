@@ -1,15 +1,18 @@
 ---
 title: "Quickstart"
-description: "Build and register a Vue micro frontend app or web component with examples adapted from the public wippyai/app repository."
+description: "Wippy-specific integration recipes for registering a Vue micro frontend app or web component."
 ---
 
 # Quickstart
 
-This page presents two end-to-end Vue examples adapted from the public
+This page presents two condensed Vue integration recipes adapted from the public
 [`wippyai/app`](https://github.com/wippyai/app) repository: a **micro frontend
 app** and a **web component**. The snippets target Web Host 1.0.56 and the
-public `@wippy-fe/*` 0.0.56 package family; the linked repository contains the
-complete applications rather than byte-for-byte copies of these minimal files.
+public `@wippy-fe/*` 0.0.56 package family. They focus on the Wippy-specific
+metadata, entry code, and registry declarations; they omit ordinary Vite
+scaffolding, dependency installation, and backend setup. Use the linked
+repository for complete applications rather than treating these excerpts as
+standalone projects.
 
 ## Prerequisites
 
@@ -32,7 +35,7 @@ complete toolchain contract.
 
 ---
 
-## Example 1: Micro frontend app (Vue)
+## Recipe 1: Micro frontend app (Vue)
 
 A full Vue 3 SPA the Web Host renders through its selected page engine (an iframe by default, or a Web Fragment). Repo: [`frontend/applications/main`](https://github.com/wippyai/app/tree/master/frontend/applications/main).
 
@@ -102,7 +105,7 @@ implements the same target for Windows, and `make.bat` only invokes
 
 ---
 
-## Example 2: Web component (Vue)
+## Recipe 2: Web component (Vue)
 
 A custom element the host mounts in the page DOM (Shadow DOM), embeddable from any page or chat artifact. Repo: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/master/frontend/web-components/reaction-bar).
 
@@ -113,6 +116,7 @@ A custom element the host mounts in the page DOM (Shadow DOM), embeddable from a
   "name": "@example/reaction-bar",
   "version": "1.0.0",
   "specification": "wippy-component-1.0",
+  "browser": "dist/index.js",
   "wippy": {
     "tagName": "example-reaction-bar",
     "type": "widget",
