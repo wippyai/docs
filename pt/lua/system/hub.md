@@ -1,11 +1,13 @@
 ---
 title: "Hub"
-description: "Acesso somente leitura ao catálogo de módulos do Wippy Hub: listar módulos, pesquisar, obter metadados, versões, dependências e READMEs."
+description: "Navegue por metadados e artefatos do Wippy Hub, gerencie credenciais e inspecione o cache local de artefatos em Lua."
 ---
 
 # Hub
 
-Acesso somente leitura ao catálogo de módulos do Wippy Hub: listar módulos, pesquisar, obter metadados, versões, dependências e READMEs.
+O módulo `hub` lê módulos, versões, dependências, arquivos, artefatos e READMEs do Wippy Hub. Ele também gerencia o override de credencial do Hub no runtime e pode remover artefatos não fixados do cache local.
+
+Esta página é uma referência de API. As coordenadas do catálogo são ilustrativas; operações de artefatos, autenticação e cache exigem acesso de rede, credenciais, estado do lock e políticas de segurança correspondentes.
 
 ## Carregamento
 
@@ -15,7 +17,7 @@ local hub = require("hub")
 
 ## Opções por chamada
 
-Cada chamada aceita uma tabela opcional de opções. Chaves comuns a todas as chamadas:
+Chamadas de catálogo e artefatos que usam a rede aceitam uma tabela opcional com estas chaves comuns:
 
 | Chave | Tipo | Descrição |
 |-----|------|-------------|
@@ -24,6 +26,8 @@ Cada chamada aceita uma tabela opcional de opções. Chaves comuns a todas as ch
 | `timeout` | duration/number | Tempo limite da requisição (por exemplo `"3m"` ou segundos) |
 
 Chamadas com suporte a paginação também aceitam `page` e `page_size`.
+
+Chamadas de autenticação recebem diretamente uma URL de registro. Chamadas de cache e métodos do handle de pacote usam as próprias opções descritas abaixo.
 
 ## Módulos
 
@@ -64,6 +68,7 @@ local result, err = hub.modules.list({
 local readme, err = hub.modules.readme("wippy/terminal", {
     version = "1.2.3"
 })
+if err then return nil, err end
 print(readme.content)
 ```
 
@@ -93,14 +98,17 @@ local v, err = hub.versions.get("wippy/terminal", "1.0.0")
 
 ```lua
 local pkg, err = hub.versions.open("wippy/terminal", "1.2.3")
+if err then return nil, err end
 
-local entries, err = pkg:entries({
+local entries, entries_err = pkg:entries({
     kind = "function.lua",       -- string or string[], omit for all kinds
     include_data = false,        -- default true
 })
 -- each entry: { id = "ns:name", kind = "...", meta = {...}, data = <any> }
-
-pkg:close()
+local _, close_err = pkg:close()
+if entries_err then return nil, entries_err end
+if close_err then return nil, close_err end
+return entries
 ```
 
 | Método | Descrição |
@@ -112,6 +120,28 @@ pkg:close()
 | `pkg:close()` | Libera o handle |
 
 O `data` das entradas é retornado cru — referências `${env:...}` não são resolvidas.
+
+## Cache Local de Artefatos
+
+```lua
+local entries, err = hub.cache.list()
+
+local removed, err = hub.cache.remove("wippy/terminal", "1.2.3", {
+    force = false,
+})
+
+local candidates, err = hub.cache.prune({
+    dry_run = true,
+})
+```
+
+| Função | Descrição |
+|--------|-----------|
+| `hub.cache.list()` | Listar artefatos em cache como registros `{module, version, size, pinned}` |
+| `hub.cache.remove(module, version, opts?)` | Remover um artefato; `opts.force = true` permite remover quando o lock file o fixa |
+| `hub.cache.prune(opts?)` | Remover artefatos não referenciados pelo lock file; `opts.dry_run = true` apenas informa os candidatos |
+
+`hub.cache.remove` e `hub.cache.prune` excluem arquivos do diretório vendor resolvido pelo lock, salvo quando se aplicam as proteções de dry-run ou pin.
 
 ## Dependências
 
@@ -147,6 +177,8 @@ local status, err = hub.auth.status()
 local ok, err = hub.auth.logout()
 ```
 
+As strings de token acima são placeholders. Carregue credenciais reais de uma entrada de ambiente apoiada por secrets ou de outra fonte protegida; não as versione em Lua ou YAML do registro.
+
 | Função | Descrição |
 |----------|-------------|
 | `hub.auth.authenticate(token, registry?)` | Valida o token contra o registry e, em caso de sucesso, o instala como override do runtime |
@@ -155,9 +187,11 @@ local ok, err = hub.auth.logout()
 
 `status` contém `authenticated`, `registry` e `orgs`; campos de identidade (`username`, `user_id`, `scope`, `expires_at`, `expired`) estão presentes apenas quando autenticado. Um token que falha na validação não é armazenado — `authenticate` retorna `authenticated = false`. O override tem precedência sobre `WIPPY_TOKEN` e credenciais armazenadas.
 
-**Permissões:** `hub.auth.authenticate`, `hub.auth.status`, `hub.auth.logout`
+## Permissões
+
+Cada operação `hub.*` de nível superior verifica o nome de ação correspondente, como `hub.modules.list`, `hub.versions.open`, `hub.dependencies.get`, `hub.files.list`, `hub.auth.status` ou `hub.cache.prune`. Ações que endereçam um módulo usam a referência fornecida como recurso de segurança; ações de autenticação usam a URL do registro. Os métodos do handle de pacote não executam outra verificação de permissão depois da chamada autorizada a `hub.versions.open`.
 
 ## Veja também
 
-- [CLI Reference](guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
-- [Publishing Guide](guides/publishing.md)
+- [Referência da CLI](../../guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
+- [Guia de Publicação](../../guides/publishing.md)

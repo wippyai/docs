@@ -1,6 +1,6 @@
 ---
 title: "System"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Inspecione estado do runtime, processo, host, supervisor e cluster e controle configurações selecionadas do runtime."
 ---
 
 # System
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Consulte informações do sistema de runtime incluindo uso de memória, estatísticas de garbage collection, detalhes de CPU e metadados de processo.
+O módulo `system` informa o estado do runtime, memória, processo, host, supervisor e cluster. Ele também expõe controles selecionados do runtime.
+
+Esta página é uma referência de API. A maioria dos trechos mostra uma operação isolada; controles como shutdown, ajuste do runtime e locks distribuídos exigem autorização explícita por política e tratamento de falhas específico da aplicação.
 
 ## Carregamento
 
@@ -47,6 +49,34 @@ Cada tabela de módulo contém:
 | `name` | string | Nome do módulo |
 | `description` | string | Descrição do módulo |
 | `class` | string[] | Tags de classificação do módulo |
+
+## Carregando Fontes de Deployment
+
+`system.source.load()` reconstrói o baseline normalizado do registro a partir da geração atual das fontes de deployment. Proprietários e entradas vêm da mesma geração, inclusive durante instalação dinâmica, atualização, desinstalação, substituição e rollback.
+
+```lua
+local sources, err = system.source.load()
+if err then
+    return nil, err
+end
+
+for _, owner in ipairs(sources.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(sources.entries) do
+    print(entry.id)
+end
+```
+
+**Retorna:** `table, error`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `owners` | string[] | Identificadores estáveis dos proprietários das fontes; o proprietário da aplicação é `application` |
+| `entries` | table[] | Entradas do registro decodificadas a partir do baseline normalizado das fontes |
+
+Entradas de normalização de módulos empacotados não reivindicam propriedade, e caminhos do filesystem não são expostos. O carregamento exige `system.read` em `sources`. Falhas de registro, carregamento ou conversão das fontes retornam `errors.INTERNAL` não retentável; negação de permissão retorna `errors.PERMISSION_DENIED`.
 
 ## Estatísticas de Memória
 
@@ -167,10 +197,10 @@ local count, err = system.runtime.goroutines()
 Obter ou definir valor GOMAXPROCS:
 
 ```lua
--- Obter valor atual
+-- Get current value
 local current, err = system.runtime.max_procs()
 
--- Definir novo valor
+-- Set new value
 local prev, err = system.runtime.max_procs(4)
 ```
 
@@ -307,7 +337,7 @@ Cada tabela de estado tem o mesmo formato que `system.supervisor.state()`.
 
 ## Primitivos de Cluster
 
-As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o registro global que o clustering fornece.
+As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](../../guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o registro global que o clustering fornece.
 
 Todas as chamadas de leitura são locais e baratas: reportam a visão deste nó do estado confirmado, sem bloquear na rede.
 
@@ -316,8 +346,8 @@ Todas as chamadas de leitura são locais e baratas: reportam a visão deste nó 
 `system.node` reporta a identidade própria deste nó no cluster.
 
 ```lua
-local id, err = system.node.id()      -- ID deste nó
-local addr, err = system.node.addr()  -- endereço de rede anunciado
+local id, err = system.node.id()      -- this node's ID
+local addr, err = system.node.addr()  -- advertised network address
 local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
 ```
 
@@ -334,9 +364,9 @@ local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-m
 `system.cluster` reporta a visão em todo o cluster: quem são os membros e quem lidera.
 
 ```lua
-local members, err = system.cluster.members()  -- array de tabelas de nó
-local leader, err = system.cluster.leader()    -- ID do nó leader, ou "" se desconhecido
-local n, err = system.cluster.size()           -- contagem de membros visíveis
+local members, err = system.cluster.members()  -- array of node tables
+local leader, err = system.cluster.leader()    -- leader node ID, or "" if unknown
+local n, err = system.cluster.size()           -- count of visible members
 ```
 
 `system.cluster.members()` retorna um array de tabelas de nó. O nó local é incluído uma vez e ordena primeiro.
@@ -362,11 +392,11 @@ local n, err = system.cluster.size()           -- contagem de membros visíveis
 
 ```lua
 local leader, err = system.raft.is_leader()      -- boolean
-local member, err = system.raft.is_member()      -- boolean: voter ou standby
-local role, err = system.raft.role()             -- mesmos valores que system.node.role()
-local term, err = system.raft.term()             -- termo Raft atual
-local idx, err = system.raft.commit_index()      -- índice de log confirmado mais alto
-local stats, err = system.raft.stats()           -- mapa de stats bruto (string -> string)
+local member, err = system.raft.is_member()      -- boolean: voter or standby
+local role, err = system.raft.role()             -- same values as system.node.role()
+local term, err = system.raft.term()             -- current Raft term
+local idx, err = system.raft.commit_index()      -- highest committed log index
+local stats, err = system.raft.stats()           -- raw stats map (string -> string)
 ```
 
 | Função | Retorna | Notas |
@@ -386,10 +416,18 @@ local stats, err = system.raft.stats()           -- mapa de stats bruto (string 
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- seção crítica: apenas um detentor em todo o cluster
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
 A aquisição é fail-fast: se o lock já está mantido, retorna `false` imediatamente em vez de bloquear, portanto os chamadores implementam seu próprio retry e backoff. Apenas o detentor atual pode liberar; liberar um lock que você não detém é uma operação segura sem efeito.
@@ -426,6 +464,7 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | `system.read` | `cwd` | Ler diretório de trabalho |
 | `system.read` | `hosts` | Listar hosts / processos de host |
 | `system.read` | `modules` | Listar módulos carregados |
+| `system.read` | `sources` | Carregar fontes de deployment normalizadas |
 | `system.read` | `supervisor` | Ler estado do supervisor |
 | `system.read` | `node` | Ler identidade deste nó |
 | `system.read` | `cluster` | Ler associação e leader do cluster |
@@ -438,7 +477,9 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Permissão negada | `errors.INVALID` | não |
+| Permissão negada (carregamento de fontes de deployment) | `errors.PERMISSION_DENIED` | não |
+| Permissão negada (operações sem fontes, exceto locks distribuídos) | `errors.INVALID` | não |
+| Permissão negada (acquire/release de lock distribuído) | `errors.PERMISSION_DENIED` | não |
 | Argumento inválido | `errors.INVALID` | não |
 | Argumento obrigatório ausente | `errors.INVALID` | não |
 | Code manager indisponível | `errors.INTERNAL` | não |
@@ -448,4 +489,4 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | Associação indisponível | `errors.INTERNAL` | não |
 | Lock já mantido | `errors.ALREADY_EXISTS` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
