@@ -7,6 +7,8 @@ description: "Configure native or Docker command executors, working directories,
 
 Executor entries run external commands as native operating-system processes or in Docker containers.
 
+This page is a configuration and API reference. Entry fences are fragments for an existing entry list; the Lua example assumes an executor named `app:shell` and an allowed `git status` command.
+
 ## Entry Kinds
 
 | Kind | Description |
@@ -143,15 +145,27 @@ if start_err then
     return nil, start_err
 end
 
-local output, read_err = stdout:read()
+local chunks = {}
+while true do
+    local chunk, read_err = stdout:read(4096)
+    if read_err then
+        stdout:close()
+        proc:close(true)
+        executor:release()
+        return nil, read_err
+    end
+    if chunk == nil then break end
+    chunks[#chunks + 1] = chunk
+end
+
 local exit_code, wait_err = proc:wait()
+local _, stream_close_err = stdout:close()
+local _, release_err = executor:release()
 
-stdout:close()
-executor:release()
-
-if read_err then return nil, read_err end
 if wait_err then return nil, wait_err end
-return output, exit_code
+if stream_close_err then return nil, stream_close_err end
+if release_err then return nil, release_err end
+return table.concat(chunks), exit_code
 ```
 
 ## See Also

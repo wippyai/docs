@@ -7,6 +7,8 @@ description: "Define environment variables backed by memory, files, the operatin
 
 Environment entries let runtime code reference configuration by public variable name or registry entry ID.
 
+This page is a configuration reference. Its YAML fences are entry fragments unless they show an enclosing document.
+
 ## Storage and Access
 
 The model separates storage from access:

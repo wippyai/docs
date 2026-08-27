@@ -7,6 +7,8 @@ description: "Key-value stores with TTL support: in-memory, SQL-backed, and clus
 
 Wippy provides TTL-aware key-value stores backed by memory, SQL, Raft, or a CRDT.
 
+This page is an entry-configuration reference. The YAML fences are fragments for an existing entry list, and the SQL fence is schema setup that must run before a `store.sql` entry starts.
+
 ## Entry Kinds
 
 | Kind | Description |
@@ -55,13 +57,13 @@ When `max_size` is reached, new entries are rejected. Data is lost on restart.
 | `expire_column_name` | string | expires_at | Column for expiration |
 | `cleanup_interval` | duration | 0 | Expired entry cleanup interval |
 
-Column names are validated against SQL injection. Create the table before use:
+Column names are validated against SQL injection. The following prerequisite is PostgreSQL DDL; use the equivalent binary/blob and timestamp types for MySQL or SQLite:
 
 ```sql
 CREATE TABLE kv_store (
     key VARCHAR(255) PRIMARY KEY,
     value BYTEA NOT NULL,
-    expires_at BIGINT
+    expires_at TIMESTAMPTZ NULL
 );
 
 CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL;
@@ -69,7 +71,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Cluster KV Stores
 
-`store.kv.raft` and `store.kv.crdt` replicate key-value data across cluster nodes. Both require [clustering](guides/cluster.md) to be enabled and reuse the same [Store Module](lua/storage/store.md) Lua API. Each entry is a namespaced view into one node-wide engine; `namespace` isolates this entry's keys and must match `^[a-z][a-z0-9._-]*$` (it may not start with `_`).
+`store.kv.raft` and `store.kv.crdt` replicate key-value data across cluster nodes. Both require [clustering](../guides/cluster.md) to be enabled and reuse the same [Store Module](../lua/storage/store.md) Lua API. Each entry is a namespaced view into one node-wide engine; `namespace` isolates this entry's keys and must match `^[a-z][a-z0-9._-]*$` (it may not start with `_`).
 
 ### Raft (strong consistency)
 
@@ -83,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |-------|------|----------|-------------|
 | `namespace` | string | Yes | Key namespace in the shared engine |
 
-Writes are proposed through the shared Raft (followers forward to the leader); reads are linearizable. Conditional writes (`put` with `only_if_absent`/`if_version`) are supported. Raft state is fs-durable by default under `cluster.raft.data_dir` (default `~/.wippy/store`); see [Configuration](guides/configuration.md#cluster).
+Writes are proposed through the shared Raft (followers forward to the leader); reads are linearizable. Conditional writes (`put` with `only_if_absent`/`if_version`) are supported. Raft state is fs-durable by default under `cluster.raft.data_dir` (default `~/.wippy/store`); see [Configuration](../guides/configuration.md#cluster).
 
 ### CRDT (eventual consistency)
 
@@ -107,17 +109,18 @@ Writes mutate local state and disseminate over gossip; conflicting concurrent wr
 
 ## TTL Behavior
 
-All four store kinds support time-to-live values. Reads treat an expired key as missing even before background cleanup removes its storage.
+All four store kinds accept time-to-live values, but expiry visibility differs by backend.
 
-- `store.memory` removes expired entries on its `cleanup_interval`, which defaults to `5m`. A configured zero value is replaced by that default.
-- `store.sql` removes expired rows on `cleanup_interval`; its default of `0` disables background cleanup.
-- `store.kv.raft` and `store.kv.crdt` attach expiring keys to leases managed by the shared cluster store and have no per-entry cleanup interval.
+- `store.memory` treats an expired key as missing on read and removes expired entries on its `cleanup_interval`, which defaults to `5m`. A configured zero value is replaced by that default.
+- `store.sql` filters expired rows on read and removes them on `cleanup_interval`; its default of `0` disables background cleanup without making expired rows readable.
+- `store.kv.raft` attaches expiring keys to leader-driven leases. The roughly one-second lease sweep proposes the deletion through Raft, so a key may remain readable until that consensus-applied removal lands.
+- `store.kv.crdt` also removes expired keys during its roughly one-second lease sweep, then gossips the resulting tombstone. The lease deadline itself is local to the node that accepted the write; if that origin fails before expiry, another node does not independently reproduce the deadline and the key can remain until later state or administrative cleanup removes it.
 
 ## Lua API
 
-See [Store Module](lua/storage/store.md) for operations: `get`, `set`, `has`, `delete`, plus `put`, `entry`, `list`, and `info` for versioned and conditional access.
+See [Store Module](../lua/storage/store.md) for operations: `get`, `set`, `has`, `delete`, plus `put`, `entry`, `list`, and `info` for versioned and conditional access.
 
 ## See Also
 
-- [Store Module](lua/storage/store.md) - Lua API reference
-- [Database](system/database.md) - SQL backing for `store.sql`
+- [Store Module](../lua/storage/store.md) - Lua API reference
+- [Database](./database.md) - SQL backing for `store.sql`
