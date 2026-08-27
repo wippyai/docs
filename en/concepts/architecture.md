@@ -7,7 +7,7 @@ description: "How to carve a Wippy application into namespaces, slices, and laye
 
 A Wippy application is a **graph of registry entries** represented by source files. Code lives in entries such as `function.lua` and `process.lua`; `_index.yaml` files declare how functions, routes, services, and libraries connect. Application structure determines how that graph is divided into namespaces so it remains composable, testable, and bootable as it grows.
 
-This page explains one way to organize that graph. For file format, naming, and `_index.yaml` placement, see [YAML & Project Structure](start/structure.md). For entry definitions, see the [Entry Kinds Guide](guides/entry-kinds.md).
+This page explains one way to organize that graph. For file format, naming, and `_index.yaml` placement, see [YAML & Project Structure](../start/structure.md). For entry definitions, see the [Entry Kinds Guide](../guides/entry-kinds.md).
 
 ## Feature Slices
 
@@ -54,7 +54,7 @@ Three files commonly appear at the root of a slice. They contain definitions sha
 | File | Holds | Capabilities |
 |------|-------|--------------|
 | `consts.lua` | State machines, enums, queue tiers, registry IDs of processes. The values that mirror your database `CHECK` constraints. | none |
-| `config.lua` | Env-tunable knobs with code-default fallbacks (`env.get(KEY) or DEFAULT`), so no `env.variable` entry is required for a value to be optional. | `env` |
+| `config.lua` | Env-tunable knobs with a helper that applies a code default only when `env.get(KEY)` returns `errors.NOT_FOUND` and propagates permission or backend errors. No `env.variable` entry is required for a value to be optional. | `env` |
 | `types.lua` | Entity shapes (`type Job = { ... }`) — the rows the persistence layer returns. | none |
 
 `consts` and `types` declare **no host capabilities**; they are pure `library.lua` entries that return a table. Keeping domain vocabulary free of I/O also makes it testable without a database or process host.
@@ -87,9 +87,9 @@ These are two points on a spectrum:
 
 Choose based on whether the slice will be **consumed by a host you do not control**. Reusable components need a requirement interface; internal slices can reference application infrastructure directly. The packaging changes with reuse, while the internal layering can remain the same.
 
-See [Building Components](guides/components.md) for the requirement/dependency mechanism, and [Dependency Management](guides/dependency-management.md) for the lock-file side.
+See [Building Components](../guides/components.md) for the requirement/dependency mechanism, and [Dependency Management](../guides/dependency-management.md) for the lock-file side.
 
-## Why Use This Shape {#why-this-shape}
+## Why Use This Shape :id=why-this-shape
 
 This structure supports composition, capability review, and boot-order analysis:
 
@@ -103,9 +103,9 @@ This structure supports composition, capability review, and boot-order analysis:
 
 ## See Also
 
-- [YAML & Project Structure](start/structure.md) — file format, naming, namespaces
-- [Building Components](guides/components.md) — `ns.definition`, `ns.requirement`, mounting
-- [Dependency Management](guides/dependency-management.md) — lock files, consuming modules
-- [Registry](concepts/registry.md) — how entries are stored and resolved
-- [Entry Kinds Guide](guides/entry-kinds.md) — every entry kind
-- [Process Model](concepts/process-model.md) — services, supervision, hosts
+- [YAML & Project Structure](../start/structure.md) — file format, naming, namespaces
+- [Building Components](../guides/components.md) — `ns.definition`, `ns.requirement`, mounting
+- [Dependency Management](../guides/dependency-management.md) — lock files, consuming modules
+- [Registry](./registry.md) — how entries are stored and resolved
+- [Entry Kinds Guide](../guides/entry-kinds.md) — every entry kind
+- [Process Model](./process-model.md) — services, supervision, hosts

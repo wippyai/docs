@@ -32,7 +32,7 @@ security:
 
 Keep strict mode enabled in deployments that must fail closed, and ensure services start with the actor and scope their work requires. Disabling strict mode does not turn a complete scope's `undefined` result into an allow.
 
-See the [Security reference](system/security.md) for policy syntax, actors, scopes, and token stores.
+See the [Security reference](../system/security.md) for policy syntax, actors, scopes, and token stores.
 
 ## Lua Isolation
 
@@ -81,7 +81,7 @@ This inheritance keeps authorization attached to a call chain, but it also means
 
 Reading entries and mutating the registry are different permissions. Standard durable changesets require `registry.apply`; at v0.3.32a that check uses an empty resource and is not a per-entry or per-namespace write decision. Do not grant `registry.apply` to an untrusted agent and assume a namespace pattern will confine its writes.
 
-Process-local overlays have a narrower permission surface. They check the overlay owner and operation-specific actions such as `registry.overlay.create.<kind>`, `registry.overlay.update.<kind>`, and `registry.overlay.delete.<kind>` against the affected entry ID. See [Entry Registry](lua/core/registry.md#process-local-overlays).
+Process-local overlays have a narrower permission surface. They check the overlay owner and operation-specific actions such as `registry.overlay.create.<kind>`, `registry.overlay.update.<kind>`, and `registry.overlay.delete.<kind>` against the affected entry ID. See [Entry Registry](../lua/core/registry.md#process-local-overlays).
 
 ## Data Boundaries
 
@@ -113,7 +113,7 @@ Wippy's execution and policy boundaries do not replace infrastructure controls:
 - host administration, SSH access, and database-administrator actions require infrastructure audit logging;
 - per-tenant CPU and memory quotas require deployment-level resource controls.
 
-OpenTelemetry can trace configured runtime and framework operations, but trace coverage depends on the enabled instrumentation. See [Observability](guides/observability.md).
+OpenTelemetry can trace configured runtime and framework operations, but trace coverage depends on the enabled instrumentation. See [Observability](../guides/observability.md).
 
 ## Review Checklist
 
@@ -128,8 +128,8 @@ OpenTelemetry can trace configured runtime and framework operations, but trace c
 
 ## See Also
 
-- [Security reference](system/security.md) — Policies, scopes, actors, strict mode, and token stores
-- [Entry Registry](lua/core/registry.md) — Registry read, mutation, and overlay permissions
-- [Process Management](lua/core/process.md) — Spawn, context, and process security permissions
-- [Process Model](concepts/process-model.md) — Process isolation and lifecycle
-- [Agents](framework/agents.md) — Agent definitions and tool selection
+- [Security reference](../system/security.md) — Policies, scopes, actors, strict mode, and token stores
+- [Entry Registry](../lua/core/registry.md) — Registry read, mutation, and overlay permissions
+- [Process Management](../lua/core/process.md) — Spawn, context, and process security permissions
+- [Process Model](./process-model.md) — Process isolation and lifecycle
+- [Agents](../framework/agents.md) — Agent definitions and tool selection

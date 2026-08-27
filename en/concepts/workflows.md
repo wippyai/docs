@@ -101,9 +101,13 @@ local _, err = funcs.call("app.approvals:submit", request)
 if err then return nil, err end
 
 local inbox = process.inbox()
-local msg = inbox:receive()  -- blocks until signal arrives
+local msg, open = inbox:receive()  -- blocks until signal arrives
+if not open then return nil, errors.new("workflow inbox closed") end
 
-if msg.approved then
+local decision, payload_err = msg:payload():data()
+if payload_err then return nil, payload_err end
+
+if decision.approved then
     return funcs.call("app.orders:fulfill", request.order_id)
 else
     return funcs.call("app.notifications:send_rejection", request)

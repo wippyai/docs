@@ -20,11 +20,11 @@ app:templates             → Template set
 
 Each entry has an `ID` (namespace:name format), a `kind` that determines its handler, arbitrary `meta` fields, and kind-specific `data`.
 
-Registry IDs are also used as resources by many authorization checks. The registry stores the definitions; the security scope decides whether guarded operations may access them. See the [Security Model](concepts/security-model.md).
+Registry IDs are also used as resources by many authorization checks. The registry stores the definitions; the security scope decides whether guarded operations may access them. See the [Security Model](./security-model.md).
 
 ## Kind Handlers
 
-When a dispatched entry is submitted, its `kind` selects the registered handler. The handler validates and reconciles the corresponding runtime resource: an `http.service` entry manages an HTTP server, a `function.lua` entry manages a function pool, and a `db.sql.postgres` entry manages a connection pool. See the [Entry Kinds Guide](guides/entry-kinds.md) for available kinds and [Custom Entry Kinds](internals/kinds.md) for handler implementation.
+When a dispatched entry is submitted, its `kind` selects the registered handler. The handler validates and reconciles the corresponding runtime resource: an `http.service` entry manages an HTTP server, a `function.lua` entry manages a function pool, and a `db.sql.postgres` entry manages a connection pool. See the [Entry Kinds Guide](../guides/entry-kinds.md) for available kinds and [Custom Entry Kinds](../internals/kinds.md) for handler implementation.
 
 ## Live Updates
 
@@ -32,10 +32,10 @@ Entries can be added, updated, or removed while the system runs. For dispatched 
 
 Version history supports backward and forward transitions when history is enabled. Memory history is the default and lasts for the process lifetime; SQLite and PostgreSQL backends persist history across restarts.
 
-YAML and JSON definition files are source manifests that the boot loader converts into entries. They are not serialized registry snapshots. See [Registry module](lua/core/registry.md) for programmatic access.
+YAML and JSON definition files are source manifests that the boot loader converts into entries. They are not serialized registry snapshots. See [Registry module](../lua/core/registry.md) for programmatic access.
 
 ## See Also
 
-- [YAML & Project Structure](start/structure.md) — Definition files
-- [Custom Entry Kinds](internals/kinds.md) — Implement kind handlers
-- [Process Model](concepts/process-model.md) — Understand process execution
+- [YAML & Project Structure](../start/structure.md) — Definition files
+- [Custom Entry Kinds](../internals/kinds.md) — Implement kind handlers
+- [Process Model](./process-model.md) — Understand process execution

@@ -15,6 +15,8 @@ reuse Lua states, so module globals and closure upvalues are worker-local and
 are not a reliable cross-call store.
 
 ```lua
+local funcs = require("funcs")
+
 local result, err = funcs.call("app.math:add", 2, 3)
 if err then
     return nil, err
@@ -32,8 +34,12 @@ Use functions for HTTP handlers, data transformations, and anything that should 
 Processes are actors. They maintain state across multiple messages, run independently of whoever started them, and communicate through message passing.
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "job", {task = "process_data"})
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then return nil, err end
+
+local ok, send_err = process.send(pid, "job", {task = "process_data"})
+if send_err then return nil, send_err end
+return ok
 ```
 
 After being spawned, a process runs independently of the code that created it. Processes can monitor or link to one another and can participate in supervision trees that restart failed children.
@@ -52,7 +58,9 @@ rebuild state after crashes, restarts, or infrastructure changes.
 
 ```lua
 -- The provider records this workflow so a worker restart can replay it.
-process.spawn("app.orders:process", "app:temporal_worker", order_id)
+local pid, err = process.spawn("app.orders:process", "app:temporal_worker", order_id)
+if err then return nil, err end
+return pid
 ```
 
 Durability adds latency because workflow operations are recorded. Use workflows when recovery is more important than the lower latency of functions or processes, such as for multi-step business processes and long-running orchestration.

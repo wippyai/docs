@@ -19,6 +19,8 @@ Call functions synchronously with `funcs.call()`:
 ```lua
 local funcs = require("funcs")
 local result, err = funcs.call("app.api:get_user", user_id)
+if err then return nil, err end
+return result
 ```
 
 For non-blocking execution, use `funcs.async()`:
@@ -57,9 +59,14 @@ local user_id = ctx.get("user_id")
 Add context when calling:
 
 ```lua
-local exec = funcs.new()
-    :with_context({trace_id = "abc-123"})
-    :call("app.api:process", data)
+local funcs = require("funcs")
+
+local exec, err = funcs.new():with_context({trace_id = "abc-123"})
+if err then return nil, err end
+
+local result, err = exec:call("app.api:process", data)
+if err then return nil, err end
+return result
 ```
 
 Security context propagates the same way. Called functions see the caller's actor and can check permissions. See the [security module](../lua/security/security.md) for access control APIs.

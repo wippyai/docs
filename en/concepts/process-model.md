@@ -7,10 +7,7 @@ description: "How Wippy processes execute, communicate, isolate capabilities, an
 
 Wippy executes code in isolated processes: lightweight state machines that communicate through messages rather than shared memory. This actor model gives each process its own state and lifecycle.
 
-This page explains the lifecycle and isolation model. Use the [Process
-Management reference](../lua/core/process.md) for spawn, messaging, monitoring,
-registry, and upgrade APIs. See [Process Host and
-Services](../system/process-host.md) for runtime-managed service fields.
+This page explains the lifecycle and isolation model. Use the [Process Management reference](../lua/core/process.md) for spawn, messaging, monitoring, registry, and upgrade APIs. See [Process Host and Services](../system/process-host.md) for runtime-managed service fields.
 
 ## State Machine Execution
 
@@ -56,7 +53,9 @@ For the security implications of process isolation, see the [Security Model](./s
 Create background processes with `process.spawn()`:
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+local pid, err = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+if err then return nil, err end
+return pid
 ```
 
 The first argument is the registry entry, the second is the process host, and remaining arguments pass to the process.
@@ -74,7 +73,9 @@ Spawn variants control lifecycle relationships:
 Processes communicate through messages rather than shared memory:
 
 ```lua
-process.send(target_pid, "topic", payload)
+local ok, err = process.send(target_pid, "topic", payload)
+if err then return nil, err end
+return ok
 ```
 
 Messages from the same sender arrive in order. Messages from different senders may interleave. Delivery is fire-and-forget—use request-response patterns when you need confirmation.
@@ -88,11 +89,16 @@ Processes can register in a local name registry and be addressed by name instead
 Any process can supervise other processes by monitoring them. A supervisor starts monitored children, watches for EXIT events, and decides whether to restart them after failure.
 
 ```lua
-local worker = process.spawn_monitored("app.workers:handler", "app:processes")
-local event = process.events():receive()
+local worker, spawn_err = process.spawn_monitored("app.workers:handler", "app:processes")
+if spawn_err then return nil, spawn_err end
+
+local event, open = process.events():receive()
+if not open then return nil, errors.new("process event channel closed") end
 
 if event.kind == process.event.EXIT and event.result.error then
-    worker = process.spawn_monitored("app.workers:handler", "app:processes")
+    local replacement, restart_err = process.spawn_monitored("app.workers:handler", "app:processes")
+    if restart_err then return nil, restart_err end
+    worker = replacement
 end
 ```
 
@@ -108,11 +114,9 @@ At the runtime level, services can start and supervise long-running processes. D
     restart:
       max_attempts: 5
       initial_delay: 1s
-      max_delay: 30s
-      backoff_factor: 2.0
 ```
 
-The service starts automatically, restarts on crash with backoff, and integrates with the runtime's lifecycle management.
+The service starts automatically and integrates with the runtime's lifecycle management. At the pinned runtime, the initial failed start counts toward `max_attempts`, so `5` permits at most four follow-up starts. Each retry waits for `initial_delay` with jitter; the delay does not increase between attempts.
 
 ## Process Upgrading
 
