@@ -1,6 +1,6 @@
 ---
 title: "시스템"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "런타임, 프로세스, 호스트, 슈퍼바이저, 클러스터 상태를 검사하고 선택된 런타임 설정을 제어합니다."
 ---
 
 # 시스템
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-메모리 사용량, 가비지 컬렉션 통계, CPU 세부 정보, 프로세스 메타데이터를 포함한 런타임 시스템 정보를 조회합니다.
+`system` 모듈은 런타임, 메모리, 프로세스, 호스트, 슈퍼바이저, 클러스터 상태를 보고하고 일부 런타임 제어를 제공합니다.
+
+이 페이지는 API 레퍼런스입니다. 대부분의 조각은 독립된 작업 하나를 보여 줍니다. 셧다운, 런타임 튜닝, 분산 잠금 같은 제어에는 명시적 정책 권한과 애플리케이션별 오류 처리가 필요합니다.
 
 ## 로딩
 
@@ -47,6 +49,34 @@ local mods, err = system.modules()
 | `name` | string | 모듈 이름 |
 | `description` | string | 모듈 설명 |
 | `class` | string[] | 모듈 분류 태그 |
+
+## 배포 소스 로드
+
+`system.source.load()`는 현재 배포 소스 세대에서 정규화된 레지스트리 기준선을 다시 구성합니다. 동적 설치, 업데이트, 제거, 교체, 롤백 중에도 소유자와 엔트리는 같은 세대에서 가져옵니다.
+
+```lua
+local sources, err = system.source.load()
+if err then
+    return nil, err
+end
+
+for _, owner in ipairs(sources.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(sources.entries) do
+    print(entry.id)
+end
+```
+
+**반환:** `table, error`
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `owners` | string[] | 안정적인 소스 소유자 식별자. 애플리케이션 소유자는 `application` |
+| `entries` | table[] | 정규화된 소스 기준선에서 디코딩한 레지스트리 엔트리 |
+
+패킹된 모듈 정규화 입력은 소유권을 주장하지 않으며 파일시스템 경로는 노출되지 않습니다. 로드에는 `sources`에 대한 `system.read`가 필요합니다. 소스 레지스트리, 로드, 변환 실패는 재시도할 수 없는 `errors.INTERNAL`, 권한 거부는 `errors.PERMISSION_DENIED`를 반환합니다.
 
 ## 메모리 통계
 
@@ -164,13 +194,13 @@ local count, err = system.runtime.goroutines()
 
 ## GOMAXPROCS
 
-GOMAXPROCS 값 가져오기 또는 설정:
+`GOMAXPROCS` 값 가져오기 또는 설정:
 
 ```lua
--- 현재 값 가져오기
+-- Get current value
 local current, err = system.runtime.max_procs()
 
--- 새 값 설정
+-- Set new value
 local prev, err = system.runtime.max_procs(4)
 ```
 
@@ -307,7 +337,7 @@ local states, err = system.supervisor.states()
 
 ## 클러스터 프리미티브
 
-`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 활성화된](guides/cluster.md) 경우에 가장 유용합니다; 독립 노드에서는 예측 가능하게 저하됩니다 — `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 클러스터링이 제공하는 글로벌 레지스트리가 필요합니다.
+`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 비활성화된](../../guides/cluster.md) 경우 `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 글로벌 레지스트리가 필요하므로 사용할 수 없습니다.
 
 모든 읽기 호출은 로컬이고 저렴합니다: 커밋된 상태에 대한 이 노드의 뷰를 보고하며, 네트워크를 차단하지 않습니다.
 
@@ -316,8 +346,8 @@ local states, err = system.supervisor.states()
 `system.node`는 클러스터에서 이 노드 자체의 정체성을 보고합니다.
 
 ```lua
-local id, err = system.node.id()      -- 이 노드의 ID
-local addr, err = system.node.addr()  -- 광고된 네트워크 주소
+local id, err = system.node.id()      -- this node's ID
+local addr, err = system.node.addr()  -- advertised network address
 local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
 ```
 
@@ -334,9 +364,9 @@ local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-m
 `system.cluster`는 클러스터 전체 뷰를 보고합니다: 멤버가 누구이고 누가 리더인지.
 
 ```lua
-local members, err = system.cluster.members()  -- 노드 테이블 배열
-local leader, err = system.cluster.leader()    -- 리더 노드 ID, 또는 알 수 없으면 ""
-local n, err = system.cluster.size()           -- 보이는 멤버 수
+local members, err = system.cluster.members()  -- array of node tables
+local leader, err = system.cluster.leader()    -- leader node ID, or "" if unknown
+local n, err = system.cluster.size()           -- count of visible members
 ```
 
 `system.cluster.members()`는 노드 테이블 배열을 반환합니다. 로컬 노드가 한 번 포함되고 먼저 정렬됩니다.
@@ -362,11 +392,11 @@ local n, err = system.cluster.size()           -- 보이는 멤버 수
 
 ```lua
 local leader, err = system.raft.is_leader()      -- boolean
-local member, err = system.raft.is_member()      -- boolean: voter 또는 standby
-local role, err = system.raft.role()             -- system.node.role()과 같은 값
-local term, err = system.raft.term()             -- 현재 Raft 텀
-local idx, err = system.raft.commit_index()      -- 가장 높은 커밋된 로그 인덱스
-local stats, err = system.raft.stats()           -- 원시 통계 맵 (string -> string)
+local member, err = system.raft.is_member()      -- boolean: voter or standby
+local role, err = system.raft.role()             -- same values as system.node.role()
+local term, err = system.raft.term()             -- current Raft term
+local idx, err = system.raft.commit_index()      -- highest committed log index
+local stats, err = system.raft.stats()           -- raw stats map (string -> string)
 ```
 
 | 함수 | 반환 | 비고 |
@@ -386,10 +416,18 @@ local stats, err = system.raft.stats()           -- 원시 통계 맵 (string ->
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- critical section: only one holder cluster-wide
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
 획득은 실패-즉시 방식입니다: 잠금이 이미 보유 중이면 차단하는 대신 즉시 `false`를 반환하므로 호출자가 자체 재시도와 백오프를 구현합니다. 현재 보유자만 해제할 수 있습니다; 보유하지 않은 잠금을 해제하는 것은 안전한 no-op입니다.
@@ -426,19 +464,22 @@ end
 | `system.read` | `cwd` | 작업 디렉토리 읽기 |
 | `system.read` | `hosts` | 호스트 / 호스트 프로세스 목록 조회 |
 | `system.read` | `modules` | 로드된 모듈 목록 조회 |
+| `system.read` | `sources` | 정규화된 배포 소스 로드 |
 | `system.read` | `supervisor` | 슈퍼바이저 상태 읽기 |
 | `system.read` | `node` | 이 노드의 정체성 읽기 |
 | `system.read` | `cluster` | 클러스터 멤버십 및 리더 읽기 |
 | `system.read` | `raft` | Raft 상태 읽기 |
 | `system.read` | `raft_stats` | 원시 Raft 통계 맵 읽기 |
-| `system.lock` | `<잠금 이름>` | 분산 잠금 획득 또는 해제 |
+| `system.lock` | `<lock name>` | 분산 잠금 획득 또는 해제 |
 | `system.exit` | - | 시스템 셧다운 트리거 |
 
 ## 에러
 
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
-| 권한 거부됨 | `errors.INVALID` | 아니오 |
+| 권한 거부됨 (배포 소스 로드) | `errors.PERMISSION_DENIED` | 아니오 |
+| 권한 거부됨 (분산 잠금 외 비소스 작업) | `errors.INVALID` | 아니오 |
+| 권한 거부됨 (분산 잠금 획득/해제) | `errors.PERMISSION_DENIED` | 아니오 |
 | 잘못된 인수 | `errors.INVALID` | 아니오 |
 | 필수 인수 누락 | `errors.INVALID` | 아니오 |
 | 코드 매니저 사용 불가 | `errors.INTERNAL` | 아니오 |
@@ -448,4 +489,4 @@ end
 | 멤버십 사용 불가 | `errors.INTERNAL` | 아니오 |
 | 잠금 이미 보유됨 | `errors.ALREADY_EXISTS` | 아니오 |
 
-에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
