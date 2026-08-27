@@ -1,13 +1,13 @@
 ---
 title: "設定リファレンス"
-description: "Wippyは.wippy.yamlファイルで設定されます。すべてのオプションには妥当なデフォルト値があります。"
+description: "ランタイム設定のフィールド、プロファイル、合成規則、環境変数参照、およびコマンドラインからの上書き。"
 ---
 
 # 設定リファレンス
 
-Wippyは`.wippy.yaml`ファイルで設定されます。すべてのオプションには妥当なデフォルト値があります。
+Wippy は `.wippy.yaml` ファイルからランタイム設定を読み取ります。
 
-以下の値はいずれも、起動時に `wippy run --set section.path=value` で上書きできます（繰り返し指定可能で、ファイルより優先されます）。これらの設定セクションではなく個々のレジストリ*エントリ*を上書きするには、`override:` セクションまたは `-o` を使用します — [エントリの上書き](guides/entry-kinds.md#overriding-entries)を参照してください。
+以下の設定フィールドは、繰り返し指定できる `wippy run --set section.path=value` オプションを使用して起動時に上書きできます。これらの設定セクションではなく個々のレジストリ*エントリ*を上書きするには、`override:` セクションまたは `-o` を使用します。[エントリの上書き](./entry-kinds.md#overriding-entries)を参照してください。
 
 ## 設定の合成 {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - 最初のファイルが、相対パスの解決に使われるディレクトリを決めます。
 - ファイル名に予約された意味はありません。デフォルト以外は何も自動探索されません。
 
-設定は次の順序で適用されます：ファイル合成、次に `--profile` の選択、最後に `--set` の上書き。パックから実行されるアプリケーションでは、パックされたランタイムデフォルトがこれらすべての下に位置します（[ランタイムデフォルトの公開](guides/publishing.md#publishing-runtime-defaults)を参照）。
+設定は、合成されたファイル、選択された `--profile` オーバーレイ、`--set` の上書きの順に適用されます。パックから実行されるアプリケーションでは、パックされたランタイムデフォルトの優先順位はこれら 3 つより低くなります。[ランタイムデフォルトの公開](./publishing.md#publishing-runtime-defaults)を参照してください。
 
 ## プロファイル {#profiles}
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` セクションはプロファイル内でのリスト操作をサポートします — `namespaces.add`、`namespaces.remove`、`entries.add`、`entries.remove` — これにより、プロファイルはベースのリストを置き換えるのではなく調整できます。
 - `${name}` 参照はマージ後の `vars:` セクションから補間されます。プロファイルの vars 内で OS 環境変数を参照することはできません。ベース設定で `${env:NAME}` を使用してください。これはファイルのロード時に解決されます。
 
-`wippy run`、`test`、`pack` は `--profile` を受け付けます。`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます — [プロファイルの公開](guides/publishing.md#publishing-profiles)を参照してください。
+`wippy run`、`test`、`pack` は `--profile` を受け付けます。`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます。[プロファイルの公開](./publishing.md#publishing-profiles)を参照してください。
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## ログマネージャ
 
-ランタイムログルーティングを制御します。コンソール出力は[CLIフラグ](guides/cli.md)（`-v`, `-c`, `-s`）で設定します。
+ランタイムログルーティングを制御します。コンソール出力は [CLI フラグ](./cli.md)（`-v`, `-c`, `-s`）で設定します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-参照: [ロガーモジュール](lua/system/logger.md)
+参照: [ロガーモジュール](../lua/system/logger.md)
 
 ## プロファイラ
 
@@ -111,22 +111,22 @@ profiler:
   address: "localhost:6060"
 ```
 
-アクセス: `http://localhost:6060/debug/pprof/`
+デフォルトのアドレスで有効にすると、プロファイラは `http://localhost:6060/debug/pprof/` で利用できます。
 
 ## セキュリティ
 
-グローバルセキュリティ動作。個別のポリシーは[security.policyエントリ](guides/entry-kinds.md)として定義されます。
+グローバルなセキュリティ動作です。個別のポリシーは [security.policy エントリ](./entry-kinds.md)として定義されます。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `strict_mode` | bool | false | セキュリティコンテキストが不完全な場合にアクセスを拒否 |
+| `strict_mode` | bool | true | セキュリティコンテキストが不完全な場合にアクセスを拒否 |
 
 ```yaml
 security:
   strict_mode: true
 ```
 
-参照: [セキュリティシステム](system/security.md), [セキュリティモジュール](lua/security/security.md)
+参照: [セキュリティシステム](../system/security.md), [セキュリティモジュール](../lua/security/security.md)
 
 ## レジストリ {#registry}
 
@@ -135,8 +135,10 @@ security:
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `enable_history` | bool | true | エントリバージョンを追跡 |
-| `history_type` | string | memory | ストレージ: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLiteファイルパス |
+| `history_type` | string | memory | ストレージ: `memory`、`sqlite`、`postgres`、`nil` |
+| `history_path` | string | .wippy/registry.db | SQLite ファイルパス（`history_type: sqlite` の場合に使用） |
+| `history_dsn` | string | | Postgres DSN（`history_type: postgres` の場合に使用） |
+| `history_schema` | string | | Postgres スキーマ名（`history_type: postgres` の場合に使用） |
 
 ```yaml
 registry:
@@ -144,7 +146,14 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-参照: [レジストリコンセプト](concepts/registry.md), [レジストリモジュール](lua/core/registry.md)
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
+```
+
+参照: [レジストリコンセプト](../concepts/registry.md), [レジストリモジュール](../lua/core/registry.md)
 
 ## リレー
 
@@ -152,14 +161,14 @@ registry:
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `node_name` | string | local | このリレーノードの識別子 |
+| `node_name` | string | インスタンスごとに導出された ID | このリレーノードの識別子（デフォルトは machine-id/hostname + 作業ディレクトリの UUIDv5。`WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME` で上書き可能） |
 
 ```yaml
 relay:
   node_name: worker-1
 ```
 
-参照: [プロセスモデル](concepts/process-model.md)
+参照: [プロセスモデル](../concepts/process-model.md)
 
 ## スーパーバイザ
 
@@ -177,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-参照: [スーパービジョンガイド](guides/supervision.md)
+参照: [スーパービジョンガイド](./supervision.md)
 
 <note>
-`process.host`ごとのワーカーとキューは、このグローバルセクションではなく、エントリ自体（`workers`、`queue_size`、`local_queue_size`）で設定します。[Process Host](system/process-host.md)エントリ種別を参照してください。
+`process.host` ごとのワーカーとキューは、このグローバルセクションではなく、エントリ自体（`workers`、`queue_size`、`local_queue_size`）で設定します。[Process Host](../system/process-host.md) エントリ種別を参照してください。
 </note>
 
 ## Luaランタイム
@@ -192,8 +201,10 @@ Lua VMキャッシュと式評価。
 | `proto_cache_size` | int | 60000 | コンパイル済みプロトタイプキャッシュ |
 | `main_cache_size` | int | 10000 | メインチャンクキャッシュ |
 | `cache.enabled` | bool | false | コンパイル済みバイトコード/型チェックキャッシュをディスクに永続化 |
-| `cache.dir` | string | （システムキャッシュディレクトリ） | キャッシュディレクトリパス |
-| `cache.mode` | string | `read_write` | キャッシュモード: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | キャッシュディレクトリのパス（設定または作業ディレクトリからの相対パス） |
+| `cache.mode` | string | `readwrite` | キャッシュモード: `readwrite`（デフォルト）、`readonly`、`off` |
+| `cache.compile.enabled` | bool | true | コンパイル済みバイトコードを永続化（`cache.enabled` の場合） |
+| `cache.typecheck.enabled` | bool | true | 型チェック結果を永続化（`cache.enabled` の場合） |
 | `type_system.enabled` | bool | false | 静的型チェックを有効化 |
 | `type_system.strict` | bool | false | 型警告をエラーとして扱う |
 
@@ -207,7 +218,7 @@ lua:
     enabled: true
 ```
 
-参照: [Lua概要](lua/overview.md)
+参照: [Lua概要](../lua/overview.md)
 
 ## ファインダー
 
@@ -241,11 +252,11 @@ OTLPによる分散トレーシングとメトリクスエクスポート。
 | `metrics_enabled` | bool | false | メトリクスをエクスポート |
 | `http.enabled` | bool | true | HTTPリクエストをトレース |
 | `http.extract_headers` | bool | true | 受信ヘッダからトレースコンテキストを抽出 |
-| `http.inject_headers` | bool | true | 送信ヘッダにトレースコンテキストを注入 |
+| `http.inject_headers` | bool | true | HTTP レスポンスにトレースコンテキストを注入 |
 | `process.enabled` | bool | true | プロセスライフサイクルをトレース |
 | `process.trace_lifecycle` | bool | true | spawn/terminate の span を発行 |
 | `interceptor.enabled` | bool | true | 関数呼び出しをトレース |
-| `interceptor.order` | int | 100 | インターセプタの優先度 |
+| `interceptor.order` | int | 100 | デコードされる互換性フィールド。ランタイム v0.3.32a は、この値にかかわらずインターセプタを順序 100 で登録 |
 | `queue.enabled` | bool | true | キューの publish/consume をトレース |
 | `temporal.enabled` | bool | false | Temporal ワークフローをトレース |
 
@@ -260,7 +271,7 @@ otel:
 
 標準 OTEL 環境変数（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）は一致するフィールドを上書きします。
 
-参照: [可観測性ガイド](guides/observability.md)
+参照: [可観測性ガイド](./observability.md)
 
 ## シャットダウン
 
@@ -292,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-参照: [メトリクスモジュール](lua/system/metrics.md), [可観測性ガイド](guides/observability.md)
+参照: [メトリクスモジュール](../lua/system/metrics.md), [可観測性ガイド](./observability.md)
 
 ## Prometheus
 
@@ -301,7 +312,7 @@ Prometheusメトリクスエンドポイント。
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `enabled` | bool | false | メトリクスサーバーを起動 |
-| `address` | string | localhost:9090 | リッスンアドレス |
+| `address` | string | | リッスンアドレス。`enabled: true` の場合は明示的な設定が必要で、設定しなければメトリクスサーバーは起動しない |
 
 ```yaml
 prometheus:
@@ -311,11 +322,11 @@ prometheus:
 
 Prometheusスクレイピング用の`/metrics`エンドポイントを公開します。
 
-参照: [可観測性ガイド](guides/observability.md)
+参照: [可観測性ガイド](./observability.md)
 
-## クラスタ
+## クラスタ {#cluster}
 
-マルチノードクラスタリング: ゴシップメンバーシップと有界 Raft コンセンサスコア。アーキテクチャと運用モデルについては[クラスタガイド](guides/cluster.md)を参照。このセクションは設定キーのリファレンスです。
+マルチノードクラスタリング: ゴシップメンバーシップと有界 Raft コンセンサスコア。アーキテクチャと運用モデルについては[クラスタガイド](./cluster.md)を参照してください。このセクションは設定キーのリファレンスです。
 
 ### トップレベル
 
@@ -358,22 +369,27 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 | `internode.auto_port` | bool | true | 起動時に実際のポートを探索して固定し、ゴシップで通知する |
 | `internode.advertise_addr` | string | | アップグレード済みピア向けに公開される追加のリレーエンドポイント（IP または DNS 名）— NAT やロードバランサ経由の到達性のため |
 | `internode.advertise_port` | int | 0 | `advertise_addr` 用のポート（0 = バインドポート。`advertise_addr` が必要） |
+| `internode.identity_key` | string | | Base64 エンコードされた Ed25519 秘密シードまたは鍵。`identity_key_file` を設定しない場合は必須 |
+| `internode.identity_key_file` | string | | Base64 エンコードされた Ed25519 秘密シードまたは鍵を含むファイル。`identity_key` を設定しない場合は必須 |
+| `internode.trusted_peer_keys` | map | | ノード名から Base64 公開鍵へのマップ。ローカルノードと信頼するすべてのピアを含める必要がある |
 
 `advertise_addr`/`advertise_port` はノードメタデータに追加のエンドポイントを公開し、バインドエンドポイントは変わらず通知され続けるため、バージョンが混在するクラスタでもローリングアップグレード中に接続が維持されます。
 
+クラスタ化する各ノードには、固有のノード間通信の秘密 ID と、信頼する公開鍵のマップが必要です。秘密鍵のソースは 1 つだけ設定します。インライン値と鍵ファイルのどちらも、Base64 エンコードされた 32 バイトのシードまたは 64 バイトの鍵を含める必要があります。信頼する値は Base64 エンコードされた公開鍵です。
+
 ### Raft（コンセンサス）
 
-有界 Raft。Raft の状態はデフォルトで fs 永続化され、`raft.data_dir`（デフォルト `~/.wippy/store`）の下に保存されます。再起動したノードでもピアからクォーラムに再参加します。[`store.kv.raft`](system/store.md#cluster-kv-stores) エントリはこれを通じてレプリケートされます。ブートストラップはゴシップ駆動（Consul/Nomad の `bootstrap_expect` スタイル）です。
+有界 Raft コアは、デフォルトで `raft.data_dir`（`~/.wippy/store`）の下に永続状態を保存します。再起動したノードはピアからクォーラムに再参加します。[`store.kv.raft`](../system/store.md#cluster-kv-stores) エントリはこのコアを通じてレプリケートされ、ゴシップが `bootstrap_expect` モデルによるブートストラップを調整します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `raft.data_dir` | string | `~/.wippy/store` | fs 永続化された Raft 状態と永続 CRDT スナップショットのディレクトリ（`<data_dir>/_sys/` の下）。パスが解決されない場合（ホームディレクトリがなく未設定）のみディスクレス |
 | `raft.enabled` | bool | true | Raft ノードを実行。`false` にするとゴシップのみのクライアントになる |
 | `raft.role` | string | server | `server` は Raft ノードを実行。`client` はゴシップのみ |
-| `raft.eligible` | bool | true | このノードが投票ノードとして選択される可能性があるかどうか |
+| `raft.eligible` | bool | true | このノードが投票ノードまたはスタンバイとして選択されるかどうか。false の場合は Raft 外のクライアントとなる |
 | `raft.priority` | int | 100 | 投票ノード選択の優先度（値が小さいほど優先） |
-| `raft.bootstrap_expect` | int | 1 | 初期クォーラムサイズ: `0`=既存クラスタに参加のみ、`1`=単一ノード、`N`=N個の適格ピアを待ってからクォーラムを形成 |
-| `raft.max_voters` | int | 5 | 投票ノードの上限（奇数でなければならない）。それ以上の適格ノードはスタンバイになる |
+| `raft.bootstrap_expect` | int | 1 | 初期クォーラムサイズ: `0`=既存クラスタに参加、`1`=単一ノード、`N`=ローカルノードを含む N 個の適格ノードを待ってからクォーラムを形成 |
+| `raft.max_voters` | int | 5 | 投票ノードの上限（奇数でなければならない）。さらに最大 `max_standbys` 個の適格ノードがスタンバイとなり、残りはクライアントとなる |
 | `raft.max_standbys` | int | 4 | 昇格に備えて保持する非投票メンバー数。投票ノード+スタンバイを超えたノードは Raft メンバーではない |
 | `raft.reconcile_debounce` | duration | 2s | ゴシップイベント後、投票ノード調整ロジックが実行されるまでの集約ウィンドウ |
 | `raft.reconcile_timeout` | duration | 2s | 調整パスごとの上限時間 |
@@ -394,6 +410,10 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -409,6 +429,12 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
     max_voters: 5
@@ -422,6 +448,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```
@@ -432,7 +464,7 @@ cluster:
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `enabled` | bool | false | TCPサーバーを有効化 |
+| `enabled` | bool | false | LSP サービスと TCP サーバーを有効化。HTTP トランスポートにも必要 |
 | `address` | string | :7777 | TCPリッスンアドレス |
 | `http_enabled` | bool | false | HTTPトランスポートを有効化 |
 | `http_address` | string | :7778 | HTTPリッスンアドレス |
@@ -447,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-参照: [LSPガイド](guides/lsp.md)
+参照: [LSPガイド](./lsp.md)
 
 ## ネットワークサービス
 
@@ -464,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-参照: [ネットワークオーバーレイ](system/network.md)
+参照: [ネットワークオーバーレイ](../system/network.md)
 
 ## HTTPディスパッチャ
 
@@ -518,11 +550,11 @@ extensions:
 
 | 変数 | 説明 |
 |------|------|
-| `GOMEMLIMIT` | メモリ制限（`--memory-limit`フラグをオーバーライド） |
+| `GOMEMLIMIT` | `--memory-limit` フラグが未設定の場合のメモリ制限フォールバック（優先順位: `--memory-limit` フラグ > `GOMEMLIMIT` > デフォルト 1G） |
 
 ## 関連項目
 
-- [CLIリファレンス](guides/cli.md) - コマンドラインオプション
-- [クラスタガイド](guides/cluster.md) - クラスタリングのアーキテクチャと運用
-- [エントリ種別](guides/entry-kinds.md) - すべてのエントリタイプ
-- [可観測性ガイド](guides/observability.md) - ロギング、メトリクス、トレーシング
+- [CLIリファレンス](./cli.md) — コマンドラインオプション
+- [クラスタガイド](./cluster.md) — クラスタリングのアーキテクチャと運用
+- [エントリ種別](./entry-kinds.md) — エントリの種類とフィールド
+- [可観測性ガイド](./observability.md) — ロギング、メトリクス、トレーシング
