@@ -1,60 +1,60 @@
 ---
 title: "Cluster"
-description: "Ein einzelner Wippy-Knoten ist eine vollständige Laufzeitumgebung. Ein Cluster verbindet mehrere Knoten zu einem koordinierten System: Prozesse können…"
+description: "Wie Wippy-Knoten Peers erkennen, Prozessnachrichten routen und sich über Gossip und Raft koordinieren."
 ---
 
 # Cluster
 
-Ein einzelner Wippy-Knoten ist eine vollständige Laufzeitumgebung. Ein **Cluster** verbindet mehrere Knoten zu einem koordinierten System: Prozesse können benannt und von jedem Knoten aus erreicht werden, sich über Sperren und Gruppen koordinieren und auf einen gemeinsamen Konsenskern vertrauen — ohne dass sich ändert, wie Ihr Code Prozesse startet, Nachrichten sendet oder überwacht.
+Ein einzelner Wippy-Knoten ist eine vollständige Runtime. Ein **Cluster** verbindet mehrere Knoten, damit Prozesse clusterweite Namen verwenden, Nachrichten zwischen Knoten routen und sich über Sperren, Gruppen und einen gemeinsamen Konsenskern koordinieren können.
 
-Clustering ist optional (`cluster.enabled`). Diese Seite beschreibt das Modell, das Ihr Code sieht; für Topologie, Konfiguration und Betrieb siehe den [Cluster-Leitfaden](guides/cluster.md).
+Clustering ist optional (`cluster.enabled`). Diese Seite beschreibt das für Ihren Code sichtbare Modell; Topologie, Konfiguration und Betrieb behandelt der [Cluster-Leitfaden](../guides/cluster.md).
 
-## Das Modell
+## Clustermodell
 
-Knoten entdecken sich gegenseitig über **Gossip** (SWIM) — ein Knoten tritt bei, indem er auf einen Seed zeigt, und Mitgliedschaft sowie Ausfallerkennung konvergieren ohne einen Koordinator. Über Gossip sitzt ein kleiner, begrenzter **Raft**-Kern: eine feste Menge von Wählern stellt linearisierbaren Konsens bereit, während der Rest der Flotte auf Gossip aufsetzt. Die meisten Knoten tragen nie Konsenslast, sodass der Cluster horizontal skaliert und gleichzeitig eine einzige Quelle der Wahrheit für Dinge behält, die eine benötigen.
+Knoten erkennen einander über **Gossip** (SWIM). Ein Knoten tritt über einen Seed bei; anschließend konvergieren Mitgliedschafts- und Fehlerinformationen ohne zentralen Koordinator. Ein begrenzter **Raft**-Kern stellt linearisierbaren Konsens über eine dynamisch abgeglichene Wählermenge bereit, während weitere Knoten über Gossip teilnehmen.
 
-Was der Cluster Ihrem Code bietet, lässt sich auf drei Ideen reduzieren: **Namen**, **Routing** und **Koordinationsprimitive**.
+Das Anwendungsmodell besteht aus drei Teilen: **Namen**, **Routing** und **Koordinationsprimitiven**.
 
 ## Benennung
 
-Ein Prozess wird normalerweise über seine PID adressiert. In einem Cluster kann er auch unter einem **Namen** registriert werden und von überall unter diesem Namen erreichbar sein. Die entscheidende Wahl ist der **Gültigkeitsbereich** — die Konsistenzgarantie, die Sie wollen, abgewogen gegen die Kosten:
+Ein Prozess wird normalerweise über seine PID adressiert. In einem Cluster kann er zusätzlich unter einem **Namen** registriert und von anderen Knoten über diesen Namen erreicht werden. Der ausgewählte **Scope** bestimmt Konsistenzgarantie und Koordinationsaufwand:
 
-| Gültigkeitsbereich | Sichtbarkeit | Garantie | Verwendung |
-|--------------------|--------------|----------|------------|
-| **Local** | dieser Knoten | sofort, keine Koordination | knotenlokal Hilfsprozesse |
-| **Eventual** | clusterweit | konvergiert nach Gossip; Konflikte werden aufgelöst und der Verlierer benachrichtigt | Dienst-, Gruppen- und begrenzte Präsenznamen |
-| **Consistent** | clusterweit | linearisierbares Singleton über Raft | der Standard für clusterweite benannte Dienste |
-| **Strong** | clusterweit | Consistent, plus jeder lebende Knoten bestätigt, bevor der Name aktiv wird | Steuerungsebenen-Singletons und Sperren |
+| Scope | Sichtbarkeit | Garantie | Geeignet für |
+|-------|------------|-----------|------------|
+| **Local** | dieser Knoten | sofort, ohne Koordination | knotenlokale Hilfsprozesse |
+| **Eventual** | clusterweit | konvergiert nach Gossip; Konflikte werden aufgelöst und der Verlierer benachrichtigt | Service-, Gruppen- und begrenzte Präsenznamen |
+| **Consistent** | clusterweit | linearisierbares Singleton über Raft | standardmäßiger clusterweiter benannter Service |
+| **Strong** | clusterweit | Consistent, zusätzlich bestätigt jeder aktive Knoten den Namen vor seiner Aktivierung | Control-Plane-Singletons und Sperren |
 
-Die Gültigkeitsbereiche bilden eine strikte Ordnung — `Local < Eventual < Consistent < Strong` — auf der Achse Konsistenz versus Kosten. Sie wählen den schwächsten Bereich, der die benötigte Garantie noch erfüllt. Namen werden über [`process.registry`](lua/core/process.md) registriert und automatisch freigegeben, wenn der besitzende Prozess endet (oder sein Knoten verlässt).
+Die Scopes sind nach Konsistenz und Koordinationsaufwand als `Local < Eventual < Consistent < Strong` geordnet. Wählen Sie den kostengünstigsten Scope, der die benötigte Garantie erfüllt. Namen werden über [`process.registry`](../lua/core/process.md) registriert. Lokale Namen werden beim Beenden des Prozesses entfernt; Consistent- und Strong-Namen außerdem beim Beenden des Prozesses oder Verlassen des Knotens. Eventual-Namen werden explizit oder beim Verlassen ihres Ursprungsknotens entfernt, nicht automatisch, wenn nur der besitzende Prozess endet.
 
 ## Routing
 
-Benennung ist nur nützlich, wenn ein Name zuverlässig den richtigen Prozess erreicht. Routing verbindet beides und folgt einigen konsistenten Regeln:
+Routing verbindet einen registrierten Namen mit dem Prozess, dem er gehört:
 
-- **Lesevorgänge sind lokal.** Jeder Knoten löst einen Namen aus seinem eigenen Replikat oder dem über Gossip verteilten Cache auf — kein Netzwerk-Roundtrip zum Nachschlagen eines Namens. Dies hält die Auflösung schnell und lässt sie bei Netzwerkpartitionen funktionieren.
-- **Auflösung hat eine feste Reihenfolge.** Ein Name wird der Reihe nach über die Ebenen aufgelöst — Consistent (Raft), dann Eventual (Gossip), dann Local — sodass ein clusterweiter Name einen lokalen Namen mit gleichem Text überschattet.
-- **Schreibvorgänge routen zur Autorität.** Eine Consistent- oder Strong-Registrierung läuft über den Raft-Leader; ein Knoten, der nicht der Leader ist, leitet den Schreibvorgang weiter und wartet auf das Ergebnis. Nach dem Commit wird die aktive Bindung über Gossip verteilt, sodass jeder Knoten — auch jene außerhalb des Raft-Kerns — den Namen danach lokal auflösen kann.
-- **Nachrichten routen über PID.** Wenn Sie mit `process.send` an einen Namen senden, wird dieser zu einer PID aufgelöst und die Nachricht an den besitzenden Knoten zugestellt. Ihr Code adressiert einen Prozess auf dieselbe Weise, unabhängig davon, ob er auf diesem oder einem anderen Knoten liegt — der Ort ist transparent.
+- **Lesevorgänge sind lokal.** Jeder Knoten löst einen Namen aus seinem eigenen Replikat oder dem über Gossip verbreiteten Cache auf — ohne Netzwerk-Roundtrip für die Namenssuche. Das hält die Auflösung schnell und funktionsfähig während Partitionen.
+- **Die Auflösung folgt einer festen Reihenfolge.** Ein Name wird über die Ebenen von der höchsten Autorität abwärts aufgelöst: Consistent und Strong (Raft), dann Eventual (Gossip), dann Local. Dadurch überschattet ein clusterweiter Name einen lokalen Namen mit derselben Zeichenfolge.
+- **Schreibvorgänge werden zur Autorität geroutet.** Eine Consistent- oder Strong-Registrierung läuft über den Raft-Leader; ein anderer Knoten leitet den Schreibvorgang weiter und wartet auf das Ergebnis. Nach dem Commit wird die aktive Bindung über Gossip verbreitet, sodass jeder Knoten — auch außerhalb des Raft-Kerns — den Namen anschließend lokal auflösen kann.
+- **Nachrichten werden per PID geroutet.** Wenn Sie mit `process.send` an einen Namen senden, wird er in eine PID aufgelöst und das Relay liefert die Nachricht an den besitzenden Knoten. Ihr Code adressiert einen Prozess gleich, unabhängig davon, ob er auf diesem oder einem anderen Knoten läuft — der Ort ist transparent.
 
-Das Ergebnis: Sie registrieren und schlagen Namen auf, ohne darüber nachzudenken, welcher Knoten die Autorität hält, und Nachrichten finden ihr Ziel im Cluster genauso wie lokal.
+Anwendungen registrieren Namen und lösen sie auf, ohne den Autoritätsknoten direkt anzusprechen. Nach der Auflösung werden Nachrichten an den Knoten geroutet, dem die Ziel-PID gehört.
 
 ## Primitive
 
-Clustering stellt eine kleine Menge von Bausteinen bereit. Jeder ist vollständig auf seiner eigenen Seite dokumentiert; das Konzept ist, was sie ermöglichen:
+Clustering stellt eine kleine Menge von Koordinationsbausteinen bereit:
 
-- **Mitgliedschaft und Identität** — die lebende Menge von Knoten sowie Identität und Rolle dieses Knotens. Verwenden Sie es, um Peers zu entdecken oder Arbeit aufzuteilen. Siehe [`system.cluster`](lua/system/system.md) und [`system.node`](lua/system/system.md).
-- **Konsenszustand** — der Raft-Leader, Term und die Rolle dieses Knotens, für Diagnose und leader-bewusste Logik. Siehe [`system.raft`](lua/system/system.md).
-- **Clusterweite Namen** — Prozesse nach Name und Gültigkeitsbereich registrieren und auflösen, das Fundament, auf dem alles andere aufbaut. Siehe [`process.registry`](lua/core/process.md).
-- **Verteilte Sperren** — clusterweiter gegenseitiger Ausschluss mit höchstens einem Inhaber, automatisch freigegeben, wenn der Inhaber ausfällt. Siehe [`system.lock`](lua/system/system.md).
-- **Prozessgruppen** — benannten Gruppen beitreten und an jedes Mitglied über alle Knoten hinweg senden, im Erlang-Stil. Siehe [Prozessgruppen](lua/core/pg.md).
+- **Mitgliedschaft und Identität** — die Menge aktiver Knoten sowie Identität und Rolle dieses Knotens. Verwenden Sie sie, um Peers zu erkennen oder Arbeit aufzuteilen. Siehe [`system.cluster`](../lua/system/system.md) und [`system.node`](../lua/system/system.md).
+- **Konsenszustand** — Raft-Leader, Term und Rolle dieses Knotens für Diagnose und Leader-bewusste Logik. Siehe [`system.raft`](../lua/system/system.md).
+- **Clusterweite Namen** — Prozesse nach Name und Scope registrieren und auflösen; das Fundament der übrigen Funktionen. Siehe [`process.registry`](../lua/core/process.md).
+- **Verteilte Sperren** — clusterweiter gegenseitiger Ausschluss mit höchstens einem Inhaber; wird automatisch freigegeben, wenn der Inhaber stirbt. Siehe [`system.lock`](../lua/system/system.md).
+- **Prozessgruppen** — benannten Gruppen beitreten und Erlang-artig an alle Mitglieder auf allen Knoten senden. Siehe [Prozessgruppen](../lua/core/pg.md).
 
-Diese sind bewusst primitiv gehalten: Sperren und benannte Singletons bauen auf dem Strong-Gültigkeitsbereich auf, Prozessgruppen auf Gossip, und alle auf derselben oben beschriebenen Mitgliedschaft und demselben Routing — sodass sie vorhersagbar zusammenspielen, anstatt jede ihre eigene Verteilung zu erfinden.
+Diese Primitive verwenden dieselbe Mitgliedschafts- und Routing-Infrastruktur. Consistent- und Strong-Namen sowie verteilte Sperren nutzen den Raft-Kern. Prozessgruppen verwenden die Gossip-Mitgliedschaft, um Peers zu erkennen, Änderungen über das Relay zu senden und regelmäßig den vollständigen Zustand zur Konvergenz auszutauschen.
 
 ## Siehe auch
 
-- [Cluster-Leitfaden](guides/cluster.md) - Topologie, Konfiguration und Betrieb
-- [Prozessverwaltung](lua/core/process.md) - Starten, Nachrichtenübermittlung und die Namensvergabe
-- [Prozessgruppen](lua/core/pg.md) - Benannte Gruppen und Broadcast
-- [System](lua/system/system.md) - `system.cluster`, `system.node`, `system.raft`, `system.lock`
-- [Prozessmodell](concepts/process-model.md) - Prozesse, PIDs und Nachrichtenübermittlung
+- [Cluster-Leitfaden](../guides/cluster.md) — Topologie, Konfiguration und Betrieb
+- [Prozessverwaltung](../lua/core/process.md) — Starten, Nachrichten und Namensregistry
+- [Prozessgruppen](../lua/core/pg.md) — Benannte Gruppen und Broadcast
+- [System](../lua/system/system.md) — `system.cluster`, `system.node`, `system.raft`, `system.lock`
+- [Prozessmodell](./process-model.md) — Prozesse, PIDs und Nachrichten

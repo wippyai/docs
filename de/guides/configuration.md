@@ -1,13 +1,13 @@
 ---
 title: "Konfigurationsreferenz"
-description: "Wippy wird über .wippy.yaml-Dateien konfiguriert. Alle Optionen haben sinnvolle Standardwerte."
+description: "Runtime-Konfigurationsfelder, Profile, Kompositionsregeln, Umgebungsreferenzen und CLI-Überschreibungen."
 ---
 
 # Konfigurationsreferenz
 
-Wippy wird über `.wippy.yaml`-Dateien konfiguriert. Alle Optionen haben sinnvolle Standardwerte.
+Wippy liest seine Runtime-Konfiguration aus `.wippy.yaml`-Dateien.
 
-Jeder Wert unten kann beim Start mit `wippy run --set section.path=value` überschrieben werden (wiederholbar, hat Vorrang vor der Datei). Um einzelne Registry-*Einträge* statt dieser Konfigurationsabschnitte zu überschreiben, verwenden Sie den Abschnitt `override:` oder `-o` — siehe [Einträge überschreiben](guides/entry-kinds.md#overriding-entries).
+Verwenden Sie die wiederholbare Option `wippy run --set section.path=value`, um die folgenden Konfigurationsfelder beim Start zu überschreiben. Für einzelne Registry-*Einträge* statt Konfigurationsabschnitte verwenden Sie `override:` oder `-o`; siehe [Einträge überschreiben](./entry-kinds.md#overriding-entries).
 
 ## Konfigurations-Komposition {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - Die erste Datei verankert das Verzeichnis, gegen das relative Pfade aufgelöst werden.
 - Dateinamen tragen keine reservierte Bedeutung; nichts außer dem Standard wird automatisch entdeckt.
 
-Die Konfiguration wird in dieser Reihenfolge angewendet: Datei-Komposition, dann `--profile`-Auswahlen, dann `--set`-Überschreibungen. Für aus Packs ausgeführte Anwendungen liegen die gepackten Runtime-Defaults unter all diesen (siehe [Runtime-Defaults veröffentlichen](guides/publishing.md#publishing-runtime-defaults)).
+Die Konfiguration wird in dieser Reihenfolge angewendet: komponierte Dateien, ausgewählte `--profile`-Overlays und anschließend `--set`-Überschreibungen. Bei Anwendungen aus Packs haben gepackte Runtime-Defaults eine niedrigere Priorität; siehe [Runtime-Defaults veröffentlichen](./publishing.md#publishing-runtime-defaults).
 
 ## Profile {#profiles}
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - Der Abschnitt `disable` unterstützt Listenoperationen innerhalb von Profilen — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — sodass ein Profil die Basisliste anpassen kann, statt sie zu ersetzen.
 - `${name}`-Referenzen interpolieren aus dem zusammengeführten `vars:`-Abschnitt. OS-Umgebungsreferenzen sind innerhalb von Profil-Vars nicht erlaubt; verwenden Sie `${env:NAME}` in der Basiskonfiguration, aufgelöst beim Laden der Datei.
 
-`wippy run`, `test` und `pack` akzeptieren `--profile`; `install`, `update`, `lint` und `registry` akzeptieren es ebenfalls für Workspace-Profile (zusammen mit `--set`). Anwendungen können Profile in Packs ausliefern — siehe [Profile veröffentlichen](guides/publishing.md#publishing-profiles).
+`wippy run`, `test` und `pack` akzeptieren `--profile`; `install`, `update`, `lint` und `registry` akzeptieren es ebenfalls für Workspace-Profile (zusammen mit `--set`). Anwendungen können Profile in Packs ausliefern — siehe [Profile veröffentlichen](./publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## Log-Manager
 
-Steuert das Runtime-Log-Routing. Konsolenausgabe wird über [CLI-Flags](guides/cli.md) (`-v`, `-c`, `-s`) konfiguriert.
+Steuert das Runtime-Log-Routing. Konsolenausgabe wird über [CLI-Flags](./cli.md) (`-v`, `-c`, `-s`) konfiguriert.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-Siehe: [Logger-Modul](lua/system/logger.md)
+Siehe: [Logger-Modul](../lua/system/logger.md)
 
 ## Profiler
 
@@ -115,18 +115,18 @@ Zugriff unter `http://localhost:6060/debug/pprof/`
 
 ## Sicherheit
 
-Globales Sicherheitsverhalten. Individuelle Richtlinien werden als [security.policy-Einträge](guides/entry-kinds.md) definiert.
+Globales Sicherheitsverhalten. Individuelle Richtlinien werden als [security.policy-Einträge](./entry-kinds.md) definiert.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `strict_mode` | bool | false | Zugriff verweigern wenn Sicherheitskontext unvollständig |
+| `strict_mode` | bool | true | Zugriff verweigern, wenn der Sicherheitskontext unvollständig ist |
 
 ```yaml
 security:
   strict_mode: true
 ```
 
-Siehe: [Sicherheitssystem](system/security.md), [Sicherheitsmodul](lua/security/security.md)
+Siehe: [Sicherheitssystem](../system/security.md), [Sicherheitsmodul](../lua/security/security.md)
 
 ## Registry
 
@@ -135,8 +135,10 @@ Eintragsspeicherung und Versionshistorie. Die Registry enthält alle Konfigurati
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `enable_history` | bool | true | Eintragsversionen verfolgen |
-| `history_type` | string | memory | Speicher: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad |
+| `history_type` | string | memory | Speicher: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad bei `history_type: sqlite` |
+| `history_dsn` | string | | PostgreSQL-DSN bei `history_type: postgres` |
+| `history_schema` | string | | PostgreSQL-Schemaname bei `history_type: postgres` |
 
 ```yaml
 registry:
@@ -144,7 +146,14 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-Siehe: [Registry-Konzept](concepts/registry.md), [Registry-Modul](lua/core/registry.md)
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
+```
+
+Siehe: [Registry-Konzept](../concepts/registry.md), [Registry-Modul](../lua/core/registry.md)
 
 ## Relay
 
@@ -159,7 +168,7 @@ relay:
   node_name: worker-1
 ```
 
-Siehe: [Prozessmodell](concepts/process-model.md)
+Siehe: [Prozessmodell](../concepts/process-model.md)
 
 ## Supervisor
 
@@ -177,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-Siehe: [Supervision-Anleitung](guides/supervision.md)
+Siehe: [Supervision-Anleitung](./supervision.md)
 
 <note>
-Worker und Warteschlangen pro `process.host` werden am Eintrag selbst konfiguriert (`workers`, `queue_size`, `local_queue_size`), nicht in diesem globalen Abschnitt. Siehe den [Process Host](system/process-host.md)-Eintragstyp.
+Worker und Warteschlangen pro `process.host` werden am Eintrag selbst konfiguriert (`workers`, `queue_size`, `local_queue_size`), nicht in diesem globalen Abschnitt. Siehe den [Process Host](../system/process-host.md)-Eintragstyp.
 </note>
 
 ## Lua-Runtime
@@ -207,7 +216,7 @@ lua:
     enabled: true
 ```
 
-Siehe: [Lua-Übersicht](lua/overview.md)
+Siehe: [Lua-Übersicht](../lua/overview.md)
 
 ## Finder
 
@@ -241,11 +250,11 @@ Verteiltes Tracing und Metrik-Export über OTLP.
 | `metrics_enabled` | bool | false | Metriken exportieren |
 | `http.enabled` | bool | true | HTTP-Anfragen tracen |
 | `http.extract_headers` | bool | true | Trace-Context aus eingehenden Headern extrahieren |
-| `http.inject_headers` | bool | true | Trace-Context in ausgehende Header einfügen |
+| `http.inject_headers` | bool | true | Trace-Kontext in die HTTP-Antwort einfügen |
 | `process.enabled` | bool | true | Prozess-Lebenszyklus tracen |
 | `process.trace_lifecycle` | bool | true | Spans für spawn/terminate ausgeben |
 | `interceptor.enabled` | bool | true | Funktionsaufrufe tracen |
-| `interceptor.order` | int | 100 | Interceptor-Priorität |
+| `interceptor.order` | int | 100 | Dekodiertes Kompatibilitätsfeld; Runtime v0.3.32a registriert den Interceptor unabhängig von diesem Wert mit Reihenfolge 100 |
 | `queue.enabled` | bool | true | Queue publish/consume tracen |
 | `temporal.enabled` | bool | false | Temporal-Workflows tracen |
 
@@ -260,7 +269,7 @@ otel:
 
 Standard-OTEL-Umgebungsvariablen (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) überschreiben die entsprechenden Felder.
 
-Siehe: [Observability-Anleitung](guides/observability.md)
+Siehe: [Observability-Anleitung](./observability.md)
 
 ## Shutdown
 
@@ -292,7 +301,7 @@ metrics:
     enabled: true
 ```
 
-Siehe: [Metriken-Modul](lua/system/metrics.md), [Observability-Anleitung](guides/observability.md)
+Siehe: [Metriken-Modul](../lua/system/metrics.md), [Observability-Anleitung](./observability.md)
 
 ## Prometheus
 
@@ -311,11 +320,11 @@ prometheus:
 
 Stellt `/metrics`-Endpunkt für Prometheus-Scraping bereit.
 
-Siehe: [Observability-Anleitung](guides/observability.md)
+Siehe: [Observability-Anleitung](./observability.md)
 
 ## Cluster
 
-Multi-Node-Clustering: Gossip-Mitgliedschaft plus ein begrenzter Raft-Konsenskern. Siehe den [Cluster-Leitfaden](guides/cluster.md) für Architektur und Betriebsmodell; dieser Abschnitt ist die Konfigurationsschlüssel-Referenz.
+Multi-Node-Clustering: Gossip-Mitgliedschaft plus ein begrenzter Raft-Konsenskern. Siehe den [Cluster-Leitfaden](./cluster.md) für Architektur und Betriebsmodell; dieser Abschnitt ist die Konfigurationsschlüssel-Referenz.
 
 ### Oberste Ebene
 
@@ -358,22 +367,27 @@ TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh ü
 | `internode.auto_port` | bool | true | Tatsächlichen Port beim Start ermitteln, festlegen und im Gossip bewerben |
 | `internode.advertise_addr` | string | | Zusätzlicher Relay-Endpunkt (IP oder DNS-Name), veröffentlicht für aktualisierte Peers — für NAT- oder Load-Balancer-Erreichbarkeit |
 | `internode.advertise_port` | int | 0 | Port für `advertise_addr` (0 = Bind-Port; erfordert `advertise_addr`) |
+| `internode.identity_key` | string | | Base64-kodierter privater Ed25519-Seed oder -Schlüssel; erforderlich, wenn `identity_key_file` nicht gesetzt ist |
+| `internode.identity_key_file` | string | | Datei mit Base64-kodiertem privatem Ed25519-Seed oder -Schlüssel; erforderlich, wenn `identity_key` nicht gesetzt ist |
+| `internode.trusted_peer_keys` | map | | Zuordnung von Knotennamen zu öffentlichen Base64-Schlüsseln; muss den lokalen Knoten und jeden vertrauenswürdigen Peer enthalten |
 
 `advertise_addr`/`advertise_port` veröffentlichen einen additiven Endpunkt in den Knoten-Metadaten, während der Bind-Endpunkt unverändert beworben bleibt, sodass Cluster mit gemischten Versionen während eines Rolling Upgrades verbunden bleiben.
 
+Jeder Clusterknoten benötigt eine eigene private Internode-Identität und eine Karte vertrauenswürdiger öffentlicher Schlüssel. Konfigurieren Sie genau eine Quelle für den privaten Schlüssel. Inline-Werte und Schlüsseldateien müssen einen Base64-kodierten Seed mit 32 Byte oder Schlüssel mit 64 Byte enthalten; Vertrauenswerte sind Base64-kodierte öffentliche Schlüssel.
+
 ### Raft (Konsens)
 
-Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unter `raft.data_dir` (Standard `~/.wippy/store`) gespeichert; ein neugestarteter Knoten tritt dem Quorum dennoch von Peers wieder bei. [`store.kv.raft`](system/store.md#cluster-kv-stores)-Einträge replizieren darüber. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
+Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unter `raft.data_dir` (Standard `~/.wippy/store`) gespeichert; ein neugestarteter Knoten tritt dem Quorum dennoch von Peers wieder bei. [`store.kv.raft`](../system/store.md#cluster-kv-stores)-Einträge replizieren darüber. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `raft.data_dir` | string | `~/.wippy/store` | Verzeichnis für fs-dauerhaften Raft-Zustand und dauerhafte CRDT-Snapshots (unter `<data_dir>/_sys/`). Festplatten-los nur, wenn kein Pfad aufgelöst wird (kein Home-Verzeichnis und keiner gesetzt) |
 | `raft.enabled` | bool | true | Raft-Knoten betreiben; `false` macht diesen zum reinen Gossip-Client |
 | `raft.role` | string | server | `server` betreibt einen Raft-Knoten; `client` ist nur Gossip |
-| `raft.eligible` | bool | true | Ob dieser Knoten als Voter ausgewählt werden darf |
+| `raft.eligible` | bool | true | Ob dieser Knoten als Voter oder Standby ausgewählt werden darf; `false` hält ihn als Client außerhalb von Raft |
 | `raft.priority` | int | 100 | Voter-Auswahlpriorität (niedrigerer Wert wird bevorzugt) |
-| `raft.bootstrap_expect` | int | 1 | Initiale Quorumgröße: `0`=bestehendem beitreten, `1`=Einzelknoten, `N`=auf N berechtigte Peers warten, dann Quorum bilden |
-| `raft.max_voters` | int | 5 | Voter-Obergrenze (muss ungerade sein); zusätzliche berechtigte Knoten werden Standbys |
+| `raft.bootstrap_expect` | int | 1 | Initiale Quorumgröße: `0`=bestehendem beitreten, `1`=Einzelknoten, `N`=auf N berechtigte Knoten einschließlich des lokalen warten, dann Quorum bilden |
+| `raft.max_voters` | int | 5 | Voter-Obergrenze (muss ungerade sein); bis zu `max_standbys` weitere berechtigte Knoten werden Standbys, der Rest bleibt Client |
 | `raft.max_standbys` | int | 4 | Nicht-abstimmende Mitglieder, warm gehalten für Beförderung; Knoten jenseits voters+standbys sind keine Raft-Mitglieder |
 | `raft.reconcile_debounce` | duration | 2s | Koaleszenzfenster nach einem Gossip-Ereignis, bevor der Voter-Reconciler läuft |
 | `raft.reconcile_timeout` | duration | 2s | Schranke pro Reconcile-Durchlauf |
@@ -394,6 +408,10 @@ Einzelknoten (Entwicklung) — Clustering aktiviert, bootstrappt sich sofort:
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -409,6 +427,12 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
     max_voters: 5
@@ -422,6 +446,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```
@@ -447,7 +477,7 @@ lsp:
   http_enabled: true
 ```
 
-Siehe: [LSP-Anleitung](guides/lsp.md)
+Siehe: [LSP-Anleitung](./lsp.md)
 
 ## Netzwerkdienst
 
@@ -464,7 +494,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-Siehe: [Netzwerk-Overlays](system/network.md)
+Siehe: [Netzwerk-Overlays](../system/network.md)
 
 ## HTTP-Dispatcher
 
@@ -522,7 +552,7 @@ extensions:
 
 ## Siehe auch
 
-- [CLI-Referenz](guides/cli.md) - Kommandozeilenoptionen
-- [Cluster-Leitfaden](guides/cluster.md) - Clustering-Architektur und Betrieb
-- [Entry-Typen](guides/entry-kinds.md) - Alle Entry-Typen
-- [Observability-Anleitung](guides/observability.md) - Logging, Metriken, Tracing
+- [CLI-Referenz](./cli.md) — Kommandozeilenoptionen
+- [Cluster-Leitfaden](./cluster.md) — Clustering-Architektur und Betrieb
+- [Entry-Kinds](./entry-kinds.md) — Entry-Kinds und Felder
+- [Observability](./observability.md) — Logging, Metriken und Tracing

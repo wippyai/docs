@@ -1,17 +1,19 @@
 ---
 title: "Installation"
-description: "Schnellinstallation"
+description: "Installieren Sie die Wippy-Runtime und prüfen Sie, ob der Befehl verfügbar ist."
 ---
 
 # Installation
 
-## Schnellinstallation
+## Installation
 
 ```bash
 curl -fsSL https://hub.wippy.ai/install.sh | bash
 ```
 
-Oder laden Sie direkt von [hub.wippy.ai/releases](https://hub.wippy.ai/releases) herunter.
+Das Installationsskript setzt eine POSIX-Shell voraus. Laden Sie die Runtime unter Windows von
+[hub.wippy.ai/releases](https://hub.wippy.ai/releases) herunter und nehmen Sie `wippy.exe` in den
+`PATH` auf.
 
 ## Überprüfung
 
@@ -19,18 +21,20 @@ Oder laden Sie direkt von [hub.wippy.ai/releases](https://hub.wippy.ai/releases)
 wippy version
 ```
 
-## Schnellstart
+## Abhängigkeitsmetadaten initialisieren
 
 ```bash
-# Neues Projekt erstellen
-mkdir myapp && cd myapp
-wippy init
+# Create a project directory
+mkdir myapp
+cd myapp
 
-# Ausführen
-wippy run
+# Create or update wippy.lock
+wippy init
 ```
 
-HTTP, SQL, Storage und Prozess-Hosting sind in die Runtime eingebaut — ein frisches Projekt läuft ohne jede Abhängigkeit. Framework-Module werden bei Bedarf aus dem Hub hinzugefügt:
+`wippy init` schreibt den Dependency-Lock sowie dessen Einstellungen für Quell- und Modulverzeichnisse. Der Befehl legt weder Quellcode für die Anwendung noch Registry-Einträge an. Folgen Sie [Hello World](../tutorials/hello-world.md), um eine ausführbare Anwendung zu erstellen, und starten Sie sie anschließend mit `wippy run`.
+
+Die Runtime umfasst HTTP-, SQL-, Storage- und Process-Hosting-Funktionen. Fügen Sie Framework-Module aus dem Hub hinzu, wenn die Anwendung sie benötigt:
 
 ```bash
 wippy add wippy/test
@@ -40,8 +44,8 @@ wippy install
 ## Befehlsübersicht
 
 | Befehl | Beschreibung |
-|--------|--------------|
-| `wippy init` | Neues Projekt initialisieren |
+| --------- | ------------- |
+| `wippy init` | `wippy.lock` erstellen oder aktualisieren |
 | `wippy run` | Runtime starten |
 | `wippy test` | Test-Entrypoint ausführen |
 | `wippy lint` | Code auf Fehler prüfen |
@@ -49,15 +53,21 @@ wippy install
 | `wippy install` | Abhängigkeiten installieren |
 | `wippy update` | Abhängigkeiten aktualisieren |
 | `wippy pack` | Snapshot erstellen |
-| `wippy publish` | Zum Hub veröffentlichen |
+| `wippy publish` | Im Hub veröffentlichen |
 | `wippy search` | Nach Modulen suchen |
+| `wippy readme` | README eines Moduls aus dem Hub abrufen |
+| `wippy registry` | Geladene Registry-Einträge untersuchen |
 | `wippy auth` | Authentifizierung verwalten |
 | `wippy version` | Versionsinformationen ausgeben |
 
-Siehe [CLI-Referenz](guides/cli.md) für vollständige Dokumentation.
+Die vollständige Dokumentation finden Sie in der [CLI-Referenz](../guides/cli.md).
+
+## Fehlerbehebung
+
+Wenn die Shell `wippy` nach der Installation nicht findet, öffnen Sie sie erneut und prüfen Sie, ob das Installationsverzeichnis im `PATH` liegt.
 
 ## Nächste Schritte
 
-- [Hello World](tutorials/hello-world.md) - Erstellen Sie Ihr erstes Projekt
-- [Projektstruktur](start/structure.md) - Verstehen Sie die Struktur
-- [CLI-Referenz](guides/cli.md) - Alle Befehle und Optionen
+- [Hello World](../tutorials/hello-world.md) — Erstellen Sie Ihre erste Anwendung
+- [Projektstruktur](./structure.md) — Lernen Sie den Projektaufbau kennen
+- [CLI-Referenz](../guides/cli.md) — Sehen Sie sich alle Befehle und Optionen an

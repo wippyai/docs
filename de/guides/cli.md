@@ -1,11 +1,13 @@
 ---
 title: "CLI-Referenz"
-description: "Kommandozeilenschnittstelle für die Wippy-Runtime."
+description: "Befehle, Flags, Konfigurationsüberschreibungen und häufige Workflows für die Wippy-CLI."
 ---
 
 # CLI-Referenz
 
-Kommandozeilenschnittstelle für die Wippy-Runtime.
+Verwenden Sie die Wippy-CLI, um Projekte zu initialisieren, die Runtime auszuführen, Abhängigkeiten zu verwalten, Registry-Einträge zu untersuchen und Module zu veröffentlichen.
+
+Dies ist eine Befehlsreferenz. Beispiele zu Quellcode, Lock-Datei, Registry-Einträgen oder Veröffentlichungsmetadaten setzen ein bestehendes Projekt beziehungsweise Modul voraus und bilden kein einzelnes End-to-End-Projekt.
 
 ## Globale Flags
 
@@ -13,7 +15,7 @@ Verfügbar bei allen Befehlen:
 
 | Flag | Kurz | Beschreibung |
 |------|------|--------------|
-| `--config` | | Konfigurationsdatei, wiederholbar; spätere Dateien überschreiben frühere (Standard: .wippy.yaml) |
+| `--config` | | Konfigurationsdatei, wiederholbar; spätere Dateien überschreiben frühere (Standard: .wippy.yaml). `wippy publish` definiert eine andere befehlsspezifische Option. |
 | `--verbose` | `-v` | Debug-Logging aktivieren |
 | `--very-verbose` | | Debug mit Stack-Traces |
 | `--console` | `-c` | Farbige Konsolenausgabe |
@@ -22,13 +24,15 @@ Verfügbar bei allen Befehlen:
 | `--profiler` | `-p` | pprof auf localhost:6060 aktivieren |
 | `--memory-limit` | `-m` | Speicherlimit (z.B. 1G, 512M) |
 
-Priorität des Speicherlimits: `--memory-limit` Flag > `GOMEMLIMIT` Umgebungsvariable > 1GB Standard.
+Die Reihenfolge für das Speicherlimit ist `--memory-limit`, dann `GOMEMLIMIT`, dann der Standard von 1 GB.
 
-`--config` kann mehrfach übergeben werden, um Konfigurationsdateien zu komponieren. Dateien werden von links nach rechts zusammengeführt: Spätere Dateien überschreiben übereinstimmende Werte und behalten alles andere bei. Jede explizit benannte Datei muss existieren; ohne `--config` ist die Standarddatei `.wippy.yaml` optional. Die erste Datei verankert das Verzeichnis, gegen das relative Pfade aufgelöst werden. Die Konfiguration wird in dieser Reihenfolge angewendet: Datei-Komposition, dann `--profile`-Auswahlen, dann `--set`-Überschreibungen. Siehe [Konfiguration](guides/configuration.md#config-composition).
+Die globale Option `--config` kann mehrfach übergeben werden, um Konfigurationsdateien zu komponieren. Dateien werden von links nach rechts zusammengeführt. Jede explizit benannte Datei muss existieren; ohne `--config` ist `.wippy.yaml` optional. Die erste Datei verankert relative Pfade. Danach werden `--profile`-Overlays und zuletzt `--set`-Überschreibungen angewendet. Siehe [Konfiguration](./configuration.md#config-composition).
+
+`wippy publish` überschattet die globale Option mit dem befehlsspezifischen `--config <dir>`. Dort ist der Wert das Verzeichnis mit `wippy.yaml`, nicht eine wiederholbare Runtime-Konfigurationsdatei.
 
 ## wippy init
 
-Eine neue Lock-Datei erstellen.
+`wippy.lock` erstellen oder die Einstellungen für Quell- und Modulverzeichnis aktualisieren. Der Befehl legt weder Anwendungsquellcode noch Registry-Einträge an.
 
 ```bash
 wippy init
@@ -46,13 +50,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 Die Runtime starten oder einen Befehl ausführen.
 
 ```bash
-wippy run                                   # Runtime starten
-wippy run list                              # Verfügbare Befehle auflisten
-wippy run migrate                           # Einen benannten benutzerdefinierten Befehl ausführen
-wippy run snapshot.wapp                     # Aus Pack-Datei ausführen
-wippy run acme/http                         # Modul aus dem Hub ausführen
-wippy run acme/http@1.2.3                   # Bestimmte Version ausführen
-wippy run --exec app:worker                 # Runtime starten und einen einzelnen Prozess ausführen
+wippy run                                   # Start runtime
+wippy run list                              # List available commands
+wippy run migrate                           # Run a named custom command
+wippy run snapshot.wapp                     # Run from pack file
+wippy run acme/http                         # Run module from hub
+wippy run acme/http@1.2.3                   # Run specific version
+wippy run --exec app:worker                 # Start runtime and execute a single process
 ```
 
 | Flag | Kurz | Beschreibung |
@@ -81,9 +85,9 @@ Werte werden nach Form konvertiert: `true`/`false` zu Bool, Ganz- und Gleitkomma
 Den Test-Entrypoint ausführen: den Prozess-Entry, der den Use Case `test` deklariert. Die Runtime bootet, führt diesen Entry aus und beendet sich. `wippy run` führt Test-Entrypoints nicht automatisch aus; Testen läuft immer über `wippy test`.
 
 ```bash
-wippy test                     # Tests aus dem lokalen Projekt ausführen
-wippy test snapshot.wapp       # Tests aus einer Pack-Datei ausführen
-wippy test acme/module@1.2.3   # Tests aus einem Hub-Modul ausführen
+wippy test                     # Run tests from the local project
+wippy test snapshot.wapp       # Run tests from a pack file
+wippy test acme/module@1.2.3   # Run tests from a hub module
 ```
 
 | Flag | Kurz | Beschreibung |
@@ -105,7 +109,7 @@ wippy lint --json
 wippy lint --rules
 ```
 
-Validiert alle Lua-Entries: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (einschließlich ihrer `.bc`-Varianten).
+Validiert quellcodehaltige Einträge der Kinds `function.lua`, `library.lua`, `process.lua` und `workflow.lua`. Vorkompilierte `.bc`-Einträge enthalten keinen parsbaren Quellcode und werden übersprungen.
 
 | Flag | Kurz | Standard | Beschreibung |
 |------|------|----------|--------------|
@@ -142,9 +146,9 @@ wippy add acme/http@latest
 Abhängigkeiten aus der Lock-Datei installieren.
 
 ```bash
-wippy install                            # Alle installieren
-wippy install acme/http                  # Bestimmtes Modul installieren
-wippy install --refresh acme/http        # Bestimmtes Modul neu laden
+wippy install                            # Install all
+wippy install acme/http                  # Install specific module
+wippy install --refresh acme/http        # Re-fetch a specific module
 ```
 
 | Flag | Kurz | Standard | Beschreibung |
@@ -162,9 +166,9 @@ wippy install --refresh acme/http        # Bestimmtes Modul neu laden
 Abhängigkeiten aktualisieren und Lock-Datei neu generieren.
 
 ```bash
-wippy update                      # Alle aktualisieren
-wippy update acme/http            # Bestimmtes Modul aktualisieren
-wippy update acme/http demo/sql   # Mehrere aktualisieren
+wippy update                      # Update all
+wippy update acme/http            # Update specific module
+wippy update acme/http demo/sql   # Update multiple
 ```
 
 | Flag | Kurz | Standard | Beschreibung |
@@ -183,7 +187,7 @@ Ein Snapshot-Pack (.wapp-Datei) erstellen.
 ```bash
 wippy pack snapshot.wapp
 wippy pack release.wapp --description "Release 1.0"
-wippy pack app.wapp --embed app:assets --bytecode **
+wippy pack app.wapp --embed app:assets --bytecode "**"
 ```
 
 | Flag | Kurz | Beschreibung |
@@ -229,7 +233,7 @@ Liest aus `wippy.yaml` im aktuellen Verzeichnis.
 | `--module-type` | Modultyp: `library`, `application`, `agent` oder `plugin` (überschreibt `type:` in wippy.yaml) |
 | `--module-display-name` | Anzeigename für neu erstellte Module (nur `--create`) |
 
-Der Modultyp wird normalerweise als `type:` in `wippy.yaml` deklariert (siehe [Publishing](guides/publishing.md#wippy-yaml)); `--module-type` überschreibt ihn für eine einzelne Veröffentlichung. Ist keins von beiden gesetzt, erhalten neu erstellte Module standardmäßig den Typ `application` mit einer Deprecation-Warnung.
+Der Modultyp wird normalerweise als `type:` in `wippy.yaml` deklariert (siehe [Veröffentlichen](./publishing.md#wippyyaml)); `--module-type` überschreibt ihn für eine einzelne Veröffentlichung. Ist keiner der Werte gesetzt, erhalten neu erstellte Module standardmäßig den Typ `application` mit einer Deprecation-Warnung.
 
 ## wippy search
 
@@ -370,6 +374,13 @@ entries:
       command:
         name: migrate
         short: Run database migrations
+        security:
+          actor:
+            id: app:migrations
+          policies:
+            - app.security:migrations
+          groups:
+            - app.security:operators
     source: file://runner.lua
     method: main
     modules:
@@ -398,6 +409,9 @@ wippy run list
 | `short` | Nein | Kurzbeschreibung, angezeigt in `wippy run list` |
 | `main` | Nein | Diesen Entry als Standardbefehl markieren (automatisch ausgewählt von Packs und Hub-Modulen, die einen einzigen Befehl ausliefern) |
 | `use_case` | Nein | Entrypoint-Kategorie, Standard `run`. Der Entry, der `use_case: test` deklariert, ist das, was `wippy test` ausführt |
+| `security` | Nein | Nur für die CLI geltender Sicherheitskontext mit `actor`, `policies` und `groups` |
+
+Der `security`-Block gehört in `meta.command`. Die gezeigten IDs sind Beispiele und müssen in der geladenen Registry auflösbar sein. Der Block gilt nur, wenn der Terminal-Host den Eintrag als CLI-Befehl startet; gewöhnliche Prozessstarts erben ihn nicht. Fehlerhafte oder nicht auflösbare Sicherheitsmetadaten verhindern den Start des Befehls.
 
 Jede Art von Prozess-Entry funktioniert (`process.lua`, `process.wasm`). Der Befehlsname muss über alle geladenen Entries eindeutig sein. Argumente nach dem Befehlsnamen werden als String-Payloads an den Prozess übergeben.
 
@@ -406,65 +420,66 @@ Jede Art von Prozess-Entry funktioniert (`process.lua`, `process.wasm`). Der Bef
 ### Entwicklungs-Workflow
 
 ```bash
-# Projekt initialisieren
+# Initialize dependency lock metadata
 wippy init
-wippy add wippy/test wippy/llm
+wippy add wippy/test
+wippy add wippy/llm
 wippy install
 
-# Auf Fehler prüfen
+# Check for errors
 wippy lint
 
-# Mit Debug-Ausgabe ausführen
+# Run with debug output
 wippy run -c -v
 
-# Konfiguration für lokale Entwicklung überschreiben
+# Override config for local dev
 wippy run -o app:db:host=localhost -o app:db:port=5432
 ```
 
 ### Produktions-Deployment
 
 ```bash
-# Release-Pack mit Bytecode erstellen
-wippy pack release.wapp --bytecode ** --exclude-ns test.**
+# Create release pack with bytecode
+wippy pack release.wapp --bytecode "**" --exclude-ns "test.**"
 
-# Aus Pack mit Speicherlimit ausführen
+# Run from pack with memory limit
 wippy run release.wapp -m 2G
 ```
 
 ### Debugging
 
 ```bash
-# Einzelnen Prozess ausführen
+# Execute single process
 wippy run --exec app:worker
 
-# Mit aktiviertem Profiler
+# With profiler enabled
 wippy run -p -v
-# Dann: go tool pprof http://localhost:6060/debug/pprof/heap
+# Then: go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 
 ### Abhängigkeitsverwaltung
 
 ```bash
-# Neue Abhängigkeit hinzufügen
+# Add new dependency
 wippy add acme/http@latest
 
-# Erneut herunterladen erzwingen
+# Force re-download
 wippy install --force
 
-# Bestimmtes Modul aktualisieren
+# Update specific module
 wippy update acme/http
 ```
 
 ### Veröffentlichung
 
 ```bash
-# Im Hub anmelden
+# Login to hub
 wippy auth login
 
-# Modul validieren
+# Validate module
 wippy publish --dry-run
 
-# Veröffentlichen
+# Publish
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
@@ -501,5 +516,5 @@ override:
 
 ## Siehe auch
 
-- [Konfiguration](guides/configuration.md) - Referenz zur Konfigurationsdatei
-- [Observability](guides/observability.md) - Monitoring und Logging
+- [Konfiguration](./configuration.md) — Referenz der Konfigurationsdatei
+- [Observability](./observability.md) — Monitoring und Logging
