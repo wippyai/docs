@@ -224,7 +224,7 @@
     "children": [
       {"title": "개요", "path": "temporal/overview"},
       {"title": "액티비티", "path": "temporal/activities"},
-      {"title": "워크플로", "path": "temporal/workflows"}
+      {"title": "워크플로우", "path": "temporal/workflows"}
     ]
   },
   {
