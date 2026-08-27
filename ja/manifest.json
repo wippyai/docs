@@ -163,6 +163,38 @@
     ]
   },
   {
+    "title": "フロントエンド",
+    "children": [
+      {"title": "フロントエンド契約: はじめに", "path": "frontend/overview"},
+      {"title": "プラットフォームトポロジー", "path": "frontend/platform-topology"},
+      {"title": "Portable UI 契約", "path": "frontend/portable-ui-contract"},
+      {"title": "デザインレイヤー", "path": "frontend/design-layer"},
+      {
+        "title": "フロントエンドレジストリ",
+        "children": [
+          {"title": "レジストリエントリ", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Micro Frontend App（view.page）", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Web Component（view.component）", "path": "frontend/frontend-registry/view-component"},
+          {"title": "動的ルーティング", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "概要", "path": "frontend/web-host/overview"},
+          {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
+          {"title": "ブートストラップシーケンス", "path": "frontend/web-host/bootstrap"},
+          {"title": "マルチパネルレイアウト", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "レンダリングエンジン", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy と分離", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS injection", "path": "frontend/web-host/css-injection"},
+          {"title": "テーマの永続化", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe パッケージ", "path": "frontend/web-host/packages"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},
