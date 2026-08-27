@@ -1,15 +1,17 @@
 ---
 title: "WASM 함수"
-description: "WASM 함수는 WebAssembly 코드를 실행하는 레지스트리 엔트리입니다. 인라인 WAT 소스용 function.wat과 사전 컴파일된 바이너리용 function.wasm, 두 가지 엔트리 종류를 사용할 수 있습니다."
+description: "인라인 WAT 함수와 사전 컴파일된 WASM 함수를 레지스트리 엔트리로 설정합니다."
 ---
 
 # WASM 함수
 
-WASM 함수는 WebAssembly 코드를 실행하는 레지스트리 엔트리입니다. 인라인 WAT 소스용 `function.wat`과 사전 컴파일된 바이너리용 `function.wasm`, 두 가지 엔트리 종류를 사용할 수 있습니다.
+인라인 WebAssembly Text 소스에는 `function.wat`, 사전 컴파일된 바이너리에는 `function.wasm`을 사용합니다.
+
+**분류: 함수 설정 레퍼런스.** WAT 블록은 작은 레지스트리 예제입니다. 사전 컴파일 예제는 외부 컴포넌트 빌드, 파일 시스템 엔트리, guest WIT와 일치하는 export 메서드, 정확한 바이너리에서 계산한 SHA-256 digest를 전제로 합니다. 실제처럼 보이는 sample hash는 예시입니다.
 
 ## 인라인 WAT 함수
 
-WebAssembly Text 형식을 사용하여 `_index.yaml`에서 직접 작은 WASM 함수를 정의합니다:
+`_index.yaml`에서 WAT 함수를 직접 정의합니다.
 
 ```yaml
 entries:
@@ -96,7 +98,7 @@ entries:
 
 | Type | Description |
 |------|-------------|
-| `inline` | 동기, 단일 스레드. 호출마다 새 인스턴스 생성. |
+| `inline` | mutex 직렬화. 순차 동기 호출은 하나의 warm instance를 재사용하고, asyncified 호출은 매 호출 후 닫히며 retained-memory 정책도 교체를 유발할 수 있음. |
 | `lazy` | 유휴 워커 없음. 요청 시 `max_size`까지 확장. |
 | `static` | 고정된 수의 워커와 요청 큐. |
 | `adaptive` | 자동 스케일링 탄력적 풀. |
@@ -121,10 +123,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-`max_size`가 지정되지 않은 경우 기본 탄력적 풀 최대값은 워커 100개입니다.
+100-worker 기본값은 암시적으로 선택된 풀(`type`을 설정하지 않은 경우)에만 적용됩니다. `type: lazy` 또는 `type: adaptive`를 명시하고 `max_size`를 생략하면 기본 최대값은 16 workers입니다.
 
 ### 워커 클래스와 코어 어피니티
 
@@ -174,6 +175,7 @@ scheduler:
 ```lua
 -- Arguments passed directly as WASM function parameters
 local result, err = funcs.call("myns:compute", 6, 7)
+if err then return nil, err end
 -- result: 42
 ```
 
@@ -201,14 +203,22 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## 실행 제한
 
-함수의 최대 실행 시간을 설정합니다:
+실행 시간을 제한하고 linear memory를 너무 많이 유지하는 warm instance를 재활용합니다.
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 67108864
+  retained_memory_check_interval: 16
 ```
 
-제한을 초과하면 실행이 취소되고 오류가 반환됩니다.
+| Field | Default | Description |
+|-------|---------|-------------|
+| `max_execution_ms` | `0` | 최대 호출 시간(밀리초); `0`은 timeout 비활성화 |
+| `max_retained_memory_bytes` | 64 MiB | 호출 후 retained memory가 이 값을 넘으면 warm worker instance를 재활용; 명시적 `0`은 재활용 비활성화 |
+| `retained_memory_check_interval` | 아래 참조 | retained-memory 검사 사이의 완료된 호출 수 |
+
+실행 시간 제한을 넘으면 호출이 취소되고 오류를 반환합니다. 기본 64 MiB retained-memory 제한은 16회 호출마다 검사합니다. `max_retained_memory_bytes`를 양수로 명시하고 interval을 생략하면 런타임은 매 호출 후 검사합니다. 검사 비용을 분산하려면 양수 interval을 설정하십시오.
 
 ## WASI 설정
 
@@ -285,14 +295,16 @@ local users = {
 
 -- Transform: adds display field and tag count
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 
 -- Filter: returns only active users
-local active, err = funcs.call("myns:filter_active", users)
+local active, filter_err = funcs.call("myns:filter_active", users)
+if filter_err then return nil, filter_err end
 ```
 
 ### WASI Clocks를 사용한 비동기 슬립
 
-`wasi:clocks`와 `wasi:io`를 임포트하는 WASM 컴포넌트는 클럭과 폴링을 사용할 수 있습니다. 비동기 양보 메커니즘은 Wippy 디스패처와 통합됩니다:
+`wasi:clocks`, `wasi:io` 및 별도의 `wasi:poll` 프로필을 import하는 WASM 컴포넌트는 clock과 polling을 사용할 수 있습니다. 비동기 yield 메커니즘은 Wippy dispatcher와 통합됩니다.
 
 ```yaml
   - name: sleep_ms
@@ -303,6 +315,7 @@ local active, err = funcs.call("myns:filter_active", users)
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline
@@ -312,7 +325,7 @@ method 필드의 `#` 구분자는 인터페이스 메서드를 참조합니다: 
 
 ## 참고
 
-- [개요](wasm/overview.md) - WebAssembly 런타임 개요
-- [호스트 함수](wasm/hosts.md) - 사용 가능한 호스트 인터페이스
-- [프로세스](wasm/processes.md) - WASM을 프로세스로 실행하기
-- [엔트리 종류](guides/entry-kinds.md) - 모든 레지스트리 엔트리 종류
+- [개요](./overview.md) - WebAssembly 런타임 개요
+- [호스트 함수](./hosts.md) - 사용 가능한 호스트 인터페이스
+- [프로세스](./processes.md) - WASM을 프로세스로 실행하기
+- [엔트리 종류](../guides/entry-kinds.md) - 모든 레지스트리 엔트리 종류

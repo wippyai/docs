@@ -138,10 +138,10 @@
   {
     "title": "WASM Runtime",
     "children": [
-      {"title": "Overview", "path": "wasm/overview"},
-      {"title": "Functions", "path": "wasm/functions"},
-      {"title": "Host Functions", "path": "wasm/hosts"},
-      {"title": "Processes", "path": "wasm/processes"}
+      {"title": "개요", "path": "wasm/overview"},
+      {"title": "함수", "path": "wasm/functions"},
+      {"title": "호스트 함수", "path": "wasm/hosts"},
+      {"title": "프로세스", "path": "wasm/processes"}
     ]
   },
   {
