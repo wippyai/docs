@@ -127,7 +127,7 @@ stateDiagram-v2
 
 ## 메시지 라우팅
 
-scheduler는 process로 message를 route하기 위해 `relay.Receiver`를 구현합니다. `Send()`는 `byPID` map에서 target PID를 찾고 message를 process queue에 event로 push한 다음 process가 idle 또는 blocked이면 깨웁니다. `injectOrGlobal`을 통해 requeue하며 알려진 worker affinity가 있으면 마지막 worker의 per-worker inject queue에 push하고, 그렇지 않으면 global queue를 사용합니다.
+scheduler는 process로 message를 route하기 위해 `relay.Receiver`를 구현합니다. `Send()`는 `byPID` map에서 target PID를 찾고 message를 process queue에 event로 push한 다음 process가 idle 또는 blocked이면 깨웁니다. injectOrGlobal을 통해 requeue하며 알려진 worker affinity가 있으면 마지막 worker의 per-worker inject queue에 push하고, 그렇지 않으면 global queue를 사용합니다.
 
 ## 셧다운
 

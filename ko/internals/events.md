@@ -1,20 +1,23 @@
 ---
 title: "이벤트 버스"
-description: "이벤트 버스는 단일 디스패처 고루틴을 사용하는 pub/sub 시스템입니다. 퍼블리셔는 액션을 큐에 넣고, 디스패처는 순차적으로 처리하고, 구독자는 채널에서 매칭되는 이벤트를 받습니다."
+description: "이벤트 버스 action, wildcard 구독, 전달, Lua process bridging, request-response helper, 종료를 설명합니다."
 ---
 
 # 이벤트 버스
 
-이벤트 버스는 단일 디스패처 고루틴을 사용하는 pub/sub 시스템입니다. 퍼블리셔는 액션을 큐에 넣고, 디스패처는 순차적으로 처리하고, 구독자는 채널에서 매칭되는 이벤트를 받습니다.
+이벤트 버스는 하나의 dispatcher goroutine에서 큐에 쌓인 pub/sub action을 처리하고 매칭되는 이벤트를 subscriber channel에 전달합니다.
+
+Go 코드 조각은 구현 및 extension fragment입니다. 기존 component context, logger, handler, 애플리케이션 event type이 있다고 가정합니다.
 
 ## 이벤트 구조
 
 ```go
 type Event struct {
-    System string  // 컴포넌트/모듈 (예: "registry", "process")
-    Kind   string  // 이벤트 타입 (예: "create", "update", "exit")
-    Path   string  // 엔티티 식별자
-    Data   any     // 페이로드
+    System string  // Component/module (e.g., "registry", "process")
+    Kind   string  // Event type (e.g., "create", "update", "exit")
+    Path   string  // Entity identifier
+    Data   any     // Payload
+    Aux    any     // In-process dispatcher context; not propagated to processes
 }
 ```
 
@@ -23,14 +26,14 @@ type Event struct {
 ```mermaid
 flowchart LR
     subgraph Publishers
-        P1[컴포넌트]
-        P2[컴포넌트]
+        P1[Component]
+        P2[Component]
     end
 
     subgraph Bus
         Q[actionQueue]
-        D[디스패처 고루틴]
-        S[subscribers 맵]
+        D[dispatcher goroutine]
+        S[subscribers map]
     end
 
     subgraph Subscribers
@@ -40,8 +43,8 @@ flowchart LR
 
     P1 & P2 -->|enqueue| Q
     Q -->|signal| D
-    D -->|매칭 & 전달| S1 & S2
-    D <-->|관리| S
+    D -->|match & deliver| S1 & S2
+    D <-->|manage| S
 ```
 
 버스는 간단한 구조로 상태를 저장합니다:
@@ -73,7 +76,7 @@ type Bus struct {
 | Send | 매칭하는 구독자에게 이벤트 전달 |
 | Stop | 구독자 정리, 큐 드레인, 루프 종료 |
 
-Subscribe와 Unsubscribe는 디스패처가 확인할 때까지 블록합니다. Send는 fire-and-forget입니다.
+Subscribe와 Unsubscribe는 dispatcher가 확인할 때까지 block합니다. Send는 fire-and-forget입니다. bus는 최대 `DefaultMaxSubscribers`개 구독(기본값 4096)을 허용하며 cap을 넘는 구독은 `ErrSubscribersCapReached`로 실패합니다.
 
 ## 큐 스와핑
 
@@ -88,7 +91,7 @@ func (b *Bus) processActions() bool {
     b.actionMu.Unlock()
 
     for i := range actions {
-        // 액션 처리
+        // process action
     }
 
     clear(actions)
@@ -115,7 +118,7 @@ type sub struct {
 }
 ```
 
-와일드카드 패키지는 세 가지 패턴 타입을 지원합니다:
+wildcard package는 네 가지 pattern type을 지원합니다.
 
 | 패턴 | 매칭 |
 |---------|---------|
@@ -178,7 +181,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -204,10 +207,13 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 콜백과 함께 채널 구독을 래핑합니다:
 
 ```go
-handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
+handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "entry.*",
     func(evt Event) {
-        // 처리
+        // handle
     })
+if err != nil {
+    return err
+}
 defer handler.Close()
 ```
 
@@ -221,26 +227,37 @@ defer handler.Close()
 router, err := eventbus.StartRouter(ctx, bus,
     WithHandlers(handler1, handler2),
     WithLogger(log))
+if err != nil {
+    return err
+}
 defer router.Stop()
 ```
 
 각 핸들러는 `Pattern()`과 `Handle()`을 구현합니다. 라우터는 각각에 대해 Subscriber를 생성하고 Stop 시 모두 닫습니다.
 
-### Awaiter
+### AwaitService
 
-특정 이벤트에 대한 동기 대기:
+Pub/sub 기반 request-response를 제공합니다. `(system, kind)` pair당 하나의 구독을 유지하고 `Path`로 이벤트를 waiter에 라우팅합니다.
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+if err := svc.Start(ctx); err != nil {
+    return err
+}
+defer svc.Stop()
+
+waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
+if err != nil {
+    return err
+}
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // 매칭 또는 타임아웃까지 블록
+result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 ```
 
-Prepare-then-Wait 패턴은 레이스 조건을 피합니다: 응답을 생성하는 이벤트를 트리거하기 전에 구독합니다.
+`Prepare`는 trigger event를 보내기 전에 waiter를 등록하여 응답이 먼저 도착하는 race를 피합니다. `Wait`는 같은 `Path`의 이벤트가 오거나 timeout이 만료될 때까지 block합니다. 양수가 아닌 timeout은 기본 `DefaultAwaitTimeout` 30초를 사용합니다. event kind가 `accept`, `*.accept`, `*.accepted`이면 `Accepted`가 true이고, 그 밖의 kind는 reject로 취급되어 `Data`의 `error`가 `Error`로 나타납니다. `Await(ctx, system, kind, path, timeout)` helper는 Prepare와 Wait를 결합합니다. boot infrastructure는 AwaitService를 context에 등록하며 `event.GetAwaitService`로 가져올 수 있습니다.
 
 ## 셧다운
 
@@ -254,5 +271,5 @@ Prepare-then-Wait 패턴은 레이스 조건을 피합니다: 응답을 생성�
 
 ## 참고
 
-- [레지스트리](internals/registry.md) - 주요 이벤트 생산자
-- [명령 디스패치](internals/dispatch.md) - 프로세스-핸들러 라우팅
+- [레지스트리](./registry.md) - 주요 이벤트 생산자
+- [명령 디스패치](./dispatch.md) - 프로세스-핸들러 라우팅
