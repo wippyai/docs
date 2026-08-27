@@ -1,11 +1,13 @@
 ---
-title: "Command Dispatch"
-description: "O sistema de despacho roteia comandos de processos para handlers. Processos cedem comandos com tags de correlação, handlers executam trabalho…"
+title: "Despacho de Comandos"
+description: "Como yields de processos são roteados para handlers de comandos e retornam por eventos de conclusão correlacionados."
 ---
 
-# Command Dispatch
+# Despacho de Comandos
 
-O sistema de despacho roteia comandos de processos para handlers. Processos cedem comandos com tags de correlação, handlers executam trabalho assíncrono, e resultados fluem de volta via filas de eventos.
+O despacho de comandos roteia yields de processos para handlers e devolve resultados correlacionados pelas filas de eventos dos processos.
+
+Esta é uma referência de extensão e implementação. Os fragmentos de comando e dispatcher personalizados pressupõem um pacote Go, um grafo de boot, uma API de comandos e tratamento de erros específico do serviço já existentes.
 
 ## Fluxo
 
@@ -26,69 +28,64 @@ sequenceDiagram
     P->>P: resume with result
 ```
 
-## Registry de Comandos
+## Registro de comandos
 
-O registry armazena handlers em uma estrutura híbrida:
+O registro armazena handlers em uma estrutura híbrida:
 
 ```go
 type Registry struct {
-    handlers [256]Handler         // Comandos de sistema: O(1) index
-    extended map[CommandID]Handler // Comandos estendidos: lookup em map
-    frozen   atomic.Bool          // Sem lock após boot
+    handlers [256]Handler         // System commands: O(1) index
+    extended map[CommandID]Handler // Extended commands: map lookup
+    frozen   atomic.Bool          // Lock-free after boot
 }
 ```
 
-Comandos de sistema (0-255) usam indexação de array. Comandos estendidos usam lookup em map. Após `Freeze()`, todos os lookups são sem lock.
+Comandos do sistema (0–255) usam indexação de array. Comandos estendidos usam consulta ao mapa. Depois de `Freeze()`, todas as consultas dispensam locks.
 
-### Faixas de Command ID
+### Faixas de IDs de comandos
 
 | Faixa | Módulo | Exemplos |
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
-| 10-29 | clock | Sleep, Ticker, Timer |
-| 30-39 | socket | Dial, Listen, Accept, Close |
-| 50-59 | stream | Read, Write, Close, Seek |
-| 60-69 | http | Request, RequestBatch |
-| 70-79 | tty | E/S de terminal |
-| 80-89 | websocket | Connect, Send, Receive |
-| 90-99 | event | Subscribe, Send |
-| 100-119 | sql | Query, Execute, Prepare, Stmt, Tx ops |
-| 120-129 | store | Get, Set, Delete, Has |
-| 130-139 | security | ValidateToken, CreateToken |
-| 140-149 | function | Call, AsyncStart, AsyncCancel |
-| 150-159 | exec | ProcessWait |
-| 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
-| 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
-| 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 10, 14, 16, 18-23 | clock | Sleep e operações de ticker e timer |
+| 30-34 | socket | Connect, Listen, Accept, Bind, Resolve |
+| 50-57 | stream | Operações Read, Write, Close, Seek, Flush, Stat e Scanner |
+| 60-61 | http | Request, RequestBatch |
+| 70-78 | tty | E/S de terminal |
+| 80-85 | websocket | Connect, Send, Receive, Close, Ping, Subscribe |
+| 90-91 | event | Subscribe, Send |
+| 100-111 | sql | Query, Execute, Prepare e operações de statement e transação |
+| 120-126 | store | Get, Set, Delete, Has, Entry, List, Put |
+| 130-132 | security | ValidateToken, CreateToken, RevokeToken |
+| 140-142 | function | Call, AsyncStart, AsyncCancel |
+| 150 | exec | ProcessWait |
+| 160-169 | cloudstorage | Operações de objetos e multipart |
+| 170-171 | eval | Compile, Run |
+| 172 | cdc | Subscribe |
+| 173-174 | cloudstorage | AbortMultipartUpload, OpenReader |
+| 180-183 | workflow | SideEffect, Exec, Version, UpsertAttrs |
+| 190-193 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (grupo de processos) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Serviços definidos pelo usuário |
 
-Registro acontece durante boot via `MustRegisterCommands()`. Colisões causam panic na inicialização.
+Os pacotes reservam a propriedade dos IDs de comandos em `init()` com `MustRegisterCommands()`; colisões de propriedade causam panic durante a inicialização dos pacotes. Durante o carregamento dos componentes, cada serviço associa seus handlers por meio de `Registrar.Register`. O dispatcher só é congelado depois que esses handlers são instalados.
 
 ## Definindo Comandos
 
 Comandos são estruturas de dados com um `CommandID` único:
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string
     Option int
 }
 
-var myCmdPool = sync.Pool{New: func() any { return &MyCmd{} }}
-
 func (c *MyCmd) CmdID() dispatcher.CommandID { return MyCommand }
-
-func (c *MyCmd) Release() {
-    c.Input = ""
-    c.Option = 0
-    myCmdPool.Put(c)
-}
 ```
 
-Reuso de pool elimina alocação em hot paths. Registre no package init:
+Reserve o ID do comando durante a inicialização do pacote:
 
 ```go
 func init() {
@@ -112,7 +109,7 @@ type ResultReceiver interface {
 
 ```go
 type Dispatcher struct {
-    // estado do serviço
+    // service state
 }
 
 func (d *Dispatcher) RegisterAll(register func(id dispatcher.CommandID, h dispatcher.Handler)) {
@@ -155,14 +152,14 @@ Quando um processo precisa de trabalho assíncrono, ele cede um comando com uma 
 ```go
 type Yield struct {
     Cmd Command
-    Tag uint64    // Contador local do processo para correlação
+    Tag uint64    // Process-local counter for correlation
 }
 ```
 
 O worker extrai yields de `StepOutput` após cada passo e os despacha para handlers. Cada tag identifica unicamente a requisição para que resultados possam ser correspondidos de volta.
 
-## Veja Também
+## Consulte também
 
-- [Scheduler](internals/scheduler.md) - Execução de processos
-- [Modules](internals/modules.md) - Integração de módulos Lua
-- [Process Model](concepts/process-model.md) - Conceitos de alto nível
+- [Scheduler](./scheduler.md) — Execução de processos
+- [Módulos](./modules.md) — Integração de módulos Lua
+- [Modelo de processos](../concepts/process-model.md) — Conceitos de alto nível
