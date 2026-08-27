@@ -25,30 +25,20 @@ local events = require("events")
 イベントバスからのイベントをサブスクライブ:
 
 ```lua
--- すべてのorderイベントをサブスクライブ
+-- Subscribe to all order events
 local sub, err = events.subscribe("orders.*")
 if err then
     return nil, err
 end
 
--- 特定のイベント種別をサブスクライブ
-local sub = events.subscribe("users", "user.created")
-
--- システムからのすべてのイベントをサブスクライブ
-local sub = events.subscribe("payments")
-
--- イベントを処理
+-- Process events
 local ch = sub:channel()
 while true do
     local evt, ok = ch:receive()
     if not ok then break end
 
-    logger:info("Received event", {
-        system = evt.system,
-        kind = evt.kind,
-        path = evt.path
-    })
-    handle_event(evt)
+    print(evt.system, evt.kind, evt.path)
+    -- Process evt.data when the publisher supplied a payload.
 end
 ```
 
@@ -64,7 +54,7 @@ end
 イベントバスにイベントを送信:
 
 ```lua
--- order作成イベントを送信
+-- Send order created event
 local ok, err = events.send("orders", "order.created", "/orders/123", {
     order_id = "123",
     customer_id = "456",
@@ -74,23 +64,11 @@ if err then
     return nil, err
 end
 
--- userイベントを送信
-events.send("users", "user.registered", "/users/" .. user.id, {
-    user_id = user.id,
-    email = user.email,
-    created_at = time.now():format("2006-01-02T15:04:05Z07:00")
-})
-
--- paymentイベントを送信
-events.send("payments", "payment.completed", "/payments/" .. payment.id, {
-    payment_id = payment.id,
-    order_id = payment.order_id,
-    amount = payment.amount,
-    method = payment.method
-})
-
--- データなしで送信
-events.send("system", "heartbeat", "/health")
+-- Send without data
+local heartbeat_sent, heartbeat_err = events.send("system", "heartbeat", "/health")
+if heartbeat_err then
+    return nil, heartbeat_err
+end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -109,6 +87,7 @@ events.send("system", "heartbeat", "/health")
 イベント受信用のチャネルを取得:
 
 ```lua
+local json = require("json")
 local ch = sub:channel()
 
 local evt, ok = ch:receive()
@@ -116,7 +95,9 @@ if ok then
     print("System:", evt.system)
     print("Kind:", evt.kind)
     print("Path:", evt.path)
-    print("Data:", json.encode(evt.data))
+    local encoded, encode_err = json.encode(evt.data)
+    if encode_err then return nil, encode_err end
+    print("Data:", encoded)
 end
 ```
 
@@ -127,7 +108,7 @@ end
 アンサブスクライブしてチャネルをクローズ:
 
 ```lua
-sub:close()
+local closed = sub:close() -- true
 ```
 
 ## 権限

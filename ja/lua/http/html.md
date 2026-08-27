@@ -34,6 +34,7 @@ local html = require("html")
 
 ```lua
 local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 
 policy:allow_elements("p", "strong", "em")
 policy:allow_attrs("class"):globally()
@@ -48,7 +49,8 @@ local clean = policy:sanitize(user_input)
 ユーザー生成コンテンツ用に事前設定。一般的なフォーマット要素を許可。
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 
 local safe = policy:sanitize('<p>Hello <strong>world</strong></p>')
 -- '<p>Hello <strong>world</strong></p>'
@@ -64,7 +66,8 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 すべてのHTMLを除去し、プレーンテキストのみを返す。
 
 ```lua
-local policy = html.sanitize.strict_policy()
+local policy, err = html.sanitize.strict_policy()
+if err then return nil, err end
 
 local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 -- 'Hello world!'
@@ -79,7 +82,8 @@ local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 特定のHTML要素をホワイトリストに追加。
 
 ```lua
-local policy = html.sanitize.new_policy()
+local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 policy:allow_elements("p", "strong", "em", "br")
 policy:allow_elements("h1", "h2", "h3")
 policy:allow_elements("a", "img")
@@ -144,7 +148,7 @@ policy:allow_attrs("id"):globally()
 正規表現パターンに対して属性値を検証。
 
 ```lua
--- styleで16進カラーのみを許可
+-- Only allow hex colors in style
 local builder, err = policy:allow_attrs("style"):matching("^color:#[0-9a-fA-F]{6}$")
 if err then
     return nil, err
@@ -235,6 +239,8 @@ policy:require_parseable_urls(true)
 
 ```lua
 policy:allow_attrs("href", "rel"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:require_nofollow_on_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -267,6 +273,8 @@ policy:require_noreferrer_on_links(true)
 
 ```lua
 policy:allow_attrs("href", "target"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -303,8 +311,9 @@ policy:allow_elements("img")
 policy:allow_attrs("src"):on_elements("img")
 policy:allow_data_uri_images()
 
-policy:sanitize('<img src="data:image/png;base64,iVBORw...">')
--- '<img src="data:image/png;base64,iVBORw...">'
+local input = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2O9sAAAAASUVORK5CYII=">'
+policy:sanitize(input)
+-- The data URI is preserved.
 ```
 
 **戻り値:** `Policy`
@@ -344,7 +353,7 @@ policy:allow_elements("p")
 policy:allow_standard_attributes()
 
 policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
--- '<p id="intro" class="text" title="Introduction">Hello</p>'
+-- '<p id="intro" title="Introduction">Hello</p>'
 ```
 
 **戻り値:** `Policy`
@@ -354,7 +363,8 @@ policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
 HTML文字列にポリシーを適用。
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 policy:require_nofollow_on_links(true)
 
 local dirty = '<p>Hello</p><script>alert("xss")</script>'
@@ -375,4 +385,3 @@ local clean = policy:sanitize(dirty)
 | 無効な正規表現パターン | `errors.INVALID` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

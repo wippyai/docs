@@ -28,13 +28,6 @@ local executor, err = exec.get("app:exec")
 if err then
     return nil, err
 end
-
--- エグゼキュータを使用
-local proc = executor:exec("ls -la")
--- ...
-
--- 完了時に解放
-executor:release()
 ```
 
 | パラメータ | 型 | 説明 |
@@ -48,16 +41,7 @@ executor:release()
 指定されたコマンドで新しいプロセスを作成します:
 
 ```lua
--- シンプルなコマンド
-local proc, err = executor:exec("echo 'Hello, World!'")
-
--- 作業ディレクトリ付き
-local proc = executor:exec("npm install", {
-    work_dir = "/app/project"
-})
-
--- 環境変数付き
-local proc = executor:exec("python script.py", {
+local proc, err = executor:exec("python script.py", {
     work_dir = "/scripts",
     env = {
         PYTHONPATH = "/app/lib",
@@ -65,14 +49,10 @@ local proc = executor:exec("python script.py", {
         API_KEY = api_key
     }
 })
-
--- シェルスクリプトを実行
-local proc = executor:exec("./deploy.sh production", {
-    work_dir = "/app/scripts",
-    env = {
-        DEPLOY_ENV = "production"
-    }
-})
+if err then
+    executor:release() -- release is specified to return true, nil
+    return nil, err
+end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -88,20 +68,38 @@ local proc = executor:exec("./deploy.sh production", {
 プロセスを開始して完了を待機します。
 
 ```lua
-local proc = executor:exec("./build.sh")
-
-local ok, err = proc:start()
-if err then
-    return nil, err
+local executor, get_err = exec.get("app:exec")
+if get_err then
+    return nil, get_err
 end
 
-local exit_code, err = proc:wait()
-if err then
-    return nil, err
+local proc, create_err = executor:exec("./build.sh")
+if create_err then
+    executor:release()
+    return nil, create_err
+end
+
+local ok, start_err = proc:start()
+if start_err then
+    proc:close(true)
+    executor:release()
+    return nil, start_err
+end
+
+local exit_code, wait_err = proc:wait()
+local _, release_err = executor:release()
+if wait_err then
+    return nil, wait_err
+end
+if release_err then
+    return nil, release_err
 end
 
 if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", "Build failed with exit code: " .. exit_code)
+    return nil, errors.new({
+        message = "Build failed with exit code: " .. exit_code,
+        kind = errors.INTERNAL
+    })
 end
 ```
 
@@ -110,40 +108,79 @@ end
 プロセス出力を読み取るストリームを取得します。
 
 ```lua
-local proc = executor:exec("./process-data.sh")
-
-local stdout = proc:stdout_stream()
-local stderr = proc:stderr_stream()
-
-proc:start()
-
--- すべてのstdoutを読み取り
-local output = {}
-while true do
-    local chunk = stdout:read(4096)
-    if not chunk then break end
-    table.insert(output, chunk)
-end
-local result = table.concat(output)
-
--- エラーをチェック
-local err_output = {}
-while true do
-    local chunk = stderr:read(4096)
-    if not chunk then break end
-    table.insert(err_output, chunk)
+local function fail(err)
+    proc:close(true)   -- close is specified to return true, nil
+    executor:release()
+    return nil, err
 end
 
-local exit_code = proc:wait()
-
-stdout:close()
-stderr:close()
-
-if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", table.concat(err_output))
+local function drain(stream, done)
+    coroutine.spawn(function()
+        local chunks = {}
+        while true do
+            local chunk, read_err = stream:read(4096)
+            if read_err then
+                done:send({err = read_err})
+                return
+            end
+            if not chunk then
+                done:send({data = table.concat(chunks)})
+                return
+            end
+            table.insert(chunks, chunk)
+        end
+    end)
 end
 
-return result
+local _, start_err = proc:start()
+if start_err then return fail(start_err) end
+
+local stdout, stdout_err = proc:stdout_stream()
+if stdout_err then return fail(stdout_err) end
+local stderr, stderr_err = proc:stderr_stream()
+if stderr_err then return fail(stderr_err) end
+
+local stdout_done = channel.new(1)
+local stderr_done = channel.new(1)
+drain(stdout, stdout_done)
+drain(stderr, stderr_done)
+
+local stdout_result
+local stderr_result
+while not stdout_result or not stderr_result do
+    local cases = {}
+    if not stdout_result then table.insert(cases, stdout_done:case_receive()) end
+    if not stderr_result then table.insert(cases, stderr_done:case_receive()) end
+
+    local selected = channel.select(cases)
+    if not selected.ok then
+        return fail(errors.new("output drain channel closed"))
+    end
+    if selected.value.err then return fail(selected.value.err) end
+
+    if selected.channel == stdout_done then
+        stdout_result = selected.value
+    else
+        stderr_result = selected.value
+    end
+end
+
+local _, stdout_close_err = stdout:close()
+if stdout_close_err then return fail(stdout_close_err) end
+local _, stderr_close_err = stderr:close()
+if stderr_close_err then return fail(stderr_close_err) end
+
+local exit_code, wait_err = proc:wait()
+if wait_err then return fail(wait_err) end
+
+local _, release_err = executor:release()
+if release_err then return nil, release_err end
+
+return {
+    exit_code = exit_code,
+    stdout = stdout_result.data,
+    stderr = stderr_result.data
+}
 ```
 
 ## write_stdin
@@ -151,22 +188,60 @@ return result
 プロセスのstdinにデータを書き込みます。
 
 ```lua
--- コマンドにデータをパイプ
-local proc = executor:exec("sort")
-local stdout = proc:stdout_stream()
+-- This command exits after reading three lines; it does not require an EOF signal
+local proc, create_err = executor:exec("head -n 3")
+if create_err then
+    executor:release()
+    return nil, create_err
+end
 
-proc:start()
+local function fail(err)
+    proc:close(true)
+    executor:release()
+    return nil, err
+end
 
--- 入力を書き込み
-proc:write_stdin("banana\napple\ncherry\n")
-proc:write_stdin("")  -- EOFを通知
+local _, start_err = proc:start()
+if start_err then
+    return fail(start_err)
+end
 
--- ソートされた出力を読み取り
-local sorted = stdout:read()
-print(sorted)  -- "apple\nbanana\ncherry\n"
+local stdout, stream_err = proc:stdout_stream()
+if stream_err then
+    return fail(stream_err)
+end
 
-proc:wait()
-stdout:close()
+for _, line in ipairs({"banana\n", "apple\n", "cherry\n"}) do
+    local _, write_err = proc:write_stdin(line)
+    if write_err then
+        return fail(write_err)
+    end
+end
+
+-- Read until the bounded command exits and closes stdout
+local chunks = {}
+while true do
+    local chunk, read_err = stdout:read(4096)
+    if read_err then
+        return fail(read_err)
+    end
+    if not chunk then break end
+    table.insert(chunks, chunk)
+end
+print(table.concat(chunks))  -- "banana\napple\ncherry\n"
+
+local _, close_err = stdout:close()
+if close_err then
+    return fail(close_err)
+end
+
+local exit_code, wait_err = proc:wait()
+if wait_err then return fail(wait_err) end
+local _, release_err = executor:release()
+if release_err then return nil, release_err end
+if exit_code ~= 0 then
+    return nil, errors.new("head exited with code " .. exit_code)
+end
 ```
 
 ## signal / close
@@ -174,20 +249,18 @@ stdout:close()
 シグナルを送信またはプロセスを閉じます。
 
 ```lua
-local proc = executor:exec("./long-running-server.sh")
-proc:start()
+-- Stop and discard the handle. close() sends SIGTERM, reaps in the
+-- background, and returns true even if signaling fails.
+local _, close_err = proc:close()
+if close_err then return nil, close_err end
 
--- ... 後でそれを停止する必要がある ...
+-- For immediate forced shutdown, use this instead:
+-- local _, close_err = proc:close(true) -- SIGKILL
 
--- グレースフルシャットダウン（SIGTERM）
-proc:close()
-
--- または強制終了（SIGKILL）
-proc:close(true)
-
--- または特定のシグナルを送信
-local SIGINT = 2
-proc:signal(SIGINT)
+-- When the exit code matters, signal and then wait instead of closing:
+-- local _, signal_err = proc:signal(2) -- SIGINT on Unix
+-- if signal_err then return nil, signal_err end
+-- local exit_code, wait_err = proc:wait()
 ```
 
 ## 権限
@@ -210,4 +283,3 @@ Exec操作はセキュリティポリシー評価の対象です。
 | 既に開始済み | `errors.INVALID` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

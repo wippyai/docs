@@ -91,8 +91,8 @@ local line, err = io.readline()
 Raw端末モードを有効化または無効化します（行バッファリングとエコーを無効化）:
 
 ```lua
-local ok, err = io.raw(true)   -- 有効化
-local ok, err = io.raw(false)  -- 無効化
+local ok, err = io.raw(true)   -- enable
+local ok, err = io.raw(false)  -- disable
 ```
 
 | パラメータ | 型 | 説明 |

@@ -21,7 +21,9 @@ local metrics = require("metrics")
 ### カウンターをインクリメント
 
 ```lua
-metrics.counter_inc("requests_total", {method = "POST"})
+local recorded, err = metrics.counter_inc("requests_total", {method = "POST"})
+if err then return nil, err end
+return recorded
 ```
 
 | パラメータ | 型 | 説明 |
@@ -34,7 +36,9 @@ metrics.counter_inc("requests_total", {method = "POST"})
 ### カウンターに加算
 
 ```lua
-metrics.counter_add("bytes_total", 1024, {direction = "out"})
+local recorded, err = metrics.counter_add("bytes_total", 1024, {direction = "out"})
+if err then return nil, err end
+return recorded
 ```
 
 | パラメータ | 型 | 説明 |
@@ -50,7 +54,9 @@ metrics.counter_add("bytes_total", 1024, {direction = "out"})
 ### ゲージを設定
 
 ```lua
-metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+local recorded, err = metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+if err then return nil, err end
+return recorded
 ```
 
 | パラメータ | 型 | 説明 |
@@ -64,7 +70,9 @@ metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 ### ゲージをインクリメント
 
 ```lua
-metrics.gauge_inc("connections", {pool = "db"})
+local recorded, err = metrics.gauge_inc("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | パラメータ | 型 | 説明 |
@@ -77,7 +85,9 @@ metrics.gauge_inc("connections", {pool = "db"})
 ### ゲージをデクリメント
 
 ```lua
-metrics.gauge_dec("connections", {pool = "db"})
+local recorded, err = metrics.gauge_dec("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | パラメータ | 型 | 説明 |
@@ -92,7 +102,9 @@ metrics.gauge_dec("connections", {pool = "db"})
 ### 観測値の記録
 
 ```lua
-metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+local recorded, err = metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+if err then return nil, err end
+return recorded
 ```
 
 | パラメータ | 型 | 説明 |
@@ -110,4 +122,3 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 | コレクターが利用不可 | `errors.INTERNAL` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

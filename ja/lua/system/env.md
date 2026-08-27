@@ -23,23 +23,21 @@ local env = require("env")
 環境変数の値を取得。
 
 ```lua
--- データベース接続文字列を取得
-local db_url = env.get("DATABASE_URL")
-if not db_url then
-    return nil, errors.new("INVALID", "DATABASE_URL not configured")
+-- Get database connection string
+local db_url, db_err = env.get("DATABASE_URL")
+if db_err then return nil, db_err end
+
+-- Apply a fallback only to a missing variable. Permission and backend errors
+-- still propagate to the caller.
+local function get_or(key, fallback)
+    local value, err = env.get(key)
+    if not err then return value end
+    if errors.is(err, errors.NOT_FOUND) then return fallback end
+    return nil, err
 end
 
--- フォールバック付きで取得
-local port = env.get("PORT") or "8080"
-local host = env.get("HOST") or "localhost"
-
--- シークレットを取得
-local api_key = env.get("API_SECRET_KEY")
-local jwt_secret = env.get("JWT_SECRET")
-
--- 設定
-local log_level = env.get("LOG_LEVEL") or "info"
-local debug_mode = env.get("DEBUG") == "true"
+local port, port_err = get_or("PORT", "8080")
+if port_err then return nil, port_err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -55,16 +53,10 @@ local debug_mode = env.get("DEBUG") == "true"
 環境変数を設定。
 
 ```lua
--- ランタイム設定を設定
-env.set("APP_MODE", "production")
-
--- テスト用にオーバーライド
-env.set("API_URL", "http://localhost:8080")
-
--- 条件に基づいて設定
-if is_development then
-    env.set("LOG_LEVEL", "debug")
-end
+-- Set runtime configuration
+local updated, set_err = env.set("APP_MODE", "production")
+if set_err then return nil, set_err end
+return updated
 ```
 
 | パラメータ | 型 | 説明 |
@@ -79,20 +71,25 @@ end
 アクセス可能なすべての環境変数を取得。
 
 ```lua
-local vars = env.get_all()
+local logger = require("logger")
 
--- 設定をログ（シークレットはログしないよう注意）
-for key, value in pairs(vars) do
-    if not key:match("SECRET") and not key:match("KEY") then
-        logger.debug("env", {[key] = value})
-    end
-end
+local vars, vars_err = env.get_all()
+if vars_err then return nil, vars_err end
 
--- 必須変数を確認
+-- Log names only. Values such as connection URLs may contain credentials even
+-- when their keys do not include words like SECRET or KEY.
+local accessible_keys = {}
+for key in pairs(vars) do table.insert(accessible_keys, key) end
+logger:debug("accessible environment variables", {keys = accessible_keys})
+
+-- Check required variables
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new("INVALID", "Missing required env var: " .. key)
+        return nil, errors.new({
+            message = "Missing required env var: " .. key,
+            kind = errors.INVALID
+        })
     end
 end
 ```
@@ -136,4 +133,3 @@ end
 ## 関連項目
 
 - [環境システム](system/env.md) - ストレージバックエンドと変数定義の設定
-

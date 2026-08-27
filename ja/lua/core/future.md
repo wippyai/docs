@@ -16,6 +16,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
 ```lua
 local funcs = require("funcs")
 local future, err = funcs.async("app.compute:task", data)
+if err then
+    return nil, err
+end
 ```
 
 ## レスポンスチャネル
@@ -24,10 +27,17 @@ local future, err = funcs.async("app.compute:task", data)
 
 ```lua
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
 end
+
+local payload, err = future:result()
+if err then
+    return nil, err
+end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 `channel()`は`response()`のエイリアス。
@@ -84,7 +94,7 @@ end
 非同期操作をキャンセル（ベストエフォート）：
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
 ```
 
 操作が既に進行中の場合でも完了する可能性あり。
@@ -92,8 +102,17 @@ future:cancel()
 ## タイムアウトパターン
 
 ```lua
-local future = funcs.async("app.compute:slow", data)
-local timeout = time.after("5s")
+local time = require("time")
+
+local future, err = funcs.async("app.compute:slow", data)
+if err then
+    return nil, err
+end
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     future:channel():case_receive(),
@@ -101,32 +120,57 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    -- The operation may still complete; this caller ignores the late result.
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
 end
 
-return r.value:data()
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## 最初に完了したもの
 
 ```lua
-local f1 = funcs.async("app.cache:get", key)
-local f2 = funcs.async("app.db:get", key)
-
-local r = channel.select {
-    f1:channel():case_receive(),
-    f2:channel():case_receive()
-}
-
--- 遅い方をキャンセル
-if r.channel == f1:channel() then
-    f2:cancel()
-else
-    f1:cancel()
+local f1, err = funcs.async("app.cache:get", key)
+if err then
+    return nil, err
+end
+local f2, err = funcs.async("app.db:get", key)
+if err then
+    return nil, err
 end
 
-return r.value:data()
+local ch1 = f1:channel()
+local ch2 = f2:channel()
+
+local r = channel.select {
+    ch1:case_receive(),
+    ch2:case_receive()
+}
+
+-- The slower operation may still complete; this caller ignores its result.
+local winner
+if r.channel == ch1 then
+    winner = f1
+else
+    winner = f2
+end
+
+local payload, result_err = winner:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## エラー
@@ -135,4 +179,3 @@ return r.value:data()
 |-----------|------|
 | 操作がキャンセルされた | `CANCELED` |
 | 非同期操作が失敗 | 様々 |
-

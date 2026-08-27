@@ -1,6 +1,6 @@
 ---
 title: "ロギング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "構造化ログメッセージを書き込み、永続フィールドを持つ子ロガーを作成します。"
 ---
 
 # ロギング
@@ -9,7 +9,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-debug、info、warn、errorレベル付きの構造化ロギングを提供します。
+`logger` モジュールは debug、info、warn、error レベルの構造化メッセージを書き込みます。
+
+このページは API リファレンスです。各スニペットは独立したログ操作で、必要なロガー設定を持つ実行コンテキストを前提とします。
+
+ログ呼び出しに戻り値はありません。実行コンテキストから取得できる場合は、現在のフレームから導出したプロセス `pid` とソース `location` も追加されます。
 
 ## ロード
 
@@ -29,6 +33,10 @@ logger:debug("message", {key = "value"})
 |-----------|------|-------------|
 | `message` | string | ログメッセージ |
 | `fields` | table? | コンテキストのキーバリューペア |
+
+フィールド名になるのは文字列キーだけです。文字列、数値、整数、真偽値、エラー、および構造化された Lua 値はログフィールドに変換され、文字列以外のキーは無視されます。
+
+`logger:error` では、`error` という名前のフィールドはエラーフィールドとして出力され、残りのフィールドを処理する前に渡されたテーブルから削除されます。`error` エントリを保持する必要がある場合、そのテーブルを再利用しないでください。
 
 ### Info
 
@@ -65,13 +73,16 @@ logger:error("message", {key = "value"})
 
 ## ロガーのカスタマイズ
 
-### Withフィールド
+### `logger:with`
 
 永続フィールド付きの子ロガーを作成します。
 
 ```lua
-local child = logger:with({request_id = id})
-child:info("message")
+local function request_logger(request_id)
+    return logger:with({request_id = request_id})
+end
+
+request_logger("req-123"):info("message")
 ```
 
 | パラメータ | 型 | 説明 |
@@ -80,7 +91,9 @@ child:info("message")
 
 **戻り値:** `Logger`
 
-### 名前付きロガー
+元のロガーは変更されません。子ロガーにはさらに `with` や `named` を連結できます。
+
+### `logger:named`
 
 名前付きの子ロガーを作成します。
 
@@ -95,11 +108,6 @@ named:info("message")
 
 **戻り値:** `Logger`
 
-## エラー
+空の名前を指定すると Lua の引数エラーが発生します。構造化された `errors.INVALID` 値として返されるわけではありません。
 
-| 条件 | 種別 | 再試行可能 |
-|-----------|------|-----------|
-| 空の名前文字列 | `errors.INVALID` | no |
-
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-
+ログメソッドは構造化エラーを返しません。無効な引数型では Lua の引数エラーが発生します。実行コンテキストにロガーが接続されていない場合、モジュールは no-op ロガーを使用し、メッセージを破棄します。

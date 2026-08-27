@@ -1,11 +1,13 @@
 ---
 title: "Hub"
-description: "Wippy Hub モジュールカタログへの読み取り専用アクセス。モジュールの一覧取得、検索、メタデータ・バージョン・依存関係・README の取得を行います。"
+description: "Wippy Hub のメタデータとアーティファクトを参照し、認証情報を管理し、ローカルアーティファクトキャッシュを検査します。"
 ---
 
 # Hub
 
-Wippy Hub モジュールカタログへの読み取り専用アクセス。モジュールの一覧取得、検索、メタデータ・バージョン・依存関係・README の取得を行います。
+`hub` モジュールは、Wippy Hub のモジュール、バージョン、依存関係、ファイル、アーティファクト、README を読み取ります。また、ランタイムの Hub 認証情報オーバーライドを管理し、ローカルキャッシュから未固定のアーティファクトを削除できます。
+
+このページは API リファレンスです。カタログ座標は説明用です。アーティファクト、認証、キャッシュの各操作には、一致するネットワークアクセス、認証情報、ロック状態、セキュリティポリシーが必要です。
 
 ## 読み込み
 
@@ -15,7 +17,7 @@ local hub = require("hub")
 
 ## 呼び出しごとのオプション
 
-すべての呼び出しはオプションテーブルを受け取れます。すべての呼び出しに共通するキー：
+ネットワーク経由のカタログおよびアーティファクト呼び出しは、次の共通キーを持つオプションテーブルを受け取れます。
 
 | キー | 型 | 説明 |
 |-----|------|-------------|
@@ -24,6 +26,8 @@ local hub = require("hub")
 | `timeout` | duration/number | リクエストのタイムアウト（例: `"3m"` または秒数） |
 
 ページネーション対応の呼び出しでは `page` と `page_size` も指定できます。
+
+認証呼び出しにはレジストリ URL を直接渡します。キャッシュ呼び出しとパッケージハンドルのメソッドには、それぞれ以下で説明する専用オプションがあります。
 
 ## モジュール
 
@@ -64,6 +68,7 @@ local result, err = hub.modules.list({
 local readme, err = hub.modules.readme("wippy/terminal", {
     version = "1.2.3"
 })
+if err then return nil, err end
 print(readme.content)
 ```
 
@@ -93,14 +98,17 @@ local v, err = hub.versions.get("wippy/terminal", "1.0.0")
 
 ```lua
 local pkg, err = hub.versions.open("wippy/terminal", "1.2.3")
+if err then return nil, err end
 
-local entries, err = pkg:entries({
+local entries, entries_err = pkg:entries({
     kind = "function.lua",       -- string or string[], omit for all kinds
     include_data = false,        -- default true
 })
 -- each entry: { id = "ns:name", kind = "...", meta = {...}, data = <any> }
-
-pkg:close()
+local _, close_err = pkg:close()
+if entries_err then return nil, entries_err end
+if close_err then return nil, close_err end
+return entries
 ```
 
 | メソッド | 説明 |
@@ -112,6 +120,28 @@ pkg:close()
 | `pkg:close()` | ハンドルを解放 |
 
 エントリの `data` は生のまま返されます — `${env:...}` 参照は解決されません。
+
+## ローカルアーティファクトキャッシュ
+
+```lua
+local entries, err = hub.cache.list()
+
+local removed, err = hub.cache.remove("wippy/terminal", "1.2.3", {
+    force = false,
+})
+
+local candidates, err = hub.cache.prune({
+    dry_run = true,
+})
+```
+
+| 関数 | 説明 |
+|----------|-------------|
+| `hub.cache.list()` | キャッシュ済みアーティファクトを `{module, version, size, pinned}` レコードとして一覧表示 |
+| `hub.cache.remove(module, version, opts?)` | キャッシュ済みアーティファクトを 1 つ削除。`opts.force = true` を指定するとロックファイルで固定されていても削除可能 |
+| `hub.cache.prune(opts?)` | ロックファイルから参照されていないアーティファクトを削除。`opts.dry_run = true` では候補のみを報告 |
+
+`hub.cache.remove` と `hub.cache.prune` は、ドライランまたは固定保護が適用されない限り、ロックから解決された vendor ディレクトリ内のファイルを削除します。
 
 ## 依存関係
 
@@ -147,6 +177,8 @@ local status, err = hub.auth.status()
 local ok, err = hub.auth.logout()
 ```
 
+上のトークン文字列はプレースホルダーです。実際の認証情報は、シークレットで保護された環境エントリまたは別の保護されたソースから読み込んでください。Lua やレジストリ YAML にコミットしてはいけません。
+
 | 関数 | 説明 |
 |----------|-------------|
 | `hub.auth.authenticate(token, registry?)` | トークンをレジストリに対して検証し、成功時にランタイムのオーバーライドとしてインストール |
@@ -155,9 +187,11 @@ local ok, err = hub.auth.logout()
 
 `status` には `authenticated`、`registry`、`orgs` が含まれます。アイデンティティフィールド（`username`、`user_id`、`scope`、`expires_at`、`expired`）は認証済みの場合にのみ存在します。検証に失敗したトークンは保存されず、`authenticate` は `authenticated = false` を返します。このオーバーライドは `WIPPY_TOKEN` および保存済みの認証情報より優先されます。
 
-**権限:** `hub.auth.authenticate`、`hub.auth.status`、`hub.auth.logout`
+## 権限
+
+各トップレベルの `hub.*` 操作は、`hub.modules.list`、`hub.versions.open`、`hub.dependencies.get`、`hub.files.list`、`hub.auth.status`、`hub.cache.prune` のように対応するアクション名を検査します。モジュールを指定するアクションは指定されたモジュール参照をセキュリティリソースとして使い、認証アクションはレジストリ URL を使用します。認可済みの `hub.versions.open` 呼び出し後、パッケージハンドルのメソッドでは再度の権限検査を行いません。
 
 ## 関連項目
 
-- [CLI Reference](guides/cli.md) — `wippy readme`、`wippy search`、`wippy publish`
-- [Publishing Guide](guides/publishing.md)
+- [CLI リファレンス](../../guides/cli.md) — `wippy readme`、`wippy search`、`wippy publish`
+- [公開ガイド](../../guides/publishing.md)

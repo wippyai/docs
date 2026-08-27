@@ -26,10 +26,10 @@ os.difftime()
 Unixタイムスタンプ（1970年1月1日UTC以降の秒数）を取得:
 
 ```lua
--- 現在のタイムスタンプ
+-- Current timestamp
 local now = os.time()  -- 1718462445
 
--- 特定の日時
+-- Specific date/time
 local t = os.time({
     year = 2024,
     month = 12,
@@ -58,11 +58,11 @@ local t = os.time({
 テーブルで呼び出すと、不足しているフィールドは上記のデフォルト値を使用。`year`、`month`、`day`フィールドは指定されない場合、現在の日付がデフォルト。
 
 ```lua
--- 日付のみ（時間はデフォルトで深夜0時）
+-- Just date (time defaults to midnight)
 os.time({year = 2024, month = 6, day = 15})
 
--- 部分的（現在の年/月を補完）
-os.time({day = 1})  -- 現在の月の1日
+-- Partial (fills in current year/month)
+os.time({day = 1})  -- first of current month
 ```
 
 ## 日付のフォーマット
@@ -150,7 +150,7 @@ Luaランタイム開始からの経過秒数を取得:
 ```lua
 local start = os.clock()
 
--- 作業を実行
+-- do work
 for i = 1, 1000000 do end
 
 local elapsed = os.clock() - start
@@ -188,4 +188,3 @@ print(days)  -- 365
 ```lua
 os.platform  -- "wippy"
 ```
-
