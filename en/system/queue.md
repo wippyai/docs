@@ -206,7 +206,7 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
       exclusive: false
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app.queue:tasks
 ```
 
@@ -215,7 +215,7 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
 | `queue` | required | Queue registry ID |
 | `func` | required | Handler function registry ID |
 | `concurrency` | 1 | Parallel worker count |
-| `prefetch` | 10 | Total delivery buffer / max in-flight messages shared across workers |
+| `prefetch` | 10 | Shared delivery-buffer size; AMQP also applies it as the channel QoS prefetch count |
 | `auto_ack` | false | Backend-specific auto-ack option; for AMQP, `true` asks the broker to acknowledge on delivery |
 | `driver_options` | - | Per-driver sub-bag (same structure as queue) |
 
@@ -239,8 +239,8 @@ Workers run concurrently:
 ```
 concurrency: 3, prefetch: 10
 
-1. Driver delivers up to 10 messages to buffer
-2. 3 workers pull from buffer concurrently
+1. Driver delivers up to 10 messages to the shared buffer
+2. 3 workers pull from the buffer and can each hold an active delivery
 3. As workers finish, buffer refills
 4. Backpressure when all workers busy and buffer full
 ```

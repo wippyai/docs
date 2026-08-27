@@ -28,7 +28,7 @@ Wippy limits Raft membership to a fixed-size core so the leader does not replica
 | **Standby** | up to 4 (`max_standbys`) | yes | yes | no |
 | **Client** | unbounded | no | no | no |
 
-- **Voters** form the quorum. Writes commit once a majority of voters acknowledge them. The voter count is always odd so a majority is well-defined.
+- **Voters** form the quorum. Writes commit once a majority of voters acknowledge them. `max_voters` is normalized to an odd cap (default 5). With at least three eligible nodes, the reconciler also chooses an odd voter count. With two eligible nodes and a cap greater than one, both are voters; `max_voters: 1` keeps a single voter.
 - **Standbys** are non-voting members kept fully replicated and warm. When a voter departs, the leader promotes the highest-ranked standby into the open voter slot, so quorum recovers without waiting for a fresh node to catch up.
 - **Clients** are nodes beyond `voters + standbys`. They are not in the Raft configuration, so the leader does not send them log entries. They participate in gossip and route writes to a Raft member, keeping Raft replication bounded by the configured core size.
 
@@ -38,9 +38,9 @@ The `max_voters` and `max_standbys` settings cap the consensus core independentl
 
 The leader runs a reconciler that, on every membership change (debounced by `raft.reconcile_debounce`, default 2s), recomputes which nodes should be voters and applies the minimal set of promote/demote operations. Selection is deterministic — every node derives the same ordering from the same gossip view — and is driven by three gossip-advertised hints:
 
-- `raft.eligible` — a node with `eligible: false` is never chosen as a voter (use for nodes you want to stay clients or standbys).
+- `raft.eligible` — a node with `eligible: false` is excluded from both voter and standby selection and remains outside Raft as a client. Keep a node eligible but below the voter cutoff when it should serve as a standby.
 - `raft.priority` — lower value is preferred when filling voter slots; ties break by node ID.
-- `failure_domain` — voters are spread across distinct domains (zones/racks) first, so losing one domain cannot take out a voter majority.
+- `failure_domain` — voters are spread across distinct domains (zones/racks) first, reducing the risk that one domain failure removes a voter majority.
 
 Operations are applied in a quorum-preserving order: adds and promotions first, then demotions, then removals.
 
@@ -56,6 +56,11 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+  internode:
+    identity_key_file: /etc/wippy/node-2.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
 ```
 
 The first node needs no `join_addrs`; it starts as a seed. Joins retry with backoff, and an isolated node periodically attempts to rejoin. This supports nodes that restart with a new IP, as commonly occurs in Kubernetes.
@@ -68,19 +73,21 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+The gossip key protects membership traffic. Internode TCP connections use a separate Ed25519 identity. Every clustered node must provide either `internode.identity_key` or `internode.identity_key_file`, and `trusted_peer_keys` must contain the matching public key for the local node as well as every peer it can connect to. `identity_key` contains a base64-encoded 32-byte seed or 64-byte private key; trusted peer values are base64-encoded public keys. Give each node its own private key and deploy the same trusted-public-key map to all nodes.
+
 Membership changes (`NodeJoined`, `NodeLeft`, `NodeUpdated`) are the events that drive Raft bootstrap, voter reconciliation, process-group sync, and automatic cleanup of names owned by a departed node.
 
 ## Bootstrap
 
-The initial cluster forms through gossip rather than a static peer list. With the Consul/Nomad-style `bootstrap_expect` setting, each starting node waits for the configured number of peers before forming quorum.
+The initial cluster forms through gossip rather than a static peer list. With the Consul/Nomad-style `bootstrap_expect` setting, each starting node waits until the configured number of eligible nodes, including itself, is visible before forming quorum.
 
 | `bootstrap_expect` | Behavior |
 |--------------------|----------|
 | `0` | Never self-bootstrap; only join a cluster that already exists |
 | `1` | Single-node; bootstrap immediately with self as the only voter |
-| `N` | Wait until `N` eligible peers are stably visible in gossip, then all derive the same voter list and form quorum |
+| `N` | Wait until `N` eligible nodes, including the local node, are stably visible in gossip, then all derive the same voter list and form quorum |
 
-For an `N`-node bootstrap, set the same `bootstrap_expect: N` on every initial node. Each advertises a "pre-bootstrap" status in gossip; once exactly `N` such peers are visible for a short stability window, every node independently computes the identical sorted voter set and forms the cluster. The stability window prevents a brief, partial view from triggering bootstrap early.
+For an `N`-node bootstrap, set the same `bootstrap_expect: N` on every initial node. Each advertises a "pre-bootstrap" status in gossip; once exactly `N` such nodes, including itself, are visible for a short stability window, every node independently computes the identical sorted voter set and forms the cluster. The stability window prevents a brief, partial view from triggering bootstrap early.
 
 Nodes that start later see an already-formed cluster and skip bootstrap entirely — the leader's reconciler adds them as voters or standbys.
 
@@ -88,7 +95,7 @@ Nodes that start later see an already-formed cluster and skip bootstrap entirely
 
 Raft state is **fs-durable by default**: logs and snapshots are persisted under `cluster.raft.data_dir` (default `~/.wippy/store`, in `_sys/raft`), and [`store.kv.raft`](system/store.md#cluster-kv-stores) replicates through the same core. A restarting node still rejoins gossip and catches up from its peers, so the cluster also tolerates losing a node's disk; durability comes from both the live quorum and on-disk state. A node runs diskless only when no data directory resolves (no configured path and no home directory) — see [Recovery](#recovery-and-failure-modes).
 
-Raft does not open its own listening port. It rides the **internode mesh** — the same TCP connections used for relay traffic between nodes — carrying its RPCs as internode request/reply frames over the mesh's reliable per-class channels. The internode port is auto-selected at boot (range 7950-7959, then ephemeral), pinned, and advertised in gossip so peers can reach it. The only port you normally expose is the gossip port.
+Raft does not open its own listening port. It rides the **internode mesh** — the same TCP connections used for relay traffic between nodes — carrying its RPCs as internode request/reply frames over the mesh's reliable per-class channels. The internode port is auto-selected at boot (range 7950-7959, then ephemeral), pinned, and advertised in gossip so peers can reach it. Nodes must be mutually reachable on both the gossip port and their advertised internode TCP ports.
 
 The Raft FSM holds the global name registry: active `name -> PID` bindings plus in-flight strong reservations. That is what the naming primitives below read and write.
 
@@ -138,7 +145,7 @@ Acquire is fail-fast (non-blocking): if the lock is held, it returns immediately
 
 ## Configuration
 
-The full key-by-key reference is in [Configuration](guides/configuration.md#cluster). The minimal shapes:
+See [Configuration](guides/configuration.md#cluster) for related cluster settings. These minimal shapes include the mandatory internode identity settings.
 
 Single node (development):
 
@@ -146,6 +153,10 @@ Single node (development):
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -160,6 +171,12 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
 ```
@@ -172,6 +189,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```
@@ -183,7 +206,7 @@ cluster:
 | Gossip (membership) | 7946 | TCP + UDP | `cluster.membership.bind_port` |
 | Internode mesh (relay + Raft) | auto | TCP | `cluster.internode.bind_port` |
 
-Raft is multiplexed over the internode mesh rather than using a separate port. The internode port is assigned automatically and advertised through gossip; only the gossip port requires predictable exposure.
+Raft is multiplexed over the internode mesh rather than using a separate port. The internode port is assigned automatically and advertised through gossip. The gossip port is predictable by default, but peers must also be able to reach each node's advertised internode TCP port.
 
 ## Observability
 
@@ -205,19 +228,19 @@ Built-in liveness checks (wired to the liveness endpoint):
 
 - **gossip** — healthy while the node's gossip health score stays low, with a boot grace window so a rejoining node is not killed prematurely.
 - **raft last-contact** — a voting follower fails if it has not heard from a leader recently; a standby tolerates a much longer gap; leaders always pass.
-- **process-group broadcast** — fails if a group sees no broadcast traffic for an extended period, catching a wedged event loop or a persistent partition.
+- **process-group broadcast** — fails when the process-group service has neither sent nor received any broadcast for its activity ceiling, catching a wedged service or a persistent partition.
 
 ## Recovery and Failure Modes
 
 Raft state is fs-durable, but the cluster's primary durability still comes from a live quorum. The practical rules:
 
-- Keep a voter majority alive. With 5 voters you tolerate 2 simultaneous voter failures; standbys are promoted to refill open slots. Drop below a majority and writes (new Consistent/Strong registrations and lock acquisitions) stall until quorum returns. Existing names and lookups continue to serve from local replicas.
+- Keep a voter majority alive. With 5 voters you tolerate 2 simultaneous voter failures; standbys are promoted to refill open slots. Drop below a majority and writes (new Consistent/Strong registrations and lock acquisitions) stall until quorum returns. Locally replicated state can still answer some reads, but do not treat those reads as proof that a partitioned node has the latest value.
 - The leader proactively evicts a voter that is both heartbeat-silent and gossip-dead, so a dead voter does not permanently block quorum while a standby is promoted in.
-- To recover a cluster that has lost quorum, restart the failed nodes. They rejoin gossip and the surviving members fold them back in. Spreading voters across `failure_domain`s is what prevents a single zone failure from causing quorum loss in the first place.
+- To recover a cluster that has lost quorum, restart the failed nodes. They rejoin gossip and the surviving members fold them back in. Spreading voters across `failure_domain`s reduces the chance that a single zone failure causes quorum loss.
 
 ## See Also
 
-- [Configuration](guides/configuration.md#cluster) — every cluster config key
+- [Configuration](guides/configuration.md#cluster) — related cluster settings
 - [Process](lua/core/process.md) — registering and resolving processes by name
 - [System](lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
 - [Observability](guides/observability.md) — metrics and health endpoints

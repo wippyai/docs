@@ -119,7 +119,7 @@ Global security behavior. Individual policies are defined as [security.policy en
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `strict_mode` | bool | false | Deny access when security context is incomplete |
+| `strict_mode` | bool | true | Deny access when security context is incomplete |
 
 ```yaml
 security:
@@ -252,11 +252,11 @@ Distributed tracing and metrics export via OTLP.
 | `metrics_enabled` | bool | false | Export metrics |
 | `http.enabled` | bool | true | Trace HTTP requests |
 | `http.extract_headers` | bool | true | Extract trace context from inbound headers |
-| `http.inject_headers` | bool | true | Inject trace context into outbound headers |
+| `http.inject_headers` | bool | true | Inject trace context into the HTTP response |
 | `process.enabled` | bool | true | Trace process lifecycle |
 | `process.trace_lifecycle` | bool | true | Emit spans for spawn/terminate |
 | `interceptor.enabled` | bool | true | Trace function calls |
-| `interceptor.order` | int | 100 | Interceptor priority |
+| `interceptor.order` | int | 100 | Decoded compatibility field; runtime v0.3.32a registers the interceptor at order 100 regardless of this value |
 | `queue.enabled` | bool | true | Trace queue publish/consume |
 | `temporal.enabled` | bool | false | Trace Temporal workflows |
 
@@ -369,8 +369,13 @@ TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh
 | `internode.auto_port` | bool | true | Discover the actual port at boot, pin it, and advertise it in gossip |
 | `internode.advertise_addr` | string | | Additional relay endpoint (IP or DNS name) published for upgraded peers — for NAT or load-balanced reachability |
 | `internode.advertise_port` | int | 0 | Port for `advertise_addr` (0 = bind port; requires `advertise_addr`) |
+| `internode.identity_key` | string | | Base64-encoded Ed25519 private seed or key; required unless `identity_key_file` is set |
+| `internode.identity_key_file` | string | | File containing a base64-encoded Ed25519 private seed or key; required unless `identity_key` is set |
+| `internode.trusted_peer_keys` | map | | Node-name to base64 public-key map; must include the local node and every trusted peer |
 
 `advertise_addr`/`advertise_port` publish an additive endpoint in node metadata while the bind endpoint stays advertised unchanged, so mixed-version clusters keep connecting during a rolling upgrade.
+
+Every clustered node needs its own internode private identity and a trusted-public-key map. Configure exactly one private-key source. Both inline values and key files must contain a base64-encoded 32-byte seed or 64-byte key; trusted values are base64-encoded public keys.
 
 ### Raft (consensus)
 
@@ -381,10 +386,10 @@ The bounded Raft core stores durable state under `raft.data_dir` by default (`~/
 | `raft.data_dir` | string | `~/.wippy/store` | Directory for fs-durable Raft state and durable CRDT snapshots (under `<data_dir>/_sys/`). Diskless only when no path resolves (no home dir and none set) |
 | `raft.enabled` | bool | true | Run a Raft node; `false` makes this a gossip-only client |
 | `raft.role` | string | server | `server` runs a Raft node; `client` is gossip-only |
-| `raft.eligible` | bool | true | Whether this node may be selected as a voter |
+| `raft.eligible` | bool | true | Whether this node may be selected as a voter or standby; false keeps it outside Raft as a client |
 | `raft.priority` | int | 100 | Voter selection priority (lower is preferred) |
-| `raft.bootstrap_expect` | int | 1 | Initial quorum size: `0`=join existing, `1`=single-node, `N`=wait for N eligible peers then form quorum |
-| `raft.max_voters` | int | 5 | Voter ceiling (must be odd); extra eligible nodes become standbys |
+| `raft.bootstrap_expect` | int | 1 | Initial quorum size: `0`=join existing, `1`=single-node, `N`=wait for N eligible nodes including the local node, then form quorum |
+| `raft.max_voters` | int | 5 | Voter ceiling (must be odd); up to `max_standbys` additional eligible nodes become standbys, and the rest remain clients |
 | `raft.max_standbys` | int | 4 | Non-voting members kept warm for promotion; nodes beyond voters+standbys are not Raft members |
 | `raft.reconcile_debounce` | duration | 2s | Coalesce window after a gossip event before the voter reconciler runs |
 | `raft.reconcile_timeout` | duration | 2s | Bound per reconcile pass |
@@ -405,6 +410,10 @@ Single-node (development) — clustering on, bootstraps itself immediately:
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -420,6 +429,12 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
     max_voters: 5
@@ -433,6 +448,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```
@@ -443,7 +464,7 @@ Language Server Protocol server for editor integrations.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `enabled` | bool | false | Enable the TCP server |
+| `enabled` | bool | false | Enable the LSP service and TCP server; the HTTP transport also requires this |
 | `address` | string | :7777 | TCP listen address |
 | `http_enabled` | bool | false | Enable the HTTP transport |
 | `http_address` | string | :7778 | HTTP listen address |

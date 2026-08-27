@@ -15,7 +15,7 @@ Wippy includes a Language Server Protocol (LSP) server for Lua editor features. 
 - Find references
 - Document and workspace symbols
 - Call hierarchy (incoming and outgoing calls)
-- Real-time diagnostics (parse errors, type errors)
+- Pull diagnostics for type errors in the current editor overlay after successful parsing
 - Signature help for function parameters
 
 ## Configuration
@@ -23,12 +23,6 @@ Wippy includes a Language Server Protocol (LSP) server for Lua editor features. 
 Enable the LSP server in `.wippy.yaml`:
 
 ```yaml
-version: "1.0"
-
-lua:
-  type_system:
-    enabled: true
-
 lsp:
   enabled: true
   address: ":7777"
@@ -38,7 +32,7 @@ lsp:
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| `enabled` | false | Enable the TCP server |
+| `enabled` | false | Enable the LSP service and TCP server |
 | `address` | :7777 | TCP listen address |
 | `http_enabled` | false | Enable the HTTP transport |
 | `http_address` | :7778 | HTTP listen address |
@@ -52,7 +46,7 @@ The TCP server speaks JSON-RPC 2.0 with standard LSP message framing (Content-Le
 
 ### HTTP Transport
 
-The HTTP transport accepts POST requests with JSON-RPC payloads. It supports browser-based editors and web tools and includes CORS headers for cross-origin access.
+The HTTP transport accepts POST requests with JSON-RPC payloads. It supports browser-based editors and web tools, answers CORS preflight `OPTIONS` requests, and includes CORS headers for cross-origin access.
 
 ```yaml
 lsp:
@@ -89,6 +83,9 @@ Key behaviors:
 | Method | Description |
 |--------|-------------|
 | `initialize` | Capability negotiation |
+| `initialized` | Initialization-complete notification |
+| `shutdown` | Shut down the protocol session |
+| `exit` | Exit notification |
 | `textDocument/didOpen` | Track opened documents |
 | `textDocument/didChange` | Full document sync |
 | `textDocument/didClose` | Release documents |
@@ -115,13 +112,9 @@ The completion engine resolves types through the code graph. It provides:
 
 ## Diagnostics
 
-Diagnostics are computed during indexing and include:
+After a document parses successfully, indexing stores type-checking diagnostics such as mismatches and undefined symbols. Diagnostics use the standard error, warning, information, and hint severities.
 
-- Parse errors (syntax problems)
-- Type checking errors (mismatches, undefined symbols)
-- Severity levels: error, warning, information, hint
-
-Diagnostics update as you type through the document overlay system.
+Full-document change notifications update the overlay used for diagnostics. Clients retrieve the current stored result with `textDocument/diagnostic`; this server does not push `textDocument/publishDiagnostics` notifications. A parse failure aborts re-indexing before new diagnostics are stored, so the pull result does not report that syntax error and can retain the previous successful result.
 
 ## See Also
 

@@ -176,7 +176,7 @@ Checked 42 entries: 5 errors, 12 warnings
 
 ### JSON Format
 
-Machine-readable output for CI/CD integration:
+Machine-readable output for CI/CD processing:
 
 ```bash
 wippy lint --json
@@ -213,13 +213,19 @@ wippy lint --cache-reset
 
 ## CI Integration
 
-Use JSON output and exit codes for automated checks:
+In table and summary modes, the command exits non-zero when the filtered result contains errors. Warnings and hints do not affect the exit code, even when `--level warning` or `--level hint` displays them.
+
+JSON mode is different: after successfully encoding the result, `wippy lint --json` exits with code 0 even when `error_count` is non-zero. A CI job using JSON output must parse `error_count` itself. To use the command's exit status as the gate, run a non-JSON invocation:
+
+```bash
+wippy lint --level error
+```
+
+You can produce a report separately without treating its exit status as the lint result:
 
 ```bash
 wippy lint --json --level error > lint-results.json
 ```
-
-The linter exits with code 0 when no errors are found, and non-zero when there are errors.
 
 Example GitHub Actions step:
 
@@ -241,6 +247,8 @@ Example GitHub Actions step:
 | `--no-color` | | false | Disable colored output |
 | `--rules` | | false | Enable lint rules (W-series style/quality checks) |
 | `--cache-reset` | | false | Clear cache before linting |
+| `--profile` | | | Apply a workspace profile from merged runtime configuration; repeat to apply profiles in order |
+| `--set` | | | Override a merged configuration value as `section.path=value`; repeat for multiple overrides |
 | `--lock-file` | `-l` | wippy.lock | Path to lock file |
 
 ## See Also
