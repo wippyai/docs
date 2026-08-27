@@ -66,13 +66,13 @@
       {
         "title": "Data Formats",
         "children": [
-          {"title": "JSON", "path": "lua/data/json"},
-          {"title": "YAML", "path": "lua/data/yaml"},
-          {"title": "Base64", "path": "lua/data/base64"},
-          {"title": "Compress", "path": "lua/data/compress"},
+          {"title": "JSON-Kodierung", "path": "lua/data/json"},
+          {"title": "YAML-Kodierung", "path": "lua/data/yaml"},
+          {"title": "Base64-Kodierung", "path": "lua/data/base64"},
+          {"title": "Komprimierung", "path": "lua/data/compress"},
           {"title": "Archive", "path": "lua/data/archive"},
-          {"title": "Payload", "path": "lua/data/payload"},
-          {"title": "Excel", "path": "lua/data/excel"}
+          {"title": "Payload-Kodierung", "path": "lua/data/payload"},
+          {"title": "Excel-Tabellen", "path": "lua/data/excel"}
         ]
       },
       {

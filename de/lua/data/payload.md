@@ -1,6 +1,6 @@
 ---
 title: "Payload-Kodierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Typisierte Payloads erstellen, ihr Format untersuchen, Werte extrahieren und zwischen unterstützten Darstellungen transkodieren."
 ---
 
 # Payload-Kodierung
@@ -8,14 +8,16 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Konvertieren Sie Daten zwischen Formaten einschließlich JSON, MessagePack und Binär. Behandeln Sie typisierte Payloads für Inter-Service-Kommunikation und Workflow-Datenübergabe.
+Payloads transportieren typisierte Werte zwischen Funktionen, Prozessen, Services und Workflows. Sie lassen sich untersuchen, extrahieren oder zwischen unterstützten Formaten transkodieren.
+
+Diese Seite ist eine API-Referenz mit partiellen Transportrezepten. Werte wie `p`, `input_data` und der asynchrone Zieleintrag stammen aus der umgebenden Anwendung.
 
 ## Laden
 
-Globaler Namespace. Kein require erforderlich.
+`payload` ist ein globaler Namespace und benötigt kein `require()`.
 
 ```lua
-payload.new(...)  -- direkter Zugriff
+payload.new(...)  -- direct access
 ```
 
 ## Format-Konstanten
@@ -38,26 +40,26 @@ payload.format.ERROR    -- "golang/error"
 Erstellen Sie ein neues Payload aus einem Lua-Wert:
 
 ```lua
--- Aus Tabelle
+-- From table
 local p = payload.new({
     user_id = 123,
     name = "Alice",
     roles = {"admin", "user"}
 })
 
--- Aus String
+-- From string
 local str_p = payload.new("Hello, World!")
 
--- Aus Zahl
+-- From number
 local num_p = payload.new(42.5)
 
--- Aus Boolean
+-- From boolean
 local bool_p = payload.new(true)
 
--- Aus nil
+-- From nil
 local nil_p = payload.new(nil)
 
--- Aus Fehler
+-- From error
 local err_p = payload.new(errors.new("something failed"))
 ```
 
@@ -115,21 +117,24 @@ local p = payload.new({
     value = 123
 })
 
--- Zu JSON konvertieren
+-- Convert to JSON
 local json_p, err = p:transcode(payload.format.JSON)
 if err then
     return nil, err
 end
 print(json_p:get_format())  -- "json/plain"
 
--- Zu MessagePack konvertieren (kompaktes Binar)
+-- Convert to MessagePack (compact binary)
 local msgpack_p, err = p:transcode(payload.format.MSGPACK)
 if err then
     return nil, err
 end
 
--- Zu YAML konvertieren
-local yaml_p, err = p:transcode(payload.format.YAML)
+-- Convert to YAML
+local yaml_p, yaml_err = p:transcode(payload.format.YAML)
+if yaml_err then
+    return nil, yaml_err
+end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -144,15 +149,18 @@ Erzwingt die Dekodierung eines Payloads zu einem Lua-Wert, unabhängig vom Quell
 
 ```lua
 local data, err = p:unmarshal()
+if err then
+    return nil, err
+end
 ```
 
-`unmarshal()` transkodiert immer in das Lua-Format und gibt den resultierenden Lua-Wert zurück. Im Gegensatz zu `data()`, das den rohen zugrunde liegenden Wert zurückgibt (möglicherweise ein Go-Objekt für Nicht-Lua-Formate), garantiert `unmarshal()` einen vollständig dekodierten Lua-Wert.
+Sowohl `data()` als auch `unmarshal()` geben den vorhandenen Lua-Wert zurück oder transkodieren eine Nicht-Lua-Payload in das Lua-Format. `unmarshal()` ist strenger, wenn ein Transcoder ein ungültiges Ergebnis erzeugt: Die Methode gibt dann einen Fehler `errors.INTERNAL` zurück, während `data()` `nil` zurückgibt.
 
 **Gibt zurück:** `any, error`
 
 ## Async-Ergebnisse
 
-Payloads werden häufig von asynchronen Funktionsaufrufen empfangen:
+Asynchrone Funktionsaufrufe geben ihre Werte in Payloads zurück:
 
 ```lua
 local funcs = require("funcs")
@@ -162,14 +170,22 @@ if err then
     return nil, err
 end
 
--- Auf Ergebnis warten
+-- Wait for result
 local ch = future:response()
-local result_payload, ok = ch:receive()
+local _, ok = ch:receive()
 if not ok then
     return nil, errors.new("channel closed")
 end
 
--- Daten aus Payload extrahieren
+local result_payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+if result_payload == nil then
+    return nil, errors.new("compute returned no result")
+end
+
+-- Extract data from payload
 local result, err = result_payload:data()
 if err then
     return nil, err
@@ -178,6 +194,8 @@ end
 print(result.computed_value)
 ```
 
+Dieses Beispiel setzt voraus, dass `app.process:compute` genau einen Wert zurückgibt. Bei keinem Ergebnis gibt `future:result()` `nil` zurück; bei mehreren Ergebnissen gibt es statt einer einzelnen `Payload` eine Lua-Tabelle zurück. Aufrufer müssen diese Formen getrennt behandeln.
+
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
@@ -185,4 +203,4 @@ print(result.computed_value)
 | Transkodierung fehlgeschlagen | `errors.INTERNAL` | nein |
 | Ergebnis ist kein gültiger Lua-Wert | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.

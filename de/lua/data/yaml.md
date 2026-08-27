@@ -1,6 +1,6 @@
 ---
 title: "YAML-Kodierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Lua-Tabellen als YAML kodieren und YAML-Dokumente in Lua-Werte dekodieren."
 ---
 
 # YAML-Kodierung
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Parsen Sie YAML-Dokumente in Lua-Tabellen und serialisieren Sie Lua-Werte zu YAML-Strings.
+Das Modul `yaml` serialisiert Lua-Tabellen als YAML und parst YAML-Dokumente in Lua-Werte.
+
+Diese Seite ist eine API-Referenz. Ausdrücke, die nur eine Ausgabe zeigen, veranschaulichen erfolgreiche Kodierung; Beispiele, die einen Wert weiterverwenden, erfassen den optionalen zweiten Rückgabewert `error`.
 
 ## Laden
 
@@ -17,32 +19,33 @@ Parsen Sie YAML-Dokumente in Lua-Tabellen und serialisieren Sie Lua-Werte zu YAM
 local yaml = require("yaml")
 ```
 
+Fügen Sie `yaml` zur `modules:`-Liste des ausführbaren Eintrags hinzu, bevor Sie das Modul laden.
+
 ## Kodierung
 
-### Wert kodieren
+### `encode`
 
 Kodiert eine Lua-Tabelle ins YAML-Format.
 
 ```lua
--- Einfache Schlüssel-Wert-Paare
+-- Simple key-value
 local config = {
     name = "myapp",
     port = 8080,
     debug = true
 }
-local out = yaml.encode(config)
--- name: myapp
--- port: 8080
--- debug: true
+local out, err = yaml.encode(config)
+if err then return nil, err end
+-- YAML mapping containing name, port, and debug.
 
--- Arrays werden zu YAML-Listen
+-- Arrays become YAML lists
 local items = {"apple", "banana", "cherry"}
 yaml.encode(items)
 -- - apple
 -- - banana
 -- - cherry
 
--- Verschachtelte Strukturen
+-- Nested structures
 local server = {
     http = {
         address = ":8080",
@@ -69,7 +72,7 @@ yaml.encode(server)
 | `sort_unordered` | boolean | Felder, die nicht in `field_order` sind, alphabetisch sortieren |
 
 ```lua
--- Feldreihenfolge in Ausgabe steuern
+-- Control field order in output
 local entry = {
     zebra = 1,
     alpha = 2,
@@ -77,17 +80,18 @@ local entry = {
     kind = "demo"
 }
 
--- Felder erscheinen in angegebener Reihenfolge, Rest alphabetisch sortiert
-local result = yaml.encode(entry, {
+-- Fields appear in specified order, remaining sorted alphabetically
+local result, encode_err = yaml.encode(entry, {
     field_order = {"name", "kind"},
     sort_unordered = true
 })
+if encode_err then return nil, encode_err end
 -- name: test
 -- kind: demo
 -- alpha: 2
 -- zebra: 1
 
--- Alle Felder alphabetisch sortieren
+-- Just sort all fields alphabetically
 yaml.encode(entry, {sort_unordered = true})
 -- alpha: 2
 -- kind: demo
@@ -99,12 +103,12 @@ yaml.encode(entry, {sort_unordered = true})
 
 ## Dekodierung
 
-### String dekodieren
+### `decode`
 
-Parst einen YAML-String in eine Lua-Tabelle.
+Parst einen YAML-String in einen Lua-Wert.
 
 ```lua
--- Konfiguration parsen
+-- Parse configuration
 local config, err = yaml.decode([[
 server:
   host: localhost
@@ -122,15 +126,17 @@ print(config.server.host)     -- "localhost"
 print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
--- Aus Dateiinhalt parsen
-local content = fs.read("config.yaml")
+-- Parse from file content
+local fs = require("fs")
+local config_fs = assert(fs.get("app:config"))
+local content = assert(config_fs:readfile("config.yaml"))
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")
 end
 
--- Gemischte Typen behandeln
-local data = yaml.decode([[
+-- Handle mixed types
+local data, data_err = yaml.decode([[
 name: test
 count: 42
 ratio: 3.14
@@ -139,6 +145,7 @@ tags:
   - lua
   - wippy
 ]])
+if data_err then return nil, data_err end
 print(type(data.count))    -- "number"
 print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
@@ -148,7 +155,7 @@ print(type(data.tags))     -- "table"
 |-----------|------|-------------|
 | `data` | string | Zu parsender YAML-String |
 
-**Gibt zurück:** `any, error` - Gibt table, array, string, number oder boolean zurück, abhängig vom YAML-Inhalt
+**Rückgabewerte:** `any, error` — der Werttyp hängt vom YAML-Inhalt ab
 
 ## Fehler
 
@@ -159,4 +166,4 @@ print(type(data.tags))     -- "table"
 | Leerer String (decode) | `errors.INVALID` | nein |
 | Ungültige YAML-Syntax | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
