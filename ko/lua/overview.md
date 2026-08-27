@@ -1,47 +1,52 @@
 ---
 title: "Lua 런타임"
-description: "I/O 바운드 및 비즈니스 로직 워크로드에 최적화된 Wippy의 주요 컴퓨트 런타임입니다. 코드는 메시지 전달로 통신하는 격리된 프로세스에서 실행됩니다. 공유 메모리도 락도 없습니다."
+description: "Lua code가 Wippy process에서 실행되고 channel로 통신하며 module을 load하고 error를 처리하는 방식을 설명합니다."
 ---
 
 # Lua 런타임
 
-I/O 바운드 및 비즈니스 로직 워크로드에 최적화된 Wippy의 주요 컴퓨트 런타임입니다. 코드는 메시지 전달로 통신하는 격리된 프로세스에서 실행됩니다. 공유 메모리도 락도 없습니다.
+Lua는 I/O-bound work와 business logic을 위한 Wippy의 주 runtime입니다. code는 shared memory 대신 message passing으로 통신하는 isolated process에서 실행됩니다.
 
-Wippy는 폴리글랏 런타임으로 설계되었습니다. Lua가 주요 언어이지만, 향후 버전에서는 컴퓨트 집약적이거나 특수한 워크로드를 위해 WebAssembly와 Temporal 통합을 통해 추가 언어를 지원할 예정입니다.
+이 페이지는 conceptual overview입니다. code block은 독립된 reference snippet이며 `inbox`, `events`, `handle_message` 같은 이름은 surrounding application이 제공하는 value 또는 callback을 뜻합니다.
+
+Lua의 design tradeoff와 WebAssembly와의 관계는 [Wippy가 Lua를 사용하는 이유](why-lua.md)를 참조하십시오.
 
 ## 프로세스
 
 Lua 코드는 **프로세스** 내에서 실행됩니다. 스케줄러가 관리하는 격리된 실행 컨텍스트입니다. 각 프로세스는:
 
-- 자체 메모리 공간을 가집니다
-- 블로킹 작업(I/O, 채널)에서 양보합니다
-- 모니터링 및 감독할 수 있습니다
-- 머신당 수천 개로 확장 가능합니다
-
-<note>
-일반적인 Lua 프로세스는 약 13 KB의 기본 메모리 오버헤드를 가집니다.
-</note>
+- 자체 memory space를 가집니다.
+- I/O와 channel access 같은 blocking operation 중 yield합니다.
+- monitor와 supervise가 가능합니다.
+- 한 machine에서 수천 개의 다른 process와 함께 실행할 수 있습니다.
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "task", {data = "work"})
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then
+    return nil, err
+end
+
+local sent, send_err = process.send(pid, "task", {data = "work"})
+if send_err then
+    return nil, send_err
+end
 ```
 
-생성, 링킹, 슈퍼비전은 [프로세스 관리](lua/core/process.md)를 참조하세요.
+executable Lua entry는 `process`를 ambient global로 받습니다. `modules` list에 추가하지 않고 `require("process")`로 load할 수도 있습니다. spawn, link, supervision은 [프로세스 관리](core/process.md)를 참조하십시오.
 
 ## 채널
 
-통신을 위한 Go 스타일 채널:
+channel은 concurrent task 간 통신을 제공합니다.
 
 ```lua
-local ch = channel.new()        -- 버퍼 없음
+local sync_ch = channel.new()   -- unbuffered
 local buffered = channel.new(10)
 
-ch:send(value)                  -- 수신될 때까지 블록
-local val, ok = ch:receive()    -- 준비될 때까지 블록
+buffered:send("work")           -- completes while buffer space is available
+local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-select와 패턴은 [채널](lua/core/channel.md)을 참조하세요.
+select와 pattern은 [채널](core/channel.md)을 참조하십시오.
 
 ## 코루틴
 
@@ -53,10 +58,10 @@ coroutine.spawn(function()
     ch:send(data)
 end)
 
-do_other_work()  -- 즉시 계속
+do_other_work()  -- continues immediately
 ```
 
-생성된 코루틴은 스케줄러가 관리합니다. 수동 yield/resume이 필요 없습니다.
+생성된 coroutine은 scheduler가 관리하므로 caller가 직접 yield하거나 resume하지 않습니다.
 
 ## Select
 
@@ -70,7 +75,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- 타임아웃
+    -- timed out
 elseif r.channel == events then
     handle_event(r.value)
 else
@@ -80,37 +85,40 @@ end
 
 ## 전역
 
-`require` 없이 항상 사용 가능하며, `modules:`에 나열할 필요가 없습니다:
+다음 global은 `require` 없이 사용할 수 있으며 `modules:`에 나열할 필요가 없습니다.
 
-- `process` - 프로세스 스폰, 메시지 전송, 모니터링 및 연결
 - `channel` - Go 스타일 채널
 - `payload` - 엔트리의 입력 payload
+- `process` - process spawning, messaging, monitoring, lifecycle operation
 - `print`, `subscribe`, `unsubscribe` - 로깅 및 pub/sub
 - `os`, `table`, `math`, `string`, `coroutine`, `errors` - 표준 라이브러리
 
 ## 모듈
 
-그 외 모든 것은 `require()`로 로드되며 엔트리의 `modules:` 허용 목록에 있어야 합니다:
+built-in runtime module 중 ambient가 아닌 것은 `require()`로 load하며 entry의 `modules:` allowlist에 있어야 합니다. executable entry는 `process`를 ambient global로 받으며 `require("process")`도 `modules:` 선언 없이 허용됩니다.
 
 ```lua
+local process = require("process")
 local json = require("json")
 local sql = require("sql")
 local http = require("http_client")
 ```
 
-사용 가능한 모듈은 엔트리 설정에 따라 다릅니다. [엔트리 정의](lua/entries.md)를 참조하세요.
+사용 가능한 module은 entry configuration에 따라 다릅니다. [엔트리 정의](entries.md)를 참조하십시오.
 
-## 외부 라이브러리
+Registry library도 같은 `require("alias")` syntax를 사용하지만 entry의 `imports:` map에 별도로 선언합니다.
 
-Wippy는 Luau에서 영감을 받은 [점진적 타입 시스템](lua/types.md)과 함께 Lua 5.3 구문을 사용합니다. 타입은 일급 런타임 값입니다. 검증을 위해 호출 가능하고, 인자로 전달 가능하며, 인트로스펙션 가능합니다. Zod나 Pydantic 같은 스키마 라이브러리의 필요성을 대체합니다.
+## 언어와 라이브러리 지원
+
+Wippy는 Luau에서 영감을 받은 [점진적 타입 시스템](types.md)과 함께 Lua 5.3 syntax를 사용합니다. type은 validation에 사용하고 argument로 전달하며 runtime에 inspect할 수 있는 first-class runtime value입니다.
 
 외부 Lua 라이브러리(LuaRocks 등)는 지원되지 않습니다. 런타임은 I/O, 네트워킹, 시스템 통합을 위한 내장 확장과 함께 자체 모듈 시스템을 제공합니다.
 
-커스텀 확장은 내부 문서의 [모듈](internals/modules.md)을 참조하세요.
+custom extension은 internals 문서의 [모듈](../internals/modules.md)을 참조하십시오.
 
 ## 오류 처리
 
-함수는 `result, error` 쌍을 반환합니다:
+function은 일반적으로 `result, error` pair를 반환합니다.
 
 ```lua
 local data, err = json.decode(input)
@@ -119,11 +127,11 @@ if err then
 end
 ```
 
-패턴은 [오류 처리](lua/core/errors.md)를 참조하세요.
+이 snippet은 `json`이 entry의 `modules` list에 있고 `input`이 decode할 문자열을 포함한다고 가정합니다. pattern은 [오류 처리](core/errors.md)를 참조하십시오.
 
 ## 다음은
 
-- [엔트리 정의](lua/entries.md) - 엔트리 포인트 설정
-- [채널](lua/core/channel.md) - 채널 패턴
-- [프로세스 관리](lua/core/process.md) - 생성 및 슈퍼비전
-- [함수](lua/core/funcs.md) - 프로세스 간 호출
+- [엔트리 정의](entries.md) - entry point 설정
+- [채널](core/channel.md) - channel pattern
+- [프로세스 관리](core/process.md) - spawning과 supervision
+- [함수](core/funcs.md) - cross-process call
