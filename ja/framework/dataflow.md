@@ -1,22 +1,24 @@
 ---
 title: "Dataflow"
-description: "The wippy/dataflow module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes —…"
+description: "Wippy Dataflow のノード、ルーティング、制御フロー、永続ワークフローを使って DAG ワークフローを構成し、実行します。"
 ---
 
 # Dataflow
 
-The `wippy/dataflow` module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes — functions, agents, cycles, and parallel processors — connected by typed data routes. The orchestrator manages execution, state persistence, and recovery.
+`wippy/dataflow` モジュールは、有向非巡回グラフ（DAG）のワークフローをオーケストレーションします。関数、エージェント、サイクル、並列プロセッサなどのノードが、名前付きで discriminator をキーにするルートを通じてデータを交換し、オーケストレーターが実行、永続状態、復旧を管理します。
 
-## Setup
+このページは概念例とリファレンス例を含む API 入門であり、単独で実行するチュートリアルではありません。`task`、`config`、`file_list` などの値と、`app:tokenize`、`app:worker` などの ID は、アプリケーションが提供するデータやレジストリエントリを表します。スニペットは[セットアップ](#セットアップ)で説明する永続化データベースとプロセスホストも前提とします。完全に実行できるプロジェクトは、[Dataflow ワークフローを構築する](../tutorials/dataflow.md)に従ってください。
 
-Add the module to your project:
+## セットアップ
+
+モジュールをプロジェクトに追加します。
 
 ```bash
 wippy add wippy/dataflow
 wippy install
 ```
 
-Declare the dependency:
+依存関係を宣言します。
 
 ```yaml
 version: "1.0"
@@ -29,13 +31,13 @@ entries:
     version: "*"
 ```
 
-The dataflow module depends on `wippy/agent`, `wippy/llm`, and `wippy/session` — these are resolved automatically when you run `wippy install`. The module requires a database resource at `app:db` for workflow persistence and runs migrations automatically via `wippy/migration`.
+Dataflow モジュールは `wippy/agent`、`wippy/llm`、`wippy/session`、`wippy/test`、`wippy/migration` に依存し、`wippy install` がそれらを解決します。既定ではワークフロー永続化に `app:db`、wake サービスに `app:processes` を使用します。これらのエントリを用意するか、`target_db` と `process_host` の要件を上書きしてください。Dataflow のマイグレーションは `wippy/migration` を通じて実行されます。
 
-The module publishes an `env.variable` entry `userspace.dataflow.env:web_host_origin` (default `https://front.wippy.ai`) that downstream flows can read for building public URLs. Override it through the env router or a requirement.
+モジュールは `userspace.dataflow.env:web_host_origin` という `env.variable` エントリ（既定値 `https://front.wippy.ai`）を公開します。下流のフローは公開 URL の構築にこの値を読み取れます。env ルーターまたは requirement で上書きしてください。
 
 ## Flow Builder
 
-The flow builder provides a fluent interface for composing workflows. Import it into your entry:
+Flow Builder はワークフローを構成する fluent インターフェースです。エントリにインポートします。
 
 ```yaml
 imports:
@@ -46,7 +48,7 @@ imports:
 local flow = require("flow")
 ```
 
-### Core API
+### コア API
 
 ```lua
 flow.create()
@@ -66,9 +68,9 @@ flow.template()
     :[operations]...
 ```
 
-### Linear Pipeline
+### 線形パイプライン
 
-Nodes chain automatically when no explicit routing is defined. Output of each node flows to the next:
+明示的なルーティングがなければノードは自動的に連結され、各ノードの出力が次のノードへ流れます。
 
 ```lua
 local result, err = flow.create()
@@ -79,9 +81,9 @@ local result, err = flow.create()
     :run()
 ```
 
-### Named Routing
+### 名前付きルーティング
 
-Use `:as()` to name nodes and `:to()` to route data between them. Only use `:as()` when the node needs to be referenced:
+`:as()` でノードに名前を付け、`:to()` でノード間のデータをルーティングします。`:as()` はそのノードを参照する必要がある場合にだけ使います。
 
 ```lua
 local result, err = flow.create()
@@ -101,11 +103,11 @@ local result, err = flow.create()
     :run()
 ```
 
-The second parameter to `:to()` is the **discriminator** — the input key at the receiving node. When a node receives multiple inputs, they are collected as a table keyed by discriminator.
+`:to()` の第 2 引数は **discriminator**、つまり受信ノード側の入力キーです。ノードが複数入力を受け取ると、それらは discriminator をキーとするテーブルにまとめられます。
 
-### Workflow Input and Static Data
+### ワークフロー入力と静的データ
 
-`:with_input()` is the single primary input to the workflow. `:with_data()` creates independent static data sources:
+`:with_input()` はワークフローへの単一の主入力です。`:with_data()` は独立した静的データソースを作成します。
 
 ```lua
 flow.create()
@@ -129,11 +131,11 @@ flow.create()
     :run()
 ```
 
-Use `:with_input()` for external data entering the workflow. Use `:with_data()` for config, constants, and reference data shared across multiple nodes. Static data uses reference optimization — the first route creates actual data, subsequent routes create lightweight references.
+ワークフローに入る外部データには `:with_input()` を使用します。複数ノードで共有する設定、定数、参照データには `:with_data()` を使用します。静的データには参照最適化が働き、最初のルートが実データを作成し、それ以降のルートは軽量な参照を作成します。
 
-### Conditional Routing
+### 条件付きルーティング
 
-Use `:when()` after `:to()` to add conditions. Conditions evaluate against the node's output using `expr` syntax:
+`:to()` の後に `:when()` を使って条件を追加します。条件は `expr` 構文でノード出力を評価します。
 
 ```lua
 flow.create()
@@ -148,7 +150,7 @@ flow.create()
     :run()
 ```
 
-Conditions can combine with inline transforms for more complex routing:
+条件とインライン変換を組み合わせると、より複雑なルーティングを構成できます。
 
 ```lua
 :func("app:decompose"):as("decompose")
@@ -156,20 +158,20 @@ Conditions can combine with inline transforms for more complex routing:
     :to("processor", "items", "output.items")
 ```
 
-Conditional expressions support: comparisons (`output.score > 0.8`), logical operators (`output.valid && output.count > 5`), array functions (`len(output.items) > 0`, `any(output.errors, {.critical})`), string operations (`output.status contains 'success'`), and optional chaining (`output.data?.nested?.value`).
+条件式では、比較（`output.score > 0.8`）、論理演算子（`output.valid && output.count > 5`）、配列関数（`len(output.items) > 0`、`any(output.errors, {.critical})`）、文字列操作（`output.status contains 'success'`）、optional chaining（`output.data?.nested?.value`）を使用できます。
 
-### Workflow Terminals
+### ワークフロー終端
 
-Route to `@success` or `@fail` to terminate the workflow explicitly. In nested contexts (cycles, parallel), terminals create node outputs instead of workflow outputs:
+`@success` または `@fail` へルーティングすると、ワークフローを明示的に終了します。ネストされたコンテキスト（サイクル、並列処理）では、終端はワークフロー出力ではなくノード出力を作成します。
 
 ```lua
 :func("app:final_step"):to("@success")
 :func("app:handler"):error_to("@fail")
 ```
 
-### Error Routing
+### エラールーティング
 
-Use `:error_to()` to route node errors to a handler. Errors can be routed as normal inputs to recovery nodes:
+`:error_to()` でノードエラーをハンドラーへルーティングします。エラーは通常の入力として復旧ノードへ渡せます。
 
 ```lua
 :agent("app:gpt_planner", { model = "gpt-5" }):as("gpt_planner")
@@ -185,27 +187,27 @@ Use `:error_to()` to route node errors to a handler. Errors can be routed as nor
 }):as("consolidator")
 ```
 
-This pattern runs both planners in parallel — if one fails, its error becomes the input for the consolidator, which proceeds with whatever results are available.
+このパターンは 2 つの planner を並列実行します。一方が失敗すると、そのエラーが consolidator の入力となり、利用できる結果だけで処理を続行します。
 
-## Input Merging
+## 入力のマージ
 
-How nodes receive inputs depends on discriminators and whether `args` is configured.
+ノードが入力を受け取る形は、discriminator と `args` の設定有無で決まります。
 
-**Without args — single default input:**
+**args なし — 単一の default 入力:**
 
 ```lua
 :func("source"):to("target")
 -- target receives: raw content (unwrapped)
 ```
 
-**Without args — single named input:**
+**args なし — 単一の名前付き入力:**
 
 ```lua
 :func("source"):to("target", "task")
 -- target receives: { task = content }
 ```
 
-**Without args — multiple inputs:**
+**args なし — 複数入力:**
 
 ```lua
 :func("source1"):to("target", "data")
@@ -213,7 +215,7 @@ How nodes receive inputs depends on discriminators and whether `args` is configu
 -- target receives: { data = content1, config = content2 }
 ```
 
-**With args — inputs merge into base:**
+**args あり — 入力をベースへマージ:**
 
 ```lua
 :func("app:api_client", {
@@ -224,12 +226,12 @@ How nodes receive inputs depends on discriminators and whether `args` is configu
 ```
 
 <note>
-Nodes with <code>args</code> cannot receive inputs with the <code>"default"</code> discriminator. Use named discriminators with <code>:to(target, "input_key")</code> instead.
+<code>args</code> または文字列形式の <code>input_transform</code> を持つノードは、<code>"default"</code> discriminator の入力を受け取れません。代わりに <code>:to(target, "input_key")</code> で名前付き discriminator を使用してください。
 </note>
 
-## Input Transforms
+## 入力変換
 
-Transform data before it reaches a node:
+ノードへ到達する前にデータを変換します。
 
 ```lua
 -- String transform: single expression
@@ -245,11 +247,11 @@ Transform data before it reaches a node:
 })
 ```
 
-Context variables available in transforms: `input` (workflow input), `inputs` (all incoming node inputs), `output` (current node's output when routing).
+変換で利用できるコンテキスト変数は、`input`（ワークフロー入力）、`inputs`（ノードへの全入力）、`output`（ルーティング時の現在ノード出力）です。
 
-### Inline Route Transforms
+### インラインルート変換
 
-The third parameter to `:to()` is an inline transform expression:
+`:to()` の第 3 引数はインライン変換式です。
 
 ```lua
 :func("source"):as("source")
@@ -258,11 +260,11 @@ The third parameter to `:to()` is an inline transform expression:
     :to("list", nil, "map(output.items, {.id})")
 ```
 
-## Node Types
+## ノード種別
 
-### Function Node
+### Function ノード
 
-Executes a registered `function.lua` entry:
+登録済みの `function.lua` エントリを実行します。
 
 ```lua
 :func("app:my_function", {
@@ -274,19 +276,19 @@ Executes a registered `function.lua` entry:
 })
 ```
 
-| Option | Type | Description |
+| オプション | 型 | 説明 |
 |--------|------|-------------|
-| `args` | table | Base arguments merged with node inputs |
-| `inputs` | table | Input requirements: `{ required = {...}, optional = {...} }` |
-| `context` | table | Execution context passed to function |
-| `input_transform` | string/table | Expression to transform inputs |
-| `metadata` | table | Node metadata (e.g., `{ title = "..." }`) |
+| `args` | table | ノード入力とマージするベース引数 |
+| `inputs` | table | 入力要件: `{ required = {...}, optional = {...} }` |
+| `context` | table | 関数へ渡す実行コンテキスト |
+| `input_transform` | string/table | 入力を変換する式 |
+| `metadata` | table | ノードメタデータ（例: `{ title = "..." }`） |
 
-If the function returns `{ _control = { commands = [...] } }`, the orchestrator spawns a child workflow. This is how nested flows work.
+関数が `{ _control = { commands = [...] } }` を返すと、オーケストレーターは子ワークフローを生成します。ネストされたフローはこの仕組みで動作します。
 
-### Agent Node
+### Agent ノード
 
-Executes an agent with tool calling and optional structured exit:
+ツール呼び出しと任意の構造化終了を持つエージェントを実行します。
 
 ```lua
 :agent("app:content_writer", {
@@ -310,23 +312,25 @@ Executes an agent with tool calling and optional structured exit:
 })
 ```
 
-| Option | Type | Description |
+| オプション | 型 | 説明 |
 |--------|------|-------------|
-| `model` | string | Override model |
-| `arena.prompt` | string | System prompt |
-| `arena.max_iterations` | number | Max reasoning loops (default: 64) |
-| `arena.min_iterations` | number | Min iterations before exit (default: 1) |
+| `model` | string | モデルを上書き |
+| `arena.prompt` | string | システムプロンプト |
+| `arena.max_iterations` | number | 推論ループの最大回数（既定 64） |
+| `arena.min_iterations` | number | 終了前の最小反復回数（既定 1） |
 | `arena.tool_calling` | string | `"auto"`、`"any"`（`exit_schema` が必要）、`"none"`（`exit_schema` を拒否） |
-| `arena.tools` | array | Tool registry IDs |
-| `arena.exit_schema` | table | JSON schema for structured exit |
-| `arena.exit_func_id` | string | Function to validate exit output |
-| `arena.context` | table | Additional context |
-| `inputs` | table | Input requirements |
-| `show_tool_calls` | boolean | Include tool calls in output |
-| `input_transform` | string/table | Transform inputs |
-| `metadata` | table | Node metadata |
+| `arena.tools` | array | ツールのレジストリ ID |
+| `arena.exit_schema` | table | 構造化終了用の JSON Schema |
+| `arena.exit_func_id` | string | 終了出力を検証する関数 |
+| `arena.context` | table | 追加コンテキスト |
+| `inputs` | table | 入力要件 |
+| `active_traits` | array | 選択したエージェントの有効 trait を上書き。空配列でこのノードでは無効化 |
+| `active_tools` | array | 選択したエージェントの有効ツールを上書き。空配列でこのノードでは無効化 |
+| `show_tool_calls` | boolean | 出力にツール呼び出しを含める |
+| `input_transform` | string/table | 入力を変換 |
+| `metadata` | table | ノードメタデータ |
 
-**Dynamic agent selection:** Pass an empty string as agent ID and resolve it via `input_transform`:
+**動的なエージェント選択:** エージェント ID に空文字列を渡し、`input_transform` で解決します。
 
 ```lua
 :agent("", {
@@ -342,11 +346,11 @@ Executes an agent with tool calling and optional structured exit:
 })
 ```
 
-**Exit validation:** When `exit_func_id` is set, the function validates the agent's exit output. On validation failure, the agent receives the error as observation and continues (up to `max_iterations`).
+**終了検証:** `exit_func_id` を設定すると、その関数がエージェントの終了出力を検証します。検証失敗時はエージェントがエラーを observation として受け取り、`max_iterations` まで続行します。
 
-### Cycle Node
+### Cycle ノード
 
-Iterates a function or template repeatedly with persistent state:
+永続状態を引き継ぎながら、関数またはテンプレートを繰り返し実行します。
 
 ```lua
 :cycle({
@@ -355,24 +359,25 @@ Iterates a function or template repeatedly with persistent state:
     initial_state = {
         entry_id = entry_id,
         content_prompt = prompt,
+        task = task,
         min_score = 8.0,
         feedback_history = {}
     }
 })
 ```
 
-The cycle function receives on each iteration:
+サイクル関数は各反復で次の値を受け取ります。
 
 ```lua
 {
-    input = <workflow_input>,
+    input = <workflow_input>,  -- only on the first iteration (iteration == 1); nil thereafter
     state = <accumulated_state>,
     last_result = <previous_iteration_output>,
     iteration = <current_iteration_number>
 }
 ```
 
-The function controls continuation:
+関数が継続を制御します。
 
 ```lua
 function my_cycle(cycle_context)
@@ -386,23 +391,28 @@ function my_cycle(cycle_context)
     end
 
     -- spawn child workflow for this iteration
+    -- task is read from state since cycle_context.input is nil after iteration 1
     return flow.create()
-        :with_input({ task = cycle_context.input.task })
+        :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
         :agent("app:qa")
         :run()
 end
 ```
 
-| Option | Type | Description |
+| オプション | 型 | 説明 |
 |--------|------|-------------|
-| `func_id` | string | Iteration function (mutually exclusive with `template`) |
-| `template` | FlowBuilder | Template for each iteration (mutually exclusive with `func_id`) |
-| `max_iterations` | number | Maximum iterations |
-| `initial_state` | table | Starting state |
-| `continue_condition` | string | Expression: continue while true |
+| `func_id` | string | 反復関数（`template` と排他） |
+| `template` | FlowBuilder | 各反復のテンプレート（`func_id` と排他） |
+| `max_iterations` | number | 最大反復回数（既定 100） |
+| `initial_state` | table | 初期状態（既定 `{}`） |
+| `continue_condition` | string | true の間継続する式 |
+| `inputs` | table | 入力要件 |
+| `context` | table | サイクル関数へ渡す実行コンテキスト |
+| `input_transform` | string/table | サイクルが受け取る前に入力を変換 |
+| `metadata` | table | ノードメタデータ |
 
-**Template-based cycle:**
+**テンプレートベースのサイクル:**
 
 ```lua
 :cycle({
@@ -413,9 +423,9 @@ end
 })
 ```
 
-### Parallel Node
+### Parallel ノード
 
-Map-reduce pattern over arrays:
+配列に対する map-reduce パターンです。
 
 ```lua
 :parallel({
@@ -424,7 +434,8 @@ Map-reduce pattern over arrays:
     iteration_input_key = "spec",
     passthrough_keys = { "task" },
     batch_size = 10,
-    on_error = "collect_errors",
+    scheduling = "rolling",
+    on_error = "continue",
     filter = "successes",
     unwrap = true,
     template = flow.template()
@@ -444,18 +455,22 @@ Map-reduce pattern over arrays:
 })
 ```
 
-| Option | Type | Description |
+| オプション | 型 | 説明 |
 |--------|------|-------------|
-| `source_array_key` | string | Input key containing the array (required) |
-| `template` | FlowBuilder | Template for each item (required, must route to `@success`) |
-| `iteration_input_key` | string | Input key for current item (default: `"default"`) |
-| `batch_size` | number | Items per parallel batch (default: 1 = sequential) |
-| `on_error` | string | `"collect_errors"` (default) or `"fail_fast"` |
-| `filter` | string | `"all"` (default), `"successes"`, `"failures"` |
-| `unwrap` | boolean | Return raw results instead of wrapped metadata (default: false) |
-| `passthrough_keys` | array | Input keys forwarded to every iteration |
+| `source_array_key` | string | 空でない配列を含む入力キー（必須） |
+| `template` | FlowBuilder | 各項目のテンプレート（必須、`@success` へルーティングすること） |
+| `iteration_input_key` | string | 現在項目の入力キー（既定 `"default"`） |
+| `batch_size` | number | 1 から 1000 の正の整数。同時実行項目の最大数（既定 1） |
+| `scheduling` | string | `"batch"`（既定）は波全体を待機。`"rolling"` は完了枠を補充し、`on_error = "continue"` が必要 |
+| `on_error` | string | `"continue"`（既定）または `"fail_fast"`。`"collect_errors"` は `"continue"` の互換別名 |
+| `filter` | string | `"all"`（既定）、`"successes"`、`"failures"` |
+| `unwrap` | boolean | ラップ済みメタデータではなく生の結果を返す（既定 false） |
+| `passthrough_keys` | array | 各反復へ転送する入力キー |
+| `inputs` | table | 入力要件 |
+| `input_transform` | string/table | 並列処理前に入力を変換 |
+| `metadata` | table | ノードメタデータ |
 
-**Passthrough keys** provide shared context (config, task description) to every iteration without duplicating data in the source array:
+**passthrough key** は、ソース配列内でデータを複製せずに、設定やタスク説明などの共有コンテキストを各反復へ渡します。
 
 ```lua
 :with_data(file_list):as("files"):to("processor", "files")
@@ -474,9 +489,9 @@ Map-reduce pattern over arrays:
 }):as("processor")
 ```
 
-### Signal Node
+### Signal ノード
 
-Pauses execution until an external signal arrives. Use for human approvals, external events, or staged workflows:
+外部シグナルが届くまで実行を一時停止します。人による承認、外部イベント、段階的なワークフローに使用します。
 
 ```lua
 :signal({
@@ -486,51 +501,66 @@ Pauses execution until an external signal arrives. Use for human approvals, exte
 })
 ```
 
-| Option | Type | Description |
+| オプション | 型 | 説明 |
 |--------|------|-------------|
-| `signal_id` | string | Signal name matched against `client:signal()`. If empty or omitted, a UUID v7 is generated at runtime |
-| `inputs` | table | Input requirements |
-| `input_transform` | string/table | Transform inputs before the node receives them |
-| `metadata` | table | Node metadata |
+| `signal_id` | string | `client:signal()` と照合するシグナル名。空または省略時はランタイムが UUID v7 を生成 |
+| `timeout` | string/number | 正の duration 文字列または正の有限ミリ秒。期限切れ時は `{ timeout = true, code = "SIGNAL_TIMEOUT" }` を出力 |
+| `inputs` | table | 入力要件 |
+| `input_transform` | string/table | ノードが受け取る前に入力を変換 |
+| `metadata` | table | ノードメタデータ |
 
-Send the signal from outside the workflow using the client API (see `client:signal()` below).
+クライアント API を使ってワークフロー外部からシグナルを送信します（後述の `client:signal()` を参照）。
 
-#### Behavior
+#### 動作
 
-The node yields with `wait_for_signal = true` and persists that yield in the workflow state. The orchestrator resumes the node when a matching `NODE_SIGNAL` commit arrives.
+ノードは `wait_for_signal = true` で yield し、その yield をワークフロー状態に永続化します。一致する `NODE_SIGNAL` コミットが到着すると、オーケストレーターがノードを再開します。
 
-- The signal is satisfied by any non-`nil` payload. `false`, `0`, `""`, and `{}` all satisfy the yield; only `nil` keeps it pending.
-- A signal yield blocks `COMPLETE_WORKFLOW` but does not block other pending nodes — parallel branches continue to execute while one branch waits.
-- Signals can be pre-queued before `:start()`: if a matching `NODE_SIGNAL` commit arrives before the signal node reaches the yield, it is delivered the moment the yield is tracked.
-- Only one signal satisfies each yield. If a second signal with the same `signal_id` arrives before the yield is satisfied, it overwrites the first.
-- When multiple signal yields share the same `signal_id`, the first matching yield receives the data.
-- If the `signal_id` field is absent, matching falls back to the node's discriminator.
-- Delivered signal data is passed to the node's output as the signal payload.
+- `client:signal()` は、省略、`nil`、`false` のデータを `{}` として保存します。この空オブジェクトと、保持される `0` や `""` などの値は yield を満たします。
+- シグナル yield は `COMPLETE_WORKFLOW` をブロックしますが、ほかの pending ノードはブロックしません。一方のブランチが待機中でも並列ブランチは実行を続けます。
+- `client:signal()` はシグナルを永続キューへ追加し、ワークフローのアクティベーションを要求します。ノードが yield に到達する前にシグナルが届いた場合、その yield が追跡された時点で配信されます。別途 `:start()` を呼ぶ必要はありません。
+- 各 yield を満たすシグナルは 1 つだけです。yield が満たされる前に同じ `signal_id` の 2 つ目のシグナルが届くと、最初のシグナルを上書きします。
+- 複数のアクティブな yield が同じ `signal_id` を共有する場合、一致する yield の 1 つがデータを受け取ります。どれになるかは未定義です。受信先が重要なら一意の ID を使用してください。
+- `signal_id` を省略すると、builder が返さない UUID v7 が生成されます。クライアント API から配信するシグナルには、明示的で安定した ID を設定してください。
+- 配信されたシグナルデータは、シグナルペイロードとしてノード出力へ渡されます。
 
-#### Durability and recovery
+#### 耐久性と復旧
 
-The signal yield is part of the workflow state, persisted through the same outbox mechanism as every other command. If the orchestrator process is killed while waiting:
+シグナル yield はワークフロー状態の一部であり、ほかのコマンドと同じ outbox 仕組みで永続化されます。待機中にオーケストレータープロセスが停止した場合:
 
-- The pending yield is restored on restart.
-- Signals delivered during the outage are queued and applied when the state reloads.
-- Compound pipelines (`func → signal → signal → func`) recover step-by-step — each signal can be delivered across a separate restart.
+- pending yield は再起動時に復元されます。
+- 停止中に配信されたシグナルはキューに入り、状態の再読み込み時に適用されます。
+- 複合パイプライン（`func → signal → signal → func`）は段階ごとに復旧し、各シグナルは別々の再起動をまたいで配信できます。
 
-Orphaned signal yields (yields whose parent process exited without completion) are cleaned up by the workflow state's process exit handler.
+親プロセスが完了せず終了した孤立シグナル yield は、ワークフロー状態のプロセス終了ハンドラーがクリーンアップします。
 
-#### Pipeline patterns
+#### パイプラインパターン
 
-Signal nodes participate in any topology:
+シグナルノードは任意のトポロジーに参加できます。上記の `flow` インポートと並べて client binding を追加してください。
+
+```yaml
+imports:
+  client: userspace.dataflow:client
+```
 
 ```lua
+local client = require("client")
+local c, client_err = client.new()
+if client_err then return nil, client_err end
+
 -- Human-in-the-loop approval between two functions
-flow.create()
+local approval_id, start_err = flow.create()
+    :with_input({ draft_id = "draft-123" })
     :func("app:draft")
     :signal({ signal_id = "approve_draft" })
     :func("app:publish")
-    :run()
+    :start()
+if start_err then return nil, start_err end
+
+local _, signal_err = c:signal(approval_id, "approve_draft", { approved = true })
+if signal_err then return nil, signal_err end
 
 -- Two parallel approvals that must both arrive before release
-flow.create()
+local release_id, release_err = flow.create()
     :with_input({ doc = "release-notes" })
         :as("trigger")
         :to("legal", "doc")
@@ -549,14 +579,21 @@ flow.create()
         :to("release")
 
     :func("app:release"):as("release"):to("@success")
-    :run()
+    :start()
+if release_err then return nil, release_err end
+
+local _, legal_err = c:signal(release_id, "legal_ok", { approved_by = "legal" })
+if legal_err then return nil, legal_err end
+
+local _, finance_err = c:signal(release_id, "finance_ok", { approved_by = "finance" })
+if finance_err then return nil, finance_err end
 ```
 
-Signal data is exposed as the node output, so downstream nodes receive whatever was passed to `client:signal()`.
+保存されたシグナルデータはノード出力として公開されます。下流ノードは送信されたペイロードを受け取りますが、省略、`nil`、`false` のデータは `{}` に正規化されます。
 
-### Join Node
+### Join ノード
 
-Collects multiple inputs before proceeding:
+複数の入力を収集してから処理を進めます。
 
 ```lua
 :join({
@@ -566,15 +603,17 @@ Collects multiple inputs before proceeding:
 })
 ```
 
-| Option | Type | Description |
+| オプション | 型 | 説明 |
 |--------|------|-------------|
-| `output_mode` | string | `"object"` (default) or `"array"` (arrival order) |
-| `ignored_keys` | array | Input keys excluded from output |
-| `inputs` | table | Input requirements |
+| `output_mode` | string | `"object"`（既定）または `"array"`（到着順） |
+| `ignored_keys` | array | 出力から除外する入力キー |
+| `inputs` | table | 入力要件 |
+| `input_transform` | string/table | join 前に入力を変換 |
+| `metadata` | table | ノードメタデータ |
 
-## Templates
+## テンプレート
 
-Templates define reusable sub-workflows. Use `flow.template()` to create, `:use()` to inline:
+テンプレートは再利用可能なサブワークフローを定義します。`flow.template()` で作成し、`:use()` でインライン化します。
 
 ```lua
 local preprocessor = flow.template()
@@ -588,11 +627,11 @@ flow.create()
     :run()
 ```
 
-Templates inline their operations into the parent flow at compile time.
+テンプレートの操作はコンパイル時に親フローへインライン化されます。
 
-## Nested Workflows
+## ネストされたワークフロー
 
-Functions used in cycles and parallel nodes can spawn child workflows by returning `flow.create():run()`:
+サイクルや並列ノードで使う関数は、`flow.create():run()` を返すことで子ワークフローを生成できます。
 
 ```lua
 function my_processor(input)
@@ -604,15 +643,15 @@ function my_processor(input)
 end
 ```
 
-When `:run()` executes inside an existing dataflow context, it returns `{ _control = { commands = [...] } }` instead of executing directly. The orchestrator handles the child workflow through the yield mechanism.
+`:run()` が既存の Dataflow コンテキスト内で実行されると、直接実行する代わりに `{ _control = { commands = [...] } }` を返します。オーケストレーターは yield 仕組みを通じて子ワークフローを処理します。
 
 <note>
-Functions that participate in dataflow composition <strong>must</strong> return <code>flow.create():run()</code>. Functions returning anything else cannot spawn child workflows.
+子ワークフローを生成する必要がある関数は <code>flow.create():run()</code> を返さなければなりません。ほかの Dataflow 関数は通常の結果を返せます。
 </note>
 
-## Synchronous vs Asynchronous
+## 同期実行と非同期実行
 
-`:run()` blocks until the workflow completes and returns output:
+`:run()` は同期的に実行します。通常はワークフローの終端出力を返しますが、耐久的な待機によって先に passivate される場合があります。その場合は、ワークフロー ID とともに `pending = true` および `passivated = true` を持つ結果が返ります。
 
 ```lua
 local result, err = flow.create()
@@ -621,7 +660,7 @@ local result, err = flow.create()
     :run()
 ```
 
-`:start()` returns immediately with a workflow ID:
+`:start()` はワークフロー ID を直ちに返します。
 
 ```lua
 local dataflow_id, err = flow.create()
@@ -630,11 +669,11 @@ local dataflow_id, err = flow.create()
     :start()
 ```
 
-`:start()` cannot be used in nested contexts.
+`:start()` はネストされたコンテキストでは使用できません。
 
 ## Client API
 
-For programmatic workflow management:
+プログラムからワークフローを管理します。
 
 ```yaml
 imports:
@@ -647,90 +686,91 @@ local client = require("client")
 local c, err = client.new()
 ```
 
-| Method | Description |
+| メソッド | 説明 |
 |--------|-------------|
-| `client.new()` | Create client (requires security actor) |
-| `:create_workflow(commands, options?)` | Create workflow, returns `dataflow_id` |
-| `:execute(dataflow_id, options?)` | Run synchronously, returns result |
-| `:start(dataflow_id, options?)` | Run asynchronously, returns `dataflow_id` |
-| `:output(dataflow_id)` | Fetch workflow outputs |
-| `:get_status(dataflow_id)` | Get current status |
-| `:cancel(dataflow_id, timeout?)` | Gracefully cancel (default: 30s) |
-| `:terminate(dataflow_id)` | Force terminate |
-| `:signal(dataflow_id, signal_id, data?)` | Deliver an external signal to a waiting signal node |
+| `client.new()` | クライアントを作成（現在の security actor と scope が必要） |
+| `:create_workflow(commands, options?)` | ワークフローを作成し `dataflow_id` を返す |
+| `:execute(dataflow_id, options?)` | 同期実行して結果を返す |
+| `:start(dataflow_id, options?)` | 非同期実行して `dataflow_id` を返す |
+| `:output(dataflow_id)` | ワークフロー出力を取得 |
+| `:get_status(dataflow_id)` | 現在の状態を取得 |
+| `:cancel(dataflow_id, timeout?)` | graceful cancel（既定 30 秒） |
+| `:terminate(dataflow_id)` | 強制終了 |
+| `:signal(dataflow_id, signal_id, data?)` | 待機中のシグナルノードへ外部シグナルを配信 |
+| `:revive(dataflow_id)` | 終端していないワークフローのアクティベーションを要求 |
 
-## Workflow Status
+## ワークフロー状態
 
-| Status | Description |
+| 状態 | 説明 |
 |--------|-------------|
-| `template` | Node is a template instance |
-| `pending` | Waiting for inputs |
-| `ready` | Inputs collected, ready to execute |
-| `running` | Actively executing |
-| `paused` | Yielded, waiting for child workflow |
-| `completed` | Finished successfully |
-| `failed` | Failed |
-| `cancelled` | User cancelled |
-| `skipped` | Conditional branch not taken |
-| `terminated` | Force terminated |
+| `pending` | 作成済みで未実行 |
+| `running` | ワークフロー実行中 |
+| `waiting` | シグナルなどの耐久イベントを待って passivate 中 |
+| `completed` | 正常完了 |
+| `failed` | 失敗 |
+| `cancelled` | ユーザーがキャンセル |
+| `terminated` | 強制終了 |
 
-## Metadata
+ノードには別のライフサイクルがあります。現在のノード遷移では `template`、`pending`、`running`、`waiting`、`completed`、`failed`、`cancelled` を使用します。`ready` は読み込まれたワークフローのアクティベーション状態として受け付けます。`paused`、`skipped`、ノードレベルの `terminated` は互換値として認識されますが、現在のノード遷移には書き込まれません。
+
+## メタデータ
 
 ```lua
 flow.create()
     :with_title("Document Processing Pipeline")
     :with_metadata({ source = "api", priority = "high" })
+    :with_input({ document_id = "doc-123" })
     :func("app:process", { metadata = { title = "Process Document" } })
     :run()
 ```
 
-Title defaults to "Flow Builder Workflow" if not provided.
+タイトルを指定しない場合は `"Flow Builder Workflow"` になります。
 
-## Validation Rules
+## 検証規則
 
-The compiler validates workflows at compile time:
+コンパイラーはコンパイル時にワークフローを検証します。
 
-- All `:as(name)` names must be unique
-- All `:to()` and `:error_to()` targets must reference existing names (except `@success`, `@fail`)
-- Graph must be acyclic
-- All nodes must have incoming routes (from another node, workflow input, or static data)
-- `:cycle()` requires `func_id` or `template` (not both)
-- `:parallel()` requires `source_array_key` and `template`
-- At least one path must lead to `@success` or have auto-output
-- `:when()` only follows `:to()` or `:error_to()` from nodes (not static data)
-- Nodes with `args` cannot receive inputs with `"default"` discriminator
+- `:as(name)` の名前はすべて一意
+- `:to()` と `:error_to()` の対象は既存名を参照（`@success`、`@fail` を除く）
+- グラフは非巡回
+- 全ノードに入力ルートがある（別ノード、ワークフロー入力、静的データのいずれか）
+- `:cycle()` には `func_id` または `template` の一方が必要
+- `:parallel()` には `source_array_key` と `template` が必要
+- 少なくとも 1 つのパスが `@success` に到達するか、自動出力を持つ
+- `:when()` はノードからの `:to()` または `:error_to()` の直後だけで使用（静的データでは不可）
+- `args` または文字列形式の `input_transform` を持つノードは `"default"` discriminator の入力を受け取れない
 
-## Expression Reference
+## 式リファレンス
 
-Expressions use the `expr` module syntax, available in `:when()` conditions and `input_transform` values.
+式は `expr` モジュールの構文を使い、`:when()` 条件と `input_transform` 値で利用できます。
 
-**Operators:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
+**演算子:** `+`、`-`、`*`、`/`、`%`、`**`、`&`、`|`、`^`、`<<`、`>>`、`==`、`!=`、`<`、`<=`、`>`、`>=`、`&&`、`||`、`!`、`in`、`contains`、`startsWith`、`endsWith`
 
-**Array functions:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
+**配列関数:** `all()`、`any()`、`none()`、`one()`、`filter()`、`map()`、`count()`、`len()`、`first()`、`last()`
 
-**Math functions:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `round()`, `sqrt()`, `pow()`
+**数学関数:** `max()`、`min()`、`abs()`、`ceil()`、`floor()`、`round()`、`sqrt()`、`pow()`
 
-**String functions:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
+**文字列関数:** `len()`、`upper()`、`lower()`、`trim()`、`split()`、`join()`
 
-**Type functions:** `type()`, `int()`, `float()`, `string()`
+**型関数:** `type()`、`int()`、`float()`、`string()`
 
-**Literals:** numbers, strings, booleans (`true`/`false`), null (`nil`), arrays (`[1, 2, 3]`), objects (`{key: value}`)
+**リテラル:** 数値、文字列、真偽値（`true`/`false`）、null（`nil`）、配列（`[1, 2, 3]`）、オブジェクト（`{key: value}`）
 
-**Ternary:** `output.age >= 18 ? output.verified : false`
+**三項演算子:** `output.age >= 18 ? output.verified : false`
 
-**Optional chaining:** `output.data?.nested?.value`
+**optional chaining:** `output.data?.nested?.value`
 
-## Error Handling
+## エラー処理
 
-Both `:run()` and `:start()` follow standard Lua error conventions:
+`:run()` と `:start()` は標準の Lua エラー規約に従います。
 
-- Success: `data, nil` (run) or `dataflow_id, nil` (start)
-- Failure: `nil, error_message`
+- 成功: `data, nil`（run）または `dataflow_id, nil`（start）
+- 失敗: `nil, error_message`
 
-Error categories: compilation errors, client errors, workflow creation errors, execution errors, and workflow failures.
+エラー分類には、コンパイルエラー、クライアントエラー、ワークフロー作成エラー、実行エラー、ワークフロー失敗があります。
 
-## See Also
+## 関連項目
 
-- [Agents](framework/agents.md) - Agent framework used by agent nodes
-- [LLM](framework/llm.md) - LLM module
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Agents](./agents.md) — Agent ノードが使うエージェントフレームワーク
+- [LLM](./llm.md) — エージェントが使うモデルインターフェース
+- [Framework 概要](./overview.md) — Framework モジュールのインストールと利用
