@@ -5,17 +5,22 @@ description: "How page applications and web components receive configuration and
 
 # Proxy & Isolation
 
-The Web Host runs each child micro frontend in a sandboxed context and connects
-it to the host through the **Proxy API**. Page applications and web components
-both import that API from **`@wippy-fe/proxy`**.
+The Web Host connects page applications and web components to host services
+through the **Proxy API**. A packaged page runs in either a sandboxed `srcdoc`
+iframe or a Web Fragment realm, according to `hostConfig.renderEngine`. A web
+component runs in the host page's DOM. All three contexts import the API from
+**`@wippy-fe/proxy`**.
 
 ![Proxy API injection and nesting](../diagrams/proxy-layers.svg)
 
 ## The Proxy API
 
-The Proxy API is your entry point to the host. A runtime — `proxy.js` — delivers it: it puts the API and the current `AppConfig` on the page and exposes them through the **`@wippy-fe/proxy`** module.
+The Proxy API is your entry point to the host. An engine-specific runtime puts
+the API and current child configuration in the page context and exposes them
+through **`@wippy-fe/proxy`**.
 
-- For a **micro frontend app** (`view.page`), the host injects `proxy.js` into the page's `srcdoc`.
+- For a `view.page` using the **iframe engine**, the host injects `proxy.js` into the page's `srcdoc`.
+- For a `view.page` using the **Web Fragment engine**, the fragment gateway loads `proxy-fragment.js` in the reframed realm.
 - For a **web component** (`view.component`), the runtime is already present in the host page — the component mounts in the host DOM, not a separate iframe.
 
 Your code consumes it through the sync getters exported by `@wippy-fe/proxy`:
@@ -30,15 +35,22 @@ on('@visibility', (visible) => { /* pause or resume work */ })
 
 Portable Vue routing is the exception: `@wippy-fe/router` consumes `@history` and reports local navigation for you. Do not add manual routing subscriptions around it.
 
-These getters are **synchronous**: `host`, `api`, `on`, `config`, and the rest are ready the moment your code runs — config is in place before the runtime initializes (see below), so there is no handshake to await. Mark `@wippy-fe/proxy` as `external` in your Vite build — the host provides it through the import map. See [Proxy API](../micro-frontends/proxy-api.md) for the full surface.
+These getters are **synchronous** once application code runs: `host`, `api`,
+`on`, `config`, and the rest need no application-managed handshake. The iframe
+engine starts from pre-injected config; the fragment runtime resolves its config
+with the host before building the API. Mark `@wippy-fe/proxy` as `external` in
+your Vite build — the host provides it through the import map. See [Proxy
+API](../micro-frontends/proxy-api.md) for the full surface.
 
-## How config reaches an app iframe
+## How config reaches a page application
+
+### Iframe engine
 
 When the host loads a `view.page`, it builds a `srcdoc` and injects, **in order, before your app's script**:
 
 ```html
 <!-- 1. The child AppConfig — set synchronously, before the runtime loads -->
-<script>window.__WIPPY_APP_CONFIG__ = { /* auth, env, theming, hostConfig, context */ }</script>
+<script>window.__WIPPY_APP_CONFIG__ = { /* auth, env, theming, context */ }</script>
 <!-- 2. The CSS-injection flags for this page -->
 <script>window.__WIPPY_PROXY_CONFIG__ = { injections: { css: { themeConfig: true, primevue: true /* … */ } } }</script>
 <!-- 3. The runtime (preceded by loading.js) -->
@@ -48,17 +60,28 @@ When the host loads a `view.page`, it builds a `srcdoc` and injects, **in order,
 
 Because the config global is set **before** `proxy.js` runs, the runtime initializes synchronously and the `@wippy-fe/proxy` getters work immediately — no handshake. Pages don't reference these scripts directly; the `<script data-role="@wippy/scripts">` placeholder is replaced by the host with the correct ordered tags. Per-page overrides arrive as `window.__WIPPY_CONFIG_OVERRIDES__` (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
 
-A web component sees the same globals because it runs in the host page, where the runtime already set them before the component's `connectedCallback` fires.
+### Web Fragment engine
+
+The fragment gateway serves a reframed realm stub with the Web Host import map,
+`loading.js`, and `proxy-fragment.js`. The server cannot inject the client-held
+auth token, so the fragment runtime obtains the child config through the
+`GetConfig`/`SetConfig` handshake over its same-origin channel to the host. It
+then builds the same authenticated API and config globals used by
+`@wippy-fe/proxy`.
+
+A web component sees the host page's existing API and config globals because it
+runs in that page rather than in a separate page realm.
 
 ## How apps and web components differ
 
 Both import the same API from `@wippy-fe/proxy`. They differ in execution context and how styles are delivered:
 
-| | Micro Frontend App (`view.page`) | Web Component (`view.component`) |
-|---|---|---|
-| Runs in | its own `srcdoc` iframe | the host page DOM (Shadow DOM) |
-| Runtime delivery | `proxy.js` injected into the iframe | runtime already present in the host page |
-| CSS | full injection pipeline (`themeConfig`, `primevue`, …) — see [CSS Injection](./css-injection.md) | `hostCssKeys` into the Shadow DOM — see [Theming: Web Components](../micro-frontends/web-component-theming.md) |
+| | Page: iframe engine | Page: Web Fragment engine | Web component |
+|---|---|---|---|
+| Runs in | sandboxed `srcdoc` iframe | reframed same-origin realm reflected into a shadow root | host page DOM (Shadow DOM) |
+| Runtime delivery | `proxy.js` injected into `srcdoc` | fragment gateway loads `proxy-fragment.js` | runtime already present in the host page |
+| Config delivery | synchronous global, followed by non-blocking handshake updates | blocking host handshake owned by the fragment runtime | host page globals |
+| CSS | client injection pipeline — see [CSS Injection](./css-injection.md) | gateway and fragment-realm injection — see [CSS Injection](./css-injection.md) | `hostCssKeys` into the Shadow DOM — see [Theming: Web Components](../micro-frontends/web-component-theming.md) |
 
 ## Composition & nesting
 
@@ -66,7 +89,11 @@ Children compose. A micro frontend app or a web component can itself host childr
 
 How a node hosts a child depends on the child's kind:
 
-- **An iframe child** — a micro frontend app, an artifact, or arbitrary Wippy HTML — goes through `<w-iframe>`, `<w-artifact>`, or `html.inject`. These inject the runtime (base URL, import map, `loading.js`, `proxy.js`, and config) into the child's `srcdoc`, so it gets the Proxy API exactly as a top-level app does. Its proxy bridges up through the parent to the host.
+- **A page or HTML child** goes through `<w-iframe>`, `<w-artifact>`, or
+  `html.inject`. In iframe mode these build a `srcdoc` with the base URL, import
+  map, runtime, and config. In fragment mode, a nested registered `view.page`
+  renders as a Web Fragment; inline HTML and other non-page content remain
+  `srcdoc`. In either case its proxy bridges through the parent to the host.
 - **A web component child** needs none of that. Render its tag — or load it with `loadWebComponent` / `loadByTagName` — and it runs in the same DOM, importing the Proxy API directly.
 
 The child's own code is identical whether it runs at the top level or nested several deep: import from `@wippy-fe/proxy` and use it. There are no special nesting rules.
@@ -75,7 +102,7 @@ See [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custo
 
 ## Internals — do not read or override
 
-`proxy.js` installs the following globals for its own use. **Application and
+`proxy.js` or `proxy-fragment.js` installs the following globals for its own use. **Application and
 component code must not read or assign them**; use `@wippy-fe/proxy` instead.
 The names are listed here to prevent collisions:
 
@@ -94,9 +121,17 @@ Two entry points make up the public JavaScript API: `initWippyApp(config, rootCo
 
 This is the wire protocol the runtime uses internally; **application code never sends or receives these messages** — `@wippy-fe/proxy` handles them for you.
 
-The standard host-injected path needs no handshake to start up — config is already present synchronously as `window.__WIPPY_APP_CONFIG__` before `proxy.js` runs, so the runtime builds its instance immediately. The `get-config`/`set-config` exchange still happens on this path, but only as a **non-blocking re-sync and live-update channel**: after the synchronous instance is built, the iframe runtime always sends `get-config`, the host answers with `set-config`, and it re-pushes `set-config` on every later config update. Nested `<w-iframe>` children behave the same way. Your code never waits on any of this — the sync getters are already live.
+For a host-injected `srcdoc` page, config is present synchronously as
+`window.__WIPPY_APP_CONFIG__` before `proxy.js` runs. The iframe runtime still
+sends `get-config`, but that exchange is a non-blocking re-sync and live-update
+channel after the initial instance exists.
 
-The handshake is **the sole, blocking config source** in exactly one scenario: the manual, facade-less iframe embedding (`iframe.html?waitForCustomConfig`), where there is no pre-injected `window.__WIPPY_APP_CONFIG__`, so initialization blocks on the first `set-config` and the parent must answer the `get-config` request (see [Facade Entry Point § Manual iframe embedding](./entry-point.md#manual-facade-less-iframe-embedding)).
+For a Web Fragment page, the handshake is the initial config source: the realm
+runtime requests `AppConfig`, including client-held auth, over its same-origin
+channel to the host before it builds the proxy instance. The handshake is also
+blocking for the manual whole-host iframe (`iframe.html?waitForCustomConfig`),
+where the embedding parent must answer the first `get-config` request (see
+[Facade Entry Point § Manual iframe embedding](./entry-point.md#manual-facade-less-iframe-embedding)).
 
 Every message is a JSON envelope with shape `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`. The `type` field is configurable via `APP_CONFIG_IFRAME_EVENT_TYPE` but defaults to `'@gen2-chat'`.
 
@@ -146,7 +181,12 @@ All message types are defined in the `IFrameMessageType` enum:
 
 ## `<w-iframe>` Custom Element
 
-`<w-iframe>` is the low-level iframe primitive built into `proxy.js`. It accepts raw source HTML, injects the full Wippy runtime (base URL, import map, `loading.js`, `proxy.js`, child config), and renders the result as a sandboxed `srcdoc` iframe.
+`<w-iframe>` is the low-level child-page primitive built into the proxy runtime.
+It accepts raw source HTML and, in the normal iframe path, injects the full Wippy
+runtime (base URL, import map, `loading.js`, `proxy.js`, and child config) into a
+sandboxed `srcdoc` iframe. Inside a fragment-rendered page, a nested registered
+`view.page` instead uses a nested Web Fragment; inline HTML and other content
+continue to use `srcdoc`.
 
 Use `<w-iframe>` when you have source HTML and want the same runtime behavior that Wippy micro frontend apps get automatically: authenticated API, state relay, WebSocket relay, nav-owner routing, and parent-child bridge messaging.
 

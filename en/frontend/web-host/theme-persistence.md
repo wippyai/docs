@@ -43,8 +43,9 @@ served outside the Web Host can read them too.
 - **`cookie`** — the Jet-rendered host shell reads the cookie **server-side** and writes the
   `w-theme-*` class onto `<html>` before the response is sent, so the very first paint is already
   themed. This avoids a theme flash and is the preferred default.
-- **`localStorage`** — the server can't read localStorage, so the stored value is applied by a
-  synchronous inline script as early as possible. A brief flash is technically possible but minimized.
+- **`localStorage`** — the server can't read localStorage, so the shipped shell loads
+  `theme-persist.js` synchronously as the first script in `<head>`. It applies the
+  stored class before the brand stylesheet, loading UI, or Web Host bundle renders.
 
 ## The generated script
 

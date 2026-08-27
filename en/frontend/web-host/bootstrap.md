@@ -18,9 +18,9 @@ Host JS-module entry: `module.js` for **compat** mode or `managed-layout.js` for
 
 1. **Page loads the module.** The script registers `window.initWippyApp` on the page's `window`.
 
-2. **Page calls `initWippyApp(config, rootContainer?)`.** The page has fetched `/facade/config` and passes the payload directly as a function argument. There is no PostMessage handshake.
+2. **Page assembles `AppConfig` and calls `initWippyApp(appConfig, rootContainer?)`.** The shell fetches `/facade/config`, reads the bearer token from the `@wippy_token_info` localStorage entry, adds `$schema`, `auth`, and `context`, and forwards the supported response fields. There is no PostMessage handshake.
    ```javascript
-   const events = window.initWippyApp(config, '#app')
+   const events = window.initWippyApp(appConfig, '#app')
    events.on('ready', () => console.log('App ready'))
    ```
 
@@ -35,11 +35,11 @@ produce this embedding.
 
 1. **Iframe loads.** The Web Host loads in the browser. Because `?waitForCustomConfig` is present in the URL, the app mounts a minimal skeleton and suspends — it does not attempt to read auth tokens or call any API endpoints yet.
 
-2. **Parent sends `SetConfig`.** The parent has fetched `/facade/config` (or supplied an equivalent payload) and forwards it via PostMessage:
+2. **Parent sends `SetConfig`.** The parent supplies a complete `AppConfig`. A `/facade/config` response can provide the deployment settings, but the parent must add `$schema`, `auth`, and `context` before replying:
    ```javascript
    iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'set-config', ...configPayload },
-     config.iframe_origin
+     { type: '@gen2-chat', action: 'set-config', ...appConfig },
+     cfg.iframe_origin
    )
    ```
 
@@ -55,7 +55,7 @@ Once `AppConfig` is available (via either path), the Web Host runs the following
 The root Pinia instance is created and all store modules are registered. Auth state is loaded from `AppConfig.auth` — the token is stored in memory (or in a cookie if `hostConfig.session.type = 'cookie'`). Environment URLs from `AppConfig.env` are written to the store for use by Axios and the WebSocket client.
 
 **2. Axios configuration.**
-The Axios instance is configured with `APP_API_URL` as `baseURL` and the auth token injected as a default header. Any `axiosDefaults` from the config are merged in. This instance is the one child iframes receive via the proxy API.
+The Axios instance is configured with `APP_API_URL` as `baseURL` and the auth token injected as a default header. Any `axiosDefaults` from the config are merged in. Child page applications receive this instance through the proxy API.
 
 **3. Vue Router initialization.**
 The router is created with the history mode specified in `AppConfig.hostConfig.history` (`"hash"` or `"browser"`). System routes (`/c/:id`, `/chat/:id`, `/keeper/:id`, etc.) are registered. This is a static set — dynamic mount routes are added in a later step.
@@ -83,13 +83,14 @@ The full configuration type accepted by both `initWippyApp` and `SetConfig`. Not
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.0.xsd
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack Query defaults (global + per role-based category)
+  themeMode?: 'auto' | 'light' | 'dark'
   theming: AppTheming
   hostConfig: HostConfig
   context: AppContext
@@ -129,6 +130,7 @@ interface HostConfig {
   hideNavBar?: boolean
   disableRightPanel?: boolean
   hideSessionSelector?: boolean
+  renderEngine?: 'iframe' | 'fragment'
   additionalNavItems?: PageApi.Page[]
   stateCache?: { maxPages?: number; maxSizePerPage?: number }
   allowAdditionalTags?: Record<string, string[]>   // tag → allowed attributes
@@ -170,13 +172,20 @@ interface AppContext {
 }
 ```
 
+> **Current facade limitation.** Web Host accepts `AppConfig.tanstack`, and the
+> facade config endpoint returns the configured `tanstack` object. The standard
+> facade shell does not currently copy that field into the `AppConfig` passed to
+> `initWippyApp`. Do not rely on the facade `tanstack` parameter on the standard
+> shell path until that forwarding is implemented. A manual embedder can include
+> it in the `AppConfig` it assembles.
+
 ## Configuration Sources and Priority
 
 The Web Host resolves configuration from multiple sources, in priority order from lowest to highest:
 
 1. **Built-in defaults** — defined in the Web Host bundle itself.
 2. **URL query parameters** — `?token=<token>`, `?expiresAt=<timestamp>`, `?persist` for cookie sessions. Useful for direct development access without a parent page.
-3. **`initWippyApp()` argument** — the standard facade (JS-module) path; takes precedence over URL parameters.
+3. **`initWippyApp()` argument** — the `AppConfig` assembled by the standard facade shell; takes precedence over URL parameters.
 4. **PostMessage `SetConfig`** — the manual, facade-less iframe path, used when `?waitForCustomConfig` is present.
 
 In practice, production deployments always use `initWippyApp()` (the facade path) or PostMessage (manual iframe embedding). URL parameters are a development convenience for loading the host directly in the browser with a token.
@@ -188,8 +197,9 @@ The standard facade (JS-module) path:
 ```
 module.js / managed-layout.js loaded on the page
   │
-  ├─ window.initWippyApp(config, '#app')
-  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
+  ├─ shell assembles AppConfig from /facade/config + local auth
+  ├─ window.initWippyApp(appConfig, '#app')
+  │     appConfig = { $schema, auth, env, theming, hostConfig, context, ... }
   │
   ├─ Init Pinia (auth store, config store)
   ├─ Configure Axios (baseURL, auth header)

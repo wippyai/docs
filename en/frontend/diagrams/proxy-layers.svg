@@ -30,7 +30,7 @@
 <polyline class="edge" data-from="Child" data-to="Host" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="uses it → host · api · on · state · ws" points="417.3591666666666,210.1 417.3591666666666,198.1 429.53150000000005,198.1 429.53150000000005,129.8 403.2801666666667,129.8 403.2801666666667,93.80000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
 <polyline class="edge" data-from="Child" data-to="Nested" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="hosts more children:
 &lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject
-(re-inject the runtime; web components just render their tag)" points="291.7318333333333,280.8 291.7318333333333,316.8 240.99150000000006,316.8 240.99150000000006,413.7 310.3803333333333,413.7 310.3803333333333,425.7" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+(registered pages use iframe / fragment engine)" points="291.7318333333333,280.8 291.7318333333333,316.8 240.99150000000006,316.8 240.99150000000006,413.7 310.3803333333333,413.7 310.3803333333333,425.7" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
 <polyline class="edge" data-from="Nested" data-to="Child" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="uses the Proxy API
 (bridges up through its parent)" points="398.7106666666666,425.7 398.7106666666666,413.7 468.0994999999999,413.7 468.0994999999999,331.09999999999997 417.3591666666666,331.09999999999997 417.3591666666666,280.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
 <polyline class="edge" data-from="Nested" data-to="Nested" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="…hosts its own children, indefinitely" points="222.04999999999998,449.26666666666665 212.04999999999998,449.26666666666665 212.04999999999998,472.8333333333333 222.04999999999998,472.8333333333333" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
@@ -44,9 +44,9 @@
 </g>
 <g class="edge-label" data-from="Child" data-to="Nested" data-label="hosts more children:
 &lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject
-(re-inject the runtime; web components just render their tag)">
+(registered pages use iframe / fragment engine)">
   <rect x="95.99150000000006" y="323.8" width="289.10799999999983" height="58.900000000000006" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
-  <text x="240.54549999999998" y="353.25" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)"><tspan x="240.54549999999998" dy="-10.450000000000001">hosts more children:</tspan><tspan x="240.54549999999998" dy="14.3">&lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject</tspan><tspan x="240.54549999999998" dy="14.3">(re-inject the runtime; web components just render their tag)</tspan></text>
+  <text x="240.54549999999998" y="353.25" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)"><tspan x="240.54549999999998" dy="-10.450000000000001">hosts more children:</tspan><tspan x="240.54549999999998" dy="14.3">&lt;w-iframe&gt; · &lt;w-artifact&gt; · html.inject</tspan><tspan x="240.54549999999998" dy="14.3">(registered pages use iframe / fragment engine)</tspan></text>
 </g>
 <g class="edge-label" data-from="Nested" data-to="Child" data-label="uses the Proxy API
 (bridges up through its parent)">
@@ -63,10 +63,10 @@ Proxy API: api · navigate · state · ws · chat" data-shape="rectangle">
   <text x="354.54549999999995" y="66.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="354.54549999999995" dy="-3.9000000000000012">Wippy Web Host</tspan><tspan x="354.54549999999995" dy="16.900000000000002">Proxy API: api · navigate · state · ws · chat</tspan></text>
 </g>
 <g class="node" data-id="Child" data-label="Child node
-Micro Frontend App (iframe) · Web Component (host page)
+MFE App (iframe / Web Fragment) · Web Component
 import { host, api, on } from '@wippy-fe/proxy'" data-shape="rectangle">
   <rect x="166.10450000000003" y="210.1" width="376.8819999999999" height="70.7" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
-  <text x="354.54549999999995" y="245.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="354.54549999999995" dy="-12.350000000000001">Child node</tspan><tspan x="354.54549999999995" dy="16.900000000000002">Micro Frontend App (iframe) · Web Component (host page)</tspan><tspan x="354.54549999999995" dy="16.900000000000002">import { host, api, on } from &#39;@wippy-fe/proxy&#39;</tspan></text>
+  <text x="354.54549999999995" y="245.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="354.54549999999995" dy="-12.350000000000001">Child node</tspan><tspan x="354.54549999999995" dy="16.900000000000002">MFE App (iframe / Web Fragment) · Web Component</tspan><tspan x="354.54549999999995" dy="16.900000000000002">import { host, api, on } from &#39;@wippy-fe/proxy&#39;</tspan></text>
 </g>
 <g class="node" data-id="Nested" data-label="Nested child
 Micro Frontend App · Web Component
