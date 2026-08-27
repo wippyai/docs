@@ -140,7 +140,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 | `sources` | string[] | Para OUTDATED: IDs de registro que mudaram ou foram afetados transitivamente |
 
-`OUTDATED` é entregue apenas aos processos que optam por recebê-lo com `process.set_options({upgradable = true})`. Múltiplas invalidações são combinadas em um único evento pendente com a união de `sources`. Trate o evento chamando [`process.upgrade`](#process-upgrade).
+`OUTDATED` é entregue apenas aos processos que optam por recebê-lo com `process.set_options({upgradable = true})`. Múltiplas invalidações são combinadas em um único evento pendente com a união de `sources`. Trate o evento chamando [`process.upgrade`](#upgrade-de-processo).
 
 ## Inscrição em Tópico
 
@@ -272,7 +272,7 @@ local ok, err = process.registry.unregister(name)
 
 ### Escopo
 
-O argumento opcional `scope` seleciona a garantia de consistência do nome e usa `LOCAL` por padrão. Consulte o [Guia de Cluster](../../guides/cluster.md#naming-and-name-scopes) para o modelo completo.
+O argumento opcional `scope` seleciona a garantia de consistência do nome e usa `LOCAL` por padrão. Consulte o [Guia de Cluster](../../guides/cluster.md#nomeação-e-escopos-de-nome) para o modelo completo.
 
 | Constante | Visibilidade | Garantia |
 |-----------|--------------|----------|

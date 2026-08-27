@@ -60,7 +60,7 @@ entries:
 | `fe_entry_path` | não | `/iframe.html` | Caminho da entrada de **iframe** no bundle, usado no modo de incorporação por iframe. A página atual da facade carrega a entrada de módulo JS (`module.js`/`managed-layout.js`); o caminho permanece disponível para incorporações manuais sem facade. |
 | `fe_mode` | não | `compat` | Shell carregado: `compat` usa `module.js`; `managed` usa `managed-layout.js`. Exposto por `/facade/config` como `mode`/`module_file`. |
 | `host_config_layout` | não | `{}` | Configuração JSON de layout emitida como `hostConfig.layout`, usada apenas pelo shell **managed**. |
-| `render_engine` | não | `iframe` | Mecanismo de renderização emitido como `hostConfig.renderEngine`. Consulte [Mecanismo de Renderização](#mecanismo-de-renderizacao). |
+| `render_engine` | não | `iframe` | Mecanismo de renderização emitido como `hostConfig.renderEngine`. Consulte [Mecanismo de Renderização](#mecanismo-de-renderização). |
 | `login_path` | não | `/login.html` | Caminho na origem para redirecionar usuários não autenticados; funciona com `login_redirect_param`. |
 | `login_redirect_param` | não | `""` (desativado) | Nome do parâmetro de query que recebe a URL de retorno após o login. Vazio desativa o acréscimo. |
 | `extra_scripts` | não | `[]` | Array JSON de URLs de scripts extras carregados pela facade; emitido como `extraScripts`. |
@@ -74,7 +74,7 @@ entries:
 | `iframe` _(padrão)_ | Páginas são renderizadas como iframes srcdoc, o mecanismo principal. |
 | `fragment` | Páginas são renderizadas como [Web Fragments](../frontend/web-host/render-engines.md), um realm `reframed` refletido em shadow root. |
 
-Somente a string exata `fragment` habilita o modo; **qualquer outro valor, inclusive um erro como `fragmnet`, é limitado a `iframe`** de forma silenciosa e segura. O modo fragment também exige o [gateway `/@fragment`](./views.md#gateway-de-web-fragments), fornecido automaticamente por `wippy/views` ≥ 0.5.9. Uma página pode sobrescrever o padrão com [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
+Somente a string exata `fragment` habilita o modo; **qualquer outro valor, inclusive um erro como `fragmnet`, é limitado a `iframe`** de forma silenciosa e segura. O modo fragment também exige o [gateway `/@fragment`](./views.md#gateway-de-web-fragments), fornecido automaticamente por `wippy/views` ≥ 0.5.9. Uma página pode sobrescrever o padrão com [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#engine-de-renderização).
 
 ### Identidade da Aplicação
 
@@ -101,7 +101,7 @@ O token de bootstrap do shell é separado de `session_type`. O shell sempre lê 
 
 ### Temas
 
-Há três escopos: **global**, **host** (chrome do Web Host) e **children** (contextos `view.page` e componentes `view.component`). Consulte a [Matriz de Entrega de CSS](../frontend/web-host/css-injection.md#css-delivery-matrix).
+Há três escopos: **global**, **host** (chrome do Web Host) e **children** (contextos `view.page` e componentes `view.component`). Consulte a [Matriz de Entrega de CSS](../frontend/web-host/css-injection.md#matriz-de-entrega-de-css).
 
 | Parâmetro | Escopo | Padrão | Descrição |
 |-----------|--------|--------|-----------|
@@ -183,7 +183,7 @@ Os três seguintes são emitidos como campos de nível superior de `AppConfig`, 
 
 ## Endpoint de Configuração
 
-A facade registra `GET /facade/config` no roteador público configurado. Com o prefixo `/api/public` da [Configuração](#configuracao), a página busca `/api/public/facade/config`. O mesmo roteador expõe `GET /facade/variables.css`. O frontend busca a configuração ao carregar:
+A facade registra `GET /facade/config` no roteador público configurado. Com o prefixo `/api/public` da [Configuração](#configuração), a página busca `/api/public/facade/config`. O mesmo roteador expõe `GET /facade/variables.css`, que renderiza `css_variables` como uma folha de estilo `text/css` para páginas fora do Web Host. Consulte [Reutilizando o Tema da Facade Fora do Web Host](#reutilizando-o-tema-da-facade-fora-do-web-host). O frontend busca a configuração ao carregar:
 
 ```json
 {
@@ -230,9 +230,9 @@ A facade registra `GET /facade/config` no roteador público configurado. Com o p
 }
 ```
 
-A URL da API vem de `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` troca `http://` por `ws://` ou `https://` por `wss://`. Os temas usam os escopos `global`, `host` e `children`, e `host.i18n` contém a identidade da aplicação. As chaves de `hostConfig` são camelCase e vêm dos parâmetros da facade; `render_engine` se torna `renderEngine`. `api_routes`, `axios_defaults` e `tanstack` são campos superiores de `AppConfig`.
+A URL da API vem de `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` é derivada pela troca de `http://` por `ws://` ou de `https://` por `wss://`. Os temas usam três escopos (`global`, `host` e `children`), e `host.i18n` contém a identidade da aplicação. As chaves de `hostConfig` usam camelCase e são montadas a partir dos parâmetros da facade: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, além dos opcionais `additional_nav_items`, `state_cache`, `allow_additional_tags` e `chat`. `render_engine` se torna `renderEngine` (consulte [Mecanismo de Renderização](#mecanismo-de-renderização)). `api_routes`, `axios_defaults` e `tanstack` são emitidos como campos de nível superior de `AppConfig` (`apiRoutes`, `axiosDefaults` e `tanstack`), no mesmo nível de `hostConfig`, não dentro dele.
 
-Os campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` e `module_file` pertencem ao shell usado pela página de incorporação; não fazem parte do `AppConfig` filho. `iframe_origin` e `iframe_url` são usados apenas por incorporações manuais sem facade. `mode` é o `fe_mode` normalizado, e `module_file` é `/module.js` em compat ou `/managed-layout.js` em managed.
+Os campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` e `module_file` pertencem ao nível do shell usado pela página de incorporação; não fazem parte do `AppConfig` filho com que o host é inicializado. `iframe_origin` e `iframe_url` são usados apenas por incorporações manuais de iframe sem facade (consulte [Ponto de Entrada da Facade](../frontend/web-host/entry-point.md)). `mode` é o `fe_mode` normalizado (`compat` ou `managed`), e `module_file` é a entrada de módulo JavaScript carregada pela página da facade: `/module.js` no modo compat e `/managed-layout.js` no modo managed.
 
 ## Barra Lateral de Navegação
 

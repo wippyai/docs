@@ -7,7 +7,7 @@ description: "Componha e execute workflows DAG com nós, roteamento, persistênc
 
 O módulo `wippy/dataflow` orquestra workflows em grafos acíclicos direcionados (DAGs). Funções, agentes, ciclos, processadores paralelos e outros nós trocam dados por rotas nomeadas e identificadas por discriminadores, enquanto o orquestrador gerencia execução, estado persistido e recuperação.
 
-Esta página é uma introdução à API com trechos conceituais e de referência, não um tutorial autônomo. Valores como `task`, `config` e `file_list`, e IDs como `app:tokenize` ou `app:worker`, representam dados e entradas de registro fornecidos pela aplicação. Os trechos também pressupõem o banco de persistência e o host de processos descritos em [Instalação](#instalacao). Para um projeto completo e executável, siga [Criando um Workflow Dataflow](../tutorials/dataflow.md).
+Esta página é uma introdução à API com trechos conceituais e de referência, não um tutorial autônomo. Valores como `task`, `config` e `file_list`, e IDs como `app:tokenize` ou `app:worker`, representam dados e entradas de registro fornecidos pela aplicação. Os trechos também pressupõem o banco de persistência e o host de processos descritos em [Instalação](#instalação). Para um projeto completo e executável, siga [Criando um Workflow Dataflow](../tutorials/dataflow.md).
 
 ## Instalação
 

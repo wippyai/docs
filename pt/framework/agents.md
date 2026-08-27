@@ -329,6 +329,8 @@ end
 Use <code>funcs.call(tc.registry_id, tc.arguments)</code> para executar ferramentas. O campo <code>registry_id</code> mapeia diretamente para a entrada da ferramenta no registro.
 </note>
 
+Para entender como o acesso dos agentes às ferramentas e a observabilidade são protegidos, consulte o [Modelo de Segurança](../concepts/security-model.md).
+
 ## Streaming
 
 Transmita respostas do agente em tempo real usando `stream_target`:

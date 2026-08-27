@@ -123,7 +123,7 @@ Backends de histórico:
 | Memory | Padrão quando `history_type` não está definido; testes |
 | Nil | Sem histórico |
 
-SQLite usa o modo WAL com tabelas para versões, changesets (codificados em MessagePack) e metadados. PostgreSQL é selecionado com `registry.history_type: postgres` e `history_dsn`/`history_schema` (consulte [Configuração](../guides/configuration.md#registry)).
+SQLite usa o modo WAL com tabelas para versões, changesets (codificados em MessagePack) e metadados. PostgreSQL é selecionado com `registry.history_type: postgres` e `history_dsn`/`history_schema` (consulte [Configuração](../guides/configuration.md#registro)).
 
 O histórico também persiste a resolução exata de dependências de cada versão: quando uma mudança de `ns.dependency` é aplicada, o grafo de módulos resolvido é armazenado por conteúdo junto ao changeset. Boot e rollback reproduzem o grafo armazenado em vez de resolvê-lo novamente; assim, uma versão sempre é reconciliada com as versões usadas em sua resolução. O esquema do histórico migra automaticamente no primeiro boot após uma atualização; uma versão preexistente é resolvida uma única vez na primeira visita e registrada como checkpoint.
 

@@ -219,7 +219,7 @@ window.__WIPPY_PROXY_CONFIG__  // internal — must exist in iframe-hosted mode
 ```
 Um valor `undefined` significa que a proxy não foi injetada antes do app. O
 código da aplicação nunca deve ler esse global diretamente; consulte
-[Proxy e isolamento — Internos](../web-host/proxy-isolation.md#internos-não-leia-nem-substitua).
+[Proxy e isolamento — Internos](../web-host/proxy-isolation.md#internos-nao-leia-nem-substitua).
 
 **3. Confirme `base: ''` em vite.config.ts:**
 

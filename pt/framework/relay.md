@@ -7,6 +7,8 @@ description: "O módulo wippy/relay fornece infraestrutura de relay WebSocket co
 
 O módulo `wippy/relay` fornece infraestrutura de relay WebSocket com uma arquitetura de hub de duas camadas. Um hub central gerencia hubs por usuário, que por sua vez gerenciam conexões de clientes WebSocket e roteiam mensagens para plugins.
 
+Esta página é uma receita parcial de integração e uma referência de protocolo, não uma aplicação WebSocket independente. Os blocos de configuração e plugin pressupõem um projeto Wippy existente, um escopo de segurança real no `user_security_scope` configurado e um endpoint HTTP WebSocket conectado ao relay, conforme descrito em [Relay WebSocket](../http/websocket-relay.md). Os payloads de protocolo e os blocos de ciclo de vida são modelos de referência.
+
 ## Arquitetura
 
 ```

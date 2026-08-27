@@ -47,7 +47,7 @@ Helpers relacionados (não são acesso ao proxy):
 | Telas de carregamento/erro | `<wippy-loading>` / `<wippy-error>` de `@wippy-fe/loading` |
 
 `window.$W` e `window.getWippyApi` são globais **internos** instalados pelo
-runtime. Não os use diretamente (consulte [Proxy e isolamento § Internos](./proxy-isolation.md#internos-não-leia-nem-substitua)).
+runtime. Não os use diretamente (consulte [Proxy e isolamento § Internos](./proxy-isolation.md#internos-nao-leia-nem-substitua)).
 
 ## Pacotes
 

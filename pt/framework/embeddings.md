@@ -20,7 +20,7 @@ wippy install
 
 ### Modelo e provedor obrigatórios
 
-Antes de chamar a API de embeddings, registre um `llm.model` cujo `meta.name` seja `text-embedding-3-small`, cujas capacidades incluam `embed` e cujo mapeamento de provedor resolva para um provedor de embeddings. Configure as credenciais desse provedor, como `OPENAI_API_KEY`, no armazenamento de ambiente usado por `wippy/llm`. Consulte a [configuração de modelos de LLM](./llm.md#model-configuration).
+Antes de chamar a API de embeddings, registre um `llm.model` cujo `meta.name` seja `text-embedding-3-small`, cujas capacidades incluam `embed` e cujo mapeamento de provedor resolva para um provedor de embeddings. Configure as credenciais desse provedor, como `OPENAI_API_KEY`, no armazenamento de ambiente usado por `wippy/llm`. Consulte a [configuração de modelos de LLM](./llm.md#configuracao-de-modelo).
 
 ### Dependência do banco de dados
 

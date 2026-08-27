@@ -299,7 +299,7 @@ Valores de retorno comuns, inclusive `false`, não selecionam o reconhecimento. 
 
 ### Roteamento Dead-Letter
 
-O roteamento dead-letter ainda não está implementado. O bloco `dead_letter` é aceito, mas nenhum driver integrado conta tentativas, encaminha mensagens nack para a DLQ ou define headers `x_dead_letter_*`. Uma mensagem nack é reenviada conforme a política do driver. O namespace de headers `x_*` fica reservado para a futura contabilização da DLQ; publicadores devem evitá-lo.
+O roteamento dead-letter ainda não está implementado. O bloco `dead_letter` (consulte [Configuração de Fila](#configuração-de-fila)) é aceito, mas nenhum driver integrado conta tentativas, encaminha mensagens nack para a DLQ ou define headers `x_dead_letter_*`. Uma mensagem nack é reenviada conforme a política do driver. O namespace de headers `x_*` fica reservado para a futura contabilização da DLQ; publicadores devem evitá-lo.
 
 ## Publicando Mensagens
 

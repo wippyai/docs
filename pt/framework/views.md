@@ -7,8 +7,8 @@ description: "Defina páginas renderizadas no servidor, aplicações frontend, c
 
 O módulo `wippy/views` define páginas e componentes, gerencia seus recursos e mapeia variáveis de ambiente para a saída renderizada. Ele oferece dois modelos de página:
 
-- **Páginas de template Jet** (`kind: template.jet`) renderizam HTML no servidor após reunir os dados e recursos da página. Consulte [Páginas de Template](#paginas-de-template).
-- **Frontends como entradas de registro** (`kind: registry.entry`) descrevem aplicações de micro frontend (`view.page`) e componentes web reutilizáveis (`view.component`) servidos por CDN ou montagem estática. A entrada de registro contém as políticas de roteamento e implantação. Os metadados do frontend vêm do `wippy-meta.json` gerado pelo pacote, e os campos explícitos do registro têm precedência. Consulte [Páginas de Componente](#paginas-de-componente) e [Componentes de View](#componentes-de-view).
+- **Páginas de template Jet** (`kind: template.jet`) renderizam HTML no servidor após reunir os dados e recursos da página. Consulte [Páginas de Template](#páginas-de-template).
+- **Frontends como entradas de registro** (`kind: registry.entry`) descrevem aplicações de micro frontend (`view.page`) e componentes web reutilizáveis (`view.component`) servidos por CDN ou montagem estática. A entrada de registro contém as políticas de roteamento e implantação. Os metadados do frontend vêm do `wippy-meta.json` gerado pelo pacote, e os campos explícitos do registro têm precedência. Consulte [Páginas de Componente](#páginas-de-componente) e [Componentes de View](#componentes-de-view).
 
 Esta página é uma referência do registro e da API HTTP. Seus blocos YAML, HTML e JSON são trechos independentes, não um único projeto executável. Antes de adaptá-los, forneça o `http.router`, o armazenamento de ambiente e o serviço HTTP referenciados pela dependência, além dos conjuntos de templates, funções, recursos ou bundles de frontend usados pelo exemplo escolhido.
 
@@ -47,7 +47,7 @@ entries:
 
 ## Páginas de Template
 
-> **Modelo renderizado no servidor.** O `wippy/views` reúne dados e recursos de template no servidor e renderiza o HTML final com Jet. A resposta é HTML puro e não usa proxy de iframe nem micro frontend no cliente. Para SPAs e componentes externos, consulte [Páginas de Componente](#paginas-de-componente).
+> **Modelo renderizado no servidor.** O `wippy/views` reúne dados e recursos de template no servidor e renderiza o HTML final com Jet. A resposta é HTML puro e não usa proxy de iframe nem micro frontend no cliente. Para SPAs e componentes externos, consulte [Páginas de Componente](#páginas-de-componente).
 
 Páginas de template são renderizadas no servidor com templates Jet. Os dados são injetados por `data.set`, `data.data_func` e `data.resources`:
 

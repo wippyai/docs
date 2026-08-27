@@ -1,9 +1,9 @@
 ---
-title: "Parsing Tree-sitter"
+title: "Análise sintática com Tree-sitter"
 description: "Analise código-fonte, inspecione árvores de sintaxe concretas e execute consultas Tree-sitter."
 ---
 
-# Parsing Tree-sitter
+# Análise sintática com Tree-sitter
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
@@ -50,9 +50,9 @@ local langs = treesitter.supported_languages()
 -- {go = true, javascript = true, python = true, ...}
 ```
 
-## Quick Start
+## Início rápido
 
-### Parse de Código
+### Análise de código
 
 ```lua
 local code = [[
@@ -118,9 +118,9 @@ query:close()
 tree:close()
 ```
 
-## Parsing
+## Análise sintática
 
-### Parse Simples
+### Análise simples
 
 Analisa o código-fonte com um parser interno temporário.
 
@@ -139,7 +139,7 @@ end
 
 **Retorna:** `Tree, error`
 
-### Parser Reutilizavel
+### Parser reutilizável
 
 Cria um parser reutilizável para parsing repetido ou atualizações incrementais.
 
@@ -176,7 +176,7 @@ parser:close()
 
 **Retorna:** `Parser, error`
 
-### Métodos do Parser
+### Métodos do parser
 
 | Método | Descrição |
 |--------|-----------|
@@ -215,7 +215,7 @@ print(source_text)  -- "package main"
 tree:close()
 ```
 
-### Métodos da Tree
+### Métodos da árvore
 
 | Método | Descrição |
 |--------|-----------|
@@ -355,18 +355,18 @@ if node:is_missing() then
 end
 ```
 
-### S-Expression
+### Expressão S
 
 ```lua
 local sexp = node:to_sexp()
 -- "(source_file (package_clause (package_identifier)))"
 ```
 
-## Queries
+## Consultas
 
 As consultas Tree-sitter encontram padrões da árvore de sintaxe escritos como S-expressions.
 
-### Criar Query
+### Criar consulta
 
 ```lua
 local query, err = treesitter.query("go", [[
@@ -388,7 +388,7 @@ end
 
 **Retorna:** `Query, error`
 
-### Executar Query
+### Executar consulta
 
 ```lua
 -- Get all captures (flattened)
@@ -431,7 +431,7 @@ tree:close()
 
 Passar userdata do tipo incorreto no lugar de um `Node` do Tree-sitter retorna `nil, error`; passar um valor primitivo ou uma tabela gera um erro de argumento Lua antes dessa verificação. Aqui, `root`, `source_code` e `query` devem vir de uma árvore ainda aberta e de uma consulta criada com sucesso. O exemplo usa o handle proprietário `tree` para fechar ambos os recursos antes de retornar.
 
-### Controle de Query
+### Controle da consulta
 
 ```lua
 -- Limit query scope
@@ -453,7 +453,7 @@ query:disable_pattern(0)
 query:disable_capture("func_name")
 ```
 
-### Inspeção de Query
+### Inspeção da consulta
 
 ```lua
 local pattern_count = query:pattern_count()
@@ -553,7 +553,7 @@ Fechar um parser, uma árvore, uma consulta ou um cursor que já esteja fechado 
 
 Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
 
-## Referência de Sintaxe de Query
+## Referência da sintaxe de consultas
 
 Consultas Tree-sitter usam padrões S-expression:
 

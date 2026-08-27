@@ -7,7 +7,7 @@ description: "Campos de configuração do runtime, profiles, regras de composiç
 
 O Wippy lê a configuração do runtime em arquivos `.wippy.yaml`.
 
-Use a opção repetível `wippy run --set section.path=value` para sobrescrever na inicialização os campos de configuração abaixo. Para sobrescrever *entradas* individuais do registro em vez de seções de configuração, use a seção `override:` ou `-o`; consulte [Sobrescrevendo Entradas](./entry-kinds.md#overriding-entries).
+Use a opção repetível `wippy run --set section.path=value` para sobrescrever na inicialização os campos de configuração abaixo. Para sobrescrever *entradas* individuais do registro em vez de seções de configuração, use a seção `override:` ou `-o`; consulte [Sobrescrevendo Entradas](./entry-kinds.md#sobrescrevendo-entradas).
 
 ## Composição de Configuração {#config-composition}
 

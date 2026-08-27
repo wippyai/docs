@@ -7,6 +7,8 @@ description: "O modulo wippy/llm fornece uma interface unificada para trabalhar 
 
 O modulo `wippy/llm` fornece uma interface unificada para trabalhar com Modelos de Linguagem de Grande Escala (LLMs) de multiplos provedores (OpenAI, Anthropic, Google, modelos locais). Ele suporta geracao de texto, chamada de ferramentas, saida estruturada, embeddings e streaming.
 
+Esta página é uma introdução à API com snippets de referência combináveis, não um tutorial independente. Os exemplos pressupõem um projeto Wippy existente, um modelo e um provedor registrados e quaisquer credenciais exigidas por esse provedor. Substitua os nomes de modelos dos exemplos por um modelo exposto pelo seu registry; chamadas remotas de geração e embeddings podem gerar custos do provedor. Para um projeto completo e executável, siga [Criar um Agente LLM](../tutorials/llm-agent.md).
+
 ## Configuracao
 
 Adicione o modulo ao seu projeto:

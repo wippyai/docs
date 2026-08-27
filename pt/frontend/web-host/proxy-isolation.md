@@ -105,7 +105,7 @@ O código do próprio filho é idêntico, seja executado no nível superior ou a
 
 Consulte abaixo [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custom-element) e [Injeção avançada de HTML](#injeção-avançada-de-html) para conhecer a mecânica.
 
-## Internos — não leia nem substitua
+## Internos — não leia nem substitua :id=internos-nao-leia-nem-substitua
 
 `proxy.js` ou `proxy-fragment.js` instala os globais a seguir para uso próprio.
 **O código da aplicação e dos componentes não deve lê-los nem atribuí-los**; use

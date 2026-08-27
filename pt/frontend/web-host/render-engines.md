@@ -20,7 +20,7 @@ Use `createAppRouter()` de `@wippy-fe/router` para uma aplicação que pode exec
 
 ## Como um fragment é renderizado
 
-Um `view.page` selecionado para o engine fragment é montado como `<web-fragment src="/@fragment/{id}/">`. O [gateway `/@fragment`](../../framework/views.md#web-fragments-gateway) de `wippy/views` serve o contrato de reframing; o cliente `reframed` cria um iframe same-origin oculto (`wf:<id>`), transmite o HTML transformado do gateway para o shadow root do fragment e executa `proxy-fragment.js` — um adaptador de `@wippy-fe/proxy` — no realm para fornecer a API proxy `$W`. O adaptador encaminha o protocolo `postMessage` compartilhado à janela same-origin capturada do Host, sem depender de `window.parent` alterado pelo realm.
+Um `view.page` selecionado para o engine fragment é montado como `<web-fragment src="/@fragment/{id}/">`. O [gateway `/@fragment`](../../framework/views.md#gateway-de-web-fragments) de `wippy/views` serve o contrato de reframing; o cliente `reframed` cria um iframe same-origin oculto (`wf:<id>`), transmite o HTML transformado do gateway para o shadow root do fragment e executa `proxy-fragment.js` — um adaptador de `@wippy-fe/proxy` — no realm para fornecer a API proxy `$W`. O adaptador encaminha o protocolo `postMessage` compartilhado à janela same-origin capturada do Host, sem depender de `window.parent` alterado pelo realm.
 
 A mesma página no engine iframe é um `<iframe>` srcdoc com `proxy.js` injetado; consulte [Proxy e isolamento](./proxy-isolation.md).
 
@@ -34,7 +34,7 @@ O engine de toda a implantação é definido pelo requirement `render_engine` da
 wippy run -c -o wippy.facade:render_engine:default=fragment
 ```
 
-Consulte [Facade → Engine de renderização](../../framework/facade.md#render-engine) para esse parâmetro.
+Consulte [Facade → Engine de renderização](../../framework/facade.md#mecanismo-de-renderização) para esse parâmetro.
 
 ### Substituição por página (autor da aplicação)
 
@@ -46,7 +46,7 @@ Uma página opta por entrar ou sair com `wippy.renderEngine` no bloco `wippy` de
 | `"iframe"` | Sempre renderiza como iframe srcdoc, ignorando fragments independentemente do switch. |
 | `"fragment"` | Prefere o engine fragment. Em implantação global `fragment`: sempre. Em implantação global `iframe`: somente se um **probe de capacidade** em runtime (`GET /@fragment/{id}/`, armazenado em cache por sessão) confirmar a presença do gateway e do proxy; senão, retorna ao iframe de modo seguro. |
 
-Consulte [Aplicações micro frontend → Engine de renderização](../frontend-registry/view-page.md#render-engine).
+Consulte [Aplicações micro frontend → Engine de renderização](../frontend-registry/view-page.md#engine-de-renderização).
 
 ## Limitações de Fragment
 
@@ -73,7 +73,7 @@ Ativar o engine fragment em uma aplicação consumidora exige módulos de framew
 1. **Módulos de framework** — use um par atual e compatível de `wippy/facade` e `wippy/views` que exponha o switch `render_engine` e o gateway fragment automontável. Verifique a versão exata na documentação atual dos módulos Wippy.
 2. **O switch** — defina `render_engine` da facade como `fragment` globalmente ou opte por fragments em páginas individuais com `wippy.renderEngine`.
 
-> O gateway `/@fragment` é fornecido pelo próprio `wippy/views` atual: o módulo declara seu próprio router de nível superior e o vincula a um requirement `server` cujo padrão é `app:gateway`. Um consumidor não precisa configurar fragments e inicializa normalmente no engine iframe, estejam fragments ativos ou não; substitua o parâmetro `server` apenas se o id de seu `http.service` for diferente de `app:gateway`. Quando uma página escolhe fragments individualmente em uma implantação iframe, um probe de capacidade em runtime confirma o gateway e `proxy-fragment.js` antes da troca; do contrário, permanece em iframe. O switch global `render_engine: fragment` confia no operador e não executa probe. Consulte [Views → Gateway de Web Fragments](../../framework/views.md#web-fragments-gateway).
+> O gateway `/@fragment` é fornecido pelo próprio `wippy/views` atual: o módulo declara seu próprio router de nível superior e o vincula a um requirement `server` cujo padrão é `app:gateway`. Um consumidor não precisa configurar fragments e inicializa normalmente no engine iframe, estejam fragments ativos ou não; substitua o parâmetro `server` apenas se o id de seu `http.service` for diferente de `app:gateway`. Quando uma página escolhe fragments individualmente em uma implantação iframe, um probe de capacidade em runtime confirma o gateway e `proxy-fragment.js` antes da troca; do contrário, permanece em iframe. O switch global `render_engine: fragment` confia no operador e não executa probe. Consulte [Views → Gateway de Web Fragments](../../framework/views.md#gateway-de-web-fragments).
 
 A aplicação frontend não precisa de código específico para Fragment; `proxy-fragment.js` é um artefato do host servido pela CDN, não algo incluído no bundle da aplicação.
 
