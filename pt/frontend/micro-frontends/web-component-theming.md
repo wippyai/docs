@@ -159,7 +159,8 @@ defaults herdados. Aliases semânticos acompanham os modos Auto e forçados:
 ```
 
 Não use `var(--p-surface-N)` para cores dependentes do tema: a escala numerada
-não se inverte no modo escuro. Use aliases semânticos.
+não se inverte no modo escuro. Use os aliases semânticos (`--p-text-color`,
+`--p-content-background`, `--p-text-muted-color`, `--p-content-border-color`).
 
 Para tons derivados, use `color-mix(in srgb, var(--p-content-background) 85%, var(--p-text-color) 15%)`.
 
@@ -212,7 +213,7 @@ hostCssKeys: ['themeConfigUrl'] as const
 - Blocos `<style>` com `@media (prefers-color-scheme: dark)` que fixam cores do modo escuro — as variáveis de `theme-config.css` são recalibradas para o modo escuro, então referências a `var(--p-*)` não precisam de uma paleta fixa separada.
 - Solicitar `primeVueCssUrl` sem renderizar PrimeVue adiciona CSS inútil.
 - Definir overlays PrimeVue com `appendTo: 'self'` como correção habitual. Instale `PrimeVuePlugin` e mantenha o destino padrão; ele redireciona para uma camada de overlay fixada no shadow root proprietário. O `self` explícito posiciona inline e pode cortar conteúdo em overlays com rolagem.
-- Sem `bubbles: true, composed: true`, eventos não saem do shadow DOM.
+- Ao disparar um `CustomEvent`, sem `bubbles: true, composed: true` o evento não sai do shadow DOM.
 - Escolher a externalização de `@wippy-fe/theme` por suposições sobre CSS, em vez de usar o import map completo da versão fixada do Web Host.
 
 ---

@@ -75,7 +75,7 @@ end
 
 ## Fechando Channels
 
-Fechar o channel. Remetentes pendentes recebem erro, receptores pendentes recebem `nil, false`. Lança erro se já estiver fechado:
+Fechar o channel faz com que remetentes pendentes recebam um erro e receptores pendentes recebam `nil, false`. Fechar um channel que já está fechado não produz efeito:
 
 ```lua
 local results = channel.new(10)
@@ -188,6 +188,8 @@ ch:case_send(value)
 -- Receive case - completes when value available
 ch:case_receive()
 ```
+
+Valores da tabela de casos que não sejam casos de envio ou recebimento são ignorados. Garanta que a tabela contenha pelo menos um caso válido, a menos que ela também tenha um branch padrão.
 
 ## Padrão Worker Pool
 

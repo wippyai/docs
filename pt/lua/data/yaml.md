@@ -11,15 +11,19 @@ description: "Codifique tabelas Lua como YAML e decodifique documentos YAML em v
 
 Parse de documentos YAML para tabelas Lua e serialização de valores Lua para strings YAML.
 
+Esta é uma referência de API. Expressões usadas apenas como saída ilustram codificações bem-sucedidas; exemplos que consomem um valor capturam o segundo retorno opcional `error`.
+
 ## Carregamento
 
 ```lua
 local yaml = require("yaml")
 ```
 
+Adicione `yaml` à lista `modules:` da entrada executável antes de carregá-lo.
+
 ## Codificação
 
-### Codificar Valor
+### `encode`
 
 Codifica uma tabela Lua para formato YAML.
 
@@ -99,7 +103,7 @@ yaml.encode(entry, {sort_unordered = true})
 
 ## Decodificação
 
-### Decodificar String
+### `decode`
 
 Parse de uma string YAML para uma tabela Lua.
 

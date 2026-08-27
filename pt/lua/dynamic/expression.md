@@ -155,6 +155,8 @@ end
 -- maximum == 5, uppercase == "HELLO", and total == 10
 ```
 
+Outras funções integradas incluem `min`, `abs`, `ceil`, `floor`, `len`, `lower` e `trim`. Expr-lang também oferece operadores como `contains` para strings e `in` para testes de pertencimento.
+
 ## Erros
 
 | Condição | Tipo | Retentável |

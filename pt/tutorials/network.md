@@ -29,6 +29,8 @@ O Wippy oferece três tipos de entrada de overlay:
   curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
   ```
 
+  Uma verificação bem-sucedida retorna um JSON que contém um endereço IP.
+
   O Tor Browser costuma usar 9150; nesse caso, altere juntos a entrada e o comando.
 - Um diretório vazio:
 
@@ -167,6 +169,8 @@ Com o Tor rodando localmente:
 direct IP: <your public IP>
 tor IP:    <Tor exit IP>
 ```
+
+As duas linhas devem conter endereços IP válidos. Normalmente eles são diferentes; a prova importante é que a requisição roteada só tem sucesso por meio do listener SOCKS configurado.
 
 Se o Tor não estiver em execução, a linha `tor IP` reportará um erro de dial — a sobreposição SOCKS5 não recorre silenciosamente a uma conexão direta.
 

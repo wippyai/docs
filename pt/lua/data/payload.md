@@ -10,6 +10,8 @@ description: "Crie payloads tipados, inspecione seu formato, extraia valores e t
 
 Converta dados entre formatos incluindo JSON, MessagePack e binario. Manipule payloads tipados para comunicação entre serviços e passagem de dados em workflows.
 
+Esta é uma referência de API com receitas parciais de transporte. Valores como `p` e `input_data`, assim como a entrada assíncrona de destino, são fornecidos pela aplicação.
+
 ## Carregamento
 
 Namespace global. Nenhum require necessario.
@@ -152,13 +154,15 @@ if err then
 end
 ```
 
-`unmarshal()` sempre transcodifica para o formato Lua e retorna o valor Lua resultante. Diferente de `data()`, que retorna o valor bruto subjacente (potencialmente um objeto Go para formatos não-Lua), `unmarshal()` garante um valor Lua totalmente decodificado.
+Tanto `data()` quanto `unmarshal()` retornam o valor Lua existente ou transcodificam um payload não Lua para o formato Lua. `unmarshal()` é mais estrito quando um transcoder produz um resultado inválido: ele retorna um erro `errors.INTERNAL`, enquanto `data()` retorna `nil`.
 
 **Retorna:** `any, error`
 
 ## Resultados Assincronos
 
 Payloads sao comumente recebidos de chamadas de função assíncronas:
+
+Este exemplo pressupõe que `app.process:compute` retorne exatamente um valor. Sem resultados, `future:result()` retorna `nil`; com vários resultados, retorna uma tabela Lua em vez de um único `Payload`, portanto o chamador precisa tratar essas formas separadamente.
 
 ```lua
 local funcs = require("funcs")

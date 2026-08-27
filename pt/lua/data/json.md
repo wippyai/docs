@@ -11,15 +11,19 @@ description: "Codifique valores Lua como JSON, decodifique strings JSON e valide
 
 Codifique tabelas Lua para JSON e decodifique strings JSON para valores Lua. Inclui validação JSON Schema para verificação de dados e aplicação de contratos de API.
 
+Esta é uma referência de API. Exemplos de expressões curtas mostram valores de retorno bem-sucedidos; exemplos que consomem o resultado capturam o segundo retorno opcional `error`.
+
 ## Carregamento
 
 ```lua
 local json = require("json")
 ```
 
+Adicione `json` à lista `modules:` da entrada executável antes de carregá-lo.
+
 ## Codificação
 
-### Codificar Valor
+### `encode`
 
 Codifica um valor Lua em uma string JSON.
 
@@ -70,7 +74,7 @@ Regras de codificação:
 
 ## Decodificação
 
-### Decodificar String
+### `decode`
 
 Decodifica uma string JSON em um valor Lua.
 
@@ -120,7 +124,7 @@ end
 
 ## Validação de Schema
 
-### Validar Valor
+### `validate`
 
 Valida um valor Lua contra um JSON Schema. Use para aplicar contratos de API ou validar entrada do usuário.
 
@@ -169,7 +173,7 @@ if schema_err then return nil, schema_err end
 
 Schemas sao cacheados por hash de conteudo para performance.
 
-### Validar String JSON
+### `validate_string`
 
 Valida uma string JSON contra um schema sem decodificar primeiro. Util quando voce precisa validar antes do parse.
 

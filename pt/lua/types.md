@@ -376,6 +376,8 @@ end
 print(Predicate:ret():kind())        -- "boolean"
 ```
 
+`typeof(expression)` é sintaxe de tipo, não uma função de reflexão em runtime. Use-a em um alias como `type Config = typeof(default_config)`; o alias resultante é o valor de tipo em runtime.
+
 ### Comparação de Tipos
 
 ```lua

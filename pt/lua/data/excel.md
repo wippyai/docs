@@ -224,11 +224,11 @@ end
 
 **Retorna:** `string[][], error`
 
-Todos os valores de celula retornados como strings. Booleans como "TRUE" ou "FALSE", numeros como representação string.
+Todos os valores das células são retornados como strings. Valores booleanos usam `"TRUE"` ou `"FALSE"`, e números usam sua representação em string.
 
 ### Streaming de Linhas
 
-`wb:rows(sheet)` abre um cursor de streaming sobre uma planilha. A planilha é decodificada incrementalmente em memória constante, ao contrário de `get_rows` que materializa a planilha inteira:
+`wb:rows(sheet)` abre um cursor que decodifica as linhas da planilha incrementalmente, enquanto `get_rows` materializa a planilha inteira. A abertura do workbook ainda lê todo o conteúdo XLSX e pode reter metadados e strings compartilhadas; portanto, o processamento não usa memória constante de ponta a ponta:
 
 ```lua
 local cursor, err = wb:rows("Report")

@@ -82,6 +82,8 @@ end
 
 **Retorna:** `boolean, error`
 
+Um retorno bem-sucedido confirma apenas que o runtime aceitou o envio. Ele não confirma que algum subscriber recebeu ou processou o evento.
+
 ## Métodos de Subscription
 
 ### Obtendo o Channel
@@ -103,7 +105,7 @@ if ok then
 end
 ```
 
-Campos do evento: `system`, `kind`, `path`, `data`
+Cada evento contém `system`, `kind` e `path`. O campo `data` só está presente quando o publisher fornece um payload não nulo.
 
 ### Fechando Subscription
 

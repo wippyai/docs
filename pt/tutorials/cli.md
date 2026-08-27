@@ -184,7 +184,7 @@ return { main = main }
 
 ## Informações do Sistema
 
-Acesse estatísticas do runtime com o módulo `system`:
+As leituras do sistema são operações protegidas. Adicione esta política e substitua a entrada `app:cli` para que o comando tenha um actor, a política e o módulo `system`:
 
 ```yaml
   - name: cli-system-read
@@ -208,6 +208,8 @@ Acesse estatísticas do runtime com o módulo `system`:
       policies:
         - app:cli-system-read
 ```
+
+Depois, substitua `src/cli.lua`:
 
 ```lua
 local io = require("io")

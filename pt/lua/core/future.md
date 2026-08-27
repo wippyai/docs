@@ -42,6 +42,8 @@ if data_err then return nil, data_err end
 
 `channel()` e um alias para `response()`.
 
+O valor do channel é o payload, a tabela de payloads ou o erro da operação. Depois que o channel estiver pronto, `result()` oferece uma interface consistente para sucesso ou erro e retorna o valor em cache mesmo após o channel ser drenado.
+
 ## Verificação de Conclusao
 
 Verificação não-bloqueante se future completou:
