@@ -28,7 +28,7 @@
   {
     "title": "Core Concepts",
     "children": [
-      {"title": "Compute Units", "path": "concepts/compute-units"},
+      {"title": "컴퓨트 유닛", "path": "concepts/compute-units"},
       {"title": "아키텍처", "path": "concepts/architecture"},
       {"title": "레지스트리", "path": "concepts/registry"},
       {"title": "보안 모델", "path": "concepts/security-model"},
@@ -57,7 +57,7 @@
           {"title": "Functions", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},
           {"title": "Stream", "path": "lua/core/stream"},
-          {"title": "Context", "path": "lua/core/context"},
+          {"title": "컨텍스트", "path": "lua/core/context"},
           {"title": "Events", "path": "lua/core/events"},
           {"title": "Registry", "path": "lua/core/registry"},
           {"title": "Contract", "path": "lua/core/contract"}
