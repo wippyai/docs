@@ -1,22 +1,20 @@
 ---
 title: "Architektur"
-description: "<note Diese Seite ist in Bearbeitung. Inhalte können unvollständig sein oder sich ändern. </note"
+description: "Wie Wippy Infrastruktur startet, Komponenten und Einträge lädt, Arbeit plant, Nachrichten weiterleitet und herunterfährt."
 ---
 
 # Architektur
 
-<note>
-Diese Seite ist in Bearbeitung. Inhalte können unvollständig sein oder sich ändern.
-</note>
-
 Wippy ist ein geschichtetes System, das auf Go aufgebaut ist. Komponenten initialisieren sich in Abhängigkeitsreihenfolge, kommunizieren über einen Event-Bus und führen Lua-Prozesse über einen Work-Stealing-Scheduler aus.
+
+Diese Seite ist eine Implementierungsreferenz. Diagramme und Go-Typen beschreiben Interna der Runtime, keine Registry-Einträge oder Erweiterungs-APIs für Anwendungen.
 
 ## Schichten
 
 | Schicht | Komponenten |
 |---------|-------------|
 | Anwendung | Lua-Prozesse, Funktionen, Workflows |
-| Runtime | Lua-Engine (gopher-lua), 50+ Module |
+| Runtime | Lua-Engine (wippyai/go-lua) und Runtime-Module |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topologie, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -42,23 +40,24 @@ Erstellt Kerninfrastruktur bevor Komponenten geladen werden:
 
 ### Phase 2: Komponentenladung
 
-Der Loader löst Abhängigkeiten via topologischer Sortierung auf und lädt Komponenten Level für Level. Komponenten auf demselben Level laden parallel.
+Der Loader löst Abhängigkeiten durch topologische Sortierung auf und lädt Komponenten sequenziell, Ebene für Ebene. Auch Komponenten derselben Ebene werden nacheinander geladen.
 
-Core-Komponenten (PIDGen, Dispatcher, Registry, Finder, Supervisor) initialisieren zuerst, gefolgt von Systemkomponenten (Topology, Lifecycle, Factory, Functions, Contracts). Konkrete Level werden zur Laufzeit aus dem Abhängigkeitsgraphen berechnet, sodass sich die Reihenfolge anpasst, wenn Komponenten hinzugefügt oder entfernt werden.
+Abhängigkeitskanten bestimmen die Ebenen. Paketgruppen wie Core und System erzwingen keine zusätzliche globale Reihenfolge. Komponenten ohne Abhängigkeitskante können deshalb unabhängig von ihrer Paketgruppe derselben Ebene angehören.
 
-Jede Komponente hängt sich während Load an den Kontext an, wodurch Services für abhängige Komponenten verfügbar werden.
+Jede Komponente bindet sich beim Laden an den Kontext, wodurch ihre Services für abhängige Komponenten verfügbar werden.
 
 ### Phase 3: Aktivierung
 
 Nach dem Laden aller Komponenten:
 
-1. **Dispatcher einfrieren** - Sperrt Command-Handler-Registry für lock-freie Lookups
-2. **AppContext versiegeln** - Keine Schreibzugriffe mehr erlaubt, ermöglicht lock-freie Lesezugriffe
-3. **Komponenten starten** - Ruft `Start()` auf jeder Komponente mit `Starter`-Interface auf
+1. **Runtime-Services starten** – Ruft `StartRuntimeServices(ctx)` auf
+2. **Dispatcher einfrieren** – Sperrt die Registry der Command-Handler für sperrfreie Abfragen
+3. **AppContext versiegeln** – Verhindert weitere Schreibzugriffe und ermöglicht sperrfreie Lesezugriffe
+4. **Komponenten starten** – Ruft `Start()` für jede Komponente mit `Starter`-Interface auf
 
 ### Phase 4: Entry-Ladung
 
-Registry-Einträge (aus YAML-Dateien) werden geladen und validiert:
+Registry-Einträge aus den Projektmanifesten `_index.json`, `_index.yaml` und `_index.yml` werden geladen und validiert:
 
 1. Einträge aus Projektdateien geparst
 2. Pipeline-Stufen transformieren Einträge (Override, Link, Bytecode)
@@ -84,14 +83,14 @@ Komponenten deklarieren Abhängigkeiten. Der Loader baut einen gerichteten azykl
 | Komponente | Abhängigkeiten | Zweck |
 |------------|----------------|-------|
 | PIDGen | keine | Prozess-ID-Generierung |
-| Dispatcher | PIDGen | Command-Handler-Dispatch |
-| Registry | Dispatcher | Entry-Speicherung und Versionierung |
+| Dispatcher | keine | Dispatch von Command-Handlern |
+| Registry | Artifact | Speicherung und Versionierung von Einträgen |
 | Finder | Registry | Entry-Lookup und Suche |
 | Supervisor | Registry | Service-Neustartrichtlinien |
-| Topology | Supervisor | Prozess-Eltern/Kind-Baum |
+| Topology | keine | Eltern-Kind-Baum der Prozesse |
 | Lifecycle | Topology | Service-Lebenszyklus-Management |
-| Factory | Lifecycle | Prozess-Spawning |
-| Functions | Factory | Zustandslose Funktionsaufrufe |
+| Factory | keine | Erzeugen von Prozessen |
+| Functions | Registry | Ausführung gepoolter Funktionen |
 
 ## Event-Bus
 
@@ -100,8 +99,8 @@ Asynchrones Pub/Sub für Inter-Komponenten-Kommunikation.
 ### Design
 
 - Einzelne Dispatcher-Goroutine verarbeitet alle Events
-- Queue-basierte Action-Zustellung verhindert Publisher-Blockierung
-- Pattern-Matching unterstützt exakte Topics und Wildcards (`*`)
+- Publisher stellen Aktionen in eine Queue, ohne auf die Zustellung an Abonnenten zu warten
+- Der Musterabgleich unterstützt exakte Werte, `*`, `**` und Alternativen innerhalb eines Segments
 - Kontextbasierter Lebenszyklus bindet Subscriptions an Cancellation
 
 ### Event-Fluss
@@ -112,15 +111,15 @@ sequenceDiagram
     participant B as EventBus
     participant S as Subscribers
 
-    P->>B: Publish(topic, data)
+    P->>B: Send(ctx, Event)
     B->>B: Match patterns
-    B->>S: Queue action
+    B->>S: Deliver on subscriber channel
     S->>S: Execute callback
 ```
 
 ### Gängige Topics
 
-Topics haben das Format `<system>:<kind>`. Die integrierten Systeme veröffentlichen:
+Events führen `System` und `Kind` als getrennte Felder. Die integrierten Systeme veröffentlichen:
 
 | System | Kind | Zweck |
 |--------|------|-------|
@@ -136,7 +135,7 @@ Versionierte Speicherung für Entry-Definitionen.
 ### Features
 
 - **Versionierter Zustand** - Jede Mutation erstellt neue Version
-- **History** - SQLite-gestützte Historie für Audit-Trail
+- **Historie** – Standardmäßig im Arbeitsspeicher; optional SQLite-gestützt für ein dauerhaftes Audit-Protokoll (`history_type: sqlite`)
 - **Beobachtung** - Spezifische Einträge auf Änderungen beobachten
 - **Ereignisgesteuert** - Publiziert Events bei Mutationen
 
@@ -144,8 +143,8 @@ Versionierte Speicherung für Entry-Definitionen.
 
 ```mermaid
 flowchart LR
-    YAML[YAML-Dateien] --> Parser
-    Parser --> Stages[Pipeline-Stufen]
+    YAML[YAML Files] --> Parser
+    Parser --> Stages[Pipeline Stages]
     Stages --> Registry
     Registry --> Validation
     Validation --> Active
@@ -170,18 +169,18 @@ Nachrichtenrouting zwischen Prozessen über Nodes hinweg.
 ```mermaid
 flowchart LR
     subgraph Router
-        Local[Local Node] --> Peer[Peer Nodes]
+        Local[Local Node] --> Peer[Registered Peers]
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Selber Prozess]
-    Peer -.- P[Selber Cluster]
-    Inter -.- I[Remote]
+    Local -.- L[Same-node hosts and processes]
+    Peer -.- P[External receivers, such as Temporal]
+    Inter -.- I[Other cluster nodes]
 ```
 
-1. **Local** - Direkte Zustellung innerhalb desselben Nodes
-2. **Peer** - Weiterleitung an Peer-Nodes im Cluster
-3. **Internode** - Routing zu Remote-Nodes via Netzwerk
+1. **Local** – Direkte Zustellung zwischen Hosts und Prozessen desselben Nodes
+2. **Peer** – Weiterleitung an einen registrierten externen Empfänger, etwa Temporal
+3. **Internode** – Netzwerk-Routing zu einem anderen Cluster-Node als Fallback
 
 ### Mailbox
 
@@ -203,7 +202,7 @@ Versiegeltes Dictionary für Komponentenreferenzen.
 | Duplikat-Schlüssel | Panic |
 | Typsicherheit | Typisierte Getter-Funktionen |
 
-Komponenten hängen Services während der Load-Phase an. Nach Boot-Abschluss wird AppContext für optimale Leseleistung versiegelt.
+Komponenten binden ihre Services während der Ladephase an. Nach Abschluss des Starts wird AppContext für optimale Leseleistung versiegelt.
 
 ## Shutdown
 
@@ -218,7 +217,7 @@ Zweites Signal erzwingt sofortigen Exit.
 
 ## Siehe auch
 
-- [Scheduler](internals/scheduler.md) - Prozessausführung
-- [Event-Bus](internals/events.md) - Pub/Sub-System
-- [Registry](internals/registry.md) - Zustandsverwaltung
-- [Command-Dispatch](internals/dispatch.md) - Yield-Behandlung
+- [Scheduler](./scheduler.md) – Prozessausführung
+- [Event-Bus](./events.md) – Pub/Sub-System
+- [Registry](./registry.md) – Zustandsverwaltung
+- [Command-Dispatch](./dispatch.md) – Yield-Behandlung

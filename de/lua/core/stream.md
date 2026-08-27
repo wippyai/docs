@@ -1,23 +1,28 @@
 ---
 title: "Streams"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Von I/O-Modulen zurückgegebene Stream-Objekte lesen, schreiben, positionieren, prüfen, scannen und schließen."
 ---
 
 # Streams
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Stream-Lese-/Schreiboperationen zur effizienten Datenverarbeitung. Stream-Objekte werden von anderen Modulen (HTTP, Dateisystem, etc.) bezogen.
+Streams bieten inkrementelles I/O für HTTP-, Dateisystem- und andere Module. Die Module, denen die zugrunde liegenden Daten gehören, erstellen die Stream-Objekte. Diese Seite ist eine API-Referenz; die Scanner-Schleife verwendet einen anwendungsdefinierten Callback `process(token)`.
 
-## Laden
+## Einen Stream beziehen
 
 ```lua
--- Vom HTTP-Request-Body
-local stream = req:stream()
+-- From HTTP request body
+local stream, err = req:stream()
+if err then return nil, err end
 
--- Vom Dateisystem
+-- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## Lesen
@@ -28,14 +33,9 @@ local chunk, err = stream:read(size)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `size` | integer | Zu lesende Bytes (0 = alle verfügbaren lesen) |
+| `size` | integer | Zu lesende Bytes (0 = standardmäßiger 32-KB-Chunk) |
 
-**Gibt zurück:** `string, error` — nil bei EOF
-
-```lua
--- Alle verbleibenden Daten lesen
-local data, err = stream:read_all()
-```
+**Gibt zurück:** `string, error` — `nil, nil` am EOF
 
 ## Schreiben
 
@@ -68,7 +68,7 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
-Gepufferte Daten in den zugrunde liegenden Speicher schreiben.
+`flush` schreibt gepufferte Daten in das zugrunde liegende Ziel.
 
 ## Stream-Info
 
@@ -90,7 +90,7 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-Stream schließen und Ressourcen freigeben. Sicher mehrfach aufzurufen.
+`close` gibt die Ressourcen des Streams frei und kann mehrfach aufgerufen werden.
 
 ## Scanner
 
@@ -107,26 +107,36 @@ local scanner, err = stream:scanner(split)
 ### Scanner-Methoden
 
 ```lua
-local has_more = scanner:scan()  -- Zum nächsten Token vorrücken
-local token = scanner:text()      -- Aktuelles Token abrufen
-local err_msg = scanner:err()     -- Fehler abrufen falls vorhanden
+local has_more, err = scanner:scan()  -- advance to next token
+local token = scanner:text()           -- current token
+local err_msg = scanner:err()          -- scanner error if any
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then
+        local scan_err = scanner:err()
+        if scan_err then return nil, scan_err end  -- raw scanner error string
+        break  -- clean EOF
+    end
+    process(scanner:text())
 end
 ```
+
+Wenn `scan()` den Wert `false` zurückgibt, prüfen Sie `scanner:err()`, bevor Sie das Ergebnis als EOF behandeln. Tokenisierungsfehler und Fehler beim zugrunde liegenden Lesen werden im Scanner gespeichert und erscheinen nicht im zweiten Rückgabewert von `scan()`.
 
 ## Fehler
 
 | Bedingung | Art |
-|-----------|------|
-| Ungültiger whence/split-Typ | `INVALID` |
-| Stream geschlossen | `INTERNAL` |
-| Nicht lesbar/schreibbar | `INTERNAL` |
-| Lese-/Schreibfehler | `INTERNAL` |
+|-----------|-----|
+| Stream geschlossen | `errors.INTERNAL` |
+| Nicht lesbar/schreibbar | `errors.INTERNAL` |
+| Fehler beim Lesen, Schreiben oder Positionieren | `errors.INTERNAL` |
+| Positionieren eines nicht positionierbaren Streams | `errors.INTERNAL` |
+| Fehler beim Schließen, Flushen oder Abrufen von Statistiken | `errors.INTERNAL` |
+| Fehler beim Erstellen eines Scanners oder beim Scan-Dispatch | `errors.INTERNAL` |
+| Tokenisierungsfehler oder Fehler beim zugrunde liegenden Lesen | Unstrukturierter String von `scanner:err()` |
+
+Ein nicht unterstützter `whence`- oder Scanner-Split-Wert löst einen Lua-Argumentfehler aus, statt einen strukturierten Fehlerwert zurückzugeben.

@@ -1,28 +1,22 @@
 ---
 title: "Lizenz"
-description: "Wippy wird unter der Mozilla Public License 2.0 veröffentlicht."
+description: "Lizenzierung der Wippy-Dokumentation, der Runtime und separat lizenzierter Komponenten."
 ---
 
 # Lizenz
 
-Wippy wird unter der Mozilla Public License 2.0 veröffentlicht.
+Dieses Dokumentations-Repository und die Wippy-Runtime werden unter der Mozilla Public License 2.0 veröffentlicht. Einzelne Wippy-Module und Komponenten können andere Lizenzen verwenden; maßgeblich ist jeweils die Datei `LICENSE` im betreffenden Repository.
 
 ## Mozilla Public License 2.0
 
-```
-Copyright 2025 Spiral Scout
-
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
-```
+Lesen Sie den genauen Lizenztext im [Dokumentations-Repository](https://github.com/wippyai/docs/blob/main/LICENSE) oder im [Runtime-Repository](https://github.com/wippyai/runtime/blob/main/LICENSE).
 
 ## Was das bedeutet
 
-Sie können Wippy in kommerziellen Projekten verwenden, den Quellcode modifizieren und Ihre Modifikationen verteilen. Modifizierte Dateien müssen unter MPL-2.0 bleiben, aber Sie können Wippy mit proprietärem Code in einem größeren Werk kombinieren.
+MPL-2.0 erlaubt kommerzielle Nutzung, Änderung und Verteilung. Geänderte, von der MPL abgedeckte Dateien bleiben unter MPL-2.0, können aber in einem größeren Werk mit separat lizenziertem Code kombiniert werden.
 
-Sie müssen den Quellcode aller modifizierten MPL-lizenzierten Dateien bei der Verteilung verfügbar machen.
+Wenn Sie geänderte, von der MPL abgedeckte Dateien verteilen, müssen Sie deren Source Form unter MPL-2.0 verfügbar machen. Die vollständigen Bedingungen enthält der Lizenztext.
 
 ## Abhängigkeiten
 
-Wippy verwendet verschiedene Open-Source-Abhängigkeiten, jede mit ihrer eigenen Lizenz. Alle Abhängigkeiten sind mit kommerzieller Nutzung kompatibel.
+Abhängigkeiten behalten ihre eigenen Lizenzen. Das öffentliche Repository [`wippyai/wasm-runtime`](https://github.com/wippyai/wasm-runtime/blob/main/LICENSE) steht beispielsweise unter MIT statt MPL-2.0.

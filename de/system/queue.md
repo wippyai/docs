@@ -299,6 +299,8 @@ Gewöhnliche Rückgabewerte, einschließlich `false`, wählen das Bestätigungsv
 
 ### Dead-Letter-Routing
 
+Dead-Letter-Routing ist noch nicht implementiert. Der Block `dead_letter` (siehe [Queue-Konfiguration](#queue-konfiguration)) wird in der Konfiguration akzeptiert, aber kein integrierter Treiber zählt derzeit Versuche, leitet negativ bestätigte Nachrichten an die konfigurierte DLQ weiter oder setzt `x_dead_letter_*`-Header. Eine negativ bestätigte Nachricht wird nach der eigenen Richtlinie des Treibers erneut zugestellt. Der Header-Namensraum `x_*` ist für künftige DLQ-Buchführung reserviert; Publisher sollten daher keine `x_*`-Header setzen.
+
 Dead-Letter-Routing ist noch nicht implementiert. Der Block `dead_letter` wird in der Konfiguration akzeptiert, aber derzeit zählt kein integrierter Treiber Versuche, leitet abgelehnte Nachrichten an die konfigurierte DLQ weiter oder setzt `x_dead_letter_*`-Header. Eine abgelehnte Nachricht wird gemäß der eigenen Richtlinie des Treibers erneut zugestellt. Der Header-Namespace `x_*` ist für zukünftige DLQ-Buchhaltung reserviert; Publisher sollten daher keine `x_*`-Header setzen.
 
 ## Nachrichten veröffentlichen

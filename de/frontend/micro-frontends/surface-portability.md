@@ -151,7 +151,7 @@ direkt gemountetes Element misst seinen eigenen Root statt das Browserfenster.
 
 Der Vertrag bindet `position: fixed` nicht. `container-type` erzeugt keinen
 Containing Block. Im Web Fragment bezieht sich `fixed` auf das **Hostfenster**,
-nicht das Panel. Fixieren Sie eine App bei nötiger Viewport-Verankerung mit
+statt auf das Panel. Siehe [Render-Engines](../web-host/render-engines.md). Fixieren Sie eine App bei nötiger Viewport-Verankerung mit
 `wippy.renderEngine: "iframe"`.
 
 Für eine paneldeckende portable Fläche verwenden Sie `inset: 0` und einen
@@ -205,7 +205,7 @@ benennen Sie den Root in `app` um.
 - `body > *` sowie `html`/`body`-Regeln sind zwischen Engines nicht portabel. iframe legt die Surface-Box zwischen Body und Inhalt; Fragment nennt Dokumentelemente um. Regeln gehören auf den eigenen Root innerhalb der Oberfläche.
 - Über `<w-iframe>` / `<w-artifact>` gerenderter Inhalt erhält keine Oberfläche, auch als Top-Level-Managed-Panel. `host.surface` meldet `width: 0`, `sizing: 'content'`, aber `engine: 'iframe'`. Prüfen Sie `snapshot.width`; nutzen Sie `kind: 'page'` für Inhalte mit Vertrag.
 - Bei Content-Sizing gibt es keine Blockachse.
-- Fragment-Apps müssen an `#app` mounten.
+- Fragment-Apps müssen an `#app` mounten; siehe [App-Root (`#app`)](#app-root-app) zur erforderlichen Höhenkette und zum Nullhöhen-Symptom.
 - Die veraltete Route `/page/:id` erhält keine Oberfläche; `/c/:id` verwenden. Auch hier `snapshot.width` statt Engine prüfen.
 - Die Engines können sich um eine Scrollbarbreite unterscheiden: iframe misst innerhalb des Dokuments, Fragment am Hostwrapper.
 - Dies ist keine Isolationsgrenze. Ein Fragment erhält kein eigenes Dokument, keinen Viewport, keine Selection, Top Layer oder Origin.

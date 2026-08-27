@@ -7,7 +7,7 @@ description: "Workflows als gerichtete azyklische Graphen erstellen, ausführen,
 
 Das Modul `wippy/dataflow` stellt eine Workflow-Engine auf Grundlage gerichteter azyklischer Graphen (DAGs) bereit. Workflows bestehen aus Knoten – Funktionen, Agenten, Zyklen und parallelen Verarbeitern –, die durch typisierte Datenrouten verbunden sind. Der Orchestrator übernimmt Ausführung, Zustandspersistenz und Wiederherstellung.
 
-Diese Seite ist eine API-Referenz mit Teilrezepten. Die Beispiele setzen registrierte Funktionen wie `app:tokenize` und `app:worker`, Eingabewerte wie `task` und `file_list`, eine Persistenzdatenbank sowie einen Prozess-Host voraus; sie bilden allein noch keine ausführbare Anwendung.
+Diese Seite ist eine API-Einführung mit konzeptionellen und Referenzausschnitten, kein eigenständiges Tutorial. Werte wie `task`, `config` und `file_list` sowie IDs wie `app:tokenize` oder `app:worker` stehen für Daten und Registry-Entrys der Anwendung. Die Ausschnitte setzen außerdem die unter [Einrichtung](#einrichtung) beschriebene Persistenzdatenbank und den Prozess-Host voraus. Ein vollständiges ausführbares Projekt finden Sie unter [Einen Dataflow-Workflow erstellen](../tutorials/dataflow.md).
 
 ## Einrichtung
 

@@ -9,6 +9,8 @@ description: "Rezepte zum Umstellen viewportbasierter responsiver Regeln auf den
 Block konvertiert ein isoliertes Muster. Wenden Sie den Entscheidungsbaum auf
 das gesamte Stylesheet an und prüfen Sie danach beide Engines und Sizing-Modi.
 
+Die Rezepte stellen eine vorhandene Micro-Frontend-Anwendung von viewportbasierter Responsivität auf den [Oberflächenvertrag](./surface-portability.md) um.
+
 | Label | Bedeutung |
 |---|---|
 | **automatisch** | Mechanisch, gleiche Bedeutung. |
@@ -97,7 +99,7 @@ War das Gerät gemeint, bleibt die Media Query.
 Ohne Blockachse gibt es keine Abfrage. Verwenden Sie kein `cqh`. Sizing wird
 durch den Renderort bestimmt, nicht das Paket. Ist die Blockachse zwingend,
 deklarieren Sie `requirements: ["block-size"]` und rendern Sie in einem
-Containerkontext.
+Containerkontext. Siehe „Container-Sizing und Content-Sizing“ unter [Portabilität von Oberflächen](./surface-portability.md).
 
 ## 9. Geometrie in einer Umwelt-Media-Query — **manuell**
 
@@ -235,6 +237,8 @@ rootgebunden ist und sichtbar fallbackt. Komponentenqueries sind additiv.
 
 `sv*`/`lv*` sind Browser-Viewport-Einheiten, nicht „surface“.
 
+### Berechnungen
+
 ```css
 /* before */ block-size: calc(100vh - 4rem);
 /* after  */ block-size: calc(var(--wippy-surface-height, 400px) - 4rem);
@@ -243,8 +247,12 @@ rootgebunden ist und sichtbar fallbackt. Komponentenqueries sind additiv.
 Ein fixer, sichtbar falscher Fallback ist besser als `100vh`, das den alten
 Fehler verbirgt. `min()`/`max()`/`clamp()` bleiben strukturell gleich.
 
+### Wann `100%` besser als ein Surface-Wert ist
+
 Soll ein Element seinen Elternknoten füllen, verwenden Sie `100%` oder
 `w-full`; Surface-Werte nur für die Seitenfläche selbst.
+
+### Fehlenden Vertrag nicht hinter einem Fallback verbergen
 
 ```css
 /* ✗ */ inline-size: var(--wippy-surface-width, 100vw);
@@ -259,6 +267,7 @@ braucht keine Migration, die Größe schon: Ein surfacefüllendes Overlay nutzt
 `inset: 0`, nicht `vw`/`vh` oder die bei Content-Sizing fehlende Höhenvariable.
 Für beide Engines: `absolute` in einem eigenen `relative` App-Root. `fixed` ist
 nur in iframe panelbezogen; in Fragment bezieht es sich auf das Hostfenster.
+Siehe [Render-Engines](../web-host/render-engines.md) und pinnen Sie die Anwendung bei Bedarf mit `wippy.renderEngine: "iframe"`.
 Hostvermittelte Overlay-Platzierung und Scrollhilfen sind noch nicht verfügbar.
 
 ## Checkliste

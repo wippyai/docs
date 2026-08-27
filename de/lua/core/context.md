@@ -1,6 +1,6 @@
 ---
 title: "Request-Kontext"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Anfragebezogene Werte lesen, die über Funktions- und Prozessaufrufe weitergegeben werden."
 ---
 
 # Request-Kontext
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Zugriff auf anfragespezifische Kontextwerte. Der Kontext wird über [Funcs](lua/core/funcs.md) oder [Process](lua/core/process.md) gesetzt.
+Das Modul `ctx` liest anfragebezogene Werte, die über [Funktionsaufrufe](./funcs.md) oder [Prozessoperationen](./process.md) weitergegeben werden. Diese Seite ist eine API-Referenz; die Ausschnitte zeigen einzelne Aufrufe innerhalb eines ausführbaren Lua-Entrys.
 
 ## Laden
 
@@ -38,12 +38,14 @@ local values, err = ctx.all()
 
 **Gibt zurück:** `table, error`
 
+`ctx.all()` gibt eine leere Tabelle zurück, wenn ein Ausführungskontext vorhanden ist, aber keine Anfragewerte enthält. Fehlt der Ausführungskontext, werden `nil, errors.INTERNAL` zurückgegeben.
+
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Leerer Schlüssel | `errors.INVALID` | nein |
 | Schlüssel nicht gefunden | `errors.NOT_FOUND` | nein |
-| Kein Kontext verfügbar | `errors.INTERNAL` | nein |
+| Kein Ausführungskontext verfügbar | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](./errors.md) für den Umgang mit Fehlern.

@@ -257,6 +257,13 @@ Zeigt eine PrimeVue-Benachrichtigung. `severity` akzeptiert `success`, `info`, `
 host.toast(options: ToastMessageOptions): void
 ```
 
+| `severity` | Darstellung |
+|------------|-------------|
+| `success` | Grün |
+| `info` | Blau |
+| `warn` | Gelb |
+| `error` | Rot |
+
 ```typescript
 host.toast({
   severity: 'success',
@@ -810,6 +817,8 @@ const useMyStore = defineStore('my-store', () => {
 
 ## WebSocket
 
+### `ws`
+
 `ws` sendet Befehle über die WebSocket-Verbindung des Hosts; Antworten kommen über `on()`.
 
 ### `ws.send(command)`
@@ -1067,7 +1076,13 @@ app.use(router)
 
 ### `<wippy-loading>`
 
-Vollflächiger, Theme-fähiger Spinner. Attribute: `title`, `subtitle` und boolesches `no-bg`.
+Vollflächiger Ladeindikator mit Theme-fähigen Farben.
+
+| Attribut | Beschreibung |
+|----------|--------------|
+| `title` | Haupttext (zum Beispiel „Loading...“) |
+| `subtitle` | Sekundärtext |
+| `no-bg` | Boolean — transparenter Hintergrund für Overlays |
 
 ```html
 <wippy-loading title="Loading..." subtitle="Please wait"></wippy-loading>
@@ -1076,7 +1091,15 @@ Vollflächiger, Theme-fähiger Spinner. Attribute: `title`, `subtitle` und boole
 
 ### `<wippy-error>`
 
-Vollflächige Fehlerdarstellung. `icon` akzeptiert `circle`, `triangle` oder `sad`; `severity` akzeptiert `danger` oder `warning`; Standardwerte sind `circle` und `danger`. `no-bg` macht den Hintergrund transparent.
+Vollflächige Fehlerdarstellung mit von der Severity abhängiger Farbgebung.
+
+| Attribut | Werte | Standard |
+|----------|-------|----------|
+| `title` | Beliebiger String | „Something went wrong“ |
+| `message` | Beliebiger String | (leer) |
+| `icon` | `circle`, `triangle`, `sad` | `circle` |
+| `severity` | `danger`, `warning` | `danger` |
+| `no-bg` | Boolean | (nicht vorhanden) |
 
 ```html
 <wippy-error title="Failed to load" message="Server returned 500" severity="danger"></wippy-error>

@@ -111,6 +111,8 @@ Für Web Components: `themeConfigUrl` liefert Plattformstandards,
 `primeVueCssUrl` PrimeVue-Styles. Ein aktuelles `@wippy-fe/webcomponent-core`
 muss konfigurierte Werte in den Inner Root überbrücken; kopieren Sie keine Palette.
 
+Die vollständige Injektionspipeline beschreiben [Theming für Micro-Frontend-Anwendungen](./micro-frontend-app-theming.md) und [Theming für Web Components](./web-component-theming.md).
+
 ## Host-Adresszeile aktualisiert sich nicht
 
 Portable Apps verwenden `createAppRouter()` aus `@wippy-fe/router`; das Paket

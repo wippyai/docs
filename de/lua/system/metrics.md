@@ -1,6 +1,6 @@
 ---
 title: "Metriken & Telemetrie"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Anwendungs-Counter, Gauges und Histogrammbeobachtungen erfassen."
 ---
 
 # Metriken & Telemetrie
@@ -8,7 +8,15 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Erfassen Sie Anwendungsmetriken mit Countern, Gauges und Histogrammen.
+Das Modul `metrics` erfasst Anwendungs-Counter, Gauges und Histogrammbeobachtungen.
+
+Diese Seite ist eine API-Referenz. Die Ausschnitte zeigen jeweils eine Beobachtung und reichen Collector-Fehler weiter.
+
+Nach der Übergabe an den aktiven Collector liefert jede Funktion `true, nil`. Ist im Ausführungskontext kein Collector vorhanden, liefert sie `nil` und einen nicht wiederholbaren Fehler `errors.INTERNAL`.
+
+Labels sind optional. Nur Einträge mit Zeichenkettenschlüssel und Zeichenkettenwert werden erfasst; andere Einträge werden stillschweigend ignoriert. Ein nicht tabellarisches Labels-Argument wird wie ein fehlendes Argument behandelt.
+
+Metriknamen werden ohne lokale Validierung weitergereicht.
 
 ## Laden
 
@@ -18,10 +26,14 @@ local metrics = require("metrics")
 
 ## Counter
 
-### Counter inkrementieren
+### `metrics.counter_inc`
+
+Erhöht einen Counter um eins.
 
 ```lua
-metrics.counter_inc("requests_total", {method = "POST"})
+local recorded, err = metrics.counter_inc("requests_total", {method = "POST"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -31,10 +43,14 @@ metrics.counter_inc("requests_total", {method = "POST"})
 
 **Gibt zurück:** `boolean, error`
 
-### Zu Counter addieren
+### `metrics.counter_add`
+
+Addiert einen Wert zu einem Counter.
 
 ```lua
-metrics.counter_add("bytes_total", 1024, {direction = "out"})
+local recorded, err = metrics.counter_add("bytes_total", 1024, {direction = "out"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -45,12 +61,16 @@ metrics.counter_add("bytes_total", 1024, {direction = "out"})
 
 **Gibt zurück:** `boolean, error`
 
+Die Runtime reicht den Wert unverändert weiter und verlangt keinen positiven Wert.
+
 ## Gauges
 
-### Gauge setzen
+### `metrics.gauge_set`
 
 ```lua
-metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+local recorded, err = metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -61,10 +81,12 @@ metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 
 **Gibt zurück:** `boolean, error`
 
-### Gauge inkrementieren
+### `metrics.gauge_inc`
 
 ```lua
-metrics.gauge_inc("connections", {pool = "db"})
+local recorded, err = metrics.gauge_inc("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -74,10 +96,12 @@ metrics.gauge_inc("connections", {pool = "db"})
 
 **Gibt zurück:** `boolean, error`
 
-### Gauge dekrementieren
+### `metrics.gauge_dec`
 
 ```lua
-metrics.gauge_dec("connections", {pool = "db"})
+local recorded, err = metrics.gauge_dec("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -89,10 +113,12 @@ metrics.gauge_dec("connections", {pool = "db"})
 
 ## Histogramme
 
-### Beobachtung aufzeichnen
+### `metrics.histogram`
 
 ```lua
-metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+local recorded, err = metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -109,4 +135,6 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 |-----------|------|-----------|
 | Collector nicht verfügbar | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Ungültige Typen für Name oder Wert lösen Lua-Argumentfehler aus, statt strukturierte Fehler zurückzugeben.
+
+Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.

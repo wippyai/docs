@@ -36,7 +36,8 @@ Regeln gehören unter `.wippy-host-app .p-drawer-content`.
 Verschiebt man dupliziertes Modul-CSS in die Facade, verschwindet die
 Abhängigkeit nicht. Gehört der Selektor nicht zum gemeinsamen PrimeVue-
 Themevokabular, entsteht ein privater Facade-Vertrag. Modulübergreifendes
-Vokabular außerhalb des Themes gehört in ein veröffentlichtes Paket.
+Vokabular außerhalb des Themes gehört in ein veröffentlichtes Paket; siehe
+[Designschicht](../design-layer.md).
 
 ## Semantische Gleichheit
 

@@ -232,8 +232,10 @@ nicht unter `hostConfig`:
 ## Konfigurationsendpunkt
 
 Die Facade registriert `GET /facade/config` am öffentlichen Router. Der effektive Pfad
-enthält dessen Präfix; mit `/api/public` aus der Einrichtung lädt die Seite
-`/api/public/facade/config`. Derselbe Router stellt `GET /facade/variables.css` bereit.
+enthält dessen Präfix; mit `/api/public` aus der [Einrichtung](#einrichtung) lädt die Seite
+`/api/public/facade/config`. Derselbe Router stellt `GET /facade/variables.css` bereit,
+das `css_variables` als `text/css`-Stylesheet für Seiten außerhalb des Web Hosts rendert;
+siehe [Facade-Theming auf Seiten außerhalb des Web Hosts wiederverwenden](#facade-theming-auf-seiten-außerhalb-des-web-hosts-wiederverwenden).
 Das Frontend lädt die Konfiguration beim Start:
 
 ```json
@@ -287,14 +289,14 @@ Branding der Anwendung.
 Die API-URL stammt aus `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` wird durch Ersetzen von
 `http://` durch `ws://` beziehungsweise `https://` durch `wss://` abgeleitet.
 `hostConfig` verwendet camelCase und enthält die Facade-Parameter einschließlich
-`render_engine` als `renderEngine`. `api_routes`, `axios_defaults` und `tanstack`
+`render_engine` als `renderEngine` (siehe [Render-Engine](#render-engine)). `api_routes`, `axios_defaults` und `tanstack`
 werden als gleichrangige Top-Level-Felder `apiRoutes`, `axiosDefaults` und `tanstack`
 ausgegeben.
 
 `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` und `module_file`
 sind Felder der Shell zum Aufbau der Einbettungsseite und gehören nicht zur
 `AppConfig` der Children. `iframe_origin` und `iframe_url` werden nur bei manuellen
-iframe-Einbettungen ohne Facade verwendet. `mode` ist das normalisierte `fe_mode`,
+iframe-Einbettungen ohne Facade verwendet (siehe [Facade-Einstiegspunkt](../frontend/web-host/entry-point.md)). `mode` ist das normalisierte `fe_mode`,
 `module_file` entsprechend `/module.js` oder `/managed-layout.js`.
 
 ## Navigationsleiste

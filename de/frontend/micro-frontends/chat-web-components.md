@@ -20,7 +20,8 @@ Diese Elemente werden vom Host bereitgestellt; anders als eine selbst gebaute
 [Web Component](./web-component.md) werden sie weder verfasst noch registriert.
 Der srcdoc-Injektor stellt die Tags bereit. Das Web-Fragment-Gateway des
 fixierten Framework-Releases lässt `chat.js` bewusst aus. Fragmentseiten dürfen
-die Tags daher nicht voraussetzen und nutzen stattdessen die Host-Chatsteuerung.
+die Tags daher nicht voraussetzen und nutzen stattdessen die Host-Chatsteuerung;
+siehe [Laden](#laden).
 
 > Verwenden Sie die Elemente für eine Chatoberfläche **in der eigenen Seite oder
 > im eigenen Panel**. Zum imperativen Öffnen des Host-Chatpanels dienen
@@ -211,13 +212,15 @@ verdecken und externe Ressourcen anfordern.
 Das Weglassen von `css-variables` respektiert normal das Facade-Theme. Farb-
 Overrides je Instanz dienen bewusster Isolierung, nicht routinemäßigem Restyling.
 
+Das vollständige Theming-Modell mit semantischen Variablen, Hell-/Dunkelumschaltung und Shadow-DOM-CSS-Injektion des Hosts beschreibt [Theming für Web Components](./web-component-theming.md).
+
 ## Runtime-Verkabelung
 
 In einem srcdoc-iframe ist keine weitere Einrichtung nötig. Auth und
 Konfiguration stammen aus dem Proxy; REST und WebSocket nutzen die Environment-
 URLs. Beim Mount lädt die registrierte Shell ihre Interna und verbindet sich
 mit der vorhandenen Session. Für Web Fragment und direkte Hostkontexte gelten
-die genannten Verfügbarkeitsgrenzen.
+die unter [Laden](#laden) genannten Verfügbarkeitsgrenzen.
 
 ## Siehe auch
 

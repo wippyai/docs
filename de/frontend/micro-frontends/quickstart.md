@@ -75,7 +75,7 @@ export function createMainApp() {
 }
 ```
 
-**Registrierung** in `_index.yaml`; dies ist Betreiber-/Deploymentpolicy:
+**Registrierung** in `_index.yaml`; dies ist Betreiber-/Deploymentpolicy — siehe [Micro-Frontend-Anwendungen (`view.page`)](../frontend-registry/view-page.md):
 
 ```yaml
 - name: admin
@@ -196,7 +196,7 @@ function toggle(emoji: string) {
 `useComponentProps` / `useComponentEvents` sind dünne lokale Wrapper um
 `useProps()` / `useEvents()` in `src/constants.ts`.
 
-**Registrierung** als `view.component`; alle drei Autoload-Gates sind erforderlich:
+**Registrierung** als `view.component`; alle drei Autoload-Gates sind erforderlich — siehe [Web Components (`view.component`)](../frontend-registry/view-component.md):
 
 ```yaml
 - name: reaction-bar

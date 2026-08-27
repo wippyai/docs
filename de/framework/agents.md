@@ -643,6 +643,8 @@ return {
 
 Dieses Muster ermöglicht mandantenfähige Anwendungen, in denen Agenten pro Benutzer oder Workspace konfiguriert und außerhalb der Framework-Registry gespeichert werden.
 
+Wie Toolzugriff und Observability von Agenten abgesichert werden, beschreibt das [Sicherheitsmodell](../concepts/security-model.md).
+
 ## Siehe auch
 
 - [LLM](./llm.md) – zugrunde liegendes LLM-Modul

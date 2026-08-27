@@ -1,6 +1,6 @@
 ---
 title: "HTML-Bereinigung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Nicht vertrauenswürdiges HTML mit vordefinierten oder eigenen Element-, Attribut- und URL-Richtlinien bereinigen."
 ---
 
 # HTML-Bereinigung
@@ -8,9 +8,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Bereinigen Sie nicht vertrauenswürdiges HTML, um XSS-Angriffe zu verhindern. Basiert auf [bluemonday](https://github.com/microcosm-cc/bluemonday).
+Das Modul `html` bereinigt nicht vertrauenswürdiges HTML anhand von Richtlinien, die auf [bluemonday](https://github.com/microcosm-cc/bluemonday) beruhen.
 
-Bereinigung funktioniert durch Parsen von HTML und Filtern durch eine Whitelist-Richtlinie. Elemente und Attribute, die nicht explizit erlaubt sind, werden entfernt. Die Ausgabe ist immer wohlgeformtes HTML.
+Die Bereinigung parst ein HTML-Fragment und filtert es anhand einer Allowlist. Nicht erlaubte Elemente und Attribute werden entfernt; das verbleibende Fragment wird bei der Serialisierung normalisiert.
+
+Diese Seite ist eine API-Referenz. Konstruktorblöcke sind eigenständige Richtlinienbeispiele; spätere Methodenblöcke sind partielle Konfigurationsausschnitte, die ein bereits erzeugtes `policy` voraussetzen. Die bereinigte Ausgabe eignet sich nur als Inhalt eines HTML-Elements. Für die Interpolation in JavaScript, CSS, URLs oder HTML-Attribute ist sie nicht sicher; verwenden Sie einen Encoder für den tatsächlichen Ausgabekontext.
 
 ## Laden
 
@@ -28,12 +30,15 @@ Drei eingebaute Richtlinien für häufige Anwendungsfälle:
 | `ugc_policy` | Benutzerkommentare, Foren | Gängige Formatierung (`p`, `b`, `i`, `a`, Listen, etc.) |
 | `strict_policy` | Reintext-Extraktion | Nichts (entfernt alles HTML) |
 
+Alle drei Konstruktoren liefern `Policy, nil`; die Richtlinienerzeugung schlägt derzeit nicht fehl.
+
 ### Leere Richtlinie
 
 Erstellt eine Richtlinie, die nichts erlaubt. Verwenden Sie dies, um eine benutzerdefinierte Whitelist von Grund auf aufzubauen.
 
 ```lua
 local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 
 policy:allow_elements("p", "strong", "em")
 policy:allow_attrs("class"):globally()
@@ -48,7 +53,8 @@ local clean = policy:sanitize(user_input)
 Vorkonfiguriert für benutzergenerierten Inhalt. Erlaubt gängige Formatierungselemente.
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 
 local safe = policy:sanitize('<p>Hello <strong>world</strong></p>')
 -- '<p>Hello <strong>world</strong></p>'
@@ -64,7 +70,8 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 Entfernt alles HTML, gibt nur Reintext zurück.
 
 ```lua
-local policy = html.sanitize.strict_policy()
+local policy, err = html.sanitize.strict_policy()
+if err then return nil, err end
 
 local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 -- 'Hello world!'
@@ -79,7 +86,8 @@ local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 Bestimmte HTML-Elemente auf Whitelist setzen.
 
 ```lua
-local policy = html.sanitize.new_policy()
+local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 policy:allow_elements("p", "strong", "em", "br")
 policy:allow_elements("h1", "h2", "h3")
 policy:allow_elements("a", "img")
@@ -144,7 +152,7 @@ policy:allow_attrs("id"):globally()
 Attributwerte gegen Regex-Muster validieren.
 
 ```lua
--- Nur Hex-Farben in style erlauben
+-- Only allow hex colors in style
 local builder, err = policy:allow_attrs("style"):matching("^color:#[0-9a-fA-F]{6}$")
 if err then
     return nil, err
@@ -160,7 +168,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `pattern` | string | Regex-Muster |
+| `pattern` | string | Mit Go RE2 kompatibler regulärer Ausdruck |
 
 **Gibt zurück:** `AttrBuilder, error`
 
@@ -168,7 +176,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 ### Standard-URLs
 
-URL-Behandlung mit Sicherheitsstandards aktivieren.
+Aktiviert die Standardrichtlinie für URLs. Sie verlangt parsebare URLs, erlaubt relative URLs sowie `mailto`, `http` und `https` und ergänzt erlaubte Linkelemente um `rel="nofollow"`.
 
 ```lua
 policy:allow_elements("a")
@@ -235,6 +243,8 @@ policy:require_parseable_urls(true)
 
 ```lua
 policy:allow_attrs("href", "rel"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:require_nofollow_on_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -267,6 +277,8 @@ policy:require_noreferrer_on_links(true)
 
 ```lua
 policy:allow_attrs("href", "target"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -279,11 +291,13 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 **Gibt zurück:** `Policy`
 
+Wenn nicht vertrauenswürdige Links in einem neuen Tab geöffnet werden, aktivieren Sie zusätzlich `require_noreferrer_on_links(true)`, um Referrer-Leaks und den Zugriff über `opener` zu mindern.
+
 ## Komfortmethoden
 
 ### Bilder erlauben
 
-`<img>` mit Standardattributen erlauben.
+Erlaubt `<img>` mit `align`, `alt`, `height`, `width` und `src`. Der Helper aktiviert außerdem die Standard-URL-Richtlinie, erlaubt aber keine Data-URI-Bilder.
 
 ```lua
 policy:allow_images()
@@ -296,22 +310,23 @@ policy:sanitize('<img src="photo.jpg" alt="Photo">')
 
 ### Data-URI-Bilder erlauben
 
-Base64-eingebettete Bilder erlauben.
+Erlaubt syntaktisch gültige Base64-kodierte Data-URI-Bilder der Typen `gif`, `jpeg`, `png`, `svg+xml` oder `webp`. Der Sanitizer prüft Medientyp und Base64-Kodierung, nicht den dekodierten Bildinhalt. Data-URIs können aktiven Inhalt transportieren; erlauben Sie sie nur, wenn Sie den Bilddaten vertrauen.
 
 ```lua
 policy:allow_elements("img")
 policy:allow_attrs("src"):on_elements("img")
 policy:allow_data_uri_images()
 
-policy:sanitize('<img src="data:image/png;base64,iVBORw...">')
--- '<img src="data:image/png;base64,iVBORw...">'
+local input = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2O9sAAAAASUVORK5CYII=">'
+policy:sanitize(input)
+-- The data URI is preserved.
 ```
 
 **Gibt zurück:** `Policy`
 
 ### Listen erlauben
 
-Listenelemente erlauben: `ul`, `ol`, `li`, `dl`, `dt`, `dd`.
+Erlaubt `ul`, `ol`, `li`, `dl`, `dt` und `dd`. Der Helper erlaubt außerdem validierte Attribute `type` auf `ul`, `ol` und `li` sowie ein ganzzahliges Attribut `value` auf `li`.
 
 ```lua
 policy:allow_lists()
@@ -324,7 +339,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### Tabellen erlauben
 
-Tabellenelemente erlauben: `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`, `caption`.
+Erlaubt `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td` und `th` sowie die vom Helper validierten Attribute für Dimensionen, Ausrichtung, Spans, Header, Scope und verwandte Präsentationseigenschaften.
 
 ```lua
 policy:allow_tables()
@@ -337,14 +352,14 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### Standardattribute erlauben
 
-Gängige Attribute erlauben: `id`, `class`, `title`, `dir`, `lang`.
+Erlaubt global die Standardattribute `dir`, `id`, `lang` und `title`. Werte sind eingeschränkt: `dir` ist `ltr` oder `rtl`, `lang` umfasst 2 bis 20 ASCII-Buchstaben, und `id` sowie `title` müssen den sicheren Zeichenmustern des Sanitizers entsprechen. Dieser Helper erlaubt `class` nicht.
 
 ```lua
 policy:allow_elements("p")
 policy:allow_standard_attributes()
 
 policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
--- '<p id="intro" class="text" title="Introduction">Hello</p>'
+-- '<p id="intro" title="Introduction">Hello</p>'
 ```
 
 **Gibt zurück:** `Policy`
@@ -354,7 +369,8 @@ policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
 Richtlinie auf HTML-String anwenden.
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 policy:require_nofollow_on_links(true)
 
 local dirty = '<p>Hello</p><script>alert("xss")</script>'
@@ -368,10 +384,13 @@ local clean = policy:sanitize(dirty)
 
 **Gibt zurück:** `string`
 
+`sanitize` liefert ausschließlich eine Zeichenkette. In Runtime `v0.3.32a` kann der zugrunde liegende Fragmentparser fehlerhafte, nicht parsebare Eingaben in eine leere Zeichenkette umwandeln; der Lua-Wrapper kann dies nicht von gültiger Eingabe unterscheiden, deren Inhalt die Richtlinie vollständig entfernt hat. Behandeln Sie die Bereinigung als Ausgabefilter, nicht als Eingabevalidierung. Prüfen Sie erforderlichen Inhalt separat, wenn ein leeres Ergebnis relevant ist.
+
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Ungültiges Regex-Muster | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Fügen Sie `html` zur Liste `modules:` des ausführbaren Eintrags hinzu, bevor Sie es per `require` laden.

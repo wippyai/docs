@@ -161,7 +161,7 @@ Nachrichtenrouting zwischen Prozessen über Knoten hinweg.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `node_name` | string | local | Bezeichner für diesen Relay-Knoten |
+| `node_name` | string | abgeleitete Instanz-ID | Kennung dieses Relay-Knotens (Standard: UUIDv5 aus Machine-ID/Hostname und Arbeitsverzeichnis; überschreibbar über `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -201,8 +201,10 @@ Lua-VM-Caching und Expression-Auswertung.
 | `proto_cache_size` | int | 60000 | Kompilierter Prototype-Cache |
 | `main_cache_size` | int | 10000 | Main-Chunk-Cache |
 | `cache.enabled` | bool | false | Kompilierten Bytecode-/Typecheck-Cache auf Disk persistieren |
-| `cache.dir` | string | (System-Cache-Verzeichnis) | Cache-Verzeichnis-Pfad |
-| `cache.mode` | string | `read_write` | Cache-Modus: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Cache-Verzeichnispfad relativ zum Konfigurations-/Arbeitsverzeichnis |
+| `cache.mode` | string | `readwrite` | Cache-Modus: `readwrite` (Standard), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Kompilierten Bytecode persistieren, wenn `cache.enabled` gesetzt ist |
+| `cache.typecheck.enabled` | bool | true | Typecheck-Ergebnisse persistieren, wenn `cache.enabled` gesetzt ist |
 | `type_system.enabled` | bool | false | Statische Typprüfung aktivieren |
 | `type_system.strict` | bool | false | Typwarnungen als Fehler behandeln |
 

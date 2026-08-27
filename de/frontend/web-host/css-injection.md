@@ -63,7 +63,7 @@ nicht reine Hostnamen. Ihr injiziertes Custom CSS ist immer der Children-Scope
 
 **Unterstützung für `fs://`:** Die sechs genannten Theming-Einstellungen
 akzeptieren `fs://<path>`, das bei der Anfrage aus dem Dateisystem `content_fs`
-aufgelöst wird; siehe [Facade → Wiederverwendung von Facade-Theming](../../framework/facade.md).
+aufgelöst wird; siehe [Facade → Wiederverwendung von Facade-Theming](../../framework/facade.md#facade-theming-auf-seiten-außerhalb-des-web-hosts-wiederverwenden).
 `icon_sets` / `host_icon_sets` und alle Nicht-Theming-JSON-Parameter sind nur
 inline möglich.
 
@@ -77,7 +77,7 @@ Anfragezeit.
 Die Styles werden logisch in folgender Reihenfolge geschichtet. Die ersten vier
 Schichten sind normale `<style>`-/`<link>`-Elemente. `cssVariables` und die
 Nicht-`@import`-Deklarationen aus `customCSS` liegen in `adoptedStyleSheets` des
-iframe-Dokuments und gewinnen unabhängig von der Quellreihenfolge im `<head>`.
+iframe-Dokuments (siehe [Überschreibungsmechanismus](#überschreibungsmechanismus-adopted-stylesheets)) und gewinnen unabhängig von der Quellreihenfolge im `<head>`.
 Da Constructable Stylesheets kein `@import` erlauben, extrahiert der Proxy diese
 Regeln in einen normalen Head-Style mit gewöhnlicher Kaskade:
 
@@ -100,7 +100,7 @@ ihre Position in der iframe-Kaskade.
 Dies ist die logische Überschreibungsreihenfolge, nicht die tatsächliche
 Einfügereihenfolge im `<head>`. Die Adopted-Stylesheet-Kaskade bestimmt die
 Präzedenz von `cssVariables` und Nicht-`@import`-Regeln; extrahierte Imports
-bleiben normale Dokumentstyles.
+bleiben normale Dokumentstyles. Siehe [Überschreibungsmechanismus](#überschreibungsmechanismus-adopted-stylesheets).
 
 Jedes Kind-iframe erhält eigene Kopien der für diese Seite aktivierten
 Plattformbundles. Host, iframe-Seiten, Web Fragments und Komponenten-Shadow-
@@ -298,7 +298,7 @@ theming: {
 Für iframe normalisiert der Compiler führende `--`, verbindet die Basis mit
 `@light` / `@dark` und erzeugt effektive Blöcke für Auto-Hell/Dunkel sowie
 erzwungen Hell/Dunkel. Er ist variablenagnostisch. Die Überschreibung hängt
-nicht von der Quellreihenfolge im `<head>` ab.
+nicht von der Quellreihenfolge im `<head>` ab; siehe [Überschreibungsmechanismus](#überschreibungsmechanismus-adopted-stylesheets).
 
 ### Überschreibungsmechanismus: Adopted Stylesheets
 

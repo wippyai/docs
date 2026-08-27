@@ -1,16 +1,18 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Terminal-Eingabeereignisse verarbeiten und formatierte Terminal-Layouts rendern."
 ---
 
 # TTY
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Terminal-UI-Modul für Roh-Eingabeereignisse, formatierte Ausgabe und Layout-Hilfsfunktionen.
+Das Modul `tty` verarbeitet rohe Terminal-Eingabeereignisse und stellt Hilfsfunktionen für formatierte Ausgabe und Layout bereit.
+
+Diese Seite ist eine API-Referenz. Die Eingabeschleife ist ein Teilrezept für einen Terminalprozess; die Styling- und Layout-Ausschnitte sind unabhängige Beispiele.
 
 <note>
-Dieses Modul funktioniert nur im Terminal-Kontext. Du kannst es nicht aus regulären Funktionen verwenden — nur aus Prozessen, die auf einem <a href="system/terminal.md">Terminal-Host</a> laufen.
+Dieses Modul ist nur für Prozesse verfügbar, die auf einem <a href="../../system/terminal.md">Terminal-Host</a> laufen, nicht für reguläre Funktionen.
 </note>
 
 ## Laden
@@ -28,25 +30,36 @@ local tty = require("tty")
 local io = require("io")
 
 local function handler()
-    tty.start()
-    local events = tty.events()
+    local events, events_err = tty.events()
+    if events_err then return nil, events_err end
+
+    -- Subscribe before starting so the initial start event cannot be missed.
+    local started, start_err = tty.start()
+    if start_err then return nil, start_err end
+
+    local loop_err
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -187,10 +200,12 @@ end
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `keys` | string[] | Zu vergleichende Tastenmuster (z. B. `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Erforderlich. Zu vergleichende Tastenmuster, zum Beispiel `"a"`, `"ctrl+c"`, `"enter"` |
 | `help` | table | Optional. `{key = "...", desc = "..."}` für Hilfetext |
 
 **Rückgabe:** `KeyBinding`
+
+Das Typschema verlangt `keys`. Zur Laufzeit erzeugt eine fehlende oder leere `keys`-Tabelle eine Bindung, die nie zutrifft.
 
 ### KeyBinding-Methoden
 
@@ -220,7 +235,8 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
 ### tty.style()
@@ -309,18 +325,18 @@ local w, h = tty.text.size("hello\nworld") -- both
 ### Verbinden
 
 ```lua
--- Side-by-side verbinden, oben ausgerichtet
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Vertikal stapeln, zentriert
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### Maximale Dimensionen
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- breitestes
-local h = tty.text.max_height({"one\ntwo", "single"})         -- höchstes
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### Platzierung
@@ -328,13 +344,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- höchstes
 Platziert einen String in einer Box mit gegebenen Dimensionen:
 
 ```lua
--- Zentrieren in einer 80x24-Box
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Nur horizontal
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Nur vertikal
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -348,7 +364,17 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Fehler
+
+Die Funktionen zur Eingabesteuerung geben strukturierte Fehler zurück:
+
+| Bedingung | Art | Wiederholbar |
+|-----------|-----|--------------|
+| Kein Terminalkontext oder Input-Controller | `errors.UNAVAILABLE` | nein |
+| Event-Abonnement besitzt keinen Runtime- oder Prozesskontext | `errors.INTERNAL` | nein |
+| Ungültige Terminal-Yield-Antwort | `errors.INTERNAL` | nein |
+
 ## Siehe auch
 
-- [Terminal-I/O](lua/system/io.md) — stdin/stdout/stderr-Operationen
-- [Terminal-Host](system/terminal.md) — Terminal-Host-Konfiguration
+- [Terminal-I/O](./io.md) — stdin/stdout/stderr-Operationen
+- [Terminal-Host](../../system/terminal.md) — Konfiguration des Terminal-Hosts

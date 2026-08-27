@@ -1,18 +1,20 @@
 ---
-title: "Entry-Handler"
-description: "Entry-Handler verarbeiten Registry-Einträge nach Kind. Wenn Einträge hinzugefügt, aktualisiert oder gelöscht werden, dispatcht die Registry Events an…"
+title: "Entry-Listener und -Observer"
+description: "Wie Listener und Observer Registry-Mutationen für passende Entry-Kind-Muster verarbeiten."
 ---
 
-# Entry-Handler
+# Entry-Listener und -Observer
 
-Entry-Handler verarbeiten Registry-Einträge nach Kind. Wenn Einträge hinzugefügt, aktualisiert oder gelöscht werden, dispatcht die Registry Events an passende Handler.
+Entry-Listener und -Observer verarbeiten Registry-Mutationen für passende Entry-Kind-Muster.
+
+Diese Seite ist eine Go-Erweiterungsreferenz. Die Ausschnitte für Registrierung und Konfiguration setzen eine vorhandene Boot-Komponente, einen Manager, einen Transcoder und einen Anwendungskonfigurationstyp voraus.
 
 ## Funktionsweise
 
-Die Registry pflegt eine Map von Kind-Patterns zu Handlern. Wenn ein Eintrag sich ändert:
+Boot sammelt Listener und Observer samt ihren Kind-Mustern. Wenn sich ein Eintrag ändert:
 
 1. Registry emittiert Event (`entry.create`, `entry.update`, `entry.delete`)
-2. Handler-Registry matched Entry-Kind gegen registrierte Patterns
+2. Jeder Listener-Wrapper gleicht den Entry-Kind mit seinem registrierten Muster ab
 3. Passende Handler erhalten den Eintrag
 4. Handler verarbeiten oder lehnen den Eintrag ab
 
@@ -20,11 +22,11 @@ Die Registry pflegt eine Map von Kind-Patterns zu Handlern. Wenn ein Eintrag sic
 
 Handler subscriben mit Patterns:
 
-| Pattern | Matched |
+| Muster | Treffer |
 |---------|---------|
 | `http.service` | Nur exakter Match |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## EntryListener-Interface
 
@@ -38,7 +40,7 @@ type EntryListener interface {
 }
 ```
 
-Wird von `Add` ein Fehler zurückgegeben, wird der Eintrag abgelehnt.
+Gibt `Add`, `Update` oder `Delete` einen Fehler zurück, wird die jeweilige Operation abgelehnt.
 
 ## Listener vs Observer
 
@@ -51,6 +53,8 @@ Wird von `Add` ein Fehler zurückgegeben, wird der Eintrag abgelehnt.
 handlers.RegisterListener("http.*", httpManager)
 handlers.RegisterObserver("function.*", metricsCollector)
 ```
+
+Fehler eines Observers aus `Add`, `Update` und `Delete` werden ignoriert und erzeugen weder ein Accept- noch ein Reject-Event. Implementiert ein Listener oder Observer zusätzlich `TransactionListener`, nimmt er an Transaktionsbarrieren teil. Ein Fehler aus `Begin`, `Commit` oder `Discard` lehnt die jeweilige Transaktionsphase ab.
 
 ## Handler registrieren
 
@@ -72,7 +76,7 @@ func MyService() boot.Component {
 
 ## Entry-Daten dekodieren
 
-Verwenden Sie `entry.DecodeEntryConfig` aus `internal/entry`, um Entry-Daten zu unmarshallen. Dieser Helper befindet sich unter `internal/`, ist also nur innerhalb des Runtime-Moduls importierbar; Erweiterungen außerhalb des Baums müssen das Muster kopieren oder den Transcoder direkt verwenden:
+Verwenden Sie `entry.DecodeEntryConfig` aus `github.com/wippyai/runtime/system/entry`, um Entry-Daten zu dekodieren. Das Paket kann auch von Erweiterungen außerhalb des Runtime-Baums importiert werden:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -80,16 +84,19 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
     if err != nil {
         return err
     }
-    // cfg verarbeiten...
+    // Process cfg...
     return nil
 }
 ```
 
 Der Decoder:
-1. Unmarshalled `entry.Data` in Ihre Config-Struct
-2. Befüllt `ID` und `Meta` aus dem Entry
-3. Ruft `InitDefaults()` auf wenn implementiert
-4. Ruft `Validate()` auf wenn implementiert
+
+1. Löst moderne `${env:...}`-Platzhalter in den Entry-Daten auf.
+2. Dekodiert die aufgelösten Daten in Ihre Konfigurationsstruktur.
+3. Übernimmt `ID` und `Meta` aus dem Eintrag, wenn die dekodierten Felder null beziehungsweise `nil` sind.
+4. Ruft, sofern implementiert, `InitDefaults()` auf.
+5. Löst ältere `*_env`-Felder über die Environment-Registry auf.
+6. Ruft, sofern implementiert, `Validate()` auf.
 
 ## Config-Struktur
 
@@ -123,9 +130,9 @@ Für atomare Operationen über mehrere Einträge implementieren Sie `Transaction
 
 ```go
 type TransactionListener interface {
-    Begin(ctx context.Context)
-    Commit(ctx context.Context)
-    Discard(ctx context.Context)
+    Begin(ctx context.Context) error
+    Commit(ctx context.Context) error
+    Discard(ctx context.Context) error
 }
 ```
 
@@ -133,5 +140,5 @@ Die Registry ruft `Begin` vor Verarbeitung eines Batches auf, dann `Commit` bei 
 
 ## Siehe auch
 
-- [Registry](internals/registry.md) - Entry-Speicherung
-- [Architektur](internals/architecture.md) - Boot-Sequenz
+- [Registry](./registry.md) – Speicherung von Einträgen
+- [Architektur](./architecture.md) – Boot-Sequenz
