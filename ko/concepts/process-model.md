@@ -1,11 +1,13 @@
 ---
 title: "프로세스 모델"
-description: "Wippy는 격리된 프로세스에서 코드를 실행합니다. 각 프로세스는 메시지 전달로 통신하는 경량 상태 머신입니다. 이러한 액터 모델 방식은 공유 상태로 인한 버그를 없애고 동시성 프로그래밍을 예측 가능하게 합니다."
+description: "Wippy 프로세스가 실행, 통신, capability 격리 및 supervision을 통한 복구를 수행하는 방식입니다."
 ---
 
 # 프로세스 모델
 
-Wippy는 격리된 프로세스에서 코드를 실행합니다. 각 프로세스는 메시지 전달로 통신하는 경량 상태 머신입니다. 이러한 액터 모델 방식은 공유 상태로 인한 버그를 없애고 동시성 프로그래밍을 예측 가능하게 합니다.
+Wippy는 공유 memory 대신 message로 통신하는 lightweight state machine인 격리된 process에서 code를 실행합니다. 이 actor model은 각 process에 자체 state 및 lifecycle을 제공합니다.
+
+이 페이지는 lifecycle과 isolation model을 설명합니다. spawn, messaging, monitoring, registry 및 upgrade API는 [프로세스 관리 레퍼런스](../lua/core/process.md)를 사용하십시오. runtime-managed service field는 [프로세스 호스트 및 서비스](../system/process-host.md)를 참조하십시오.
 
 ## 상태 머신 실행
 
@@ -31,9 +33,9 @@ flowchart LR
 
 ## 프로세스 호스트
 
-Wippy는 단일 런타임 내에서 여러 프로세스 호스트를 실행하며, 각 호스트는 서로 다른 기능과 보안 경계를 갖습니다. 예를 들어 권한이 필요한 시스템 프로세스는 사용자 세션을 실행하는 호스트와 격리된 별도 호스트에서 실행할 수 있습니다. 호스트는 프로세스가 수행할 수 있는 작업을 제한할 수 있으며, Erlang에서는 이 수준의 격리를 위해 별도 노드가 필요합니다.
+Wippy는 하나의 런타임에서 여러 process host를 실행할 수 있으며 각 host는 자체 capability와 security boundary를 갖습니다. privileged system process는 user session을 실행하는 host와 분리된 host에서 실행할 수 있습니다.
 
-일부 호스트는 특수 목적으로 사용됩니다. 예를 들어 Terminal 호스트는 단일 프로세스만 실행하지만, 다른 호스트에서는 허용되지 않는 IO 작업 접근 권한을 부여합니다. 이를 통해 하나의 배포에서 다양한 신뢰 수준을 혼합할 수 있습니다. 전체 접근 권한이 있는 시스템 서비스와 샌드박스된 사용자 코드가 같은 런타임에서 실행될 수 있습니다.
+일부 host는 특수화되어 있습니다. 예를 들어 Terminal host는 하나의 scheduler worker를 사용하고 수락한 process에 terminal I/O context를 제공하지만 one-process lifetime limit를 강제하지 않습니다. 별도 host를 사용하면 하나의 deployment에서 서로 다른 trust level의 process를 실행할 수 있습니다.
 
 ## 보안 모델
 
@@ -41,12 +43,16 @@ Wippy는 단일 런타임 내에서 여러 프로세스 호스트를 실행하�
 
 접근 제어는 여러 수준에서 작동합니다. 개별 프로세스마다 자체 접근 수준이 있고, 호스트 간 메시지 전송은 보안 정책에 따라 차단될 수 있습니다. 샌드박스된 사용자 프로세스는 시스템 호스트에 메시지를 보내지 못하도록 설정할 수 있습니다. 현재 액터에 연결된 정책이 허용되는 작업을 결정합니다.
 
+process isolation의 security implication은 [보안 모델](./security-model.md)을 참조하십시오.
+
 ## 프로세스 생성
 
 `process.spawn()`으로 백그라운드 프로세스를 생성합니다:
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+local pid, err = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+if err then return nil, err end
+return pid
 ```
 
 첫 번째 인자는 레지스트리 엔트리, 두 번째는 프로세스 호스트이며, 나머지 인자는 프로세스에 전달됩니다.
@@ -55,22 +61,24 @@ local pid = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
 
 | 함수 | 동작 |
 |----------|----------|
-| `spawn` | Fire and forget |
+| `spawn` | 독립 프로세스 시작 |
 | `spawn_monitored` | 자식이 종료할 때 EXIT 이벤트 수신 |
-| `spawn_linked` | 양방향 - 어느 쪽이든 크래시 시 다른 쪽에 알림 |
+| `spawn_linked` | abnormal exit가 양방향으로 전파됨; `trap_links: true`이면 peer가 실패하는 대신 `LINK_DOWN`을 받음 |
 
 ## 메시지 전달
 
 프로세스는 공유 메모리가 아닌 메시지를 통해 통신합니다:
 
 ```lua
-process.send(target_pid, "topic", payload)
+local ok, err = process.send(target_pid, "topic", payload)
+if err then return nil, err end
+return ok
 ```
 
 같은 발신자의 메시지는 순서대로 도착합니다. 다른 발신자의 메시지는 순서가 섞일 수 있습니다. 전달 방식은 fire-and-forget이므로 확인이 필요하면 요청-응답 패턴을 사용하세요.
 
 <note>
-프로세스는 로컬 이름 레지스트리에 등록하여 PID 대신 이름으로 주소를 지정할 수 있습니다(예: `session_manager`). 노드 간 주소 지정을 위한 글로벌 레지스트리도 계획되어 있습니다.
+프로세스는 local name registry에 등록하여 PID 대신 이름으로 address할 수 있습니다(예: `session_manager`). `process.registry`에서 EVENTUAL(gossip-based), CONSISTENT 또는 STRONG(둘 다 Raft-backed) scope를 사용해 cross-node addressing을 위한 cluster-wide name도 등록할 수 있습니다.
 </note>
 
 ## 슈퍼비전
@@ -78,11 +86,16 @@ process.send(target_pid, "topic", payload)
 모든 프로세스는 다른 프로세스를 모니터링하여 감독할 수 있습니다. 부모 프로세스는 모니터링을 설정하고 자식을 생성하며, EXIT 이벤트를 감시하다가 실패 시 재시작합니다. 이는 Erlang의 "let it crash" 철학을 따릅니다. 프로세스는 예상치 못한 상황에서 크래시하고, 모니터링 프로세스가 복구를 담당합니다.
 
 ```lua
-local worker = process.spawn_monitored("app.workers:handler", "app:processes")
-local event = process.events():receive()
+local worker, spawn_err = process.spawn_monitored("app.workers:handler", "app:processes")
+if spawn_err then return nil, spawn_err end
+
+local event, open = process.events():receive()
+if not open then return nil, errors.new("process event channel closed") end
 
 if event.kind == process.event.EXIT and event.result.error then
-    worker = process.spawn_monitored("app.workers:handler", "app:processes")
+    local replacement, restart_err = process.spawn_monitored("app.workers:handler", "app:processes")
+    if restart_err then return nil, restart_err end
+    worker = replacement
 end
 ```
 
@@ -97,10 +110,10 @@ end
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
 ```
 
-서비스는 자동으로 시작되고, 크래시 시 백오프를 적용하며 재시작되고, 런타임의 라이프사이클 관리와 통합됩니다.
+service는 자동으로 시작되고 runtime lifecycle management와 통합됩니다. 고정된 런타임에서 최초 failed start도 `max_attempts`에 포함되므로 `5`는 최대 네 번의 후속 start를 허용합니다. 각 retry는 jitter가 적용된 `initial_delay`만큼 기다리며 attempt 사이에 delay가 증가하지 않습니다.
 
 ## 프로세스 업그레이드
 
@@ -112,7 +125,7 @@ process.upgrade("app.workers:v2", current_state)
 
 첫 번째 인자는 새 레지스트리 엔트리입니다(현재 정의를 다시 로드하려면 nil). 추가 인자는 새 버전에 전달되어 업그레이드 과정에서 상태를 넘길 수 있습니다. 프로세스는 새 코드로 즉시 실행을 재개합니다.
 
-이를 통해 개발 중에는 핫 코드 리로드가, 프로덕션에서는 무중단 업데이트가 가능합니다. 런타임이 컴파일된 프로토를 캐시하므로 업그레이드 시 컴파일 비용이 반복되지 않습니다. 업그레이드가 실패하면 프로세스가 크래시하고 일반적인 슈퍼비전 규칙이 적용됩니다. 모니터링 중인 부모가 이전 버전으로 재시작하거나 실패를 상위로 전파할 수 있습니다.
+런타임은 반복 compilation을 피하기 위해 compiled prototype을 cache합니다. upgrade가 실패하면 process가 crash하고 일반 supervision behavior가 적용됩니다. monitoring parent는 이를 restart하거나 failure를 escalate할 수 있습니다.
 
 ## 스케줄링
 
