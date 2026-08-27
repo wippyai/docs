@@ -1,13 +1,13 @@
 ---
 title: "프로세스 그룹"
-description: "프로세스 그룹을 사용하면 프로세스가 명명된 그룹에 참여하고 그룹에 주소된 브로드캐스트를 수신할 수 있으며, 멤버십은 클러스터의 모든 노드에서 추적됩니다. 모델은 Erlang/OTP pg를 따릅니다: 그룹은 첫 번째 참여 시 생성되고, 프로세스는 여러 그룹에 속할 수…"
+description: "분산 멤버십, broadcast, monitoring 및 reconciliation을 제공하는 cluster-aware named process group을 설정합니다."
 ---
 
 # 프로세스 그룹
 
-프로세스 그룹을 사용하면 프로세스가 명명된 그룹에 참여하고 그룹에 주소된 브로드캐스트를 수신할 수 있으며, 멤버십은 클러스터의 모든 노드에서 추적됩니다. 모델은 Erlang/OTP `pg`를 따릅니다: 그룹은 첫 번째 참여 시 생성되고, 프로세스는 여러 그룹에 속할 수 있으며(한 그룹에 여러 번 참여 가능), 멤버십은 분산형입니다 — 각 노드가 자체 상태를 유지하고 노드 간 메시를 통해 피어와 조정합니다.
+`pg.scope`를 사용하면 프로세스가 named group에 join하고 group으로 전송된 broadcast를 받을 수 있습니다. 모델은 Erlang/OTP `pg`를 따릅니다. group은 첫 join에서 생성되고, 프로세스는 여러 group에 속하거나 같은 group에 여러 번 join할 수 있으며, 각 cluster node는 자체 membership state를 유지하고 internode mesh를 통해 peer와 reconcile합니다. 이 페이지는 설정 및 동작 레퍼런스이며 YAML 블록은 entry fragment입니다.
 
-Lua API는 [프로세스 그룹](lua/core/pg.md)에 문서화되어 있습니다; 이 페이지는 범위 엔트리 종류와 설정을 다룹니다. 멤버십 모델은 [클러스터 가이드](guides/cluster.md)를 참조하세요.
+Lua API는 [프로세스 그룹](../lua/core/pg.md)에 문서화되어 있습니다. 이 페이지는 scope entry kind와 설정을 다룹니다. 주변 membership model은 [클러스터 가이드](../guides/cluster.md)를 참조하십시오.
 
 ## 엔트리 종류
 
@@ -26,16 +26,16 @@ Lua API는 [프로세스 그룹](lua/core/pg.md)에 문서화되어 있습니다
 
 ## 설정
 
-모든 필드는 선택적이며 일반적인 클러스터에 맞게 조정된 기본값을 가집니다.
+모든 필드는 선택 사항입니다. 표에는 기본값이 나와 있습니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|------|
 | `protocol_timeout` | duration | 5s | 노드 간 sync/discover 작업의 타임아웃 |
 | `broadcast_timeout` | duration | 5s | 단일 멤버에게 브로드캐스트 전달 타임아웃 |
-| `anti_entropy_interval` | duration | 30s | 조정 루프 주기; 틱당 하나의 피어가 동기화됨 (0이면 비활성화) |
+| `anti_entropy_interval` | duration | 30s | reconcile loop 주기; tick마다 peer 하나를 sync |
 | `circuit_breaker_failures` | int | 3 | 서킷을 열기 전 노드에 대한 연속 전송 실패 횟수 |
 | `circuit_breaker_reset_time` | duration | 10s | 열린 서킷이 테스트 전송을 위해 반개방으로 이동하기 전 대기 시간 |
-| `max_retries` | int | 3 | 실패한 브로드캐스트의 재시도 횟수 (0이면 재시도 비활성화) |
+| `max_retries` | int | 3 | 실패한 broadcast의 retry 시도 횟수 |
 | `retry_base_delay` | duration | 100ms | 재시도 간 초기 백오프 지연 |
 | `retry_max_delay` | duration | 1s | 최대 백오프 지연 |
 | `action_queue_size` | int | 256 | "용량 접근 중" 경고가 기록되는 깊이 |
@@ -70,10 +70,10 @@ Lua API는 [프로세스 그룹](lua/core/pg.md)에 문서화되어 있습니다
 
 ## 관측성
 
-활성 상태 헬스 체크(`pg.broadcast_recent.<scope>`)는 범위가 장기간 브로드캐스트 트래픽을 보지 못하면 비정상을 보고하여, 막힌 이벤트 루프나 지속적인 파티션을 표시합니다. [관측성 가이드](guides/observability.md)를 참조하세요.
+활성 상태 health check(`pg.broadcast_recent.<scope>`)는 scope가 장기간 broadcast traffic을 보지 못하면 unhealthy를 보고하여 막힌 event loop나 지속적인 partition을 표시합니다. [관측성 가이드](../guides/observability.md)를 참조하십시오.
 
 ## 참고
 
-- [프로세스 그룹](lua/core/pg.md) - Lua API
-- [클러스터](guides/cluster.md) - 멤버십과 클러스터링 모델
-- [프로세스 모델](concepts/process-model.md) - 프로세스, PID, 메시징
+- [프로세스 그룹](../lua/core/pg.md) - Lua API
+- [클러스터](../guides/cluster.md) - 멤버십과 클러스터링 모델
+- [프로세스 모델](../concepts/process-model.md) - 프로세스, PID 및 메시징

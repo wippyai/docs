@@ -173,9 +173,9 @@
   {
     "title": "System Components",
     "children": [
-      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "프로세스 호스트", "path": "system/process-host"},
       {"title": "프로세스 그룹", "path": "system/process-groups"},
-      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "터미널", "path": "system/terminal"},
       {"title": "Database", "path": "system/database"},
       {"title": "Change Data Capture", "path": "system/cdc"},
       {"title": "Store", "path": "system/store"},
