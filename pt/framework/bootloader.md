@@ -1,11 +1,13 @@
 ---
 title: "Bootloader"
-description: "O modulo wippy/bootloader orquestra a inicializacao da aplicacao descobrindo e executando funcoes de bootloader em uma ordem definida na inicializacao.…"
+description: "Configure funções de bootloader ordenadas para tarefas idempotentes de inicialização da aplicação."
 ---
 
 # Bootloader
 
-O modulo `wippy/bootloader` orquestra a inicializacao da aplicacao descobrindo e executando funcoes de bootloader em uma ordem definida na inicializacao. Outros modulos do framework (migracoes, criptografia, atualizacao de indices) registram bootloaders para executar seus proprios passos de inicializacao.
+O módulo `wippy/bootloader` orquestra a inicialização da aplicação descobrindo e executando funções de bootloader em uma ordem definida. Outros módulos do framework — migrações, criptografia e atualização de índices — registram bootloaders para executar suas próprias etapas de inicialização.
+
+Esta página é uma receita parcial de integração e uma referência de API, não uma aplicação independente. A definição abaixo é estruturalmente completa, mas `apply_seed()` representa código da aplicação que precisa implementar a operação de semeadura real e sua verificação de idempotência. Qualquer limpeza ou reversão persistente depende dessa operação específica da aplicação.
 
 ## Configuracao
 
@@ -58,7 +60,7 @@ Os bootloaders sao autonomos -- cada um verifica suas proprias condicoes, faz se
 
 ## Definindo um Bootloader
 
-Um bootloader e qualquer entrada `function.lua` com `meta.type: bootloader`:
+Um bootloader é qualquer entrada `function.*` com `meta.type: bootloader`. A maioria dos bootloaders de aplicações usa `function.lua`:
 
 ```yaml
 - name: seed_defaults
@@ -78,7 +80,7 @@ Um bootloader e qualquer entrada `function.lua` com `meta.type: bootloader`:
 | Campo | Obrigatorio | Descricao |
 |-------|----------|-------------|
 | `meta.type` | Sim | Deve ser `bootloader` |
-| `meta.order` | Nao | Ordem de execucao (padrao `100`); menor executa primeiro |
+| `meta.order` | Não | Ordem de execução (padrão `999`); valores menores executam primeiro |
 | `meta.description` | Nao | Resumo legivel por humanos |
 | `meta.requires` | Nao | Dicas de dependencia exibidas nos logs |
 
@@ -118,7 +120,9 @@ return { run = run }
 | `skipped` | Sem operacao (ja feito, pre-condicao nao atendida) |
 | `error` | Falha -- interrompe a sequencia de boot |
 
-Um bootloader que lanca um erro Lua e tratado como `error`.
+Um bootloader que gera um erro Lua, retorna um erro de execução ou retorna um valor que não seja uma tabela é convertido em um resultado `error`. O orquestrador mede e sobrescreve `duration`; um valor `details` retornado é preservado para logging.
+
+Use exatamente as três strings de status. Outro valor é registrado como `UNKNOWN`, não é incluído em um contador de status e atualmente não interrompe os bootloaders posteriores.
 
 ## Ordem de Execucao
 
@@ -129,30 +133,30 @@ Valores menores de `order` executam primeiro. Reserve ordens baixas para infraes
 | `10` | Segredos e chaves de criptografia (fornecido pelo modulo) |
 | `20` | Migracoes de schema (fornecido por `wippy/migration`) |
 | `50` | Semeadura de dados, aquecimento de indice de busca |
-| `100` | Padrao -- tarefas em nivel de aplicacao |
+| `100` | Tarefas no nível da aplicação (convenção) |
 
-Quando dois bootloaders compartilham uma ordem, a ordem de execucao entre eles nao e garantida.
+Quando dois bootloaders compartilham uma ordem, eles executam em ordem alfabética pelo ID totalmente qualificado da entrada.
 
 ## Bootloaders Integrados
 
 ### Chave de Criptografia (ordem `10`)
 
-Gera uma `ENCRYPTION_KEY` de 256 bits e a armazena atraves do `env_storage` configurado se nenhum valor estiver presente. Outros modulos (seguranca, rastreamento de uso) leem esta variavel para criptografia envelope. E ignorado quando a variavel ja existe.
+Gera 32 bytes aleatórios, codifica-os como uma `ENCRYPTION_KEY` hexadecimal de 64 caracteres e armazena o valor pelo `env_storage` configurado quando nenhum valor está presente. É ignorado quando a variável já existe.
 
 ### Bootloader de Migracao (ordem `20`)
 
-Fornecido por `wippy/migration`. Descobre cada entrada com `meta.type: migration`, agrupa-as por `meta.target_db` e aplica as pendentes. Veja [Migracoes](framework/migration.md).
+Fornecido por `wippy/migration`. Descobre cada entrada com `meta.type: migration`, agrupa-as por `meta.target_db` e aplica as pendentes. Veja [Migrações](./migration.md).
 
 ## Observando o Status de Boot
 
-O servico registra uma linha por bootloader (`SUCCESS`, `FAILED`, `SKIPPED`) com o ID da entrada, ordem e duracao. A linha de resumo final reporta os totais agregados. Um bootloader que falha aborta a inicializacao -- a politica de reinicio do supervisor entao se aplica a `bootloader.service`.
+O serviço registra a contagem descoberta e depois uma linha de resultado por bootloader executado (`SUCCESS`, `FAILED`, `SKIPPED`), com o ID da entrada, a ordem e a duração. O resumo final informa as contagens executadas e por status. Um bootloader com falha interrompe os posteriores e faz o orquestrador retornar `false` com suas estatísticas; ele não gera sozinho um erro de processo Lua.
 
 <tip>
-Mantenha os bootloaders idempotentes. Eles podem executar novamente apos um reinicio por crash, entao verifique pre-condicoes (linha existe, arquivo presente, variavel env definida) antes de fazer o trabalho.
+Mantenha os bootloaders idempotentes. Eles executam novamente sempre que `bootloader.service` é iniciado, portanto verifique as pré-condições — linha existente, arquivo presente, variável de ambiente definida — antes de realizar o trabalho.
 </tip>
 
 ## Veja Tambem
 
-- [Migracoes](framework/migration.md) - Bootloader de migracao e DSL
-- [Supervisao](guides/supervision.md) - Ciclo de vida do servico e politica de reinicio
-- [Visao Geral do Framework](framework/overview.md) - Uso de modulos do framework
+- [Migrações](./migration.md) — Bootloader de migração e DSL
+- [Supervisão](../guides/supervision.md) — Ciclo de vida do serviço e política de reinicialização
+- [Visão Geral do Framework](./overview.md) — Uso dos módulos do framework

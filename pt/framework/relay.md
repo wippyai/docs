@@ -107,7 +107,7 @@ O prefixo `session_` corresponde ao plugin de sessão. O hub remove o prefixo e 
 -- payload:
 {
     conn_pid = client_pid,
-    type = "session_get_state",  -- tipo completo original preservado
+    type = "session_get_state",  -- original full type preserved
     data = { key = "value" },
     request_id = "...",
     session_id = "..."
@@ -173,11 +173,25 @@ local json = require("json")
 
 local function handle_message(topic, payload)
     if topic == "get_state" then
-        process.send(payload.conn_pid, "ws.message", json.encode({
+        if not payload.conn_pid then
+            return nil, "Relay message is missing conn_pid"
+        end
+
+        local encoded, encode_err = json.encode({
             type = "session_state",
             data = { status = "active" }
-        }))
+        })
+        if encode_err then
+            return nil, encode_err
+        end
+
+        local sent, send_err = process.send(payload.conn_pid, "ws.message", encoded)
+        if not sent then
+            return nil, send_err or "Relay response was not sent"
+        end
     end
+
+    return true
 end
 
 local function run(args)
@@ -198,11 +212,14 @@ local function run(args)
             local payload = msg:payload():data()
 
             if topic == "resume" then
-                -- primeiro cliente conectado
+                -- first client connected
             elseif topic == "shutdown" then
-                -- último cliente desconectado
+                -- last client disconnected
             else
-                handle_message(topic, payload)
+                local ok, err = handle_message(topic, payload)
+                if not ok then
+                    error("Failed to handle relay message: " .. tostring(err))
+                end
             end
         elseif result.channel == events then
             local event = result.value
@@ -254,12 +271,12 @@ O hub central executa sob seu próprio grupo de segurança (`wippy.relay.securit
 | `ws.leave` | Cliente → Central/User Hub | Desconexão |
 | `ws.message` | Cliente → User Hub | Mensagem WebSocket |
 | `ws.cancel` | Central → User Hub | Encerramento gracioso |
-| `ws.control` | Central → User Hub | Controle de roteamento |
+| `ws.control` | Central → Cliente | Redireciona o PID de destino da conexão do cliente para o hub do usuário |
 | `hub.activity_update` | User Hub → Central | Atualização de contagem de clientes |
 
 ## Veja Também
 
-- [WebSocket Relay](http/websocket-relay.md) - Configuração de endpoint WebSocket HTTP
-- [Modelo de Processos](concepts/process-model.md) - Ciclo de vida e mensageria de processos
-- [Segurança](system/security.md) - Atores e escopos de segurança
-- [Visão Geral do Framework](framework/overview.md) - Uso do módulo do framework
+- [WebSocket Relay](../http/websocket-relay.md) — Configuração do endpoint WebSocket HTTP
+- [Modelo de Processos](../concepts/process-model.md) — Ciclo de vida e mensageria de processos
+- [Segurança](../system/security.md) — Atores e escopos de segurança
+- [Visão Geral do Framework](./overview.md) — Instalação e importação de módulos do framework
