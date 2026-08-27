@@ -5,6 +5,9 @@ description: "How Wippy frontend source becomes a routed page or web component a
 
 # Platform Topology
 
+This page is an architecture and diagnostic reference. The delivery chain and
+diagrams describe system boundaries; they do not provide a runnable project.
+
 ## Delivery chain
 
 | Stage | Owner | Verification |

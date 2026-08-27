@@ -5,6 +5,10 @@ description: "The entry point for portable Wippy pages, web components, builds, 
 
 # Frontend Contract: Start Here
 
+This page is an orientation guide and navigation reference. It identifies the
+contracts a frontend module must follow; it is not a build tutorial or a
+complete application example.
+
 Wippy frontend modules are portable by default. A module must continue to work when it is imported into another Wippy project whose facade supplies a different compliant PrimeVue theme and no project-private CSS.
 
 ## Choose the correct path

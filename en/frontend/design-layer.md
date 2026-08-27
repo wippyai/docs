@@ -5,6 +5,9 @@ description: "How to place frontend styles and components in the theme, a shared
 
 # The Design Layer
 
+This page is a design-ownership decision guide. Its CSS and component snippets
+are partial patterns that assume an existing Wippy frontend package and build.
+
 A Wippy frontend can contain many independently published modules in one
 application. The **theme** reaches every surface, while each **module** owns its
 local presentation. A **shared design layer** covers the narrower case where
@@ -66,7 +69,7 @@ it renders anything conventional, and the ladder only goes one way:
 | consumes semantic tokens or dark mode | `themeConfigUrl` |
 | can scroll | `iframeCssUrl` |
 | renders markdown | `markdownCssUrl` |
-| renders anything **Tailwind** can express | Tailwind — write utilities, not hand-rolled CSS |
+| chooses Tailwind utilities for routine layout or spacing | `primeVueCssUrl` (the Host bundles Tailwind with this asset) |
 | renders anything **PrimeVue** ships a component for — button, input, form, table, dialog, menu, tag, tooltip, any feedback control | `primeVueCssUrl` **and** `PrimeVuePlugin` |
 
 A chart on a canvas is the archetypal legitimate opt-out: it has no classic UI,
@@ -76,9 +79,12 @@ integration comes with it.
 
 Note the coupling: **Tailwind utilities are delivered with `primeVueCssUrl`.**
 There is no separate Tailwind host CSS key, so in practice a component that
-needs Tailwind is loading the PrimeVue asset too. (`preflightCssUrl` is not
-part of the key union; if Tailwind preflight is genuinely required inside the
-shadow root, load it imperatively — rarely needed.)
+chooses Tailwind is loading the PrimeVue asset too. Prefer utilities for
+ordinary layout and spacing when they keep the component clear, but portable
+module-owned CSS remains valid when a utility is not the best expression of the
+design. (`preflightCssUrl` is not part of the key union; if Tailwind preflight
+is genuinely required inside the shadow root, load it imperatively — rarely
+needed.)
 
 The practical consequence for this page: **most of what a module wants already
 exists in the backbone.** The shared design layer is a narrow band above it, not
