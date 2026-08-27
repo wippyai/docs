@@ -7,6 +7,8 @@ description: "Install, declare, and import official Wippy framework modules publ
 
 Official framework modules are published through the Wippy Hub under the `wippy` organization.
 
+This page is a module-management reference for an existing Wippy project. The commands are runnable from the project root; the YAML and import blocks are independent reference snippets rather than a complete application.
+
 ## Adding Framework Modules
 
 ```bash
@@ -28,7 +30,7 @@ entries:
   - name: dependency.test
     kind: ns.dependency
     component: wippy/test
-    version: "^0.4.0"
+    version: "*"
 ```
 
 Then resolve and install:

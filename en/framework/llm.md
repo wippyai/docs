@@ -7,6 +7,8 @@ description: "Use wippy/llm for generation, prompts, streaming, tools, structure
 
 The `wippy/llm` module provides one interface for language models from OpenAI, Anthropic, Google, and local providers. It supports text generation, tool calling, structured output, embeddings, and streaming.
 
+This page is an API primer with composable reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a registered model and provider, and any credentials required by that provider. Replace example model names with one your registry exposes; remote generation and embedding calls may incur provider charges. For a complete runnable project, follow [Build an LLM Agent](../tutorials/llm-agent.md).
+
 ## Setup
 
 Add the module to your project:
@@ -214,33 +216,90 @@ local llm = require("llm")
 local TOPIC = "llm_stream"
 
 local function main()
-    local stream_ch = process.listen(TOPIC)
-
-    local response = llm.generate("Write a short story", {
-        model = "gpt-4o",
-        stream = {
-            reply_to = process.pid(),
-            topic = TOPIC,
-        },
-    })
-
-    while true do
-        local chunk, ok = stream_ch:receive()
-        if not ok then break end
-
-        if chunk.type == "chunk" then
-            io.write(chunk.content)
-        elseif chunk.type == "thinking" then
-            io.write(chunk.content)
-        elseif chunk.type == "error" then
-            io.print("Error: " .. chunk.error.message)
-            break
-        elseif chunk.type == "done" then
-            break
-        end
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, listen_err
     end
 
-    process.unlisten(stream_ch)
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove LLM stream listener"
+            if err then
+                return nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return nil, cleanup_err
+        end
+        if err then
+            return nil, err
+        end
+        return text, response
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish(nil, nil, pid_err)
+    end
+
+    local done_ch = channel.new(1)
+    coroutine.spawn(function()
+        local response, err = llm.generate("Write a short story", {
+            model = "gpt-4o",
+            stream = {
+                reply_to = self_pid,
+                topic = TOPIC,
+            },
+        })
+        done_ch:send({ response = response, err = err })
+    end)
+
+    local full_text = ""
+    local generation_result = nil
+    local stream_done = false
+    local stream_err = nil
+
+    while true do
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not generation_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(nil, nil, "LLM stream closed before completion")
+        end
+
+        if result.channel == done_ch then
+            generation_result = result.value
+            if generation_result.err then
+                return finish(nil, nil, generation_result.err)
+            end
+            if stream_done then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "thinking" then
+                print(chunk.content or "")
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "LLM stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and generation_result then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        end
+    end
 end
 ```
 
@@ -256,6 +315,7 @@ end
 
 <note>
 Streaming requires a <code>process.lua</code> entry because it uses Wippy's process communication system (<code>process.pid()</code>, <code>process.listen()</code>).
+Run generation in a separate coroutine so the listener drains chunks concurrently, and remove the listener on every return path.
 </note>
 
 ## Tool Calling
@@ -486,19 +546,25 @@ Generate vector embeddings for semantic search:
 ```lua
 local llm = require("llm")
 
--- single text
-local response = llm.embed("The quick brown fox", {
+-- A single input still returns an array of vectors.
+local single_response, single_err = llm.embed("The quick brown fox", {
     model = "text-embedding-3-small",
     dimensions = 512,
 })
--- response.result is a float array
+if single_err then
+    error("Embedding failed: " .. tostring(single_err))
+end
+local vector = single_response.result[1]
 
--- multiple texts
-local response = llm.embed({
+-- Multiple inputs return one vector per input.
+local batch_response, batch_err = llm.embed({
     "First document",
     "Second document",
 }, { model = "text-embedding-3-small" })
--- response.result is an array of float arrays
+if batch_err then
+    error("Batch embedding failed: " .. tostring(batch_err))
+end
+local vectors = batch_response.result
 ```
 
 ## Provider Status
@@ -526,11 +592,11 @@ Errors are returned as the second return value. On error, the first return value
 local response, err = llm.generate("Hello", { model = "gpt-4o" })
 
 if err then
-    io.print("Error: " .. tostring(err))
+    print("Error: " .. tostring(err))
     return
 end
 
-io.print(response.result)
+print(response.result)
 ```
 
 ### Error Types

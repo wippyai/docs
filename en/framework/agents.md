@@ -7,6 +7,8 @@ description: "Define and run Wippy agents with tools, streaming, delegates, trai
 
 The `wippy/agent` module defines agents declaratively and runs them through a context and runner. Agents can use tools, stream responses, delegate work, apply traits, and recall memory.
 
+This page is an API primer with composable reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a registered LLM model and provider, configured provider credentials, and the agent, tool, or resolver entries referenced by each example. Later snippets build on variables such as `ctx`, `runner`, and `conversation` created in earlier sections. For a complete runnable project, follow [Build an LLM Agent](../tutorials/llm-agent.md).
+
 ## Setup
 
 Add the module to your project:
@@ -157,11 +159,19 @@ print(response.result)
 ### Step Options
 
 ```lua
+local self_pid, pid_err = process.pid()
+if pid_err then
+    error("Failed to get process PID: " .. tostring(pid_err))
+end
+
 local response, err = runner:step(conversation, {
     context = { session_id = "abc" },
-    stream_target = { reply_to = process.pid(), topic = "stream" },
+    stream_target = { reply_to = self_pid, topic = "stream" },
     tool_call = "auto",
 })
+if err then
+    error("Agent step failed: " .. tostring(err))
+end
 ```
 
 | Option | Type | Description |
@@ -330,13 +340,36 @@ Stream agent responses through `stream_target`:
 local TOPIC = "agent_stream"
 
 local function stream_step(runner, conversation)
-    local stream_ch = process.listen(TOPIC)
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, nil, listen_err
+    end
+
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove agent stream listener"
+            if err then
+                return text, nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return text, nil, cleanup_err
+        end
+        if err then
+            return text, nil, err
+        end
+        return text, response, nil
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish("", nil, pid_err)
+    end
 
     local done_ch = channel.new(1)
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
             stream_target = {
-                reply_to = process.pid(),
+                reply_to = self_pid,
                 topic = TOPIC,
             },
         })
@@ -344,36 +377,50 @@ local function stream_step(runner, conversation)
     end)
 
     local full_text = ""
+    local step_result = nil
+    local stream_done = false
+    local stream_err = nil
+
     while true do
-        local result = channel.select({
-            stream_ch:case_receive(),
-            done_ch:case_receive(),
-        })
-        if not result.ok then break end
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not step_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(full_text, nil, "Agent stream closed before completion")
+        end
 
         if result.channel == done_ch then
-            process.unlisten(stream_ch)
-            local r = result.value
-            return full_text, r.response, r.err
-        end
-
-        local chunk = result.value
-        if chunk.type == "chunk" then
-            io.write(chunk.content or "")
-            full_text = full_text .. (chunk.content or "")
-        elseif chunk.type == "done" then
-            -- wait for the step to complete
-            local r, ok = done_ch:receive()
-            process.unlisten(stream_ch)
-            if ok and r then
-                return full_text, r.response, r.err
+            step_result = result.value
+            if step_result.err then
+                return finish(full_text, nil, step_result.err)
             end
-            return full_text, nil, nil
+            if stream_done then
+                return finish(full_text, step_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "Agent stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and step_result then
+                return finish(full_text, step_result.response, stream_err)
+            end
         end
     end
-
-    process.unlisten(stream_ch)
-    return full_text, nil, nil
 end
 ```
 
@@ -408,7 +455,10 @@ Agents can delegate to other agents. Delegates appear as tools to the parent age
 Delegate calls appear in `response.delegate_calls`:
 
 ```lua
-local response = runner:step(conversation)
+local response, err = runner:step(conversation)
+if err then
+    error("Delegate step failed: " .. tostring(err))
+end
 
 if response.delegate_calls then
     for _, dc in ipairs(response.delegate_calls) do

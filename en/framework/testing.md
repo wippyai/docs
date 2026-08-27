@@ -7,6 +7,8 @@ description: "Define and run Wippy tests with BDD suites, assertions, lifecycle 
 
 The `wippy/test` module provides BDD suites, assertions, lifecycle hooks, mocks, and a runner for test entries.
 
+This page is an API primer. Its Lua, YAML, output, and project-layout blocks are reference snippets that can be combined in an existing Wippy project; they are not one copy-and-run project. Names such as `validate`, `format_name`, `db`, `connect`, and `notify_user` stand for application functions or modules supplied by the test subject. For a complete runnable example, follow [Testing a Wippy Application](../tutorials/testing.md).
+
 ## Setup
 
 Add the dependency:

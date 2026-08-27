@@ -7,6 +7,8 @@ description: "Configure Wippy Relay hubs, WebSocket clients, prefixed plugins, u
 
 The `wippy/relay` module routes WebSocket connections through a central hub and per-user hubs. User hubs manage client connections and dispatch messages to prefixed plugins.
 
+This page is a partial integration recipe and protocol reference, not a standalone WebSocket application. The setup and plugin blocks assume an existing Wippy project, a real security scope at the configured `user_security_scope`, and an HTTP WebSocket endpoint connected to the relay as described in [WebSocket Relay](../http/websocket-relay.md). Protocol payloads and lifecycle blocks are reference shapes.
+
 ## Architecture
 
 ```
@@ -173,11 +175,25 @@ local json = require("json")
 
 local function handle_message(topic, payload)
     if topic == "get_state" then
-        process.send(payload.conn_pid, "ws.message", json.encode({
+        if not payload.conn_pid then
+            return nil, "Relay message is missing conn_pid"
+        end
+
+        local encoded, encode_err = json.encode({
             type = "session_state",
             data = { status = "active" }
-        }))
+        })
+        if encode_err then
+            return nil, encode_err
+        end
+
+        local sent, send_err = process.send(payload.conn_pid, "ws.message", encoded)
+        if not sent then
+            return nil, send_err or "Relay response was not sent"
+        end
     end
+
+    return true
 end
 
 local function run(args)
@@ -202,7 +218,10 @@ local function run(args)
             elseif topic == "shutdown" then
                 -- last client disconnected
             else
-                handle_message(topic, payload)
+                local ok, err = handle_message(topic, payload)
+                if not ok then
+                    error("Failed to handle relay message: " .. tostring(err))
+                end
             end
         elseif result.channel == events then
             local event = result.value

@@ -7,6 +7,8 @@ description: "Compose and run DAG workflows with Wippy Dataflow nodes, routing, 
 
 The `wippy/dataflow` module orchestrates directed acyclic graph (DAG) workflows. Functions, agents, cycles, parallel processors, and other nodes exchange data through named, discriminator-keyed routes, while the orchestrator manages execution, persisted state, and recovery.
 
+This page is an API primer with conceptual and reference snippets, not a standalone tutorial. Values such as `task`, `config`, and `file_list`, and IDs such as `app:tokenize` or `app:worker`, stand for data and registry entries supplied by the application. The snippets also assume the persistence database and process host described in [Setup](#setup). For a complete runnable project, follow [Build a Dataflow Workflow](../tutorials/dataflow.md).
+
 ## Setup
 
 Add the module to your project:
