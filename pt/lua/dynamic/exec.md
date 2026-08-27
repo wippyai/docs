@@ -1,6 +1,6 @@
 ---
 title: "Execução de Comandos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Inicie processos externos, troque dados por streams, aguarde a conclusão e envie sinais."
 ---
 
 # Execução de Comandos
@@ -9,9 +9,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Execute comandos externos e scripts shell com controle total sobre streams de I/O.
+O módulo `exec` inicia executáveis externos e fornece acesso à entrada, saída, ciclo de vida e sinais. Esta página é uma referência de API com receitas parciais: IDs de executores, comandos, caminhos, valores de ambiente e políticas de segurança vêm da aplicação.
 
-Para configuração de executor, veja [Executor](system/exec.md).
+O executor analisa uma string de comando em executável e argumentos; ele não invoca um shell. Operadores shell como pipes, redirects, expansão de variáveis e substituição de comandos não são interpretados. Um script executável só pode ser iniciado diretamente quando o backend e o sistema operacional selecionados oferecem suporte.
+
+Antes de usar os exemplos, configure um recurso de executor e sua allowlist de comandos conforme descrito em [Executor](../../system/exec.md), e conceda `exec.get` e `exec.run` para os recursos exatos utilizados. Os exemplos usam comandos e caminhos Unix; substitua-os por comandos disponíveis no host do executor.
 
 ## Carregamento
 
@@ -28,13 +30,6 @@ local executor, err = exec.get("app:exec")
 if err then
     return nil, err
 end
-
--- Usar executor
-local proc = executor:exec("ls -la")
--- ...
-
--- Liberar quando terminar
-executor:release()
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -48,16 +43,7 @@ executor:release()
 Criar um novo processo com o comando específicado:
 
 ```lua
--- Comando simples
-local proc, err = executor:exec("echo 'Hello, World!'")
-
--- Com diretorio de trabalho
-local proc = executor:exec("npm install", {
-    work_dir = "/app/project"
-})
-
--- Com variaveis de ambiente
-local proc = executor:exec("python script.py", {
+local proc, err = executor:exec("python script.py", {
     work_dir = "/scripts",
     env = {
         PYTHONPATH = "/app/lib",
@@ -65,14 +51,10 @@ local proc = executor:exec("python script.py", {
         API_KEY = api_key
     }
 })
-
--- Executar script shell
-local proc = executor:exec("./deploy.sh production", {
-    work_dir = "/app/scripts",
-    env = {
-        DEPLOY_ENV = "production"
-    }
-})
+if err then
+    executor:release() -- release is specified to return true, nil
+    return nil, err
+end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -88,20 +70,38 @@ local proc = executor:exec("./deploy.sh production", {
 Iniciar o processo e aguardar conclusao.
 
 ```lua
-local proc = executor:exec("./build.sh")
-
-local ok, err = proc:start()
-if err then
-    return nil, err
+local executor, get_err = exec.get("app:exec")
+if get_err then
+    return nil, get_err
 end
 
-local exit_code, err = proc:wait()
-if err then
-    return nil, err
+local proc, create_err = executor:exec("./build.sh")
+if create_err then
+    executor:release()
+    return nil, create_err
+end
+
+local ok, start_err = proc:start()
+if start_err then
+    proc:close(true)
+    executor:release()
+    return nil, start_err
+end
+
+local exit_code, wait_err = proc:wait()
+local _, release_err = executor:release()
+if wait_err then
+    return nil, wait_err
+end
+if release_err then
+    return nil, release_err
 end
 
 if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", "Build falhou com código de saida: " .. exit_code)
+    return nil, errors.new({
+        message = "Build failed with exit code: " .. exit_code,
+        kind = errors.INTERNAL
+    })
 end
 ```
 
@@ -110,40 +110,79 @@ end
 Obter streams para ler saida do processo.
 
 ```lua
-local proc = executor:exec("./process-data.sh")
-
-local stdout = proc:stdout_stream()
-local stderr = proc:stderr_stream()
-
-proc:start()
-
--- Ler todo stdout
-local output = {}
-while true do
-    local chunk = stdout:read(4096)
-    if not chunk then break end
-    table.insert(output, chunk)
-end
-local result = table.concat(output)
-
--- Verificar erros
-local err_output = {}
-while true do
-    local chunk = stderr:read(4096)
-    if not chunk then break end
-    table.insert(err_output, chunk)
+local function fail(err)
+    proc:close(true)   -- close is specified to return true, nil
+    executor:release()
+    return nil, err
 end
 
-local exit_code = proc:wait()
-
-stdout:close()
-stderr:close()
-
-if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", table.concat(err_output))
+local function drain(stream, done)
+    coroutine.spawn(function()
+        local chunks = {}
+        while true do
+            local chunk, read_err = stream:read(4096)
+            if read_err then
+                done:send({err = read_err})
+                return
+            end
+            if not chunk then
+                done:send({data = table.concat(chunks)})
+                return
+            end
+            table.insert(chunks, chunk)
+        end
+    end)
 end
 
-return result
+local _, start_err = proc:start()
+if start_err then return fail(start_err) end
+
+local stdout, stdout_err = proc:stdout_stream()
+if stdout_err then return fail(stdout_err) end
+local stderr, stderr_err = proc:stderr_stream()
+if stderr_err then return fail(stderr_err) end
+
+local stdout_done = channel.new(1)
+local stderr_done = channel.new(1)
+drain(stdout, stdout_done)
+drain(stderr, stderr_done)
+
+local stdout_result
+local stderr_result
+while not stdout_result or not stderr_result do
+    local cases = {}
+    if not stdout_result then table.insert(cases, stdout_done:case_receive()) end
+    if not stderr_result then table.insert(cases, stderr_done:case_receive()) end
+
+    local selected = channel.select(cases)
+    if not selected.ok then
+        return fail(errors.new("output drain channel closed"))
+    end
+    if selected.value.err then return fail(selected.value.err) end
+
+    if selected.channel == stdout_done then
+        stdout_result = selected.value
+    else
+        stderr_result = selected.value
+    end
+end
+
+local _, stdout_close_err = stdout:close()
+if stdout_close_err then return fail(stdout_close_err) end
+local _, stderr_close_err = stderr:close()
+if stderr_close_err then return fail(stderr_close_err) end
+
+local exit_code, wait_err = proc:wait()
+if wait_err then return fail(wait_err) end
+
+local _, release_err = executor:release()
+if release_err then return nil, release_err end
+
+return {
+    exit_code = exit_code,
+    stdout = stdout_result.data,
+    stderr = stderr_result.data
+}
 ```
 
 ## write_stdin
@@ -151,22 +190,60 @@ return result
 Escrever dados para stdin do processo.
 
 ```lua
--- Pipe de dados para comando
-local proc = executor:exec("sort")
-local stdout = proc:stdout_stream()
+-- This command exits after reading three lines; it does not require an EOF signal
+local proc, create_err = executor:exec("head -n 3")
+if create_err then
+    executor:release()
+    return nil, create_err
+end
 
-proc:start()
+local function fail(err)
+    proc:close(true)
+    executor:release()
+    return nil, err
+end
 
--- Escrever input
-proc:write_stdin("banana\napple\ncherry\n")
-proc:write_stdin("")  -- Sinalizar EOF
+local _, start_err = proc:start()
+if start_err then
+    return fail(start_err)
+end
 
--- Ler saida ordenada
-local sorted = stdout:read()
-print(sorted)  -- "apple\nbanana\ncherry\n"
+local stdout, stream_err = proc:stdout_stream()
+if stream_err then
+    return fail(stream_err)
+end
 
-proc:wait()
-stdout:close()
+for _, line in ipairs({"banana\n", "apple\n", "cherry\n"}) do
+    local _, write_err = proc:write_stdin(line)
+    if write_err then
+        return fail(write_err)
+    end
+end
+
+-- Read until the bounded command exits and closes stdout
+local chunks = {}
+while true do
+    local chunk, read_err = stdout:read(4096)
+    if read_err then
+        return fail(read_err)
+    end
+    if not chunk then break end
+    table.insert(chunks, chunk)
+end
+print(table.concat(chunks))  -- "banana\napple\ncherry\n"
+
+local _, close_err = stdout:close()
+if close_err then
+    return fail(close_err)
+end
+
+local exit_code, wait_err = proc:wait()
+if wait_err then return fail(wait_err) end
+local _, release_err = executor:release()
+if release_err then return nil, release_err end
+if exit_code ~= 0 then
+    return nil, errors.new("head exited with code " .. exit_code)
+end
 ```
 
 ## signal / close
@@ -174,20 +251,18 @@ stdout:close()
 Enviar sinais ou fechar o processo.
 
 ```lua
-local proc = executor:exec("./long-running-server.sh")
-proc:start()
+-- Stop and discard the handle. close() sends SIGTERM, reaps in the
+-- background, and returns true even if signaling fails.
+local _, close_err = proc:close()
+if close_err then return nil, close_err end
 
--- ... depois, precisa parar ...
+-- For immediate forced shutdown, use this instead:
+-- local _, close_err = proc:close(true) -- SIGKILL
 
--- Shutdown gracioso (SIGTERM)
-proc:close()
-
--- Ou force kill (SIGKILL)
-proc:close(true)
-
--- Ou enviar sinal especifico
-local SIGINT = 2
-proc:signal(SIGINT)
+-- When the exit code matters, signal and then wait instead of closing:
+-- local _, signal_err = proc:signal(2) -- SIGINT on Unix
+-- if signal_err then return nil, signal_err end
+-- local exit_code, wait_err = proc:wait()
 ```
 
 ## Permissões
@@ -208,5 +283,9 @@ Operações de exec estao sujeitas a avaliação de política de segurança.
 | Processo fechado | `errors.INVALID` | não |
 | Processo não iniciado | `errors.INVALID` | não |
 | Ja iniciado | `errors.INVALID` | não |
+| Falha ao obter executor ou criar processo | `errors.INTERNAL` | não |
+| Falha em start, wait, signal, stdin ou operação de stream | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+No runtime v0.3.32a, as negações de política de `exec.get` e `exec.run` usam `errors.INVALID`, não `errors.PERMISSION_DENIED`.
+
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
