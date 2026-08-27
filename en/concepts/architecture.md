@@ -42,7 +42,7 @@ api  →  service  →  persist  →  { consts, config, types }
 The slice root contains shared vocabulary and does not import its own children. Children may import the root. Avoid direct imports between slices; place shared definitions in a common parent namespace such as `app.core:types`.
 
 <note>
-Namespace boundaries provide the seams used for dependency injection and boot-order resolution. A consistent import direction keeps those relationships explicit. See <a href="#why-this-shape">Why this shape</a>.
+Namespaces organize entry IDs but do not create dependencies or injection seams by themselves. Explicit <code>imports</code>, kind-specific references, and <code>ns.requirement</code> targets create those relationships. A consistent direction keeps the resulting graph explicit. See <a href="#why-this-shape">Why this shape</a>.
 </note>
 
 A small slice can use one `_index.yaml` for its libraries and endpoint. The important property is the **import direction**, not the number of folders.
@@ -63,14 +63,14 @@ Keep this vocabulary **slice-private**. Place constants and types shared across 
 
 ## Capabilities by Layer
 
-Each entry declares the host capabilities it needs in `modules:`. A layered slice can assign them by responsibility:
+Lua entries declare non-ambient modules in `modules:` and registry-backed dependencies in `imports:`. A layered slice can keep those dependencies aligned with responsibility:
 
 - `persist/*` declares `sql`, keeping database access in the persistence layer.
-- `service/*` declares `channel` and process-host capabilities, keeping spawning and supervision in the service layer.
-- `api/*` declares whatever an endpoint needs to marshal a request.
-- The root vocabulary declares nothing.
+- `service/*` keeps process orchestration and service dependencies in the service layer. The `process` and `channel` globals are ambient and do not need `modules:` declarations.
+- `api/*` declares modules such as `http` and imports the functions or libraries it calls.
+- The root vocabulary needs no non-ambient modules or infrastructure imports.
 
-This limits each capability to a known layer. To review code that can write to the database, for example, inspect `persist/` and its declared modules.
+This limits module visibility to a known layer. It is not an authorization grant: ABAC policies independently decide whether guarded operations such as `db.get` are allowed at runtime. To review code that can request a database handle, inspect `persist/`, its declared modules, and the policies attached to its execution context.
 
 ## Applications and Components
 
@@ -93,11 +93,11 @@ See [Building Components](guides/components.md) for the requirement/dependency m
 
 This structure supports composition, capability review, and boot-order analysis:
 
-**The namespace boundary is the injection seam.** When layers connect through explicit `imports:` and live in distinct namespaces, `ns.requirement` entries have clear injection targets. A host can supply a database to persistence entries and a process host to service entries. Directly referencing `app:db` would instead couple the component to that host.
+**Requirement targets are the injection seam.** Distinct namespaces make target IDs legible, but `ns.requirement.targets` performs the injection. A host can supply a database ID to persistence entries and a process-host ID to service entries. Directly referencing `app:db` instead couples the component to that host convention.
 
-**One-way imports keep boot order resolvable.** The runtime resolves the entry graph at boot and needs a topological order. The direction `api → service → persist → root` keeps a slice acyclic. Routing shared dependencies through a parent namespace also reduces cross-slice cycles.
+**One-way references keep registry transitions resolvable.** The registry extracts declared dependency paths and topologically orders changes so dependencies are created before their dependents and deleted after them. The direction `api → service → persist → root` helps keep that graph acyclic. A parent namespace is only an organizational convention; the shared entries still need explicit references.
 
-**Capabilities scoped by layer have a clear boundary.** Host capabilities are granted per entry. When persistence entries alone declare `sql`, the code that can reach the database is easier to identify and audit.
+**Modules scoped by layer have a clear boundary.** Each Lua chunk can resolve its declared imports and non-ambient modules; undeclared registry modules fail closed at module resolution. Runtime policy checks remain a separate boundary. When persistence entries alone declare `sql`, the code that can request a database handle is easier to identify and audit.
 
 **The layering supports different test scopes.** Vocabulary can be tested without infrastructure. Persistence tests can use a database without starting workers. A whole-module **mount test** then checks the integration seams: every supervised service points to a process, every spawned ID resolves, and every requirement is filled.
 

@@ -30,7 +30,7 @@ YAML definitions are loaded into the registry at startup. The registry is the so
 
 ### Definition File Format
 
-A definition file contains a `namespace` and either an `entries` array or top-level `name` and `kind` fields. The `version` field is optional:
+A definition file contains a `namespace` and either an `entries` array or top-level `name` and `kind` fields. The optional `version` marker is conventionally `"1.0"`; the v0.3.32a loader does not require it.
 
 ```yaml
 version: "1.0"
@@ -58,9 +58,9 @@ entries:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `version` | No | Schema version (currently `"1.0"`) |
+| `version` | No | Manifest version marker (conventionally `"1.0"`) |
 | `namespace` | Yes | Entry namespace for this file |
-| `entries` | Yes | Array of entry definitions |
+| `entries` | Conditional | Array of entry definitions; omit only when using top-level `name` and `kind` |
 
 ### Naming Convention
 
@@ -100,7 +100,7 @@ Entry full ID combines namespace and name: `app.api:get_user`
 
 ### Source Directories
 
-The `wippy.lock` file defines where Wippy loads definitions from:
+The `wippy.lock` file names the application source root and the base directory used to resolve locked modules:
 
 ```yaml
 directories:
@@ -108,11 +108,11 @@ directories:
   src: ./src
 ```
 
-Wippy recursively scans these directories for YAML files.
+Wippy adds `directories.src` as the application load path. `directories.modules` is not scanned as one raw source tree: each locked module resolves to its versioned `.wapp` archive or unpacked module path, and each replacement resolves to its configured entry root. The loader recursively scans the application source and selected directory-based module or replacement roots for `.yaml`, `.yml`, and `.json` manifests; `.wapp` modules are read as archives. Only object-shaped files with a `namespace` are treated as registry manifests, and `node_modules` directories are skipped. `_index.yaml` is a project convention, not the only accepted filename.
 
 ## Entry Definitions
 
-Each item in the `entries` array defines one entry. Its properties are at the root level, without a `data:` wrapper:
+Each item in the `entries` array defines one entry. Kind-specific fields can appear beside `name`, `kind`, and `meta`, as in this example:
 
 ```yaml
 entries:
@@ -135,6 +135,18 @@ entries:
     func: hello
 ```
 
+An explicit `data:` field is also supported. When present, its value is the complete kind-specific payload, so do not mix it with sibling kind-specific fields:
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
+```
+
 ### Metadata
 
 Use `meta` for UI-friendly information:
@@ -148,7 +160,7 @@ Use `meta` for UI-friendly information:
   source: file://payment.lua
 ```
 
-Use `meta.title` and `meta.comment` for text displayed in management interfaces.
+Use `meta.title` and `meta.comment` for descriptive information that registry consumers and management interfaces can display.
 
 ### Application Entries
 
@@ -170,13 +182,13 @@ Use `registry.entry` kind for application-level configuration:
 
 | Kind | Purpose |
 |------|---------|
-| `registry.entry` | General-purpose data |
+| `registry.entry` | General-purpose data stored without normal event dispatch |
 | `function.lua` | Callable Lua function |
 | `process.lua` | Long-running process |
 | `http.service` | HTTP server |
 | `http.router` | Route group |
 | `http.endpoint` | HTTP handler |
-| `process.host` | Process supervisor |
+| `process.host` | Process execution host |
 
 See the [Entry Kinds Guide](guides/entry-kinds.md) for the entry-kind reference.
 
@@ -214,7 +226,7 @@ directories:
 
 ## Referencing Entries
 
-Reference entries by full ID or relative name. Children attach to their parent through `meta`, not via parent-side lists:
+Reference entries by full ID or relative name where the entry kind supports it. HTTP routers and endpoints attach through `meta.server` and `meta.router`, rather than through parent-side child lists:
 
 ```yaml
 # Router declares itself against a server

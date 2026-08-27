@@ -5,7 +5,7 @@ description: "How Wippy stores typed entries, initializes runtime resources, and
 
 # Registry
 
-The registry is Wippy's central configuration store for entry points, services, resources, and other runtime definitions. Registry changes propagate through the system as events.
+The registry is Wippy's versioned store for entry points, services, resources, and other runtime definitions. Most runtime entry kinds are reconciled through event-bus transactions; internal kinds such as `registry.entry` and namespace metadata bypass event dispatch by default.
 
 ## Entries
 
@@ -20,17 +20,19 @@ app:templates             → Template set
 
 Each entry has an `ID` (namespace:name format), a `kind` that determines its handler, arbitrary `meta` fields, and kind-specific `data`.
 
-For how the registry functions as an authorization layer, see the [Security Model](concepts/security-model.md).
+Registry IDs are also used as resources by many authorization checks. The registry stores the definitions; the security scope decides whether guarded operations may access them. See the [Security Model](concepts/security-model.md).
 
 ## Kind Handlers
 
-When an entry is submitted, its `kind` selects the handler that processes it. The handler validates the configuration and creates the corresponding runtime resource: an `http.service` entry starts an HTTP server, a `function.lua` entry creates a function pool, and a `db.sql.postgres` entry establishes a connection pool. See the [Entry Kinds Guide](guides/entry-kinds.md) for available kinds and [Custom Entry Kinds](internals/kinds.md) for handler implementation.
+When a dispatched entry is submitted, its `kind` selects the registered handler. The handler validates and reconciles the corresponding runtime resource: an `http.service` entry manages an HTTP server, a `function.lua` entry manages a function pool, and a `db.sql.postgres` entry manages a connection pool. See the [Entry Kinds Guide](guides/entry-kinds.md) for available kinds and [Custom Entry Kinds](internals/kinds.md) for handler implementation.
 
 ## Live Updates
 
-Entries can be added, updated, or removed while the system runs. Changes flow through the event bus, where listeners can validate or reject them. Transactions apply related changes atomically, and version history supports rollback.
+Entries can be added, updated, or removed while the system runs. For dispatched kinds, a registry transaction asks participating handlers to accept or reject each operation before commit. A rejection discards the transaction and applies the inverse transition. Related topology changes produce one new registry version.
 
-YAML definition files are serialized registry snapshots loaded at startup. See [Registry module](lua/core/registry.md) for programmatic access.
+Version history supports backward and forward transitions when history is enabled. Memory history is the default and lasts for the process lifetime; SQLite and PostgreSQL backends persist history across restarts.
+
+YAML and JSON definition files are source manifests that the boot loader converts into entries. They are not serialized registry snapshots. See [Registry module](lua/core/registry.md) for programmatic access.
 
 ## See Also
 

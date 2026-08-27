@@ -11,7 +11,7 @@ Clustering is opt-in (`cluster.enabled`). This page explains the model your code
 
 ## Cluster Model
 
-Nodes discover one another through **gossip** (SWIM). A node joins through a seed, after which membership and failure information converge without a central coordinator. A bounded **Raft** core provides linearizable consensus through a fixed set of voters, while other nodes participate through gossip.
+Nodes discover one another through **gossip** (SWIM). A node joins through a seed, after which membership and failure information converge without a central coordinator. A bounded **Raft** core provides linearizable consensus through a dynamically reconciled voter set, while other nodes participate through gossip.
 
 The application-facing model has three parts: **names**, **routing**, and **coordination primitives**.
 
@@ -26,7 +26,7 @@ A process is normally addressed by its PID. In a cluster, it can also be registe
 | **Consistent** | cluster-wide | linearizable singleton via Raft | the standard cluster-wide named service |
 | **Strong** | cluster-wide | Consistent, plus every live node acknowledges before the name is active | control-plane singletons and locks |
 
-The scopes are ordered as `Local < Eventual < Consistent < Strong` by consistency and coordination cost. Select the least costly scope that meets the required guarantee. Names are registered through [`process.registry`](lua/core/process.md) and released when the owning process exits or its node leaves.
+The scopes are ordered as `Local < Eventual < Consistent < Strong` by consistency and coordination cost. Select the least costly scope that meets the required guarantee. Names are registered through [`process.registry`](lua/core/process.md). Local names are removed when the process exits; Consistent and Strong names are also reaped on process exit or node departure. Eventual names are removed explicitly or when their origin node leaves, not automatically when only the owning process exits.
 
 ## Routing
 
@@ -49,7 +49,7 @@ Clustering exposes a small set of coordination building blocks:
 - **Distributed locks** — cluster-wide mutual exclusion with at most one holder, released automatically if the holder dies. See [`system.lock`](lua/system/system.md).
 - **Process groups** — join named groups and broadcast to every member across all nodes, Erlang-style. See [Process Groups](lua/core/pg.md).
 
-These primitives share the same membership and routing layers. Consistent and Strong names and distributed locks use the Raft core, while process groups use gossip.
+These primitives share membership and routing infrastructure. Consistent and Strong names and distributed locks use the Raft core. Process groups use gossip membership to discover peers, send changes over the relay, and periodically exchange full state for convergence.
 
 ## See Also
 
