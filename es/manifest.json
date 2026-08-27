@@ -163,6 +163,38 @@
     ]
   },
   {
+    "title": "Frontend",
+    "children": [
+      {"title": "Contrato frontend: empiece aquí", "path": "frontend/overview"},
+      {"title": "Topología de la plataforma", "path": "frontend/platform-topology"},
+      {"title": "Contrato de interfaz portable", "path": "frontend/portable-ui-contract"},
+      {"title": "La capa de diseño", "path": "frontend/design-layer"},
+      {
+        "title": "Registro frontend",
+        "children": [
+          {"title": "Entradas del registro", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Aplicaciones micro frontend (view.page)", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Componentes web (view.component)", "path": "frontend/frontend-registry/view-component"},
+          {"title": "Enrutamiento dinámico", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Descripción general", "path": "frontend/web-host/overview"},
+          {"title": "Fachada frontend", "path": "frontend/web-host/entry-point"},
+          {"title": "Secuencia de bootstrap", "path": "frontend/web-host/bootstrap"},
+          {"title": "Diseño multipanel", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Motores de renderizado", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy y aislamiento", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "Inyección de CSS", "path": "frontend/web-host/css-injection"},
+          {"title": "Persistencia del tema", "path": "frontend/web-host/theme-persistence"},
+          {"title": "Paquetes @wippy-fe", "path": "frontend/web-host/packages"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},
