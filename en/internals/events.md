@@ -15,6 +15,7 @@ type Event struct {
     Kind   string  // Event type (e.g., "create", "update", "exit")
     Path   string  // Entity identifier
     Data   any     // Payload
+    Aux    any     // In-process dispatcher context; not propagated to processes
 }
 ```
 
@@ -73,7 +74,7 @@ Four action types flow through the queue:
 | Send | Delivers event to matching subscribers |
 | Stop | Clears subscribers, drains queue, exits loop |
 
-Subscribe and Unsubscribe block until the dispatcher confirms. Send is fire-and-forget.
+Subscribe and Unsubscribe block until the dispatcher confirms. Send is fire-and-forget. The bus accepts at most `DefaultMaxSubscribers` subscriptions (4096 by default); subscriptions beyond the cap fail with `ErrSubscribersCapReached`.
 
 ## Queue Swapping
 
@@ -115,7 +116,7 @@ type sub struct {
 }
 ```
 
-The wildcard package supports three pattern types:
+The wildcard package supports four pattern types:
 
 | Pattern | Matches |
 |---------|---------|
@@ -204,10 +205,13 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 Wraps channel subscription with a callback:
 
 ```go
-handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
+handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "entry.*",
     func(evt Event) {
         // handle
     })
+if err != nil {
+    return err
+}
 defer handler.Close()
 ```
 

@@ -85,15 +85,17 @@ sequenceDiagram
     end
 ```
 
-Handlers have 30 seconds to accept or reject each operation. On rejection, the registry rolls back by computing and applying the inverse delta.
+By default, the registry waits 30 seconds for listeners to accept or reject each operation. `registry.event_wait_timeout` changes this per-operation timeout. On rejection, the registry rolls back by computing and applying the inverse delta.
 
 ### Non-propagating Entries
 
-Some kinds skip the event bus entirely:
+The following kinds skip the event bus by default:
 - `registry.entry` - Application configs
 - `ns.requirement` - Namespace requirements
 - `ns.dependency` - Module dependencies
 - `ns.definition` - Module metadata (readme, wiki, license, authors)
+
+`registry.dispatch_internal_kinds` replaces this default list.
 
 ## Dependency Resolution
 
@@ -140,13 +142,15 @@ Query engine with LRU caching for searching entries:
 
 | Operator | Prefix | Example |
 |----------|--------|---------|
-| Glob | (none) | `.kind=function.*` |
+| Root-field glob | `.` root field | `.kind=function.*` |
 | Regex | `~` | `~meta.path=/api/.*` |
 | Contains | `*` | `*meta.tags=backend` |
 | Prefix | `^` | `^meta.name=user` |
 | Suffix | `$` | `$meta.path=Handler` |
 
 Cache invalidates on version change.
+
+Glob matching applies to the root fields `.kind`, `.name`, `.ns`, and `.id`. Unprefixed `meta.*` criteria use equality matching.
 
 ## See Also
 

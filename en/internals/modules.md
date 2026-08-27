@@ -43,10 +43,14 @@ The `Class` field determines where the module can be used:
 | `ClassNondeterministic` | Output varies (time, random) |
 | `ClassIO` | External I/O operations |
 | `ClassNetwork` | Network operations |
+| `ClassEncoding` | Encoding and decoding operations |
+| `ClassTime` | Time-related operations |
+| `ClassProcess` | Process-related operations |
+| `ClassSecurity` | Security-related operations |
 | `ClassStorage` | Data persistence |
 | `ClassWorkflow` | Workflow-safe operations |
 
-Modules tagged only with `ClassDeterministic` are workflow-safe. Adding I/O or network classes restricts the module to functions and processes.
+Workflow compilation allows modules carrying at least one of `ClassDeterministic` or `ClassWorkflow`. Class filtering is inclusive: a module passes when any of its classes is allowed.
 
 ## Exposing Functions
 
@@ -403,7 +407,7 @@ func TestMyModuleYields(t *testing.T) {
 
     script := `
         local result = mymodule.fetch("http://example.com")
-        return result.status
+        return result
     `
 
     ctx, _ := ctxapi.OpenFrameContext(context.Background())
