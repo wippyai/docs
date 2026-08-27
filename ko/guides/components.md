@@ -50,7 +50,7 @@ publish되는 각 module에는 정확히 하나의 definition이 있어야 합�
       path: .db
 ```
 
-### default — 필수 vs 선택
+### `default` — 필수 vs 선택
 
 `default` 필드가 호스트가 값을 *반드시* 공급해야 하는지를 결정합니다:
 
@@ -61,7 +61,7 @@ publish되는 각 module에는 정확히 하나의 definition이 있어야 합�
 명시적으로 빈 default(<code>default: ""</code>)는 absent 또는 null default와 다릅니다. empty string은 "optional, falls back to nothing"을 뜻하고 absent와 <code>default: null</code>은 둘 다 "host가 반드시 제공"해야 함을 뜻합니다. 합리적인 in-app convention(<code>app:db</code>, <code>app:processes</code>)이 있는 infrastructure에는 non-null default를 사용하고 host만 아는 value에는 생략하십시오.
 </note>
 
-### targets — 값이 도착하는 곳
+### `targets` — 값이 도착하는 곳
 
 각 타겟은 `{entry, path}` 쌍입니다:
 
@@ -80,7 +80,7 @@ targets:
 
 ### 하나의 요구사항, 여러 타겟
 
-같은 값이 필요한 모든 것을 하나의 요구사항 아래에 묶으세요. 이것이 관용적 패턴입니다: `target_db` 요구사항이 모든 마이그레이션의 `.meta.target_db`와 모든 영속성 라이브러리의 `.db`에 주입하고, `process_host`가 감독되는 각 `service`의 `.host`에 주입하고, `api_router`가 각 엔드포인트의 `.meta.router`에 주입합니다:
+같은 값이 필요한 모든 것을 하나의 요구사항 아래에 묶으세요. 이것이 관용적 패턴입니다: `target_db` 요구사항이 모든 마이그레이션의 `.meta.target_db`와 모든 영속성 라이브러리의 `.db`에 주입하고, `process_host`가 감독되는 각 service의 `.host`에 주입하고, `api_router`가 각 엔드포인트의 `.meta.router`에 주입합니다:
 
 ```yaml
 - name: process_host

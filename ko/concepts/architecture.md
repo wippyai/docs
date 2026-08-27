@@ -19,7 +19,7 @@ src/app/auth/          namespace: app.auth
 src/app/billing/       namespace: app.billing
 ```
 
-feature slice는 관련 동작을 한 folder에 유지하므로 top-level `handlers/`, `models`, `services/` directory 전체를 추적하지 않고도 capability를 읽고, test하고, 변경하거나 제거하기 쉽습니다.
+feature slice는 관련 동작을 한 folder에 유지하므로 top-level `handlers/`, `models/`, `services/` directory 전체를 추적하지 않고도 capability를 읽고, test하고, 변경하거나 제거하기 쉽습니다.
 
 ## 슬라이스 안의 레이어
 
@@ -99,7 +99,7 @@ requirement/dependency mechanism은 [컴포넌트 구축](../guides/components.m
 
 **layer별로 scope된 module은 명확한 boundary를 가집니다.** 각 Lua chunk는 선언된 import와 non-ambient module을 resolve할 수 있으며 선언되지 않은 registry module은 module resolution에서 fail closed합니다. runtime policy check는 별도의 boundary입니다. persistence entry만 `sql`을 선언하면 database handle을 요청할 수 있는 code를 더 쉽게 식별하고 audit할 수 있습니다.
 
-**레이어링은 테스트 가능성의 그라디언트를 만듭니다.** 순수 어휘는 아무 세계 없이 테스트됩니다. `persist` 테스트는 데이터베이스는 건드리지만 워커는 건드리지 않습니다. 그런 다음 모듈 전체의 **마운트 테스트**가 단위 테스트가 의도적으로 볼 수 없는 이음새를 감사합니다 — 모든 감독 서비스가 실제 프로세스를 가리키는지, 스폰되는 모든 ID가 해석되는지, 모든 요구사항이 채워지는지. 레이어가 실제로 분리 가능할 때만 이 그라디언트를 얻습니다.
+**레이어링은 테스트 가능성의 그라디언트를 만듭니다.** 순수 어휘는 아무 세계 없이 테스트됩니다. persist 테스트는 데이터베이스는 건드리지만 워커는 건드리지 않습니다. 그런 다음 모듈 전체의 **마운트 테스트**가 단위 테스트가 의도적으로 볼 수 없는 이음새를 감사합니다 — 모든 감독 서비스가 실제 프로세스를 가리키는지, 스폰되는 모든 ID가 해석되는지, 모든 요구사항이 채워지는지. 레이어가 실제로 분리 가능할 때만 이 그라디언트를 얻습니다.
 
 ## 참고
 

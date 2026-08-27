@@ -1,11 +1,11 @@
 ---
 title: "린터"
-description: "Wippy에는 Lua 코드에 대한 타입 검사 및 정적 분석을 수행하는 내장 린터가 포함되어 있습니다. wippy lint로 실행합니다."
+description: "내장 Lua 린터를 사용해 타입 검사, 정적 분석, 필터링, 캐싱, CI 출력을 수행합니다."
 ---
 
 # 린터
 
-Wippy에는 Lua 코드에 대한 타입 검사 및 정적 분석을 수행하는 내장 린터가 포함되어 있습니다. `wippy lint`로 실행합니다.
+`wippy lint`를 실행해 Lua 엔트리를 타입 검사하고 정적으로 분석합니다.
 
 ## 사용법
 
@@ -26,7 +26,7 @@ wippy lint --summary              # Group results by error code
 - `process.lua` - 프로세스
 - `workflow.lua` - 워크플로우
 
-이들의 사전 컴파일된 `.bc` 변형(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)도 린팅됩니다.
+바이트코드 엔트리에는 소스가 아니라 컴파일된 바이트코드(fs/path/hash)가 들어 있으므로 파싱하거나 타입 검사할 수 없습니다. 린터는 소스를 포함하는 Lua 엔트리만 검사합니다. `.bc` 변형은 전체 엔트리 수에는 포함될 수 있지만 검사를 건너뜁니다.
 
 각 엔트리는 파싱, 타입 검사, 정확성 분석을 거칩니다.
 
@@ -87,7 +87,7 @@ modules:
   - funcs                    # bare module name
 ```
 
-동적 require(`require(variable)`)는 검사하지 않습니다. 앰비언트 집합 — 실행 가능한 종류의 `process`처럼 선언 없이 사용 가능한 모듈 — 은 린터와 런타임이 공유하므로, 린트 시점과 실행 시점의 해석이 어긋날 수 없습니다.
+동적 require(`require(variable)`)는 검사하지 않습니다. 린터와 런타임은 앰비언트 모듈 집합을 공유합니다. 여기에는 실행 가능한 엔트리 종류의 `process`처럼 선언 없이 사용할 수 있는 모듈이 포함됩니다.
 
 ### 린트 규칙 경고 (W 시리즈)
 
@@ -176,7 +176,7 @@ Checked 42 entries: 5 errors, 12 warnings
 
 ### JSON 형식
 
-CI/CD 통합을 위한 기계 판독 가능 출력:
+CI/CD 처리용 기계 판독 가능 출력:
 
 ```bash
 wippy lint --json
@@ -203,7 +203,7 @@ wippy lint --json
 
 ## 캐싱
 
-린터는 반복 실행 속도를 높이기 위해 결과를 캐싱합니다. 캐시 키는 소스 코드 해시, 메서드 이름, 의존성, 타입 시스템 구성을 기반으로 합니다.
+린터는 실행 사이에 결과를 캐싱합니다. 캐시 키에는 소스 해시, 메서드 이름, 의존성, 타입 시스템 구성이 포함됩니다.
 
 결과가 오래된 것 같으면 캐시를 지웁니다:
 
@@ -211,15 +211,21 @@ wippy lint --json
 wippy lint --cache-reset
 ```
 
-## CI/CD 통합
+## CI 통합
 
-자동화된 검사를 위해 JSON 출력과 종료 코드를 사용합니다:
+테이블 및 요약 모드에서는 필터링된 결과에 오류가 있으면 명령이 0이 아닌 코드로 종료됩니다. `--level warning`이나 `--level hint`로 표시하더라도 경고와 힌트는 종료 코드에 영향을 주지 않습니다.
+
+JSON 모드는 다릅니다. 결과를 성공적으로 인코딩하면 `error_count`가 0이 아니어도 `wippy lint --json`은 코드 0으로 종료됩니다. JSON 출력을 사용하는 CI 작업은 `error_count`를 직접 파싱해야 합니다. 명령의 종료 상태를 게이트로 사용하려면 JSON이 아닌 호출을 실행하세요:
+
+```bash
+wippy lint --level error
+```
+
+종료 상태를 린트 결과로 취급하지 않고 별도로 보고서를 생성할 수 있습니다:
 
 ```bash
 wippy lint --json --level error > lint-results.json
 ```
-
-린터는 오류가 발견되지 않으면 종료 코드 0으로, 오류가 있으면 0이 아닌 코드로 종료합니다.
 
 GitHub Actions 단계 예시:
 
@@ -241,10 +247,12 @@ GitHub Actions 단계 예시:
 | `--no-color` | | false | 색상 출력 비활성화 |
 | `--rules` | | false | 린트 규칙 활성화 (W 시리즈 스타일/품질 검사) |
 | `--cache-reset` | | false | 린팅 전 캐시 지우기 |
+| `--profile` | | | 병합된 런타임 설정에서 워크스페이스 프로파일 적용. 여러 프로파일은 반복하여 순서대로 적용 |
+| `--set` | | | 병합된 설정 값을 `section.path=value`로 재정의. 여러 재정의는 반복 |
 | `--lock-file` | `-l` | wippy.lock | 잠금 파일 경로 |
 
 ## 같이 보기
 
-- [CLI](guides/cli.md) - 전체 CLI 참조
-- [타입](lua/types.md) - 타입 시스템 문서
-- [LSP](guides/lsp.md) - 실시간 진단을 통한 에디터 통합
+- [CLI](./cli.md) - 전체 CLI 참조
+- [타입](../lua/types.md) - 타입 시스템 문서
+- [LSP](./lsp.md) - 실시간 진단을 통한 에디터 통합

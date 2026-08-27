@@ -1,11 +1,13 @@
 ---
 title: "의존성 관리"
-description: "Wippy는 잠금 파일 기반의 의존성 시스템을 사용합니다. 모듈은 허브에 게시되고, 소스에서 의존성으로 선언되며, 정확한 버전을 추적하는 wippy.lock 파일로 해석됩니다."
+description: "잠금 파일로 Wippy 모듈 의존성을 선언, 해석, 설치, 업데이트, 교체, 검증합니다."
 ---
 
 # 의존성 관리
 
-Wippy는 잠금 파일 기반의 의존성 시스템을 사용합니다. 모듈은 허브에 게시되고, 소스에서 의존성으로 선언되며, 정확한 버전을 추적하는 `wippy.lock` 파일로 해석됩니다.
+Wippy는 소스 선언에서 모듈 의존성을 해석하고 정확한 버전을 `wippy.lock`에 기록합니다. 게시된 모듈은 Hub에서 프로젝트의 모듈 디렉토리로 다운로드됩니다.
+
+아래 `acme/*` 모듈 이름, 버전, 해시, 로컬 경로는 예시입니다. 자체 프로젝트 또는 Hub에서 가져온 모듈과 검증된 다이제스트로 바꾸세요.
 
 ## 프로젝트 파일
 
@@ -149,7 +151,7 @@ wippy update acme/http acme/sql    # Update specific modules
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # 모든 모듈 다시 가져오기 (--force와 --repair는 별칭)
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
 ## 모듈 저장소
@@ -206,7 +208,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-키는 `org/module`, 값은 디렉토리입니다 (상대 경로는 첫 번째 `--config` 파일의 디렉토리를 기준으로 해석됩니다; 경로는 존재해야 하며 디렉토리여야 합니다). 교체를 `null`로 설정하면 이전 설정 레이어나 프로파일에서 상속된 교체가 비활성화됩니다. 교체는 [프로파일](guides/configuration.md#profiles) 안에도 둘 수 있어 `--profile workspace`와 함께할 때만 활성화됩니다.
+키는 `org/module`, 값은 디렉토리입니다 (상대 경로는 첫 번째 `--config` 파일의 디렉토리를 기준으로 해석됩니다; 경로는 존재해야 하며 디렉토리여야 합니다). 교체를 `null`로 설정하면 이전 설정 레이어나 프로파일에서 상속된 교체가 비활성화됩니다. 교체는 [프로파일](./configuration.md#profiles) 안에도 둘 수 있어 `--profile workspace`와 함께할 때만 활성화됩니다.
 
 워크스페이스 교체는 부트 시 로드 그래프에 영향을 주며 `wippy.lock`에는 절대 기록되지 않습니다. 로컬 소스의 변경은 허브에 접속하지 않고 직접 반영됩니다. 모듈의 `wippy.yaml`에 있는 소스 `exclude:` 글롭은 교체 디렉토리에도 적용됩니다 — 엔트리를 로드할 때와 콘텐츠를 해싱할 때 모두.
 
@@ -224,11 +226,11 @@ wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 
 ## 무결성 검증
 
-잠금 파일의 각 모듈에는 콘텐츠 해시가 있습니다. 설치 중에 다운로드된 모듈은 예상 해시와 대조하여 검증됩니다. 불일치하는 모듈은 거부되고 레지스트리에서 다시 다운로드됩니다.
+잠금 엔트리의 콘텐츠 해시는 설치 과정에서 채워지기 전까지 선택 사항입니다. 예상 다이제스트가 있으면 설치 시 캐시된 모듈과 다운로드한 모듈을 그 값으로 검증합니다. 캐시된 모듈이 일치하지 않으면 설치가 중단됩니다. `wippy install --refresh`를 실행해 새 복사본을 다운로드하고 검증하세요. 새로 다운로드한 모듈이 검증에 실패하면 해당 파일을 제거하고 설치도 실패합니다.
 
 ## 같이 보기
 
-- [컴포넌트 구축](guides/components.md) - 작성자 측: `ns.requirement`와 `parameters`를 통한 값 공급
-- [CLI](guides/cli.md) - 명령어 참조
-- [게시](guides/publishing.md) - 허브에 모듈 게시
-- [프로젝트 구조](start/structure.md) - 프로젝트 레이아웃
+- [컴포넌트 구축](./components.md) - 작성자 측: 요구사항을 작성하고 `parameters`를 통해 값 공급
+- [CLI](./cli.md) - 명령어 참조
+- [게시](./publishing.md) - 허브에 모듈 게시
+- [프로젝트 구조](../start/structure.md) - 프로젝트 레이아웃

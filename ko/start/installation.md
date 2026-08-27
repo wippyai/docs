@@ -43,7 +43,7 @@ wippy install
 
 | 명령어 | 설명 |
 |---------|-------------|
-| `wippy init` | 새 프로젝트 초기화 |
+| `wippy init` | `wippy.lock` 생성 또는 업데이트 |
 | `wippy run` | 런타임 시작 |
 | `wippy test` | 테스트 엔트리포인트 실행 |
 | `wippy lint` | 코드 오류 검사 |

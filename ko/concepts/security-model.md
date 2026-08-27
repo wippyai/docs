@@ -81,7 +81,7 @@ Actor와 scope는 상속 가능한 frame-context 값입니다. 함수 호출과 
 
 엔트리 읽기와 레지스트리 변경은 서로 다른 권한입니다. 표준 durable changeset에는 `registry.apply`가 필요합니다. v0.3.32a에서 이 검사는 빈 resource를 사용하며 엔트리별 또는 namespace별 쓰기 결정이 아닙니다. 신뢰할 수 없는 agent에 `registry.apply`를 부여한 뒤 namespace pattern으로 쓰기를 제한할 수 있다고 가정하지 마십시오.
 
-프로세스 로컬 overlay는 더 좁은 권한 표면을 가집니다. overlay owner와 `registry.overlay.create.<kind>`, `registry.overlay.update.<kind>`, `registry.overlay.delete.<kind>` 같은 작업별 action을 영향받는 엔트리 ID에 대해 검사합니다. [엔트리 레지스트리](../lua/core/registry.md#process-local-overlays)를 확인하십시오.
+프로세스 로컬 overlay는 더 좁은 권한 표면을 가집니다. overlay owner와 `registry.overlay.create.<kind>`, `registry.overlay.update.<kind>`, `registry.overlay.delete.<kind>` 같은 작업별 action을 영향받는 엔트리 ID에 대해 검사합니다. [엔트리 레지스트리](../lua/core/registry.md#프로세스-로컬-오버레이)를 확인하십시오.
 
 ## 데이터 경계
 
