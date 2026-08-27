@@ -10,6 +10,12 @@ description: "Record application counters, gauges, and histogram observations."
 
 The `metrics` module records application counters, gauges, and histogram observations.
 
+Every function returns `true, nil` after passing the observation to the active collector. If the execution context has no collector, it returns `nil` and a non-retryable `errors.INTERNAL` error.
+
+Labels are optional. Only entries with both a string key and a string value are recorded; other entries are silently ignored. A non-table labels argument is treated as if no labels were supplied.
+
+Metric names are forwarded without local validation.
+
 ## Loading
 
 ```lua
@@ -48,6 +54,8 @@ metrics.counter_add("bytes_total", 1024, {direction = "out"})
 | `labels` | table? | Label key-value pairs |
 
 **Returns:** `boolean, error`
+
+The runtime forwards the value unchanged and does not require it to be positive.
 
 ## Gauges
 
@@ -120,5 +128,7 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Collector not available | `errors.INTERNAL` | no |
+
+Invalid name or value types raise Lua argument errors instead of returning structured errors.
 
 See [Error Handling](lua/core/errors.md) for working with errors.

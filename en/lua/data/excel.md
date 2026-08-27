@@ -21,7 +21,7 @@ local excel = require("excel")
 
 ### Create a Workbook
 
-Create an empty workbook:
+Create a workbook with the default `Sheet1` sheet:
 
 ```lua
 local wb, err = excel.new()
@@ -62,7 +62,12 @@ if err then
 end
 
 -- Read data from workbook
-local rows = wb:get_rows("Sheet1")
+local rows, rows_err = wb:get_rows("Sheet1")
+if rows_err then
+    wb:close()
+    file:close()
+    return nil, rows_err
+end
 for i, row in ipairs(rows) do
     print("Row " .. i .. ": " .. table.concat(row, ", "))
 end
@@ -99,7 +104,7 @@ local existing = wb:new_sheet("Summary")  -- returns same as idx1
 |-----------|------|-------------|
 | `name` | string | Sheet name |
 
-**Returns:** `integer, error`
+**Returns:** `integer, error`. Sheet indexes are 1-based.
 
 ### List Sheets
 
@@ -277,6 +282,25 @@ end
 
 **Returns:** `error`
 
+`write_to` does not close the writer. Close the file separately, as in the example.
+
+### Serialize to Bytes
+
+Serialize the workbook as a complete `.xlsx` file in a Lua binary string:
+
+```lua
+local data, err = wb:bytes()
+if err then
+    return nil, err
+end
+
+-- For example, return `data` in an HTTP response or upload it to object storage.
+```
+
+**Returns:** `string, error`
+
+The workbook remains open and usable after `bytes()`. The complete file is materialized in memory, so use `write_to` for large workbooks when a writer is available.
+
 ### Close a Workbook
 
 Close a workbook and release its resources:
@@ -296,14 +320,24 @@ wb:close()
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| No context | `errors.INTERNAL` | no |
-| Invalid workbook | `errors.INVALID` | no |
-| Workbook closed | `errors.INTERNAL` | no |
-| Not a reader/writer | `errors.INTERNAL` | no |
-| Invalid Excel file | `errors.INTERNAL` | no |
-| Non-existent sheet | `errors.INTERNAL` | no |
+| No context in `new` or `open` | `errors.INTERNAL` | no |
+| Invalid or empty Excel file in `open` | `errors.INTERNAL` | no |
+| Invalid workbook receiver in `new_sheet`, `get_sheet_list`, `get_rows`, `rows`, or `bytes` | `errors.INVALID` | no |
+| Invalid workbook receiver in `set_cell_value`, `write_to`, or `close` | `errors.INTERNAL` | no |
+| Closed workbook in `rows` | `errors.INVALID` | no |
+| Closed workbook in other workbook operations | `errors.INTERNAL` | no |
+| Sheet creation failure | `errors.INTERNAL` | no |
+| Missing sheet in `rows` | `errors.INVALID` | no |
+| Missing sheet in `get_rows` or `set_cell_value` | `errors.INTERNAL` | no |
 | Invalid cell reference | `errors.INTERNAL` | no |
-| Write failed | `errors.INTERNAL` | no |
+| Invalid writer or write failure | `errors.INTERNAL` | no |
+| Invalid or closed row cursor in `read`, or batch size below 1 | `errors.INVALID` | no |
+| Invalid row cursor in `close` | `errors.INTERNAL` | no |
+| Row read, cursor close, or context-cancellation failure | `errors.INTERNAL` | no |
+
+Passing a value that is not an `io.Reader` to `open`, or a non-userdata value to `write_to`, raises a Lua argument error instead of returning a structured error. Writer userdata that does not implement `io.Writer` returns `errors.INTERNAL`. A row batch larger than 10,000 is capped at 10,000 rather than rejected.
+
+Closing a workbook also closes its open row cursors. Workbooks are closed automatically when their Lua execution context is cleaned up, but explicit `close()` calls release resources sooner.
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

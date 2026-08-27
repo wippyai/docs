@@ -11,6 +11,8 @@ description: "Write structured log messages and create child loggers with persis
 
 The `logger` module writes structured messages at debug, info, warn, and error levels.
 
+Log calls return no values. When the execution context provides them, each call also adds the process `pid` and the source `location` derived from the current frame.
+
 ## Loading
 
 ```lua
@@ -58,6 +60,10 @@ All four log-level methods accept the same parameters:
 | `message` | string | Log message |
 | `fields` | table? | Contextual key-value pairs |
 
+Only string keys become field names. Strings, numbers, integers, booleans, errors, and structured Lua values are converted to log fields; non-string keys are ignored.
+
+For `logger:error`, a field named `error` is emitted as an error field and removed from the supplied table before the remaining fields are processed. Do not reuse that table if the `error` entry must remain intact.
+
 ## Logger Customization
 
 ### `logger:with`
@@ -75,6 +81,8 @@ child:info("message")
 
 **Returns:** `Logger`
 
+The original logger is unchanged. Child loggers can be chained with additional `with` and `named` calls.
+
 ### `logger:named`
 
 Create a child logger with a name.
@@ -90,10 +98,6 @@ named:info("message")
 
 **Returns:** `Logger`
 
-## Errors
+An empty name raises a Lua argument error. It is not returned as a structured `errors.INVALID` value.
 
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| Empty name string | `errors.INVALID` | no |
-
-See [Error Handling](lua/core/errors.md) for working with errors.
+The logging methods do not return structured errors. Invalid argument types raise Lua argument errors. If no logger is attached to the execution context, the module uses a no-op logger and discards the message.

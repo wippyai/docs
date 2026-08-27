@@ -54,17 +54,19 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `headers` | table | HTTP headers for handshake |
-| `protocols` | table | WebSocket subprotocols |
-| `dial_timeout` | number/string | Connection timeout (ms or "5s") |
-| `read_timeout` | number/string | Read timeout |
-| `write_timeout` | number/string | Write timeout |
-| `compression` | number | Compression mode (see Constants) |
-| `compression_threshold` | number | Min size to compress (0-100MB) |
-| `read_limit` | number | Max message size (0-128MB) |
-| `channel_capacity` | number | Receive channel buffer (1-10000) |
+| `headers` | table | String-to-string HTTP handshake headers; other entries are ignored |
+| `protocols` | table | WebSocket subprotocol strings; non-string entries are ignored |
+| `dial_timeout` | number/string | Connection timeout; `0` applies no runtime-wide connection deadline, while underlying HTTP transport defaults still apply |
+| `read_timeout` | number/string | Per-message read timeout; `0` disables it |
+| `write_timeout` | number/string | Accepted by the Lua API but not applied by runtime `v0.3.32a` |
+| `compression` | number/string | `0`/`"disabled"`, `1`/`"context_takeover"`, or `2`/`"no_context_takeover"`; default disabled |
+| `compression_threshold` | number | Minimum size to compress, in bytes (0-104857600); `0` uses 128 bytes for context takeover or 512 for no-context-takeover mode |
+| `read_limit` | number | Maximum inbound message size, in bytes (0-134217728); `0` uses 16 MiB |
+| `channel_capacity` | number | Service-side inbound message buffer (1-10000); default 16 |
 
 **Timeout format:** Numbers are milliseconds. Strings use Go duration syntax such as `"5s"` or `"1m"`.
+
+Invalid timeout strings and out-of-range or unsupported option values are ignored, leaving the corresponding default in effect.
 
 ## Sending Messages
 
@@ -73,6 +75,8 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 Send a text message.
 
 ```lua
+local json = require("json")
+
 client:send("Hello, Server!")
 
 -- Send JSON
@@ -95,9 +99,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Message content |
 | `type` | number | `websocket.TEXT` (1) or `websocket.BINARY` (2) |
 
-The call yields until the message is sent.
-
-**Returns:** `boolean, error`
+If `type` is absent or not `websocket.TEXT` or `websocket.BINARY`, the runtime sends a text message. The call yields until the send command completes and returns no values. In runtime `v0.3.32a`, transport send failures are not returned to Lua.
 
 ### Ping
 
@@ -107,18 +109,19 @@ Send a ping frame.
 client:ping()
 ```
 
-The call yields until the ping is sent.
-
-**Returns:** `boolean, error`
+The call yields until the ping command completes and returns no values. In runtime `v0.3.32a`, transport ping failures are not returned to Lua.
 
 ## Receiving Messages
 
-`channel()` returns the receive channel, and `receive()` is an alias. The channel can be used with `channel.select`.
+`channel()` returns the receive channel, and `receive()` is an alias. The first call yields while the runtime creates the subscription; later calls return the same channel immediately. A subscription failure returns `nil, error`. The channel can be used with `channel.select`.
 
 ### Basic Receive
 
 ```lua
-local ch = client:channel()
+local ch, err = client:channel()
+if err then
+    return nil, err
+end
 
 local msg, ok = ch:receive()
 if ok then
@@ -130,7 +133,12 @@ end
 ### Message Loop
 
 ```lua
-local ch = client:channel()
+local json = require("json")
+
+local ch, err = client:channel()
+if err then
+    return nil, err
+end
 
 while true do
     local msg, ok = ch:receive()
@@ -148,8 +156,18 @@ end
 ### With Select
 
 ```lua
-local ch = client:channel()
-local timeout = time.after("30s")
+local json = require("json")
+local time = require("time")
+
+local ch, ch_err = client:channel()
+if ch_err then
+    return nil, ch_err
+end
+
+local timeout, timeout_err = time.after("30s")
+if timeout_err then
+    return nil, timeout_err
+end
 
 while true do
     local r = channel.select {
@@ -159,7 +177,12 @@ while true do
 
     if r.channel == timeout then
         client:ping()  -- Keep-alive
-        timeout = time.after("30s")
+        timeout, timeout_err = time.after("30s")
+        if timeout_err then
+            return nil, timeout_err
+        end
+    elseif not r.ok then
+        break
     else
         local data = json.decode(r.value.data)
         process(data)
@@ -194,7 +217,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Close code (1000-4999), default 1000 |
 | `reason` | string | Close reason (optional) |
 
-The call yields until the close frame is sent.
+The call yields until the close command completes. Success returns no values; a close failure returns `nil, error`. Values outside the accepted numeric range are ignored and the default code `1000` is used.
 
 ## Constants
 
@@ -205,13 +228,15 @@ The call yields until the close frame is sent.
 websocket.TEXT    -- 1
 websocket.BINARY  -- 2
 
--- String (received message type field)
+-- Compatibility string constants
 websocket.TYPE_TEXT    -- "text"
 websocket.TYPE_BINARY  -- "binary"
 websocket.TYPE_PING    -- "ping"
 websocket.TYPE_PONG    -- "pong"
 websocket.TYPE_CLOSE   -- "close"
 ```
+
+Receive-channel message objects use only `"text"` and `"binary"`. Ping and pong frames are handled by the transport, and a terminal event closes the channel instead of producing a `"close"` message object.
 
 ### Compression Modes
 
@@ -251,6 +276,8 @@ client:close(websocket.CLOSE_CODES.NORMAL, "Done")
 ### Real-Time Chat
 
 ```lua
+local json = require("json")
+
 local function connect_chat(room_id, on_message)
     local client, err = websocket.connect("wss://chat.example.com/ws", {
         headers = {["Authorization"] = "Bearer " .. token}
@@ -266,7 +293,11 @@ local function connect_chat(room_id, on_message)
     }))
 
     -- Message loop
-    local ch = client:channel()
+    local ch, channel_err = client:channel()
+    if channel_err then
+        client:close()
+        return nil, channel_err
+    end
     while true do
         local msg, ok = ch:receive()
         if not ok then break end
@@ -282,15 +313,30 @@ end
 ### Price Stream with Keep-Alive
 
 ```lua
-local client = websocket.connect("wss://stream.example.com/prices")
+local json = require("json")
+local time = require("time")
+
+local client, err = websocket.connect("wss://stream.example.com/prices")
+if err then
+    return nil, err
+end
 
 client:send(json.encode({
     action = "subscribe",
     symbols = {"BTC-USD", "ETH-USD"}
 }))
 
-local ch = client:channel()
-local heartbeat = time.after("30s")
+local ch, channel_err = client:channel()
+if channel_err then
+    client:close()
+    return nil, channel_err
+end
+
+local heartbeat, heartbeat_err = time.after("30s")
+if heartbeat_err then
+    client:close()
+    return nil, heartbeat_err
+end
 
 while true do
     local r = channel.select {
@@ -300,7 +346,11 @@ while true do
 
     if r.channel == heartbeat then
         client:ping()
-        heartbeat = time.after("30s")
+        heartbeat, heartbeat_err = time.after("30s")
+        if heartbeat_err then
+            client:close()
+            return nil, heartbeat_err
+        end
     elseif not r.ok then
         break  -- Connection closed
     else
@@ -333,7 +383,12 @@ See [Security Model](system/security.md) for policy configuration.
 | URL not allowed | `errors.PERMISSION_DENIED` | no |
 | No context | `errors.INTERNAL` | no |
 | Connection failed | `errors.INTERNAL` | yes |
-| Invalid connection ID | `errors.INTERNAL` | no |
+| Invalid connection ID returned by the dispatcher | `errors.INTERNAL` | no |
+| Subscription failed | `errors.INTERNAL` | yes |
+| Missing process context during subscription | `errors.INTERNAL` | no |
+| Close failed | `errors.INTERNAL` | no |
+
+An empty URL, a non-table options value, invalid argument types, and a missing execution context or process PID when requesting the receive channel raise Lua errors. They are not returned as structured errors. Runtime `v0.3.32a` does not expose send or ping transport failures to Lua callers.
 
 ```lua
 local client, err = websocket.connect(url)
