@@ -1,41 +1,41 @@
 ---
-title: "Construcción de Componentes"
-description: "Creación de módulos reutilizables: declarar interfaces de requirements con ns.requirement y cómo los hosts suministran valores mediante parámetros de dependencia."
+title: "Creación de componentes"
+description: "Declara requisitos de módulos reutilizables con ns.requirement y haz que un Host los proporcione mediante parámetros de dependencia."
 ---
 
-# Construcción de Componentes
+# Creación de componentes
 
-Un **componente** es un módulo Wippy reutilizable — un slice de funcionalidad publicado en el hub y montado en una aplicación host. El desafío al que se enfrenta un componente es que no puede nombrar las cosas de las que depende: necesita *una* base de datos, *un* host de procesos, *un* router, pero no sabe cuáles le dará el host. Wippy resuelve esto con una **interfaz de requirements** — el componente declara huecos, el host los llena.
+Un **componente** es un módulo Wippy reutilizable que se publica en el Hub y se monta en una aplicación Host. Puede depender de una base de datos, process host o router sin conocer los ID de entradas del Host. Declara esas dependencias mediante una **interfaz de requirements**, y el Host proporciona sus valores.
 
-Esta guía cubre el lado del autor: declarar esa interfaz y entender cómo fluyen los valores hacia tus entradas. Para el lado del consumidor (archivos de bloqueo, restricciones de versión, `wippy add`/`update`) consulta [Gestión de Dependencias](guides/dependency-management.md). Para cómo se estructura internamente un componente consulta [Arquitectura de Aplicaciones](concepts/architecture.md).
+Esta guía cubre el lado del author: declarar la interfaz y comprender cómo fluyen los valores hacia las entradas. Para el lado del consumer (lock files, constraints de versión, `wippy add`/`update`), consulta [Gestión de dependencias](./dependency-management.md). Para la estructura interna de un componente, consulta [Arquitectura de aplicaciones](../concepts/architecture.md).
 
-## Los tres tipos
+## Los tres tipos de entrada
 
-| Tipo | Lado | Rol |
-|------|------|-----|
-| `ns.definition` | componente | Metadatos del módulo; requerido para publicar. |
-| `ns.requirement` | componente | Un hueco que el host debe llenar, y dónde inyectar el valor. |
-| `ns.dependency` | host | Monta un componente y suministra valores para sus requirements. |
+| Kind | Lado | Función |
+|------|------|------|
+| `ns.definition` | componente | Metadatos del módulo; obligatorio para publicar. |
+| `ns.requirement` | componente | Un hueco que debe rellenar el Host y dónde inyectar el valor. |
+| `ns.dependency` | Host | Monta un componente y proporciona valores para sus requirements. |
 
 ## ns.definition
 
-Uno por módulo, requerido para publicar. Lleva el nombre para mostrar del módulo y la ruta del README — nada más.
+Cada módulo publicado debe tener exactamente una definition. Puede contener metadatos del módulo y referencias a README y páginas wiki.
 
 ```yaml
 - name: definition
   kind: ns.definition
-  module: jobs                # opcional; por defecto el nombre de la entrada
-  readme: file://README.md    # ruta a la documentación del módulo
+  module: jobs                # optional module metadata
+  readme: file://README.md    # path to the module's documentation
   meta:
     title: Durable Jobs
     description: Leased job queue with retry and dead-lettering.
 ```
 
-Solo `module` y `readme` son datos del componente; `meta` es metadata ordinaria de entrada para las UIs de gestión. Las notas de versión se suministran en el momento de publicar, no aquí.
+`module`, `readme` y `wiki` son data de la definition; todos son opcionales. `meta` son metadatos ordinarios de la entrada para interfaces de administración. Las release notes se proporcionan al publicar, no aquí.
 
 ## ns.requirement
 
-Un requirement es un **hueco con nombre con una lista de destinos de inyección**. El host suministra un valor; el runtime escribe ese valor en cada entrada destino en la ruta dada.
+Un requirement es un **valor con nombre y una lista de targets de injection**. El Host proporciona el valor y el runtime lo escribe en cada entrada target en el path especificado.
 
 ```yaml
 - name: target_db
@@ -50,37 +50,37 @@ Un requirement es un **hueco con nombre con una lista de destinos de inyección*
       path: .db
 ```
 
-### default — obligatorio vs opcional
+### `default`: obligatorio u opcional
 
-El campo `default` decide si el host *debe* suministrar un valor:
+El campo `default` determina si el Host *debe* proporcionar un valor:
 
-- **`default` presente** (cualquier valor, incluida una cadena vacía) → el requirement es **opcional**. Si el host no suministra nada, se usa el valor por defecto.
-- **`default` ausente** → el requirement es **obligatorio**. Sin nada suministrado, el enlazado falla bajo el modo estricto (y advierte en caso contrario).
+- **`default` presente con valor no null** (incluida una cadena vacía) → requirement **opcional**. Si el Host no proporciona nada, se usa el default.
+- **`default` ausente** → requirement **obligatorio**. Si no se proporciona nada, el linking falla en modo strict (y emite un warning en caso contrario).
 
 <note>
-Un default explícitamente vacío (<code>default: ""</code>) es distinto de no tener default en absoluto. La cadena vacía significa "opcional, recurre a nada"; ausente significa "el host debe proporcionar esto". Usa un default para infraestructura que tiene una convención razonable dentro de la app (<code>app:db</code>, <code>app:processes</code>); omítelo para valores que solo el host puede conocer.
+Un default explícitamente vacío (<code>default: ""</code>) es distinto de uno ausente o null. Una cadena vacía significa «opcional, fallback a nada»; tanto la ausencia como <code>default: null</code> significan «el Host debe proporcionar este valor». Usa un default no null para infraestructura con una convención razonable dentro de la aplicación (<code>app:db</code>, <code>app:processes</code>); omítelo para valores que solo puede conocer el Host.
 </note>
 
-### targets — dónde aterriza el valor
+### `targets`: ubicaciones de injection
 
 Cada target es un par `{entry, path}`:
 
-- **`entry`** — la entrada en la que se inyecta el valor. Un nombre simple (`schema`) se resuelve dentro del propio namespace del requirement; un id completamente calificado (`app.jobs.migrations:schema`) apunta exactamente a esa entrada, a través de namespaces.
-- **`path`** — una ruta con puntos dentro de la entrada destino, ej. `.meta.target_db`, `.host`, `.database.url`. El punto inicial es convencional.
+- **`entry`** — entrada donde se inyecta el valor. Un nombre simple (`schema`) se resuelve dentro del namespace del propio requirement; un id fully-qualified (`app.jobs.migrations:schema`) apunta exactamente a esa entrada entre namespaces.
+- **`path`** — dot path dentro de la entrada target, por ejemplo `.meta.target_db`, `.host`, `.database.url`. El punto inicial es convencional.
 
-Un requirement sin targets es un error — un hueco que no inyecta en ningún sitio no tiene sentido.
+Un requirement debe declarar al menos un target.
 
-Anexa en lugar de asignar con el sufijo `+=` en la ruta — útil cuando varios requirements contribuyen a una misma lista (ej. middleware):
+Usa el sufijo `+=` en el path para append en lugar de set, útil cuando varios requirements contribuyen a una lista, por ejemplo middleware:
 
 ```yaml
 targets:
   - entry: app.api:router
-    path: .middleware+=     # anexa el valor a la lista en .middleware
+    path: .middleware+=     # appends the value to the list at .middleware
 ```
 
-### Un requirement, muchos targets
+### Un requirement, varios targets
 
-Agrupa todo lo que necesita el mismo valor bajo un único requirement. Este es el patrón idiomático: un requirement `target_db` que inyecta en el `.meta.target_db` de cada migración y en el `.db` de cada biblioteca de persistencia, un `process_host` que inyecta en el `.host` de cada `service` supervisado, un `api_router` que inyecta en el `.meta.router` de cada endpoint:
+Agrupa en un requirement los targets que necesitan el mismo valor. Por ejemplo, `target_db` puede proporcionar `.meta.target_db` a todas las migraciones y `.db` a la library de persistencia; `process_host` puede proporcionar `.host` a cada servicio supervisado; y `api_router` puede proporcionar `.meta.router` a cada endpoint:
 
 ```yaml
 - name: process_host
@@ -91,11 +91,11 @@ Agrupa todo lo que necesita el mismo valor bajo un único requirement. Este es e
     - { entry: app.jobs.service:sweeper.service, path: .host }
 ```
 
-El host llena un hueco; el runtime distribuye el valor a cada target. Nada se refleja en una entrada de configuración paralela — la entrada del requirement *es* el cableado.
+El Host proporciona un valor y el runtime lo escribe en todos los targets declarados. La propia entrada requirement contiene este wiring.
 
 ## Consumir un componente
 
-El host monta un componente con `ns.dependency` y llena sus requirements a través de `parameters`:
+El Host monta un componente con `ns.dependency` y rellena sus requirements mediante `parameters`:
 
 ```yaml
 version: "1.0"
@@ -114,40 +114,40 @@ entries:
         value: app:api
 ```
 
-Cada `parameter.name` coincide con un requirement; su `value` es lo que se inyecta en los targets de ese requirement. Los requirements con default pueden omitirse; los obligatorios deben suministrarse.
+Cada `parameter.name` coincide con un requirement; su `value` se inyecta en los targets del requirement. Se pueden omitir los requirements con default; los obligatorios deben proporcionarse.
 
 ### Coincidencia de nombres de parámetros
 
-Cómo se vincula el nombre de un parámetro a un requirement:
+Cómo se enlaza un nombre de parámetro con un requirement:
 
-- **Nombre simple** (`target_db`) coincide con un requirement de ese nombre perteneciente al componente que se está montando. No cruza hacia los requirements de un módulo diferente.
-- **Nombre calificado** (`acme.jobs:target_db`) coincide exactamente con ese id de requirement. Úsalo para desambiguar al cablear dependencias transitivas.
+- **Nombre simple** (`target_db`) coincide con un requirement de ese nombre perteneciente al componente que se está montando. No cruza a requirements de otro módulo.
+- **Nombre cualificado** (`acme.jobs:target_db`) coincide exactamente con ese ID. Úsalo para desambiguar al conectar dependencias transitivas.
 
-Si dos dependencias suministran valores **diferentes** para el mismo requirement, eso es un conflicto y se reporta (valores idénticos están bien).
+Si dos dependencias proporcionan valores **distintos** para el mismo requirement, se informa de un conflicto; los valores idénticos son válidos.
 
 ## Cuándo se resuelven los valores
 
-La inyección ocurre en la **etapa de Link** del pipeline de construcción — al publicar, durante la expansión de dependencias y en el arranque — no en tiempo de ejecución. La etapa:
+La injection ocurre en la etapa **Link** del pipeline de build — durante publish, expansión de dependencias y boot —, no en runtime. La etapa:
 
-1. Recolecta cada `ns.requirement` y cada `ns.dependency` con sus parámetros.
-2. Para cada requirement, resuelve un valor: un parámetro coincidente gana; en su defecto el default; en su defecto (sin default) queda sin resolver.
-3. Escribe el valor resuelto en cada entrada destino en su ruta (asignación, o anexado para `+=`).
+1. Recopila cada `ns.requirement` y cada `ns.dependency` con sus parámetros.
+2. Para cada requirement, resuelve un valor: gana un parámetro coincidente; si no, el default; si tampoco existe, queda sin resolver.
+3. Escribe el valor resuelto en cada entrada target en su path (set o append para `+=`).
 
-Bajo **requirements estrictos** un requirement obligatorio sin resolver hace fallar la construcción; en caso contrario registra una advertencia y continúa. Para cuando las entradas llegan al runtime, cada requirement lleno ya ha sido incorporado en sus targets.
+Con **strict requirements**, un requirement obligatorio sin resolver hace fallar el build; de lo contrario se registra un warning y continúa. Cuando las entradas llegan al runtime, cada requirement cubierto ya está incorporado a sus targets.
 
-## Verifica las costuras: un test de montaje
+## Verificar la integración con una prueba de montaje
 
-Los tests unitarios ejercitan un slice de forma aislada; no pueden ver si el módulo *ensamblado* es coherente. Agrega un test de empaquetado/montaje que audite el módulo como un todo contra el registro en vivo con los requirements inyectados:
+Las unit tests no verifican las relaciones del registro del módulo ensamblado. Añade una prueba de packaging o montaje contra el registro con requirements inyectados para verificar que:
 
-- cada `service` supervisado apunta a una entrada de proceso que existe,
-- cada id spawneado o programado resuelve a una entrada real,
-- el almacenamiento de cada `env.variable` está registrado.
+- cada `service` supervisado apunta a una entrada de proceso existente,
+- cada ID creado o programado resuelve a una entrada real,
+- el storage de cada `env.variable` está registrado.
 
-Estas son las costuras de integración que las suites unitarias aisladas enmascaran — los huecos que permiten que un supervisor referencie un worker que nunca se registró, o que un fixture de test filtre un id de almacenamiento exclusivo del harness a un arranque montado. Consulta [Supervisión](guides/supervision.md) y el framework de [Testing](framework/testing.md).
+Esto detecta relaciones sin resolver, como un supervisor que referencia un worker no registrado o un fixture de prueba que usa un ID de storage propio del harness. Consulta [Supervisión](./supervision.md) y el framework de [Testing](../framework/testing.md).
 
-## Ver También
+## Véase también
 
-- [Arquitectura de Aplicaciones](concepts/architecture.md) — cómo se estructura internamente un componente
-- [Gestión de Dependencias](guides/dependency-management.md) — archivos de bloqueo, versiones, el flujo del consumidor
-- [Publicación de Módulos](guides/publishing.md) — poner un componente en el hub
-- [Guía de Tipos de Entrada](guides/entry-kinds.md) — referencia de `ns.definition`, `ns.requirement`, `ns.dependency`
+- [Arquitectura de aplicaciones](../concepts/architecture.md) — estructura interna de un componente
+- [Gestión de dependencias](./dependency-management.md) — lock files, versiones y workflow del consumer
+- [Publicación de módulos](./publishing.md) — publicar un componente en el Hub
+- [Guía de tipos de entrada](./entry-kinds.md) — referencia de `ns.definition`, `ns.requirement`, `ns.dependency`

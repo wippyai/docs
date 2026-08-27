@@ -1,58 +1,52 @@
 ---
-title: "Servidor de Lenguaje"
-description: "Wippy incluye un servidor LSP (Language Server Protocol) integrado que proporciona funcionalidades de IDE para codigo Lua. El servidor se ejecuta como…"
+title: "Servidor de lenguaje"
+description: "Configura el servidor Language Server Protocol integrado de Wippy para funciones de editor Lua mediante TCP o HTTP."
 ---
 
-# Servidor de Lenguaje
+# Servidor de lenguaje
 
-Wippy incluye un servidor LSP (Language Server Protocol) integrado que proporciona funcionalidades de IDE para codigo Lua. El servidor se ejecuta como parte del runtime de Wippy y se conecta a editores via TCP o HTTP.
+Wippy incluye un servidor Language Server Protocol (LSP) para funciones de editor Lua. Se ejecuta como parte del runtime de Wippy y acepta conexiones de editores mediante TCP o HTTP.
 
-## Caracteristicas
+## Funciones
 
-- Autocompletado con sugerencias basadas en tipos
-- Informacion al pasar el cursor mostrando tipos y firmas
-- Ir a la definicion
+- Autocompletado de código con sugerencias conscientes de tipos
+- Información hover con tipos y signatures
+- Ir a la definición
 - Buscar referencias
-- Simbolos de documento y espacio de trabajo
-- Jerarquia de llamadas (entrantes y salientes)
-- Diagnosticos en tiempo real (errores de analisis, errores de tipo)
-- Ayuda de firma para parametros de funciones
+- Símbolos de documento y workspace
+- Jerarquía de llamadas (entrantes y salientes)
+- Diagnósticos pull para errores de tipos en el overlay actual del editor después de un parse correcto
+- Ayuda de signature para parámetros de funciones
 
-## Configuracion
+## Configuración
 
 Habilita el servidor LSP en `.wippy.yaml`:
 
 ```yaml
-version: "1.0"
-
-lua:
-  type_system:
-    enabled: true
-
 lsp:
   enabled: true
   address: ":7777"
 ```
 
-### Campos de Configuracion
+### Campos de configuración
 
-| Campo | Por Defecto | Descripcion |
-|-------|-------------|-------------|
-| `enabled` | false | Habilitar el servidor TCP |
-| `address` | :7777 | Direccion de escucha TCP |
-| `http_enabled` | false | Habilitar el transporte HTTP |
-| `http_address` | :7778 | Direccion de escucha HTTP |
+| Campo | Default | Descripción |
+|-------|---------|-------------|
+| `enabled` | false | Habilita el servicio LSP y el servidor TCP |
+| `address` | :7777 | Dirección de escucha TCP |
+| `http_enabled` | false | Habilita el transporte HTTP |
+| `http_address` | :7778 | Dirección de escucha HTTP |
 | `http_path` | /lsp | Ruta del endpoint HTTP |
-| `http_allow_origin` | * | Origen permitido para CORS |
-| `max_message_bytes` | 8388608 | Tamano maximo de mensaje entrante (bytes) |
+| `http_allow_origin` | * | Origin permitido por CORS |
+| `max_message_bytes` | 8388608 | Tamaño máximo de mensaje entrante, en bytes |
 
 ### Transporte TCP
 
-El servidor TCP utiliza JSON-RPC 2.0 con el enmarcado estandar de mensajes LSP (cabeceras Content-Length). Este es el transporte principal para integraciones con editores.
+El servidor TCP habla JSON-RPC 2.0 con el framing estándar de mensajes LSP (headers Content-Length). Es el transporte principal para integraciones con editores.
 
 ### Transporte HTTP
 
-El transporte HTTP acepta solicitudes POST con payloads JSON-RPC. Util para editores basados en navegador y herramientas web. Se incluyen cabeceras CORS para acceso entre origenes.
+El transporte HTTP acepta requests POST con payloads JSON-RPC. Admite editores en browser y herramientas web, responde requests CORS preflight `OPTIONS` e incluye headers CORS para acceso cross-origin.
 
 ```yaml
 lsp:
@@ -63,68 +57,67 @@ lsp:
   http_allow_origin: "*"
 ```
 
-## Esquema de URI de Documentos
+## Esquema URI de documentos
 
-El servidor LSP usa el esquema de URI `wippy://` para identificar entradas del registro:
+El servidor LSP usa el esquema URI `wippy://` para identificar entradas del registro:
 
 ```
 wippy://namespace:entry_name
 ```
 
-Los editores mapean estos URIs a IDs de entrada en el registro. Se aceptan tanto el esquema `wippy://` como el formato directo `namespace:entry_name`.
+Los editores asignan estos URI a ID de entradas del registro. Se aceptan tanto el esquema `wippy://` como el formato sin esquema `namespace:entry_name`.
 
-## Indexacion
+## Indexación
 
-El servidor LSP mantiene un indice de todas las entradas de codigo para busquedas rapidas. La indexacion ocurre en segundo plano usando multiples workers.
+El servidor LSP mantiene un índice de entradas de código. Varios workers actualizan el índice en segundo plano.
 
-Comportamientos clave:
+Comportamientos principales:
 
-- Las entradas se indexan en orden de dependencias (dependencias primero)
-- Los cambios disparan la re-indexacion de las entradas afectadas
-- Los cambios no guardados del editor se almacenan en una capa superpuesta
-- El indice es incremental - solo se reprocesan las entradas modificadas
+- Las entradas se indexan en orden de dependencias (primero las dependencias)
+- Los cambios provocan la reindexación de las entradas afectadas
+- Los cambios sin guardar del editor se almacenan en un overlay
+- La indexación es incremental; solo se vuelven a procesar las entradas modificadas
 
-## Metodos LSP Soportados
+## Métodos LSP compatibles
 
-| Metodo | Descripcion |
+| Método | Descripción |
 |--------|-------------|
-| `initialize` | Negociacion de capacidades |
-| `textDocument/didOpen` | Seguimiento de documentos abiertos |
-| `textDocument/didChange` | Sincronizacion completa de documentos |
-| `textDocument/didClose` | Liberacion de documentos |
-| `textDocument/hover` | Informacion de tipo en el cursor |
-| `textDocument/definition` | Ir a la definicion |
-| `textDocument/references` | Buscar todas las referencias |
+| `initialize` | Negociación de capacidades |
+| `initialized` | Notificación de inicialización completada |
+| `shutdown` | Cierra la sesión del protocolo |
+| `exit` | Notificación de salida |
+| `textDocument/didOpen` | Hace seguimiento de documentos abiertos |
+| `textDocument/didChange` | Sincronización completa del documento |
+| `textDocument/didClose` | Libera documentos |
+| `textDocument/hover` | Información de tipos en el cursor |
+| `textDocument/definition` | Salta a la definición |
+| `textDocument/references` | Busca todas las referencias |
 | `textDocument/completion` | Autocompletado |
-| `textDocument/signatureHelp` | Firmas de funciones |
-| `textDocument/diagnostic` | Diagnosticos de archivo |
-| `textDocument/documentSymbol` | Simbolos de archivo |
-| `workspace/symbol` | Busqueda global de simbolos |
-| `textDocument/prepareCallHierarchy` | Jerarquia de llamadas |
-| `callHierarchy/incomingCalls` | Buscar llamadores |
-| `callHierarchy/outgoingCalls` | Buscar llamados |
+| `textDocument/signatureHelp` | Signatures de funciones |
+| `textDocument/diagnostic` | Diagnósticos del archivo |
+| `textDocument/documentSymbol` | Símbolos del archivo |
+| `workspace/symbol` | Búsqueda global de símbolos |
+| `textDocument/prepareCallHierarchy` | Jerarquía de llamadas |
+| `callHierarchy/incomingCalls` | Busca callers |
+| `callHierarchy/outgoingCalls` | Busca callees |
 
 ## Autocompletado
 
-El motor de autocompletado resuelve tipos a traves del grafo de codigo. Proporciona:
+El motor de autocompletado resuelve tipos mediante el grafo de código. Proporciona:
 
-- Autocompletado de miembros despues de `.` y `:` (campos, metodos)
+- Autocompletado de miembros tras `.` y `:` (campos, métodos)
 - Autocompletado de variables locales
-- Autocompletado de simbolos a nivel de modulo
-- Caracteres de activacion: `.`, `:`
+- Autocompletado de símbolos de módulo
+- Caracteres activadores: `.`, `:`
 
-## Diagnosticos
+## Diagnósticos
 
-Los diagnosticos se calculan durante la indexacion e incluyen:
+Después de que un documento se analice correctamente, la indexación almacena diagnósticos de comprobación de tipos, como incompatibilidades y símbolos no definidos. Los diagnósticos usan las severidades estándar de error, warning, information y hint.
 
-- Errores de analisis (problemas de sintaxis)
-- Errores de verificacion de tipos (incompatibilidades, simbolos no definidos)
-- Niveles de severidad: error, warning, information, hint
+Las notificaciones de cambio del documento completo actualizan el overlay usado para los diagnósticos. Los clients recuperan el resultado almacenado actual con `textDocument/diagnostic`; este servidor no envía notificaciones `textDocument/publishDiagnostics`. Un fallo de parse aborta la reindexación antes de almacenar nuevos diagnósticos, por lo que el resultado pull no informa ese error de sintaxis y puede conservar el resultado correcto anterior.
 
-Los diagnosticos se actualizan mientras escribes a traves del sistema de capa superpuesta de documentos.
+## Véase también
 
-## Ver Tambien
-
-- [Linter](guides/linter.md) - Verificacion de codigo por linea de comandos
-- [Tipos](lua/types.md) - Documentacion del sistema de tipos
-- [Configuracion](guides/configuration.md) - Configuracion del runtime
+- [Linter](./linter.md) — Comprobación de código desde CLI
+- [Tipos](../lua/types.md) — Documentación del sistema de tipos
+- [Configuración](./configuration.md) — Configuración del runtime

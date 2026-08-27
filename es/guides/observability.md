@@ -1,52 +1,54 @@
 ---
 title: "Observabilidad"
-description: "Configure logging, métricas y trazado distribuido para aplicaciones Wippy."
+description: "Configura logging de Wippy, métricas Prometheus, tracing de OpenTelemetry y estadísticas del runtime."
 ---
 
 # Observabilidad
 
-Configure logging, métricas y trazado distribuido para aplicaciones Wippy.
+Wippy expone el comportamiento de la aplicación y del runtime mediante logging, métricas, tracing distribuido y estadísticas del runtime.
 
-## Visión General
+## Resumen
 
-Wippy proporciona tres pilares de observabilidad configurados al iniciar:
+Se configuran tres áreas de observabilidad durante el boot:
 
 | Pilar | Backend | Configuración |
 |--------|---------|---------------|
 | Logging | Zap (JSON estructurado) | `logger` y `logmanager` |
 | Métricas | Prometheus | `prometheus` |
-| Trazado | OpenTelemetry | `otel` |
+| Tracing | OpenTelemetry | `otel` |
 
-## Configuración del Logger
+## Configuración del logger
 
-### Logger Básico
+### Encoding del logger
 
 ```yaml
 logger:
-  encoding: json       # json o console
+  encoding: json       # json or console
 ```
 
-El nivel y la salida se controlan mediante flags de CLI (`-v`, `-c`, `-s`) — solo se lee `encoding` del yaml.
+El nivel y el output se controlan mediante flags de CLI (`-v`, `-c`, `-s`); YAML solo lee `encoding`.
 
-### Gestor de Logs
+### Log Manager
 
-El gestor de logs controla la propagación de logs y streaming de eventos:
+El log manager controla la propagación de logs y el streaming de eventos:
 
 ```yaml
 logmanager:
-  propagate_downstream: true   # Propagar a componentes hijos
-  stream_to_events: false      # Reenviar logs al bus de eventos
-  min_level: -1                # -1=debug (por defecto), 0=info, 1=warn, 2=error
+  propagate_downstream: true   # Propagate to child components
+  stream_to_events: false      # Forward logs to event bus
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
 ```
 
-Cuando `stream_to_events` está habilitado, las entradas de log se convierten en eventos a los que los procesos pueden suscribirse vía el bus de eventos.
+Cuando `stream_to_events` está habilitado, las entradas de log se convierten en eventos a los que pueden suscribirse los procesos mediante el event bus.
 
-### Contexto Automático
+El default embebido del log manager es `-1`, pero `wippy run` aplica al inicio su elección de logging de CLI: info (`0`) de forma predeterminada y debug (`-1`) con `-v` o `--very-verbose`.
 
-Los logs emitidos desde Lua mediante el [módulo logger](lua/system/logger.md) incluyen automáticamente:
+### Contexto automático
+
+Los logs emitidos desde Lua mediante el [módulo logger](../lua/system/logger.md) incluyen automáticamente:
 
 - `pid` - PID del proceso actual
-- `location` - ID de entrada y línea invocadora (ej., `app.api:handler:45`)
+- `location` - ID de entrada y línea del caller, por ejemplo `app.api:handler:45`
 
 ## Métricas Prometheus
 
@@ -56,9 +58,9 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Las métricas se exponen en `/metrics` en la dirección configurada.
+El servidor Prometheus solo se inicia cuando `enabled` es `true` y `address` no está vacío. Expone métricas en `/metrics` y el handler de liveness del runtime en `/livez` en esa dirección.
 
-### Configuración de Scrape
+### Configuración de scrape
 
 ```yaml
 # prometheus.yml
@@ -69,23 +71,23 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-Para la API de métricas en Lua, consulte el [Módulo Metrics](lua/system/metrics.md).
+Para la API de métricas Lua, consulta el [módulo Metrics](../lua/system/metrics.md).
 
 ## OpenTelemetry
 
-OTEL proporciona trazado distribuido y exportación opcional de métricas.
+OpenTelemetry (OTEL) proporciona tracing distribuido y export opcional de métricas.
 
-### Configuración Básica
+### Configuración básica
 
 ```yaml
 otel:
   enabled: true
   endpoint: "localhost:4318"
-  protocol: http/protobuf      # grpc o http/protobuf
+  protocol: http/protobuf      # grpc or http/protobuf
   service_name: my-app
   service_version: "1.0.0"
-  insecure: false              # Permitir conexiones sin TLS
-  sample_rate: 1.0             # 0.0 a 1.0
+  insecure: true               # Use plaintext for a local collector
+  sample_rate: 1.0             # 0.0 to 1.0
   traces_enabled: true
   metrics_enabled: false
   propagators:
@@ -93,9 +95,9 @@ otel:
     - baggage
 ```
 
-### Fuentes de Trazas
+### Fuentes de traces
 
-Habilite trazado para componentes específicos:
+Habilita tracing para componentes concretos:
 
 ```yaml
 otel:
@@ -103,30 +105,31 @@ otel:
   endpoint: "localhost:4318"
   service_name: my-app
 
-  # Trazado de solicitudes HTTP
+  # HTTP request tracing
   http:
     enabled: true
-    extract_headers: true      # Leer contexto de traza entrante
-    inject_headers: true       # Escribir contexto de traza saliente
+    extract_headers: true      # Read incoming trace context
+    inject_headers: true       # Write trace context to the HTTP response
 
-  # Trazado de ciclo de vida de procesos
+  # Process lifecycle tracing
   process:
     enabled: true
-    trace_lifecycle: true      # Trazar eventos spawn/exit
+    trace_lifecycle: true      # Trace spawn/exit events
 
-  # Trazado de mensajes de cola
+  # Queue message tracing
   queue:
     enabled: true
 
-  # Trazado de llamadas de funciones
+  # Function call tracing
   interceptor:
     enabled: true
-    order: 0                   # Orden de ejecución del interceptor
 ```
 
-### Flujos de Trabajo Temporal
+Cuando OTEL está habilitado, se activan de forma predeterminada tracing y propagación HTTP, tracing de procesos y spans de ciclo de vida, interception de funciones, tracing de queues y export de traces. El tracing de Temporal y el export de métricas están deshabilitados de forma predeterminada. El runtime fijado registra el interceptor de funciones en order 100; aunque se puede decodificar un valor `interceptor.order` de la configuración, no cambia ese orden de registro.
 
-Habilite trazado para flujos de trabajo Temporal:
+### Workflows de Temporal
+
+Habilita tracing para workflows de Temporal:
 
 ```yaml
 otel:
@@ -138,67 +141,73 @@ otel:
     enabled: true
 ```
 
-Cuando está habilitado, el interceptor de trazado del SDK de Temporal se registra para operaciones de cliente y worker.
+Cuando se habilita, el interceptor de tracing del SDK de Temporal se registra para operaciones tanto de client como de worker.
 
-Operaciones trazadas:
-- Inicios y completaciones de flujos de trabajo
-- Ejecuciones de actividades
-- Llamadas a flujos de trabajo hijos
-- Manejo de señales y consultas
+Las operaciones traced incluyen:
 
-### Qué Se Traza
+- Inicio y finalización de workflows
+- Ejecución de activities
+- Llamadas a child workflows
+- Gestión de signals y queries
 
-| Componente | Nombre de Span | Atributos |
+### Qué se tracea
+
+| Componente | Nombre de span | Atributos |
 |-----------|-----------|------------|
-| Solicitudes HTTP | `{METHOD} {route}` | http.method, http.url, http.host |
-| Llamadas de funciones | ID de Función | process.pid, frame.id |
-| Ciclo de vida de procesos | `{source}.started/terminated` | process.pid |
-| Mensajes de cola | Topic del mensaje | Contexto de traza en headers |
-| Flujos de trabajo Temporal | Nombre de Workflow/Activity | workflow.id, run.id |
+| Requests HTTP | `{METHOD} {route}` | http.method, http.url, http.host |
+| Llamadas de función | ID de función | process.pid, frame.id |
+| Ciclo de vida de procesos | `<source-id>.started/terminated`, o `process.started/terminated` sin source frame | process.pid, lifecycle.event |
+| Publicación en queue | `<queue-id>.publish` | atributos de messaging y trace context en headers |
+| Consumo de queue | ID de función handler | atributos de messaging heredados por el span de función |
+| Workflows de Temporal | Nombre de operación del SDK de Temporal | metadatos de workflow y run del SDK |
 
-### Propagación de Contexto
+### Propagación del contexto
 
-El contexto de traza se propaga automáticamente:
+Las integraciones configuradas propagan trace context mediante:
 
-- **HTTP -> Función**: Headers W3C Trace Context
-- **Función -> Función**: Herencia de contexto de frame
-- **Proceso -> Proceso**: Contexto de spawn
-- **Cola publish -> consume**: Headers del mensaje
+- **HTTP → Function**: headers W3C Trace Context
+- **Function → Function**: herencia de contexto del frame
+- **Process → Process**: contexto de spawn
+- **Queue publish → consume**: headers del mensaje
 
-### Variables de Entorno
+### Variables de entorno
 
-OTEL puede configurarse vía entorno:
+OTEL se puede configurar mediante el entorno:
 
 | Variable | Descripción |
 |----------|-------------|
-| `OTEL_SDK_DISABLED` | Establecer a `true` para deshabilitar OTEL |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint del colector |
+| `OTEL_SDK_DISABLED` | Establece `true` para deshabilitar OTEL |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint del collector; se elimina un scheme `http://` o `https://` antes de configurar el exporter |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc` o `http/protobuf` |
+| `OTEL_EXPORTER_OTLP_INSECURE` | Establece `true` para usar una conexión plaintext al collector |
 | `OTEL_SERVICE_NAME` | Nombre del servicio |
 | `OTEL_SERVICE_VERSION` | Versión del servicio |
-| `OTEL_TRACES_SAMPLER_ARG` | Tasa de muestreo (0.0-1.0) |
-| `OTEL_PROPAGATORS` | Lista de propagadores |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio` o `parentbased_traceidratio` |
+| `OTEL_TRACES_SAMPLER_ARG` | Sample rate (0.0-1.0) |
+| `OTEL_PROPAGATORS` | Lista de propagators |
 
-## Estadísticas del Runtime
+## Estadísticas del runtime
 
 El módulo `system` proporciona estadísticas internas del runtime:
 
 ```lua
 local system = require("system")
 
--- Estadísticas de memoria
-local mem = system.memory.stats()
+-- Memory statistics
+local mem, mem_err = system.memory.stats()
 -- mem.alloc, mem.heap_alloc, mem.heap_objects, etc.
 
--- Conteo de goroutines
-local count = system.runtime.goroutines()
+-- Goroutine count
+local count, count_err = system.runtime.goroutines()
 
--- Estados del supervisor
-local states = system.supervisor.states()
+-- Supervisor states
+local states, states_err = system.supervisor.states()
 ```
 
-## Ver También
+Estas funciones devuelven `value, error`. Requieren el permiso `system.read` en el security scope actual.
 
-- [Módulo Logger](lua/system/logger.md) - API de logging en Lua
-- [Módulo Metrics](lua/system/metrics.md) - API de métricas en Lua
-- [Módulo System](lua/system/system.md) - Estadísticas del runtime
+## Véase también
+
+- [Módulo Logger](../lua/system/logger.md) — API de logging Lua
+- [Módulo Metrics](../lua/system/metrics.md) — API de métricas Lua
+- [Módulo System](../lua/system/system.md) — Estadísticas del runtime

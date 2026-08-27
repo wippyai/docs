@@ -5,28 +5,30 @@ description: "Comparta código reutilizable en el Wippy Hub."
 
 # Publicación de Módulos
 
-Comparta código reutilizable en el Wippy Hub.
+La publicación empaqueta un módulo y hace que una versión o etiqueta mutable esté disponible mediante Wippy Hub.
+
+Este documento es un flujo de publicación y una referencia. Los módulos `acme/*`, las URL, los tokens, las credenciales y el código fuente de ejemplo son ilustrativos; sustitúyelos por recursos que pertenezcan a tu organización.
 
 ## Requisitos Previos
 
-1. Cree una cuenta en [hub.wippy.ai](https://hub.wippy.ai)
-2. Cree una organización o únase a una
-3. Registre el nombre de su módulo bajo su organización
+1. Crea una cuenta en [hub.wippy.ai](https://hub.wippy.ai).
+2. Crea una organización o únete a una.
+3. Elige un nombre de módulo. La primera publicación puede registrar un nombre ausente si tu cuenta tiene permiso; usa `--create` para registrarlo antes de la carga y definir sus propiedades explícitamente.
 
 ## Estructura del Módulo
 
 ```
 mymodule/
-├── wippy.yaml      # Manifiesto del módulo
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # Definiciones de entradas
-│   └── *.lua       # Archivos fuente
-└── README.md       # Documentación (opcional)
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-Manifiesto del módulo:
+Define los metadatos del módulo en `wippy.yaml`:
 
 ```yaml
 organization: acme
@@ -145,9 +147,9 @@ Referencie otras entradas:
   modules:
     - json
   imports:
-    client: acme.http:client           # Mismo namespace
-    utils: acme.utils:helpers          # Namespace diferente
-    base_registry: :registry           # Integrado
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
 En Lua:
@@ -230,14 +232,21 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### Empaquetado de Archivos Estáticos
 
-Los módulos con entradas `fs.directory` (assets estáticos, plantillas, archivos públicos) deben usar `--embed` para incluirlos en el paquete publicado. Sin él, las entradas `fs.directory` se excluyen.
+Selecciona una entrada `fs.directory` para incrustarla mediante `--embed` o mediante la lista persistente `embed:` del manifiesto del proyecto. Las entradas seleccionadas se transforman en recursos `fs.embed`. Una entrada `fs.directory` no seleccionada permanece en el pack, pero no se incluye el contenido del directorio al que hace referencia.
+
+```yaml
+# wippy.yaml
+embed:
+  - app:public_files
+  - app:assets
+```
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-La bandera `--embed` acepta IDs de entrada o nombres que coincidan con entradas `fs.directory`. La misma bandera está disponible en `wippy pack`.
+La lista del manifiesto y la bandera `--embed` aceptan IDs de entrada o nombres que coincidan con entradas `fs.directory`. La bandera puede repetirse y cada valor puede ser una lista separada por comas. La misma bandera de CLI está disponible en `wippy pack`; una selección explícita mediante CLI sustituye la lista del manifiesto para esa invocación.
 
 ### Primera Publicación
 
@@ -307,7 +316,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []` no publica ninguno; un nombre desconocido hace fallar la publicación. Las subsecciones `workspace` nunca se exportan, ni siquiera dentro de un perfil publicado. Ver [Configuración](guides/configuration.md#profiles) para declarar perfiles.
+`include: []` no publica ninguno; un nombre desconocido hace fallar la publicación. Las subsecciones `workspace` nunca se exportan, ni siquiera dentro de un perfil publicado. Ver [Configuración](./configuration.md#profiles) para declarar perfiles.
 
 ## Uso de Módulos Publicados
 
@@ -337,7 +346,7 @@ override:
 ### Importar en Su Código
 
 ```yaml
-# su src/_index.yaml
+# your src/_index.yaml
 entries:
   - name: __dependency.acme.http
     kind: ns.dependency
@@ -357,6 +366,7 @@ entries:
 ```yaml
 organization: acme
 module: cache
+type: library
 description: In-memory caching with TTL
 license: MIT
 keywords:
@@ -375,19 +385,8 @@ entries:
     meta:
       title: Cache Module
 
-  - name: max_size
-    kind: ns.requirement
-    meta:
-      description: Maximum cache entries
-    targets:
-      - entry: acme.cache:cache
-        path: ".meta.max_size"
-    default: 1000
-
   - name: cache
     kind: library.lua
-    meta:
-      max_size: 1000
     source: file://cache.lua
     modules:
       - time
@@ -399,12 +398,8 @@ local time = require("time")
 
 local cache = {}
 local store = {}
-local max_size = 1000
 
 function cache.set(key, value, ttl)
-    if #store >= max_size then
-        cache.evict_oldest()
-    end
     store[key] = {
         value = value,
         expires = ttl and (time.now():unix() + ttl) or nil
@@ -427,12 +422,14 @@ return cache
 Publicar:
 
 ```bash
-wippy init && wippy update && wippy lint
+wippy init
+wippy update
+wippy lint
 wippy publish --version 1.0.0
 ```
 
 ## Véase También
 
-- [Referencia CLI](guides/cli.md)
-- [Tipos de Entrada](guides/entry-kinds.md)
-- [Configuración](guides/configuration.md)
+- [Referencia CLI](./cli.md)
+- [Tipos de Entrada](./entry-kinds.md)
+- [Configuración](./configuration.md)

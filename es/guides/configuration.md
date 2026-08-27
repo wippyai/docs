@@ -7,7 +7,7 @@ description: "Wippy se configura mediante archivos .wippy.yaml. Todas las opcion
 
 Wippy se configura mediante archivos `.wippy.yaml`. Todas las opciones tienen valores por defecto razonables.
 
-Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](guides/entry-kinds.md#overriding-entries).
+Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](./entry-kinds.md#overriding-entries).
 
 ## Composición de Configuración {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - El primer archivo ancla el directorio usado para resolver rutas relativas.
 - Los nombres de archivo no tienen significado reservado; nada aparte del archivo por defecto se descubre automáticamente.
 
-La configuración se aplica en orden: composición de archivos, luego las selecciones de `--profile`, luego las sobrescrituras de `--set`. Para aplicaciones ejecutadas desde packs, los valores por defecto de runtime empaquetados se sitúan por debajo de todos estos (ver [Publicar Valores por Defecto de Runtime](guides/publishing.md#publishing-runtime-defaults)).
+La configuración se aplica en orden: composición de archivos, luego las selecciones de `--profile`, luego las sobrescrituras de `--set`. Para aplicaciones ejecutadas desde packs, los valores por defecto de runtime empaquetados se sitúan por debajo de todos estos (ver [Publicar valores por defecto del runtime](./publishing.md#publishing-runtime-defaults)).
 
 ## Perfiles {#profiles}
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - La sección `disable` admite operaciones de lista dentro de perfiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — de modo que un perfil puede ajustar la lista base en lugar de reemplazarla.
 - Las referencias `${name}` se interpolan desde la sección `vars:` fusionada. Las referencias a variables de entorno del SO no están permitidas dentro de las vars de perfil; usa `${env:NAME}` en la configuración base, resuelta al cargar el archivo.
 
-`wippy run`, `test` y `pack` aceptan `--profile`; `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](guides/publishing.md#publishing-profiles).
+`wippy run`, `test` y `pack` aceptan `--profile`; `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](./publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## Gestor de Registros
 
-Controla el enrutamiento de registros del runtime. La salida en consola se configura mediante [flags de CLI](guides/cli.md) (`-v`, `-c`, `-s`).
+Controla el enrutamiento de registros del runtime. La salida en consola se configura mediante [flags de CLI](./cli.md) (`-v`, `-c`, `-s`).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-Ver: [Módulo Logger](lua/system/logger.md)
+Ver: [Módulo Logger](../lua/system/logger.md)
 
 ## Profiler
 
@@ -115,7 +115,7 @@ Acceso en `http://localhost:6060/debug/pprof/`
 
 ## Seguridad
 
-Comportamiento de seguridad global. Las políticas individuales se definen como [entradas security.policy](guides/entry-kinds.md).
+Comportamiento de seguridad global. Las políticas individuales se definen como [entradas security.policy](./entry-kinds.md).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
@@ -126,7 +126,7 @@ security:
   strict_mode: true
 ```
 
-Ver: [Sistema de Seguridad](system/security.md), [Módulo de Seguridad](lua/security/security.md)
+Ver: [Sistema de Seguridad](../system/security.md), [Módulo de Seguridad](../lua/security/security.md)
 
 ## Registro
 
@@ -135,8 +135,10 @@ Almacenamiento de entradas e historial de versiones. El registro almacena todas 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `enable_history` | bool | true | Rastrear versiones de entradas |
-| `history_type` | string | memory | Almacenamiento: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | Ruta del archivo SQLite |
+| `history_type` | string | memory | Almacenamiento: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | Ruta del archivo SQLite (se usa con `history_type: sqlite`) |
+| `history_dsn` | string | | DSN de Postgres (se usa con `history_type: postgres`) |
+| `history_schema` | string | | Nombre de esquema de Postgres (se usa con `history_type: postgres`) |
 
 ```yaml
 registry:
@@ -144,7 +146,14 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
-Ver: [Concepto de Registro](concepts/registry.md), [Módulo de Registro](lua/core/registry.md)
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
+```
+
+Ver: [Concepto de Registro](../concepts/registry.md), [Módulo de Registro](../lua/core/registry.md)
 
 ## Relay
 
@@ -152,14 +161,14 @@ Enrutamiento de mensajes entre procesos a través de nodos.
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
-| `node_name` | string | local | Identificador de este nodo relay |
+| `node_name` | string | ID derivado por instancia | Identificador de este nodo relay (predeterminado: UUIDv5 de machine-id/hostname + directorio de trabajo; se puede sobrescribir con `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
   node_name: worker-1
 ```
 
-Ver: [Modelo de Procesos](concepts/process-model.md)
+Ver: [Modelo de Procesos](../concepts/process-model.md)
 
 ## Supervisor
 
@@ -177,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-Ver: [Guía de Supervisión](guides/supervision.md)
+Ver: [Guía de Supervisión](./supervision.md)
 
 <note>
-Los workers y colas por `process.host` se configuran en la propia entrada (`workers`, `queue_size`, `local_queue_size`), no en esta sección global. Ver el tipo de entrada [Process Host](system/process-host.md).
+Los workers y colas por `process.host` se configuran en la propia entrada (`workers`, `queue_size`, `local_queue_size`), no en esta sección global. Ver el tipo de entrada [Process Host](../system/process-host.md).
 </note>
 
 ## Runtime de Lua
@@ -192,8 +201,10 @@ Caché de la VM de Lua y evaluación de expresiones.
 | `proto_cache_size` | int | 60000 | Caché de prototipos compilados |
 | `main_cache_size` | int | 10000 | Caché del chunk principal |
 | `cache.enabled` | bool | false | Persistir caché de bytecode/verificación de tipos en disco |
-| `cache.dir` | string | (directorio de caché del sistema) | Ruta del directorio de caché |
-| `cache.mode` | string | `read_write` | Modo de caché: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Ruta del directorio de caché |
+| `cache.mode` | string | `readwrite` | Modo de caché: `readwrite` (predeterminado), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Persistir bytecode compilado (cuando `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Persistir resultados de comprobación de tipos (cuando `cache.enabled`) |
 | `type_system.enabled` | bool | false | Habilitar verificación estática de tipos |
 | `type_system.strict` | bool | false | Tratar advertencias de tipos como errores |
 
@@ -207,7 +218,7 @@ lua:
     enabled: true
 ```
 
-Ver: [Visión General de Lua](lua/overview.md)
+Ver: [Visión General de Lua](../lua/overview.md)
 
 ## Finder
 
@@ -260,7 +271,7 @@ otel:
 
 Las variables de entorno estándar de OTEL (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) sobrescriben los campos correspondientes.
 
-Ver: [Guía de Observabilidad](guides/observability.md)
+Ver: [Guía de Observabilidad](./observability.md)
 
 ## Apagado
 
@@ -292,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-Ver: [Módulo de Métricas](lua/system/metrics.md), [Guía de Observabilidad](guides/observability.md)
+Ver: [Módulo de Métricas](../lua/system/metrics.md), [Guía de Observabilidad](./observability.md)
 
 ## Prometheus
 
@@ -301,7 +312,7 @@ Endpoint de métricas de Prometheus.
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Iniciar servidor de métricas |
-| `address` | string | localhost:9090 | Dirección de escucha |
+| `address` | string | | Dirección de escucha; debe establecerse explícitamente cuando `enabled: true`, de lo contrario el servidor de métricas no se inicia |
 
 ```yaml
 prometheus:
@@ -311,11 +322,11 @@ prometheus:
 
 Expone el endpoint `/metrics` para el scraping de Prometheus.
 
-Ver: [Guía de Observabilidad](guides/observability.md)
+Ver: [Guía de Observabilidad](./observability.md)
 
 ## Cluster
 
-Clustering multi-nodo: membresía por gossip más un núcleo de consenso Raft acotado. Ver la [Guía de Cluster](guides/cluster.md) para la arquitectura y el modelo operativo; esta sección es la referencia de claves de configuración.
+Clustering multi-nodo: membresía por gossip más un núcleo de consenso Raft acotado. Ver la [Guía de Cluster](./cluster.md) para la arquitectura y el modelo operativo; esta sección es la referencia de claves de configuración.
 
 ### Nivel superior
 
@@ -351,6 +362,8 @@ Las cuatro claves de sondeo heredan los valores por defecto de red local de memb
 
 Malla TCP que transporta el tráfico de relay y Raft entre nodos. Raft viaja por esta malla mediante request/reply internodo; no hay un puerto Raft separado.
 
+Cada nodo del cluster necesita su propia identidad privada internodo y un mapa de claves públicas de confianza. Configura exactamente una fuente de clave privada. Tanto los valores inline como los archivos de clave deben contener una semilla de 32 bytes o una clave de 64 bytes codificada en base64; los valores de confianza son claves públicas codificadas en base64.
+
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `internode.bind_addr` | string | 0.0.0.0 | Dirección de enlace de la malla |
@@ -358,12 +371,15 @@ Malla TCP que transporta el tráfico de relay y Raft entre nodos. Raft viaja por
 | `internode.auto_port` | bool | true | Descubrir el puerto real en el arranque, fijarlo y anunciarlo en gossip |
 | `internode.advertise_addr` | string | | Endpoint de relay adicional (IP o nombre DNS) publicado para peers actualizados — para alcanzabilidad con NAT o balanceadores de carga |
 | `internode.advertise_port` | int | 0 | Puerto para `advertise_addr` (0 = puerto de enlace; requiere `advertise_addr`) |
+| `internode.identity_key` | string | | Semilla o clave privada Ed25519 codificada en base64; obligatoria salvo que se establezca `identity_key_file` |
+| `internode.identity_key_file` | string | | Archivo que contiene una semilla o clave privada Ed25519 codificada en base64; obligatorio salvo que se establezca `identity_key` |
+| `internode.trusted_peer_keys` | map | | Mapa de nombre de nodo a clave pública Ed25519 codificada en base64; debe incluir el nodo local y todos los peers |
 
 `advertise_addr`/`advertise_port` publican un endpoint aditivo en los metadatos del nodo mientras el endpoint de enlace sigue anunciándose sin cambios, de modo que los clusters con versiones mixtas mantienen la conectividad durante una actualización progresiva.
 
 ### Raft (consenso)
 
-Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo `raft.data_dir` (por defecto `~/.wippy/store`); un nodo reiniciado aún se une al quórum desde sus peers. Las entradas [`store.kv.raft`](system/store.md#cluster-kv-stores) se replican a través de él. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`).
+Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo `raft.data_dir` (por defecto `~/.wippy/store`); un nodo reiniciado aún se une al quórum desde sus peers. Las entradas [`store.kv.raft`](../system/store.md#cluster-kv-stores) se replican a través de él. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
@@ -373,7 +389,7 @@ Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo
 | `raft.eligible` | bool | true | Si este nodo puede ser seleccionado como votante |
 | `raft.priority` | int | 100 | Prioridad de selección de votante (valor menor es preferido) |
 | `raft.bootstrap_expect` | int | 1 | Tamaño inicial del quórum: `0`=unirse a uno existente, `1`=nodo único, `N`=esperar N peers elegibles para formar quórum |
-| `raft.max_voters` | int | 5 | Límite de votantes (debe ser impar); los nodos elegibles adicionales se convierten en standbys |
+| `raft.max_voters` | int | 5 | Límite de votantes (debe ser impar); hasta `max_standbys` nodos elegibles adicionales se convierten en standbys y el resto permanece como clients |
 | `raft.max_standbys` | int | 4 | Miembros no votantes mantenidos en espera para promoción; los nodos más allá de voters+standbys no son miembros Raft |
 | `raft.reconcile_debounce` | duration | 2s | Ventana de consolidación tras un evento de gossip antes de que se ejecute el reconciliador de votantes |
 | `raft.reconcile_timeout` | duration | 2s | Límite por pasada de reconciliación |
@@ -394,6 +410,10 @@ Nodo único (desarrollo) — clustering activado, se bootstrapea inmediatamente:
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -409,6 +429,12 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
     max_voters: 5
@@ -422,6 +448,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```
@@ -447,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-Ver: [Guía de LSP](guides/lsp.md)
+Ver: [Guía de LSP](./lsp.md)
 
 ## Servicio de Red
 
@@ -464,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-Ver: [Redes Superpuestas](system/network.md)
+Ver: [Redes Superpuestas](../system/network.md)
 
 ## Despachador HTTP
 
@@ -518,11 +550,11 @@ extensions:
 
 | Variable | Descripción |
 |----------|-------------|
-| `GOMEMLIMIT` | Límite de memoria (sobrescribe el flag `--memory-limit`) |
+| `GOMEMLIMIT` | Límite de memoria de fallback cuando no se establece el flag `--memory-limit` (precedencia: flag `--memory-limit` > `GOMEMLIMIT` > valor predeterminado de 1G) |
 
 ## Ver También
 
-- [Referencia de CLI](guides/cli.md) - Opciones de línea de comandos
-- [Guía de Cluster](guides/cluster.md) - Arquitectura y operaciones de clustering
-- [Tipos de Entrada](guides/entry-kinds.md) - Todos los tipos de entrada
-- [Guía de Observabilidad](guides/observability.md) - Registro, métricas, trazas
+- [Referencia de CLI](./cli.md) - Opciones de línea de comandos
+- [Guía de Cluster](./cluster.md) - Arquitectura y operaciones de clustering
+- [Tipos de Entrada](./entry-kinds.md) - Todos los tipos de entrada
+- [Guía de Observabilidad](./observability.md) - Registro, métricas, trazas

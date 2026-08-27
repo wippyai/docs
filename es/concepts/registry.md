@@ -1,37 +1,41 @@
 ---
 title: "Registro"
-description: "El registro es el almacén de configuración central de Wippy. Todas las definiciones (puntos de entrada, servicios, recursos) viven aquí, y los cambios…"
+description: "Cómo almacena Wippy entradas tipadas, inicializa recursos del runtime y propaga cambios de configuración."
 ---
 
 # Registro
 
-El registro es el almacén de configuración central de Wippy. Todas las definiciones (puntos de entrada, servicios, recursos) viven aquí, y los cambios se propagan reactivamente a través del sistema.
+El registro es el almacén versionado de Wippy para puntos de entrada, servicios, recursos y otras definiciones del runtime. La mayoría de los tipos de entrada del runtime se reconcilian mediante transacciones del bus de eventos; los tipos internos como `registry.entry` y los metadatos de namespace omiten de forma predeterminada el despacho de eventos.
 
 ## Entradas
 
-El registro contiene **entradas**: definiciones tipadas con IDs únicos:
+El registro contiene **entradas**: definiciones tipadas con ID únicos:
 
 ```
-app.api:get_user          -> Manejador HTTP
-app.workers:email_sender  -> Proceso en segundo plano
-app:database              -> Conexión a base de datos
-app:templates             -> Conjunto de plantillas
+app.api:get_user          → HTTP handler
+app.workers:email_sender  → Background process
+app:database              → Database connection
+app:templates             → Template set
 ```
 
-Cada entrada tiene un `ID` (formato namespace:nombre), un `kind` que determina su manejador, campos `meta` arbitrarios, y `data` específica del kind.
+Cada entrada tiene un `ID` (formato namespace:name), un `kind` que determina su handler, campos `meta` arbitrarios y `data` específicos del tipo.
 
-## Manejadores de Kind
+Muchos controles de autorización también usan los ID del registro como recursos. El registro almacena las definiciones; el ámbito de seguridad decide si las operaciones protegidas pueden acceder a ellas. Consulta el [Modelo de seguridad](./security-model.md).
 
-Cuando se envía una entrada, su `kind` determina qué manejador la procesa. El manejador valida la configuración y crea recursos del runtime: una entrada `http.service` inicia un servidor HTTP, una entrada `function.lua` crea un pool de funciones, una entrada `sql.database` establece un pool de conexiones. Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para kinds disponibles y [Tipos de Entrada Personalizados](internals/kinds.md) para implementar manejadores.
+## Handlers de tipos
 
-## Actualizaciones en Vivo
+Cuando se envía una entrada despachada, su `kind` selecciona el handler registrado. El handler valida y reconcilia el recurso correspondiente del runtime: una entrada `http.service` gestiona un servidor HTTP, una entrada `function.lua` gestiona un pool de funciones y una entrada `db.sql.postgres` gestiona un pool de conexiones. Consulta la [Guía de tipos de entrada](../guides/entry-kinds.md) para ver los tipos disponibles y [Tipos de entrada personalizados](../internals/kinds.md) para implementar handlers.
 
-El registro soporta cambios en tiempo de ejecución: agregar, actualizar, o eliminar entradas mientras el sistema se ejecuta. Los cambios fluyen a través del bus de eventos donde los listeners pueden validarlos o rechazarlos, y las transacciones aseguran atomicidad. El historial de versiones permite rollback.
+## Actualizaciones en vivo
 
-Los archivos de definición YAML son snapshots serializados del registro cargados al inicio. Consulte el [módulo Registry](lua/core/registry.md) para acceso programático.
+Las entradas se pueden añadir, actualizar o eliminar mientras el sistema está en ejecución. Para los tipos despachados, una transacción del registro pide a los handlers participantes que acepten o rechacen cada operación antes del commit. Un rechazo descarta la transacción y aplica la transición inversa. Los cambios de topología relacionados producen una sola versión nueva del registro.
 
-## Ver También
+El historial de versiones permite transiciones hacia atrás y hacia delante cuando está habilitado. El historial en memoria es el predeterminado y dura lo que dura el proceso; los backends de SQLite y PostgreSQL conservan el historial entre reinicios.
 
-- [YAML y Estructura del Proyecto](start/structure.md) - Archivos de definición
-- [Tipos de Entrada Personalizados](internals/kinds.md) - Implementar manejadores de kind
-- [Modelo de Procesos](concepts/process-model.md) - Cómo funcionan los procesos
+Los archivos de definición YAML y JSON son manifests de origen que el boot loader convierte en entradas. No son snapshots serializados del registro. Consulta el [módulo Registry](../lua/core/registry.md) para el acceso programático.
+
+## Véase también
+
+- [YAML y estructura del proyecto](../start/structure.md) — Archivos de definición
+- [Tipos de entrada personalizados](../internals/kinds.md) — Implementar handlers de tipos
+- [Modelo de procesos](./process-model.md) — Comprender la ejecución de procesos

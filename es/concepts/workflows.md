@@ -1,22 +1,22 @@
 ---
-title: "Flujos de Trabajo"
-description: "Los flujos de trabajo son operaciones durables y de larga duración que sobreviven fallos y reinicios. Proporcionan garantías de confiabilidad para…"
+title: "Flujos de trabajo"
+description: "Cómo Wippy persiste flujos de trabajo de larga duración, reproduce la ejecución, recibe señales y se recupera de fallos."
 ---
 
 # Flujos de Trabajo
 
-Los flujos de trabajo son operaciones durables y de larga duración que sobreviven fallos y reinicios. Proporcionan garantías de confiabilidad para procesos de negocio críticos como pagos, cumplimiento de pedidos, y aprobaciones de múltiples pasos.
+Los flujos de trabajo persisten el estado de las operaciones de larga duración para que la ejecución pueda recuperarse después de fallos y reinicios. Son adecuados para procesos como pagos, cumplimiento de pedidos y aprobaciones de múltiples pasos.
 
 ## Por qué Flujos de Trabajo
 
-Las funciones son efímeras: si el host falla, el trabajo en progreso se pierde. Los flujos de trabajo persisten su estado:
+Las funciones conservan el estado en curso en memoria, mientras que los flujos de trabajo persisten el estado de ejecución:
 
 | Aspecto | Funciones | Flujos de Trabajo |
 |--------|-----------|-----------|
-| Estado | En memoria | Persistido |
-| Fallo | Trabajo perdido | Se reanuda |
+| Estado | Local a la llamada | Reconstruido a partir del historial persistido |
+| Fallo del worker | La llamada en curso falla | Se reproduce desde el historial registrado |
 | Duración | Segundos a minutos | Horas a meses |
-| Completación | Mejor esfuerzo | Garantizada |
+| Fallo de la aplicación | Se devuelve al llamador | Termina o se reintenta según la política del proveedor |
 
 ## Cómo Funcionan los Flujos de Trabajo
 
@@ -26,19 +26,28 @@ El código del flujo de trabajo parece código Lua regular:
 local funcs = require("funcs")
 local time = require("time")
 
-local result = funcs.call("app.api:charge_card", payment)
+local result, err = funcs.call("app.api:charge_card", payment)
+if err then return nil, err end
+
 time.sleep("24h")
-local status = funcs.call("app.api:check_status", result.id)
+
+local status, err = funcs.call("app.api:check_status", result.id)
+if err then return nil, err end
 
 if status == "failed" then
-    funcs.call("app.api:refund", result.id)
+    local _, refund_err = funcs.call("app.api:refund", result.id)
+    if refund_err then return nil, refund_err end
 end
+
+return status
 ```
 
-El motor de flujos de trabajo intercepta las llamadas y registra los resultados. Si el proceso falla, la ejecución se reproduce desde el historial: mismo código, mismos resultados.
+El motor de flujos de trabajo intercepta las llamadas y registra sus resultados. Después de un fallo, reproduce la ejecución desde el historial registrado.
+
+Dentro de un flujo de trabajo, cada destino de `funcs.call()` se ejecuta como una actividad de Temporal. Una entrada `function.*` de destino debe registrarse con un worker mediante `meta.temporal.activity.worker`; las entradas no registradas no están disponibles para el flujo de trabajo. Un destino de actividad `process.*` también necesita `meta.options.default_host` (o el campo heredado `meta.default_host`) para registrarse en el registro de funciones que usa el worker de Temporal. Consulte [Actividades](../temporal/activities.md) para ver un ejemplo de actividad de función y sus opciones.
 
 <note>
-Wippy maneja el determinismo automáticamente. Operaciones como <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code>, y <code>time.now()</code> son interceptadas y sus resultados registrados. En el replay, los valores registrados se retornan en lugar de re-ejecutar.
+Los autores de flujos de trabajo deben escribir código determinista. Wippy limita los módulos del flujo de trabajo a los clasificados como Deterministic o Workflow y proporciona implementaciones seguras para replay de las operaciones compatibles. <code>funcs.call()</code> ejecuta una actividad registrada, <code>time.sleep()</code> usa un temporizador del flujo de trabajo, <code>uuid.v4()</code> registra un efecto secundario y <code>time.now()</code> lee la referencia temporal determinista del flujo de trabajo.
 </note>
 
 ## Patrones de Flujo de Trabajo
@@ -50,22 +59,20 @@ Compensar en caso de fallo:
 ```lua
 local funcs = require("funcs")
 
-local inventory = funcs.call("app.inventory:reserve", items)
-if inventory.error then
-    return nil, inventory.error
+local inventory, err = funcs.call("app.inventory:reserve", items)
+if err then return nil, err end
+
+local payment, err = funcs.call("app.payments:charge", amount)
+if err then
+    local _, compensation_err = funcs.call("app.inventory:release", inventory.id)
+    return nil, compensation_err or err
 end
 
-local payment = funcs.call("app.payments:charge", amount)
-if payment.error then
-    funcs.call("app.inventory:release", inventory.id)
-    return nil, payment.error
-end
-
-local shipping = funcs.call("app.shipping:create", order)
-if shipping.error then
-    funcs.call("app.payments:refund", payment.id)
-    funcs.call("app.inventory:release", inventory.id)
-    return nil, shipping.error
+local shipping, err = funcs.call("app.shipping:create", order)
+if err then
+    local _, refund_err = funcs.call("app.payments:refund", payment.id)
+    local _, release_err = funcs.call("app.inventory:release", inventory.id)
+    return nil, refund_err or release_err or err
 end
 
 return {inventory = inventory, payment = payment, shipping = shipping}
@@ -78,19 +85,24 @@ Esperar eventos externos (decisiones de aprobación, webhooks, acciones de usuar
 ```lua
 local funcs = require("funcs")
 
-funcs.call("app.approvals:submit", request)
+local _, err = funcs.call("app.approvals:submit", request)
+if err then return nil, err end
 
 local inbox = process.inbox()
-local msg = inbox:receive()  -- bloquea hasta que llega la señal
+local msg, open = inbox:receive()  -- blocks until signal arrives
+if not open then return nil, errors.new("workflow inbox closed") end
 
-if msg.approved then
-    funcs.call("app.orders:fulfill", request.order_id)
+local decision, payload_err = msg:payload():data()
+if payload_err then return nil, payload_err end
+
+if decision.approved then
+    return funcs.call("app.orders:fulfill", request.order_id)
 else
-    funcs.call("app.notifications:send_rejection", request)
+    return funcs.call("app.notifications:send_rejection", request)
 end
 ```
 
-## Cuándo Usar Qué
+## Elegir un modelo de cómputo :id=choosing-a-compute-model
 
 | Caso de Uso | Elegir |
 |----------|--------|
@@ -108,14 +120,17 @@ end
 Los flujos de trabajo se crean de la misma manera que los procesos: usando `process.spawn()` con un host diferente:
 
 ```lua
--- Crear flujo de trabajo en worker temporal
-local pid = process.spawn("app.workflows:order_processor", "app:temporal_worker", order_data)
+-- Spawn workflow on temporal worker
+local pid, err = process.spawn("app.workflows:order_processor", "app:temporal_worker", order_data)
+if err then return nil, err end
 
--- Enviar señales al flujo de trabajo
-process.send(pid, "update", {status = "approved"})
+-- Send signals to workflow
+local ok, err = process.send(pid, "update", {status = "approved"})
+if err then return nil, err end
+return ok
 ```
 
-Desde la perspectiva del llamador, la API es idéntica. La diferencia es el host: los flujos de trabajo se ejecutan en un `temporal.worker` en lugar de un `process.host`.
+El llamador usa la misma API de spawn. El host determina si la entrada se ejecuta en un `temporal.worker` o en un `process.host`. El historial persistido y el replay se aplican solo en la ruta alojada por Temporal. Una entrada de flujo de trabajo ejecutada mediante un host de procesos normal tiene semántica de proceso en memoria y no obtiene la durabilidad de Temporal.
 
 <tip>
 Cuando un flujo de trabajo crea hijos via <code>process.spawn()</code>, se convierten en flujos de trabajo hijos en el mismo proveedor, manteniendo las garantías de durabilidad.
@@ -126,13 +141,13 @@ Cuando un flujo de trabajo crea hijos via <code>process.spawn()</code>, se convi
 Los procesos pueden ejecutarse como servicios supervisados usando `process.service`:
 
 ```yaml
-# Definición del proceso
+# Process definition
 - name: session_handler
   kind: process.lua
   source: file://session_handler.lua
   method: main
 
-# Servicio supervisado envolviendo el proceso
+# Supervised service wrapping the process
 - name: session_manager
   kind: process.service
   process: app:session_handler
@@ -143,7 +158,7 @@ Los procesos pueden ejecutarse como servicios supervisados usando `process.servi
       max_attempts: 10
 ```
 
-Los flujos de trabajo no usan árboles de supervisión: son automáticamente gestionados por el proveedor de flujos de trabajo (Temporal). El proveedor maneja la persistencia, reintentos y recuperación.
+Los flujos de trabajo no usan árboles de supervisión de procesos. El proveedor administra la persistencia y la recuperación; los reintentos de la aplicación siguen las políticas configuradas para el flujo de trabajo y sus actividades.
 
 ## Configuración
 
@@ -154,9 +169,26 @@ Definición de proceso (creado dinámicamente):
   kind: workflow.lua
   source: file://order_processor.lua
   method: main
+  meta:
+    temporal:
+      workflow:
+        worker: app:temporal_worker
   modules:
     - funcs
     - time
+```
+
+Cada función o proceso invocado mediante `funcs.call()` también declara el worker de actividad. Por ejemplo:
+
+```yaml
+- name: charge_card
+  kind: function.lua
+  source: file://charge_card.lua
+  method: main
+  meta:
+    temporal:
+      activity:
+        worker: app:temporal_worker
 ```
 
 Proveedor de flujos de trabajo:
@@ -172,8 +204,8 @@ Proveedor de flujos de trabajo:
 
 Consulte [Temporal](https://temporal.io) para infraestructura de flujos de trabajo en producción.
 
-## Ver También
+## Véase también :id=see-also
 
-- [Funciones](concepts/functions.md) - Manejo de solicitudes sin estado
-- [Modelo de Procesos](concepts/process-model.md) - Trabajo en segundo plano con estado
-- [Supervisión](guides/supervision.md) - Políticas de reinicio de procesos
+- [Funciones](./functions.md) — Llamadas con ámbito de solicitud
+- [Modelo de procesos](./process-model.md) — Trabajo en segundo plano con estado
+- [Supervisión](../guides/supervision.md) — Políticas de reinicio de procesos

@@ -1,60 +1,60 @@
 ---
-title: "Cluster"
-description: "Un solo nodo Wippy es un runtime completo. Un cluster une varios nodos en un sistema coordinado: los procesos pueden ser nombrados y alcanzados desde…"
+title: "Clúster"
+description: "Cómo descubren peers los nodos de Wippy, enrutan mensajes de procesos y se coordinan mediante gossip y Raft."
 ---
 
-# Cluster
+# Clúster
 
-Un solo nodo Wippy es un runtime completo. Un **cluster** une varios nodos en un sistema coordinado: los procesos pueden ser nombrados y alcanzados desde cualquier nodo, coordinarse mediante bloqueos y grupos, y apoyarse en un núcleo de consenso compartido — sin que su código cambie la forma en que genera, envía o supervisa.
+Un solo nodo de Wippy es un runtime completo. Un **clúster** conecta varios nodos para que los procesos puedan usar nombres de ámbito global, enrutar mensajes entre nodos y coordinarse mediante locks, grupos y un núcleo de consenso compartido.
 
-El clustering es opcional (`cluster.enabled`). Esta página explica el modelo que ve su código; para topología, configuración y operaciones consulte la [Guía de Cluster](guides/cluster.md).
+El clustering es opcional (`cluster.enabled`). Esta página explica el modelo que observa el código; para la topología, configuración y operaciones, consulta la [Guía de clúster](../guides/cluster.md).
 
-## El modelo
+## Modelo de clúster
 
-Los nodos se descubren entre sí mediante **gossip** (SWIM) — un nodo se une apuntando a una semilla, y la membresía y la detección de fallos convergen sin un coordinador. Sobre gossip se asienta un pequeño núcleo **Raft** acotado: un conjunto fijo de votantes proporciona consenso linearizable, mientras el resto de la flota opera por gossip. La mayoría de los nodos nunca cargan con consenso, por lo que el cluster escala horizontalmente manteniendo una única fuente de verdad para lo que la necesita.
+Los nodos se descubren mediante **gossip** (SWIM). Un nodo se une a través de un seed y, después, la información de membership y fallos converge sin un coordinador central. Un núcleo **Raft** limitado proporciona consenso linealizable mediante un conjunto de voters reconciliado dinámicamente, mientras los demás nodos participan mediante gossip.
 
-Lo que el cluster aporta a su código se reduce a tres ideas: **nombres**, **enrutamiento** y **primitivas de coordinación**.
+El modelo visible para la aplicación tiene tres partes: **nombres**, **routing** y **primitivas de coordinación**.
 
-## Nomenclatura
+## Nombres
 
-Un proceso se direcciona normalmente por su PID. En un cluster también puede registrarse bajo un **nombre** y ser alcanzado por ese nombre desde cualquier lugar. La decisión relevante es el **alcance** — la garantía de consistencia que desea, negociada frente al costo:
+Normalmente se dirige un proceso por su PID. En un clúster también puede registrarse con un **nombre** y alcanzarse por ese nombre desde otros nodos. El **scope** elegido determina la garantía de consistencia y el coste de coordinación:
 
-| Alcance | Visibilidad | Garantía | Úselo para |
-|---------|-------------|----------|------------|
-| **Local** | este nodo | instantáneo, sin coordinación | helpers locales del nodo |
-| **Eventual** | todo el cluster | converge tras el gossip; los conflictos se resuelven y notifican al perdedor | nombres de servicio, grupo y presencia acotada |
-| **Consistent** | todo el cluster | singleton linearizable vía Raft | el servicio con nombre estándar en todo el cluster |
-| **Strong** | todo el cluster | Consistent, más el reconocimiento de cada nodo activo antes de que el nombre esté activo | singletons y bloqueos del plano de control |
+| Scope | Visibilidad | Garantía | Úsalo para |
+|-------|------------|-----------|------------|
+| **Local** | este nodo | instantánea, sin coordinación | helpers locales del nodo |
+| **Eventual** | todo el clúster | converge tras gossip; los conflictos se resuelven y notifican al perdedor | nombres de servicios, grupos y presencia acotada |
+| **Consistent** | todo el clúster | singleton linealizable mediante Raft | servicio con nombre global estándar |
+| **Strong** | todo el clúster | Consistent, y además cada nodo activo confirma antes de activar el nombre | singletons del control plane y locks |
 
-Los alcances forman un ordenamiento estricto — `Local < Eventual < Consistent < Strong` — sobre el eje consistencia-versus-costo. Se elige el alcance más débil que aún cumpla la garantía requerida. Los nombres se registran a través de [`process.registry`](lua/core/process.md) y se liberan automáticamente cuando el proceso propietario termina (o su nodo abandona el cluster).
+Los scopes se ordenan como `Local < Eventual < Consistent < Strong` por consistencia y coste de coordinación. Elige el menos costoso que cumpla la garantía necesaria. Los nombres se registran mediante [`process.registry`](../lua/core/process.md). Los nombres Local se eliminan cuando termina el proceso; los Consistent y Strong también se recolectan cuando termina el proceso o abandona el nodo. Los Eventual se eliminan de forma explícita o cuando abandona su nodo de origen, no automáticamente cuando solo termina el proceso propietario.
 
-## Enrutamiento
+## Routing
 
-La nomenclatura solo es útil si un nombre alcanza de forma confiable el proceso correcto. El enrutamiento es lo que conecta ambos, y sigue algunas reglas consistentes:
+El routing conecta un nombre registrado con el proceso propietario:
 
-- **Las lecturas son locales.** Cada nodo resuelve un nombre desde su propia réplica o caché diseminada por gossip — sin viaje de red para buscar un nombre. Esto mantiene la resolución rápida y funcional durante particiones.
-- **La resolución tiene un orden fijo.** Un nombre se resuelve a través de los planos en orden — Consistent (Raft), luego Eventual (gossip), luego Local — de modo que un nombre de todo el cluster sombrea a uno local con la misma cadena.
-- **Las escrituras se enrutan hacia la autoridad.** Un registro Consistent o Strong pasa por el líder Raft; un nodo que no es el líder reenvía la escritura y espera el resultado. Una vez confirmado, el enlace activo se disemina por gossip para que cada nodo — incluidos los que no forman parte del núcleo Raft — pueda resolver el nombre localmente.
-- **Los mensajes se enrutan por PID.** Cuando se usa `process.send` hacia un nombre, este se resuelve a un PID y el relay entrega el mensaje al nodo propietario. Su código direcciona un proceso de la misma forma ya sea que viva en este nodo o en otro — la ubicación es transparente.
+- **Las lecturas son locales.** Cada nodo resuelve nombres desde su propia réplica o cache distribuida por gossip, sin round-trip de red. Esto mantiene rápida la resolución y permite que siga funcionando durante particiones.
+- **La resolución sigue un orden fijo.** Se consultan primero los planes con mayor autoridad — Consistent y Strong (Raft), después Eventual (gossip) y finalmente Local —, por lo que un nombre global oculta uno local con la misma cadena.
+- **Las escrituras se enrutan a la autoridad.** Un registro Consistent o Strong pasa por el líder de Raft; un nodo que no es líder reenvía la escritura y espera el resultado. Tras el commit, el binding activo se distribuye por gossip para que cada nodo, incluso fuera del núcleo Raft, pueda resolverlo localmente.
+- **Los mensajes se enrutan por PID.** Al usar `process.send` con un nombre, este se resuelve a un PID y el relay entrega el mensaje al nodo propietario. El código se dirige igual a procesos locales o remotos; la ubicación es transparente.
 
-El efecto: se registran y buscan nombres sin pensar en qué nodo tiene la autoridad, y los mensajes encuentran su destino en todo el cluster de la misma forma que lo hacen localmente.
+Las aplicaciones registran y resuelven nombres sin dirigirse al nodo de autoridad. Después de resolverlos, los mensajes se encaminan al nodo propietario del PID.
 
 ## Primitivas
 
-El clustering expone un pequeño conjunto de bloques de construcción. Cada uno está documentado en su propia página; el concepto es lo que permiten construir:
+El clustering expone un conjunto pequeño de bloques de coordinación:
 
-- **Membresía e identidad** — el conjunto activo de nodos y la identidad y rol de este nodo. Úselo para descubrir pares o distribuir trabajo. Vea [`system.cluster`](lua/system/system.md) y [`system.node`](lua/system/system.md).
-- **Estado de consenso** — el líder Raft, el término y el rol de este nodo, para diagnósticos y lógica consciente del líder. Vea [`system.raft`](lua/system/system.md).
-- **Nombres en todo el cluster** — registre y resuelva procesos por nombre y alcance, el fundamento sobre el que se construye todo lo demás. Vea [`process.registry`](lua/core/process.md).
-- **Bloqueos distribuidos** — exclusión mutua en todo el cluster con como máximo un titular, liberado automáticamente si el titular muere. Vea [`system.lock`](lua/system/system.md).
-- **Grupos de procesos** — únase a grupos con nombre y transmita a cada miembro en todos los nodos, al estilo Erlang. Vea [Grupos de Procesos](lua/core/pg.md).
+- **Membership e identidad** — el conjunto de nodos activos y la identidad y rol del nodo actual. Úsalos para descubrir peers o repartir trabajo. Consulta [`system.cluster`](../lua/system/system.md) y [`system.node`](../lua/system/system.md).
+- **Estado de consenso** — líder y term de Raft, además del rol del nodo actual, para diagnóstico y lógica dependiente del líder. Consulta [`system.raft`](../lua/system/system.md).
+- **Nombres globales** — registrar y resolver procesos por nombre y scope, la base del resto. Consulta [`process.registry`](../lua/core/process.md).
+- **Locks distribuidos** — exclusión mutua global con un solo holder como máximo, liberada automáticamente si este muere. Consulta [`system.lock`](../lua/system/system.md).
+- **Grupos de procesos** — unirse a grupos con nombre y transmitir a todos sus miembros en todos los nodos, al estilo de Erlang. Consulta [Grupos de procesos](../lua/core/pg.md).
 
-Estas son deliberadamente primitivas: los bloqueos y los singletons con nombre se construyen sobre el alcance de nomenclatura Strong, los grupos de procesos sobre gossip, y todos ellos sobre la misma membresía y enrutamiento descritos anteriormente — por lo que se componen de forma predecible en lugar de que cada uno invente su propia distribución.
+Estas primitivas comparten la infraestructura de membership y routing. Los nombres Consistent y Strong y los locks distribuidos usan el núcleo Raft. Los grupos de procesos usan gossip membership para descubrir peers, envían cambios por relay e intercambian periódicamente el estado completo para converger.
 
-## Véase También
+## Véase también
 
-- [Guía de Cluster](guides/cluster.md) - Topología, configuración y operaciones
-- [Gestión de Procesos](lua/core/process.md) - Generación, mensajería y el registro de nombres
-- [Grupos de Procesos](lua/core/pg.md) - Grupos con nombre y broadcast
-- [Sistema](lua/system/system.md) - `system.cluster`, `system.node`, `system.raft`, `system.lock`
-- [Modelo de Procesos](concepts/process-model.md) - Procesos, PIDs y mensajería
+- [Guía de clúster](../guides/cluster.md) — Topología, configuración y operaciones
+- [Gestión de procesos](../lua/core/process.md) — Creación, mensajería y registro de nombres
+- [Grupos de procesos](../lua/core/pg.md) — Grupos con nombre y broadcast
+- [Sistema](../lua/system/system.md) — `system.cluster`, `system.node`, `system.raft`, `system.lock`
+- [Modelo de procesos](./process-model.md) — Procesos, PID y mensajería

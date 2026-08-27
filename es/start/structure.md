@@ -5,17 +5,15 @@ description: "Organización del proyecto, archivos de definición YAML y convenc
 
 # YAML y Estructura del Proyecto
 
-Organización del proyecto, archivos de definición YAML y convenciones de nomenclatura.
-
 ## Estructura de Directorios
 
 ```
 myapp/
-├── .wippy.yaml          # Configuración del runtime
-├── wippy.lock           # Configuración de directorios fuente
-├── .wippy/              # Módulos instalados
-└── src/                 # Código fuente de la aplicación
-    ├── _index.yaml      # Definiciones de entradas
+├── .wippy.yaml          # Runtime configuration
+├── wippy.lock           # Source directories config
+├── .wippy/              # Installed modules
+└── src/                 # Application source
+    ├── _index.yaml      # Entry definitions
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -30,9 +28,9 @@ myapp/
 Las definiciones YAML se cargan en el registro al iniciar. El registro es la fuente de verdad; los archivos YAML son una forma de poblarlo. Las entradas también pueden provenir de otras fuentes o crearse programáticamente.
 </note>
 
-### Estructura del Archivo
+### Formato del archivo de definición
 
-Cualquier archivo YAML con `version` y `namespace` es válido:
+Un archivo de definición contiene un `namespace` y, o bien un array `entries`, o bien los campos de nivel superior `name` y `kind`. El marcador opcional `version` usa por convención el valor `"1.0"`; el cargador de v0.3.32a no lo exige.
 
 ```yaml
 version: "1.0"
@@ -42,7 +40,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: Obtiene usuario por ID
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +50,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: Endpoint de API de usuario
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -60,31 +58,31 @@ entries:
 
 | Campo | Requerido | Descripción |
 |-------|----------|-------------|
-| `version` | sí | Versión del esquema (actualmente `"1.0"`) |
-| `namespace` | sí | Namespace de entradas para este archivo |
-| `entries` | sí | Array de definiciones de entradas |
+| `version` | No | Marcador de versión del manifiesto (por convención `"1.0"`) |
+| `namespace` | Sí | Namespace de entradas para este archivo |
+| `entries` | Condicional | Array de definiciones de entradas; se omite únicamente cuando se usan `name` y `kind` en el nivel superior |
 
 ### Convención de Nomenclatura
 
 Use puntos (`.`) para separación semántica y guiones bajos (`_`) para palabras:
 
 ```yaml
-# Función y su endpoint
-- name: get_user              # La función
-- name: get_user.endpoint     # Su endpoint HTTP
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# Múltiples endpoints para la misma función
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
 # Routers
-- name: api.public            # Router de API pública
-- name: api.admin             # Router de API admin
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
-Patrón: <code>nombre_base.variante</code> - los puntos separan partes semánticas, los guiones bajos separan palabras dentro de una parte.
+Patrón: <code>base_name.variant</code> — los puntos separan partes semánticas, mientras que los guiones bajos separan palabras dentro de una parte.
 </tip>
 
 ### Namespaces
@@ -102,7 +100,7 @@ El ID completo de entrada combina namespace y nombre: `app.api:get_user`
 
 ### Directorios Fuente
 
-El archivo `wippy.lock` define de dónde Wippy carga las definiciones:
+El archivo `wippy.lock` nombra la raíz de código fuente de la aplicación y el directorio base usado para resolver módulos bloqueados:
 
 ```yaml
 directories:
@@ -110,18 +108,18 @@ directories:
   src: ./src
 ```
 
-Wippy escanea estos directorios recursivamente buscando archivos YAML.
+Wippy añade `directories.src` como ruta de carga de la aplicación. `directories.modules` no se escanea como un único árbol de código fuente sin procesar: cada módulo bloqueado se resuelve a su archivo `.wapp` versionado o a una ruta de módulo desempaquetado, y cada replacement se resuelve a su raíz de entradas configurada. El cargador escanea recursivamente el código fuente de la aplicación y las raíces seleccionadas de módulos o replacements basados en directorios en busca de manifiestos `.yaml`, `.yml` y `.json`; los módulos `.wapp` se leen como archivos. Solo los archivos con forma de objeto y un `namespace` se tratan como manifiestos del registro, y se omiten los directorios `node_modules`. `_index.yaml` es una convención del proyecto, no el único nombre de archivo aceptado.
 
 ## Definiciones de Entrada
 
-Cada entrada en el array `entries`. Las propiedades están al nivel raíz (sin envoltorio `data:`):
+Cada elemento del array `entries` define una entrada. Los campos específicos del kind pueden aparecer junto a `name`, `kind` y `meta`, como en este ejemplo:
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: Retorna hola mundo
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -131,10 +129,22 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Endpoint hello
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
+```
+
+También se admite un campo `data:` explícito. Cuando está presente, su valor es la carga útil completa específica del kind, por lo que no debes mezclarlo con campos específicos del kind al mismo nivel:
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
 ```
 
 ### Metadatos
@@ -145,12 +155,12 @@ Use `meta` para información amigable para la UI:
 - name: payment_handler
   kind: function.lua
   meta:
-    title: Procesador de Pagos
-    comment: Maneja pagos de Stripe
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
-Convención: `meta.title` y `meta.comment` se renderizan bien en interfaces de gestión.
+Usa `meta.title` y `meta.comment` para información descriptiva que puedan mostrar los consumidores del registro y las interfaces de gestión.
 
 ### Entradas de Aplicación
 
@@ -160,7 +170,7 @@ Use el kind `registry.entry` para configuración a nivel de aplicación:
 - name: config
   kind: registry.entry
   meta:
-    title: Configuración de Aplicación
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -172,15 +182,15 @@ Use el kind `registry.entry` para configuración a nivel de aplicación:
 
 | Tipo | Propósito |
 |------|---------|
-| `registry.entry` | Datos de propósito general |
+| `registry.entry` | Datos de propósito general almacenados sin el despacho normal de eventos |
 | `function.lua` | Función Lua invocable |
 | `process.lua` | Proceso de larga duración |
 | `http.service` | Servidor HTTP |
 | `http.router` | Grupo de rutas |
 | `http.endpoint` | Manejador HTTP |
-| `process.host` | Supervisor de procesos |
+| `process.host` | Host de ejecución de procesos |
 
-Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para la referencia completa.
+Consulta la [Guía de tipos de entrada](../guides/entry-kinds.md) para la referencia de tipos de entrada.
 
 ## Archivos de Configuración
 
@@ -189,17 +199,20 @@ Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para la referenci
 Configuración del runtime en la raíz del proyecto:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
-Consulte la [Guía de Configuración](guides/configuration.md) para todas las opciones.
+Consulta la [Guía de configuración](../guides/configuration.md) para los campos de configuración del runtime.
 
 ### wippy.lock
 
@@ -213,20 +226,24 @@ directories:
 
 ## Referenciando Entradas
 
-Referencie entradas por ID completo o nombre relativo:
+Referencia las entradas por ID completo o nombre relativo cuando el kind de entrada lo permita. Los routers HTTP y endpoints se adjuntan mediante `meta.server` y `meta.router`, no mediante listas de hijos en el padre:
 
 ```yaml
-# ID completo (cross-namespace)
-- name: main.router
+# Router declares itself against a server
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# Mismo namespace - solo use el nombre
+# Endpoint references router by registry ID (cross-namespace works the same way)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## Proyecto de Ejemplo
@@ -251,7 +268,7 @@ myapp/
 
 ## Ver También
 
-- [Arquitectura de Aplicaciones](concepts/architecture.md) - Cómo dividir una app en slices y capas
-- [Guía de Tipos de Entrada](guides/entry-kinds.md) - Tipos de entrada disponibles
-- [Guía de Configuración](guides/configuration.md) - Opciones del runtime
-- [Tipos de Entrada Personalizados](internals/kinds.md) - Implementar manejadores (avanzado)
+- [Arquitectura de aplicaciones](../concepts/architecture.md) — organiza una aplicación en slices y capas
+- [Guía de tipos de entrada](../guides/entry-kinds.md) — revisa los tipos de entrada disponibles
+- [Guía de configuración](../guides/configuration.md) — configura las opciones del runtime
+- [Tipos de entrada personalizados](../internals/kinds.md) — implementa handlers (avanzado)
