@@ -11,11 +11,11 @@ description: "プロジェクトレイアウト、YAML定義ファイル、命�
 
 ```
 myapp/
-├── .wippy.yaml          # ランタイム設定
-├── wippy.lock           # ソースディレクトリ設定
-├── .wippy/              # インストール済みモジュール
-└── src/                 # アプリケーションソース
-    ├── _index.yaml      # エントリ定義
+├── .wippy.yaml          # Runtime configuration
+├── wippy.lock           # Source directories config
+├── .wippy/              # Installed modules
+└── src/                 # Application source
+    ├── _index.yaml      # Entry definitions
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -30,9 +30,9 @@ myapp/
 YAML定義は起動時にレジストリにロードされます。レジストリが真のソースであり、YAMLファイルはそれを設定する一つの方法です。エントリは他のソースから来ることも、プログラムで作成することもできます。
 </note>
 
-### ファイル構造
+### Definition file の形式 :id=definition-file-format
 
-`version`と`namespace`を持つYAMLファイルは有効です：
+definition file には `namespace` と、`entries` array または top-level の `name` / `kind` field が必要です。省略可能な `version` marker は慣例上 `"1.0"` ですが、v0.3.32a loader では必須ではありません。
 
 ```yaml
 version: "1.0"
@@ -42,7 +42,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: IDでユーザーを取得
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +52,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: ユーザーAPIエンドポイント
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -60,27 +60,27 @@ entries:
 
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
-| `version` | はい | スキーマバージョン（現在は`"1.0"`） |
-| `namespace` | はい | このファイルのエントリ名前空間 |
-| `entries` | はい | エントリ定義の配列 |
+| `version` | いいえ | manifest version marker（慣例上 `"1.0"`） |
+| `namespace` | はい | この file の entry namespace |
+| `entries` | 条件付き | entry definition の array。top-level の `name` と `kind` を使う場合のみ省略 |
 
 ### 命名規則
 
 意味的な区切りにはドット（`.`）を、単語の区切りにはアンダースコア（`_`）を使用します：
 
 ```yaml
-# 関数とそのエンドポイント
-- name: get_user              # 関数
-- name: get_user.endpoint     # そのHTTPエンドポイント
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# 同じ関数に対する複数のエンドポイント
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
-# ルーター
-- name: api.public            # パブリックAPIルーター
-- name: api.admin             # 管理者用APIルーター
+# Routers
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
@@ -102,7 +102,7 @@ app.workers
 
 ### ソースディレクトリ
 
-`wippy.lock`ファイルはWippyが定義をロードする場所を定義します：
+`wippy.lock` file は application source root と、locked module を resolve する base directory を指定します。
 
 ```yaml
 directories:
@@ -110,18 +110,18 @@ directories:
   src: ./src
 ```
 
-WippyはこれらのディレクトリからYAMLファイルを再帰的にスキャンします。
+Wippy は `directories.src` を application load path に追加します。`directories.modules` は raw source tree として scan されません。locked module は versioned `.wapp` archive または unpacked module path、replacement は設定済み entry root に resolve されます。loader は application source と、選択された directory-based module / replacement root を再帰的に scan し、`.yaml`、`.yml`、`.json` manifest を読み込みます。`.wapp` module は archive として読みます。`namespace` を持つ object-shaped file だけが registry manifest となり、`node_modules` directory は除外されます。`_index.yaml` は project convention であり、唯一の有効 filename ではありません。
 
 ## エントリ定義
 
-各エントリは`entries`配列内に定義します。プロパティはルートレベルにあります（`data:`ラッパーなし）：
+`entries` array の各 item が 1 つの entry を定義します。kind 固有 field は、次のように `name`、`kind`、`meta` と同じ level に置けます。
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: Hello Worldを返す
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -131,10 +131,22 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Helloエンドポイント
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
+```
+
+明示的な `data:` field も利用できます。指定した場合、その value が kind 固有 payload 全体になるため、sibling の kind 固有 field と混在させないでください。
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
 ```
 
 ### メタデータ
@@ -145,8 +157,8 @@ UI向けの情報には`meta`を使用します：
 - name: payment_handler
   kind: function.lua
   meta:
-    title: 決済プロセッサ
-    comment: Stripe決済を処理
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
@@ -160,7 +172,7 @@ UI向けの情報には`meta`を使用します：
 - name: config
   kind: registry.entry
   meta:
-    title: アプリケーション設定
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -172,15 +184,15 @@ UI向けの情報には`meta`を使用します：
 
 | 種別 | 目的 |
 |------|------|
-| `registry.entry` | 汎用データ |
+| `registry.entry` | 通常の event dispatch を行わず保存する汎用 data |
 | `function.lua` | 呼び出し可能なLua関数 |
 | `process.lua` | 長時間実行プロセス |
 | `http.service` | HTTPサーバー |
 | `http.router` | ルートグループ |
 | `http.endpoint` | HTTPハンドラ |
-| `process.host` | プロセススーパーバイザ |
+| `process.host` | process execution host |
 
-完全なリファレンスは[エントリ種別ガイド](guides/entry-kinds.md)を参照してください。
+entry-kind reference は[エントリ種別ガイド](../guides/entry-kinds.md)を参照してください。
 
 ## 設定ファイル
 
@@ -189,17 +201,20 @@ UI向けの情報には`meta`を使用します：
 プロジェクトルートのランタイム設定：
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
-すべてのオプションについては[設定ガイド](guides/configuration.md)を参照してください。
+runtime configuration field は[設定ガイド](../guides/configuration.md)を参照してください。
 
 ### wippy.lock
 
@@ -213,20 +228,24 @@ directories:
 
 ## エントリの参照
 
-エントリはフルIDまたは相対名で参照できます：
+entry kind が対応する場合、full ID または relative name で entry を参照できます。HTTP router と endpoint は parent 側の child list ではなく、`meta.server` と `meta.router` で attach します。
 
 ```yaml
-# フルID（名前空間をまたぐ場合）
-- name: main.router
+# Router declares itself against a server
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# 同じ名前空間内 - 名前だけで参照
+# Endpoint references router by registry ID (cross-namespace works the same way)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## プロジェクト例
@@ -251,7 +270,7 @@ myapp/
 
 ## 関連項目
 
-- [アプリケーションアーキテクチャ](concepts/architecture.md) - アプリをスライスとレイヤーに分割する方法
-- [エントリ種別ガイド](guides/entry-kinds.md) - 利用可能なエントリ種別
-- [設定ガイド](guides/configuration.md) - ランタイムオプション
-- [カスタムエントリ種別](internals/kinds.md) - ハンドラの実装（上級）
+- [アプリケーションアーキテクチャ](../concepts/architecture.md) — application を slice と layer に整理
+- [エントリ種別ガイド](../guides/entry-kinds.md) — 利用可能な entry kind
+- [設定ガイド](../guides/configuration.md) — runtime option
+- [カスタムエントリ種別](../internals/kinds.md) — handler の実装（上級）
