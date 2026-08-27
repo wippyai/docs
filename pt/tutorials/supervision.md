@@ -1,34 +1,53 @@
 ---
-title: "Supervisão de Processos"
-description: "Monitore e vincule processos para construir sistemas tolerantes a falhas."
+title: "Receitas de Supervisão de Processos"
+description: "Aplique padrões de monitoramento, vínculo, cancelamento e reinício a processos Wippy."
 ---
 
-# Supervisão de Processos
+# Receitas de Supervisão de Processos
 
-Monitore e vincule processos para construir sistemas tolerantes a falhas.
+Use monitoramento e vínculos para observar saídas de processos, propagar falhas, tratar cancelamentos e reiniciar workers.
+
+**Classificação:** Receita parcial. Os snippets de ciclo de vida são independentes, e
+a seção de pool de workers fornece suas entradas principais, mas não o processo de
+controle separado necessário para provocar e verificar uma reinicialização.
+
+## Contexto e Dependências
+
+Os snippets destinam-se ao runtime Wippy `v0.3.32a` e pressupõem uma entrada Lua
+executável, um `process.host` em execução chamado `app:processes` e entradas de worker
+definidas pelo projeto, como `app.workers:task_worker`. As APIs `process` e `channel`
+são globais do ambiente. Qualquer snippet que chame `time.*` exige o módulo `time` na
+entrada e `local time = require("time")` no código-fonte.
+
+Spawn, seleção de host, monitoramento, vínculo, envio, cancelamento e encerramento de
+processos são operações protegidas. Associe um ator e políticas allow de escopo restrito
+a cada entrada executável que as utiliza. A configuração do pool de workers abaixo
+inclui as políticas necessárias para essa receita; os snippets isolados não incluem.
 
 ## Monitoramento vs Vinculação
 
 **Monitoramento** fornece observação unidirecional:
-- Pai monitora filho
-- Filho termina, pai recebe evento EXIT
-- Pai continua executando
+
+- Um pai monitora um filho.
+- Quando o filho termina, o pai recebe um evento `EXIT`.
+- O pai continua em execução.
 
 **Vinculação** cria compartilhamento bidirecional de destino:
-- Pai e filho estão vinculados
-- Qualquer processo falha, ambos terminam
-- A menos que `trap_links=true` esteja definido
+
+- Um pai e um filho são vinculados.
+- Se qualquer processo terminar de forma anormal, o outro também termina.
+- Definir `trap_links=true` transforma falhas em eventos que o processo pode tratar.
 
 ```mermaid
 flowchart TB
-    subgraph Monitoring["MONITORAMENTO (unidirecional)"]
+    subgraph Monitoring["MONITORING (one-way)"]
         direction TB
-        P1[Pai monitora] -->|EXIT event<br/>pai continua| C1[Filho termina]
+        P1[Parent monitors] -->|EXIT event<br/>parent continues| C1[Child exits]
     end
 
-    subgraph Linking["VINCULAÇÃO (bidirecional)"]
+    subgraph Linking["LINKING (bidirectional)"]
         direction TB
-        P2[Pai vinculado] <-->|LINK_DOWN<br/>ambos morrem| C2[Filho termina]
+        P2[Parent linked] <-->|abnormal exit<br/>fate sharing| C2[Child fails]
     end
 ```
 
@@ -42,7 +61,7 @@ Use `process.spawn_monitored()` para criar e monitorar em uma chamada:
 local function main()
     local events_ch = process.events()
 
-    -- Criar worker e iniciar monitoramento
+    -- Spawn worker and start monitoring
     local worker_pid, err = process.spawn_monitored(
         "app.workers:task_worker",
         "app:processes"
@@ -51,7 +70,7 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- Aguardar worker completar
+    -- Wait for worker to complete
     local event = events_ch:receive()
 
     if event.kind == process.event.EXIT then
@@ -75,7 +94,7 @@ local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- Spawn sem monitoramento
+    -- Spawn without monitoring
     local worker_pid, err = process.spawn(
         "app.workers:long_worker",
         "app:processes"
@@ -84,17 +103,20 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- Iniciar monitoramento depois
+    -- Start monitoring later
     local ok, monitor_err = process.monitor(worker_pid)
     if monitor_err then
         return nil, "monitor failed: " .. tostring(monitor_err)
     end
 
-    -- Cancelar o worker
+    -- Cancel the worker
     time.sleep("5ms")
-    process.cancel(worker_pid)
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
-    -- Receber evento EXIT
+    -- Receive EXIT event
     local event = events_ch:receive()
     if event.kind == process.event.EXIT then
         print("Worker terminated:", event.from)
@@ -111,24 +133,30 @@ local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- Spawn e monitorar
+    -- Spawn and monitor
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
-    -- Parar monitoramento
+    -- Stop monitoring
     local ok, unmon_err = process.unmonitor(worker_pid)
     if unmon_err then
         return nil, "unmonitor failed: " .. tostring(unmon_err)
     end
 
-    -- Cancelar worker
-    process.cancel(worker_pid)
+    -- Cancel worker
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
-    -- Nenhum evento EXIT será recebido (desmonitoramos)
+    -- No EXIT event will be received (we unmonitored)
     local timeout = time.after("200ms")
     local result = channel.select {
         events_ch:case_receive(),
@@ -148,30 +176,36 @@ end
 Use `process.link()` para criar um vínculo bidirecional:
 
 ```lua
--- Worker que vincula a um processo alvo
+-- Worker that links to a target process
 local function worker_main()
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
-    -- Ativar trap_links para receber eventos LINK_DOWN
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to receive LINK_DOWN events
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
-    -- Receber PID alvo do remetente
+    -- Receive target PID from sender
     local msg = inbox_ch:receive()
     local target_pid = msg:payload():data()
     local sender = msg:from()
 
-    -- Criar vínculo bidirecional
+    -- Create bidirectional link
     local ok, err = process.link(target_pid)
     if err then
         return nil, "link failed: " .. tostring(err)
     end
 
-    -- Notificar remetente que estamos vinculados
-    process.send(sender, "linked", process.pid())
+    -- Notify sender we're linked
+    local _, send_err = process.send(sender, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
-    -- Aguardar LINK_DOWN quando alvo terminar
+    -- Wait for LINK_DOWN when target exits with an error
     local timeout = time.after("3s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -195,12 +229,15 @@ Use `process.spawn_linked()` para criar e vincular em uma chamada:
 
 ```lua
 local function parent_main()
-    -- Ativar trap_links para tratar morte do filho
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to handle child death
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
-    -- Criar e vincular ao filho
+    -- Spawn and link to child
     local child_pid, err = process.spawn_linked(
         "app.workers:child_worker",
         "app:processes"
@@ -209,7 +246,7 @@ local function parent_main()
         return nil, "spawn_linked failed: " .. tostring(err)
     end
 
-    -- Se filho morrer, recebemos LINK_DOWN
+    -- If the child exits with an error, we receive LINK_DOWN
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         print("Child died:", event.from)
@@ -229,18 +266,21 @@ Sem `trap_links`, falha de processo vinculado termina o processo atual:
 local function worker_main()
     local events_ch = process.events()
 
-    -- trap_links é false por padrão
+    -- trap_links is false by default
     local opts = process.get_options()
     print("trap_links:", opts.trap_links)  -- false
 
-    -- Criar worker vinculado que vai falhar
+    -- Spawn linked worker that will fail
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
-    -- Quando filho der erro, ESTE processo termina
-    -- Nunca chegamos a este ponto
+    -- When child errors, THIS process terminates
+    -- We never reach this point
     local event = events_ch:receive()
 end
 ```
@@ -251,18 +291,24 @@ Ative `trap_links` para receber eventos LINK_DOWN e sobreviver:
 
 ```lua
 local function worker_main()
-    -- Ativar trap_links
-    process.set_options({ trap_links = true })
+    -- Enable trap_links
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
-    -- Criar worker vinculado que vai falhar
+    -- Spawn linked worker that will fail
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
-    -- Aguardar evento LINK_DOWN
+    -- Wait for LINK_DOWN event
     local event = events_ch:receive()
 
     if event.kind == process.event.LINK_DOWN then
@@ -283,21 +329,24 @@ local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- Criar e monitorar worker
+    -- Spawn and monitor worker
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
-    -- Cancelar o worker
+    -- Cancel the worker
     local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
 
-    -- Aguardar evento EXIT
+    -- Wait for EXIT event
     local event = events_ch:receive()
     if event.kind == process.event.EXIT then
         print("Worker cancelled:", event.from)
@@ -308,6 +357,8 @@ end
 ### Tratar Cancelamento
 
 Worker recebe evento CANCEL através de `process.events()`:
+
+`cleanup()` e `handle_message()` abaixo são callbacks da aplicação que a receita não define.
 
 ```lua
 local function worker_main()
@@ -323,12 +374,12 @@ local function worker_main()
         if result.channel == events_ch then
             local event = result.value
             if event.kind == process.event.CANCEL then
-                -- Limpar recursos
+                -- Cleanup resources
                 cleanup()
                 return "cancelled gracefully"
             end
         else
-            -- Processar mensagem da inbox
+            -- Process inbox message
             handle_message(result.value)
         end
     end
@@ -342,18 +393,21 @@ end
 Pai com múltiplos filhos vinculando de volta a ele:
 
 ```lua
--- Worker pai cria filhos que vinculam AO pai
+-- Parent worker spawns children that link TO parent
 local function star_parent_main()
     local time = require("time")
     local events_ch = process.events()
     local child_count = 10
 
-    -- Ativar trap_links para ver filhos morrerem
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to see children die
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local children = {}
 
-    -- Criar filhos
+    -- Spawn children
     for i = 1, child_count do
         local child_pid, err = process.spawn(
             "app.workers:linker_child",
@@ -363,12 +417,15 @@ local function star_parent_main()
             error("spawn child failed: " .. tostring(err))
         end
 
-        -- Enviar PID do pai para filho
-        process.send(child_pid, "inbox", process.pid())
+        -- Send parent PID to child
+        local _, send_err = process.send(child_pid, "inbox", process.pid())
+        if send_err then
+            error("send parent PID failed: " .. tostring(send_err))
+        end
         children[child_pid] = true
     end
 
-    -- Aguardar todos os filhos confirmarem vínculo
+    -- Wait for all children to confirm link
     for i = 1, child_count do
         local msg = process.inbox():receive()
         if msg:topic() ~= "linked" then
@@ -376,7 +433,7 @@ local function star_parent_main()
         end
     end
 
-    -- Acionar falha - todos os filhos devem receber LINK_DOWN
+    -- Trigger failure - all children should receive LINK_DOWN
     error("PARENT_STAR_FAILURE")
 end
 ```
@@ -385,20 +442,32 @@ Worker filho que vincula ao pai:
 
 ```lua
 local function linker_child_main()
+    -- Enable trap_links to receive LINK_DOWN events
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
-    -- Receber PID do pai
+    -- Receive parent PID
     local msg = inbox_ch:receive()
     local parent_pid = msg:payload():data()
 
-    -- Vincular ao pai
-    process.link(parent_pid)
+    -- Link to parent
+    local _, link_err = process.link(parent_pid)
+    if link_err then
+        return nil, "link failed: " .. tostring(link_err)
+    end
 
-    -- Confirmar vínculo
-    process.send(parent_pid, "linked", process.pid())
+    -- Confirm link
+    local _, send_err = process.send(parent_pid, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
-    -- Aguardar LINK_DOWN quando pai morrer
+    -- Wait for LINK_DOWN when parent dies
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         return "parent_died"
@@ -411,24 +480,24 @@ end
 Cadeia linear onde cada nó vincula ao seu pai:
 
 ```lua
--- Raiz da cadeia: A -> B -> C -> D -> E
+-- Chain root: A -> B -> C -> D -> E
 local function chain_root_main()
     local time = require("time")
 
-    -- Criar primeiro filho
+    -- Spawn first child
     local child_pid, err = process.spawn_linked(
         "app.workers:chain_node",
         "app:processes",
-        4  -- profundidade restante
+        4  -- depth remaining
     )
     if err then
         error("spawn failed: " .. tostring(err))
     end
 
-    -- Aguardar cadeia ser construída
+    -- Wait for chain to build
     time.sleep("100ms")
 
-    -- Acionar cascata - todos os processos vinculados morrem
+    -- Trigger cascade - all linked processes die
     error("CHAIN_ROOT_FAILURE")
 end
 ```
@@ -437,10 +506,8 @@ Nó da cadeia cria próximo nó e vincula:
 
 ```lua
 local function chain_node_main(depth)
-    local time = require("time")
-
     if depth > 0 then
-        -- Criar próximo na cadeia
+        -- Spawn next in chain
         local child_pid, err = process.spawn_linked(
             "app.workers:chain_node",
             "app:processes",
@@ -451,7 +518,7 @@ local function chain_node_main(depth)
         end
     end
 
-    -- Bloqueia até a morte do pai nos matar via LINK_DOWN (trap_links=false por padrão)
+    -- Block until parent death kills us via LINK_DOWN (default trap_links=false)
     process.inbox():receive()
 end
 ```
@@ -466,6 +533,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: supervision-policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.host
+        - process.send
+        - process.spawn
+        - process.spawn.linked
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     host:
@@ -486,6 +564,18 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.supervisor:pool
+      policies:
+        - app:supervision-policy
+
+  - name: pool-service
+    kind: process.service
+    process: app.supervisor:pool
+    host: app:processes
+    input:
+      - 4
     lifecycle:
       auto_start: true
 ```
@@ -498,8 +588,11 @@ local function main(worker_count)
     local time = require("time")
     worker_count = worker_count or 4
 
-    -- Ativar trap_links para tratar mortes de workers
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to handle worker deaths
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local events_ch = process.events()
     local workers = {}
@@ -520,14 +613,14 @@ local function main(worker_count)
         return pid
     end
 
-    -- Iniciar pool inicial
+    -- Start initial pool
     for i = 1, worker_count do
         start_worker(i)
     end
 
     print("Supervisor started with " .. worker_count .. " workers")
 
-    -- Loop de supervisão
+    -- Supervision loop
     while true do
         local timeout = time.after("60s")
         local result = channel.select {
@@ -536,7 +629,7 @@ local function main(worker_count)
         }
 
         if result.channel == timeout then
-            -- Verificação periódica de saúde
+            -- Periodic health check
             local count = 0
             for _ in pairs(workers) do count = count + 1 end
             print("Health check: " .. count .. " active workers")
@@ -551,7 +644,7 @@ local function main(worker_count)
                     local uptime = os.time() - dead_worker.started_at
                     print("Worker " .. dead_worker.id .. " died after " .. uptime .. "s, restarting")
 
-                    -- Breve atraso antes de reiniciar
+                    -- Brief delay before restart
                     time.sleep("100ms")
                     start_worker(dead_worker.id)
                 end
@@ -579,6 +672,11 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.workers:task_worker
+      policies:
+        - app:supervision-policy
 ```
 
 ### Implementação do Worker
@@ -618,11 +716,14 @@ local function main(worker_id)
             if topic == "work" then
                 print("Worker " .. worker_id .. " processing: " .. payload)
                 time.sleep("100ms")
-                process.send(msg:from(), "result", "completed: " .. payload)
+                local _, send_err = process.send(msg:from(), "result", "completed: " .. payload)
+                if send_err then
+                    return nil, "send result failed: " .. tostring(send_err)
+                end
             end
 
         elseif result.channel == timeout then
-            -- Timeout de ociosidade
+            -- Idle timeout
             print("Worker " .. worker_id .. " idle")
         end
     end
@@ -631,28 +732,22 @@ end
 return { main = main }
 ```
 
-## Configuração do Host de Processos
+## Configurações do Host de Processos
 
-O host de processos controla quantas threads de SO executam processos:
+A entrada `app:processes` definida em [Configuração](#configuração) usa a seguinte
+configuração de host:
 
 ```yaml
-# src/_index.yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: processes
-    kind: process.host
-    host:
-      workers: 16  # Número de threads de SO
-    lifecycle:
-      auto_start: true
+# Within the app:processes entry in src/_index.yaml
+host:
+  workers: 16  # Worker goroutines (default: NumCPU)
 ```
 
-Configuração de workers:
-- Controla paralelismo para trabalho CPU-bound
-- Tipicamente definido para o número de núcleos de CPU
-- Todos os processos compartilham este pool de threads
+A configuração `workers`:
+
+- Controla o paralelismo de trabalho limitado por CPU.
+- Normalmente é definida como o número de núcleos de CPU.
+- Aplica-se ao pool do agendador compartilhado por todos os processos do host.
 
 ## Tipos de Evento
 
@@ -660,28 +755,32 @@ Configuração de workers:
 |--------|--------------|-------------------------|
 | `EXIT` | Processo monitorado termina | `spawn_monitored()` ou `monitor()` |
 | `LINK_DOWN` | Processo vinculado falha | `spawn_linked()` ou `link()` com `trap_links=true` |
-| `CANCEL` | `process.cancel()` chamado | Nenhuma (sempre entregue) |
+| `CANCEL` | `process.cancel()` chamado | O alvo consome `process.events()` |
 
-## Executando o Pool de Supervisores
+## Usando a Receita do Pool de Supervisores
 
-Coloque os arquivos do pool na estrutura mostrada em [Configuração](#configuração) e então:
+O pool exibido inicia e supervisiona workers, mas não é um tutorial executável completo:
+ele omite intencionalmente um processo de controle, a política de encerramento desse
+processo e uma asserção determinística do reinício. Depois de incorporar a receita a
+uma aplicação, inicialize e execute essa aplicação normalmente:
 
 ```bash
 wippy init
 wippy run
 ```
 
-O supervisor inicia automaticamente, cria quatro workers e registra reinicializações quando qualquer um deles termina. Acione uma reinicialização encerrando um worker a partir de outro processo:
+O supervisor inicia automaticamente e cria quatro workers. Para verificar o reinício,
+adicione uma entrada de controle confiável que descubra o PID de um worker, tenha
+permissão `process.terminate` para esse PID, encerre-o e confirme que o supervisor
+inicia um substituto.
 
-```lua
--- em um processo avulso ou comando de chat
-process.cancel("<pid-from-supervisor-log>")
-```
-
-O pool recebe `LINK_DOWN`, aguarda 100 ms e recria o worker com o mesmo id.
+Uma saída anormal do worker faz o pool receber `LINK_DOWN`; ele aguarda 100 ms e cria
+novamente o worker com o mesmo id. Um `process.cancel()` gracioso permite que o worker
+termine de forma limpa, o que não gera `LINK_DOWN` e não aciona um reinício. Interrompa
+a aplicação com Ctrl+C ao terminar a verificação.
 
 ## Próximos Passos
 
-- [Processes](tutorials/processes.md) - Fundamentos de processos
-- [Channels](tutorials/channels.md) - Padrões de passagem de mensagens
-- [Process Module](lua/core/process.md) - Referência da API
+- [Processos](processes.md) — Fundamentos de processos
+- [Channels](channels.md) — Padrões de passagem de mensagens
+- [Módulo Process](../lua/core/process.md) — Referência da API de processos
