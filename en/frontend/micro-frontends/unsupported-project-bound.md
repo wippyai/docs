@@ -5,6 +5,10 @@ description: "Advanced warning for modules that intentionally abandon Wippy fron
 
 # Unsupported Project-Bound Modules
 
+**Classification: normative policy reference.** It defines the marker and
+required result for a project-selected compliance workflow; the public package
+family does not provide that workflow as a runnable CLI.
+
 Wippy’s supported frontend contract is portable. A module that intentionally requires project-private facade CSS, private classes, or another deployment-specific frontend assumption is `UNSUPPORTED`.
 
 This is not a normal exception. The project compliance workflow must enforce

@@ -5,6 +5,10 @@ description: "Use container queries, surface variables, and host.surface to size
 
 # Surface Portability
 
+**Classification: rendering contract reference with focused examples.** The
+CSS, JavaScript, and package metadata blocks illustrate individual contract
+rules; they are not a complete application fixture.
+
 A micro frontend app receives a **surface**: the rectangular area the Web Host allocates to it. That area is usually **not** the browser window. The app may be one panel among several in a [multi-panel layout](../web-host/multi-panel-layout.md), and the same app may be rendered by either [render engine](../web-host/render-engines.md) at different sizes on the same screen.
 
 Sizing a layout to the window is therefore wrong in both engines. The surface contract gives you a portable alternative in CSS and in JavaScript.

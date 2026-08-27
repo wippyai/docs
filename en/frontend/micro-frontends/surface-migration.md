@@ -5,6 +5,10 @@ description: "Recipes for converting viewport-based responsive rules to the Wipp
 
 # Surface Migration
 
+**Classification: partial migration recipe collection.** Each before/after
+block converts one isolated pattern. Apply the decision tree to the complete
+stylesheet, then verify the page in both render engines and both sizing modes.
+
 Recipes for converting an existing micro frontend app from viewport-based
 responsiveness to the [surface contract](./surface-portability.md).
 
@@ -246,6 +250,8 @@ const mq = matchMedia('(min-width: 640px)')
 mq.addEventListener('change', render)
 
 // after
+import { host } from '@wippy-fe/proxy'
+
 const off = host.surface.onChange(s => render(s.width >= 640))
 render(host.surface.snapshot.width >= 640)
 // call off() on teardown

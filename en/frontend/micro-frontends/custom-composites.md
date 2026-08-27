@@ -5,6 +5,9 @@ description: "Contract-first exceptions for controls whose required affordance c
 
 # Custom Composites
 
+**Classification: normative exception-contract reference.** The JSON block is
+a placeholder-bearing schema example, not a valid contract or evidence bundle.
+
 Custom controls are exceptions, not an alternative component library.
 
 ## Admission test

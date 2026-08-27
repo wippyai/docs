@@ -5,9 +5,22 @@ description: "Reference for embedding the host-provided chat, message list, comp
 
 # Chat Web Components
 
-The Wippy chat UI is available as **composable custom elements**. Any micro frontend or other page running in a child context can embed live chat by tag, without Vue imports or registration. The elements use the same chat components and `ChatTransport` → `SessionManager` data layer as the host.
+**Classification: API reference with partial embedding examples.** The HTML
+and JavaScript blocks assume a hosted child where the chat element shell is
+available, a valid session UUID or agent start token, and application-owned
+mount and teardown code.
 
-These are host-provided elements to consume. Unlike a [Web Component](./web-component.md) that you build yourself, you do not author or register them. The host makes them available by tag in every child (see [How they load](#how-they-load)).
+The Wippy chat UI is available as **composable custom elements** in contexts
+where the Host injects the chat shell. A srcdoc iframe child can embed live
+chat by tag without Vue imports or registration. The elements use the same chat
+components and `ChatTransport` → `SessionManager` data layer as the host.
+
+These are host-provided elements to consume. Unlike a
+[Web Component](./web-component.md) that you build yourself, you do not author
+or register them. The srcdoc iframe injector makes them available by tag. The
+Web Fragment gateway in the pinned Framework release deliberately omits
+`chat.js`, so a Fragment page cannot assume these tags exist; use the host chat
+controls there instead (see [How they load](#how-they-load)).
 
 > Use these when you want a chat surface *inside your own page or panel*. To open the host's own chat panel imperatively instead, use `host.startChat(token)` / `host.openSession(sessionUUID)` from `@wippy-fe/proxy` (see [Proxy API](./proxy-api.md)).
 
@@ -24,15 +37,26 @@ Every element also accepts two per-instance theming attributes — **`custom-css
 
 ## How they load
 
-The chat elements ship like [`<wippy-loading>`](../web-host/packages.md#wippy-feloading): a small `@wippy-fe/chat.js` shell auto-registers all four tags and is injected into every child context through the host `scripts` array (alongside `loading.js` and `proxy.js`). The tags are therefore available by name in any child micro frontend without per-app registration: you do not install a package or call `customElements.define()`.
+The chat elements ship like
+[`<wippy-loading>`](../web-host/packages.md#wippy-feloading): a small
+`@wippy-fe/chat.js` shell auto-registers all four tags. The srcdoc iframe
+injector includes it in the host `scripts` array alongside `loading.js` and
+`proxy.js`, so iframe-delivered pages do not install a package or call
+`customElements.define()`.
+
+The Framework's Web Fragment gateway injects `loading.js` and
+`proxy-fragment.js`, but not `chat.js`. Fragment-delivered pages should use
+`host.startChat()` or `host.openSession()` unless a later platform contract
+adds an explicit chat-shell opt-in. Direct web components mounted in the host
+document must likewise not assume that another child realm registered the tags.
 
 The implementation dependencies are code-split into a separate `chat-internals.[hash].js` chunk and **lazy-loaded on first mount**. While the chunk downloads, the element shows a `<wippy-loading>` placeholder; if the load fails it shows `<wippy-error>`. Pages that never mount a chat tag do not load the internals.
 
 ## `<wippy-chat>`
 
-Reactive session control requires Web Host `1.0.51` or newer. Pin the matching
-`@wippy-fe/*` `0.0.51+` package family; older injected chat elements only
-support the initial mount reliably.
+Reactive session control requires Web Host `1.0.51` or newer. The element shell
+is a Host-injected asset rather than a public `@wippy-fe/chat` package; older
+Host releases only support the initial mount reliably.
 
 The full chat surface: header, scrollable message list, and composer.
 
@@ -101,7 +125,7 @@ input, scroll position, and element-owned lifecycle state across panel updates.
 
 ## `<wippy-chat-messages>` and `<wippy-chat-input>`
 
-The message list and the composer as separate elements, so you can lay them out yourself. Each takes a single `session-id`; with no explicit `session-id` they follow the [shared active session](#composition--shared-session) set by a `<wippy-session-selector>`. Neither emits events.
+The message list and the composer as separate elements, so you can lay them out yourself. Each takes a single `session-id`; with no explicit `session-id` they follow the [shared active session](#composition-and-shared-session) set by a `<wippy-session-selector>`. Neither emits events.
 
 ```html
 <!-- Custom layout: messages above, composer below -->
@@ -167,6 +191,10 @@ Each element renders in a shadow root, so host page styles do not leak in or out
 | `custom-css` | string | Raw CSS appended **last** into the element's shadow root, so it wins by order. |
 | `css-variables` | object (JSON) | Per-instance CSS variable overrides applied to `:host`. Keys may omit the leading `--`. |
 
+Treat both attributes as trusted application configuration. Do not copy
+untrusted user input into raw CSS or variable values; CSS can alter or obscure
+the embedded interface and can initiate external resource requests.
+
 ```html
 <wippy-chat
   session-id="019eb2ae-…"
@@ -180,7 +208,12 @@ For the full theming model — semantic variables, dark/light flipping, and how 
 
 ## Runtime wiring
 
-Inside a Web Host child, the elements require no additional setup. Auth and config come from the proxy globals the host injects (`window.__WIPPY_APP_CONFIG__` / `window.__WIPPY_APP_API__`); REST and WebSocket use the config's environment URLs. When a chat tag mounts, the shell registers it, the internals load on demand, and the chat connects with the child's existing session.
+Inside a srcdoc iframe child, the elements require no additional setup. Auth
+and config come from the injected proxy runtime; REST and WebSocket use the
+config's environment URLs. When a chat tag mounts, the already-registered
+shell loads the internals on demand and connects with the child's existing
+session. Web Fragment and direct-host contexts have the availability limits
+described in [How they load](#how-they-load).
 
 ## See Also
 

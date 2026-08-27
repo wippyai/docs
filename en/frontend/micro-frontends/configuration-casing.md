@@ -5,6 +5,9 @@ description: "Casing rules at backend facade, registry, and frontend configurati
 
 # Configuration and Casing
 
+**Classification: schema-boundary reference.** The YAML block is a shape
+excerpt, not a complete registry entry.
+
 Casing follows the schema boundary. Never recursively convert a configuration object.
 
 | Boundary | Rule | Examples |

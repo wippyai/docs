@@ -5,6 +5,10 @@ description: "How the facade authors a PrimeVue theme and how modules remain por
 
 # Theme Authoring
 
+**Classification: theme ownership and runtime contract reference.** The mode
+switching block demonstrates one public API flow; it assumes a running Host and
+does not configure a facade or build a module by itself.
+
 The facade authors a PrimeVue theme. Modules consume it rather than defining an independent design system.
 
 Wippy currently runs PrimeVue with `theme: 'none'`. Component appearance is supplied by Wippy’s Tailwind-authored PrimeVue CSS, public runtime variables, and facade customization.
@@ -58,18 +62,34 @@ The public theme-mode contract is AppConfig plus `@wippy-fe/proxy`:
 import { host, on } from '@wippy-fe/proxy'
 
 async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
+  if (host.getThemeMode() === mode) return
+
   await new Promise<void>((resolve, reject) => {
-    const stop = on('@theme', (appliedMode) => {
-      if (appliedMode !== mode) return
+    let settled = false
+    let stop = () => {}
+    const finish = (error?: unknown) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeout)
       stop()
-      const currentMode = host.getThemeMode()
-      if (currentMode !== mode) {
-        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
-        return
-      }
-      resolve()
+      if (error) reject(error)
+      else resolve()
+    }
+    const timeout = window.setTimeout(
+      () => finish(new Error(`Timed out waiting for theme mode: ${mode}`)),
+      5_000,
+    )
+
+    stop = on('@theme', (appliedMode) => {
+      if (appliedMode !== mode) return
+      finish()
     })
-    host.setThemeMode(mode)
+
+    try {
+      host.setThemeMode(mode)
+    } catch (error) {
+      finish(error)
+    }
   })
 }
 

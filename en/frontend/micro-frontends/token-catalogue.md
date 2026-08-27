@@ -5,6 +5,10 @@ description: "Generated public Wippy theme token catalogue and compatibility met
 
 # Token Catalogue
 
+**Classification: generated token reference.** Use it to select an existing
+public token and inspect its provenance. It does not teach facade theme setup or
+authorize names absent from the generated package manifest.
+
 > Never construct a token name by analogy. Search this catalogue or the selected package manifest.
 
 This page is a checked-in projection of the structured token source in `@wippy-fe/theme`. Normative prose lives in Wippy Docs; token names, values, consumers, and source provenance are generated from package sources.

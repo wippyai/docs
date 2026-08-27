@@ -5,6 +5,10 @@ description: "How Wippy web components inherit theme variables and load rule-bas
 
 # Theming: Web Components
 
+**Classification: configuration reference with partial component recipes.**
+The snippets assume an existing Wippy web component, its shadow root, and the
+public proxy and web-component packages from the pinned release family.
+
 Web components inherit theme variables across the shadow boundary and load rule-based theme assets inside their shadow roots. See [Theme Authoring](./theming.md) for the shared authoring contract.
 
 ---
@@ -59,7 +63,20 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 | `markdownCssUrl` | `.data-body` markdown styles | Small | Only if the WC renders markdown content. |
 | `iframeCssUrl` | Default themed scrollbar styling; the name is historical | Small | Required for any WC that can scroll, for scrollbar consistency. |
 
-`preflightCssUrl` is not in the `HostCssKey` union. If you genuinely need Tailwind v3 preflight inside the shadow root, fetch it with `loadCss(hostCss.preflightCssUrl)` and insert the returned text with `injectInlineCss(shadow, css)`. In practice this is rarely needed.
+`preflightCssUrl` is not in the `HostCssKey` union. If you genuinely need
+Tailwind v3 preflight inside the shadow root, fetch and insert it explicitly:
+
+```typescript
+import { hostCss, loadCss } from '@wippy-fe/proxy'
+import { injectInlineCss } from '@wippy-fe/webcomponent-core'
+
+const css = await loadCss(hostCss.preflightCssUrl)
+injectInlineCss(shadow, css)
+```
+
+Here `shadow` is the component's existing `ShadowRoot`. Handle a rejected CSS
+fetch as a component initialization failure. In practice preflight is rarely
+needed.
 
 Choose the assets independently:
 

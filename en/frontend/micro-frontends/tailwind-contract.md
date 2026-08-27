@@ -5,6 +5,10 @@ description: "The difference between utility names, compiled values, runtime-bac
 
 # Tailwind Contract
 
+**Classification: generated contract reference.** The prose explains how to
+interpret the catalogue; the generated rows report the pinned theme package's
+compiled evidence and are not a Tailwind setup tutorial.
+
 “Tailwind token” is ambiguous. Use these four terms instead.
 
 | Layer | Example | Theme behavior |

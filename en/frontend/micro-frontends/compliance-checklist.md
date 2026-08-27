@@ -5,6 +5,10 @@ description: "Normative frontend compliance rules, checker ownership, publicatio
 
 # Frontend Compliance and Publication Gates
 
+**Classification: normative compliance and evidence reference.** The JSON
+blocks define placeholder-bearing shapes for checker inputs; they are not
+passing evidence or a standalone application fixture.
+
 This page owns the deterministic checker and publication requirements below.
 The [Portable UI Contract](../portable-ui-contract.md) owns the underlying
 portability and UI rule statements, while the linked guides provide detailed
@@ -62,10 +66,24 @@ Publication keeps runtime evidence outside the repository. Set:
 - `WIPPY_FE_RUNTIME_EVIDENCE_SHA256` to the lowercase SHA-256 of the exact
   `runtime-acceptance-evidence.json` bytes.
 
-`FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs` invokes the
-selected theme's canonical acceptance checker with that evidence path and hash,
-then validates and recomputes the visual evidence. Normal documentation
-freshness checks do not require local release evidence.
+From the Wippy Docs repository root, run the publication check with Node.js
+22 or newer after setting all four variables above. In PowerShell:
+
+```powershell
+$env:FRONTEND_DOCS_PUBLICATION = '1'
+node scripts/check-frontend-docs.mjs
+Remove-Item Env:FRONTEND_DOCS_PUBLICATION
+```
+
+In a POSIX shell:
+
+```sh
+FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs
+```
+
+The check invokes the selected theme's canonical acceptance checker with the
+evidence path and hash, then validates and recomputes the visual evidence.
+Normal documentation freshness checks do not require local release evidence.
 
 ## Deterministic visual verification
 

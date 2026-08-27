@@ -5,6 +5,10 @@ description: "How micro frontend apps receive facade, child-scope, and per-page 
 
 # Theming: Micro Frontend Apps
 
+**Classification: configuration reference with partial recipes.** The YAML,
+package metadata, and runtime snippets each show one layer of the theme
+contract; combine them with a complete `view.page` project and facade entry.
+
 Micro frontend apps receive the same effective child theme through
 engine-specific CSS delivery. See [Theme Authoring](./theming.md) for the
 shared authoring contract.

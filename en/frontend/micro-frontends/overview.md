@@ -5,6 +5,10 @@ description: "Choose between a micro frontend app and a web component, then foll
 
 # Wippy Micro Frontends
 
+**Classification: conceptual decision guide.** This page compares the two
+artifact types and routes readers to the build and API references; it is not a
+standalone project tutorial.
+
 Wippy frontend code runs inside the Web Host's isolation boundary. You can
 build two artifact types: **micro frontend apps** and **web components**. Both
 are independent Vite projects, communicate with the platform through

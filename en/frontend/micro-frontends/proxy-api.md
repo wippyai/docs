@@ -5,6 +5,11 @@ description: "Reference for the configuration, host controls, API access, events
 
 # Proxy API
 
+**Classification: API reference with partial integration snippets.** The
+examples assume a Host-delivered child, valid deployment URLs and credentials,
+and application values such as `file`, `uuid`, event handlers, and routes. They
+show one API operation at a time rather than a standalone project.
+
 Child apps and web components communicate with the Wippy host through the proxy runtime (`proxy.js`). Application code uses named getters from **`@wippy-fe/proxy`**, its thin synchronous facade. The same imports work for both surfaces:
 
 - **Micro Frontend Apps (`view.page`)** run through the selected srcdoc iframe or Web Fragment adapter, which provides the same proxy contract.
@@ -157,20 +162,35 @@ public proxy API:
 import { host, on } from '@wippy-fe/proxy'
 
 async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
+  if (host.getThemeMode() === mode) return
+
   await new Promise<void>((resolve, reject) => {
-    const unsubscribe = on('@theme', (appliedMode) => {
-      if (appliedMode !== mode) return
+    let settled = false
+    let unsubscribe = () => {}
+    const finish = (error?: unknown) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeout)
       unsubscribe()
-      const currentMode = host.getThemeMode()
-      if (currentMode !== mode) {
-        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
-        return
-      }
-      resolve()
+      if (error) reject(error)
+      else resolve()
+    }
+    const timeout = window.setTimeout(
+      () => finish(new Error(`Timed out waiting for theme mode: ${mode}`)),
+      5_000,
+    )
+
+    unsubscribe = on('@theme', (appliedMode) => {
+      if (appliedMode !== mode) return
+      finish()
     })
 
     // Subscribe before the command so a fast propagation event cannot be lost.
-    host.setThemeMode(mode)
+    try {
+      host.setThemeMode(mode)
+    } catch (error) {
+      finish(error)
+    }
   })
 }
 
@@ -421,13 +441,19 @@ host.handleError(
 try {
   await api.get('/protected-endpoint')
 } catch (error) {
-  if ((error as any).response?.status === 401) {
-    host.handleError('auth-expired', error as Record<string, unknown>)
-  } else {
+  // Same-origin 401 responses already trigger the proxy's single-flight
+  // auth-expired flow. Report only application-specific non-auth failures.
+  if ((error as any).response?.status !== 401) {
     host.handleError('other', error as Record<string, unknown>)
   }
 }
 ```
+
+The proxy adds the Wippy bearer token to same-origin requests and invokes the
+host's `auth-expired` flow once when such a request returns 401. Set
+`skipDefaultAuth: true` only for a request that intentionally bypasses both
+behaviors. Fully qualified cross-origin requests skip them automatically so the
+Wippy token is not sent to another origin.
 
 ---
 
@@ -484,9 +510,11 @@ if (layout.snapshot) {
 // Subscribe to changes (the fresh snapshot is passed to the handler)
 import { on } from '@wippy-fe/proxy'
 
-on('@layout-change', (snapshot) => {
+const stopLayoutChanges = on('@layout-change', (snapshot) => {
   console.log(snapshot.activeBreakpoint)
 })
+
+// Call stopLayoutChanges() when the owning page or component tears down.
 
 // Mutations
 layout.resizePanel('right', '40%')
@@ -527,7 +555,9 @@ For the full managed-layout model, see [Multi-Panel Layout](../web-host/multi-pa
 
 A pre-configured axios instance with:
 - Base URL from the deployment environment
-- Automatic `Authorization: Bearer <token>` injection on every request
+- Automatic `Authorization: Bearer <token>` injection for same-origin requests
+  unless `skipDefaultAuth: true`; cross-origin requests do not receive the
+  Wippy token
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
@@ -558,21 +588,27 @@ const response = await api.post('/api/v1/uploads', formData, {
 
 const uploadedUuid = response.data.uuid  // { success: boolean, uuid: string }
 
-// Track processing status via WebSocket
-on(`upload:${uploadedUuid}`, (msg) => {
+// Track processing status via WebSocket. Retain and call the unsubscribe on
+// completion, failure, cancellation, or component teardown.
+const stopUploadStatus = on(`upload:${uploadedUuid}`, (msg) => {
   // msg.data.status: 'uploaded' | 'completed' | 'error' | 'processing'
 })
 
-// Cancel in-flight upload
-abort.abort()
 ```
 
-Maximum file size: 100 MB.
+Call `abort.abort()` from the application's cancel action while the POST is
+still pending. An abort after the awaited response has settled cannot cancel
+the completed upload. Call `stopUploadStatus()` when processing reaches a
+terminal status or when the owning component tears down.
+
+The Host's built-in upload UI rejects files larger than 100 MB. The proxy
+axios instance does not enforce that limit; a custom endpoint or child UI must
+apply its own documented client and server limits.
 
 ### File download
 
 ```typescript
-const response = await api.get('/api/v1/uploads/{uuid}/download', {
+const response = await api.get(`/api/v1/uploads/${uuid}/download`, {
   responseType: 'blob',
 })
 
@@ -619,13 +655,16 @@ const response = await api.post('/api/v1/agents/stream', { prompt: 'Hello' }, {
 const reader = (response.data as ReadableStream<Uint8Array>).getReader()
 const decoder = new TextDecoder()
 let buffer = ''
+let endedByMarker = false
 
 try {
-  while (true) {
+  stream: while (true) {
     const { done, value } = await reader.read()
     if (done) break
 
     buffer += decoder.decode(value, { stream: true })
+    // SSE permits CRLF. Normalize before looking for blank-line delimiters.
+    buffer = buffer.replace(/\r\n/g, '\n')
 
     while (true) {
       const sep = buffer.indexOf('\n\n')
@@ -640,23 +679,33 @@ try {
 
       if (dataLines.length === 0) continue
       const payload = dataLines.join('\n')
-      if (payload === '[DONE]') return
+      if (payload === '[DONE]') {
+        endedByMarker = true
+        break stream
+      }
 
+      let evt: unknown
       try {
-        const evt = JSON.parse(payload)
-        handleEvent(evt)
+        evt = JSON.parse(payload)
       } catch {
         handleText(payload)
+        continue
       }
+      handleEvent(evt)
     }
   }
 } finally {
-  reader.releaseLock()
+  try {
+    if (endedByMarker) await reader.cancel()
+  } finally {
+    reader.releaseLock()
+  }
 }
-
-// Cancel the stream
-abort.abort()
 ```
+
+Call `abort.abort()` from the owning cancel or teardown path while the read
+loop is active. The resulting abort rejection should be treated as expected
+only when that path initiated it; report other stream failures normally.
 
 To default all requests to the fetch adapter:
 
@@ -781,6 +830,7 @@ class MyEl extends HTMLElement {
 |-------|-----------------|-------------|
 | `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
 | `@visibility` | `boolean` | Iframe/Web Fragment visibility changed. Direct web components use the typed host-visibility contract instead. |
+| `@theme` | `'auto' \| 'light' \| 'dark'` | Applied theme mode propagated by the Host. |
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
 | `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
@@ -854,12 +904,14 @@ state.getAll(options?: { scope?: string }): Promise<Record<string, unknown>>
 **Recommended iframe/Web Fragment save pattern** — save when the page goes to background rather than on every change. Direct WCs use `useHostVisibility()` for the same lifecycle decision:
 
 ```typescript
-on('@visibility', async (visible) => {
+const stopVisibility = on('@visibility', async (visible) => {
   if (!visible) {
     await state.set('scrollY', document.documentElement.scrollTop)
     await state.set('formData', currentFormData)
   }
 })
+
+// Call stopVisibility() when the owning page or component tears down.
 ```
 
 **Limits:** 2 MB per page (JSON-serialized, configurable by the host through `hostConfig.stateCache`). State lives in host memory — survives iframe reload but not a full browser page refresh.
@@ -908,7 +960,7 @@ ws.send(command: WsCommand): void
 ```typescript
 import { ws, on } from '@wippy-fe/proxy'
 
-on('session:my-session:message:*', (msg) => {
+const stopMessages = on('session:my-session:message:*', (msg) => {
   console.log('Response:', msg.data)
 })
 
@@ -919,6 +971,9 @@ ws.send({
   data: { text: 'Hello from child app' },
 })
 ```
+
+Keep `stopMessages` and call it when the owning component or page tears down;
+do not unsubscribe immediately after `send()` if the response is still needed.
 
 ### `ws.sendWithResponse(command)` → `Promise<WsMessage>`
 
