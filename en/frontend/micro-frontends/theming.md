@@ -43,7 +43,12 @@ Do not add runtime tokens for theoretical flexibility. Add or adopt a token only
 
 ## CSS transport is not permission
 
-Pages receive styles in an iframe. Web components may receive styles inside a shadow root. This explains where CSS can take effect; it does not authorize a module to depend on arbitrary facade selectors.
+Page style transport follows the selected rendering engine: iframe pages use
+the proxy injection pipeline, while Web Fragment pages receive platform CSS
+from the fragment gateway and page overrides in the reflected head. Web
+components may receive styles inside a shadow root. These mechanisms explain
+where CSS can take effect; they do not authorize a module to depend on
+arbitrary facade selectors.
 
 ## Runtime mode switching
 

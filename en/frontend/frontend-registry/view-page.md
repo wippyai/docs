@@ -165,10 +165,9 @@ Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is au
 |---|---|---|---|
 | `mountRoute` | string | — | Claims a URL path in the host router; the host renders this page when the browser navigates to a matching path |
 
-> **Temporary compatibility spelling:** `meta.mountRoute` is a current backend
-> casing bug. The intended backend field is `meta.mount_route`, and a future
-> backend release is expected to change it. Use `meta.mountRoute` until that
-> backend change ships; recheck the target Wippy version when upgrading.
+> **Casing exception:** the current registry schema reads `meta.mountRoute` and
+> stores it in the registry's internal `mount_route` field; API output uses
+> `mountRoute` again. Use the authored lower-camel-case spelling shown here.
 
 `mountRoute` accepts only the v1 catch-all form — `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or a different param name (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict and `GET /api/public/pages/routes` returns HTTP 500, rendered as a fatal fullscreen error. The `:part(.*)*` wildcard lets the child application manage its own sub-routes while the host keeps ownership of the top-level path.
 
@@ -227,9 +226,9 @@ Note that `announced: false` is valid for `view.page` entries — the page is re
 The proxy injection defaults baked into `wippy-meta.json` (from the
 `package.json` `wippy` block) can be overridden per deployment with a `proxy:`
 block placed **under `meta:`** in the registry entry. Facade requirement names
-use their documented snake_case names. Registry fields currently include one
-temporary backend casing bug: the wrapper is `config_overrides`, while the route
-field is still read as `mountRoute` until it is corrected to `mount_route`.
+use their documented snake_case names. The wrapper is `config_overrides`, while
+the registry schema defines the route field as `mountRoute`, stores it in the
+registry's internal `mount_route` field, and emits `mountRoute` in API output.
 Nested proxy/config objects are passed through and retain their defined
 lower-camel-case keys. The host deep-merges `meta.proxy` over bundled
 `wippy.proxy`.

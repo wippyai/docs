@@ -24,9 +24,9 @@ Every element also accepts two per-instance theming attributes — **`custom-css
 
 ## How they load
 
-The chat elements ship like [`<wippy-loading>`](../web-host/packages.md#wippy-feloading): a small shell, `@wippy-fe/chat.js` (~21 KB), auto-registers all four tags and is injected into every child context through the host `scripts` array (alongside `loading.js` and `proxy.js`). The tags are therefore available by name in any child micro frontend without per-app registration: you do not install a package or call `customElements.define()`.
+The chat elements ship like [`<wippy-loading>`](../web-host/packages.md#wippy-feloading): a small `@wippy-fe/chat.js` shell auto-registers all four tags and is injected into every child context through the host `scripts` array (alongside `loading.js` and `proxy.js`). The tags are therefore available by name in any child micro frontend without per-app registration: you do not install a package or call `customElements.define()`.
 
-The heavier internals — the Vue tree plus PrimeVue, Shiki, and the markdown renderer (~2 MB) — are code-split into a separate `chat-internals.[hash].js` chunk and **lazy-loaded on first mount**. While the chunk downloads, the element shows a `<wippy-loading>` placeholder; if the load fails it shows `<wippy-error>`. Pages that never mount a chat tag do not load the internals.
+The implementation dependencies are code-split into a separate `chat-internals.[hash].js` chunk and **lazy-loaded on first mount**. While the chunk downloads, the element shows a `<wippy-loading>` placeholder; if the load fails it shows `<wippy-error>`. Pages that never mount a chat tag do not load the internals.
 
 ## `<wippy-chat>`
 

@@ -87,9 +87,10 @@ a place to re-do what PrimeVue and Tailwind already cover. See
 
 ### The shared design layer
 
-Some ideas recur across a known set of modules and have no component in the
-theme: a content card, a surface header row, an empty state, or a set of tag
-sizes. These concepts belong in the shared design layer.
+Some ideas recur across a known set of modules and have no application-level
+contract in the theme: a domain-specific match summary, a surface header row,
+an empty state, or a project-specific tag-sizing vocabulary. These concepts
+belong in the shared design layer.
 
 They ship as a **published package**, materialized into each consumer at build
 time. It must be a package rather than a path alias because consumers live in
@@ -164,9 +165,9 @@ severity and it is the theme's.
 ### Shared vocabulary the theme has no seat for
 
 ```css
-/* GOOD — PrimeVue ships no Card, no surface Header, no EmptyState.
-   These recur across modules with nothing themed behind them, so they are
-   exactly what the shared layer is for. */
+/* GOOD — this application-specific card contract and empty-state vocabulary
+   recur across modules. PrimeVue's generic Card does not define these domain
+   semantics, so the shared layer owns them. */
 @import "@kickside/ui-kit/kx-card.css";
 @import "@kickside/ui-kit/kx-state.css";
 ```

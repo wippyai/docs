@@ -95,6 +95,20 @@ The target Web Host release defines host-provided modules.
 
 Do not maintain a hand-written package list. Do not mirror the full external set into peer dependencies.
 
+For web-component entry builds, preserve the entry module's registration side effect:
+
+```ts
+export default {
+  build: {
+    rollupOptions: {
+      preserveEntrySignatures: 'strict',
+    },
+  },
+}
+```
+
+Using `false` can move `define(import.meta.url, Component)` out of the entry chunk, leaving the Host's `?declare-tag=` import unable to register the element.
+
 ```ts
 import hostImportMap from './wippy-import-map.json'
 

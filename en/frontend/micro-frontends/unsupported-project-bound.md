@@ -7,7 +7,8 @@ description: "Advanced warning for modules that intentionally abandon Wippy fron
 
 Wippy’s supported frontend contract is portable. A module that intentionally requires project-private facade CSS, private classes, or another deployment-specific frontend assumption is `UNSUPPORTED`.
 
-This is not a normal exception:
+This is not a normal exception. The project compliance workflow must enforce
+these results:
 
 - Standard compliance returns exactly `UNSUPPORTED`.
 - Standard CI fails.
@@ -29,6 +30,8 @@ field and value below:
 }
 ```
 
-`mode` and other aliases are not accepted. This marker makes the standard
-compliance command return `UNSUPPORTED` and exit unsuccessfully; it does not
-grant an exemption.
+`mode` and other aliases are not accepted. The compliance workflow must make
+this marker return `UNSUPPORTED` and exit unsuccessfully; it does not grant an
+exemption. The public `@wippy-fe/*` 0.0.56 package family does not ship an
+application-compliance CLI, so the project must implement this gate in its
+selected compliance workflow.

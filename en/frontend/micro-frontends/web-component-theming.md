@@ -5,7 +5,7 @@ description: "How Wippy web components inherit theme variables and load rule-bas
 
 # Theming: Web Components
 
-Web components inherit theme variables across the shadow boundary and load rule-based theme assets explicitly. See [Theme Authoring](./theming.md) for the shared authoring contract.
+Web components inherit theme variables across the shadow boundary and load rule-based theme assets inside their shadow roots. See [Theme Authoring](./theming.md) for the shared authoring contract.
 
 ---
 
@@ -14,7 +14,7 @@ Web components inherit theme variables across the shadow boundary and load rule-
 Shadow DOM blocks CSS cascade — stylesheets written outside your component do not apply inside it. However, CSS custom properties (variables) **do** cross the shadow boundary. This means:
 
 - Custom properties inherit across the shadow boundary. WippyElement also bridges every configured variable name through its forced-theme inner root, so locally loaded `theme-config.css` defaults cannot reset configured values.
-- PrimeVue component styles, Tailwind utilities, and other rule-based stylesheets do **not** cascade in — you must load them explicitly via `hostCssKeys`.
+- PrimeVue component styles, Tailwind utilities, and other rule-based stylesheets do **not** cascade in. The runtime loads all four supported Host CSS assets when `hostCssKeys` is omitted; declare the list explicitly to limit that set.
 
 ---
 
@@ -22,7 +22,7 @@ Shadow DOM blocks CSS cascade — stylesheets written outside your component do 
 
 **L1 — Global:** CSS custom properties cross the shadow boundary. WippyElement enumerates the effective global/children/page variable maps, including `@light` / `@dark`, and installs a generic inheritance bridge before the injected custom CSS layer.
 
-**L2 — Scoped:** Same as L1 for custom properties. Stylesheet-based CSS (PrimeVue, Tailwind) does not cascade — use `hostCssKeys` to load these explicitly into the shadow root.
+**L2 — Scoped:** Same as L1 for custom properties. Stylesheet-based CSS (PrimeVue, Tailwind) does not cascade — use `hostCssKeys` to control which Host assets load into the shadow root.
 
 **L3 — Per-page config_overrides:** CSS vars set via operator `config_overrides` reach the WC host and inner theme root through the same generic bridge.
 
@@ -40,7 +40,7 @@ JavaScript externalization follows the complete pinned Web Host `import-map.json
 
 ### `hostCssKeys` — runtime CSS loading
 
-Declare which host-served CSS assets the WC runtime should inject into your shadow root. Add to `wippyConfig.hostCssKeys`:
+Declare which host-served CSS assets the WC runtime should inject into your shadow root. When `hostCssKeys` is omitted, the runtime loads `themeConfigUrl`, `primeVueCssUrl`, `markdownCssUrl`, and `iframeCssUrl`; an empty list opts out. An explicit list is recommended so the component loads only what it uses:
 
 ```typescript
 static get wippyConfig(): WippyElementConfig<ComponentProps> {
@@ -52,25 +52,16 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 }
 ```
 
-| Key | What it loads | Size | When to include |
+| Key | What it loads | Relative cost | When to include |
 |---|---|---|---|
-| `themeConfigUrl` | `theme-config.css` — the full `--p-*` CSS variable system | ~8 KB | When the WC consumes host semantic tokens, dark mode, or themed chrome. A presentation-neutral canvas/SVG/chart can omit it. |
-| `primeVueCssUrl` | All PrimeVue component CSS (unstyled mode) | ~455 KB | Only if the WC renders PrimeVue components (`<Button>`, `<Dialog>`, etc.) inside its shadow root. |
-| `markdownCssUrl` | `.data-body` markdown styles | ~5 KB | Only if the WC renders markdown content. |
-| `iframeCssUrl` | Default themed scrollbar styling; the name is historical | ~1 KB | Required for any WC that can scroll, for scrollbar consistency. |
+| `themeConfigUrl` | `theme-config.css` — the full `--p-*` CSS variable system | Small | When the WC consumes host semantic tokens, dark mode, or themed chrome. A presentation-neutral canvas/SVG/chart can omit it. |
+| `primeVueCssUrl` | All PrimeVue component CSS (unstyled mode) plus Tailwind utilities | Large | Only if the WC renders PrimeVue components (`<Button>`, `<Dialog>`, etc.) or authors Tailwind utility classes inside its shadow root. |
+| `markdownCssUrl` | `.data-body` markdown styles | Small | Only if the WC renders markdown content. |
+| `iframeCssUrl` | Default themed scrollbar styling; the name is historical | Small | Required for any WC that can scroll, for scrollbar consistency. |
 
-`preflightCssUrl` is not in the `HostCssKey` union. If you genuinely need Tailwind v3 preflight inside the shadow root, call `hostCss.preflightCssUrl` + `loadCss()` imperatively. In practice this is rarely needed.
+`preflightCssUrl` is not in the `HostCssKey` union. If you genuinely need Tailwind v3 preflight inside the shadow root, fetch it with `loadCss(hostCss.preflightCssUrl)` and insert the returned text with `injectInlineCss(shadow, css)`. In practice this is rarely needed.
 
-#### Bundle-size guidance
-
-| `hostCssKeys` | Total CSS pulled |
-|---|---|
-| `['themeConfigUrl']` | ~8 KB |
-| `['themeConfigUrl', 'iframeCssUrl']` | ~9 KB |
-| `['themeConfigUrl', 'markdownCssUrl', 'iframeCssUrl']` | ~14 KB |
-| `['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl']` | ~464 KB |
-
-Choose independently:
+Choose the assets independently:
 
 - A presentation-neutral canvas/SVG/chart with no standard product controls, host semantic tokens, or utility classes may omit PrimeVue, the theme asset, and Tailwind.
 - Any button, input, form, table, dialog, menu, tag, tooltip, or feedback control requires its PrimeVue equivalent, `PrimeVuePlugin`, and `primeVueCssUrl`.

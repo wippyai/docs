@@ -14,10 +14,10 @@ Use these checks to isolate common Wippy frontend failures before changing appli
 - `Proxy globals not found` (or your `@wippy-fe/proxy` imports come back undefined) — `proxy.js` / `dev-proxy.js` did not load before your app script ran, so the runtime never installed its internal globals. Check that `dev-proxy.js` is referenced with `data-role="@wippy/scripts"` in `app.html`.
 - Silent hang (no errors, no app) — in host-less mode, the dev overlay may be waiting for you to click **Accept**. Confirm that its FAB (floating button) appeared. If it did not, `proxy.js` / `dev-proxy.js` failed to load or install its globals; follow the `Proxy globals not found` check above.
 
-Hosted and host-less micro frontends do not wait for a `GetConfig`/`SetConfig`
-handshake: config is injected synchronously as `window.__WIPPY_APP_CONFIG__`
-before `proxy.js` runs. The blocking handshake applies only to the host-level
-manual `iframe.html?waitForCustomConfig` embedding.
+Hosted iframe pages and host-less pages receive config synchronously before the
+proxy boots. Web Fragment pages use the fragment adapter's
+`GetConfig`/`SetConfig` handshake, as does the host-level manual
+`iframe.html?waitForCustomConfig` embedding.
 
 **2. Check the Network tab:**
 - Confirm `dev-proxy.js` (host-less) or `proxy.js` (hosted) loaded with status 200.
@@ -53,18 +53,18 @@ customElements.get('your-tag-name')  // undefined means the element was not regi
 **3. Check the Network tab:**
 - Filter for your component's `index.js` URL
 - The URL should contain `?declare-tag=your-tag-name` — this is how the element registers itself
-- If the URL has no `?declare-tag=` query: `define(import.meta.url, MyElement)` was not in the entry chunk. This is the `preserveEntrySignatures: false` problem — see [Build System](./build-system.md)
+- If the URL has no `?declare-tag=` query: `define(import.meta.url, MyElement)` was not retained in the entry chunk. Set `build.rollupOptions.preserveEntrySignatures` to `'strict'`; `false` can move the registration side effect out of the entry. See [Build System](./build-system.md)
 
 ## API calls failing / 401
 
 **1. In host-less mode:**
-- The `dev-token` stub in the proxy config is not a real credential — it will always get 401 from a real backend
+- The `dev-token` stub in the proxy config is not a real credential and normally must be replaced before calling an authenticated backend
 - Open the dev overlay → find the `auth.token` field in the JSON config → paste a real bearer token
 - Confirm `APP_API_URL` in the overlay config points to the running backend (not localhost if your backend is elsewhere)
 
 **2. In hosted mode:**
-- Handle 401 by calling `host.handleError('auth-expired', error)` — this triggers the host's re-authentication flow
-- If all API calls 401: check that the host's session token is being injected correctly (the proxy handles this automatically via `api.get(...)`)
+- Use the proxy `api` client. For eligible same-origin 401 responses it single-flights and calls `host.handleError('auth-expired', error)` automatically.
+- If all API calls 401, check the Host config and session-token injection. Call `host.handleError` manually only for a request path that deliberately bypasses the standard proxy client and therefore cannot receive its automatic handling.
 
 ## Theme looks wrong
 
@@ -128,11 +128,21 @@ If the host URL still does not update, confirm the current `@wippy-fe/router` fa
 
 ## Works locally, breaks when hosted
 
-**1. Check `document.baseURI`:**
+**1. Check relative asset resolution for the selected engine:**
+
+For iframe delivery, inspect:
+
 ```javascript
 document.baseURI  // should be <url>/<base_path>/ from your registry entry
 ```
-If empty or wrong: the `<base>` tag was not injected. Check that `base_path` in `_index.yaml` matches the actual directory structure of your built output.
+
+If it is wrong, the `<base>` tag was not injected correctly. Check that
+`base_path` in `_index.yaml` matches the actual directory structure of the
+built output.
+
+Web Fragment delivery deliberately does not inject a `<base>` element. Inspect
+the reflected head and body instead: relative `href="./…"` and `src="./…"`
+attributes should be rewritten to the fragment gateway's asset URLs.
 
 **2. Check proxy globals (internal diagnostic):**
 ```javascript

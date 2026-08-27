@@ -89,10 +89,12 @@ hashes. A changed source hash or sibling-contract hash invalidates review.
 
 This page defines the normative fields; it is not a JSON Schema and the
 documentation checker only proves that this example retains the required
-shape. `wippy-fe-compliance` validates a real module contract against the
-selected theme manifest, verifies the hashes and complete property set, and
-checks that every evidence reference resolves to the named passing result or
-capture from the same candidate build. Accessibility evidence binds the
+shape. A module compliance implementation must validate a real contract
+against the selected theme manifest, verify the hashes and complete property
+set, and check that every evidence reference resolves to the named passing
+result or capture from the same candidate build. The public `@wippy-fe/*`
+0.0.56 package family does not provide a module-compliance CLI. Accessibility
+evidence binds the
 component `sourceSha256`, hashed files, zero unexpected console errors, and a
 passed result. Visual evidence binds canonical before/after/diff files, hashes,
 recomputed metrics and disposition, and the matching candidate build. A
@@ -119,10 +121,10 @@ If the required runtime semantic does not exist, fix the shared theme contract f
 `sharedAppearanceMappings` is exhaustive, not illustrative: it contains exactly
 one mapping for every `shared-runtime` property in the selected sibling
 contract, no additional property IDs, the contract part, a stable module
-selector, and the exact published source kind and name. Compliance tooling uses
-the selector, part, CSS property, and published source to prove the mapping
-structurally with PostCSS; a token name in a comment or unrelated selector does
-not count. A Tailwind-backed mapping also records unique, exact
+selector, and the exact published source kind and name. The selected compliance
+implementation must use the selector, part, CSS property, and published source
+to prove the mapping structurally with PostCSS; a token name in a comment or
+unrelated selector does not count. A Tailwind-backed mapping also records unique, exact
 `utilityClasses`; after normalization that set must equal the selected sibling
 contract source set. `platformInvariantUtilities` contains
 `{ "contractProperty": "...", "utility": "..." }` records whose utility equals

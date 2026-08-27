@@ -1,21 +1,32 @@
 ---
 title: "Theming: Micro Frontend Apps"
-description: "How iframe-delivered micro frontend apps receive facade, child-scope, and per-page theme configuration."
+description: "How micro frontend apps receive facade, child-scope, and per-page theme configuration."
 ---
 
 # Theming: Micro Frontend Apps
 
-Micro frontend apps receive theme configuration through the host's CSS injection pipeline. See [Theme Authoring](./theming.md) for the shared authoring contract.
+Micro frontend apps receive the same effective child theme through
+engine-specific CSS delivery. See [Theme Authoring](./theming.md) for the
+shared authoring contract.
 
 ---
 
 ## How the theme reaches your app
 
-The host injects CSS into your micro frontend app's iframe through the proxy injection pipeline. The current runtime schema is `wippy-context-2.0`: facade theming is represented as `theming.global`, `theming.host`, and `theming.children`; a child page receives its effective child-facing theme as `config.theming.global`.
+With iframe delivery, the host injects CSS through the proxy pipeline and puts
+custom variables and CSS in document-level adopted stylesheets. With Web
+Fragment delivery, the framework gateway supplies the platform CSS and the
+fragment adapter puts custom variables and CSS in the reflected head as
+ordinary `<style>` elements. The current runtime schema is `wippy-context-2.0`:
+facade theming is represented as `theming.global`, `theming.host`, and
+`theming.children`; either page engine receives its effective child-facing
+theme as `config.theming.global`.
 
 ### L1 — Global (facade level)
 
-CSS variables set in the facade's global theming scope reach the host and all iframes through the `themeConfig` and custom-variable proxy injections. Use this scope for the brand palette, accent color, and styling that must apply consistently everywhere.
+CSS variables set in the facade's global theming scope reach the host and child
+pages through the engine's CSS-delivery path. Use this scope for the brand
+palette, accent color, and styling that must apply consistently everywhere.
 
 ```yaml
 - name: css_variables
@@ -24,12 +35,12 @@ CSS variables set in the facade's global theming scope reach the host and all if
 
 ### L2 — Scoped (host or children scope)
 
-The facade exposes separate current-schema scopes for the host chrome and for child iframes:
+The facade exposes separate current-schema scopes for the host chrome and for child pages:
 
 | Schema scope | Reaches | Use for |
 |---|---|---|
 | `theming.host` | Host UI chrome only | Sidebar, chat messages, splitter — host BEM overrides |
-| `theming.children` | Child iframes only | CSS that applies inside child apps but must not leak into the host |
+| `theming.children` | Child pages only | CSS that applies inside child apps but must not leak into the host |
 
 CSS set in `children_css_variables` or `children_custom_css` reaches your micro frontend app; host-scoped vars target the Web Host chrome only.
 
@@ -60,9 +71,10 @@ A `package.json` mirror under `wippy.configOverrides` provides the same shape fo
 
 ---
 
-## Enabling CSS injection
+## Enabling iframe CSS injection
 
-In your `package.json` `wippy` block, configure which injections your micro frontend app requests:
+For iframe-hosted and host-less rendering, configure which injections your
+micro frontend app requests in the `package.json` `wippy` block:
 
 ```jsonc
 "wippy": {
@@ -71,7 +83,7 @@ In your `package.json` `wippy` block, configure which injections your micro fron
     "injections": {
       "css": {
         "themeConfig":      true,   // --p-* CSS vars (theme-config.css)
-        "primevue":         true,   // PrimeVue component CSS (~455 KB)
+        "primevue":         true,   // PrimeVue component CSS and Tailwind utilities
         "markdown":         false,  // .data-body markdown styles
         "iframe":           true,   // Scrollbar styling
         "customCss":        true,   // Child-projected theming.global.customCSS
@@ -92,6 +104,10 @@ The iframe proxy has broad runtime defaults when flags are omitted. **Enable the
 - `css.markdown` — `.data-body` markdown styles. Enable only if your page renders markdown content.
 
 Full flag reference and runtime defaults: [CSS Injection](../web-host/css-injection.md).
+
+Web Fragment delivery does not use these flags to gate its fixed host CSS. The
+framework gateway injects those assets, and the fragment adapter applies the
+effective custom variables and CSS after it receives AppConfig.
 
 > **Development mode:** The development overlay starts with `themeConfig`, `primevue`, `markdown`, and `iframe` disabled. Enable them to preview the injected theme locally. Select "Auto-accept on reload" to preserve the selection across reloads.
 
@@ -119,7 +135,9 @@ This pre-proxy global is an embedding/host-less integration escape hatch. In a h
 
 ## Verifying
 
-To confirm CSS variables are active in your running page: open DevTools, select the inner iframe's frame context (not the outer page), then run:
+To confirm CSS variables are active in your running page, select its execution
+realm in DevTools—an inner frame for iframe delivery, or the reframed fragment
+realm for Web Fragment delivery—then run:
 
 ```js
 getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')

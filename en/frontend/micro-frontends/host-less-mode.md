@@ -41,7 +41,7 @@ What that means in practice:
   dependencies and peer roots the artifact actually imports.
 - The same `app.ts` (or WC `index.ts`) boots correctly in two environments:
   1. **Hosted** — inside a Wippy Web Host that injects `proxy.js`, AppConfig, importmap, and CSS.
-  2. **Host-less** — running its `app.html` directly via Vite dev server, file://, a unit-test page, a Storybook-style playground, etc.
+  2. **Host-less** — running its `app.html` through a Vite dev server, a unit-test page, a Storybook-style playground, or another HTTP development host.
 
 Each app or WC is a small program with a standardized I/O surface. The host is one possible runtime; standalone is another. Application code does not need to distinguish between them.
 
@@ -114,7 +114,7 @@ Standalone `app.html` resolves the complete copied map. Hosted mode uses the map
 
 Every Wippy app's `package.json` carries metadata that determines runtime defaults — proxy injections (`wippy.proxy.injections.css.*`), per-page theming overrides (`wippy.configOverrides.customization`), iconify icon collections, etc. In hosted mode the host reads these from the registry. In host-less mode dev-proxy needs the same data to apply the same defaults.
 
-The canonical pattern is `wippyPagePlugin()` from the coherent current `@wippy-fe/vite-plugin` family (`0.0.46` at publication), added once to your `vite.config.ts`. The plugin reads your `package.json` at build time and does **two** things:
+The canonical pattern is `wippyPagePlugin()` from the coherent current `@wippy-fe/vite-plugin` family (`0.0.56` at publication), added once to your `vite.config.ts`. The plugin reads your `package.json` at build time and does **two** things:
 
 1. **Resolves `file://` references** in the `wippy` block (any string value of the form `"file://<relative>"` is replaced with the referenced file's UTF-8 contents — see `*.do-not-link.<ext>` naming convention in [build-system.md](./build-system.md)).
 2. **Emits two outputs** with the resolved JSON:
@@ -163,7 +163,7 @@ This shape has the following properties:
 - **Defined ordering.** The plugin injects the metadata at the top of `<head>`, before any script tag. Dev-proxy is a synchronous UMD script; module scripts are deferred.
 - **Plugin-owned template update.** The plugin injects the metadata without a hand-maintained block in `app.html`.
 - **Shared constant.** `@wippy-fe/shared` exports the `'@wippy/package'` value as `WIPPY_PACKAGE_DATA_ROLE`; dev-proxy and the plugin import it from there.
-- **Hosted compatibility.** The host's `processWebPage` reads `package.json` from the registry server-side and treats the inline JSON tag as metadata.
+- **Hosted compatibility.** Hosted processing reads package metadata from the registry server-side. The inline JSON tag is only consumed by the standalone development path and is otherwise inert.
 
 Dev-proxy reads the JSON during `resolveDevConfig()` and uses it to populate the development-overlay defaults. If the script tag is absent, dev-proxy falls back to `getDefaultProxyConfig()`, so older apps continue with the generic defaults.
 
@@ -171,7 +171,7 @@ Dev-proxy reads the JSON during `resolveDevConfig()` and uses it to populate the
 
 > **Why one tag and not two?** A second `<script>` block (e.g. an `if (!window.__WIPPY__) load dev-proxy`) would only run after the host's injection completes; if the marker is gone, the conditional has nothing to attach to. The single-tag pattern means the marker is *always* in the source HTML, and the host's job is exactly "delete this marker and replace it." The standalone case happens precisely when nobody deleted it.
 
-The host contract requires that the HTML file specified in `wippy.path` MUST include a `<script type="text/javascript" data-role="@wippy/scripts">` element where additional scripts will be automatically injected.
+The host contract requires that the HTML file specified in `wippy.path` include a `<script data-role="@wippy/scripts">` element where additional scripts will be injected. The `data-role` marker is the selector; `type="text/javascript"` is optional because a classic script is the HTML default.
 
 Canonical app templates include the `src="…/dev-proxy.js"` value. **Include the `src=` fallback** unless the application cannot run host-less and records that limitation.
 
@@ -193,7 +193,10 @@ Its job is to make the `@wippy-fe/proxy` getters resolve correctly without any h
    - A nanoevents emitter for `on(...)` subscriptions and `@history` / `@visibility` simulations.
    - `host` stubs that console-log every method (`createDevHostAPI()` in `src/proxy/dev/host-stubs.ts`).
    - A real axios instance backing `api` from `@wippy-fe/proxy`, configured against the URL the developer entered (`env.APP_API_URL` defaults to `${location.origin}/api`).
-   - A logger / state / ws stub that mirrors the production proxy shape.
+   - The standard logger plus the production-shaped state and WebSocket
+     host-message bridges. Without a real host responder, calls that require a
+     reply cannot complete; only the `host` API gets the standalone stub layer
+     described below.
 4. **Apply CSS injection** based on the proxy config the developer chose:
    - `themeConfig: true` → injects `theme-config.css` from `@wippy-fe/theme`.
    - `iframe`, `primevue`, `markdown` → ditto, the inline-CSS bundles from `src/proxy/dev/css-inline.ts`.
@@ -264,6 +267,10 @@ The `host` API (`import { host } from '@wippy-fe/proxy'`) is the surface the app
 | `host.formatUrl(rel)` | Returns `${appConfig.routePrefix || ''}${rel}` |
 | `host.classifyLink(href)` | Real implementation — uses `mountRoutes` / `routePrefix` from the accepted config |
 | `host.layout.*` | No-op stubs that satisfy the type contract |
+| `host.surface` | Standalone `host` surface descriptor; reports zero width, content sizing, and no optional surface capabilities |
+| `host.bridge.post/on/request` | `post` logs, `on` is a no-op subscription, and `request` rejects because the bridge is unavailable |
+| `host.setThemeMode(mode)` / `host.getThemeMode()` | Stores and reports the selected mode locally and emits the theme event |
+| `host.logout()` | Console-log only |
 
 The stubs log requested host side effects to the console. If application correctness depends on an effect, such as `host.openSession` opening a session, test that path under a host; the stubs do not perform it.
 
@@ -281,7 +288,7 @@ Web components share the same dual-mode design but are loaded as ES modules inst
 <html>
 <head>
     <!-- Required complete import-map script omitted from this abbreviated example. -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.56/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>
@@ -347,7 +354,7 @@ When an app or WC has drifted from the standalone-aware contract, the symptoms a
 
 | Symptom | Probable cause | Fix |
 |---|---|---|
-| `app.html` has `<script data-role="@wippy/scripts"></script>` with no `src=` | Page can't boot host-less. Loading the file directly produces a blank page — the proxy runtime never installs, so `@wippy-fe/proxy` imports fail to resolve. | Add `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` to the tag — the URL always requires a release-tag segment. |
+| `app.html` has `<script data-role="@wippy/scripts"></script>` with no `src=` | Page cannot boot on an HTTP development host without Wippy injection. The proxy runtime never initializes, so application modules error when they evaluate `@wippy-fe/proxy`. | Add `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` to the tag — the URL always requires a release-tag segment. |
 | `app.html` has the dev-proxy `<script src=…>` but **no `<script type="importmap">`** above it | Browser can't resolve external bare specifiers. The first module-script load fails with `Failed to resolve module specifier`. | Fetch `<release-tag>/import-map.json`, copy its complete `imports` object into `<head>` before dev-proxy, and use all keys as Rollup externals. |
 | `app.html` body has a custom SVG spinner / `<div>Loading…</div>` instead of `<wippy-loading title="…">` | Pre-bootstrap loader doesn't match the canonical Wippy idiom. The custom markup keeps showing while the WC ecosystem (which would render a styled, theme-aware loader) is fully booted. | Replace with `<wippy-loading title="Loading..."></wippy-loading>`. The `<wippy-loading>` web component is registered by `dev-proxy.js` (it imports `@wippy-fe/loading` synchronously) before the `<body>` parses, so the element resolves correctly even at very early page load. |
 | `import` from a sibling app's source files | Shared code is being copy-pasted across module boundaries. | Extract to a workspace package or duplicate intentionally; never reach across app folders. |

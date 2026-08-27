@@ -11,6 +11,11 @@ portability and UI rule statements, while the linked guides provide detailed
 implementation guidance. The index maps each rule to its source and required
 checker result.
 
+The public `@wippy-fe/*` 0.0.56 package family does not ship a module-compliance
+CLI. The repository documentation checker validates the documentation examples
+and generated catalogue freshness; a module's selected compliance workflow
+must implement the application-facing checks below.
+
 | Rule | Detailed guidance | Deterministic result |
 |---|---|---|
 | FE-PORT-001 | [Portable UI Contract](../portable-ui-contract.md) | Reject private portability assumptions |

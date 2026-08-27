@@ -79,7 +79,7 @@ function yamlCasingViolations(yaml) {
     if (parents.at(-1) === 'meta' && key === 'mount_route') {
       violations.push({
         index,
-        message: 'current backend compatibility field must be mountRoute until the mount_route fix ships',
+        message: 'current registry schema field must be authored as mountRoute, not mount_route',
       })
     }
 
@@ -392,8 +392,8 @@ const requiredPages = new Map([
   ['micro-frontends/configuration-casing.md', [
     'top-level `lower_case_with_underscore`',
     'Nested frontend configuration carried by backend YAML',
-    '`meta.mountRoute` is a current backend compatibility bug',
-    '`meta.mount_route`',
+    'The current view registry schema reads `meta.mountRoute`',
+    'internal `mount_route` field',
   ]],
   ['micro-frontends/custom-composites.md', [
     'Data-shape equivalence is not affordance equivalence',
@@ -669,9 +669,9 @@ if (!/outside the Wippy portable-module contract/.test(themePersistence)) {
 }
 
 const viewPage = await readFile(join(root, 'frontend-registry/view-page.md'), 'utf8')
-if (!viewPage.includes('`meta.mountRoute` is a current backend')
-  || !viewPage.includes('`meta.mount_route`')) {
-  errors.push('frontend-registry/view-page.md: mountRoute must remain documented as a temporary backend casing bug')
+if (!viewPage.includes('current registry schema reads `meta.mountRoute`')
+  || !viewPage.includes('internal `mount_route` field')) {
+  errors.push('frontend-registry/view-page.md: mountRoute must remain documented as the current schema-defined casing exception')
 }
 
 if (errors.length) {
