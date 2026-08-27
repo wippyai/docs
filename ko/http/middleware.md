@@ -30,13 +30,13 @@ options:
 </tip>
 
 ```yaml
-middleware:        # 매칭 전
+middleware:        # Before endpoint metadata
   - cors
   - compress
 options:
   cors.allow.origins: "*"
 
-post_middleware:   # 매칭 후
+post_middleware:   # Post-match
   - endpoint_firewall
 post_options:
   endpoint_firewall.action: "access"
@@ -101,7 +101,7 @@ options:
 
 **키 전략:** `ip`, `header:X-API-Key`, `query:api_key`
 
-헤더와 함께 `429 Too Many Requests` 반환: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+다음 헤더와 함께 `429 Too Many Requests`를 반환합니다: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 
@@ -154,7 +154,7 @@ options:
 
 <note>매칭 전</note>
 
-토큰 기반 인증. 토큰 스토어 설정은 [보안](system/security.md) 참조.
+토큰 기반 인증. 토큰 스토어 설정은 [보안](../system/security.md) 참조.
 
 ```yaml
 middleware:
@@ -264,7 +264,7 @@ options:
 
 <warning>매칭 후</warning>
 
-프로세스로 WebSocket 연결 릴레이. [WebSocket 릴레이](http/websocket-relay.md) 참조.
+프로세스로 WebSocket 연결 릴레이. [WebSocket 릴레이](./websocket-relay.md) 참조.
 
 ```yaml
 post_middleware:
@@ -279,7 +279,7 @@ post_options:
 
 <warning>Post-match</warning>
 
-프로세스에서 Server-Sent Events를 스트리밍합니다. [Server-Sent Events](http/sse.md)를 참조하세요.
+프로세스에서 Server-Sent Events를 스트리밍합니다. [Server-Sent Events](./sse.md)를 참조하세요.
 
 ```yaml
 post_middleware:
@@ -311,21 +311,21 @@ middleware:
 
 ```yaml
 middleware:
-  - real_ip       # 1. 먼저 실제 IP 추출
-  - cors          # 2. CORS 프리플라이트 처리
-  - compress      # 3. 응답 압축 설정
-  - ratelimit     # 4. 레이트 제한 확인
-  - metrics       # 5. 메트릭 기록
-  - token_auth    # 6. 요청 인증
+  - real_ip       # 1. Extract real IP first
+  - cors          # 2. Handle CORS preflight
+  - compress      # 3. Set up response compression
+  - ratelimit     # 4. Check rate limits
+  - metrics       # 5. Record metrics
+  - token_auth    # 6. Authenticate requests
 
 post_middleware:
-  - endpoint_firewall  # 라우트 매칭 후 인가
+  - endpoint_firewall  # Authorize after route match
 ```
 
 ## 참고
 
-- [라우팅](http/router.md) - 라우터 설정
-- [보안](system/security.md) - 토큰 스토어 및 정책
-- [WebSocket 릴레이](http/websocket-relay.md) - WebSocket 처리
-- [Server-Sent Events](http/sse.md) - SSE 스트리밍
-- [터미널](system/terminal.md) - 터미널 서비스
+- [라우팅](./router.md) - 라우터 설정
+- [보안](../system/security.md) - 토큰 스토어 및 정책
+- [WebSocket 릴레이](./websocket-relay.md) - WebSocket 처리
+- [Server-Sent Events](./sse.md) - SSE 스트리밍
+- [터미널](../system/terminal.md) - 터미널 서비스

@@ -30,7 +30,7 @@ description: "filesystem entry와 http.static을 사용해 SPA, asset 및 user u
 | `path` | string | URL 마운트 경로 (`/`로 시작해야 함) |
 | `fs` | 레지스트리 ID | 서빙할 파일시스템 엔트리 |
 | `static_options.spa` | bool | SPA 모드 - 매칭되지 않는 경로에 인덱스 서빙 |
-| `static_options.index` | string | 인덱스 파일 (spa=true일 때 필수) |
+| `static_options.index` | string | 인덱스 파일 (`spa=true`일 때 필수) |
 | `static_options.cache` | string | Cache-Control 헤더 값 |
 | `middleware` | []string | 미들웨어 체인 |
 | `options` | map | 미들웨어 옵션 (점 표기법) |

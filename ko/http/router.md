@@ -5,7 +5,7 @@ description: "라우터는 URL 프리픽스 아래에 엔드포인트를 그룹�
 
 # 라우팅
 
-라우터는 URL 프리픽스 아래에 엔드포인트를 그룹화하고 공유 미들웨어를 적용합니다. 엔드포인트는 HTTP 핸들러를 정의합니다.
+`http.router`는 URL 프리픽스 아래에 엔드포인트를 그룹화하고 공유 미들웨어를 적용합니다. 각 `http.endpoint`는 HTTP 핸들러를 정의합니다.
 
 ## 아키텍처
 
@@ -68,7 +68,7 @@ flowchart TB
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
 | `meta.router` | 레지스트리 ID | 부모 라우터 |
-| `method` | string | HTTP 메서드 (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `method` | string | HTTP 메서드: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` 또는 모든 메서드에 대한 `*` |
 | `path` | string | URL 경로 패턴 (`/`로 시작) |
 | `func` | 레지스트리 ID | 핸들러 함수 |
 
@@ -92,11 +92,14 @@ URL 파라미터에 `{param}` 구문 사용:
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("user_id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
 
-    -- ...
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
@@ -114,30 +117,33 @@ end
   func: serve_file
 ```
 
-```lua
--- 요청: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
-```
 
-와일드카드는 경로의 마지막 세그먼트여야 합니다.
+와일드카드는 경로의 마지막 세그먼트여야 합니다. 예를 들어 `GET /api/v1/files/docs/guides/readme.md` 요청은 `req:param("filepath")` 값이 `docs/guides/readme.md`인 상태로 전달됩니다.
 
 ## 핸들러 함수
 
-엔드포인트 핸들러는 `http` 모듈을 사용하여 요청 및 응답 객체에 접근합니다. 전체 API는 [HTTP 모듈](lua/http/http.md)을 참조하세요.
+엔드포인트 핸들러는 `http` 모듈을 사용하여 요청 및 응답 객체에 접근합니다. 전체 API는 [HTTP 모듈](../lua/http/http.md)을 참조하세요.
 
 ```lua
 local http = require("http")
-local json = require("json")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user = get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
-    res:status(200)
-    res:write(json.encode(user))
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -167,7 +173,7 @@ options:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## 매칭 전 vs 매칭 후 미들웨어
@@ -185,13 +191,13 @@ post_options:
 - WebSocket 릴레이
 
 ```yaml
-middleware:        # 매칭 전: 이 라우터로의 모든 요청
+middleware:        # Before endpoint metadata: matched routes only
   - cors
   - compress
-  - token_auth     # 액터/스코프로 컨텍스트 보강
+  - token_auth     # Enriches context with actor/scope
 
-post_middleware:   # 매칭 후: 매칭된 라우트만
-  - endpoint_firewall  # token_auth의 액터 사용
+post_middleware:   # Post-match: matched routes only
+  - endpoint_firewall  # Uses actor from token_auth
 ```
 
 <tip>
@@ -200,19 +206,21 @@ post_middleware:   # 매칭 후: 매칭된 라우트만
 
 ## 전체 예제
 
+이 예제는 목록 handler 엔트리를 정의합니다. `app:get_user_by_id`와 `app:create_user` 함수 ID는 같은 namespace의 다른 위치에 정의된 handler를 가리킵니다.
+
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  # 서버
+  # Server
   - name: gateway
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # API 라우터
+  # API Router
   - name: api
     kind: http.router
     meta:
@@ -227,7 +235,7 @@ entries:
       ratelimit.requests: "100"
       ratelimit.window: "1m"
 
-  # 핸들러 함수
+  # Handler function
   - name: get_users
     kind: function.lua
     source: file://handlers/users.lua
@@ -237,7 +245,7 @@ entries:
       - json
       - sql
 
-  # 엔드포인트
+  # Endpoints
   - name: list_users
     kind: http.endpoint
     meta:
@@ -269,7 +277,7 @@ entries:
 
 ```yaml
 entries:
-  # 퍼블릭 라우트 (인증 없음)
+  # Public routes (no auth)
   - name: public
     kind: http.router
     meta:
@@ -278,7 +286,7 @@ entries:
     middleware:
       - cors
 
-  # 보호된 라우트
+  # Protected routes
   - name: protected
     kind: http.router
     meta:
@@ -288,14 +296,14 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```
 
 ## 참고
 
-- [서버](http/server.md) - HTTP 서버 설정
-- [정적 파일](http/static.md) - 정적 파일 서빙
-- [미들웨어](http/middleware.md) - 사용 가능한 미들웨어
-- [HTTP 모듈](lua/http/http.md) - Lua HTTP API
+- [서버](./server.md) - HTTP 서버 설정
+- [정적 파일](./static.md) - 정적 파일 서빙
+- [미들웨어](./middleware.md) - 사용 가능한 미들웨어
+- [HTTP 모듈](../lua/http/http.md) - Lua HTTP API
