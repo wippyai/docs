@@ -7,6 +7,8 @@ description: "How Wippy boots infrastructure, loads components and entries, sche
 
 Wippy is a layered system built on Go. Components initialize in dependency order, communicate through an event bus, and execute Lua processes via a work-stealing scheduler.
 
+This is an implementation reference. The diagrams and Go types describe runtime internals rather than application registry entries or extension APIs.
+
 ## Layers
 
 | Layer | Components |
@@ -172,18 +174,18 @@ Message routing between processes across nodes.
 ```mermaid
 flowchart LR
     subgraph Router
-        Local[Local Node] --> Peer[Peer Nodes]
+        Local[Local Node] --> Peer[Registered Peers]
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same process]
-    Peer -.- P[Same cluster]
-    Inter -.- I[Remote]
+    Local -.- L[Same-node hosts and processes]
+    Peer -.- P[External receivers, such as Temporal]
+    Inter -.- I[Other cluster nodes]
 ```
 
-1. **Local** - Direct delivery within same node
-2. **Peer** - Forward to peer nodes in cluster
-3. **Internode** - Route to remote nodes via network
+1. **Local** - Deliver directly between hosts and processes on the same node
+2. **Peer** - Forward to a registered external receiver, such as Temporal
+3. **Internode** - Fall back to network routing for another cluster node
 
 ### Mailbox
 
@@ -220,7 +222,7 @@ Second signal forces immediate exit.
 
 ## See Also
 
-- [Scheduler](internals/scheduler.md) - Process execution
-- [Event Bus](internals/events.md) - Pub/sub system
-- [Registry](internals/registry.md) - State management
-- [Command Dispatch](internals/dispatch.md) - Yield handling
+- [Scheduler](./scheduler.md) - Process execution
+- [Event Bus](./events.md) - Pub/sub system
+- [Registry](./registry.md) - State management
+- [Command Dispatch](./dispatch.md) - Yield handling

@@ -7,6 +7,8 @@ description: "Event bus actions, wildcard subscriptions, delivery, Lua process b
 
 The event bus processes queued pub/sub actions on one dispatcher goroutine and delivers matching events to subscriber channels.
 
+The Go snippets are implementation and extension fragments. They assume an existing component context, logger, handlers, and application event types.
+
 ## Event Structure
 
 ```go
@@ -225,6 +227,9 @@ Manages multiple handlers with centralized lifecycle:
 router, err := eventbus.StartRouter(ctx, bus,
     WithHandlers(handler1, handler2),
     WithLogger(log))
+if err != nil {
+    return err
+}
 defer router.Stop()
 ```
 
@@ -236,10 +241,15 @@ Request-response over pub/sub. It keeps a single subscription per `(system, kind
 
 ```go
 svc := eventbus.NewAwaitService(bus)
-svc.Start(ctx)
+if err := svc.Start(ctx); err != nil {
+    return err
+}
 defer svc.Stop()
 
-waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
+waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
+if err != nil {
+    return err
+}
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
@@ -261,5 +271,5 @@ result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 
 ## See Also
 
-- [Registry](internals/registry.md) - Primary event producer
-- [Command Dispatch](internals/dispatch.md) - Process-to-handler routing
+- [Registry](./registry.md) - Primary event producer
+- [Command Dispatch](./dispatch.md) - Process-to-handler routing

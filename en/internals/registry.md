@@ -7,6 +7,8 @@ description: "Versioned registry storage, changesets, transactions, dependency r
 
 The registry stores versioned entry state, supports transactions and history, and propagates changes through the event bus.
 
+The Go and query fragments on this page document internal data structures and finder syntax; they are not standalone application examples.
+
 ## Entry Storage
 
 Entries are stored as an ordered slice with a hash map index for O(1) lookups:
@@ -121,7 +123,7 @@ History backends:
 | Memory | Default when `history_type` is unset; testing |
 | Nil | No history |
 
-SQLite uses WAL mode with tables for versions, changesets (MessagePack encoded), and metadata. PostgreSQL is selected with `registry.history_type: postgres` plus `history_dsn`/`history_schema` (see [Configuration](guides/configuration.md#registry)).
+SQLite uses WAL mode with tables for versions, changesets (MessagePack encoded), and metadata. PostgreSQL is selected with `registry.history_type: postgres` plus `history_dsn`/`history_schema` (see [Configuration](../guides/configuration.md#registry)).
 
 History also persists the exact dependency resolution for each version: when an `ns.dependency` change is applied, the resolved module graph is stored content-addressed alongside the changeset. Boot and rollback replay the stored graph instead of re-solving, so a version always reconciles with the versions it was resolved with. The history schema migrates automatically on first boot after an upgrade; a pre-existing version is resolved once on first visit and checkpointed.
 
@@ -154,5 +156,5 @@ Glob matching applies to the root fields `.kind`, `.name`, `.ns`, and `.id`. Unp
 
 ## See Also
 
-- [Registry](concepts/registry.md) - High-level concepts
-- [Events](internals/events.md) - Event bus details
+- [Registry](../concepts/registry.md) - High-level concepts
+- [Events](./events.md) - Event bus details

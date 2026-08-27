@@ -7,6 +7,8 @@ description: "How Wippy schedules process work, routes events, manages worker qu
 
 The scheduler executes processes on workers with local deques, inject queues, a global queue, and work stealing.
 
+This is an implementation reference. Its Go structures and diagrams describe the pinned runtime scheduler, not APIs implemented by application code.
+
 ## Process Interface
 
 The scheduler works with any type implementing the `Process` interface:

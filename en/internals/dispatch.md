@@ -7,6 +7,8 @@ description: "How process yields are routed to command handlers and returned thr
 
 Command dispatch routes process yields to handlers and returns correlated results through process event queues.
 
+This is an extension and implementation reference. The custom command and dispatcher fragments assume an existing Go package, boot graph, command API, and service-specific error handling.
+
 ## Flow
 
 ```mermaid
@@ -162,6 +164,6 @@ The worker extracts yields from `StepOutput` after each step and dispatches them
 
 ## See Also
 
-- [Scheduler](internals/scheduler.md) - Process execution
-- [Modules](internals/modules.md) - Lua module integration
-- [Process Model](concepts/process-model.md) - High-level concepts
+- [Scheduler](./scheduler.md) - Process execution
+- [Modules](./modules.md) - Lua module integration
+- [Process Model](../concepts/process-model.md) - High-level concepts

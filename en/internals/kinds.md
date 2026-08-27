@@ -7,6 +7,8 @@ description: "How listeners and observers handle registry mutations for matching
 
 Entry listeners and observers process registry mutations for matching entry-kind patterns.
 
+This is a Go extension reference. The registration and configuration snippets assume an existing boot component, manager, transcoder, and application config type.
+
 ## How It Works
 
 Boot collects listeners and observers with their kind patterns. When an entry changes:
@@ -88,10 +90,12 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 The decoder:
-1. Unmarshals `entry.Data` into your config struct
-2. Populates `ID` and `Meta` from the entry
-3. Calls `InitDefaults()` if implemented
-4. Calls `Validate()` if implemented
+1. Resolves modern `${env:...}` placeholders in the entry data
+2. Unmarshals the resolved data into your config struct
+3. Fills `ID` and `Meta` from the entry when the decoded fields are zero or nil
+4. Calls `InitDefaults()` if implemented
+5. Resolves legacy `*_env` fields through the environment registry
+6. Calls `Validate()` if implemented
 
 ## Config Structure
 
@@ -135,5 +139,5 @@ The registry calls `Begin` before processing a batch, then `Commit` on success o
 
 ## See Also
 
-- [Registry](internals/registry.md) - Entry storage
-- [Architecture](internals/architecture.md) - Boot sequence
+- [Registry](./registry.md) - Entry storage
+- [Architecture](./architecture.md) - Boot sequence
