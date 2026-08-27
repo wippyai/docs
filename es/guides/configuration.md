@@ -9,7 +9,7 @@ Wippy se configura mediante archivos `.wippy.yaml`. Todas las opciones tienen va
 
 Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](./entry-kinds.md#overriding-entries).
 
-## Composición de Configuración {#config-composition}
+## Composición de Configuración :id=config-composition
 
 `--config` es repetible; los archivos se componen de izquierda a derecha usando el mismo esquema:
 
@@ -24,7 +24,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 
 La configuración se aplica en orden: composición de archivos, luego las selecciones de `--profile`, luego las sobrescrituras de `--set`. Para aplicaciones ejecutadas desde packs, los valores por defecto de runtime empaquetados se sitúan por debajo de todos estos (ver [Publicar valores por defecto del runtime](./publishing.md#publishing-runtime-defaults)).
 
-## Perfiles {#profiles}
+## Perfiles :id=profiles
 
 Un archivo de configuración puede declarar overlays con nombre bajo `profiles:`. Cada cuerpo de perfil refleja las secciones normales de configuración; seleccionarlo con `--profile <name>` superpone esos valores sobre la configuración base fusionada:
 
@@ -128,7 +128,7 @@ security:
 
 Ver: [Sistema de Seguridad](../system/security.md), [Módulo de Seguridad](../lua/security/security.md)
 
-## Registro
+## Registro :id=registry
 
 Almacenamiento de entradas e historial de versiones. El registro almacena todas las entradas de configuración.
 

@@ -353,3 +353,10 @@ Establezca parámetros de `wippy/facade` en `_index.yaml`. Ejemplo de `app-templ
 ```
 
 Consulte la [referencia del módulo Facade](../../framework/facade.md) para todos los parámetros y valores predeterminados.
+
+En el embedding manual, el padre parte de `<iframe id="wippy"></iframe>` y
+responde al handshake, no empuja configuración al evento load. El payload es
+`AppConfig`; `AppConfig.tanstack` existe, aunque la fachada estándar no reenvía
+todavía ese campo. `allowAdditionalTags` tiene forma
+`Record<string, string[]>`. El protocolo usa la acción `SetConfig` y el enum
+`IFrameMessageType`; el receptor actual valida el tipo y la acción del sobre.

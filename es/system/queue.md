@@ -181,7 +181,7 @@ Las claves bajo `driver_options` están agrupadas por nombre de driver. Un drive
 | `queue_expiry` | Expiración de colas no utilizadas |
 | `max_length` | Máximo de mensajes retenidos |
 
-### Códecs {#codecs}
+### Códecs :id=codecs
 
 El `codec` selecciona cómo se serializa el cuerpo de un mensaje antes de entregarlo al broker. Es una cadena de formato de payload y por defecto es `json/plain`:
 

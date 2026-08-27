@@ -23,7 +23,7 @@ El modo managed sustituye el chrome estándar por un árbol declarativo de panel
 | Layouts por breakpoint | No | Sí |
 | Paneles flotantes | No | Sí |
 | Coordinador headless | No | Sí (`coordinators`) |
-| Routing por panel | Solo principal | Cada panel `page` |
+| Routing por panel | Solo principal | Cada panel page |
 | Bus entre paneles | No | Sí |
 
 ## Compatibilidad
@@ -44,7 +44,9 @@ Use una familia compatible con la versión exacta de Web Host y verifique su imp
 
 El reveal de 14 segundos es un fallback de 1.0.52, no una función de 1.0.51 ni una demora de aplicación.
 
-La visibilidad de componentes directos retenidos exige Host 1.0.52 y paquetes core/vue/shared 0.0.52. El host establece `data-wippy-visible="true" | "false"` antes de conectar el elemento y lo actualiza sin remontar. No es visibilidad CSS, viewport o documento.
+### Actividad de web components retenidos
+
+La visibilidad de componentes directos retenidos exige Web Host `1.0.52` y `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue` y `@wippy-fe/shared` `0.0.52`. El host establece `data-wippy-visible="true" | "false"` antes de conectar el elemento y lo actualiza sin remontar. No es visibilidad CSS, del viewport ni del documento, y nunca implica un remontaje.
 
 En Vue, use `useHostVisibility()` o `useHostVisibilityRefresh(task)`, que se ejecuta después de montar y en transiciones exactas `false -> true`. No use el topic proxy `@visibility` en un WC directo; pertenece a iframe/Fragment.
 
@@ -71,7 +73,7 @@ host_config:
       main: { kind: page,    id: home }
 ```
 
-La fachada sirve `managed-layout.js` en vez de `module.js`. `fe_mode` es un requisito de fachada, no un campo de AppConfig; el layout llega mediante `AppConfig.hostConfig.layout`. La superficie proxy es igual en ambos modos, pero algunos comandos solo tienen efecto en uno.
+La fachada sirve `managed-layout.js` en vez de `module.js`. `fe_mode` es un requisito de fachada, no un campo de `AppConfig`; el layout llega mediante `AppConfig.hostConfig.layout`. No existe un campo `AppConfig.feature`. La superficie proxy es igual en ambos modos, pero algunos comandos solo tienen efecto en uno; consulta [Qué funciona en cada modo](#qué-funciona-en-cada-modo).
 
 ## `HostLayoutDeclaration`
 
@@ -148,7 +150,7 @@ Los paneles con el mismo `id` conservan un host de contenido estable entre break
 
 ### Drawers
 
-`display: 'drawer-left' | 'drawer-right' | 'drawer-bottom'` crea un overlay deslizante. No participa en el tamaño del track, se ancla al borde, se controla con `openDrawer`/`closeDrawer`/`toggleDrawer` y muestra backdrop. Un slot `main` no puede ser drawer. `drawerSize.width` controla izquierda/derecha y `height` el inferior; predeterminado `320px`.
+`display: 'drawer-left' | 'drawer-right' | 'drawer-bottom'` crea un overlay deslizante. No participa en el tamaño del track, se ancla al borde y se controla con openDrawer/closeDrawer/toggleDrawer. Un slot main no puede ser drawer. `drawerSize.width` controla izquierda/derecha y height el inferior; predeterminado `320px`.
 
 ## Paneles flotantes
 
@@ -208,7 +210,7 @@ customElements.define('my-coordinator', MyCoordinator)
 
 ### Coordinador compat incluido
 
-Managed solo renderiza superficies declaradas. `host.openArtifact()`, `startChat()`, `openSession()` y `navigate()` publican intents tipados en `@HOST/intent`. Declare:
+Managed solo renderiza superficies declaradas. `host.openArtifact()`, startChat(), openSession() y navigate() publican intents tipados en `@HOST/intent`. Declare:
 
 ```yaml
 coordinators:
@@ -258,7 +260,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 |--------|-------------|
 | `.snapshot` | Snapshot síncrono o `null` fuera de managed |
 | `.resizePanel(id, size)` | Redimensiona en el breakpoint activo |
-| `.collapsePanel(id)` / `.expandPanel(id)` | Colapsa/expande un panel `collapsible` |
+| `.collapsePanel(id)` / `.expandPanel(id)` | Colapsa/expande un panel collapsible |
 | `.openDrawer(id)` / `.closeDrawer(id)` / `.toggleDrawer(id)` | Controla drawer |
 | `.movePanel(id, target)` | Mueve en el árbol |
 | `.removePanel(id)` | Elimina de todos los breakpoints |
@@ -266,7 +268,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.addFloating(id, def)` / `.removeFloating(id)` | Gestiona flotantes |
 | `.openModal(id, def)` | Abre modal; en 0.0.56 `def` es obligatorio y se fusiona con la declaración. Usa `<dialog>.showModal()` salvo `useNativeDialog: false`. Reabrir el mismo ID no hace nada |
 | `.closeModal(id)` | Cierra modal |
-| `.broadcast` / `.send` / `.on` | Bus |
+| broadcast / send / on | Bus |
 
 `openModal()` documenta infraestructura interna; la interfaz Vue debe usar `Dialog` de PrimeVue o confirmación del host.
 
@@ -340,9 +342,13 @@ El área de hit es mayor que la línea. `--wippy-layout-splitter-z-index` vale `
 
 Configure tamaño, fondo, borde/sombra y color juntos. SVG rota 90° en splitters verticales y se oculta si están bloqueados.
 
-## Efecto según modo
+## Qué funciona en cada modo
 
-La superficie proxy es igual, pero `host.layout` solo tiene efecto cuando se declara un layout. En compat, snapshot es `null` y mutaciones/bus son no-op silenciosos. Compruebe:
+La superficie proxy es igual, pero algunos métodos dependen del modo.
+
+### `host.layout` solo tiene efecto en modo managed
+
+`host.layout` solo tiene efecto cuando se declara un layout. En compat, snapshot es `null` y las mutaciones y el bus son no-op silenciosos. Comprueba:
 
 ```typescript
 if (host.layout.snapshot) {
@@ -353,15 +359,17 @@ if (host.layout.snapshot) {
 
 `addPanel` y `setLayout` no se exponen en ningún modo.
 
+### Comandos `host.*` que presuponen el shell compat
+
 Los comandos de chrome compat publican intents en managed. El coordinador compat los traduce:
 
 | Comando | Compat | Managed |
 |---------|--------|---------|
 | `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, `state`/`ws`/`on` | Funciona | Funciona directamente |
-| `openArtifact` | Panel derecho/modal | Intent al panel/modal configurado |
-| `startChat` / `openSession` | Abre sesión | Intent al panel de chat |
-| `navigate` | Router raíz | Intent a ruta principal y URL |
-| `onRouteChanged` | URL del navegador | Estado del panel; `routeSync` proyecta principal |
+| openArtifact | Panel derecho/modal | Intent al panel/modal configurado |
+| startChat / openSession | Abre sesión | Intent al panel de chat |
+| navigate | Router raíz | Intent a ruta principal y URL |
+| onRouteChanged | URL del navegador | Estado del panel; `routeSync` proyecta principal |
 
 Sin coordinador, los intents iniciales esperan en cola limitada. Solo coordinadores leen intents reservados.
 
@@ -371,7 +379,9 @@ Sin coordinador, los intents iniciales esperan en cola limitada. Solo coordinado
 2. **Snapshot** para forma del layout: tamaños, colapso, props; mantenga payloads pequeños.
 3. **Local al panel** para borradores, modales y estado transitorio.
 
-Patrón recomendado: evento de bus → coordinador → `updatePanel` → el panel reacciona mediante su router.
+## Patrón canónico de coordinación
+
+El patrón recomendado es: evento de bus → coordinador → `updatePanel` → el panel reacciona mediante su router.
 
 ```typescript
 // In the coordinator service
@@ -387,6 +397,73 @@ const router = createAppRouter([...])
 ```
 
 Mantenga coordinadores finos y paneles propietarios de su interfaz.
+
+**Detalles normativos del contrato**
+
+La declaración backend `HostLayoutDeclaration` se proyecta a
+`hostConfig.layout`. Sus colecciones principales son `layouts`, `breakpoints`,
+`panels`, `floating`, `modals` y `coordinators`. Cada definición contiene un
+`id`, un `kind` y, según el caso, `title`, `icon`, `size`, `route`, `props` o
+`tagName`. Los tags válidos incluyen `kind: page`, `kind: component` y
+`kind: builtin`; el árbol exige exactamente un `main: true`. Un segundo
+`kind: page` puede ocupar cualquier slot no principal. El ID reservado
+`@HOST/<id>` incluye `@HOST/nav-sidebar` y
+`@HOST/compat-coordinator`.
+
+El modo `compat` mantiene el shell estándar; `managed` activa el
+`LayoutManager`. La dependencia se declara en `wippy.facade`, y el runtime se
+consume desde `@wippy-fe/proxy`. Los componentes directos usan
+`@wippy-fe/webcomponent-core` y `@wippy-fe/webcomponent-vue`; los composables
+proceden de `@wippy-fe/vue-host`. El paquete `@wippy-fe/layout` proporciona el
+buffer y `@wippy-fe/layout` también define sus contratos de slot. Mantenga toda
+la familia `@wippy-fe/*` en una release compatible. La visibilidad retenida
+requiere como mínimo `1.0.52`/0.0.52; el contrato actual documentado llega a
+`0.0.56` y expone `data-wippy-visible` con valor `false` cuando el panel no está
+activo. Use `useHostVisibilityRefresh()` para el refresco al reaparecer.
+
+La API de bus presenta las firmas `.broadcast(channel, payload)`,
+`.send(target, channel, payload)` y `.on(channel, handler)`. Las operaciones
+subyacentes son `broadcast`, `send` y `on`; el coordinador vuelve a usar
+`broadcast`, `send` y `on` al distribuir intents de `@HOST/intent`. El wrapper
+con scope debe obtenerse desde `@wippy-fe/proxy`, nunca importando un host sin
+scope.
+
+La API del layout incluye `host.layout.snapshot`,
+`host.layout.updatePanel(id, def)`, `host.layout.openDrawer(id)`,
+`closeDrawer(id)`, `toggleDrawer(id)`, `addFloating`, `closeModal`,
+`movePanel`, `resizePanel`, `updatePanel` y `openModal`. Las mutaciones
+`movePanel`, `resizePanel`, `updatePanel` y `openModal` conservan las reglas de
+merge descritas arriba. El argumento `def` identifica la definición de modal o
+panel y `panelId` identifica el panel receptor. En código Vue, compruebe
+`layout.snapshot.value !== null` o `isManaged.value`.
+
+Los coordinadores traducen `host.openSession()`, `host.startChat()` y
+`host.navigate()` a intents configurados mediante `artifactPanel`,
+`chatPanel`, `modalId` y `routeSync`. Las firmas transportadas son
+`openArtifact(id, ...)`, `startChat(token)`, `openSession(uuid)`,
+`navigate(url)` y `onRouteChanged(route, navId?)`. La sincronización de la URL
+principal usa `@history`; el visor de artefactos usa la ruta `/:uuid`. El
+namespace `host.*` no implica por sí mismo que una operación tenga efecto en
+ambos modos.
+
+En drawers, `collapsible: true` habilita el colapso y `drawerSize.height`
+dimensiona el drawer inferior. En el buffer, `keyOf`, `markReady()` y
+`markFailed()` evitan que una señal obsoleta revele otro slot. El ejemplo de
+merge conserva `{ artifactId: 'old', zoom: 2 }`; `updatePanel()` fusiona
+superficialmente props. Un handle oculto usa el valor `0` y su capa se
+controla con `--wippy-layout-splitter-z-index`.
+
+Los composables exponen `useWippyLayout().snapshot.value`,
+`useWippyPanel(id).value`, `useWippyBreakpoint().value` y
+`useWippyMainRoute().value`. Los dos últimos son `Ref<string>` y los valores
+degradan a `null` o a cadena vacía fuera de managed, según el contrato descrito
+arriba. El snapshot ausente se puede comprobar con `=== null`.
+
+Los `coordinators` se montan sin slot visible. Cada entrada de `coordinators`
+recibe el API con scope, y el mapa `coordinators` puede incluir servicios de
+compatibilidad. Los overlays `floating` comparten el identificador `id`. El
+ciclo de un coordinador comienza en `onMount`, y las rutas reactivas se exponen
+como `string`.
 
 ## Limitaciones conocidas
 

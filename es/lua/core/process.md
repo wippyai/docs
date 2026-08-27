@@ -182,7 +182,7 @@ local result, err = process.exec(id, host, ...)
 
 **Permisos:** `process.exec` sobre el id del proceso, `process.host` sobre el id del host
 
-## Actualización de procesos {id="process-upgrade"}
+## Actualización de procesos :id=process-upgrade
 
 Actualiza el proceso actual conservando su PID:
 

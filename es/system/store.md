@@ -69,7 +69,7 @@ CREATE TABLE kv_store (
 CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL;
 ```
 
-## Almacenes KV de cluster
+## Almacenes KV de cluster :id=cluster-kv-stores
 
 `store.kv.raft` y `store.kv.crdt` replican datos clave-valor entre los nodos del cluster. Ambos requieren que el [clustering](../guides/cluster.md) esté habilitado y reutilizan la misma API Lua del [módulo Store](../lua/storage/store.md). Cada entrada es una vista con namespace sobre un único motor a nivel de nodo; `namespace` aísla las claves de esta entrada y debe coincidir con `^[a-z][a-z0-9._-]*$` (no puede comenzar con `_`).
 

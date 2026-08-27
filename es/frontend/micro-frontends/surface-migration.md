@@ -154,7 +154,7 @@ Los *tipos* media no tienen forma de contenedor. Conserve el tipo como media que
 
 `rem` **no** es relativo a la raíz dentro de `@media`. Las condiciones de media query resuelven `em` y `rem` respecto al tamaño de fuente *inicial* —el valor predeterminado del navegador, independiente del CSS del autor—, mientras que `@container` los resuelve de forma ordinaria respecto al tamaño calculado de la raíz o contenedor.
 
-Por tanto, ya son distintos en cuanto el tamaño de fuente de la raíz difiere del predeterminado del navegador, sin que nada cambie en runtime. El restablecimiento habitual `html { font-size: 62.5% }` basta para mover un breakpoint convertido de 640 px a 400 px.
+Por tanto, ya son distintos en cuanto el tamaño de fuente de la raíz difiere del predeterminado del navegador, sin que nada cambie en runtime. El restablecimiento habitual de fuente raíz al 62,5 % basta para mover un breakpoint convertido de 640 px a 400 px.
 
 «Nada cambia el tamaño de fuente raíz» **no** es una precondición suficiente. Conviértalo a `px`, igual que con `em` (receta 14), salvo que pueda demostrar que el tamaño calculado de la raíz coincide con el predeterminado del navegador.
 

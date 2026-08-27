@@ -99,7 +99,7 @@ Raft no abre su propio puerto de escucha. Viaja por la **malla internodo** — l
 
 El FSM de Raft contiene el registro de nombres global: bindings activos `name -> PID` más reservas strong en vuelo. Eso es lo que las primitivas de naming que se describen a continuación leen y escriben.
 
-## Naming y ámbitos de nombre {#naming-and-name-scopes}
+## Naming y ámbitos de nombre :id=naming-and-name-scopes
 
 Un proceso puede registrarse bajo un nombre y ser alcanzado por ese nombre en lugar de su PID raw. La decisión clave es el **ámbito**, que selecciona la garantía de consistencia. Hay cuatro ámbitos disponibles, de más barato/débil a más fuerte:
 
@@ -121,7 +121,7 @@ Los nombres se liberan automáticamente: Local al salir el proceso; Consistent y
 
 La superficie Lua para naming reside en `process.registry` (register/lookup/unregister con un ámbito) — ver la referencia de [Process](../lua/core/process.md).
 
-## Grupos de proceso {#process-groups}
+## Grupos de proceso :id=process-groups
 
 Los grupos de proceso son una facilidad de publish/subscribe y membresía consciente del cluster modelada en `pg` de Erlang. Un proceso se une a un grupo con nombre; una difusión se reparte por la malla internode a los miembros del grupo en todos los nodos, entregada en modo best-effort. Los grupos son eventualmente consistentes e independientes de Raft — usan la vista de membresía de gossip para elegir los destinatarios — por lo que siguen funcionando incluso mientras el núcleo de consenso está convergiendo.
 
@@ -129,7 +129,7 @@ Operaciones típicas: unirse/abandonar un grupo, difundir a todos los miembros (
 
 Ver [Grupos de Proceso](../lua/core/pg.md) para la API Lua y el [tipo de entrada `pg.scope`](../system/process-groups.md) para la configuración.
 
-## Bloqueos distribuidos {#distributed-locks}
+## Bloqueos distribuidos :id=distributed-locks
 
 `system.lock` es exclusión mutua a nivel de cluster construida sobre una escritura condicional linealizable por Raft en el almacén clave-valor compartido. Adquirir un bloqueo ejecuta un set-if-absent del PID titular en `_sys:lock:<name>`; liberarlo elimina la entrada si el llamador sigue siendo el titular. Como la escritura condicional pasa por Raft (las escrituras fuera del líder se reenvían al líder), es linealizable y solo puede existir un titular en todo el cluster.
 
@@ -240,7 +240,7 @@ Verificaciones de liveness incorporadas (conectadas al endpoint de liveness):
 - **raft last-contact** — un follower votante falla si no ha escuchado de un líder recientemente; un standby tolera un intervalo mucho mayor; los líderes siempre pasan.
 - **process-group broadcast** — falla si un grupo no ve tráfico de difusión durante un período prolongado, detectando un bucle de eventos bloqueado o una partición persistente.
 
-## Recuperación y modos de fallo {#recovery-and-failure-modes}
+## Recuperación y modos de fallo :id=recovery-and-failure-modes
 
 El estado de Raft es persistente en disco, pero la durabilidad principal del cluster sigue proviniendo de un quórum activo. Las reglas prácticas:
 

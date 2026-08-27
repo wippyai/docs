@@ -1,11 +1,13 @@
 ---
 title: "Seguimiento de Uso"
-description: "El modulo wippy/usage registra el consumo de tokens de LLM y proporciona consultas agregadas agrupadas por intervalo de tiempo, modelo o usuario. Se…"
+description: "Registra el consumo de tokens LLM y consulta totales de uso por intervalo de tiempo, modelo o usuario."
 ---
 
 # Seguimiento de Uso
 
-El modulo `wippy/usage` registra el consumo de tokens de LLM y proporciona consultas agregadas agrupadas por intervalo de tiempo, modelo o usuario. Se vincula al contrato `wippy.llm:usage_tracker`, por lo que cualquier codigo que llame a traves del modulo LLM produce automaticamente registros de uso.
+El módulo `wippy/usage` registra el consumo de tokens LLM y proporciona consultas agregadas por intervalo de tiempo, modelo o usuario. Es la implementación predeterminada del contrato `wippy.llm:usage_tracker`, por lo que las llamadas realizadas mediante el módulo LLM producen registros de uso automáticamente.
+
+Esta página es una introducción a la API con fragmentos de referencia, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, una base de datos SQL configurada y `wippy/llm` cuando se necesita seguimiento automático. Las filas de uso persisten en la base de datos seleccionada; elimine las filas de ejemplo mediante el flujo normal de mantenimiento de la base de datos al terminar las pruebas.
 
 ## Configuracion
 
@@ -25,20 +27,20 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.usage
     kind: ns.dependency
     component: wippy/usage
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.usage.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
 Cuando la aplicacion inicia, `wippy/migration` ejecuta la migracion `01_create_token_usage_table` del modulo, la cual crea la tabla `token_usage` junto con indices en `user_id`, `context_id`, `model_id` y `timestamp`.
+
+Si usa la ruta relativa de SQLite mostrada arriba, cree el directorio `data` antes de iniciar la aplicación.
 
 ## Esquema
 
@@ -83,6 +85,11 @@ imports:
 ```lua
 local tracker = require("usage_tracker")
 
+-- Numeric counts supplied by the caller or model provider.
+local prompt_tokens, completion_tokens = 120, 40
+local thinking_tokens = 0
+local cache_read_tokens, cache_write_tokens = 0, 0
+
 local usage_id, err = tracker.track_usage(
     "openai:gpt-4o",
     prompt_tokens,
@@ -92,6 +99,9 @@ local usage_id, err = tracker.track_usage(
     cache_write_tokens,
     { context_id = "chat-42", metadata = { feature = "summary" } }
 )
+if err then
+    error("Failed to record usage: " .. tostring(err))
+end
 ```
 
 | Parametro | Tipo | Descripcion |
@@ -113,17 +123,31 @@ Retorna `usage_id` o `nil, err`.
 `wippy.usage:token_usage_repo` ofrece consultas agregadas:
 
 ```yaml
+modules:
+  - time
 imports:
   usage: wippy.usage:token_usage_repo
 ```
 
 ```lua
 local usage = require("usage")
+local time = require("time")
 
-local summary  = usage.get_summary(start_unix, end_unix)
-local by_time  = usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY)
-local by_model = usage.get_usage_by_model(start_unix, end_unix)
-local by_user  = usage.get_usage_by_user(start_unix, end_unix)
+-- Inclusive query bounds expressed as UNIX timestamps.
+local end_unix = time.now():unix()
+local start_unix = end_unix - (24 * 60 * 60)
+
+local function require_result(value, err)
+    if err then
+        error("Usage query failed: " .. tostring(err))
+    end
+    return value
+end
+
+local summary  = require_result(usage.get_summary(start_unix, end_unix))
+local by_time  = require_result(usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY))
+local by_model = require_result(usage.get_usage_by_model(start_unix, end_unix))
+local by_user  = require_result(usage.get_usage_by_user(start_unix, end_unix))
 ```
 
 ### Funciones
@@ -156,7 +180,7 @@ Tanto el tracker como el repositorio aceptan timestamps UNIX en el limite de la 
 La columna `meta` almacena un blob JSON de forma libre. Usalo para correlacionar registros con eventos de la aplicacion:
 
 ```lua
-tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
+local usage_id, err = tracker.track_usage("openai:gpt-4o", 120, 40, 0, 0, 0, {
     context_id = "chat-42",
     metadata   = {
         session_id = "s-7",
@@ -164,12 +188,15 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
         agent_id   = "writer",
     },
 })
+if err then
+    error("Failed to record usage metadata: " .. tostring(err))
+end
 ```
 
 `context_id` es una columna de nivel superior y puede indexarse; `metadata` se almacena como texto y esta pensado para visualizacion, no para filtrado.
 
 ## Ver Tambien
 
-- [LLM](framework/llm.md) - Generacion LLM y el contrato `usage_tracker`
-- [Migraciones](framework/migration.md) - Runner de migraciones que crea el esquema
-- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework
+- [LLM](./llm.md) — Generación LLM y contrato `usage_tracker`
+- [Migraciones](./migration.md) — Runner de migraciones que crea el esquema
+- [Visión general del framework](./overview.md) — Uso de módulos del framework

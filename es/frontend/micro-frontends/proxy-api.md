@@ -272,7 +272,7 @@ host.navigate('/keeper')
 > incluido, o uno equivalente, para asignarlos a paneles declarados de chat,
 > artefacto, modal y ruta principal. El modo gestionado no tiene chrome compat
 > implícito; sin coordinador se publican los intents pero nada los renderiza.
-> Consulte [Layout multipanel § Qué funciona en cada modo](../web-host/multi-panel-layout.md#efecto-según-modo).
+> Consulte [Layout multipanel § Qué funciona en cada modo](../web-host/multi-panel-layout.md#qué-funciona-en-cada-modo).
 
 ---
 
@@ -411,7 +411,7 @@ document.addEventListener('click', (ev) => {
 })
 ```
 
-En aplicaciones Vue, sustituya el `RouterLink` de `vue-router` por el de `@wippy-fe/router`: usa `classifyLink` internamente y sus props son compatibles con el `RouterLink` real.
+En aplicaciones Vue, sustituya el `RouterLink` de `vue-router` por el `RouterLink` de `@wippy-fe/router`: usa `classifyLink` internamente y sus props son compatibles con el `RouterLink` real.
 
 ---
 

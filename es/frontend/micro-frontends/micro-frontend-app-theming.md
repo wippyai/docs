@@ -35,7 +35,7 @@ La fachada expone ámbitos separados del esquema actual para el chrome del host 
 
 El CSS definido en `children_css_variables` o `children_custom_css` llega a la aplicación micro frontend; las variables limitadas al host solo afectan al chrome de Web Host.
 
-### L3 — Por página (`config_overrides` en el YAML del registro)
+### L3 — Por página (`config_overrides` en el YAML del registro) :id=l3-por-página-config_overrides-en-el-yaml-del-registro
 
 Asigne a una página su propio tema mediante `config_overrides.customization.cssVariables` / `customCSS` en el YAML de su entrada de registro. El override se proyecta en `theming.global` de la página, por lo que aplica el tema a la página **y a todo lo que esta integre**. El contenido anidado de `<w-artifact>` / `<w-iframe>` / `html.inject` se construye desde la configuración ya combinada de la página y hereda el tema recursivamente. Úselo para un **subárbol con tema propio**, como un módulo de administración cuyo tema se propaga a sus artefactos y subaplicaciones. No afecta a páginas hermanas ni al resto del shell de la aplicación.
 

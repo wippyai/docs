@@ -518,7 +518,7 @@ end
 
 ## Pool de Workers con Supervisión
 
-### Configuración {id="configuration"}
+### Configuración :id=configuration
 
 ```yaml
 # src/_index.yaml

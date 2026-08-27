@@ -700,7 +700,7 @@ entries:
 func: app.users:handler
 ```
 
-## Sobrescribir entradas {id="overriding-entries"}
+## Sobrescribir entradas :id=overriding-entries
 
 Cualquier campo de una entrada — incluido su `kind` — puede sobrescribirse en el arranque sin editar el YAML de origen, usando la sección de configuración `override:` o el flag de CLI `-o`. Las claves usan el formato `namespace:entry:path`:
 

@@ -1,11 +1,13 @@
 ---
 title: "Framework de Testing"
-description: "El modulo wippy/test proporciona un framework de testing estilo BDD con aserciones, hooks de ciclo de vida y mocking."
+description: "Define y ejecuta tests Wippy con suites BDD, assertions, hooks de ciclo de vida, mocks y funciones de test simples."
 ---
 
 # Framework de Testing
 
-El modulo `wippy/test` proporciona un framework de testing estilo BDD con aserciones, hooks de ciclo de vida y mocking.
+El módulo `wippy/test` proporciona suites BDD, assertions, hooks de ciclo de vida, mocks y un runner para entradas de test.
+
+Esta página es una introducción a la API. Sus bloques Lua, YAML, output y layout de proyecto son fragmentos de referencia que se pueden combinar en un proyecto Wippy existente; no forman un único proyecto copy-and-run. Nombres como `validate`, `format_name`, `db`, `connect` y `notify_user` representan funciones o módulos de aplicación proporcionados por el sujeto del test. Para un ejemplo ejecutable completo, siga [Probar una aplicación Wippy](../tutorials/testing.md).
 
 ## Configuracion
 
@@ -32,9 +34,9 @@ entries:
     meta:
       type: test
       suite: math
-      name: Operaciones matematicas
+      name: Math operations
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
@@ -278,7 +280,7 @@ wippy test math
 wippy test user validation
 ```
 
-Los filtros coinciden contra los IDs de las entradas. Multiples patrones se combinan.
+Los filtros comparan substrings literales de los ID de entrada. Con varios patrones, una entrada se ejecuta si su ID coincide con cualquiera de ellos.
 
 ### Ejemplo de Salida
 
@@ -357,7 +359,7 @@ entries:
       type: test
       suite: math
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 
@@ -367,30 +369,17 @@ entries:
       type: test
       suite: user
     source: file://user_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
 
-## Requisitos de Infraestructura
+## Terminal Host
 
-El runner de tests necesita un `process.host` y un `terminal.host` en tu aplicacion. Estos tipicamente ya estan presentes. Si no, agregalos:
-
-```yaml
-entries:
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
-    lifecycle:
-      auto_start: true
-```
+`wippy/test` depende de `wippy/terminal`, que proporciona el `wippy.terminal:host` auto-start usado por el runner CLI. Las aplicaciones no necesitan declarar otro process host o terminal host solo para ejecutar `wippy test`.
 
 ## Ver Tambien
 
-- [Descripcion General del Framework](framework/overview.md) - Uso de modulos del framework
-- [Referencia CLI](guides/cli.md) - Comandos CLI
-- [Funciones](concepts/functions.md) - Registro de funciones
+- [Descripción general del framework](./overview.md) — Instalar e importar módulos del framework
+- [Referencia CLI](../guides/cli.md) — Comando y flags de test
+- [Funciones](../concepts/functions.md) — Entradas de función e invocación

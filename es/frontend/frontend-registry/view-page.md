@@ -191,7 +191,7 @@ Ejemplo de la misma aplicación con una paleta diferente:
 
 `announced: false` es válido: la ruta funciona, pero la página no aparece en la barra lateral.
 
-### Override del proxy del operador (_index.yaml)
+### Override del proxy del operador (_index.yaml) :id=override-del-proxy-del-operador-_indexyaml
 
 Los valores de `wippy-meta.json` pueden sobrescribirse por despliegue con `proxy:` **bajo `meta:`**. Los requisitos de la fachada conservan snake_case; el wrapper es `config_overrides`; el campo de ruta es `mountRoute`; los objetos anidados conservan lower-camel-case. El host fusiona `meta.proxy` sobre `wippy.proxy`.
 
@@ -226,3 +226,9 @@ Distinga:
 ```
 
 Solo se sobrescriben las claves establecidas. Referencia completa: [Inyección de CSS](../web-host/css-injection.md).
+
+El override YAML vive en `meta.entry_point`; el contenido resultante lo sirve
+`http.static`. Los motores admitidos siguen siendo `iframe` y `fragment`. Los
+patrones `/home/:id` y `/users/:userId(\d+)` son inválidos para `mountRoute`:
+use el wildcard documentado. Un `@import` de fuentes viaja en el CSS global, y
+`errorCapture: true` habilita la captura del proxy iframe.

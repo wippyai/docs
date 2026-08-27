@@ -1,11 +1,13 @@
 ---
 title: "LLM"
-description: "El modulo wippy/llm proporciona una interfaz unificada para trabajar con Modelos de Lenguaje Grande de multiples proveedores (OpenAI, Anthropic,…"
+description: "Usa wippy/llm para generación, prompts, streaming, herramientas, salida estructurada, selección de modelos y embeddings."
 ---
 
 # LLM
 
-El modulo `wippy/llm` proporciona una interfaz unificada para trabajar con Modelos de Lenguaje Grande de multiples proveedores (OpenAI, Anthropic, Google, modelos locales). Soporta generacion de texto, llamadas a herramientas, salida estructurada, embeddings y streaming.
+El módulo `wippy/llm` proporciona una interfaz para modelos de OpenAI, Anthropic, Google y providers locales. Admite generación de texto, llamadas a herramientas, salida estructurada, embeddings y streaming.
+
+Esta página es una introducción a la API con fragmentos de referencia componibles, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, un modelo y provider registrados y las credenciales que requiera ese provider. Sustituya los nombres de ejemplo por un modelo expuesto por su registro; las llamadas remotas pueden generar cargos. Para un proyecto ejecutable completo, siga [Construir un agente LLM](../tutorials/llm-agent.md).
 
 ## Configuracion
 
@@ -16,33 +18,20 @@ wippy add wippy/llm
 wippy install
 ```
 
-Declara la dependencia en tu `_index.yaml`. El modulo LLM requiere un almacenamiento de entorno (para claves API) y un host de procesos:
+Declare la dependencia en `_index.yaml`:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
     version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
 ```
 
-La entrada `env.storage.os` expone las variables de entorno del sistema operativo a los proveedores LLM. Configura tus claves API como variables de entorno (por ejemplo, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`).
+El módulo proporciona almacenamiento de entorno OS y usa `wippy.terminal:host` como process host predeterminado. Sobrescriba los parámetros `env_storage` o `process_host` solo si la aplicación necesita otras entradas. Configure claves mediante variables como `OPENAI_API_KEY` y `ANTHROPIC_API_KEY`.
 
 ## Generacion de Texto
 
@@ -83,7 +72,7 @@ El primer argumento de `generate()` puede ser un prompt de texto, un constructor
 | Opcion | Tipo | Descripcion |
 |--------|------|-------------|
 | `model` | string | Nombre o clase del modelo (requerido) |
-| `temperature` | number | Control de aleatoriedad, 0-1 |
+| `temperature` | number | Control de aleatoriedad, 0-2; el soporte depende del provider |
 | `max_tokens` | number | Maximo de tokens a generar |
 | `top_p` | number | Parametro de muestreo nucleus |
 | `top_k` | number | Filtrado top-k |
@@ -98,7 +87,7 @@ El primer argumento de `generate()` puede ser un prompt de texto, un constructor
 | Campo | Tipo | Descripcion |
 |-------|------|-------------|
 | `result` | string | Contenido de texto generado |
-| `tokens` | table | Uso de tokens: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
+| `tokens` | table | Uso de tokens: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, más los opcionales `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | Razon por la que se detuvo la generacion: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Array de llamadas a herramientas (si el modelo invoco herramientas) |
 | `metadata` | table | Metadatos especificos del proveedor |
@@ -140,7 +129,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | Agregar mensaje de asistente |
 | `:add_developer(content, meta?)` | Agregar mensaje de desarrollador |
 | `:add_message(role, content_parts, name?, meta?)` | Agregar mensaje con rol y partes de contenido |
-| `:add_function_call(name, args, id?)` | Agregar llamada a herramienta del asistente |
+| `:add_function_call(name, arguments, id?, options?)` | Añadir una llamada a herramienta del asistente (`arguments` es la cadena JSON sin procesar) |
 | `:add_function_result(name, result, id?)` | Agregar resultado de ejecucion de herramienta |
 | `:add_cache_marker(id?)` | Marcar limite de cache (modelos Claude) |
 | `:get_messages()` | Obtener array de mensajes |
@@ -223,33 +212,90 @@ local llm = require("llm")
 local TOPIC = "llm_stream"
 
 local function main()
-    local stream_ch = process.listen(TOPIC)
-
-    local response = llm.generate("Write a short story", {
-        model = "gpt-4o",
-        stream = {
-            reply_to = process.pid(),
-            topic = TOPIC,
-        },
-    })
-
-    while true do
-        local chunk, ok = stream_ch:receive()
-        if not ok then break end
-
-        if chunk.type == "chunk" then
-            io.write(chunk.content)
-        elseif chunk.type == "thinking" then
-            io.write(chunk.content)
-        elseif chunk.type == "error" then
-            io.print("Error: " .. chunk.error.message)
-            break
-        elseif chunk.type == "done" then
-            break
-        end
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, listen_err
     end
 
-    process.unlisten(stream_ch)
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove LLM stream listener"
+            if err then
+                return nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return nil, cleanup_err
+        end
+        if err then
+            return nil, err
+        end
+        return text, response
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish(nil, nil, pid_err)
+    end
+
+    local done_ch = channel.new(1)
+    coroutine.spawn(function()
+        local response, err = llm.generate("Write a short story", {
+            model = "gpt-4o",
+            stream = {
+                reply_to = self_pid,
+                topic = TOPIC,
+            },
+        })
+        done_ch:send({ response = response, err = err })
+    end)
+
+    local full_text = ""
+    local generation_result = nil
+    local stream_done = false
+    local stream_err = nil
+
+    while true do
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not generation_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(nil, nil, "LLM stream closed before completion")
+        end
+
+        if result.channel == done_ch then
+            generation_result = result.value
+            if generation_result.err then
+                return finish(nil, nil, generation_result.err)
+            end
+            if stream_done then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "thinking" then
+                print(chunk.content or "")
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "LLM stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and generation_result then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        end
+    end
 end
 ```
 
@@ -265,6 +311,7 @@ end
 
 <note>
 El streaming requiere una entrada <code>process.lua</code> porque utiliza el sistema de comunicacion de procesos de Wippy (<code>process.pid()</code>, <code>process.listen()</code>).
+Ejecute la generación en otra coroutine para drenar los chunks de forma concurrente y elimine el listener en todas las rutas de retorno.
 </note>
 
 ## Llamadas a Herramientas
@@ -305,7 +352,7 @@ if response.tool_calls and #response.tool_calls > 0 then
         local result = { temperature = 22, condition = "sunny" }
 
         -- add the exchange to the conversation
-        conversation:add_function_call(tc.name, tc.arguments, tc.id)
+        conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
         conversation:add_function_result(tc.name, json.encode(result), tc.id)
     end
 
@@ -367,7 +414,7 @@ end
 Para modelos OpenAI, todas las propiedades deben estar en el array <code>required</code>. Usa tipos union para campos opcionales: <code>type = {"string", "null"}</code>. Establece <code>additionalProperties = false</code>.
 </tip>
 
-## Configuracion de Modelos
+## Configuracion de Modelos :id=model-configuration
 
 Los modelos se definen como entradas de registro con `meta.type: llm.model`:
 
@@ -495,19 +542,25 @@ Genera embeddings vectoriales para busqueda semantica:
 ```lua
 local llm = require("llm")
 
--- single text
-local response = llm.embed("The quick brown fox", {
+-- A single input still returns an array of vectors.
+local single_response, single_err = llm.embed("The quick brown fox", {
     model = "text-embedding-3-small",
     dimensions = 512,
 })
--- response.result is a float array
+if single_err then
+    error("Embedding failed: " .. tostring(single_err))
+end
+local vector = single_response.result[1]
 
--- multiple texts
-local response = llm.embed({
+-- Multiple inputs return one vector per input.
+local batch_response, batch_err = llm.embed({
     "First document",
     "Second document",
 }, { model = "text-embedding-3-small" })
--- response.result is an array of float arrays
+if batch_err then
+    error("Batch embedding failed: " .. tostring(batch_err))
+end
+local vectors = batch_response.result
 ```
 
 ## Estado del Proveedor
@@ -535,11 +588,11 @@ Los errores se retornan como el segundo valor de retorno. En caso de error, el p
 local response, err = llm.generate("Hello", { model = "gpt-4o" })
 
 if err then
-    io.print("Error: " .. tostring(err))
+    print("Error: " .. tostring(err))
     return
 end
 
-io.print(response.result)
+print(response.result)
 ```
 
 ### Tipos de Error
@@ -579,6 +632,6 @@ io.print(response.result)
 
 ## Ver Tambien
 
-- [Agentes](framework/agents.md) - Framework de agentes con herramientas, delegados y memoria
-- [Construir un Agente LLM](tutorials/llm-agent.md) - Tutorial paso a paso
-- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework
+- [Agentes](./agents.md) — Framework de agentes con herramientas, delegates y memoria
+- [Construir un agente LLM](../tutorials/llm-agent.md) — Crear un agente paso a paso
+- [Visión general del framework](./overview.md) — Instalar e importar módulos del framework

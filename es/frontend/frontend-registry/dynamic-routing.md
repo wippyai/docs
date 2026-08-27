@@ -101,3 +101,7 @@ El clasificador comprueba primero el router local de la página, de modo que un 
 `classifyLink` consulta la misma lista de rutas obtenida al arrancar. Si el router hijo no reclama `/demo/step-2`, se clasifica como `host-nav` porque `/demo/:part(.*)*` es un montaje registrado: el host navega a `iframe-demo` sin recargar toda la página.
 
 Una aplicación hija no necesita conocer otras páginas. En iframe con `preventLinkClicks: true`, un `<a href="/demo/step-2">` normal se intercepta y clasifica. Use `AutoRouterLink` cuando la misma navegación deba funcionar con ambos motores.
+
+El comportamiento backend pertenece a `page_registry.lua`. Por ejemplo, un
+hijo puede navegar internamente de `/profile` a `/profile/edit`, mientras una
+ruta registrada distinta como `/settings` continúa siendo navegación del host.

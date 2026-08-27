@@ -289,6 +289,58 @@ Elementos IIFE `<wippy-loading>` y `<wippy-error>`, inyectados antes del adaptad
 
 Loading admite `title`, `subtitle`, `no-bg`; error admite `title`, `message`, `icon` y `severity`.
 
+La superficie de tipos y constantes forma parte del contrato publicado. El
+proxy obtiene sus proveedores de `GLOBAL_API_PROVIDER` y `GLOBAL_CONFIG_VAR`,
+proyectados como `window.__WIPPY_APP_API__`, `window.__WIPPY_APP_CONFIG__` y
+`window.__WIPPY_PROXY_CONFIG__`; el fallback histórico es
+`window.getWippyApi()`. En un árbol de componentes, use `getWippyHost(el)`,
+`getWippyHostBus(el)` y `getWippyPanelId(el)`. El tipo del host puede expresarse
+como `ProxyApiInstance['host']` o `HostApi`, y la visibilidad se expone mediante
+`WippyElement.hostVisible`, `useHostVisibility()` y
+`onHostVisibilityChanged(visible, previous)`.
+
+El router consume `@history`; `<RouterLink>` clasifica enlaces y termina en
+`host.navigate()` cuando corresponde. `initialPath`,
+`useWippyMainRoute().value` y `useWippyBreakpoint().value` son snapshots de
+solo lectura. El contenido actual se obtiene con `useContent()`, mientras
+`useWippyPanel(id).value` consulta un panel concreto.
+
+Los tipos de layout incluyen `HostLayoutDeclaration`, `LayoutBusBound`,
+`BroadcastEnvelope`, `DropPosition`, `PanelTarget`, `PixelSize`, `SizeValue` y
+`ComputedRef`. Los inputs reactivos aceptan `string \| Ref<string> \| getter`.
+El estado gestionado se comprueba con `layout.isManaged.value` y
+`layout.snapshot.value !== null`; `snapshot.value`, `activeBreakpoint` y
+`panels` describen la vista actual. Las operaciones son `collapsePanel`,
+`expandPanel`, `movePanel`, `resizePanel`, `removePanel`, `removeFloating` y
+`closeModal`. El bus distingue `host-nav` y `child-nav`.
+
+Los assets de tema exponen `themeConfigUrl` y `primeVueCssUrl`; sus variables
+incluyen `--p-primary-*`, `--p-secondary-*`, `--p-surface-*` y
+`--wippy-layout-splitter-handle-size`. Los consumidores de PrimeVue importan
+subpaths como `primevue/button` y `primevue/dialog`. Las superficies
+`view.page`, `view.component` y `w-iframe` comparten esas claves mediante
+`wippy/views`, pero conservan sus límites de renderizado.
+
+El helper `customElements.define(...)` puede declarar una etiqueta mediante
+`?declare-tag=tagName`; una declaración ausente suele producir
+`[Vue warn]: Failed to resolve component`. En Pinia, `defineStore` registra el
+store. El helper genérico se exporta literalmente como
+`export const useComponentProps = () => useProps<ComponentProps>()`, y sus
+constantes compartidas viven en `src/constants.ts`.
+
+Los metadatos de publicación residen en `package.json`, con los paquetes de
+desarrollo en `devDependencies`, los aliases en `tsconfig.json` y la versión
+inyectada en `wippy-meta.json`. Un documento independiente necesita
+`<script type="importmap">` y debe externalizar `@wippy-fe/*`; el bundle del
+host resuelve la etiqueta `<version-tag>`. La API usa `=== null` para distinguir
+la ausencia de snapshot y conserva `false`, `auto` y `await` como valores o
+palabras clave exactos.
+
+El bootstrap carga `loading.js`. El logger acepta `debug`, `info`, `warn` y
+`error`; `warning` e `ignore` son valores de política distintos. Los tipos de
+indicador incluyen `circle`, `triangle`, `slot` y `task`. El elemento de error
+admite los valores visuales `sad` y `danger`.
+
 ## Bundles entregados por Host
 
 ### `@wippy-fe/chat` (no publicado)

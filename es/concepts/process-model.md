@@ -78,7 +78,7 @@ return ok
 Los mensajes de un mismo sender llegan en orden. Los de senders distintos pueden intercalarse. La entrega es fire-and-forget; usa patrones request-response si necesitas confirmación.
 
 <note>
-Los procesos pueden registrarse en un registro local de nombres y dirigirse por nombre en vez de PID (por ejemplo, <code>session_manager</code>). También se pueden registrar nombres globales para dirigirse entre nodos mediante <code>process.registry</code> con scopes EVENTUAL (basado en gossip), CONSISTENT o STRONG (ambos respaldados por Raft).
+Los procesos pueden registrarse en un registro local de nombres y dirigirse por nombre en vez de PID (por ejemplo, `session_manager`). También se pueden registrar nombres globales para dirigirse entre nodos mediante `process.registry` con scopes EVENTUAL (basado en gossip), CONSISTENT o STRONG (ambos respaldados por Raft).
 </note>
 
 ## Supervisión

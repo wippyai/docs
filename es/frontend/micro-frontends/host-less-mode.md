@@ -365,6 +365,18 @@ En ambos enfoques, el código de prueba satisface el contrato proxy en lugar de 
 
 **La prueba de WC falla con "host getter returned null".** Las pruebas deben definir `el.__wippyHost = fakeWrapper` *antes* de `connectedCallback`: antes de `document.body.appendChild(el)` o mediante el resolver de la suite.
 
+Si `app.html` contiene un `<script src=…>` para dev-proxy pero no un import map
+anterior, el navegador devuelve `Failed to resolve module specifier`. Mantenga
+la etiqueta exacta `<script src=".../dev-proxy.js" data-role="@wippy/scripts">`
+y el import map completo. El loader canónico es `<wippy-loading>`; dev-proxy
+registra ese elemento al importar `@wippy-fe/loading` antes de analizar el body.
+
+No importe fuentes de una aplicación hermana. En un componente use
+`import { api } from '@wippy-fe/proxy'` para conservar la URL configurada. Los
+componentes basados en `WippyVueElement` siguen registrándose con `define()`.
+Los overrides de `config_overrides` alimentan también
+`theming.global.cssVariables` en el modo sin host.
+
 ---
 
 ## Documentación relacionada

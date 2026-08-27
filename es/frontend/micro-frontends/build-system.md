@@ -19,7 +19,7 @@ npm run build -- --outDir <target> --emptyOutDir
 
 La compilación de despliegue controla `<target>`. `vite.config.ts` no debe fijar un directorio de salida de despliegue.
 
-Los repositorios fuente de plataforma o paquetes que no inicia `wippy.exe`, como el código fuente de Web Host, usan los scripts y argumentos exactos declarados por el `package.json` de ese repositorio. La receta de módulo Wippy `--outDir <target> --emptyOutDir` no se aplica a repositorios fuente de paquetes, salvo que su propio script declarado documente expresamente esos argumentos.
+Los repositorios fuente de plataforma o paquetes que no inicia `wippy.exe`, como el código fuente de Web Host, usan los scripts y argumentos exactos declarados por el `package.json` de ese repositorio. La receta de módulo Wippy con directorio de salida limpio no se aplica a repositorios fuente de paquetes, salvo que su propio script declarado documente expresamente esos argumentos.
 
 ### Makefile
 

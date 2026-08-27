@@ -172,3 +172,7 @@ await loadByTagName('example-heavy-chart')
 ```
 
 El registro perezoso mantiene ligera la carga inicial. Aun así necesita `announced: true` para que `loadByTagName()` lo resuelva: `GET /components/by-tag/{tag}` devuelve `404 "Component is not announced"` cuando es `false`.
+
+La política del operador se declara en `_index.yaml`. Con `announced: false`,
+el componente no se anuncia y tampoco puede resolverse mediante el endpoint
+por etiqueta.

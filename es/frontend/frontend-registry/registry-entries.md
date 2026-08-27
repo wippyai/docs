@@ -142,3 +142,8 @@ En componentes, el host compone la misma URL:
 ```
 
 Las entradas actuales de la plantilla omiten `base_path`, pero está admitido; la URL se reduce a `<url>/<entry_point>`. A diferencia de una página, el componente se inyecta como `<script type="module">` y no recibe un `<base>` HTML.
+
+Para páginas, el paquete debe declarar `wippy.path`; si falta, el plugin falla
+con `wippy.path is required for a page package`. El valor de política
+`announced: false` oculta una página de la navegación, pero no impide el acceso
+directo a su ruta.

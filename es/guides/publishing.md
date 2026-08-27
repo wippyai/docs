@@ -276,7 +276,7 @@ El registro y el token también pueden provenir de las variables de entorno `WIP
 
 Si la cuota de módulos privados de la organización está agotada, la publicación falla con un mensaje como `cannot publish: Private-module quota exhausted (5 of 5)...`. Haz el módulo público o pide a un administrador de la organización que aumente la cuota. Las cargas y descargas se reintentan automáticamente ante errores de red transitorios.
 
-## Publicar Valores por Defecto de Runtime {#publishing-runtime-defaults}
+## Publicar Valores por Defecto de Runtime :id=publishing-runtime-defaults
 
 Las aplicaciones (solo `type: application`) pueden distribuir valores por defecto de configuración de runtime dentro de sus packs mediante `publish.runtime` en `wippy.yaml`:
 
@@ -304,7 +304,7 @@ Reglas:
 
 En el destino, la configuración se aplica de menor a mayor: valores por defecto del pack de la app, valores por defecto integrados del runtime, archivos de configuración locales, perfiles seleccionados, sobrescrituras de CLI.
 
-## Publicar Perfiles {#publishing-profiles}
+## Publicar Perfiles :id=publishing-profiles
 
 Los perfiles de la aplicación raíz se exportan a los metadatos `runtime.profiles` del pack. Publicar no selecciona ni fija un perfil — los consumidores eligen uno en tiempo de ejecución con `wippy run --profile <name>`:
 

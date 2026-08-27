@@ -1,11 +1,13 @@
 ---
 title: "Relay"
-description: "El módulo wippy/relay proporciona infraestructura de relay WebSocket con una arquitectura de hub de dos niveles. Un hub central gestiona hubs por…"
+description: "Configura hubs de Wippy Relay, clientes WebSocket, plugins con prefijo, aislamiento de usuarios y ciclo de vida de conexiones."
 ---
 
 # Relay
 
-El módulo `wippy/relay` proporciona infraestructura de relay WebSocket con una arquitectura de hub de dos niveles. Un hub central gestiona hubs por usuario, los cuales a su vez gestionan conexiones de clientes WebSocket y enrutan mensajes a plugins.
+El módulo `wippy/relay` enruta conexiones WebSocket mediante un hub central y hubs por usuario. Los hubs de usuario administran conexiones de clientes y despachan mensajes a plugins con prefijo.
+
+Esta página es una receta de integración parcial y una referencia de protocolo, no una aplicación WebSocket independiente. Los bloques de configuración y plugin suponen un proyecto Wippy existente, un scope de seguridad real en el `user_security_scope` configurado y un endpoint HTTP WebSocket conectado al relay como se describe en [WebSocket Relay](../http/websocket-relay.md). Los payloads del protocolo y bloques de ciclo de vida son formas de referencia.
 
 ## Arquitectura
 
@@ -173,11 +175,25 @@ local json = require("json")
 
 local function handle_message(topic, payload)
     if topic == "get_state" then
-        process.send(payload.conn_pid, "ws.message", json.encode({
+        if not payload.conn_pid then
+            return nil, "Relay message is missing conn_pid"
+        end
+
+        local encoded, encode_err = json.encode({
             type = "session_state",
             data = { status = "active" }
-        }))
+        })
+        if encode_err then
+            return nil, encode_err
+        end
+
+        local sent, send_err = process.send(payload.conn_pid, "ws.message", encoded)
+        if not sent then
+            return nil, send_err or "Relay response was not sent"
+        end
     end
+
+    return true
 end
 
 local function run(args)
@@ -202,7 +218,10 @@ local function run(args)
             elseif topic == "shutdown" then
                 -- last client disconnected
             else
-                handle_message(topic, payload)
+                local ok, err = handle_message(topic, payload)
+                if not ok then
+                    error("Failed to handle relay message: " .. tostring(err))
+                end
             end
         elseif result.channel == events then
             local event = result.value
@@ -259,7 +278,7 @@ El hub central se ejecuta bajo su propio grupo de seguridad (`wippy.relay.securi
 
 ## Véase También
 
-- [WebSocket Relay](http/websocket-relay.md) - Configuración del endpoint WebSocket HTTP
-- [Modelo de Procesos](concepts/process-model.md) - Ciclo de vida y mensajería de procesos
-- [Seguridad](system/security.md) - Actores y ámbitos de seguridad
-- [Resumen del Framework](framework/overview.md) - Uso del módulo del framework
+- [WebSocket Relay](../http/websocket-relay.md) — Configuración del endpoint HTTP WebSocket
+- [Modelo de procesos](../concepts/process-model.md) — Ciclo de vida y mensajería de procesos
+- [Seguridad](../system/security.md) — Actores y scopes de seguridad
+- [Resumen del framework](./overview.md) — Instalar e importar módulos del framework

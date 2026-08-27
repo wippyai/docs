@@ -1,6 +1,6 @@
 ---
 title: "E/S de Terminal"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Lee la entrada del terminal y escribe en la salida estándar y la salida de error estándar."
 ---
 
 # E/S de Terminal
@@ -8,10 +8,12 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Leer desde stdin y escribir a stdout/stderr para aplicaciones CLI.
+El módulo `io` lee de la entrada estándar y escribe en la salida estándar y la salida de error estándar en aplicaciones de terminal.
+
+Esta es una referencia de API. Sus fragmentos son llamadas aisladas; un proceso de terminal debe propagar los errores Lua estructurados devueltos cuando el resultado afecte al flujo de control.
 
 <note>
-Este módulo solo funciona dentro de contexto de terminal. No puede usarlo desde funciones regulares, solo desde procesos ejecutandose en un <a href="system/terminal.md">Terminal Host</a>.
+Este módulo solo está disponible para procesos ejecutados en un <a href="../../system/terminal.md">Terminal Host</a>, no para funciones regulares.
 </note>
 
 ## Carga
@@ -48,6 +50,8 @@ io.print("value1", "value2", 123)
 
 **Devuelve:** `boolean, error`
 
+Cuando la búsqueda del contexto de terminal tiene éxito, los errores de escritura se ignoran y la función devuelve `true`. Si falta el contexto de terminal, devuelve `nil, "no terminal context"`.
+
 ## Escribir a Stderr
 
 Escribir valores a stderr con tabs entre ellos y nueva linea al final:
@@ -62,9 +66,11 @@ io.eprint("Error:", message)
 
 **Devuelve:** `boolean, error`
 
+Cuando la búsqueda del contexto de terminal tiene éxito, los errores de escritura se ignoran y la función devuelve `true`. Si falta el contexto de terminal, devuelve `nil, "no terminal context"`.
+
 ## Leer Bytes
 
-Leer hasta n bytes desde stdin:
+Leer hasta `n` bytes desde stdin:
 
 ```lua
 local data, err = io.read(1024)
@@ -74,7 +80,7 @@ local data, err = io.read(1024)
 |-----------|------|-------------|
 | `n` | integer | Número de bytes a leer (predeterminado: 1024, valores <= 0 se convierten en 1024) |
 
-**Devuelve:** `string, error`
+**Devuelve:** `string, error`. Una lectura correcta puede devolver menos de `n` bytes o una cadena vacía.
 
 ## Leer una Linea
 
@@ -84,22 +90,22 @@ Leer una linea desde stdin hasta nueva linea:
 local line, err = io.readline()
 ```
 
-**Devuelve:** `string, error`
+**Devuelve:** `string, error`. Se eliminan los caracteres finales `\n` y `\r`. Un EOF después de una entrada parcial devuelve esa línea parcial; un EOF sin entrada devuelve `nil` y un error estructurado.
 
 ## Modo Raw
 
 Activa o desactiva el modo raw del terminal (deshabilita el buffering por líneas y el eco):
 
 ```lua
-local ok, err = io.raw(true)   -- activar
-local ok, err = io.raw(false)  -- desactivar
+local ok, err = io.raw(true)   -- enable
+local ok, err = io.raw(false)  -- disable
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `enable` | boolean | `true` para activar, `false` para desactivar (por defecto: `true`) |
 
-**Devuelve:** `boolean, error`
+**Devuelve:** `boolean, error`. La llamada es un no-op correcto cuando la salida estándar no implementa `Sync()`.
 
 El modo raw usa conteo de referencias — cada `io.raw(true)` debe emparejarse con un `io.raw(false)`. El terminal se restablece automáticamente al modo normal al salir el proceso.
 
@@ -123,13 +129,8 @@ local args = io.args()
 
 **Devuelve:** `string[]`
 
+`io.args()` nunca falla. Devuelve una tabla vacía cuando no hay contexto de terminal disponible.
+
 ## Errores
 
-| Condición | Tipo | Reintentable |
-|-----------|------|--------------|
-| Sin contexto de terminal | `errors.UNAVAILABLE` | no |
-| Operación de escritura fallida | `errors.INTERNAL` | no |
-| Operación de lectura fallida | `errors.INTERNAL` | no |
-| Operación de flush fallida | `errors.INTERNAL` | no |
-
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Este módulo devuelve errores Lua estructurados. La ausencia de contexto de terminal usa `errors.UNAVAILABLE`; los fallos directos de write/flush y de respuesta yield no válida usan `errors.INTERNAL`. Los fallos de read, readline y raw mode respaldados por el dispatcher conservan los metadatos del error subyacente cuando están disponibles. `io.args()` no devuelve errores.

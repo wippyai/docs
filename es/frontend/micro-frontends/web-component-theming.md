@@ -26,7 +26,7 @@ Shadow DOM bloquea la cascada CSS: las hojas de estilo escritas fuera del compon
 
 **L2 — Por ámbito:** igual que L1 para propiedades personalizadas. El CSS basado en hojas de estilo (PrimeVue, Tailwind) no entra en cascada; use `hostCssKeys` para controlar qué assets del Host se cargan en la raíz shadow.
 
-**L3 — `config_overrides` por página:** las variables CSS definidas mediante `config_overrides` del operador llegan al host del WC y a la raíz interna del tema mediante el mismo puente genérico.
+**L3 — `config_overrides` por página:** las variables CSS definidas mediante el override del operador llegan al host del WC y a la raíz interna del tema mediante el mismo puente genérico.
 
 **El `custom_css` de la fachada llega a la raíz shadow (Web Host 1.0.43+, con opt-out).** Las reglas de selectores no atraviesan el límite en cascada, por lo que el runtime inyecta el CSS personalizado global + children compuesto.
 

@@ -114,7 +114,7 @@ pool:
 ```
 
 <tip>
-Prefiere un <code>type</code> de pool explícito. Para <code>type: static</code>, establece <code>size</code>; si también existe <code>workers</code>, proporciona el número de workers y aun así requiere un <code>size</code> positivo. En el modo implícito legacy, <code>workers > 0</code> junto con <code>size > 0</code> selecciona un pool static, <code>max_size > 0</code> sin workers selecciona uno lazy y <code>size</code> por sí solo deriva a ejecución inline.
+Prefiere un `type` de pool explícito. Para `type: static`, establece `size`; si también existe `workers`, proporciona el número de workers y aun así requiere un `size` positivo. En el modo implícito legacy, `workers > 0` junto con `size > 0` selecciona un pool static, `max_size > 0` sin workers selecciona uno lazy y `size` por sí solo deriva a ejecución inline.
 </tip>
 
 ## Interceptors
