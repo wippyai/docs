@@ -1,11 +1,13 @@
 ---
 title: "사용량 추적"
-description: "wippy/usage 모듈은 LLM 토큰 소비를 기록하고 시간 간격, 모델 또는 사용자별로 그룹화된 집계 쿼리를 제공합니다. 이 모듈은 wippy.llm:usagetracker 컨트랙트에 바인딩되므로, LLM 모듈을 통해 호출하는 모든 코드가 자동으로 사용량 레코드를…"
+description: "LLM token consumption을 기록하고 time interval, model 또는 user별 usage total을 query합니다."
 ---
 
 # 사용량 추적
 
-`wippy/usage` 모듈은 LLM 토큰 소비를 기록하고 시간 간격, 모델 또는 사용자별로 그룹화된 집계 쿼리를 제공합니다. 이 모듈은 `wippy.llm:usage_tracker` 컨트랙트에 바인딩되므로, LLM 모듈을 통해 호출하는 모든 코드가 자동으로 사용량 레코드를 생성합니다.
+`wippy/usage` 모듈은 LLM token consumption을 기록하고 time interval, model 또는 user별 aggregate query를 제공합니다. `wippy.llm:usage_tracker` contract의 default implementation이므로 LLM module을 통한 call은 자동으로 usage record를 생성합니다.
+
+이 페이지는 standalone tutorial이 아니라 reference snippet이 포함된 API primer입니다. snippet은 기존 Wippy project, configured SQL database, automatic tracking이 필요할 때 `wippy/llm`을 가정합니다. usage row는 선택한 database에 persist됩니다. testing이 끝나면 일반 database-maintenance workflow로 sample row를 제거하십시오.
 
 ## 설정
 
@@ -25,20 +27,20 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.usage
     kind: ns.dependency
     component: wippy/usage
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.usage.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
 애플리케이션이 시작되면 `wippy/migration`이 모듈의 `01_create_token_usage_table` 마이그레이션을 실행하여 `user_id`, `context_id`, `model_id`, `timestamp`에 대한 인덱스와 함께 `token_usage` 테이블을 생성합니다.
+
+위 relative SQLite path를 사용하면 application 시작 전에 `data` directory를 생성하십시오.
 
 ## 스키마
 
@@ -83,6 +85,11 @@ imports:
 ```lua
 local tracker = require("usage_tracker")
 
+-- Numeric counts supplied by the caller or model provider.
+local prompt_tokens, completion_tokens = 120, 40
+local thinking_tokens = 0
+local cache_read_tokens, cache_write_tokens = 0, 0
+
 local usage_id, err = tracker.track_usage(
     "openai:gpt-4o",
     prompt_tokens,
@@ -92,6 +99,9 @@ local usage_id, err = tracker.track_usage(
     cache_write_tokens,
     { context_id = "chat-42", metadata = { feature = "summary" } }
 )
+if err then
+    error("Failed to record usage: " .. tostring(err))
+end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -113,17 +123,31 @@ local usage_id, err = tracker.track_usage(
 `wippy.usage:token_usage_repo`는 집계 쿼리를 제공합니다:
 
 ```yaml
+modules:
+  - time
 imports:
   usage: wippy.usage:token_usage_repo
 ```
 
 ```lua
 local usage = require("usage")
+local time = require("time")
 
-local summary  = usage.get_summary(start_unix, end_unix)
-local by_time  = usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY)
-local by_model = usage.get_usage_by_model(start_unix, end_unix)
-local by_user  = usage.get_usage_by_user(start_unix, end_unix)
+-- Inclusive query bounds expressed as UNIX timestamps.
+local end_unix = time.now():unix()
+local start_unix = end_unix - (24 * 60 * 60)
+
+local function require_result(value, err)
+    if err then
+        error("Usage query failed: " .. tostring(err))
+    end
+    return value
+end
+
+local summary  = require_result(usage.get_summary(start_unix, end_unix))
+local by_time  = require_result(usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY))
+local by_model = require_result(usage.get_usage_by_model(start_unix, end_unix))
+local by_user  = require_result(usage.get_usage_by_user(start_unix, end_unix))
 ```
 
 ### 함수
@@ -156,7 +180,7 @@ usage.INTERVAL.MONTH  -- "month"
 `meta` 컬럼은 자유 형식 JSON 블롭을 저장합니다. 이를 사용하여 레코드를 애플리케이션 이벤트와 연관시킵니다:
 
 ```lua
-tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
+local usage_id, err = tracker.track_usage("openai:gpt-4o", 120, 40, 0, 0, 0, {
     context_id = "chat-42",
     metadata   = {
         session_id = "s-7",
@@ -164,12 +188,15 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
         agent_id   = "writer",
     },
 })
+if err then
+    error("Failed to record usage metadata: " .. tostring(err))
+end
 ```
 
 `context_id`는 최상위 컬럼이며 인덱싱될 수 있습니다; `metadata`는 텍스트로 저장되며 필터링이 아닌 표시용으로 사용됩니다.
 
 ## 참고 항목
 
-- [LLM](framework/llm.md) - LLM 생성 및 `usage_tracker` 컨트랙트
-- [마이그레이션](framework/migration.md) - 스키마를 생성하는 마이그레이션 러너
-- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
+- [LLM](./llm.md) - LLM generation 및 `usage_tracker` contract
+- [마이그레이션](./migration.md) - schema를 생성하는 migration runner
+- [프레임워크 개요](./overview.md) - framework module 사용법
