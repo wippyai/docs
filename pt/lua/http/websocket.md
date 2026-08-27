@@ -8,7 +8,9 @@ description: "Conecte-se a servidores WebSocket, envie e receba mensagens, use c
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Cliente WebSocket para comunicação bidirecional em tempo real com servidores.
+O módulo `websocket` cria conexões cliente bidirecionais com servidores WebSocket.
+
+Esta página é uma referência de API com receitas parciais de conexão e assinatura. URLs de endpoints, tokens, handlers de mensagens e dados da aplicação vêm da aplicação ao redor. Os exemplos de ciclo de vida fecham o cliente em todo caminho terminal ou de erro verificado; os exemplos menores de métodos pressupõem que um proprietário externo faça essa limpeza.
 
 ## Carregamento
 
@@ -16,9 +18,13 @@ Cliente WebSocket para comunicação bidirecional em tempo real com servidores.
 local websocket = require("websocket")
 ```
 
+Adicione `websocket` à lista `modules:` da entrada executável antes de importá-lo. O global `channel` está sempre disponível; as receitas com JSON e timeout também exigem `json` e `time`.
+
 ## Conectando
 
 ### `connect`
+
+Abre uma conexão WebSocket com as opções padrão:
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws")
@@ -26,6 +32,8 @@ if err then
     return nil, err
 end
 ```
+
+Passe uma tabela de opções para configurar a conexão:
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws", {
@@ -53,21 +61,25 @@ end
 
 | Opção | Tipo | Descrição |
 |-------|------|-----------|
-| `headers` | table | Headers HTTP para handshake |
-| `protocols` | table | Subprotocolos WebSocket |
-| `dial_timeout` | number/string | Timeout de conexão (ms ou "5s") |
-| `read_timeout` | number/string | Timeout de leitura |
-| `write_timeout` | number/string | Timeout de escrita |
-| `compression` | number | Modo de compressao (veja Constantes) |
-| `compression_threshold` | number | Tamanho minimo para comprimir (0-100MB) |
-| `read_limit` | number | Tamanho maximo de mensagem (0-128MB) |
-| `channel_capacity` | number | Buffer do channel de recepcao (1-10000) |
+| `headers` | table | Headers HTTP string-para-string do handshake; outras entradas são ignoradas |
+| `protocols` | table | Strings de subprotocolos WebSocket; entradas que não são strings são ignoradas |
+| `dial_timeout` | number/string | Timeout da conexão; `0` não aplica um prazo global do runtime, mas os padrões do transporte HTTP subjacente continuam valendo |
+| `read_timeout` | number/string | Timeout por mensagem; `0` o desativa |
+| `write_timeout` | number/string | Aceito pela API Lua, mas não aplicado pelo runtime `v0.3.32a` |
+| `compression` | number/string | `0`/`"disabled"`, `1`/`"context_takeover"` ou `2`/`"no_context_takeover"`; desativado por padrão |
+| `compression_threshold` | number | Tamanho mínimo para comprimir, em bytes (0-104857600); `0` usa 128 bytes com context takeover ou 512 sem context takeover |
+| `read_limit` | number | Tamanho máximo de mensagem recebida, em bytes (0-134217728); `0` usa 16 MiB |
+| `channel_capacity` | number | Buffer de mensagens recebidas no serviço (1-10000); padrão 16 |
 
-**Formato de timeout:** Numeros sao milissegundos, strings usam formato de duração Go ("5s", "1m").
+**Formato de timeout:** números representam milissegundos. Strings usam a sintaxe de duração Go, como `"5s"` ou `"1m"`.
+
+Strings de timeout inválidas e valores de opções fora dos limites ou não aceitos são ignorados, mantendo o padrão correspondente.
 
 ## Enviando Mensagens
 
 ### Mensagens de Texto
+
+Envia uma mensagem de texto.
 
 ```lua
 local json = require("json")
@@ -85,6 +97,8 @@ client:send(payload)
 
 ### Mensagens Binarias
 
+Envia uma mensagem binária especificando `websocket.BINARY`.
+
 ```lua
 client:send(binary_data, websocket.BINARY)
 ```
@@ -94,19 +108,21 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Conteudo da mensagem |
 | `type` | number | `websocket.TEXT` (1) ou `websocket.BINARY` (2) |
 
-**Retorna:** `boolean, error`
+Se `type` estiver ausente ou não for `websocket.TEXT` nem `websocket.BINARY`, o runtime envia uma mensagem de texto. A chamada cede a execução até o envio terminar e não retorna valores. No runtime `v0.3.32a`, falhas de transporte durante o envio não são retornadas ao Lua.
 
 ### Ping
+
+Envia um frame de ping.
 
 ```lua
 client:ping()
 ```
 
-**Retorna:** `boolean, error`
+A chamada cede a execução até o comando de ping terminar e não retorna valores. No runtime `v0.3.32a`, falhas de transporte no ping não são retornadas ao Lua.
 
 ## Recebendo Mensagens
 
-O método `channel()` retorna um channel para receber mensagens. `receive()` é um alias para `channel()`. Funciona com `channel.select` para multiplexação.
+`channel()` retorna o channel de recebimento, e `receive()` é um alias. A primeira chamada cede a execução enquanto o runtime cria a assinatura; chamadas posteriores retornam o mesmo channel imediatamente. Uma falha na assinatura retorna `nil, error`. O channel pode ser usado com `channel.select`.
 
 ### Recepcao Basica
 
@@ -214,6 +230,8 @@ if close_err then return nil, close_err end
 
 ## Fechando Conexão
 
+Fecha a conexão com código de status e motivo opcionais:
+
 ```lua
 local _, close_err = client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
 if close_err then return nil, close_err end
@@ -227,7 +245,9 @@ if close_err then return nil, close_err end
 | `code` | number | Código de fechamento (1000-4999), padrão 1000 |
 | `reason` | string | Motivo do fechamento (opcional) |
 
-**Retorna:** `boolean, error`
+A chamada cede a execução até o comando de fechamento terminar. Em caso de sucesso, não retorna valores; uma falha retorna `nil, error`. Capture dois resultados ao verificar a chamada, pois o erro é o segundo. Valores fora do intervalo numérico aceito são ignorados e o código padrão `1000` é usado.
+
+O channel de recebimento pertence ao cliente; não o feche diretamente. Um evento terminal remoto fecha o channel. Chamar `client:close()` cancela a assinatura do channel de recebimento e interrompe o produtor no cliente; faça isso prontamente, em vez de depender da limpeza no encerramento do processo.
 
 ## Constantes
 
@@ -245,6 +265,8 @@ websocket.TYPE_PING    -- "ping"
 websocket.TYPE_PONG    -- "pong"
 websocket.TYPE_CLOSE   -- "close"
 ```
+
+Os objetos de mensagem do channel de recebimento usam somente `"text"` e `"binary"`. Frames de ping e pong são processados pelo transporte, e um evento terminal fecha o channel em vez de produzir um objeto de mensagem `"close"`.
 
 ### Modos de Compressao
 
@@ -414,6 +436,11 @@ Veja [Modelo de Segurança](../../system/security.md) para configurar as políti
 | Sem contexto | `errors.INTERNAL` | não |
 | Conexão falhou | `errors.INTERNAL` | sim |
 | ID de conexão inválido | `errors.INTERNAL` | não |
+| Falha na assinatura | `errors.INTERNAL` | sim |
+| Contexto de processo ausente durante a assinatura | `errors.INTERNAL` | não |
+| Falha ao fechar | `errors.INTERNAL` | não |
+
+Uma URL vazia, um valor de opções que não seja tabela, tipos de argumentos inválidos e a ausência de contexto de execução ou PID de processo ao solicitar o channel geram erros Lua. Eles não são retornados como erros estruturados. O runtime `v0.3.32a` não expõe falhas de transporte de envio ou ping aos chamadores Lua.
 
 ```lua
 local client, err = websocket.connect(url)

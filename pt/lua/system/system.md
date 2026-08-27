@@ -470,7 +470,7 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | `system.read` | `cluster` | Ler associação e leader do cluster |
 | `system.read` | `raft` | Ler estado do Raft |
 | `system.read` | `raft_stats` | Ler o mapa de stats bruto do Raft |
-| `system.lock` | `<nome do lock>` | Adquirir ou liberar um lock distribuído |
+| `system.lock` | `<lock name>` | Adquirir ou liberar um lock distribuído |
 | `system.exit` | - | Acionar shutdown do sistema |
 
 ## Erros

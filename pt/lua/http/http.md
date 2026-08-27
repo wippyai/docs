@@ -8,7 +8,9 @@ description: "Leia requisições HTTP no servidor e construa respostas de status
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Trate requisicoes HTTP e construa respostas. Acesse dados da requisição, parametros de rota, headers e conteudo do corpo. Construa respostas com codigos de status, headers e suporte a streaming.
+O módulo `http` lê a requisição atual no servidor e constrói sua resposta, incluindo headers, dados de rota, conteúdo do corpo, saída em streaming e Server-Sent Events.
+
+Esta página é uma referência de API com receitas parciais de handlers. Nomes como `id`, `data`, `token` e callbacks da aplicação vêm do handler ao redor. Os acessores da requisição geralmente retornam `value, error`, e as mutações da resposta retornam `error`; os exemplos que consomem um resultado verificam esses erros.
 
 Para configurar o servidor, veja [Servidor HTTP](../../http/server.md).
 
@@ -17,6 +19,8 @@ Para configurar o servidor, veja [Servidor HTTP](../../http/server.md).
 ```lua
 local http = require("http")
 ```
+
+Adicione `http` à lista `modules:` da entrada executável antes de importá-lo. Exemplos que usam `uuid`, `fs` ou `time` exigem esses módulos separadamente.
 
 ## Acessando a Requisição
 
@@ -48,9 +52,11 @@ if err then return nil, err end
 
 **Retorna:** `Response, error`
 
-## Métodos de Request
+## Métodos da Requisição
 
-### method
+### `method`
+
+Retorna o método HTTP da requisição.
 
 ```lua
 local method, method_err = req:method()
@@ -71,7 +77,9 @@ elseif method == http.METHOD.DELETE then
 end
 ```
 
-### path
+### `path`
+
+Retorna o caminho da requisição.
 
 ```lua
 local path, err = req:path()
@@ -84,7 +92,7 @@ if path:match("^/api/") then
 end
 ```
 
-### query
+### `query`
 
 Obtem um único parametro de query.
 
@@ -99,7 +107,7 @@ if page_err then return nil, page_err end
 local page = tonumber(page_text) or 1
 ```
 
-### query_params
+### `query_params`
 
 Obtem todos os parametros de query. Multiplos valores para a mesma chave sao unidos com virgulas.
 
@@ -114,7 +122,9 @@ for key, value in pairs(params) do
 end
 ```
 
-### header
+### `header`
+
+Retorna um header da requisição pelo nome.
 
 ```lua
 local uuid = require("uuid")
@@ -137,36 +147,36 @@ if not correlation_id then
 end
 ```
 
-### content_type
+### `content_type`
 
-Obtem o header Content-Type.
+Retorna o header `Content-Type`.
 
 ```lua
 local ct, type_err = req:content_type()  -- "application/json; charset=utf-8" or nil
 if type_err then return nil, type_err end
 ```
 
-### content_length
+### `content_length`
 
-Obtem o valor do header Content-Length.
+Retorna o valor do header `Content-Length`.
 
 ```lua
 local length, length_err = req:content_length()  -- number of bytes
 if length_err then return nil, length_err end
 ```
 
-### host
+### `host`
 
-Obtem o header Host.
+Retorna o header `Host`.
 
 ```lua
 local host, host_err = req:host()  -- "example.com:8080"
 if host_err then return nil, host_err end
 ```
 
-### param
+### `param`
 
-Obtem parametros de rota da URL (de padroes de path como `/users/:id`).
+Retorna um parâmetro de rota de um padrão de caminho como `/users/:id`.
 
 ```lua
 -- Route: /users/:id/posts/:post_id
@@ -187,7 +197,7 @@ if not valid then
 end
 ```
 
-### params
+### `params`
 
 Obtem todos os parametros de rota.
 
@@ -200,7 +210,7 @@ if err then return nil, err end
 local issue = get_issue(p.org, p.repo, p.issue)
 ```
 
-### body
+### `body`
 
 Le o corpo completo da requisição como string.
 
@@ -219,7 +229,9 @@ end
 logger.debug("Request body read", {length = #body})
 ```
 
-### body_json
+`body()`, `body_json()`, `stream()` e `parse_multipart()` consomem o mesmo corpo da requisição. Escolha um único caminho de leitura do corpo por handler. `body()` e `body_json()` aplicam o timeout e o limite de tamanho do objeto de requisição; `stream()` é incremental e não aplica essas duas opções.
+
+### `body_json`
 
 Le e faz parse do corpo como JSON.
 
@@ -245,7 +257,9 @@ end
 local user = create_user(data)
 ```
 
-### has_body
+### `has_body`
+
+Verifica se a requisição tem um corpo.
 
 ```lua
 local has_body, body_state_err = req:has_body()
@@ -263,7 +277,11 @@ else
 end
 ```
 
-### is_content_type
+`has_body()` retorna `true` somente quando existe um objeto de corpo e um `Content-Length` positivo. Uma requisição chunked, ou qualquer outra de tamanho desconhecido, pode retornar `false`; handlers que aceitam esses corpos devem tentar o leitor escolhido e tratar seu erro.
+
+### `is_content_type`
+
+Verifica se a requisição tem o tipo de conteúdo especificado.
 
 ```lua
 local is_json, type_check_err = req:is_content_type("application/json")
@@ -277,7 +295,9 @@ if not is_json then
 end
 ```
 
-### accepts
+### `accepts`
+
+Verifica se a requisição aceita o tipo de conteúdo especificado.
 
 ```lua
 local accepts_json, json_accept_err = req:accepts("application/json")
@@ -300,7 +320,11 @@ else
 end
 ```
 
-### remote_addr
+O helper `accepts()` fixado faz correspondências exatas separadas por vírgula e aceita `*/*`; ele não processa parâmetros de media type, wildcards de subtipo nem pesos de qualidade, e a ausência do header `Accept` retorna `false`. Use negociação controlada pela aplicação quando essa semântica HTTP for importante.
+
+### `remote_addr`
+
+Retorna o endereço de rede remoto do cliente.
 
 ```lua
 local addr, addr_err = req:remote_addr()  -- "192.168.1.100:54321"
@@ -321,7 +345,7 @@ if rate_limiter:is_limited(ip) then
 end
 ```
 
-### parse_multipart
+### `parse_multipart`
 
 Faz parse de dados de formulario multipart (uploads de arquivo). Recebe um inteiro `max_memory` opcional (bytes mantidos em memória antes de transbordar para arquivos temporários; padrão 32MB).
 
@@ -379,7 +403,11 @@ if form.files.documents then
 end
 ```
 
-### stream
+Valores de campos multipart são strings quando o campo ocorre uma vez e arrays quando se repete. Trate nomes de arquivos enviados e valores de `Content-Type` como metadados não confiáveis; gere o nome de armazenamento e inspecione o conteúdo de forma independente quando o tipo for relevante.
+
+A escrita exclusiva `wx` impede sobrescrever um objeto existente. Uma falha na escrita não prova que o destino pertence a esta requisição, portanto o caminho de falha não deve removê-lo indiscriminadamente. Aplicações que precisam limpar gravações parciais devem preparar os uploads sob um nome temporário com ownership rastreado e promovê-los somente depois que a escrita for bem-sucedida.
+
+### `stream`
 
 Obtem corpo da requisição como stream para arquivos grandes.
 
@@ -400,9 +428,13 @@ if read_err then return nil, read_err end
 if close_err then return nil, close_err end
 ```
 
-## Métodos de Response
+## Métodos da Resposta
 
-### set_status
+### `set_status`
+
+Define o código de status da resposta.
+
+`set_status()` grava o status e confirma imediatamente os headers da resposta. Chame `set_header()`, `set_content_type()` ou `set_transfer()` antes; alterações posteriores nos headers retornam `errors.INVALID`.
 
 ```lua
 local status_err = res:set_status(http.STATUS.CREATED)
@@ -412,7 +444,9 @@ if status_err then return nil, status_err end
 -- 401 Unauthorized, 403 Forbidden, 404 Not Found, and 500 Internal Error.
 ```
 
-### set_header
+### `set_header`
+
+Define um header da resposta.
 
 ```lua
 local request_id_err = res:set_header("X-Request-ID", correlation_id)
@@ -431,7 +465,9 @@ local headers_err = res:set_header("Access-Control-Allow-Headers", "Content-Type
 if headers_err then return nil, headers_err end
 ```
 
-### set_content_type
+### `set_content_type`
+
+Define o tipo de conteúdo da resposta.
 
 ```lua
 local type_err = res:set_content_type(http.CONTENT.JSON)
@@ -440,7 +476,7 @@ if type_err then return nil, type_err end
 -- Other examples: "text/html; charset=utf-8" or "application/pdf".
 ```
 
-### write
+### `write`
 
 Escreve no corpo da resposta.
 
@@ -460,7 +496,7 @@ for _, fragment in ipairs({
 end
 ```
 
-### write_json
+### `write_json`
 
 Codifica valor como JSON e escreve.
 
@@ -488,20 +524,25 @@ local error_write_err = res:write_json({
 if error_write_err then return nil, error_write_err end
 ```
 
-### flush
+`write()`, `write_json()`, `flush()` e `write_event()` também confirmam os headers. `write_json()` define `Content-Type: application/json` somente quando os headers ainda não foram confirmados.
+
+### `flush`
 
 Flush de dados em buffer para o cliente.
 
 <code-block lang="lua">
--- Streaming de atualizacoes de progresso
+-- Stream progress updates
 for i = 1, 100 do
-    res:write(string.format("Progress: %d%%\n", i))
-    res:flush()
-    time.sleep("100ms")
+    local write_err = res:write(string.format("Progress: %d%%\n", i))
+    if write_err then return nil, write_err end
+    local flush_err = res:flush()
+    if flush_err then return nil, flush_err end
+    local _, sleep_err = time.sleep("100ms")
+    if sleep_err then return nil, sleep_err end
 end
 </code-block>
 
-### set_transfer
+### `set_transfer`
 
 Define codificação de transferencia para streaming.
 
@@ -521,7 +562,7 @@ local sse_err = res:set_transfer(http.TRANSFER.SSE)
 if sse_err then return nil, sse_err end
 ```
 
-### write_event
+### `write_event`
 
 Escreve um Server-Sent Event.
 
@@ -564,7 +605,7 @@ http.METHOD.HEAD
 http.METHOD.OPTIONS
 ```
 
-### Codigos de Status
+### Códigos de Status
 
 ```lua
 -- Success (2xx)
@@ -604,7 +645,7 @@ http.STATUS.GATEWAY_TIMEOUT      -- 504
 http.STATUS.VERSION_NOT_SUPPORTED -- 505
 ```
 
-### Tipos de Conteudo
+### Tipos de Conteúdo
 
 ```lua
 http.CONTENT.JSON       -- "application/json"
@@ -614,16 +655,16 @@ http.CONTENT.TEXT       -- "text/plain"
 http.CONTENT.STREAM     -- "application/octet-stream"
 ```
 
-### Modos de Transferencia
+### Modos de Transferência
 
 ```lua
 http.TRANSFER.CHUNKED   -- "chunked"
 http.TRANSFER.SSE       -- "sse"
 ```
 
-### Tipos de Erro
+### Constantes Legadas de Tipo de Erro
 
-Constantes de tipo de erro específicas do módulo para tratamento preciso de erros.
+O módulo exporta estas strings por compatibilidade, mas os métodos atuais de requisição e resposta não as retornam. Falhas do runtime usam os tipos estruturados `errors.*` descritos abaixo.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Form/multipart parse error
@@ -640,8 +681,8 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | Corpo muito grande | `errors.INVALID` | não |
 | Timeout de leitura | `errors.INTERNAL` | não |
 | JSON inválido | `errors.INVALID` | não |
-| Não e multipart | `errors.INVALID` | não |
-| Headers ja enviados | `errors.INVALID` | não |
+| Não é multipart | `errors.INVALID` | não |
+| Headers já enviados | `errors.INVALID` | não |
 | Escrita falhou | `errors.INTERNAL` | não |
 
 Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.

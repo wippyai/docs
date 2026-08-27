@@ -8,7 +8,9 @@ description: "Envie requisições HTTP com headers, autenticação, formulários
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Faca requisicoes HTTP para serviços externos. Suporta todos os métodos HTTP, headers, parametros de query, dados de formulario, uploads de arquivo, respostas em streaming e requisicoes em lote concorrentes.
+O módulo `http_client` envia requisições HTTP com headers, parâmetros de query, formulários, uploads de arquivos, autenticação, opções TLS, respostas em streaming e lotes concorrentes.
+
+Esta página é uma referência de API com receitas parciais de requisição. URLs, tokens, credenciais, dados das requisições e certificados são fornecidos pela aplicação. Os exemplos verificam `Response, error` antes de usar a resposta e fecham explicitamente os corpos recebidos em streaming.
 
 ## Carregamento
 
@@ -16,11 +18,15 @@ Faca requisicoes HTTP para serviços externos. Suporta todos os métodos HTTP, h
 local http_client = require("http_client")
 ```
 
+Adicione `http_client` à lista `modules:` da entrada executável antes de importá-lo. As receitas com JSON e sistema de arquivos também exigem `json` e `fs`.
+
 ## Métodos HTTP
 
-Todos os métodos compartilham a mesma assinatura: `method(url, options?)` retornando `Response, error`.
+Os métodos de conveniência usam a assinatura `method(url, options?)` e retornam `Response, error`.
 
-### Requisição GET
+### GET
+
+Envia uma requisição `GET`.
 
 ```lua
 local resp, err = http_client.get("https://api.example.com/users")
@@ -32,7 +38,9 @@ print(resp.status_code)  -- 200
 print(resp.body)         -- response body
 ```
 
-### Requisição POST
+### POST
+
+Envia uma requisição `POST`.
 
 ```lua
 local json = require("json")
@@ -46,7 +54,9 @@ local resp, err = http_client.post("https://api.example.com/users", {
 if err then return nil, err end
 ```
 
-### Requisição PUT
+### PUT
+
+Envia uma requisição `PUT`.
 
 ```lua
 local body, body_err = json.encode({name = "Alice Smith"})
@@ -58,7 +68,9 @@ local resp, err = http_client.put("https://api.example.com/users/123", {
 if err then return nil, err end
 ```
 
-### Requisição PATCH
+### PATCH
+
+Envia uma requisição `PATCH`.
 
 ```lua
 local body, body_err = json.encode({status = "active"})
@@ -70,7 +82,9 @@ local resp, err = http_client.patch("https://api.example.com/users/123", {
 if err then return nil, err end
 ```
 
-### Requisição DELETE
+### DELETE
+
+Envia uma requisição `DELETE`.
 
 ```lua
 local resp, err = http_client.delete("https://api.example.com/users/123", {
@@ -79,9 +93,9 @@ local resp, err = http_client.delete("https://api.example.com/users/123", {
 if err then return nil, err end
 ```
 
-### Requisição HEAD
+### HEAD
 
-Retorna apenas headers, sem corpo.
+Uma requisição `HEAD` retorna os headers sem um corpo de resposta.
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
@@ -89,7 +103,9 @@ if err then return nil, err end
 local size = resp.headers["Content-Length"]
 ```
 
-### Método Customizado
+### Métodos Personalizados
+
+Envia uma requisição usando uma string de método HTTP explícita.
 
 ```lua
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
@@ -124,7 +140,7 @@ if err then return nil, err end
 
 Selecionar `overlay_network` exige a permissão `network.select` no ID da rede.
 
-### Parametros de Query
+### Parâmetros de Query
 
 ```lua
 local resp, err = http_client.get("https://api.example.com/search", {
@@ -154,6 +170,8 @@ local resp, err = http_client.get("https://api.example.com/data", {
 })
 if err then return nil, err end
 ```
+
+Carregue os valores de autenticação de um armazenamento de segredos controlado pela aplicação e envie-os somente por TLS.
 
 ### Dados de Formulario
 
@@ -190,9 +208,13 @@ if err then return nil, err end
 | `filename` | string | não | Nome original do arquivo |
 | `content` | string | sim* | Conteudo do arquivo |
 | `reader` | userdata | sim* | Alternativa: io.Reader para conteudo |
-| `content_type` | string | não | Tipo MIME (padrão: `application/octet-stream`) |
+| `content_type` | string | não | Atualmente ignorado: cada parte enviada usa sempre `Content-Type: application/octet-stream`, independentemente deste campo |
 
-*`content` ou `reader` e obrigatorio.
+*É obrigatório fornecer `content` ou `reader`.
+
+O runtime fixado lê todo o `reader` na memória antes do envio, não o fecha e não relata separadamente uma falha de leitura diferente de EOF; ele pode enviar os bytes acumulados antes dessa falha. Prefira `content` para dados cujo tamanho já é limitado e feche readers pertencentes ao chamador depois da requisição. O campo `content_type` é interpretado, mas não encaminhado pelo runtime `v0.3.32a`, portanto as partes enviadas usam o padrão do transporte.
+
+Arquivos baseados em `reader` só funcionam em chamadas de requisição individual nesta versão. `request_batch` encaminha o campo `content`, mas descarta um `reader` interpretado; uploads em lote devem fornecer `content`.
 
 ### Timeout
 
@@ -206,7 +228,7 @@ if err then return nil, err end
 
 ### Opções TLS {id="tls-options"}
 
-Configure opcoes TLS por requisicao para mTLS (mutual TLS) e certificados CA customizados.
+Configure TLS mútuo e certificados CA personalizados para uma requisição.
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -258,7 +280,7 @@ if err then return nil, err end
 
 #### Pular Verificacao TLS
 
-Pular verificacao TLS para ambientes de desenvolvimento. Requer a permissão de segurança `http_client.insecure_tls`.
+`insecure_skip_verify` desativa a verificação TLS e exige a permissão de segurança `http_client.insecure_tls`.
 
 ```lua
 local resp, err = http_client.get("https://localhost:8443/api", {
@@ -268,6 +290,8 @@ local resp, err = http_client.get("https://localhost:8443/api", {
 })
 if err then return nil, err end
 ```
+
+Use `insecure_skip_verify` somente com um endpoint de diagnóstico controlado. A opção desativa tanto a verificação da cadeia de certificados quanto a do hostname.
 
 ## Objeto Response
 
@@ -296,7 +320,7 @@ end
 
 ## Respostas em Streaming
 
-Para respostas grandes, use streaming para evitar carregar o corpo inteiro na memoria.
+Defina `stream = true` para processar uma resposta incrementalmente, em vez de manter todo o corpo em memória.
 
 ```lua
 local resp, err = http_client.get("https://cdn.example.com/large-file.zip", {
@@ -324,11 +348,11 @@ if close_err then return nil, close_err end
 | `read(n?)` | string, error | Ler até `n` bytes (padrão: buffer da implementação) |
 | `close()` | boolean, error | Fechar o stream |
 
-`resp.stream` é um objeto [stream](../core/stream.md) completo — `seek`, `stat` e `scanner` também estão disponíveis.
+`resp.stream` é um objeto [stream](../core/stream.md) completo — `seek`, `stat` e `scanner` também estão disponíveis. O chamador é responsável pelo corpo recebido em streaming e deve fechá-lo em toda saída; a limpeza da tarefa é um fallback, não um substituto para a liberação imediata.
 
 ## Requisicoes em Lote
 
-Executar multiplas requisicoes concorrentemente.
+`request_batch` executa várias requisições concorrentemente.
 
 ```lua
 local requests = {
@@ -364,13 +388,17 @@ end
 **Retorna:** `responses, errors` - arrays indexados pela posicao da requisição
 
 **Notas:**
+
 - Requisicoes executam concorrentemente
 - Streaming (`stream = true`) não e suportado em lote
+- Uploads baseados em `reader` não são aceitos em lote; use `files[].content`
 - Arrays de resultado correspondem a ordem das requisicoes (indexados a partir de 1)
 
 ## Codificação de URL
 
 ### Codificar
+
+Codifica uma string para inclusão em uma URL.
 
 ```lua
 local encoded = http_client.encode_uri("hello world")
@@ -380,6 +408,8 @@ local url = "https://api.example.com/search?q=" .. http_client.encode_uri(query)
 ```
 
 ### Decodificar
+
+Decodifica uma string codificada anteriormente com `http_client.encode_uri`.
 
 ```lua
 local decoded, err = http_client.decode_uri("hello+world")
@@ -399,6 +429,7 @@ Requisicoes HTTP estao sujeitas a avaliação de política de segurança.
 | `http_client.unix_socket` | Caminho do socket | Permitir/negar conexoes Unix socket |
 | `http_client.private_ip` | Endereco IP | Permitir/negar acesso a faixas de IP privado |
 | `http_client.insecure_tls` | URL | Permitir/negar TLS inseguro (pular verificacao) |
+| `network.select` | ID da rede | Permitir/negar a seleção explícita de `overlay_network` |
 
 ### Verificando Acesso
 
@@ -430,10 +461,12 @@ Veja [Modelo de Segurança](../../system/security.md) para configurar as políti
 | IP privado bloqueado | `errors.PERMISSION_DENIED` | não |
 | Socket Unix negado | `errors.PERMISSION_DENIED` | não |
 | TLS inseguro negado | `errors.PERMISSION_DENIED` | não |
-| URL ou opções invalidas | `errors.INVALID` | não |
+| Item de lote inválido, streaming em lote ou escape de URI inválido | `errors.INVALID` | não |
 | Sem contexto | `errors.INTERNAL` | não |
-| Falha de rede | `errors.INTERNAL` | sim |
+| URL de transporte malformada ou falha de rede | `errors.INTERNAL` | sim |
 | Timeout | `errors.INTERNAL` | sim |
+
+Muitos valores de opções não aceitos são ignorados, em vez de retornarem erros estruturados. Tipos de argumentos Lua inválidos e um lote vazio geram erros de argumento Lua. Valide tabelas de opções fornecidas pela aplicação antes de chamar o cliente.
 
 ```lua
 local resp, err = http_client.get(url)

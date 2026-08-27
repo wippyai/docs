@@ -8,9 +8,11 @@ description: "Sanitize HTML não confiável com políticas predefinidas ou perso
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Sanitize HTML não confiavel para prevenir ataques XSS. Baseado em [bluemonday](https://github.com/microcosm-cc/bluemonday).
+O módulo `html` sanitiza HTML não confiável com políticas baseadas em [bluemonday](https://github.com/microcosm-cc/bluemonday).
 
-A sanitização funciona parseando HTML e filtrando através de uma política de whitelist. Elementos e atributos não explicitamente permitidos sao removidos. A saida e sempre HTML bem formado.
+A sanitização analisa um fragmento HTML e o filtra por uma política de allowlist. Elementos e atributos não permitidos são removidos, e o fragmento restante é normalizado durante a serialização.
+
+Esta página é uma referência de API. Os blocos de construtores são exemplos autocontidos de políticas; os blocos posteriores são trechos parciais de configuração que pressupõem uma `policy` já criada. A saída sanitizada é adequada somente ao contexto de conteúdo de um elemento HTML. Ela não é segura para interpolação em JavaScript, CSS, URLs ou atributos HTML; use um encoder próprio para o contexto real de saída.
 
 ## Carregamento
 
@@ -18,15 +20,19 @@ A sanitização funciona parseando HTML e filtrando através de uma política de
 local html = require("html")
 ```
 
+Adicione `html` à lista `modules:` da entrada executável antes de importá-lo.
+
 ## Políticas Predefinidas
 
-Tres políticas embutidas para casos de uso comuns:
+O módulo oferece três construtores de políticas predefinidas:
 
 | Política | Caso de Uso | Permite |
 |----------|-------------|---------|
 | `new_policy` | Sanitização customizada | Nada (construir do zero) |
 | `ugc_policy` | Comentarios de usuários, foruns | Formatação comum (`p`, `b`, `i`, `a`, listas, etc.) |
 | `strict_policy` | Extração de texto puro | Nada (remove todo HTML) |
+
+Os três construtores retornam `Policy, nil`; atualmente, a criação da política não falha.
 
 ### Política Vazia
 
@@ -44,7 +50,7 @@ local clean = policy:sanitize(user_input)
 
 **Retorna:** `Policy, error`
 
-### Política de Conteudo de Usuário
+### Política de Conteúdo de Usuário
 
 Pre-configurada para conteudo gerado por usuários. Permite elementos de formatação comuns.
 
@@ -116,7 +122,7 @@ policy:allow_attrs("class", "id"):globally()
 
 **Retorna:** `AttrBuilder`
 
-### Em Elementos Especificos
+### Em Elementos Específicos
 
 Permitir atributos apenas em elementos especificos.
 
@@ -164,7 +170,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `pattern` | string | Padrão regex |
+| `pattern` | string | Expressão regular compatível com Go RE2 |
 
 **Retorna:** `AttrBuilder, error`
 
@@ -172,7 +178,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 ### URLs Padrão
 
-Habilitar tratamento de URL com padroes de segurança.
+Habilita a política padrão de tratamento de URLs. Ela exige URLs analisáveis, permite URLs relativas e os esquemas `mailto`, `http` e `https`, e adiciona `rel="nofollow"` aos elementos de link permitidos.
 
 ```lua
 policy:allow_elements("a")
@@ -287,11 +293,13 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 **Retorna:** `Policy`
 
+Ao abrir links não confiáveis em uma nova aba, habilite também `require_noreferrer_on_links(true)` para impedir vazamento do referrer e mitigar acesso via opener.
+
 ## Métodos de Conveniencia
 
 ### Permitir Imagens
 
-Permitir `<img>` com atributos padrão.
+Permite `<img>` com `align`, `alt`, `height`, `width` e `src`. Este helper também habilita a política padrão de URLs, mas não permite imagens em data URI.
 
 ```lua
 policy:allow_images()
@@ -304,7 +312,7 @@ policy:sanitize('<img src="photo.jpg" alt="Photo">')
 
 ### Permitir Imagens Data URI
 
-Permitir imagens embutidas em base64.
+Permite imagens data URI sintaticamente válidas e codificadas em Base64 nos formatos `gif`, `jpeg`, `png`, `svg+xml` ou `webp`. O sanitizador valida o media type e a codificação Base64, não o conteúdo decodificado da imagem. Data URIs podem carregar conteúdo ativo; habilite-as somente quando confiar nos dados da imagem:
 
 ```lua
 policy:allow_elements("img")
@@ -320,7 +328,7 @@ policy:sanitize(input)
 
 ### Permitir Listas
 
-Permitir elementos de lista: `ul`, `ol`, `li`, `dl`, `dt`, `dd`.
+Permite `ul`, `ol`, `li`, `dl`, `dt` e `dd`. O helper também aceita atributos `type` validados em `ul`, `ol` e `li`, além de um atributo inteiro `value` em `li`.
 
 ```lua
 policy:allow_lists()
@@ -333,7 +341,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### Permitir Tabelas
 
-Permitir elementos de tabela: `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`, `caption`.
+Permite `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td` e `th`. Também permite dimensões, alinhamento, spans, headers, scope e atributos de apresentação relacionados, todos validados pelo helper.
 
 ```lua
 policy:allow_tables()
@@ -346,7 +354,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### Permitir Atributos Padrão
 
-Permitir atributos comuns: `id`, `class`, `title`, `dir`, `lang`.
+Permite globalmente os atributos padrão `dir`, `id`, `lang` e `title`. Os valores são restritos: `dir` deve ser `ltr` ou `rtl`, `lang` deve ter de 2 a 20 letras ASCII e `id` e `title` devem corresponder aos padrões de caracteres seguros do sanitizador. Este helper não permite `class`.
 
 ```lua
 policy:allow_elements("p")
@@ -377,6 +385,8 @@ local clean = policy:sanitize(dirty)
 | `html` | string | HTML para sanitizar |
 
 **Retorna:** `string`
+
+`sanitize` retorna somente uma string. No runtime `v0.3.32a`, o parser de fragmentos subjacente pode transformar uma entrada malformada que não consegue analisar em uma string vazia, e o wrapper Lua não distingue esse caso de uma entrada válida cujo conteúdo foi removido pela política. Trate a sanitização como filtro de saída, não como validação de entrada; valide separadamente o conteúdo obrigatório quando um resultado vazio for relevante.
 
 ## Erros
 

@@ -8,7 +8,7 @@ description: "Inspecione o actor e scope atuais, avalie políticas e gerencie to
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Gerencie actors de autenticação, escopos de autorização e políticas de acesso.
+O módulo `security` expõe actors de autenticação, scopes de autorização, políticas e token stores. Esta página é uma referência de API com receitas parciais de autorização. IDs de registry, actors, metadados de requisição, valores de tokens, objetos da aplicação como `user` e `doc` e callbacks como `show_admin_features` vêm da aplicação; os exemplos não formam um deployment completo de autenticação.
 
 O Wippy usa o modo de segurança estrito por padrão. A entrada executável deve habilitar `security`, ter um actor e um scope e autorizar exatamente as operações chamadas. Em particular, criar ou alterar scopes exige `security.actor.create` ou `security.scope.create`; consultas ao registro exigem `security.policy.get` ou `security.policy_group.get`; operações com tokens exigem `security.token_store.get` e a permissão específica da operação. `new_actor`, `new_scope`, `scope:with`, `scope:without` e a obtenção negada de `token_store` lançam erro Lua em vez de retornar um `error` estruturado. Conceda esses pré-requisitos no contexto de segurança da entrada. Veja [Modelo de Segurança](../../system/security.md) para configurar.
 
@@ -18,7 +18,7 @@ O Wippy usa o modo de segurança estrito por padrão. A entrada executável deve
 local security = require("security")
 ```
 
-## actor
+## `actor`
 
 Retorna o actor de segurança atual do contexto de execução.
 
@@ -32,9 +32,11 @@ if actor then
 end
 ```
 
+Os metadados do actor podem conter identificadores ou dados pessoais. Não registre a tabela completa de metadados nem copie segredos para ela.
+
 **Retorna:** `Actor|nil`
 
-## scope
+## `scope`
 
 Retorna o escopo de segurança atual do contexto de execução.
 
@@ -50,7 +52,7 @@ end
 
 **Retorna:** `Scope|nil`
 
-## can
+## `can`
 
 Verifica se o contexto atual permite uma ação em um recurso.
 
@@ -86,7 +88,7 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 
 **Retorna:** `boolean`
 
-## new_actor
+## `new_actor`
 
 Cria um novo actor com ID e metadados.
 
@@ -112,7 +114,7 @@ local service_actor = security.new_actor("service:payment-processor", {
 
 **Retorna:** `Actor`
 
-## new_scope
+## `new_scope`
 
 Cria um novo escopo customizado.
 
@@ -140,9 +142,11 @@ end
 scope = scope:with(policy1):with(policy2)
 ```
 
+Cada alternativa acima é um padrão de construção isolado. `new_scope` e `scope:with` podem gerar erro quando faltar contexto ou houver negação de permissão; elas não retornam `nil, error` nessas verificações.
+
 **Retorna:** `Scope`
 
-## policy
+## `policy`
 
 Obtem uma política do registry.
 
@@ -169,7 +173,7 @@ end
 
 **Retorna:** `Policy, error`
 
-## named_scope
+## `named_scope`
 
 Obtem um grupo de políticas pre-definido.
 
@@ -184,13 +188,15 @@ end
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
+Carregar um scope não eleva o contexto de execução atual. A chamada produz um valor para avaliação explícita ou para uma API que aceite um scope; o chamador ainda precisa de permissão para executar a operação protegida.
+
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `id` | string | ID do grupo de políticas |
 
 **Retorna:** `Scope, error`
 
-## token_store
+## `token_store`
 
 Obtem um token store para gerenciar tokens de autenticação.
 
@@ -203,6 +209,8 @@ end
 -- Use store...
 return store:close()
 ```
+
+O chamador é responsável pelo token store adquirido até chamar `close()`. Feche-o depois da operação final em todos os caminhos de sucesso ou erro verificados; fechamentos repetidos são seguros. Uma negação de permissão durante a aquisição gera um erro Lua, enquanto falhas de lookup e de recurso retornam `nil, error`.
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
@@ -219,7 +227,7 @@ return store:close()
 
 ## Métodos do Scope
 
-### with / without
+### `with` / `without`
 
 Adiciona ou remove políticas do escopo.
 
@@ -236,6 +244,8 @@ scope = scope:with(write_policy)
 -- Remove policy
 scope = scope:without("app:read-only")
 ```
+
+`with` e `without` retornam novos valores de scope imutáveis e geram erro quando `security.scope.create` não é permitido para o recurso `with` ou `without`.
 
 ### evaluate
 
@@ -285,7 +295,7 @@ end
 
 ## Métodos do TokenStore
 
-### create
+### `create`
 
 Criar token de autenticação.
 
@@ -314,6 +324,8 @@ end
 return token
 ```
 
+`request_ip` e `user_agent` são valores de requisição fornecidos pela aplicação. Armazene apenas os metadados necessários às decisões de segurança, aplique limites de retenção e nunca registre nem persista o bearer token retornado fora do credential store previsto.
+
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `actor` | Actor | Actor para o token |
@@ -323,7 +335,7 @@ return token
 
 **Retorna:** `string, error`
 
-### validate
+### `validate`
 
 Validar token e obter actor/scope.
 
@@ -335,9 +347,11 @@ if err then
 end
 ```
 
+Aqui e abaixo, `store` é um handle ativo com proprietário e `token` é uma credencial bearer não confiável fornecida pelo chamador. Não registre o token, inclusive em erros de validação ou revogação.
+
 **Retorna:** `Actor, Scope, error`
 
-### revoke
+### `revoke`
 
 Invalidar um token.
 
@@ -351,7 +365,7 @@ end
 
 **Retorna:** `boolean, error`
 
-### close
+### `close`
 
 Liberar o recurso do token store.
 
@@ -372,6 +386,8 @@ Operações de segurança estao sujeitas a avaliação de política de seguranç
 | `security.policy.get` | ID da Policy | Acessar definicoes de política |
 | `security.policy_group.get` | ID do Grupo | Acessar escopos nomeados |
 | `security.scope.create` | `custom` | Criar escopos customizados |
+| `security.scope.create` | `with` | Adicionar uma política com `scope:with` |
+| `security.scope.create` | `without` | Remover uma política com `scope:without` |
 | `security.actor.create` | ID do Actor | Criar actors |
 | `security.token_store.get` | ID da Store | Acessar token stores |
 | `security.token.validate` | ID da Store | Validar tokens |
@@ -386,7 +402,8 @@ Veja [Modelo de Segurança](../../system/security.md) para configurar as políti
 |----------|------|------------|
 | Sem contexto | `errors.INTERNAL` | não |
 | ID de token store vazio | `errors.INVALID` | não |
-| Permissão negada | `errors.INVALID` | não |
+| Permissão negada em policy, named scope ou operação de token | `errors.INVALID` | não |
+| Construção de actor/scope, alteração de scope ou aquisição de token store negada | gera erro Lua | não |
 | Política não encontrada | `errors.INTERNAL` | não |
 | Token store não encontrado | `errors.INTERNAL` | não |
 | Token store fechado | `errors.INTERNAL` | não |

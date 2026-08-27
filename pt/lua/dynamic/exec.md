@@ -23,7 +23,7 @@ local exec = require("exec")
 
 ## Obtendo um Executor
 
-Obter um recurso de executor de processo pelo ID:
+Obtém um executor de processos pelo ID do registry:
 
 ```lua
 local executor, err = exec.get("app:exec")
@@ -31,6 +31,8 @@ if err then
     return nil, err
 end
 ```
+
+Mantenha o executor adquirido enquanto cria e executa seus processos. Chame `executor:release()` em todo caminho de retorno depois que o último processo for criado; a liberação é idempotente.
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
@@ -40,7 +42,7 @@ end
 
 ## Criando um Processo
 
-Criar um novo processo com o comando específicado:
+Cria um processo para o comando especificado:
 
 ```lua
 local proc, err = executor:exec("python script.py", {
@@ -57,6 +59,8 @@ if err then
 end
 ```
 
+Argumentos entre aspas são agrupados pelo parser do executor nativo. Eles são passados diretamente ao executável, sem avaliação por shell. No executor nativo, as entradas de `command_whitelist` e o recurso da política `exec.run` correspondem à string completa do comando, não apenas ao nome do executável.
+
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `cmd` | string | Comando para executar |
@@ -65,9 +69,9 @@ end
 
 **Retorna:** `Process, error`
 
-## start / wait
+## `start` / `wait`
 
-Iniciar o processo e aguardar conclusao.
+Inicia o processo e aguarda sua conclusão.
 
 ```lua
 local executor, get_err = exec.get("app:exec")
@@ -105,9 +109,11 @@ if exit_code ~= 0 then
 end
 ```
 
-## stdout_stream / stderr_stream
+`wait()` cede a execução até o processo filho terminar, retorna seu código de saída, coleta o processo e fecha seu handle. Depois de `wait()`, os demais métodos do processo reportam `errors.INVALID`, pois ele está fechado.
 
-Obter streams para ler saida do processo.
+## `stdout_stream` / `stderr_stream`
+
+Abre streams para ler a saída depois de `start()`. Streams de processos executados por Docker não ficam disponíveis antes que o contêiner inicie. Se stdout e stderr puderem produzir dados, drene-os concorrentemente: ler todo o stdout antes do stderr pode causar deadlock quando o processo filho preencher o pipe de stderr não lido.
 
 ```lua
 local function fail(err)
@@ -185,9 +191,11 @@ return {
 }
 ```
 
-## write_stdin
+Esta receita parcial pressupõe que `proc` foi criado a partir do `executor` ativo. Os globais `channel` e `coroutine` coordenam os dois leitores no mesmo processo Lua.
 
-Escrever dados para stdin do processo.
+## `write_stdin`
+
+Escreve dados na entrada padrão do processo. `write_stdin` não fecha stdin; use um comando com contrato de entrada limitado quando a conclusão depender desse stream.
 
 ```lua
 -- This command exits after reading three lines; it does not require an EOF signal
@@ -246,9 +254,11 @@ if exit_code ~= 0 then
 end
 ```
 
-## signal / close
+Esta receita parcial pressupõe que `executor` esteja ativo no início do bloco.
 
-Enviar sinais ou fechar o processo.
+## `signal` / `close`
+
+Escolha um único caminho de encerramento para um processo iniciado:
 
 ```lua
 -- Stop and discard the handle. close() sends SIGTERM, reaps in the
@@ -265,6 +275,8 @@ if close_err then return nil, close_err end
 -- local exit_code, wait_err = proc:wait()
 ```
 
+`close()` é idempotente. Depois que `close()` ou `wait()` fechar o handle, chamadas posteriores a `signal()`, `start()`, `wait()` e ao acesso de streams retornam `errors.INVALID`. Os números e o comportamento dos sinais dependem do backend do executor e do sistema operacional.
+
 ## Permissões
 
 Operações de exec estao sujeitas a avaliação de política de segurança.
@@ -278,7 +290,7 @@ Operações de exec estao sujeitas a avaliação de política de segurança.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| ID inválido | `errors.INVALID` | não |
+| ID de executor vazio | `errors.INVALID` | não |
 | Permissão negada | `errors.INVALID` | não |
 | Processo fechado | `errors.INVALID` | não |
 | Processo não iniciado | `errors.INVALID` | não |

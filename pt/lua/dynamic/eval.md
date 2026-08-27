@@ -32,9 +32,9 @@ end
 -- result = 20
 ```
 
-### Compilando Expressoes
+### Reutilizando Expressões Compiladas
 
-Compilar uma vez, executar muitas vezes:
+Compile uma expressão para avaliá-la repetidamente:
 
 ```lua
 local program, err = expr.compile("price * quantity")
@@ -126,9 +126,9 @@ end
 
 Campos desconhecidos de `limits`, um valor `limits` que não seja tabela e valores inválidos de `max_steps` retornam `errors.INVALID` não retentável.
 
-### Acesso a Modulos
+### Acesso a Módulos
 
-Whitelist de modulos permitidos:
+Forneça uma allowlist de módulos:
 
 ```lua
 local encoded, err = runner.run({
@@ -143,7 +143,7 @@ if err then
 end
 ```
 
-Modulos fora da lista não podem ser requeridos.
+Quando uma lista explícita está presente, módulos fora dela não podem ser importados. Cada módulo listado também exige a permissão `eval.module`.
 
 ### Imports do Registry
 
@@ -164,6 +164,8 @@ if err then
     return nil, err
 end
 ```
+
+A biblioteca importada deve ser uma biblioteca de registry baseada em código-fonte que retorne um valor. O alias — `utils` neste exemplo — é vinculado como global no programa avaliado; ele não é um módulo Wippy e não exige `require()`.
 
 ### Imports Privilegiados
 
@@ -186,9 +188,9 @@ end
 
 A biblioteca `pricing` executa em seu próprio ambiente com escopo onde `funcs` está disponível; o código avaliado não pode dar require nem alcançar `funcs` diretamente. Conceder um módulo a um import exige que o chamador detenha a permissão `eval.module` para esse módulo — capacidades não podem ser delegadas além do que o próprio chamador tem permitido.
 
-### Modulos Customizados
+### Módulos Personalizados
 
-Injetar tabelas customizadas:
+Expõe tabelas personalizadas como módulos:
 
 ```lua
 local version, err = runner.run({
@@ -203,6 +205,8 @@ if err then
     return nil, err
 end
 ```
+
+Os valores dos módulos personalizados são diretamente acessíveis pelo código avaliado. Não coloque segredos nem handles privilegiados nessas tabelas, a menos que a divulgação a esse código seja intencional.
 
 ### Valores de Contexto
 
@@ -244,11 +248,11 @@ program:modules()  -- {"json"}    (string[])
 
 O programa compilado é informativo; execute chamando `runner.run` com o código-fonte e o método.
 
-## Modelo de Segurança
+## Controles de Capacidade
 
-### Classes de Modulos
+### Classes de Módulos
 
-Modulos sao categorizados por capacidade:
+Os módulos são categorizados por capacidade:
 
 | Classe | Descrição | Padrão |
 |--------|-----------|--------|
@@ -256,6 +260,9 @@ Modulos sao categorizados por capacidade:
 | `encoding` | Encoding de dados | Permitido |
 | `time` | Operações de tempo | Permitido |
 | `nondeterministic` | Random, etc. | Permitido |
+| `io` | Operações de entrada/saída sem outra classe bloqueada | Permitido |
+| `security` | Helpers de segurança | Permitido |
+| `workflow` | Operações seguras para workflows | Permitido |
 | `process` | Spawn, registry | Bloqueado |
 | `storage` | Arquivo, banco de dados | Bloqueado |
 | `network` | HTTP, sockets | Bloqueado |
@@ -278,7 +285,9 @@ if err then
 end
 ```
 
-### Verificacoes de Permissão
+A autorização da classe apenas admite o módulo no ambiente de avaliação. As verificações de segurança do próprio módulo e os controles de acesso externos continuam valendo.
+
+### Verificações de Permissão
 
 O sistema verifica permissões para:
 
@@ -292,7 +301,7 @@ Configure em políticas de segurança.
 
 ## Cache de Compilação
 
-Programas compilados são cacheados em um LRU cuja chave é source, method, modules e classes permitidas — execuções repetidas de código idêntico pulam a recompilação. Imports e contexto são vinculados em tempo de execução e não afetam a chave do cache.
+Programas compilados são armazenados em um LRU cuja chave contém o código-fonte, o método, os módulos e as classes permitidas. Execuções repetidas de código idêntico pulam a compilação. Imports, módulos personalizados, argumentos e contexto são vinculados em tempo de execução e não afetam a chave do cache.
 
 ```yaml
 # .wippy.yaml
@@ -318,9 +327,11 @@ if err then
 end
 ```
 
-## Casos de Uso
+Aqui, `run_config` é a tabela de configuração montada pela aplicação.
 
-### Sistema de Plugins
+## Escolhendo por Caso de Uso
+
+### Plugins
 
 ```lua
 local plugins, find_err = registry.find({["meta.type"] = "plugin"})
@@ -341,7 +352,9 @@ for _, plugin in ipairs(plugins) do
 end
 ```
 
-### Avaliação de Template
+Este padrão parcial pressupõe que o chamador carregou `registry` e `eval_runner`, que `app_config` está definido e que as entradas correspondentes do registry armazenam o código-fonte Lua em `data.source`. `registry.find` retorna tabelas de entrada, portanto os campos são lidos como `plugin.data`, não por um método da entrada.
+
+### Regras Repetidas
 
 ```lua
 local compiled, compile_err = expr.compile("score >= minimum")
@@ -361,6 +374,8 @@ for _, candidate in ipairs(candidates) do
 end
 ```
 
+Este padrão parcial pressupõe que `candidates` é fornecido pela aplicação. Use o módulo de templates, em vez de `expr`, quando a saída for texto renderizado.
+
 ### Scripts de Usuário
 
 ```lua
@@ -373,6 +388,8 @@ if err then
     return nil, err
 end
 ```
+
+Este é um padrão parcial de integração, não um sandbox para código hostil. Valide quem pode fornecer `user_code`, conceda apenas os módulos e políticas necessários e imponha um timeout externo ou uma fronteira de isolamento quando código não confiável puder deixar de ceder a execução.
 
 ## Veja Também
 
