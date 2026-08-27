@@ -1,17 +1,19 @@
 ---
 title: "Modelo de Processos"
-description: "O Wippy executa código em processos isolados — máquinas de estado leves que se comunicam através de passagem de mensagens. Essa abordagem baseada no…"
+description: "Como os processos do Wippy executam, se comunicam, isolam capacidades e se recuperam por meio de supervisão."
 ---
 
 # Modelo de Processos
 
-O Wippy executa código em processos isolados — máquinas de estado leves que se comunicam através de passagem de mensagens. Essa abordagem baseada no modelo de atores elimina bugs de estado compartilhado e torna a programação concorrente previsível.
+O Wippy executa código em processos isolados: máquinas de estado leves que se comunicam por mensagens, em vez de memória compartilhada. Esse modelo de atores dá a cada processo seu próprio estado e ciclo de vida.
 
-## Execução como Máquina de Estado
+Esta página explica o modelo de ciclo de vida e isolamento. Use a referência de [Gerenciamento de Processos](../lua/core/process.md) para APIs de spawn, mensagens, monitoramento, registro e atualização. Consulte [Host de Processos e Serviços](../system/process-host.md) para os campos de serviços gerenciados pelo runtime.
 
-Todo processo segue o mesmo padrão: inicializa, avança pela execução cedendo em operações bloqueantes, e fecha quando completo. O agendador multiplexa milhares de processos através de um pool de workers, executando outros processos enquanto um aguarda I/O.
+## Execução como máquina de estado
 
-Processos suportam múltiplos yields concorrentes — você pode iniciar várias operações assíncronas e aguardar que qualquer uma ou todas sejam concluídas. Isso permite I/O paralelo eficiente sem criar processos adicionais.
+Cada processo inicializa, avança pela execução, cede em operações bloqueantes e encerra quando termina. O scheduler multiplexa processos em um pool de workers e executa outros trabalhos enquanto um processo aguarda I/O.
+
+Processos aceitam vários yields simultâneos, permitindo iniciar diversas operações assíncronas e aguardar qualquer uma ou todas elas sem criar processos adicionais.
 
 ```mermaid
 flowchart LR
@@ -23,70 +25,81 @@ flowchart LR
     Running --> Complete
 ```
 
-Processos não estão limitados a Lua. O runtime já suporta módulos WebAssembly através do tipo `process.wasm`, e a arquitetura admite qualquer implementação de máquina de estado.
+Processos não se limitam a Lua. O runtime também aceita módulos WebAssembly por meio do kind `process.wasm`, e sua arquitetura de processos pode acomodar outras implementações de máquinas de estado.
 
 <warning>
-Processos são leves, mas não são gratuitos. Cada processo carrega um pequeno custo base para seu estado, caixa de entrada e contabilidade do escalonador, e as alocações dinâmicas aumentam essa pegada durante a execução.
+Processos são leves, mas não são gratuitos. Cada processo possui um pequeno custo básico para estado, inbox e bookkeeping do scheduler; alocações dinâmicas aumentam esse consumo durante a execução.
 </warning>
 
-## Hosts de Processos
+## Hosts de processos
 
-O Wippy executa múltiplos hosts de processos dentro de um único runtime, cada um com diferentes capacidades e limites de segurança. Processos do sistema executando funções privilegiadas podem residir em um host, isolados de hosts executando sessões de usuário. Hosts podem restringir o que os processos podem fazer — em Erlang você precisaria de nós separados para esse nível de isolamento.
+O Wippy pode executar vários hosts de processos no mesmo runtime, cada qual com suas próprias capacidades e fronteiras de segurança. Processos de sistema privilegiados podem executar em um host separado dos hosts que atendem sessões de usuários.
 
-Alguns hosts são especializados. O host Terminal, por exemplo, executa um único processo mas concede acesso a operações de IO que outros hosts negam. Isso permite misturar níveis de confiança em uma única implantação — serviços do sistema com acesso total ao lado de código de usuário em sandbox.
+Alguns hosts são especializados. O host Terminal, por exemplo, usa um worker do scheduler e fornece contexto de I/O de terminal aos processos aceitos; ele não impõe um limite de vida de um único processo. Hosts separados permitem que uma implantação execute processos com diferentes níveis de confiança.
 
-## Modelo de Segurança
+## Modelo de segurança
 
-Todo processo executa sob uma identidade de ator e política de segurança. Tipicamente este é o usuário que iniciou a chamada, mas processos do sistema executam sob um ator de sistema com privilégios diferentes.
+Cada processo executa sob uma identidade de ator e uma política de segurança. Em geral, trata-se do usuário que iniciou a chamada, enquanto processos de sistema usam um ator de sistema com privilégios diferentes.
 
-O controle de acesso funciona em múltiplos níveis. Processos individuais têm seus próprios níveis de acesso. O envio de mensagens entre hosts pode ser proibido com base na política de segurança — um processo de usuário em sandbox pode não ter permissão para enviar mensagens a hosts do sistema. A política anexada ao ator atual determina quais operações são permitidas.
+O controle de acesso se aplica em vários níveis. A política de segurança pode restringir operações individuais de processos e a entrega de mensagens entre hosts. A política associada ao ator atual determina quais operações são permitidas.
 
-## Criando Processos
+Para as implicações de segurança do isolamento de processos, consulte o [Modelo de Segurança](./security-model.md).
+
+## Iniciando processos
 
 Crie processos em segundo plano com `process.spawn()`:
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+local pid, err = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+if err then return nil, err end
+return pid
 ```
 
-O primeiro argumento é a entrada do registro, o segundo é o host de processos, e os argumentos restantes são passados ao processo.
+O primeiro argumento é a entrada do registro, o segundo é o host de processos e os argumentos restantes são passados ao processo.
 
-Variantes de spawn controlam relacionamentos de ciclo de vida:
+As variantes de spawn controlam as relações de ciclo de vida:
 
 | Função | Comportamento |
-|--------|---------------|
-| `spawn` | Dispara e esquece |
-| `spawn_monitored` | Recebe eventos EXIT quando o filho termina |
-| `spawn_linked` | Bidirecional — qualquer crash notifica o outro |
+|----------|----------|
+| `spawn` | Inicia um processo independente |
+| `spawn_monitored` | Recebe eventos EXIT quando o filho encerra |
+| `spawn_linked` | Uma saída anormal se propaga em qualquer direção; com `trap_links: true`, o peer recebe `LINK_DOWN` em vez de falhar |
 
-## Passagem de Mensagens
+## Passagem de mensagens
 
-Processos se comunicam através de mensagens, nunca memória compartilhada:
+Processos se comunicam por mensagens, e não por memória compartilhada:
 
 ```lua
-process.send(target_pid, "topic", payload)
+local ok, err = process.send(target_pid, "topic", payload)
+if err then return nil, err end
+return ok
 ```
 
-Mensagens do mesmo remetente chegam em ordem. Mensagens de remetentes diferentes podem intercalar. A entrega é dispara-e-esquece — use padrões de requisição-resposta quando precisar de confirmação.
+Mensagens do mesmo remetente chegam em ordem. Mensagens de remetentes diferentes podem se intercalar. A entrega é fire-and-forget; use padrões de requisição e resposta quando precisar de confirmação.
 
 <note>
-Processos podem se registrar em um registro de nomes local e ser endereçados por nome ao invés de PID (ex: `session_manager`). Registro global para endereçamento entre nós está planejado.
+Processos podem se registrar em um registro local de nomes e ser endereçados pelo nome, em vez do PID (por exemplo, `session_manager`). Nomes também podem ser registrados em todo o cluster para endereçamento entre nós por meio de `process.registry`, usando os escopos EVENTUAL (baseado em gossip), CONSISTENT ou STRONG (ambos apoiados por Raft).
 </note>
 
 ## Supervisão
 
-Qualquer processo pode supervisionar outros monitorando-os. Um processo cria filhos com monitoramento, observa eventos EXIT, e os reinicia em caso de falha. Isso segue a filosofia "deixe falhar" do Erlang: processos falham em condições inesperadas, e o processo de monitoramento trata a recuperação.
+Qualquer processo pode supervisionar outros processos monitorando-os. Um supervisor inicia filhos monitorados, observa eventos EXIT e decide se deve reiniciá-los após uma falha.
 
 ```lua
-local worker = process.spawn_monitored("app.workers:handler", "app:processes")
-local event = process.events():receive()
+local worker, spawn_err = process.spawn_monitored("app.workers:handler", "app:processes")
+if spawn_err then return nil, spawn_err end
+
+local event, open = process.events():receive()
+if not open then return nil, errors.new("process event channel closed") end
 
 if event.kind == process.event.EXIT and event.result.error then
-    worker = process.spawn_monitored("app.workers:handler", "app:processes")
+    local replacement, restart_err = process.spawn_monitored("app.workers:handler", "app:processes")
+    if restart_err then return nil, restart_err end
+    worker = replacement
 end
 ```
 
-No nível raiz, o runtime fornece serviços que iniciam e supervisionam processos de longa duração — similar ao systemd no Linux. Defina uma entrada `process.service` para que o runtime gerencie um processo:
+No nível do runtime, serviços podem iniciar e supervisionar processos de longa duração. Defina uma entrada `process.service` para que o runtime gerencie um processo:
 
 ```yaml
 - name: worker.service
@@ -97,23 +110,23 @@ No nível raiz, o runtime fornece serviços que iniciam e supervisionam processo
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
 ```
 
-O serviço inicia automaticamente, reinicia em caso de crash com backoff, e se integra com o gerenciamento de ciclo de vida do runtime.
+O serviço inicia automaticamente e integra-se ao gerenciamento de ciclo de vida do runtime. No runtime fixado, a primeira inicialização que falha conta para `max_attempts`; portanto, `5` permite no máximo quatro novas tentativas de inicialização. Cada retry aguarda `initial_delay` com jitter; o atraso não aumenta entre tentativas.
 
-## Atualização de Processos
+## Atualização de processos
 
-Processos em execução podem atualizar seu código sem perder a identidade. Chame `process.upgrade()` para trocar para uma nova definição preservando PID, caixa de mensagens e relacionamentos de supervisão:
+Processos em execução podem atualizar seu código sem perder a identidade. Chame `process.upgrade()` para trocar para uma nova definição, preservando PID, mailbox e relações de supervisão:
 
 ```lua
 process.upgrade("app.workers:v2", current_state)
 ```
 
-O primeiro argumento é a nova entrada do registro (ou nil para recarregar a definição atual). Argumentos adicionais são passados para a nova versão, permitindo carregar estado através da atualização. O processo retoma a execução com o novo código imediatamente.
+O primeiro argumento é a nova entrada do registro (ou nil para recarregar a definição atual). Argumentos adicionais são passados à nova versão, permitindo transportar estado durante a atualização. O processo retoma imediatamente a execução com o novo código.
 
-Isso permite hot code reload durante o desenvolvimento e atualizações sem tempo de inatividade em produção. O runtime armazena em cache protos compilados, então atualizações não pagam o custo de compilação repetidamente. Se uma atualização falhar por qualquer motivo, o processo falha e a semântica normal de supervisão se aplica — um pai de monitoramento pode reiniciá-lo com a versão anterior ou escalar a falha.
+O runtime armazena protótipos compilados em cache para evitar compilações repetidas. Se uma atualização falhar, o processo falha e o comportamento normal de supervisão se aplica; um pai que o monitora pode reiniciá-lo ou escalar a falha.
 
 ## Agendamento
 
-O agendador de atores usa roubo de trabalho entre núcleos de CPU. Cada worker tem uma fila local para localidade de cache, com uma fila global para distribuição. Processos cedem em operações bloqueantes, permitindo que milhares executem concorrentemente em poucos threads.
+O scheduler de atores usa work-stealing entre núcleos da CPU. Cada worker possui uma fila local para favorecer a localidade do cache e há uma fila global para distribuir o trabalho. Processos cedem em operações bloqueantes para que outros processos possam executar no pool de workers.

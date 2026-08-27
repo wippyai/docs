@@ -81,7 +81,7 @@ Essa herança mantém a autorização ligada à cadeia de chamadas, mas também 
 
 Ler entries e alterar o registry exigem permissões diferentes. Changesets duráveis padrão exigem `registry.apply`; na v0.3.32a, essa verificação usa um recurso vazio e não representa uma decisão de escrita por entry ou namespace. Não conceda `registry.apply` a um agente não confiável presumindo que um padrão de namespace limitará suas escritas.
 
-Overlays locais ao processo têm uma superfície de permissão mais restrita. Eles verificam o owner do overlay e ações específicas como `registry.overlay.create.<kind>`, `registry.overlay.update.<kind>` e `registry.overlay.delete.<kind>` em relação ao ID afetado. Consulte [Registry de entries](../lua/core/registry.md#overlays-locais-ao-processo).
+Overlays locais ao processo têm uma superfície de permissão mais restrita. Eles verificam o owner do overlay e ações específicas como `registry.overlay.create.<kind>`, `registry.overlay.update.<kind>` e `registry.overlay.delete.<kind>` em relação ao ID afetado. Consulte [Registry de entries](../lua/core/registry.md).
 
 ## Limites de dados
 
