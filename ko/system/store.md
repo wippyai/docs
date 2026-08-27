@@ -5,7 +5,9 @@ description: "TTL 지원이 있는 키-값 스토어: 인메모리, SQL 기반, 
 
 # 스토어 (키-값)
 
-TTL 지원이 있는 키-값 스토어: 인메모리, SQL 기반, 클러스터 복제(Raft 및 CRDT).
+Wippy는 memory, SQL, Raft 또는 CRDT 기반의 TTL-aware key-value store를 제공합니다.
+
+이 페이지는 entry-configuration 레퍼런스입니다. YAML fence는 기존 entry list용 fragment이며 SQL fence는 `store.sql` 엔트리가 시작되기 전에 실행해야 하는 schema setup입니다.
 
 ## 엔트리 종류
 
@@ -29,7 +31,7 @@ TTL 지원이 있는 키-값 스토어: 인메모리, SQL 기반, 클러스터 �
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `max_size` | int | 10000 | 최대 항목 수 (0 = 무제한) |
+| `max_size` | int | 10000 | 최대 엔트리 수; 0은 기본값(10000)으로 교체됨 |
 | `cleanup_interval` | duration | 5m | 만료된 항목 정리 간격 |
 
 `max_size`에 도달하면 새 항목이 거부됩니다. 재시작 시 데이터가 손실됩니다.
@@ -55,21 +57,21 @@ TTL 지원이 있는 키-값 스토어: 인메모리, SQL 기반, 클러스터 �
 | `expire_column_name` | string | expires_at | 만료용 컬럼 |
 | `cleanup_interval` | duration | 0 | 만료된 항목 정리 간격 |
 
-컬럼 이름은 SQL 인젝션에 대해 검증됩니다. 사용 전에 테이블을 생성하세요:
+column name은 SQL injection에 대해 검증됩니다. 다음 prerequisite는 PostgreSQL DDL입니다. MySQL 또는 SQLite에는 동등한 binary/blob 및 timestamp type을 사용하십시오.
 
 ```sql
 CREATE TABLE kv_store (
     key VARCHAR(255) PRIMARY KEY,
     value BYTEA NOT NULL,
-    expires_at BIGINT
+    expires_at TIMESTAMPTZ NULL
 );
 
 CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL;
 ```
 
-## Cluster KV Stores {id=cluster-kv-stores}
+## Cluster KV Stores
 
-`store.kv.raft`와 `store.kv.crdt`는 클러스터 노드 간에 키-값 데이터를 복제합니다. 둘 다 [클러스터링](guides/cluster.md)이 활성화되어 있어야 하며 동일한 [Store 모듈](lua/storage/store.md) Lua API를 재사용합니다. 각 엔트리는 노드 전체 엔진 하나에 대한 네임스페이스 뷰입니다. `namespace`는 이 엔트리의 키를 격리하며 `^[a-z][a-z0-9._-]*$`와 일치해야 합니다(`_`로 시작할 수 없음).
+`store.kv.raft`와 `store.kv.crdt`는 cluster node 간에 key-value data를 복제합니다. 둘 다 [clustering](../guides/cluster.md)이 활성화되어야 하며 같은 [Store 모듈](../lua/storage/store.md) Lua API를 재사용합니다. 각 엔트리는 node-wide engine 하나의 namespaced view입니다. `namespace`는 이 엔트리의 key를 격리하며 `^[a-z][a-z0-9._-]*$`와 일치해야 합니다(`_`로 시작할 수 없음).
 
 ### Raft (강한 일관성)
 
@@ -83,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |-------|------|----------|-------------|
 | `namespace` | string | 예 | 공유 엔진 내 키 네임스페이스 |
 
-쓰기는 공유 Raft를 통해 제안되며(팔로워는 리더로 전달), 읽기는 선형화 가능합니다. 조건부 쓰기(`only_if_absent`/`if_version`과 함께하는 `put`)가 지원됩니다. Raft 상태는 기본적으로 `cluster.raft.data_dir`(기본값 `~/.wippy/store`) 아래에 fs-durable입니다. [구성](guides/configuration.md#cluster)을 참조하세요.
+write는 shared Raft를 통해 propose되고 follower는 leader로 전달합니다. read는 linearizable합니다. conditional write(`only_if_absent`/`if_version`을 사용한 `put`)를 지원합니다. Raft state는 기본적으로 `cluster.raft.data_dir`(기본값 `~/.wippy/store`) 아래에 fs-durable입니다. [설정](../guides/configuration.md#cluster)을 참조하십시오.
 
 ### CRDT (최종 일관성)
 
@@ -107,13 +109,18 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## TTL 동작
 
-두 스토어 모두 TTL(Time-to-live)을 지원합니다. 만료된 항목은 `cleanup_interval`에서 정리가 실행될 때까지 잠시 유지됩니다. 자동 정리를 비활성화하려면 `0`으로 설정하세요.
+네 store kind 모두 TTL 값을 받지만 expiry visibility는 backend마다 다릅니다.
+
+- `store.memory`는 read에서 expired key를 missing으로 취급하고 기본값 `5m`인 `cleanup_interval`에서 expired entry를 제거합니다. 설정된 zero value는 기본값으로 교체됩니다.
+- `store.sql`은 read에서 expired row를 filter하고 `cleanup_interval`에서 제거합니다. 기본값 `0`은 background cleanup을 비활성화하지만 expired row를 readable하게 만들지는 않습니다.
+- `store.kv.raft`는 expiring key를 leader-driven lease에 연결합니다. 약 1초의 lease sweep이 Raft를 통해 deletion을 propose하므로 consensus-applied removal이 반영될 때까지 key가 readable할 수 있습니다.
+- `store.kv.crdt`도 약 1초의 lease sweep에서 expired key를 제거한 뒤 tombstone을 gossip합니다. lease deadline은 write를 수락한 node에 local입니다. origin이 expiry 전에 실패하면 다른 node가 deadline을 독립적으로 재현하지 않으므로 이후 state 또는 administrative cleanup이 제거할 때까지 key가 남을 수 있습니다.
 
 ## Lua API
 
-작업은 [Store 모듈](lua/storage/store.md)을 참조하세요: `get`, `set`, `has`, `delete`, 그리고 버전 관리 및 조건부 접근을 위한 `put`, `entry`, `list`, `info`.
+작업은 [Store 모듈](../lua/storage/store.md)을 참조하십시오: `get`, `set`, `has`, `delete`, 그리고 versioned 및 conditional access를 위한 `put`, `entry`, `list`, `info`.
 
 ## 참고
 
-- [Store 모듈](lua/storage/store.md) - Lua API 레퍼런스
-- [데이터베이스](system/database.md) - `store.sql`의 SQL 백엔드
+- [Store 모듈](../lua/storage/store.md) - Lua API 레퍼런스
+- [데이터베이스](./database.md) - `store.sql`의 SQL backing
