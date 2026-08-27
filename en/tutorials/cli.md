@@ -206,7 +206,10 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet the user
+
+  greet  Greet the user  (app:cli)
+
+Run with: wippy run <command>
 ```
 
 ## Exit Codes
@@ -237,7 +240,7 @@ end
 | Flag | Description |
 |------|-------------|
 | `wippy run -x app:cli` | Run CLI process (auto-detects terminal.host) |
-| `wippy run -x app:cli --host app:term` | Explicit terminal host |
+| `wippy run -x app:cli --host app:terminal` | Explicit terminal host |
 | `wippy run -x app:cli -v` | With verbose logging |
 
 ## Next Steps

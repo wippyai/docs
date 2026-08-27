@@ -73,16 +73,19 @@ result.ok              -- true
 
 ### Select with Send
 
-Use `case_send` to attempt non-blocking sends:
+Use `case_send` to include a send operation in a select. Without a default case, `channel.select` waits until one of its cases is ready. Add `default = true` to make the attempt non-blocking:
 
 ```lua
 local ch = channel.new(1)
 
 local result = channel.select{
-    ch:case_send("sent")
+    ch:case_send("sent"),
+    default = true
 }
 
-result.ok  -- true (send succeeded)
+if not result.default then
+    result.ok  -- true (send succeeded)
+end
 
 local v = ch:receive()  -- "sent"
 ```

@@ -112,16 +112,14 @@ wippy init
 wippy run -c
 ```
 
-The startup output includes the runtime-ready message and the listening address:
+The startup output includes the runtime-ready message and the listening address. Timestamps vary, but the messages are:
 
 ```
-╦ ╦╦╔═╗╔═╗╦ ╦  Adaptive Application Runtime
-║║║║╠═╝╠═╝╚╦╝  v0.1.20
-╚╩╝╩╩  ╩   ╩   by Spiral Scout
-
-0.00s  INFO  run          runtime ready
-0.11s  INFO  core         service app:gateway is running  {"details": "service listening on :8080"}
+INFO  run   runtime ready
+INFO  core  service app:gateway is running  {"details": "service listening on :8080"}
 ```
+
+The console banner also shows the runtime version and build date; those values depend on the binary being run.
 
 ## Step 5: Test It
 
@@ -146,7 +144,7 @@ Expected response:
 
 | Command | Description |
 |---------|-------------|
-| `wippy init` | Generate lock file from `src/` |
+| `wippy init` | Create `wippy.lock` with `./src` as the source directory |
 | `wippy run` | Start runtime from lock file |
 | `wippy run -c` | Start with colorful console output |
 | `wippy run -v` | Start with verbose debug logging |

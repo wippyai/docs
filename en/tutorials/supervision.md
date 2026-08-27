@@ -18,7 +18,7 @@ Use monitoring and linking to observe process exits, propagate failures, handle 
 **Linking** creates bidirectional fate-sharing:
 
 - A parent and child are linked.
-- If either process fails, both terminate.
+- If either process exits abnormally, the other also terminates.
 - Setting `trap_links=true` changes failures into events that the process can handle.
 
 ```mermaid
@@ -30,7 +30,7 @@ flowchart TB
 
     subgraph Linking["LINKING (bidirectional)"]
         direction TB
-        P2[Parent linked] <-->|LINK_DOWN<br/>both die| C2[Child exits]
+        P2[Parent linked] <-->|LINK_DOWN<br/>both die| C2[Child fails]
     end
 ```
 
@@ -278,7 +278,7 @@ end
 
 ### Send Cancel Signal
 
-Use `process.cancel()` to gracefully terminate a process:
+Use `process.cancel()` to request graceful cancellation from a process:
 
 ```lua
 local function main()
@@ -491,6 +491,13 @@ entries:
     method: main
     modules:
       - time
+
+  - name: pool-service
+    kind: process.service
+    process: app.supervisor:pool
+    host: app:processes
+    input:
+      - 4
     lifecycle:
       auto_start: true
 ```

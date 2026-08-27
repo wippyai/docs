@@ -13,6 +13,8 @@ Processes provide isolated execution units that communicate through message pass
 
 This page is an API primer: each snippet illustrates one operation in isolation. For an end-to-end application that combines spawning, monitoring, and messaging, see the [Echo Service](tutorials/echo-service.md) tutorial.
 
+The `process` API is an ambient global in executable Lua entries. It does not need to appear in `modules`; direct `process.*` access is idiomatic, and `require("process")` also resolves without an explicit module declaration.
+
 Key concepts:
 
 - Spawn processes with `process.spawn()` and its variants.
@@ -207,7 +209,7 @@ local ok, err = process.unmonitor(worker_pid)
 
 ## Process Linking
 
-Link processes for coordinated lifecycle management. Linked processes receive LINK_DOWN events when linked processes fail.
+Link processes for coordinated lifecycle management. An abnormal exit terminates linked peers by default. A peer with `trap_links=true` remains running and receives a `LINK_DOWN` event instead.
 
 ### Spawn Linked Process
 
