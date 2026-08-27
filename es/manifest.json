@@ -54,13 +54,13 @@
           {"title": "Canales", "path": "lua/core/channel"},
           {"title": "Procesos", "path": "lua/core/process"},
           {"title": "Grupos de procesos", "path": "lua/core/pg"},
-          {"title": "Functions", "path": "lua/core/funcs"},
+          {"title": "Funciones", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},
           {"title": "Stream", "path": "lua/core/stream"},
-          {"title": "Context", "path": "lua/core/context"},
-          {"title": "Events", "path": "lua/core/events"},
-          {"title": "Registry", "path": "lua/core/registry"},
-          {"title": "Contract", "path": "lua/core/contract"}
+          {"title": "Contexto", "path": "lua/core/context"},
+          {"title": "Eventos", "path": "lua/core/events"},
+          {"title": "Registro", "path": "lua/core/registry"},
+          {"title": "Contratos", "path": "lua/core/contract"}
         ]
       },
       {
@@ -128,9 +128,9 @@
       {
         "title": "Dynamic",
         "children": [
-          {"title": "Eval", "path": "lua/dynamic/eval"},
-          {"title": "Exec", "path": "lua/dynamic/exec"},
-          {"title": "Expression", "path": "lua/dynamic/expression"}
+          {"title": "Evaluación", "path": "lua/dynamic/eval"},
+          {"title": "Ejecución", "path": "lua/dynamic/exec"},
+          {"title": "Expresiones", "path": "lua/dynamic/expression"}
         ]
       }
     ]

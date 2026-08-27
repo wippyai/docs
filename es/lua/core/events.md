@@ -1,17 +1,22 @@
 ---
-title: "Bus de Eventos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+title: "Bus de eventos"
+description: "Publica y observa eventos de mejor esfuerzo del runtime y la aplicación."
 ---
 
-# Bus de Eventos
+# Bus de eventos
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publicar y suscribirse a eventos para observabilidad — monitorear la actividad del runtime y de la aplicación y reaccionar a ella.
+El bus de eventos publica actividad del runtime y la aplicación para monitorización,
+logs, métricas y efectos secundarios reactivos. Esta página es una referencia de API;
+los fragmentos presuponen una entrada Lua ejecutable con el módulo y permisos indicados.
 
 <note>
-Usar el bus de eventos solo para observación: monitoreo, registro, métricas y efectos secundarios reactivos. Es un canal de publish/subscribe de mejor esfuerzo, no un transporte confiable — no construir lógica de negocio sobre él ni depender de él para entrega garantizada. Para mensajería crítica de negocio usar mensajería de proceso (`process.send`), canales, o la [cola de mensajes](lua/storage/queue.md).
+El bus de eventos es un canal publish/subscribe de mejor esfuerzo, no un transporte
+fiable. No dependas de él para entregas críticas para el negocio. Usa mensajería de
+procesos (`process.send`), canales o la [cola de mensajes](../storage/queue.md) cuando
+la entrega forme parte de la corrección de la aplicación.
 </note>
 
 ## Carga
@@ -22,35 +27,29 @@ local events = require("events")
 
 ## Suscribirse a Eventos
 
-Suscribirse a eventos del bus de eventos:
+Suscríbete a un sistema o patrón de sistema, con un filtro opcional por tipo de evento:
 
 ```lua
--- Suscribirse a todos los eventos de pedidos
+-- Subscribe to all order events
 local sub, err = events.subscribe("orders.*")
 if err then
     return nil, err
 end
 
--- Suscribirse a tipo de evento específico
-local sub = events.subscribe("users", "user.created")
-
--- Suscribirse a todos los eventos de un sistema
-local sub = events.subscribe("payments")
-
--- Procesar eventos
+-- Process events
 local ch = sub:channel()
 while true do
     local evt, ok = ch:receive()
     if not ok then break end
 
-    logger:info("Received event", {
-        system = evt.system,
-        kind = evt.kind,
-        path = evt.path
-    })
-    handle_event(evt)
+    print(evt.system, evt.kind, evt.path)
+    -- Process evt.data when the publisher supplied a payload.
 end
 ```
+
+Pasa un segundo argumento para limitar la entrega a un tipo, por ejemplo
+`events.subscribe("users", "user.created")`. Si se omite, se aceptan todos los tipos
+del sistema coincidente.
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
@@ -59,12 +58,12 @@ end
 
 **Devuelve:** `Subscription, error`
 
-## Enviar Eventos
+## Publicar eventos
 
 Enviar un evento al bus de eventos:
 
 ```lua
--- Enviar evento de pedido creado
+-- Send order created event
 local ok, err = events.send("orders", "order.created", "/orders/123", {
     order_id = "123",
     customer_id = "456",
@@ -74,23 +73,11 @@ if err then
     return nil, err
 end
 
--- Enviar evento de usuario
-events.send("users", "user.registered", "/users/" .. user.id, {
-    user_id = user.id,
-    email = user.email,
-    created_at = time.now():format("2006-01-02T15:04:05Z07:00")
-})
-
--- Enviar evento de pago
-events.send("payments", "payment.completed", "/payments/" .. payment.id, {
-    payment_id = payment.id,
-    order_id = payment.order_id,
-    amount = payment.amount,
-    method = payment.method
-})
-
--- Enviar sin datos
-events.send("system", "heartbeat", "/health")
+-- Send without data
+local heartbeat_sent, heartbeat_err = events.send("system", "heartbeat", "/health")
+if heartbeat_err then
+    return nil, heartbeat_err
+end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -102,6 +89,9 @@ events.send("system", "heartbeat", "/health")
 
 **Devuelve:** `boolean, error`
 
+Un retorno correcto confirma que el runtime aceptó el envío. No confirma que algún
+suscriptor haya recibido o procesado el evento.
+
 ## Métodos de Suscripción
 
 ### Obtener el Canal
@@ -109,6 +99,7 @@ events.send("system", "heartbeat", "/health")
 Obtener el canal para recibir eventos:
 
 ```lua
+local json = require("json")
 local ch = sub:channel()
 
 local evt, ok = ch:receive()
@@ -116,19 +107,25 @@ if ok then
     print("System:", evt.system)
     print("Kind:", evt.kind)
     print("Path:", evt.path)
-    print("Data:", json.encode(evt.data))
+    local encoded, encode_err = json.encode(evt.data)
+    if encode_err then return nil, encode_err end
+    print("Data:", encoded)
 end
 ```
 
-Campos del evento: `system`, `kind`, `path`, `data`
+Cada evento contiene `system`, `kind` y `path`. El campo `data` solo está presente
+cuando el publicador proporcionó un payload distinto de nil.
 
 ### Cerrar Suscripción
 
 Desuscribirse y cerrar el canal:
 
 ```lua
-sub:close()
+local closed = sub:close() -- true
 ```
+
+El cierre es idempotente. Después de cerrar el canal, `receive()` devuelve
+`nil, false` cuando se agotan los eventos almacenados.
 
 ## Permisos
 
@@ -145,5 +142,6 @@ sub:close()
 | Tipo vacío | `errors.INVALID` | no |
 | Ruta vacía | `errors.INVALID` | no |
 | Política denegada | `errors.INVALID` | no |
+| Falta el contexto de ejecución o proceso | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](./errors.md) para trabajar con errores.

@@ -1,13 +1,15 @@
 ---
 title: "Futures"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Recibe, inspecciona y cancela resultados de llamadas asíncronas a funciones y contratos."
 ---
 
 # Futures
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Resultados de operaciones asincronas. Los futures son devueltos por `funcs.async()` y llamadas async de contrato.
+Los futures representan resultados de operaciones asíncronas. Los devuelven
+`funcs.async()` y las llamadas asíncronas a contratos. Esta página es una referencia
+de API; los identificadores de destino y argumentos de sus patrones los define la aplicación.
 
 ## Carga
 
@@ -16,25 +18,40 @@ No es un módulo cargable. Los futures son creados por operaciones asincronas:
 ```lua
 local funcs = require("funcs")
 local future, err = funcs.async("app.compute:task", data)
+if err then
+    return nil, err
+end
 ```
 
 ## Canal de Respuesta
 
-Obtener canal para recibir resultado:
+Usa el canal de respuesta para esperar a que termine la operación y lee después el
+resultado almacenado en el future:
 
 ```lua
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
 end
+
+local payload, err = future:result()
+if err then
+    return nil, err
+end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 `channel()` es un alias para `response()`.
 
+El valor del canal es el payload, la tabla de payloads o el error de la operación.
+Llamar a `result()` después de que el canal esté listo proporciona una única interfaz
+para éxito y error y devuelve el valor almacenado incluso después de consumir el canal.
+
 ## Verificacion de Completitud
 
-Verificacion no bloqueante si el future completo:
+Comprueba sin bloquear si el future ha terminado:
 
 ```lua
 if future:is_complete() then
@@ -44,7 +61,7 @@ end
 
 ## Verificacion de Cancelacion
 
-Verificar si `cancel()` fue llamado:
+Comprueba si el proveedor marcó el future como cancelado:
 
 ```lua
 if future:is_canceled() then
@@ -54,7 +71,7 @@ end
 
 ## Obtener Resultado
 
-Obtener resultado cacheado (no bloqueante):
+Lee sin bloquear el resultado almacenado:
 
 ```lua
 local val, err = future:result()
@@ -68,7 +85,7 @@ local val, err = future:result()
 
 ## Obtener Error
 
-Obtener error si el future fallo:
+Lee el error cuando el future ha fallado:
 
 ```lua
 local err, has_error = future:error()
@@ -79,21 +96,44 @@ end
 
 **Devuelve:** `error, boolean`
 
+Cuando una operación falla, `error()` devuelve un wrapper `INTERNAL` no reintentable.
+Usa `result()` cuando deban conservarse el tipo y la reintentabilidad del error original.
+
 ## Cancelar
 
-Cancelar operación asincrona (mejor esfuerzo):
+Solicita la cancelación de la operación asíncrona con semántica de mejor esfuerzo:
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
 ```
 
 La operación puede aun completarse si ya esta en progreso.
 
+**Devuelve:** `boolean, error`
+
+<warning>
+En el runtime v0.3.32a, los futures de funciones y contratos comparten un único
+callback de cancelación global al proceso. Cuando se cargan ambos proveedores,
+<code>cancel()</code> y <code>is_canceled()</code> no son un contrato estable entre
+proveedores. No uses la cancelación para la corrección de la aplicación; aplica un
+timeout local e ignora un resultado tardío hasta que el runtime separe la cancelación
+de los proveedores.
+</warning>
+
 ## Patrón de Timeout
 
 ```lua
-local future = funcs.async("app.compute:slow", data)
-local timeout = time.after("5s")
+local time = require("time")
+
+local future, err = funcs.async("app.compute:slow", data)
+if err then
+    return nil, err
+end
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     future:channel():case_receive(),
@@ -101,37 +141,64 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    -- The operation may still complete; this caller ignores the late result.
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
 end
 
-return r.value:data()
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## Primero en Completar
 
 ```lua
-local f1 = funcs.async("app.cache:get", key)
-local f2 = funcs.async("app.db:get", key)
-
-local r = channel.select {
-    f1:channel():case_receive(),
-    f2:channel():case_receive()
-}
-
--- Cancelar el mas lento
-if r.channel == f1:channel() then
-    f2:cancel()
-else
-    f1:cancel()
+local f1, err = funcs.async("app.cache:get", key)
+if err then
+    return nil, err
+end
+local f2, err = funcs.async("app.db:get", key)
+if err then
+    return nil, err
 end
 
-return r.value:data()
+local ch1 = f1:channel()
+local ch2 = f2:channel()
+
+local r = channel.select {
+    ch1:case_receive(),
+    ch2:case_receive()
+}
+
+-- The slower operation may still complete; this caller ignores its result.
+local winner
+if r.channel == ch1 then
+    winner = f1
+else
+    winner = f2
+end
+
+local payload, result_err = winner:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## Errores
 
-| Condición | Tipo |
-|-----------|------|
-| Operación cancelada | `CANCELED` |
-| Operación asincrona fallida | varia |
+| Condición | Tipo | Reintentable |
+|-----------|------|--------------|
+| Operación cancelada mediante `result()` | `errors.CANCELED` | no |
+| Fallo de operación devuelto por `result()` | varía | se conserva del error de la función |
+| Fallo de operación devuelto por `error()` | `errors.INTERNAL` | no |
+| Fallo del dispatch de cancelación | `errors.INTERNAL` | no |

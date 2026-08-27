@@ -1,6 +1,6 @@
 ---
 title: "Contratos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Abre bindings de servicios tipados, inspecciona contratos, llama implementaciones y propaga el contexto de llamada o seguridad."
 ---
 
 # Contratos
@@ -9,7 +9,10 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Invocar servicios a traves de contratos tipados. Llamar APIs remotas, flujos de trabajo y funciones con validacion de esquema y soporte de ejecución asincrona.
+El módulo `contract` abre bindings de servicios tipados para API remotas, workflows y
+funciones. Los contratos admiten validación de esquema, llamadas asíncronas y
+propagación del contexto de llamada. Esta página es una referencia de API; los IDs y
+valores como `current_user` representan entradas y estado circundante de la aplicación.
 
 ## Carga
 
@@ -28,21 +31,24 @@ if err then
 end
 
 local result, err = greeter:say_hello("Alice")
+if err then
+    return nil, err
+end
 ```
 
 Con contexto de alcance o parametros de consulta:
 
 ```lua
--- Con tabla de alcance
+-- With scope table
 local svc, err = contract.open("app.services:user", {
     tenant_id = "acme",
     region = "us-east"
 })
 
--- Con parametros de consulta (auto-convertidos: "true"->bool, numeros->int/float)
+-- With query parameters (auto-converted: "true"→bool, numbers→int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
--- Con opciones de llamada (tercer argumento)
+-- With call options (third argument)
 local inst, err = contract.open("app.services:flaky", nil, {
     retry = { max_attempts = 5, initial_delay = 100 }
 })
@@ -62,6 +68,9 @@ Recuperar definicion de contrato para introspeccion:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 
 print(c:id())  -- "app.services:greeter"
 
@@ -71,6 +80,9 @@ for _, m in ipairs(methods) do
 end
 
 local method, err = c:method("say_hello")
+if err then
+    return nil, err
+end
 ```
 
 ### Definicion de Método
@@ -79,8 +91,10 @@ local method, err = c:method("say_hello")
 |-------|------|-------------|
 | `name` | string | Nombre del método |
 | `description` | string | Descripción del método |
-| `input_schemas` | table[] | Definiciones de esquema de entrada |
-| `output_schemas` | table[] | Definiciones de esquema de salida |
+| `input_schemas` | table[] o nil | Definiciones de esquema de entrada; se omite si está vacío |
+| `output_schemas` | table[] o nil | Definiciones de esquema de salida; se omite si está vacío |
+
+Cada elemento de esquema contiene un string `format` y puede incluir un valor `definition`.
 
 ## Encontrar Implementaciones
 
@@ -88,6 +102,9 @@ Listar todos los bindings que implementan un contrato:
 
 ```lua
 local bindings, err = contract.find_implementations("app.services:greeter")
+if err then
+    return nil, err
+end
 
 for _, binding_id in ipairs(bindings) do
     print(binding_id)
@@ -98,7 +115,13 @@ O via objeto de contrato:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 local bindings, err = c:implementations()
+if err then
+    return nil, err
+end
 ```
 
 ## Verificar Implementacion
@@ -117,9 +140,18 @@ Llamada sincrona - bloquea hasta completar:
 
 ```lua
 local calc, err = contract.open("app.services:calculator")
+if err then
+    return nil, err
+end
 
 local sum, err = calc:add(10, 20)
+if err then
+    return nil, err
+end
 local product, err = calc:multiply(5, 6)
+if err then
+    return nil, err
+end
 ```
 
 ## Llamadas Asincronas
@@ -128,35 +160,51 @@ Agregar sufijo `_async` para ejecución asincrona:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
+if err then
+    return nil, err
+end
 
 local future, err = processor:process_async(large_dataset)
-
--- Hacer otro trabajo...
-
--- Esperar resultado
-local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+if err then
+    return nil, err
 end
+
+-- Do other work...
+
+-- Wait for result
+local ch = future:response()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
+end
+
+local payload, result_err = future:result()
+if result_err then return nil, result_err end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
-Consulte [Futures](lua/core/future.md) para metodos de future.
+Consulta [Futures](./future.md) para conocer sus métodos.
 
 ## Abrir via Contrato
 
-Abrir binding a traves de objeto de contrato:
+Abre un binding mediante un objeto de contrato. Las llamadas siguientes son
+alternativas; comprueba el error de `contract.get()` y de la llamada `open()` elegida
+antes de usar la instancia.
 
 ```lua
 local c, err = contract.get("app.services:user")
+if err then
+    return nil, err
+end
 
--- Binding por defecto
+-- Default binding
 local instance, err = c:open()
 
--- Binding específico
+-- Specific binding
 local instance, err = c:open("app.services:user_impl")
 
--- Con alcance
+-- With scope
 local instance, err = c:open(nil, {user_id = 123})
 local instance, err = c:open("app.services:user_impl", {user_id = 123})
 ```
@@ -166,12 +214,18 @@ local instance, err = c:open("app.services:user_impl", {user_id = 123})
 Crear envoltorio con contexto preconfigurado:
 
 ```lua
+local ctx = require("ctx")
 local c, err = contract.get("app.services:user")
+if err then return nil, err end
 
-local wrapped = c:with_context({
-    request_id = ctx.get("request_id"),
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local wrapped, err = c:with_context({
+    request_id = request_id,
     user_id = current_user.id
 })
+if err then return nil, err end
 
 local instance, err = wrapped:open()
 ```
@@ -182,15 +236,20 @@ Configura reintentos y otro comportamiento de llamada vía `with_options`:
 
 ```lua
 local c, err = contract.get("app.services:flaky")
+if err then return nil, err end
 
-local inst, err = c
-    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
-    :open("app.services:flaky_impl")
+local configured = c:with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
+local inst, err = configured:open("app.services:flaky_impl")
+if err then return nil, err end
 
 local result, err = inst:call()
 ```
 
-Las opciones se aplican a cada llamada de método en la instancia devuelta. Solo errores reintentables disparan reintentos; los errores no reintentables aparecen inmediatamente. Encadenable con `with_context`, `with_actor`, `with_scope`.
+Las opciones se aplican a cada llamada de método de la instancia devuelta. Solo los
+errores reintentables disparan reintentos; los demás vuelven de inmediato.
+`with_options` puede encadenarse con `with_context`, `with_actor` y `with_scope`.
 
 | Opción | Tipo | Descripción |
 |--------|------|-------------|
@@ -204,10 +263,16 @@ Establecer actor y alcance para autorizacion:
 ```lua
 local security = require("security")
 local c, err = contract.get("app.services:admin")
+if err then return nil, err end
 
-local secured = c:with_actor(security.actor()):with_scope(security.scope())
+local secured, err = c:with_actor(security.actor())
+if err then return nil, err end
+
+secured, err = secured:with_scope(security.scope())
+if err then return nil, err end
 
 local admin, err = secured:open()
+if err then return nil, err end
 ```
 
 Sin `with_actor`/`with_scope` explícitos, un contrato abierto hereda el actor y el scope ambientales del llamador. Cuando se establecen, se propagan a las funciones de implementación enlazadas — cada llamada de método en la instancia se ejecuta bajo esa identidad.
@@ -233,4 +298,5 @@ Sin `with_actor`/`with_scope` explícitos, un contrato abierto hereda el actor y
 | Método no encontrado | `errors.NOT_FOUND` |
 | Sin binding por defecto | `errors.NOT_FOUND` |
 | Permiso denegado | `errors.PERMISSION_DENIED` |
-| Llamada fallida | `errors.INTERNAL` |
+| Fallo del dispatcher del contrato o de conversión de respuesta | `errors.INTERNAL` |
+| La implementación devolvió un error | Conserva el tipo de error de la implementación |

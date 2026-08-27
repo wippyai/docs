@@ -1,14 +1,17 @@
 ---
-title: "Registro de Entradas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+title: "Registro de entradas"
+description: "Lee entradas y metadatos del registro, inspecciona versiones y snapshots, y aplica conjuntos de cambios."
 ---
 
-# Registro de Entradas
+# Registro de entradas
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Consultar y modificar entradas registradas. Acceder a metadatos, instantaneas e historial de versiones.
+El módulo `registry` lee y modifica entradas y proporciona acceso a snapshots e
+historial de versiones. Esta página es una referencia de API; los ejemplos de
+mutación usan identificadores ilustrativos y requieren políticas que autoricen esos
+recursos y tipos de entrada exactos.
 
 ## Carga
 
@@ -21,9 +24,9 @@ local registry = require("registry")
 ```lua
 {
     id = "app.lib:assert",     -- string: "namespace:name"
-    kind = "function.lua",     -- string: tipo de entrada
-    meta = {type = "test"},    -- table: metadatos buscables
-    data = {...}               -- any: carga de entrada
+    kind = "function.lua",     -- string: entry type
+    meta = {type = "test"},    -- table: searchable metadata
+    data = {...}               -- any: entry payload
 }
 ```
 
@@ -38,11 +41,13 @@ local entry, err = registry.get("app.lib:assert")
 ## Buscar Entradas
 
 ```lua
-local entries, err = registry.find({kind = "function.lua"})
-local entries, err = registry.find({kind = "http.endpoint", namespace = "app.api"})
+local entries, err = registry.find({[".kind"] = "function.lua"})
+local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Los campos de filtro coinciden con los metadatos de entrada.
+Los selectores raíz son `.kind`, `.name`, `.ns` y `.id`; sus valores admiten glob.
+Los filtros de metadatos usan el prefijo `meta.`, por ejemplo
+`{["meta.type"] = "test"}`.
 
 ## Parsear ID
 
@@ -56,8 +61,8 @@ local id = registry.parse_id("app.lib:assert")
 Vista punto en el tiempo del registro:
 
 ```lua
-local snap, err = registry.snapshot()           -- estado actual
-local snap, err = registry.snapshot_at(5)       -- en versión 5
+local snap, err = registry.snapshot()           -- current state
+local snap, err = registry.snapshot_at(5)       -- at version 5
 ```
 
 ### Metodos de Instantanea
@@ -68,19 +73,59 @@ local snap, err = registry.snapshot_at(5)       -- en versión 5
 | `snap:get(id)` | `Entry, error` | Entrada unica por ID |
 | `snap:find(filter)` | `Entry[]` | Filtrar entradas |
 | `snap:namespace(ns)` | `Entry[]` | Entradas en namespace |
-| `snap:versión()` | `Versión` | Versión de instantanea |
+| `snap:version()` | `Version` | Versión del snapshot |
 | `snap:changes()` | `Changes` | Crear conjunto de cambios |
+
+## Overlays locales al proceso
+
+`registry.overlay(owner_id)` abre un overlay local al proceso para un propietario
+lógico. Devuelve un snapshot normal del registro efectivo; crea un conjunto de
+cambios desde él y aplícalo del mismo modo que un cambio duradero:
+
+```lua
+local snap, err = registry.overlay("controllers:customer-db")
+if err then
+    return nil, err
+end
+
+local changes = snap:changes()
+changes:create({
+    id = "runtime.data_sources:customer-db",
+    kind = "db.sql.postgres",
+    data = {host = "db.example.com", database = "customer"}
+})
+
+local current_version, err = changes:apply()
+```
+
+Los cambios del overlay afectan a la topología del registro y a los recursos de este
+proceso, pero no crean versiones duraderas del historial. Por ello,
+`changes:apply()` devuelve la versión duradera actual sin cambios. Un overlay sobrevive
+a commits normales del historial y a la selección de versión; se elimina con un
+arranque en frío o una carga explícita del estado del registro y después lo reconcilia
+su propietario.
+
+Los snapshots de overlay usan concurrencia optimista basada en generaciones. Aplicar
+cambios desde uno obsoleto falla atómicamente con `errors.CONFLICT` reintentable;
+vuelve a abrir el overlay y reconstruye el conjunto. Solo puede haber una operación
+por ID de entrada. Los IDs de propietario se recortan hasta su identidad canónica. El
+propietario es estado del registro, no metadatos de entrada, y los tipos propiedad de
+directivas de expansión no pueden cambiarse mediante un overlay.
+
+Las llamadas normales a `registry.get`, `find` y `snapshot` ven el registro efectivo
+compuesto y siguen necesitando `registry.get` para cada entrada; el permiso del
+overlay del propietario no sustituye la autorización de lectura.
 
 ## Versiones
 
 ```lua
-local versión, err = registry.current_version()
+local version, err = registry.current_version()
 local versions, err = registry.versions()
 
-print(versión:id())       -- ID numerico
-print(versión:string())   -- cadena de visualizacion
-local prev = versión:previous()  -- versión anterior o nil
-local next = versión:next()      -- versión siguiente o nil
+print(version:id())       -- numeric ID
+print(version:string())   -- display string
+local prev = version:previous()  -- previous version or nil
+local next = version:next()      -- next version or nil
 ```
 
 ## Historial
@@ -88,8 +133,8 @@ local next = versión:next()      -- versión siguiente o nil
 ```lua
 local hist, err = registry.history()
 local versions, err = hist:versions()
-local versión, err = hist:get_version(5)
-local snap, err = hist:snapshot_at(versión)
+local version, err = hist:get_version(5)
+local snap, err = hist:snapshot_at(version)
 ```
 
 ## Conjuntos de Cambios
@@ -163,6 +208,11 @@ end
 | `registry.get` | ID de entrada | Leer entrada (también filtra resultados de find/entries) |
 | `registry.apply` | - | Aplicar conjunto de cambios |
 | `registry.apply_version` | - | Aplicar/revertir versión |
+| `registry.overlay.get` | ID de propietario | Abrir el overlay de un propietario |
+| `registry.overlay.apply` | ID de propietario | Aplicar un conjunto de cambios de overlay |
+| `registry.overlay.create.<kind>` | ID de entrada | Crear una entrada del tipo indicado en un overlay |
+| `registry.overlay.update.<kind>` | ID de entrada | Actualizar una entrada del tipo indicado en un overlay |
+| `registry.overlay.delete.<kind>` | ID de entrada | Eliminar una entrada del tipo indicado de un overlay |
 
 ## Errores
 
@@ -173,6 +223,8 @@ end
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Parámetro invalido | `errors.INVALID` |
 | Sin cambios para aplicar | `errors.INVALID` |
+| Propietario de overlay vacío o tipo propiedad de una directiva | `errors.INVALID` |
+| Snapshot de overlay obsoleto | `errors.CONFLICT` (reintentable) |
 | Registro no disponible | `errors.INTERNAL` |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](./errors.md) para trabajar con errores.
