@@ -136,12 +136,12 @@
     ]
   },
   {
-    "title": "WASM Runtime",
+    "title": "WASM-Runtime",
     "children": [
-      {"title": "Overview", "path": "wasm/overview"},
-      {"title": "Functions", "path": "wasm/functions"},
-      {"title": "Host Functions", "path": "wasm/hosts"},
-      {"title": "Processes", "path": "wasm/processes"}
+      {"title": "Übersicht", "path": "wasm/overview"},
+      {"title": "Funktionen", "path": "wasm/functions"},
+      {"title": "Host-Funktionen", "path": "wasm/hosts"},
+      {"title": "Prozesse", "path": "wasm/processes"}
     ]
   },
   {

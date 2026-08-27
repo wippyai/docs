@@ -1,15 +1,20 @@
 ---
 title: "WASM-Funktionen"
-description: "WASM-Funktionen sind Registry-Eintraege, die WebAssembly-Code ausfuehren. Zwei Entry Kinds stehen zur Verfuegung: function.wat fuer…"
+description: "Inline-WAT-Funktionen und vorkompilierte WASM-Funktionen als Registry-Einträge konfigurieren."
 ---
 
 # WASM-Funktionen
 
-WASM-Funktionen sind Registry-Eintraege, die WebAssembly-Code ausfuehren. Zwei Entry Kinds stehen zur Verfuegung: `function.wat` fuer Inline-WAT-Quellcode und `function.wasm` fuer vorkompilierte Binaries.
+Verwenden Sie `function.wat` für Inline-Quellcode im WebAssembly-Textformat und `function.wasm` für vorkompilierte Binärdateien.
+
+**Klassifizierung: Referenz zur Funktionskonfiguration.** WAT-Blöcke sind kleine
+Registry-Beispiele. Vorkompilierte Beispiele setzen einen externen Komponenten-Build,
+einen Dateisystemeintrag, zum Gast-WIT passende exportierte Methoden und einen aus
+der exakten Binärdatei berechneten SHA-256-Digest voraus. Realistisch aussehende Beispiel-Hashes dienen nur zur Veranschaulichung.
 
 ## Inline-WAT-Funktionen
 
-Definieren Sie kleine WASM-Funktionen direkt in Ihrer `_index.yaml` im WebAssembly-Text-Format:
+Definieren Sie eine WAT-Funktion direkt in `_index.yaml`:
 
 ```yaml
 entries:
@@ -28,7 +33,7 @@ entries:
       type: inline
 ```
 
-Fuer groessere WAT-Quellen verwenden Sie eine Dateireferenz:
+Verwenden Sie für größere WAT-Quellen eine Dateireferenz:
 
 ```yaml
   - name: answer
@@ -43,20 +48,20 @@ Fuer groessere WAT-Quellen verwenden Sie eine Dateireferenz:
 
 ### WAT-Konfigurationsfelder
 
-| Field | Required | Beschreibung |
-|-------|----------|-------------|
-| `source` | Yes | Inline-WAT-Quellcode oder `file://`-Referenz |
-| `method` | Yes | Name der exportierten Funktion, die aufgerufen wird |
-| `wit` | No | WIT-Signatur fuer Raw/Core-Module |
-| `pool` | No | Worker-Pool-Konfiguration |
-| `transport` | No | Input/Output-Mapping (Standard: `payload`) |
-| `imports` | No | Host-Imports zum Aktivieren (z.B. `wasi:cli`, `wasi:io`) |
-| `wasi` | No | WASI-Konfiguration (args, env, mounts) |
-| `limits` | No | Ausfuehrungslimits |
+| Feld | Erforderlich | Beschreibung |
+|------|--------------|--------------|
+| `source` | Ja | Inline-WAT-Quelle oder `file://`-Referenz |
+| `method` | Ja | Name der aufzurufenden exportierten Funktion |
+| `wit` | Nein | WIT-Signatur für Raw/Core-Module |
+| `pool` | Nein | Worker-Pool-Konfiguration |
+| `transport` | Nein | Ein-/Ausgabeabbildung (Standard: `payload`) |
+| `imports` | Nein | Zu aktivierende Host-Imports (z. B. `wasi:cli`, `wasi:io`) |
+| `wasi` | Nein | WASI-Konfiguration (args, env, mounts) |
+| `limits` | Nein | Ausführungslimits |
 
 ## Vorkompilierte WASM-Funktionen
 
-Laden Sie kompilierte `.wasm`-Binaries aus einem Dateisystem-Eintrag:
+Laden Sie kompilierte `.wasm`-Binärdateien aus einem Dateisystemeintrag:
 
 ```yaml
 entries:
@@ -77,29 +82,29 @@ entries:
 
 ### WASM-Konfigurationsfelder
 
-| Field | Required | Beschreibung |
-|-------|----------|-------------|
-| `fs` | Yes | Dateisystem-Entry-ID, die das Binary enthaelt |
-| `path` | Yes | Pfad zur `.wasm`-Datei innerhalb des Dateisystems |
-| `hash` | Yes | SHA-256-Hash zur Integritaetspruefung (`sha256:...`) |
-| `method` | Yes | Name der exportierten Funktion, die aufgerufen wird |
-| `wit` | No | WIT-Signatur fuer Raw/Core-Module |
-| `pool` | No | Worker-Pool-Konfiguration |
-| `transport` | No | Input/Output-Mapping (Standard: `payload`) |
-| `imports` | No | Host-Imports zum Aktivieren |
-| `wasi` | No | WASI-Konfiguration |
-| `limits` | No | Ausfuehrungslimits |
+| Feld | Erforderlich | Beschreibung |
+|------|--------------|--------------|
+| `fs` | Ja | ID des Dateisystemeintrags mit der Binärdatei |
+| `path` | Ja | Pfad zur `.wasm`-Datei innerhalb des Dateisystems |
+| `hash` | Ja | SHA-256-Hash für die Integritätsprüfung (`sha256:...`) |
+| `method` | Ja | Name der aufzurufenden exportierten Funktion |
+| `wit` | Nein | WIT-Signatur für Raw/Core-Module |
+| `pool` | Nein | Worker-Pool-Konfiguration |
+| `transport` | Nein | Ein-/Ausgabeabbildung (Standard: `payload`) |
+| `imports` | Nein | Zu aktivierende Host-Imports |
+| `wasi` | Nein | WASI-Konfiguration |
+| `limits` | Nein | Ausführungslimits |
 
 ## Worker-Pools
 
-Jede WASM-Funktion verwendet einen Pool vorkompilierter Instanzen. Der Pool-Typ steuert Nebenlaeufigkeit und Ressourcenverbrauch.
+Jede WASM-Funktion verwendet einen Pool vorkompilierter Instanzen. Der Pool-Typ steuert Parallelität und Ressourcenverbrauch.
 
-| Type | Beschreibung |
-|------|-------------|
-| `inline` | Synchron, single-threaded. Neue Instanz pro Aufruf. |
-| `lazy` | Keine Idle-Worker. Skaliert bei Bedarf bis `max_size`. |
+| Typ | Beschreibung |
+|-----|--------------|
+| `inline` | Durch Mutex serialisiert. Aufeinanderfolgende synchrone Aufrufe verwenden eine warme Instanz erneut; asyncifizierte Aufrufe schließen sie nach jedem Aufruf, und die Richtlinie für beibehaltenen Speicher kann ebenfalls einen Austausch auslösen. |
+| `lazy` | Keine inaktiven Worker. Skaliert bei Bedarf bis `max_size`. |
 | `static` | Feste Anzahl von Workern mit Request-Queue. |
-| `adaptive` | Automatisch skalierende elastische Pools. |
+| `adaptive` | Automatisch skalierender elastischer Pool. |
 
 ### Pool-Konfiguration
 
@@ -121,14 +126,13 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-Das Standard-Maximum fuer elastische Pools betraegt 100 Worker, wenn `max_size` nicht angegeben ist.
+Der Standardwert von 100 Workern gilt nur für den implizit ausgewählten Pool, wenn kein `type` gesetzt ist. Wenn Sie `type: lazy` oder `type: adaptive` explizit ohne `max_size` setzen, beträgt das Standardmaximum 16 Worker.
 
-### Worker-Klassen und Core-Affinitaet
+### Worker-Klassen und Core-Affinität
 
-Das Setzen von `pool.worker_class` leitet die Funktion an einen dedizierten Pool von auf OS-Threads gepinnten Workern statt an die obigen geteilten Pool-Typen (`type` wird ignoriert, wenn gesetzt; konventioneller Name: `wasm`):
+Mit `pool.worker_class` wird die Funktion an einen dedizierten Pool aus an OS-Threads gebundenen Workern statt an die oben beschriebenen gemeinsam genutzten Pool-Typen geleitet (`type` wird dann ignoriert; konventioneller Name: `wasm`):
 
 ```yaml
 pool:
@@ -136,7 +140,7 @@ pool:
   workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
 ```
 
-Core-Isolation wird pro Runtime in `.wippy.yaml` aktiviert:
+Die Core-Isolation wird pro Runtime in `.wippy.yaml` aktiviert:
 
 ```yaml
 scheduler:
@@ -145,20 +149,20 @@ scheduler:
     reserved_cores: 2  # cores reserved for WASM pools (default: 1)
 ```
 
-Mit aktivierter Isolation laufen der Actor-Scheduler und die gepinnten WASM-Pools auf disjunkten CPU-Mengen (`sched_setaffinity`, nur Linux — andere Plattformen dimensionieren die Pools, binden aber keine Threads). Langlaufende WASM-Aufrufe koennen das Actor-Scheduling dann nicht aushungern.
+Bei aktivierter Isolation laufen der Actor-Scheduler und die gebundenen WASM-Pools auf getrennten CPU-Mengen (`sched_setaffinity`, nur Linux — auf anderen Plattformen werden die Pools dimensioniert, die Threads jedoch nicht gebunden). Langlebige WASM-Aufrufe können das Actor-Scheduling dann nicht aushungern.
 
 ## Transports
 
-Transports steuern, wie Input und Output zwischen der Runtime und dem WASM-Modul abgebildet werden.
+Transports steuern, wie Ein- und Ausgaben zwischen der Runtime und dem WASM-Modul abgebildet werden.
 
 | Transport | Beschreibung |
-|-----------|-------------|
+|-----------|--------------|
 | `payload` | Bildet Runtime-Payloads direkt auf WASM-Aufrufargumente ab (Standard) |
-| `wasi-http` | Bildet HTTP-Request/Response-Kontext auf WASM-Argumente und -Ergebnisse ab |
+| `wasi-http` | Bildet HTTP-Request-/Response-Kontext auf WASM-Argumente und -Ergebnisse ab |
 
 ### Payload-Transport
 
-Der Standard-Transport uebergibt Argumente direkt. Lua-Werte werden in Go-Typen transkodiert und dann in WIT-Typen abgesenkt:
+Der Standard-Transport übergibt Argumente direkt. Lua-Werte werden in Go-Typen transkodiert und anschließend in WIT-Typen abgesenkt:
 
 ```yaml
   - name: compute
@@ -174,12 +178,13 @@ Der Standard-Transport uebergibt Argumente direkt. Lua-Werte werden in Go-Typen 
 ```lua
 -- Arguments passed directly as WASM function parameters
 local result, err = funcs.call("myns:compute", 6, 7)
+if err then return nil, err end
 -- result: 42
 ```
 
 ### WASI-HTTP-Transport
 
-Der `wasi-http`-Transport bildet HTTP-Requests auf WASM ab und schreibt Ergebnisse zurueck in die HTTP-Response. Verwenden Sie ihn, um WASM-Funktionen als HTTP-Endpunkte bereitzustellen:
+Der Transport `wasi-http` bildet HTTP-Anfragen auf WASM ab und schreibt die Ergebnisse in die HTTP-Response. Verwenden Sie ihn, um WASM-Funktionen als HTTP-Endpunkte bereitzustellen:
 
 ```yaml
   - name: greet_wasm
@@ -199,20 +204,28 @@ Der `wasi-http`-Transport bildet HTTP-Requests auf WASM ab und schreibt Ergebnis
     func: greet_wasm
 ```
 
-## Ausfuehrungslimits
+## Ausführungslimits
 
-Legen Sie eine maximale Ausfuehrungszeit fuer eine Funktion fest:
+Begrenzen Sie die Ausführungszeit und ersetzen Sie warme Instanzen, die zu viel linearen Speicher beibehalten:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 67108864
+  retained_memory_check_interval: 16
 ```
 
-Wenn das Limit ueberschritten wird, wird die Ausfuehrung abgebrochen und ein Fehler zurueckgegeben.
+| Feld | Standard | Beschreibung |
+|------|----------|--------------|
+| `max_execution_ms` | `0` | Maximale Aufrufdauer in Millisekunden; `0` deaktiviert das Zeitlimit |
+| `max_retained_memory_bytes` | 64 MiB | Eine warme Worker-Instanz nach einem Aufruf ersetzen, wenn der beibehaltene Speicher diesen Wert überschreitet; ein explizites `0` deaktiviert das Ersetzen |
+| `retained_memory_check_interval` | Siehe unten | Anzahl abgeschlossener Aufrufe zwischen Prüfungen des beibehaltenen Speichers |
+
+Wenn das Ausführungszeitlimit überschritten wird, wird der Aufruf abgebrochen und gibt einen Fehler zurück. Das standardmäßige Limit von 64 MiB für beibehaltenen Speicher wird alle 16 Aufrufe geprüft. Wenn `max_retained_memory_bytes` explizit auf einen positiven Wert gesetzt und das Intervall weggelassen wird, prüft die Runtime nach jedem Aufruf. Mit einem positiven Intervall können Sie diese Prüfungen seltener ausführen.
 
 ## WASI-Konfiguration
 
-Konfigurieren Sie WASI-Faehigkeiten fuer das Guest-Modul:
+Konfigurieren Sie die WASI-Fähigkeiten des Gastmoduls:
 
 ```yaml
 wasi:
@@ -232,16 +245,16 @@ wasi:
       guest: /output
 ```
 
-| Field | Beschreibung |
-|-------|-------------|
-| `args` | Kommandozeilenargumente, die an den Guest uebergeben werden |
-| `cwd` | Arbeitsverzeichnis innerhalb des Guest (muss absolut sein) |
-| `env` | Umgebungsvariablen, abgebildet aus Registry-Env-Eintraegen |
-| `mounts` | Dateisystem-Mounts aus Registry-Dateisystem-Eintraegen |
+| Feld | Beschreibung |
+|------|--------------|
+| `args` | Befehlszeilenargumente für den Gast |
+| `cwd` | Arbeitsverzeichnis im Gast (muss absolut sein) |
+| `env` | Umgebungsvariablen, die aus Registry-Env-Einträgen abgebildet werden |
+| `mounts` | Dateisystem-Mounts aus Registry-Dateisystemeinträgen |
 
-Umgebungsvariablen werden zum Aufrufzeitpunkt aus der Umgebungs-Registry aufgeloest. Erforderliche Variablen verursachen einen Fehler, wenn sie nicht gefunden werden.
+Umgebungsvariablen werden zum Aufrufzeitpunkt aus der Umgebungs-Registry aufgelöst. Wenn eine erforderliche Variable nicht gefunden wird, entsteht ein Fehler.
 
-Mount-Pfade muessen absolut und eindeutig sein. Jeder Mount bildet einen Runtime-Dateisystem-Eintrag auf einen Guest-Verzeichnispfad ab.
+Mount-Pfade müssen absolut und eindeutig sein. Jeder Mount bildet einen Runtime-Dateisystemeintrag auf einen Gast-Verzeichnispfad ab.
 
 ## Beispiele
 
@@ -285,14 +298,16 @@ local users = {
 
 -- Transform: adds display field and tag count
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 
 -- Filter: returns only active users
-local active, err = funcs.call("myns:filter_active", users)
+local active, filter_err = funcs.call("myns:filter_active", users)
+if filter_err then return nil, filter_err end
 ```
 
 ### Asynchrones Sleep mit WASI Clocks
 
-WASM-Komponenten, die `wasi:clocks` und `wasi:io` importieren, koennen Clocks und Polling verwenden. Der asynchrone Yield-Mechanismus integriert sich in den Wippy-Dispatcher:
+WASM-Komponenten, die `wasi:clocks`, `wasi:io` und das separate Profil `wasi:poll` importieren, können Clocks und Polling verwenden. Der asynchrone Yield-Mechanismus integriert sich in den Wippy-Dispatcher:
 
 ```yaml
   - name: sleep_ms
@@ -303,16 +318,17 @@ WASM-Komponenten, die `wasi:clocks` und `wasi:io` importieren, koennen Clocks un
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline
 ```
 
-Der `#`-Separator im method-Feld referenziert eine Interface-Methode: `test-sleep#sleep-ms` ruft die Funktion `sleep-ms` aus dem Interface `test-sleep` auf.
+Das Trennzeichen `#` im Methodenfeld verweist auf eine Schnittstellenmethode: `test-sleep#sleep-ms` ruft die Funktion `sleep-ms` der Schnittstelle `test-sleep` auf.
 
 ## Siehe auch
 
-- [Uebersicht](wasm/overview.md) - WebAssembly-Runtime-Uebersicht
-- [Host-Funktionen](wasm/hosts.md) - Verfuegbare Host-Schnittstellen
-- [Prozesse](wasm/processes.md) - WASM als Prozesse ausfuehren
-- [Entry-Typen](guides/entry-kinds.md) - Alle Registry Entry Kinds
+- [Übersicht](./overview.md) - Übersicht über die WebAssembly-Runtime
+- [Host-Funktionen](./hosts.md) - Verfügbare Host-Schnittstellen
+- [Prozesse](./processes.md) - WASM als Prozesse ausführen
+- [Eintragsarten](../guides/entry-kinds.md) - Alle Arten von Registry-Einträgen
