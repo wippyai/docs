@@ -24,7 +24,7 @@ facade は global、host、children の 3 scope を公開します。主なル�
 
 child が受け取る custom CSS は global + children の合成です。WC の custom property は mount 元 `:root` から継承し、host-mounted は global + host、page 内は global + children です。injected selector CSS は常に global + children。全 surface 共通は global scope に置きます。
 
-6 つの theming knob は `content_fs` から request-time 解決する `fs://<path>` を受け付けます（[Facade の non-Web-Host page での再利用](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages)参照）。`file://` は loader-time inline で別契約です。`icon_sets` / `host_icon_sets` と non-theming JSON parameter は inline-only です。数件を超える override は `content_fs` 背後の個別 CSS/JSON file に置くと review と再利用が容易です。
+6 つの theming knob は `content_fs` から request-time 解決する `fs://<path>` を受け付けます（[Facade の non-Web-Host page での再利用](../../framework/facade.md)参照）。`file://` は loader-time inline で別契約です。`icon_sets` / `host_icon_sets` と non-theming JSON parameter は inline-only です。数件を超える override は `content_fs` 背後の個別 CSS/JSON file に置くと review と再利用が容易です。
 
 ## Iframe injection pipeline
 

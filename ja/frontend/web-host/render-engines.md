@@ -20,7 +20,7 @@ Wippy Web Host は 2 種類の **page-render engine** のいずれかで micro f
 
 ## Fragment の render 方法
 
-fragment engine が選ばれた `view.page` は `<web-fragment src="/@fragment/{id}/">` として mount されます。`wippy/views` の [`/@fragment` gateway](../../framework/views.md#web-fragments-gateway) が reframing contract を配信します。`reframed` client は hidden same-origin realm iframe（`wf:<id>`）を作り、gateway が変換した HTML を fragment の shadow root へ stream し、realm 内で `proxy-fragment.js`（`@wippy-fe/proxy` adapter）を実行して `$W` proxy API を提供します。adapter は realm の patched `window.parent` に依存せず、共有 `postMessage` protocol を捕捉済み same-origin Host window へ route します。
+fragment engine が選ばれた `view.page` は `<web-fragment src="/@fragment/{id}/">` として mount されます。`wippy/views` の [`/@fragment` gateway](../../framework/views.md) が reframing contract を配信します。`reframed` client は hidden same-origin realm iframe（`wf:<id>`）を作り、gateway が変換した HTML を fragment の shadow root へ stream し、realm 内で `proxy-fragment.js`（`@wippy-fe/proxy` adapter）を実行して `$W` proxy API を提供します。adapter は realm の patched `window.parent` に依存せず、共有 `postMessage` protocol を捕捉済み same-origin Host window へ route します。
 
 iframe engine で同じ page を動かす場合は、`proxy.js` を注入した srcdoc `<iframe>` になります。[Proxy と分離](./proxy-isolation.md)を参照してください。
 
@@ -34,7 +34,7 @@ deployment 全体の engine は、facade の `render_engine` requirement → `ho
 wippy run -c -o wippy.facade:render_engine:default=fragment
 ```
 
-parameter は [Facade → Render engine](../../framework/facade.md#render-engine)を参照してください。
+parameter は [Facade → Render engine](../../framework/facade.md)を参照してください。
 
 ### Page 単位の override（app author）
 
@@ -73,7 +73,7 @@ consumer application で fragment engine を有効にするには、互換性の
 1. **Framework module** — `render_engine` switch と self-mounting fragment gateway を公開する、現在互換性のある `wippy/facade` と `wippy/views` の組み合わせを使います。exact release は現在の Wippy module documentation で確認してください。
 2. **Switch** — facade の `render_engine` を `fragment` に設定（global）するか、page 単位に `wippy.renderEngine` で opt in します。
 
-> `/@fragment` gateway は現在の `wippy/views` が自己提供します。module が top-level router を宣言し、デフォルトで `app:gateway` を指す `server` requirement に bind します。consumer 側の fragment wiring は不要で、fragment が有効かどうかにかかわらず通常どおり iframe engine で boot します。`http.service` id が `app:gateway` でない場合だけ `server` parameter を上書きしてください。通常は iframe の deployment で page が個別に fragment を選ぶと、runtime capability probe が gateway + `proxy-fragment.js` を確認してから切り替え、確認できなければ iframe を維持します。global `render_engine: fragment` switch は operator を信頼し、probe しません。[Views → Web Fragments gateway](../../framework/views.md#web-fragments-gateway)を参照してください。
+> `/@fragment` gateway は現在の `wippy/views` が自己提供します。module が top-level router を宣言し、デフォルトで `app:gateway` を指す `server` requirement に bind します。consumer 側の fragment wiring は不要で、fragment が有効かどうかにかかわらず通常どおり iframe engine で boot します。`http.service` id が `app:gateway` でない場合だけ `server` parameter を上書きしてください。通常は iframe の deployment で page が個別に fragment を選ぶと、runtime capability probe が gateway + `proxy-fragment.js` を確認してから切り替え、確認できなければ iframe を維持します。global `render_engine: fragment` switch は operator を信頼し、probe しません。[Views → Web Fragments gateway](../../framework/views.md)を参照してください。
 
 frontend app 自体に fragment 固有 code は不要です。`proxy-fragment.js` は CDN から配信される host artifact であり、app が bundle するものではありません。
 

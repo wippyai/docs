@@ -336,7 +336,7 @@ splitter layer は default z-index `700`。handle は opt-in です。
 
 opt-in 時は size/fill/border/shadow/icon を一緒に設定します。
 
-## Mode ごとの効果
+## Mode ごとの効果 :id=what-works-in-which-mode
 
 ### `host.layout` が効くのは managed mode のみ
 

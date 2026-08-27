@@ -191,6 +191,31 @@
           {"title": "テーマの永続化", "path": "frontend/web-host/theme-persistence"},
           {"title": "@wippy-fe パッケージ", "path": "frontend/web-host/packages"}
         ]
+      },
+      {
+        "title": "Wippy Micro Frontend",
+        "children": [
+          {"title": "概要", "path": "frontend/micro-frontends/overview"},
+          {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "Micro Frontend App のレシピ", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Web Component のレシピ", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Chat Web Component", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Surface Portability", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "Surface Migration", "path": "frontend/micro-frontends/surface-migration"},
+          {"title": "Theme Authoring", "path": "frontend/micro-frontends/theming"},
+          {"title": "Tailwind 契約", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "Token Catalogue", "path": "frontend/micro-frontends/token-catalogue"},
+          {"title": "テーマ設定: Micro Frontend App", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "テーマ設定: Web Component", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "Build と dependency の契約", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Configuration と casing", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "Custom Composite", "path": "frontend/micro-frontends/custom-composites"},
+          {"title": "Host-less Mode", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "Compliance Rule Index", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Unsupported Project-Bound Module", "path": "frontend/micro-frontends/unsupported-project-bound"},
+          {"title": "デバッグ", "path": "frontend/micro-frontends/debugging"}
+        ]
       }
     ]
   },
