@@ -18,8 +18,7 @@ Die Rezepte stellen eine vorhandene Micro-Frontend-Anwendung von viewportbasiert
 | **manuell** | Menschliche Entscheidung nötig. |
 | **nicht konvertierbar** | Keine Containerform; `host.surface` verwenden oder Viewportverhalten bewusst behalten. |
 
-Nicht ausgelieferte Tailwind-`surface-*`-Varianten, Builddiagnostik,
-hostvermitteltes Scrollen und Hit-Testing werden ausdrücklich gekennzeichnet.
+> Rezepte, die von noch nicht ausgelieferten Funktionen abhängen — Tailwind-`surface-*`-Varianten, Builddiagnostik, hostvermitteltes Scrollen oder Hit-Testing — sind als **noch nicht ausgeliefert** gekennzeichnet und beschreiben ausschließlich den heutigen Stand.
 
 ## Entscheidungsbaum
 

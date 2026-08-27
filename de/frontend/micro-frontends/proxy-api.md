@@ -61,7 +61,9 @@ Die Proxy-APIs werden nicht aus `@wippy-fe/shared` importiert. Dieses Paket enth
 
 ### Interna nicht verwenden
 
-Die Laufzeit installiert unter anderem `window.$W`, `window.getWippyApi`, `window.initWippyApi` und `window.__WIPPY_*`. Anwendungscode darf sie weder lesen noch überschreiben. Verwenden Sie stets `@wippy-fe/proxy`; siehe [Interna](../web-host/proxy-isolation.md#interna-nicht-lesen-oder-überschreiben). `initWippyApp(config, rootContainer?)` startet den gesamten Web Host auf dem Module-Embed-/Facade-Pfad und gehört nicht in Child-Code.
+Die Laufzeit installiert unter anderem `window.$W`, `window.getWippyApi`, `window.initWippyApi` und `window.__WIPPY_*`. Anwendungscode darf sie weder lesen noch überschreiben. Verwenden Sie stets `@wippy-fe/proxy`; siehe [Interna](../web-host/proxy-isolation.md#interna-nicht-lesen-oder-überschreiben).
+
+> `@wippy-fe/proxy` (hier dokumentiert) ist die API für Child-Code. Der Host-eigene Bootstrap `initWippyApp(config, rootContainer?)` startet den gesamten Web Host auf dem Module-Embed-/Facade-Pfad; Child-Anwendungen rufen ihn niemals auf.
 
 ---
 
@@ -530,7 +532,9 @@ const upload = await api.get(`/api/v1/uploads/${uuid}`)
 
 ### SSE-Streaming
 
-Für `text/event-stream` verwendet `api` den Fetch-Adapter. Native `EventSource` kann keine eigenen Header und damit kein Bearer-Token senden.
+Für `text/event-stream` verwendet `api` den Fetch-Adapter.
+
+> Verwenden Sie nicht das native `EventSource` des Browsers: Es kann keine benutzerdefinierten Header anhängen und deshalb das Proxy-Token `Authorization: Bearer` nicht übertragen.
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
@@ -744,7 +748,9 @@ Portable Vue-Apps überlassen `@history` dem Router-Paket. Mehrere Abonnements d
 
 ### `state`
 
-Host-vermittelter Schlüssel/Wert-Speicher, der die Zerstörung eines Seiten-Realm übersteht. Der Standard-Namespace ist nach Seiten- oder Artefakt-UUID isoliert. Alle Methoden akzeptieren optional `{ scope?: string }`; rohe Scope-Werte müssen anwendungsweit eindeutig sein. `@wippy-fe/pinia-persist` setzt für eigene Scopes automatisch `@custom:` voran.
+Host-vermittelter Schlüssel/Wert-Speicher, der die Zerstörung eines Seiten-Realm übersteht. Der Standard-Namespace ist nach Seiten- oder Artefakt-UUID isoliert. Alle Methoden akzeptieren optional `{ scope?: string }`, um den Standard-Scope zu überschreiben. Verwenden Sie `scope`, wenn mehrere Instanzen derselben Komponente getrennte Zustandsbereiche benötigen.
+
+> **Eindeutigkeit des Scopes:** Die rohe `state`-API übergibt Scope-Werte unverändert; sie müssen daher in der gesamten Anwendung eindeutig sein. Das Plugin `@wippy-fe/pinia-persist` versieht benutzerdefinierte Scopes automatisch mit dem Präfix `@custom:`, um Kollisionen mit System-Scopes zu verhindern.
 
 ```typescript
 import { state } from '@wippy-fe/proxy'
