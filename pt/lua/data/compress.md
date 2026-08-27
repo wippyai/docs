@@ -1,21 +1,25 @@
 ---
-title: "Compressao"
+title: "Compressão"
 description: "Comprima e descomprima strings com gzip, Brotli, Zstandard, DEFLATE raw e zlib."
 ---
 
-# Compressao
+# Compressão
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Comprima e descomprima dados usando algoritmos gzip, deflate, zlib, brotli e zstd.
+O módulo `compress` codifica e decodifica strings com gzip, Brotli, Zstandard, DEFLATE raw e zlib.
+
+Esta é uma referência de API com receitas parciais de HTTP e armazenamento. Toda operação materializa a entrada e a saída completas como strings Lua; use as APIs de arquivo ou stream quando os dados precisarem permanecer em streaming. Os exemplos pressupõem que a entrada habilita `compress` e os módulos exigidos separadamente, como `json` ou `http`.
 
 ## Carregamento
 
 ```lua
 local compress = require("compress")
 ```
+
+Adicione `compress` à lista `modules:` da entrada executável antes de importá-lo.
 
 ## GZIP
 
@@ -334,7 +338,7 @@ if err then return nil, err end
 |-----------|-------------|------------|------|----------------|
 | gzip | HTTP, ampla compatibilidade | Media | Boa | 1-9 |
 | brotli | Assets estaticos, texto | Lenta | Melhor | 0-11 |
-| zstd | Arquivos grandes, streaming | Rapida | Boa | 1-22 |
+| zstd | Payloads binários, compressão rápida | Rápida | Boa | 1-22 |
 | deflate/zlib | Baixo nivel, protocolos especificos | Media | Boa | 1-9 |
 
 ```lua
@@ -409,6 +413,8 @@ else
     if write_err then return nil, write_err end
 end
 ```
+
+Este handler parcial analisa tokens exatos de codificação e valores `q` da RFC, respeita rejeições explícitas como `br;q=0` e emite `Vary: Accept-Encoding`. `set_header` substitui um valor `Vary` existente; portanto, adicione a `vary_fields` todos os outros campos usados pelo middleware ao redor antes de defini-lo. Uma stack HTTP completa pode oferecer um helper compartilhado de negociação.
 
 ## Erros
 
