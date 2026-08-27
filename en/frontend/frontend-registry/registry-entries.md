@@ -54,25 +54,29 @@ The `meta` block is what `wippy/views` reads. The `meta.type` field discriminate
 
 | Value | Meaning |
 |---|---|
-| `view.page` | A micro frontend app (full SPA), rendered in an iframe inside the Web Host |
+| `view.page` | A micro frontend app (full SPA), rendered through the page's selected iframe or Web Fragment engine |
 | `view.component` | A Web Component (custom element) that can be embedded anywhere in a page |
 
 Every other field in `meta` is interpreted in the context of this type. Fields that apply to one type and not the other are described in the per-type reference pages ([view.page](./view-page.md), [view.component](./view-component.md)).
 
 ## The `specification` Marker
 
-Every frontend package that participates in the registry declares `"specification": "wippy-component-1.0"` at the top level of its `package.json`. This string is the handshake that tells Wippy (and tooling) that this package follows the wippy-component contract — it has a `wippy` block with a known shape, and it was built with `@wippy-fe/vite-plugin`.
+Frontend packages should declare `"specification": "wippy-component-1.0"` at the top level of `package.json`. The marker identifies the package metadata and API response shape. `@wippy-fe/vite-plugin` validates the value when it is present.
 
 ```json
 {
-  "name": "@wippy/app-main",
+  "name": "@wippy/example-widget",
   "version": "1.0.0",
   "specification": "wippy-component-1.0",
-  "wippy": { ... }
+  "browser": "dist/index.js",
+  "wippy": {
+    "type": "component",
+    "tagName": "example-widget"
+  }
 }
 ```
 
-The presence of `specification` does not change runtime behavior, but `wippy/views` uses it when validating entries loaded from the registry.
+The marker does not change rendering behavior. `wippy/views` carries the bundled value into page and component descriptors, or supplies `wippy-component-1.0` for legacy bundles that omit it; registry YAML validation does not depend on this field.
 
 ## The `wippy-meta.json` Contract
 
@@ -87,9 +91,9 @@ Metadata responsibilities:
 - **Consumed by:** `wippy/views`, which reads it from the served bundle root when building page/component descriptors and API responses.
 - **Overridden by:** `_index.yaml`, which remains authoritative for deployment policy and every field it explicitly declares.
 
-When `wippy/views` loads a `registry.entry`, it reads `wippy-meta.json` from the artifact's served bundle root. For pages, that root is the page `url + base_path`; for web components, the current entries serve the component directly from `url`. YAML always wins: `_index.yaml` takes precedence for every field it declares. `wippy-meta.json` provides the defaults that `wippy/views` reads when no YAML override is present for a given field. Deployment-policy fields — `announced`, `secure`, `url`, `mountRoute`, and `base_path` — must be set in `_index.yaml` because they express operator decisions rather than component authorship; there is no `package.json`/`wippy-meta.json` authoring surface for them. (`base_path` is honored for both pages and components; the current app-template component entries simply omit it.)
+When `wippy/views` loads a `registry.entry`, it reads `wippy-meta.json` from the artifact's served bundle root (`url + base_path`) for both pages and components. YAML always wins: `_index.yaml` takes precedence for every field it declares. `wippy-meta.json` provides the defaults that `wippy/views` reads when no YAML override is present for a given field. Deployment-policy fields — `announced`, `secure`, `url`, `mountRoute`, and `base_path` — must be set in `_index.yaml` because they express operator decisions rather than component authorship; there is no `package.json`/`wippy-meta.json` authoring surface for them. (`base_path` is honored for both pages and components; the current app-template component entries simply omit it.)
 
-By contrast, `entry_point` is FE-authored *and* YAML-overridable. It is baked into `wippy-meta.json` from the package's `wippy` block — `wippy.path` for pages (which `@wippy-fe/vite-plugin` **requires**; omitting it makes the plugin throw `wippy.path is required for a page package`) or `wippy.tagName`/`browser` for components. The `meta.entry_point` field in `_index.yaml` is an optional per-deployment override on top of that authored default; it is not a YAML-only field.
+By contrast, `entry_point` is FE-authored *and* YAML-overridable. For pages it comes from `wippy.path` (which `@wippy-fe/vite-plugin` **requires**; omitting it makes the plugin throw `wippy.path is required for a page package`). For components it comes from the top-level `browser` field; `wippy.tagName` declares the custom-element name separately. The `meta.entry_point` field in `_index.yaml` is an optional per-deployment override on top of that authored default; it is not a YAML-only field.
 
 A component author writes display metadata once in the `wippy` block of
 `package.json`, and the vite plugin records it in `wippy-meta.json` as the

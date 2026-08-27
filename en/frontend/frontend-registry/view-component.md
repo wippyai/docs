@@ -16,18 +16,21 @@ For guidance on writing the component implementation, see [Web Component](../mic
 
 These fields are authored by the FE developer in the `wippy` block of `package.json`. The vite plugin bakes them into `wippy-meta.json` at build time, and `wippy/views` reads them from there as defaults.
 
-> **All fields in this section can be overridden by the operator in `_index.yaml`. YAML always takes precedence.**
+> **YAML can override `tagName`, `props`, and `events` through `meta.tag_name`, `meta.props`, and `meta.events`.** Build configuration selects `wippyComponentPlugin()`. The optional package `type` is metadata that the selected plugin validates when present; it has no separate YAML override.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `type` | string | — | Must be `"component"` or `"widget"`; `"widget"` is the template convention |
+| `type` | string | `"widget"` in the runtime descriptor | Optional; when present, must be `"component"` or `"widget"`. Build configuration, not this field, selects the Vite plugin |
 | `tagName` | string | — | Custom element name; must contain a hyphen per the HTML spec |
 | `props` | object | — | JSON Schema describing the component's accepted attributes |
 | `events` | object | — | JSON Schema describing the custom DOM events the component emits |
 
 ### `wippy.type` in `package.json`
 
-Web component packages set `"type": "widget"` or `"type": "component"` (not `"page"`) inside their `wippy` block. The app-template currently uses `"widget"`, and the vite plugin accepts both component names for this runtime contract.
+Web component packages may set `"type": "widget"` or `"type": "component"`
+(not `"page"`) inside their `wippy` block. The app template uses `"widget"`;
+the component plugin accepts either value or an omitted field and rejects page
+metadata.
 
 ```json
 {
@@ -35,8 +38,14 @@ Web component packages set `"type": "widget"` or `"type": "component"` (not `"pa
   "wippy": {
     "tagName": "example-reaction-bar",
     "type": "widget",
-    "props": { ... },
-    "events": { ... }
+    "props": {
+      "type": "object",
+      "properties": {}
+    },
+    "events": {
+      "type": "object",
+      "properties": {}
+    }
   }
 }
 ```
@@ -147,7 +156,7 @@ If any gate is missing the component is silently absent. To verify: `curl /api/p
 
 ## The Autoload Sequence
 
-When a page inside the Web Host finishes mounting, the host runs the following sequence:
+During Web Host runtime initialization, each context that owns global autoload runs the following sequence. It is not triggered after every page mount:
 
 1. `GET /api/public/components/list?auto_register=true` — fetches all announced, auto-registering components.
 

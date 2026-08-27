@@ -6,9 +6,9 @@ description: "Reference for declaring, routing, serving, and configuring a view.
 # Micro Frontend Apps (view.page)
 
 A `view.page` entry describes a full single-page application that the Web Host
-loads inside an iframe. Each entry claims a path in the host router, receives
-an isolated browsing context, and gets CSS and configuration through the host's
-proxy layer.
+loads through the selected iframe or Web Fragment engine. Each entry can claim
+a path in the host router and receives CSS, configuration, and host APIs through
+the engine's proxy adapter.
 
 ## Frontend Fields (package.json wippy block)
 
@@ -27,7 +27,7 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 
 ### Render engine
 
-`renderEngine` selects the [page render engine](../web-host/render-engines.md) for this page (`view.page` only). The engine is transparent to app code — the same page renders identically either way — so set it only to opt a page out of, or into, the fragment engine.
+`renderEngine` selects the [page render engine](../web-host/render-engines.md) for this page (`view.page` only). The proxy API is portable across engines, but browser layout and DOM behavior can differ; review the fragment limitations before opting a page into that engine.
 
 | Value | Effect |
 |-------|--------|
@@ -83,13 +83,27 @@ frontend defaults without converting keys.
 }
 ```
 
-`proxy.enabled: true` means the Web Host wraps the page in its proxy iframe harness, which writes `window.__WIPPY_APP_CONFIG__` and related globals before the page bundle evaluates.
+In the iframe engine, `proxy.injections` configures the assets added by the
+srcdoc proxy. If it is omitted, that adapter uses permissive defaults and
+enables most injections. Web Host 1.0.56 carries `proxy.enabled` as metadata but
+does not use it as a runtime toggle.
 
-If `proxy.injections` is omitted, the iframe proxy uses permissive runtime defaults and enables most injections. The list below shows the **recommended explicit values for a typical Vite micro frontend app** — not the runtime defaults — so package reviewers can see the page's intent.
+Web Host 1.0.56 does not translate these flags to the Fragment engine. The
+Fragment gateway always supplies `loading.js`, `proxy-fragment.js`, and the four
+Host stylesheets (theme config, iframe scrollbar styles, PrimeVue/Tailwind, and
+Markdown); its proxy also installs error capture unconditionally. A page that
+can fall back to iframe should still declare its iframe injection intent
+explicitly.
+
+The list below shows the **recommended explicit iframe values for a typical
+Vite micro frontend app** — not the runtime defaults — so package reviewers can
+see the page's fallback behavior.
 
 #### Recommended explicit injection values
 
-These are the flags a micro frontend app typically declares and the value to set for a typical Vite SPA. They are not the runtime defaults.
+These are the flags a micro frontend app typically declares for its iframe
+delivery path. They are not the runtime defaults, and Web Host 1.0.56's Fragment
+gateway does not use them.
 
 - `css.themeConfig` (`true`) — CSS custom properties for the active theme
 - `css.iframe` (`true`) — required default themed scrollbar styling; `iframe` is a historical name and the current sheet does not provide layout resets
@@ -99,9 +113,9 @@ These are the flags a micro frontend app typically declares and the value to set
 - `css.customVariables` (`true`) — child-projected CSS variable overrides
 - `tailwindConfig` (`false`) — host Tailwind config object (CDN Tailwind only)
 - `resizeObserver` (`false` for full SPAs) — child body-size updates to the host
-- `preventLinkClicks` (`false` for pages) — route `<a>` clicks through `classifyLink`
+- `preventLinkClicks` (`false` for pages) — install the iframe engine's raw-`<a>` classifier hook; use `@wippy-fe/router` for portable link classification across engines
 - `iconifyIcons` (`false`) — pre-load host Iconify collections
-- `errorCapture` (`true`) — forward uncaught iframe errors to the host
+- `errorCapture` (`true`) — forward uncaught page errors to the host
 
 Most full SPA pages set `resizeObserver: false` and `preventLinkClicks: false` because they manage their own layout and routing. The `main` app in the template sets `errorCapture: true` to surface uncaught errors during development.
 
@@ -143,7 +157,7 @@ Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is au
 | `secure` | boolean | `false` | `true` → requires authentication; unauthenticated requests get a 401 |
 | `inline` | boolean | `false` | `true` → page is hidden from all listings (sidebar, API); use for embedded artifact viewers or auxiliary routes |
 
-`announced: false` hides the page from navigation but does not prevent loading. An iframe or a direct URL still works. `inline: true` is stricter — it suppresses the page from all public-facing listings.
+`announced: false` hides the page from navigation but does not prevent loading. The page can still be embedded or reached through its route. `inline: true` is stricter — it suppresses the page from all public-facing listings.
 
 ### Mount Route
 
@@ -168,7 +182,7 @@ When the Web Host starts, it fetches `GET /api/public/pages/routes` and calls `r
 
 | Field | Type | Description |
 |---|---|---|
-| `config_overrides` | object | Deep-merged over the AppConfig values the Web Host injects into the iframe |
+| `config_overrides` | object | Deep-merged over the AppConfig values the Web Host injects into the page context |
 
 `config_overrides` is the registry wrapper name. Its nested object already uses
 the frontend schema's lower-camel-case keys, such as

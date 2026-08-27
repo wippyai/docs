@@ -58,5 +58,8 @@ Both:
 
 - Wippy backend module with `wippy/views` declared as a dependency (see [Views](../../framework/views.md))
 - `wippy/facade` for the Web Host entry point (see [Facade Entry Point](../web-host/entry-point.md))
-- Node.js 22 or newer and Vite 7, as declared by the selected Web Host source;
-  re-check its package when the target release changes
+- Node.js 22.12 or newer and Vite 7 for this documentation baseline. The Host
+  source package declares Node 22+ and uses Vite 7; Vite 7 itself requires
+  Node 20.19+ or 22.12+. `@wippy-fe/vite-plugin` 0.0.56 also accepts Vite 5 and
+  6, but consumers choosing those versions must follow that Vite release's Node
+  requirements

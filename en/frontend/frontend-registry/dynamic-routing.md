@@ -34,7 +34,7 @@ for (const [mountRoute, pageId] of Object.entries(routes)) {
 }
 ```
 
-After this point, navigating to `/home/anything` causes the router to render the `main` page's iframe, and navigating to `/demo/anything` causes the router to render the `iframe-demo` page's iframe — without any hard-coded knowledge of those paths in the host bundle.
+After this point, navigating to `/home/anything` causes the router to render the `main` page through its selected engine, and navigating to `/demo/anything` does the same for the `iframe-demo` page — without any hard-coded knowledge of those paths in the host bundle.
 
 ## Claiming a Path with `mountRoute`
 
@@ -46,7 +46,6 @@ A `view.page` entry claims a host router path by setting `mountRoute` in its `_i
   meta:
     type: view.page
     mountRoute: /home/:part(.*)*
-    ...
 ```
 
 `mountRoute` is the current compatibility spelling for a backend casing bug.
@@ -66,16 +65,19 @@ The only first-wins behavior is Vue Router runtime priority between a root catch
 
 ## The URL Sync Loop
 
-Once a page is loaded in its iframe, the child application navigates internally
-with its own router. The host reflects those navigations in its URL bar so the
-browser's back button, bookmarks, and copied URLs work correctly. A PostMessage
-pair synchronizes the two routers.
+Once a page is loaded in its runtime context, the child application navigates
+internally with its own router. The host reflects those navigations in its URL
+bar so the browser's back button, bookmarks, and copied URLs work correctly.
+The proxy bridge synchronizes the two routers for both page engines.
 
 ![Frontend Registry](../diagrams/frontend-registry.svg)
 
 ### Child → Host: `CmdRouteChanged`
 
-When the child application's router commits a navigation (e.g. the user moves from `/home/settings` to `/home/profile`), the child posts a message to its parent window:
+When the child application's router commits a navigation (e.g. the user moves
+from `/home/settings` to `/home/profile`), it reports the internal route through
+the proxy bridge. The iframe adapter posts to `window.parent`; the Fragment
+adapter routes the same protocol to its captured host window:
 
 ```typescript
 // In the child application, on internal route change.
@@ -99,17 +101,22 @@ The round-trip keeps the host URL bar, the child router, and the browser history
 
 ## `classifyLink`
 
-When a page has `preventLinkClicks: true` in its proxy injections (see [view.page](./view-page.md)), the host intercepts `<a>` clicks inside the iframe before the browser handles them. Each intercepted link is passed to `classifyLink`, which decides how to handle it:
+In the iframe engine, `preventLinkClicks: true` installs a document-level hook that intercepts raw `<a>` clicks before the browser handles them (see [view.page](./view-page.md)). The Web Fragment adapter in Web Host 1.0.56 does not install this raw-click hook. For portable Vue navigation, use `AutoRouterLink` from `@wippy-fe/router`; it calls the same `classifyLink` API in either engine.
+
+The classifier returns one of four results:
 
 | `LinkKind` | Condition | Action |
 |---|---|---|
 | `host-nav` | Top path segment matches a known `mountRoute` literal, a baked-in system route (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`), or a root-mount catch-all | `preventDefault` + `host.navigate(normalizedPath)` |
-| `child-nav` | The iframe's own router resolves the path to a real (non-catch-all) route, or nothing else has claimed it | The subapp's `RouterLink` decides in-app; the host does NOT `preventDefault` and does NOT reload the iframe |
+| `child-nav` | The child router resolves the path to a real (non-catch-all) route, or nothing else has claimed it | The subapp's router decides in-app; the host does NOT `preventDefault` or reload the page context |
 | `external` | Different origin, or a non-`http` scheme (`javascript`/`mailto`/`tel`/`sms`/`ftp`/`file`/`data`/`blob`) | Browser default (e.g. opens in a new tab) |
 | `ignore` | Empty `href` or a pure hash (`#…`) | `preventDefault` |
 
-The classifier checks the iframe's own local router first, so a link the child can resolve itself stays in-app.
+The classifier checks the page's local router first, so a link the child can resolve itself stays in-app.
 
 `classifyLink` consults the same routes list fetched at startup. A link to `/demo/step-2` is classified as `host-nav` because `/demo/:part(.*)*` is a registered mount route — the host navigates to the `iframe-demo` page rather than doing a full page reload.
 
-This means a child application does not need to know about other pages in the system. It can render ordinary `<a href="/demo/step-2">` links and the host's link classifier handles the navigation correctly.
+This means a child application does not need to know about other pages in the
+system. In an iframe with `preventLinkClicks: true`, an ordinary
+`<a href="/demo/step-2">` is intercepted and classified. Use `AutoRouterLink`
+when the same navigation must work in both page engines.

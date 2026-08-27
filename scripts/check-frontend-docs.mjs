@@ -416,12 +416,12 @@ const requiredPages = new Map([
     'unexpected console errors',
   ]],
   ['micro-frontends/quickstart.md', [
-    'Node.js 22 or newer',
-    'Vite 7',
+    'Node.js 22.12 or newer',
+    'Vite 7 for these examples',
   ]],
   ['micro-frontends/overview.md', [
-    'Node.js 22 or newer',
-    'Vite 7',
+    'Node.js 22.12 or newer',
+    'Vite 7 for this documentation baseline',
   ]],
   ['micro-frontends/unsupported-project-bound.md', [
     'Standard compliance returns exactly `UNSUPPORTED`',
@@ -601,7 +601,7 @@ if (!/%~dp0make\.ps1/.test(batFence) || /\bnpm(?:\.cmd)?\s+run\s+build\b/.test(b
   errors.push('micro-frontends/build-system.md: make.bat must only delegate to make.ps1')
 }
 if (!buildSystem.includes('https://web-host.wippy.ai/<release-tag>/import-map.json')
-  || !buildSystem.includes('https://web-host.wippy.ai/v1.2.3/import-map.json')) {
+  || !buildSystem.includes('https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json')) {
   errors.push('micro-frontends/build-system.md: canonical CDN import-map URL must be explicit')
 }
 
