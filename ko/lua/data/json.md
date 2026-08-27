@@ -1,6 +1,6 @@
 ---
 title: "JSON 인코딩"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Lua 값을 JSON으로 인코딩하고, JSON 문자열을 디코딩하고, 값이나 문자열을 JSON Schema로 검증합니다."
 ---
 
 # JSON 인코딩
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Lua 테이블을 JSON으로 인코딩하고 JSON 문자열을 Lua 값으로 디코딩합니다. 데이터 검증 및 API 계약 적용을 위한 JSON Schema 검증을 포함합니다.
+`json` 모듈은 Lua 값을 JSON으로 인코딩하고, JSON 문자열을 디코딩하고, 데이터를 JSON Schema로 검증합니다.
+
+이 페이지는 API 레퍼런스입니다. 짧은 표현식 예시는 성공 반환값을 보여 주며, 결과를 사용하는 예시는 선택적 두 번째 `error` 반환값을 캡처합니다.
 
 ## 로딩
 
@@ -17,28 +19,30 @@ Lua 테이블을 JSON으로 인코딩하고 JSON 문자열을 Lua 값으로 디�
 local json = require("json")
 ```
 
+require하기 전에 실행 가능 엔트리의 `modules:` 목록에 `json`을 추가하세요.
+
 ## 인코딩
 
-### 값 인코딩
+### `encode`
 
 Lua 값을 JSON 문자열로 인코딩합니다.
 
 ```lua
--- 단순 값
+-- Simple values
 json.encode("hello")        -- '"hello"'
 json.encode(42)             -- '42'
 json.encode(true)           -- 'true'
 json.encode(nil)            -- 'null'
 
--- 배열 (순차적 숫자 키)
+-- Arrays (sequential numeric keys)
 json.encode({1, 2, 3})      -- '[1,2,3]'
 json.encode({"a", "b"})     -- '["a","b"]'
 
--- 객체 (문자열 키)
+-- Objects (string keys)
 local user = {name = "Alice", age = 30}
-json.encode(user)           -- '{"name":"Alice","age":30}'
+json.encode(user)           -- JSON object with name="Alice" and age=30; member order is unspecified
 
--- 중첩 구조
+-- Nested structures
 local order = {
     id = "ord-123",
     items = {
@@ -48,7 +52,7 @@ local order = {
     total = 99.50
 }
 json.encode(order)
--- '{"id":"ord-123","items":[{"sku":"ABC","qty":2},{"sku":"XYZ","qty":1}],"total":99.5}'
+-- Structurally equivalent JSON; object-member order is unspecified
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -70,12 +74,12 @@ json.encode(order)
 
 ## 디코딩
 
-### 문자열 디코딩
+### `decode`
 
 JSON 문자열을 Lua 값으로 디코딩합니다.
 
 ```lua
--- 객체 파싱
+-- Parse object
 local user, err = json.decode('{"name":"Bob","active":true}')
 if err then
     return nil, err
@@ -83,13 +87,14 @@ end
 print(user.name)    -- "Bob"
 print(user.active)  -- true
 
--- 배열 파싱
-local items = json.decode('[10, 20, 30]')
+-- Parse array
+local items, items_err = json.decode('[10, 20, 30]')
+if items_err then return nil, items_err end
 print(items[1])     -- 10
 print(#items)       -- 3
 
--- 중첩 데이터 파싱
-local response = json.decode([[
+-- Parse nested data
+local response, response_err = json.decode([[
 {
     "status": "ok",
     "data": {
@@ -100,13 +105,14 @@ local response = json.decode([[
     }
 }
 ]])
+if response_err then return nil, response_err end
 print(response.data.users[1].name)  -- "Alice"
 
--- 에러 처리
+-- Handle errors
 local data, err = json.decode("not valid json")
 if err then
     print(err:kind())     -- "INTERNAL"
-    print(err:message())  -- 파싱 에러 상세
+    print(err:message())  -- parse error details
 end
 ```
 
@@ -118,12 +124,12 @@ end
 
 ## 스키마 검증
 
-### 값 검증
+### `validate`
 
 JSON Schema에 대해 Lua 값을 검증합니다. API 계약 적용이나 사용자 입력 검증에 사용합니다.
 
 ```lua
--- 스키마 정의
+-- Define a schema
 local user_schema = {
     type = "object",
     properties = {
@@ -134,26 +140,28 @@ local user_schema = {
     required = {"name", "email"}
 }
 
--- 유효한 데이터는 통과
+-- Valid data passes
 local valid, err = json.validate(user_schema, {
     name = "Alice",
     email = "alice@example.com",
     age = 30
 })
+if err then return nil, err end
 print(valid)  -- true
 
--- 유효하지 않은 데이터는 상세 정보와 함께 실패
+-- Invalid data fails with details
 local valid, err = json.validate(user_schema, {
     name = "",
     email = "not-an-email"
 })
 if not valid then
-    print(err:message())  -- 검증 에러 상세
+    print(err:message())  -- validation error details
 end
 
--- 스키마는 JSON 문자열일 수도 있음
+-- Schema can also be a JSON string
 local schema_json = '{"type":"number","minimum":0}'
-local valid = json.validate(schema_json, 42)
+local valid, schema_err = json.validate(schema_json, 42)
+if schema_err then return nil, schema_err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -165,7 +173,7 @@ local valid = json.validate(schema_json, 42)
 
 스키마는 성능을 위해 콘텐츠 해시로 캐시됩니다.
 
-### JSON 문자열 검증
+### `validate_string`
 
 먼저 디코딩하지 않고 스키마에 대해 JSON 문자열을 검증합니다. 파싱 전에 검증해야 할 때 유용합니다.
 
@@ -178,15 +186,19 @@ local schema = {
     required = {"action"}
 }
 
--- 요청 본문의 raw JSON 검증
+-- Validate raw JSON from request body
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new({
+        message = "Invalid request: " .. err:message(),
+        kind = errors.INVALID
+    })
 end
 
--- 이제 안전하게 디코딩
-local request = json.decode(body)
+-- Now safe to decode
+local request, decode_err = json.decode(body)
+if decode_err then return nil, decode_err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -208,4 +220,4 @@ local request = json.decode(body)
 | 스키마 컴파일 실패 | `errors.INVALID` | 아니오 |
 | 검증 실패 | `errors.INVALID` | 아니오 |
 
-에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
