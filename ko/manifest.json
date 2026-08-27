@@ -20,7 +20,7 @@
       {"title": "컴포넌트 구축", "path": "guides/components"},
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
-      {"title": "Queue Consumers", "path": "guides/queue-consumers"},
+      {"title": "큐 컨슈머", "path": "guides/queue-consumers"},
       {"title": "Supervision", "path": "guides/supervision"},
       {"title": "Publishing", "path": "guides/publishing"}
     ]
