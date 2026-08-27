@@ -8,7 +8,9 @@ description: "Inspect the current actor and scope, evaluate policies, and manage
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-The `security` module exposes authentication actors, authorization scopes, policies, and token stores.
+The `security` module exposes authentication actors, authorization scopes, policies, and token stores. This page is an API reference with partial authorization recipes. Registry IDs, actors, request metadata, token values, application objects such as `user` and `doc`, and callbacks such as `show_admin_features` come from the surrounding application; the examples are not a complete authentication deployment.
+
+Wippy runs in strict security mode by default. The executable entry must enable `security`, have an actor and scope, and authorize the exact operations it calls. In particular, construction and scope changes need `security.actor.create` or `security.scope.create`; registry lookup needs `security.policy.get` or `security.policy_group.get`; token work needs `security.token_store.get` plus the operation-specific token permission. `new_actor`, `new_scope`, `scope:with`, `scope:without`, and permission-denied `token_store` acquisition raise a Lua error instead of returning a structured `error`. Grant these prerequisites in the entry's security context rather than trying to recover after a denial. See [Security Model](../../system/security.md) for configuration.
 
 ## Loading
 
@@ -25,13 +27,12 @@ local actor = security.actor()
 if actor then
     local id = actor:id()
     local meta = actor:meta()
-
-    logger:info("Request from", {
-        user_id = id,
-        role = meta.role
-    })
+    -- Use only the fields required for authorization or application logic.
+    local role = meta.role
 end
 ```
+
+Actor metadata can contain identifiers or personal data. Do not log the complete metadata table or copy secrets into it.
 
 **Returns:** `Actor|nil`
 
@@ -122,15 +123,26 @@ Create a custom scope.
 local scope = security.new_scope()
 
 -- Scope with policies
-local read_policy = security.policy("app:read-only")
+local read_policy, read_err = security.policy("app:read-only")
+if read_err then
+    return nil, read_err
+end
 local scope = security.new_scope({read_policy})
 
 -- Build scope incrementally
 local scope = security.new_scope()
-local policy1 = security.policy("app:read")
-local policy2 = security.policy("app:write")
+local policy1, policy1_err = security.policy("app:read")
+if policy1_err then
+    return nil, policy1_err
+end
+local policy2, policy2_err = security.policy("app:write")
+if policy2_err then
+    return nil, policy2_err
+end
 scope = scope:with(policy1):with(policy2)
 ```
+
+Each alternative above is an isolated construction pattern. `new_scope` and `scope:with` can raise on missing context or permission denial; they do not return `nil, error` for those checks.
 
 **Returns:** `Scope`
 
@@ -176,6 +188,8 @@ end
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
+Loading a scope does not elevate the current execution context. It produces a value for explicit evaluation or for an API that accepts a scope; the caller still needs permission to perform the protected operation.
+
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `id` | string | Policy group ID |
@@ -193,8 +207,10 @@ if err then
 end
 
 -- Use store...
-store:close()
+return store:close()
 ```
+
+The caller owns an acquired token store until `close()` is called. Close it after the final operation on every checked success or error path; repeated closes are safe. A permission denial during acquisition raises a Lua error, while lookup and resource failures return `nil, error`.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -219,12 +235,17 @@ Add or remove policies from scope.
 local scope = security.new_scope()
 
 -- Add policy
-local write_policy = security.policy("app:write")
+local write_policy, err = security.policy("app:write")
+if err then
+    return nil, err
+end
 scope = scope:with(write_policy)
 
 -- Remove policy
 scope = scope:without("app:read-only")
 ```
+
+`with` and `without` return new immutable scope values and raise when `security.scope.create` is not allowed for the `with` or `without` resource.
 
 ### `evaluate`
 
@@ -280,7 +301,14 @@ Create an authentication token.
 
 ```lua
 local actor = security.new_actor("user:123", {role = "user"})
-local scope = security.named_scope("app:default")
+local scope, scope_err = security.named_scope("app:default")
+if scope_err then
+    return nil, scope_err
+end
+local store, store_err = security.token_store("app:tokens")
+if store_err then
+    return nil, store_err
+end
 
 local token, err = store:create(actor, scope, {
     expiration = "24h",  -- or milliseconds
@@ -289,7 +317,14 @@ local token, err = store:create(actor, scope, {
         user_agent = user_agent
     }
 })
+store:close()
+if err then
+    return nil, err
+end
+return token
 ```
+
+`request_ip` and `user_agent` are application-provided request values. Store only metadata needed for security decisions, apply retention limits, and never log or persist the returned bearer token outside the intended credential store.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -306,10 +341,13 @@ Validate a token and return its actor and scope.
 
 ```lua
 local actor, scope, err = store:validate(token)
+store:close()
 if err then
     return nil, err
 end
 ```
+
+Here and below, `store` is a live owned handle and `token` is an untrusted bearer credential supplied by the caller. Do not log the token, including on validation or revocation errors.
 
 **Returns:** `Actor, Scope, error`
 
@@ -319,6 +357,10 @@ Invalidate a token.
 
 ```lua
 local ok, err = store:revoke(token)
+store:close()
+if err then
+    return nil, err
+end
 ```
 
 **Returns:** `boolean, error`
@@ -343,14 +385,16 @@ Security policy evaluation applies to security operations.
 |--------|----------|-------------|
 | `security.policy.get` | Policy ID | Access policy definitions |
 | `security.policy_group.get` | Group ID | Access named scopes |
-| `security.scope.create` | `custom` | Create custom scopes |
+| `security.scope.create` | `custom` | Create a custom scope with `new_scope` |
+| `security.scope.create` | `with` | Add a policy with `scope:with` |
+| `security.scope.create` | `without` | Remove a policy with `scope:without` |
 | `security.actor.create` | Actor ID | Create actors |
 | `security.token_store.get` | Store ID | Access token stores |
 | `security.token.validate` | Store ID | Validate tokens |
 | `security.token.create` | Store ID | Create tokens |
 | `security.token.revoke` | Store ID | Revoke tokens |
 
-See [Security Model](system/security.md) for policy configuration.
+See [Security Model](../../system/security.md) for policy configuration.
 
 ## Errors
 
@@ -358,7 +402,8 @@ See [Security Model](system/security.md) for policy configuration.
 |-----------|------|-----------|
 | No context | `errors.INTERNAL` | no |
 | Empty token store ID | `errors.INVALID` | no |
-| Permission denied | `errors.INVALID` | no |
+| Policy, named-scope, or token-operation permission denied | `errors.INVALID` | no |
+| Actor/scope construction, scope change, or token-store acquisition denied | raises Lua error | no |
 | Policy not found | `errors.INTERNAL` | no |
 | Token store not found | `errors.INTERNAL` | no |
 | Token store closed | `errors.INTERNAL` | no |
@@ -373,11 +418,12 @@ if err then
     end
     return nil, err
 end
+store:close()
 ```
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.
 
 ## See Also
 
-- [Security Model](system/security.md) - Actors, policies, scopes configuration
-- [HTTP Middleware](http/middleware.md) - Endpoint and resource firewall
+- [Security Model](../../system/security.md) - Actors, policies, scopes configuration
+- [HTTP Middleware](../../http/middleware.md) - Endpoint and resource firewall
