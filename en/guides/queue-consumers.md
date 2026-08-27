@@ -167,7 +167,7 @@ The built-in in-memory driver is intended for development and testing:
 
 ## See Also
 
-- [Message Queue](lua/storage/queue.md) — Queue module reference
-- [Queue Configuration](system/queue.md) — Queue drivers and entry definitions
-- [Supervision](guides/supervision.md) — Consumer lifecycle
-- [Process Management](lua/core/process.md) — Process spawning and communication
+- [Message Queue](../lua/storage/queue.md) — Queue module reference
+- [Queue Configuration](../system/queue.md) — Queue drivers and entry definitions
+- [Supervision](./supervision.md) — Consumer lifecycle
+- [Process Management](../lua/core/process.md) — Process spawning and communication

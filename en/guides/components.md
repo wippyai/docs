@@ -7,7 +7,7 @@ description: "Declare reusable module requirements with ns.requirement and suppl
 
 A **component** is a reusable Wippy module published to the Hub and mounted into a host application. A component can depend on a database, process host, or router without knowing the host's entry IDs. It declares these dependencies through a **requirement interface**, and the host supplies their values.
 
-This guide covers the author side: declaring that interface and understanding how values flow into your entries. For the consumer side (lock files, version constraints, `wippy add`/`update`) see [Dependency Management](guides/dependency-management.md). For how a component is structured internally see [Application Architecture](concepts/architecture.md).
+This guide covers the author side: declaring that interface and understanding how values flow into your entries. For the consumer side (lock files, version constraints, `wippy add`/`update`) see [Dependency Management](./dependency-management.md). For how a component is structured internally see [Application Architecture](../concepts/architecture.md).
 
 ## The Three Entry Kinds
 
@@ -148,11 +148,11 @@ Unit tests do not verify the assembled module's registry relationships. Add a pa
 - every spawned or scheduled id resolves to a real entry,
 - every `env.variable`'s storage is registered.
 
-This catches unresolved relationships such as a supervisor referencing an unregistered worker or a test fixture using a harness-only storage ID. See [Supervision](guides/supervision.md) and the [Testing](framework/testing.md) framework.
+This catches unresolved relationships such as a supervisor referencing an unregistered worker or a test fixture using a harness-only storage ID. See [Supervision](./supervision.md) and the [Testing](../framework/testing.md) framework.
 
 ## See Also
 
-- [Application Architecture](concepts/architecture.md) — how a component is structured internally
-- [Dependency Management](guides/dependency-management.md) — lock files, versions, the consumer workflow
-- [Publishing Modules](guides/publishing.md) — putting a component on the hub
-- [Entry Kinds Guide](guides/entry-kinds.md) — `ns.definition`, `ns.requirement`, `ns.dependency` reference
+- [Application Architecture](../concepts/architecture.md) — how a component is structured internally
+- [Dependency Management](./dependency-management.md) — lock files, versions, the consumer workflow
+- [Publishing Modules](./publishing.md) — putting a component on the hub
+- [Entry Kinds Guide](./entry-kinds.md) — `ns.definition`, `ns.requirement`, `ns.dependency` reference
