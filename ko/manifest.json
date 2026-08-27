@@ -3,8 +3,8 @@
     "title": "Getting Started",
     "children": [
       {"title": "What is Wippy", "path": "start/about"},
-      {"title": "Installation", "path": "start/installation"},
-      {"title": "Project Structure", "path": "start/structure"}
+      {"title": "설치", "path": "start/installation"},
+      {"title": "프로젝트 구조", "path": "start/structure"}
     ]
   },
   {
