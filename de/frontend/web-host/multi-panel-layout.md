@@ -117,7 +117,7 @@ Parameter (Standard `compat`, optional `managed`); er wird am Requirement
 Feld `AppConfig.feature`: Das Managed Layout erreicht das Kind ausschließlich
 über `AppConfig.hostConfig.layout`. Die Oberfläche der Proxy-API ist in beiden
 Modi gleich, einige Befehle wirken jedoch nur in einem Modus; siehe
-[Welche Funktionen in welchem Modus wirken](#welche-funktionen-in-welchem-modus-wirken).
+[Welche Funktionen in welchem Modus wirken](#funktionsumfang-nach-modus).
 
 ## Die `HostLayoutDeclaration`
 
