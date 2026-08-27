@@ -5,10 +5,9 @@ description: "How the Web Host registers backend mount routes, synchronizes chil
 
 # Dynamic Routing
 
-The Web Host's router is not statically configured. At startup, it fetches the
-current page mount routes from the backend and adds them to the Vue Router
-instance. A new `view.page` entry with a `mountRoute` claim therefore takes
-effect without a Web Host bundle change.
+The Web Host combines statically defined system routes with page mount routes
+fetched from the backend at startup. A new `view.page` entry with a `mountRoute`
+claim therefore takes effect without a Web Host bundle change.
 
 ![Mount route sync](../diagrams/mountroute-sync.svg)
 
@@ -24,8 +23,8 @@ The response is an envelope `{ success, count, routes }`, where `routes` is a ma
 
 ```typescript
 // Simplified from the Web Host bootstrap
-const { routes } = await api.get('/api/public/pages/routes')
-for (const [mountRoute, pageId] of Object.entries(routes)) {
+const { data } = await api.get('/api/public/pages/routes')
+for (const [mountRoute, pageId] of Object.entries(data.routes)) {
   router.addRoute('app', {
     path: mountRoute,
     component: MountRoutePage,
@@ -48,20 +47,20 @@ A `view.page` entry claims a host router path by setting `mountRoute` in its `_i
     mountRoute: /home/:part(.*)*
 ```
 
-`mountRoute` is the current compatibility spelling for a backend casing bug.
-The intended backend key is `mount_route`; continue authoring `mountRoute`
-until the backend correction ships.
+The current registry schema reads the authored field as `mountRoute`, stores it
+in the registry's internal `mount_route` field, and emits `mountRoute` in API
+output. Use the lower-camel-case spelling shown above.
 
-`mountRoute` accepts only the catch-all forms `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen literal segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or different param names (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict, the backend's `validate_mount_route_syntax` fails, and `GET /api/public/pages/routes` returns HTTP 500 (rendered as a fatal fullscreen error). The wildcard segment `:part(.*)*` lets the child application manage its own sub-routes (e.g. `/home/settings`, `/home/profile/edit`) while the host owns the `/home` prefix.
+`mountRoute` accepts only the catch-all forms `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen literal segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or different param names (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected. For backend `view.page` entries, `validate_mount_route_syntax` makes `GET /api/public/pages/routes` return HTTP 500, so Host startup stops before those entries reach its router. After a successful response and configuration merge, the Host separately validates the resulting route set, including syntax and conflicts with system routes. The wildcard segment `:part(.*)*` lets the child application manage its own sub-routes (e.g. `/settings`, `/profile/edit`) while the host owns the `/home` prefix.
 
 Two entries must not claim the same route. If two `view.page` entries claim the
 **same** `mountRoute`, the backend validator (`validate_mount_routes` in
 `page_registry.lua`) records a duplicate-route conflict in the same issues list
-as syntax errors. `GET /api/public/pages/routes` then returns HTTP 500, and the
-Web Host renders a fatal fullscreen `<wippy-error>`, as it does for a malformed
-`mountRoute`. The duplicate is **not** silently ignored.
+as syntax errors. `GET /api/public/pages/routes` then returns HTTP 500, Host
+startup stops, and the error is relayed through the Host error handler. The
+duplicate is **not** silently ignored.
 
-The only first-wins behavior is Vue Router runtime priority between a root catch-all (`/:part(.*)*`) and a more-specific system route (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) or a longer literal-prefix mount — the more-specific route matches first. That is route-resolution precedence, not duplicate-route handling.
+Vue Router route-resolution precedence still applies between a root catch-all (`/:part(.*)*`) and a more-specific system route (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) or a longer literal-prefix mount: the more-specific route matches. That priority is not duplicate-route handling.
 
 ## The URL Sync Loop
 
@@ -75,7 +74,7 @@ The proxy bridge synchronizes the two routers for both page engines.
 ### Child → Host: `CmdRouteChanged`
 
 When the child application's router commits a navigation (e.g. the user moves
-from `/home/settings` to `/home/profile`), it reports the internal route through
+from `/settings` to `/profile` under the `/home` mount), it reports the internal route through
 the proxy bridge. The iframe adapter posts to `window.parent`; the Fragment
 adapter routes the same protocol to its captured host window:
 
