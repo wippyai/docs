@@ -5,7 +5,7 @@ description: "Configure directory-backed and read-only embedded filesystems."
 
 # Filesystem
 
-Filesystem entries expose directory-backed or read-only embedded storage to runtime modules.
+Filesystem entries expose directory-backed or read-only embedded storage to runtime modules. This page is a configuration reference; its YAML blocks are individual entry fragments rather than complete projects.
 
 ## Entry Kinds
 

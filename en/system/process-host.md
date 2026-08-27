@@ -5,7 +5,7 @@ description: "Process hosts manage Lua and WebAssembly process execution using a
 
 # Process Host
 
-A `process.host` runs Lua and WebAssembly processes on a work-stealing scheduler.
+A `process.host` runs Lua and WebAssembly processes on a work-stealing scheduler. This page is a configuration and lifecycle reference; the YAML block is an entry fragment.
 
 <note>
 Each host schedules processes independently. Load is not distributed between hosts automatically.

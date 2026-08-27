@@ -5,7 +5,7 @@ description: "Stream row-level changes from Postgres logical replication with db
 
 # Change Data Capture
 
-A `db.cdc.postgres` source streams row-level changes from Postgres logical replication through the `pgoutput` plugin. It creates a replication slot, can snapshot existing rows, and then emits insert, update, and delete changes. Sources are addressed by entry ID and consumed from Lua through the [`cdc` module](lua/storage/cdc.md).
+A `db.cdc.postgres` source streams row-level changes from Postgres logical replication through the `pgoutput` plugin. It creates a replication slot, can snapshot existing rows, and then emits insert, update, and delete changes. This page is a configuration reference; the example assumes an existing database, publication or table set, replication credentials, and environment values. Sources are addressed by entry ID and consumed from Lua through the [`cdc` module](../lua/storage/cdc.md).
 
 ## Configuration
 
@@ -45,12 +45,12 @@ A `db.cdc.postgres` source streams row-level changes from Postgres logical repli
 | `temporary` | bool | false | Use a temporary replication slot (removed on disconnect) |
 | `failover` | bool | false | Enable failover slot mode (mutually exclusive with `temporary`) |
 | `standby_interval` | duration | `10s` | Standby status message interval |
-| `status_interval` | duration | `30s` | Status update interval to the server |
+| `status_interval` | duration | `30s` | Retained-WAL and replication-lag metric sampling interval |
 | `snapshot_fetch_size` | int | `1000` | Rows fetched per snapshot batch; `0` uses the default |
 | `options` | map | - | Extra connection options |
 | `lifecycle` | object | - | Lifecycle configuration |
 
-Credentials resolve `${env:NAME}` placeholders through the [environment registry](system/env.md) at decode time.
+Credentials resolve `${env:NAME}` placeholders through the [environment registry](./env.md) at decode time.
 
 ## How It Works
 
@@ -58,7 +58,7 @@ Credentials resolve `${env:NAME}` placeholders through the [environment registry
 2. If `snapshot` is set, existing rows of the configured tables are emitted first as change events with `op = "r"` (read).
 3. If `streaming` is set, ongoing row changes (`insert`, `update`, `delete`, `truncate`) are streamed from the WAL via the `pgoutput` plugin.
 4. A standby status loop periodically acknowledges the LSN so Postgres retains WAL segments (`standby_interval`).
-5. The source registers under its entry ID; Lua code subscribes with [`cdc.stream`](lua/storage/cdc.md).
+5. The source registers under its entry ID; Lua code subscribes with [`cdc.stream`](../lua/storage/cdc.md).
 
 ## Source Info
 
@@ -77,6 +77,6 @@ Each source is described by an info record:
 
 ## See Also
 
-- [CDC Module](lua/storage/cdc.md) - Lua streaming API
-- [Database](system/database.md) - SQL database services
-- [Environment](system/env.md) - Resolving credentials via `${env:NAME}`
+- [CDC Module](../lua/storage/cdc.md) - Lua streaming API
+- [Database](./database.md) - SQL database services
+- [Environment](./env.md) - Resolving credentials via `${env:NAME}`

@@ -6,7 +6,7 @@ description: "Configure AWS credentials and S3-compatible object storage."
 # Cloud Storage
 <secondary-label ref="external"/>
 
-Cloud storage entries configure AWS credentials and S3-compatible buckets used by the Lua storage API.
+Cloud storage entries configure AWS credentials and S3-compatible buckets used by the Lua storage API. This page is a configuration reference; the snippets assume the named bucket and credentials or SDK credential chain already exist.
 
 ## Entry Kinds
 
@@ -17,6 +17,8 @@ Cloud storage entries configure AWS credentials and S3-compatible buckets used b
 
 ## AWS Configuration
 
+Static credentials registered through the environment system:
+
 ```yaml
 - name: aws_config
   kind: config.aws
@@ -25,18 +27,26 @@ Cloud storage entries configure AWS credentials and S3-compatible buckets used b
   secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 ```
 
+AWS SDK default credential chain (for example, IAM roles or instance profiles):
+
+```yaml
+- name: aws_config
+  kind: config.aws
+  region: ${env:AWS_REGION}
+```
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `region` | string | Yes | AWS region. Supply via `${env:NAME}` when it differs per deployment |
 | `access_key_id` | string | No | AWS access key ID (inline or `${env:NAME}`) |
 | `secret_access_key` | string | No | AWS secret access key (inline or `${env:NAME}`) |
 
-Credentials resolve from the [environment registry](system/env.md) at decode time. Static credentials apply only when both `access_key_id` and `secret_access_key` resolve to non-empty values. Otherwise, the AWS SDK default credential chain is used, including IAM roles and instance profiles.
+Credential fields resolve from the [environment registry](./env.md) at decode time. A modern `${env:NAME}` placeholder without a default fails decoding when its variable is missing, so omit `access_key_id` and `secret_access_key` to use the AWS SDK default credential chain. Static credentials apply only when both fields resolve to non-empty values.
 
 Requests are signed with AWS Signature Version 4 by the AWS SDK using the resolved credentials. No signing configuration is required.
 
 <note>
-Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) that resolves the same way. This form is <b>deprecated</b> — migrate it to the <code>${env:NAME}</code> placeholder shown above.
+Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) that also looks up the environment registry. Unlike a modern placeholder without a default, an unregistered or empty legacy lookup preserves the inline or zero value. The legacy form is <b>deprecated</b> — migrate it deliberately, adding placeholder defaults where equivalent fallback behavior is required.
 </note>
 
 <note>
@@ -74,10 +84,10 @@ When an endpoint is provided, path-style access is enabled automatically.
 
 ## Lua API
 
-See [Cloud Storage Module](lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs).
+See [Cloud Storage Module](../lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs).
 
 ## See Also
 
-- [Cloud Storage Module](lua/storage/cloud.md) - Lua API reference
-- [Filesystem](system/filesystem.md) - Local filesystem entries
-- [Queue](system/queue.md) - SQS handler shares the same `config.aws` entries
+- [Cloud Storage Module](../lua/storage/cloud.md) - Lua API reference
+- [Filesystem](./filesystem.md) - Local filesystem entries
+- [Queue](./queue.md) - SQS handler shares the same `config.aws` entries
