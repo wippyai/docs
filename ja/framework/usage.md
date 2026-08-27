@@ -1,22 +1,24 @@
 ---
-title: "Usage Tracking"
-description: "wippy/usage モジュールは LLM のトークン消費を記録し、時間間隔、モデル、またはユーザーでグループ化された集計クエリを提供します。wippy.llm:usagetracker コントラクトにバインドされるため、LLM モジュールを介して呼び出されるコードは自動的に使用量レコードを生成します。"
+title: "使用量トラッキング"
+description: "LLM token 消費量を記録し、時間間隔、model、user ごとの使用量合計を query します。"
 ---
 
-# Usage Tracking
+# 使用量トラッキング
 
-`wippy/usage` モジュールは LLM のトークン消費を記録し、時間間隔、モデル、またはユーザーでグループ化された集計クエリを提供します。`wippy.llm:usage_tracker` コントラクトにバインドされるため、LLM モジュールを介して呼び出されるコードは自動的に使用量レコードを生成します。
+`wippy/usage` モジュールは LLM token 消費量を記録し、時間間隔、model、user ごとの集計 query を提供します。これは `wippy.llm:usage_tracker` contract のデフォルト実装であるため、LLM モジュールを通じた呼び出しでは使用量 record が自動的に生成されます。
+
+このページはリファレンススニペットを含む API 入門であり、独立したチュートリアルではありません。スニペットは既存の Wippy プロジェクト、設定済み SQL データベース、自動トラッキングが必要な場合の `wippy/llm` を前提としています。使用量 row は選択したデータベースへ永続化されます。テスト完了後、通常のデータベース保守手順で sample row を削除してください。
 
 ## セットアップ
 
-プロジェクトにモジュールを追加します:
+プロジェクトへモジュールを追加します。
 
 ```bash
 wippy add wippy/usage
 wippy install
 ```
 
-依存関係を宣言し、`target_db` 要件を使用量レコードを保存するデータベースに向けます:
+依存関係を宣言し、使用量 record を格納するデータベースを `target_db` に設定します。
 
 ```yaml
 version: "1.0"
@@ -25,22 +27,22 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.usage
     kind: ns.dependency
     component: wippy/usage
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.usage.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-アプリケーションが起動すると、`wippy/migration` がモジュールの `01_create_token_usage_table` マイグレーションを実行し、`user_id`、`context_id`、`model_id`、`timestamp` のインデックスとともに `token_usage` テーブルを作成します。
+アプリケーションの起動時、`wippy/migration` はモジュールの `01_create_token_usage_table` migration を実行します。これにより `token_usage` table と、`user_id`、`context_id`、`model_id`、`timestamp` の index が作成されます。
 
-## スキーマ
+上記の相対 SQLite path を使用する場合は、アプリケーションを開始する前に `data` directory を作成してください。
+
+## Schema
 
 ```
 token_usage
@@ -57,9 +59,9 @@ token_usage
 └── meta               text (JSON)
 ```
 
-## 自動追跡
+## 自動トラッキング
 
-`wippy/llm` は各生成の前に `wippy.llm:usage_tracker` コントラクトを解決します。`wippy/usage` は自身の実装をデフォルトとしてバインドします:
+`wippy/llm` は各 generation の前に `wippy.llm:usage_tracker` contract を解決します。`wippy/usage` はその実装をデフォルトとして bind します。
 
 ```yaml
 contracts:
@@ -69,11 +71,11 @@ contracts:
       track_usage: wippy.usage:usage_tracker
 ```
 
-成功した LLM 呼び出しごとに、モデル ID、トークン数、オプションの `context_id` を指定して `track_usage` が呼び出されます。`user_id` はアクティブなセキュリティアクターから取得され、ユーザーコンテキスト外の呼び出しは `"system"` として記録されます。
+成功した各 LLM 呼び出しは、model ID、token count、任意の `context_id` を指定して `track_usage` を呼び出します。`user_id` は active な security actor から取得されます。user context 外の呼び出しは `"system"` として記録されます。
 
 ## Tracker API
 
-LLM フローの外部で使用量を記録する必要がある場合は、トラッカーを直接インポートします:
+LLM flow 外の使用量を記録するには、tracker を直接 import します。
 
 ```yaml
 imports:
@@ -82,6 +84,11 @@ imports:
 
 ```lua
 local tracker = require("usage_tracker")
+
+-- Numeric counts supplied by the caller or model provider.
+local prompt_tokens, completion_tokens = 120, 40
+local thinking_tokens = 0
+local cache_read_tokens, cache_write_tokens = 0, 0
 
 local usage_id, err = tracker.track_usage(
     "openai:gpt-4o",
@@ -92,51 +99,68 @@ local usage_id, err = tracker.track_usage(
     cache_write_tokens,
     { context_id = "chat-42", metadata = { feature = "summary" } }
 )
+if err then
+    error("Failed to record usage: " .. tostring(err))
+end
 ```
 
-| パラメータ | 型 | 説明 |
+| Parameter | 型 | 説明 |
 |-----------|------|-------------|
-| `model_id` | string | 正規のモデル ID |
-| `prompt_tokens` | number | 入力トークン |
-| `completion_tokens` | number | 出力トークン |
-| `thinking_tokens` | number | 推論トークン（報告されない場合は 0） |
-| `cache_read_tokens` | number | プロンプトキャッシュヒット |
-| `cache_write_tokens` | number | プロンプトキャッシュ書き込み |
-| `options.context_id` | string | 自由形式のタグ。`ctx.get("context_id")` にフォールバック |
-| `options.timestamp` | number | Unix タイムスタンプ。デフォルトは現在（UTC） |
-| `options.metadata` | table | レコードと一緒に保存される任意の JSON メタデータ |
+| `model_id` | string | canonical model ID |
+| `prompt_tokens` | number | input token |
+| `completion_tokens` | number | output token |
+| `thinking_tokens` | number | reasoning token（報告されない場合は 0） |
+| `cache_read_tokens` | number | prompt cache hit |
+| `cache_write_tokens` | number | prompt cache write |
+| `options.context_id` | string | 自由形式の tag。未指定時は `ctx.get("context_id")` にフォールバック |
+| `options.timestamp` | number | Unix timestamp。デフォルトは現在時刻（UTC） |
+| `options.metadata` | table | record とともに格納する任意の JSON metadata |
 
 `usage_id` または `nil, err` を返します。
 
 ## Repository API
 
-`wippy.usage:token_usage_repo` は集計クエリを提供します:
+`wippy.usage:token_usage_repo` は集計 query を提供します。
 
 ```yaml
+modules:
+  - time
 imports:
   usage: wippy.usage:token_usage_repo
 ```
 
 ```lua
 local usage = require("usage")
+local time = require("time")
 
-local summary  = usage.get_summary(start_unix, end_unix)
-local by_time  = usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY)
-local by_model = usage.get_usage_by_model(start_unix, end_unix)
-local by_user  = usage.get_usage_by_user(start_unix, end_unix)
+-- Inclusive query bounds expressed as UNIX timestamps.
+local end_unix = time.now():unix()
+local start_unix = end_unix - (24 * 60 * 60)
+
+local function require_result(value, err)
+    if err then
+        error("Usage query failed: " .. tostring(err))
+    end
+    return value
+end
+
+local summary  = require_result(usage.get_summary(start_unix, end_unix))
+local by_time  = require_result(usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY))
+local by_model = require_result(usage.get_usage_by_model(start_unix, end_unix))
+local by_user  = require_result(usage.get_usage_by_user(start_unix, end_unix))
 ```
 
 ### 関数
 
 | 関数 | 戻り値 |
 |----------|---------|
-| `get_summary(start, end)` | 範囲全体の合計: prompt/completion/thinking/cache トークン、リクエスト数、`total_tokens`（prompt + completion + thinking） |
-| `get_usage_by_time(start, end, interval)` | 間隔ごとのバケット配列。欠落したバケットはゼロを返します |
-| `get_usage_by_model(start, end)` | モデルごとの合計。`total_tokens` 降順でソート |
-| `get_usage_by_user(start, end)` | ユーザーごとの合計。`total_tokens` 降順でソート |
-| `create(user_id, model_id, prompt, completion, options)` | トラッカーが使用する低レベル挿入 |
+| `get_summary(start, end)` | 範囲全体の合計: prompt/completion/thinking/cache token、request count、`total_tokens`（prompt + completion + thinking） |
+| `get_usage_by_time(start, end, interval)` | interval ごとの bucket 配列。欠けている bucket は zero を返す |
+| `get_usage_by_model(start, end)` | model ごとの合計。`total_tokens` の降順 |
+| `get_usage_by_user(start, end)` | user ごとの合計。`total_tokens` の降順 |
+| `create(user_id, model_id, prompt, completion, options)` | tracker が使用する低レベル insert |
 
-### 間隔
+### 時間間隔
 
 ```lua
 usage.INTERVAL.HOUR   -- "hour"
@@ -145,18 +169,18 @@ usage.INTERVAL.WEEK   -- "week"
 usage.INTERVAL.MONTH  -- "month"
 ```
 
-`get_usage_by_time` は設定された間隔にバケットを揃えます。PostgreSQL では間隔演算を伴う `generate_series` を使用し、SQLite では UNIX タイムスタンプに対する再帰 CTE を使用します。各バケットの `total_tokens` はキャッシュトークンを除外します。
+`get_usage_by_time` は bucket を設定された interval に揃えます。PostgreSQL では interval arithmetic を伴う `generate_series` を使用し、SQLite では UNIX timestamp 上の recursive CTE を使用します。各 bucket の `total_tokens` には cache token は含まれません。
 
 ### 時間範囲
 
-トラッカーとリポジトリの両方は、公開 API 境界で UNIX タイムスタンプを受け付けます。内部的にはリポジトリが保存とクエリのために RFC3339 文字列に変換します。フォーマットされた文字列ではなく、`os.time()` または `time.now():unix()` の値を渡してください。
+tracker と repository は、どちらも public API 境界で UNIX timestamp を受け取ります。repository は内部で格納と query のため RFC3339 string へ変換します。format 済み string ではなく、`os.time()` または `time.now():unix()` の値を渡してください。
 
-## メタデータとコンテキスト
+## Metadata と Context
 
-`meta` カラムは自由形式の JSON BLOB を保存します。これを使用してレコードをアプリケーションイベントと関連付けます:
+`meta` column は record とアプリケーションイベントを関連付けるための自由形式 JSON を格納します。
 
 ```lua
-tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
+local usage_id, err = tracker.track_usage("openai:gpt-4o", 120, 40, 0, 0, 0, {
     context_id = "chat-42",
     metadata   = {
         session_id = "s-7",
@@ -164,12 +188,15 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
         agent_id   = "writer",
     },
 })
+if err then
+    error("Failed to record usage metadata: " .. tostring(err))
+end
 ```
 
-`context_id` はトップレベルカラムでインデックスを付けられます。`metadata` はテキストとして保存され、フィルタリングではなく表示を目的としています。
+`context_id` は top-level column で index を作成できます。`metadata` は text として格納され、filter ではなく表示を目的とします。
 
-## 関連情報
+## 関連項目
 
-- [LLM](framework/llm.md) - LLM 生成と `usage_tracker` コントラクト
-- [Migrations](framework/migration.md) - スキーマを作成するマイグレーションランナー
-- [Framework Overview](framework/overview.md) - フレームワークモジュールの使用方法
+- [LLM](./llm.md) — LLM generation と `usage_tracker` contract
+- [Migration](./migration.md) — schema を作成する migration runner
+- [Framework 概要](./overview.md) — Framework モジュールの使用方法
