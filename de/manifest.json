@@ -111,18 +111,18 @@
       {
         "title": "Text & Templates",
         "children": [
-          {"title": "Text", "path": "lua/text/text"},
-          {"title": "Template", "path": "lua/text/template"},
-          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+          {"title": "Textverarbeitung", "path": "lua/text/text"},
+          {"title": "Template-Engine", "path": "lua/text/template"},
+          {"title": "Tree-sitter-Parsing", "path": "lua/text/treesitter"}
         ]
       },
       {
         "title": "Security",
         "children": [
-          {"title": "Security", "path": "lua/security/security"},
-          {"title": "Crypto", "path": "lua/security/crypto"},
-          {"title": "Hash", "path": "lua/security/hash"},
-          {"title": "UUID", "path": "lua/security/uuid"}
+          {"title": "Sicherheit & Zugriffskontrolle", "path": "lua/security/security"},
+          {"title": "Verschlüsselung & Signierung", "path": "lua/security/crypto"},
+          {"title": "Hash-Funktionen", "path": "lua/security/hash"},
+          {"title": "UUID-Generierung", "path": "lua/security/uuid"}
         ]
       },
       {

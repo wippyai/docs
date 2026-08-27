@@ -1,6 +1,6 @@
 ---
 title: "UUID-Generierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "UUIDs erzeugen, validieren, untersuchen, parsen und formatieren."
 ---
 
 # UUID-Generierung
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Generieren Sie universell eindeutige Identifikatoren. Angepasst für Workflows - zufällige UUIDs geben bei Replay konsistente Werte zurück.
+Das Modul `uuid` erzeugt, validiert, untersucht, parst und formatiert UUIDs. In deterministischen Workflows läuft die Erzeugung von v1, v4 und v7 als aufgezeichneter Seiteneffekt; beim Replay wird der aufgezeichnete Wert zurückgegeben. Die Namespace-basierten Versionen v3 und v5 sind deterministisch und laufen direkt.
+
+Diese Seite ist eine API-Referenz mit einzelnen Aufrufen. Werte wie `namespace`, `name`, `input` und `id` stammen aus der umgebenden Anwendung. Behandeln Sie den zweiten Rückgabewert `error`, bevor Sie erzeugte, geparste, untersuchte oder formatierte Ergebnisse verwenden. UUIDs sind Identifikatoren und keine Bearer-Anmeldedaten; verwenden Sie keine UUID-Version als Authentifizierungstoken oder Geheimnis.
 
 ## Laden
 
@@ -16,11 +18,13 @@ Generieren Sie universell eindeutige Identifikatoren. Angepasst für Workflows -
 local uuid = require("uuid")
 ```
 
-## Zufällige UUIDs
+## Nichtdeterministische UUIDs
 
 ### Version 1
 
 Zeitbasierte UUID mit Zeitstempel und Knoten-ID.
+
+Version 1 legt Erzeugungszeit und Knotenkennung offen. Vermeiden Sie sie, wenn diese Angaben sensibel sind; bevorzugen Sie v4, wenn nur ein undurchsichtiger Identifikator benötigt wird.
 
 ```lua
 local id, err = uuid.v1()
@@ -40,7 +44,7 @@ local id, err = uuid.v4()
 
 ### Version 7
 
-Zeitgeordnete UUID. Nach Erstellungszeit sortierbar.
+Eine zeitgeordnete UUID, die ihre Erzeugungszeit für chronologische Indizierung kodiert. Verlassen Sie sich nicht auf eine streng monotone Reihenfolge, insbesondere bei Werten, die im selben Zeitintervall erzeugt werden.
 
 ```lua
 local id, err = uuid.v7()
@@ -72,6 +76,9 @@ Deterministische UUID aus Namespace und Name mit SHA-1.
 ```lua
 local NS_URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
 local id, err = uuid.v5(NS_URL, "https://example.com/resource")
+if err then
+    return nil, err
+end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -93,7 +100,7 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | Zu prüfender Wert |
 
-**Gibt zurück:** `boolean, error`
+**Gibt zurück:** `boolean, nil`. Nicht als Zeichenkette vorliegende und fehlerhafte Eingaben geben `false` zurück; die Validierung löst keinen strukturierten Fehler aus.
 
 ### Version abrufen
 
@@ -135,7 +142,7 @@ Zurückgegebene Tabellenfelder:
 - `version` (integer): UUID-Version (1, 3, 4, 5 oder 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS oder Invalid
 - `timestamp` (integer): Unix-Zeitstempel (nur v1 und v7)
-- `node` (string): Knoten-ID (nur v1)
+- `node` (string): rohe sechs Byte lange Knotenkennung (nur v1); vor Anzeige oder Textspeicherung kodieren
 
 ### Formatieren
 
@@ -161,4 +168,4 @@ local formatted, err = uuid.format(id, "urn")
 | Nicht unterstützter Formattyp | `errors.INVALID` | nein |
 | Generierung fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
