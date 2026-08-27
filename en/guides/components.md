@@ -19,19 +19,19 @@ This guide covers the author side: declaring that interface and understanding ho
 
 ## ns.definition
 
-Each published module has one definition containing its display name and README path.
+Each published module must have exactly one definition. The definition can carry module metadata, a README reference, and wiki page references.
 
 ```yaml
 - name: definition
   kind: ns.definition
-  module: jobs                # optional; defaults to the entry name
+  module: jobs                # optional module metadata
   readme: file://README.md    # path to the module's documentation
   meta:
     title: Durable Jobs
     description: Leased job queue with retry and dead-lettering.
 ```
 
-Only `module` and `readme` are component data; `meta` is ordinary entry metadata for management UIs. Release notes are supplied at publish time, not here.
+`module`, `readme`, and `wiki` are definition data; all are optional. `meta` is ordinary entry metadata for management UIs. Release notes are supplied at publish time, not here.
 
 ## ns.requirement
 
@@ -54,11 +54,16 @@ A requirement is a **named value with a list of injection targets**. The host su
 
 The `default` field decides whether the host *must* supply a value:
 
-- **`default` present** (any value, including an empty string) → the requirement is **optional**. If the host supplies nothing, the default is used.
+- **`default` present with a non-null value** (including an empty string) → the requirement is **optional**. If the host supplies nothing, the default is used.
 - **`default` absent** → the requirement is **mandatory**. With nothing supplied, linking fails under strict mode (and warns otherwise).
 
 <note>
-An explicitly empty default (<code>default: ""</code>) is distinct from no default at all. Empty-string means "optional, falls back to nothing"; absent means "the host must provide this." Use a default for infrastructure that has a sane in-app convention (<code>app:db</code>, <code>app:processes</code>); omit it for values only the host can know.
+An explicitly empty default (<code>default: ""</code>) is distinct from an
+absent or null default. Empty-string means "optional, falls back to nothing";
+absent and <code>default: null</code> both mean "the host must provide this."
+Use a non-null default for infrastructure that has a sane in-app convention
+(<code>app:db</code>, <code>app:processes</code>); omit it for values only the
+host can know.
 </note>
 
 ### `targets`: Injection Locations

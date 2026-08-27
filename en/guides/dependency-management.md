@@ -224,7 +224,11 @@ Modules with active replacements skip their vendor path.
 
 ## Integrity Verification
 
-Each module in the lock file has a content hash. During installation, downloaded modules are verified against their expected hashes. Mismatched modules are rejected and re-downloaded from the registry.
+A lock entry's content hash is optional until installation populates it. When
+an expected digest is present, installation verifies cached and downloaded
+modules against it. A mismatched cached module stops the install; run
+`wippy install --refresh` to download and verify a fresh copy. A newly
+downloaded module that fails verification is removed and the install fails.
 
 ## See Also
 

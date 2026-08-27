@@ -32,9 +32,11 @@ entries:
     directory: ./package
 ```
 
-The resource is packed into the WAPP as usual. Declared
-artifacts are **validated during module publish and application pack**, so a
-malformed one fails at publish rather than in a consumer.
+The marker alone does not include the directory contents. Select the
+`fs.directory` entry through the producer manifest's `embed:` list or the
+publish/pack `--embed` flag. Once selected, the entry is transformed into a
+packed resource and its artifact format is validated; malformed selected
+artifacts fail before the WAPP is produced.
 
 ## Formats
 
@@ -155,11 +157,21 @@ vocabulary package consists of its files and manifest:
 
 ```text
 platform/ui-kit/
+├── wippy.yaml           # selects package_fs for embedding
 ├── src/_index.yaml      # declares package_fs as the artifact
 └── package/             # the directory that becomes the npm package
     ├── package.json
     ├── kx-card.css
     └── kx-state.css
+```
+
+Keep the embed selection in the producer manifest so publish, local pack, and
+CI use the same resource set:
+
+```yaml
+# platform/ui-kit/wippy.yaml
+embed:
+  - package_fs
 ```
 
 ```json
@@ -195,8 +207,9 @@ wippy publish --dry-run --version 1.5.0
 wippy publish --create --module-type library --module-visibility public --version 1.5.0
 ```
 
-Declared artifacts are validated as part of publish, so a package.json that
-fails the format's rules is rejected here rather than in a consumer's build.
+Because the producer manifest selects `package_fs` for embedding, the artifact
+is included and validated during publish. A `package.json` that fails the
+format's rules is rejected here rather than in a consumer's build.
 
 ### Development Loop
 

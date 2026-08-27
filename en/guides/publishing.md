@@ -125,7 +125,7 @@ entries:
 Targets specify where the value is injected:
 
 - `entry` — Full entry ID to configure
-- `path` — JSONPath for value injection
+- `path` — Dot path into the target entry for value injection
 
 `default` accepts any scalar type — `default: 20` flows into a numeric target as a number, not a string. The same applies to `parameters[].value` on `ns.dependency` entries, and both accept `${env:NAME}` references, carried verbatim and resolved when the target entry is decoded.
 
@@ -231,14 +231,26 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### Embed Static Files
 
-Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, `fs.directory` entries are excluded.
+Select an `fs.directory` entry for embedding either with `--embed` or with the
+project manifest's persistent `embed:` list. Selected entries are transformed
+to `fs.embed` resources. An unselected `fs.directory` entry remains in the
+pack, but its referenced directory contents are not included.
+
+```yaml
+# wippy.yaml
+embed:
+  - app:public_files
+  - app:assets
+```
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-The `--embed` flag accepts entry IDs or names matching `fs.directory` entries. The same flag is available on `wippy pack`.
+The manifest list and `--embed` flag accept entry IDs or names matching
+`fs.directory` entries. The same CLI flag is available on `wippy pack`; a CLI
+selection overrides the manifest list for that invocation.
 
 ### First Publish
 
