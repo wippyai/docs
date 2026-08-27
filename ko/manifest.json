@@ -102,7 +102,7 @@
           {"title": "환경 변수", "path": "lua/system/env"},
           {"title": "로깅", "path": "lua/system/logger"},
           {"title": "I/O", "path": "lua/system/io"},
-          {"title": "Metrics", "path": "lua/system/metrics"},
+          {"title": "메트릭", "path": "lua/system/metrics"},
           {"title": "OS Time", "path": "lua/system/ostime"},
           {"title": "TTY", "path": "lua/system/tty"},
           {"title": "Hub", "path": "lua/system/hub"}
@@ -228,11 +228,11 @@
     "children": [
       {"title": "Architecture", "path": "internals/architecture"},
       {"title": "Registry", "path": "internals/registry"},
-      {"title": "Scheduler", "path": "internals/scheduler"},
+      {"title": "스케줄러", "path": "internals/scheduler"},
       {"title": "Dispatch", "path": "internals/dispatch"},
       {"title": "Events", "path": "internals/events"},
       {"title": "Modules", "path": "internals/modules"},
-      {"title": "Kinds", "path": "internals/kinds"}
+      {"title": "엔트리 리스너와 옵저버", "path": "internals/kinds"}
     ]
   },
   {

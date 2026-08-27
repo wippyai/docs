@@ -1,11 +1,13 @@
 ---
 title: "스케줄러"
-description: "스케줄러는 작업 스틸링 설계를 사용하여 프로세스를 실행합니다. 워커는 로컬 데크를 유지하고 유휴 상태일 때 서로에게서 스틸링합니다."
+description: "Wippy가 process work를 schedule하고 event를 route하며 worker queue와 process shutdown을 관리하는 방식을 설명합니다."
 ---
 
 # 스케줄러
 
-스케줄러는 작업 스틸링 설계를 사용하여 프로세스를 실행합니다. 워커는 로컬 데크를 유지하고 유휴 상태일 때 서로에게서 스틸링합니다.
+scheduler는 local deque, inject queue, global queue, work stealing을 사용해 worker에서 process를 실행합니다.
+
+이 페이지는 implementation reference입니다. Go structure와 diagram은 application code가 구현하는 API가 아니라 pinned runtime scheduler를 설명합니다.
 
 ## 프로세스 인터페이스
 
@@ -25,33 +27,35 @@ type Process interface {
 | `Step` | 들어오는 이벤트로 상태 머신 진행, 출력에 yield 쓰기 |
 | `Close` | 리소스 해제 |
 
-`Init`의 `method` 파라미터는 어떤 진입점을 호출할지 지정합니다. 프로세스 인스턴스는 여러 진입점을 노출할 수 있고, 호출자가 어떤 것을 실행할지 선택합니다. 이는 스케줄러가 프로세스를 올바르게 시작하고 있는지 검증하는 역할도 합니다.
+`Init`의 `method` parameter는 호출할 entry point를 지정합니다. process instance는 여러 entry point를 expose할 수 있으며 caller가 실행할 항목을 선택합니다.
 
 스케줄러는 `Step()`을 반복적으로 호출하여 이벤트(yield 완료, 메시지)를 전달하고 yield(디스패치할 명령)를 수집합니다. 프로세스는 상태와 yield를 `StepOutput` 버퍼에 씁니다.
 
 ```go
 type Event struct {
-    Type  EventType  // EventYieldComplete 또는 EventMessage
-    Tag   uint64     // yield 완료를 위한 상관 태그
-    Data  any        // 결과 데이터 또는 메시지 페이로드
-    Error error      // yield 실패 시 에러
+    Type  EventType  // EventYieldComplete or EventMessage
+    Tag   uint64     // Correlation tag for yield completions
+    Data  any        // Result data or message payload
+    Error error      // Error if yield failed
 }
 ```
 
 ## 구조
 
-스케줄러는 기본적으로 `GOMAXPROCS` 워커를 스폰합니다. 각 워커는 캐시 친화적 LIFO 접근을 위한 로컬 데크를 가집니다. 글로벌 FIFO 큐는 새 제출과 교차 워커 전송을 처리합니다. 프로세스는 메시지 라우팅을 위해 PID로 추적됩니다.
+scheduler는 기본적으로 `GOMAXPROCS` worker를 spawn합니다. 각 worker에는 cache-friendly LIFO access용 local deque와 yield completion 및 message wake처럼 affinity가 있는 requeued work용 per-worker MPSC inject queue가 있습니다. global FIFO queue는 새 submission과 affinity 없는 requeue를 처리합니다. process는 message routing을 위해 PID로 추적됩니다.
 
 ## 작업 찾기
 
 ```mermaid
 flowchart TD
-    W[워커가 작업 필요] --> L{로컬 데크?}
-    L -->|항목 있음| LP[아래에서 LIFO 팝]
-    L -->|비어있음| G{글로벌 큐?}
-    G -->|항목 있음| GP[팝 + 최대 16개 배치 전송]
-    G -->|비어있음| S[무작위 피해자에서 스틸]
-    S --> SH[피해자 데크에서 절반 스틸]
+    W[Worker needs work] --> L{Local deque?}
+    L -->|has items| LP[Pop from bottom LIFO]
+    L -->|empty| I{Inject queue?}
+    I -->|has items| IP[Pop + drain up to 16 to local]
+    I -->|empty| G{Global queue?}
+    G -->|has items| GP[Pop + batch transfer up to 16]
+    G -->|empty| S[Scan other workers from rotating start]
+    S --> SH[Steal up to half, capped at 32]
 ```
 
 워커는 우선순위 순서로 소스를 확인합니다:
@@ -59,10 +63,11 @@ flowchart TD
 | 우선순위 | 소스 | 패턴 |
 |----------|--------|---------|
 | 1 | 로컬 데크 | LIFO 팝, 락 프리, 캐시 친화적 |
-| 2 | 글로벌 큐 | 배치 전송과 함께 FIFO 팝 |
-| 3 | 다른 워커 | 피해자 데크에서 절반 스틸 |
+| 2 | inject queue | affinity가 있는 requeue/event를 MPSC pop하고 최대 16개를 local로 drain |
+| 3 | global queue | batch transfer를 포함한 FIFO pop |
+| 4 | 다른 worker | rotating start index에서 scan하고 시도마다 최대 32개까지 절반 steal |
 
-글로벌에서 팝할 때 워커는 하나를 가져가고 최대 16개를 로컬 데크로 배치 전송합니다.
+inject 또는 global queue에서 pop할 때 worker는 한 item을 가져오고 최대 16개를 local deque로 이동합니다.
 
 ## Chase-Lev 데크
 
@@ -71,14 +76,14 @@ flowchart TD
 ```go
 type Deque struct {
     buffer atomic.Pointer[dequeBuffer]
-    top    atomic.Int64  // 스틸러가 여기서 스틸 (CAS)
-    bottom atomic.Int64  // 소유자가 여기서 푸시/팝
+    top    atomic.Int64  // Thieves steal from here (CAS)
+    bottom atomic.Int64  // Owner pushes/pops here
 }
 ```
 
-소유자는 동기화 없이 아래에서 푸시하고 팝합니다(LIFO). 스틸러는 CAS를 사용하여 위에서 스틸합니다(FIFO). 이를 통해 소유자는 최근 푸시된 항목에 캐시 친화적으로 접근하면서 오래된 작업을 스틸러에게 분배합니다.
+owner는 mutex 없이 bottom에서 push/pop(LIFO)하며 마지막 item pop은 thief와 조정하기 위해 CAS를 사용합니다. thief는 CAS로 top에서 steal(FIFO)합니다. owner는 최근 push된 item에 cache-friendly하게 접근하고 오래된 work는 stealer에 분배됩니다.
 
-`StealHalfInto`는 하나의 CAS 작업으로 항목의 절반을 가져가 경합을 줄입니다.
+`StealHalfInto`는 하나의 CAS operation에서 available item의 최대 절반을 destination buffer 한도까지 가져옵니다. worker의 steal attempt는 32-item buffer를 사용합니다.
 
 ## 적응형 스피닝
 
@@ -94,13 +99,13 @@ type Deque struct {
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Ready: 제출
-    Ready --> Running: 워커가 CAS
-    Running --> Complete: 완료
-    Running --> Blocked: 명령 yield
-    Running --> Idle: 메시지 대기
+    [*] --> Ready: Submit
+    Ready --> Running: CAS by worker
+    Running --> Complete: done
+    Running --> Blocked: yields commands
+    Running --> Idle: waiting for messages
     Blocked --> Ready: CompleteYield
-    Idle --> Ready: Send 도착
+    Idle --> Ready: Send arrives
 ```
 
 | 상태 | 설명 |
@@ -122,7 +127,7 @@ stateDiagram-v2
 
 ## 메시지 라우팅
 
-스케줄러는 프로세스로 메시지를 라우팅하기 위해 `relay.Receiver`를 구현합니다. `Send()`가 호출되면 `byPID` 맵에서 대상 PID를 조회하고, 메시지를 이벤트로 프로세스 큐에 푸시하고, 유휴 상태면 글로벌 큐에 푸시하여 프로세스를 깨웁니다.
+scheduler는 process로 message를 route하기 위해 `relay.Receiver`를 구현합니다. `Send()`는 `byPID` map에서 target PID를 찾고 message를 process queue에 event로 push한 다음 process가 idle 또는 blocked이면 깨웁니다. `injectOrGlobal`을 통해 requeue하며 알려진 worker affinity가 있으면 마지막 worker의 per-worker inject queue에 push하고, 그렇지 않으면 global queue를 사용합니다.
 
 ## 셧다운
 
@@ -130,5 +135,5 @@ stateDiagram-v2
 
 ## 참고
 
-- [명령 디스패치](internals/dispatch.md) - yield가 핸들러에 도달하는 방법
-- [프로세스 모델](concepts/process-model.md) - 상위 수준 개념
+- [명령 디스패치](./dispatch.md) - yield가 handler에 도달하는 방식
+- [프로세스 모델](../concepts/process-model.md) - high-level concept
