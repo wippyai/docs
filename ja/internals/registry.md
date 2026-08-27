@@ -1,30 +1,32 @@
 ---
 title: "レジストリ内部"
-description: "レジストリはバージョン付きでイベント駆動の状態ストアです。完全なバージョン履歴を維持し、トランザクションをサポートし、イベントバスを通じて変更を伝播します。"
+description: "バージョン管理されたレジストリストレージ、変更セット、トランザクション、依存関係の解決、履歴、エントリ検索。"
 ---
 
 # レジストリ内部
 
-レジストリはバージョン付きでイベント駆動の状態ストアです。完全なバージョン履歴を維持し、トランザクションをサポートし、イベントバスを通じて変更を伝播します。
+レジストリはバージョン管理されたエントリ状態を格納し、トランザクションと履歴をサポートし、変更をイベントバス経由で伝播します。
+
+このページの Go およびクエリの断片は、内部データ構造と finder 構文を説明するもので、独立したアプリケーション例ではありません。
 
 ## エントリストレージ
 
-エントリはO(1)ルックアップ用のハッシュマップインデックス付き順序付きスライスとして格納：
+エントリは、O(1) 検索用のハッシュマップインデックスを伴う順序付きスライスとして格納されます。
 
 ```go
 type Entry struct {
     ID   ID              // namespace:name
-    Kind Kind            // エントリタイプ
-    Meta attrs.Bag       // メタデータ
-    Data payload.Payload // コンテンツ
+    Kind Kind            // Entry type
+    Meta attrs.Bag       // Metadata
+    Data payload.Payload // Content
 }
 ```
 
-エントリIDはGoの`unique`パッケージを使用してインターニング—同一のIDはメモリを共有。
+エントリ ID は Go の `unique` パッケージを使用して intern されます。同一の ID はメモリを共有します。
 
 ## バージョンチェーン
 
-各バージョンは親を指す。パス計算はグラフアルゴリズムを使用して任意の2つのバージョン間の最短ルートを見つける：
+各バージョンは親を参照します。パス計算ではグラフアルゴリズムを使用し、任意の 2 バージョン間の最短経路を求めます。
 
 ```mermaid
 flowchart LR
@@ -33,31 +35,31 @@ flowchart LR
 
 ## ChangeSet
 
-チェンジセットは1つの状態から別の状態に変換する操作の順序付きリスト：
+変更セットは、ある状態を別の状態へ変換する操作の順序付きリストです。
 
 | 操作 | OriginalEntry | 目的 |
-|------|---------------|------|
+|-----------|---------------|---------|
 | Create | nil | 新しいエントリを追加 |
-| Update | 古い値 | 既存を変更 |
+| Update | 古い値 | 既存エントリを変更 |
 | Delete | 削除された値 | エントリを削除 |
 
-`OriginalEntry`は反転を可能にする—更新は以前の値を、削除は削除されたものを格納。
+`OriginalEntry` により逆操作が可能になります。更新は以前の値を、削除は削除された内容を格納します。
 
-### デルタの構築
+### Delta の構築
 
-`BuildDelta(oldState, newState)`は最小限の操作を生成：
+`BuildDelta(oldState, newState)` は最小限の操作を生成します。
 
-1. 状態を比較し、変更を特定
-2. 削除を依存関係の逆順でソート（依存するものが先）
-3. 作成/更新を依存関係の順でソート（依存されるものが先）
+1. 状態を比較して変更を特定
+2. 削除を依存関係の逆順（依存側が先）に並べ替え
+3. 作成/更新を依存関係の順方向（依存先が先）に並べ替え
 
-### スカッシュ
+### Squash
 
-複数のチェンジセットはエントリごとの最終状態を追跡してマージ：
+複数の変更セットは、エントリごとの最終状態を追跡して統合されます。
 
 ```
-Create + Update = Create（更新された値で）
-Create + Delete = ∅（相殺）
+Create + Update = Create (with updated value)
+Create + Delete = ∅ (cancel out)
 Update + Delete = Delete
 Delete + Create = Update
 ```
@@ -66,90 +68,94 @@ Delete + Create = Update
 
 ```mermaid
 sequenceDiagram
-    participant R as レジストリ
-    participant B as イベントバス
-    participant H as ハンドラ
+    participant R as Registry
+    participant B as EventBus
+    participant H as Handlers
 
     R->>B: registry.begin
-    loop 各操作
+    loop Each Operation
         R->>B: entry.create/update/delete
-        B->>H: リスナーにディスパッチ
-        H-->>B: 受理または拒否
-        B-->>R: 確認
+        B->>H: dispatch to listeners
+        H-->>B: accept or reject
+        B-->>R: confirmation
     end
-    alt すべて受理
+    alt All accepted
         R->>B: registry.commit
-    else いずれか拒否
+    else Any rejected
         R->>B: registry.discard
-        R->>R: ロールバック
+        R->>R: rollback
     end
 ```
 
-ハンドラには各操作を受理または拒否するのに30秒。拒否時、レジストリは逆デルタを計算・適用してロールバック。
+デフォルトでは、レジストリは各操作についてリスナーが accept または reject するまで 30 秒待ちます。`registry.event_wait_timeout` は操作ごとのタイムアウトを変更します。reject された場合、レジストリは逆 delta を計算して適用し、ロールバックします。
 
-### 非伝播エントリ
+### 伝播しないエントリ
 
-一部のkindはイベントバスを完全にスキップ：
+次の種別はデフォルトでイベントバスを経由しません。
+
 - `registry.entry` - アプリケーション設定
 - `ns.requirement` - 名前空間要件
 - `ns.dependency` - モジュール依存関係
-- `ns.definition` - モジュールメタデータ（readme、wiki、ライセンス、著者）
+- `ns.definition` - モジュールメタデータ（readme、wiki、license、authors）
 
-## 依存関係解決
+`registry.dispatch_internal_kinds` はこのデフォルトリストを置き換えます。
 
-エントリは他のエントリへの依存関係を宣言可能。リゾルバは登録されたパターンを通じて依存関係を抽出：
+## 依存関係の解決
+
+エントリは他のエントリへの依存関係を宣言できます。resolver は登録されたパターンを通じて依存関係を抽出します。
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```
 
-依存関係はエントリのMetaとDataフィールドから抽出され、状態遷移時のトポロジカルソートに使用。
+依存関係はエントリの Meta および Data フィールドから抽出され、状態遷移時のトポロジカルソートに使用されます。
 
 ## バージョン履歴
 
-履歴バックエンド：
+履歴バックエンドは次のとおりです。
 
-| 実装 | ユースケース |
-|-----|-----------|
-| SQLite | 本番永続化 |
-| PostgreSQL | 本番永続化、ノード間で共有 |
-| Memory | `history_type`未設定時のデフォルト。テスト |
+| 実装 | 用途 |
+|----------------|----------|
+| SQLite | 本番環境の永続化 |
+| PostgreSQL | ノード間で共有する本番環境の永続化 |
+| Memory | `history_type` 未設定時のデフォルト。テスト |
 | Nil | 履歴なし |
 
-SQLiteはWALモードを使用し、バージョン、チェンジセット（MessagePackエンコード）、メタデータ用のテーブルを持つ。PostgreSQLは`registry.history_type: postgres`に`history_dsn`/`history_schema`を加えて選択する（[設定](guides/configuration.md#registry)を参照）。
+SQLite は、バージョン、変更セット（MessagePack エンコード）、メタデータのテーブルを WAL モードで使用します。PostgreSQL は `registry.history_type: postgres` と `history_dsn`/`history_schema` で選択します（[設定](../guides/configuration.md#registry)を参照）。
 
-履歴は各バージョンの正確な依存関係解決も永続化する。`ns.dependency`の変更が適用されると、解決されたモジュールグラフはチェンジセットと並んでコンテンツアドレスで保存される。ブートとロールバックは再解決する代わりに保存済みのグラフをリプレイするため、あるバージョンは常にそれが解決された時点のバージョン群と整合する。履歴スキーマはアップグレード後の初回ブートで自動的にマイグレーションされる。既存のバージョンは初回アクセス時に一度だけ解決され、チェックポイントされる。
+履歴は各バージョンの正確な依存関係解決も永続化します。`ns.dependency` の変更が適用されると、解決済みモジュールグラフが変更セットとともに content-addressed 形式で格納されます。起動とロールバックでは再解決せず、格納されたグラフを再生するため、バージョンは常に解決時と同じバージョン群と整合します。履歴スキーマはアップグレード後の初回起動時に自動移行されます。既存バージョンは初回アクセス時に一度解決され、checkpoint されます。
 
 ### ナビゲーション
 
-パス計算はバージョン間の最短ルートを見つける：
+パス計算は、バージョン間の最短経路を求めます。
 
 ```go
-Path(v0, v3) = [v1, v2, v3]  // チェンジセットを順方向に適用
-Path(v3, v1) = [v2, v1]      // 逆チェンジセットを適用
+Path(v0, v3) = [v1, v2, v3]  // Apply changesets forward
+Path(v3, v1) = [v2, v1]      // Apply reversed changesets
 ```
 
-`LoadState()`は新しいバージョンを作成せずにベースラインから履歴をリプレイ—ブート時に使用。
+`LoadState()` は新しいバージョンを作成せず、基準点から履歴を再生します。起動時に使用されます。
 
 ## Finder
 
-エントリ検索用のLRUキャッシュ付きクエリエンジン：
+エントリ検索用の LRU キャッシュ付きクエリエンジンです。
 
 | 演算子 | プレフィックス | 例 |
-|-------|------------|-----|
-| Glob | (なし) | `.kind=function.*` |
-| Regex | `~` | `~meta.path=/api/.*` |
-| Contains | `*` | `*meta.tags=backend` |
-| Prefix | `^` | `^meta.name=user` |
-| Suffix | `$` | `$meta.path=Handler` |
+|----------|--------|---------|
+| ルートフィールド glob | `.` ルートフィールド | `.kind=function.*` |
+| 正規表現 | `~` | `~meta.path=/api/.*` |
+| 含む | `*` | `*meta.tags=backend` |
+| 前方一致 | `^` | `^meta.name=user` |
+| 後方一致 | `$` | `$meta.path=Handler` |
 
-キャッシュはバージョン変更時に無効化。
+バージョン変更時にキャッシュは無効化されます。
+
+glob マッチングはルートフィールド `.kind`、`.name`、`.ns`、`.id` に適用されます。プレフィックスのない `meta.*` 条件は等価比較を使用します。
 
 ## 関連項目
 
-- [レジストリ](concepts/registry.md) - 高レベルコンセプト
-- [イベント](internals/events.md) - イベントバスの詳細
-
+- [レジストリ](../concepts/registry.md) - 高レベルの概念
+- [イベント](./events.md) - イベントバスの詳細

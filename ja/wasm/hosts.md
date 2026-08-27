@@ -1,25 +1,30 @@
 ---
 title: "ホスト関数"
-description: "WASMモジュールはホスト関数インポートを通じてランタイム機能にアクセスします。各インポートはimportsリストでエントリごとに明示的に宣言されます。"
+description: "エントリのインポートを通じて、Wippy 関数呼び出し、WASI Preview 1 互換性、または選択した WASI Preview 2 インターフェースを有効にします。"
 ---
 
 # ホスト関数
 
-WASMモジュールはホスト関数インポートを通じてランタイム機能にアクセスします。各インポートは`imports`リストでエントリごとに明示的に宣言されます。
+各エントリは `imports` フィールドを通じて、以下に示すホストインターフェースを選択して有効にします。
 
-## インポートタイプ
+**分類: ホストインターフェースリファレンス。** YAML ブロックはエントリの一部です。ファイルシステム ID、パス、メソッド、ハッシュをコンパイル済みモジュールの値に置き換えてください。ダイジェストにはモジュールの実際の SHA-256 値を指定する必要があります。
+
+## インポート種別
 
 | インポート | 説明 |
-|-----------|------|
-| `wasi:cli` | 環境変数、終了、stdin/stdout/stderr、ターミナル |
-| `wasi:io` | ストリーム、エラー処理、ポーリング |
+|--------|-------------|
+| `funcs` | Component Model モジュールから Wippy レジストリ関数を呼び出す |
+| `wasi1` | raw/core モジュール向け WASI Preview 1 互換性 |
+| `wasi:cli` | 環境、終了、標準入力/標準出力/標準エラー出力、ターミナル |
+| `wasi:io` | ストリームとエラー処理 |
+| `wasi:poll` | 非同期ポーリング / 協調的 yield（インターフェース `wasi:io/poll`） |
 | `wasi:clocks` | ウォールクロックとモノトニッククロック |
 | `wasi:filesystem` | マウントされたディレクトリを通じたファイルシステムアクセス |
 | `wasi:random` | 暗号学的に安全な乱数 |
-| `wasi:sockets` | TCP/UDPネットワーキングとDNS解決 |
-| `wasi:http` | 送信HTTPクライアントリクエスト |
+| `wasi:sockets` | TCP/UDP ネットワークと DNS 解決 |
+| `wasi:http` | 送信 HTTP クライアントリクエスト |
 
-エントリ設定でインポートを有効にします:
+エントリ設定でインポートを有効にします。
 
 ```yaml
   - name: my_function
@@ -37,35 +42,56 @@ WASMモジュールはホスト関数インポートを通じてランタイム�
       type: inline
 ```
 
-モジュールが実際に必要とするインポートのみを宣言してください。
+モジュールが実際に必要とするインポートだけを宣言してください。
 
-## WASIインポート
+`funcs` と以下の `wasi:*` プロファイルには Component Model モジュールが必要です。`wasi_snapshot_preview1` をインポートする raw/core モジュールには `wasi1` を使用してください。エイリアス `wasi-preview1`、`preview1`、`wasi_snapshot_preview1` は同じプロファイルへ解決されます。未対応のインポート、または core モジュールに対する Component Model 専用プロファイルは、モジュール準備時に失敗します。
 
-各`wasi:*`インポートは関連するWASI Preview 2インターフェースのグループを有効にします。
+## Wippy 関数呼び出し
+
+`funcs` プロファイルは、Component Model モジュール向けに `wippy:runtime/funcs@0.1.0` インターフェースを登録します。
+
+```wit
+interface funcs {
+  call-string: func(target: string, input: string) -> result<string, string>;
+  call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
+}
+```
+
+どちらのメソッドも Wippy の関数レジストリを通じて対象を呼び出します。呼び出しは実行時のセキュリティコンテキストを引き継ぎ、対象レジストリ ID に対する `funcs.call` 権限を必要とします。
+
+## WASI インポート
+
+各 `wasi:*` インポートは、関連する WASI Preview 2 インターフェース群を有効にします。
 
 ### wasi:clocks
 
 **インターフェース:** `wasi:clocks/wall-clock`、`wasi:clocks/monotonic-clock`
 
-時間操作用のウォールクロックとモノトニッククロック。モノトニッククロックは非同期スリープのためにWippyディスパッチャと統合されています。
+時間操作のためのウォールクロックとモノトニッククロックです。モノトニッククロックは、非同期スリープのために Wippy ディスパッチャーと統合されます。
 
 ### wasi:io
 
-**インターフェース:** `wasi:io/error`、`wasi:io/streams`、`wasi:io/poll`
+**インターフェース:** `wasi:io/error`、`wasi:io/streams`
 
-ストリーム読み書き操作と非同期ポーリング。pollインターフェースはディスパッチャを通じた協調的yieldを可能にします。
+ストリームの読み書きとエラー処理を提供します。`wasi:io/poll` インターフェースは、独立した `wasi:poll` インポートによって提供されます。
+
+### wasi:poll
+
+**インターフェース:** `wasi:io/poll`
+
+非同期ポーリングです。poll インターフェースにより、ディスパッチャーを通じた協調的 yield が可能になります。
 
 ### wasi:cli
 
-**インターフェース:** `wasi:cli/environment`、`wasi:cli/exit`、`wasi:cli/stdin`、`wasi:cli/stdout`、`wasi:cli/stderr`
+**インターフェース:** `wasi:cli/environment`、`wasi:cli/exit`、`wasi:cli/stdin`、`wasi:cli/stdout`、`wasi:cli/stderr`、`wasi:cli/terminal-stdin`、`wasi:cli/terminal-stdout`、`wasi:cli/terminal-stderr`
 
-環境変数、プロセス終了コード、標準I/Oストリームへのアクセス。環境変数はWASI設定を通じてWippy環境レジストリからマッピングされます。
+環境変数、プロセス終了コード、標準 I/O ストリームへのアクセスを提供します。環境変数は、WASI 設定を通じて Wippy 環境レジストリからマッピングされます。
 
 ### wasi:filesystem
 
 **インターフェース:** `wasi:filesystem/types`、`wasi:filesystem/preopens`
 
-マウントされたディレクトリを通じたファイルシステムアクセス。マウントはエントリごとに設定され、Wippyファイルシステムエントリをゲストパスにマッピングします。
+マウントされたディレクトリを通じたファイルシステムアクセスです。マウントはエントリごとに設定し、Wippy ファイルシステムエントリをゲストパスへマッピングします。
 
 ```yaml
 wasi:
@@ -79,22 +105,28 @@ wasi:
 
 **インターフェース:** `wasi:random/random`、`wasi:random/insecure`、`wasi:random/insecure-seed`
 
-暗号学的に安全な乱数および非安全な乱数生成。
+暗号学的に安全な乱数と、安全でない乱数の生成を提供します。
 
 ### wasi:sockets
 
-**インターフェース:** `wasi:sockets/network`、`wasi:sockets/instance-network`、`wasi:sockets/ip-name-lookup`、`wasi:sockets/tcp`、`wasi:sockets/tcp-create-socket`、`wasi:sockets/udp`
+**インターフェース:** `wasi:sockets/instance-network`、`wasi:sockets/ip-name-lookup`、`wasi:sockets/tcp`、`wasi:sockets/tcp-create-socket`、`wasi:sockets/udp`、`wasi:sockets/udp-create-socket`
 
-DNS解決を伴うTCPおよびUDPネットワーキング。ソケット操作は非同期I/Oのためにディスパッチャと統合されています。
+DNS 解決を伴う TCP および UDP ネットワークです。ソケット操作は非同期 I/O のためにディスパッチャーと統合されます。
 
 ### wasi:http
 
 **インターフェース:** `wasi:http/types`、`wasi:http/outgoing-handler`
 
-WASMモジュール内からの送信HTTPクライアントリクエスト。WASI HTTP仕様で定義されたリクエスト/レスポンス型をサポートします。
+WASM モジュール内から送信する HTTP クライアントリクエストです。WASI HTTP 仕様で定義されたリクエスト/レスポンス型に対応します。
+
+送信リクエストには URL に対する `http_client.request` 権限が必要です。プライベート IP アドレスへのリクエストには、解決されたアドレスに対する `http_client.private_ip` も必要です。
+
+## ソケット権限
+
+`wasi:sockets` を有効にするとインターフェースは利用可能になりますが、ネットワークアクセス自体は許可されません。DNS 参照には名前に対する `socket.resolve`、送信 TCP 接続にはアドレスに対する `socket.connect`、TCP または UDP のバインドにはアドレスに対する `socket.listen` が必要です。
 
 ## 関連項目
 
-- [概要](wasm/overview.md) - WebAssemblyランタイムの概要
-- [関数](wasm/functions.md) - WASM関数の設定
-- [プロセス](wasm/processes.md) - WASMをプロセスとして実行する
+- [概要](./overview.md) - WebAssembly ランタイムの概要
+- [関数](./functions.md) - WASM 関数の設定
+- [プロセス](./processes.md) - WASM をプロセスとして実行

@@ -1,28 +1,22 @@
 ---
 title: "ライセンス"
-description: "WippyはMozilla Public License 2.0の下でリリースされています。"
+description: "Wippy のドキュメント、ランタイム、および個別にライセンスされるコンポーネントのライセンス。"
 ---
 
 # ライセンス
 
-WippyはMozilla Public License 2.0の下でリリースされています。
+このドキュメントリポジトリと Wippy ランタイムは Mozilla Public License 2.0 の下で公開されています。個々の Wippy モジュールやコンポーネントには異なるライセンスが適用される場合があります。各リポジトリの `LICENSE` ファイルが正式な情報です。
 
 ## Mozilla Public License 2.0
 
-```
-Copyright 2025 Spiral Scout
+正確なライセンスは、[ドキュメントリポジトリ](https://github.com/wippyai/docs/blob/main/LICENSE) または [ランタイムリポジトリ](https://github.com/wippyai/runtime/blob/main/LICENSE) で確認してください。
 
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
-```
+## このライセンスが意味すること
 
-## これが意味すること
+MPL-2.0 は商用利用、変更、配布を許可します。MPL の対象となる変更済みファイルには引き続き MPL-2.0 が適用されますが、それらのファイルを別のライセンスが適用されるコードと組み合わせ、より大きな著作物とすることができます。
 
-Wippyは商用プロジェクトで使用でき、ソースコードを変更し、変更を配布できます。変更されたファイルはMPL-2.0のままである必要がありますが、より大きな作品の中でWippyをプロプライエタリコードと組み合わせることができます。
-
-変更されたMPLライセンスファイルを配布する際は、そのソースコードを利用可能にする必要があります。
+MPL の対象となる変更済みファイルを配布する場合、そのファイルのソース形式を MPL-2.0 の下で提供する必要があります。完全な条件についてはライセンス本文を参照してください。
 
 ## 依存関係
 
-Wippyは様々なオープンソース依存関係を使用しており、それぞれ独自のライセンスを持っています。すべての依存関係は商用利用と互換性があります。
+依存関係には、それぞれのライセンスが引き続き適用されます。たとえば、現在公開されている [`wippyai/wasm-runtime`](https://github.com/wippyai/wasm-runtime/blob/main/LICENSE) リポジトリには、MPL-2.0 ではなく MIT License が適用されています。
