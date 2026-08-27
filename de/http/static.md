@@ -1,11 +1,13 @@
 ---
 title: "Statische Dateien"
-description: "Stellen Sie statische Dateien aus jedem Dateisystem mit http.static bereit. Statische Handler mounten direkt auf dem Server und können SPAs, Assets…"
+description: "SPAs, Assets und Benutzer-Uploads mit http.static aus Dateisystemeinträgen bereitstellen."
 ---
 
 # Statische Dateien
 
-Stellen Sie statische Dateien aus jedem Dateisystem mit `http.static` bereit. Statische Handler mounten direkt auf dem Server und können SPAs, Assets oder Benutzer-Uploads aus jedem Pfad bereitstellen.
+Ein `http.static`-Handler wird direkt auf einem Server eingebunden und stellt SPAs, Assets oder Benutzer-Uploads aus einem Dateisystemeintrag bereit.
+
+**Klassifikation: Referenz für statische Handler.** Die YAML-Blöcke setzen voraus, dass der genannte HTTP-Server existiert. In diesen vom Host definierten Beispielen werden relative Pfade von `fs.directory` ausgehend vom Arbeitsverzeichnis des Projekts aufgelöst. Einträge im Besitz eines Moduls lösen relative Pfade dagegen vom Quellstamm des besitzenden Moduls aus auf, sofern nicht `base: project` konfiguriert ist. Die referenzierten Dateien müssen separat erstellt werden.
 
 ## Konfiguration
 
@@ -16,7 +18,6 @@ Stellen Sie statische Dateien aus jedem Dateisystem mit `http.static` bereit. St
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,7 +29,6 @@ Stellen Sie statische Dateien aus jedem Dateisystem mit `http.static` bereit. St
 | `meta.server` | Registry-ID | Übergeordneter HTTP-Server |
 | `path` | string | URL-Mount-Pfad (muss mit `/` beginnen) |
 | `fs` | Registry-ID | Dateisystem-Eintrag zum Bereitstellen |
-| `directory` | string | Unterverzeichnis innerhalb des Dateisystems |
 | `static_options.spa` | bool | SPA-Modus - Index für nicht gematchte Pfade bereitstellen |
 | `static_options.index` | string | Index-Datei (erforderlich wenn spa=true) |
 | `static_options.cache` | string | Cache-Control-Header-Wert |
@@ -45,12 +45,12 @@ Statische Dateien werden aus Dateisystem-Einträgen bereitgestellt. Jeder Dateis
 
 ```yaml
 entries:
-  # Lokales Verzeichnis
+  # Local directory
   - name: public
     kind: fs.directory
     directory: ./public
 
-  # Statischer Handler
+  # Static handler
   - name: static
     kind: http.static
     meta:
@@ -61,16 +61,20 @@ entries:
 
 Anfrage `/static/css/style.css` stellt `./public/css/style.css` bereit.
 
-Das `directory`-Feld wählt ein Unterverzeichnis innerhalb des Dateisystems aus:
+Um ein Unterverzeichnis bereitzustellen, verweisen Sie mit `fs` auf einen dort verwurzelten Dateisystemeintrag, beispielsweise auf ein `fs.directory`, dessen `directory` auf das Unterverzeichnis gesetzt ist:
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPA-Modus
@@ -109,18 +113,17 @@ entries:
     kind: fs.directory
     directory: ./dist
 
-  # Versionierte Assets - für immer cachen
+  # Versioned assets - cache forever
   - name: assets
     kind: http.static
     meta:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 
-  # HTML - kurzer Cache, muss revalidiert werden
+  # HTML - short cache, must revalidate
   - name: app
     kind: http.static
     meta:
@@ -134,6 +137,7 @@ entries:
 ```
 
 Gängige Cache-Muster:
+
 - **Versionierte Assets**: `public, max-age=31536000, immutable`
 - **HTML/Index**: `public, max-age=0, must-revalidate`
 - **Benutzer-Uploads**: `private, max-age=3600`
@@ -157,15 +161,15 @@ Wenden Sie Middleware für Komprimierung, CORS oder andere Verarbeitung an:
     cors.allow.origins: "*"
 ```
 
-Middleware umhüllt den statischen Handler in Reihenfolge - Anfragen durchlaufen jede Middleware bevor sie den Datei-Server erreichen.
+Middleware umschließt den statischen Handler in der angegebenen Reihenfolge — Anfragen durchlaufen jede Middleware, bevor sie den Dateiserver erreichen.
 
 <warning>
-Pfad-Matching ist präfixbasiert. Ein Handler auf <code>/</code> fängt alle nicht gematchten Anfragen ab. Verwenden Sie Router für API-Endpunkte um Konflikte zu vermeiden.
+Der Pfadabgleich ist präfixbasiert. Ein Handler unter <code>/</code> fängt alle nicht abgeglichenen Anfragen ab. Verwenden Sie Router für API-Endpunkte, um Konflikte zu vermeiden.
 </warning>
 
 ## Siehe auch
 
-- [Server](http/server.md) - HTTP-Server-Konfiguration
-- [Routing](http/router.md) - Router und Endpunkte
-- [Dateisystem](lua/storage/filesystem.md) - Dateisystem-Modul
-- [Middleware](http/middleware.md) - Verfügbare Middleware
+- [Server](./server.md) – HTTP-Server-Konfiguration
+- [Routing](./router.md) – Router und Endpunkte
+- [Dateisystem](../lua/storage/filesystem.md) – Dateisystemmodul
+- [Middleware](./middleware.md) – Verfügbare Middleware

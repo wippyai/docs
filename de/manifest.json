@@ -249,12 +249,12 @@
   {
     "title": "HTTP",
     "children": [
-      {"title": "Server", "path": "http/server"},
-      {"title": "Router", "path": "http/router"},
-      {"title": "Endpoint", "path": "http/endpoint"},
-      {"title": "Middleware", "path": "http/middleware"},
-      {"title": "Static Files", "path": "http/static"},
-      {"title": "WebSocket Relay", "path": "http/websocket-relay"},
+      {"title": "HTTP-Server", "path": "http/server"},
+      {"title": "Routing", "path": "http/router"},
+      {"title": "HTTP-Endpunkte", "path": "http/endpoint"},
+      {"title": "HTTP-Middleware", "path": "http/middleware"},
+      {"title": "Statische Dateien", "path": "http/static"},
+      {"title": "WebSocket-Relay", "path": "http/websocket-relay"},
       {"title": "Server-Sent Events", "path": "http/sse"}
     ]
   },
