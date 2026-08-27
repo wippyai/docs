@@ -19,12 +19,12 @@ web component Wippy **sem** o Web Host ao redor.
 
 ## Sumário
 
-- [Modelo mental — apps e WCs reconhecem intencionalmente o modo independente](#modelo-mental--apps-e-web-components-reconhecem-o-modo-independente)
-- [O ponto de decisão `@wippy/scripts` — uma tag, dois caminhos de bootstrap](#o-ponto-de-decisão-wippyscripts--uma-tag-dois-caminhos-de-bootstrap)
+- [Modelo mental — apps e WCs reconhecem intencionalmente o modo independente](#modelo-mental-apps-e-web-components-reconhecem-o-modo-independente)
+- [O ponto de decisão `@wippy/scripts` — uma tag, dois caminhos de bootstrap](#o-ponto-de-decisão-wippyscripts-uma-tag-dois-caminhos-de-bootstrap)
 - [O que `dev-proxy.js` realmente faz](#o-que-dev-proxyjs-realmente-faz)
 - [O overlay de desenvolvimento (modal de configuração)](#overlay-de-desenvolvimento-modal-de-configuração)
-- [Stubs do host — a API `host` independente](#stubs-do-host--a-api-host-independente)
-- [Web components — playground e testes sem host](#web-components--playground-e-testes-sem-host)
+- [Stubs do host — a API `host` independente](#stubs-do-host-a-api-host-independente)
+- [Web components — playground e testes sem host](#web-components-playground-e-testes-sem-host)
 - [Desvios comuns e como identificá-los](#desvios-comuns-e-como-identificá-los)
 - [Solução de problemas](#solução-de-problemas)
 - [Documentação relacionada](#documentação-relacionada)
@@ -215,7 +215,7 @@ A função dele é fazer os getters de `@wippy-fe/proxy` resolverem corretamente
 4. **Aplica a injeção de CSS** com base na configuração de proxy escolhida pelo desenvolvedor:
    - `themeConfig: true` → injeta `theme-config.css` de `@wippy-fe/theme`.
    - `iframe`, `primevue`, `markdown` → de modo semelhante, injeta os bundles de CSS inline de `src/proxy/dev/css-inline.ts`.
-   - `customCss` / `customVariables` → aplica `appConfig.theming.global.customCSS` / `cssVariables` (inclusive os blocos `@dark`/`@light` descritos em [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3--por-página-config_overrides-no-yaml-do-registry)).
+   - `customCss` / `customVariables` → aplica `appConfig.theming.global.customCSS` / `cssVariables` (inclusive os blocos `@dark`/`@light` descritos em [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3-por-página-config_overrides-no-yaml-do-registry)).
 5. **Instala os globais internos da proxy** com o mesmo formato de `entry.iframe.ts`, para que os getters de `@wippy-fe/proxy` (`config`, `host`, `api`, `on`, `logger`, `state`, `ws`, `loadWebComponent`) sejam resolvidos. Todo código de app ou WC que importa de `@wippy-fe/proxy` funciona sem alterações. (Os próprios globais — `window.$W` etc. — são internos; consulte [Proxy e isolamento § Internos](../web-host/proxy-isolation.md#internos-nao-leia-nem-substitua).)
 
 `ChildAppConfig` padrão (de `getDefaultConfig()` em `config-store.ts`):
@@ -382,7 +382,7 @@ Quando um app ou WC diverge do contrato que reconhece o modo independente, os si
 | `import` de arquivos-fonte de um app irmão | Código compartilhado está sendo copiado entre fronteiras de módulos. | Extraia-o para um pacote do workspace ou duplique-o intencionalmente; nunca atravesse pastas de apps. |
 | Chamadas `fetch('/api/…')` com valores fixos | Ignoram a instância axios fornecida pela proxy e não recebem overrides de `env.APP_API_URL`. | Use `useApi()` (apps) ou `import { api } from '@wippy-fe/proxy'` (WCs). |
 | `new EventSource(...)` para dados em tempo real | Ignora a bridge de autenticação/relay do host; o modo independente não tem equivalente. | Use `on('your.topic', cb)` — funciona nos dois modos (no modo independente, o tópico apenas não dispara, a menos que seja simulado). |
-| `document.documentElement.setAttribute('data-theme', ...)` para alterar o tema | `data-theme` não é o protocolo de temas do Wippy. | Use o modo Auto ou as classes `.w-theme-light` / `.w-theme-dark` gerenciadas pelo host. Valores `@light` / `@dark` configurados atendem aos dois caminhos. Consulte [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3--por-página-config_overrides-no-yaml-do-registry). |
+| `document.documentElement.setAttribute('data-theme', ...)` para alterar o tema | `data-theme` não é o protocolo de temas do Wippy. | Use o modo Auto ou as classes `.w-theme-light` / `.w-theme-dark` gerenciadas pelo host. Valores `@light` / `@dark` configurados atendem aos dois caminhos. Consulte [micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3-por-página-config_overrides-no-yaml-do-registry). |
 | `import '@wippy-fe/theme/theme-config.css'` em `app.ts` | Redundante — o host injeta theme-config pela injeção de proxy `themeConfig: true`. No modo sem host, a dev-proxy também a injeta. | Remova o import. |
 | URLs base de API fixas em módulos api/ | Não funcionam no modo sem host contra outro ambiente. | Leia `appConfig.env.APP_API_URL` por `useApi()`. |
 
