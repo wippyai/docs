@@ -273,10 +273,10 @@
       {"title": "Frontend Facade", "path": "tutorials/facade"},
       {"title": "Netzwerk-Overlays", "path": "tutorials/network"},
       {"title": "Rust/WASM", "path": "tutorials/rust-wasm"},
-      {"title": "LLM Agent", "path": "tutorials/llm-agent"},
+      {"title": "LLM-Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
       {"title": "Keeper über MCP", "path": "tutorials/keeper-mcp"},
-      {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
+      {"title": "Dataflow: Einen dauerhaften DAG ausführen", "path": "tutorials/dataflow"},
       {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },
