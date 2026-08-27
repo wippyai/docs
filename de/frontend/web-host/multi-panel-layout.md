@@ -509,7 +509,7 @@ Setzen Sie beim Aktivieren Größe, Füllung, Rahmen/Schatten und Symbolfarbe
 gemeinsam. Bei vertikalen Splittern dreht sich das SVG um 90 Grad; bei
 gesperrten Teilungen bleibt es verborgen.
 
-## Welche Funktionen in welchem Modus wirken
+## Welche Funktionen in welchem Modus wirken :id=funktionsumfang-nach-modus
 
 Die Oberfläche der Proxy-API ist in Compat und Managed identisch; dieselben
 Importe aus `@wippy-fe/proxy` werden aufgelöst. Zwei Bereiche unterscheiden

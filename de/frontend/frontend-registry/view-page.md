@@ -28,9 +28,9 @@ Diese Felder erstellt der Frontend-Entwickler im Block `wippy` von `package.json
 
 | Wert | Wirkung |
 |------|---------|
-| `"auto"` _(Standardwert oder weggelassen)_ | Folgt dem globalen Deployment-Schalter `hostConfig.renderEngine`, den der Facade-Parameter [`render_engine`](../../framework/facade.md#render-engine) setzt |
+| `"auto"` _(Standardwert oder weggelassen)_ | Folgt dem globalen Deployment-Schalter `hostConfig.renderEngine`, den der Facade-Parameter [`render_engine`](../../framework/facade.md) setzt |
 | `"iframe"` | Rendert unabhängig vom Schalter immer als srcdoc-iframe. Für Seiten mit nicht reframing-kompatibler Technik: Pointer-Hit-Testing (`elementFromPoint`), Layout mit Viewport-Einheiten (`vh`/`vw`, `matchMedia`), `position: fixed` |
-| `"fragment"` | Bevorzugt die Engine [Web Fragment](../web-host/render-engines.md). Bei globalem `fragment`: immer. Bei globalem `iframe`: nur wenn ein Laufzeit-Capability-Probe bestätigt, dass [`/@fragment`-Gateway](../../framework/views.md#web-fragments-gateway) und Proxy vorhanden sind; andernfalls sicherer Fallback auf iframe |
+| `"fragment"` | Bevorzugt die Engine [Web Fragment](../web-host/render-engines.md). Bei globalem `fragment`: immer. Bei globalem `iframe`: nur wenn ein Laufzeit-Capability-Probe bestätigt, dass [`/@fragment`-Gateway](../../framework/views.md) und Proxy vorhanden sind; andernfalls sicherer Fallback auf iframe |
 
 ```json
 {

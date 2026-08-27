@@ -20,7 +20,7 @@ Verwenden Sie `createAppRouter()` aus `@wippy-fe/router` für Anwendungen, die u
 
 ## Rendering eines Fragments
 
-Eine für die Fragment-Engine ausgewählte `view.page` wird als `<web-fragment src="/@fragment/{id}/">` gemountet. Das [`/@fragment`-Gateway](../../framework/views.md#web-fragments-gateway) in `wippy/views` liefert den Reframing-Vertrag. Der `reframed`-Client erzeugt einen verborgenen Same-Origin-Realm-iframe (`wf:<id>`), streamt das transformierte HTML des Gateways in den Shadow Root des Fragments und führt `proxy-fragment.js`, einen Adapter für `@wippy-fe/proxy`, im Realm aus, um die Proxy-API `$W` bereitzustellen. Der Adapter leitet das gemeinsame `postMessage`-Protokoll an das erfasste Same-Origin-Hostfenster, statt sich auf das gepatchte `window.parent` des Realms zu verlassen.
+Eine für die Fragment-Engine ausgewählte `view.page` wird als `<web-fragment src="/@fragment/{id}/">` gemountet. Das [`/@fragment`-Gateway](../../framework/views.md) in `wippy/views` liefert den Reframing-Vertrag. Der `reframed`-Client erzeugt einen verborgenen Same-Origin-Realm-iframe (`wf:<id>`), streamt das transformierte HTML des Gateways in den Shadow Root des Fragments und führt `proxy-fragment.js`, einen Adapter für `@wippy-fe/proxy`, im Realm aus, um die Proxy-API `$W` bereitzustellen. Der Adapter leitet das gemeinsame `postMessage`-Protokoll an das erfasste Same-Origin-Hostfenster, statt sich auf das gepatchte `window.parent` des Realms zu verlassen.
 
 Dieselbe Seite ist unter der iframe-Engine ein srcdoc-`<iframe>` mit injiziertem `proxy.js`; siehe [Proxy und Isolation](./proxy-isolation.md).
 
@@ -34,7 +34,7 @@ Die Engine für ein vollständiges Deployment ist die Facade-Anforderung `render
 wippy run -c -o wippy.facade:render_engine:default=fragment
 ```
 
-Siehe [Facade → Render Engine](../../framework/facade.md#render-engine).
+Siehe [Facade → Render Engine](../../framework/facade.md).
 
 ### Überschreibung pro Seite (Anwendungsautor)
 
@@ -73,7 +73,7 @@ Die Fragment-Engine in einer konsumierenden Anwendung benötigt kompatible Frame
 1. **Framework-Module** — Verwenden Sie ein aktuelles kompatibles Paar aus `wippy/facade` und `wippy/views`, das den Schalter `render_engine` und das selbst mountende Fragment-Gateway bereitstellt. Prüfen Sie das genaue Release in der aktuellen Wippy-Moduldokumentation.
 2. **Schalter** — Setzen Sie `render_engine` der Facade global auf `fragment` oder aktivieren Sie Seiten einzeln mit `wippy.renderEngine`.
 
-> Das Gateway `/@fragment` wird von aktuellem `wippy/views` selbst bereitgestellt: Das Modul deklariert seinen eigenen Top-Level-Router und bindet ihn an eine Anforderung `server` mit Standardwert `app:gateway`. Ein Konsument benötigt keine Fragmentverdrahtung und startet unabhängig von aktivierten Fragments normal mit der iframe-Engine. Überschreiben Sie `server` nur, wenn die ID Ihres `http.service` nicht `app:gateway` lautet. Aktiviert eine einzelne Seite Fragments in einem ansonsten auf iframe eingestellten Deployment, bestätigt ein Laufzeit-Capability-Probe Gateway und `proxy-fragment.js`, bevor gewechselt wird; andernfalls bleibt die Engine iframe. Der globale Schalter `render_engine: fragment` vertraut dem Betreiber und prüft nicht. Siehe [Views → Web-Fragments-Gateway](../../framework/views.md#web-fragments-gateway).
+> Das Gateway `/@fragment` wird von aktuellem `wippy/views` selbst bereitgestellt: Das Modul deklariert seinen eigenen Top-Level-Router und bindet ihn an eine Anforderung `server` mit Standardwert `app:gateway`. Ein Konsument benötigt keine Fragmentverdrahtung und startet unabhängig von aktivierten Fragments normal mit der iframe-Engine. Überschreiben Sie `server` nur, wenn die ID Ihres `http.service` nicht `app:gateway` lautet. Aktiviert eine einzelne Seite Fragments in einem ansonsten auf iframe eingestellten Deployment, bestätigt ein Laufzeit-Capability-Probe Gateway und `proxy-fragment.js`, bevor gewechselt wird; andernfalls bleibt die Engine iframe. Der globale Schalter `render_engine: fragment` vertraut dem Betreiber und prüft nicht. Siehe [Views → Web-Fragments-Gateway](../../framework/views.md).
 
 Die Frontend-Anwendung benötigt keinen Fragment-spezifischen Code; `proxy-fragment.js` ist ein vom CDN ausgeliefertes Host-Artefakt und wird nicht von der Anwendung gebündelt.
 

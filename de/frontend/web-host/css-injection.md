@@ -63,7 +63,7 @@ nicht reine Hostnamen. Ihr injiziertes Custom CSS ist immer der Children-Scope
 
 **Unterstützung für `fs://`:** Die sechs genannten Theming-Einstellungen
 akzeptieren `fs://<path>`, das bei der Anfrage aus dem Dateisystem `content_fs`
-aufgelöst wird; siehe [Facade → Wiederverwendung von Facade-Theming](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages).
+aufgelöst wird; siehe [Facade → Wiederverwendung von Facade-Theming](../../framework/facade.md).
 `icon_sets` / `host_icon_sets` und alle Nicht-Theming-JSON-Parameter sind nur
 inline möglich.
 

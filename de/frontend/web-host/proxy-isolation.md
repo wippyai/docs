@@ -273,7 +273,7 @@ frame.addEventListener('nav-owner-route', (event) => {
 })
 ```
 
-### Eltern-Kind-Bridge
+### Eltern-Kind-Bridge :id=parent-child-bridge
 
 Benannte Kanäle vermeiden rohe `postMessage`-Envelopes.
 
