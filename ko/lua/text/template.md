@@ -1,6 +1,6 @@
 ---
 title: "템플릿 엔진"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "구성된 template set에서 Jet template을 render합니다."
 ---
 
 # 템플릿 엔진
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="external"/>
 
-[Jet 템플릿 엔진](https://github.com/CloudyKit/jet)을 사용하여 동적 콘텐츠를 렌더링합니다. 템플릿 상속과 포함을 사용하여 HTML 페이지, 이메일, 문서를 빌드합니다.
+`templates` 모듈은 구성된 set의 [Jet](https://github.com/CloudyKit/jet) template을 render합니다. template은 inheritance와 include를 사용할 수 있습니다. 이 페이지는 독립된 template deployment가 아니라 isolated rendering example을 포함한 API reference입니다. registry ID와 template source가 이미 구성되어 있어야 하며 executable entry는 `templates`를 enable하고 요청한 set에 대한 `template.get` permission을 가져야 합니다.
 
-템플릿 세트 설정은 [템플릿 엔진](system/template.md)을 참조하세요.
+template set configuration은 [템플릿 엔진](../../system/template.md)을 참조하십시오.
 
 ## 로딩
 
@@ -18,7 +18,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 local templates = require("templates")
 ```
 
-## 템플릿 세트 획득
+## `templates.get`
 
 레지스트리 ID로 템플릿 세트를 가져와 렌더링을 시작합니다:
 
@@ -28,9 +28,9 @@ if err then
     return nil, err
 end
 
--- 세트 사용...
+-- Use the set...
 
-set:release()
+return set:release()
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -39,26 +39,30 @@ set:release()
 
 **반환:** `Set, error`
 
-## 템플릿 렌더링
+## `set:render`
 
 데이터와 함께 이름으로 템플릿을 렌더링합니다:
 
 ```lua
-local set = templates.get("app.views:emails")
+local set, get_err = templates.get("app.views:emails")
+if get_err then
+    return nil, get_err
+end
 
 local html, err = set:render("welcome", {
     user = {name = "Alice", email = "alice@example.com"},
-    activation_url = "https://example.com/activate?token=abc"
+    activation_url = "https://example.invalid/activate"
 })
 
+set:release()
 if err then
-    set:release()
     return nil, err
 end
 
-set:release()
 return html
 ```
+
+caller는 획득한 모든 set을 `release()`할 때까지 소유합니다. checked error path를 포함해 마지막 render 후 release하십시오. 반복 release는 안전합니다. rendering은 application이 제공한 value를 모든 output context에서 안전하게 만들지 않습니다. secret과 one-time URL을 log에 남기지 말고 rendered string을 사용하는 위치에 필요한 escaping 또는 sanitization을 적용하십시오.
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
@@ -67,7 +71,7 @@ return html
 
 **반환:** `string, error`
 
-## 세트 메서드
+## Set 메서드 요약
 
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
@@ -113,13 +117,13 @@ Jet은 표현식과 제어 구조에 `{{ }}`를, 주석에 `{* *}`를 사용합�
 ### 상속
 
 ```html
-{* 부모: layout.jet *}
+{* Parent: layout.jet *}
 <html>
 <head><title>{{ yield title() }}</title></head>
 <body>{{ yield body() }}</body>
 </html>
 
-{* 자식: page.jet *}
+{* Child: page.jet *}
 {{ extends "layout" }}
 {{ block title() }}My Page{{ end }}
 {{ block body() }}<p>Content</p>{{ end }}
@@ -140,8 +144,9 @@ Jet은 표현식과 제어 구조에 `{{ }}`를, 주석에 `{* *}`를 사용합�
 | 빈 ID | `errors.INVALID` | 아니오 |
 | 빈 템플릿 이름 | `errors.INVALID` | 아니오 |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
+| template set missing, unavailable 또는 resource type 불일치 | `errors.INTERNAL` | 아니오 |
 | 템플릿을 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 렌더링 에러 | `errors.INTERNAL` | 아니오 |
-| 세트가 이미 해제됨 | `errors.INTERNAL` | 아니오 |
+| release된 set에서 render 시도 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
+[에러 처리](../core/errors.md)에서 error 사용법을 확인하십시오.
