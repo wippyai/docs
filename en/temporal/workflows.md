@@ -217,7 +217,7 @@ Set a specific Temporal workflow ID:
 ```lua
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-" .. order.id,
+        ["workflow.id"] = "order-" .. order.id,
     })
 
 local pid, err = spawner:spawn_monitored(
@@ -235,8 +235,8 @@ Control behavior when spawning a workflow with an ID that already exists:
 -- Fail if workflow already exists
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-123",
-        ["temporal.workflow.id_conflict_policy"] = "fail",
+        ["workflow.id"] = "order-123",
+        ["workflow.id_conflict_policy"] = "fail",
     })
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
@@ -249,8 +249,8 @@ end
 -- Error when already started (alternative approach)
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-123",
-        ["temporal.workflow.execution_error_when_already_started"] = true,
+        ["workflow.id"] = "order-123",
+        ["workflow.execution_error_when_already_started"] = true,
     })
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
@@ -260,7 +260,7 @@ local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
 -- Reuse existing (default behavior with explicit ID)
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-123",
+        ["workflow.id"] = "order-123",
     })
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
@@ -279,52 +279,74 @@ Pass Temporal workflow options via `with_options()`:
 
 ```lua
 local spawner = process.with_options({
-    ["temporal.workflow.id"] = "order-123",
-    ["temporal.workflow.execution_timeout"] = "24h",
-    ["temporal.workflow.run_timeout"] = "1h",
-    ["temporal.workflow.task_timeout"] = "30s",
-    ["temporal.workflow.id_conflict_policy"] = "fail",
-    ["temporal.workflow.retry_policy"] = {
+    ["workflow.id"] = "order-123",
+    ["workflow.execution_timeout"] = "24h",
+    ["workflow.run_timeout"] = "1h",
+    ["workflow.task_timeout"] = "30s",
+    ["workflow.id_conflict_policy"] = "fail",
+    ["workflow.retry_policy"] = {
         initial_interval = 1000,
         backoff_coefficient = 2.0,
         maximum_interval = 300000,
         maximum_attempts = 3,
     },
-    ["temporal.workflow.cron_schedule"] = "0 */6 * * *",
-    ["temporal.workflow.search_attributes"] = {
+    ["workflow.cron_schedule"] = "0 */6 * * *",
+    ["workflow.search_attributes"] = {
         customer_id = "cust-123"
     },
-    ["temporal.workflow.memo"] = {
+    ["workflow.memo"] = {
         source = "api"
     },
-    ["temporal.workflow.start_delay"] = "5m",
-    ["temporal.workflow.parent_close_policy"] = "terminate",
+    ["workflow.start_delay"] = "5m",
+    ["workflow.parent_close_policy"] = "terminate",
 })
 ```
 
-#### Full Options Reference
+#### Options Reference
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `temporal.workflow.id` | string | Explicit workflow execution ID |
-| `temporal.workflow.task_queue` | string | Override task queue |
-| `temporal.workflow.execution_timeout` | duration | Total workflow execution timeout |
-| `temporal.workflow.run_timeout` | duration | Single run timeout |
-| `temporal.workflow.task_timeout` | duration | Workflow task processing timeout |
-| `temporal.workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
-| `temporal.workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
-| `temporal.workflow.execution_error_when_already_started` | boolean | Error if workflow already running |
-| `temporal.workflow.retry_policy` | table | Retry policy (see below) |
-| `temporal.workflow.cron_schedule` | string | Cron expression for recurring workflows |
-| `temporal.workflow.memo` | table | Non-indexed workflow metadata |
-| `temporal.workflow.search_attributes` | table | Indexed queryable attributes |
-| `temporal.workflow.enable_eager_start` | boolean | Start execution immediately |
-| `temporal.workflow.start_delay` | duration | Delay before workflow starts |
-| `temporal.workflow.parent_close_policy` | string | Child behavior on parent close |
-| `temporal.workflow.wait_for_cancellation` | boolean | Wait for cancellation to finish |
-| `temporal.workflow.namespace` | string | Temporal namespace override |
+| `workflow.id` | string | Explicit workflow execution ID |
+| `workflow.task_queue` | string | Override task queue |
+| `workflow.execution_timeout` | duration | Total workflow execution timeout |
+| `workflow.run_timeout` | duration | Single run timeout |
+| `workflow.task_timeout` | duration | Workflow task processing timeout |
+| `workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
+| `workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
+| `workflow.execution_error_when_already_started` | boolean | Error if workflow already running |
+| `workflow.retry_policy` | table | Retry policy (see below) |
+| `workflow.cron_schedule` | string | Cron expression for recurring workflows |
+| `workflow.memo` | table | Non-indexed workflow metadata |
+| `workflow.search_attributes` | table | Indexed queryable attributes |
+| `workflow.enable_eager_start` | boolean | Start execution immediately |
+| `workflow.start_delay` | duration | Delay before workflow starts |
+| `workflow.summary` | string | Summary shown in Temporal workflow metadata |
+| `workflow.details` | string | Details shown in Temporal workflow metadata |
+| `workflow.versioning_override` | string or table | Auto-upgrade mode or a pinned deployment/build version |
+| `workflow.priority` | table | Priority key and optional fairness settings |
+| `workflow.parent_close_policy` | string | Child behavior on parent close |
+| `workflow.wait_for_cancellation` | boolean | Wait for cancellation to finish |
+| `workflow.namespace` | string | Temporal namespace override |
+| `workflow.versioning_intent` | string or number | Child-workflow worker versioning intent |
+| `workflow.name` | string | Child workflow type override |
 
 Duration values accept strings (`"5s"`, `"10m"`, `"1h"`) or milliseconds as numbers.
+
+Legacy `temporal.workflow.*` aliases remain accepted for compatibility. New code should use the canonical `workflow.*` names shown above.
+
+A pinned version override requires both the mode and deployment version:
+
+```lua
+["workflow.versioning_override"] = {
+    mode = "pinned",
+    version = {
+        deployment_name = "orders",
+        build_id = "orders-v2",
+    },
+}
+```
+
+Use the string `"auto_upgrade"` for an auto-upgrade override.
 
 #### Parent Close Policy
 
@@ -415,8 +437,8 @@ local function handler()
     local spawner = process
         .with_context({request_id = req:header("X-Request-ID")})
         :with_options({
-            ["temporal.workflow.id"] = "order-" .. order.id,
-            ["temporal.workflow.id_conflict_policy"] = "fail",
+            ["workflow.id"] = "order-" .. order.id,
+            ["workflow.id_conflict_policy"] = "fail",
         })
 
     local pid, err = spawner:spawn(

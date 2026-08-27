@@ -135,8 +135,27 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Wait for activity cancellation |
 | `activity.disable_eager_execution` | boolean | false | Disable eager execution |
 | `activity.retry_policy` | table | - | Retry configuration (see below) |
+| `activity.versioning_intent` | string or number | - | Worker versioning intent for the activity |
+| `activity.summary` | string | - | Summary shown in Temporal activity metadata |
+| `activity.priority` | table | - | Priority key and optional fairness settings |
+| `activity.name` | string | - | Activity type override |
 
 Duration values accept strings (`"5s"`, `"10m"`, `"1h"`) or milliseconds as numbers.
+
+Use the canonical `activity.*` names for new code. Legacy `temporal.activity.*` aliases remain accepted for compatibility.
+
+```lua
+local executor = funcs.new():with_options({
+    ["activity.summary"] = "Charge the order payment",
+    ["activity.priority"] = {
+        priority_key = 10,
+        fairness_key = "customer-123",
+        fairness_weight = 1.0,
+    },
+    ["activity.name"] = "charge-payment",
+    ["activity.versioning_intent"] = "use_assignment_rules",
+})
+```
 
 ### Retry Policy
 

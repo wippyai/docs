@@ -197,7 +197,6 @@ Configure worker behavior:
 
     # Versioning
     deployment_name: ""
-    build_id: ""
     build_id: ${env:BUILD_ID}              # Read from env registry
     use_versioning: false
     default_versioning_behavior: "pinned" # or "auto_upgrade"
