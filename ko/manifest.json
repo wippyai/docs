@@ -147,7 +147,7 @@
   {
     "title": "Framework",
     "children": [
-      {"title": "Overview", "path": "framework/overview"},
+      {"title": "프레임워크", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
       {"title": "Agents", "path": "framework/agents"},
       {"title": "Testing", "path": "framework/testing"},
