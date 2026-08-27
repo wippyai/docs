@@ -1,14 +1,14 @@
 ---
-title: "Procesamiento de Texto"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+title: "Procesamiento de texto"
+description: "Compila expresiones regulares, compara texto, crea parches y divide documentos en fragmentos."
 ---
 
-# Procesamiento de Texto
+# Procesamiento de texto
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Expresiones regulares, comparacion de texto y division semantica de texto.
+El módulo `text` proporciona expresiones regulares, comparación y aplicación de parches de texto y división de documentos. Esta página es una referencia de API. Sus bloques cortos son llamadas aisladas; los bloques de división más largos son recetas parciales cuyos documentos, recursos de sistema de archivos configurados y procesamiento posterior pertenecen a la aplicación contenedora.
 
 ## Carga
 
@@ -16,12 +16,17 @@ Expresiones regulares, comparacion de texto y division semantica de texto.
 local text = require("text")
 ```
 
-## Expresiones Regulares
+## Expresiones regulares
 
-### Compilar
+### `text.regexp.compile`
+
+Compila una expresión regular compatible con RE2.
 
 ```lua
 local re, err = text.regexp.compile("[0-9]+")
+if err then
+    return nil, err
+end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -30,7 +35,9 @@ local re, err = text.regexp.compile("[0-9]+")
 
 **Devuelve:** `Regexp, error`
 
-### Coincidencia
+### `re:match_string`
+
+Comprueba si una cadena coincide con la expresión compilada.
 
 ```lua
 local ok = re:match_string("abc123")
@@ -42,7 +49,9 @@ local ok = re:match_string("abc123")
 
 **Devuelve:** `boolean`
 
-### Buscar
+### `re:find_string`
+
+Busca la primera subcadena coincidente.
 
 ```lua
 local match = re:find_string("abc123def")
@@ -54,7 +63,11 @@ local match = re:find_string("abc123def")
 
 **Devuelve:** `string | nil`
 
-### Buscar Todas
+En esta versión del runtime, una coincidencia de cadena vacía también se representa como `nil`; usa un patrón que consuma al menos un carácter cuando sea necesario distinguir una coincidencia vacía de la ausencia de coincidencia.
+
+### `re:find_all_string`
+
+Busca todas las subcadenas coincidentes.
 
 ```lua
 local matches = re:find_all_string("a1b2c3")
@@ -66,7 +79,9 @@ local matches = re:find_all_string("a1b2c3")
 
 **Devuelve:** `string[]`
 
-### Buscar con Grupos
+### `re:find_string_submatch`
+
+Busca la primera coincidencia y sus grupos de captura.
 
 ```lua
 local match = re:find_string_submatch("user@example.com")
@@ -78,7 +93,9 @@ local match = re:find_string_submatch("user@example.com")
 
 **Devuelve:** `string[] | nil` (coincidencia completa + grupos de captura)
 
-### Buscar Todas con Grupos
+### `re:find_all_string_submatch`
+
+Busca todas las coincidencias y sus grupos de captura.
 
 ```lua
 local matches = re:find_all_string_submatch("a=1 b=2")
@@ -90,7 +107,9 @@ local matches = re:find_all_string_submatch("a=1 b=2")
 
 **Devuelve:** `string[][]`
 
-### Buscar Indice
+### `re:find_string_index`
+
+Busca los límites basados en 1 de la primera coincidencia.
 
 ```lua
 local pos = re:find_string_index("abc123")
@@ -102,7 +121,9 @@ local pos = re:find_string_index("abc123")
 
 **Devuelve:** `table | nil` ({start, end}, basado en 1)
 
-### Buscar Todos los Indices
+### `re:find_all_string_index`
+
+Busca los límites de todas las coincidencias.
 
 ```lua
 local positions = re:find_all_string_index("a1b2c3")
@@ -114,7 +135,9 @@ local positions = re:find_all_string_index("a1b2c3")
 
 **Devuelve:** `table[] | nil` (nil cuando no hay coincidencias)
 
-### Reemplazar
+### `re:replace_all_string`
+
+Reemplaza todas las subcadenas coincidentes.
 
 ```lua
 local result = re:replace_all_string("a1b2", "X")
@@ -127,7 +150,9 @@ local result = re:replace_all_string("a1b2", "X")
 
 **Devuelve:** `string`
 
-### Dividir
+### `re:split`
+
+Divide una cadena en las coincidencias de la expresión compilada.
 
 ```lua
 local parts = re:split("a,b,c", -1)
@@ -140,7 +165,9 @@ local parts = re:split("a,b,c", -1)
 
 **Devuelve:** `string[]`
 
-### Conteo de Subexpresiones
+### `re:num_subexp`
+
+Devuelve el número de subexpresiones de captura.
 
 ```lua
 local count = re:num_subexp()
@@ -148,7 +175,9 @@ local count = re:num_subexp()
 
 **Devuelve:** `number`
 
-### Nombres de Subexpresiones
+### `re:subexp_names`
+
+Devuelve los nombres de las subexpresiones de captura.
 
 ```lua
 local names = re:subexp_names()
@@ -156,7 +185,9 @@ local names = re:subexp_names()
 
 **Devuelve:** `string[]`
 
-### String de Patrón
+### `re:string`
+
+Devuelve la cadena del patrón compilado.
 
 ```lua
 local pattern = re:string()
@@ -164,11 +195,13 @@ local pattern = re:string()
 
 **Devuelve:** `string`
 
-## Comparacion de Texto
+## Comparación de texto
 
 Comparar versiones de texto y generar parches. Basado en [go-diff](https://github.com/sergi/go-diff) (diff-match-patch de Google).
 
-### Crear Comparador
+### `text.diff.new`
+
+Crea un comparador de texto con opciones predeterminadas o personalizadas.
 
 ```lua
 local diff, err = text.diff.new()
@@ -188,15 +221,21 @@ local diff, err = text.diff.new(options)
 | `patch_delete_threshold` | number | 0.5 | Umbral de eliminacion |
 | `patch_margin` | integer | 4 | Margen de contexto |
 
-### Comparar
+### `diff:compare`
 
-Encontrar diferencias entre dos textos. Devuelve un array de operaciones describiendo como transformar text1 en text2.
+Compara dos cadenas y devuelve las operaciones que transforman `text1` en `text2`.
 
 ```lua
-local diff, _ = text.diff.new()
+local diff, diff_err = text.diff.new()
+if diff_err then
+    return nil, diff_err
+end
 local diffs, err = diff:compare("hello world", "hello there")
+if err then
+    return nil, err
+end
 
--- diffs contiene:
+-- diffs contains:
 -- {operation = "equal", text = "hello "}
 -- {operation = "delete", text = "world"}
 -- {operation = "insert", text = "there"}
@@ -211,17 +250,17 @@ local diffs, err = diff:compare("hello world", "hello there")
 
 Operaciones: `"equal"`, `"delete"`, `"insert"`
 
-### Resumir
+### `diff:summarize`
 
-Contar caracteres cambiados entre versiones.
+Cuenta los bytes UTF-8 sin cambios, insertados y eliminados. Para texto no ASCII, estos totales no son recuentos de puntos de código Unicode ni de grafemas.
 
 ```lua
-local diffs, _ = diff:compare("hello world", "hello there")
+-- `diffs` is the checked result from diff:compare.
 local summary = diff:summarize(diffs)
 
--- summary.equals = 6 (caracteres sin cambiar)
--- summary.deletions = 5 (caracteres eliminados)
--- summary.insertions = 5 (caracteres agregados)
+-- summary.equals = 6 (bytes unchanged)
+-- summary.deletions = 5 (bytes removed)
+-- summary.insertions = 5 (bytes added)
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -230,12 +269,15 @@ local summary = diff:summarize(diffs)
 
 **Devuelve:** `table` ({insertions, deletions, equals})
 
-### Texto Formateado
+### `diff:pretty_text`
 
 Formatear diff con colores ANSI para visualizacion en terminal.
 
 ```lua
 local formatted, err = diff:pretty_text(diffs)
+if err then
+    return nil, err
+end
 print(formatted)
 ```
 
@@ -245,13 +287,16 @@ print(formatted)
 
 **Devuelve:** `string, error`
 
-### HTML Formateado
+### `diff:pretty_html`
 
 Formatear diff como HTML con tags `<del>` e `<ins>`.
 
 ```lua
 local html, err = diff:pretty_html(diffs)
--- Devuelve: "hello <del>world</del><ins>there</ins>"
+if err then
+    return nil, err
+end
+-- `html` is an HTML fragment with equal, deleted, and inserted spans.
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -260,7 +305,7 @@ local html, err = diff:pretty_html(diffs)
 
 **Devuelve:** `string, error`
 
-### Crear Parches
+### `diff:patch_make`
 
 Generar parches que pueden aplicarse para transformar un texto en otro. Los parches pueden serializarse y aplicarse despues.
 
@@ -269,6 +314,9 @@ local text1 = "The quick brown fox jumps over the lazy dog"
 local text2 = "The quick red fox jumps over the lazy cat"
 
 local patches, err = diff:patch_make(text1, text2)
+if err then
+    return nil, err
+end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -278,15 +326,17 @@ local patches, err = diff:patch_make(text1, text2)
 
 **Devuelve:** `table, error`
 
-### Aplicar Parches
+### `diff:patch_apply`
 
-Aplicar parches para transformar texto. Devuelve el resultado y si todos los parches se aplicaron exitosamente.
+Aplica parches a una cadena y devuelve el resultado e indica si todos los parches se aplicaron correctamente.
 
 ```lua
 local result, success = diff:patch_apply(patches, text1)
 -- result = "The quick red fox jumps over the lazy cat"
 -- success = true
 ```
+
+Comprueba `success` antes de tratar `result` como la transformación solicitada. Pasa tablas de parches producidas por `patch_make`; en esta versión del runtime, el texto de parche serializado con formato incorrecto dentro de una tabla construida manualmente puede omitirse en vez de notificarse por separado.
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
@@ -295,11 +345,11 @@ local result, success = diff:patch_apply(patches, text1)
 
 **Devuelve:** `string, boolean`
 
-## Division de Texto
+## División de texto
 
 Dividir documentos grandes en fragmentos mas pequenos preservando limites semanticos. Basado en el divisor de texto de [langchaingo](https://github.com/tmc/langchaingo).
 
-### Divisor Recursivo
+### `text.splitter.recursive`
 
 Divide texto usando una jerarquia de separadores. Primero intenta dividir en dobles nuevas lineas (parrafos), luego nuevas lineas simples, luego espacios, luego caracteres. Recurre a separadores mas pequenos cuando los fragmentos exceden el limite de tamano.
 
@@ -308,10 +358,15 @@ local splitter, err = text.splitter.recursive({
     chunk_size = 1000,
     chunk_overlap = 100
 })
+if err then
+    return nil, err
+end
 
 local long_text = "This is a long text that needs splitting..."
-local chunks, err = splitter:split_text(long_text)
--- chunks = {"This is a long...", "...text that needs...", "...splitting..."}
+local chunks, split_err = splitter:split_text(long_text)
+if split_err then
+    return nil, split_err
+end
 ```
 
 **Devuelve:** `Splitter, error`
@@ -325,7 +380,7 @@ local chunks, err = splitter:split_text(long_text)
 | `keep_separator` | boolean | false | Mantener separadores en salida |
 | `separators` | string[] | nil | Lista de separadores personalizada |
 
-### Divisor de Markdown
+### `text.splitter.markdown`
 
 Divide documentos markdown respetando la estructura. Intenta mantener encabezados con su contenido, bloques de código intactos y filas de tabla juntas.
 
@@ -335,10 +390,26 @@ local splitter, err = text.splitter.markdown({
     code_blocks = true,
     heading_hierarchy = true
 })
+if err then
+    return nil, err
+end
 
-local readme = fs.read("README.md")
-local chunks, err = splitter:split_text(readme)
+local fs = require("fs")
+local docs, docs_err = fs.get("app:docs")
+if docs_err then
+    return nil, docs_err
+end
+local readme, read_err = docs:readfile("README.md")
+if read_err then
+    return nil, read_err
+end
+local chunks, split_err = splitter:split_text(readme)
+if split_err then
+    return nil, split_err
+end
 ```
+
+Esta receta parcial requiere que la entrada habilite tanto `text` como `fs`, un recurso de sistema de archivos `app:docs` configurado y un archivo `README.md` legible dentro de ese recurso.
 
 **Devuelve:** `Splitter, error`
 
@@ -353,18 +424,23 @@ local chunks, err = splitter:split_text(readme)
 | `heading_hierarchy` | boolean | false | Respetar niveles de encabezado |
 | `join_table_rows` | boolean | false | Mantener filas de tabla juntas |
 
-### Dividir Texto
+### `splitter:split_text`
 
 Dividir un solo documento en un array de fragmentos.
 
 ```lua
 local chunks, err = splitter:split_text(document)
+if err then
+    return nil, err
+end
 
 for i, chunk in ipairs(chunks) do
-    -- Procesar cada fragmento (ej., crear embedding, enviar a LLM)
+    -- Process each chunk (e.g., create embedding, send to LLM)
     process(chunk)
 end
 ```
+
+Aquí, `splitter` es un divisor creado correctamente, mientras que `document` y `process` son proporcionados por la aplicación.
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
@@ -372,20 +448,23 @@ end
 
 **Devuelve:** `string[], error`
 
-### Dividir Lote
+### `splitter:split_batch`
 
 Dividir multiples documentos preservando sus metadatos. Cada documento de entrada puede producir multiples fragmentos de salida. Todos los fragmentos heredan los metadatos de su documento fuente.
 
 ```lua
--- Entrada: paginas de un PDF con numeros de pagina
+-- Input: pages from a PDF with page numbers
 local pages = {
     {content = "First page content...", metadata = {page = 1}},
     {content = "Second page content...", metadata = {page = 2}}
 }
 
 local chunks, err = splitter:split_batch(pages)
+if err then
+    return nil, err
+end
 
--- Salida: cada fragmento sabe de que pagina vino
+-- Output: each chunk knows which page it came from
 for _, chunk in ipairs(chunks) do
     print("Page " .. chunk.metadata.page .. ": " .. chunk.content:sub(1, 50))
 end
@@ -397,11 +476,13 @@ end
 
 **Devuelve:** `table, error` (array de {content, metadata})
 
+`split_batch` omite silenciosamente un elemento cuando este no es una tabla, falta su campo `content`, está vacío o no es una cadena, o falla la división de ese elemento. Aun así, devuelve los fragmentos restantes con un error `nil`. Valida cada elemento de entrada antes de la llamada y comprueba en el código de la aplicación cualquier requisito de cardinalidad; no trates una llamada correcta como prueba de que se representaron todas las entradas.
+
 ## Errores
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Sintaxis de patrón invalida | `errors.INVALID` | no |
+| Sintaxis de patrón no válida | `errors.INVALID` | no |
 | Error interno | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
