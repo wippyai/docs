@@ -1,25 +1,28 @@
 ---
 title: "Micro AGI"
-description: "런타임에 자체 도구를 만드는 자기 수정 에이전트를 구축합니다 — 문서를 읽고, Lua를 작성하고, 레지스트리에 엔트리를 등록하고, 활성 세션에 로드합니다."
+description: "문서를 읽고 Lua 도구를 생성해 런타임에 등록하고 활성 세션에 로드하는 자기 수정 에이전트를 살펴봅니다."
 ---
 
 # Micro AGI
 
-런타임에 자체 도구를 만드는 자기 수정 에이전트를 구축합니다 — 문서를 읽고, Lua를 작성하고, 레지스트리에 엔트리를 등록하고, 활성 세션에 로드합니다.
+문서를 읽고 Lua 도구를 생성해 런타임에 등록하고 활성 세션에 로드하는 에이전트를 살펴봅니다.
 
-## 우리가 만들 것
+**분류: 참조 구현 해설.** 코드 조각은 게시된 `wippy/micro-agi` 모듈을 설명하지만 의도적으로 완전한 소스 트리가 아닙니다. 구현을 실행하려면 Hub 모듈을 사용하고, 독립적으로 빌드하려면 LLM 에이전트 튜토리얼을 사용하세요.
 
-다음을 수행하는 터미널 에이전트:
-- 스트리밍과 함께 LLM을 사용하여 질문에 답변
-- API를 학습하기 위해 Wippy 문서 검색
-- 레지스트리를 검사하여 기존 기능 발견
-- 기능이 없을 때 즉석에서 새 도구 구축
-- 압축을 통해 자체 컨텍스트 윈도우 관리
+## 패키지가 보여 주는 기능
+
+다음 기능을 갖는 터미널 에이전트입니다.
+
+- LLM의 답변을 스트리밍합니다.
+- API를 찾기 위해 Wippy 문서를 검색합니다.
+- 기존 기능을 찾기 위해 레지스트리를 검사합니다.
+- 필요한 기능이 없으면 도구를 만들고 로드합니다.
+- 컨텍스트 제한에 가까워지면 대화 기록을 압축합니다.
 
 ```mermaid
 flowchart LR
     User -->|prompt| Agent
-    Agent -->|step| LLM[GPT-5.1]
+    Agent -->|step| LLM[Configured model]
     LLM -->|tool_calls| Agent
     Agent -->|funcs.call| Tools
     Tools -->|result| Agent
@@ -36,7 +39,7 @@ flowchart LR
 
 ## 아키텍처
 
-에이전트는 레지스트리에 접근할 수 있는 Wippy 프로세스로 실행됩니다. LLM이 자신에게 없는 기능이 필요하다고 판단하면 자기 수정 루프를 사용합니다:
+에이전트는 레지스트리에 접근할 수 있는 Wippy 프로세스로 실행됩니다. LLM이 보유하지 않은 기능이 필요하다고 판단하면 다음 자기 수정 루프를 사용합니다.
 
 ```mermaid
 sequenceDiagram
@@ -51,7 +54,7 @@ sequenceDiagram
     A->>A: execute doc_search
     A->>L: step(conversation + tool result)
     L->>A: tool_call: create_tool(name, source, schema)
-    A->>R: evaluate deny policies + changeset create
+    A->>R: apply namespace denylist + changeset create
     R->>A: ok
     A->>L: step(conversation + tool result)
     L->>A: tool_call: load_tool("app.generated:current_time")
@@ -64,9 +67,11 @@ sequenceDiagram
     A->>U: stream response
 ```
 
-핵심 통찰: 도구는 레지스트리 엔트리입니다. 도구 생성은 `data.source`에 인라인 Lua 소스가 있는 `function.lua` 엔트리를 작성하는 것일 뿐입니다. 에이전트 런타임은 다른 엔트리와 마찬가지로 컴파일하여 로드합니다.
+도구는 레지스트리 엔트리입니다. 에이전트는 인라인 Lua 소스를 `data.source`에 담은 `function.lua` 엔트리를 작성하여 도구를 만듭니다. 런타임은 그 엔트리를 컴파일하고 로드합니다.
 
-## 프로젝트 구조
+## 게시된 패키지 구조
+
+패키지는 다음 파일을 모두 소유합니다. 이 페이지는 `doc_search.lua`와 아키텍처에 중요한 계약을 재현하지만 레지스트리 헬퍼, 변경 집합 처리, 동적 로더 헬퍼, 에이전트 루프는 축약합니다. 특히 `create_tool`, `load_tool`, `agent.lua` 섹션은 그대로 복사할 수 있는 파일이 아니라 발췌본입니다. `registry_list`와 `registry_read`의 완전한 레지스트리 정의도 게시된 모듈에만 있습니다.
 
 ```
 micro-agi/
@@ -87,7 +92,7 @@ micro-agi/
 
 ## 인프라
 
-`.wippy.yaml` 생성:
+패키지는 다음 `.wippy.yaml` 구성을 사용합니다.
 
 ```yaml
 version: "1.0"
@@ -98,7 +103,7 @@ logger:
 
 ## 엔트리 정의
 
-인프라, 보안 정책, 모델, 에이전트, 프로세스를 포함한 `src/_index.yaml`을 생성합니다:
+다음 `src/_index.yaml` 엔트리 일부는 인프라, 보안 정책, 모델, 에이전트, 프로세스를 보여 줍니다.
 
 ```yaml
 version: "1.0"
@@ -142,7 +147,7 @@ entries:
 
 ### 보안 정책
 
-두 개의 `security.policy` 엔트리가 에이전트가 쓸 수 있는 네임스페이스를 제한합니다:
+두 `security.policy` 엔트리가 애플리케이션 수준 네임스페이스 거부 목록을 구성합니다.
 
 ```yaml
   - name: deny_core_ns
@@ -164,13 +169,13 @@ entries:
       - agent_security
 ```
 
-이 정책들은 `create_tool`에 의해 명명된 스코프(`app:agent_security`)로 로드되며, 모든 레지스트리 쓰기 전에 평가됩니다. 에이전트는 `app.generated:*`에 쓸 수 있지만(거부 정책이 일치하지 않음), `app:*`(코어 엔트리, 모델, 에이전트 정의) 또는 `app.tools:*`(내장 도구)에는 쓸 수 없습니다.
+`create_tool`은 이 정책들을 명명된 범위(`app:agent_security`)로 로드합니다. 헬퍼는 `app:*`(핵심 엔트리, 모델, 에이전트 정의) 또는 `app.tools:*`(기본 제공 도구)에 대한 명시적 `deny`를 거부하지만, 일치하지 않는 `app.generated:*`의 `undefined` 결과는 자체 필터에서 통과시킵니다. 이것은 Wippy 런타임 권한 부여가 아닙니다. 보호되는 연산에는 아래 보안 모듈 연산과 `changes:apply()` 내부의 `registry.apply`를 포함하여 실행 컨텍스트의 명시적 `allow`가 필요합니다.
 
-정책 평가에 대한 자세한 내용은 [보안 모델](system/security.md)을 참조하세요.
+정책 평가에 대한 자세한 내용은 [보안 모델](../system/security.md)을 참조하세요.
 
 ### 모델
 
-두 모델이 서로 다른 목적을 수행합니다:
+서로 다른 목적에 두 모델을 사용합니다.
 
 ```yaml
   - name: gpt-5.1
@@ -183,17 +188,16 @@ entries:
       capabilities: [generate, tool_use, structured_output, vision, thinking]
       class: [reasoning]
       priority: 210
-    max_tokens: 128000
-    output_tokens: 32768
+    max_tokens: 400000
+    output_tokens: 128000
     pricing:
-      input: 2.5
+      input: 1.25
       output: 10
     providers:
       - id: wippy.llm.openai:provider
         options:
           reasoning_model_request: true
         provider_model: gpt-5.1
-    thinking_effort: 10
 
   - name: gpt-4.1-nano
     kind: registry.entry
@@ -215,7 +219,7 @@ entries:
         provider_model: gpt-4.1-nano
 ```
 
-GPT-5.1은 추론과 도구 사용을 처리합니다. GPT-4.1 Nano는 25배 낮은 비용으로 컨텍스트 압축을 처리합니다.
+GPT-5.1은 추론과 도구 사용을 처리하고 GPT-4.1 Nano는 컨텍스트 압축을 처리합니다.
 
 ### 에이전트 정의
 
@@ -241,15 +245,17 @@ GPT-5.1은 추론과 도구 사용을 처리합니다. GPT-4.1 Nano는 25배 낮
       To gain new capabilities: doc_search the API, create_tool with Lua source,
       load_tool, call it. All in one turn.
     model: gpt-5.1
+    thinking_effort: 10
     max_tokens: 2048
     tools:
       - "app.tools:*"
 ```
 
-프롬프트는 의도적으로 간결합니다. 핵심 규칙:
-- **할루시네이션 금지** — 에이전트는 실제 데이터를 위해 도구를 사용해야 함
-- **자기 수정** — 거부하는 대신 도구 구축
-- **설명보다 행동** — 먼저 행동하고 요청받으면 설명
+프롬프트는 에이전트에 세 가지 운영 규칙을 부여합니다.
+
+- **검색한 데이터 사용** — 외부 사실에는 도구를 사용합니다.
+- **누락된 기능 생성** — 허용된 기능이 없으면 도구를 만듭니다.
+- **행동 우선** — 설명하기 전에 요청된 작업을 수행합니다.
 
 ### 프로세스
 
@@ -262,27 +268,28 @@ GPT-5.1은 추론과 도구 사용을 처리합니다. GPT-4.1 Nano는 25배 낮
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, funcs, registry, time, security]
+    modules: [io, json, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
       compress: wippy.llm.util:compress
 ```
 
-프로세스는 터미널 명령으로 실행됩니다. 보안 강제 적용은 `agent_security` 정책 그룹을 로드하고 쓰기 전에 평가하는 `create_tool` 내부에서 발생합니다.
+프로세스는 터미널 명령으로 실행됩니다. `create_tool`은 쓰기 전에 패키지 거부 목록을 적용하지만 그 필터는 명령의 런타임 보안 컨텍스트를 제공하지 않습니다.
 
-임포트:
+가져오기:
+
 - `prompt` — 대화 빌더
-- `agent_context` — 에이전트 로딩 및 동적 도구 관리
+- `agent_context` — 에이전트 로딩과 동적 도구 관리
 - `compress` — 컨텍스트 관리를 위한 LLM 기반 텍스트 압축
 
 ## 도구
 
-다섯 가지 도구를 포함한 `src/tools/_index.yaml`을 생성합니다:
+다섯 도구를 포함하는 `src/tools/_index.yaml`을 만듭니다.
 
 ### doc_search
 
-`wippy.ai/llm` API를 통해 Wippy 문서를 가져옵니다. 두 가지 모드를 지원합니다: 경로로 페이지 가져오기, 또는 쿼리로 검색.
+`wippy.ai/llm` API를 통해 Wippy 문서를 가져옵니다. 경로로 페이지 가져오기와 쿼리 검색, 두 모드를 지원합니다.
 
 ```lua
 local http_client = require("http_client")
@@ -311,7 +318,7 @@ local function fetch_page(path)
 end
 
 local function search_docs(query)
-    local url = BASE_URL .. "/search?q=" .. query
+    local url = BASE_URL .. "/search?q=" .. http_client.encode_uri(query)
     local resp, err = http_client.get(url, {
         headers = { ["User-Agent"] = "wippy-agent/1.0" },
     })
@@ -351,9 +358,9 @@ return { handler = handler }
 
 ### create_tool
 
-자기 수정의 핵심입니다. 네임스페이스 거부 정책을 평가하고 인라인 Lua 소스로 레지스트리에 `function.lua` 엔트리를 생성합니다.
+이 도구는 패키지의 네임스페이스 거부 목록을 평가한 뒤 인라인 Lua 소스를 갖는 `function.lua` 레지스트리 엔트리를 만듭니다.
 
-생성된 엔트리의 `modules` 필드는 도구가 접근할 수 있는 것을 제어합니다. 나열되지 않은 모듈은 해당 엔트리에 존재하지 않으므로 차단하거나 스캔할 것이 없습니다.
+생성된 엔트리의 `modules` 필드는 도구가 요구할 수 있는 전역이 아닌 런타임 모듈을 제어합니다. 모든 실행 가능한 Lua 엔트리에서 `process` 모듈은 전역이므로 이를 생략하는 것은 보안 경계가 아닙니다. 프로세스 연산에는 여전히 런타임 보안 정책이 적용됩니다.
 
 ```lua
 local registry = require("registry")
@@ -367,11 +374,11 @@ local MAX_NAME_LEN = 64
 local ALLOWED_MODULES = {
     time = true, json = true, http_client = true, expr = true,
     text = true, base64 = true, yaml = true, crypto = true,
-    hash = true, uuid = true, url = true,
+    hash = true, uuid = true,
 }
 ```
 
-**정책 평가** — `create_tool`은 `agent_security` 명명된 스코프를 로드하고 대상 엔트리 ID에 대해 거부 정책을 평가합니다. `app:*` 또는 `app.tools:*`에 대한 쓰기는 거부되고, `app.generated:*`에 대한 쓰기는 통과합니다(일치하는 거부 정책 없음):
+**거부 목록 평가** — `create_tool`은 `agent_security` 명명 범위를 로드합니다. 범위가 `deny`를 반환하면 `app:*` 또는 `app.tools:*` 쓰기를 거부하지만, 일치하지 않는 `app.generated:*` 대상은 `undefined`를 반환하여 이 애플리케이션 필터를 통과합니다.
 
 ```lua
 local actor = security.new_actor("service:agent", { role = "agent" })
@@ -386,7 +393,9 @@ if result == "deny" then
 end
 ```
 
-**레지스트리 쓰기** — 엔트리는 `data.source`의 소스와 허용된 모듈만으로 작성됩니다:
+이 검사는 레지스트리 변경에 권한을 부여하지 않습니다. 현재 명령에는 보안 모듈 호출과 `registry.apply`를 명시적으로 허용하는 런타임 액터 및 범위도 필요합니다.
+
+**레지스트리 쓰기** — 엔트리는 `data.source`의 소스와 허용된 모듈만 사용해 작성됩니다.
 
 ```lua
 local entry = {
@@ -414,14 +423,17 @@ if existing then
 else
     changes:create(entry)
 end
-changes:apply()
+local _, apply_err = changes:apply()
+if apply_err then
+    return { error = "failed to apply registry change: " .. tostring(apply_err) }
+end
 ```
 
-디스크에 파일이 없습니다. 도구는 전적으로 레지스트리에만 존재합니다.
+생성된 도구는 소스 파일에 쓰이지 않고 레지스트리에 저장됩니다.
 
 ### load_tool
 
-엔트리가 도구인지 검증하고 에이전트 루프에 다시 로드하도록 신호를 보냅니다:
+엔트리가 도구인지 검증하고 에이전트 루프에 다시 로드하라는 신호를 보냅니다.
 
 ```lua
 local function handler(input)
@@ -445,7 +457,7 @@ local function handler(input)
 end
 ```
 
-에이전트 루프는 결과에서 `loaded = true`를 감지하고 `ctx:add_tools(id)`에 이어 `ctx:load_agent()`를 호출하여 새 도구로 에이전트를 다시 컴파일합니다.
+에이전트 루프는 결과의 `loaded = true`를 감지하고 `ctx:add_tools(id)`에 이어 `ctx:load_agent()`를 호출하여 새 도구와 함께 에이전트를 다시 컴파일합니다.
 
 ## 에이전트 루프
 
@@ -453,7 +465,7 @@ end
 
 ### 스트리밍
 
-[LLM Agent 튜토리얼](tutorials/llm-agent.md)과 동일한 코루틴 + 채널 패턴을 사용합니다:
+[LLM 에이전트 튜토리얼](./llm-agent.md)과 같은 코루틴 및 채널 패턴을 사용합니다.
 
 ```lua
 coroutine.spawn(function()
@@ -469,15 +481,22 @@ end)
 
 ### 도구 실행
 
-도구는 안전을 위해 `pcall`과 함께 `funcs.call()`로 호출됩니다:
+도구는 `funcs.call()`로 호출합니다. `pcall`은 발생한 Lua 오류를 포착하고 `funcs.call()`의 정상적인 두 번째 반환값은 호출 오류를 전달합니다.
 
 ```lua
-local ok, result = pcall(funcs.call, tc.registry_id, args)
+local ok, result, call_err = pcall(funcs.call, tc.registry_id, args)
+if not ok then
+    results[tc.id] = { error = tostring(result) }
+elseif call_err then
+    results[tc.id] = { error = tostring(call_err) }
+else
+    results[tc.id] = result
+end
 ```
 
 ### 동적 도구 로딩
 
-`load_tool`이 `loaded = true`를 반환하면 에이전트가 자신을 다시 로드합니다:
+`load_tool`이 `loaded = true`를 반환하면 에이전트가 자신을 다시 로드합니다.
 
 ```mermaid
 flowchart TD
@@ -506,11 +525,11 @@ local function handle_tool_loading(tool_calls, results)
 end
 ```
 
-대화는 러너가 아닌 프롬프트 빌더에 존재하므로 다시 로드해도 보존됩니다.
+대화는 러너가 아닌 프롬프트 빌더에 있으므로 다시 로드해도 유지됩니다.
 
 ### 컨텍스트 압축
 
-프롬프트 토큰이 96K(128K 컨텍스트 윈도우의 75%)를 초과하면 GPT-4.1 Nano를 사용하여 대화가 압축됩니다:
+프롬프트 토큰이 30만(40만 컨텍스트 창의 75%)을 초과하면 GPT-4.1 Nano로 대화를 압축합니다.
 
 ```lua
 if response.tokens and response.tokens.prompt_tokens
@@ -519,87 +538,75 @@ if response.tokens and response.tokens.prompt_tokens
 end
 ```
 
-압축은 메시지 내용을 추출하고, 4000자를 목표로 `compress.to_size()`를 호출하고, 대화를 요약으로 교체합니다:
+압축은 메시지 콘텐츠를 추출하고 `compress.to_size()`를 호출해 4000자를 목표로 만든 뒤 대화를 요약으로 교체합니다.
 
 ```lua
-local summary = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+local summary, compress_err = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+if compress_err then
+    return nil, compress_err
+end
 session.conversation = prompt.new()
 session.conversation:add_system("Conversation summary:\n\n" .. summary)
 ```
 
 ## 보안 모델
 
-에이전트는 네임스페이스 거부 정책과 모듈 수준 접근 제어를 통해 보호됩니다.
+애플리케이션 거부 목록과 모듈 수준 접근 제어가 생성된 도구를 제한하지만 런타임 권한 부여를 대체하지는 않습니다.
 
 ```mermaid
 flowchart TD
-    LLM[LLM generates tool] --> P{Namespace Deny Policies}
+    LLM[LLM generates tool] --> P{Application Namespace Denylist}
     P -->|scope:evaluate| Check{Target namespace?}
     Check -->|app.generated:*| OK[No deny match]
     Check -->|app:* or app.tools:*| Deny[Policy Denied]
 
-    OK --> M{Module Allowlist}
-    M -->|only granted modules| R[Registry write]
+    OK --> M{Non-ambient Module Allowlist}
+    M -->|only listed non-ambient modules| R[Registry write]
     M -->|unknown module requested| Err[Rejected]
+    R --> A[Ambient process API remains available]
 ```
 
-### 네임스페이스 거부 정책
+### 네임스페이스 거부 목록
 
 | 정책 | 리소스 | 효과 |
 |--------|-----------|--------|
 | `deny_core_ns` | `app:*` | deny |
 | `deny_tools_ns` | `app.tools:*` | deny |
 
-`create_tool`은 `agent_security` 정책 그룹을 로드하고 대상 엔트리 ID에 대해 평가합니다. 거부 정책은 `app:*`과 `app.tools:*`에만 일치하므로, `app.generated:*`에 대한 쓰기는 통과합니다(결과는 `undefined`, "거부되지 않음"을 의미).
+`create_tool`은 `agent_security` 정책 그룹을 로드하고 대상 엔트리 ID를 평가합니다. 애플리케이션 수준 필터에서는 의도적으로 `undefined`를 "거부되지 않음"으로 처리합니다. Wippy의 보호된 권한 부여는 그렇지 않으며 명시적 `allow`가 있어야만 연산을 허용합니다. 이 코드를 실행하는 컨텍스트에는 여전히 필요한 런타임 권한이 있어야 합니다.
 
-이는 에이전트가 다음을 하지 못하도록 방지합니다:
-- 자체 프롬프트 또는 에이전트 정의 수정 (`app:dev_assistant`)
-- 내장 도구 덮어쓰기 (`app.tools:*`)
-- 인프라 엔트리 변경 (`app:processes` 등)
+따라서 에이전트는 다음을 수행할 수 없습니다.
+
+- 자신의 프롬프트 또는 에이전트 정의(`app:dev_assistant`) 수정
+- 기본 제공 도구(`app.tools:*`) 덮어쓰기
+- 인프라 엔트리(`app:processes` 등) 변경
 
 ### 모듈 접근 제어
 
-생성된 도구는 `data.modules`에 자신의 `modules`를 선언합니다. `ALLOWED_MODULES` 집합의 모듈만 허용됩니다. Wippy 런타임은 모듈 수준에서 이를 강제합니다 — 모듈이 엔트리에 나열되지 않으면 `require()`가 오류를 반환합니다. 스캔할 것이 없으므로 소스 코드 스캔이 없습니다: 부여되지 않은 모듈은 실행 컨텍스트에 존재하지 않습니다.
+생성된 도구는 `data.modules`에 전역이 아닌 기능을 선언하며 `create_tool`은 `ALLOWED_MODULES`의 이름만 허용합니다. 선언하지 않은 비전역 모듈은 요구할 수 없습니다. 런타임은 생성된 도구를 포함한 모든 실행 가능한 Lua 엔트리에 여전히 `process`를 주입하므로 `data.modules`에서 `process`를 생략하는 대신 보안 정책으로 프로세스 연산을 제한해야 합니다.
 
-## 실행
+이 튜토리얼은 `process.spawn` 또는 `process.exec` 정책을 정의하지 않습니다. 따라서 생성된 도구는 완전한 샌드박스가 아닙니다. 신뢰할 수 없는 도구 소스를 허용하기 전에 전역 프로세스 연산에 대한 런타임 정책을 추가하세요.
 
-Hub에서 직접 실행:
+## 실행과 현재 패키지 제한
+
+게시된 산출물은 Hub 모듈입니다. `wippy.lock`이 없는 새 빈 디렉터리에서 시작하세요. Hub 부트스트랩은 관련 없는 잠금 또는 다중 루트 잠금을 거부합니다. 첫 실행에서 배포 잠금을 만들며 이후에는 같은 디렉터리에서 일치하는 잠금을 재사용합니다.
 
 ```bash
+mkdir micro-agi-deploy
+cd micro-agi-deploy
 wippy run wippy/micro-agi agent
 ```
 
-또는 클론하여 로컬에서 실행:
+명령은 선택된 모듈 버전을 다운로드하고 선언된 의존성을 해석한 뒤 `agent` 명령을 호출합니다.
 
-```bash
-cd micro-agi
-wippy init && wippy update
-wippy run agent
-```
+해당 모듈이 기대하는 제공자 자격 증명과 모델 구성, Hub 다운로드 및 문서 검색을 위한 레지스트리/네트워크 접근도 필요합니다. 이 페이지는 로컬 복제본이나 잠금 파일을 제공하지 않으므로 재현 가능한 소스 빌드를 주장하지 않습니다.
 
-```
-dev assistant (quit to exit)
-
-> what time is it?
-  [doc_search] ok
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:current_time_utc
-  [current_time_utc] ok
-The current UTC time is 2026-02-13T03:13:41Z.
-
-> fetch https://httpbin.org/get and show my ip
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:http_get
-  [http_get] ok
-Your IP is 203.0.113.42.
-```
+검토한 릴리스에서 `wippy/micro-agi` v0.3.1은 `agent`에 `meta.command.security` 컨텍스트를 선언하지 않습니다. 기본 엄격 모드에서는 `funcs.call`, 레지스트리 읽기/쓰기, 문서 검색 HTTP 요청을 포함한 보호된 도구 경로가 필요한 명시적 허용을 받지 못합니다. 따라서 위 도구 및 자기 수정 흐름은 기본 엄격 모드에서 성공하는 실행이 아니라 참조 설계입니다. 신뢰할 수 없는 코드 생성기를 작동시키기 위해 엄격 모드를 비활성화하지 마세요. 먼저 패키지가 필요한 작업에 대한 최소 권한 명령 범위를 추가해야 합니다.
 
 ## 다음 단계
 
-- [LLM Agent](tutorials/llm-agent.md) — 처음부터 기본 에이전트 구축
-- [에이전트 모듈](framework/agents.md) — 에이전트 프레임워크 참조
-- [레지스트리](concepts/registry.md) — 레지스트리 동작 방식
-- [보안 모델](system/security.md) — 선언적 보안 정책
-- [엔트리 종류](guides/entry-kinds.md) — 사용 가능한 엔트리 타입
+- [LLM 에이전트](./llm-agent.md) — 기본 에이전트를 처음부터 만들기
+- [에이전트 모듈](../framework/agents.md) — 에이전트 프레임워크 참조
+- [레지스트리](../concepts/registry.md) — 레지스트리 개념
+- [보안 모델](../system/security.md) — 선언적 보안 정책
+- [엔트리 종류](../guides/entry-kinds.md) — 사용 가능한 엔트리 유형
