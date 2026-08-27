@@ -1,15 +1,17 @@
 ---
 title: "Temporal統合"
-description: "WippyはTemporal.ioと統合し、耐久性のあるワークフロー実行、自動リプレイ、再起動を乗り越える長時間実行プロセスを提供します。"
+description: "WippyはTemporal.ioと統合し、耐久性のあるワークフロー実行、自動リプレイ、再起動後も継続する長時間実行プロセスを提供します。"
 ---
 
 # Temporal統合
 
-Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワークフロー実行、自動リプレイ、再起動を乗り越える長時間実行プロセスを提供します。
+このページは、Temporalクライアントとワーカーの設定リファレンスです。最後のレジストリ断片はエントリ同士の接続方法を示すものであり、単独で完結するプロジェクトではありません。
+
+`temporal.client`と`temporal.worker`のエントリ種別は、Wippyのワークフローとアクティビティを[Temporal](https://temporal.io)に接続します。
 
 ## クライアント設定
 
-`temporal.client`エントリ種別はTemporalサーバーへの接続を定義します。
+`temporal.client`エントリ種別は、Temporalサーバーへの接続を定義します。
 
 ```yaml
 - name: temporal_client
@@ -50,10 +52,10 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
 
 #### APIキー（Temporal Cloud）
 
-以下のいずれかの方法でAPIキーを提供：
+次のいずれかの方法でAPIキーを指定します。
 
 ```yaml
-# 直接値
+# Direct value
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -62,16 +64,16 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
     type: api_key
     api_key: "your-api-key"
 
-# 環境変数から
+# From environment variable
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
-# ファイルから
+# From file
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -81,7 +83,7 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-`_env`で終わるフィールドはシステムで定義されている必要がある環境変数を参照します。環境ストレージと変数の設定については[環境変数システム](system/env.md)を参照してください。
+認証フィールドと資格情報フィールドに含まれる`${env:NAME}`プレースホルダーは、デコード時に[環境レジストリ](../system/env.md)を通じて解決されます。従来の`api_key_env` / `key_pem_env`ディレクティブも同じ方法で解決されますが、非推奨です。`api_key: ${env:NAME}` / `key_pem: ${env:NAME}`を使用してください。
 
 #### mTLS
 
@@ -99,7 +101,7 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
     ca_file: "/path/to/ca.pem"
 ```
 
-証明書とキーはPEM文字列または環境変数からも提供できます：
+証明書とキーは、PEM文字列または環境変数からも指定できます。
 
 ```yaml
 auth:
@@ -108,7 +110,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### TLS設定
@@ -117,8 +119,8 @@ auth:
 tls:
   enabled: true
   ca_file: "/path/to/ca.pem"
-  server_name: "temporal.example.com"    # サーバー名検証をオーバーライド
-  insecure_skip_verify: false            # 検証をスキップ（開発のみ）
+  server_name: "temporal.example.com"    # Override server name verification
+  insecure_skip_verify: false            # Skip verification (dev only)
 ```
 
 ### ヘルスチェック
@@ -131,7 +133,7 @@ health_check:
 
 ## ワーカー設定
 
-`temporal.worker`エントリ種別はワークフローとアクティビティを実行するワーカーを定義します。
+`temporal.worker`エントリ種別は、ワークフローとアクティビティを実行するワーカーを定義します。
 
 ```yaml
 - name: worker
@@ -140,7 +142,7 @@ health_check:
   task_queue: "my-app-queue"
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app:temporal_client
 ```
 
@@ -153,7 +155,7 @@ health_check:
 
 ### ワーカーオプション
 
-ワーカー動作を微調整：
+ワーカーの動作を設定します。
 
 ```yaml
 - name: worker
@@ -161,59 +163,65 @@ health_check:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
-    # 並行性
+    # Identity
+    identity: ""                          # Worker identity (appears in Temporal UI)
+
+    # Concurrency
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
-    # ポーラー
+    # Pollers
     max_concurrent_activity_task_pollers: 20
     max_concurrent_workflow_task_pollers: 20
 
-    # レート制限
-    worker_activities_per_second: 0        # 0 = 無制限
+    # Rate limiting
+    worker_activities_per_second: 0        # 0 = unlimited
     worker_local_activities_per_second: 0
     task_queue_activities_per_second: 0
 
-    # タイムアウト
+    # Timeouts
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
-    # 機能フラグ
+    # Feature flags
     enable_logging_in_replay: false
     enable_session_worker: false
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
-    # バージョニング
+    # Versioning
     deployment_name: ""
-    build_id: ""
-    build_id_env: "BUILD_ID"              # 環境変数から読み取り
+    build_id: ${env:BUILD_ID}              # Read from env registry
     use_versioning: false
-    default_versioning_behavior: "pinned" # または "auto_upgrade"
+    default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-`_env`で終わるフィールドは[環境変数システム](system/env.md)エントリで定義された環境変数を参照します。
+資格情報フィールドと識別子フィールドに含まれる`${env:NAME}`プレースホルダーは、デコード時に[環境レジストリ](../system/env.md)を通じて解決されます。従来の`build_id_env`ディレクティブも同じ方法で解決されますが、非推奨です。`build_id: ${env:NAME}`を使用してください。
 
 ### バージョニング動作
 
-`default_versioning_behavior`は、`use_versioning`が有効な場合に新しいワークフロー実行がワーカーのビルドIDを選ぶ方法を制御します:
+`default_versioning_behavior`は、`use_versioning`が有効な場合に、新しいワークフロー実行がワーカーのビルドIDを選択する方法を制御します。
 
 | 値 | 動作 |
 |----|------|
-| `pinned` | ワークフローは実行中、開始時のビルドIDに固定されます |
+| `pinned` | ワークフローは実行全体を通して、開始時のビルドIDを使用し続けます |
 | `auto_upgrade` | ワークフローは各タスク後に互換性のある最新のビルドIDで再開できます |
 
-`build_id_env`は、`build_id`が空の場合に指定された環境変数からビルドIDを読み取ります。
+リテラルの`build_id`が指定されていない場合、`build_id: ${env:NAME}`は環境レジストリからビルドIDを読み取ります。
 
 ### セッションワーカー
 
-`enable_session_worker: true`を設定すると、ワーカーはTemporalセッションを実行できます: これは単一のワーカーに固定された一連のアクティビティです（アクティビティが一時ディレクトリやオープン接続などのローカル状態を共有する場合に便利です）。`max_concurrent_session_execution_size`はワーカー上の同時セッション数を制限します。
+`enable_session_worker: true`を設定すると、ワーカーはTemporal Sessionsを実行できます。これは、単一のワーカーに固定された一連のアクティビティです（一時ディレクトリや開かれた接続などのローカル状態をアクティビティ間で共有する場合に便利です）。`max_concurrent_session_execution_size`は、ワーカー上の同時セッション数を制限します。
 
-### 並行性デフォルト
+### 並行性のデフォルト値
 
 | オプション | デフォルト |
 |-----------|-----------|
@@ -225,7 +233,9 @@ health_check:
 | `max_concurrent_workflow_task_pollers` | 20 |
 | `sticky_schedule_to_start_timeout` | 5s |
 
-## 完全な例
+## 設定例
+
+このレジストリ断片は、1つのワークフローと1つのアクティビティをワーカーに接続します。`localhost:7233`でTemporalサーバーに到達でき、参照される2つのLuaソースファイルが存在することを前提としています。実装については、ワークフローとアクティビティのページを参照してください。
 
 ```yaml
 version: "1.0"
@@ -245,7 +255,7 @@ entries:
     task_queue: "orders"
     lifecycle:
       auto_start: true
-      depends_on:
+      requires:
         - app:temporal_client
 
   - name: order_workflow
@@ -265,6 +275,8 @@ entries:
     source: file://payment.lua
     method: charge
     modules:
+      - env
+      - errors
       - http_client
       - json
     meta:
@@ -275,5 +287,5 @@ entries:
 
 ## 関連項目
 
-- [アクティビティ](temporal/activities.md) - アクティビティ定義
-- [ワークフロー](temporal/workflows.md) - ワークフロー実装
+- [アクティビティ](./activities.md) - アクティビティの定義
+- [ワークフロー](./workflows.md) - ワークフローの実装
