@@ -163,6 +163,38 @@
     ]
   },
   {
+    "title": "Frontend",
+    "children": [
+      {"title": "Frontend-Vertrag: Einstieg", "path": "frontend/overview"},
+      {"title": "Plattformtopologie", "path": "frontend/platform-topology"},
+      {"title": "Vertrag für portable Oberflächen", "path": "frontend/portable-ui-contract"},
+      {"title": "Die Designschicht", "path": "frontend/design-layer"},
+      {
+        "title": "Frontend-Registry",
+        "children": [
+          {"title": "Registry-Einträge", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Micro-Frontend-Anwendungen (view.page)", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Web Components (view.component)", "path": "frontend/frontend-registry/view-component"},
+          {"title": "Dynamisches Routing", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Übersicht", "path": "frontend/web-host/overview"},
+          {"title": "Frontend-Facade", "path": "frontend/web-host/entry-point"},
+          {"title": "Bootstrap-Ablauf", "path": "frontend/web-host/bootstrap"},
+          {"title": "Multi-Panel-Layout", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Render Engines", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy und Isolation", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS-Injektion", "path": "frontend/web-host/css-injection"},
+          {"title": "Theme-Persistenz", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe-Pakete", "path": "frontend/web-host/packages"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},
