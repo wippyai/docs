@@ -184,7 +184,7 @@
       {"title": "파일시스템", "path": "system/filesystem"},
       {"title": "클라우드 스토리지", "path": "system/cloudstorage"},
       {"title": "Environment", "path": "system/env"},
-      {"title": "Template", "path": "system/template"},
+      {"title": "템플릿", "path": "system/template"},
       {"title": "Security", "path": "system/security"},
       {"title": "Exec", "path": "system/exec"}
     ]

@@ -1,12 +1,14 @@
 ---
 title: "템플릿 엔진"
-description: "<secondary-label ref='external'/"
+description: "Jet template set, source, name, inheritance 및 공유 engine 설정을 구성합니다."
 ---
 
 # 템플릿 엔진
 <secondary-label ref="external"/>
 
-[CloudyKit Jet](https://github.com/CloudyKit/jet)을 사용한 템플릿 렌더링.
+template 엔트리는 [CloudyKit Jet](https://github.com/CloudyKit/jet) set과 template source를 설정합니다.
+
+이 페이지는 설정 레퍼런스입니다. YAML fence는 기존 entry list에 사용할 fragment이며, 각 template을 같은 프로젝트 또는 설치된 module graph의 참조된 `template.set`과 결합하십시오.
 
 ## 엔트리 종류
 
@@ -24,14 +26,19 @@ description: "<secondary-label ref='external'/"
   kind: template.set
 ```
 
-모든 설정은 합리적인 기본값으로 선택적입니다:
+모든 template-set 설정은 선택 사항입니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `engine.development_mode` | bool | false | 템플릿 캐싱 비활성화 |
 | `engine.delimiters.left` | string | `{{` | 변수 시작 구분자 |
 | `engine.delimiters.right` | string | `}}` | 변수 종료 구분자 |
+| `engine.delimiters.comment_left` | string | `{*` | 검증되는 comment opening delimiter; 현재 loader는 적용하지 않음 |
+| `engine.delimiters.comment_right` | string | `*}` | 검증되는 comment closing delimiter; 현재 loader는 적용하지 않음 |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 검증되는 extension list; 현재 loader의 discovery에는 사용되지 않음 |
 | `engine.globals` | map | - | 모든 템플릿에서 사용 가능한 변수 |
+
+런타임에서 `development_mode`, 왼쪽 및 오른쪽 expression delimiter, `globals`가 Jet set을 설정합니다. comment-delimiter 및 extension field는 이 릴리스에서 허용되고 검증되지만 in-memory Jet loader가 적용하지 않습니다. 이를 변경해도 parsing이나 template discovery가 달라지지 않습니다.
 
 ## 템플릿
 
@@ -59,11 +66,13 @@ description: "<secondary-label ref='external'/"
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|----------|-------------|
 | `set` | reference | 예 | 부모 템플릿 세트 |
-| `source` | string | 예 | 템플릿 내용 |
+| `source` | string | 예 | inline template content 또는 manifest-relative `file://` reference |
+
+relative `file://` reference는 entry가 포함된 manifest 기준으로 로드되며 해당 manifest filesystem 밖으로 나갈 수 없습니다. 결과 template source 안의 environment placeholder는 environment system에서 resolve되지 않고 template text로 유지됩니다.
 
 ## 템플릿 해결
 
-템플릿은 레지스트리 ID가 아닌 이름을 사용하여 서로 참조합니다. 해결은 세트 내의 가상 파일시스템처럼 작동합니다:
+템플릿은 registry ID가 아닌 이름으로 서로 참조합니다. 이름은 set 안에서 resolve됩니다.
 
 1. 기본적으로 레지스트리 엔트리 이름(`entry.ID.Name`)이 템플릿 이름이 됩니다
 2. 커스텀 명명을 위해 `meta.name`으로 오버라이드:
@@ -86,7 +95,7 @@ description: "<secondary-label ref='external'/"
 템플릿은 부모 템플릿을 확장하고 블록을 오버라이드할 수 있습니다:
 
 ```yaml
-# 부모가 yield 포인트 정의
+# Parent defines yield points
 - name: base
   kind: template.jet
   set: app.views:views
@@ -96,7 +105,7 @@ description: "<secondary-label ref='external'/"
     <body>{{ yield body() }}</body>
     </html>
 
-# 자식이 확장하고 블록 채움
+# Child extends and fills blocks
 - name: page
   kind: template.jet
   set: app.views:views
@@ -108,10 +117,10 @@ description: "<secondary-label ref='external'/"
 
 ## Lua API
 
-렌더링 작업은 [템플릿 모듈](lua/text/template.md)을 참조하세요.
+rendering 작업은 [템플릿 모듈](../lua/text/template.md)을 참조하십시오.
 
 ## 참고
 
-- [템플릿 모듈](lua/text/template.md) - Lua API 레퍼런스
-- [파일시스템](system/filesystem.md) - 디스크에서 템플릿 로드
-- [HTTP 엔드포인트](http/endpoint.md) - 요청 핸들러에서 템플릿 렌더링
+- [템플릿 모듈](../lua/text/template.md) - Lua API 레퍼런스
+- [파일시스템](./filesystem.md) - disk에서 template 로드
+- [HTTP 엔드포인트](../http/endpoint.md) - request handler에서 template rendering
