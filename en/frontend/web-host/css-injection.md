@@ -5,6 +5,10 @@ description: "Reference for CSS delivery across Web Host page engines and web-co
 
 # CSS Injection
 
+This page is the configuration reference for Host-delivered CSS. JSON and
+TypeScript blocks show individual settings and component contracts, not a
+complete frontend package.
+
 For iframe pages, the Web Host uses a layered injection pipeline to give the
 child document the same visual theme as the host. Because an iframe does not
 inherit CSS from its parent document, the host injects style assets into the
@@ -43,7 +47,13 @@ For more than a few overrides, keep CSS and JSON in separate files behind `conte
 
 ## The iframe injection pipeline
 
-Styles are injected in this logical layering. The first four layers are plain `<style>`/`<link>` elements; the last two (`customCSS` and `cssVariables`) are not — they are placed in the iframe document's `adoptedStyleSheets` (see [Override mechanism](#override-mechanism-adopted-stylesheets) below), so they always win regardless of `<head>` source order:
+Styles are injected in this logical layering. The first four layers are plain
+`<style>`/`<link>` elements. `cssVariables` and the non-`@import` declarations
+from `customCSS` are placed in the iframe document's `adoptedStyleSheets` (see
+[Override mechanism](#override-mechanism-adopted-stylesheets) below), so those
+declarations win regardless of `<head>` source order. Constructable stylesheets
+cannot contain `@import`, so the proxy extracts those rules into an ordinary
+`<head>` style whose cascade follows normal document order:
 
 The `view.page` iframe pipeline is `themeConfig` → `primevue`/`tailwind` →
 `iframe` → `markdown` → `customVariables` → `customCss` in logical cascade
@@ -59,10 +69,13 @@ iframe cascade.
 3. iframe.css            — Default themed scrollbar styling (historical name; no iframe layout reset)
 4. markdown.css          — .data-body rendering styles for Markdown content
 5. cssVariables          — effective base + Auto/forced mode blocks from AppConfig.theming.global.cssVariables (adopted stylesheet)
-6. customCSS             — Raw CSS from the child-projected AppConfig.theming.global.customCSS (adopted stylesheet)
+6. customCSS             — Non-@import CSS in an adopted stylesheet; extracted @import rules use a head style
 ```
 
-This list shows the logical override order, not the literal `<head>` insertion order. The adopted-stylesheet cascade determines the custom layers' precedence; see [Override mechanism](#override-mechanism-adopted-stylesheets).
+This list shows the logical override order, not the literal `<head>` insertion
+order. The adopted-stylesheet cascade determines the precedence of
+`cssVariables` and non-`@import` custom declarations; extracted imports remain
+ordinary document styles. See [Override mechanism](#override-mechanism-adopted-stylesheets).
 
 Each child iframe receives its own copies of the platform bundles enabled for that page rather than inheriting them through the host document's cascade. The Host, iframe pages, Web Fragments, and web-component shadow roots then receive their scope-specific global, host, or children customization through the delivery paths shown above; their complete style sets are not identical.
 
@@ -114,7 +127,7 @@ meta:
 
 | Flag | Default | What it injects |
 |------|---------|-----------------|
-| `themeConfig` | `true` | `theme-config.css` — all `--p-primary-*`, `--p-surface-*`, `--p-secondary-*`, and PrimeVue semantic variables. Disabling this removes theme inheritance entirely. |
+| `themeConfig` | `true` | `theme-config.css` — all `--p-primary-*`, `--p-surface-*`, `--p-secondary-*`, and PrimeVue semantic variables. Disabling it removes this platform theme layer; enabled `customVariables` and `customCss` still apply independently. |
 | `iframe` | `true` | `iframe.css` — default themed scrollbar styling. The name is historical and does not imply iframe layout rules. Keep enabled for every page for scrollbar consistency. |
 | `primevue` | `true` | `primevue.css` + `tailwind.css` — PrimeVue component styles and Tailwind v3 utilities. Disable only while the entire artifact has no PrimeVue-like product UI. Framework choice alone is not an exception. |
 | `markdown` | `true` | `markdown.css` — `.data-body` markdown rendering styles used by chat artifact display. |
@@ -133,7 +146,7 @@ These flags sit alongside `css` in the `injections` block:
 | `resizeObserver` | `true` | Observe the child document body and send size updates to the host. This is a body-size relay, not a browser API polyfill. |
 | `preventLinkClicks` | `true` | Intercept all `<a>` clicks inside the iframe and classify them through `host.classifyLink()` before navigating. Useful for pages with external Markdown content that may contain host-navigable links. |
 | `iconifyIcons` | `true` | Inject registered Iconify icon sets so `<iconify-icon>` elements work offline. |
-| `refreshWhenVisible` | `true` | Notify the child when a previously hidden iframe becomes visible again. |
+| `refreshWhenVisible` | `true` | Reload the child window when the host's `@visibility` event changes to `true`. Disable it when a retained iframe must resume without a reload. |
 | `historyPolyfill` | `true` | **No-op today.** The history polyfill is intentionally disabled for `srcdoc` iframes (`window.location` is non-configurable), so this flag has no runtime effect. The runtime always installs a history *guard* instead, which stubs `window.history` methods and warns to use memory-history routing — apps must use memory mode (e.g. `createAppRouter` memory history). Setting this flag does **not** make SPA route changes observable by the host. |
 | `errorCapture` | `true` | Attach `window.onerror` and `window.onunhandledrejection` handlers that forward uncaught errors to the host via `logger.captureException`. Enable in production for centralized error collection. |
 
@@ -171,7 +184,7 @@ A page may disable PrimeVue injection only while it contains no standard product
 }
 ```
 
-With both disabled the page still receives `customCSS`, `cssVariables`, and `iframe.css` (scrollbar reset) unless those are also turned off. The proxy API, state relay, and WebSocket bridge are unaffected by CSS flags.
+With both disabled the page still receives `customCSS`, `cssVariables`, and `iframe.css` (themed scrollbar styling) unless those are also turned off. The proxy API, state relay, and WebSocket bridge are unaffected by CSS flags.
 
 ## Web Components: facade custom CSS + `hostCssKeys`
 
@@ -227,9 +240,22 @@ For iframe delivery, the compiler normalizes leading `--`, merges the top-level 
 
 ### Override mechanism: adopted stylesheets
 
-In iframe delivery, `customCSS` and `cssVariables` are **not** ordinary `<head>` `<style>`/`<link>` elements. The proxy places them in the iframe document's [`adoptedStyleSheets`](https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets) (constructable stylesheets). Per the CSS cascade, adopted stylesheets always order **after** all `<style>`/`<link>` document stylesheets regardless of insertion order, so they always win over `theme-config.css`, `primevue.css`, `iframe.css`, and `markdown.css`. In the production iframe proxy these custom layers are in fact inserted *before* `theme-config.css` and PrimeVue; the override still holds because it comes from the adopted-stylesheet cascade position, not from `<head>` source order. Web Fragment delivery instead uses ordinary `<style>` elements in its reflected head.
+In iframe delivery, `cssVariables` and non-`@import` declarations from
+`customCSS` are **not** ordinary `<head>` `<style>`/`<link>` elements. The proxy
+places them in the iframe document's
+[`adoptedStyleSheets`](https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets)
+(constructable stylesheets). Per the CSS cascade, adopted stylesheets order
+**after** document stylesheets regardless of insertion order, so those
+declarations win over `theme-config.css`, `primevue.css`, `iframe.css`, and
+`markdown.css`. The proxy extracts `@import` rules from `customCSS` into an
+ordinary `<head>` style instead; imports therefore do not receive this adopted-
+stylesheet ordering guarantee. Web Fragment delivery uses ordinary `<style>`
+elements in its reflected head.
 
-Between the two iframe custom layers, **`customCSS` overrides `cssVariables`**: the adopted sheets are ordered `cssVariables` first, then `customCSS`, and later adopted sheets have higher priority. If the same `--p-*` token is set in both, the `customCSS` value wins.
+Between the two iframe adopted layers, **non-`@import` `customCSS` overrides
+`cssVariables`**: the sheets are ordered `cssVariables` first, then `customCSS`,
+and later adopted sheets have higher priority. If the same `--p-*` token is set
+in both, the non-import `customCSS` value wins.
 
 ### Three theming scopes
 

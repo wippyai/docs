@@ -5,6 +5,10 @@ description: "How page applications and web components receive configuration and
 
 # Proxy & Isolation
 
+This page is an API and internal-transport reference. Its snippets assume an
+existing hosted page or component; they are partial integrations rather than a
+complete application.
+
 The Web Host connects page applications and web components to host services
 through the **Proxy API**. A packaged page runs in either a sandboxed `srcdoc`
 iframe or a Web Fragment realm, according to `hostConfig.renderEngine`. A web
@@ -135,7 +139,11 @@ where the embedding parent must answer the first `get-config` request (see
 
 Every message is a JSON envelope with shape `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`. The `type` field is configurable via `APP_CONFIG_IFRAME_EVENT_TYPE` but defaults to `'@gen2-chat'`.
 
-All message types are defined in the `IFrameMessageType` enum:
+The table lists the transport members needed to explain the public behavior on
+this page. It is intentionally not an exhaustive mirror of the internal enum,
+which also contains host lifecycle, chat, download, logging, bridge-response,
+nav-owner, layout-mutation, breakpoint, drawer/modal, and theme-mode messages.
+Those members may change without becoming an application API.
 
 | Enum member | Wire value | Direction | Description |
 |-------------|------------|-----------|-------------|
@@ -274,6 +282,9 @@ const off = host.bridge.on('refresh', async (payload) => {
   console.log('refresh requested', payload)
   return { ok: true }
 })
+
+// Later, dispose this listener when the owning component or page scope is torn down:
+// off()
 ```
 
 `host.bridge.on()` returns an unsubscribe function (`() => void`). **One channel = one active handler.** If multiple handlers are registered for the same channel, the most recently registered one wins and handles **all** incoming messages on that channel — both fire-and-forget `post()` and `request()`. `on()` is not additive: earlier handlers are shadowed (not removed) and do not run while a newer handler exists, and the proxy logs a `console.warn` on duplicate registration. If the newest handler unsubscribes, the previous handler for that channel becomes active again. Use distinct channel names if you need multiple independent listeners.

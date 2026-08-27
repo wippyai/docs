@@ -5,6 +5,9 @@ description: "How the Web Host receives AppConfig and initializes stores, routin
 
 # Bootstrap Sequence
 
+This page is a lifecycle and configuration reference. The sequence diagrams
+describe Host initialization; they are not application bootstrap code to copy.
+
 After receiving its configuration, the Web Host runs a fixed initialization
 sequence before rendering the full interface. Configuration arrives either
 through a JS module that takes over the page or through a manually embedded
@@ -38,48 +41,67 @@ produce this embedding.
 2. **Parent sends `SetConfig`.** The parent supplies a complete `AppConfig`. A `/facade/config` response can provide the deployment settings, but the parent must add `$schema`, `auth`, and `context` before replying:
    ```javascript
    iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'set-config', ...appConfig },
+     JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
      cfg.iframe_origin
    )
    ```
 
-3. **Web Host receives `AppConfig`.** The message handler validates the envelope type and action, then extracts the full configuration object.
+3. **Web Host receives `AppConfig`.** The message handler validates the envelope
+   type and action, then extracts the configuration object. At Web Host 1.0.56,
+   this inbound handler does not authenticate `event.origin` or `event.source`,
+   and a later matching `SetConfig` can replace the configuration. The parent
+   must restrict who can message the iframe and treat that whole message
+   environment as trusted. Iframe DOM and style isolation is not configuration-
+   authority isolation.
 
 4. **Initialization proceeds** — the internal path is identical to Path A from this point forward.
 
 ## Internal Init Sequence
 
-Once `AppConfig` is available (via either path), the Web Host runs the following steps in order:
+Once `AppConfig` is available (via either path), the Web Host runs the following
+startup sequence:
 
-**1. Pinia store initialization.**
-The root Pinia instance is created and all store modules are registered. Auth state is loaded from `AppConfig.auth` — the token is stored in memory (or in a cookie if `hostConfig.session.type = 'cookie'`). Environment URLs from `AppConfig.env` are written to the store for use by Axios and the WebSocket client.
+**1. Resolve and normalize configuration.**
+`resolveConfig()` initializes and merges the supplied configuration, applies
+schema migrations, normalizes session policy, and populates the configuration,
+authentication, and environment state used by the rest of the Host.
 
-**2. Axios configuration.**
-The Axios instance is configured with `APP_API_URL` as `baseURL` and the auth token injected as a default header. Any `axiosDefaults` from the config are merged in. Child page applications receive this instance through the proxy API.
+**2. Fetch backend page routes.**
+Before creating or mounting the Vue application, the Host awaits
+`GET /api/public/pages/routes`. A backend syntax or duplicate-route error aborts
+startup and is relayed through the Host error path; it is not a post-mount route
+installation step.
 
-**3. Vue Router initialization.**
-The router is created with the history mode specified in `AppConfig.hostConfig.history` (`"hash"` or `"browser"`). System routes (`/c/:id`, `/chat/:id`, `/keeper/:id`, etc.) are registered. This is a static set — dynamic mount routes are added in a later step.
+**3. Create the application and router.**
+The Vue application is created. The router uses the history mode from
+`AppConfig.hostConfig.history` and registers both static system routes and the
+backend mount routes before the application mounts.
 
-**4. PrimeVue and theme injection.**
-PrimeVue is installed on the Vue app. CSS custom properties from `AppConfig.theming.global` and `AppConfig.theming.host` are injected as `:root { --key: value; }` overrides for the appropriate scopes. `customCSS` strings from `theming.global` and `theming.host` are injected as `<style>` tags, and icons from `theming.global` / `theming.host` are registered with Iconify. This step applies before the app mounts so the first render has the correct theme.
+**4. Install application providers.**
+`setupApp()` installs Pinia, configures Axios and authentication, installs
+PrimeVue and the theme providers, and wires the remaining application services.
+Child applications receive the configured API surface through the proxy layer.
 
-**5. Vue app mount.**
-The root `App.vue` component is mounted into the DOM. Users see the chrome — sidebar, chat panel, layout skeleton — at this point, though page content may still be loading.
+**5. Mount and resolve the current URL.**
+Only after configuration, route loading, router creation, and provider setup
+have completed does the module entry mount `App.vue`. The router then resolves
+the current browser or hash URL against the complete route table.
 
-**6. Dynamic route registration.**
-The app calls `GET /api/public/pages/routes` to fetch the list of registered view pages. For each page whose registry entry declares `mountRoute`, `router.addRoute('app', ...)` is called to add the route to the live router. The `app` named route is the parent layout route that wraps all content.
-
-Any conflict in mount routes (duplicate paths, reserved segments, malformed syntax) at this stage sets a fatal error on the pages store. `App.vue` detects this and renders a fullscreen `<wippy-error>` with a descriptive message instead of the normal UI.
-
-**7. URL resolution.**
-The router resolves the current URL (from `window.location` in browser-history mode or from the hash in hash mode). If the URL matches a system route or a registered mount route, the corresponding page renders. If it matches no route, the router falls back to the chat home view.
-
-**8. WebSocket connection.**
-The WebSocket client connects to `APP_WEBSOCKET_URL` using the auth token. Real-time events (incoming messages, session updates, artifact state changes) begin flowing. The connection is maintained for the lifetime of the page.
+**6. Create WebSocket clients when requested.**
+WebSocket setup is consumer-driven rather than a fixed final bootstrap step.
+`useWsClientRaw()` creates the client when a consuming component or composable
+requests it. The connection starts eagerly unless `hostConfig.lazyWS` is true;
+with lazy mode, it starts when a subscription requires it.
 
 ## AppConfig TypeScript Interface
 
-The full configuration type accepted by both `initWippyApp` and `SetConfig`. Note there is no `feature` field and no `fe_mode` field in `AppConfig` — `fe_mode` is a facade requirement parameter that selects the module entry, and managed mode is conveyed to the host through `hostConfig.layout`:
+The following abridged declaration shows the main configuration fields accepted
+by both `initWippyApp` and `SetConfig`. Supporting types and less commonly used
+fields remain authoritative in the pinned Web Host `app-config/types.ts`; do not
+treat this excerpt as a replacement for the shipped schema. There is no
+`feature` or `fe_mode` field in `AppConfig` — `fe_mode` is a facade requirement
+parameter that selects the module entry, and managed mode is conveyed through
+`hostConfig.layout`:
 
 ```typescript
 interface AppConfig {
@@ -105,20 +127,36 @@ interface AppEnv {
   APP_API_URL: string
   APP_AUTH_API_URL: string
   APP_WEBSOCKET_URL: string
-  [key: string]: string | undefined
 }
 
 interface AppTheming {
   global?: ThemingScope
-  host?: ThemingScope
-  children?: ThemingScope
+  host?: HostThemingScope
+  children?: ChildrenThemingScope
+}
+
+interface CssVariablesMap {
+  [key: string]: string | Record<string, string> | undefined
+  '@dark'?: Record<string, string>
+  '@light'?: Record<string, string>
 }
 
 interface ThemingScope {
   customCSS?: string
-  cssVariables?: Record<string, string>
+  cssVariables?: CssVariablesMap
+  fonts?: FontConfig[]
   icons?: Record<string, unknown>
   iconSets?: Record<string, Record<string, unknown>>
+}
+
+interface HostThemingScope extends ThemingScope {
+  i18n?: Partial<I18NTextTypes>
+}
+
+interface ChildrenThemingScope {
+  customCSS?: string
+  cssVariables?: CssVariablesMap
+  fonts?: FontConfig[]
 }
 
 interface HostConfig {
@@ -131,6 +169,7 @@ interface HostConfig {
   disableRightPanel?: boolean
   hideSessionSelector?: boolean
   renderEngine?: 'iframe' | 'fragment'
+  lazyWS?: boolean
   additionalNavItems?: PageApi.Page[]
   stateCache?: { maxPages?: number; maxSizePerPage?: number }
   allowAdditionalTags?: Record<string, string[]>   // tag → allowed attributes
@@ -168,7 +207,13 @@ interface AppContext {
   resourceId: string
   resourceType: 'page' | 'artifact'
   route?: string
-  [key: string]: unknown
+  parentResourceId?: string
+  nestingDepth?: number
+  isNavOwner?: boolean
+  layoutPanelId?: string
+  layoutId?: string
+  layout?: unknown
+  extensions?: Record<string, unknown>
 }
 ```
 
@@ -201,17 +246,14 @@ module.js / managed-layout.js loaded on the page
   ├─ window.initWippyApp(appConfig, '#app')
   │     appConfig = { $schema, auth, env, theming, hostConfig, context, ... }
   │
-  ├─ Init Pinia (auth store, config store)
-  ├─ Configure Axios (baseURL, auth header)
-  ├─ Create Vue Router (history mode, system routes)
-  ├─ Install PrimeVue, inject theme CSS
-  ├─ Mount App.vue
-  │
-  ├─ GET /api/public/pages/routes
-  │     router.addRoute('app', ...) for each backend mountRoute
-  │
-  ├─ Resolve current URL → render matching view
-  └─ Connect WebSocket
+  ├─ resolveConfig() → migrate, normalize, and populate config/auth/env state
+  ├─ await GET /api/public/pages/routes
+  ├─ create Vue app + router
+  │     static system routes + validated backend mount routes
+  ├─ setupApp() → Pinia, Axios, PrimeVue, theming, and other providers
+  ├─ mount App.vue → resolve the current URL
+  └─ consuming components request WebSocket clients
+        eager connection unless hostConfig.lazyWS is true
 ```
 
 ## See Also

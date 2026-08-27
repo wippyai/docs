@@ -5,6 +5,9 @@ description: "How the CDN-hosted Web Host, facade page, and child micro frontend
 
 # Web Host Overview
 
+This page is an architecture reference. It explains deployment boundaries and
+entry points; setup belongs in the linked facade and micro-frontend guides.
+
 The Wippy Web Host is a Vue 3 single-page application built with the
 Feature-Sliced Design methodology and delivered from
 `https://web-host.wippy.ai`. It hosts the user-facing pages and UI components

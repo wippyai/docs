@@ -5,6 +5,10 @@ description: "How wippy/facade serves the Web Host, constructs AppConfig, handle
 
 # Facade Entry Point
 
+This page is an integration reference. The shell bootstrap and manual iframe
+blocks isolate specific contracts; they are not substitutes for a complete
+login flow or application project.
+
 The `wippy/facade` backend module delivers the Web Host to users. It serves the
 HTML shell and `/facade/config`. The shell loads the Web Host module, checks the
 browser's stored authentication token, redirects unauthenticated users, and
@@ -29,8 +33,17 @@ also loads configured extra scripts, installs the Web Host import map, handles
 errors, and applies the persisted theme before this call:
 
 ```javascript
-const cfg = await fetch('/api/public/facade/config').then(response => response.json())
-const { token } = JSON.parse(localStorage.getItem('@wippy_token_info'))
+const response = await fetch('/api/public/facade/config')
+if (!response.ok)
+  throw new Error(`Facade config request failed: ${response.status}`)
+const cfg = await response.json()
+
+const storedAuth = localStorage.getItem('@wippy_token_info')
+if (!storedAuth)
+  throw new Error('Authentication is required before bootstrapping the host')
+const { token } = JSON.parse(storedAuth)
+if (typeof token !== 'string' || token.length === 0)
+  throw new Error('Stored authentication does not contain a token')
 
 await import(cfg.facade_url + cfg.module_file)
 
@@ -276,8 +289,17 @@ Unlike the JS-module path, the host inside the iframe **requests** its config: i
 
 ```javascript
 async function mountWippyIframe(auth) {
-  const cfg = await fetch('/api/public/facade/config').then(response => response.json())
+  const response = await fetch('/api/public/facade/config')
+  if (!response.ok)
+    throw new Error(`Facade config request failed: ${response.status}`)
+  const cfg = await response.json()
   const iframe = document.getElementById('wippy')
+  if (!(iframe instanceof HTMLIFrameElement))
+    throw new Error('Expected <iframe id="wippy">')
+
+  const iframeUrl = new URL(cfg.iframe_url)
+  if (iframeUrl.origin !== cfg.iframe_origin)
+    throw new Error('iframe_url and iframe_origin must identify the same origin')
 
   const appConfig = {
     $schema: `${cfg.facade_url}/schemas/wippy-context-2.0.xsd`,
@@ -293,27 +315,50 @@ async function mountWippyIframe(auth) {
     context: { resourceId: '', resourceType: 'page' },
   }
 
-  window.addEventListener('message', (event) => {
+  function onMessage(event) {
     if (event.origin !== cfg.iframe_origin || event.source !== iframe.contentWindow)
       return
 
-    const message = event.data
+    let message
+    try {
+      message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
+    }
+    catch {
+      return
+    }
     if (message?.type === '@gen2-chat' && message.action === 'get-config') {
-      iframe.contentWindow.postMessage(
-        { type: '@gen2-chat', action: 'set-config', ...appConfig },
+      event.source.postMessage(
+        JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
         cfg.iframe_origin,
       )
     }
-  })
+  }
+
+  window.addEventListener('message', onMessage)
 
   // iframe_url already includes ?waitForCustomConfig
-  iframe.src = cfg.iframe_url
+  iframe.src = iframeUrl.href
+
+  return function unmount() {
+    window.removeEventListener('message', onMessage)
+    iframe.remove()
+  }
 }
 ```
 
 Call `mountWippyIframe` with an `auth` object containing the current bearer
 `token` and an ISO 8601 `expiresAt`. Do not source that token from
-`/facade/config`; the endpoint does not return one.
+`/facade/config`; the endpoint does not return one. Retain the returned
+`unmount` function and call it when the embedding surface is removed so the
+window listener and iframe do not survive their owner.
+
+The parent-side checks above protect the parent from accepting messages from a
+different frame. At Web Host 1.0.56, the iframe's inbound `SetConfig` handler
+checks only the envelope `type` and `action`; it does not authenticate
+`event.origin` or `event.source`, and a later matching message can replace the
+configuration. Treat every script or window that can message the iframe as part
+of the trusted configuration boundary. Iframe DOM and style isolation is not
+configuration-authority isolation.
 
 The `?waitForCustomConfig` query parameter (already present in `iframe_url`) is the key signal. It tells the Web Host to pause initialization — the app mounts but deliberately does not attempt to resolve authentication or load routes until it receives a `set-config` message. Without it the Web Host would try to read auth tokens from URL parameters or defaults, which is not appropriate for embedded deployments.
 
@@ -334,7 +379,7 @@ Set the `wippy/facade` parameters that produce the config response in
 - name: facade
   kind: ns.dependency
   component: wippy/facade
-  version: '>=v0.5.37'
+  version: '0.6.37'
   parameters:
     - name: server
       value: app:gateway

@@ -5,6 +5,9 @@ description: "How view.page applications run in srcdoc iframes or Web Fragments,
 
 # Render Engines
 
+This page is a render-engine selection and compatibility reference. It explains
+operator and package settings; it is not a standalone deployment recipe.
+
 The Wippy Web Host renders a micro frontend app (`view.page`) through one of **two page-render engines**. The engine is a delivery concern chosen by an operator switch, with an optional per-page override. Portable apps use the Wippy proxy and router APIs so their behavior does not depend on a particular engine.
 
 | Engine | How a page renders | Isolation | Routing |

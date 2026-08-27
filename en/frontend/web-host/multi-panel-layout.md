@@ -5,6 +5,10 @@ description: "Early-access reference for declaring and controlling the Web Host'
 
 # Multi-Panel Layout
 
+This page is an early-access configuration and API reference. The YAML and
+TypeScript blocks are partial declarations and integration patterns, not a
+production-ready shell by themselves.
+
 > **Status: Draft 1 preview — early access, not for production.** The
 > managed-layout API is available but has not been validated with a production
 > consumer. Field names, defaults, and validation rules may change between
@@ -234,13 +238,18 @@ A coordinator component receives the panel-scoped host wrapper and can subscribe
 import { WippyElement } from '@wippy-fe/webcomponent-core'
 
 class MyCoordinator extends WippyElement {
+  private offOpenChat: (() => void) | null = null
+
   protected onMount() {
-    this.host?.layout.on('open-chat', ({ payload }) => {
+    this.offOpenChat = this.host?.layout.on('open-chat', ({ payload }) => {
       this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
       this.host?.layout.expandPanel('right')
-    })
+    }) ?? null
   }
-  protected onUnmount() {}
+  protected onUnmount() {
+    this.offOpenChat?.()
+    this.offOpenChat = null
+  }
   static get wippyConfig() { return { propsSchema: { properties: {} } } }
 }
 customElements.define('my-coordinator', MyCoordinator)
@@ -326,7 +335,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def?)` | Open a declared modal by id, optionally overriding its definition. Runtime-only modals require `def`. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def)` | Open a modal. The public 0.0.56 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |

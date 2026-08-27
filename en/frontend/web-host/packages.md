@@ -5,6 +5,10 @@ description: "Reference for the @wippy-fe packages used by view.page application
 
 # @wippy-fe Packages
 
+This page is a package API reference. Its snippets demonstrate isolated API
+contracts and assume an existing package, Host import map, and application
+lifecycle.
+
 Public `@wippy-fe/*` packages provide the contracts used by `view.page`
 applications and `view.component` web components. Web Host source also consumes
 workspace builds of several of these packages. Public packages are versioned in
@@ -59,17 +63,18 @@ import { host, api, ws, on, state, html, sanitize } from '@wippy-fe/proxy'
 host.navigate('/some-path')
 
 // Call a backend API endpoint
-const data = await api.get('/api/v1/agents/list')
+const { data } = await api.get('/api/v1/agents/list')
 
 // Send a WebSocket command
-ws.sendCommand(sessionId, { text: 'Hello' })
+ws.sendCommand(sessionId, { command: 'stop' })
 
 // Subscribe to a non-routing host event
 on('@visibility', (visible) => { /* pause or resume work */ })
 
 // Host-backed state in this page or artifact scope
-state.set('my-key', { value: 42 })
-state.get('my-key').then(v => console.log(v))
+await state.set('my-key', { value: 42 })
+const value = await state.get('my-key')
+console.log(value)
 ```
 
 Without an explicit `scope` option, the Host keys state by the current page or
@@ -115,14 +120,32 @@ import { api } from '@wippy-fe/proxy'
 import { WippyElement } from '@wippy-fe/webcomponent-core'
 
 class MyWidget extends WippyElement {
-  protected async onMount() {
-    const { data } = await api.get('/api/v1/ping')
-    this.innerHTML = `<div>Hello from ${data.name}</div>`
-    this.host?.layout.on('update', ({ payload }) => {
+  private offUpdate: (() => void) | null = null
+  private loadEpoch = 0
+
+  protected onMount(_shadow: ShadowRoot, container: HTMLElement) {
+    const epoch = ++this.loadEpoch
+    void this.loadName(container, epoch)
+    this.offUpdate = this.host?.layout.on('update', ({ payload }) => {
       // react to cross-panel messages
-    })
+    }) ?? null
   }
-  protected onUnmount() {}
+  protected onUnmount() {
+    ++this.loadEpoch
+    this.offUpdate?.()
+    this.offUpdate = null
+  }
+  private async loadName(container: HTMLElement, epoch: number) {
+    try {
+      const { data } = await api.get('/api/v1/ping')
+      if (this.isConnected && epoch === this.loadEpoch)
+        container.textContent = `Hello from ${data.name}`
+    }
+    catch {
+      if (this.isConnected && epoch === this.loadEpoch)
+        container.textContent = 'Could not load the service name.'
+    }
+  }
   static get wippyConfig() {
     return { propsSchema: { properties: { label: { type: 'string' } } } }
   }

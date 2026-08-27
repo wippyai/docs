@@ -5,6 +5,9 @@ description: "Configure the facade to persist light, dark, or automatic theme mo
 
 # Theme Persistence
 
+This page is a facade configuration guide. The external-page HTML block is a
+partial integration example and assumes the facade endpoints already exist.
+
 By default, the Web Host resolves light or dark mode from `theme_mode` (the
 facade default) and keeps the choice in memory. An explicit user choice is
 therefore lost on reload. Theme persistence stores the choice in a **cookie**
@@ -42,7 +45,8 @@ served outside the Web Host can read them too.
 
 - **`cookie`** — the Jet-rendered host shell reads the cookie **server-side** and writes the
   `w-theme-*` class onto `<html>` before the response is sent, so the very first paint is already
-  themed. This avoids a theme flash and is the preferred default.
+  themed. This avoids a theme flash and is the preferred persistence option when
+  first-paint consistency matters.
 - **`localStorage`** — the server can't read localStorage, so the shipped shell loads
   `theme-persist.js` synchronously as the first script in `<head>`. It applies the
   stored class before the brand stylesheet, loading UI, or Web Host bundle renders.
