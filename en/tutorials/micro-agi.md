@@ -1,13 +1,18 @@
 ---
 title: "Micro AGI"
-description: "Build an agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session."
+description: "Study a self-modifying agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session."
 ---
 
 # Micro AGI
 
-Build an agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session.
+Study an agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session.
 
-## What We're Building
+**Classification: reference implementation walkthrough.** The snippets explain the
+published `wippy/micro-agi` module but are intentionally not a complete source tree.
+Run the Hub module to exercise the implementation; use the LLM Agent tutorial when
+you need a self-contained build.
+
+## What the Package Demonstrates
 
 A terminal agent that:
 
@@ -20,7 +25,7 @@ A terminal agent that:
 ```mermaid
 flowchart LR
     User -->|prompt| Agent
-    Agent -->|step| LLM[GPT-5.1]
+    Agent -->|step| LLM[Configured model]
     LLM -->|tool_calls| Agent
     Agent -->|funcs.call| Tools
     Tools -->|result| Agent
@@ -67,7 +72,14 @@ sequenceDiagram
 
 Tools are registry entries. To create one, the agent writes a `function.lua` entry with inline Lua source in `data.source`; the runtime then compiles and loads that entry.
 
-## Project Structure
+## Published Package Structure
+
+The package owns all of these files. This page reproduces `doc_search.lua` and the
+contracts that matter to the architecture, but abbreviates the registry helpers,
+changeset plumbing, dynamic-loader helpers, and the agent loop. In particular, the
+`create_tool`, `load_tool`, and `agent.lua` sections are excerpts, not files that can
+be copied verbatim. The complete registry definitions for `registry_list` and
+`registry_read` also remain in the published module.
 
 ```
 micro-agi/
@@ -88,7 +100,7 @@ micro-agi/
 
 ## Infrastructure
 
-Create `.wippy.yaml`:
+The package uses this `.wippy.yaml` configuration:
 
 ```yaml
 version: "1.0"
@@ -99,7 +111,8 @@ logger:
 
 ## Entry Definitions
 
-Create `src/_index.yaml` with infrastructure, security policies, models, agent, and process:
+The following selected `src/_index.yaml` entries show the infrastructure, security
+policies, models, agent, and process:
 
 ```yaml
 version: "1.0"
@@ -167,7 +180,7 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
 
 These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
 
-See [Security Model](system/security.md) for details on policy evaluation.
+See [Security Model](../system/security.md) for details on policy evaluation.
 
 ### Models
 
@@ -194,7 +207,6 @@ Two models serve different purposes:
         options:
           reasoning_model_request: true
         provider_model: gpt-5.1
-    thinking_effort: 10
 
   - name: gpt-4.1-nano
     kind: registry.entry
@@ -242,6 +254,7 @@ GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression
       To gain new capabilities: doc_search the API, create_tool with Lua source,
       load_tool, call it. All in one turn.
     model: gpt-5.1
+    thinking_effort: 10
     max_tokens: 2048
     tools:
       - "app.tools:*"
@@ -462,7 +475,7 @@ The agent loop in `src/agent.lua` handles streaming, tool execution, dynamic loa
 
 ### Streaming
 
-Uses the same coroutine + channel pattern from the [LLM Agent tutorial](tutorials/llm-agent.md):
+Uses the same coroutine + channel pattern from the [LLM Agent tutorial](./llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -592,21 +605,28 @@ operations before allowing untrusted tool source.
 
 ## Run
 
-Run directly from hub:
+The runnable artifact is the Hub module. Start in a fresh empty directory that does
+not contain `wippy.lock`; Hub bootstrap rejects an unrelated or multi-root lock.
+The first run creates the deployment lock, and later runs from the same directory
+reuse that matching lock.
 
 ```bash
+mkdir micro-agi-deploy
+cd micro-agi-deploy
 wippy run wippy/micro-agi agent
 ```
 
-Or clone and run locally:
+The command downloads the selected module version, resolves its declared
+dependencies, and invokes its `agent` command.
 
-```bash
-cd micro-agi
-wippy init && wippy update
-wippy run agent
-```
+It still requires the provider credentials and model configuration expected by that
+module, plus registry/network access for Hub download and documentation search. This
+page does not provide a local clone or lockfile, so it does not claim a reproducible
+source build.
 
-```
+Illustrative interaction (model text, generated names, timestamps, and addresses vary):
+
+```text
 dev assistant (quit to exit)
 
 > what time is it?
@@ -627,8 +647,8 @@ Your IP is 203.0.113.42.
 
 ## Next Steps
 
-- [LLM Agent](tutorials/llm-agent.md) — Build a basic agent from scratch
-- [Agent Module](framework/agents.md) — Agent framework reference
-- [Registry](concepts/registry.md) — Registry concepts
-- [Security Model](system/security.md) — Declarative security policies
-- [Entry Kinds](guides/entry-kinds.md) — Available entry types
+- [LLM Agent](./llm-agent.md) — Build a basic agent from scratch
+- [Agent Module](../framework/agents.md) — Agent framework reference
+- [Registry](../concepts/registry.md) — Registry concepts
+- [Security Model](../system/security.md) — Declarative security policies
+- [Entry Kinds](../guides/entry-kinds.md) — Available entry types

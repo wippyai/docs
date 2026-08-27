@@ -7,6 +7,11 @@ description: "Ingest documents, retrieve relevant chunks with vector search, and
 
 Build a retrieval-augmented generation pipeline over your own documents. The example uses `wippy/embeddings` for vector search and the LLM framework for answer generation.
 
+**Classification: partial application recipe.** The retrieval code is complete, but
+it is an integration for the Wippy application template rather than a standalone app.
+The template owns authentication, security policy, provider/model configuration,
+bootloader, and migration wiring.
+
 ## What You'll Build
 
 A minimal RAG pipeline:
@@ -17,25 +22,22 @@ A minimal RAG pipeline:
 
 ## Prerequisites
 
-- A database: `db.sql.sqlite` (includes `vec0` support) or `db.sql.postgres` with the `pgvector` extension.
-- An LLM provider configured with an embedding model (e.g. `text-embedding-3-small`) — see [LLM Framework](framework/llm.md).
-- Wippy project bootstrapped (`wippy init`, `wippy add wippy/embeddings`).
+- An app based on the [Wippy application template](https://github.com/wippyai/app),
+  with `app:db`, `app:processes`, `app.env:store`, and the bootloader/migration
+  dependencies already present.
+- SQLite from the runtime (including `vec0`) or PostgreSQL with the `pgvector`
+  extension enabled before startup.
+- `OPENAI_API_KEY` available through the app's configured LLM environment storage.
+- Registry model entries named `text-embedding-3-small` (capability `embed`, OpenAI
+  provider) and `gpt-4o-mini` (capability `generate`, OpenAI provider). The embeddings
+  package calls the first name directly and requests 512 dimensions.
 
 ## Dependencies
 
-Declare the `wippy/embeddings` dependency and set `target_db` to the registry ID of the database that will hold the embeddings table:
+Add the `wippy/embeddings` dependency to `src/app/deps/_index.yaml` and bind its
+target database:
 
 ```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: db
-    kind: db.sql.sqlite
-    file: ./data/app.db
-    lifecycle:
-      auto_start: true
-
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
@@ -43,16 +45,32 @@ entries:
     parameters:
       - name: target_db
         value: app:db
+
 ```
 
-`wippy/embeddings` pulls in `wippy/llm` and the migration that creates the `embeddings_512` table (PostgreSQL `pgvector` or SQLite `vec0` virtual table).
+Do not redeclare dependencies already supplied by the application template. Verify
+that its existing `wippy/migration` dependency binds `app_db` to `app:db`, and that
+its existing `wippy/bootloader` dependency binds `application_host` to
+`app:processes` and `env_storage` to `app.env:store`.
+
+`wippy/embeddings` supplies the migration that creates `embeddings_512`
+(PostgreSQL `pgvector` or SQLite `vec0`). `wippy/migration` discovers it, and the
+auto-started bootloader applies it during `wippy run -c`; there is no separate
+schema command in this recipe.
+
+After editing the dependency entries, resolve and install the graph:
+
+```bash
+wippy update
+wippy install
+```
 
 ## Ingest Documents
 
 The `text` module splits documents, while the `embeddings` library generates and persists their vectors.
 
 ```lua
--- app/ingest.lua
+-- src/app/ingest.lua
 local text = require("text")
 local embeddings = require("embeddings")
 
@@ -85,12 +103,12 @@ end
 return { ingest = ingest }
 ```
 
-Register the function and its imports:
+Register the function and its imports in `src/app/_index.yaml`:
 
 ```yaml
 - name: ingest
   kind: function.lua
-  source: file://app/ingest.lua
+  source: file://ingest.lua
   method: ingest
   modules:
     - text
@@ -136,7 +154,7 @@ local hits = embeddings.find_by_origin(
 Compose the retrieved chunks into a prompt and call the LLM. Here the retrieved text is appended to the system prompt; the user's question becomes the user turn:
 
 ```lua
--- app/answer.lua
+-- src/app/answer.lua
 local embeddings = require("embeddings")
 local llm = require("llm")
 local prompt = require("prompt")
@@ -177,10 +195,12 @@ end
 return { answer = answer }
 ```
 
+Register the answer function in the same `src/app/_index.yaml`:
+
 ```yaml
 - name: answer
   kind: function.lua
-  source: file://app/answer.lua
+  source: file://answer.lua
   method: answer
   imports:
     embeddings: wippy.embeddings:embeddings
@@ -190,57 +210,11 @@ return { answer = answer }
 
 ## HTTP Endpoint Example
 
-Expose the answer function through an HTTP endpoint:
+Append the following entries to `src/app/_index.yaml`. The `ingest` and `answer`
+entries were already added above; do not duplicate them or the template's database,
+gateway, and router:
 
 ```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: db
-    kind: db.sql.sqlite
-    file: ./data/app.db
-    lifecycle:
-      auto_start: true
-
-  - name: embeddings
-    kind: ns.dependency
-    component: wippy/embeddings
-    version: "*"
-    parameters:
-      - name: target_db
-        value: app:db
-
-  - name: ingest
-    kind: function.lua
-    source: file://app/ingest.lua
-    method: ingest
-    modules:
-      - text
-    imports:
-      embeddings: wippy.embeddings:embeddings
-
-  - name: answer
-    kind: function.lua
-    source: file://app/answer.lua
-    method: answer
-    imports:
-      embeddings: wippy.embeddings:embeddings
-      llm: wippy.llm:llm
-      prompt: wippy.llm:prompt
-
-  - name: gateway
-    kind: http.service
-    addr: ":8080"
-    lifecycle:
-      auto_start: true
-
-  - name: api
-    kind: http.router
-    meta:
-      server: app:gateway
-    prefix: /api
-
   - name: ask
     kind: http.endpoint
     meta:
@@ -251,7 +225,7 @@ entries:
 
   - name: answer_http
     kind: function.lua
-    source: file://app/answer_http.lua
+    source: file://answer_http.lua
     method: handler
     modules:
       - http
@@ -260,7 +234,7 @@ entries:
 ```
 
 ```lua
--- app/answer_http.lua
+-- src/app/answer_http.lua
 local http = require("http")
 local answer = require("answer")
 
@@ -288,12 +262,42 @@ end
 return { handler = handler }
 ```
 
-Seed the index by calling `ingest` from a setup process or a CLI command (`process.lua` with `meta.command`), then query:
+Start the app so the migration bootloader creates the vector table:
 
 ```bash
-curl -X POST http://localhost:8080/api/ask \
+wippy run -c
+```
+
+Seed the index by calling `app:ingest` from an authenticated setup function or a
+named process in your application. The exact seed surface is application-owned so
+this partial recipe does not expose an unauthenticated write endpoint. After at
+least one document has been ingested, query the template's token-protected API with
+an application session bearer:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/ask \
+    -H 'Authorization: Bearer <app-session-token>' \
     -H 'Content-Type: application/json' \
     -d '{"question":"how do I configure TLS?"}'
+```
+
+A successful response has this shape; answer text, similarity values, and hit order
+depend on the provider and indexed content:
+
+```json
+{
+  "answer": "...",
+  "sources": [
+    {
+      "content": "...",
+      "content_type": "doc_chunk",
+      "origin_id": "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
+      "context_id": "1",
+      "similarity": 0.82,
+      "meta": { "title": "TLS guide", "chunk": 1 }
+    }
+  ]
+}
 ```
 
 ## Operational Notes
@@ -306,7 +310,7 @@ curl -X POST http://localhost:8080/api/ask \
 
 ## Next Steps
 
-- [LLM Framework](framework/llm.md) — `llm.generate`, `llm.embed`, and prompt construction
-- [Agents](framework/agents.md) — Wrap the retriever as an agent tool
-- [SQL Module](lua/storage/sql.md) — Underlying database access
-- [Text Module](lua/text/text.md) — Character-based text splitters
+- [LLM Framework](../framework/llm.md) — `llm.generate`, `llm.embed`, and prompt construction
+- [Agents](../framework/agents.md) — Wrap the retriever as an agent tool
+- [SQL Module](../lua/storage/sql.md) — Underlying database access
+- [Text Module](../lua/text/text.md) — Character-based text splitters
