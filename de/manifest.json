@@ -16,6 +16,7 @@
       {"title": "Linter", "path": "guides/linter"},
       {"title": "Language Server", "path": "guides/lsp"},
       {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Buildzeit-Artefakte", "path": "guides/artifacts"},
       {"title": "Komponenten bauen", "path": "guides/components"},
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
@@ -30,6 +31,7 @@
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "Architektur", "path": "concepts/architecture"},
       {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Sicherheitsmodell", "path": "concepts/security-model"},
       {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "Cluster", "path": "concepts/cluster"},
       {"title": "Functions", "path": "concepts/functions"},
@@ -40,6 +42,7 @@
     "title": "Lua Runtime",
     "children": [
       {"title": "Overview", "path": "lua/overview"},
+      {"title": "Warum Lua", "path": "lua/why-lua"},
       {"title": "Types", "path": "lua/types"},
       {"title": "Entries", "path": "lua/entries"},
       {
@@ -67,6 +70,7 @@
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "Base64", "path": "lua/data/base64"},
           {"title": "Compress", "path": "lua/data/compress"},
+          {"title": "Archive", "path": "lua/data/archive"},
           {"title": "Payload", "path": "lua/data/payload"},
           {"title": "Excel", "path": "lua/data/excel"}
         ]
@@ -87,7 +91,8 @@
           {"title": "Store", "path": "lua/storage/store"},
           {"title": "Filesystem", "path": "lua/storage/filesystem"},
           {"title": "Cloud Storage", "path": "lua/storage/cloud"},
-          {"title": "Queue", "path": "lua/storage/queue"}
+          {"title": "Queue", "path": "lua/storage/queue"},
+          {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
       {
@@ -177,6 +182,7 @@
       {"title": "Network", "path": "system/network"},
       {"title": "Filesystem", "path": "system/filesystem"},
       {"title": "Cloud Storage", "path": "system/cloudstorage"},
+      {"title": "Change Data Capture", "path": "system/cdc"},
       {"title": "Environment", "path": "system/env"},
       {"title": "Template", "path": "system/template"},
       {"title": "Security", "path": "system/security"},
@@ -213,6 +219,7 @@
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
       {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
+      {"title": "Keeper über MCP", "path": "tutorials/keeper-mcp"},
       {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },
