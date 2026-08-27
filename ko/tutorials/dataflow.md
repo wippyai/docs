@@ -1,36 +1,43 @@
 ---
-title: "Dataflow: 로컬 지식 베이스"
-description: "자신의 머신에서 지식 베이스를 구축합니다 — 벡터 스토어를 생성한 다음 문서를 청크로 분할하여 수집합니다. 이것은 RAG 튜토리얼의 데이터 생성 동반자입니다: 여기서는 로컬 KB를 세우고 채우며; 거기서는 그것에서 검색하고 답변을 생성합니다. 둘 다 로컬 SQLite…"
+title: "Dataflow: 내구성 있는 DAG 실행"
+description: "지속 상태, 자동 마이그레이션, 두 개의 함수 노드를 갖춘 작은 wippy/dataflow 워크플로를 만들고 실행합니다."
 ---
 
-# Dataflow: 로컬 지식 베이스
+# Dataflow: 내구성 있는 DAG 실행
 
-자신의 머신에서 지식 베이스를 구축합니다 — 벡터 스토어를 생성한 다음 문서를 청크로 분할하여 수집합니다. 이것은 [RAG 튜토리얼](tutorials/rag.md)의 데이터 생성 동반자입니다: 여기서는 로컬 KB를 세우고 채우며; 거기서는 그것에서 검색하고 답변을 생성합니다. 둘 다 로컬 SQLite 벡터 스토어로 뒷받침되는 `wippy/embeddings` 모듈을 사용합니다.
+**분류: 실행 가능한 튜토리얼.** 이 페이지에서는 외부 제공자가 필요 없는 완전한 `wippy/dataflow` 프로젝트를 만듭니다. 임베딩이나 LLM은 사용하지 않습니다. 해당 사용 사례는 [검색 증강 생성](./rag.md)을 참조하세요.
 
-## 무엇을 구축할 것인가
+워크플로는 하나의 입력을 두 함수 노드로 전달합니다.
 
-1. 데이터베이스가 512차원 벡터 스토어를 보유하는 로컬 앱.
-2. 시작 시 `embeddings_512` 테이블을 생성하는 마이그레이션.
-3. 마크다운을 청크로 분할하고 임베딩을 스토어에 쓰는 수집 함수.
-
-## 전제 조건
-
-- Wippy 프로젝트 ([app-template](https://github.com/wippyai/app-template) 클론, 또는 `wippy init`).
-- 임베딩 모델 (예: `text-embedding-3-small`) 로 구성된 LLM 제공자 — [LLM 프레임워크](framework/llm.md) 참조. 벡터 스토어는 그것 없이 로컬에서 생성되지만, 수집 (`llm.embed`를 호출함) 에는 구성된 제공자가 필요합니다.
-
-의존성을 설치합니다:
-
-```bash
-wippy add wippy/embeddings
-wippy add wippy/migration
-wippy add wippy/bootloader
-wippy add wippy/llm
-wippy install
+```text
+{ values = { 2, 4, 6 } } -> double -> summarize -> { count = 3, total = 24 }
 ```
 
-## 스토어 생성
+Dataflow는 워크플로, 노드, 명령, 깨우기, 활성화를 SQL에 영속화합니다. 명령은 마이그레이션 부트로더가 해당 테이블을 만들 때까지 기다린 뒤 흐름을 시작합니다.
 
-KB는 로컬 SQLite 데이터베이스에 있습니다. `wippy/embeddings`는 벡터 테이블을 생성하는 마이그레이션을 제공합니다; 부트로더가 시작 시 이를 실행합니다. 조각들을 함께 연결합니다:
+## 사전 요구 사항
+
+- 소스 디렉터리가 `./src`인 Wippy 프로젝트
+- Wippy 런타임 `v0.3.32a` 이상
+- 최초 의존성 설치 시 모듈 레지스트리에 접근할 수 있는 환경
+
+모델 제공자나 API 키는 필요하지 않습니다.
+
+## 프로젝트 구조
+
+```text
+dataflow-demo/
+├── wippy.lock                 # generated
+└── src/
+    ├── _index.yaml
+    ├── double.lua
+    ├── summarize.lua
+    └── run.lua
+```
+
+## 런타임 구성
+
+`src/_index.yaml`을 만듭니다.
 
 ```yaml
 version: "1.0"
@@ -39,170 +46,255 @@ namespace: app
 entries:
   - name: db
     kind: db.sql.sqlite
-    file: ./data/app.db
+    file: ./.wippy/dataflow.db
     lifecycle:
       auto_start: true
+
+  - name: env_storage
+    kind: env.storage.file
+    file_path: ./.wippy/dataflow.env
+    auto_create: true
 
   - name: processes
     kind: process.host
-    host:
-      max_processes: 1000
-      workers: 8
+    lifecycle:
+      auto_start: true
 
-  - name: embeddings
+  # Dataflow includes session views, so its standalone configuration supplies
+  # the router those transitive entries target. The HTTP service need not start.
+  - name: gateway
+    kind: http.service
+    addr: ":18080"
+    lifecycle:
+      auto_start: false
+
+  - name: api.public
+    kind: http.router
+    meta:
+      server: app:gateway
+    prefix: /api/public
+
+  - name: api
+    kind: http.router
+    meta:
+      server: app:gateway
+    prefix: /api
+
+  - name: dep.dataflow
     kind: ns.dependency
-    component: wippy/embeddings
+    component: wippy/dataflow
+    version: "0.7.6"
     parameters:
-      - name: target_db
+      - name: userspace.dataflow:target_db
+        value: app:db
+      - name: userspace.dataflow:process_host
+        value: app:processes
+      - name: wippy.migration:app_db
         value: app:db
 
-  - name: migration
+  - name: dep.security
     kind: ns.dependency
-    component: wippy/migration
-    parameters:
-      - name: app_db
-        value: app:db
+    component: wippy/security
+    version: "*"
 
-  - name: bootloader
+  - name: dep.bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
-      - name: application_host
+      - name: wippy.bootloader:application_host
         value: app:processes
-      - name: app_db
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: dep.llm
+    kind: ns.dependency
+    component: wippy/llm
+    version: "*"
+    parameters:
+      - name: wippy.llm:process_host
+        value: app:processes
+      - name: wippy.llm:env_storage
+        value: app:env_storage
+
+  - name: dep.session
+    kind: ns.dependency
+    component: wippy/session
+    version: "*"
+    parameters:
+      - name: wippy.session:database_resource
         value: app:db
-      - name: env_storage
-        value: app.env:store
+      - name: wippy.session:api_router
+        value: app:api.public
+      - name: wippy.session:env_storage
+        value: app:env_storage
+      - name: wippy.session:delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: dep.views
+    kind: ns.dependency
+    component: wippy/views
+    version: "*"
+    parameters:
+      - name: wippy.views:api_router
+        value: app:api.public
+      - name: wippy.views:env_storage
+        value: app:env_storage
+
+  - name: demo_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
+  - name: double
+    kind: function.lua
+    source: file://double.lua
+    method: handler
+
+  - name: summarize
+    kind: function.lua
+    source: file://summarize.lua
+    method: handler
+
+  - name: run
+    kind: process.lua
+    meta:
+      command:
+        name: dataflow-demo
+        short: Run the Dataflow tutorial DAG
+        security:
+          actor:
+            id: app:dataflow-demo
+          policies:
+            - app:demo_policy
+    source: file://run.lua
+    method: main
+    modules:
+      - io
+      - sql
+      - time
+    imports:
+      flow: userspace.dataflow.flow:flow
 ```
 
-부트로더는 환경 스토어가 필요합니다; 자체 네임스페이스에 표준 스토어를 추가합니다:
+마이그레이션 엔트리는 `wippy/dataflow`가 소유합니다. `wippy/migration` 의존성은 전이적으로 포함되며, `wippy/bootloader`는 런타임 시작 중에 마이그레이션 부트로더를 실행합니다. 위의 명시적 매개변수는 두 시스템을 모두 `app:db`에 바인딩합니다.
 
-```yaml
-# src/env/_index.yaml
-version: "1.0"
-namespace: app.env
+광범위한 정책은 이 격리된 튜토리얼이 워크플로 동작에 집중하도록 합니다. 프로덕션 명령에서는 워크플로에 필요한 정확한 함수, 데이터베이스, 프로세스 작업만 허용하는 정책으로 교체하세요.
 
-entries:
-  - name: file
-    kind: env.storage.file
-    auto_create: true
-    file_path: .env
-    lifecycle:
-      auto_start: true
+## 노드 구현
 
-  - name: os
-    kind: env.storage.os
-    lifecycle:
-      auto_start: true
-
-  - name: store
-    kind: env.storage.router
-    lifecycle:
-      auto_start: true
-    storages:
-      - app.env:file
-      - app.env:os
-```
-
-데이터 디렉토리를 생성하고 앱을 시작합니다:
-
-```bash
-mkdir -p data
-wippy run
-```
-
-부팅 시 마이그레이션이 실행되고 스토어가 `data/app.db`에 나타납니다:
-
-```
-$ sqlite3 data/app.db ".tables"
-_migrations            embeddings_512         embeddings_512_chunks
-embeddings_512_info    embeddings_512_rowids  embeddings_512_vector_chunks00
-...
-```
-
-`embeddings_512`는 SQLite `vec0` 가상 테이블입니다; `embeddings_512_*` 섀도 테이블은 청크, 행 id, 메타데이터를 보유합니다. (PostgreSQL에서는 동일한 마이그레이션이 대신 `pgvector`를 사용합니다.)
-
-## 문서 수집
-
-수집은 두 단계입니다: `text` 모듈로 텍스트를 청크로 분할한 다음, 각 청크를 임베딩하고 영속화하는 `embeddings.add_batch`로 씁니다.
+`src/double.lua`를 만듭니다.
 
 ```lua
--- src/ingest.lua
-local text = require("text")
-local embeddings = require("embeddings")
-
-local function ingest(doc_id, title, markdown)
-    local splitter, err = text.splitter.markdown({
-        chunk_size = 800,
-        chunk_overlap = 100,
-        heading_hierarchy = true,
-        code_blocks = true,
-    })
-    if err then return nil, err end
-
-    local chunks, split_err = splitter:split_text(markdown)
-    if split_err then return nil, split_err end
-
-    local batch = {}
-    for i, chunk in ipairs(chunks) do
-        table.insert(batch, {
-            content = chunk,
-            content_type = "doc_chunk",
-            origin_id = doc_id,
-            context_id = tostring(i),
-            meta = { title = title, chunk = i },
-        })
+local function handler(input)
+    local result = { values = {} }
+    for _, value in ipairs(input.values or {}) do
+        table.insert(result.values, value * 2)
     end
-
-    return embeddings.add_batch(batch)
+    return result
 end
 
-return { ingest = ingest }
+return { handler = handler }
 ```
 
-함수를 등록합니다:
-
-```yaml
-- name: ingest
-  kind: function.lua
-  source: file://ingest.lua
-  method: ingest
-  modules:
-    - text
-  imports:
-    embeddings: wippy.embeddings:embeddings
-```
-
-주요 사항:
-
-- `origin_id`는 하나의 원본 문서에서 나온 모든 청크를 그룹화합니다 — `embedding_repo.delete_by_origin(doc_id)`로 문서별로 삭제하고 다시 수집합니다.
-- `content_type`을 사용하면 하나의 스토어에 서로 구별되는 코퍼스 (`doc_chunk`, `faq`, `code_snippet`) 를 유지하고 쿼리 시 필터링할 수 있습니다.
-- `add_batch`는 배치가 8000 토큰 요청 제한을 초과하면 자동으로 분할합니다.
-
-## 콘텐츠 검증
-
-문서가 수집되면 행이 들어갔는지 확인하고 유사도 검색을 실행합니다:
+`src/summarize.lua`를 만듭니다.
 
 ```lua
-local embeddings = require("embeddings")
+local function handler(input)
+    local total = 0
+    for _, value in ipairs(input.values or {}) do
+        total = total + value
+    end
+    return { count = #(input.values or {}), total = total }
+end
 
-local results, err = embeddings.search("how do I configure TLS?", {
-    content_type = "doc_chunk",
-    limit = 5,
-})
--- results[i].content, .similarity, .meta, .origin_id, .context_id
+return { handler = handler }
 ```
 
-거기서부터 [RAG 튜토리얼](tutorials/rag.md)은 이러한 결과를 그라운딩된 답변을 위해 LLM에 공급하는 방법을 보여줍니다.
+## 흐름 빌드 및 실행
 
-## 운영 참고 사항
+`src/run.lua`를 만듭니다.
 
-- **청크 크기**: 500–1000 토큰이 좋은 기본값입니다. 문장이 경계를 넘어 잘리지 않도록 `chunk_overlap` (청크 크기의 ~10–20%) 을 사용하세요.
-- **차원**: 512차원의 `text-embedding-3-small`은 비용 효율적이며 `embeddings_512` 테이블과 일치합니다. 더 큰 벡터는 더 큰 저장 공간과 느린 검색을 의미합니다.
-- **로컬 대 공유**: SQLite (`vec0`) 는 전체 KB를 하나의 로컬 파일에 유지합니다 — 개발 및 단일 노드 앱에 이상적입니다. 공유된 프로덕션 스토어를 위해서는 `target_db`를 `pgvector`가 있는 `db.sql.postgres`로 가리키세요; 수집 코드는 변경되지 않습니다.
+```lua
+local io = require("io")
+local sql = require("sql")
+local time = require("time")
+local flow = require("flow")
+
+local function wait_for_schema()
+    for _ = 1, 100 do
+        local db, err = sql.get("app:db")
+        if not err then
+            local rows, query_err = db:query(
+                "SELECT name FROM sqlite_master " ..
+                "WHERE type='table' AND name='dataflows'"
+            )
+            db:release()
+            if not query_err and rows and #rows > 0 then
+                return true
+            end
+        end
+        time.sleep("100ms")
+    end
+    return nil, "Dataflow migrations did not finish within 10 seconds"
+end
+
+local function main()
+    local ready, ready_err = wait_for_schema()
+    if not ready then
+        io.print("dataflow failed: " .. ready_err)
+        return 1
+    end
+
+    local result, err = flow.create()
+        :with_title("Double and summarize")
+        :with_input({ values = { 2, 4, 6 } })
+        :func("app:double")
+        :as("double")
+        :to("summarize", "default")
+        :func("app:summarize")
+        :as("summarize")
+        :run()
+
+    if err then
+        io.print("dataflow failed: " .. tostring(err))
+        return 1
+    end
+
+    io.print(string.format("count=%d total=%d", result.count, result.total))
+    return 0
+end
+
+return { main = main }
+```
+
+잠금 파일을 초기화하고 의존성 그래프를 해석해 설치한 다음, 콘솔 로그를 활성화하여 이름 있는 명령을 실행합니다.
+
+```bash
+wippy init
+wippy update
+wippy install
+wippy run -c dataflow-demo
+```
+
+처음 실행할 때 부트로더가 Dataflow 마이그레이션을 적용합니다. 그런 다음 명령은 다음을 출력합니다.
+
+```text
+count=3 total=24
+```
+
+이후 실행에서는 마이그레이션이 이미 적용되었다고 보고하고 새로운 영속 워크플로를 실행합니다.
+
+## 영속성 확인
+
+SQLite 파일은 `./.wippy/dataflow.db`입니다. 실행에 성공하면 이 파일에는 워크플로, 노드, 데이터, 커밋, 깨우기, 활성화 저장소를 포함하여 모듈이 소유하는 Dataflow 테이블이 들어 있습니다. 애플리케이션은 이 테이블에 직접 쓰지 말고 Dataflow 클라이언트 또는 Keeper를 통해 검사해야 합니다.
+
+호출자가 워크플로 ID를 즉시 받아야 한다면 `:run()` 대신 `:start()`를 사용합니다. 상태나 출력을 읽거나 비동기 워크플로를 취소, 종료, 복구 또는 신호 처리하려면 Dataflow 클라이언트를 사용하세요.
 
 ## 다음 단계
 
-- [RAG](tutorials/rag.md) — 이 스토어에서 검색하고 그라운딩된 답변 생성
-- [LLM 프레임워크](framework/llm.md) — `llm.embed`, 임베딩 모델, 제공자
-- [텍스트 모듈](lua/text/text.md) — 스플리터 및 토큰화
+- [Dataflow 프레임워크](../framework/dataflow.md) — 라우팅, 병렬 노드, 순환, 에이전트, 신호, 클라이언트 API
+- [검색 증강 생성](./rag.md) — 임베딩 기반 검색
+- [MCP를 통한 Keeper](./keeper-mcp.md) — MCP 클라이언트에서 실행 중인 워크플로 검사
