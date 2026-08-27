@@ -87,11 +87,11 @@
       {
         "title": "Storage",
         "children": [
-          {"title": "SQL", "path": "lua/storage/sql"},
-          {"title": "Store", "path": "lua/storage/store"},
-          {"title": "Filesystem", "path": "lua/storage/filesystem"},
-          {"title": "Cloud Storage", "path": "lua/storage/cloud"},
-          {"title": "Queue", "path": "lua/storage/queue"},
+          {"title": "SQL-Datenbank", "path": "lua/storage/sql"},
+          {"title": "Key-Value-Speicher", "path": "lua/storage/store"},
+          {"title": "Dateisystem", "path": "lua/storage/filesystem"},
+          {"title": "Cloud-Speicher", "path": "lua/storage/cloud"},
+          {"title": "Nachrichten-Queue", "path": "lua/storage/queue"},
           {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
