@@ -37,7 +37,7 @@ end
 
 **Permission:** `pg.open` on the scope `id`
 
-The instance is released automatically when the process exits. Call `release()` to release it earlier. Other operations are methods on the instance and use `:` syntax.
+The instance is released automatically during execution-frame cleanup. Call `release()` to release it earlier. Other operations are methods on the instance and use `:` syntax.
 
 ## Joining and Leaving
 
@@ -165,7 +165,7 @@ Subscription channels are buffered (capacity 64). If a slow consumer fills the b
 group:release()
 ```
 
-`release` frees the instance immediately and is idempotent. After release, every method returns an error. Cleanup also runs automatically when the process exits.
+`release` frees the instance immediately and is idempotent. After release, every method returns an error. Cleanup also runs automatically at the end of the execution frame.
 
 **Returns:** `boolean`
 
@@ -178,12 +178,12 @@ group:release()
 | `pg.leave` | `leave()` | group name |
 | `pg.get_members` | `get_members()` | group name |
 | `pg.get_local_members` | `get_local_members()` | group name |
-| `pg.which_groups` | `which_groups()` | (scope) |
-| `pg.which_local_groups` | `which_local_groups()` | (scope) |
+| `pg.which_groups` | `which_groups()` | - |
+| `pg.which_local_groups` | `which_local_groups()` | - |
 | `pg.broadcast` | `broadcast()` | group name |
 | `pg.broadcast_local` | `broadcast_local()` | group name |
 | `pg.monitor` | `monitor()` | group name |
-| `pg.events` | `events()` | (scope) |
+| `pg.events` | `events()` | - |
 
 ## Errors
 
@@ -192,8 +192,11 @@ group:release()
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Missing or empty argument | `errors.INVALID` |
 | Scope not found | `errors.INTERNAL` |
-| Leave a group with no membership | `errors.INVALID` |
+| Leave a group with no membership | `errors.NOT_FOUND` |
 | Instance released | `errors.INVALID` |
+| Group/member or action-queue limit reached | `errors.RATE_LIMITED` (retryable) |
+| Service stopped, backpressure, or open circuit | `errors.UNAVAILABLE` |
+| Broadcast timed out | `errors.TIMEOUT` (retryable) |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

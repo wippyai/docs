@@ -33,7 +33,7 @@ Each source is a table: `name`, `slot`, `publication`, `tables`, `streaming`, `f
 
 ## `source`
 
-Retrieve one source by name (its entry ID):
+Retrieve one source by its registry entry ID or replication slot name:
 
 ```lua
 local info, err = cdc.source("app:pg_cdc")
@@ -58,12 +58,14 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `name` | string | Source name (entry ID) |
+| `name` | string | Source registry ID or replication slot name |
 | `opts.tables` | []string | Filter to these tables (omit for all configured tables) |
 | `opts.ops` | []string | Filter to these operations: `insert`, `update`, `delete`, `truncate` |
-| `opts.buffer` | int | Channel buffer size (1-65536) |
+| `opts.buffer` | int | Source subscription buffer size (1-65536; default: 128) |
 
 **Returns:** `Stream, error`
+
+The Lua delivery channel has a separate fixed capacity of 64. The `buffer` option controls the PostgreSQL source subscription, not that channel.
 
 ## Stream Methods
 
@@ -125,7 +127,8 @@ Each message received on the channel is a change table:
 | No context / no process PID | `errors.INTERNAL` |
 | Source name required | `errors.INVALID` |
 | Invalid buffer size | `errors.INVALID` |
-| Source not found | `errors.INTERNAL` |
+| Source not found when opening a stream | `errors.NOT_FOUND` |
+| Source inspector or process context unavailable | `errors.INTERNAL` |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

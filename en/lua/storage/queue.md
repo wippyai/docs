@@ -44,17 +44,19 @@ end
 
 ### Message Headers
 
-Headers carry routing, priority, and tracing metadata:
+Headers carry routing, priority, and tracing metadata. Keys must be strings, and publisher values may be strings, integers, numbers, or booleans:
 
 ```lua
 queue.publish("app:notifications", {
     type = "order_shipped",
     order_id = order.id
 }, {
-    priority = "high",
+    priority = 5,
     correlation_id = request_id
 })
 ```
+
+Consumers receive every header value as a string. The `x_original_queue`, `x_dead_letter_reason`, `x_dead_letter_time`, and `attempts` keys are reserved for delivery and dead-letter bookkeeping and must not be set by publishers.
 
 ## Accessing Delivery Context
 
@@ -80,12 +82,12 @@ This function is available only while a queue consumer is processing a message.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `id()` | `string, error` | Unique message identifier |
-| `header(key)` | `any, error` | Single header value (nil if missing) |
-| `headers()` | `table, error` | All message headers |
+| `header(key)` | `string?, error` | Normalized string value, or nil if missing |
+| `headers()` | `{[string]: string}, error` | All headers with normalized string values |
 | `ack()` | `boolean, error` | Acknowledge processing (single-shot) |
 | `nack()` | `boolean, error` | Signal failure for redelivery or dead-letter (single-shot) |
 
-The runtime auto-acks on handler success and auto-nacks on handler error. Call `ack`/`nack` only to settle early.
+The runtime auto-acks on handler success and auto-nacks on handler error. Call `ack`/`nack` only to settle early. Settlement is single-shot, and a `Message` is invalid after its consumer handler returns.
 
 ## Queue Info
 
@@ -101,11 +103,10 @@ local stats, err = queue.info("app:tasks")
 A `queue.consumer` entry binds a queue to the handler referenced by `func`. The handler receives the message payload directly:
 
 ```yaml
-entries:
-  - kind: queue.consumer
-    id: email_worker
-    queue: app:emails
-    func: app:email_handler
+- name: email_worker
+  kind: queue.consumer
+  queue: app:emails
+  func: app:email_handler
 ```
 
 ```lua
@@ -143,8 +144,10 @@ The runtime checks the general permission first and the queue-specific permissio
 | Queue ID empty | `errors.INVALID` | no |
 | Message data empty | `errors.INVALID` | no |
 | No delivery context | `errors.INVALID` | no |
+| Message released or already settled | `errors.INVALID` | no |
 | Publish not allowed | `errors.INVALID` | no |
 | Publish failed | `errors.INTERNAL` | no |
+| Queue or driver not found for `info` | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

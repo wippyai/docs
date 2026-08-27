@@ -60,11 +60,21 @@ local config = json.decode(data)
 Use `open()` to stream a large file:
 
 ```lua
-local file = vol:open("/data/large.csv", "r")
+local errors = require("errors")
+local file, err = vol:open("/data/large.csv", "r")
+if err then
+    return nil, err
+end
 
 while true do
-    local chunk = file:read(65536)
-    if not chunk or #chunk == 0 then break end
+    local chunk, err = file:read(65536)
+    if err then
+        if err:kind() == errors.NOT_FOUND then
+            break -- EOF
+        end
+        file:close()
+        return nil, err
+    end
     process(chunk)
 end
 
@@ -73,7 +83,7 @@ file:close()
 
 ## Writing Files
 
-Write data to a file:
+Write a string or reader-backed stream to a file:
 
 ```lua
 local vol = fs.get("app:data")
@@ -86,6 +96,17 @@ vol:writefile("/logs/app.log", message .. "\n", "a")
 
 -- Exclusive write (fails if exists)
 local ok, err = vol:writefile("/lock.pid", tostring(pid), "wx")
+
+-- Copy from an open file or another reader-backed value
+local source, err = vol:open("/incoming/report.csv", "r")
+if err then
+    return nil, err
+end
+local copied, err = vol:writefile("/archive/report.csv", source)
+source:close()
+if err then
+    return nil, err
+end
 ```
 
 | Mode | Description |
@@ -145,6 +166,8 @@ vol:remove("/temp/file.txt")
 
 Entry fields: `name`, `type` ("file" or "directory")
 
+`mkdir` creates one directory and does not create missing parents. `remove` accepts files and empty directories only.
+
 ## File Handle Methods
 
 When using `vol:open()` for streaming:
@@ -166,8 +189,15 @@ Call `close()` after finishing with a file handle.
 Use a scanner for line-by-line processing:
 
 ```lua
-local file = vol:open("/data/users.csv", "r")
-local scanner = file:scanner("lines")
+local file, err = vol:open("/data/users.csv", "r")
+if err then
+    return nil, err
+end
+local scanner, err = file:scanner("lines")
+if err then
+    file:close()
+    return nil, err
+end
 
 scanner:scan()  -- skip header
 
@@ -176,10 +206,18 @@ while scanner:scan() do
     process(line)
 end
 
+local scan_err = scanner:err()
+if scan_err then
+    file:close()
+    return nil, scan_err
+end
+
 file:close()
 ```
 
 Split modes: `"lines"` (default), `"words"`, `"bytes"`, `"runes"`
+
+`scanner:err()` returns an error message or `nil`; use it to distinguish a scan failure from clean EOF.
 
 ## Constants
 
@@ -197,7 +235,7 @@ fs.seek.END       -- from end
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `readfile(path)` / `read_file(path)` | `string, error` | Read entire file |
-| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | Write file |
+| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | Write a string or reader-backed value |
 | `exists(path)` | `boolean, error` | Check if path exists |
 | `stat(path)` | `table, error` | Get file info |
 | `isdir(path)` | `boolean, error` | Check if directory |
@@ -221,8 +259,10 @@ Security policy evaluation applies when a volume is acquired.
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty path | `errors.INVALID` | no |
+| Path contains a null byte | `errors.INVALID` | no |
 | Invalid mode | `errors.INVALID` | no |
 | File is closed | `errors.INVALID` | no |
+| File-handle read reached EOF | `errors.NOT_FOUND` | no |
 | Path not found | `errors.NOT_FOUND` | no |
 | Path already exists | `errors.ALREADY_EXISTS` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |

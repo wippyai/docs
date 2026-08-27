@@ -29,7 +29,11 @@ if err then
     return nil, err
 end
 
-local rows = db:query("SELECT * FROM users WHERE active = ?", {1})
+local rows, err = db:query("SELECT * FROM users WHERE active = ?", {1})
+if err then
+    db:release()
+    return nil, err
+end
 
 db:release()
 ```
@@ -41,11 +45,11 @@ db:release()
 **Returns:** `DB, error`
 
 <note>
-Connections are automatically returned to the pool when the function exits, but calling `db:release()` explicitly is recommended for long-running operations.
+Database leases are released during execution-frame cleanup. Call `db:release()` explicitly when database work finishes, especially in long-running operations.
 </note>
 
 <note>
-Placeholders are passed to the database driver unchanged; the runtime does not rewrite them. SQLite and MySQL use `?`, PostgreSQL uses `$1, $2` — write them in the form your driver expects. The examples below use `?` (SQLite/MySQL). For queries that target more than one engine, build them with the [query builder](#query-builder) and set the dialect's `placeholder_format`.
+Direct `db` and transaction queries pass placeholders to the database driver unchanged. SQLite and MySQL use `?`; PostgreSQL uses `$1`, `$2`, and so on. Builder `run_with` calls select dollar placeholders automatically for PostgreSQL. Other database types retain the builder's selected format, which defaults to `?`. Set `placeholder_format` when generating SQL with `to_sql` or when another format is required.
 </note>
 
 ## Constants
@@ -478,6 +482,8 @@ local ok, err = db:release()
 
 **Returns:** `boolean, error`
 
+The operation is idempotent.
+
 ### `db:stats`
 
 Return connection-pool statistics.
@@ -548,6 +554,8 @@ local ok, err = stmt:close()
 ## Transactions
 
 A transaction returned by `db:begin()` provides query, statement, savepoint, commit, and rollback operations.
+
+An active transaction is rolled back automatically during execution-frame cleanup. Commit or roll it back explicitly as soon as its work is complete.
 
 ### `tx:db_type`
 
@@ -926,14 +934,17 @@ Generate the SQL string and bind arguments.
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
 ### `select:run_with`
 
 Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local rows, err = executor:query()
 ```
 
@@ -941,7 +952,7 @@ local rows, err = executor:query()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## INSERT Builder
 
@@ -1095,14 +1106,17 @@ Generate the SQL string and bind arguments.
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
 ### `insert:run_with`
 
 Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1110,7 +1124,7 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## UPDATE Builder
 
@@ -1301,14 +1315,17 @@ Generate the SQL string and bind arguments.
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
 ### `update:run_with`
 
 Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1316,7 +1333,7 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## DELETE Builder
 
@@ -1440,14 +1457,17 @@ Generate the SQL string and bind arguments.
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
 ### `delete:run_with`
 
 Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1455,7 +1475,7 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## Executing Queries
 
