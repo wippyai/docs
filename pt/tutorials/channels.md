@@ -1,18 +1,24 @@
 ---
-title: "Channels e Concorrência"
-description: "Channels estilo Go para programação concorrente dentro de processos."
+title: "Introdução a Canais e Concorrência"
+description: "Revise operações de canais e padrões de coordenação entre coroutines."
 ---
 
-# Channels e Concorrência
+# Introdução a Canais e Concorrência
 
-Channels estilo Go para programação concorrente dentro de processos.
+Esta página apresenta canais para coordenar coroutines dentro de um processo. Os exemplos cobrem buffering, seleção, produtor-consumidor, fan-out, fan-in e fechamento.
+
+**Classificação:** introdução de referência/API. Os trechos são exemplos independentes, não uma aplicação autônoma.
+
+## Contexto e Dependências
+
+Execute os trechos em uma função exportada de uma entrada Lua executável, como `process.lua`. As APIs `channel` e `coroutine` são globais do ambiente e não exigem `require()` nem declarações em `modules`. Cada trecho cria seus próprios canais e deve ser avaliado separadamente.
 
 ## Criando Channels
 
 Channels são canais de comunicação para corrotinas. Crie com `channel.new(capacity)`:
 
 ```lua
-local ch = channel.new(1)  -- channel com buffer, capacidade 1
+local ch = channel.new(1)  -- buffered channel, capacity 1
 ```
 
 ### Channels com Buffer
@@ -20,14 +26,14 @@ local ch = channel.new(1)  -- channel com buffer, capacidade 1
 Channels com buffer permitem envios sem bloquear até que o buffer esteja cheio:
 
 ```lua
-local ch = channel.new(3)  -- buffer comporta 3 itens
+local ch = channel.new(3)  -- buffer holds 3 items
 
--- Enviar sem bloquear
+-- Send without blocking
 ch:send(1)
 ch:send(2)
 ch:send(3)
 
--- Receber em ordem FIFO
+-- Receive in FIFO order
 local v1, ok1 = ch:receive()  -- 1, true
 local v2, ok2 = ch:receive()  -- 2, true
 local v3, ok3 = ch:receive()  -- 3, true
@@ -38,15 +44,15 @@ local v3, ok3 = ch:receive()  -- 3, true
 Channels sem buffer (capacidade 0) sincronizam remetente e receptor:
 
 ```lua
-local ch = channel.new(0)  -- sem buffer
+local ch = channel.new(0)  -- unbuffered
 local done = channel.new(1)
 
 coroutine.spawn(function()
-    ch:send("from spawn")  -- bloqueia até receptor estar pronto
+    ch:send("from spawn")  -- blocks until receiver ready
     done:send(true)
 end)
 
-local val = ch:receive()  -- recebe "from spawn"
+local val = ch:receive()  -- receives "from spawn"
 local completed = done:receive()
 ```
 
@@ -65,7 +71,7 @@ local result = channel.select{
     ch2:case_receive()
 }
 
--- result é uma tabela com: channel, value, ok
+-- result is a table with: channel, value, ok
 result.channel == ch1  -- true
 result.value           -- "ch1_value"
 result.ok              -- true
@@ -73,16 +79,19 @@ result.ok              -- true
 
 ### Select com Send
 
-Use `case_send` para tentar envios não-bloqueantes:
+Use `case_send` para incluir um envio no `select`. Sem caso padrão, `channel.select` espera até uma operação ficar pronta. Adicione `default = true` para tornar a tentativa não bloqueante:
 
 ```lua
 local ch = channel.new(1)
 
 local result = channel.select{
-    ch:case_send("sent")
+    ch:case_send("sent"),
+    default = true
 }
 
-result.ok  -- true (envio bem-sucedido)
+if not result.default then
+    result.ok  -- true (send succeeded)
+end
 
 local v = ch:receive()  -- "sent"
 ```
@@ -96,7 +105,7 @@ local ch = channel.new(5)
 local done = channel.new(1)
 local consumed = 0
 
--- Consumidor
+-- Consumer
 coroutine.spawn(function()
     while true do
         local v, ok = ch:receive()
@@ -106,7 +115,7 @@ coroutine.spawn(function()
     done:send(consumed)
 end)
 
--- Produtor
+-- Producer
 for i = 1, 10 do
     ch:send(i)
 end
@@ -148,7 +157,7 @@ Um produtor, múltiplos consumidores:
 local work = channel.new(10)
 local results = channel.new(10)
 
--- Criar 3 workers
+-- Spawn 3 workers
 for w = 1, 3 do
     coroutine.spawn(function()
         while true do
@@ -159,13 +168,13 @@ for w = 1, 3 do
     end)
 end
 
--- Enviar trabalho
+-- Send work
 for i = 1, 6 do
     work:send(i)
 end
 work:close()
 
--- Coletar resultados
+-- Collect results
 local sum = 0
 for i = 1, 6 do
     local r = results:receive()
@@ -183,23 +192,24 @@ local output = channel.new(10)
 local producer_count = 4
 local items_per_producer = 5
 
--- Criar produtores
+-- Spawn producers
 for p = 1, producer_count do
+    local producer_id = p
     coroutine.spawn(function()
         for i = 1, items_per_producer do
-            output:send({producer = p, item = i})
+            output:send({producer = producer_id, item = i})
         end
     end)
 end
 
--- Coletar todas as mensagens
+-- Collect all messages
 local received = {}
 for i = 1, producer_count * items_per_producer do
     local msg = output:receive()
     table.insert(received, msg)
 end
 
--- Verificar que todos os produtores enviaram seus itens
+-- Verify all producers sent their items
 local counts = {}
 for _, msg in ipairs(received) do
     counts[msg.producer] = (counts[msg.producer] or 0) + 1
@@ -218,7 +228,7 @@ coroutine.spawn(function()
     local count = 0
     while true do
         local v, ok = ch:receive()
-        if not ok then break end  -- channel fechado
+        if not ok then break end  -- channel closed
         count = count + 1
     end
     done:send(count)
@@ -227,7 +237,7 @@ end)
 for i = 1, 10 do
     ch:send(i)
 end
-ch:close()  -- sinalizar que não há mais valores
+ch:close()  -- signal no more values
 
 local total = done:receive()
 ```
@@ -242,9 +252,10 @@ Operações disponíveis:
 - `ch:close()` - Fechar channel
 - `ch:case_send(value)` - Criar caso de envio para select
 - `ch:case_receive()` - Criar caso de recepção para select
-- `channel.select{cases...}` - Aguardar múltiplas operações
+- `channel.select{cases...}` - Espera em múltiplas operações e retorna `channel`, `value` e `ok`
+- `channel.select{cases..., default = true}` - Retorna `{default = true, ok = true}` imediatamente quando nenhum caso está pronto
 
 ## Próximos Passos
 
-- [Channel Module Reference](lua/core/channel.md) - Documentação completa da API
-- [Processes](tutorials/processes.md) - Comunicação inter-processo
+- [Referência do Módulo Channel](../lua/core/channel.md) - Documentação da API de canais
+- [Processos](processes.md) - Comunicação entre processos
