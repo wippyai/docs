@@ -9,10 +9,16 @@ Wippy provides three ways to run code: functions, processes, and workflows. They
 
 ## Functions
 
-Functions run when called and return a result. They do not retain state between calls.
+Functions run when called and return a result. Treat each call as stateless:
+durable or shared state belongs in a database or store. Function pools can
+reuse Lua states, so module globals and closure upvalues are worker-local and
+are not a reliable cross-call store.
 
 ```lua
-local result = funcs.call("app.math:add", 2, 3)
+local result, err = funcs.call("app.math:add", 2, 3)
+if err then
+    return nil, err
+end
 ```
 
 Functions execute in the caller's context. If the caller is canceled or exits, its running function calls are canceled as well.
@@ -40,10 +46,12 @@ Use processes for background jobs, service daemons, and anything that needs to o
 
 ## Workflows
 
-Workflows are for durable operations that must recover from interruptions. They persist execution state to a workflow provider, such as Temporal, and can resume after crashes, restarts, or infrastructure changes.
+Workflows are for durable operations that must recover from interruptions. A
+workflow provider such as Temporal records execution history and replays it to
+rebuild state after crashes, restarts, or infrastructure changes.
 
 ```lua
--- This can run for days, survive restarts, and never lose progress
+-- The provider records this workflow so a worker restart can replay it.
 process.spawn("app.orders:process", "app:temporal_worker", order_id)
 ```
 
@@ -57,12 +65,14 @@ Wippy records supported workflow operations so they produce the same results dur
 
 | | Functions | Processes | Workflows |
 |---|---|---|---|
-| **State** | None | In memory | Persisted |
+| **State** | Call-local; do not depend on worker reuse | In memory | Rebuilt from persisted history |
 | **Lifetime** | Single call | Until exit or crash | Persists across restarts |
 | **Communication** | Return value + messages | Message passing | Activity calls + messages |
-| **Failure handling** | Caller handles | Supervision trees | Automatic retry |
+| **Failure handling** | Caller handles | Supervision trees | Provider recovery; retries follow policy |
 | **Latency** | Lowest | Low | Higher |
 
 ## Same Code, Different Behavior
 
-Many modules adapt to their context automatically. For example, `time.sleep()` in a function blocks the worker, in a process it yields to let others run, and in a workflow it records a timer that replays correctly on recovery.
+Many modules adapt to their context automatically. For example, `time.sleep()`
+yields in both functions and processes so other work can run; in a workflow,
+the provider also records the timer so replay does not start a second timer.

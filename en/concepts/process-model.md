@@ -8,9 +8,9 @@ description: "How Wippy processes execute, communicate, isolate capabilities, an
 Wippy executes code in isolated processes: lightweight state machines that communicate through messages rather than shared memory. This actor model gives each process its own state and lifecycle.
 
 This page explains the lifecycle and isolation model. Use the [Process
-Management reference](lua/core/process.md) for spawn, messaging, monitoring,
+Management reference](../lua/core/process.md) for spawn, messaging, monitoring,
 registry, and upgrade APIs. See [Process Host and
-Services](system/process-host.md) for runtime-managed service fields.
+Services](../system/process-host.md) for runtime-managed service fields.
 
 ## State Machine Execution
 
@@ -38,7 +38,10 @@ Processes are lightweight but not free. Each process carries a small baseline co
 
 Wippy can run multiple process hosts within one runtime, each with its own capabilities and security boundaries. Privileged system processes can run in a host separate from hosts that execute user sessions.
 
-Some hosts are specialized. The Terminal host, for example, runs a single process and grants it access to I/O operations that other hosts deny. Separate hosts allow one deployment to run processes with different trust levels.
+Some hosts are specialized. The Terminal host, for example, uses one scheduler
+worker and supplies terminal I/O context to accepted processes; it does not
+enforce a one-process lifetime limit. Separate hosts allow one deployment to
+run processes with different trust levels.
 
 ## Security Model
 
@@ -46,7 +49,7 @@ Each process executes under an actor identity and security policy. This is typic
 
 Access control applies at multiple levels. Security policy can restrict individual process operations and message delivery between hosts. The policy attached to the current actor determines which operations are permitted.
 
-For the security implications of process isolation, see the [Security Model](concepts/security-model.md).
+For the security implications of process isolation, see the [Security Model](./security-model.md).
 
 ## Spawning Processes
 
@@ -64,7 +67,7 @@ Spawn variants control lifecycle relationships:
 |----------|----------|
 | `spawn` | Start an independent process |
 | `spawn_monitored` | Receive EXIT events when child exits |
-| `spawn_linked` | Bidirectional—either crash notifies the other |
+| `spawn_linked` | Abnormal exit propagates in either direction; with `trap_links: true`, the peer receives `LINK_DOWN` instead of failing |
 
 ## Message Passing
 

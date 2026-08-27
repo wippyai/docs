@@ -1,11 +1,16 @@
 ---
 title: "Functions"
-description: "How to define and call stateless functions, propagate context, configure pools, and apply interceptors."
+description: "How to define and call functions, propagate context, configure pools, and apply interceptors."
 ---
 
 # Functions
 
-Functions are stateless entry points that execute a call and return a result. A function inherits its caller's context and is canceled when the caller is canceled. Use functions for HTTP handlers, API endpoints, and other operations that complete within a request lifecycle.
+Functions are call-and-return entry points. A function inherits its caller's
+context and is canceled when the caller is canceled. Pools can reuse Lua states,
+so module globals and closure upvalues may survive on one worker but are not
+shared consistently across calls. Store durable or shared state outside the
+function. Use functions for HTTP handlers, API endpoints, and other operations
+that complete within a request lifecycle.
 
 ## Calling Functions
 
@@ -19,13 +24,24 @@ local result, err = funcs.call("app.api:get_user", user_id)
 For non-blocking execution, use `funcs.async()`:
 
 ```lua
-local future = funcs.async("app.process:analyze", data)
+local future, err = funcs.async("app.process:analyze", data)
+if err then
+    return nil, err
+end
 
 local ch = future:response()
-local result, ok = ch:receive()
+local payload, open = ch:receive()
+if not open then
+    return nil, "future response channel closed"
+end
+
+local result, err = payload:data()
+if err then
+    return nil, err
+end
 ```
 
-See the [funcs module](lua/core/funcs.md) for function invocation and executor options.
+See the [funcs module](../lua/core/funcs.md) for function invocation and executor options.
 
 ## Context Propagation
 
@@ -46,7 +62,7 @@ local exec = funcs.new()
     :call("app.api:process", data)
 ```
 
-Security context propagates the same way. Called functions see the caller's actor and can check permissions. See the [security module](lua/security/security.md) for access control APIs.
+Security context propagates the same way. Called functions see the caller's actor and can check permissions. See the [security module](../lua/security/security.md) for access control APIs.
 
 ## Registry Definition
 
@@ -75,7 +91,7 @@ Functions run on pools that manage execution. The pool type determines scaling b
 ```yaml
 pool:
   type: static
-  workers: 8
+  size: 8
   buffer: 512
 ```
 
@@ -96,7 +112,11 @@ pool:
 ```
 
 <tip>
-If you don't specify a pool type, the runtime selects one based on your configuration. Set `workers` for a static pool, `max_size` for a lazy pool, or set `type` to select the pool explicitly.
+Prefer an explicit pool `type`. For `type: static`, set `size`; if `workers` is
+also present, it supplies the worker count and still requires a positive
+`size`. In the legacy implicit mode, `workers > 0` plus `size > 0` selects a
+static pool, `max_size > 0` with no workers selects a lazy pool, and `size`
+alone falls through to inline execution.
 </tip>
 
 ## Interceptors
@@ -116,7 +136,11 @@ Function calls pass through an interceptor chain. Interceptors can handle cross-
         backoff_factor: 2.0
 ```
 
-Built-in interceptors include retry with exponential backoff. You can add custom interceptors for logging, metrics, tracing, authorization, circuit breaking, or request transformation.
+Built-in interceptors include retry with exponential backoff. Runtime
+integrations written in Go can register additional interceptors for logging,
+metrics, tracing, authorization, circuit breaking, or request transformation;
+Lua application entries can configure only interceptors installed by the
+runtime.
 
 The chain runs before and after each call. Each interceptor can modify the request, short-circuit execution, or wrap the response.
 
@@ -126,9 +150,15 @@ Functions can expose their input/output schemas as contracts. Contracts define m
 
 ```lua
 local contract = require("contract")
-local sender = contract.get("app.email:sender")
-local email = sender:open("app.email:sender_impl")
-email:send({to = "user@example.com", subject = "Hello"})
+local sender, err = contract.get("app.email:sender")
+if err then return nil, err end
+
+local email, err = sender:open("app.email:sender_impl")
+if err then return nil, err end
+
+local result, err = email:send({to = "user@example.com", subject = "Hello"})
+if err then return nil, err end
+return result
 ```
 
 Contracts allow callers to use an interface while selecting an implementation separately. This supports testing, multi-tenant deployments, and gradual migrations.
