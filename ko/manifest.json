@@ -34,7 +34,7 @@
       {"title": "보안 모델", "path": "concepts/security-model"},
       {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "클러스터", "path": "concepts/cluster"},
-      {"title": "Functions", "path": "concepts/functions"},
+      {"title": "함수", "path": "concepts/functions"},
       {"title": "Workflows", "path": "concepts/workflows"}
     ]
   },
@@ -186,7 +186,7 @@
       {"title": "Environment", "path": "system/env"},
       {"title": "템플릿", "path": "system/template"},
       {"title": "Security", "path": "system/security"},
-      {"title": "Exec", "path": "system/exec"}
+      {"title": "실행기", "path": "system/exec"}
     ]
   },
   {
@@ -196,7 +196,7 @@
       {"title": "Router", "path": "http/router"},
       {"title": "Endpoint", "path": "http/endpoint"},
       {"title": "Middleware", "path": "http/middleware"},
-      {"title": "Static Files", "path": "http/static"},
+      {"title": "정적 파일", "path": "http/static"},
       {"title": "WebSocket Relay", "path": "http/websocket-relay"},
       {"title": "Server-Sent Events", "path": "http/sse"}
     ]
