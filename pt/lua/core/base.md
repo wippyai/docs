@@ -1,6 +1,6 @@
 ---
 title: "Bibliotecas Lua Padrão"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "APIs globais integradas de Lua, incluindo table, string, math, coroutine e erros estruturados, disponíveis nas entradas do Wippy."
 ---
 
 # Bibliotecas Lua Padrão
@@ -8,40 +8,42 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Bibliotecas Lua centrais automaticamente disponíveis em todos os processos Wippy. Nenhum `require()` necessário.
+Essas bibliotecas centrais de Lua estão disponíveis em todas as entradas Lua executáveis sem `require()`.
 
-## Funções Globais
+Esta página é uma referência de API. Os blocos de assinaturas listam as funções disponíveis; os blocos mais longos são exemplos isolados ou padrões parciais, não entradas completas. Nomes como `check_health` e `process_request` representam callbacks da aplicação.
+
+## Funções Globais Integradas
 
 ### Tipo e Conversão
 
 ```lua
-type(value)         -- Retorna: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
-tonumber(s [,base]) -- Converter para número, base opcional (2-36)
-tostring(value)     -- Converter para string, chama metamétodo __tostring
+type(value)         -- Returns: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
+tonumber(s [,base]) -- Convert to number, optional base (2-36)
+tostring(value)     -- Convert to string, calls __tostring metamethod
 ```
 
 ### Assertions e Erros
 
 ```lua
-assert(v [,msg])    -- Lança erro se v for false/nil, retorna v caso contrário
-error(msg [,level]) -- Lança erro no nível de stack específicado (padrão 1)
-pcall(fn, ...)      -- Chamada protegida, retorna ok, resultado_ou_erro
-xpcall(fn, errh)    -- Chamada protegida com função handler de erro
+assert(v [,msg])    -- Raises error if v is false/nil, returns v otherwise
+error(msg [,level]) -- Raises error at specified stack level (default 1)
+pcall(fn, ...)      -- Protected call, returns ok, result_or_error
+xpcall(fn, errh)    -- Protected call with error handler function
 ```
 
 ### Iteração de Tabela
 
 ```lua
-pairs(t)            -- Iterar todos os pares chave-valor
-ipairs(t)           -- Iterar porção array (1, 2, 3, ...)
-next(t [,index])    -- Obter próximo par chave-valor após index
+pairs(t)            -- Iterate all key-value pairs
+ipairs(t)           -- Iterate array portion (1, 2, 3, ...)
+next(t [,index])    -- Get next key-value pair after index
 ```
 
 ### Metatables
 
 ```lua
-getmetatable(obj)       -- Obter metatable (ou campo __metatable se protegido)
-setmetatable(t, mt)     -- Definir metatable, retorna t
+getmetatable(obj)       -- Get metatable (or __metatable field if protected)
+setmetatable(t, mt)     -- Set metatable, returns t
 ```
 
 ### Acesso Raw a Tabela
@@ -49,38 +51,37 @@ setmetatable(t, mt)     -- Definir metatable, retorna t
 Bypass de metamethods para acesso direto a tabela:
 
 ```lua
-rawget(t, k)        -- Obter t[k] sem __index
-rawset(t, k, v)     -- Definir t[k]=v sem __newindex
-rawequal(a, b)      -- Comparar sem __eq
+rawget(t, k)        -- Get t[k] without __index
+rawset(t, k, v)     -- Set t[k]=v without __newindex
+rawequal(a, b)      -- Compare without __eq
 ```
 
 ### Utilitários
 
 ```lua
-select(index, ...)  -- Retornar args a partir do index
-select("#", ...)    -- Retornar número de args
-unpack(t [,i [,j]]) -- Retornar t[i] até t[j] como múltiplos valores
-print(...)          -- Imprimir valores (usa logging estruturado no Wippy)
+select(index, ...)  -- Return args from index onwards
+select("#", ...)    -- Return number of args
+unpack(t [,i [,j]]) -- Return t[i] through t[j] as multiple values
+print(...)          -- Print values (uses structured logging in Wippy)
 ```
 
 ### Variáveis Globais
 
 ```lua
-_G        -- A tabela de ambiente global
-_VERSION  -- String da versão Lua
+_G        -- The global environment table
+_VERSION  -- Lua version string
 ```
 
 ## Manipulação de Tabela
 
-Funções para modificar tabelas:
+A biblioteca `table` fornece operações in-place sobre arrays, ordenação, concatenação e desempacotamento:
 
 ```lua
-table.insert(t, [pos,] value)  -- Inserir valor em pos (padrão: fim)
-table.remove(t [,pos])         -- Remover e retornar elemento em pos (padrão: último)
-table.concat(t [,sep [,i [,j]]]) -- Concatenar elementos array com separador
-table.sort(t [,comp])          -- Ordenar in place, comp(a,b) retorna true se a < b
-table.pack(...)                -- Empacotar varargs em tabela com campo 'n'
-table.unpack(t [,i [,j]])      -- Desempacotar elementos de tabela como múltiplos valores
+table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
+table.remove(t [,pos])         -- Remove and return element at pos (default: last)
+table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
+table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
+table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
 ```
 
 ```lua
@@ -88,50 +89,50 @@ local items = {"a", "b", "c"}
 
 table.insert(items, "d")           -- {"a", "b", "c", "d"}
 table.insert(items, 2, "x")        -- {"a", "x", "b", "c", "d"}
-table.remove(items, 2)             -- {"a", "b", "c", "d"}, retorna "x"
+table.remove(items, 2)             -- {"a", "b", "c", "d"}, returns "x"
 
 local csv = table.concat(items, ",")  -- "a,b,c,d"
 
 table.sort(items, function(a, b)
-    return a > b  -- Ordem decrescente
+    return a > b  -- Descending order
 end)
 ```
 
 ## Operações de String
 
-Funções de manipulação de string. Também disponíveis como métodos em valores string:
+As funções de string também estão disponíveis como métodos nos valores string.
 
 ### Pattern Matching
 
 ```lua
-string.find(s, pattern [,init [,plain]])   -- Encontrar pattern, retorna início, fim, capturas
-string.match(s, pattern [,init])           -- Extrair substring correspondente
-string.gmatch(s, pattern)                  -- Iterador sobre todas as correspondências
-string.gsub(s, pattern, repl [,n])         -- Substituir correspondências, retorna string, contagem
+string.find(s, pattern [,init [,plain]])   -- Find pattern, returns start, end, captures
+string.match(s, pattern [,init])           -- Extract matching substring
+string.gmatch(s, pattern)                  -- Iterator over all matches
+string.gsub(s, pattern, repl [,n])         -- Replace matches, returns string, count
 ```
 
 ### Conversão de Caso
 
 ```lua
-string.upper(s)   -- Converter para maiúsculas
-string.lower(s)   -- Converter para minúsculas
+string.upper(s)   -- Convert to uppercase
+string.lower(s)   -- Convert to lowercase
 ```
 
 ### Substrings e Caracteres
 
 ```lua
-string.sub(s, i [,j])      -- Substring de i até j (índices negativos do fim)
-string.len(s)              -- Tamanho da string (ou use #s)
-string.byte(s [,i [,j]])   -- Códigos numéricos de caracteres
-string.char(...)           -- Criar string de códigos de caractere
-string.rep(s, n [,sep])    -- Repetir string n vezes com separador
-string.reverse(s)          -- Inverter string
+string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
+string.len(s)              -- String length (or use #s)
+string.byte(s [,i [,j]])   -- Numeric codes of characters
+string.char(...)           -- Create string from character codes
+string.rep(s, n)           -- Repeat string n times
+string.reverse(s)          -- Reverse string
 ```
 
 ### Formatação
 
 ```lua
-string.format(fmt, ...)    -- Formatação estilo printf
+string.format(fmt, ...)    -- Printf-style formatting
 ```
 
 Específicadores de formato: `%d` (inteiro), `%f` (float), `%s` (string), `%q` (quoted), `%x` (hex), `%o` (octal), `%e` (científico), `%%` (% literal)
@@ -143,10 +144,10 @@ local s = "Hello, World!"
 local start, stop = string.find(s, "World")  -- 8, 12
 local word = string.match(s, "%w+")          -- "Hello"
 
--- Substituição
+-- Substitution
 local new = string.gsub(s, "World", "Wippy") -- "Hello, Wippy!"
 
--- Sintaxe de método
+-- Method syntax
 local upper = s:upper()                       -- "HELLO, WORLD!"
 local part = s:sub(1, 5)                      -- "Hello"
 ```
@@ -179,88 +180,94 @@ Versões maiúsculas (`%A`, `%D`, etc.) correspondem ao complemento.
 
 ## Funções Math
 
-Funções e constantes matemáticas:
+A biblioteca `math` fornece constantes numéricas e operações matemáticas comuns.
 
 ### Constantes {id="math-constants"}
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinito
-math.mininteger  -- Inteiro mínimo
-math.maxinteger  -- Inteiro máximo
+math.huge     -- Infinity
+math.mininteger  -- Minimum integer
+math.maxinteger  -- Maximum integer
 ```
 
 ### Operações Básicas
 
 ```lua
-math.abs(x)           -- Valor absoluto
-math.min(...)         -- Mínimo dos argumentos
-math.max(...)         -- Máximo dos argumentos
-math.floor(x)         -- Arredondar para baixo
-math.ceil(x)          -- Arredondar para cima
-math.modf(x)          -- Partes inteira e fracionária
-math.fmod(x, y)       -- Resto de ponto flutuante
+math.abs(x)           -- Absolute value
+math.min(...)         -- Minimum of arguments
+math.max(...)         -- Maximum of arguments
+math.floor(x)         -- Round down
+math.ceil(x)          -- Round up
+math.modf(x)          -- Integer and fractional parts
+math.fmod(x, y)       -- Floating-point remainder
 ```
 
 ### Potências e Raízes
 
 ```lua
-math.sqrt(x)          -- Raiz quadrada
-math.pow(x, y)        -- x^y (ou use operador x^y)
+math.sqrt(x)          -- Square root
+math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Log natural (ou log base n)
+math.log(x)           -- Natural log
+math.log10(x)         -- Base-10 log
 ```
 
 ### Trigonometria
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- Radianos
-math.asin(x)  math.acos(x)  math.atan(y [,x])
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hiperbólico
-math.deg(r)   -- Radianos para graus
-math.rad(d)   -- Graus para radianos
+math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Arc tangent of y/x
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
+math.deg(r)   -- Radians to degrees
+math.rad(d)   -- Degrees to radians
 ```
 
 ### Números Aleatórios
 
 ```lua
-math.random()         -- Float aleatório [0,1)
-math.random(n)        -- Inteiro aleatório [1,n]
-math.random(m, n)     -- Inteiro aleatório [m,n]
-math.randomseed(x)    -- Definir seed aleatório
+math.random()         -- Random float [0,1)
+math.random(n)        -- Random integer [1,n]
+math.random(m, n)     -- Random integer [m,n]
+math.randomseed(x)    -- Compatibility no-op; does not seed math.random
 ```
+
+`math.random` não é determinístico. Não o use em decisões que precisem ser reproduzidas de forma idêntica em um workflow; `math.randomseed` não pode torná-lo determinístico.
 
 ### Conversão de Tipo
 
 ```lua
-math.tointeger(x)     -- Converter para inteiro ou nil
-math.type(x)          -- "integer", "float", ou nil
-math.ult(m, n)        -- Comparação unsigned less-than
+math.tointeger(x)     -- Convert to integer or nil
+math.type(x)          -- "integer", "float", or nil
+math.ult(m, n)        -- Unsigned less-than comparison
 ```
 
 ## Corrotinas
 
-Criação e controle de corrotinas. Veja [Channels and Coroutines](lua/core/channel.md) para channels e padrões concorrentes:
+A biblioteca `coroutine` fornece criação e controle de corrotinas. Veja [Channels e Corrotinas](channel.md) para padrões de concorrência baseados em channels.
 
 ```lua
-coroutine.create(fn)        -- Criar corrotina de função
-coroutine.resume(co, ...)   -- Iniciar/continuar corrotina
-coroutine.yield(...)        -- Suspender corrotina, retornar valores para resume
+coroutine.create(fn)        -- Create coroutine from function
+coroutine.resume(co, ...)   -- Start/continue coroutine
+coroutine.yield(...)        -- Suspend coroutine, return values to resume
 coroutine.status(co)        -- "running", "suspended", "normal", "dead"
-coroutine.running()         -- Corrotina atual (nil se thread principal)
-coroutine.wrap(fn)          -- Criar corrotina como função chamável
+coroutine.running()         -- Current coroutine (nil if main thread)
+coroutine.wrap(fn)          -- Create coroutine as callable function
 ```
 
 ### Criando Corrotinas Concorrentes
 
-Criar uma corrotina concorrente que executa independentemente (específico Wippy):
+O Wippy acrescenta `coroutine.spawn` para trabalho concorrente gerenciado pelo scheduler:
 
 ```lua
-coroutine.spawn(fn)         -- Criar função como corrotina concorrente
+coroutine.spawn(fn)         -- Spawn function as concurrent coroutine
 ```
 
 ```lua
--- Criar tarefa em background
+local time = require("time")
+
+-- Spawn background task
 coroutine.spawn(function()
     while true do
         check_health()
@@ -268,37 +275,39 @@ coroutine.spawn(function()
     end
 end)
 
--- Continuar execução principal imediatamente
+-- Continue main execution immediately
 process_request()
 ```
 
+Esse padrão parcial pressupõe que a entrada liste `time` em `modules:` e forneça as funções `check_health` e `process_request`. A corrotina criada é executada concorrentemente no mesmo processo Lua; `process_request()` é alcançada imediatamente, e cada verificação de integridade é seguida por uma pausa de 30 segundos.
+
 ## Tratamento de Erros
 
-Criação e classificação de erros estruturados. Veja [Error Handling](lua/core/errors.md) para documentação completa:
+A tabela global `errors` cria e classifica erros estruturados. Veja [Tratamento de Erros](errors.md) para a API completa.
 
 ### Constantes {id="error-constants"}
 
 ```lua
-errors.UNKNOWN           -- Erro não classificado
-errors.INVALID           -- Argumento ou entrada inválido
-errors.NOT_FOUND         -- Recurso não encontrado
-errors.ALREADY_EXISTS    -- Recurso já existe
-errors.PERMISSION_DENIED -- Permissão negada
-errors.TIMEOUT           -- Operação expirou
-errors.CANCELED          -- Operação cancelada
-errors.UNAVAILABLE       -- Serviço indisponível
-errors.INTERNAL          -- Erro interno
-errors.CONFLICT          -- Conflito (ex: modificação concorrente)
-errors.RATE_LIMITED      -- Limite de taxa excedido
+errors.UNKNOWN           -- Unclassified error
+errors.INVALID           -- Invalid argument or input
+errors.NOT_FOUND         -- Resource not found
+errors.ALREADY_EXISTS    -- Resource already exists
+errors.PERMISSION_DENIED -- Permission denied
+errors.TIMEOUT           -- Operation timed out
+errors.CANCELED          -- Operation cancelled
+errors.UNAVAILABLE       -- Service unavailable
+errors.INTERNAL          -- Internal error
+errors.CONFLICT          -- Conflict (e.g., concurrent modification)
+errors.RATE_LIMITED      -- Rate limit exceeded
 ```
 
 ### Funções {id="error-functions"}
 
 ```lua
--- Criar erro de string
+-- Create error from string
 local err = errors.new("something went wrong")
 
--- Criar erro com metadados
+-- Create error with metadata
 local err = errors.new({
     message = "User not found",
     kind = errors.NOT_FOUND,
@@ -306,82 +315,48 @@ local err = errors.new({
     details = {user_id = 123}
 })
 
--- Encapsular erro existente com contexto
+-- Wrap existing error with context
 local wrapped = errors.wrap(err, "failed to load profile")
 
--- Verificar tipo de erro
+-- Check error kind
 if errors.is(err, errors.NOT_FOUND) then
-    -- tratar não encontrado
+    -- handle not found
 end
 
--- Obter call stack do erro
+-- Get call stack from error
 local stack = errors.call_stack(err)
 ```
 
 ### Métodos de Erro
 
 ```lua
-err:message()    -- Obter string de mensagem de erro
-err:kind()       -- Obter tipo de erro (ex: "NOT_FOUND")
-err:retryable()  -- true, false, ou nil (desconhecido)
-err:details()    -- Obter tabela de detalhes ou nil
-err:stack()      -- Obter stack trace como string
-```
-
-## UTF-8 Unicode
-
-Tratamento de strings UTF-8 Unicode:
-
-### Constantes {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Pattern correspondendo um único caractere UTF-8
-```
-
-### Funções {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Criar string de codepoints Unicode
-utf8.codes(s)            -- Iterador sobre codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Obter codepoints nas posições i até j
-utf8.len(s [,i [,j]])    -- Contar caracteres UTF-8 (não bytes)
-utf8.offset(s, n [,i])   -- Posição em bytes do n-ésimo caractere a partir da posição i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Contar caracteres (não bytes)
-print(utf8.len(s))  -- 9
-
--- Iterar sobre codepoints
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Obter codepoint na posição
-local code = utf8.codepoint(s, 8)  -- Primeiro caractere chinês
-
--- Criar string de codepoints
-local emoji = utf8.char(0x1F600)  -- Rosto sorridente
+err:message()    -- Get error message string
+err:kind()       -- Get error kind (e.g., "NOT_FOUND")
+err:retryable()  -- true, false, or nil (unknown)
+err:details()    -- Get details table or nil
+err:stack()      -- Get stack trace as string
 ```
 
 ## Recursos Restritos
 
-Os seguintes recursos Lua padrão NÃO estão disponíveis por segurança:
+Os seguintes recursos padrão de Lua não estão disponíveis nos processos do Wippy:
 
 | Recurso | Alternativa |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Use módulo [Dynamic Evaluation](lua/dynamic/eval.md) |
+| `load`, `loadstring`, `loadfile`, `dofile` | Use o módulo [Avaliação Dinâmica](../dynamic/eval.md) |
 | `collectgarbage` | GC automático |
 | `rawlen` | Use operador `#` |
-| `io.*` | Use módulo [File System](lua/storage/filesystem.md) |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use módulos [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) |
-| `debug.*` (exceto traceback) | Não disponível |
+| `string.dump` | Não suportado |
+| `io.*` | Use [Filesystem](../storage/filesystem.md) para arquivos ou [I/O de Terminal](../system/io.md) para streams de terminal |
+| `os.execute` | Use [Execução de Comandos](../dynamic/exec.md) |
+| `os.remove`, `os.rename` | Use [Filesystem](../storage/filesystem.md) |
+| `os.exit`, `os.tmpname` | Sem equivalente direto na biblioteca padrão |
+| `debug.*` | Não disponível |
+| `utf8.*` | Não disponível |
 | `package.loadlib` | Bibliotecas nativas não suportadas |
 
 ## Veja Também
 
-- [Channels and Coroutines](lua/core/channel.md) - Channels estilo Go para concorrência
-- [Error Handling](lua/core/errors.md) - Criação e tratamento de erros estruturados
-- [OS Time](lua/system/ostime.md) - Funções de tempo do sistema
+- [Channels e Corrotinas](channel.md) - Channels no estilo Go para concorrência
+- [Tratamento de Erros](errors.md) - Criação e tratamento de erros estruturados
+- [Tempo do SO](../system/ostime.md) - Funções de tempo do sistema

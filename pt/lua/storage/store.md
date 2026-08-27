@@ -1,6 +1,6 @@
 ---
 title: "Key-Value Store"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Armazene e recupere valores com expiração opcional e gravações condicionais."
 ---
 
 # Key-Value Store
@@ -11,7 +11,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 Armazenamento key-value rapido com suporte a TTL. Ideal para cache, sessoes e estado temporario.
 
-Para configuração de store, veja [Store](system/store.md).
+Para configurar o store, veja [Store](../../system/store.md).
 
 ## Carregamento
 
@@ -29,10 +29,17 @@ if err then
     return nil, err
 end
 
-cache:set("user:123", {name = "Alice"}, 3600)
-local user = cache:get("user:123")
+local _, set_err = cache:set("user:123", {name = "Alice"}, 3600)
+if set_err then
+    cache:release()
+    return nil, set_err
+end
+
+local user, get_err = cache:get("user:123")
 
 cache:release()
+if get_err then return nil, get_err end
+return user
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -46,13 +53,14 @@ cache:release()
 Armazenar um valor com TTL opcional:
 
 ```lua
-local cache = store.get("app:cache")
+-- Simple set
+local _, err = cache:set("user:123:name", "Alice")
+if err then return nil, err end
 
--- Set simples
-cache:set("user:123:name", "Alice")
-
--- Set com TTL (expira em 300 segundos)
-cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+-- Set with TTL (expires in 300 seconds)
+local ok, ttl_err = cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+if ttl_err then return nil, ttl_err end
+return ok
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -68,10 +76,16 @@ cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 Obter um valor por chave:
 
 ```lua
-local user = cache:get("user:123")
-if not user then
-    -- Chave não encontrada ou expirada
+local errors = require("errors")
+
+local user, err = cache:get("user:123")
+if err then
+    if err:kind() == errors.NOT_FOUND then
+        return nil -- key missing or expired
+    end
+    return nil, err
 end
+return user
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -87,8 +101,15 @@ Retorna `nil` se chave não existe.
 Verificar se uma chave existe sem recuperar:
 
 ```lua
-if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+local errors = require("errors")
+
+local exists, err = cache:has("lock:" .. resource_id)
+if err then return nil, err end
+if exists then
+    return nil, errors.new({
+        message = "Resource is locked",
+        kind = errors.CONFLICT
+    })
 end
 ```
 
@@ -103,7 +124,9 @@ end
 Remover uma chave do store:
 
 ```lua
-cache:delete("session:" .. session_id)
+local deleted, err = cache:delete("session:" .. session_id)
+if err then return nil, err end
+return deleted
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -120,6 +143,7 @@ Retorna `true` se deletado, `false` se chave não existia.
 
 ```lua
 local e, err = cache:entry("user:123")
+if err then return nil, err end
 if e then
     print(e.key, e.value, e.version)
 end
@@ -137,13 +161,16 @@ Listar entradas em ordem determinística de chave, com paginação:
 
 ```lua
 local page, err = cache:list({ prefix = "session:", limit = 100 })
+if err then return nil, err end
 for _, e in ipairs(page.items) do
     print(e.key, e.value)
 end
 
--- próxima página
+-- next page
 if page.has_more then
-    page = cache:list({ prefix = "session:", after = page.cursor })
+    local next_page, next_err = cache:list({ prefix = "session:", after = page.cursor })
+    if next_err then return nil, next_err end
+    page = next_page
 end
 ```
 
@@ -160,17 +187,24 @@ end
 `put` escreve um valor e retorna sua nova `Entry`. As opções habilitam concorrência otimista:
 
 ```lua
--- cria apenas se a chave não existir
+local errors = require("errors")
+
+-- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
-    -- outra pessoa a detém
+if err and err:kind() == errors.ALREADY_EXISTS then
+    -- someone else holds it
+elseif err then
+    return nil, err
 end
 
--- compare-and-set: escreve apenas se a versão ainda corresponder
-local cur = cache:entry("config")
+-- compare-and-set: write only if the version still matches
+local cur, read_err = cache:entry("config")
+if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
-    -- um escritor concorrente a alterou; releia e tente novamente
+if err2 and err2:kind() == errors.CONFLICT then
+    -- a concurrent writer changed it; re-read and retry
+elseif err2 then
+    return nil, err2
 end
 ```
 
@@ -193,9 +227,10 @@ Escritas condicionais exigem um store cujo <code>info().conditional_put</code> s
 `info` informa o backend e o que ele suporta, para que o código possa se adaptar a qualquer store vinculado:
 
 ```lua
-local info = cache:info()
--- info.backend      -> um de store.backend.* (ex.: "kv.raft")
--- info.consistency  -> um de store.consistency.* (ex.: "linearizable")
+local info, err = cache:info()
+if err then return nil, err end
+-- info.backend      -> one of store.backend.* (e.g. "kv.raft")
+-- info.consistency  -> one of store.consistency.* (e.g. "linearizable")
 -- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  (booleans)
 ```
 
@@ -209,8 +244,10 @@ local info = cache:info()
 | `store.consistency` | `LINEARIZABLE`, `EVENTUAL`, `LOCAL`, `UNKNOWN` |
 
 ```lua
-if cache:info().consistency == store.consistency.LINEARIZABLE then
-    -- seguro usar compare-and-set
+local info, err = cache:info()
+if err then return nil, err end
+if info.consistency == store.consistency.LINEARIZABLE then
+    -- safe to use compare-and-set
 end
 ```
 
@@ -254,4 +291,4 @@ Operações de store estao sujeitas a avaliação de política de segurança.
 | Divergência de `if_version` | `errors.CONFLICT` | sim |
 | Escrita condicional em store sem suporte | `errors.INVALID` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.

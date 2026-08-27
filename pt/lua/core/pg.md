@@ -1,6 +1,6 @@
 ---
 title: "Grupos de Processos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Gerencie grupos de processos no cluster, associações, broadcasts e inscrições em alterações de membros."
 ---
 
 # Grupos de Processos
@@ -8,9 +8,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Agrupe processos em grupos nomeados e faça broadcast para todos os membros em todo o cluster. Modelado no `pg` do Erlang/OTP: grupos são dinâmicos, um processo pode pertencer a muitos grupos e a associação é rastreada em todo o cluster e é eventualmente consistente.
+Os grupos de processos organizam processos sob nomes dinâmicos e transmitem mensagens aos membros do grupo em todo o cluster. Um processo pode participar de vários grupos, e a associação no cluster é eventualmente consistente.
 
-Para o tipo de entrada de escopo e sua configuração, veja [Grupos de Processos](system/process-groups.md). Para o modelo de clustering mais amplo, veja o [Guia de Cluster](guides/cluster.md).
+Esta página é uma referência de API. Seus trechos pressupõem um `pg.scope` existente, uma entrada executável com contexto de processo e políticas que autorizem as operações documentadas. Os blocos demonstram chamadas individuais ou fluxos parciais de inscrição, não uma aplicação independente.
+
+Para o tipo de entrada de escopo e sua configuração, veja [Grupos de Processos](../../system/process-groups.md). Para o modelo de clustering mais amplo, veja o [Guia de Cluster](../../guides/cluster.md).
 
 ## Carregamento
 
@@ -18,9 +20,11 @@ Para o tipo de entrada de escopo e sua configuração, veja [Grupos de Processos
 local pg = require("pg")
 ```
 
+Adicione `pg` à lista `modules:` da entrada executável antes de carregá-lo.
+
 ## Abrindo um Escopo
 
-Um grupo de processos vive dentro de um **escopo** — uma entrada de registro `pg.scope`. Abra-o para obter uma instância sobre a qual você opera:
+Um grupo de processos pertence a um **escopo**, representado por uma entrada de registro `pg.scope`. Abra o escopo para obter uma instância para as operações do grupo:
 
 ```lua
 local group, err = pg.open("app:pg")
@@ -37,14 +41,25 @@ end
 
 **Permissão:** `pg.open` no `id` do escopo
 
-A instância é liberada automaticamente quando o processo sai; chame `release()` para liberá-la antes. Todas as outras operações são métodos na instância, chamados com `:`.
+A instância é liberada automaticamente durante a limpeza do frame de execução. Chame `release()` para liberá-la antes. As demais operações são métodos da instância e usam a sintaxe `:`.
 
 ## Entrando e Saindo
 
+As chamadas abaixo são formas independentes: escolha a associação a um único grupo ou em lote necessária para a aplicação e combine-a com as operações de saída correspondentes.
+
 ```lua
-local ok, err = group:join("workers")           -- grupo único
-local ok, err = group:join({"workers", "all"})  -- lote
+local ok, err = group:join("workers")           -- single group
+if err then return nil, err end
+```
+
+```lua
+local ok, err = group:join({"workers", "all"})  -- batch
+if err then return nil, err end
+```
+
+```lua
 local ok, err = group:leave("workers")
+if err then return nil, err end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -53,15 +68,18 @@ local ok, err = group:leave("workers")
 
 **Retorna:** `boolean, error`
 
-Um processo pode entrar no mesmo grupo mais de uma vez; deve sair o mesmo número de vezes para partir completamente (semântica multi-join). `leave` é best-effort em um lote e retorna erro apenas quando o processo não era membro de nenhum dos grupos nomeados.
+Um processo pode entrar no mesmo grupo mais de uma vez e deve sair o mesmo número de vezes para deixá-lo por completo. Em um lote, `leave` é best-effort e só retorna erro quando o processo não era membro de nenhum dos grupos informados.
 
 **Permissões:** `pg.join` / `pg.leave` em cada nome de grupo
 
 ## Listando Membros
 
 ```lua
-local members, err = group:get_members("workers")        -- todos os nós
-local local_members, err = group:get_local_members("workers")  -- apenas este nó
+local members, err = group:get_members("workers")        -- all nodes
+if err then return nil, err end
+
+local local_members, err = group:get_local_members("workers")  -- this node only
+if err then return nil, err end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -75,8 +93,11 @@ local local_members, err = group:get_local_members("workers")  -- apenas este n�
 ## Listando Grupos
 
 ```lua
-local groups, err = group:which_groups()         -- todos os grupos no cluster
-local local_groups, err = group:which_local_groups()  -- grupos com membro local
+local groups, err = group:which_groups()         -- all groups in the cluster
+if err then return nil, err end
+
+local local_groups, err = group:which_local_groups()  -- groups with a local member
+if err then return nil, err end
 ```
 
 **Retorna:** `string[], error` — nomes de grupos que atualmente têm pelo menos um membro
@@ -85,11 +106,14 @@ local local_groups, err = group:which_local_groups()  -- grupos com membro local
 
 ## Broadcast
 
-Envia uma mensagem para todos os membros de um grupo. Cada membro a recebe sob `topic` do processo chamador — trate com `process.listen(topic)`.
+O broadcast envia uma mensagem do processo chamador para todos os membros do grupo sob `topic`. Os membros a recebem com `process.listen(topic)`.
 
 ```lua
-local ok, err = group:broadcast("workers", "task", {id = 42})   -- todos os nós
-local ok, err = group:broadcast_local("workers", "task", {id = 42})  -- apenas este nó
+local ok, err = group:broadcast("workers", "task", {id = 42})   -- all nodes
+if err then return nil, err end
+
+ok, err = group:broadcast_local("workers", "task", {id = 42})  -- this node only
+if err then return nil, err end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -104,7 +128,7 @@ local ok, err = group:broadcast_local("workers", "task", {id = 42})  -- apenas e
 
 ## Monitorando um Grupo
 
-`monitor` inscreve-se em eventos de entrada/saída para um grupo e retorna os membros atuais atomicamente — nenhuma mudança de associação pode ocorrer entre o snapshot e a inscrição.
+`monitor` assina eventos de entrada e saída de um grupo e retorna um snapshot atômico dos membros atuais. Nenhuma alteração de associação pode ocorrer entre o snapshot e a criação da inscrição sem ser observada.
 
 ```lua
 local sub, members, err = group:monitor("workers")
@@ -113,13 +137,16 @@ if err then
 end
 
 for _, pid in ipairs(members) do
-    -- membros atuais no momento da inscrição
+    -- current members at subscription time
 end
 
 local ch = sub:channel()
-local event = ch:receive()  -- {kind = "member.joined" | "member.left", path = "workers", data = {...}}
+local event, open = ch:receive()  -- {kind = "member.joined" | "member.left", path = "workers", data = {...}}
+if not open then
+    return nil, errors.new("Process-group subscription closed")
+end
 
-sub:close()  -- cancelar inscrição; sub:close({flush = true}) drena eventos enfileirados primeiro
+sub:close()  -- unsubscribe; sub:close({flush = true}) drains queued events first
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -132,13 +159,19 @@ sub:close()  -- cancelar inscrição; sub:close({flush = true}) drena eventos en
 
 ## Observando Todos os Grupos
 
-`events` inscreve-se em mudanças de associação em todos os grupos do escopo e retorna um snapshot de todos os grupos com seus membros.
+`events` assina mudanças de associação em todos os grupos do escopo e retorna um snapshot que mapeia os grupos para seus membros.
 
 ```lua
 local sub, snapshot, err = group:events()
+if err then
+    return nil, err
+end
 -- snapshot: { ["workers"] = {pid, ...}, ["all"] = {pid, ...} }
 
-local event = sub:channel():receive()
+local event, open = sub:channel():receive()
+if not open then
+    return nil, errors.new("Process-group subscription closed")
+end
 sub:close()
 ```
 
@@ -165,7 +198,7 @@ Channels de inscrição têm buffer (capacidade 64); se um consumidor lento ench
 group:release()
 ```
 
-Libera a instância imediatamente. Idempotente; após a liberação, cada método retorna um erro. A limpeza também ocorre automaticamente quando o processo sai.
+`release` libera a instância imediatamente e é idempotente. Após a liberação, todas as outras operações do grupo retornam erro. A limpeza também é executada automaticamente ao fim do frame de execução.
 
 **Retorna:** `boolean`
 
@@ -178,12 +211,12 @@ Libera a instância imediatamente. Idempotente; após a liberação, cada métod
 | `pg.leave` | `leave()` | nome do grupo |
 | `pg.get_members` | `get_members()` | nome do grupo |
 | `pg.get_local_members` | `get_local_members()` | nome do grupo |
-| `pg.which_groups` | `which_groups()` | (escopo) |
-| `pg.which_local_groups` | `which_local_groups()` | (escopo) |
+| `pg.which_groups` | `which_groups()` | - |
+| `pg.which_local_groups` | `which_local_groups()` | - |
 | `pg.broadcast` | `broadcast()` | nome do grupo |
 | `pg.broadcast_local` | `broadcast_local()` | nome do grupo |
 | `pg.monitor` | `monitor()` | nome do grupo |
-| `pg.events` | `events()` | (escopo) |
+| `pg.events` | `events()` | - |
 
 ## Erros
 
@@ -191,14 +224,17 @@ Libera a instância imediatamente. Idempotente; após a liberação, cada métod
 |----------|------|
 | Permissão negada | `errors.PERMISSION_DENIED` |
 | Argumento ausente ou vazio | `errors.INVALID` |
-| Escopo não encontrado | `errors.NOT_FOUND` |
-| Sair de um grupo sem associação | `errors.INVALID` |
+| Escopo não encontrado | `errors.INTERNAL` |
+| Sair de um grupo sem associação | `errors.NOT_FOUND` |
 | Instância liberada | `errors.INVALID` |
+| Limite de grupos/membros ou da fila de ações atingido | `errors.RATE_LIMITED` (retentável) |
+| Serviço interrompido, backpressure ou circuito aberto | `errors.UNAVAILABLE` |
+| Timeout no broadcast | `errors.TIMEOUT` (retentável) |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Grupos de Processos](system/process-groups.md) - Tipo de entrada de escopo e configuração
-- [Cluster](guides/cluster.md) - Associação e o modelo de clustering
-- [Gerenciamento de Processos](lua/core/process.md) - Criando e enviando mensagens para processos individuais
+- [Grupos de Processos](../../system/process-groups.md) - Tipo de entrada de escopo e configuração
+- [Cluster](../../guides/cluster.md) - Associação, nomes e modelo de clustering
+- [Gerenciamento de Processos](process.md) - Criação de processos individuais e envio de mensagens

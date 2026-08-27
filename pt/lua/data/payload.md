@@ -1,6 +1,6 @@
 ---
 title: "Codificação de Payload"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Crie payloads tipados, inspecione seu formato, extraia valores e transcodifique entre representações compatíveis."
 ---
 
 # Codificação de Payload
@@ -15,7 +15,7 @@ Converta dados entre formatos incluindo JSON, MessagePack e binario. Manipule pa
 Namespace global. Nenhum require necessario.
 
 ```lua
-payload.new(...)  -- acesso direto
+payload.new(...)  -- direct access
 ```
 
 ## Constantes de Formato
@@ -38,26 +38,26 @@ payload.format.ERROR    -- "golang/error"
 Criar um novo payload de um valor Lua:
 
 ```lua
--- De tabela
+-- From table
 local p = payload.new({
     user_id = 123,
     name = "Alice",
     roles = {"admin", "user"}
 })
 
--- De string
+-- From string
 local str_p = payload.new("Hello, World!")
 
--- De numero
+-- From number
 local num_p = payload.new(42.5)
 
--- De boolean
+-- From boolean
 local bool_p = payload.new(true)
 
--- De nil
+-- From nil
 local nil_p = payload.new(nil)
 
--- De erro
+-- From error
 local err_p = payload.new(errors.new("something failed"))
 ```
 
@@ -115,21 +115,24 @@ local p = payload.new({
     value = 123
 })
 
--- Converter para JSON
+-- Convert to JSON
 local json_p, err = p:transcode(payload.format.JSON)
 if err then
     return nil, err
 end
 print(json_p:get_format())  -- "json/plain"
 
--- Converter para MessagePack (binario compacto)
+-- Convert to MessagePack (compact binary)
 local msgpack_p, err = p:transcode(payload.format.MSGPACK)
 if err then
     return nil, err
 end
 
--- Converter para YAML
-local yaml_p, err = p:transcode(payload.format.YAML)
+-- Convert to YAML
+local yaml_p, yaml_err = p:transcode(payload.format.YAML)
+if yaml_err then
+    return nil, yaml_err
+end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -144,6 +147,9 @@ Forçar a decodificação de um payload para um valor Lua, independentemente do 
 
 ```lua
 local data, err = p:unmarshal()
+if err then
+    return nil, err
+end
 ```
 
 `unmarshal()` sempre transcodifica para o formato Lua e retorna o valor Lua resultante. Diferente de `data()`, que retorna o valor bruto subjacente (potencialmente um objeto Go para formatos não-Lua), `unmarshal()` garante um valor Lua totalmente decodificado.
@@ -162,14 +168,22 @@ if err then
     return nil, err
 end
 
--- Aguardar resultado
+-- Wait for result
 local ch = future:response()
-local result_payload, ok = ch:receive()
+local _, ok = ch:receive()
 if not ok then
     return nil, errors.new("channel closed")
 end
 
--- Extrair dados do payload
+local result_payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+if result_payload == nil then
+    return nil, errors.new("compute returned no result")
+end
+
+-- Extract data from payload
 local result, err = result_payload:data()
 if err then
     return nil, err
@@ -185,5 +199,4 @@ print(result.computed_value)
 | Falha de transcodificação | `errors.INTERNAL` | não |
 | Resultado não e valor Lua valido | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
-
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.

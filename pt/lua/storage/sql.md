@@ -1,6 +1,6 @@
 ---
 title: "Banco de Dados SQL"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Execute queries SQL parametrizadas, transações e prepared statements em bancos de dados configurados."
 ---
 
 # Banco de Dados SQL
@@ -11,7 +11,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 Execute queries SQL em bancos de dados PostgreSQL, MySQL e SQLite. Recursos incluem queries parametrizadas, transacoes, prepared statements e um query builder fluente.
 
-Para configuração de banco de dados, veja [Database](system/database.md).
+Para configurar o banco de dados, veja [Banco de Dados](../../system/database.md).
 
 ## Carregamento
 
@@ -29,9 +29,19 @@ if err then
     return nil, err
 end
 
-local rows = db:query("SELECT * FROM users WHERE active = ?", {1})
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
-db:release()
+local rows, err = db:query("SELECT * FROM users WHERE active = ?", {1})
+if err then
+    return finish(nil, err)
+end
+
+return finish(rows)
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -45,7 +55,7 @@ Conexoes sao automaticamente retornadas ao pool quando a função termina, mas c
 </note>
 
 <note>
-Os marcadores de posição são passados ao driver do banco de dados sem alteração; o runtime não os reescreve. SQLite e MySQL usam `?`, PostgreSQL usa `$1, $2` — escreva-os no formato que seu driver espera. Os exemplos a seguir usam `?` (SQLite/MySQL). Para consultas que visam mais de um mecanismo, construa-as com o [Query Builder](#query-builder) e defina o `placeholder_format` do dialeto.
+Os marcadores de posição são passados ao driver do banco de dados sem alteração; o runtime não os reescreve. SQLite e MySQL usam `?`, PostgreSQL usa `$1, $2` — escreva-os no formato que seu driver espera. Os exemplos a seguir usam `?` (SQLite/MySQL). Para consultas que visam mais de um mecanismo, use o Query Builder e defina o `placeholder_format` do dialeto.
 </note>
 
 ## Constantes
@@ -88,7 +98,7 @@ local value = sql.as.int(42)
 
 **Retorna:** `userdata`
 
-## as.float
+### as.float
 
 Coerce valor para tipo SQL float.
 
@@ -98,7 +108,7 @@ local value = sql.as.float(19.99)
 
 **Retorna:** `userdata`
 
-## as.text
+### as.text
 
 Coerce valor para tipo SQL text.
 
@@ -108,7 +118,7 @@ local value = sql.as.text("hello")
 
 **Retorna:** `userdata`
 
-## as.binary
+### as.binary
 
 Coerce valor para tipo SQL binary.
 
@@ -118,7 +128,7 @@ local value = sql.as.binary("binary data")
 
 **Retorna:** `userdata`
 
-## as.null
+### as.null
 
 Retorna marcador SQL NULL.
 
@@ -144,7 +154,7 @@ local query = sql.builder.select("id", "name")
 
 **Retorna:** `SelectBuilder`
 
-## builder.insert
+### builder.insert
 
 Cria query builder de INSERT.
 
@@ -160,7 +170,7 @@ local query = sql.builder.insert("users")
 
 **Retorna:** `InsertBuilder`
 
-## builder.update
+### builder.update
 
 Cria query builder de UPDATE.
 
@@ -176,7 +186,7 @@ local query = sql.builder.update("users")
 
 **Retorna:** `UpdateBuilder`
 
-## builder.delete
+### builder.delete
 
 Cria query builder de DELETE.
 
@@ -192,7 +202,7 @@ local query = sql.builder.delete("users")
 
 **Retorna:** `DeleteBuilder`
 
-## builder.expr
+### builder.expr
 
 Cria expressao SQL raw para uso em clausulas where/having.
 
@@ -207,7 +217,7 @@ local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 
 **Retorna:** `Sqlizer`
 
-## builder.eq
+### builder.eq
 
 Cria condição de igualdade de tabela.
 
@@ -221,7 +231,7 @@ local cond = sql.builder.eq({active = 1, status = "open"})
 
 **Retorna:** `Sqlizer`
 
-## builder.not_eq
+### builder.not_eq
 
 Cria condição de desigualdade de tabela.
 
@@ -235,7 +245,7 @@ local cond = sql.builder.not_eq({status = "closed"})
 
 **Retorna:** `Sqlizer`
 
-## builder.lt
+### builder.lt
 
 Cria condição menor-que de tabela.
 
@@ -249,7 +259,7 @@ local cond = sql.builder.lt({age = 18})
 
 **Retorna:** `Sqlizer`
 
-## builder.lte
+### builder.lte
 
 Cria condição menor-ou-igual de tabela.
 
@@ -263,7 +273,7 @@ local cond = sql.builder.lte({price = 100})
 
 **Retorna:** `Sqlizer`
 
-## builder.gt
+### builder.gt
 
 Cria condição maior-que de tabela.
 
@@ -277,7 +287,7 @@ local cond = sql.builder.gt({score = 80})
 
 **Retorna:** `Sqlizer`
 
-## builder.gte
+### builder.gte
 
 Cria condição maior-ou-igual de tabela.
 
@@ -291,7 +301,7 @@ local cond = sql.builder.gte({age = 21})
 
 **Retorna:** `Sqlizer`
 
-## builder.like
+### builder.like
 
 Cria condição LIKE de tabela.
 
@@ -305,7 +315,7 @@ local cond = sql.builder.like({name = "john%"})
 
 **Retorna:** `Sqlizer`
 
-## builder.not_like
+### builder.not_like
 
 Cria condição NOT LIKE de tabela.
 
@@ -319,7 +329,7 @@ local cond = sql.builder.not_like({email = "%@spam.com"})
 
 **Retorna:** `Sqlizer`
 
-## builder.and_
+### builder.and_
 
 Combina multiplas condicoes com AND.
 
@@ -336,7 +346,7 @@ local cond = sql.builder.and_({
 
 **Retorna:** `Sqlizer`
 
-## builder.or_
+### builder.or_
 
 Combina multiplas condicoes com OR.
 
@@ -353,7 +363,7 @@ local cond = sql.builder.or_({
 
 **Retorna:** `Sqlizer`
 
-## builder.question
+### builder.question
 
 Formato de placeholder para placeholders ? (padrão). Disponível como alias `sql.builder.default_placeholder`.
 
@@ -363,7 +373,7 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.question)
 ```
 
-## builder.dollar
+### builder.dollar
 
 Formato de placeholder para placeholders $1, $2, ...
 
@@ -373,11 +383,11 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
-## builder.at
+### builder.at
 
 Formato de placeholder para placeholders `@p1, @p2, ...` (estilo SQL Server). Passado para `placeholder_format` como os formatos acima.
 
-## builder.colon
+### builder.colon
 
 Formato de placeholder para placeholders `:1, :2, ...`. Passado para `placeholder_format` como os formatos acima.
 
@@ -929,7 +939,10 @@ local sql_str, args = query:to_sql()
 Cria executor para query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local rows, err = executor:query()
 ```
 
@@ -1025,7 +1038,7 @@ Adiciona prefixo SQL.
 
 ```lua
 local query = sql.builder.insert("users")
-    :prefix("INSERT IGNORE INTO")
+    :prefix("/* audit import */")
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -1098,7 +1111,10 @@ local sql_str, args = query:to_sql()
 Cria executor para query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1304,7 +1320,10 @@ local sql_str, args = query:to_sql()
 Cria executor para query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1443,7 +1462,10 @@ local sql_str, args = query:to_sql()
 Cria executor para query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1514,30 +1536,34 @@ Acesso a banco de dados está sujeito a avaliação de política de segurança.
 | Nome de savepoint inválido | `errors.INVALID` | não |
 | Erro de execução de query | varia | varia |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
 
 ## Exemplo
 
 ```lua
 local sql = require("sql")
 
--- Obter conexão de banco de dados
 local db, err = sql.get("app.db:main")
-if err then error(err) end
+if err then return nil, err end
 
--- Verificar tipo de banco de dados
-local dbtype, _ = db:type()
-print("Tipo de banco de dados:", dbtype)
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
--- Query direta
+-- Direct query
 local users, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 for _, user in ipairs(users) do
     print(user.id, user.name)
 end
 
--- Padrão builder
+-- Builder pattern
 local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :from("users u")
     :left_join("orders o ON o.user_id = u.id")
@@ -1550,56 +1576,52 @@ local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :order_by("order_count DESC")
     :limit(10)
 
-local executor = query:run_with(db)
+local executor, build_err = query:run_with(db)
+if build_err then
+    return finish(nil, build_err)
+end
 local results, err = executor:query()
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
--- Transação com savepoints
+-- Transaction
 local tx, err = db:begin({isolation = sql.isolation.SERIALIZABLE})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 local _, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 if err then
-    tx:rollback()
-    error(err)
+    local _, rollback_err = tx:rollback()
+    if rollback_err then report_cleanup_error(rollback_err) end
+    return finish(nil, err)
 end
 
-tx:savepoint("sp1")
-
-local _, err = tx:execute("UPDATE users SET status = ? WHERE id = ?", {"active", 1})
-if err then
-    tx:rollback_to("sp1")
-else
-    tx:release("sp1")
+local _, commit_err = tx:commit()
+if commit_err then
+    return finish(nil, commit_err)
 end
-
-local ok, err = tx:commit()
-if err then error(err) end
 
 -- Prepared statements
 local stmt, err = db:prepare("INSERT INTO logs (message, level) VALUES (?, ?)")
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
-for i = 1, 100 do
+for i = 1, 3 do
     local _, err = stmt:execute({"log message " .. i, "info"})
     if err then
-        stmt:close()
-        error(err)
+        local _, close_err = stmt:close()
+        if close_err then report_cleanup_error(close_err) end
+        return finish(nil, err)
     end
 end
 
-stmt:close()
+local _, close_err = stmt:close()
+if close_err then
+    return finish(nil, close_err)
+end
 
--- NULL e valores tipados
-local insert = sql.builder.insert("products")
-    :columns("name", "price", "description")
-    :values("Widget", sql.as.float(19.99), sql.NULL)
-
-local executor = insert:run_with(db)
-local result, err = executor:exec()
-if err then error(err) end
-
-print("ID inserido:", result.last_insert_id)
-
-db:release()
+return finish({users = users, ranked_users = results})
 ```

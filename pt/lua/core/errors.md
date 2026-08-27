@@ -1,6 +1,6 @@
 ---
 title: "Errors"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Crie, encapsule, inspecione e classifique erros estruturados em entradas Lua."
 ---
 
 # Errors
@@ -13,10 +13,10 @@ Tratamento de erros estruturados com categorização e metadados de retry. Tabel
 ## Criando Erros
 
 ```lua
--- Mensagem simples (tipo padrão UNKNOWN)
+-- Simple message (kind defaults to UNKNOWN)
 local err = errors.new("something went wrong")
 
--- Com tipo, retryable e detalhes
+-- With kind, retryable, and details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -32,7 +32,7 @@ local err = errors.new({
 Adicionar contexto preservando tipo, retryable e detalhes:
 
 ```lua
-local data, err = db.query("SELECT * FROM users")
+local data, err = db:query("SELECT * FROM users")
 if err then
     return nil, errors.wrap(err, "failed to load users")
 end
@@ -53,12 +53,12 @@ end
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- tratar entrada inválida
+    -- handle invalid input
 end
 
--- Ou comparar diretamente
+-- Or compare directly
 if err:kind() == errors.NOT_FOUND then
-    -- tratar recurso ausente
+    -- handle missing resource
 end
 ```
 
@@ -94,16 +94,11 @@ end
 
 ## Erros Retentáveis
 
-| Tipicamente Retentável | Não Retentável |
-|------------------------|----------------|
-| `TIMEOUT` | `INVALID` |
-| `UNAVAILABLE` | `NOT_FOUND` |
-| `RATE_LIMITED` | `PERMISSION_DENIED` |
-| | `ALREADY_EXISTS` |
+A possibilidade de repetir uma operação é um metadado do erro, não uma propriedade garantida pelo tipo. Verifique o valor retornado por `err:retryable()` em vez de inferi-lo de `err:kind()`. Um resultado `nil` significa que o erro não informa se a repetição é apropriada.
 
 ```lua
 if err:retryable() then
-    -- seguro para retentar
+    -- safe to retry
 end
 ```
 

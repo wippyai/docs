@@ -1,6 +1,6 @@
 ---
 title: "Contracts"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Abra bindings de serviços tipados, inspecione contratos, chame implementações e propague contexto de chamada ou segurança."
 ---
 
 # Contracts
@@ -28,21 +28,24 @@ if err then
 end
 
 local result, err = greeter:say_hello("Alice")
+if err then
+    return nil, err
+end
 ```
 
 Com contexto de escopo ou parametros de query:
 
 ```lua
--- Com tabela de escopo
+-- With scope table
 local svc, err = contract.open("app.services:user", {
     tenant_id = "acme",
     region = "us-east"
 })
 
--- Com parametros de query (auto-convertido: "true"->bool, numeros->int/float)
+-- With query parameters (auto-converted: "true"→bool, numbers→int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
--- Com opções de chamada (terceiro argumento)
+-- With call options (third argument)
 local inst, err = contract.open("app.services:flaky", nil, {
     retry = { max_attempts = 5, initial_delay = 100 }
 })
@@ -62,6 +65,9 @@ Recuperar definição de contract para introspecção:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 
 print(c:id())  -- "app.services:greeter"
 
@@ -71,6 +77,9 @@ for _, m in ipairs(methods) do
 end
 
 local method, err = c:method("say_hello")
+if err then
+    return nil, err
+end
 ```
 
 ### Definição de Method
@@ -88,6 +97,9 @@ Listar todos os bindings que implementam um contract:
 
 ```lua
 local bindings, err = contract.find_implementations("app.services:greeter")
+if err then
+    return nil, err
+end
 
 for _, binding_id in ipairs(bindings) do
     print(binding_id)
@@ -98,7 +110,13 @@ Ou via objeto contract:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 local bindings, err = c:implementations()
+if err then
+    return nil, err
+end
 ```
 
 ## Verificando Implementação
@@ -117,9 +135,18 @@ Chamada síncrona - bloqueia até completar:
 
 ```lua
 local calc, err = contract.open("app.services:calculator")
+if err then
+    return nil, err
+end
 
 local sum, err = calc:add(10, 20)
+if err then
+    return nil, err
+end
 local product, err = calc:multiply(5, 6)
+if err then
+    return nil, err
+end
 ```
 
 ## Chamadas Assíncronas
@@ -128,20 +155,31 @@ Adicione sufixo `_async` para execução assíncrona:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
+if err then
+    return nil, err
+end
 
 local future, err = processor:process_async(large_dataset)
-
--- Fazer outro trabalho...
-
--- Aguardar resultado
-local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+if err then
+    return nil, err
 end
+
+-- Do other work...
+
+-- Wait for result
+local ch = future:response()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
+end
+
+local payload, result_err = future:result()
+if result_err then return nil, result_err end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
-Veja [Futures](lua/core/future.md) para métodos de future.
+Veja [Futures](./future.md) para os métodos de future.
 
 ## Abrindo via Contract
 
@@ -149,14 +187,17 @@ Abrir binding através de objeto contract:
 
 ```lua
 local c, err = contract.get("app.services:user")
+if err then
+    return nil, err
+end
 
--- Binding padrão
+-- Default binding
 local instance, err = c:open()
 
--- Binding especifico
+-- Specific binding
 local instance, err = c:open("app.services:user_impl")
 
--- Com escopo
+-- With scope
 local instance, err = c:open(nil, {user_id = 123})
 local instance, err = c:open("app.services:user_impl", {user_id = 123})
 ```
@@ -166,12 +207,18 @@ local instance, err = c:open("app.services:user_impl", {user_id = 123})
 Criar wrapper com contexto pre-configurado:
 
 ```lua
+local ctx = require("ctx")
 local c, err = contract.get("app.services:user")
+if err then return nil, err end
 
-local wrapped = c:with_context({
-    request_id = ctx.get("request_id"),
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local wrapped, err = c:with_context({
+    request_id = request_id,
     user_id = current_user.id
 })
+if err then return nil, err end
 
 local instance, err = wrapped:open()
 ```
@@ -182,10 +229,13 @@ Configure retry e outro comportamento de chamada via `with_options`:
 
 ```lua
 local c, err = contract.get("app.services:flaky")
+if err then return nil, err end
 
-local inst, err = c
-    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
-    :open("app.services:flaky_impl")
+local configured = c:with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
+local inst, err = configured:open("app.services:flaky_impl")
+if err then return nil, err end
 
 local result, err = inst:call()
 ```
@@ -204,10 +254,16 @@ Definir ator e escopo para autorização:
 ```lua
 local security = require("security")
 local c, err = contract.get("app.services:admin")
+if err then return nil, err end
 
-local secured = c:with_actor(security.actor()):with_scope(security.scope())
+local secured, err = c:with_actor(security.actor())
+if err then return nil, err end
+
+secured, err = secured:with_scope(security.scope())
+if err then return nil, err end
 
 local admin, err = secured:open()
+if err then return nil, err end
 ```
 
 Sem `with_actor`/`with_scope` explícitos, um contract aberto herda o ator e o escopo ambientes do chamador. Quando definidos, eles se propagam às funções de implementação vinculadas — cada chamada de método na instância executa sob essa identidade.

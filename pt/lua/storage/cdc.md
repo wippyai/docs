@@ -30,7 +30,7 @@ for _, s in ipairs(sources) do
 end
 ```
 
-Cada fonte é uma tabela com `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary` e `snapshot`. Consulte [Fontes CDC](../../system/cdc.md#informações-da-fonte).
+Cada fonte é uma tabela com `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary` e `snapshot`. Consulte [Fontes CDC](../../system/cdc.md#source-info).
 
 **Retorna:** `table, error`
 

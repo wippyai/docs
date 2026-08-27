@@ -1,6 +1,6 @@
 ---
 title: "Codificação Base64"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Codifique strings e dados binários como Base64 padrão RFC 4648 e decodifique-os novamente em bytes."
 ---
 
 # Codificação Base64
@@ -24,21 +24,28 @@ local base64 = require("base64")
 Codifica uma string (incluindo dados binarios) para base64.
 
 ```lua
--- Codificar texto
-local encoded = base64.encode("Hello, World!")
+-- Encode text
+local encoded, err = base64.encode("Hello, World!")
+if err then return nil, err end
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
--- Codificar dados binarios (ex: de arquivo)
-local image_data = fs.read_binary("photo.jpg")
-local image_b64 = base64.encode(image_data)
+-- Encode binary data from a configured filesystem volume
+local fs = require("fs")
+local assets = assert(fs.get("app:assets"))
+local image_data = assert(assets:readfile("photo.jpg"))
+local image_b64, encode_err = base64.encode(image_data)
+if encode_err then return nil, encode_err end
 
--- Codificar JSON para transporte
+-- Encode JSON for transport
 local json = require("json")
-local payload = json.encode({user = "alice", action = "login"})
-local token_part = base64.encode(payload)
+local payload, json_err = json.encode({user = "alice", action = "login"})
+if json_err then return nil, json_err end
+local token_part, token_err = base64.encode(payload)
+if token_err then return nil, token_err end
 
--- Codificar credenciais
-local credentials = base64.encode("username:password")
+-- Encode credentials
+local credentials, credentials_err = base64.encode(username .. ":" .. password)
+if credentials_err then return nil, credentials_err end
 local auth_header = "Basic " .. credentials
 ```
 
@@ -55,28 +62,41 @@ local auth_header = "Basic " .. credentials
 Decodifica uma string base64 de volta para dados originais.
 
 ```lua
--- Decodificar texto
-local decoded = base64.decode("SGVsbG8sIFdvcmxkIQ==")
+-- Decode text
+local decoded, decode_err = base64.decode("SGVsbG8sIFdvcmxkIQ==")
+if decode_err then return nil, decode_err end
 print(decoded)  -- "Hello, World!"
 
--- Decodificar com tratamento de erro
+-- Decode with error handling
 local data, err = base64.decode(user_input)
 if err then
-    return nil, errors.new("INVALID", "Invalid base64 data")
+    return nil, errors.new({
+        message = "Invalid base64 data",
+        kind = errors.INVALID
+    })
 end
 
--- Decodificar dados binarios
-local image_b64 = request.body
-local image_data, err = base64.decode(image_b64)
+-- Decode binary data
+local image_data, err = base64.decode(encoded_image)
 if err then
     return nil, err
 end
-fs.write_binary("output.jpg", image_data)
+local fs = require("fs")
+local output = assert(fs.get("app:output"))
+local ok, write_err = output:writefile("output.jpg", image_data)
+if write_err then
+    return nil, write_err
+end
 
--- Decodificar partes de JWT
-local parts = string.split(jwt_token, ".")
-local header = json.decode(base64.decode(parts[1]))
-local payload = json.decode(base64.decode(parts[2]))
+-- Decode the first field from a dot-delimited value
+local encoded_header, header_err = base64.encode("header")
+if header_err then return nil, header_err end
+local encoded_payload, payload_err = base64.encode("payload")
+if payload_err then return nil, payload_err end
+local value = encoded_header .. "." .. encoded_payload
+local encoded_field = assert(value:match("^([^.]+)"))
+local field, err = base64.decode(encoded_field)
+if err then return nil, err end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -93,4 +113,4 @@ local payload = json.decode(base64.decode(parts[2]))
 | Caracteres base64 inválidos | `errors.INVALID` | não |
 | Padding corrompido | `errors.INVALID` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
