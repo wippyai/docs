@@ -163,6 +163,63 @@
     ]
   },
   {
+    "title": "프런트엔드",
+    "children": [
+      {"title": "프런트엔드 계약: 시작하기", "path": "frontend/overview"},
+      {"title": "플랫폼 토폴로지", "path": "frontend/platform-topology"},
+      {"title": "이식 가능한 UI 계약", "path": "frontend/portable-ui-contract"},
+      {"title": "디자인 계층", "path": "frontend/design-layer"},
+      {
+        "title": "프런트엔드 레지스트리",
+        "children": [
+          {"title": "레지스트리 엔트리", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "마이크로 프런트엔드 앱(view.page)", "path": "frontend/frontend-registry/view-page"},
+          {"title": "웹 컴포넌트(view.component)", "path": "frontend/frontend-registry/view-component"},
+          {"title": "동적 라우팅", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "개요", "path": "frontend/web-host/overview"},
+          {"title": "프런트엔드 Facade", "path": "frontend/web-host/entry-point"},
+          {"title": "Bootstrap 순서", "path": "frontend/web-host/bootstrap"},
+          {"title": "멀티 패널 레이아웃", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "렌더 엔진", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy 및 격리", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS 주입", "path": "frontend/web-host/css-injection"},
+          {"title": "테마 지속성", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe 패키지", "path": "frontend/web-host/packages"}
+        ]
+      },
+      {
+        "title": "Wippy 마이크로 프런트엔드",
+        "children": [
+          {"title": "개요", "path": "frontend/micro-frontends/overview"},
+          {"title": "빠른 시작", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "페이지 레시피", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "웹 컴포넌트 레시피", "path": "frontend/micro-frontends/web-component"},
+          {"title": "채팅 웹 컴포넌트", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "프록시 API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "표면 이식성", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "표면 마이그레이션", "path": "frontend/micro-frontends/surface-migration"},
+          {"title": "테마 작성", "path": "frontend/micro-frontends/theming"},
+          {"title": "Tailwind 계약", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "토큰 카탈로그", "path": "frontend/micro-frontends/token-catalogue"},
+          {"title": "테마: 마이크로 프런트엔드 앱", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "테마: 웹 컴포넌트", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "빌드 및 의존성 계약", "path": "frontend/micro-frontends/build-system"},
+          {"title": "설정과 대소문자 표기", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "커스텀 복합 컨트롤", "path": "frontend/micro-frontends/custom-composites"},
+          {"title": "호스트 없는 모드", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "컴플라이언스 규칙 인덱스", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "지원되지 않는 프로젝트 종속 모듈", "path": "frontend/micro-frontends/unsupported-project-bound"},
+          {"title": "디버깅", "path": "frontend/micro-frontends/debugging"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},
