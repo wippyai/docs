@@ -7,6 +7,8 @@ description: "Configure attribute-based access control with actors, policy scope
 
 Wippy implements attribute-based access control with actors and policy scopes. Policies evaluate actions and resources using actor and resource metadata.
 
+This page is a configuration and API reference. Complete examples name their required registry entries; shorter Lua and YAML fences illustrate one operation or configuration fragment in an existing security context.
+
 ```mermaid
 flowchart LR
     A[Actor + Scope] --> PE[Policy Evaluation] --> AD[Allow/Deny]
@@ -133,7 +135,7 @@ entries:
 
 ### Policy Structure
 
-```yaml
+```text
 policy:
   actions: "*" | "action" | ["action1", "action2"]
   resources: "*" | "resource" | ["res1", "res2"]
@@ -253,8 +255,10 @@ A scope combines policies into a security context.
 local security = require("security")
 
 -- Get policies
-local admin_policy = security.policy("app.security:admin_policy")
-local readonly_policy = security.policy("app.security:readonly_policy")
+local admin_policy, admin_err = security.policy("app.security:admin_policy")
+if admin_err then return nil, admin_err end
+local readonly_policy, readonly_err = security.policy("app.security:readonly_policy")
+if readonly_err then return nil, readonly_err end
 
 -- Create scope with policies
 local scope = security.new_scope()
@@ -271,6 +275,7 @@ Load the policies assigned to a group:
 ```lua
 -- Load scope with all policies in group
 local scope, err = security.named_scope("app.security:admin")
+if err then return nil, err end
 ```
 
 Policies are assigned to groups via the `groups` field:
@@ -301,12 +306,25 @@ local has = scope:contains("app.security:admin_policy")
 local policies = scope:policies()
 ```
 
+### Module Permissions
+
+Strict mode applies permission checks to actor, policy, and scope construction as well as token operations:
+
+| Action | Resource | Used by | Denial behavior |
+|--------|----------|---------|-----------------|
+| `security.actor.create` | Actor ID | `security.new_actor` | Raises a Lua error |
+| `security.policy.get` | Policy registry ID | `security.policy` | Returns `nil, error` |
+| `security.policy_group.get` | Policy-group ID | `security.named_scope` | Returns `nil, error` |
+| `security.scope.create` | `custom`, `with`, or `without` | `security.new_scope`, `scope:with`, `scope:without` respectively | Raises a Lua error |
+
+Grant only the operations and IDs a caller needs. The actor, scope, and token examples on this page assume these permissions are present in addition to their operation-specific token permissions.
+
 ## Policy Evaluation
 
 ### Evaluation Flow
 
 ```
-1. Check each policy in scope
+1. Evaluate policies until a deny is found or the scope is exhausted
 2. If ANY policy returns Deny → Result is Deny
 3. If at least one Allow and no Deny → Result is Allow
 4. No applicable policies → Result is Undefined
@@ -365,7 +383,8 @@ The Lua operations are permission-gated. The active scope must allow
 `security.token_store.get` for acquisition and `security.token.create`,
 `security.token.validate`, or `security.token.revoke` for the corresponding
 operation. This applies in the default strict mode as well as in explicitly
-configured security contexts.
+configured security contexts. Examples that create an actor or load a named
+scope also require `security.actor.create` and `security.policy_group.get`.
 
 ### Configuration
 
@@ -406,9 +425,9 @@ entries:
 | `store` | required | Backing key-value store reference |
 | `token_length` | 32 | Token size in bytes (256 bits) |
 | `default_expiration` | 24h | Default token TTL |
-| `token_key` | none | HMAC-SHA256 signing key (direct value, or `${env:NAME}` to pull from the [env registry](system/env.md)) |
+| `token_key` | none | HMAC-SHA256 signing key (direct value, or `${env:NAME}` to pull from the [env registry](./env.md)) |
 
-Use `token_key: ${env:NAME}` in production to avoid embedding secrets in entries. The legacy `token_key_env` directive resolves the same way but is deprecated; prefer `${env:NAME}`.
+Use `token_key: ${env:NAME}` in production to avoid embedding secrets in entries. The legacy `token_key_env` directive also reads the environment registry but preserves the inline or zero value for a missing or empty lookup; a modern placeholder without a default fails when its variable is missing. The legacy directive is deprecated.
 
 ### Creating Tokens
 
@@ -427,20 +446,23 @@ local actor = security.new_actor("user:123", {
     email = "user@example.com"
 })
 
-local scope, _ = security.named_scope("app.security:default")
+local scope, scope_err = security.named_scope("app.security:default")
+if scope_err then
+    store:close()
+    return nil, scope_err
+end
 
 -- Create token
-local token, err = store:create(actor, scope, {
+local token, create_err = store:create(actor, scope, {
     expiration = "7d",  -- Override default expiration
     meta = {
         device = "mobile",
         ip = "192.168.1.1"
     }
 })
-
-if err then
-    return nil, err
-end
+store:close()
+if create_err then return nil, create_err end
+return token
 
 -- Token format: base64_token.hmac_signature (if token_key set)
 -- Example: "dGVzdHRva2VuMTIz.a1b2c3d4e5f6"
@@ -453,6 +475,7 @@ local errors = require("errors")
 
 -- Validate token
 local actor, scope, err = store:validate(token)
+store:close()
 if err then
     return nil, errors.new({
         kind = errors.PERMISSION_DENIED,
@@ -469,9 +492,14 @@ print(actor:id())  -- "user:123"
 ```lua
 -- Revoke single token
 local ok, err = store:revoke(token)
+if err then
+    store:close()
+    return nil, err
+end
 
 -- Close store when done
 store:close()
+return ok
 ```
 
 ## Context Flow
@@ -479,7 +507,9 @@ store:close()
 Actor and scope are inheritable frame context. Function calls and spawned
 processes inherit both unless the caller supplies a replacement context.
 Explicitly changing a spawned process's actor or scope requires the
-`process.security` permission.
+`process.security` permission. Changing the security context of a function call
+through `funcs.new():with_actor(...)` or `:with_scope(...)` instead requires
+`funcs.security` on `security`.
 
 ### Setting Context
 
@@ -487,10 +517,12 @@ Explicitly changing a spawned process's actor or scope requires the
 local funcs = require("funcs")
 
 -- Call function with security context
-local result, err = funcs.new()
-    :with_actor(actor)
-    :with_scope(scope)
-    :call("app.api:protected_endpoint", data)
+local caller, err = funcs.new():with_actor(actor)
+if err then return nil, err end
+caller, err = caller:with_scope(scope)
+if err then return nil, err end
+local result, call_err = caller:call("app.api:protected_endpoint", data)
+if call_err then return nil, call_err end
 ```
 
 ### Context Inheritance
@@ -553,33 +585,49 @@ local http = require("http")
 local security = require("security")
 
 local function protected_handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
+
+    local function respond(status, body)
+        local content_type_err = res:set_header("Content-Type", "application/json")
+        if content_type_err then return nil, content_type_err end
+        local status_err = res:set_status(status)
+        if status_err then return nil, status_err end
+        local write_err = res:write_json(body)
+        if write_err then return nil, write_err end
+        return true
+    end
 
     -- Extract and validate token
-    local auth = req:header("Authorization")
+    local auth, header_err = req:header("Authorization")
+    if header_err then return nil, header_err end
     if not auth then
-        return res:set_status(401):write_json({error = "Missing authorization"})
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Missing authorization"})
     end
 
-    local token = auth:gsub("^Bearer%s+", "")
+    local token = auth:match("^Bearer%s+(.+)$")
+    if not token then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Expected a bearer token"})
+    end
     local store, store_err = security.token_store("app.auth:tokens")
     if store_err then
-        return res:set_status(500):write_json({error = "Token store unavailable"})
+        return respond(http.STATUS.INTERNAL_ERROR, {error = "Token store unavailable"})
     end
 
-    local actor, scope, err = store:validate(token)
+    local actor, scope, validate_err = store:validate(token)
     store:close()
-    if err then
-        return res:set_status(401):write_json({error = "Invalid token"})
+    if validate_err then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Invalid token"})
     end
 
     -- Evaluate the actor and scope reconstructed from this token.
     if scope:evaluate(actor, "api.users.read", "users") ~= "allow" then
-        return res:set_status(403):write_json({error = "Forbidden"})
+        return respond(http.STATUS.FORBIDDEN, {error = "Forbidden"})
     end
 
-    res:write_json({user = actor:id()})
+    return respond(http.STATUS.OK, {user = actor:id()})
 end
 
 return { handler = protected_handler }
@@ -589,10 +637,15 @@ Token creation during login:
 
 ```lua
 local actor = security.new_actor("user:" .. user.id, {role = user.role})
-local scope, _ = security.named_scope("app.security:" .. user.role)
+local scope, scope_err = security.named_scope("app.security:" .. user.role)
+if scope_err then return nil, scope_err end
 
-local store, _ = security.token_store("app.auth:tokens")
-local token, err = store:create(actor, scope, {expiration = "24h"})
+local store, store_err = security.token_store("app.auth:tokens")
+if store_err then return nil, store_err end
+local token, token_err = store:create(actor, scope, {expiration = "24h"})
+store:close()
+if token_err then return nil, token_err end
+return token
 ```
 
 ## Best Practices

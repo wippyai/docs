@@ -7,6 +7,8 @@ description: "Configure memory, AMQP, or SQS queue drivers, logical queues, cons
 
 The queue system connects asynchronous message publishers, drivers, queues, consumers, and handler functions.
 
+This page is a configuration and behavior reference. YAML fences are fragments for an existing entry list unless they show a complete document; external-driver examples assume the broker or AWS-compatible service already exists.
+
 ## Architecture
 
 ```mermaid
@@ -99,7 +101,7 @@ Configure TLS under `tls`:
     insecure_skip_verify: false
 ```
 
-`cert`/`key`/`ca` carry PEM content — inline, via `file://`, or via a `${env:NAME}` placeholder resolved through the [env registry](system/env.md). `insecure_skip_verify` disables certificate verification (development only). The legacy `cert_env`/`key_env`/`ca_env` directives resolve the same way but are deprecated; prefer `${env:NAME}`.
+`cert`/`key`/`ca` carry PEM content — inline, via `file://`, or via a `${env:NAME}` placeholder resolved through the [env registry](./env.md). `insecure_skip_verify` disables certificate verification (development only). Legacy `cert_env`/`key_env`/`ca_env` directives also read the environment registry, but preserve an inline or zero value when the lookup is missing or empty; modern placeholders without defaults fail on missing variables. The legacy directives are deprecated.
 
 ### SQS Driver
 
@@ -229,7 +231,7 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
 | `consumer_tag` | Identifier for this subscription |
 
 <tip>
-Consumers respect call context and can be subject to security policies. Configure actor and policies at the lifecycle level. See <a href="system/security.md">Security</a>.
+Consumers respect call context and can be subject to security policies. Configure actor and policies at the lifecycle level. See <a href="./security.md">Security</a>.
 </tip>
 
 ### Worker Pool
@@ -254,20 +256,21 @@ local queue = require("queue")
 local logger = require("logger")
 
 local function main(body)
-    local msg = queue.message()
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
+    local correlation_id, header_err = msg:header("correlation_id")
+    if header_err then return nil, header_err end
+
     logger:info("processing", {
-        id = msg:id(),
-        correlation_id = msg:header("correlation_id")
+        id = message_id,
+        correlation_id = correlation_id
     })
 
-    local _, err = process_task(body)
-    if err then
-        local _, nack_err = msg:nack()
-        if nack_err then
-            logger:error("failed to nack", {error = tostring(nack_err)})
-        end
-        return
-    end
+    local _, task_err = process_task(body)
+    if task_err then return nil, task_err end
+    return true
 end
 
 return { main = main }
@@ -305,14 +308,16 @@ From Lua code:
 ```lua
 local queue = require("queue")
 
-queue.publish("app.queue:tasks", {
+local published, publish_err = queue.publish("app.queue:tasks", {
     id = "task-123",
     action = "process",
     data = payload
 })
+if publish_err then return nil, publish_err end
+return published
 ```
 
-See [Queue Module](lua/storage/queue.md) for the Lua publishing and message API.
+See [Queue Module](../lua/storage/queue.md) for the Lua publishing and message API.
 
 ## Graceful Shutdown
 
@@ -325,6 +330,6 @@ On consumer stop:
 
 ## See Also
 
-- [Queue Module](lua/storage/queue.md) - Lua API reference
-- [Queue Consumers Guide](guides/queue-consumers.md) - Consumer patterns and worker pools
-- [Supervision](guides/supervision.md) - Consumer lifecycle management
+- [Queue Module](../lua/storage/queue.md) - Lua API reference
+- [Queue Consumers Guide](../guides/queue-consumers.md) - Consumer patterns and worker pools
+- [Supervision](../guides/supervision.md) - Consumer lifecycle management

@@ -8,6 +8,8 @@ description: "Configure Jet template sets, sources, names, inheritance, and shar
 
 Template entries configure [CloudyKit Jet](https://github.com/CloudyKit/jet) sets and template sources.
 
+This page is a configuration reference. Its YAML fences are fragments for an existing entry list; combine each template with the referenced `template.set` in the same project or installed module graph.
+
 ## Entry Kinds
 
 | Kind | Description |

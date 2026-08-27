@@ -7,6 +7,8 @@ description: "Route outbound connections and bind listeners through SOCKS5, Tor,
 
 Network overlay entries route outbound connections or bind listeners through SOCKS5, Tor, Tailscale, or I2P. A selected overlay propagates across function, process, and HTTP boundaries.
 
+This page is a configuration reference. The YAML fences are entry or application-config fragments and assume the external proxy, tailnet, or I2P SAM service already exists.
+
 ## Entry Kinds
 
 | Kind | Description |
@@ -105,9 +107,10 @@ Route a called function or spawned process through an overlay using `with_option
 ```lua
 local funcs = require("funcs")
 
-local result, err = funcs.new()
-    :with_options({ network = "app.net:proxy" })
-    :call("app.api:fetch_data")
+local caller, err = funcs.new():with_options({ network = "app.net:proxy" })
+if err then return nil, err end
+local result, call_err = caller:call("app.api:fetch_data")
+if call_err then return nil, call_err end
 ```
 
 ```lua
@@ -115,7 +118,10 @@ local process = require("process")
 
 local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
+if err then return nil, err end
 ```
+
+Constructing the process spawner with custom options also requires `process.context` on `context`. A denial raises a Lua error before the spawner is returned; `network.select` is then checked separately for the selected network ID.
 
 The `http_client` module accepts the same overlay selection on per-call options under the key `overlay_network`.
 
@@ -162,6 +168,7 @@ Overlay entries are replaced on registry update. The driver builds the replaceme
 |--------|----------|-------------|
 | `network.select` | Network registry ID | Explicit overlay selection at `funcs.call`, `process.spawn`, `http_client` |
 | `network.bind` | Network registry ID | Binding an `http.service` listener through an overlay (the `network:` field) |
+| `process.context` | `context` | Constructing a process spawner with `process.with_options(...)` |
 
 Deny `network.select` on a scope to stop code inside it from choosing an overlay explicitly. Inherited overlays are unaffected — they were authorized at the caller. `network.bind` is checked when a server with a `network:` overlay starts its listener.
 
