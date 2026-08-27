@@ -11,7 +11,9 @@ description: "Run parameterized SQL queries, transactions, and prepared statemen
 
 The `sql` module runs queries against configured PostgreSQL, MySQL, and SQLite databases. It supports parameterized queries, transactions, prepared statements, and query builders.
 
-For database configuration, see [Database](system/database.md).
+This page is an API reference. Its snippets assume a configured database, permission to acquire it, and any tables named by the query. They illustrate individual calls rather than a standalone application. The combined recipe at the end states its additional schema and driver assumptions.
+
+For database configuration, see [Database](../../system/database.md).
 
 ## Loading
 
@@ -29,13 +31,19 @@ if err then
     return nil, err
 end
 
-local rows, err = db:query("SELECT * FROM users WHERE active = ?", {1})
-if err then
-    db:release()
-    return nil, err
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
 end
 
-db:release()
+local rows, err = db:query("SELECT * FROM users WHERE active = ?", {1})
+if err then
+    return finish(nil, err)
+end
+
+return finish(rows)
 ```
 
 | Parameter | Type | Description |
@@ -1040,7 +1048,7 @@ Add an SQL prefix.
 
 ```lua
 local query = sql.builder.insert("users")
-    :prefix("INSERT IGNORE INTO")
+    :prefix("/* audit import */")
 ```
 
 | Parameter | Type | Description |
@@ -1532,30 +1540,35 @@ Database access is subject to security policy evaluation.
 | Resource not found | `errors.NOT_FOUND` | no |
 | Resource not database | `errors.INVALID` | no |
 | Invalid parameters | `errors.INVALID` | no |
-| SQL syntax error | `errors.INVALID` | no |
 | Statement closed | `errors.INVALID` | no |
 | Transaction not active | `errors.INVALID` | no |
 | Invalid savepoint name | `errors.INVALID` | no |
-| Query execution error | varies | varies |
+| Driver or query execution error | preserved from the driver when available; otherwise unspecified | varies |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.
 
-## End-to-End Example
+## Combined Partial Recipe
+
+This recipe assumes `app.db:main` is a configured SQLite or MySQL database and already contains `users`, `orders`, and `logs` tables with the referenced columns. It uses `?` placeholders; use `$1`, `$2`, and so on for a PostgreSQL resource. Returned rows depend on the application's data. The surrounding application supplies `report_cleanup_error(err)` so rollback or close failures are observable without replacing the initiating operation error.
 
 ```lua
 local sql = require("sql")
 
--- Get database connection
 local db, err = sql.get("app.db:main")
-if err then error(err) end
+if err then return nil, err end
 
--- Check database type
-local dbtype, _ = db:type()
-print("Database type:", dbtype)
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
 -- Direct query
 local users, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 for _, user in ipairs(users) do
     print(user.id, user.name)
@@ -1574,56 +1587,52 @@ local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :order_by("order_count DESC")
     :limit(10)
 
-local executor = query:run_with(db)
+local executor, build_err = query:run_with(db)
+if build_err then
+    return finish(nil, build_err)
+end
 local results, err = executor:query()
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
--- Transaction with savepoints
+-- Transaction
 local tx, err = db:begin({isolation = sql.isolation.SERIALIZABLE})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 local _, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 if err then
-    tx:rollback()
-    error(err)
+    local _, rollback_err = tx:rollback()
+    if rollback_err then report_cleanup_error(rollback_err) end
+    return finish(nil, err)
 end
 
-tx:savepoint("sp1")
-
-local _, err = tx:execute("UPDATE users SET status = ? WHERE id = ?", {"active", 1})
-if err then
-    tx:rollback_to("sp1")
-else
-    tx:release("sp1")
+local _, commit_err = tx:commit()
+if commit_err then
+    return finish(nil, commit_err)
 end
-
-local ok, err = tx:commit()
-if err then error(err) end
 
 -- Prepared statements
 local stmt, err = db:prepare("INSERT INTO logs (message, level) VALUES (?, ?)")
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
-for i = 1, 100 do
+for i = 1, 3 do
     local _, err = stmt:execute({"log message " .. i, "info"})
     if err then
-        stmt:close()
-        error(err)
+        local _, close_err = stmt:close()
+        if close_err then report_cleanup_error(close_err) end
+        return finish(nil, err)
     end
 end
 
-stmt:close()
+local _, close_err = stmt:close()
+if close_err then
+    return finish(nil, close_err)
+end
 
--- NULL and typed values
-local insert = sql.builder.insert("products")
-    :columns("name", "price", "description")
-    :values("Widget", sql.as.float(19.99), sql.NULL)
-
-local executor = insert:run_with(db)
-local result, err = executor:exec()
-if err then error(err) end
-
-print("Inserted ID:", result.last_insert_id)
-
-db:release()
+return finish({users = users, ranked_users = results})
 ```

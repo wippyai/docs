@@ -11,7 +11,9 @@ description: "Read, write, and manage files in a configured filesystem volume."
 
 The `fs` module reads, writes, and manages files within configured filesystem volumes.
 
-For filesystem configuration, see [Filesystem](system/filesystem.md).
+This page is an API reference. Its snippets assume a configured volume and permission to acquire it. Each block is an isolated operation or partial recipe; application values and callbacks such as `config`, `message`, `process`, and `report_cleanup_error` must already exist. `report_cleanup_error(err)` records a close failure without replacing an operation error that already occurred.
+
+For filesystem configuration, see [Filesystem](../../system/filesystem.md).
 
 ## Loading
 
@@ -29,7 +31,9 @@ if err then
     return nil, err
 end
 
-local content = vol:readfile("/config.json")
+local content, read_err = vol:readfile("/config.json")
+if read_err then return nil, read_err end
+return content
 ```
 
 | Parameter | Type | Description |
@@ -47,19 +51,26 @@ Volumes do not require explicit release. The system manages them, and a volume b
 Read an entire file:
 
 ```lua
-local vol = fs.get("app:config")
+local json = require("json")
+
+local vol, get_err = fs.get("app:config")
+if get_err then return nil, get_err end
 
 local data, err = vol:readfile("/settings.json")
 if err then
     return nil, err
 end
 
-local config = json.decode(data)
+local config, decode_err = json.decode(data)
+if decode_err then return nil, decode_err end
+return config
 ```
 
 Use `open()` to stream a large file:
 
 ```lua
+local errors = require("errors")
+
 local file, err = vol:open("/data/large.csv", "r")
 if err then
     return nil, err
@@ -71,13 +82,15 @@ while true do
         if err:kind() == errors.NOT_FOUND then
             break -- EOF
         end
-        file:close()
+        local _, close_err = file:close()
+        if close_err then report_cleanup_error(close_err) end
         return nil, err
     end
     process(chunk)
 end
 
-file:close()
+local _, close_err = file:close()
+if close_err then return nil, close_err end
 ```
 
 ## Writing Files
@@ -85,16 +98,24 @@ file:close()
 Write a string or reader-backed stream to a file:
 
 ```lua
-local vol = fs.get("app:data")
+local json = require("json")
+
+local vol, get_err = fs.get("app:data")
+if get_err then return nil, get_err end
 
 -- Overwrite (default)
-vol:writefile("/config.json", json.encode(config))
+local encoded, encode_err = json.encode(config)
+if encode_err then return nil, encode_err end
+local _, write_err = vol:writefile("/config.json", encoded)
+if write_err then return nil, write_err end
 
 -- Append
-vol:writefile("/logs/app.log", message .. "\n", "a")
+local _, append_err = vol:writefile("/logs/app.log", message .. "\n", "a")
+if append_err then return nil, append_err end
 
 -- Exclusive write (fails if exists)
 local ok, err = vol:writefile("/lock.pid", tostring(pid), "wx")
+if err then return nil, err end
 
 -- Copy from an open file or another reader-backed value
 local source, err = vol:open("/incoming/report.csv", "r")
@@ -102,10 +123,13 @@ if err then
     return nil, err
 end
 local copied, err = vol:writefile("/archive/report.csv", source)
-source:close()
+local _, close_err = source:close()
 if err then
+    if close_err then report_cleanup_error(close_err) end
     return nil, err
 end
+if close_err then return nil, close_err end
+return copied
 ```
 
 | Mode | Description |
@@ -117,30 +141,53 @@ end
 Use a file handle for streaming writes:
 
 ```lua
-local file = vol:open("/output/report.txt", "w")
-file:write("Header\n")
-file:write("Data: " .. value .. "\n")
-file:sync()
-file:close()
+local file, open_err = vol:open("/output/report.txt", "w")
+if open_err then return nil, open_err end
+local _, header_err = file:write("Header\n")
+if header_err then
+    local _, close_err = file:close()
+    if close_err then report_cleanup_error(close_err) end
+    return nil, header_err
+end
+local _, data_err = file:write("Data: " .. value .. "\n")
+if data_err then
+    local _, close_err = file:close()
+    if close_err then report_cleanup_error(close_err) end
+    return nil, data_err
+end
+local _, sync_err = file:sync()
+if sync_err then
+    local _, close_err = file:close()
+    if close_err then report_cleanup_error(close_err) end
+    return nil, sync_err
+end
+local _, close_err = file:close()
+if close_err then return nil, close_err end
 ```
 
 ## Checking Paths
 
 ```lua
-local vol = fs.get("app:data")
+local vol, get_err = fs.get("app:data")
+if get_err then return nil, get_err end
 
 -- Check existence
-if vol:exists("/cache/results.json") then
+local exists, exists_err = vol:exists("/cache/results.json")
+if exists_err then return nil, exists_err end
+if exists then
     return vol:readfile("/cache/results.json")
 end
 
 -- Check if directory
-if vol:isdir(path) then
+local is_dir, isdir_err = vol:isdir(path)
+if isdir_err then return nil, isdir_err end
+if is_dir then
     process_directory(path)
 end
 
 -- Get file info
-local info = vol:stat("/documents/report.pdf")
+local info, stat_err = vol:stat("/documents/report.pdf")
+if stat_err then return nil, stat_err end
 print(info.size, info.modified, info.type)
 ```
 
@@ -149,18 +196,24 @@ print(info.size, info.modified, info.type)
 ## Directory Operations
 
 ```lua
-local vol = fs.get("app:data")
+local vol, get_err = fs.get("app:data")
+if get_err then return nil, get_err end
 
 -- Create directory
-vol:mkdir("/uploads/" .. user_id)
+local _, mkdir_err = vol:mkdir("/uploads/" .. user_id)
+if mkdir_err then return nil, mkdir_err end
 
 -- List directory contents
-for entry in vol:readdir("/documents") do
+local iter, state = vol:readdir("/documents")
+if not iter then return nil, state end
+for entry in iter, state do
     print(entry.name, entry.type)
 end
 
 -- Remove file or empty directory
-vol:remove("/temp/file.txt")
+local removed, remove_err = vol:remove("/temp/file.txt")
+if remove_err then return nil, remove_err end
+return removed
 ```
 
 Entry fields: `name`, `type` ("file" or "directory")
@@ -194,7 +247,8 @@ if err then
 end
 local scanner, err = file:scanner("lines")
 if err then
-    file:close()
+    local _, close_err = file:close()
+    if close_err then report_cleanup_error(close_err) end
     return nil, err
 end
 
@@ -207,11 +261,13 @@ end
 
 local scan_err = scanner:err()
 if scan_err then
-    file:close()
+    local _, close_err = file:close()
+    if close_err then report_cleanup_error(close_err) end
     return nil, scan_err
 end
 
-file:close()
+local _, close_err = file:close()
+if close_err then return nil, close_err end
 ```
 
 Split modes: `"lines"` (default), `"words"`, `"bytes"`, `"runes"`
@@ -271,4 +327,4 @@ Security policy evaluation applies when a volume is acquired.
 
 `unspecified` means `err:retryable()` returns `nil`; it is not equivalent to `false`.
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

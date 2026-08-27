@@ -11,7 +11,9 @@ description: "Publish messages and process deliveries from configured queues."
 
 The `queue` module publishes messages and processes deliveries from configured distributed queues, including RabbitMQ and other AMQP-compatible brokers.
 
-For queue configuration, see [Queue](system/queue.md).
+This page is an API reference. Publishing snippets assume the queue entries and permissions already exist. The consumer section is a partial recipe for a handler invoked by `queue.consumer`; it is not a standalone queue deployment.
+
+For queue configuration, see [Queue](../../system/queue.md).
 
 ## Loading
 
@@ -47,13 +49,14 @@ end
 Headers carry routing, priority, and tracing metadata. Keys must be strings, and publisher values may be strings, integers, numbers, or booleans:
 
 ```lua
-queue.publish("app:notifications", {
+local ok, err = queue.publish("app:notifications", {
     type = "order_shipped",
     order_id = order.id
 }, {
     priority = 5,
     correlation_id = request_id
 })
+if err then return nil, err end
 ```
 
 Consumers receive every header value as a string. The `x_original_queue`, `x_dead_letter_reason`, `x_dead_letter_time`, and `attempts` keys are reserved for delivery and dead-letter bookkeeping and must not be set by publishers.
@@ -68,9 +71,12 @@ if err then
     return nil, err
 end
 
-local msg_id = msg:id()
-local priority = msg:header("priority")
-local all_headers = msg:headers()
+local msg_id, id_err = msg:id()
+if id_err then return nil, id_err end
+local priority, header_err = msg:header("priority")
+if header_err then return nil, header_err end
+local all_headers, headers_err = msg:headers()
+if headers_err then return nil, headers_err end
 ```
 
 **Returns:** `Message, error`
@@ -93,6 +99,7 @@ The runtime auto-acks on handler success and auto-nacks on handler error. Call `
 
 ```lua
 local stats, err = queue.info("app:tasks")
+if err then return nil, err end
 -- stats may contain: message_count, consumer_count, ready (driver-dependent)
 ```
 
@@ -109,22 +116,33 @@ A `queue.consumer` entry binds a queue to the handler referenced by `func`. The 
   func: app:email_handler
 ```
 
+This fragment assumes `app:emails` and the `app:email_handler` function entry already exist. The function source below assumes the application supplies `deliver_email(payload)` and grants any permissions it needs.
+
 ```lua
--- app:email_handler
-function handle_email(payload)
-    local msg = queue.message()
+local queue = require("queue")
+local logger = require("logger")
+
+local function main(payload)
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
 
     logger:info("Processing", {
-        message_id = msg:id(),
+        message_id = message_id,
         to = payload.to
     })
 
-    local ok, err = email.send(payload.to, payload.template, payload.data)
-    if err then
-        return nil, err  -- Message will be requeued or dead-lettered
-    end
+    local ok, send_err = deliver_email(payload)
+    if send_err then return nil, send_err end
+    return ok
 end
+
+return {main = main}
 ```
+
+Returning an invocation error causes the consumer to nack the unsettled delivery. Redelivery then follows the selected driver's behavior; the built-in dead-letter configuration is not enforced in this release.
 
 ## Permissions
 
@@ -142,19 +160,19 @@ The runtime checks the general permission first and the queue-specific permissio
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Queue ID empty | `errors.INVALID` | no |
-| Message data empty | `errors.INVALID` | no |
+| Message argument missing or an empty table | `errors.INVALID` | no |
 | No delivery context | `errors.INVALID` | no |
 | Message released or already settled | `errors.INVALID` | no |
 | Publish not allowed | `errors.INVALID` | no |
 | Publish failed | `errors.INTERNAL` | no |
 | Queue or driver not found for `info` | `errors.INTERNAL` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.
 
 ## See Also
 
-- [Queue Configuration](system/queue.md) - Queue drivers and entry definitions
-- [Queue Consumers Guide](guides/queue-consumers.md) - Consumer patterns and worker pools
-- [Process Management](lua/core/process.md) - Process spawning and communication
-- [Channels](lua/core/channel.md) - Inter-process communication patterns
-- [Functions](lua/core/funcs.md) - Async function invocation
+- [Queue Configuration](../../system/queue.md) - Queue drivers and entry definitions
+- [Queue Consumers Guide](../../guides/queue-consumers.md) - Consumer patterns and worker pools
+- [Process Management](../core/process.md) - Process spawning and communication
+- [Channels](../core/channel.md) - Inter-process communication patterns
+- [Functions](../core/funcs.md) - Async function invocation
