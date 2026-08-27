@@ -138,10 +138,10 @@
   {
     "title": "WASM Runtime",
     "children": [
-      {"title": "Overview", "path": "wasm/overview"},
-      {"title": "Functions", "path": "wasm/functions"},
-      {"title": "Host Functions", "path": "wasm/hosts"},
-      {"title": "Processes", "path": "wasm/processes"}
+      {"title": "Runtime de WebAssembly", "path": "wasm/overview"},
+      {"title": "Funciones WASM", "path": "wasm/functions"},
+      {"title": "Funciones del host", "path": "wasm/hosts"},
+      {"title": "Procesos WASM", "path": "wasm/processes"}
     ]
   },
   {
