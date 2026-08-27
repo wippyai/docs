@@ -191,6 +191,31 @@
           {"title": "Persistencia del tema", "path": "frontend/web-host/theme-persistence"},
           {"title": "Paquetes @wippy-fe", "path": "frontend/web-host/packages"}
         ]
+      },
+      {
+        "title": "Micro frontends de Wippy",
+        "children": [
+          {"title": "Descripción general", "path": "frontend/micro-frontends/overview"},
+          {"title": "Inicio rápido", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "Receta de página", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Receta de componente web", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Componentes web de chat", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "API Proxy", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Portabilidad de superficies", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "Migración de superficies", "path": "frontend/micro-frontends/surface-migration"},
+          {"title": "Creación de temas", "path": "frontend/micro-frontends/theming"},
+          {"title": "Contrato de Tailwind", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "Catálogo de tokens", "path": "frontend/micro-frontends/token-catalogue"},
+          {"title": "Temas: aplicaciones micro frontend", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "Temas: componentes web", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "Contrato de compilación y dependencias", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Configuración y uso de mayúsculas", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "Composiciones personalizadas", "path": "frontend/micro-frontends/custom-composites"},
+          {"title": "Modo sin host", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "Índice de reglas de conformidad", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Módulos ligados a un proyecto no admitidos", "path": "frontend/micro-frontends/unsupported-project-bound"},
+          {"title": "Depuración", "path": "frontend/micro-frontends/debugging"}
+        ]
       }
     ]
   },
