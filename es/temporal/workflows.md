@@ -1,11 +1,13 @@
 ---
 title: "Workflows"
-description: "Los workflows son funciones durables que orquestan activities y mantienen estado a través de fallos y reinicios. Se definen usando el tipo de entrada…"
+description: "Defina workflows duraderos de Temporal con entradas workflow.lua, activities, señales, workflows hijos, temporizadores y operaciones seguras para replay."
 ---
 
 # Workflows
 
-Los workflows son funciones durables que orquestan activities y mantienen estado a través de fallos y reinicios. Se definen usando el tipo de entrada `workflow.lua`.
+Una entrada `workflow.lua` define un workflow duradero de Temporal que orquesta activities y mantiene el estado a través de fallos y reinicios.
+
+Esta página es una referencia de API con recetas parciales. Las declaraciones de entradas, el registro del worker, las implementaciones de activities, las políticas de seguridad y los datos circundantes de la aplicación solo se muestran cuando son relevantes para un contrato concreto.
 
 ## Definición
 
@@ -53,7 +55,14 @@ local function main(order)
         address = order.shipping_address
     })
     if err then
-        funcs.call("app:refund_payment", payment.id)
+        local _, refund_err = funcs.call("app:refund_payment", payment.id)
+        if refund_err then
+            return {
+                status = "failed",
+                error = tostring(err),
+                compensation_error = tostring(refund_err)
+            }
+        end
         return {status = "failed", error = tostring(err)}
     end
 
@@ -78,15 +87,16 @@ Obtener información de ejecución del workflow:
 ```lua
 local workflow = require("workflow")
 
-local info = workflow.info()
-print(info.workflow_id)    -- ID de ejecución del workflow
-print(info.run_id)         -- ID de ejecución actual
-print(info.workflow_type)  -- Nombre del tipo de workflow
-print(info.task_queue)     -- Nombre de la cola de tareas
-print(info.namespace)      -- Namespace de Temporal
-print(info.attempt)        -- Número de intento actual
-print(info.history_length) -- Número de eventos en el historial
-print(info.history_size)   -- Tamaño del historial en bytes
+local info, info_err = workflow.info()
+if info_err then return nil, info_err end
+print(info.workflow_id)    -- Workflow execution ID
+print(info.run_id)         -- Current run ID
+print(info.workflow_type)  -- Workflow type name
+print(info.task_queue)     -- Task queue name
+print(info.namespace)      -- Temporal namespace
+print(info.attempt)        -- Current attempt number
+print(info.history_length) -- Number of history events
+print(info.history_size)   -- History size in bytes
 ```
 
 ### workflow.exec()
@@ -100,19 +110,22 @@ if err then
 end
 ```
 
-Esta es la forma más sencilla de ejecutar workflows hijos cuando se necesita esperar el resultado en línea.
+Use esta forma cuando el padre deba esperar el resultado del hijo en línea.
 
 ### workflow.version()
 
 Manejar cambios de código con versionado determinista:
 
 ```lua
-local version = workflow.version("payment-v2", 1, 2)
+local version, err = workflow.version("payment-v2", 1, 2)
+if err then
+    return nil, err
+end
 
 if version == 1 then
-    result = funcs.call("app:old_payment", input)
+    return funcs.call("app:old_payment", input)
 else
-    result = funcs.call("app:new_payment", input)
+    return funcs.call("app:new_payment", input)
 end
 ```
 
@@ -128,7 +141,7 @@ El número de versión es determinista por ejecución de workflow. Los workflows
 Actualizar atributos de búsqueda y memo:
 
 ```lua
-workflow.attrs({
+local updated, err = workflow.attrs({
     search = {
         status = "processing",
         customer_id = order.customer_id,
@@ -139,6 +152,9 @@ workflow.attrs({
         source = "web"
     }
 })
+if err then
+    return nil, err
+end
 ```
 
 Los atributos de búsqueda están indexados y son consultables via las APIs de visibilidad de Temporal. El memo son datos arbitrarios no indexados adjuntos al workflow.
@@ -148,11 +164,13 @@ Los atributos de búsqueda están indexados y son consultables via las APIs de v
 Monitorear el crecimiento del historial del workflow:
 
 ```lua
-local length = workflow.history_length()
-local size = workflow.history_size()
+local length, length_err = workflow.history_length()
+if length_err then return nil, length_err end
+local size, size_err = workflow.history_size()
+if size_err then return nil, size_err end
 
 if length > 10000 then
-    -- Considerar continue-as-new para resetear el historial
+    -- Consider continue-as-new to reset history
 end
 ```
 
@@ -164,10 +182,13 @@ Iniciar un workflow desde cualquier código usando `process.spawn()`:
 
 ```lua
 local pid, err = process.spawn(
-    "app:order_workflow",    -- entrada del workflow
-    "app:worker",            -- worker de temporal
+    "app:order_workflow",    -- workflow entry
+    "app:worker",            -- temporal worker
     {order_id = "123"}       -- input
 )
+if err then
+    return nil, err
+end
 ```
 
 El parámetro host es el worker de temporal (no un host de proceso). El workflow se ejecuta de forma durable en la infraestructura de Temporal.
@@ -182,9 +203,15 @@ local pid, err = process.spawn_monitored(
     "app:worker",
     {order_id = "123"}
 )
+if err then
+    return nil, err
+end
 
 local events = process.events()
-local event = events:receive()
+local event, open = events:receive()
+if not open then
+    return nil, errors.new({kind = errors.INTERNAL, message = "process event channel closed"})
+end
 
 if event.kind == process.event.EXIT then
     local result = event.result.value
@@ -206,6 +233,9 @@ local pid, err = spawner:spawn_monitored(
     "app:worker",
     {order_id = order.id}
 )
+if err then
+    return nil, err
+end
 ```
 
 Cuando se proporciona un nombre, Temporal lo usa para deduplicar inicios de workflow. Hacer spawn con el mismo nombre mientras un workflow está ejecutándose devuelve el PID del workflow existente por defecto.
@@ -217,7 +247,7 @@ Establecer un ID de workflow de Temporal específico:
 ```lua
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-" .. order.id,
+        ["workflow.id"] = "order-" .. order.id,
     })
 
 local pid, err = spawner:spawn_monitored(
@@ -225,6 +255,9 @@ local pid, err = spawner:spawn_monitored(
     "app:worker",
     order
 )
+if err then
+    return nil, err
+end
 ```
 
 ### Políticas de Conflicto de ID
@@ -232,39 +265,41 @@ local pid, err = spawner:spawn_monitored(
 Controlar el comportamiento al hacer spawn de un workflow con un ID que ya existe:
 
 ```lua
--- Fallar si el workflow ya existe
+-- Fail if workflow already exists
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-123",
-        ["temporal.workflow.id_conflict_policy"] = "fail",
+        ["workflow.id"] = "order-123",
+        ["workflow.id_conflict_policy"] = "fail",
     })
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
 if err then
-    -- Workflow ya ejecutándose con este ID
+    -- Workflow already running with this ID
 end
 ```
 
 ```lua
--- Error cuando ya se inició (enfoque alternativo)
+-- Error when already started (alternative approach)
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-123",
-        ["temporal.workflow.execution_error_when_already_started"] = true,
+        ["workflow.id"] = "order-123",
+        ["workflow.execution_error_when_already_started"] = true,
     })
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
+if err then return nil, err end
 ```
 
 ```lua
--- Reutilizar existente (comportamiento por defecto con ID explícito)
+-- Reuse existing (default behavior with explicit ID)
 local spawner = process
     .with_options({
-        ["temporal.workflow.id"] = "order-123",
+        ["workflow.id"] = "order-123",
     })
 
 local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
--- Devuelve el PID del workflow existente si ya está ejecutándose
+if err then return nil, err end
+-- Returns existing workflow PID if already running
 ```
 
 | Política | Comportamiento |
@@ -279,52 +314,74 @@ Pasar opciones de workflow de Temporal via `with_options()`:
 
 ```lua
 local spawner = process.with_options({
-    ["temporal.workflow.id"] = "order-123",
-    ["temporal.workflow.execution_timeout"] = "24h",
-    ["temporal.workflow.run_timeout"] = "1h",
-    ["temporal.workflow.task_timeout"] = "30s",
-    ["temporal.workflow.id_conflict_policy"] = "fail",
-    ["temporal.workflow.retry_policy"] = {
+    ["workflow.id"] = "order-123",
+    ["workflow.execution_timeout"] = "24h",
+    ["workflow.run_timeout"] = "1h",
+    ["workflow.task_timeout"] = "30s",
+    ["workflow.id_conflict_policy"] = "fail",
+    ["workflow.retry_policy"] = {
         initial_interval = 1000,
         backoff_coefficient = 2.0,
         maximum_interval = 300000,
         maximum_attempts = 3,
     },
-    ["temporal.workflow.cron_schedule"] = "0 */6 * * *",
-    ["temporal.workflow.search_attributes"] = {
+    ["workflow.cron_schedule"] = "0 */6 * * *",
+    ["workflow.search_attributes"] = {
         customer_id = "cust-123"
     },
-    ["temporal.workflow.memo"] = {
+    ["workflow.memo"] = {
         source = "api"
     },
-    ["temporal.workflow.start_delay"] = "5m",
-    ["temporal.workflow.parent_close_policy"] = "terminate",
+    ["workflow.start_delay"] = "5m",
+    ["workflow.parent_close_policy"] = "terminate",
 })
 ```
 
-#### Referencia Completa de Opciones
+#### Referencia de opciones
 
 | Opción | Tipo | Descripción |
 |--------|------|-------------|
-| `temporal.workflow.id` | string | ID de ejecución del workflow explícito |
-| `temporal.workflow.task_queue` | string | Sobrescribir la cola de tareas |
-| `temporal.workflow.execution_timeout` | duration | Tiempo de espera total de ejecución del workflow |
-| `temporal.workflow.run_timeout` | duration | Tiempo de espera de una sola ejecución |
-| `temporal.workflow.task_timeout` | duration | Tiempo de espera de procesamiento de tarea del workflow |
-| `temporal.workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
-| `temporal.workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
-| `temporal.workflow.execution_error_when_already_started` | boolean | Error si el workflow ya está ejecutándose |
-| `temporal.workflow.retry_policy` | table | Política de reintentos (ver abajo) |
-| `temporal.workflow.cron_schedule` | string | Expresión cron para workflows recurrentes |
-| `temporal.workflow.memo` | table | Metadatos del workflow no indexados |
-| `temporal.workflow.search_attributes` | table | Atributos indexados consultables |
-| `temporal.workflow.enable_eager_start` | boolean | Iniciar ejecución inmediatamente |
-| `temporal.workflow.start_delay` | duration | Retraso antes de que el workflow inicie |
-| `temporal.workflow.parent_close_policy` | string | Comportamiento del hijo al cerrar el padre |
-| `temporal.workflow.wait_for_cancellation` | boolean | Esperar a que la cancelación finalice |
-| `temporal.workflow.namespace` | string | Sobrescribir el namespace de Temporal |
+| `workflow.id` | string | ID explícito de ejecución del workflow |
+| `workflow.task_queue` | string | Sobrescribir la cola de tareas |
+| `workflow.execution_timeout` | duration | Timeout total de ejecución del workflow |
+| `workflow.run_timeout` | duration | Timeout de una sola ejecución |
+| `workflow.task_timeout` | duration | Timeout de procesamiento de una tarea del workflow |
+| `workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
+| `workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
+| `workflow.execution_error_when_already_started` | boolean | Error si el workflow ya se está ejecutando |
+| `workflow.retry_policy` | table | Política de reintentos (véase abajo) |
+| `workflow.cron_schedule` | string | Expresión cron para workflows recurrentes |
+| `workflow.memo` | table | Metadatos no indexados del workflow |
+| `workflow.search_attributes` | table | Atributos indexados consultables |
+| `workflow.enable_eager_start` | boolean | Iniciar la ejecución inmediatamente |
+| `workflow.start_delay` | duration | Retraso antes de que se inicie el workflow |
+| `workflow.summary` | string | Resumen mostrado en los metadatos del workflow de Temporal |
+| `workflow.details` | string | Detalles mostrados en los metadatos del workflow de Temporal |
+| `workflow.versioning_override` | string o table | Modo de actualización automática o versión fijada de deployment/build |
+| `workflow.priority` | table | Clave de prioridad y ajustes opcionales de equidad |
+| `workflow.parent_close_policy` | string | Comportamiento del hijo cuando se cierra el padre |
+| `workflow.wait_for_cancellation` | boolean | Esperar a que finalice la cancelación |
+| `workflow.namespace` | string | Sobrescribir el namespace de Temporal |
+| `workflow.versioning_intent` | string o number | Intención de versionado del worker para el workflow hijo |
+| `workflow.name` | string | Nombre alternativo del tipo de workflow hijo |
 
-Los valores de duración aceptan strings (`"5s"`, `"10m"`, `"1h"`) o milisegundos como números.
+Los valores de duración aceptan cadenas (`"5s"`, `"10m"`, `"1h"`) o milisegundos como números.
+
+Los alias heredados `temporal.workflow.*` siguen aceptándose por compatibilidad. El código nuevo debe usar los nombres canónicos `workflow.*` mostrados arriba.
+
+Una versión fijada requiere tanto el modo como la versión del deployment:
+
+```lua
+["workflow.versioning_override"] = {
+    mode = "pinned",
+    version = {
+        deployment_name = "orders",
+        build_id = "orders-v2",
+    },
+}
+```
+
+Use la cadena `"auto_upgrade"` para seleccionar la actualización automática.
 
 #### Política de Cierre del Padre
 
@@ -338,7 +395,7 @@ Controla qué sucede con los workflows hijos cuando el padre se cierra:
 
 ### Mensajes de Inicio
 
-Encolar señales para enviar a un workflow inmediatamente después de que inicie. Los mensajes se entregan antes de cualquier señal externa:
+Encole señales junto con el inicio de un workflow. El primer mensaje de inicio no vacío se envía atómicamente con el inicio. Los mensajes de inicio restantes se envían secuencialmente en el orden del builder después de que se inicia el workflow, pero pueden intercalarse con señales enviadas de forma concurrente por otros callers:
 
 ```lua
 local spawner = process
@@ -353,28 +410,31 @@ local pid, err = spawner:spawn_monitored(
     "app:worker",
     {initial = 0}
 )
+if err then return nil, err end
 ```
 
-Los mensajes de inicio son especialmente útiles con la política de conflicto `use_existing`. Cuando un segundo spawn resuelve a un workflow existente, los mensajes de inicio aún se entregan:
+Con la política de conflicto `use_existing`, los mensajes de inicio también se entregan cuando un segundo spawn se resuelve como un workflow existente:
 
 ```lua
--- El primer spawn inicia el workflow con los mensajes iniciales
+-- First spawn starts the workflow with initial messages
 local first = process
     .with_options({})
     :with_name("my-counter")
     :with_message("increment", {amount = 3})
 
-local pid, err = first:spawn("app:counter_workflow", "app:worker", {initial = 0})
+local pid, first_err = first:spawn("app:counter_workflow", "app:worker", {initial = 0})
+if first_err then return nil, first_err end
 
--- El segundo spawn reutiliza el workflow existente y entrega nuevos mensajes
+-- Second spawn reuses existing workflow and delivers new messages
 local second = process
     .with_options({})
     :with_name("my-counter")
     :with_message("increment", {amount = 2})
 
-local pid2, err = second:spawn("app:counter_workflow", "app:worker", {initial = 999})
--- pid2 == pid (mismo workflow), el input {initial = 999} se ignora
--- Pero el mensaje increment con amount=2 se entrega
+local pid2, second_err = second:spawn("app:counter_workflow", "app:worker", {initial = 999})
+if second_err then return nil, second_err end
+-- pid2 == pid (same workflow), input {initial = 999} is ignored
+-- But the increment message with amount=2 is delivered
 ```
 
 ### Propagación de Contexto
@@ -393,6 +453,7 @@ local pid, err = spawner:spawn_monitored(
     "app:worker",
     order
 )
+if err then return nil, err end
 ```
 
 Dentro del workflow (o cualquier activity que llame), leer el contexto via el módulo `ctx`:
@@ -400,23 +461,44 @@ Dentro del workflow (o cualquier activity que llame), leer el contexto via el m�
 ```lua
 local ctx = require("ctx")
 
-local user_id = ctx.get("user_id")       -- "user-1"
-local tenant = ctx.get("tenant")         -- "tenant-1"
-local all = ctx.all()                    -- {user_id="user-1", tenant="tenant-1", request_id="req-abc"}
+local user_id, user_err = ctx.get("user_id")       -- "user-1"
+if user_err then return nil, user_err end
+local tenant, tenant_err = ctx.get("tenant")       -- "tenant-1"
+if tenant_err then return nil, tenant_err end
+local all, err = ctx.all()               -- {user_id="user-1", tenant="tenant-1", request_id="req-abc"}
+if err then
+    return nil, err
+end
 ```
 
 ### Desde Handlers HTTP
 
 ```lua
 local function handler()
-    local req = http.request()
-    local order = json.decode(req:body())
+    local req, req_err = http.request()
+    if req_err then
+        return nil, req_err
+    end
+
+    local body, body_err = req:body()
+    if body_err then
+        return nil, body_err
+    end
+    local order, decode_err = json.decode(body)
+    if decode_err then
+        return nil, decode_err
+    end
+
+    local request_id, header_err = req:header("X-Request-ID")
+    if header_err then
+        return nil, header_err
+    end
 
     local spawner = process
-        .with_context({request_id = req:header("X-Request-ID")})
+        .with_context({request_id = request_id})
         :with_options({
-            ["temporal.workflow.id"] = "order-" .. order.id,
-            ["temporal.workflow.id_conflict_policy"] = "fail",
+            ["workflow.id"] = "order-" .. order.id,
+            ["workflow.id_conflict_policy"] = "fail",
         })
 
     local pid, err = spawner:spawn(
@@ -425,17 +507,30 @@ local function handler()
         order
     )
 
-    local res = http.response()
+    local res, res_err = http.response()
+    if res_err then
+        return nil, res_err
+    end
     if err then
-        res:set_status(409)
-        return res:write_json({error = tostring(err)})
+        local status_err = res:set_status(409)
+        if status_err then
+            return nil, status_err
+        end
+        local write_err = res:write_json({error = tostring(err)})
+        if write_err then return nil, write_err end
+        return true
     end
 
-    res:set_status(202)
-    return res:write_json({
+    local status_err = res:set_status(202)
+    if status_err then
+        return nil, status_err
+    end
+    local write_err = res:write_json({
         workflow_id = tostring(pid),
         status = "started"
     })
+    if write_err then return nil, write_err end
+    return true
 end
 ```
 
@@ -452,14 +547,24 @@ local function main(order)
     local inbox = process.inbox()
 
     while true do
-        local msg = inbox:receive()
+        local msg, open = inbox:receive()
+        if not open then
+            return nil, errors.new({kind = errors.INTERNAL, message = "workflow inbox closed"})
+        end
         local topic = msg:topic()
-        local data = msg:payload():data()
 
         if topic == "approve" then
             break
         elseif topic == "cancel" then
-            return {status = "cancelled", reason = data.reason}
+            local payload = msg:payload()
+            local data
+            if payload then
+                local payload_err
+                data, payload_err = payload:data()
+                if payload_err then return nil, payload_err end
+            end
+            local reason = type(data) == "table" and data.reason or nil
+            return {status = "cancelled", reason = reason}
         end
     end
 
@@ -474,8 +579,10 @@ Suscribirse a temas específicos usando `process.listen()`:
 ```lua
 local function main(input)
     local results = {}
-    local job_ch = process.listen("add_job")
-    local exit_ch = process.listen("exit")
+    local job_ch, job_err = process.listen("add_job")
+    if job_err then return nil, job_err end
+    local exit_ch, exit_err = process.listen("exit")
+    if exit_err then return nil, exit_err end
 
     while true do
         local result = channel.select{
@@ -486,11 +593,17 @@ local function main(input)
         if result.channel == exit_ch then
             break
         elseif result.channel == job_ch then
+            if not result.ok then
+                break
+            end
             local job_data = result.value
             local activity_result, err = funcs.call(
                 "app:echo_activity",
                 {job_id = job_data.id, data = job_data}
             )
+            if err then
+                return nil, err
+            end
             table.insert(results, {
                 job_id = job_data.id,
                 result = activity_result
@@ -505,67 +618,85 @@ end
 Por defecto, `process.listen()` devuelve datos de payload raw. Usar `{message = true}` para recibir objetos Message con información del remitente:
 
 ```lua
-local ch = process.listen("request", {message = true})
-local msg = ch:receive()
+local ch, err = process.listen("request", {message = true})
+if err then return nil, err end
+local msg, open = ch:receive()
+if not open then
+    return nil, errors.new({kind = errors.INTERNAL, message = "request channel closed"})
+end
 local sender = msg:from()
-local data = msg:payload():data()
+local payload = msg:payload()
+local data
+if payload then
+    local payload_err
+    data, payload_err = payload:data()
+    if payload_err then return nil, payload_err end
+end
 ```
 
-### Múltiples Handlers de Señales
+### Manejo serializado de señales
 
-Usar `coroutine.spawn()` para manejar diferentes tipos de señales concurrentemente:
+Use un único bucle `channel.select()` cuando las señales muten estado compartido del workflow. Esto conserva un orden determinista de mutación y permite que la rama `finish` retorne sin dejar coroutines de handlers bloqueadas:
 
 ```lua
 local function main(input)
     local counter = input.initial or 0
-    local done = false
 
-    coroutine.spawn(function()
-        local ch = process.listen("increment", {message = true})
-        while not done do
-            local msg, ok = ch:receive()
-            if not ok then break end
+    local function send_reply(pid, topic, payload)
+        local sent, err = process.send(pid, topic, payload)
+        if err then error(err) end
+        return sent
+    end
 
-            local data = msg:payload():data()
-            local reply_to = msg:from()
+    local function message_data(msg)
+        local payload = msg:payload()
+        if not payload then return nil end
+        return payload:data()
+    end
 
-            if type(data) ~= "table" or type(data.amount) ~= "number" then
-                process.send(reply_to, "nak", "amount must be a number")
-            else
-                process.send(reply_to, "ack")
+    local increment_ch, increment_err = process.listen("increment", {message = true})
+    if increment_err then return nil, increment_err end
+    local decrement_ch, decrement_err = process.listen("decrement", {message = true})
+    if decrement_err then return nil, decrement_err end
+    local finish_ch, finish_err = process.listen("finish", {message = true})
+    if finish_err then return nil, finish_err end
+
+    while true do
+        local result = channel.select{
+            increment_ch:case_receive(),
+            decrement_ch:case_receive(),
+            finish_ch:case_receive()
+        }
+        if not result.ok then
+            return nil, errors.new({kind = errors.INTERNAL, message = "signal channel closed"})
+        end
+
+        local msg = result.value
+        local reply_to = msg:from()
+
+        if result.channel == finish_ch then
+            send_reply(reply_to, "ack")
+            send_reply(reply_to, "ok", {message = "finishing", value = counter})
+            return {final_counter = counter}
+        end
+
+        local data, payload_err = message_data(msg)
+        if payload_err then return nil, payload_err end
+
+        if type(data) ~= "table" or type(data.amount) ~= "number" then
+            send_reply(reply_to, "nak", "amount must be a number")
+        elseif result.channel == decrement_ch and counter - data.amount < 0 then
+            send_reply(reply_to, "nak", "would result in negative value")
+        else
+            send_reply(reply_to, "ack")
+            if result.channel == increment_ch then
                 counter = counter + data.amount
-                process.send(reply_to, "ok", {value = counter})
-            end
-        end
-    end)
-
-    coroutine.spawn(function()
-        local ch = process.listen("decrement", {message = true})
-        while not done do
-            local msg, ok = ch:receive()
-            if not ok then break end
-
-            local data = msg:payload():data()
-            local reply_to = msg:from()
-
-            if counter - data.amount < 0 then
-                process.send(reply_to, "nak", "would result in negative value")
             else
-                process.send(reply_to, "ack")
                 counter = counter - data.amount
-                process.send(reply_to, "ok", {value = counter})
             end
+            send_reply(reply_to, "ok", {value = counter})
         end
-    end)
-
-    -- La coroutine principal espera la señal de finalización
-    local finish_ch = process.listen("finish", {message = true})
-    local msg = finish_ch:receive()
-    process.send(msg:from(), "ack")
-    process.send(msg:from(), "ok", {message = "finishing"})
-    done = true
-
-    return {final_counter = counter}
+    end
 end
 ```
 
@@ -574,26 +705,40 @@ end
 Implementar patrones de solicitud-respuesta enviando respuestas de vuelta al remitente:
 
 ```lua
--- Lado del workflow
-local ch = process.listen("get_status", {message = true})
-local msg = ch:receive()
-process.send(msg:from(), "status_response", {status = "processing", progress = 75})
+-- Workflow side
+local ch, err = process.listen("get_status", {message = true})
+if err then return nil, err end
+local msg, open = ch:receive()
+if not open then return nil, errors.new({kind = errors.INTERNAL, message = "status channel closed"}) end
+local sent, send_err = process.send(msg:from(), "status_response", {status = "processing", progress = 75})
+if send_err then return nil, send_err end
 ```
 
 ```lua
--- Lado del caller
-local response_ch = process.listen("status_response")
-process.send(workflow_pid, "get_status", {})
+-- Caller side
+local response_ch, listen_err = process.listen("status_response")
+if listen_err then return nil, listen_err end
+local sent, send_err = process.send(workflow_pid, "get_status", {})
+if send_err then return nil, send_err end
 
-local timeout = time.after("5s")
+local timeout, timeout_err = time.after("5s")
+if timeout_err then return nil, timeout_err end
 local result = channel.select{
     response_ch:case_receive(),
     timeout:case_receive()
 }
 
 if result.channel == response_ch then
-    local status = result.value
+    if not result.ok then
+        return nil, errors.new({kind = errors.INTERNAL, message = "status response channel closed"})
+    end
+    return result.value
 end
+
+if not result.ok then
+    return nil, errors.new({kind = errors.INTERNAL, message = "status timeout channel closed"})
+end
+return nil, errors.new({kind = errors.TIMEOUT, message = "status request timed out", retryable = true})
 ```
 
 ### Señalización Entre Workflows
@@ -601,16 +746,21 @@ end
 Los workflows pueden enviar señales a otros workflows usando su PID:
 
 ```lua
--- Workflow remitente
+-- Sender workflow
 local function main(input)
     local target_pid = input.target
+    local response_ch, listen_err = process.listen("cross_host_pong")
+    if listen_err then return nil, listen_err end
+
     local ok, err = process.send(target_pid, "cross_host_ping", {data = "hello"})
     if err then
         return {ok = false, error = tostring(err)}
     end
 
-    local response_ch = process.listen("cross_host_pong")
-    local response = response_ch:receive()
+    local response, open = response_ch:receive()
+    if not open then
+        return {ok = false, error = "cross_host_pong channel closed"}
+    end
     return {ok = true, received = response}
 end
 ```
@@ -644,8 +794,11 @@ if err then
     return {status = "spawn_failed", error = tostring(err)}
 end
 
--- Esperar el evento EXIT del hijo
-local event = events_ch:receive()
+-- Wait for child EXIT event
+local event, open = events_ch:receive()
+if not open then
+    return nil, errors.new({kind = errors.INTERNAL, message = "process event channel closed"})
+end
 
 if event.kind == process.event.EXIT then
     local child_result = event.result.value
@@ -663,14 +816,20 @@ local child_pid, err = process.spawn(
     "app:error_child_workflow",
     "app:worker"
 )
+if err then
+    return nil, err
+end
 
-local event = events_ch:receive()
+local event, open = events_ch:receive()
+if not open then
+    return nil, errors.new({kind = errors.INTERNAL, message = "process event channel closed"})
+end
 if event.result.error then
     local child_err = event.result.error
-    -- Los objetos de error tienen métodos kind(), retryable(), message()
-    print(child_err:kind())       -- ej. "NOT_FOUND"
+    -- Error objects have kind(), retryable(), message() methods
+    print(child_err:kind())       -- e.g. "NotFound"
     print(child_err:retryable())  -- false
-    print(child_err:message())    -- texto del mensaje de error
+    print(child_err:message())    -- error message text
 end
 ```
 
@@ -687,7 +846,7 @@ local result, err = process.exec(
 if err then
     return nil, err
 end
--- result contiene el valor de retorno del workflow
+-- result contains the workflow return value
 ```
 
 ## Monitoreo y Enlace
@@ -702,12 +861,21 @@ local pid, err = process.spawn(
     "app:worker",
     {iterations = 100}
 )
+if err then
+    return nil, err
+end
 
--- Monitorear más tarde
-local ok, err = process.monitor(pid)
+-- Monitor later
+local ok, monitor_err = process.monitor(pid)
+if monitor_err then
+    return nil, monitor_err
+end
 
 local events_ch = process.events()
-local event = events_ch:receive()  -- EXIT cuando el workflow completa
+local event, open = events_ch:receive()  -- EXIT when workflow completes
+if not open then
+    return nil, errors.new({kind = errors.INTERNAL, message = "process event channel closed"})
+end
 ```
 
 ### Enlace Posterior al Inicio
@@ -716,22 +884,33 @@ Enlazar a un workflow en ejecución para recibir LINK_DOWN en terminación anorm
 
 ```lua
 local ok, err = process.set_options({trap_links = true})
+if err then
+    return nil, err
+end
 
 local pid, err = process.spawn(
     "app:long_workflow",
     "app:worker",
     {iterations = 100}
 )
+if err then
+    return nil, err
+end
 
--- Enlazar después de que el workflow ha iniciado
+-- Link after workflow has started
 time.sleep("200ms")
-local ok, err = process.link(pid)
+local linked, link_err = process.link(pid)
+if link_err then return nil, link_err end
 
--- Si el workflow es terminado, recibir LINK_DOWN
-process.terminate(pid)
+-- If workflow is terminated, receive LINK_DOWN
+local terminated, terminate_err = process.terminate(pid)
+if terminate_err then return nil, terminate_err end
 
 local events_ch = process.events()
-local event = events_ch:receive()
+local event, open = events_ch:receive()
+if not open then
+    return nil, errors.new({kind = errors.INTERNAL, message = "process event channel closed"})
+end
 -- event.kind == process.event.LINK_DOWN
 ```
 
@@ -742,8 +921,10 @@ Los eventos LINK_DOWN requieren `trap_links = true` en las opciones del proceso.
 Eliminar monitoreo o enlace:
 
 ```lua
-process.unmonitor(pid)  -- dejar de recibir eventos EXIT
-process.unlink(pid)     -- eliminar enlace bidireccional
+local unmonitored, unmonitor_err = process.unmonitor(pid)
+if unmonitor_err then return nil, unmonitor_err end
+local unlinked, unlink_err = process.unlink(pid)
+if unlink_err then return nil, unlink_err end
 ```
 
 Tras desmonitorear o desenlazar, los eventos para ese proceso ya no se entregan.
@@ -799,7 +980,10 @@ local function main(input)
     local total = 0
     local processed = {}
     for _ = 1, job_count do
-        local r = results:receive()
+        local r, open = results:receive()
+        if not open then
+            return nil, errors.new({kind = errors.INTERNAL, message = "results channel closed"})
+        end
         total = total + r.result
         table.insert(processed, r)
     end
@@ -840,42 +1024,42 @@ El código del workflow debe ser determinista. Las mismas entradas deben produci
 Estas operaciones se interceptan automáticamente y sus resultados se registran. En el replay, se devuelven los valores registrados:
 
 ```lua
--- Llamadas a activities
+-- Activity calls
 local data = funcs.call("app:fetch_data", id)
 
--- Sleep durable
+-- Durable sleep
 time.sleep("1h")
 
--- Tiempo actual
+-- Current time
 local now = time.now()
 
--- Generación de UUID
+-- UUID generation
 local id = uuid.v4()
 
--- Operaciones criptográficas
-local bytes = crypto.random_bytes(32)
+-- Crypto operations
+local bytes = crypto.random.bytes(32)
 
--- Workflows hijos
+-- Child workflows
 local result = workflow.exec("app:child", input)
 
--- Versionado
+-- Versioning
 local v = workflow.version("change-1", 1, 2)
 ```
 
 ### No Deterministas (Evitar)
 
 ```lua
--- No usar tiempo de reloj de pared
-local now = os.time()              -- no determinista
+-- Don't use wall clock time
+local now = os.time()              -- non-deterministic
 
--- No usar random directamente
-local r = math.random()            -- no determinista
+-- Don't use random directly
+local r = math.random()            -- non-deterministic
 
--- No hacer I/O en código de workflow
-local file = io.open("data.txt")   -- no determinista
+-- Don't do I/O in workflow code
+local file = io.open("data.txt")   -- non-deterministic
 
--- No usar estado mutable global
-counter = counter + 1               -- no determinista entre replays
+-- Don't use global mutable state
+counter = counter + 1               -- non-deterministic across replays
 ```
 
 ## Manejo de Errores
@@ -887,9 +1071,9 @@ Los errores de activities llevan metadatos estructurados:
 ```lua
 local result, err = funcs.call("app:risky_activity", order)
 if err then
-    print(err:kind())       -- clasificación del error (ej. "NOT_FOUND", "INTERNAL")
-    print(err:retryable())  -- si el error es reintentable
-    print(err:message())    -- mensaje de error legible por humanos
+    print(err:kind())       -- error classification (e.g. "NotFound", "Internal")
+    print(err:retryable())  -- whether the error is retryable
+    print(err:message())    -- human-readable error message
 end
 ```
 
@@ -906,7 +1090,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:unreliable_activity", input)
 if err then
-    local kind = err:kind()         -- "INTERNAL" para errores del runtime
+    local kind = err:kind()         -- "Internal" for runtime errors
     local retryable = err:retryable()
 end
 ```
@@ -918,9 +1102,9 @@ Los errores de workflows hijos (via `process.exec` o eventos EXIT) llevan los mi
 ```lua
 local result, err = process.exec("app:error_workflow", "app:worker")
 if err then
-    print(err:kind())       -- ej. "NOT_FOUND"
+    print(err:kind())       -- e.g. "NotFound"
     print(err:retryable())  -- false
-    print(err:message())    -- detalles del error
+    print(err:message())    -- error details
 end
 ```
 
@@ -928,9 +1112,15 @@ end
 
 ```lua
 local function run_compensations(compensations)
+    local first_err
     for _, comp in ipairs(compensations) do
-        funcs.call(comp.action, comp.args)
+        local _, err = funcs.call(comp.action, comp.args)
+        if err and not first_err then
+            first_err = err
+        end
     end
+    if first_err then return nil, first_err end
+    return true
 end
 
 local function main(order)
@@ -947,7 +1137,10 @@ local function main(order)
 
     local payment, err = funcs.call("app:charge_payment", order.payment)
     if err then
-        run_compensations(compensations)
+        local _, compensation_err = run_compensations(compensations)
+        if compensation_err then
+            return {status = "failed", step = "payment", error = tostring(err), compensation_error = tostring(compensation_err)}
+        end
         return {status = "failed", step = "payment", error = tostring(err)}
     end
     table.insert(compensations, 1, {
@@ -957,7 +1150,10 @@ local function main(order)
 
     local shipment, err = funcs.call("app:ship_order", order.shipping)
     if err then
-        run_compensations(compensations)
+        local _, compensation_err = run_compensations(compensations)
+        if compensation_err then
+            return {status = "failed", step = "shipping", error = tostring(err), compensation_error = tostring(compensation_err)}
+        end
         return {status = "failed", step = "shipping", error = tostring(err)}
     end
 
@@ -965,10 +1161,12 @@ local function main(order)
 end
 ```
 
+Las compensaciones se ejecutan en orden inverso al de registro. Si falla más de una compensación, el workflow aun así intenta las acciones restantes e informa del primer fallo mediante `compensation_error`.
+
 ## Ver También
 
-- [Visión General](temporal/overview.md) - Configuración de cliente y worker
-- [Activities](temporal/activities.md) - Definiciones y opciones de activities
-- [Process](lua/core/process.md) - API de gestión de procesos
-- [Funciones](lua/core/funcs.md) - Invocación de funciones
-- [Canales](lua/core/channel.md) - Operaciones de canales
+- [Visión general](./overview.md) - Configuración de cliente y worker
+- [Activities](./activities.md) - Definiciones y opciones de activities
+- [Process](../lua/core/process.md) - API de gestión de procesos
+- [Funciones](../lua/core/funcs.md) - Invocación de funciones
+- [Canales](../lua/core/channel.md) - Operaciones de canales

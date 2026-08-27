@@ -1,11 +1,13 @@
 ---
 title: "Activities"
-description: "Las activities son funciones que ejecutan operaciones no determinísticas. Cualquier entrada function.lua o process.lua puede registrarse como activity…"
+description: "Registre entradas function.lua o process.lua como activities de Temporal para ejecutar operaciones no deterministas."
 ---
 
 # Activities
 
-Las activities son funciones que ejecutan operaciones no determinísticas. Cualquier entrada `function.lua` o `process.lua` puede registrarse como activity de Temporal agregando metadatos.
+Las activities de Temporal ejecutan operaciones no deterministas. Registre una entrada `function.lua` o `process.lua` como activity mediante sus metadatos.
+
+Los fragmentos son recetas de API. El ejemplo de pago es ilustrativo y requiere una entrada de entorno propiedad de la aplicación, permiso `env.get` para la credencial, permiso `http_client.request` para la URL del proveedor y un contrato con el proveedor de pagos.
 
 ## Registrar Activities
 
@@ -17,6 +19,8 @@ Agregue `meta.temporal.activity` para registrar una función como activity:
   source: file://payment.lua
   method: charge
   modules:
+    - env
+    - errors
     - http_client
     - json
   meta:
@@ -34,31 +38,56 @@ Agregue `meta.temporal.activity` para registrar una función como activity:
 
 ## Implementación
 
-Las activities son funciones Lua regulares:
+Las activities son funciones Lua normales. Mantenga las credenciales fuera de las entradas del workflow, porque Temporal las conserva en su historial. Este ejemplo lee la clave de pago del registro de entorno dentro de la activity. El proveedor de ejemplo acepta una solicitud de cobro JSON y devuelve una respuesta JSON. La correspondencia de estados es una política propiedad de la aplicación: sustituya la URL, los campos de solicitud y respuesta y la correspondencia de fallos por el contrato de su proveedor.
 
 ```lua
 -- payment.lua
 local http = require("http_client")
 local json = require("json")
+local env = require("env")
+local errors = require("errors")
+
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
 
 local function charge(input)
-    local response, err = http.post("https://api.stripe.com/v1/charges", {
+    local api_key, env_err = env.get("PAYMENTS_API_KEY")
+    if env_err then return nil, env_err end
+
+    local body, encode_err = json.encode({
+        amount = input.amount,
+        currency = input.currency,
+        payment_token = input.payment_token
+    })
+    if encode_err then
+        return nil, encode_err
+    end
+
+    local response, err = http.post("https://payments.example.com/v1/charges", {
         headers = {
-            ["Authorization"] = "Bearer " .. input.api_key,
+            ["Authorization"] = "Bearer " .. api_key,
             ["Content-Type"] = "application/json"
         },
-        body = json.encode({
-            amount = input.amount,
-            currency = input.currency,
-            source = input.token
-        })
+        body = body
     })
 
     if err then
         return nil, err
     end
 
-    return json.decode(response:body())
+    if response.status_code >= 400 then
+        return nil, payment_error(response.status_code)
+    end
+
+    return json.decode(response.body)
 end
 
 return { charge = charge }
@@ -74,8 +103,7 @@ local funcs = require("funcs")
 local result, err = funcs.call("app:charge_payment", {
     amount = 5000,
     currency = "usd",
-    token = "tok_visa",
-    api_key = ctx.stripe_key
+    payment_token = "payment-token-123"
 })
 
 if err then
@@ -119,7 +147,13 @@ local reliable = funcs.new():with_options({
 })
 
 local a, err = reliable:call("app:step_one", input)
+if err then
+    return nil, err
+end
 local b, err = reliable:call("app:step_two", a)
+if err then
+    return nil, err
+end
 ```
 
 ### Referencia de Opciones
@@ -135,8 +169,27 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Esperar cancelación de la activity |
 | `activity.disable_eager_execution` | boolean | false | Deshabilitar ejecución anticipada |
 | `activity.retry_policy` | table | - | Configuración de reintentos (ver abajo) |
+| `activity.versioning_intent` | string o number | - | Intención de versionado del worker para la activity |
+| `activity.summary` | string | - | Resumen mostrado en los metadatos de la activity de Temporal |
+| `activity.priority` | table | - | Clave de prioridad y ajustes opcionales de equidad |
+| `activity.name` | string | - | Nombre alternativo del tipo de activity |
 
 Los valores de duración aceptan cadenas (`"5s"`, `"10m"`, `"1h"`) o milisegundos como números.
+
+Use los nombres canónicos `activity.*` en código nuevo. Los alias heredados `temporal.activity.*` siguen aceptándose por compatibilidad.
+
+```lua
+local executor = funcs.new():with_options({
+    ["activity.summary"] = "Charge the order payment",
+    ["activity.priority"] = {
+        priority_key = 10,
+        fairness_key = "customer-123",
+        fairness_weight = 1.0,
+    },
+    ["activity.name"] = "charge-payment",
+    ["activity.versioning_intent"] = "use_assignment_rules",
+})
+```
 
 ### Política de Reintentos
 
@@ -149,8 +202,8 @@ Configurar comportamiento automático de reintentos para activities fallidas:
     maximum_interval = 300000,       -- max interval between retries (ms)
     maximum_attempts = 10,           -- max retry attempts (0 = unlimited)
     non_retryable_error_types = {    -- errors that skip retries
-        "INVALID",
-        "PERMISSION_DENIED"
+        "Invalid",
+        "PermissionDenied"
     }
 }
 ```
@@ -178,7 +231,7 @@ Configurar comportamiento automático de reintentos para activities fallidas:
 
 ## Activities Locales
 
-Las activities locales se ejecutan en el proceso del workflow worker sin polling de cola de tareas separado:
+El campo `local` se acepta en una activity:
 
 ```yaml
 - name: validate_input
@@ -194,14 +247,7 @@ Las activities locales se ejecutan en el proceso del workflow worker sin polling
         local: true
 ```
 
-Características:
-- Se ejecutan en el proceso del workflow worker
-- Menor latencia (sin ida y vuelta a la cola de tareas)
-- Sin overhead de cola de tareas separada
-- Limitadas a tiempos de ejecución cortos (limitadas por `local_activity_options.schedule_to_close_timeout`, normalmente unos segundos)
-- Sin heartbeating
-
-Use activities locales para operaciones rápidas y cortas como validación de entrada, transformación de datos o consultas a caché. Para trabajo de larga duración, use una activity regular en su lugar.
+Actualmente, `local: true` se analiza pero se comporta igual que una activity normal: se registra y ejecuta por la ruta estándar de activities. Todavía no existe una ejecución diferenciada de activities locales, por lo que no cambia la latencia, el comportamiento de la cola de tareas ni el heartbeating.
 
 ## Nombrado de Activities
 
@@ -227,7 +273,10 @@ local spawner = process.with_context({
     user_id = "user-1",
     tenant = "tenant-1",
 })
-local pid = spawner:spawn("app:order_workflow", "app:worker", order)
+local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
+if err then
+    return nil, err
+end
 ```
 
 ```lua
@@ -235,8 +284,10 @@ local pid = spawner:spawn("app:order_workflow", "app:worker", order)
 local ctx = require("ctx")
 
 local function process_order(input)
-    local user_id = ctx.get("user_id")   -- "user-1"
-    local tenant = ctx.get("tenant")     -- "tenant-1"
+    local user_id, user_err = ctx.get("user_id")   -- "user-1"
+    if user_err then return nil, user_err end
+    local tenant, tenant_err = ctx.get("tenant")   -- "tenant-1"
+    if tenant_err then return nil, tenant_err end
     -- use context for authorization, logging, etc.
 end
 ```
@@ -256,9 +307,21 @@ Retorne errores mediante el patrón estándar de Lua:
 ```lua
 local errors = require("errors")
 
+-- Replace this mapping with the payment provider's documented error contract.
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
+
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -266,11 +329,11 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+    if response.status_code >= 400 then
+        return nil, payment_error(response.status_code)
     end
 
-    return json.decode(response:body())
+    return json.decode(response.body)
 end
 ```
 
@@ -292,9 +355,9 @@ end
 | Fallo | Tipo de Error | Reintentable | Descripción |
 |-------|---------------|--------------|-------------|
 | Error de aplicación | Lo que la activity haya retornado | Heredado del error retornado | Error retornado por código de activity vía `return nil, err` |
-| Crash en tiempo de ejecución | `INTERNAL` | sí | Error Lua no manejado en activity |
-| Activity faltante | `NOT_FOUND` | no | Activity no registrada con el worker |
-| Timeout | `TIMEOUT` | sí | La activity excedió el timeout configurado |
+| Crash en tiempo de ejecución | `Internal` | no | Error Lua no controlado en la activity |
+| Activity faltante | `NotFound` | no | Activity no registrada con el worker |
+| Timeout | `Timeout` | no | La activity superó el timeout configurado |
 
 ```lua
 local executor = funcs.new():with_options({
@@ -303,7 +366,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```
@@ -327,7 +390,7 @@ Las entradas `process.lua` también pueden registrarse como activities para oper
 
 ## Ver También
 
-- [Overview](temporal/overview.md) - Configuración
-- [Workflows](temporal/workflows.md) - Implementación de workflows
-- [Funciones](lua/core/funcs.md) - Módulo de funciones
-- [Manejo de Errores](lua/core/errors.md) - Tipos de error y patrones
+- [Overview](./overview.md) - Configuración
+- [Workflows](./workflows.md) - Implementación de workflows
+- [Funciones](../lua/core/funcs.md) - Módulo de funciones
+- [Manejo de errores](../lua/core/errors.md) - Tipos de error y patrones
