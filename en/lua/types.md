@@ -9,6 +9,8 @@ description: "Syntax and runtime behavior for Wippy's gradual type system, inclu
 
 Wippy's gradual type system supports incremental annotations and flow-sensitive checking. Types are non-nullable by default.
 
+This page is a language reference, not a complete program. Each code block is an isolated type-checking example, and alternatives within a block are not necessarily meant to be combined. Names such as `get_data`, `get_user`, `call`, and `User` represent application code; lines marked `ERROR` intentionally demonstrate diagnostics. These examples use language syntax and built-in type values, so they do not require runtime modules.
+
 ## Primitives
 
 ```lua
@@ -17,7 +19,7 @@ local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
 local a: any = "anything"     -- dynamic member and method access
-local u: unknown = something  -- must narrow before use
+local u: unknown = { source = "example" }  -- must narrow before use
 ```
 
 ### `any` and `unknown`

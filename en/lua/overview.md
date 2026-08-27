@@ -7,7 +7,9 @@ description: "How Lua code runs in Wippy processes, communicates through channel
 
 Lua is Wippy's primary runtime for I/O-bound work and business logic. Code runs in isolated processes that communicate through message passing rather than shared memory.
 
-For the design tradeoffs behind Lua and its relationship to WebAssembly, see [Why Wippy Uses Lua](lua/why-lua.md).
+This page is a conceptual overview. Its code blocks are isolated reference snippets; names such as `inbox`, `events`, and `handle_message` stand for values or callbacks supplied by the surrounding application.
+
+For the design tradeoffs behind Lua and its relationship to WebAssembly, see [Why Wippy Uses Lua](why-lua.md).
 
 ## Processes
 
@@ -19,27 +21,32 @@ Lua code runs inside **processes**: isolated execution contexts managed by the s
 - can run alongside thousands of other processes on one machine.
 
 ```lua
-local process = require("process")
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then
+    return nil, err
+end
 
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "task", {data = "work"})
+local sent, send_err = process.send(pid, "task", {data = "work"})
+if send_err then
+    return nil, send_err
+end
 ```
 
-See [Process Management](lua/core/process.md) for spawning, linking, and supervision.
+Executable Lua entries receive `process` as an ambient global. It can also be loaded with `require("process")` without adding it to the entry's `modules` list. See [Process Management](core/process.md) for spawning, linking, and supervision.
 
 ## Channels
 
 Channels provide communication between concurrent tasks:
 
 ```lua
-local ch = channel.new()        -- unbuffered
+local sync_ch = channel.new()   -- unbuffered
 local buffered = channel.new(10)
 
-ch:send(value)                  -- blocks until received
-local val, ok = ch:receive()    -- blocks until ready
+buffered:send("work")           -- completes while buffer space is available
+local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-See [Channels](lua/core/channel.md) for select and patterns.
+See [Channels](core/channel.md) for select and patterns.
 
 ## Coroutines
 
@@ -97,17 +104,17 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Available modules depend on entry configuration. See [Entry Definitions](lua/entries.md).
+Available modules depend on entry configuration. See [Entry Definitions](entries.md).
 
 Registry libraries use the same `require("alias")` syntax but are declared separately in the entry's `imports:` map.
 
 ## Language and Library Support
 
-Wippy uses Lua 5.3 syntax with a [gradual type system](lua/types.md) inspired by Luau. Types are first-class runtime values that can be used for validation, passed as arguments, and inspected at runtime.
+Wippy uses Lua 5.3 syntax with a [gradual type system](types.md) inspired by Luau. Types are first-class runtime values that can be used for validation, passed as arguments, and inspected at runtime.
 
 External Lua libraries (LuaRocks, etc.) are not supported. The runtime provides its own module system with built-in extensions for I/O, networking, and system integration.
 
-For custom extensions, see [Modules](internals/modules.md) in the internals documentation.
+For custom extensions, see [Modules](../internals/modules.md) in the internals documentation.
 
 ## Error Handling
 
@@ -120,11 +127,11 @@ if err then
 end
 ```
 
-See [Error Handling](lua/core/errors.md) for patterns.
+This snippet assumes `json` is enabled in the entry's `modules` list and `input` contains the string to decode. See [Error Handling](core/errors.md) for patterns.
 
 ## What's Next
 
-- [Entry Definitions](lua/entries.md) - Configure entry points
-- [Channels](lua/core/channel.md) - Channel patterns
-- [Process Management](lua/core/process.md) - Spawning and supervision
-- [Functions](lua/core/funcs.md) - Cross-process calls
+- [Entry Definitions](entries.md) - Configure entry points
+- [Channels](core/channel.md) - Channel patterns
+- [Process Management](core/process.md) - Spawning and supervision
+- [Functions](core/funcs.md) - Cross-process calls

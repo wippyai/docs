@@ -10,6 +10,8 @@ description: "Create, wrap, inspect, and classify structured errors in Lua entri
 
 The global `errors` table creates and inspects structured errors with categories, details, and retry metadata. It is available without `require`.
 
+This is an API reference. Each code block is an isolated snippet, not a complete entry. Variables such as `err` refer to an error returned or created by surrounding application code; the wrapping example assumes `db` is an application-provided database client.
+
 ## Creating Errors
 
 ```lua

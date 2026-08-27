@@ -13,13 +13,18 @@ The `process` global provides process spawning, messaging, monitoring, linking, 
 
 It is available without `require()` and does not need to be listed in `modules:`.
 
+This is an API reference. Its call-form blocks use placeholders such as `id`, `host`, `destination`, `topic`, and `name` for values supplied by application code; they are not standalone programs. Calls shown with an `err` result return their documented value on success or a failure sentinel plus `error`; the sentinel is normally `nil`, while `process.set_options` returns `false`. Application control flow should handle the error.
+
 ## Process Information
 
 Read the current frame ID or process ID:
 
 ```lua
-local frame_id = process.id()  -- Registry ID of the current function, process, or workflow definition
-local pid = process.pid()       -- Process ID
+local frame_id, err = process.id()  -- Registry ID of the current function, process, or workflow definition
+if err then return nil, err end
+
+local pid, err = process.pid()      -- Process ID
+if err then return nil, err end
 ```
 
 ## Sending Messages
@@ -142,8 +147,11 @@ local events = process.events()  -- Lifecycle events from @events topic
 Subscribe to a custom message topic:
 
 ```lua
-local ch = process.listen(topic, options)
-process.unlisten(ch)
+local ch, err = process.listen(topic, options)
+if err then return nil, err end
+
+local ok, err = process.unlisten(ch)
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -178,13 +186,19 @@ local result, err = process.exec(id, host, ...)
 
 Upgrade the current process while preserving its PID:
 
+The two snippets below are alternative call forms, not sequential operations.
+
 ```lua
 -- Upgrade to new version, passing state
 process.upgrade(id, ...)
+```
 
+```lua
 -- Keep same definition, re-run with new state
 process.upgrade(nil, preserved_state)
 ```
+
+`process.upgrade` is a terminal control transfer: it clears the current execution and starts the requested definition with the same PID. Code after the call does not run in the old execution.
 
 ## Context Spawner
 
@@ -258,7 +272,7 @@ local ok, err = process.registry.unregister(name)
 
 ### Scope
 
-The optional `scope` argument selects the name's consistency guarantee and defaults to `LOCAL`. See the [Cluster Guide](guides/cluster.md#naming-and-name-scopes) for the complete model.
+The optional `scope` argument selects the name's consistency guarantee and defaults to `LOCAL`. See the [Cluster Guide](../../guides/cluster.md#naming-and-name-scopes) for the complete model.
 
 | Constant | Visibility | Guarantee |
 |----------|------------|-----------|
@@ -267,7 +281,7 @@ The optional `scope` argument selects the name's consistency guarantee and defau
 | `process.registry.CONSISTENT` | cluster-wide | Linearizable singleton (Raft) |
 | `process.registry.STRONG` | cluster-wide | Consistent + every live node acknowledges |
 
-On a standalone node, only `LOCAL` is available; cluster scopes require [clustering](guides/cluster.md).
+On a standalone node, only `LOCAL` is available; cluster scopes require [clustering](../../guides/cluster.md).
 
 ### register
 
@@ -367,12 +381,12 @@ Some operations require multiple permissions:
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Name already registered | `errors.ALREADY_EXISTS` |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](errors.md) for working with errors.
 
 ## See Also
 
-- [Channels](lua/core/channel.md) - Inter-process communication
-- [Message Queue](lua/storage/queue.md) - Queue-based messaging
-- [Functions](lua/core/funcs.md) - Function invocation
-- [Supervision](guides/supervision.md) - Process lifecycle management
-- [Cluster](guides/cluster.md) - Name scopes and cluster-wide naming
+- [Channels](channel.md) - In-process coroutine coordination
+- [Message Queue](../storage/queue.md) - Queue-based messaging
+- [Functions](funcs.md) - Function invocation
+- [Supervision](../../guides/supervision.md) - Process lifecycle management
+- [Cluster](../../guides/cluster.md) - Name scopes and cluster-wide naming

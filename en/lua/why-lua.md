@@ -7,6 +7,8 @@ description: "The runtime constraints, tradeoffs, and complementary roles of Lua
 
 Wippy uses Lua as its primary runtime language because it fits the platform's process-isolation and embedding requirements. This page explains that design choice and its tradeoffs; it is not a general ranking of programming languages.
 
+This is a conceptual design note rather than a runnable tutorial. It describes runtime properties and points to the reference pages that define the concrete APIs.
+
 ## Runtime Requirements
 
 Wippy runs user-defined logic in isolated processes. Each process has its own memory and receives only the capabilities exposed by the runtime. Because many processes can run concurrently, the embedded language must support:

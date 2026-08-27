@@ -10,11 +10,15 @@ description: "Create, compare, parse, and format time values; work with duration
 
 The `time` module provides time values, durations, time-zone handling, parsing, formatting, sleeps, and timers. Supported workflow time calls are recorded so they can replay deterministically.
 
+This is an API reference. Code blocks are isolated examples or partial scheduling patterns, not a complete entry. Names such as `do_work`, `try_operation`, `make_request`, `send_reminder`, `user_activity`, `check_health`, and `process` represent application callbacks, channels, or data. Where a snippet assigns an error return to `_`, it assumes the shown literal is valid; handle errors when values can come from input or configuration.
+
 ## Loading
 
 ```lua
 local time = require("time")
 ```
+
+Add `time` to the executable entry's `modules:` list before requiring it. The ambient `channel` and `errors` globals used by scheduling examples need no module declaration.
 
 ## Current Time
 
@@ -33,6 +37,8 @@ local elapsed = time.now():sub(start)
 print("Took " .. elapsed:milliseconds() .. "ms")
 ```
 
+The timestamp and elapsed-time output are illustrative; `time.now()` supplies the current or recorded workflow time.
+
 **Returns:** `Time`
 
 ## Creating Time Values
@@ -45,7 +51,10 @@ local t = time.date(2024, time.DECEMBER, 25, 10, 30, 0, 0, time.utc)
 print(t:format_rfc3339())  -- "2024-12-25T10:30:00Z"
 
 -- Create in specific timezone
-local ny, _ = time.load_location("America/New_York")
+local ny, err = time.load_location("America/New_York")
+if err then
+    return nil, err
+end
 local meeting = time.date(2024, time.JANUARY, 15, 14, 0, 0, 0, ny)
 
 -- Defaults to local timezone if not specified
@@ -398,20 +407,27 @@ end
 Creates a one-shot timer that fires after the specified duration and can be stopped or reset.
 
 ```lua
-local timer = time.timer("5s")
+local timer, err = time.timer("5s")
+if err then
+    return nil, err
+end
 
 -- Wait for timer
 timer:response():receive()
 send_reminder()
 
 -- Reset on activity
-local idle_timer = time.timer("5m")
+local idle_timer, err = time.timer("5m")
+if err then
+    return nil, err
+end
+local idle_ch = idle_timer:response()
 while true do
     local r = channel.select{
         user_activity:case_receive(),
-        idle_timer:response():case_receive()
+        idle_ch:case_receive()
     }
-    if r.channel == idle_timer:response() then
+    if r.channel == idle_ch then
         logout_user()
         break
     end
@@ -441,16 +457,26 @@ Creates a repeating timer that fires at regular intervals.
 
 ```lua
 -- Periodic task
-local ticker = time.ticker("30s")
+local ticker, err = time.ticker("30s")
+if err then
+    return nil, err
+end
 local ch = ticker:response()
 
 while true do
     local tick_time = ch:receive()
     check_health()
 end
+```
 
+The loop above is intended for a long-running process. A separate finite rate-limiting pattern is:
+
+```lua
 -- Rate limiting
-local ticker = time.ticker("100ms")
+local ticker, err = time.ticker("100ms")
+if err then
+    return nil, err
+end
 for _, item in ipairs(items) do
     ticker:response():receive()
     process(item)
@@ -567,4 +593,4 @@ if err then
 end
 ```
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](errors.md) for working with errors.

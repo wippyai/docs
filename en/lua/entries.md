@@ -7,6 +7,8 @@ description: "Configuration for Lua-based entries: functions, processes, workflo
 
 Lua entry kinds define how source code is loaded and executed as a function, process, workflow, or library.
 
+This page is a configuration reference. YAML blocks are partial entry definitions intended to be placed under an `entries:` mapping in a Wippy index; they are not complete applications by themselves. Referenced source files, imports, dependencies, process hosts, and security policies must exist in the surrounding project.
+
 ## Entry Kinds
 
 | Kind | Description |
@@ -142,7 +144,7 @@ modules:
 
 Only listed built-in modules and aliases declared under `imports` are available. The module allowlist limits access to runtime capabilities, makes dependencies explicit, and restricts workflows to workflow-compatible module classes.
 
-See [Lua Runtime](lua/overview.md) for available modules.
+See [Lua Runtime](overview.md) for available modules.
 
 ## Imports
 
@@ -210,17 +212,23 @@ Use `meta` to attach searchable routing and discovery fields:
   modules:
     - http
     - json
+    - registry
 ```
 
 Metadata is searchable via the registry:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({["meta.type"] = "handler"})
+local handlers, err = registry.find({["meta.type"] = "handler"})
+if err then
+    return nil, err
+end
 ```
+
+The query returns all matching registry entries. The Lua code belongs to an executable entry whose `modules` list includes `registry`, such as the `api_handler` entry above.
 
 ## See Also
 
-- [Entry Kinds](guides/entry-kinds.md) - Reference for all entry kinds
-- [Compute Units](concepts/compute-units.md) - Functions vs processes vs workflows
-- [Lua Runtime](lua/overview.md) - Available modules
+- [Entry Kinds](../guides/entry-kinds.md) - Reference for all entry kinds
+- [Compute Units](../concepts/compute-units.md) - Functions vs processes vs workflows
+- [Lua Runtime](overview.md) - Available modules

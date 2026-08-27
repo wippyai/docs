@@ -10,13 +10,17 @@ description: "Manage cluster-wide process groups, membership, broadcasts, and me
 
 Process groups organize processes under dynamic names and broadcast messages to group members across the cluster. A process can join multiple groups, and cluster-wide membership is eventually consistent.
 
-For the scope entry kind and its configuration, see [Process Groups](system/process-groups.md). For the broader clustering model, see the [Cluster Guide](guides/cluster.md).
+This is an API reference. Its snippets assume an existing `pg.scope`, an executable entry running with process context, and policies that authorize the documented operations. The blocks demonstrate individual calls or partial subscription flows rather than a standalone application.
+
+For the scope entry kind and its configuration, see [Process Groups](../../system/process-groups.md). For the broader clustering model, see the [Cluster Guide](../../guides/cluster.md).
 
 ## Loading
 
 ```lua
 local pg = require("pg")
 ```
+
+Add `pg` to the executable entry's `modules:` list before requiring it.
 
 ## Opening a Scope
 
@@ -41,10 +45,21 @@ The instance is released automatically during execution-frame cleanup. Call `rel
 
 ## Joining and Leaving
 
+The calls below are independent forms; choose the single-group or batch join needed by the application and pair it with the corresponding leave operations.
+
 ```lua
 local ok, err = group:join("workers")           -- single group
+if err then return nil, err end
+```
+
+```lua
 local ok, err = group:join({"workers", "all"})  -- batch
+if err then return nil, err end
+```
+
+```lua
 local ok, err = group:leave("workers")
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -61,7 +76,10 @@ A process can join the same group more than once and must leave the same number 
 
 ```lua
 local members, err = group:get_members("workers")        -- all nodes
+if err then return nil, err end
+
 local local_members, err = group:get_local_members("workers")  -- this node only
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -76,7 +94,10 @@ local local_members, err = group:get_local_members("workers")  -- this node only
 
 ```lua
 local groups, err = group:which_groups()         -- all groups in the cluster
+if err then return nil, err end
+
 local local_groups, err = group:which_local_groups()  -- groups with a local member
+if err then return nil, err end
 ```
 
 **Returns:** `string[], error` — group names that currently have at least one member
@@ -89,7 +110,10 @@ Broadcast sends a message from the calling process to every group member under `
 
 ```lua
 local ok, err = group:broadcast("workers", "task", {id = 42})   -- all nodes
-local ok, err = group:broadcast_local("workers", "task", {id = 42})  -- this node only
+if err then return nil, err end
+
+ok, err = group:broadcast_local("workers", "task", {id = 42})  -- this node only
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -117,7 +141,10 @@ for _, pid in ipairs(members) do
 end
 
 local ch = sub:channel()
-local event = ch:receive()  -- {kind = "member.joined" | "member.left", path = "workers", data = {...}}
+local event, open = ch:receive()  -- {kind = "member.joined" | "member.left", path = "workers", data = {...}}
+if not open then
+    return nil, errors.new("Process-group subscription closed")
+end
 
 sub:close()  -- unsubscribe; sub:close({flush = true}) drains queued events first
 ```
@@ -136,9 +163,15 @@ sub:close()  -- unsubscribe; sub:close({flush = true}) drains queued events firs
 
 ```lua
 local sub, snapshot, err = group:events()
+if err then
+    return nil, err
+end
 -- snapshot: { ["workers"] = {pid, ...}, ["all"] = {pid, ...} }
 
-local event = sub:channel():receive()
+local event, open = sub:channel():receive()
+if not open then
+    return nil, errors.new("Process-group subscription closed")
+end
 sub:close()
 ```
 
@@ -165,7 +198,7 @@ Subscription channels are buffered (capacity 64). If a slow consumer fills the b
 group:release()
 ```
 
-`release` frees the instance immediately and is idempotent. After release, every method returns an error. Cleanup also runs automatically at the end of the execution frame.
+`release` frees the instance immediately and is idempotent. After release, every other group operation returns an error. Cleanup also runs automatically at the end of the execution frame.
 
 **Returns:** `boolean`
 
@@ -198,10 +231,10 @@ group:release()
 | Service stopped, backpressure, or open circuit | `errors.UNAVAILABLE` |
 | Broadcast timed out | `errors.TIMEOUT` (retryable) |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](errors.md) for working with errors.
 
 ## See Also
 
-- [Process Groups](system/process-groups.md) - Scope entry kind and configuration
-- [Cluster](guides/cluster.md) - Membership, naming, and the clustering model
-- [Process Management](lua/core/process.md) - Spawning and messaging individual processes
+- [Process Groups](../../system/process-groups.md) - Scope entry kind and configuration
+- [Cluster](../../guides/cluster.md) - Membership, naming, and the clustering model
+- [Process Management](process.md) - Spawning and messaging individual processes

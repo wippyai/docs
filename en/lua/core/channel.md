@@ -10,7 +10,9 @@ description: "Create buffered and unbuffered channels, exchange values, select a
 
 Channels exchange values between concurrent tasks. They can be buffered or unbuffered and can be combined with `channel.select` to coordinate multiple operations.
 
-The `channel` global is always available.
+This is an API reference. The basic blocks are isolated snippets; the timeout, fan-in, and non-blocking sections are partial patterns whose named channels and callbacks come from the surrounding application. The worker-pool block is a complete in-process example.
+
+The `channel` and `coroutine` globals are always available. Channels coordinate coroutines within one Lua process; use process messaging, functions, or queues across process boundaries.
 
 ## Creating Channels
 
@@ -36,6 +38,7 @@ Sending blocks until a receiver is ready on an unbuffered channel or until buffe
 
 ```lua
 -- Send work to a worker pool
+local tasks = {"task-a", "task-b"}
 local jobs = channel.new(100)
 for i, task in ipairs(tasks) do
     jobs:send(task)  -- Blocks if buffer full
@@ -58,13 +61,15 @@ Receiving blocks until a value is available or the channel is closed.
 ```lua
 -- Worker consuming from job queue
 while true do
-    local job, ok = work:receive()
+    local job, ok = jobs:receive()
     if not ok then
         break  -- Channel closed, no more work
     end
     process(job)
 end
 ```
+
+Here, `jobs` is the application-provided queue and `process` is its task-processing callback.
 
 **Returns:** `any, boolean`
 
@@ -84,6 +89,8 @@ for _, item in ipairs(data) do
 end
 results:close()  -- Signal completion
 ```
+
+This isolated producer snippet assumes `data` and the `process` callback are provided by the application.
 
 ## Selecting from Multiple Channels
 
@@ -110,7 +117,7 @@ Use `time.after()` to add a timeout to a channel wait.
 ```lua
 local time = require("time")
 
-local result_ch = worker:response()
+local result_ch = application_response_channel
 local timeout, err = time.after("5s")
 if err then
     return nil, err
@@ -127,12 +134,19 @@ if r.channel == timeout then
         kind = errors.TIMEOUT
     })
 end
+if not r.ok then
+    return nil, errors.new("Response channel closed")
+end
 return r.value
 ```
+
+This partial pattern assumes the entry lists `time` in `modules:` and the application supplies `application_response_channel`. `time.after` returns one channel on success; invalid or non-positive durations return `nil, error`.
 
 ### Fan-in Pattern
 
 Handle values from multiple sources in one loop.
+
+This process-entry pattern uses ambient `process`, while the application supplies the shutdown signal and the two handler functions.
 
 ```lua
 local events = process.events()
@@ -160,6 +174,8 @@ end
 
 Use a default case to check for available data without blocking.
 
+In this isolated pattern, `ch` and the `process` callback come from the application.
+
 ```lua
 local r = channel.select {
     ch:case_receive(),
@@ -168,6 +184,8 @@ local r = channel.select {
 
 if r.default then
     -- Nothing available, do something else
+elseif not r.ok then
+    -- The channel is closed
 else
     process(r.value)
 end
@@ -190,12 +208,27 @@ Values in the cases table that are not send or receive cases are ignored. Make s
 ## Worker Pool Pattern
 
 ```lua
-local work = channel.new(100)
-local results = channel.new(100)
+local items = {1, 2, 3, 4}
+local num_workers = 2
+
+local function process_item(item)
+    return item * 2
+end
+
+local work = channel.new(#items)
+local results = channel.new(#items)
 
 -- Spawn workers
-for i = 1, num_workers do
-    process.spawn("app.workers:processor", "app:processes", work, results)
+for _ = 1, num_workers do
+    coroutine.spawn(function()
+        while true do
+            local item, ok = work:receive()
+            if not ok then
+                return
+            end
+            results:send(process_item(item))
+        end
+    end)
 end
 
 -- Feed work
@@ -213,6 +246,8 @@ while #processed < #items do
 end
 ```
 
+After the loop, `processed` contains `2`, `4`, `6`, and `8`; result order depends on coroutine scheduling. The workers share channels because they are coroutines in the same Lua process.
+
 ## Errors
 
 | Condition | Kind | Retryable |
@@ -221,6 +256,6 @@ end
 
 ## See Also
 
-- [Process Management](lua/core/process.md) - Process spawning and communication
-- [Message Queue](lua/storage/queue.md) - Queue-based messaging
-- [Functions](lua/core/funcs.md) - Function invocation
+- [Process Management](process.md) - Process spawning and communication
+- [Message Queue](../storage/queue.md) - Queue-based messaging
+- [Functions](funcs.md) - Function invocation
