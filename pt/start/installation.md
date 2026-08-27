@@ -1,17 +1,17 @@
 ---
 title: "Instalação"
-description: "Instalação Rápida"
+description: "Instale o runtime do Wippy e verifique se o comando está disponível."
 ---
 
 # Instalação
 
-## Instalação Rápida
+## Instalar
 
 ```bash
 curl -fsSL https://hub.wippy.ai/install.sh | bash
 ```
 
-Ou baixe diretamente de [hub.wippy.ai/releases](https://hub.wippy.ai/releases).
+O script de instalação requer um shell POSIX. No Windows, baixe o runtime em [hub.wippy.ai/releases](https://hub.wippy.ai/releases), coloque `wippy.exe` no `PATH`.
 
 ## Verificar
 
@@ -19,45 +19,53 @@ Ou baixe diretamente de [hub.wippy.ai/releases](https://hub.wippy.ai/releases).
 wippy version
 ```
 
-## Início Rápido
+## Inicializar os metadados de dependências
 
 ```bash
-# Criar um novo projeto
-mkdir myapp && cd myapp
-wippy init
+# Create a project directory
+mkdir myapp
+cd myapp
 
-# Executar
-wippy run
+# Create or update wippy.lock
+wippy init
 ```
 
-HTTP, SQL, storage e hospedagem de processos são nativos do runtime — um projeto novo executa sem nenhuma dependência. Módulos do framework são adicionados do hub conforme necessário:
+`wippy init` grava o lock de dependências e suas configurações de diretórios de código-fonte e módulos. Ele não cria arquivos de código-fonte da aplicação nem entradas de registro. Siga o tutorial [Hello World](../tutorials/hello-world.md) para criar uma aplicação executável e depois inicie-a com `wippy run`.
+
+O runtime inclui recursos de HTTP, SQL, armazenamento e hospedagem de processos. Adicione módulos do framework pelo Hub quando a aplicação precisar deles:
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-## Visão Geral dos Comandos
+## Visão geral dos comandos
 
 | Comando | Descrição |
-|---------|-----------|
-| `wippy init` | Inicializa um novo projeto |
-| `wippy run` | Inicia o runtime |
-| `wippy test` | Executa o entrypoint de teste |
-| `wippy lint` | Verifica o código em busca de erros |
-| `wippy add` | Adiciona uma dependência |
-| `wippy install` | Instala dependências |
-| `wippy update` | Atualiza dependências |
-| `wippy pack` | Cria um snapshot |
-| `wippy publish` | Publica no hub |
-| `wippy search` | Busca por módulos |
-| `wippy auth` | Gerencia autenticação |
-| `wippy version` | Exibe informações de versão |
+| --------- | ------------- |
+| `wippy init` | Criar ou atualizar `wippy.lock` |
+| `wippy run` | Iniciar o runtime |
+| `wippy test` | Executar o entrypoint de teste |
+| `wippy lint` | Verificar erros no código |
+| `wippy add` | Adicionar uma dependência |
+| `wippy install` | Instalar dependências |
+| `wippy update` | Atualizar dependências |
+| `wippy pack` | Criar um snapshot |
+| `wippy publish` | Publicar no Hub |
+| `wippy search` | Pesquisar módulos |
+| `wippy readme` | Buscar o README de um módulo no Hub |
+| `wippy registry` | Inspecionar as entradas de registro carregadas |
+| `wippy auth` | Gerenciar autenticação |
+| `wippy version` | Exibir informações da versão |
 
-Consulte a [Referência do CLI](guides/cli.md) para documentação completa.
+Consulte a [Referência da CLI](../guides/cli.md) para obter a documentação completa.
 
-## Próximos Passos
+## Solução de problemas
 
-- [Hello World](tutorials/hello-world.md) - Crie seu primeiro projeto
-- [Estrutura do Projeto](start/structure.md) - Entenda o layout
-- [Referência do CLI](guides/cli.md) - Todos os comandos e opções
+Se o shell não encontrar `wippy` após a instalação, reabra-o e confirme que o diretório de instalação está no `PATH`.
+
+## Próximos passos
+
+- [Hello World](../tutorials/hello-world.md) — Crie sua primeira aplicação
+- [Estrutura do projeto](./structure.md) — Entenda o layout do projeto
+- [Referência da CLI](../guides/cli.md) — Consulte todos os comandos e opções
