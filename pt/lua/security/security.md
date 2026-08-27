@@ -1,6 +1,6 @@
 ---
 title: "Segurança & Controle de Acesso"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Inspecione o actor e scope atuais, avalie políticas e gerencie tokens de autenticação."
 ---
 
 # Segurança & Controle de Acesso
@@ -9,6 +9,8 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="permissions"/>
 
 Gerencie actors de autenticação, escopos de autorização e políticas de acesso.
+
+O Wippy usa o modo de segurança estrito por padrão. A entrada executável deve habilitar `security`, ter um actor e um scope e autorizar exatamente as operações chamadas. Em particular, criar ou alterar scopes exige `security.actor.create` ou `security.scope.create`; consultas ao registro exigem `security.policy.get` ou `security.policy_group.get`; operações com tokens exigem `security.token_store.get` e a permissão específica da operação. `new_actor`, `new_scope`, `scope:with`, `scope:without` e a obtenção negada de `token_store` lançam erro Lua em vez de retornar um `error` estruturado. Conceda esses pré-requisitos no contexto de segurança da entrada. Veja [Modelo de Segurança](../../system/security.md) para configurar.
 
 ## Carregamento
 
@@ -25,11 +27,8 @@ local actor = security.actor()
 if actor then
     local id = actor:id()
     local meta = actor:meta()
-
-    logger:info("Request de", {
-        user_id = id,
-        role = meta.role
-    })
+    -- Use only the fields required for authorization or application logic.
+    local role = meta.role
 end
 ```
 
@@ -44,7 +43,7 @@ local scope = security.scope()
 if scope then
     local policies = scope:policies()
     for _, policy in ipairs(policies) do
-        print("Política ativa:", policy:id())
+        print("Active policy:", policy:id())
     end
 end
 ```
@@ -56,17 +55,23 @@ end
 Verifica se o contexto atual permite uma ação em um recurso.
 
 ```lua
--- Verificar permissão de leitura
+-- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Não pode ler dados do usuário")
+    return nil, errors.new({
+        message = "Cannot read user data",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 
--- Verificar permissão de escrita
+-- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Não pode modificar pedido")
+    return nil, errors.new({
+        message = "Cannot modify order",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 
--- Verificar com metadados
+-- Check with metadata
 local allowed = security.can("delete", "document:" .. doc_id, {
     owner_id = doc.owner_id,
     department = doc.department
@@ -86,14 +91,14 @@ local allowed = security.can("delete", "document:" .. doc_id, {
 Cria um novo actor com ID e metadados.
 
 ```lua
--- Criar actor de usuário
+-- Create user actor
 local actor = security.new_actor("user:" .. user.id, {
     role = user.role,
     department = user.department,
     email = user.email
 })
 
--- Criar actor de servico
+-- Create service actor
 local service_actor = security.new_actor("service:payment-processor", {
     type = "service",
     version = "1.0.0"
@@ -112,17 +117,26 @@ local service_actor = security.new_actor("service:payment-processor", {
 Cria um novo escopo customizado.
 
 ```lua
--- Escopo vazio
+-- Empty scope
 local scope = security.new_scope()
 
--- Escopo com políticas
-local read_policy = security.policy("app:read-only")
+-- Scope with policies
+local read_policy, read_err = security.policy("app:read-only")
+if read_err then
+    return nil, read_err
+end
 local scope = security.new_scope({read_policy})
 
--- Construir escopo incrementalmente
+-- Build scope incrementally
 local scope = security.new_scope()
-local policy1 = security.policy("app:read")
-local policy2 = security.policy("app:write")
+local policy1, policy1_err = security.policy("app:read")
+if policy1_err then
+    return nil, policy1_err
+end
+local policy2, policy2_err = security.policy("app:write")
+if policy2_err then
+    return nil, policy2_err
+end
 scope = scope:with(policy1):with(policy2)
 ```
 
@@ -138,14 +152,14 @@ if err then
     return nil, err
 end
 
--- Avaliar política
+-- Evaluate policy
 local result = policy:evaluate(actor, "delete", "user:123")
 if result == "allow" then
-    -- permitido
+    -- permitted
 elseif result == "deny" then
-    -- proibido
+    -- forbidden
 else
-    -- undefined, verificar outras políticas
+    -- undefined, check other policies
 end
 ```
 
@@ -160,13 +174,13 @@ end
 Obtem um grupo de políticas pre-definido.
 
 ```lua
--- Obter escopo admin
+-- Get admin scope
 local admin_scope, err = security.named_scope("app:admin")
 if err then
     return nil, err
 end
 
--- Usar para operações elevadas
+-- Use for elevated operations
 local result = admin_scope:evaluate(actor, "delete", "user:123")
 ```
 
@@ -186,8 +200,8 @@ if err then
     return nil, err
 end
 
--- Usar store...
-store:close()
+-- Use store...
+return store:close()
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -212,11 +226,14 @@ Adiciona ou remove políticas do escopo.
 ```lua
 local scope = security.new_scope()
 
--- Adicionar política
-local write_policy = security.policy("app:write")
+-- Add policy
+local write_policy, err = security.policy("app:write")
+if err then
+    return nil, err
+end
 scope = scope:with(write_policy)
 
--- Remover política
+-- Remove policy
 scope = scope:without("app:read-only")
 ```
 
@@ -226,10 +243,13 @@ Avalia todas as políticas no escopo.
 
 ```lua
 local result = scope:evaluate(actor, "read", "document:123")
--- "allow", "deny", ou "undefined"
+-- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Acesso negado")
+    return nil, errors.new({
+        message = "Access denied",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 ```
 
@@ -271,15 +291,27 @@ Criar token de autenticação.
 
 ```lua
 local actor = security.new_actor("user:123", {role = "user"})
-local scope = security.named_scope("app:default")
+local scope, scope_err = security.named_scope("app:default")
+if scope_err then
+    return nil, scope_err
+end
+local store, store_err = security.token_store("app:tokens")
+if store_err then
+    return nil, store_err
+end
 
 local token, err = store:create(actor, scope, {
-    expiration = "24h",  -- ou milissegundos
+    expiration = "24h",  -- or milliseconds
     meta = {
         login_ip = request_ip,
         user_agent = user_agent
     }
 })
+store:close()
+if err then
+    return nil, err
+end
+return token
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -297,8 +329,9 @@ Validar token e obter actor/scope.
 
 ```lua
 local actor, scope, err = store:validate(token)
+store:close()
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Token inválido")
+    return nil, err
 end
 ```
 
@@ -310,6 +343,10 @@ Invalidar um token.
 
 ```lua
 local ok, err = store:revoke(token)
+store:close()
+if err then
+    return nil, err
+end
 ```
 
 **Retorna:** `boolean, error`
@@ -341,7 +378,7 @@ Operações de segurança estao sujeitas a avaliação de política de seguranç
 | `security.token.create` | ID da Store | Criar tokens |
 | `security.token.revoke` | ID da Store | Revogar tokens |
 
-Veja [Security Model](system/security.md) para configuração de políticas.
+Veja [Modelo de Segurança](../../system/security.md) para configurar as políticas.
 
 ## Erros
 
@@ -360,15 +397,16 @@ Veja [Security Model](system/security.md) para configuração de políticas.
 local store, err = security.token_store("app:tokens")
 if err then
     if errors.is(err, errors.INVALID) then
-        print("Requisição invalida:", err:message())
+        print("Invalid request:", err:message())
     end
     return nil, err
 end
+store:close()
 ```
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Security Model](system/security.md) - Configuração de actors, políticas, escopos
-- [HTTP Middleware](http/middleware.md) - Endpoint e resource firewall
+- [Modelo de Segurança](../../system/security.md) - Configuração de actors, políticas e scopes
+- [Middleware HTTP](../../http/middleware.md) - Firewall de endpoint e recurso

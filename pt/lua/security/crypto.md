@@ -1,6 +1,6 @@
 ---
 title: "Criptografia & Assinatura"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Gere valores aleatórios, autentique dados, criptografe conteúdo, verifique JWTs e derive chaves."
 ---
 
 # Criptografia & Assinatura
@@ -224,4 +224,4 @@ local equal = crypto.constant_time_compare(a, b)
 | Descriptografia falhou | `errors.INTERNAL` | não |
 | Token expirado | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
