@@ -113,15 +113,25 @@ El sobre es `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`; e
 | `CmdLogout` | `cmd-logout` | Hijo → Host | Logout |
 | `CmdSubscribe` / `CmdUnSubscribe` | `cmd-subscribe` / `cmd-unsubscribe` | Hijo → Host | Suscripción |
 | `OnSubscription` | `on-subscription` | Host → Hijo | Evento de suscripción |
-| CmdStateGet/Set/Remove/Clear/GetAll | cmd-state family | Hijo → Host | Estado persistido |
-| `OnStateResult` / `OnStateError` | on-state family | Host → Hijo | Resultado de estado |
+| `CmdStateGet` | `cmd-state-get` | Hijo → Host | Lee una clave de estado persistido |
+| `CmdStateSet` | `cmd-state-set` | Hijo → Host | Escribe una clave de estado persistido |
+| `CmdStateRemove` | `cmd-state-remove` | Hijo → Host | Elimina una clave de estado persistido |
+| `CmdStateClear` | `cmd-state-clear` | Hijo → Host | Borra todo el estado de esta página |
+| `CmdStateGetAll` | `cmd-state-get-all` | Hijo → Host | Lee todo el estado persistido |
+| `OnStateResult` | `on-state-result` | Host → Hijo | Entrega el resultado de una lectura de estado |
+| `OnStateError` | `on-state-error` | Host → Hijo | Informa de un fallo en una operación de estado |
 | `CmdWsSend` | `cmd-ws-send` | Hijo → Host | Comando WebSocket |
 | `CmdBodySize` | `cmd-body-size` | Hijo → Host | Altura automática |
-| `CmdBridgePost` / `CmdBridgeRequest` | cmd-bridge family | Ambos | Bridge |
-| `CmdClaimNavOwner` / `CmdReleaseNavOwner` | nav-owner command family | Hijo → Host | Propiedad de navegación |
-| `CmdLayoutSubscribe` / `CmdLayoutUpdatePanel` | cmd-layout family | Hijo → Host | Layout |
-| `CmdLayoutBroadcast` | `cmd-layout-broadcast` | Ambos | Bus de layout |
-| `OnLayoutChange` / `OnLayoutPanelChanged` / `OnLayoutBroadcast` | on-layout family | Host → Hijo | Actualizaciones |
+| `CmdBridgePost` | `cmd-bridge-post` | Hijo ↔ Padre | Envía un mensaje de canal sin esperar respuesta mediante `host.bridge` |
+| `CmdBridgeRequest` | `cmd-bridge-request` | Hijo ↔ Padre | Envía una solicitud de canal y espera una respuesta mediante `host.bridge` |
+| `CmdClaimNavOwner` | `cmd-claim-nav-owner` | Hijo → Host | Reclama la propiedad de navegación (modo nav-owner) |
+| `CmdReleaseNavOwner` | `cmd-release-nav-owner` | Hijo → Host | Libera la propiedad de navegación |
+| `CmdLayoutSubscribe` | `cmd-layout-subscribe` | Hijo → Host | Se suscribe a las actualizaciones del layout administrado |
+| `CmdLayoutUpdatePanel` | `cmd-layout-update-panel` | Hijo → Host | Modifica parcialmente una definición de panel |
+| `CmdLayoutBroadcast` | `cmd-layout-broadcast` | Hijo ↔ Host | Mensaje del bus de layout dentro de la pestaña |
+| `OnLayoutChange` | `on-layout-change` | Host → Hijo | Actualización de la instantánea completa del layout |
+| `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Hijo | Cambio en vivo del estado de un panel |
+| `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Hijo | Entrega una difusión del bus de layout |
 
 ## Elemento `<w-iframe>` :id=w-iframe-custom-element
 
