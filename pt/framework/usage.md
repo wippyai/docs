@@ -1,22 +1,24 @@
 ---
 title: "Rastreamento de Uso"
-description: "O modulo wippy/usage registra o consumo de tokens de LLMs e fornece consultas agregadas agrupadas por intervalo de tempo, modelo ou usuario. Ele se…"
+description: "Registre o consumo de tokens de LLMs e consulte totais de uso por intervalo de tempo, modelo ou usuário."
 ---
 
 # Rastreamento de Uso
 
-O modulo `wippy/usage` registra o consumo de tokens de LLMs e fornece consultas agregadas agrupadas por intervalo de tempo, modelo ou usuario. Ele se vincula ao contrato `wippy.llm:usage_tracker`, de modo que qualquer codigo que chame atraves do modulo LLM produz automaticamente registros de uso.
+O módulo `wippy/usage` registra o consumo de tokens de LLMs e oferece consultas agregadas por intervalo de tempo, modelo ou usuário. Ele é a implementação padrão do contrato `wippy.llm:usage_tracker`; por isso, as chamadas feitas pelo módulo de LLM geram registros de uso automaticamente.
 
-## Configuracao
+Esta página é uma introdução à API com exemplos de referência, não um tutorial independente. Os exemplos pressupõem um projeto Wippy existente, um banco de dados SQL configurado e `wippy/llm` quando o rastreamento automático for necessário. Os registros de uso persistem no banco selecionado; ao terminar os testes, remova os dados de exemplo pelo fluxo normal de manutenção do banco.
 
-Adicione o modulo ao seu projeto:
+## Configuração
+
+Adicione o módulo ao projeto:
 
 ```bash
 wippy add wippy/usage
 wippy install
 ```
 
-Declare a dependencia e aponte o requisito `target_db` para o banco de dados onde os registros de uso devem residir:
+Declare a dependência e defina `target_db` como o banco que armazenará os registros de uso:
 
 ```yaml
 version: "1.0"
@@ -25,22 +27,22 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.usage
     kind: ns.dependency
     component: wippy/usage
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.usage.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-Quando a aplicacao inicia, `wippy/migration` executa a migracao `01_create_token_usage_table` do modulo, que cria a tabela `token_usage` junto com indices em `user_id`, `context_id`, `model_id` e `timestamp`.
+Quando a aplicação inicia, `wippy/migration` executa a migração `01_create_token_usage_table` do módulo, que cria a tabela `token_usage` e os índices de `user_id`, `context_id`, `model_id` e `timestamp`.
 
-## Schema
+Se você usar o caminho relativo do SQLite mostrado acima, crie o diretório `data` antes de iniciar a aplicação.
+
+## Esquema
 
 ```
 token_usage
@@ -57,9 +59,9 @@ token_usage
 └── meta               text (JSON)
 ```
 
-## Rastreamento Automatico
+## Rastreamento automático
 
-`wippy/llm` resolve o contrato `wippy.llm:usage_tracker` antes de cada geracao. `wippy/usage` vincula sua implementacao como padrao:
+`wippy/llm` resolve o contrato `wippy.llm:usage_tracker` antes de cada geração. `wippy/usage` registra sua implementação como padrão:
 
 ```yaml
 contracts:
@@ -69,11 +71,11 @@ contracts:
       track_usage: wippy.usage:usage_tracker
 ```
 
-Toda chamada LLM bem-sucedida invoca `track_usage` com o id do modelo, as contagens de tokens e um `context_id` opcional. O `user_id` e obtido do ator de seguranca ativo; chamadas fora de um contexto de usuario sao registradas como `"system"`.
+Toda chamada bem-sucedida ao LLM invoca `track_usage` com o ID do modelo, as contagens de tokens e um `context_id` opcional. O `user_id` é obtido do ator de segurança ativo; chamadas fora de um contexto de usuário são registradas como `"system"`.
 
-## API do Rastreador
+## API do rastreador
 
-Importe o rastreador diretamente quando precisar registrar uso fora do fluxo LLM:
+Importe o rastreador diretamente para registrar uso fora do fluxo do LLM:
 
 ```yaml
 imports:
@@ -82,6 +84,11 @@ imports:
 
 ```lua
 local tracker = require("usage_tracker")
+
+-- Numeric counts supplied by the caller or model provider.
+local prompt_tokens, completion_tokens = 120, 40
+local thinking_tokens = 0
+local cache_read_tokens, cache_write_tokens = 0, 0
 
 local usage_id, err = tracker.track_usage(
     "openai:gpt-4o",
@@ -92,49 +99,66 @@ local usage_id, err = tracker.track_usage(
     cache_write_tokens,
     { context_id = "chat-42", metadata = { feature = "summary" } }
 )
+if err then
+    error("Failed to record usage: " .. tostring(err))
+end
 ```
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-------------|
-| `model_id` | string | Id canonico do modelo |
+| `model_id` | string | ID canônico do modelo |
 | `prompt_tokens` | number | Tokens de entrada |
-| `completion_tokens` | number | Tokens de saida |
-| `thinking_tokens` | number | Tokens de raciocinio (0 quando nao reportado) |
+| `completion_tokens` | number | Tokens de saída |
+| `thinking_tokens` | number | Tokens de raciocínio (0 quando não informado) |
 | `cache_read_tokens` | number | Acertos de cache de prompt |
-| `cache_write_tokens` | number | Gravacoes no cache de prompt |
-| `options.context_id` | string | Tag livre; fallback para `ctx.get("context_id")` |
-| `options.timestamp` | number | Timestamp Unix; padrao e agora (UTC) |
-| `options.metadata` | table | Metadados JSON arbitrarios armazenados junto ao registro |
+| `cache_write_tokens` | number | Gravações no cache de prompt |
+| `options.context_id` | string | Tag livre; usa `ctx.get("context_id")` como fallback |
+| `options.timestamp` | number | Timestamp Unix; o padrão é o momento atual (UTC) |
+| `options.metadata` | table | Metadados JSON arbitrários armazenados com o registro |
 
 Retorna `usage_id` ou `nil, err`.
 
-## API do Repositorio
+## API do repositório
 
 `wippy.usage:token_usage_repo` oferece consultas agregadas:
 
 ```yaml
+modules:
+  - time
 imports:
   usage: wippy.usage:token_usage_repo
 ```
 
 ```lua
 local usage = require("usage")
+local time = require("time")
 
-local summary  = usage.get_summary(start_unix, end_unix)
-local by_time  = usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY)
-local by_model = usage.get_usage_by_model(start_unix, end_unix)
-local by_user  = usage.get_usage_by_user(start_unix, end_unix)
+-- Inclusive query bounds expressed as UNIX timestamps.
+local end_unix = time.now():unix()
+local start_unix = end_unix - (24 * 60 * 60)
+
+local function require_result(value, err)
+    if err then
+        error("Usage query failed: " .. tostring(err))
+    end
+    return value
+end
+
+local summary  = require_result(usage.get_summary(start_unix, end_unix))
+local by_time  = require_result(usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY))
+local by_model = require_result(usage.get_usage_by_model(start_unix, end_unix))
+local by_user  = require_result(usage.get_usage_by_user(start_unix, end_unix))
 ```
 
-### Funcoes
+### Funções
 
-| Funcao | Retorno |
+| Função | Retorno |
 |----------|---------|
-| `get_summary(start, end)` | Totais do intervalo: tokens de prompt/completion/thinking/cache, contagem de requisicoes, `total_tokens` (prompt + completion + thinking) |
-| `get_usage_by_time(start, end, interval)` | Array de baldes, um por intervalo; baldes ausentes retornam zeros |
-| `get_usage_by_model(start, end)` | Totais por modelo, ordenados por `total_tokens` descendente |
-| `get_usage_by_user(start, end)` | Totais por usuario, ordenados por `total_tokens` descendente |
-| `create(user_id, model_id, prompt, completion, options)` | Insercao de baixo nivel usada pelo rastreador |
+| `get_summary(start, end)` | Totais do intervalo: tokens de prompt, completion, thinking e cache; número de requisições; e `total_tokens` (prompt + completion + thinking) |
+| `get_usage_by_time(start, end, interval)` | Array de buckets, um por intervalo; buckets ausentes retornam zeros |
+| `get_usage_by_model(start, end)` | Totais por modelo, ordenados por `total_tokens` em ordem decrescente |
+| `get_usage_by_user(start, end)` | Totais por usuário, ordenados por `total_tokens` em ordem decrescente |
+| `create(user_id, model_id, prompt, completion, options)` | Inserção de baixo nível usada pelo rastreador |
 
 ### Intervalos
 
@@ -145,18 +169,18 @@ usage.INTERVAL.WEEK   -- "week"
 usage.INTERVAL.MONTH  -- "month"
 ```
 
-`get_usage_by_time` alinha os baldes ao intervalo configurado. No PostgreSQL usa `generate_series` com aritmetica de intervalos; no SQLite usa uma CTE recursiva sobre timestamps UNIX. O `total_tokens` em cada balde exclui tokens de cache.
+`get_usage_by_time` alinha os buckets ao intervalo configurado. No PostgreSQL, usa `generate_series` com aritmética de intervalos; no SQLite, usa uma CTE recursiva sobre timestamps Unix. O `total_tokens` de cada bucket exclui os tokens de cache.
 
-### Intervalos de Tempo
+### Intervalos de tempo
 
-Tanto o rastreador quanto o repositorio aceitam timestamps UNIX na fronteira da API publica. Internamente o repositorio converte para strings RFC3339 para armazenamento e consulta. Passe valores de `os.time()` ou `time.now():unix()`, nao strings formatadas.
+Tanto o rastreador quanto o repositório aceitam timestamps Unix na fronteira da API pública. Internamente, o repositório os converte em strings RFC3339 para armazenamento e consulta. Passe valores de `os.time()` ou `time.now():unix()`, não strings formatadas.
 
-## Metadados e Contexto
+## Metadados e contexto
 
-A coluna `meta` armazena um blob JSON livre. Use-a para correlacionar registros com eventos da aplicacao:
+A coluna `meta` armazena JSON de formato livre para correlacionar registros com eventos da aplicação:
 
 ```lua
-tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
+local usage_id, err = tracker.track_usage("openai:gpt-4o", 120, 40, 0, 0, 0, {
     context_id = "chat-42",
     metadata   = {
         session_id = "s-7",
@@ -164,12 +188,15 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
         agent_id   = "writer",
     },
 })
+if err then
+    error("Failed to record usage metadata: " .. tostring(err))
+end
 ```
 
-`context_id` e uma coluna de nivel superior e pode ser indexada; `metadata` e armazenado como texto e destina-se a exibicao, nao a filtragem.
+`context_id` é uma coluna de nível superior e pode ser indexada; `metadata` é armazenado como texto e se destina à exibição, não à filtragem.
 
-## Veja Tambem
+## Consulte também
 
-- [LLM](framework/llm.md) - Geracao LLM e o contrato `usage_tracker`
-- [Migracoes](framework/migration.md) - Executor de migracoes que cria o schema
-- [Visao Geral do Framework](framework/overview.md) - Uso dos modulos do framework
+- [LLM](./llm.md) — Geração por LLM e o contrato `usage_tracker`
+- [Migrações](./migration.md) — Executor de migrações que cria o esquema
+- [Visão geral do framework](./overview.md) — Uso dos módulos do framework
