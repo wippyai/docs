@@ -34,7 +34,7 @@ entries:
 | `transport` | No | Invocation transport: `payload` (default) or `wasi-http` |
 | `wit` | No | WIT signature for raw/core modules |
 | `imports` | No | Host imports to enable |
-| `wasi` | No | WASI configuration (args, env, mounts) |
+| `wasi` | No | WASI configuration (`args`, `cwd`, `env`, and `mounts`) |
 | `limits` | No | Execution limits |
 
 <note>
@@ -74,15 +74,20 @@ wippy run list
 |-------|----------|-------------|
 | `name` | Yes | Command name used with `wippy run <name>` |
 | `short` | No | Short description shown in `wippy run list` |
+| `main` | No | Mark the entry as the default command for a pack or hub module |
+| `use_case` | No | Entrypoint category; defaults to `run` |
+| `security` | No | Security context applied only when the trusted terminal launcher starts this command |
 
-A `terminal.host` and `process.host` must be present for CLI commands to work.
+A `terminal.host` must be present for CLI commands. It owns the scheduler used
+for the command process, so a separate `process.host` is not required. When
+multiple terminal hosts exist, select one with `--host`.
 
 ## Process Lifecycle
 
 WASM processes follow the Init/Step/Close lifecycle model:
 
-1. **Init** - Module is instantiated, input arguments are captured
-2. **Step** - Execution advances. For async modules, the scheduler drives yield/resume cycles. For synchronous modules, execution completes in a single step.
+1. **Init** - Call context, method, and input arguments are captured
+2. **Step** - The first step instantiates and starts the module. Later steps advance dispatcher-bridged operations; a synchronous execution can complete in the first step.
 3. **Close** - Instance resources are released
 
 ## Spawning from Lua
@@ -91,7 +96,6 @@ Spawn a WASM process and monitor it for completion:
 
 ```lua
 local process = require("process")
-local time = require("time")
 
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
@@ -114,7 +118,10 @@ end
 
 ## Async Execution
 
-WASM processes that import WASI interfaces can perform async operations. The scheduler suspends the process during I/O and resumes it when the operation completes:
+WASM processes can yield for host operations that the runtime bridges through
+the dispatcher, including supported clock polling and outgoing HTTP. The
+scheduler suspends the process until that pending operation completes, then
+resumes it:
 
 ```yaml
   - name: http_worker
@@ -134,7 +141,9 @@ WASM processes that import WASI interfaces can perform async operations. The sch
           required: true
 ```
 
-The yield/resume mechanism is transparent to the WASM code. Standard blocking calls in the guest (sleep, read, write, HTTP requests) automatically yield to the dispatcher.
+The yield/resume mechanism is transparent to the guest for those asyncified
+operations. Do not assume every blocking WASI call yields: stream reads and
+writes are synchronous in the pinned runtime.
 
 ## WASI Configuration
 
@@ -168,8 +177,8 @@ Processes support the same WASI configuration as functions:
 
 ## See Also
 
-- [Overview](wasm/overview.md) - WebAssembly runtime overview
-- [Functions](wasm/functions.md) - WASM function configuration
-- [Host Functions](wasm/hosts.md) - Available host interfaces
-- [Process Model](concepts/process-model.md) - Process lifecycle
-- [Supervision](guides/supervision.md) - Process supervision trees
+- [Overview](./overview.md) - WebAssembly runtime overview
+- [Functions](./functions.md) - WASM function configuration
+- [Host Functions](./hosts.md) - Available host interfaces
+- [Process Model](../concepts/process-model.md) - Process lifecycle
+- [Supervision](../guides/supervision.md) - Process supervision trees

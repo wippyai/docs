@@ -5,26 +5,25 @@ description: "Contribution scope, stability expectations, security reporting, an
 
 # Contributing
 
-Wippy is developed by [Spiral Scout](https://spiralscout.com). The public release is currently in alpha.
+Wippy is developed in the public [wippyai GitHub organization](https://github.com/wippyai). The runtime release line is currently alpha.
 
 ## Stability
 
-- **Lua API**: Stable
-- **External behavior**: Stable
-- **Registry entry definitions**: Stable, with minor exceptions. A migration path is provided when changes are required.
-- **Internal runtime APIs**: May change
-- **Lower-level mechanics**: May change
+The runtime release line is alpha, and the public repositories do not publish a
+separate compatibility or migration policy. Pin the runtime and module versions
+used by an application, and review release notes and documentation before
+upgrading.
 
-## Pull Requests
+## Issues and Pull Requests
 
-We accept pull requests for Lua module improvements, API stabilization, and documentation.
+Open documentation issues and pull requests in the [documentation repository](https://github.com/wippyai/docs). The public runtime repository currently accepts [pull requests](https://github.com/wippyai/runtime/pulls) but not issues. For a runtime defect report or proposal that does not include a patch, use the published organization contact, [support@wippy.ai](mailto:support@wippy.ai).
 
-Pull requests for high-level architectural changes or core design decisions are not accepted during this phase so that the project's direction remains consistent.
+Contributions must follow the organization [Code of Conduct](https://github.com/wippyai/.github/blob/main/.github/CODE_OF_CONDUCT.md).
 
 ## Security
 
-Report security vulnerabilities directly to security@wippy.dev.
+The documentation and runtime repositories do not currently publish a dedicated security policy. Report security-sensitive issues privately to [support@wippy.ai](mailto:support@wippy.ai) instead of opening a public issue.
 
-## Commercial Support
+## Support
 
-Contact wippy@spiralscout.com for commercial support or early access.
+Contact [support@wippy.ai](mailto:support@wippy.ai).
