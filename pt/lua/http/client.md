@@ -1,6 +1,6 @@
 ---
 title: "Cliente HTTP"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Envie requisições HTTP com headers, autenticação, formulários, uploads, opções TLS, streaming e lotes."
 ---
 
 # Cliente HTTP
@@ -29,33 +29,45 @@ if err then
 end
 
 print(resp.status_code)  -- 200
-print(resp.body)         -- corpo da resposta
+print(resp.body)         -- response body
 ```
 
 ### Requisição POST
 
 ```lua
+local json = require("json")
+
+local body, body_err = json.encode({name = "Alice", email = "alice@example.com"})
+if body_err then return nil, body_err end
 local resp, err = http_client.post("https://api.example.com/users", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice", email = "alice@example.com"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### Requisição PUT
 
 ```lua
+local body, body_err = json.encode({name = "Alice Smith"})
+if body_err then return nil, body_err end
 local resp, err = http_client.put("https://api.example.com/users/123", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice Smith"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### Requisição PATCH
 
 ```lua
+local body, body_err = json.encode({status = "active"})
+if body_err then return nil, body_err end
 local resp, err = http_client.patch("https://api.example.com/users/123", {
-    body = json.encode({status = "active"})
+    headers = {["Content-Type"] = "application/json"},
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### Requisição DELETE
@@ -64,6 +76,7 @@ local resp, err = http_client.patch("https://api.example.com/users/123", {
 local resp, err = http_client.delete("https://api.example.com/users/123", {
     headers = {["Authorization"] = "Bearer " .. token}
 })
+if err then return nil, err end
 ```
 
 ### Requisição HEAD
@@ -72,6 +85,7 @@ Retorna apenas headers, sem corpo.
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
+if err then return nil, err end
 local size = resp.headers["Content-Length"]
 ```
 
@@ -81,6 +95,7 @@ local size = resp.headers["Content-Length"]
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
     headers = {["Depth"] = "1"}
 })
+if err then return nil, err end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -104,7 +119,10 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `stream` | boolean | Streaming do corpo da resposta ao inves de buffer |
 | `max_response_body` | number | Tamanho maximo da resposta em bytes (0 = padrão) |
 | `unix_socket` | string | Conectar via caminho de socket Unix |
-| `tls` | table | Configuracao TLS por requisicao (ver [Opcoes TLS](#opcoes-tls)) |
+| `tls` | table | Configuração TLS por requisição (veja [Opções TLS](#tls-options)) |
+| `overlay_network` | string | Rotear por um [overlay de rede](../../system/network.md) — ID de registro de uma entrada `network.socks5`, `network.tailscale` ou `network.i2p` |
+
+Selecionar `overlay_network` exige a permissão `network.select` no ID da rede.
 
 ### Parametros de Query
 
@@ -116,6 +134,7 @@ local resp, err = http_client.get("https://api.example.com/search", {
         limit = "20"
     }
 })
+if err then return nil, err end
 ```
 
 ### Headers e Autenticação
@@ -127,11 +146,13 @@ local resp, err = http_client.get("https://api.example.com/data", {
         ["Accept"] = "application/json"
     }
 })
+if err then return nil, err end
 
--- Ou usar basic auth
+-- Or use basic auth
 local resp, err = http_client.get("https://api.example.com/data", {
-    auth = {user = "admin", pass = "secret"}
+    auth = {user = service_user, pass = service_password}
 })
+if err then return nil, err end
 ```
 
 ### Dados de Formulario
@@ -139,10 +160,11 @@ local resp, err = http_client.get("https://api.example.com/data", {
 ```lua
 local resp, err = http_client.post("https://api.example.com/login", {
     form = {
-        username = "alice",
-        password = "secret123"
+        username = username,
+        password = password
     }
 })
+if err then return nil, err end
 ```
 
 ### Upload de Arquivo
@@ -152,13 +174,14 @@ local resp, err = http_client.post("https://api.example.com/upload", {
     form = {title = "My Document"},
     files = {
         {
-            name = "attachment",      -- nome do campo do formulario
-            filename = "report.pdf",  -- nome original do arquivo
-            content = pdf_data,       -- conteudo do arquivo
+            name = "attachment",      -- form field name
+            filename = "report.pdf",  -- original filename
+            content = pdf_data,       -- file content
             content_type = "application/pdf"
         }
     }
 })
+if err then return nil, err end
 ```
 
 | Campo de Arquivo | Tipo | Obrigatorio | Descrição |
@@ -174,16 +197,14 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 ### Timeout
 
 ```lua
--- Numero: segundos
+-- Number: seconds
 local resp, err = http_client.get(url, {timeout = 30})
+if err then return nil, err end
 
--- String: formato de duração Go
-local resp, err = http_client.get(url, {timeout = "30s"})
-local resp, err = http_client.get(url, {timeout = "1m30s"})
-local resp, err = http_client.get(url, {timeout = "1h"})
+-- String alternatives use Go duration format: "30s", "1m30s", or "1h".
 ```
 
-### Opcoes TLS
+### Opções TLS {id="tls-options"}
 
 Configure opcoes TLS por requisicao para mTLS (mutual TLS) e certificados CA customizados.
 
@@ -200,8 +221,13 @@ Tanto `cert` quanto `key` devem ser fornecidos juntos para mTLS. O campo `ca` su
 #### Autenticacao mTLS
 
 ```lua
-local cert_pem = fs.read("/certs/client.crt")
-local key_pem = fs.read("/certs/client.key")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local cert_pem, cert_err = certs:readfile("client.crt")
+if cert_err then return nil, cert_err end
+local key_pem, key_err = certs:readfile("client.key")
+if key_err then return nil, key_err end
 
 local resp, err = http_client.get("https://secure.example.com/api", {
     tls = {
@@ -209,12 +235,17 @@ local resp, err = http_client.get("https://secure.example.com/api", {
         key = key_pem,
     }
 })
+if err then return nil, err end
 ```
 
 #### CA Customizado
 
 ```lua
-local ca_pem = fs.read("/certs/internal-ca.crt")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local ca_pem, ca_err = certs:readfile("internal-ca.crt")
+if ca_err then return nil, ca_err end
 
 local resp, err = http_client.get("https://internal.example.com/api", {
     tls = {
@@ -222,6 +253,7 @@ local resp, err = http_client.get("https://internal.example.com/api", {
         server_name = "internal.example.com",
     }
 })
+if err then return nil, err end
 ```
 
 #### Pular Verificacao TLS
@@ -234,6 +266,7 @@ local resp, err = http_client.get("https://localhost:8443/api", {
         insecure_skip_verify = true,
     }
 })
+if err then return nil, err end
 ```
 
 ## Objeto Response
@@ -255,7 +288,8 @@ if err then
 end
 
 if resp.status_code == 200 then
-    local data = json.decode(resp.body)
+    local data, decode_err = json.decode(resp.body)
+    if decode_err then return nil, decode_err end
     print("Content-Type:", resp.headers["Content-Type"])
 end
 ```
@@ -272,13 +306,17 @@ if err then
     return nil, err
 end
 
--- Processar em chunks
+-- Process in chunks
+local read_err
 while true do
-    local chunk, err = resp.stream:read(65536)
-    if err or not chunk then break end
-    -- processar chunk
+    local chunk
+    chunk, read_err = resp.stream:read(65536)
+    if read_err or not chunk then break end
+    -- process chunk
 end
-resp.stream:close()
+local _, close_err = resp.stream:close()
+if read_err then return nil, read_err end
+if close_err then return nil, close_err end
 ```
 
 | Método Stream | Retorna | Descrição |
@@ -286,27 +324,33 @@ resp.stream:close()
 | `read(n?)` | string, error | Ler até `n` bytes (padrão: buffer da implementação) |
 | `close()` | boolean, error | Fechar o stream |
 
-`resp.stream` é um objeto [stream](lua/core/stream.md) completo — `seek`, `stat` e `scanner` também estão disponíveis.
+`resp.stream` é um objeto [stream](../core/stream.md) completo — `seek`, `stat` e `scanner` também estão disponíveis.
 
 ## Requisicoes em Lote
 
 Executar multiplas requisicoes concorrentemente.
 
 ```lua
-local responses, errors = http_client.request_batch({
+local requests = {
     {"GET", "https://api.example.com/users"},
     {"GET", "https://api.example.com/products"},
     {"POST", "https://api.example.com/log", {body = "event"}}
-})
+}
+local responses, batch_errors = http_client.request_batch(requests)
 
-if errors then
-    for i, err in ipairs(errors) do
+if not responses then
+    return nil, batch_errors  -- whole-batch dispatch or validation failure
+end
+
+if batch_errors then
+    for i = 1, #requests do
+        local err = batch_errors[i]
         if err then
             print("Request " .. i .. " failed:", err)
         end
     end
 else
-    -- Todas bem-sucedidas
+    -- All succeeded
     for i, resp in ipairs(responses) do
         print("Response " .. i .. ":", resp.status_code)
     end
@@ -339,6 +383,7 @@ local url = "https://api.example.com/search?q=" .. http_client.encode_uri(query)
 
 ```lua
 local decoded, err = http_client.decode_uri("hello+world")
+if err then return nil, err end
 -- "hello world"
 ```
 
@@ -361,7 +406,8 @@ Requisicoes HTTP estao sujeitas a avaliação de política de segurança.
 local security = require("security")
 
 if security.can("http_client.request", "https://api.example.com/users") then
-    local resp = http_client.get("https://api.example.com/users")
+    local resp, request_err = http_client.get("https://api.example.com/users")
+    if request_err then return nil, request_err end
 end
 ```
 
@@ -371,10 +417,10 @@ Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas po
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
--- Erro: not allowed: private IP 192.168.1.1
+-- Error: not allowed: private IP 192.168.1.1
 ```
 
-Veja [Security Model](system/security.md) para configuração de políticas.
+Veja [Modelo de Segurança](../../system/security.md) para configurar as políticas.
 
 ## Erros
 
@@ -401,4 +447,4 @@ if err then
 end
 ```
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.

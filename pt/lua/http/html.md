@@ -1,6 +1,6 @@
 ---
 title: "Sanitização HTML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Sanitize HTML não confiável com políticas predefinidas ou personalizadas de elementos, atributos e URLs."
 ---
 
 # Sanitização HTML
@@ -34,6 +34,7 @@ Cria uma política que não permite nada. Use para construir uma whitelist custo
 
 ```lua
 local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 
 policy:allow_elements("p", "strong", "em")
 policy:allow_attrs("class"):globally()
@@ -48,7 +49,8 @@ local clean = policy:sanitize(user_input)
 Pre-configurada para conteudo gerado por usuários. Permite elementos de formatação comuns.
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 
 local safe = policy:sanitize('<p>Hello <strong>world</strong></p>')
 -- '<p>Hello <strong>world</strong></p>'
@@ -64,7 +66,8 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 Remove todo HTML, retorna apenas texto puro.
 
 ```lua
-local policy = html.sanitize.strict_policy()
+local policy, err = html.sanitize.strict_policy()
+if err then return nil, err end
 
 local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 -- 'Hello world!'
@@ -79,7 +82,8 @@ local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 Whitelist de elementos HTML especificos.
 
 ```lua
-local policy = html.sanitize.new_policy()
+local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 policy:allow_elements("p", "strong", "em", "br")
 policy:allow_elements("h1", "h2", "h3")
 policy:allow_elements("a", "img")
@@ -144,7 +148,7 @@ policy:allow_attrs("id"):globally()
 Validar valores de atributo contra padrão regex.
 
 ```lua
--- Permitir apenas cores hex no style
+-- Only allow hex colors in style
 local builder, err = policy:allow_attrs("style"):matching("^color:#[0-9a-fA-F]{6}$")
 if err then
     return nil, err
@@ -235,6 +239,8 @@ Adicionar `rel="nofollow"` a todos os links. Previne spam de SEO.
 
 ```lua
 policy:allow_attrs("href", "rel"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:require_nofollow_on_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -267,6 +273,8 @@ Adicionar `target="_blank"` a URLs totalmente qualificadas.
 
 ```lua
 policy:allow_attrs("href", "target"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -303,8 +311,9 @@ policy:allow_elements("img")
 policy:allow_attrs("src"):on_elements("img")
 policy:allow_data_uri_images()
 
-policy:sanitize('<img src="data:image/png;base64,iVBORw...">')
--- '<img src="data:image/png;base64,iVBORw...">'
+local input = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2O9sAAAAASUVORK5CYII=">'
+policy:sanitize(input)
+-- The data URI is preserved.
 ```
 
 **Retorna:** `Policy`
@@ -344,7 +353,7 @@ policy:allow_elements("p")
 policy:allow_standard_attributes()
 
 policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
--- '<p id="intro" class="text" title="Introduction">Hello</p>'
+-- '<p id="intro" title="Introduction">Hello</p>'
 ```
 
 **Retorna:** `Policy`
@@ -354,7 +363,8 @@ policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
 Aplicar política a string HTML.
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 policy:require_nofollow_on_links(true)
 
 local dirty = '<p>Hello</p><script>alert("xss")</script>'
@@ -374,4 +384,4 @@ local clean = policy:sanitize(dirty)
 |----------|------|------------|
 | Padrão regex inválido | `errors.INVALID` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.

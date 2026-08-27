@@ -1,6 +1,6 @@
 ---
 title: "Cliente WebSocket"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Conecte-se a servidores WebSocket, envie e receba mensagens, use compressão e feche conexões."
 ---
 
 # Cliente WebSocket
@@ -18,7 +18,7 @@ local websocket = require("websocket")
 
 ## Conectando
 
-### Conexão Basica
+### `connect`
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws")
@@ -26,8 +26,6 @@ if err then
     return nil, err
 end
 ```
-
-### Com Opções
 
 ```lua
 local client, err = websocket.connect("wss://api.example.com/ws", {
@@ -39,6 +37,9 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
     read_timeout = "30s",
     compression = websocket.COMPRESSION.CONTEXT_TAKEOVER
 })
+if err then
+    return nil, err
+end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -48,7 +49,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 
 **Retorna:** `Client, error`
 
-### Opções de Conexão
+#### Opções de Conexão
 
 | Opção | Tipo | Descrição |
 |-------|------|-----------|
@@ -69,16 +70,17 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### Mensagens de Texto
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+local json = require("json")
 
--- Enviar JSON
-client:send(json.encode({
+client:send("Hello, Server!")
+
+-- Send JSON
+local payload, encode_err = json.encode({
     type = "subscribe",
     channel = "orders"
-}))
+})
+if encode_err then return nil, encode_err end
+client:send(payload)
 ```
 
 ### Mensagens Binarias
@@ -109,38 +111,70 @@ O método `channel()` retorna um channel para receber mensagens. `receive()` é 
 ### Recepcao Basica
 
 ```lua
-local ch = client:channel()
+local ch, err = client:channel()
+if err then
+    client:close()
+    return nil, err
+end
 
 local msg, ok = ch:receive()
 if ok then
-    print("Type:", msg.type)  -- "text" ou "binary"
+    print("Type:", msg.type)  -- "text" or "binary"
     print("Data:", msg.data)
 end
+
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ### Loop de Mensagens
 
 ```lua
-local ch = client:channel()
+local json = require("json")
+
+local ch, err = client:channel()
+if err then
+    client:close()
+    return nil, err
+end
 
 while true do
     local msg, ok = ch:receive()
     if not ok then
-        break  -- Conexão fechada
+        break  -- Connection closed
     end
 
     if msg.type == "text" then
-        local data = json.decode(msg.data)
+        local data, decode_err = json.decode(msg.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         handle_message(data)
     end
 end
+
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ### Com Select
 
 ```lua
-local ch = client:channel()
-local timeout = time.after("30s")
+local json = require("json")
+local time = require("time")
+
+local ch, ch_err = client:channel()
+if ch_err then
+    client:close()
+    return nil, ch_err
+end
+
+local timeout, timeout_err = time.after("30s")
+if timeout_err then
+    client:close()
+    return nil, timeout_err
+end
 
 while true do
     local r = channel.select {
@@ -150,12 +184,25 @@ while true do
 
     if r.channel == timeout then
         client:ping()  -- Keep-alive
-        timeout = time.after("30s")
+        timeout, timeout_err = time.after("30s")
+        if timeout_err then
+            client:close()
+            return nil, timeout_err
+        end
+    elseif not r.ok then
+        break
     else
-        local data = json.decode(r.value.data)
+        local data, decode_err = json.decode(r.value.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         process(data)
     end
 end
+
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ### Objeto Message
@@ -168,14 +215,11 @@ end
 ## Fechando Conexão
 
 ```lua
--- Fechamento normal (código 1000)
-client:close()
+local _, close_err = client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
+if close_err then return nil, close_err end
 
--- Com código e motivo
-client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
-
--- Fechamento por erro
-client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
+-- Omitting both arguments also uses normal close code 1000.
+-- Use INTERNAL_ERROR with an application-owned reason for a failed session.
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -190,11 +234,11 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 ### Tipos de Mensagem
 
 ```lua
--- Numerico (para send)
+-- Numeric (for send)
 websocket.TEXT    -- 1
 websocket.BINARY  -- 2
 
--- String (campo type da mensagem recebida)
+-- Compatibility string constants
 websocket.TYPE_TEXT    -- "text"
 websocket.TYPE_BINARY  -- "binary"
 websocket.TYPE_PING    -- "ping"
@@ -205,9 +249,9 @@ websocket.TYPE_CLOSE   -- "close"
 ### Modos de Compressao
 
 ```lua
-websocket.COMPRESSION.DISABLED         -- 0 (sem compressao)
-websocket.COMPRESSION.CONTEXT_TAKEOVER -- 1 (janela deslizante)
-websocket.COMPRESSION.NO_CONTEXT       -- 2 (por mensagem)
+websocket.COMPRESSION.DISABLED         -- 0 (no compression)
+websocket.COMPRESSION.CONTEXT_TAKEOVER -- 1 (sliding window)
+websocket.COMPRESSION.NO_CONTEXT       -- 2 (per-message)
 ```
 
 ### Codigos de Fechamento
@@ -232,7 +276,8 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (por mensagem)
 | `TLS_HANDSHAKE` | 1015 | Falha no handshake TLS |
 
 ```lua
-client:close(websocket.CLOSE_CODES.NORMAL, "Done")
+local _, close_err = client:close(websocket.CLOSE_CODES.NORMAL, "Done")
+if close_err then return nil, close_err end
 ```
 
 ## Exemplos
@@ -240,7 +285,9 @@ client:close(websocket.CLOSE_CODES.NORMAL, "Done")
 ### Chat em Tempo Real
 
 ```lua
-local function connect_chat(room_id, on_message)
+local json = require("json")
+
+local function connect_chat(room_id, token, on_message)
     local client, err = websocket.connect("wss://chat.example.com/ws", {
         headers = {["Authorization"] = "Bearer " .. token}
     })
@@ -248,38 +295,73 @@ local function connect_chat(room_id, on_message)
         return nil, err
     end
 
-    -- Entrar na sala
-    client:send(json.encode({
+    -- Join room. Runtime v0.3.32a does not expose transport send failures.
+    local join_payload, encode_err = json.encode({
         type = "join",
         room = room_id
-    }))
+    })
+    if encode_err then
+        client:close()
+        return nil, encode_err
+    end
+    client:send(join_payload)
 
-    -- Loop de mensagens
-    local ch = client:channel()
+    -- Message loop
+    local ch, channel_err = client:channel()
+    if channel_err then
+        client:close()
+        return nil, channel_err
+    end
     while true do
         local msg, ok = ch:receive()
         if not ok then break end
 
-        local data = json.decode(msg.data)
+        local data, decode_err = json.decode(msg.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         on_message(data)
     end
 
-    client:close()
+    local _, close_err = client:close()
+    if close_err then return nil, close_err end
+    return true
 end
 ```
 
 ### Stream de Precos com Keep-Alive
 
 ```lua
-local client = websocket.connect("wss://stream.example.com/prices")
+local json = require("json")
+local time = require("time")
 
-client:send(json.encode({
+local client, err = websocket.connect("wss://stream.example.com/prices")
+if err then
+    return nil, err
+end
+
+local subscribe_payload, encode_err = json.encode({
     action = "subscribe",
     symbols = {"BTC-USD", "ETH-USD"}
-}))
+})
+if encode_err then
+    client:close()
+    return nil, encode_err
+end
+client:send(subscribe_payload)
 
-local ch = client:channel()
-local heartbeat = time.after("30s")
+local ch, channel_err = client:channel()
+if channel_err then
+    client:close()
+    return nil, channel_err
+end
+
+local heartbeat, heartbeat_err = time.after("30s")
+if heartbeat_err then
+    client:close()
+    return nil, heartbeat_err
+end
 
 while true do
     local r = channel.select {
@@ -289,16 +371,25 @@ while true do
 
     if r.channel == heartbeat then
         client:ping()
-        heartbeat = time.after("30s")
+        heartbeat, heartbeat_err = time.after("30s")
+        if heartbeat_err then
+            client:close()
+            return nil, heartbeat_err
+        end
     elseif not r.ok then
-        break  -- Conexão fechada
+        break  -- Connection closed
     else
-        local price = json.decode(r.value.data)
+        local price, decode_err = json.decode(r.value.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         update_price(price.symbol, price.value)
     end
 end
 
-client:close()
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ## Permissões
@@ -312,7 +403,7 @@ Conexoes WebSocket estao sujeitas a avaliação de política de segurança.
 | `websocket.connect` | - | Permitir/negar conexoes WebSocket |
 | `websocket.connect.url` | URL | Permitir/negar conexoes para URLs específicas |
 
-Veja [Security Model](system/security.md) para configuração de políticas.
+Veja [Modelo de Segurança](../../system/security.md) para configurar as políticas.
 
 ## Erros
 
@@ -336,4 +427,4 @@ if err then
 end
 ```
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
