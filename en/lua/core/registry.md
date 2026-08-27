@@ -8,7 +8,7 @@ description: "Read registry entries and metadata, inspect versions and snapshots
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-The `registry` module reads and modifies entries and provides access to snapshots and version history.
+The `registry` module reads and modifies entries and provides access to snapshots and version history. This page is an API reference; mutation examples use illustrative IDs and require policies that authorize those exact resources and entry kinds.
 
 ## Loading
 
@@ -42,7 +42,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Filter fields match against entry metadata.
+The root selectors are `.kind`, `.name`, `.ns`, and `.id`; their values support glob matching. Metadata filters use a `meta.` prefix, for example `{["meta.type"] = "test"}`.
 
 ## Parse ID
 
@@ -208,4 +208,4 @@ end
 | Stale overlay snapshot | `errors.CONFLICT` (retryable) |
 | Registry not available | `errors.INTERNAL` |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](./errors.md) for working with errors.

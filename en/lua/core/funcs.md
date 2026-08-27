@@ -8,7 +8,7 @@ description: "Call registered functions synchronously or asynchronously and prop
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `funcs` module calls registered functions synchronously or asynchronously. An executor can propagate request context, security identity, and implementation-specific call options.
+The `funcs` module calls registered functions synchronously or asynchronously. An executor can propagate request context, security identity, and implementation-specific call options. This page is an API reference; target IDs, arguments, and application data represent surrounding code.
 
 ## Loading
 
@@ -52,13 +52,17 @@ end
 
 -- Wait for result when ready
 local ch = future:response()
-ch:receive()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
+end
 
 local payload, result_err = future:result()
 if result_err then
     return nil, result_err
 end
-local result = payload:data()
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 | Parameter | Type | Description |
@@ -87,13 +91,20 @@ An executor stores call context and options. Its configuration methods return ne
 Adds request-scoped values that will be available to the called function, such as trace IDs, session data, or feature flags.
 
 ```lua
+local ctx = require("ctx")
+
 -- Propagate request context to downstream services
-local exec = funcs.new():with_context({
-    request_id = ctx.get("request_id"),
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local exec, err = funcs.new():with_context({
+    request_id = request_id,
     feature_flags = {dark_mode = true}
 })
+if err then return nil, err end
 
 local user, err = exec:call("app.api:get_user", user_id)
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -111,7 +122,8 @@ local security = require("security")
 local actor = security.actor()  -- Get current user's actor
 
 -- Call admin function with user's credentials
-local exec = funcs.new():with_actor(actor)
+local exec, err = funcs.new():with_actor(actor)
+if err then return nil, err end
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new({
@@ -135,7 +147,8 @@ Sets the security scope for called functions. The scope defines the permissions 
 local security = require("security")
 local scope = security.new_scope()
 
-local exec = funcs.new():with_scope(scope)
+local exec, err = funcs.new():with_scope(scope)
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -150,7 +163,8 @@ Sets call options. Implementations may define their own options; the runtime als
 
 ```lua
 -- Set a 5 second timeout for external API call
-local exec = funcs.new():with_options({timeout = 5000})
+local exec, err = funcs.new():with_options({timeout = 5000})
+if err then return nil, err end
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
     -- Handle timeout or other error
@@ -177,18 +191,21 @@ The executor versions of `call` and `async` use its configured context and optio
 
 ```lua
 -- Build reusable executor with context
-local exec = funcs.new()
-    :with_context({trace_id = "abc-123"})
-    :with_options({timeout = 10000})
+local exec, err = funcs.new():with_context({trace_id = "abc-123"})
+if err then return nil, err end
+exec, err = exec:with_options({timeout = 10000})
+if err then return nil, err end
 
 -- Make multiple calls with same context
-local users, _ = exec:call("app.api:list_users")
-local posts, _ = exec:call("app.api:list_posts")
+local users, users_err = exec:call("app.api:list_users")
+if users_err then return nil, users_err end
+local posts, posts_err = exec:call("app.api:list_posts")
+if posts_err then return nil, posts_err end
 ```
 
 ## Future Invocation Summary
 
-`async()` returns a future representing an in-progress invocation. The methods below cover the caller-facing steps for receiving, inspecting, or canceling that invocation. See [Future](lua/core/future.md) for the Future object reference.
+`async()` returns a future representing an in-progress invocation. The methods below cover the caller-facing steps for receiving, inspecting, or canceling that invocation. See [Future](./future.md) for the Future object reference.
 
 ### `response` and `channel`
 
@@ -225,7 +242,8 @@ Checks whether the future has completed without blocking.
 ```lua
 while not future:is_complete() do
     -- do other work
-    time.sleep("100ms")
+    local _, sleep_err = time.sleep("100ms")
+    if sleep_err then return nil, sleep_err end
 end
 local result, err = future:result()
 ```
@@ -234,7 +252,7 @@ local result, err = future:result()
 
 ### `is_canceled`
 
-Returns `true` if `cancel()` was called on the future.
+Returns `true` if the future has been marked canceled by its provider. See the cancellation limitation below.
 
 ```lua
 if future:is_canceled() then
@@ -253,7 +271,9 @@ local value, err = future:result()
 if err then
     print("Failed:", err:message())
 elseif value then
-    print("Got:", value:data())
+    local data, data_err = value:data()
+    if data_err then return nil, data_err end
+    print("Got:", data)
 end
 ```
 
@@ -279,10 +299,15 @@ This method returns a non-retryable `INTERNAL` wrapper for a failed operation. U
 Requests cancellation of the asynchronous operation.
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
+if err then return nil, err end
 ```
 
 **Returns:** `boolean, error`
+
+<warning>
+In runtime v0.3.32a, function and contract futures share one process-global cancellation callback. When both providers are loaded, <code>cancel()</code> and <code>is_canceled()</code> are not a stable cross-provider contract. Do not use cancellation for application correctness; time out locally and ignore a late result until the runtime separates provider cancellation.
+</warning>
 
 ## Parallel Operations
 
@@ -322,7 +347,11 @@ while next(pending) do
     if result_err then
         return nil, result_err
     end
-    results[completed.name] = payload:data()
+    local data, data_err = payload:data()
+    if data_err then
+        return nil, data_err
+    end
+    results[completed.name] = data
 end
 ```
 
@@ -349,4 +378,4 @@ Function operations are subject to security policy evaluation.
 | Async start dispatch failed | `errors.INTERNAL` | no |
 | Function error | varies | varies |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](./errors.md) for working with errors.

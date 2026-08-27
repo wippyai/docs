@@ -7,7 +7,7 @@ description: "Read, write, seek, inspect, scan, and close stream objects returne
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Streams provide incremental I/O for HTTP, filesystem, and other modules. The modules that own the underlying data create stream objects.
+Streams provide incremental I/O for HTTP, filesystem, and other modules. The modules that own the underlying data create stream objects. This page is an API reference; the scanner loop uses an application-defined `process(token)` callback.
 
 ## Obtaining a Stream
 

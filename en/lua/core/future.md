@@ -7,7 +7,7 @@ description: "Receive, inspect, and cancel results from asynchronous function an
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Futures represent asynchronous operation results. They are returned by `funcs.async()` and asynchronous contract calls.
+Futures represent asynchronous operation results. They are returned by `funcs.async()` and asynchronous contract calls. This page is an API reference; the target IDs and arguments in its patterns are application-defined.
 
 ## Loading
 
@@ -16,6 +16,9 @@ Futures are not loaded as a module; asynchronous operations create them:
 ```lua
 local funcs = require("funcs")
 local future, err = funcs.async("app.compute:task", data)
+if err then
+    return nil, err
+end
 ```
 
 ## Response Channel
@@ -24,13 +27,17 @@ Use the response channel to wait for completion, then read the cached result fro
 
 ```lua
 local ch = future:response()
-ch:receive()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
+end
 
 local payload, err = future:result()
 if err then
     return nil, err
 end
-local result = payload:data()
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 `channel()` is an alias for `response()`.
@@ -49,7 +56,7 @@ end
 
 ## Cancellation Check
 
-Check whether `cancel()` was called:
+Check whether the future has been marked canceled by its provider:
 
 ```lua
 if future:is_canceled() then
@@ -99,6 +106,10 @@ The operation may still complete if it is already in progress.
 
 **Returns:** `boolean, error`
 
+<warning>
+In runtime v0.3.32a, function and contract futures share one process-global cancellation callback. When both providers are loaded, <code>cancel()</code> and <code>is_canceled()</code> are not a stable cross-provider contract. Do not use cancellation for application correctness; time out locally and ignore a late result until the runtime separates provider cancellation.
+</warning>
+
 ## Timeout Pattern
 
 ```lua
@@ -120,10 +131,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    local _, cancel_err = future:cancel()
-    if cancel_err then
-        return nil, cancel_err
-    end
+    -- The operation may still complete; this caller ignores the late result.
     return nil, errors.new({
         message = "Operation timed out",
         kind = errors.TIMEOUT
@@ -134,7 +142,9 @@ local payload, result_err = future:result()
 if result_err then
     return nil, result_err
 end
-return payload:data()
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## First-to-Complete
@@ -157,24 +167,21 @@ local r = channel.select {
     ch2:case_receive()
 }
 
--- Cancel the slower one
-local winner, loser
+-- The slower operation may still complete; this caller ignores its result.
+local winner
 if r.channel == ch1 then
-    winner, loser = f1, f2
+    winner = f1
 else
-    winner, loser = f2, f1
-end
-
-local _, cancel_err = loser:cancel()
-if cancel_err then
-    return nil, cancel_err
+    winner = f2
 end
 
 local payload, result_err = winner:result()
 if result_err then
     return nil, result_err
 end
-return payload:data()
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## Errors

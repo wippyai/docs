@@ -8,7 +8,7 @@ description: "Read request-scoped values propagated through function and process
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `ctx` module reads request-scoped values propagated through [function calls](lua/core/funcs.md) or [process operations](lua/core/process.md).
+The `ctx` module reads request-scoped values propagated through [function calls](./funcs.md) or [process operations](./process.md). This page is an API reference; the snippets show individual calls inside an executable Lua entry.
 
 ## Loading
 
@@ -33,12 +33,12 @@ local value, err = ctx.get("key")
 ### Get All Values
 
 ```lua
-local values = ctx.all()
+local values, err = ctx.all()
 ```
 
-**Returns:** `table, nil`
+**Returns:** `table, error`
 
-`ctx.all()` always succeeds. It returns an empty table when no request context or no context values are available.
+`ctx.all()` returns an empty table when an execution context is present but has no request values. A missing execution context returns `nil, errors.INTERNAL`.
 
 ## Errors
 
@@ -46,6 +46,6 @@ local values = ctx.all()
 |-----------|------|-----------|
 | Empty key | `errors.INVALID` | no |
 | Key not found | `errors.NOT_FOUND` | no |
-| No context available (`ctx.get` only) | `errors.INTERNAL` | no |
+| No execution context available | `errors.INTERNAL` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](./errors.md) for working with errors.

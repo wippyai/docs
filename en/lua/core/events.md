@@ -8,7 +8,7 @@ description: "Publish and observe best-effort runtime and application events."
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-The event bus publishes runtime and application activity for monitoring, logging, metrics, and reactive side effects.
+The event bus publishes runtime and application activity for monitoring, logging, metrics, and reactive side effects. This page is an API reference; the snippets assume an executable Lua entry with the listed module and permissions.
 
 <note>
 The event bus is a best-effort publish/subscribe channel, not a reliable transport. Do not depend on it for business-critical delivery. Use process messaging (`process.send`), channels, or the [message queue](../storage/queue.md) when delivery is part of application correctness.
@@ -102,7 +102,9 @@ if ok then
     print("System:", evt.system)
     print("Kind:", evt.kind)
     print("Path:", evt.path)
-    print("Data:", json.encode(evt.data))
+    local encoded, encode_err = json.encode(evt.data)
+    if encode_err then return nil, encode_err end
+    print("Data:", encoded)
 end
 ```
 
@@ -132,7 +134,7 @@ Closing is idempotent. After the channel is closed, `receive()` returns
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty system | `errors.INVALID` | no |
-| Empty kind | `errors.INVALID` | no |
+| Empty send kind | `errors.INVALID` | no |
 | Empty path | `errors.INVALID` | no |
 | Policy denied | `errors.INVALID` | no |
 | Missing execution or process context | `errors.INTERNAL` | no |
