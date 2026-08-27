@@ -52,10 +52,13 @@ end
 
 -- Wait for result when ready
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+ch:receive()
+
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
 end
+local result = payload:data()
 ```
 
 | Parameter | Type | Description |
@@ -192,8 +195,18 @@ local posts, _ = exec:call("app.api:list_posts")
 Returns the channel used to receive the result.
 
 ```lua
-local future, _ = funcs.async("app.api:slow_operation", data)
+local time = require("time")
+
+local future, err = funcs.async("app.api:slow_operation", data)
+if err then
+    return nil, err
+end
 local ch = future:response()  -- or future:channel()
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local result = channel.select {
     ch:case_receive(),
@@ -202,6 +215,8 @@ local result = channel.select {
 ```
 
 **Returns:** `Channel`
+
+The response channel signals completion. After it becomes ready, call `future:result()` to obtain the cached value or the called function's error.
 
 ### `is_complete`
 
@@ -242,7 +257,7 @@ elseif value then
 end
 ```
 
-**Returns:** `Payload|nil, error|nil`
+**Returns:** `Payload|table|nil, error|nil`
 
 ### `error`
 
@@ -256,6 +271,8 @@ end
 ```
 
 **Returns:** `error|nil, boolean`
+
+This method returns a non-retryable `INTERNAL` wrapper for a failed operation. Use `result()` to preserve the called function's original error metadata.
 
 ### `cancel`
 
@@ -273,29 +290,39 @@ Combine `async` with `channel.select` to run and collect multiple calls concurre
 
 ```lua
 -- Start multiple operations in parallel
-local f1, _ = funcs.async("app.api:get_user", user_id)
-local f2, _ = funcs.async("app.api:get_orders", user_id)
-local f3, _ = funcs.async("app.api:get_preferences", user_id)
+local f1, err = funcs.async("app.api:get_user", user_id)
+if err then return nil, err end
+local f2, err = funcs.async("app.api:get_orders", user_id)
+if err then return nil, err end
+local f3, err = funcs.async("app.api:get_preferences", user_id)
+if err then return nil, err end
 
 -- Wait for all to complete using channels
 local user_ch = f1:channel()
 local orders_ch = f2:channel()
 local prefs_ch = f3:channel()
 
+local pending = {
+    [user_ch] = {name = "user", future = f1},
+    [orders_ch] = {name = "orders", future = f2},
+    [prefs_ch] = {name = "preferences", future = f3}
+}
 local results = {}
-for i = 1, 3 do
-    local r = channel.select {
-        user_ch:case_receive(),
-        orders_ch:case_receive(),
-        prefs_ch:case_receive()
-    }
-    if r.channel == user_ch then
-        results.user = r.value:data()
-    elseif r.channel == orders_ch then
-        results.orders = r.value:data()
-    else
-        results.prefs = r.value:data()
+while next(pending) do
+    local cases = {}
+    for ch in pairs(pending) do
+        cases[#cases + 1] = ch:case_receive()
     end
+
+    local r = channel.select(cases)
+    local completed = pending[r.channel]
+    pending[r.channel] = nil
+
+    local payload, result_err = completed.future:result()
+    if result_err then
+        return nil, result_err
+    end
+    results[completed.name] = payload:data()
 end
 ```
 
@@ -319,6 +346,7 @@ Function operations are subject to security policy evaluation.
 | Name missing | `errors.INVALID` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 | Subscribe failed | `errors.INTERNAL` | no |
+| Async start dispatch failed | `errors.INTERNAL` | no |
 | Function error | varies | varies |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

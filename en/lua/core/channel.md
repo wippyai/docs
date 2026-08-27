@@ -111,7 +111,10 @@ Use `time.after()` to add a timeout to a channel wait.
 local time = require("time")
 
 local result_ch = worker:response()
-local timeout = time.after("5s")
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     result_ch:case_receive(),
@@ -182,6 +185,8 @@ ch:case_send(value)
 ch:case_receive()
 ```
 
+Values in the cases table that are not send or receive cases are ignored. Make sure the table contains at least one valid case unless it also has a default branch.
+
 ## Worker Pool Pattern
 
 ```lua
@@ -212,8 +217,7 @@ end
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Send on closed channel | runtime error | no |
-| Invalid case in select | runtime error | no |
+| Send on closed channel | runtime error | n/a |
 
 ## See Also
 

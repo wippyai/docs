@@ -20,17 +20,22 @@ local future, err = funcs.async("app.compute:task", data)
 
 ## Response Channel
 
-Use the response channel to receive the result:
+Use the response channel to wait for completion, then read the cached result from the future:
 
 ```lua
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+ch:receive()
+
+local payload, err = future:result()
+if err then
+    return nil, err
 end
+local result = payload:data()
 ```
 
 `channel()` is an alias for `response()`.
+
+The channel value is the operation's payload, payload table, or error. Calling `result()` after the channel becomes ready provides one consistent success/error interface and returns the cached value even after the channel is drained.
 
 ## Completion Check
 
@@ -80,21 +85,34 @@ end
 
 **Returns:** `error, boolean`
 
+When an operation fails, `error()` returns a non-retryable `INTERNAL` wrapper. Use `result()` when the called function's original error kind and retryability must be preserved.
+
 ## Canceling
 
 Request cancellation of the asynchronous operation on a best-effort basis:
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
 ```
 
 The operation may still complete if it is already in progress.
 
+**Returns:** `boolean, error`
+
 ## Timeout Pattern
 
 ```lua
-local future = funcs.async("app.compute:slow", data)
-local timeout = time.after("5s")
+local time = require("time")
+
+local future, err = funcs.async("app.compute:slow", data)
+if err then
+    return nil, err
+end
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     future:channel():case_receive(),
@@ -102,40 +120,68 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    future:cancel()
+    local _, cancel_err = future:cancel()
+    if cancel_err then
+        return nil, cancel_err
+    end
     return nil, errors.new({
         message = "Operation timed out",
         kind = errors.TIMEOUT
     })
 end
 
-return r.value:data()
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+return payload:data()
 ```
 
 ## First-to-Complete
 
 ```lua
-local f1 = funcs.async("app.cache:get", key)
-local f2 = funcs.async("app.db:get", key)
+local f1, err = funcs.async("app.cache:get", key)
+if err then
+    return nil, err
+end
+local f2, err = funcs.async("app.db:get", key)
+if err then
+    return nil, err
+end
+
+local ch1 = f1:channel()
+local ch2 = f2:channel()
 
 local r = channel.select {
-    f1:channel():case_receive(),
-    f2:channel():case_receive()
+    ch1:case_receive(),
+    ch2:case_receive()
 }
 
 -- Cancel the slower one
-if r.channel == f1:channel() then
-    f2:cancel()
+local winner, loser
+if r.channel == ch1 then
+    winner, loser = f1, f2
 else
-    f1:cancel()
+    winner, loser = f2, f1
 end
 
-return r.value:data()
+local _, cancel_err = loser:cancel()
+if cancel_err then
+    return nil, cancel_err
+end
+
+local payload, result_err = winner:result()
+if result_err then
+    return nil, result_err
+end
+return payload:data()
 ```
 
 ## Errors
 
-| Condition | Kind |
-|-----------|------|
-| Operation canceled | `CANCELED` |
-| Async operation failed | varies |
+| Condition | Kind | Retryable |
+|-----------|------|-----------|
+| Operation canceled through `result()` | `errors.CANCELED` | no |
+| Operation failure returned by `result()` | varies | preserved from the function error |
+| Operation failure returned by `error()` | `errors.INTERNAL` | no |
+| Cancellation dispatch failed | `errors.INTERNAL` | no |

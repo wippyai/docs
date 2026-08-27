@@ -60,7 +60,6 @@ local config = json.decode(data)
 Use `open()` to stream a large file:
 
 ```lua
-local errors = require("errors")
 local file, err = vol:open("/data/large.csv", "r")
 if err then
     return nil, err
@@ -217,7 +216,7 @@ file:close()
 
 Split modes: `"lines"` (default), `"words"`, `"bytes"`, `"runes"`
 
-`scanner:err()` returns an error message or `nil`; use it to distinguish a scan failure from clean EOF.
+`scanner:scan()` returns only a boolean. When it returns `false`, call `scanner:err()` to distinguish clean EOF from a tokenization or underlying read failure. `scanner:err()` returns a structured `INTERNAL` error or `nil`; unlike a stream scanner, a file scanner has no separate scan-dispatch error return.
 
 ## Constants
 
@@ -258,13 +257,18 @@ Security policy evaluation applies when a volume is acquired.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Empty path | `errors.INVALID` | no |
+| Empty path | `errors.INVALID` | unspecified |
 | Path contains a null byte | `errors.INVALID` | no |
-| Invalid mode | `errors.INVALID` | no |
-| File is closed | `errors.INVALID` | no |
-| File-handle read reached EOF | `errors.NOT_FOUND` | no |
-| Path not found | `errors.NOT_FOUND` | no |
-| Path already exists | `errors.ALREADY_EXISTS` | no |
+| Invalid mode | `errors.INVALID` | unspecified |
+| `scanner()` called on a closed file | `errors.INVALID` | unspecified |
+| Read, write, seek, stat, or sync called on a closed file | `errors.INTERNAL` | no |
+| `close()` called on an already closed file | succeeds | not applicable |
+| File-handle read reached EOF | `errors.NOT_FOUND` | unspecified |
+| Path not found | `errors.NOT_FOUND` | preserved from the underlying error when available |
+| Path already exists | `errors.ALREADY_EXISTS` | unspecified |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
+| File scanner tokenization or read failed | `errors.INTERNAL` | preserved from the underlying error when available |
+
+`unspecified` means `err:retryable()` returns `nil`; it is not equivalent to `false`.
 
 See [Error Handling](lua/core/errors.md) for working with errors.
