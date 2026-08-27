@@ -292,7 +292,7 @@ post_options:
 
 ### OpenTelemetry {#otel}
 
-<warning>Pre-match</warning>
+<note>핸들러 전</note>
 
 수신 요청에 대한 OpenTelemetry 스팬과 메트릭을 기록합니다. OTel이 활성화되면 자동으로 등록되며, 그렇지 않으면 no-op로 작동합니다.
 
