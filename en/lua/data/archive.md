@@ -50,7 +50,7 @@ Every entry point accepts an optional `opts` table:
 
 ## Reading — Random Access
 
-`archive.open(source, ...)` opens a **seekable** source for full random access (zip central directory is read up front; entries decompress on demand). The source may be an `fs.FS` handle plus a path, an open `fs.File`, or raw bytes (bytes hold the whole archive in RAM — small archives only).
+`archive.open(source, ...)` opens a **seekable** source for full random access (zip central directory is read up front; entries decompress on demand). The source may be an `fs.FS` handle plus a path, an open `fs.File`, a cloud storage reader, or raw bytes (bytes hold the whole archive in RAM — small archives only).
 
 ```lua
 local fs = require("fs")
@@ -63,6 +63,24 @@ local r, err = archive.open(fs.get("app:uploads"), "incoming.zip")
 -- Or from raw bytes (small archives only)
 -- local r = archive.open(zip_bytes, { format = "zip" })
 ```
+
+For a large archive in cloud storage, pass the ranged reader returned by `open_reader`:
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local storage = assert(cloudstorage.get("app.infra:files"))
+local source = assert(storage:open_reader("uploads/large.zip"))
+local r = assert(archive.open(source))
+
+-- Read archive entries here.
+
+r:close()
+source:close()
+storage:release()
+```
+
+The archive reader does not own an externally supplied cloud reader. Close the archive reader first, then the cloud reader and storage handle.
 
 **Returns:** `Reader, error`
 
@@ -238,5 +256,6 @@ See [Error Handling](lua/core/errors.md) for working with errors.
 ## See Also
 
 - [Filesystem](lua/storage/filesystem.md) - Source and destination filesystems
+- [Cloud Storage](lua/storage/cloud.md) - Ranged readers for cloud-hosted archives
 - [Stream](lua/core/stream.md) - Stream objects handed to and from archives
 - [Compression](lua/data/compress.md) - In-memory gzip/deflate/zstd

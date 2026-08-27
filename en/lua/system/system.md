@@ -48,6 +48,34 @@ Each module table contains:
 | `description` | string | Module description |
 | `class` | string[] | Module classification tags |
 
+## Loading Deployment Sources
+
+`system.source.load()` rebuilds the normalized registry baseline from the current deployment source generation. Owners and entries come from the same generation, including during dynamic install, update, uninstall, replacement, and rollback.
+
+```lua
+local sources, err = system.source.load()
+if err then
+    return nil, err
+end
+
+for _, owner in ipairs(sources.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(sources.entries) do
+    print(entry.id)
+end
+```
+
+**Returns:** `table, error`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `owners` | string[] | Stable source-owner identifiers; the application owner is `application` |
+| `entries` | table[] | Decoded registry entries from the normalized source baseline |
+
+Packed module normalization inputs do not claim ownership, and filesystem paths are not exposed. Loading requires `system.read` on `sources`. Source registry, load, or conversion failures return a non-retryable `errors.INTERNAL`; permission denial returns `errors.PERMISSION_DENIED`.
+
 ## Memory Statistics
 
 Read detailed memory statistics:
@@ -426,6 +454,7 @@ Security policy evaluation applies to system operations.
 | `system.read` | `cwd` | Read working directory |
 | `system.read` | `hosts` | List hosts / host processes |
 | `system.read` | `modules` | List loaded modules |
+| `system.read` | `sources` | Load normalized deployment sources |
 | `system.read` | `supervisor` | Read supervisor state |
 | `system.read` | `node` | Read this node's identity |
 | `system.read` | `cluster` | Read cluster membership and leader |
@@ -438,7 +467,8 @@ Security policy evaluation applies to system operations.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Permission denied | `errors.INVALID` | no |
+| Permission denied (deployment source loading) | `errors.PERMISSION_DENIED` | no |
+| Permission denied (other system operations) | `errors.INVALID` | no |
 | Invalid argument | `errors.INVALID` | no |
 | Missing required argument | `errors.INVALID` | no |
 | Code manager unavailable | `errors.INTERNAL` | no |

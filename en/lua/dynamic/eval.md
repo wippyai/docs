@@ -102,6 +102,23 @@ local result, err = runner.run({
 | `context` | table | Values available as `ctx` |
 | `allow_classes` | string[] | Additional module classes |
 | `custom_modules` | table | Custom tables as modules |
+| `limits` | table | Execution limits for the evaluation |
+
+### Step Limit
+
+Use `limits.max_steps` to bound scheduler resumes during an evaluation:
+
+```lua
+local result, err = runner.run({
+    source = user_code,
+    modules = {"json"},
+    limits = {max_steps = 1000}
+})
+```
+
+`max_steps` must be a non-negative integer. When omitted, the evaluation inherits the host default; an explicit `0` removes the limit. Each scheduler resume consumes a step, so yields from module calls consume the budget. Ordinary Lua loop iterations do not, which means this setting is not a CPU or instruction budget for non-yielding code.
+
+Unknown `limits` fields, a non-table `limits` value, and invalid `max_steps` values return non-retryable `errors.INVALID`.
 
 ### Module Access
 

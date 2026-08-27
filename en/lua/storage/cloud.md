@@ -315,6 +315,81 @@ return {upload_url = url}
 
 **Returns:** `string, error`
 
+## Multipart Upload URLs
+
+For large client uploads, create a multipart upload, issue presigned URLs for its parts, and complete the upload with the ETags returned by the part requests:
+
+```lua
+local key = "uploads/user-123/video.mp4"
+local upload, err = storage:create_multipart_upload(key, {
+    content_type = "video/mp4"
+})
+if err then
+    return nil, err
+end
+
+local urls, err = storage:presigned_part_urls(key, upload.upload_id, {
+    count = 3,
+    expiration = 900
+})
+if err then
+    storage:abort_multipart_upload(key, upload.upload_id)
+    return nil, err
+end
+
+-- Upload each part to its URL and retain the ETag response header.
+local completed, err = storage:complete_multipart_upload(key, upload.upload_id, {
+    {part_number = 1, etag = part_1_etag},
+    {part_number = 2, etag = part_2_etag},
+    {part_number = 3, etag = part_3_etag}
+})
+```
+
+`presigned_part_urls` accepts exactly one of `count` or `parts`. A call can return at most 1,000 URLs, and part numbers range from 1 through 10,000. The `expiration` default is 3,600 seconds, and optional `headers` are included in the signature. `create_multipart_upload` accepts `content_type`, `cache_control`, `content_disposition`, `content_encoding`, `metadata`, and `headers`. Complete requests may list parts in any order.
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `create_multipart_upload(key, opts?)` | `table, error` | Start an upload and return `{upload_id}` |
+| `presigned_part_urls(key, upload_id, opts)` | `table[], error` | Return `{part_number, url}` records |
+| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | Complete the upload and return its ETag and optional version/location |
+| `abort_multipart_upload(key, upload_id)` | `boolean, error` | Abort an incomplete upload |
+
+Abort uploads that will not be completed. Bucket lifecycle rules are a backstop for abandoned uploads, not a replacement for explicit cleanup. Multipart methods return `errors.UNAVAILABLE` when the configured provider does not support the required capability.
+
+## Random-Access Reader
+
+`open_reader` exposes a seekable, read-only object without downloading it in full. It fetches ranges on cache misses and sends the object's open-time ETag as an `If-Match` condition. Providers that enforce the condition return `errors.CONFLICT` if the object changes instead of mixing versions.
+
+```lua
+local reader, err = storage:open_reader("archives/large.zip", {
+    block_size = 8 * 1024 * 1024,
+    cache_blocks = 4
+})
+if err then
+    return nil, err
+end
+
+print(reader:key(), reader:size())
+
+reader:close()
+storage:release()
+```
+
+| Option | Default | Valid range |
+|--------|---------|-------------|
+| `block_size` | 8 MiB | 64 KiB to 128 MiB |
+| `cache_blocks` | 4 | 1 to 64 |
+
+The cache (`block_size * cache_blocks`) cannot exceed 256 MiB. Cache misses perform blocking network I/O and are serialized, so the reader is intended for sequential random-access consumers such as archive readers. The provider must supply an ETag; otherwise opening the reader returns `errors.UNAVAILABLE`. A provider that supplies an ETag but ignores ranged-read preconditions cannot provide the overwrite-detection guarantee.
+
+| Reader method | Returns | Description |
+|---------------|---------|-------------|
+| `size()` | `number` | Object size in bytes |
+| `key()` | `string` | Object key |
+| `close()` | `boolean, error` | Close the reader; idempotent |
+
+Readers close automatically at task end, but close them explicitly when work finishes.
+
 ## Storage Methods
 
 | Method | Returns | Description |
@@ -326,6 +401,11 @@ return {upload_url = url}
 | `delete_objects(keys)` | `boolean, error` | Delete multiple objects |
 | `presigned_get_url(key, opts?)` | `string, error` | Generate temporary download URL |
 | `presigned_put_url(key, opts?)` | `string, error` | Generate temporary upload URL |
+| `create_multipart_upload(key, opts?)` | `table, error` | Start a multipart upload |
+| `presigned_part_urls(key, upload_id, opts)` | `table[], error` | Generate multipart upload URLs |
+| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | Complete a multipart upload |
+| `abort_multipart_upload(key, upload_id)` | `boolean, error` | Abort a multipart upload |
+| `open_reader(key, opts?)` | `Reader, error` | Open a seekable ranged reader |
 | `release()` | `boolean` | Release storage resource |
 
 ## Permissions
@@ -349,6 +429,9 @@ Security policy evaluation applies to cloud storage operations.
 | Writer not valid | `errors.INVALID` | no |
 | Object not found | `errors.NOT_FOUND` | no |
 | Conditional precondition failed | `errors.CONFLICT` | no |
+| Object changed while a ranged reader was open | `errors.CONFLICT` | no |
+| Multipart upload not found | `errors.NOT_FOUND` | no |
+| Provider lacks multipart or ranged-reader capability | `errors.UNAVAILABLE` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 | Operation failed | `errors.INTERNAL` | no |
 
