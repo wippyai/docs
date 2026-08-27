@@ -14,7 +14,7 @@ Wippy runs user-defined logic in isolated processes. Each process has its own me
 - **Low per-process overhead.** Memory use must remain practical as process counts grow.
 - **Capability isolation.** The runtime must control the modules, functions, and system operations available to each process.
 - **In-process embedding.** Wippy's Go core must be able to create, configure, and stop a language environment for each process.
-- **Controlled module loading.** Dependencies must resolve through the registry rather than arbitrary file-system paths.
+- **Controlled module loading.** Modules must come from the runtime's allowlist or declared registry imports rather than arbitrary file-system paths.
 - **A small language surface.** Application code should remain readable and straightforward to generate, review, and lint.
 
 ## Alternatives Considered
@@ -39,7 +39,7 @@ WebAssembly fills a complementary role rather than replacing Lua as the primary 
 
 ### Host-Controlled Embedding
 
-Lua is designed to run inside a host application. Wippy creates an environment for each process, connects it to the scheduler and registry, and controls its globals and module loader. `require` resolves only modules granted through the process's registry configuration, so file-system, network, and operating-system access remains capability-controlled. Different registry scopes can provide different module sets without application-level loading rules.
+Lua is designed to run inside a host application. Wippy creates an environment for each process, connects it to the scheduler and registry, and controls its globals and module loader. `require` reads only modules already installed in that environment: the always-available base modules and standard libraries, the executable entry's ambient `process` module, built-in runtime modules allowed by `modules:`, and registry libraries declared through `imports:`. It does not search file-system paths or install packages from the network. Different entries can therefore receive different module sets without application-level loading rules.
 
 ### Language Surface
 
@@ -51,7 +51,7 @@ Lua coroutines map to Wippy's cooperative scheduling model. A process can yield 
 
 ## Tradeoffs
 
-Lua does not provide an in-process package ecosystem comparable to pip or npm. Dependencies inside Wippy are registry entries with declared capabilities rather than packages installed from the network. Workloads that depend on large external libraries can run as services or as WebAssembly components.
+Lua does not provide an in-process package ecosystem comparable to pip or npm. Wippy supplies built-in runtime modules through an allowlist and application libraries through registry imports rather than installing packages from the network. Workloads that depend on large external libraries can run as services or as WebAssembly components.
 
 Lua may also be unfamiliar to developers coming from other languages. The syntax is compact, but teams still need conventions, review, and linting for production code.
 
@@ -62,11 +62,11 @@ Wippy provides two complementary runtimes:
 - **Lua** is the primary runtime for application logic, tools, and agents.
 - **WebAssembly** runs compiled workloads and existing code that can target WASM.
 
-Both runtimes use Wippy's process model, registry, and security policies. Lua code can call registered WASM functions, and WASM processes can call registered Lua functions.
+Lua and WASM process entries use Wippy's process model; Lua and WASM functions are exposed through registered function entries. Both integrations are configured through the registry and runtime security policies. Lua code can call registered WASM functions, and WASM processes can call registered Lua functions.
 
 ## See Also
 
-- [Lua Runtime Overview](lua/overview.md) - The Lua runtime and its modules
-- [Types](lua/types.md) - Type annotations, generics, and unions
-- [Linter](guides/linter.md) - Static analysis for Lua
-- [WASM Runtime](wasm/overview.md) - Running compiled code in the sandbox
+- [Lua Runtime Overview](./overview.md) - The Lua runtime and its modules
+- [Types](./types.md) - Type annotations, generics, and unions
+- [Linter](../guides/linter.md) - Static analysis for Lua
+- [WASM Runtime](../wasm/overview.md) - Running compiled code in the sandbox

@@ -24,8 +24,9 @@ If a button, input, form, menu, or other PrimeVue-like control is later added, t
 ## Variant B: control-bearing
 
 A component with controls must install PrimeVue through the Wippy PrimeVue
-plugin and configure the required CSS delivery keys. The following entry is the
-current package-supported Vue path:
+plugin and receive the host's theme and PrimeVue CSS. The web-component package
+loads all host CSS keys by default; the explicit list below narrows that default
+to the assets this example uses plus the shared iframe/scrollbar CSS:
 
 ```ts
 import { defineComponent, h } from 'vue'
@@ -126,7 +127,10 @@ utilities.
 
 ## Metadata and build
 
-Document props and events in both package metadata and the registry entry as required by the selected schema. Invoke the module repository's Make target; its recipe uses:
+Document props and events in package metadata. A registry entry may repeat them
+as deployment-specific `meta.props` and `meta.events` overrides; when present,
+those overrides take precedence over the bundled metadata. Invoke the module
+repository's Make target; its recipe uses:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
