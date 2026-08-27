@@ -1,11 +1,13 @@
 ---
 title: "테스트 프레임워크"
-description: "wippy/test 모듈은 어서션, 생명주기 훅, 모킹을 갖춘 BDD 스타일 테스트 프레임워크를 제공합니다."
+description: "BDD 스위트, 어서션, 생명주기 훅, 모킹, 단순 테스트 함수로 Wippy 테스트를 정의하고 실행합니다."
 ---
 
 # 테스트 프레임워크
 
-`wippy/test` 모듈은 어서션, 생명주기 훅, 모킹을 갖춘 BDD 스타일 테스트 프레임워크를 제공합니다.
+`wippy/test` 모듈은 BDD 스위트, 어서션, 생명주기 훅, 모킹 및 테스트 엔트리 러너를 제공합니다.
+
+이 페이지는 API 입문서입니다. Lua, YAML, 출력 및 프로젝트 레이아웃 블록은 기존 Wippy 프로젝트에서 조합해 사용할 수 있는 참고용 코드 조각이며, 하나의 복사 후 실행 가능한 프로젝트가 아닙니다. `validate`, `format_name`, `db`, `connect`, `notify_user` 같은 이름은 테스트 대상이 제공하는 애플리케이션 함수 또는 모듈을 나타냅니다. 완전히 실행 가능한 예제는 [Wippy 애플리케이션 테스트](../tutorials/testing.md)를 따라 하세요.
 
 ## 설정
 
@@ -32,9 +34,9 @@ entries:
     meta:
       type: test
       suite: math
-      name: 수학 연산
+      name: Math operations
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
@@ -84,7 +86,7 @@ return { run = run }
 
 ### 중첩 스위트
 
-스위트를 중첩하여 구성할 수 있습니다:
+관련 동작을 그룹화하도록 스위트를 중첩할 수 있습니다:
 
 ```lua
 test.describe("user", function()
@@ -278,7 +280,7 @@ wippy test math
 wippy test user validation
 ```
 
-필터는 엔트리 ID와 매칭됩니다. 여러 패턴이 결합됩니다.
+필터는 엔트리 ID의 리터럴 부분 문자열과 일치합니다. 여러 패턴을 지정하면 ID가 그중 하나와 일치하는 엔트리가 실행됩니다.
 
 ### 출력 예시
 
@@ -357,7 +359,7 @@ entries:
       type: test
       suite: math
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 
@@ -367,30 +369,17 @@ entries:
       type: test
       suite: user
     source: file://user_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
 
-## 인프라 요구사항
+## 터미널 호스트
 
-테스트 러너는 애플리케이션에 `process.host`와 `terminal.host`가 필요합니다. 일반적으로 이미 존재합니다. 없는 경우 추가하십시오:
+`wippy/test`는 CLI 러너가 사용하는 자동 시작 `wippy.terminal:host`를 제공하는 `wippy/terminal`에 의존합니다. 애플리케이션은 `wippy test` 실행만을 위해 별도의 프로세스나 터미널 호스트를 선언할 필요가 없습니다.
 
-```yaml
-entries:
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
+## 참고 항목
 
-  - name: terminal
-    kind: terminal.host
-    lifecycle:
-      auto_start: true
-```
-
-## 참고
-
-- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
-- [CLI 레퍼런스](guides/cli.md) - CLI 명령
-- [함수](concepts/functions.md) - 함수 레지스트리
+- [프레임워크 개요](./overview.md) — 프레임워크 모듈 설치 및 임포트
+- [CLI 레퍼런스](../guides/cli.md) — 테스트 명령과 플래그
+- [함수](../concepts/functions.md) — 함수 엔트리와 호출
