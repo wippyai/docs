@@ -85,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |-------|------|----------|-------------|
 | `namespace` | string | 예 | 공유 엔진 내 키 네임스페이스 |
 
-write는 shared Raft를 통해 propose되고 follower는 leader로 전달합니다. read는 linearizable합니다. conditional write(`only_if_absent`/`if_version`을 사용한 `put`)를 지원합니다. Raft state는 기본적으로 `cluster.raft.data_dir`(기본값 `~/.wippy/store`) 아래에 fs-durable입니다. [설정](../guides/configuration.md#cluster)을 참조하십시오.
+write는 shared Raft를 통해 propose되고 follower는 leader로 전달합니다. read는 linearizable합니다. conditional write(`only_if_absent`/`if_version`을 사용한 `put`)를 지원합니다. Raft state는 기본적으로 `cluster.raft.data_dir`(기본값 `~/.wippy/store`) 아래에 fs-durable입니다. [설정](../guides/configuration.md#클러스터)을 참조하십시오.
 
 ### CRDT (최종 일관성)
 

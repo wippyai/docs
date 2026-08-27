@@ -166,7 +166,7 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|----------|-------------|
 | `driver` | 레지스트리 ID | 예 | 큐 드라이버 |
-| `codec` | string | 아니오 | 메시지 본문의 와이어 인코딩. 기본값은 `json/plain` ([코덱](#codecs) 참고) |
+| `codec` | string | 아니오 | 메시지 본문의 와이어 인코딩. 기본값은 `json/plain` ([코덱](#코덱) 참고) |
 | `queue_name` | string | 아니오 | 외부 큐 이름 (기본값은 엔트리 이름) |
 | `driver_options` | object | 아니오 | 드라이버 kind로 키가 지정된 드라이버별 서브 백 |
 | `dead_letter.queue` | Registry ID | 아니오 | 실패한 메시지의 큐 ID(허용되지만 내장 드라이버에서 아직 강제되지 않음) |

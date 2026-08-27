@@ -123,7 +123,7 @@ resolver.RegisterPattern(registry.DependencyPattern{
 | Memory | `history_type`이 설정되지 않았을 때의 기본값; 테스트 |
 | Nil | 히스토리 없음 |
 
-SQLite는 version, changeset(MessagePack encoding), metadata table이 있는 WAL mode를 사용합니다. PostgreSQL은 `registry.history_type: postgres`와 `history_dsn`/`history_schema`로 선택합니다([설정](../guides/configuration.md#registry) 참조).
+SQLite는 version, changeset(MessagePack encoding), metadata table이 있는 WAL mode를 사용합니다. PostgreSQL은 `registry.history_type: postgres`와 `history_dsn`/`history_schema`로 선택합니다([설정](../guides/configuration.md#레지스트리) 참조).
 
 히스토리는 각 버전에 대한 정확한 의존성 해결 결과도 지속합니다: `ns.dependency` 변경이 적용될 때, 해결된 모듈 그래프가 체인지셋 옆에 콘텐츠 주소 방식으로 저장됩니다. 부트와 롤백은 다시 해결하는 대신 저장된 그래프를 리플레이하므로, 버전은 항상 자신이 해결되었던 버전들과 일치하게 됩니다. 히스토리 스키마는 업그레이드 후 첫 부트에서 자동으로 마이그레이션되며, 기존 버전은 처음 방문할 때 한 번 해결되고 체크포인트됩니다.
 

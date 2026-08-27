@@ -31,7 +31,7 @@ facade는 **global**(`custom_css`, `css_variables`, `icon_sets`), **host**(`host
 
 ² 웹 컴포넌트는 마운트된 위치의 `:root`에서 사용자 정의 **속성**을 상속합니다. host chrome WC는 host 문서의 global + host 변수를, `view.page` 내부 WC는 page realm의 global + children 변수를 상속합니다. inner-root bridge는 global 및 children/page 변수 이름을 다루며 host 전용 이름은 다루지 않습니다. 주입된 사용자 정의 **CSS**는 항상 children 범위(global + children)입니다. 공유 스타일은 마운트 위치와 관계없이 모든 surface에 도달하는 `custom_css`/`css_variables`(global)에 둡니다.
 
-**`fs://` 파일 지원:** 위 여섯 테마 knob는 `content_fs` 파일시스템에서 요청 시점에 해석되는 `fs://<path>` 값을 받습니다. [Facade → Web Host가 아닌 페이지에서 facade 테마 재사용](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages)을 참고하십시오. `icon_sets`/`host_icon_sets`와 테마 이외 모든 JSON parameter는 inline 전용입니다.
+**`fs://` 파일 지원:** 위 여섯 테마 knob는 `content_fs` 파일시스템에서 요청 시점에 해석되는 `fs://<path>` 값을 받습니다. [Facade → Web Host가 아닌 페이지에서 facade 테마 재사용](../../framework/facade.md#web-host-외부-페이지에서-facade-테마-재사용)을 참고하십시오. `icon_sets`/`host_icon_sets`와 테마 이외 모든 JSON parameter는 inline 전용입니다.
 
 몇 개보다 많은 override는 CSS와 JSON을 `content_fs` 뒤의 별도 파일에 두고 `fs://`로 참조합니다. 테마 자산을 검토하고 재사용하기 쉽습니다. `file://`로 대체하지 마십시오. 이는 facade의 요청 시점 테마 계약이 아니라 loader 시점 inline 메커니즘입니다.
 

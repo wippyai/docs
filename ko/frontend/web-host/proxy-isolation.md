@@ -49,7 +49,7 @@ on('@visibility', (visible) => { /* pause or resume work */ })
 <script src="/.../proxy.js"></script>
 ```
 
-구성 global은 `proxy.js` 실행 **전**에 설정되므로 런타임이 동기식으로 초기화되고 `@wippy-fe/proxy` getter를 즉시 사용할 수 있습니다. handshake가 없습니다. 페이지는 이 script를 직접 참조하지 않습니다. `<script data-role="@wippy/scripts">` placeholder를 호스트가 올바른 순서의 tag로 교체합니다. 페이지별 override는 `window.__WIPPY_CONFIG_OVERRIDES__`로 도착합니다([Proxy API — 구성 override](../micro-frontends/proxy-api.md#config-overrides) 참고).
+구성 global은 `proxy.js` 실행 **전**에 설정되므로 런타임이 동기식으로 초기화되고 `@wippy-fe/proxy` getter를 즉시 사용할 수 있습니다. handshake가 없습니다. 페이지는 이 script를 직접 참조하지 않습니다. `<script data-role="@wippy/scripts">` placeholder를 호스트가 올바른 순서의 tag로 교체합니다. 페이지별 override는 `window.__WIPPY_CONFIG_OVERRIDES__`로 도착합니다([Proxy API — 구성 override](../micro-frontends/proxy-api.md#설정-재정의) 참고).
 
 ### Web Fragment 엔진
 

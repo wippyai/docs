@@ -30,7 +30,7 @@ for _, s in ipairs(sources) do
 end
 ```
 
-각 source는 `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary`, `snapshot` field를 가진 table입니다. [CDC source](../../system/cdc.md#source-info)를 확인하십시오.
+각 source는 `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary`, `snapshot` field를 가진 table입니다. [CDC source](../../system/cdc.md#source-정보)를 확인하십시오.
 
 **반환값:** `table, error`
 

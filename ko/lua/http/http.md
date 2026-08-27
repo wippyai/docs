@@ -515,11 +515,14 @@ if error_write_err then return nil, error_write_err end
 버퍼된 데이터를 클라이언트로 플러시합니다.
 
 <code-block lang="lua">
--- 진행 상황 업데이트 스트리밍
+-- Stream progress updates
 for i = 1, 100 do
-    res:write(string.format("Progress: %d%%\n", i))
-    res:flush()
-    time.sleep("100ms")
+    local write_err = res:write(string.format("Progress: %d%%\n", i))
+    if write_err then return nil, write_err end
+    local flush_err = res:flush()
+    if flush_err then return nil, flush_err end
+    local _, sleep_err = time.sleep("100ms")
+    if sleep_err then return nil, sleep_err end
 end
 </code-block>
 

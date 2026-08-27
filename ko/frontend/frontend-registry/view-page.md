@@ -30,7 +30,7 @@ FE 개발자는 `package.json`의 `wippy` 블록에 이 필드를 작성합니�
 |-------|--------|
 | `"auto"` _(기본값 또는 생략)_ | 배포의 전역 switch(`hostConfig.renderEngine`, facade [`render_engine`](../../framework/facade.md#render-engine) parameter로 설정)를 따름 |
 | `"iframe"` | switch와 관계없이 항상 srcdoc iframe으로 렌더링. pointer hit-testing(`elementFromPoint`), viewport 단위(`vh`/`vw`, `matchMedia`) 레이아웃, `position: fixed` 등 reframed와 호환되지 않는 기술을 쓰는 페이지에 사용 |
-| `"fragment"` | [Web Fragment](../web-host/render-engines.md) 엔진을 우선. 전역 `fragment` 배포에서는 항상 사용. 전역 `iframe` 배포에서는 런타임 capability probe가 [`/@fragment` gateway](../../framework/views.md#web-fragments-gateway)와 proxy가 있음을 확인할 때만 사용(그 외 안전하게 iframe으로 fallback) |
+| `"fragment"` | [Web Fragment](../web-host/render-engines.md) 엔진을 우선. 전역 `fragment` 배포에서는 항상 사용. 전역 `iframe` 배포에서는 런타임 capability probe가 [`/@fragment` gateway](../../framework/views.md#웹-프래그먼트-게이트웨이)와 proxy가 있음을 확인할 때만 사용(그 외 안전하게 iframe으로 fallback) |
 
 ```json
 {

@@ -20,7 +20,7 @@ wippy install
 
 ### 필수 모델 및 제공자
 
-임베딩 API를 호출하기 전에 `meta.name`이 `text-embedding-3-small`이고 기능에 `embed`가 포함되며 제공자 매핑이 임베딩 제공자로 해석되는 `llm.model`을 등록하세요. `OPENAI_API_KEY` 같은 제공자 자격 증명은 `wippy/llm`이 사용하는 환경 저장소를 통해 구성합니다. [LLM 모델 구성](./llm.md#model-configuration)을 참고하세요.
+임베딩 API를 호출하기 전에 `meta.name`이 `text-embedding-3-small`이고 기능에 `embed`가 포함되며 제공자 매핑이 임베딩 제공자로 해석되는 `llm.model`을 등록하세요. `OPENAI_API_KEY` 같은 제공자 자격 증명은 `wippy/llm`이 사용하는 환경 저장소를 통해 구성합니다. [LLM 모델 구성](./llm.md#모델-설정)을 참고하세요.
 
 ### 데이터베이스 의존성
 
