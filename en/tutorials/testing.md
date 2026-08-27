@@ -19,16 +19,15 @@ A small library and a test suite that covers it:
 
 - A Wippy project (clone [app-template](https://github.com/wippyai/app-template), or
   `wippy init` in an empty directory).
-- The test framework and a terminal host installed:
+- The test framework installed:
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  The runner renders a live terminal UI, so `wippy/terminal` is required alongside
-  `wippy/test`.
+  The test framework declares `wippy/terminal` as a dependency, so installation
+  brings in the terminal host used by the runner's live UI.
 
 ## The Code Under Test
 
@@ -126,20 +125,26 @@ wippy test
 Filter by entry id substring (namespace:name) while iterating:
 
 ```bash
-wippy test calc_test
+wippy test test calc_test
 ```
+
+The first `test` selects the framework's test-runner entrypoint. Remaining
+arguments are substring filters applied to test entry IDs.
 
 Expected output for the suite:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
+    o setup ran <duration>
+    o adds numbers <duration>
+    o returns error on divide by zero <duration>
     - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped <duration>
 
-  PASSED   3 tests   1 skipped   1ms
+  PASSED
+  3 tests  1 skipped  <duration>
 ```
+
+The live renderer prints each case before the suite summary; timings vary by run.
 
 `wippy test` exits with `0` when every case passes and `1` when any case fails, allowing CI to use the command's exit status.
 
@@ -176,6 +181,6 @@ Nested `describe` blocks inherit parent hooks (outer `before_*` first, inner
 
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) — Minimal project layout
-- [Entry Kinds](guides/entry-kinds.md) — `function.lua`, `library.lua`, and related entries
-- [Test Framework](framework/testing.md) — Runner and event-protocol reference
+- [Hello World](hello-world.md) — Minimal project layout
+- [Entry Kinds](../guides/entry-kinds.md) — `function.lua`, `library.lua`, and related entries
+- [Test Framework](../framework/testing.md) — Runner and event-protocol reference

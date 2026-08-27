@@ -28,7 +28,7 @@ A backend app that serves the Wippy UI:
 
 ## How It Works
 
-1. `index.html` is served as a static file from your HTTP server.
+1. The facade shell is rendered at `/` by your HTTP server.
 2. On load it fetches `GET /api/public/facade/config`.
 3. It checks `localStorage` for an auth token, redirecting to `login_path` if missing.
 4. It imports the Web Host bundle from the CDN (`facade_url + '/module.js'`) and calls
@@ -47,7 +47,7 @@ namespace: app
 entries:
   - name: gateway
     kind: http.service
-    addr: :8087
+    addr: ":8087"
     lifecycle:
       auto_start: true
 
@@ -69,7 +69,7 @@ entries:
         value: Verify App
 ```
 
-The shipped `index.html` fetches `/api/public/facade/config`, so the public router's
+The shipped facade shell fetches `/api/public/facade/config`, so the public router's
 prefix must be `/api/public` for the default shell to find its config.
 
 ## Run It
@@ -85,18 +85,27 @@ configuration:
 curl http://localhost:8087/api/public/facade/config
 ```
 
+Selected fields from the response are shown below:
+
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
+  "mode": "compat",
+  "module_file": "/module.js",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
+    "startNavOpen": false, "disableRightPanel": false, "hideSessionSelector": false,
+    "renderEngine": "iframe",
     "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
@@ -129,11 +138,11 @@ unset, the browser falls back to `window.location.origin`.
 - The facade does not provide authentication. It expects an auth flow that writes a
   token to `localStorage`; without one it redirects to `login_path`. Pair it with
   `userspace/users` or your own auth.
-- The UI bundle loads from the CDN (`fe_facade_url`), so the running app needs outbound
-  network access to render.
+- The UI bundle loads from the CDN (`fe_facade_url`), so the user's browser must be
+  able to reach that URL.
 
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) — Minimal project layout
-- [Authentication](tutorials/auth.md) — Add the login flow expected by the shell
-- [HTTP Endpoints](http/endpoint.md) — Routers, static files, and handlers
+- [Hello World](hello-world.md) — Minimal project layout
+- [Authentication](auth.md) — Add the login flow expected by the shell
+- [HTTP Endpoints](../http/endpoint.md) — Routers, static files, and handlers

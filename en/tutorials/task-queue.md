@@ -67,6 +67,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  # Capabilities used by the tutorial's Lua entries in strict mode
+  - name: runtime_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # SQLite database
   - name: db
     kind: db.sql.sqlite
@@ -106,6 +117,11 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: app:migrate
+      policies:
+        - app:runtime_policy
 
   # Migration service (auto-starts, exits on success)
   - name: migrate-service
@@ -130,6 +146,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: app:create_task
+      policies:
+        - app:runtime_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,6 +159,11 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: app:list_tasks
+      policies:
+        - app:runtime_policy
 
   # Queue worker
   - name: process_task
@@ -148,6 +174,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: app:process_task
+      policies:
+        - app:runtime_policy
 
   # Endpoints
   - name: create_task.endpoint
@@ -189,7 +220,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -207,7 +238,7 @@ local function main()
 
     if exec_err then
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
     logger:info("migration complete")
@@ -218,7 +249,9 @@ return { main = main }
 ```
 
 <tip>
-Returning 0 signals success. The supervisor won't restart a process that exits normally with code 0.
+A normal return ends a `process.service` child without a restart; the supervisor
+retries only when the process raises an error. Returning `0` also maps to a successful
+exit status when the same process is launched as a CLI command.
 </tip>
 
 ## Create Task Endpoint
@@ -413,7 +446,7 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## Next Steps
 
-- [HTTP Module](lua/http/http.md) — Request and response handling
-- [Queue Module](lua/storage/queue.md) — Message queue operations
-- [SQL Module](lua/storage/sql.md) — Database access
-- [Queue Consumers](guides/queue-consumers.md) — Queue configuration
+- [HTTP Module](../lua/http/http.md) — Request and response handling
+- [Queue Module](../lua/storage/queue.md) — Message queue operations
+- [SQL Module](../lua/storage/sql.md) — Database access
+- [Queue Consumers](../guides/queue-consumers.md) — Queue configuration

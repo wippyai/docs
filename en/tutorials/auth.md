@@ -41,7 +41,7 @@ flowchart TB
     end
 
     subgraph "HTTP Layer"
-        Server[http.server<br/>gateway :8081]
+        Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
         subgraph "Public Router"
@@ -68,7 +68,7 @@ flowchart TB
     end
 
     subgraph "Process Layer"
-        Supervisor[process.supervisor<br/>processes]
+        Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>per-connection]
         Ticker[ticker<br/>singleton]
     end
@@ -162,6 +162,28 @@ entries:
     groups:
       - user
 
+  # Capabilities for trusted background services
+  - name: service_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
+  # Capabilities for the public token-exchange handler
+  - name: token_issuer_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - security.actor.create
+        - security.policy.get
+        - security.scope.create
+        - security.token_store.get
+        - security.token.create
+      resources: "*"
+      effect: allow
+
   # Process host
   - name: processes
     kind: process.host
@@ -174,6 +196,11 @@ entries:
     source: file://migrate.lua
     method: main
     modules: [sql, logger, crypto]
+    security:
+      actor:
+        id: app:migrate
+      policies:
+        - app:service_policy
 
   - name: migrate-service
     kind: process.service
@@ -188,6 +215,11 @@ entries:
     source: file://ticker.lua
     method: main
     modules: [logger, time, json, crypto]
+    security:
+      actor:
+        id: app:ticker
+      policies:
+        - app:service_policy
 
   - name: ticker-service
     kind: process.service
@@ -258,6 +290,11 @@ entries:
     source: file://auth_token.lua
     method: handler
     modules: [http, sql, crypto, security, json]
+    security:
+      actor:
+        id: app:token-issuer
+      policies:
+        - app:token_issuer_policy
 
   - name: auth_token.endpoint
     kind: http.endpoint
@@ -283,7 +320,7 @@ entries:
     func: app:ws_ticker
 ```
 
-For production, use `token_key_env` to read the HMAC key from an environment variable instead of hardcoding it. See [Environment System](system/env.md).
+For production, use `token_key_env` to read the HMAC key from an environment variable instead of hardcoding it. See [Environment System](../system/env.md).
 
 ## Token Exchange
 
@@ -434,7 +471,7 @@ The `websocket_relay` middleware sends lifecycle messages to the handler process
 
 - `ws.join` — Connection established; includes `client_pid` for responses
 - `ws.message` — Client sent a message
-- `ws.leave` — Connection closed
+- `ws.leave` — Connection closed; includes the same `client_pid` and metadata as `ws.join`
 
 `ws_handler.lua` handles these lifecycle messages:
 
@@ -475,7 +512,8 @@ local function main(user_id)
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            local content = json.decode(data.data)
+            -- Text WebSocket frames arrive as string payloads.
+            local content = json.decode(data)
             if content and content.type == "ping" then
                 process.send(client_pid, "ws.send", {
                     type = "text",
@@ -485,7 +523,7 @@ local function main(user_id)
 
         elseif topic == "ws.leave" then
             -- Relay sends this automatically on disconnect
-            logger:info("client left", {user_id = user_id, reason = data.reason})
+            logger:info("client left", {user_id = user_id, client_pid = data.client_pid})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
             end
@@ -550,7 +588,7 @@ local function main()
     local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
-        return 1
+        error("failed to create ticker: " .. tostring(ticker_err))
     end
     local tick_ch = ticker:response()
 
@@ -623,7 +661,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -639,7 +677,7 @@ local function main()
     if exec_err then
         db:release()
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
     -- Check if demo key exists
@@ -648,7 +686,7 @@ local function main()
         local demo_key, key_err = crypto.random.string(32)
         if key_err then
             db:release()
-            return 1
+            error("failed to generate demo API key: " .. tostring(key_err))
         end
 
         db:execute(
@@ -678,6 +716,6 @@ Open http://localhost:8081 and enter the demo API key shown in logs.
 
 ## Next Steps
 
-- [WebSocket Relay](http/websocket-relay.md) — Middleware configuration
-- [Security Module](lua/security/security.md) — Actors, policies, and token stores
-- [Process Management](lua/core/process.md) — Process spawning and messaging
+- [WebSocket Relay](../http/websocket-relay.md) — Middleware configuration
+- [Security Module](../lua/security/security.md) — Actors, policies, and token stores
+- [Process Management](../lua/core/process.md) — Process spawning and messaging

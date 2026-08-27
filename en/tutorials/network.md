@@ -36,6 +36,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: probe_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -59,6 +68,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: app:probe
+          policies:
+            - app:probe_policy
     source: file://probe.lua
     method: main
     modules:
@@ -162,7 +176,7 @@ Overlays that support inbound traffic (Tailscale, I2P) can also accept HTTP list
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
-    auth_key: ${env:TS_AUTHKEY}
+    auth_key_env: TS_AUTHKEY
     ephemeral: true
 
   - name: gateway
@@ -204,7 +218,7 @@ Inherited overlays bypass this check — they were authorized at the caller's ed
 
 ## Next Steps
 
-- [Network System](system/network.md) — Entry-kind reference
-- [HTTP Client](lua/http/client.md) — Per-call overlay options
-- [Security Model](system/security.md) — Policies and scopes
-- [Authentication](tutorials/auth.md) — Token-based security
+- [Network System](../system/network.md) — Entry-kind reference
+- [HTTP Client](../lua/http/client.md) — Per-call overlay options
+- [Security Model](../system/security.md) — Policies and scopes
+- [Authentication](auth.md) — Token-based security

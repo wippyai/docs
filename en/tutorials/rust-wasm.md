@@ -281,7 +281,9 @@ Key points:
 - A single `fs.directory` entry provides the WASM binary.
 - Multiple functions reference the same binary with different `method` values.
 - The `hash` field verifies binary integrity at load time.
-- The `inline` pool creates a fresh instance for each call.
+- The `inline` pool serializes calls through one warm instance. It resets per-call
+  execution state between synchronous calls; use another pool type when you need
+  concurrent workers.
 
 ### Functions with WASI
 
@@ -320,6 +322,15 @@ version: "1.0"
 namespace: demo.cli
 
 entries:
+  - name: wasm_cli_policy
+    kind: security.policy
+    policy:
+      actions:
+        - fs.get
+      resources:
+        - demo.wasm:assets
+      effect: allow
+
   - name: greet
     kind: process.wasm
     meta:
@@ -327,6 +338,11 @@ entries:
       command:
         name: greet
         short: Greet someone via WASM
+        security:
+          actor:
+            id: demo.cli:greet
+          policies:
+            - demo.cli:wasm_cli_policy
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -339,6 +355,11 @@ entries:
       command:
         name: ls
         short: List files from mounted directory
+        security:
+          actor:
+            id: demo.cli:ls
+          policies:
+            - demo.cli:wasm_cli_policy
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -401,8 +422,11 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet someone via WASM
-  ls       List files from mounted directory
+
+  greet  Greet someone via WASM  (demo.cli:greet)
+  ls  List files from mounted directory  (demo.cli:ls)
+
+Run with: wippy run <command>
 ```
 
 ```bash
@@ -446,8 +470,8 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 
 ## Next Steps
 
-- [WASM Overview](wasm/overview.md) — WebAssembly runtime overview
-- [WASM Functions](wasm/functions.md) — Function configuration reference
-- [WASM Processes](wasm/processes.md) — Process configuration reference
-- [Host Functions](wasm/hosts.md) — Available WASI imports
-- [CLI Reference](guides/cli.md) — CLI command documentation
+- [WASM Overview](../wasm/overview.md) — WebAssembly runtime overview
+- [WASM Functions](../wasm/functions.md) — Function configuration reference
+- [WASM Processes](../wasm/processes.md) — Process configuration reference
+- [Host Functions](../wasm/hosts.md) — Available WASI imports
+- [CLI Reference](../guides/cli.md) — CLI command documentation
