@@ -1,11 +1,13 @@
 ---
 title: "LLM"
-description: "wippy/llm 모듈은 여러 제공자(OpenAI, Anthropic, Google, 로컬 모델)의 대규모 언어 모델과 작업하기 위한 통합 인터페이스를 제공합니다. 텍스트 생성, 도구 호출, 구조화된 출력, 임베딩, 스트리밍을 지원합니다."
+description: "wippy/llm으로 생성, 프롬프트, 스트리밍, 도구, 구조화된 출력, 모델 선택과 임베딩을 사용합니다."
 ---
 
 # LLM
 
-`wippy/llm` 모듈은 여러 제공자(OpenAI, Anthropic, Google, 로컬 모델)의 대규모 언어 모델과 작업하기 위한 통합 인터페이스를 제공합니다. 텍스트 생성, 도구 호출, 구조화된 출력, 임베딩, 스트리밍을 지원합니다.
+`wippy/llm` 모듈은 OpenAI, Anthropic, Google 및 로컬 제공자의 언어 모델을 하나의 인터페이스로 제공합니다. 텍스트 생성, 도구 호출, 구조화된 출력, 임베딩과 스트리밍을 지원합니다.
+
+이 페이지는 독립 실행형 튜토리얼이 아니라 조합 가능한 레퍼런스 조각을 제공하는 API 입문서입니다. 예제는 기존 Wippy 프로젝트, 등록된 모델과 제공자, 그리고 제공자에 필요한 자격 증명을 전제로 합니다. 예시 모델 이름은 레지스트리가 노출하는 모델로 바꾸세요. 원격 생성과 임베딩 호출에는 제공자 비용이 발생할 수 있습니다. 완전한 실행 프로젝트는 [LLM 에이전트 만들기](../tutorials/llm-agent.md)를 따르세요.
 
 ## 설정
 
@@ -16,33 +18,20 @@ wippy add wippy/llm
 wippy install
 ```
 
-`_index.yaml`에 의존성을 선언합니다. LLM 모듈은 환경 저장소(API 키용)와 프로세스 호스트가 필요합니다:
+`_index.yaml`에 의존성을 선언합니다:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
     version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
 ```
 
-`env.storage.os` 엔트리는 OS 환경 변수를 LLM 제공자에게 노출합니다. API 키를 환경 변수로 설정하세요 (예: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`).
+모듈은 OS 환경 저장소를 제공하며 백그라운드 프로세스 호스트의 기본값은 `wippy.terminal:host`입니다. 애플리케이션이 다른 엔트리를 필요로 할 때만 `env_storage` 또는 `process_host` 의존성 파라미터를 재정의하세요. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` 같은 변수로 제공자 API 키를 설정합니다.
 
 ## 텍스트 생성
 
@@ -83,7 +72,7 @@ return { handler = handler }
 | 옵션 | 타입 | 설명 |
 |--------|------|-------------|
 | `model` | string | 모델 이름 또는 클래스 (필수) |
-| `temperature` | number | 무작위성 제어, 0-1 |
+| `temperature` | number | 무작위성 제어, 0-2(제공자마다 지원 범위가 다를 수 있음) |
 | `max_tokens` | number | 생성할 최대 토큰 수 |
 | `top_p` | number | 핵 샘플링 파라미터 |
 | `top_k` | number | Top-k 필터링 |
@@ -98,7 +87,7 @@ return { handler = handler }
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
 | `result` | string | 생성된 텍스트 콘텐츠 |
-| `tokens` | table | 토큰 사용량: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
+| `tokens` | table | 토큰 사용량: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` 및 선택적 `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | 생성이 중지된 이유: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | 도구 호출 배열 (모델이 도구를 호출한 경우) |
 | `metadata` | table | 제공자별 메타데이터 |
@@ -106,7 +95,7 @@ return { handler = handler }
 
 ## 프롬프트 빌더
 
-다중 턴 대화 및 복잡한 프롬프트의 경우 프롬프트 빌더를 사용합니다:
+프롬프트 빌더로 다중 턴 대화와 구조화된 메시지를 구성합니다:
 
 ```yaml
 imports:
@@ -140,7 +129,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | 어시스턴트 메시지 추가 |
 | `:add_developer(content, meta?)` | 개발자 메시지 추가 |
 | `:add_message(role, content_parts, name?, meta?)` | 역할과 콘텐츠 파트를 지정하여 메시지 추가 |
-| `:add_function_call(name, args, id?)` | 어시스턴트의 도구 호출 추가 |
+| `:add_function_call(name, arguments, id?, options?)` | 어시스턴트의 도구 호출 추가(`arguments`는 원시 JSON 문자열) |
 | `:add_function_result(name, result, id?)` | 도구 실행 결과 추가 |
 | `:add_cache_marker(id?)` | 캐시 경계 표시 (Claude 모델) |
 | `:get_messages()` | 메시지 배열 가져오기 |
@@ -200,7 +189,7 @@ conversation:add_message(prompt.ROLE.USER, {
 
 ### 복제
 
-원본을 수정하지 않고 변형을 생성하려면 빌더를 복제합니다:
+빌더를 복제해 서로 독립적인 변형을 만듭니다:
 
 ```lua
 local base = prompt.new()
@@ -215,7 +204,7 @@ conv2:add_user("What is ML?")
 
 ## 스트리밍
 
-프로세스 통신을 사용하여 응답을 실시간으로 스트리밍합니다. `process.lua` 엔트리가 필요합니다:
+프로세스 통신을 통해 응답을 스트리밍합니다. 스트리밍에는 `process.lua` 엔트리가 필요합니다:
 
 ```lua
 local llm = require("llm")
@@ -223,33 +212,90 @@ local llm = require("llm")
 local TOPIC = "llm_stream"
 
 local function main()
-    local stream_ch = process.listen(TOPIC)
-
-    local response = llm.generate("Write a short story", {
-        model = "gpt-4o",
-        stream = {
-            reply_to = process.pid(),
-            topic = TOPIC,
-        },
-    })
-
-    while true do
-        local chunk, ok = stream_ch:receive()
-        if not ok then break end
-
-        if chunk.type == "chunk" then
-            io.write(chunk.content)
-        elseif chunk.type == "thinking" then
-            io.write(chunk.content)
-        elseif chunk.type == "error" then
-            io.print("Error: " .. chunk.error.message)
-            break
-        elseif chunk.type == "done" then
-            break
-        end
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, listen_err
     end
 
-    process.unlisten(stream_ch)
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove LLM stream listener"
+            if err then
+                return nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return nil, cleanup_err
+        end
+        if err then
+            return nil, err
+        end
+        return text, response
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish(nil, nil, pid_err)
+    end
+
+    local done_ch = channel.new(1)
+    coroutine.spawn(function()
+        local response, err = llm.generate("Write a short story", {
+            model = "gpt-4o",
+            stream = {
+                reply_to = self_pid,
+                topic = TOPIC,
+            },
+        })
+        done_ch:send({ response = response, err = err })
+    end)
+
+    local full_text = ""
+    local generation_result = nil
+    local stream_done = false
+    local stream_err = nil
+
+    while true do
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not generation_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(nil, nil, "LLM stream closed before completion")
+        end
+
+        if result.channel == done_ch then
+            generation_result = result.value
+            if generation_result.err then
+                return finish(nil, nil, generation_result.err)
+            end
+            if stream_done then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "thinking" then
+                print(chunk.content or "")
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "LLM stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and generation_result then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        end
+    end
 end
 ```
 
@@ -265,11 +311,12 @@ end
 
 <note>
 스트리밍은 Wippy의 프로세스 통신 시스템(<code>process.pid()</code>, <code>process.listen()</code>)을 사용하므로 <code>process.lua</code> 엔트리가 필요합니다.
+생성을 별도 코루틴에서 실행해 리스너가 청크를 동시에 비우도록 하고, 모든 반환 경로에서 리스너를 제거하세요.
 </note>
 
 ## 도구 호출
 
-인라인 스키마로 도구를 정의하고 `generate()`에 전달합니다:
+인라인 스키마로 도구를 정의해 `generate()`에 전달합니다:
 
 ```lua
 local llm = require("llm")
@@ -305,7 +352,7 @@ if response.tool_calls and #response.tool_calls > 0 then
         local result = { temperature = 22, condition = "sunny" }
 
         -- add the exchange to the conversation
-        conversation:add_function_call(tc.name, tc.arguments, tc.id)
+        conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
         conversation:add_function_result(tc.name, json.encode(result), tc.id)
     end
 
@@ -334,7 +381,7 @@ end
 
 ## 구조화된 출력
 
-스키마에 맞는 검증된 JSON을 생성합니다:
+스키마에 따라 검증된 JSON을 생성합니다:
 
 ```lua
 local llm = require("llm")
@@ -369,7 +416,7 @@ OpenAI 모델의 경우, 모든 속성이 <code>required</code> 배열에 포함
 
 ## 모델 설정
 
-모델은 `meta.type: llm.model`을 가진 레지스트리 엔트리로 정의됩니다:
+모델을 `meta.type: llm.model`인 레지스트리 엔트리로 정의합니다:
 
 ```yaml
 entries:
@@ -495,24 +542,30 @@ end
 ```lua
 local llm = require("llm")
 
--- single text
-local response = llm.embed("The quick brown fox", {
+-- A single input still returns an array of vectors.
+local single_response, single_err = llm.embed("The quick brown fox", {
     model = "text-embedding-3-small",
     dimensions = 512,
 })
--- response.result is a float array
+if single_err then
+    error("Embedding failed: " .. tostring(single_err))
+end
+local vector = single_response.result[1]
 
--- multiple texts
-local response = llm.embed({
+-- Multiple inputs return one vector per input.
+local batch_response, batch_err = llm.embed({
     "First document",
     "Second document",
 }, { model = "text-embedding-3-small" })
--- response.result is an array of float arrays
+if batch_err then
+    error("Batch embedding failed: " .. tostring(batch_err))
+end
+local vectors = batch_response.result
 ```
 
 ## 프로바이더 상태
 
-작업을 보내기 전에 프로바이더를 탐지합니다. 준비 상태 확인과 경량 헬스 모니터링에 유용합니다:
+준비 상태 확인과 같이 작업을 보내기 전에 프로바이더를 탐지합니다:
 
 ```lua
 local status, err = llm.status({
@@ -535,11 +588,11 @@ local status, err = llm.status({
 local response, err = llm.generate("Hello", { model = "gpt-4o" })
 
 if err then
-    io.print("Error: " .. tostring(err))
+    print("Error: " .. tostring(err))
     return
 end
 
-io.print(response.result)
+print(response.result)
 ```
 
 ### 오류 타입
@@ -579,6 +632,6 @@ io.print(response.result)
 
 ## 참고 항목
 
-- [에이전트](framework/agents.md) - 도구, 위임, 메모리를 갖춘 에이전트 프레임워크
-- [LLM 에이전트 만들기](tutorials/llm-agent.md) - 단계별 튜토리얼
-- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
+- [에이전트](./agents.md) — 도구, 위임, 메모리를 갖춘 에이전트 프레임워크
+- [LLM 에이전트 만들기](../tutorials/llm-agent.md) — 단계별 에이전트 만들기
+- [프레임워크 개요](./overview.md) — 프레임워크 모듈 설치와 가져오기
