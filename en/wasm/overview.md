@@ -65,7 +65,7 @@ WASM executions inherit the caller's security context by default:
 - Scope is inherited
 - Request context is inherited
 
-Host capabilities are opt-in through explicit imports. Each entry declares exactly which WASI interfaces it needs (`wasi:cli`, `wasi:filesystem`, etc.), limiting the module's access surface.
+Host capabilities are opt-in through explicit imports. Each entry declares the host profiles it needs, such as `funcs`, `wasi1`, `wasi:cli`, or `wasi:filesystem`, limiting the module's access surface. Enabling a profile does not bypass runtime security checks on operations such as function calls, sockets, or outgoing HTTP.
 
 ## See Also
 

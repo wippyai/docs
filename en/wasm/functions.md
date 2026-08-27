@@ -200,14 +200,22 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
 ## Execution Limits
 
-Set a maximum execution time for a function:
+Limit execution time and recycle warm instances that retain too much linear memory:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 67108864
+  retained_memory_check_interval: 16
 ```
 
-When the limit is exceeded, the execution is cancelled and an error is returned.
+| Field | Default | Description |
+|-------|---------|-------------|
+| `max_execution_ms` | `0` | Maximum call duration in milliseconds; `0` disables the timeout |
+| `max_retained_memory_bytes` | 64 MiB | Recycle a warm worker instance after a call when retained memory exceeds this value; an explicit `0` disables recycling |
+| `retained_memory_check_interval` | See below | Number of completed calls between retained-memory checks |
+
+When the execution-time limit is exceeded, the call is cancelled and returns an error. The default 64 MiB retained-memory limit is checked every 16 calls. When `max_retained_memory_bytes` is set explicitly to a positive value and the interval is omitted, the runtime checks after every call. Set a positive interval to amortize those checks.
 
 ## WASI Configuration
 

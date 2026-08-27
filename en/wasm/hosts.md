@@ -1,6 +1,6 @@
 ---
 title: "Host Functions"
-description: "WASM modules access runtime capabilities through host function imports. Each import is declared explicitly per entry in the imports list."
+description: "Enable Wippy function calls, WASI Preview 1 compatibility, or selected WASI Preview 2 interfaces through entry imports."
 ---
 
 # Host Functions
@@ -11,6 +11,8 @@ Each entry opts into the host interfaces listed below through its `imports` fiel
 
 | Import | Description |
 |--------|-------------|
+| `funcs` | Call Wippy registry functions from a Component Model module |
+| `wasi1` | WASI Preview 1 compatibility for raw/core modules |
 | `wasi:cli` | Environment, exit, stdin/stdout/stderr, terminal |
 | `wasi:io` | Streams and error handling |
 | `wasi:poll` | Async polling / cooperative yielding (interface `wasi:io/poll`) |
@@ -39,6 +41,21 @@ Enable imports in your entry configuration:
 ```
 
 Only declare the imports your module actually needs.
+
+`funcs` and the `wasi:*` profiles below require a Component Model module. Use `wasi1` for a raw/core module that imports `wasi_snapshot_preview1`; the aliases `wasi-preview1`, `preview1`, and `wasi_snapshot_preview1` resolve to the same profile. Unsupported imports, or Component Model-only profiles on a core module, fail during module preparation.
+
+## Wippy Function Calls
+
+The `funcs` profile registers the `wippy:runtime/funcs@0.1.0` interface for Component Model modules:
+
+```wit
+interface funcs {
+  call-string: func(target: string, input: string) -> result<string, string>;
+  call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
+}
+```
+
+Both methods invoke the target through Wippy's function registry. The call inherits the execution security context and requires `funcs.call` permission on the target registry ID.
 
 ## WASI Imports
 
@@ -99,6 +116,12 @@ TCP and UDP networking with DNS resolution. Socket operations integrate with the
 **Interfaces:** `wasi:http/types`, `wasi:http/outgoing-handler`
 
 Outgoing HTTP client requests from within WASM modules. Supports request/response types defined by the WASI HTTP specification.
+
+Outgoing requests require `http_client.request` permission on the URL. Requests to private IP addresses also require `http_client.private_ip` for the resolved address.
+
+## Socket Permissions
+
+Enabling `wasi:sockets` makes the interfaces available but does not authorize network access. DNS lookup requires `socket.resolve` on the name, outbound TCP connections require `socket.connect` on the address, and TCP or UDP binding requires `socket.listen` on the address.
 
 ## See Also
 
