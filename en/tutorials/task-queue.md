@@ -7,6 +7,9 @@ description: "Build a REST API that queues tasks for background processing with 
 
 Build a REST API that publishes tasks to an in-memory queue, processes them in background workers, and stores completed results in SQLite.
 
+**Classification:** Runnable tutorial. The page provides the complete registry, Lua
+sources, startup commands, and HTTP checks for a local single-node demo.
+
 ## Overview
 
 This tutorial creates a task management API demonstrating:
@@ -45,11 +48,25 @@ flowchart LR
     GET -->|SELECT| DB
 ```
 
+## Prerequisites
+
+- Wippy runtime `v0.3.32a`.
+- `curl` or another HTTP client.
+- An empty working directory. Create the project and source directory before adding
+  the files below:
+
+  ```bash
+  mkdir task-queue
+  cd task-queue
+  mkdir src
+  ```
+
 ## Project Structure
 
 ```
 task-queue/
 ├── wippy.lock
+├── data/                    # created before startup
 └── src/
     ├── _index.yaml
     ├── migrate.lua
@@ -413,10 +430,14 @@ The consumer auto-acks when the handler returns normally and auto-nacks when it 
 Create the data directory, initialize the project, and start the runtime:
 
 ```bash
-mkdir -p data
+mkdir data
 wippy init
 wippy run
 ```
+
+Leave the runtime running while you use a second terminal for the HTTP checks. Wait
+until the logs report that the HTTP service is listening and the migration completed;
+the one-shot migration and the HTTP service start independently during boot.
 
 Submit a task and query its result:
 
@@ -426,16 +447,33 @@ curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{"action": "uppercase", "data": {"text": "hello world"}}'
 
-# Response: {"id": "550e8400-...", "status": "queued"}
+# Response: {"id":"<generated-uuid>","status":"queued"}
 
 # Wait a moment for processing, then list tasks
 curl http://localhost:8080/tasks
 
-# Response: {"tasks": [...], "count": 1}
+# Response includes one completed task and "count":1
 
 # Filter by status
 curl "http://localhost:8080/tasks?status=completed"
 ```
+
+The returned row should have `status: "completed"`; its `result` field is a JSON
+string containing `{"output":"HELLO WORLD"}`. The in-memory queue is intentionally
+non-durable, but completed rows survive restarts in `data/tasks.db`.
+
+## Troubleshooting and Cleanup
+
+- `no such table: tasks` means the request reached SQLite before the migration
+  finished. Wait for `migration complete` and retry. A migration error stops the
+  migration service and is shown in the runtime logs.
+- `failed to queue task` usually means `app:queue_driver` or
+  `app:task_consumer` did not start. Check the startup logs for the first resource
+  error rather than retrying the request.
+- `address already in use` means another process owns port 8080. Stop it or change
+  `app:gateway.addr` and use the same port in the `curl` commands.
+- Stop the runtime with Ctrl+C. Remove `data/tasks.db` to reset the tutorial data;
+  the next start recreates the schema.
 
 ## Message Flow
 

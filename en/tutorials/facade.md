@@ -7,6 +7,10 @@ description: "Serve and configure the Wippy Web Host from a backend application 
 
 Use `wippy/facade` to serve the Wippy Web Host from a backend application. The facade loads the frontend bundle from a CDN and configures it through a JSON endpoint served by the application, without requiring a frontend build step. Dependency parameters control branding, theming, and feature flags.
 
+**Classification:** Partial integration recipe. It completely configures and verifies
+the facade shell and config endpoint, but it does not invent an authentication system
+or the application APIs consumed by the Web Host.
+
 ## What You'll Build
 
 A backend app that serves the Wippy UI:
@@ -17,12 +21,15 @@ A backend app that serves the Wippy UI:
 
 ## Prerequisites
 
-- A Wippy project (clone [app-template](https://github.com/wippyai/app-template), or
-  `wippy init`).
+- Wippy runtime `v0.3.32a` and a project created with `wippy init` or the
+  [Wippy application template](https://github.com/wippyai/app).
+- For browser rendering, a same-origin login flow that obtains a real backend token
+  and stores `{"token":"..."}` under the localStorage key `@wippy_token_info`.
+  The facade does not issue or validate that token.
 - The facade installed:
 
   ```bash
-  wippy add wippy/facade
+  wippy add wippy/facade@0.6.37
   wippy install
   ```
 
@@ -30,7 +37,8 @@ A backend app that serves the Wippy UI:
 
 1. The facade shell is rendered at `/` by your HTTP server.
 2. On load it fetches `GET /api/public/facade/config`.
-3. It checks `localStorage` for an auth token, redirecting to `login_path` if missing.
+3. It reads `@wippy_token_info` from `localStorage`, redirecting to `login_path`
+   only when the item is absent or cannot be parsed as JSON.
 4. It imports the Web Host bundle from the CDN (`facade_url + '/module.js'`) and calls
    `initWippyApp(...)` with the config.
 
@@ -113,6 +121,34 @@ Selected fields from the response are shown below:
 
 The `app_title` parameter appears as `theming.host.i18n.app.title` in the response.
 
+Also fetch the root document:
+
+```bash
+curl http://localhost:8087/
+```
+
+It should return an HTML shell that fetches the config endpoint and checks
+`@wippy_token_info`. These two HTTP checks verify the recipe without bypassing auth.
+
+## Browser Authentication and Rendering
+
+The facade's localStorage contract is origin-scoped. A login page on another port or
+hostname cannot populate the token for `http://localhost:8087`. After a successful
+same-origin token exchange, the login page writes the real token and returns to the
+shell:
+
+```js
+localStorage.setItem('@wippy_token_info', JSON.stringify({token: result.token}));
+window.location.assign('/');
+```
+
+The shell reads the token, imports
+`https://web-host.wippy.ai/webcomponents-1.0.56/module.js`, and passes the token to the
+Host. Rendering is complete only when the browser shows the Host without redirecting
+and its API requests authenticate successfully. Do not use a placeholder token merely
+to suppress the redirect: the shell does not validate it, so the failure only moves to
+the first protected API request.
+
 ## Configuration
 
 Parameters are passed as dependency `parameters` (values are strings; JSON values are
@@ -140,6 +176,20 @@ unset, the browser falls back to `window.location.origin`.
   `userspace/users` or your own auth.
 - The UI bundle loads from the CDN (`fe_facade_url`), so the user's browser must be
   able to reach that URL.
+
+## Troubleshooting
+
+- A redirect loop to `/login.html` means the current origin has no parseable
+  `@wippy_token_info` item. Complete the real login flow on the same origin. A
+  parseable object with a missing or empty `token` suppresses this redirect but
+  still fails when the Host reaches a protected API.
+- HTTP 404 from `/api/public/facade/config` means the router prefix is not
+  `/api/public` or the `router` dependency parameter points at another entry.
+- A config response with the right values but a blank shell usually means the browser
+  cannot load `facade_url + module_file`; check the browser network panel and CDN
+  policy.
+- Authenticated API errors after the Host renders belong to the application's API and
+  token validation layer, not to the facade shell.
 
 ## Next Steps
 

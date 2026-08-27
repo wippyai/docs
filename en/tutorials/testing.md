@@ -7,6 +7,9 @@ description: "Write and run Lua tests with wippy/test assertions, lifecycle hook
 
 Use the `wippy/test` framework to define Lua test cases with assertions, lifecycle hooks, and mocks, then execute them with `wippy test`.
 
+**Classification:** Runnable tutorial. It contains a complete library, test entry,
+dependency setup, expected runner output, and failure checks.
+
 ## What You'll Build
 
 A small library and a test suite that covers it:
@@ -17,17 +20,32 @@ A small library and a test suite that covers it:
 
 ## Prerequisites
 
-- A Wippy project (clone [app-template](https://github.com/wippyai/app-template), or
-  `wippy init` in an empty directory).
-- The test framework installed:
+- Wippy runtime `v0.3.32a`.
+- An empty working directory. Create and initialize the project, then install the
+  test framework:
 
   ```bash
+  mkdir testing-demo
+  cd testing-demo
+  mkdir src
+  wippy init
   wippy add wippy/test
   wippy install
   ```
 
   The test framework declares `wippy/terminal` as a dependency, so installation
   brings in the terminal host used by the runner's live UI.
+
+The finished project contains:
+
+```text
+testing-demo/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── calc.lua
+    └── calc_test.lua
+```
 
 ## The Code Under Test
 
@@ -92,6 +110,7 @@ Register both entries. Discovery keys off `meta.type: test`; `meta.suite` groups
 results in the output:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -148,6 +167,10 @@ The live renderer prints each case before the suite summary; timings vary by run
 
 `wippy test` exits with `0` when every case passes and `1` when any case fails, allowing CI to use the command's exit status.
 
+To verify the failure path, temporarily change the expected sum from `5` to `6`.
+The runner should print `FAILED` and exit with status 1. Restore `5` before
+continuing.
+
 ## Assertions
 
 Each assertion raises on failure; the type guards also return the validated value.
@@ -178,6 +201,21 @@ Call these inside a `describe` block:
 
 Nested `describe` blocks inherit parent hooks (outer `before_*` first, inner
 `after_*` first).
+
+## Troubleshooting
+
+- `No test runner found` means `wippy/test` is not present in `wippy.lock`; run
+  `wippy add wippy/test` followed by `wippy install`.
+- A missing `calc` or `test` module means the `imports` keys do not match the
+  corresponding `require(...)` calls.
+- A test file is not discovered unless its entry has `meta.type: test`.
+- Timings and terminal glyphs vary by terminal. Use the final status and process
+  exit code for automation.
+
+## Cleanup
+
+After leaving the `testing-demo` directory, remove it when you no longer need the
+disposable project.
 
 ## Next Steps
 
