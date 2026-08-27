@@ -10,6 +10,8 @@ description: "Parse source code, inspect concrete syntax trees, and run Tree-sit
 
 The `treesitter` module parses source code into concrete syntax trees with [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) through the [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter) bindings.
 
+This page is an API reference with partial parsing recipes. Source strings and query patterns are application input, and node-level snippets assume a live tree from an earlier checked parse. Parsers, trees, queries, and cursors are owned resources: close every successfully created handle when its last dependent operation is complete.
+
 The resulting syntax trees:
 - Represent the full structure of source code
 - Update incrementally as code changes
@@ -63,9 +65,14 @@ if err then
     return nil, err
 end
 
-local root = tree:root_node()
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 print(root:kind())        -- "source_file"
 print(root:child_count()) -- number of top-level declarations
+tree:close()
 ```
 
 ### Query Syntax Tree
@@ -76,20 +83,38 @@ func hello() {}
 func world() {}
 ]]
 
-local tree = treesitter.parse("go", code)
-local root = tree:root_node()
+local tree, parse_err = treesitter.parse("go", code)
+if parse_err then
+    return nil, parse_err
+end
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 
 -- Find all function names
-local query = treesitter.query("go", [[
+local query, query_err = treesitter.query("go", [[
     (function_declaration name: (identifier) @func_name)
 ]])
+if query_err then
+    tree:close()
+    return nil, query_err
+end
 
-local captures = query:captures(root, code)
+local captures, captures_err = query:captures(root, code)
+if captures_err then
+    query:close()
+    tree:close()
+    return nil, captures_err
+end
 for _, capture in ipairs(captures) do
     print(capture.name, capture.text)
 end
 -- "func_name"  "hello"
 -- "func_name"  "world"
+query:close()
+tree:close()
 ```
 
 ## Parsing
@@ -100,6 +125,10 @@ Parse source code with a temporary internal parser.
 
 ```lua
 local tree, err = treesitter.parse("go", code)
+if err then
+    return nil, err
+end
+-- Use the tree, then call tree:close().
 ```
 
 | Parameter | Type | Description |
@@ -114,18 +143,37 @@ local tree, err = treesitter.parse("go", code)
 Create a reusable parser for repeated parsing or incremental updates.
 
 ```lua
-local parser = treesitter.parser()
-parser:set_language("go")
+local parser, parser_err = treesitter.parser()
+if parser_err then
+    return nil, parser_err
+end
+local _, language_err = parser:set_language("go")
+if language_err then
+    parser:close()
+    return nil, language_err
+end
 
-local tree1 = parser:parse("package main")
+local tree1, first_err = parser:parse("package main")
+if first_err then
+    parser:close()
+    return nil, first_err
+end
 
--- Incremental parse with old tree
-local tree2 = parser:parse("package main\nfunc foo() {}", tree1)
+-- Parse another source with the reusable parser. For an incremental update,
+-- edit the old tree first as shown in the complete recipe below.
+local tree2, second_err = parser:parse("package main\nfunc foo() {}")
+if second_err then
+    tree1:close()
+    parser:close()
+    return nil, second_err
+end
 
+tree2:close()
+tree1:close()
 parser:close()
 ```
 
-**Returns:** `Parser`
+**Returns:** `Parser, error`
 
 ### Parser Methods
 
@@ -139,16 +187,31 @@ parser:close()
 | `reset()` | Reset parser state |
 | `close()` | Release parser resources |
 
+Trees created by a reusable parser and the parser itself are independently owned; close each successful handle. Nodes borrow their tree's storage and must not be used after that tree is closed. Cursors borrow a tree as well, so close them before the tree. Queries own separate native resources and also require `close()`; close a query after its captures or matches are no longer needed. Explicit cleanup is deterministic, while the process resource store is only a fallback for handles left open at process teardown.
+
 ## Syntax Trees
 
 ### Get Root Node
 
 ```lua
-local tree = treesitter.parse("go", "package main")
-local root = tree:root_node()
+local tree, err = treesitter.parse("go", "package main")
+if err then
+    return nil, err
+end
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 
 print(root:kind())  -- "source_file"
-print(root:text())  -- "package main"
+local source_text, text_err = root:text()
+if text_err then
+    tree:close()
+    return nil, text_err
+end
+print(source_text)  -- "package main"
+tree:close()
 ```
 
 ### Tree Methods
@@ -172,10 +235,13 @@ Apply an edit before reparsing changed source code:
 
 ```lua
 local code = "func main() { x := 1 }"
-local tree = treesitter.parse("go", code)
+local tree, parse_err = treesitter.parse("go", code)
+if parse_err then
+    return nil, parse_err
+end
 
 -- Mark edit: changed "1" to "100" at byte 19
-tree:edit({
+local _, edit_err = tree:edit({
     start_byte = 19,
     old_end_byte = 20,
     new_end_byte = 22,
@@ -186,16 +252,38 @@ tree:edit({
     new_end_row = 0,
     new_end_column = 22
 })
+if edit_err then
+    tree:close()
+    return nil, edit_err
+end
 
 -- Re-parse with edited tree (faster than full parse)
-local parser = treesitter.parser()
-parser:set_language("go")
-local new_tree = parser:parse("func main() { x := 100 }", tree)
+local parser, parser_err = treesitter.parser()
+if parser_err then
+    tree:close()
+    return nil, parser_err
+end
+local _, language_err = parser:set_language("go")
+if language_err then
+    parser:close()
+    tree:close()
+    return nil, language_err
+end
+local new_tree, new_tree_err = parser:parse("func main() { x := 100 }", tree)
+if new_tree_err then
+    parser:close()
+    tree:close()
+    return nil, new_tree_err
+end
+
+new_tree:close()
+parser:close()
+tree:close()
 ```
 
 ## Nodes
 
-Nodes represent elements in the syntax tree.
+Nodes represent elements in the syntax tree. In the isolated snippets below, `root`, `node`, and `func_decl` are application-selected nodes borrowed from a still-open tree.
 
 ### Node Types
 
@@ -244,7 +332,10 @@ local start_pt = node:start_point()  -- {row = 0, column = 0}
 local end_pt = node:end_point()      -- {row = 0, column = 12}
 
 -- Source text
-local text = node:text()
+local source_text, err = node:text()
+if err then
+    return nil, err
+end
 ```
 
 ### Error Detection
@@ -283,6 +374,10 @@ local query, err = treesitter.query("go", [[
         parameters: (parameter_list) @params
     )
 ]])
+if err then
+    return nil, err
+end
+-- The owner calls query:close() after the final query operation.
 ```
 
 | Parameter | Type | Description |
@@ -296,7 +391,12 @@ local query, err = treesitter.query("go", [[
 
 ```lua
 -- Get all captures (flattened)
-local captures = query:captures(root, source_code)
+local captures, captures_err = query:captures(root, source_code)
+if captures_err then
+    query:close()
+    tree:close()
+    return nil, captures_err
+end
 for _, capture in ipairs(captures) do
     print(capture.name)   -- "func_name"
     print(capture.text)   -- actual text
@@ -305,14 +405,30 @@ for _, capture in ipairs(captures) do
 end
 
 -- Get matches (grouped by pattern)
-local matches = query:matches(root, source_code)
+local matches, matches_err = query:matches(root, source_code)
+if matches_err then
+    query:close()
+    tree:close()
+    return nil, matches_err
+end
 for _, match in ipairs(matches) do
     print(match.id, match.pattern)
     for _, capture in ipairs(match.captures) do
-        print(capture.name, capture.node:text())
+        local captured_text, text_err = capture.node:text()
+        if text_err then
+            query:close()
+            tree:close()
+            return nil, text_err
+        end
+        print(capture.name, captured_text)
     end
 end
+
+query:close()
+tree:close()
 ```
+
+Passing userdata of the wrong type instead of a Tree-sitter `Node` returns `nil, error`; passing a primitive or table raises a Lua argument error before that check. `root`, `source_code`, and `query` here must come from a still-open tree and a successfully created query. The snippet uses the owning `tree` handle to close both resources before it returns.
 
 ### Query Control
 
@@ -352,7 +468,10 @@ A tree cursor traverses a tree without creating a node object at every step.
 ### Basic Traversal
 
 ```lua
-local cursor = tree:walk()
+local cursor, err = tree:walk()
+if err then
+    return nil, err
+end
 
 -- Start at root
 print(cursor:current_node():kind())  -- "source_file"
@@ -398,7 +517,10 @@ cursor:close()
 ## Language Metadata
 
 ```lua
-local lang = treesitter.language("go")
+local lang, err = treesitter.language("go")
+if err then
+    return nil, err
+end
 
 print(lang:version())           -- ABI version
 print(lang:node_kind_count())   -- number of node types
@@ -424,8 +546,11 @@ local field_id = lang:field_id_for_name("name")
 | Invalid query pattern | `errors.INVALID` | no |
 | Invalid positions | `errors.INVALID` | no |
 | Parse failed | `errors.INTERNAL` | no |
+| No execution context | `errors.INTERNAL` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+Closing an already closed parser, tree, query, or cursor is safe. Calling any other method on a closed handle raises a Lua argument error.
+
+See [Error Handling](../core/errors.md) for working with errors.
 
 ## Query Syntax Reference
 

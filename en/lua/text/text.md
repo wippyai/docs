@@ -8,7 +8,7 @@ description: "Compile regular expressions, compare text, create patches, and spl
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `text` module provides regular expressions, text comparison and patching, and document splitting.
+The `text` module provides regular expressions, text comparison and patching, and document splitting. This page is an API reference. Its short blocks are isolated calls; longer splitting blocks are partial recipes whose documents, configured filesystem resources, and downstream processing belong to the surrounding application.
 
 ## Loading
 
@@ -24,6 +24,9 @@ Compile an RE2-compatible regular expression.
 
 ```lua
 local re, err = text.regexp.compile("[0-9]+")
+if err then
+    return nil, err
+end
 ```
 
 | Parameter | Type | Description |
@@ -59,6 +62,8 @@ local match = re:find_string("abc123def")
 | `s` | string | String to search |
 
 **Returns:** `string | nil`
+
+At this runtime pin, an empty-string match is also represented as `nil`; use a pattern that consumes at least one character when an empty match must be distinguished from no match.
 
 ### `re:find_all_string`
 
@@ -221,8 +226,14 @@ local diff, err = text.diff.new(options)
 Compare two strings and return operations that transform `text1` into `text2`.
 
 ```lua
-local diff, _ = text.diff.new()
+local diff, diff_err = text.diff.new()
+if diff_err then
+    return nil, diff_err
+end
 local diffs, err = diff:compare("hello world", "hello there")
+if err then
+    return nil, err
+end
 
 -- diffs contains:
 -- {operation = "equal", text = "hello "}
@@ -241,15 +252,15 @@ Operations: `"equal"`, `"delete"`, `"insert"`
 
 ### `diff:summarize`
 
-Count the unchanged, inserted, and deleted characters.
+Count the unchanged, inserted, and deleted UTF-8 bytes. For non-ASCII text, these totals are not Unicode code-point or grapheme counts.
 
 ```lua
-local diffs, _ = diff:compare("hello world", "hello there")
+-- `diffs` is the checked result from diff:compare.
 local summary = diff:summarize(diffs)
 
--- summary.equals = 6 (characters unchanged)
--- summary.deletions = 5 (characters removed)
--- summary.insertions = 5 (characters added)
+-- summary.equals = 6 (bytes unchanged)
+-- summary.deletions = 5 (bytes removed)
+-- summary.insertions = 5 (bytes added)
 ```
 
 | Parameter | Type | Description |
@@ -264,6 +275,9 @@ Format a diff with ANSI colors for terminal output.
 
 ```lua
 local formatted, err = diff:pretty_text(diffs)
+if err then
+    return nil, err
+end
 print(formatted)
 ```
 
@@ -279,7 +293,10 @@ Format a diff as HTML with `<del>` and `<ins>` elements.
 
 ```lua
 local html, err = diff:pretty_html(diffs)
--- Returns: "hello <del>world</del><ins>there</ins>"
+if err then
+    return nil, err
+end
+-- `html` is an HTML fragment with equal, deleted, and inserted spans.
 ```
 
 | Parameter | Type | Description |
@@ -297,6 +314,9 @@ local text1 = "The quick brown fox jumps over the lazy dog"
 local text2 = "The quick red fox jumps over the lazy cat"
 
 local patches, err = diff:patch_make(text1, text2)
+if err then
+    return nil, err
+end
 ```
 
 | Parameter | Type | Description |
@@ -315,6 +335,8 @@ local result, success = diff:patch_apply(patches, text1)
 -- result = "The quick red fox jumps over the lazy cat"
 -- success = true
 ```
+
+Check `success` before treating `result` as the requested transformation. Pass patch tables produced by `patch_make`; at this runtime pin, malformed serialized patch text inside a hand-built table can be skipped rather than reported separately.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -336,10 +358,15 @@ local splitter, err = text.splitter.recursive({
     chunk_size = 1000,
     chunk_overlap = 100
 })
+if err then
+    return nil, err
+end
 
 local long_text = "This is a long text that needs splitting..."
-local chunks, err = splitter:split_text(long_text)
--- chunks = {"This is a long...", "...text that needs...", "...splitting..."}
+local chunks, split_err = splitter:split_text(long_text)
+if split_err then
+    return nil, split_err
+end
 ```
 
 **Returns:** `Splitter, error`
@@ -348,8 +375,8 @@ local chunks, err = splitter:split_text(long_text)
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `chunk_size` | integer | 512 | Max characters per chunk |
-| `chunk_overlap` | integer | 100 | Characters repeated between adjacent chunks |
+| `chunk_size` | integer | 4000 | Max characters per chunk |
+| `chunk_overlap` | integer | 200 | Characters repeated between adjacent chunks |
 | `keep_separator` | boolean | false | Keep separators in output |
 | `separators` | string[] | nil | Custom separator list |
 
@@ -363,12 +390,26 @@ local splitter, err = text.splitter.markdown({
     code_blocks = true,
     heading_hierarchy = true
 })
+if err then
+    return nil, err
+end
 
 local fs = require("fs")
-local docs = assert(fs.get("app:docs"))
-local readme = assert(docs:readfile("README.md"))
-local chunks, err = splitter:split_text(readme)
+local docs, docs_err = fs.get("app:docs")
+if docs_err then
+    return nil, docs_err
+end
+local readme, read_err = docs:readfile("README.md")
+if read_err then
+    return nil, read_err
+end
+local chunks, split_err = splitter:split_text(readme)
+if split_err then
+    return nil, split_err
+end
 ```
+
+This partial recipe requires the entry to enable both `text` and `fs`, a configured `app:docs` filesystem resource, and a readable `README.md` within that resource.
 
 **Returns:** `Splitter, error`
 
@@ -376,8 +417,8 @@ local chunks, err = splitter:split_text(readme)
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `chunk_size` | integer | 512 | Max characters per chunk |
-| `chunk_overlap` | integer | 100 | Characters repeated between adjacent chunks |
+| `chunk_size` | integer | 4000 | Max characters per chunk |
+| `chunk_overlap` | integer | 200 | Characters repeated between adjacent chunks |
 | `code_blocks` | boolean | false | Keep code blocks together |
 | `reference_links` | boolean | false | Preserve reference links |
 | `heading_hierarchy` | boolean | false | Respect heading levels |
@@ -389,12 +430,17 @@ Split a single document into an array of chunks.
 
 ```lua
 local chunks, err = splitter:split_text(document)
+if err then
+    return nil, err
+end
 
 for i, chunk in ipairs(chunks) do
     -- Process each chunk (e.g., create embedding, send to LLM)
     process(chunk)
 end
 ```
+
+Here, `splitter` is a successfully created splitter, while `document` and `process` are supplied by the application.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -414,6 +460,9 @@ local pages = {
 }
 
 local chunks, err = splitter:split_batch(pages)
+if err then
+    return nil, err
+end
 
 -- Output: each chunk knows which page it came from
 for _, chunk in ipairs(chunks) do
@@ -427,6 +476,8 @@ end
 
 **Returns:** `table, error` (array of {content, metadata})
 
+`split_batch` silently skips an item when the item is not a table, its `content` field is missing, empty, or not a string, or splitting that item fails. It still returns the remaining chunks with a `nil` error. Validate every input item before the call and verify any cardinality requirements in application code; do not treat a successful call as proof that every input was represented.
+
 ## Errors
 
 | Condition | Kind | Retryable |
@@ -434,4 +485,4 @@ end
 | Invalid pattern syntax | `errors.INVALID` | no |
 | Internal error | `errors.INTERNAL` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.
