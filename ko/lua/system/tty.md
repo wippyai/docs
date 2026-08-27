@@ -1,16 +1,18 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "터미널 입력 이벤트를 처리하고 스타일이 적용된 터미널 레이아웃을 렌더링합니다."
 ---
 
 # TTY
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-원시 입력 이벤트, 스타일이 적용된 출력, 레이아웃 유틸리티를 위한 터미널 UI 모듈입니다.
+`tty` 모듈은 원시 터미널 입력 이벤트를 처리하고 스타일이 적용된 출력 및 레이아웃 유틸리티를 제공합니다.
+
+이 페이지는 API 레퍼런스입니다. 입력 루프는 터미널 프로세스의 부분 예시이며 스타일과 레이아웃 조각은 독립된 예시입니다.
 
 <note>
-이 모듈은 터미널 컨텍스트 내에서만 작동합니다. 일반 함수에서 사용할 수 없으며 — <a href="system/terminal.md">Terminal Host</a>에서 실행되는 프로세스에서만 사용할 수 있습니다.
+이 모듈은 일반 함수가 아니라 <a href="../../system/terminal.md">Terminal Host</a>에서 실행되는 프로세스에서만 사용할 수 있습니다.
 </note>
 
 ## 로딩
@@ -28,31 +30,42 @@ local tty = require("tty")
 local io = require("io")
 
 local function handler()
-    tty.start()
-    local events = tty.events()
+    local events, events_err = tty.events()
+    if events_err then return nil, events_err end
+
+    -- Subscribe before starting so the initial start event cannot be missed.
+    local started, start_err = tty.start()
+    if start_err then return nil, start_err end
+
+    local loop_err
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
 ## 입력 제어
 
-### tty.start()
+### `tty.start()`
 
 원시 터미널 입력 모드를 활성화합니다. 터미널이 원시 모드로 전환되고 이벤트 발행을 시작합니다.
 
@@ -62,7 +75,7 @@ local ok, err = tty.start()
 
 **반환:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 원시 입력을 비활성화하고 터미널을 일반 모드로 복원합니다.
 
@@ -72,7 +85,7 @@ local ok, err = tty.stop()
 
 **반환:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
 터미널 이벤트를 구독하고 채널을 반환합니다. 이벤트는 `type` 필드가 있는 테이블로 전달됩니다.
 
@@ -82,7 +95,7 @@ local events = tty.events()
 
 **반환:** `EventChannel, error`
 
-### tty.screen_size()
+### `tty.screen_size()`
 
 현재 터미널 크기를 조회합니다.
 
@@ -92,7 +105,7 @@ local width, height, err = tty.screen_size()
 
 **반환:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 마우스 이벤트 추적을 활성화하거나 비활성화합니다.
 
@@ -115,9 +128,9 @@ local ok, err = tty.mouse(true)
 ```lua
 {
     type = "key",
-    key = "a",           -- 인쇄 가능한 문자 또는 키 이름
-    key_type = "runes",  -- 인쇄 가능한 경우 "runes", 또는 특수 키 이름
-    action = "press",    -- "press" 또는 "release"
+    key = "a",           -- printable character or key name
+    key_type = "runes",  -- "runes" for printable, or special key name
+    action = "press",    -- "press" or "release"
     alt = false,
     ctrl = false,
     shift = false
@@ -132,7 +145,7 @@ local ok, err = tty.mouse(true)
 {
     type = "mouse",
     action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- 버튼 이름
+    button = "left",     -- button name
     x = 10,
     y = 5,
     alt = false,
@@ -177,20 +190,22 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- 이벤트 루프에서
+-- In event loop
 if quit:matches(ev) then
     break
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
-| `keys` | string[] | 매칭할 키 패턴 (예: `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | 필수. 매칭할 키 패턴 (예: `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | 선택. 도움말 텍스트용 `{key = "...", desc = "..."}` |
 
 **반환:** `KeyBinding`
+
+타입 스키마에서는 `keys`가 필수입니다. 런타임에서 생략되거나 빈 `keys` 테이블은 어떤 이벤트와도 일치하지 않는 바인딩을 만듭니다.
 
 ### KeyBinding 메서드
 
@@ -220,10 +235,11 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
-### tty.style()
+### `tty.style()`
 
 새 빈 스타일을 생성합니다.
 
@@ -301,26 +317,26 @@ tty.align.RIGHT   -- 1
 ### 측정
 
 ```lua
-local w = tty.text.width("hello")         -- 인쇄 가능한 너비 (ANSI 인식)
-local h = tty.text.height("a\nb\nc")      -- 줄 수
-local w, h = tty.text.size("hello\nworld") -- 둘 다
+local w = tty.text.width("hello")         -- printable width (ANSI-aware)
+local h = tty.text.height("a\nb\nc")      -- line count
+local w, h = tty.text.size("hello\nworld") -- both
 ```
 
 ### 결합
 
 ```lua
--- 위쪽으로 정렬하여 나란히 결합
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- 가운데 정렬로 수직 스택
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### 최대 크기
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- 가장 넓은
-local h = tty.text.max_height({"one\ntwo", "single"})         -- 가장 높은
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### 배치
@@ -328,13 +344,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- 가장 높은
 주어진 크기의 박스 내에 문자열을 배치합니다:
 
 ```lua
--- 80x24 박스의 가운데
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- 수평만
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- 수직만
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -348,7 +364,17 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## 오류
+
+입력 제어 함수는 구조화 오류를 반환합니다:
+
+| 조건 | 종류 | 재시도 가능 |
+|------|------|-------------|
+| 터미널 컨텍스트 또는 입력 컨트롤러 없음 | `errors.UNAVAILABLE` | 아니오 |
+| 이벤트 구독에 런타임 또는 프로세스 컨텍스트 없음 | `errors.INTERNAL` | 아니오 |
+| 터미널 yield 응답이 잘못됨 | `errors.INTERNAL` | 아니오 |
+
 ## 참고
 
-- [터미널 I/O](lua/system/io.md) — stdin/stdout/stderr 작업
-- [Terminal Host](system/terminal.md) — Terminal Host 설정
+- [터미널 I/O](./io.md) — stdin/stdout/stderr 작업
+- [Terminal Host](../../system/terminal.md) — Terminal Host 설정
