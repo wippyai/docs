@@ -149,7 +149,7 @@
     "children": [
       {"title": "Übersicht", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
-      {"title": "Agents", "path": "framework/agents"},
+      {"title": "Agenten", "path": "framework/agents"},
       {"title": "Test-Framework", "path": "framework/testing"},
       {"title": "Dataflow", "path": "framework/dataflow"},
       {"title": "Relay", "path": "framework/relay"},
@@ -158,7 +158,7 @@
       ]},
       {"title": "Embeddings", "path": "framework/embeddings"},
       {"title": "Bootloader", "path": "framework/bootloader"},
-      {"title": "Migrations", "path": "framework/migration"},
+      {"title": "Migrationen", "path": "framework/migration"},
       {"title": "Nutzungserfassung", "path": "framework/usage"}
     ]
   },

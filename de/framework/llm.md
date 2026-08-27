@@ -1,52 +1,50 @@
 ---
 title: "LLM"
-description: "Das Modul wippy/llm bietet eine einheitliche Schnittstelle zur Arbeit mit Large Language Models verschiedener Anbieter (OpenAI, Anthropic, Google,…"
+description: "wippy/llm für Generierung, Prompts, Streaming, Tools, strukturierte Ausgabe, Modellauswahl und Embeddings verwenden."
 ---
 
 # LLM
 
-Das Modul `wippy/llm` bietet eine einheitliche Schnittstelle zur Arbeit mit Large Language Models verschiedener Anbieter (OpenAI, Anthropic, Google, lokale Modelle). Es unterstuetzt Textgenerierung, Tool-Aufrufe, strukturierte Ausgabe, Embeddings und Streaming.
+Das Modul `wippy/llm` bietet eine einheitliche Schnittstelle für Sprachmodelle von
+OpenAI, Anthropic, Google und lokalen Providern. Es unterstützt Textgenerierung,
+Tool-Aufrufe, strukturierte Ausgabe, Embeddings und Streaming.
+
+Diese Seite ist eine API-Einführung mit kombinierbaren Referenz-Snippets, kein
+eigenständiges Tutorial. Vorausgesetzt werden ein bestehendes Wippy-Projekt, ein
+registriertes Modell samt Provider und dessen Zugangsdaten. Ersetzen Sie Beispielmodelle
+durch einen Namen aus Ihrer Registry; Remote-Aufrufe können Providerkosten verursachen.
+Ein vollständiges Projekt zeigt [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md).
 
 ## Einrichtung
 
-Fuege das Modul deinem Projekt hinzu:
+Fügen Sie das Modul zum Projekt hinzu:
 
 ```bash
 wippy add wippy/llm
 wippy install
 ```
 
-Deklariere die Abhaengigkeit in deiner `_index.yaml`. Das LLM-Modul benoetigt einen Environment-Speicher (fuer API-Schluessel) und einen Process-Host:
+Deklarieren Sie die Abhängigkeit in `_index.yaml`:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
     version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
 ```
 
-Der Eintrag `env.storage.os` stellt OS-Umgebungsvariablen den LLM-Anbietern zur Verfuegung. Setze deine API-Schluessel als Umgebungsvariablen (z.B. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`).
+Das Modul stellt einen OS-Umgebungsspeicher bereit und verwendet standardmäßig
+`wippy.terminal:host` als Host für Hintergrundprozesse. Überschreiben Sie die
+Abhängigkeitsparameter `env_storage` oder `process_host` nur bei Bedarf. Setzen Sie
+Provider-Schlüssel über Variablen wie `OPENAI_API_KEY` und `ANTHROPIC_API_KEY`.
 
 ## Textgenerierung
 
-Importiere die `llm`-Bibliothek in deinen Eintrag und rufe `generate()` auf:
+Importieren Sie die Bibliothek `llm` und rufen Sie `generate()` auf:
 
 ```yaml
 entries:
@@ -83,11 +81,11 @@ Das erste Argument von `generate()` kann ein String-Prompt, ein Prompt-Builder o
 | Option | Typ | Beschreibung |
 |--------|-----|--------------|
 | `model` | string | Modellname oder -klasse (erforderlich) |
-| `temperature` | number | Zufallskontrolle, 0-1 |
+| `temperature` | number | Zufallskontrolle von 0 bis 2; Providerunterstützung kann variieren |
 | `max_tokens` | number | Maximale Anzahl zu generierender Tokens |
 | `top_p` | number | Nucleus-Sampling-Parameter |
 | `top_k` | number | Top-k-Filterung |
-| `thinking_effort` | number | Denktiefe 0-100 (Modelle mit Denkfaehigkeit) |
+| `thinking_effort` | number | Denktiefe 0–100 für Modelle mit Thinking-Fähigkeit |
 | `tools` | table | Array von Tool-Definitionen |
 | `tool_choice` | string | `"auto"`, `"none"`, `"any"` oder Tool-Name |
 | `stream` | table | Streaming-Konfiguration: `{ reply_to, topic, buffer_size }` |
@@ -98,15 +96,15 @@ Das erste Argument von `generate()` kann ein String-Prompt, ein Prompt-Builder o
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `result` | string | Generierter Textinhalt |
-| `tokens` | table | Token-Nutzung: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
-| `finish_reason` | string | Grund fuer das Ende der Generierung: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
+| `tokens` | table | Token-Nutzung: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` sowie optional `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
+| `finish_reason` | string | Grund für das Ende: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Array von Tool-Aufrufen (wenn das Modell Tools aufgerufen hat) |
 | `metadata` | table | Anbieterspezifische Metadaten |
 | `usage_record` | table? | Nutzungsdatensatz |
 
 ## Prompt-Builder
 
-Fuer Konversationen mit mehreren Durchgaengen und komplexe Prompts verwende den Prompt-Builder:
+Verwenden Sie den Prompt-Builder für mehrteilige Konversationen und strukturierte Nachrichten:
 
 ```yaml
 imports:
@@ -135,24 +133,24 @@ local response, err = llm.generate(conversation, {
 |---------|--------------|
 | `prompt.new()` | Leeren Builder erstellen |
 | `prompt.with_system(content)` | Builder mit Systemnachricht erstellen |
-| `:add_system(content, meta?)` | Systemnachricht hinzufuegen |
-| `:add_user(content, meta?)` | Benutzernachricht hinzufuegen |
-| `:add_assistant(content, meta?)` | Assistenznachricht hinzufuegen |
-| `:add_developer(content, meta?)` | Entwicklernachricht hinzufuegen |
-| `:add_message(role, content_parts, name?, meta?)` | Nachricht mit Rolle und Inhaltsteilen hinzufuegen |
-| `:add_function_call(name, args, id?)` | Tool-Aufruf des Assistenten hinzufuegen |
-| `:add_function_result(name, result, id?)` | Tool-Ausfuehrungsergebnis hinzufuegen |
+| `:add_system(content, meta?)` | Systemnachricht hinzufügen |
+| `:add_user(content, meta?)` | Benutzernachricht hinzufügen |
+| `:add_assistant(content, meta?)` | Assistenznachricht hinzufügen |
+| `:add_developer(content, meta?)` | Entwicklernachricht hinzufügen |
+| `:add_message(role, content_parts, name?, meta?)` | Nachricht mit Rolle und Inhaltsteilen hinzufügen |
+| `:add_function_call(name, arguments, id?, options?)` | Tool-Aufruf des Assistenten hinzufügen; `arguments` ist der rohe JSON-String |
+| `:add_function_result(name, result, id?)` | Tool-Ausführungsergebnis hinzufügen |
 | `:add_cache_marker(id?)` | Cache-Grenze markieren (Claude-Modelle) |
 | `:get_messages()` | Nachrichtenarray abrufen |
-| `:build()` | `{ messages = ... }`-Tabelle fuer `llm.generate()` abrufen |
+| `:build()` | Tabelle `{ messages = ... }` für `llm.generate()` abrufen |
 | `:clone()` | Tiefe Kopie des Builders |
 | `:clear()` | Alle Nachrichten entfernen |
 
-Alle `add_*`-Methoden geben den Builder fuer Verkettung zurueck.
+Alle `add_*`-Methoden geben den Builder zur Verkettung zurück.
 
-### Konversationen mit mehreren Durchgaengen
+### Konversationen mit mehreren Durchgängen
 
-Baue Kontext ueber mehrere Durchgaenge auf, indem du Nachrichten anfuegst:
+Bauen Sie Kontext über mehrere Durchgänge auf, indem Sie Nachrichten anhängen:
 
 ```lua
 local conversation = prompt.new()
@@ -170,7 +168,7 @@ local r2 = llm.generate(conversation, { model = "gpt-4o" })
 
 ### Multimodale Inhalte
 
-Kombiniere Text und Bilder in einer einzelnen Nachricht:
+Kombinieren Sie Text und Bilder in einer Nachricht:
 
 ```lua
 local conversation = prompt.new()
@@ -200,7 +198,7 @@ conversation:add_message(prompt.ROLE.USER, {
 
 ### Klonen
 
-Klone einen Builder, um Variationen zu erstellen, ohne das Original zu veraendern:
+Klonen Sie einen Builder für unabhängige Variationen:
 
 ```lua
 local base = prompt.new()
@@ -215,7 +213,8 @@ conv2:add_user("What is ML?")
 
 ## Streaming
 
-Streame Antworten in Echtzeit mithilfe der Prozesskommunikation. Dies erfordert einen `process.lua`-Eintrag:
+Streamen Sie Antworten über die Prozesskommunikation. Dafür ist ein
+`process.lua`-Eintrag erforderlich:
 
 ```lua
 local llm = require("llm")
@@ -223,33 +222,90 @@ local llm = require("llm")
 local TOPIC = "llm_stream"
 
 local function main()
-    local stream_ch = process.listen(TOPIC)
-
-    local response = llm.generate("Write a short story", {
-        model = "gpt-4o",
-        stream = {
-            reply_to = process.pid(),
-            topic = TOPIC,
-        },
-    })
-
-    while true do
-        local chunk, ok = stream_ch:receive()
-        if not ok then break end
-
-        if chunk.type == "chunk" then
-            io.write(chunk.content)
-        elseif chunk.type == "thinking" then
-            io.write(chunk.content)
-        elseif chunk.type == "error" then
-            io.print("Error: " .. chunk.error.message)
-            break
-        elseif chunk.type == "done" then
-            break
-        end
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, listen_err
     end
 
-    process.unlisten(stream_ch)
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove LLM stream listener"
+            if err then
+                return nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return nil, cleanup_err
+        end
+        if err then
+            return nil, err
+        end
+        return text, response
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish(nil, nil, pid_err)
+    end
+
+    local done_ch = channel.new(1)
+    coroutine.spawn(function()
+        local response, err = llm.generate("Write a short story", {
+            model = "gpt-4o",
+            stream = {
+                reply_to = self_pid,
+                topic = TOPIC,
+            },
+        })
+        done_ch:send({ response = response, err = err })
+    end)
+
+    local full_text = ""
+    local generation_result = nil
+    local stream_done = false
+    local stream_err = nil
+
+    while true do
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not generation_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(nil, nil, "LLM stream closed before completion")
+        end
+
+        if result.channel == done_ch then
+            generation_result = result.value
+            if generation_result.err then
+                return finish(nil, nil, generation_result.err)
+            end
+            if stream_done then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "thinking" then
+                print(chunk.content or "")
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "LLM stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and generation_result then
+                return finish(full_text, generation_result.response, stream_err)
+            end
+        end
+    end
 end
 ```
 
@@ -265,11 +321,13 @@ end
 
 <note>
 Streaming erfordert einen <code>process.lua</code>-Eintrag, da es das Prozesskommunikationssystem von Wippy verwendet (<code>process.pid()</code>, <code>process.listen()</code>).
+Führen Sie die Generierung in einer separaten Coroutine aus, damit der Listener Chunks
+parallel entleert, und entfernen Sie den Listener auf jedem Rückgabepfad.
 </note>
 
 ## Tool-Aufrufe
 
-Definiere Tools als Inline-Schemas und uebergib sie an `generate()`:
+Definieren Sie Tools mit Inline-Schemas und übergeben Sie sie an `generate()`:
 
 ```lua
 local llm = require("llm")
@@ -305,7 +363,7 @@ if response.tool_calls and #response.tool_calls > 0 then
         local result = { temperature = 22, condition = "sunny" }
 
         -- add the exchange to the conversation
-        conversation:add_function_call(tc.name, tc.arguments, tc.id)
+        conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
         conversation:add_function_result(tc.name, json.encode(result), tc.id)
     end
 
@@ -321,7 +379,7 @@ end
 |------|-----|--------------|
 | `id` | string | Eindeutiger Aufruf-Identifikator |
 | `name` | string | Tool-Name |
-| `arguments` | table | Geparste Argumente gemaess dem Schema |
+| `arguments` | table | Geparste Argumente gemäß dem Schema |
 
 ### Tool-Auswahl
 
@@ -334,7 +392,7 @@ end
 
 ## Strukturierte Ausgabe
 
-Generiere validiertes JSON gemaess einem Schema:
+Generieren Sie JSON, das gegen ein Schema validiert wird:
 
 ```lua
 local llm = require("llm")
@@ -364,12 +422,12 @@ end
 ```
 
 <tip>
-Bei OpenAI-Modellen muessen alle Properties im <code>required</code>-Array enthalten sein. Verwende Union-Typen fuer optionale Felder: <code>type = {"string", "null"}</code>. Setze <code>additionalProperties = false</code>.
+Bei OpenAI-Modellen müssen alle Properties im <code>required</code>-Array enthalten sein. Verwenden Sie Union-Typen für optionale Felder: <code>type = {"string", "null"}</code>. Setzen Sie <code>additionalProperties = false</code>.
 </tip>
 
 ## Modellkonfiguration
 
-Modelle werden als Registry-Eintraege mit `meta.type: llm.model` definiert:
+Definieren Sie Modelle als Registry-Einträge mit `meta.type: llm.model`:
 
 ```yaml
 entries:
@@ -402,11 +460,11 @@ entries:
 
 | Feld | Beschreibung |
 |------|--------------|
-| `meta.name` | Modellbezeichner fuer API-Aufrufe |
+| `meta.name` | Modellbezeichner für API-Aufrufe |
 | `meta.type` | Muss `llm.model` sein |
 | `meta.capabilities` | Feature-Liste: `generate`, `tool_use`, `structured_output`, `embed`, `thinking`, `vision`, `caching` |
-| `meta.class` | Klassenzugehoerigkeit: `fast`, `balanced`, `reasoning`, etc. |
-| `meta.priority` | Numerische Prioritaet fuer klassenbasierte Aufloesung (hoeher gewinnt) |
+| `meta.class` | Klassenzugehörigkeit: `fast`, `balanced`, `reasoning` usw. |
+| `meta.priority` | Numerische Priorität für klassenbasierte Auflösung; höher gewinnt |
 | `max_tokens` | Maximales Kontextfenster |
 | `output_tokens` | Maximale Ausgabe-Tokens |
 | `pricing` | Kosten pro Million Tokens: `input`, `output` |
@@ -414,7 +472,8 @@ entries:
 
 ### Lokale Modelle
 
-Fuer lokal gehostete Modelle (LM Studio, Ollama) definiere einen separaten Anbieter-Eintrag mit einer eigenen `base_url`:
+Definieren Sie für lokale Modelle wie LM Studio oder Ollama einen eigenen
+Provider-Eintrag mit angepasster `base_url`:
 
 ```yaml
   - name: local_provider
@@ -447,9 +506,9 @@ Fuer lokal gehostete Modelle (LM Studio, Ollama) definiere einen separaten Anbie
         provider_model: llama-3.2
 ```
 
-## Modellaufloesung
+## Modellauflösung
 
-Modelle koennen per exaktem Namen, Klasse oder explizitem Klassenpraefix referenziert werden:
+Modelle können über exakten Namen, Klasse oder explizites Klassenpräfix referenziert werden:
 
 ```lua
 -- exact model name
@@ -462,14 +521,14 @@ llm.generate("Hello", { model = "fast" })
 llm.generate("Hello", { model = "class:reasoning" })
 ```
 
-Aufloesungsreihenfolge:
+Auflösungsreihenfolge:
 1. Abgleich per exaktem `meta.name`
-2. Abgleich per Klassenname (hoechste `meta.priority` gewinnt)
-3. Mit `class:`-Praefix wird nur in dieser Klasse gesucht
+2. Abgleich nach Klassenname; höchste `meta.priority` gewinnt
+3. Mit Präfix `class:` nur in dieser Klasse suchen
 
 ## Modellerkennung
 
-Verfuegbare Modelle und ihre Faehigkeiten zur Laufzeit abfragen:
+Fragen Sie verfügbare Modelle und ihre Fähigkeiten zur Laufzeit ab:
 
 ```lua
 local llm = require("llm")
@@ -490,29 +549,35 @@ end
 
 ## Embeddings
 
-Generiere Vektor-Embeddings fuer semantische Suche:
+Erzeugen Sie Vektor-Embeddings für semantische Suche:
 
 ```lua
 local llm = require("llm")
 
--- single text
-local response = llm.embed("The quick brown fox", {
+-- A single input still returns an array of vectors.
+local single_response, single_err = llm.embed("The quick brown fox", {
     model = "text-embedding-3-small",
     dimensions = 512,
 })
--- response.result is a float array
+if single_err then
+    error("Embedding failed: " .. tostring(single_err))
+end
+local vector = single_response.result[1]
 
--- multiple texts
-local response = llm.embed({
+-- Multiple inputs return one vector per input.
+local batch_response, batch_err = llm.embed({
     "First document",
     "Second document",
 }, { model = "text-embedding-3-small" })
--- response.result is an array of float arrays
+if batch_err then
+    error("Batch embedding failed: " .. tostring(batch_err))
+end
+local vectors = batch_response.result
 ```
 
 ## Anbieterstatus
 
-Pruefe einen Anbieter, bevor Arbeit gesendet wird. Nuetzlich fuer Bereitschaftspruefungen und leichtgewichtiges Health-Monitoring:
+Prüfen Sie einen Provider vor dem Senden von Arbeit, etwa für Bereitschaftsprüfungen:
 
 ```lua
 local status, err = llm.status({
@@ -522,24 +587,24 @@ local status, err = llm.status({
 
 | Option | Beschreibung |
 |--------|--------------|
-| `model` | Erforderlich. Zu pruefendes Modell. |
-| `provider_id` | Optional. Ueberspringt die Modellaufloesung und zielt auf einen bestimmten Anbieter. |
+| `model` | Erforderlich; zu prüfendes Modell |
+| `provider_id` | Optional; überspringt die Modellauflösung und wählt einen bestimmten Provider |
 
-Gibt die `StatusResponse` des Anbieters zurueck (Inhalt ist anbieterabhaengig).
+Gibt die providerabhängige `StatusResponse` zurück.
 
 ## Fehlerbehandlung
 
-Fehler werden als zweiter Rueckgabewert zurueckgegeben. Bei einem Fehler ist der erste Rueckgabewert `nil`:
+Fehler stehen im zweiten Rückgabewert; bei Fehlern ist der erste Wert `nil`:
 
 ```lua
 local response, err = llm.generate("Hello", { model = "gpt-4o" })
 
 if err then
-    io.print("Error: " .. tostring(err))
+    print("Error: " .. tostring(err))
     return
 end
 
-io.print(response.result)
+print(response.result)
 ```
 
 ### Fehlertypen
@@ -547,25 +612,25 @@ io.print(response.result)
 | Konstante | Beschreibung |
 |-----------|--------------|
 | `llm.ERROR_TYPE.INVALID_REQUEST` | Fehlerhafte Anfrage |
-| `llm.ERROR_TYPE.AUTHENTICATION` | Ungueltiger API-Schluessel |
-| `llm.ERROR_TYPE.RATE_LIMIT` | Rate-Limit des Anbieters ueberschritten |
+| `llm.ERROR_TYPE.AUTHENTICATION` | Ungültiger API-Schlüssel |
+| `llm.ERROR_TYPE.RATE_LIMIT` | Provider-Limit überschritten |
 | `llm.ERROR_TYPE.SERVER_ERROR` | Serverfehler des Anbieters |
-| `llm.ERROR_TYPE.CONTEXT_LENGTH` | Eingabe ueberschreitet das Kontextfenster |
+| `llm.ERROR_TYPE.CONTEXT_LENGTH` | Eingabe überschreitet das Kontextfenster |
 | `llm.ERROR_TYPE.CONTENT_FILTER` | Inhalt durch Sicherheitssysteme gefiltert |
-| `llm.ERROR_TYPE.TIMEOUT` | Anfrage-Zeitueberschreitung |
-| `llm.ERROR_TYPE.MODEL_ERROR` | Ungueltiges oder nicht verfuegbares Modell |
+| `llm.ERROR_TYPE.TIMEOUT` | Zeitüberschreitung der Anfrage |
+| `llm.ERROR_TYPE.MODEL_ERROR` | Ungültiges oder nicht verfügbares Modell |
 
-### Abschlussgruende
+### Abschlussgründe
 
 | Konstante | Beschreibung |
 |-----------|--------------|
 | `llm.FINISH_REASON.STOP` | Normale Fertigstellung |
 | `llm.FINISH_REASON.LENGTH` | Maximale Token-Anzahl erreicht |
 | `llm.FINISH_REASON.CONTENT_FILTER` | Inhalt gefiltert |
-| `llm.FINISH_REASON.TOOL_CALL` | Modell hat einen Tool-Aufruf ausgefuehrt |
-| `llm.FINISH_REASON.ERROR` | Fehler waehrend der Generierung |
+| `llm.FINISH_REASON.TOOL_CALL` | Modell hat einen Tool-Aufruf ausgeführt |
+| `llm.FINISH_REASON.ERROR` | Fehler während der Generierung |
 
-## Faehigkeiten
+## Fähigkeiten
 
 | Konstante | Beschreibung |
 |-----------|--------------|
@@ -574,11 +639,11 @@ io.print(response.result)
 | `llm.CAPABILITY.STRUCTURED_OUTPUT` | Strukturierte JSON-Ausgabe |
 | `llm.CAPABILITY.EMBED` | Vektor-Embeddings |
 | `llm.CAPABILITY.THINKING` | Erweitertes Denken |
-| `llm.CAPABILITY.VISION` | Bildverstaendnis |
+| `llm.CAPABILITY.VISION` | Bildverständnis |
 | `llm.CAPABILITY.CACHING` | Prompt-Caching |
 
 ## Siehe auch
 
-- [Agents](framework/agents.md) - Agent-Framework mit Tools, Delegates und Memory
-- [Einen LLM-Agenten erstellen](tutorials/llm-agent.md) - Schritt-fuer-Schritt-Tutorial
-- [Framework-Uebersicht](framework/overview.md) - Nutzung der Framework-Module
+- [Agenten](./agents.md) — Agenten-Framework mit Tools, Delegaten und Memory
+- [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md) — Agent schrittweise erstellen
+- [Framework-Übersicht](./overview.md) — Framework-Module installieren und importieren
