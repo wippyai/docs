@@ -15,10 +15,13 @@ The model separates storage from access:
 - **Variables** - Named references to values in storages
 
 Variables can be referenced by:
-- **Public name** - The `variable` field value (must be unique across the system)
+- **Public name** - The `variable` field value
 - **Entry ID** - Full `namespace:name` reference
 
 Omit the `variable` field when a variable should be accessible only by entry ID.
+The first variable to claim a public name keeps that shortcut. A later variable
+with the same public name is still registered and remains accessible by entry ID,
+but does not replace the existing shortcut.
 
 ## Entry Kinds
 
@@ -44,7 +47,9 @@ Volatile in-memory storage.
 
 ### File Storage
 
-Persistent storage using `.env` file format (`KEY=VALUE` with `#` comments).
+Persistent storage using a simple `KEY=VALUE` format. Blank lines and lines that
+start with `#` are ignored; text after `#` on a value line is treated as a comment.
+Quoted values and escape sequences are not parsed specially.
 
 ```yaml
 - name: app_config
@@ -94,7 +99,7 @@ Always read-only. Set operations return `PERMISSION_DENIED`.
 
 ### Router Storage
 
-A router chains several storages. Reads search them in order until a value is found, while writes target only the first storage.
+A router chains several storages. On a cache miss, reads search them in order until a value is found; a successful value is cached by the router, so direct changes in a backing storage are not visible through that router afterward. An error other than `NOT_FOUND` stops the fallback search. Writes target only the first storage.
 
 ```yaml
 - name: config
@@ -107,7 +112,7 @@ A router chains several storages. Reads search them in order until a value is fo
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `storages` | array | Ordered list of storage references |
+| `storages` | array | Required, non-empty ordered list of storage references |
 
 ## Variables
 
@@ -124,8 +129,8 @@ Variables map public names or entry IDs to values in a storage backend.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `variable` | string | Public variable name (optional, must be unique) |
-| `storage` | string | Storage reference (`namespace:name`) |
+| `variable` | string | Optional public variable name |
+| `storage` | string | Required storage reference (`namespace:name`) |
 | `default` | string | Default value if not found |
 | `readonly` | boolean | Prevent modifications |
 
@@ -151,7 +156,7 @@ Variable names must contain only: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Placeholder Interpolation
 
-Registered variables are pulled into entry configuration with `${env:NAME}` placeholders, resolved centrally at decode time against this registry. Any string field in an entry's data may reference a variable this way.
+Registered variables are pulled into entry configuration with `${env:NAME}` placeholders, resolved centrally at decode time against this registry. Entry configuration strings are resolved unless their entry kind marks a field as opaque. Source fields such as `template.jet.source` are opaque so template or program text is not rewritten.
 
 | Syntax | Meaning |
 |--------|---------|
@@ -172,7 +177,7 @@ Registered variables are pulled into entry configuration with `${env:NAME}` plac
     key:  ${env:app.env:tls_key}
 ```
 
-A field whose entire value is a single placeholder takes the variable's typed value (coerced to bool/int/float when a typed default is given); a placeholder mixed with surrounding text interpolates into a string. A variable's own `default` is honored before the placeholder's inline `|default`. A reference that resolves to nothing and has no default fails decoding.
+A field whose entire value is a single placeholder takes the type of its inline default. For example, `${env:PORT|8080}` produces an integer and coerces a stored value to an integer, while `${env:PORT|"8080"}` remains a string. A placeholder mixed with surrounding text always produces a string. A variable's own `default` is honored before the placeholder's inline `|default`. A reference that resolves to nothing and has no default fails decoding.
 
 Resolution happens at decode time only: the stored registry entry keeps the raw placeholders, so resolved secrets never appear in `registry.get` results or persisted state. Entries referencing `${env:...}` automatically order after the env storages and variables they depend on at boot.
 
@@ -192,9 +197,9 @@ Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (for
 
 ## Runtime Access
 
-- [env module](lua/system/env.md) - Lua runtime access
+- [env module](../lua/system/env.md) - Lua runtime access
 
 ## See Also
 
-- [Security Model](system/security.md) - Access control for environment variables
-- [Configuration Guide](guides/configuration.md) - Application configuration patterns
+- [Security Model](./security.md) - Access control for environment variables
+- [Configuration Guide](../guides/configuration.md) - Application configuration patterns

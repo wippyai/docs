@@ -41,9 +41,18 @@ The native executor runs commands directly on the host operating system.
 Native executors use a clean environment by default. Only explicitly configured environment variables are passed to child processes.
 </note>
 
+Commands are parsed into an executable and argument list; they are not run
+through a shell. Pipes, redirects, variable expansion, and other shell syntax
+have no special meaning. To run a shell expression, allow and invoke the shell
+explicitly, including its command flag and the expression as arguments.
+
 ## Docker Executor
 
 The Docker executor runs commands inside Docker containers.
+
+Docker commands are also parsed directly into an executable and arguments and
+assigned as the container command. They do not receive shell expansion unless
+the command explicitly invokes a shell.
 
 ```yaml
 - name: sandbox
@@ -67,11 +76,11 @@ The Docker executor runs commands inside Docker containers.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `image` | string | **required** | Docker image to use |
-| `host` | string | unix socket | Docker daemon URL |
+| `host` | string | Docker client default | Docker daemon URL; when omitted, the client uses its environment and platform default |
 | `default_work_dir` | string | - | Working directory inside container |
 | `default_env` | map | - | Environment variables |
 | `command_whitelist` | string[] | - | Allowed commands (exact match) |
-| `network_mode` | string | bridge | Network mode: `host`, `bridge`, `none` |
+| `network_mode` | string | Docker default | Docker network mode, such as `host`, `bridge`, or `none` |
 | `volumes` | string[] | - | Volume mounts: `host:container[:ro]` |
 | `user` | string | - | User to run as inside container |
 | `memory_limit` | int | 0 | Memory limit in bytes (0 = unlimited) |
@@ -86,7 +95,8 @@ The Docker executor runs commands inside Docker containers.
 
 ## Command Whitelist
 
-Both executor types support command allowlists. When configured, only exact command matches are allowed:
+Both executor types support command allowlists. When the list is non-empty,
+only exact matches of the original command string are allowed:
 
 ```yaml
 command_whitelist:
@@ -96,9 +106,13 @@ command_whitelist:
 
 Commands absent from the allowlist are rejected with an error.
 
+An omitted or empty allowlist permits any command that passes security policy.
+The Lua API separately checks `exec.get` for the executor ID and `exec.run` for
+the exact command string.
+
 ## Lua API
 
-The [Exec Module](lua/dynamic/exec.md) provides command execution:
+The [Exec Module](../lua/dynamic/exec.md) provides command execution:
 
 ```lua
 local exec = require("exec")
@@ -106,21 +120,42 @@ local exec = require("exec")
 local executor, err = exec.get("app:shell")
 if err then return nil, err end
 
-local proc = executor:exec("git status", {
+local proc, proc_err = executor:exec("git status", {
     work_dir = "/app/repo"
 })
+if proc_err then
+    executor:release()
+    return nil, proc_err
+end
 
-local stdout = proc:stdout_stream()
-proc:start()
-local output = stdout:read()
-proc:wait()
+local stdout, stream_err = proc:stdout_stream()
+if stream_err then
+    proc:close()
+    executor:release()
+    return nil, stream_err
+end
+
+local ok, start_err = proc:start()
+if start_err then
+    stdout:close()
+    proc:close()
+    executor:release()
+    return nil, start_err
+end
+
+local output, read_err = stdout:read()
+local exit_code, wait_err = proc:wait()
 
 stdout:close()
 executor:release()
+
+if read_err then return nil, read_err end
+if wait_err then return nil, wait_err end
+return output, exit_code
 ```
 
 ## See Also
 
-- [Exec Module](lua/dynamic/exec.md) - Lua API reference
-- [Process Host](system/process-host.md) - Host that runs Wippy processes
-- [Filesystem](system/filesystem.md) - Filesystem entries used as work directories
+- [Exec Module](../lua/dynamic/exec.md) - Lua API reference
+- [Process Host](./process-host.md) - Host that runs Wippy processes
+- [Filesystem](./filesystem.md) - Filesystem entries used as work directories

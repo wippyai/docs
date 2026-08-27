@@ -31,10 +31,15 @@ All template-set configuration is optional:
 | `engine.development_mode` | bool | false | Disable template caching |
 | `engine.delimiters.left` | string | `{{` | Variable opening delimiter |
 | `engine.delimiters.right` | string | `}}` | Variable closing delimiter |
-| `engine.delimiters.comment_left` | string | `{*` | Comment opening delimiter |
-| `engine.delimiters.comment_right` | string | `*}` | Comment closing delimiter |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Template file extensions |
+| `engine.delimiters.comment_left` | string | `{*` | Validated comment opening delimiter; not applied by the current loader |
+| `engine.delimiters.comment_right` | string | `*}` | Validated comment closing delimiter; not applied by the current loader |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Validated extension list; not used for discovery by the current loader |
 | `engine.globals` | map | - | Variables available to all templates |
+
+At runtime `development_mode`, the left and right expression delimiters, and
+`globals` configure the Jet set. The comment-delimiter and extension fields are
+accepted and validated in this release, but are not applied by the in-memory
+Jet loader. Changing them does not alter parsing or discover templates.
 
 ## Templates
 
@@ -62,7 +67,12 @@ Templates belong to a set and are identified by name for internal resolution.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `set` | reference | Yes | Parent template set |
-| `source` | string | Yes | Template content |
+| `source` | string | Yes | Inline template content or a manifest-relative `file://` reference |
+
+A relative `file://` reference is loaded relative to the manifest containing
+the entry and cannot escape that manifest filesystem. Environment placeholders
+inside the resulting template source are preserved as template text rather than
+resolved by the environment system.
 
 ## Template Resolution
 
@@ -111,10 +121,10 @@ Templates can extend parent templates and override blocks:
 
 ## Lua API
 
-See [Template Module](lua/text/template.md) for rendering operations.
+See [Template Module](../lua/text/template.md) for rendering operations.
 
 ## See Also
 
-- [Template Module](lua/text/template.md) - Lua API reference
-- [Filesystem](system/filesystem.md) - Loading templates from disk
-- [HTTP Endpoint](http/endpoint.md) - Rendering templates from request handlers
+- [Template Module](../lua/text/template.md) - Lua API reference
+- [Filesystem](./filesystem.md) - Loading templates from disk
+- [HTTP Endpoint](../http/endpoint.md) - Rendering templates from request handlers

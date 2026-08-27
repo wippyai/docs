@@ -35,6 +35,10 @@ Network overlay entries route outbound connections or bind listeners through SOC
 | `password` | string | Optional SOCKS5 auth |
 | `isolate_streams` | bool | Per-connection random credentials (Tor stream isolation) |
 
+`host` and `port` are required. `isolate_streams` defaults to `false`. When
+isolation is enabled, the runtime generates a new username and password for
+each dial instead of using the configured credentials.
+
 ## Tailscale
 
 ```yaml
@@ -49,12 +53,16 @@ Network overlay entries route outbound connections or bind listeners through SOC
 | Field | Type | Description |
 |-------|------|-------------|
 | `hostname` | string | tsnet node name (used in per-node state directory) |
-| `auth_key` | string | Tailnet auth key — inline or `${env:NAME}` resolved via the [env registry](system/env.md) |
+| `auth_key` | string | Tailnet auth key — inline or `${env:NAME}` resolved via the [env registry](./env.md) |
 | `state_dir` | string | Override for tsnet state directory |
 | `control_url` | string | Alternate coordination server |
 | `ephemeral` | bool | Register as an ephemeral tailnet node |
 
 `auth_key` is required (supply it directly or via `${env:NAME}`). The legacy `auth_key_env` directive resolves the same way but is deprecated; prefer `auth_key: ${env:NAME}`.
+
+The tsnet hostname defaults to `wippy`. When `state_dir` is omitted, the runtime
+uses `<network_service.state_dir>/tailscale/<node>`, where `<node>` is the
+configured hostname or, if no hostname is configured, the registry entry name.
 
 ## I2P
 
@@ -71,6 +79,9 @@ Network overlay entries route outbound connections or bind listeners through SOC
 | `host` | string | SAM v3 bridge host |
 | `port` | int | SAM v3 bridge port |
 | `session_name` | string | Optional session identifier |
+
+`host` and `port` are required. `session_name` defaults to `wippy` and is used
+as the prefix for per-dial and per-listener SAM session IDs.
 
 ## Selecting an Overlay
 
@@ -100,6 +111,8 @@ local result, err = funcs.new()
 ```
 
 ```lua
+local process = require("process")
+
 local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
@@ -108,7 +121,19 @@ The `http_client` module accepts the same overlay selection on per-call options 
 
 ## Inheritance
 
-Overlay selection propagates through the call stack. A function called through `funcs.new():with_options({network=...})` uses the overlay for inner dials, nested `funcs.call` operations, and spawned processes until a descendant selects a different overlay or clears it.
+Overlay selection propagates through the call stack. A function called through
+`funcs.new():with_options({network=...})` uses the overlay for inner dials,
+nested calls, and spawned processes unless a new boundary selects another
+overlay. An empty `network` option means "no override"; it does not clear an
+inherited overlay or the application default.
+
+For a function call, runtime options override the function entry's
+`meta.options` before network selection. At a new function or process boundary,
+a non-empty `options.network` is selected first. If it is absent,
+`network_service.default_network` is selected when configured; if neither is
+present, the inherited frame selection remains. A selected ID must already be
+registered. An unknown ID fails the call or spawn instead of falling back to
+the host network.
 
 Ambient inheritance bypasses the descendant's own `network.select` deny rules. Only explicit selection at a Lua edge is gated.
 
@@ -129,7 +154,7 @@ network_service:
 
 ## Updating Overlays
 
-Overlay entries are replaced on registry update. The driver builds the replacement before switching to it; if creation fails, the existing overlay continues running. Concurrent callers use either the old or the new service.
+Overlay entries are replaced on registry update. The driver builds the replacement before switching to it; if creation fails, the existing overlay continues running. A successful swap is atomic for new lookups, then the previous service is closed. Work already using the previous service can therefore observe that closure.
 
 ## Permissions
 
@@ -142,6 +167,6 @@ Deny `network.select` on a scope to stop code inside it from choosing an overlay
 
 ## See Also
 
-- [Security](system/security.md) - Policies and actors
-- [HTTP Service](http/server.md) - Server binding
-- [HTTP Client](lua/http/client.md) - Per-call overlay selection
+- [Security](./security.md) - Policies and actors
+- [HTTP Service](../http/server.md) - Server binding
+- [HTTP Client](../lua/http/client.md) - Per-call overlay selection
