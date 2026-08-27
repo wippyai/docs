@@ -1,6 +1,6 @@
 [
   {
-    "title": "Getting Started",
+    "title": "시작하기",
     "children": [
       {"title": "What is Wippy", "path": "start/about"},
       {"title": "설치", "path": "start/installation"},
@@ -8,97 +8,97 @@
     ]
   },
   {
-    "title": "Guides",
+    "title": "가이드",
     "children": [
       {"title": "CLI", "path": "guides/cli"},
-      {"title": "Configuration", "path": "guides/configuration"},
+      {"title": "설정", "path": "guides/configuration"},
       {"title": "클러스터", "path": "guides/cluster"},
-      {"title": "Linter", "path": "guides/linter"},
+      {"title": "린터", "path": "guides/linter"},
       {"title": "언어 서버", "path": "guides/lsp"},
-      {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "의존성 관리", "path": "guides/dependency-management"},
       {"title": "빌드 시점 아티팩트", "path": "guides/artifacts"},
       {"title": "컴포넌트 구축", "path": "guides/components"},
-      {"title": "Entry Kinds", "path": "guides/entry-kinds"},
-      {"title": "Observability", "path": "guides/observability"},
+      {"title": "엔트리 종류", "path": "guides/entry-kinds"},
+      {"title": "관측성", "path": "guides/observability"},
       {"title": "큐 컨슈머", "path": "guides/queue-consumers"},
-      {"title": "Supervision", "path": "guides/supervision"},
-      {"title": "Publishing", "path": "guides/publishing"}
+      {"title": "감독", "path": "guides/supervision"},
+      {"title": "게시", "path": "guides/publishing"}
     ]
   },
   {
-    "title": "Core Concepts",
+    "title": "핵심 개념",
     "children": [
       {"title": "컴퓨트 유닛", "path": "concepts/compute-units"},
       {"title": "아키텍처", "path": "concepts/architecture"},
       {"title": "레지스트리", "path": "concepts/registry"},
       {"title": "보안 모델", "path": "concepts/security-model"},
-      {"title": "Process Model", "path": "concepts/process-model"},
+      {"title": "프로세스 모델", "path": "concepts/process-model"},
       {"title": "클러스터", "path": "concepts/cluster"},
       {"title": "함수", "path": "concepts/functions"},
-      {"title": "Workflows", "path": "concepts/workflows"}
+      {"title": "워크플로", "path": "concepts/workflows"}
     ]
   },
   {
-    "title": "Lua Runtime",
+    "title": "Lua 런타임",
     "children": [
       {"title": "개요", "path": "lua/overview"},
       {"title": "Lua를 사용하는 이유", "path": "lua/why-lua"},
-      {"title": "Types", "path": "lua/types"},
-      {"title": "Entries", "path": "lua/entries"},
+      {"title": "타입", "path": "lua/types"},
+      {"title": "엔트리", "path": "lua/entries"},
       {
-        "title": "Core",
+        "title": "핵심",
         "children": [
-          {"title": "Base", "path": "lua/core/base"},
+          {"title": "기본 라이브러리", "path": "lua/core/base"},
           {"title": "에러", "path": "lua/core/errors"},
-          {"title": "Time", "path": "lua/core/time"},
-          {"title": "Channels", "path": "lua/core/channel"},
-          {"title": "Process", "path": "lua/core/process"},
+          {"title": "시간", "path": "lua/core/time"},
+          {"title": "채널", "path": "lua/core/channel"},
+          {"title": "프로세스", "path": "lua/core/process"},
           {"title": "프로세스 그룹", "path": "lua/core/pg"},
-          {"title": "Functions", "path": "lua/core/funcs"},
+          {"title": "함수", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},
           {"title": "스트림", "path": "lua/core/stream"},
           {"title": "컨텍스트", "path": "lua/core/context"},
           {"title": "이벤트", "path": "lua/core/events"},
-          {"title": "Registry", "path": "lua/core/registry"},
-          {"title": "Contract", "path": "lua/core/contract"}
+          {"title": "레지스트리", "path": "lua/core/registry"},
+          {"title": "계약", "path": "lua/core/contract"}
         ]
       },
       {
-        "title": "Data Formats",
+        "title": "데이터 형식",
         "children": [
           {"title": "JSON", "path": "lua/data/json"},
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "Base64", "path": "lua/data/base64"},
-          {"title": "Compress", "path": "lua/data/compress"},
-          {"title": "Archive", "path": "lua/data/archive"},
-          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "압축", "path": "lua/data/compress"},
+          {"title": "아카이브", "path": "lua/data/archive"},
+          {"title": "페이로드", "path": "lua/data/payload"},
           {"title": "Excel", "path": "lua/data/excel"}
         ]
       },
       {
-        "title": "HTTP & Web",
+        "title": "HTTP 및 웹",
         "children": [
           {"title": "HTTP", "path": "lua/http/http"},
-          {"title": "HTTP Client", "path": "lua/http/client"},
+          {"title": "HTTP 클라이언트", "path": "lua/http/client"},
           {"title": "WebSocket", "path": "lua/http/websocket"},
           {"title": "HTML", "path": "lua/http/html"}
         ]
       },
       {
-        "title": "Storage",
+        "title": "스토리지",
         "children": [
           {"title": "SQL", "path": "lua/storage/sql"},
-          {"title": "Store", "path": "lua/storage/store"},
-          {"title": "Filesystem", "path": "lua/storage/filesystem"},
-          {"title": "Cloud Storage", "path": "lua/storage/cloud"},
-          {"title": "Queue", "path": "lua/storage/queue"},
+          {"title": "스토어", "path": "lua/storage/store"},
+          {"title": "파일시스템", "path": "lua/storage/filesystem"},
+          {"title": "클라우드 스토리지", "path": "lua/storage/cloud"},
+          {"title": "큐", "path": "lua/storage/queue"},
           {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
       {
-        "title": "System",
+        "title": "시스템",
         "children": [
-          {"title": "System", "path": "lua/system/system"},
+          {"title": "시스템", "path": "lua/system/system"},
           {"title": "환경 변수", "path": "lua/system/env"},
           {"title": "로깅", "path": "lua/system/logger"},
           {"title": "I/O", "path": "lua/system/io"},
@@ -109,34 +109,34 @@
         ]
       },
       {
-        "title": "Text & Templates",
+        "title": "텍스트 및 템플릿",
         "children": [
-          {"title": "Text", "path": "lua/text/text"},
+          {"title": "텍스트", "path": "lua/text/text"},
           {"title": "템플릿", "path": "lua/text/template"},
-          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+          {"title": "Tree-sitter", "path": "lua/text/treesitter"}
         ]
       },
       {
-        "title": "Security",
+        "title": "보안",
         "children": [
-          {"title": "Security", "path": "lua/security/security"},
-          {"title": "Crypto", "path": "lua/security/crypto"},
-          {"title": "Hash", "path": "lua/security/hash"},
+          {"title": "보안", "path": "lua/security/security"},
+          {"title": "암호화", "path": "lua/security/crypto"},
+          {"title": "해시", "path": "lua/security/hash"},
           {"title": "UUID", "path": "lua/security/uuid"}
         ]
       },
       {
-        "title": "Dynamic",
+        "title": "동적 실행",
         "children": [
-          {"title": "Eval", "path": "lua/dynamic/eval"},
-          {"title": "Exec", "path": "lua/dynamic/exec"},
+          {"title": "평가", "path": "lua/dynamic/eval"},
+          {"title": "실행", "path": "lua/dynamic/exec"},
           {"title": "표현식", "path": "lua/dynamic/expression"}
         ]
       }
     ]
   },
   {
-    "title": "WASM Runtime",
+    "title": "WASM 런타임",
     "children": [
       {"title": "개요", "path": "wasm/overview"},
       {"title": "함수", "path": "wasm/functions"},
@@ -145,21 +145,21 @@
     ]
   },
   {
-    "title": "Framework",
+    "title": "프레임워크",
     "children": [
       {"title": "프레임워크", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
-      {"title": "Agents", "path": "framework/agents"},
-      {"title": "Testing", "path": "framework/testing"},
+      {"title": "에이전트", "path": "framework/agents"},
+      {"title": "테스트", "path": "framework/testing"},
       {"title": "Dataflow", "path": "framework/dataflow"},
-      {"title": "Relay", "path": "framework/relay"},
-      {"title": "Views", "path": "framework/views", "children": [
-        {"title": "Facade", "path": "framework/facade"}
+      {"title": "릴레이", "path": "framework/relay"},
+      {"title": "뷰", "path": "framework/views", "children": [
+        {"title": "파사드", "path": "framework/facade"}
       ]},
-      {"title": "Embeddings", "path": "framework/embeddings"},
-      {"title": "Bootloader", "path": "framework/bootloader"},
-      {"title": "Migrations", "path": "framework/migration"},
-      {"title": "Usage Tracking", "path": "framework/usage"}
+      {"title": "임베딩", "path": "framework/embeddings"},
+      {"title": "부트로더", "path": "framework/bootloader"},
+      {"title": "마이그레이션", "path": "framework/migration"},
+      {"title": "사용량 추적", "path": "framework/usage"}
     ]
   },
   {
@@ -179,14 +179,14 @@
         ]
       },
       {
-        "title": "Web Host",
+        "title": "웹 호스트",
         "children": [
           {"title": "개요", "path": "frontend/web-host/overview"},
           {"title": "프런트엔드 Facade", "path": "frontend/web-host/entry-point"},
-          {"title": "Bootstrap 순서", "path": "frontend/web-host/bootstrap"},
+          {"title": "부트스트랩 순서", "path": "frontend/web-host/bootstrap"},
           {"title": "멀티 패널 레이아웃", "path": "frontend/web-host/multi-panel-layout"},
           {"title": "렌더 엔진", "path": "frontend/web-host/render-engines"},
-          {"title": "Proxy 및 격리", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "프록시 및 격리", "path": "frontend/web-host/proxy-isolation"},
           {"title": "CSS 주입", "path": "frontend/web-host/css-injection"},
           {"title": "테마 지속성", "path": "frontend/web-host/theme-persistence"},
           {"title": "@wippy-fe 패키지", "path": "frontend/web-host/packages"}
@@ -222,87 +222,87 @@
   {
     "title": "Temporal",
     "children": [
-      {"title": "Overview", "path": "temporal/overview"},
-      {"title": "Activities", "path": "temporal/activities"},
-      {"title": "Workflows", "path": "temporal/workflows"}
+      {"title": "개요", "path": "temporal/overview"},
+      {"title": "액티비티", "path": "temporal/activities"},
+      {"title": "워크플로", "path": "temporal/workflows"}
     ]
   },
   {
-    "title": "System Components",
+    "title": "시스템 구성요소",
     "children": [
       {"title": "프로세스 호스트", "path": "system/process-host"},
       {"title": "프로세스 그룹", "path": "system/process-groups"},
       {"title": "터미널", "path": "system/terminal"},
-      {"title": "Database", "path": "system/database"},
-      {"title": "Change Data Capture", "path": "system/cdc"},
-      {"title": "Store", "path": "system/store"},
-      {"title": "Queue", "path": "system/queue"},
-      {"title": "Network", "path": "system/network"},
+      {"title": "데이터베이스", "path": "system/database"},
+      {"title": "변경 데이터 캡처", "path": "system/cdc"},
+      {"title": "스토어", "path": "system/store"},
+      {"title": "큐", "path": "system/queue"},
+      {"title": "네트워크", "path": "system/network"},
       {"title": "파일시스템", "path": "system/filesystem"},
       {"title": "클라우드 스토리지", "path": "system/cloudstorage"},
-      {"title": "Environment", "path": "system/env"},
+      {"title": "환경", "path": "system/env"},
       {"title": "템플릿", "path": "system/template"},
-      {"title": "Security", "path": "system/security"},
+      {"title": "보안", "path": "system/security"},
       {"title": "실행기", "path": "system/exec"}
     ]
   },
   {
     "title": "HTTP",
     "children": [
-      {"title": "Server", "path": "http/server"},
-      {"title": "Router", "path": "http/router"},
-      {"title": "Endpoint", "path": "http/endpoint"},
-      {"title": "Middleware", "path": "http/middleware"},
+      {"title": "서버", "path": "http/server"},
+      {"title": "라우터", "path": "http/router"},
+      {"title": "엔드포인트", "path": "http/endpoint"},
+      {"title": "미들웨어", "path": "http/middleware"},
       {"title": "정적 파일", "path": "http/static"},
-      {"title": "WebSocket Relay", "path": "http/websocket-relay"},
+      {"title": "WebSocket 릴레이", "path": "http/websocket-relay"},
       {"title": "Server-Sent Events", "path": "http/sse"}
     ]
   },
   {
-    "title": "Tutorials",
+    "title": "튜토리얼",
     "children": [
       {"title": "Hello World", "path": "tutorials/hello-world"},
-      {"title": "CLI Applications", "path": "tutorials/cli"},
-      {"title": "Echo Service", "path": "tutorials/echo-service"},
-      {"title": "Channels", "path": "tutorials/channels"},
-      {"title": "Processes", "path": "tutorials/processes"},
-      {"title": "Supervision", "path": "tutorials/supervision"},
-      {"title": "Task Queue", "path": "tutorials/task-queue"},
-      {"title": "Testing", "path": "tutorials/testing"},
-      {"title": "Authentication", "path": "tutorials/auth"},
-      {"title": "Frontend Facade", "path": "tutorials/facade"},
-      {"title": "Network Overlays", "path": "tutorials/network"},
+      {"title": "CLI 애플리케이션", "path": "tutorials/cli"},
+      {"title": "에코 서비스", "path": "tutorials/echo-service"},
+      {"title": "채널", "path": "tutorials/channels"},
+      {"title": "프로세스", "path": "tutorials/processes"},
+      {"title": "감독", "path": "tutorials/supervision"},
+      {"title": "작업 큐", "path": "tutorials/task-queue"},
+      {"title": "테스트", "path": "tutorials/testing"},
+      {"title": "인증", "path": "tutorials/auth"},
+      {"title": "프론트엔드 파사드", "path": "tutorials/facade"},
+      {"title": "네트워크 오버레이", "path": "tutorials/network"},
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
-      {"title": "LLM Agent", "path": "tutorials/llm-agent"},
+      {"title": "LLM 에이전트", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
       {"title": "MCP를 통한 Keeper", "path": "tutorials/keeper-mcp"},
-      {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
-      {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
+      {"title": "Dataflow: 내구성 있는 DAG 실행", "path": "tutorials/dataflow"},
+      {"title": "검색 증강 생성", "path": "tutorials/rag"}
     ]
   },
   {
-    "title": "Internals",
+    "title": "내부 구조",
     "children": [
-      {"title": "Architecture", "path": "internals/architecture"},
+      {"title": "아키텍처", "path": "internals/architecture"},
       {"title": "레지스트리", "path": "internals/registry"},
       {"title": "스케줄러", "path": "internals/scheduler"},
       {"title": "디스패치", "path": "internals/dispatch"},
-      {"title": "Events", "path": "internals/events"},
-      {"title": "Modules", "path": "internals/modules"},
+      {"title": "이벤트", "path": "internals/events"},
+      {"title": "모듈", "path": "internals/modules"},
       {"title": "엔트리 리스너와 옵저버", "path": "internals/kinds"}
     ]
   },
   {
-    "title": "About",
+    "title": "정보",
     "children": [
-      {"title": "Contributing", "path": "about/contributing"},
-      {"title": "License", "path": "about/license"}
+      {"title": "기여하기", "path": "about/contributing"},
+      {"title": "라이선스", "path": "about/license"}
     ]
   },
   {
     "title": "LLM",
     "children": [
-      {"title": "Platform Brief", "path": "start/llm-brief"}
+      {"title": "LLM 브리프", "path": "start/llm-brief"}
     ]
   }
 ]
