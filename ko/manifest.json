@@ -49,7 +49,7 @@
         "title": "Core",
         "children": [
           {"title": "Base", "path": "lua/core/base"},
-          {"title": "Errors", "path": "lua/core/errors"},
+          {"title": "에러", "path": "lua/core/errors"},
           {"title": "Time", "path": "lua/core/time"},
           {"title": "Channels", "path": "lua/core/channel"},
           {"title": "Process", "path": "lua/core/process"},
@@ -100,7 +100,7 @@
         "children": [
           {"title": "System", "path": "lua/system/system"},
           {"title": "Environment", "path": "lua/system/env"},
-          {"title": "Logger", "path": "lua/system/logger"},
+          {"title": "로깅", "path": "lua/system/logger"},
           {"title": "I/O", "path": "lua/system/io"},
           {"title": "Metrics", "path": "lua/system/metrics"},
           {"title": "OS Time", "path": "lua/system/ostime"},

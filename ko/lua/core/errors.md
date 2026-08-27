@@ -1,6 +1,6 @@
 ---
 title: "에러"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Lua 엔트리에서 structured error를 생성, wrap, inspect 및 classify합니다."
 ---
 
 # 에러
@@ -8,15 +8,17 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-분류와 재시도 메타데이터가 있는 구조화된 에러 처리. 전역 `errors` 테이블은 require 없이 사용 가능합니다.
+전역 `errors` table은 category, detail 및 retry metadata가 있는 structured error를 생성하고 inspect합니다. `require` 없이 사용할 수 있습니다.
+
+이 페이지는 API 레퍼런스입니다. 각 code block은 완전한 엔트리가 아닌 독립적인 snippet입니다. `err` 같은 변수는 주변 애플리케이션 코드에서 반환되거나 생성된 error를 가리키며 wrapping 예제는 `db`가 애플리케이션에서 제공되는 database client라고 가정합니다.
 
 ## 에러 생성
 
 ```lua
--- 간단한 메시지 (kind 기본값은 UNKNOWN)
+-- Simple message (kind defaults to UNKNOWN)
 local err = errors.new("something went wrong")
 
--- kind, retryable, details와 함께
+-- With kind, retryable, and details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -29,10 +31,10 @@ local err = errors.new({
 
 ## 에러 래핑
 
-kind, retryable, details를 보존하면서 컨텍스트 추가:
+kind, retry metadata 및 detail을 보존하면서 context를 추가합니다.
 
 ```lua
-local data, err = db.query("SELECT * FROM users")
+local data, err = db:query("SELECT * FROM users")
 if err then
     return nil, errors.wrap(err, "failed to load users")
 end
@@ -53,12 +55,12 @@ end
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- 잘못된 입력 처리
+    -- handle invalid input
 end
 
--- 또는 직접 비교
+-- Or compare directly
 if err:kind() == errors.NOT_FOUND then
-    -- 누락된 리소스 처리
+    -- handle missing resource
 end
 ```
 
@@ -80,7 +82,7 @@ end
 
 ## 호출 스택
 
-구조화된 호출 스택 가져오기:
+`errors.call_stack`을 사용해 structured call stack을 inspect합니다.
 
 ```lua
 local stack = errors.call_stack(err)
@@ -94,16 +96,11 @@ end
 
 ## 재시도 가능한 에러
 
-| 일반적으로 재시도 가능 | 재시도 불가 |
-|----------------------|------------|
-| `TIMEOUT` | `INVALID` |
-| `UNAVAILABLE` | `NOT_FOUND` |
-| `RATE_LIMITED` | `PERMISSION_DENIED` |
-| | `ALREADY_EXISTS` |
+retryability는 error metadata이며 error kind가 보장하는 속성이 아닙니다. `err:kind()`에서 추론하지 말고 `err:retryable()`이 반환한 값을 검사하십시오. 결과가 `nil`이면 retry가 적절한지 error가 지정하지 않은 것입니다.
 
 ```lua
 if err:retryable() then
-    -- 재시도 안전
+    -- safe to retry
 end
 ```
 
