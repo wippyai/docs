@@ -56,7 +56,7 @@
           {"title": "프로세스 그룹", "path": "lua/core/pg"},
           {"title": "Functions", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},
-          {"title": "Stream", "path": "lua/core/stream"},
+          {"title": "스트림", "path": "lua/core/stream"},
           {"title": "컨텍스트", "path": "lua/core/context"},
           {"title": "이벤트", "path": "lua/core/events"},
           {"title": "Registry", "path": "lua/core/registry"},
@@ -103,7 +103,7 @@
           {"title": "로깅", "path": "lua/system/logger"},
           {"title": "I/O", "path": "lua/system/io"},
           {"title": "메트릭", "path": "lua/system/metrics"},
-          {"title": "OS Time", "path": "lua/system/ostime"},
+          {"title": "OS 시간", "path": "lua/system/ostime"},
           {"title": "TTY", "path": "lua/system/tty"},
           {"title": "Hub", "path": "lua/system/hub"}
         ]
@@ -130,7 +130,7 @@
         "children": [
           {"title": "Eval", "path": "lua/dynamic/eval"},
           {"title": "Exec", "path": "lua/dynamic/exec"},
-          {"title": "Expression", "path": "lua/dynamic/expression"}
+          {"title": "표현식", "path": "lua/dynamic/expression"}
         ]
       }
     ]
