@@ -1,11 +1,13 @@
 ---
 title: "ルーティング"
-description: "ルーターはURLプレフィックスの下にエンドポイントをグループ化し、共有ミドルウェアを適用します。エンドポイントはHTTPハンドラを定義します。"
+description: "ルーターはURLプレフィックス配下にエンドポイントをまとめ、共通のミドルウェアを適用します。エンドポイントはHTTPハンドラを定義します。"
 ---
 
 # ルーティング
 
-ルーターはURLプレフィックスの下にエンドポイントをグループ化し、共有ミドルウェアを適用します。エンドポイントはHTTPハンドラを定義します。
+`http.router`はURLプレフィックス配下にエンドポイントをまとめ、共通のミドルウェアを適用します。各`http.endpoint`はHTTPハンドラを定義します。
+
+**分類：ルーティングリファレンス。** 設定ブロックは、名前空間と参照されるすべてのエントリを含む場合を除き、レジストリの一部分です。ハンドラブロックでは、データ層を定義する代わりにアプリケーション所有の関数IDを使用します。
 
 ## アーキテクチャ
 
@@ -23,9 +25,10 @@ flowchart TB
     R2 --> E5[POST /config]
 ```
 
-エントリはメタデータを通じて親を参照します：
-- ルーター: `meta.server: app:gateway`
-- エンドポイント: `meta.router: app:api`
+エントリはメタデータを介して親を参照します：
+
+- ルーター：`meta.server: app:gateway`
+- エンドポイント：`meta.router: app:api`
 
 ## ルーター設定
 
@@ -45,13 +48,13 @@ flowchart TB
 ```
 
 | フィールド | 型 | 説明 |
-|------------|-----|------|
+|-------|------|-------------|
 | `meta.server` | Registry ID | 親HTTPサーバー |
-| `prefix` | string | すべてのルートのURLプレフィックス |
+| `prefix` | string | すべてのルートに適用するURLプレフィックス |
 | `middleware` | []string | マッチ前ミドルウェア |
 | `options` | map | ミドルウェアオプション |
 | `post_middleware` | []string | マッチ後ミドルウェア |
-| `post_options` | map | マッチ後ミドルウェアオプション |
+| `post_options` | map | マッチ後ミドルウェアのオプション |
 
 ## エンドポイント設定
 
@@ -66,15 +69,15 @@ flowchart TB
 ```
 
 | フィールド | 型 | 説明 |
-|------------|-----|------|
+|-------|------|-------------|
 | `meta.router` | Registry ID | 親ルーター |
-| `method` | string | HTTPメソッド（GET、POST、PUT、DELETE、PATCH、HEAD） |
-| `path` | string | URLパスパターン（`/`で開始） |
+| `method` | string | HTTPメソッド：`GET`、`POST`、`PUT`、`DELETE`、`PATCH`、`HEAD`、`OPTIONS`、`TRACE`、またはすべてのメソッドを表す`*` |
+| `path` | string | URLパスパターン（`/`で始まる） |
 | `func` | Registry ID | ハンドラ関数 |
 
 ## パスパラメータ
 
-URLパラメータには`{param}`構文を使用：
+URLパラメータには`{param}`構文を使用します：
 
 ```yaml
 - name: get_post
@@ -86,23 +89,26 @@ URLパラメータには`{param}`構文を使用：
   func: get_user_post
 ```
 
-ハンドラでのアクセス：
+ハンドラからアクセスする例：
 
 ```lua
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("user_id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
 
-    -- ...
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
 ### ワイルドカードパス
 
-`{param...}`で残りのパスセグメントをキャプチャ：
+残りのパスセグメントを`{param...}`でキャプチャします：
 
 ```yaml
 - name: serve_files
@@ -114,30 +120,34 @@ end
   func: serve_file
 ```
 
-```lua
--- リクエスト: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
-```
+ワイルドカードは残りのセグメントに一致します。そのため、`GET /api/v1/files/docs/guides/readme.md`のようなリクエストは、`req:param("filepath")`が`docs/guides/readme.md`に設定された状態でディスパッチされます。
 
-ワイルドカードはパスの最後のセグメントである必要があります。
+ワイルドカードはパスの最後のセグメントでなければなりません。
 
 ## ハンドラ関数
 
-エンドポイントハンドラは`http`モジュールを使用してリクエストとレスポンスオブジェクトにアクセスします。完全なAPIについては[HTTPモジュール](lua/http/http.md)を参照してください。
+エンドポイントハンドラは`http`モジュールを使用して、リクエストオブジェクトとレスポンスオブジェクトにアクセスします。リクエストとレスポンスのAPIリファレンスについては、[HTTPモジュール](../lua/http/http.md)を参照してください。
 
 ```lua
 local http = require("http")
-local json = require("json")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user = get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
-    res:status(200)
-    res:write(json.encode(user))
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -145,7 +155,7 @@ return { handler = handler }
 
 ## ミドルウェアオプション
 
-ミドルウェアオプションはミドルウェア名をプレフィックスとしたドット記法を使用：
+ミドルウェアオプションには、ミドルウェア名をプレフィックスとするドット記法を使用します：
 
 ```yaml
 middleware:
@@ -161,58 +171,60 @@ options:
   token_auth.header.name: "Authorization"
 ```
 
-マッチ後ミドルウェアは`post_options`を使用：
+マッチ後ミドルウェアでは`post_options`を使用します：
 
 ```yaml
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
-## マッチ前 vs マッチ後ミドルウェア
+## プリハンドラとマッチ後ミドルウェア
 
-**マッチ前**（`middleware`）はルートマッチング前に実行：
+**プリハンドラ**（`middleware`）は、サーバーがルートを選択した後、ルートパラメータとエンドポイントメタデータがリクエストコンテキストに付与される前に実行されます：
 - CORS（OPTIONSプリフライトを処理）
 - 圧縮
 - レート制限
-- Real IP検出
-- トークン認証（コンテキスト付加）
+- 実クライアントIPの検出
+- トークン認証（コンテキストの拡充）
 
-**マッチ後**（`post_middleware`）はルートがマッチした後に実行：
+**マッチ後**（`post_middleware`）は、ルートパラメータとエンドポイントメタデータが付与された後に実行されます：
 - エンドポイントファイアウォール（認可にルート情報が必要）
 - リソースファイアウォール
 - WebSocketリレー
 
 ```yaml
-middleware:        # マッチ前: このルーターへのすべてのリクエスト
+middleware:        # Before endpoint metadata: matched routes only
   - cors
   - compress
-  - token_auth     # アクター/スコープでコンテキストを付加
+  - token_auth     # Enriches context with actor/scope
 
-post_middleware:   # マッチ後: マッチしたルートのみ
-  - endpoint_firewall  # token_authからのアクターを使用
+post_middleware:   # Post-match: matched routes only
+  - endpoint_firewall  # Uses actor from token_auth
 ```
 
 <tip>
-トークン認証はコンテキストを付加するだけでリクエストをブロックしないため、マッチ前にできます。認可はtoken_authで設定されたアクターを使用する<code>endpoint_firewall</code>のようなマッチ後ミドルウェアで行われます。
+トークン認証は、認可より前にリクエストコンテキストを拡充するため、プリハンドラチェーンに置きます。<code>endpoint_firewall</code>などの認可ミドルウェアは、一致したエンドポイントIDを必要とするため、マッチ後チェーンに置きます。一致しないリクエストでは、どちらのルーターチェーンも実行されません。
 </tip>
 
-## 完全な例
+## ルーターとエンドポイントの接続
+
+次の例では一覧ハンドラのエントリを定義しています。`app:get_user_by_id`と`app:create_user`の関数IDは、同じ名前空間の別の場所で定義されたハンドラを参照します。
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  # サーバー
+  # Server
   - name: gateway
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # APIルーター
+  # API Router
   - name: api
     kind: http.router
     meta:
@@ -227,7 +239,7 @@ entries:
       ratelimit.requests: "100"
       ratelimit.window: "1m"
 
-  # ハンドラ関数
+  # Handler function
   - name: get_users
     kind: function.lua
     source: file://handlers/users.lua
@@ -237,7 +249,7 @@ entries:
       - json
       - sql
 
-  # エンドポイント
+  # Endpoints
   - name: list_users
     kind: http.endpoint
     meta:
@@ -265,11 +277,11 @@ entries:
 
 ## 保護されたルート
 
-認証を使用した一般的なパターン：
+次の設定では、公開ルートと、認証および認可を必要とするルートを分離します：
 
 ```yaml
 entries:
-  # パブリックルート（認証なし）
+  # Public routes (no auth)
   - name: public
     kind: http.router
     meta:
@@ -278,7 +290,7 @@ entries:
     middleware:
       - cors
 
-  # 保護されたルート
+  # Protected routes
   - name: protected
     kind: http.router
     meta:
@@ -288,14 +300,14 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```
 
 ## 関連項目
 
-- [サーバー](http/server.md) - HTTPサーバー設定
-- [静的ファイル](http/static.md) - 静的ファイル配信
-- [ミドルウェア](http/middleware.md) - 利用可能なミドルウェア
-- [HTTPモジュール](lua/http/http.md) - Lua HTTP API
+- [サーバー](./server.md) - HTTPサーバー設定
+- [静的ファイル](./static.md) - 静的ファイルの配信
+- [ミドルウェア](./middleware.md) - 利用可能なミドルウェア
+- [HTTPモジュール](../lua/http/http.md) - Lua HTTP API

@@ -1,11 +1,13 @@
 ---
 title: "静的ファイル"
-description: "http.staticを使用して任意のファイルシステムから静的ファイルを配信します。静的ハンドラはサーバーに直接マウントし、任意のパスからSPA、アセット、またはユーザーアップロードを配信できます。"
+description: "http.staticを使用して、ファイルシステムエントリからSPA、アセット、ユーザーのアップロードを配信します。"
 ---
 
 # 静的ファイル
 
-`http.static`を使用して任意のファイルシステムから静的ファイルを配信します。静的ハンドラはサーバーに直接マウントし、任意のパスからSPA、アセット、またはユーザーアップロードを配信できます。
+`http.static`ハンドラはサーバーに直接マウントされ、ファイルシステムエントリからSPA、アセット、ユーザーのアップロードを配信します。
+
+**分類：静的ハンドラリファレンス。** YAMLブロックは、指定されたHTTPサーバーが存在することを前提としています。これらのホスト作成の例では、相対的な`fs.directory`パスはプロジェクトの作業ディレクトリから解決されます。一方、モジュール所有のエントリでは、`base: project`を設定しない限り、所有モジュールのソースルートから相対パスを解決します。参照されるファイルは別途作成する必要があります。
 
 ## 設定
 
@@ -16,7 +18,6 @@ description: "http.staticを使用して任意のファイルシステムから�
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -24,33 +25,32 @@ description: "http.staticを使用して任意のファイルシステムから�
 ```
 
 | フィールド | 型 | 説明 |
-|------------|-----|------|
+|-------|------|-------------|
 | `meta.server` | Registry ID | 親HTTPサーバー |
-| `path` | string | URLマウントパス（`/`で開始する必要があります） |
+| `path` | string | URLマウントパス（`/`で始まる必要があります） |
 | `fs` | Registry ID | 配信元のファイルシステムエントリ |
-| `directory` | string | ファイルシステム内のサブディレクトリ |
-| `static_options.spa` | bool | SPAモード - マッチしないパスにindexを配信 |
-| `static_options.index` | string | インデックスファイル（spa=trueの場合必須） |
-| `static_options.cache` | string | Cache-Controlヘッダー値 |
+| `static_options.spa` | bool | SPAモード（一致しないパスにはindexを配信） |
+| `static_options.index` | string | インデックスファイル（`spa=true`の場合は必須） |
+| `static_options.cache` | string | Cache-Controlヘッダーの値 |
 | `middleware` | []string | ミドルウェアチェーン |
 | `options` | map | ミドルウェアオプション（ドット記法） |
 
 <tip>
-静的ハンドラはサーバー上の任意のパスにマウントできます。複数のハンドラが共存できます—アセットを<code>/static</code>に、SPAを<code>/</code>にマウント。
+静的ハンドラはサーバー上の任意のパスにマウントできます。複数のハンドラを共存させ、アセットを<code>/static</code>に、SPAを<code>/</code>にマウントできます。
 </tip>
 
-## ファイルシステム統合
+## ファイルシステムとの統合
 
-静的ファイルはファイルシステムエントリから配信されます。任意のファイルシステムタイプが動作します：
+静的ファイルはファイルシステムエントリから配信されます。どのファイルシステムタイプでも使用できます：
 
 ```yaml
 entries:
-  # ローカルディレクトリ
+  # Local directory
   - name: public
     kind: fs.directory
     directory: ./public
 
-  # 静的ハンドラ
+  # Static handler
   - name: static
     kind: http.static
     meta:
@@ -59,23 +59,27 @@ entries:
     fs: public
 ```
 
-リクエスト`/static/css/style.css`は`./public/css/style.css`を配信します。
+リクエスト`/static/css/style.css`に対して`./public/css/style.css`が配信されます。
 
-`directory`フィールドはファイルシステム内のサブディレクトリを選択：
+サブディレクトリを配信するには、その場所をルートとするファイルシステムエントリを`fs`から参照します。たとえば、`fs.directory`を使用し、その`directory:`をサブディレクトリに設定します：
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPAモード
 
-シングルページアプリケーションはクライアントサイドルーティング用にすべてのルートで同じindexファイルを配信する必要があります：
+クライアント側ルーティングを行うSingle Page Applicationでは、すべてのルートから同じインデックスファイルを配信する必要があります：
 
 ```yaml
 - name: spa
@@ -90,18 +94,18 @@ entries:
 ```
 
 | リクエスト | レスポンス |
-|-----------|----------|
+|---------|----------|
 | `/app.js` | `app.js`を配信（ファイルが存在） |
 | `/users/123` | `index.html`を配信（SPAフォールバック） |
 | `/api/data` | `index.html`を配信（SPAフォールバック） |
 
 <note>
-<code>spa: true</code>の場合、<code>index</code>ファイルは必須です。既存のファイルは直接配信され、他のすべてのパスはindexファイルを返します。
+<code>spa: true</code>の場合、<code>index</code>ファイルは必須です。存在するファイルは直接配信され、それ以外のパスではすべてインデックスファイルが返されます。
 </note>
 
 ## キャッシュ制御
 
-異なるアセットタイプに適切なキャッシュを設定：
+アセットの種類ごとに適切なキャッシュを設定します：
 
 ```yaml
 entries:
@@ -109,18 +113,17 @@ entries:
     kind: fs.directory
     directory: ./dist
 
-  # バージョン付きアセット - 永久キャッシュ
+  # Versioned assets - cache forever
   - name: assets
     kind: http.static
     meta:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 
-  # HTML - 短いキャッシュ、再検証必須
+  # HTML - short cache, must revalidate
   - name: app
     kind: http.static
     meta:
@@ -134,13 +137,14 @@ entries:
 ```
 
 一般的なキャッシュパターン：
-- **バージョン付きアセット**: `public, max-age=31536000, immutable`
-- **HTML/index**: `public, max-age=0, must-revalidate`
-- **ユーザーアップロード**: `private, max-age=3600`
+
+- **バージョン付きアセット**：`public, max-age=31536000, immutable`
+- **HTML／index**：`public, max-age=0, must-revalidate`
+- **ユーザーのアップロード**：`private, max-age=3600`
 
 ## ミドルウェア
 
-圧縮、CORS、その他の処理にミドルウェアを適用：
+圧縮、CORS、その他の処理を行うミドルウェアを適用できます：
 
 ```yaml
 - name: static
@@ -157,15 +161,15 @@ entries:
     cors.allow.origins: "*"
 ```
 
-ミドルウェアは静的ハンドラを順番にラップします—リクエストはファイルサーバーに到達する前に各ミドルウェアを通過します。
+ミドルウェアは記載された順に静的ハンドラをラップします。リクエストはファイルサーバーに到達する前に各ミドルウェアを通過します。
 
 <warning>
-パスマッチングはプレフィックスベースです。<code>/</code>のハンドラはすべてのマッチしないリクエストをキャッチします。競合を避けるためにAPIエンドポイントにはルーターを使用してください。
+パスの照合はプレフィックスベースです。<code>/</code>に置かれたハンドラは、一致しなかったすべてのリクエストを受け取ります。APIエンドポイントとの競合を避けるにはルーターを使用してください。
 </warning>
 
 ## 関連項目
 
-- [サーバー](http/server.md) - HTTPサーバー設定
-- [ルーティング](http/router.md) - ルーターとエンドポイント
-- [ファイルシステム](lua/storage/filesystem.md) - ファイルシステムモジュール
-- [ミドルウェア](http/middleware.md) - 利用可能なミドルウェア
+- [サーバー](./server.md) - HTTPサーバー設定
+- [ルーティング](./router.md) - ルーターとエンドポイント
+- [ファイルシステム](../lua/storage/filesystem.md) - ファイルシステムモジュール
+- [ミドルウェア](./middleware.md) - 利用可能なミドルウェア
