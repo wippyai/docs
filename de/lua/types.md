@@ -1,13 +1,15 @@
 ---
 title: "Typsystem"
-description: "Wippy enthält ein graduelles Typsystem mit flusssensitiver Prüfung. Typen sind standardmäßig nicht-nullbar."
+description: "Syntax und Runtime-Verhalten von Wippys graduellem Typsystem, einschließlich Unions, Records, Generics, Validierung und Reflektion."
 ---
 
 # Typsystem
 
-> **Experimentell.** Einige Einschränkungen sind zu erwarten.
+> **Experimentell.** Das Typsystem wird weiterentwickelt; einige Einschränkungen sind zu erwarten.
 
-Wippy enthält ein graduelles Typsystem mit flusssensitiver Prüfung. Typen sind standardmäßig nicht-nullbar.
+Wippys graduelles Typsystem unterstützt schrittweise Annotationen und flusssensitive Prüfung. Typen sind standardmäßig nicht-nullbar.
+
+Diese Seite ist eine Sprachreferenz und kein vollständiges Programm. Jeder Codeblock ist ein isoliertes Typprüfungsbeispiel; Alternativen innerhalb eines Blocks sind nicht zwingend zur gemeinsamen Verwendung gedacht. Namen wie `get_data`, `get_user`, `call` und `User` stehen für Anwendungscode. Mit `ERROR` markierte Zeilen demonstrieren absichtlich Diagnosen. Die Beispiele verwenden Sprachsyntax und integrierte Typwerte und benötigen daher keine Runtime-Module.
 
 ## Primitive
 
@@ -16,20 +18,22 @@ local n: number = 3.14
 local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- explicit dynamic (opt-out of checking)
-local u: unknown = something  -- must narrow before use
+local a: any = "anything"     -- dynamic member and method access
+local u: unknown = { source = "example" }  -- must narrow before use
 ```
 
-### any vs. unknown
+### `any` und `unknown`
 
 ```lua
--- any: opt-out of type checking
+-- any: dynamic member and method access
 local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
+local s: string = a          -- ERROR: any is not assignable to string
 
--- unknown: safe unknown, must narrow before use
+-- unknown: safe unknown, must narrow before use as a concrete type
 local u: unknown = get_data()
-u.foo                        -- ERROR: cannot access property of unknown
+u.foo                        -- no error: member access on unknown behaves like any
+local n: number = u          -- ERROR: unknown not assignable to number, narrow first
 if type(u) == "table" then
     -- u narrowed to table here
 end
@@ -183,11 +187,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -204,7 +208,7 @@ end
 
 ## Der never-Typ
 
-`never` ist der Bottom-Typ — es existieren keine Werte:
+`never` ist der Bottom-Typ: Er besitzt keine möglichen Werte.
 
 ```lua
 function fail(msg: string): never
@@ -228,20 +232,20 @@ print(value)
 
 ## Non-Nil-Assertion
 
-Verwende `!`, um zu beteuern, dass ein Ausdruck nicht nil ist:
+Verwenden Sie `!`, um zu bestätigen, dass ein Ausdruck nicht `nil` ist:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- assert user is non-nil
+local name = (user!).name            -- assert user is non-nil
 ```
 
-Wenn der Wert zur Laufzeit nil ist, wird ein Fehler ausgelöst. Verwende dies, wenn du weißt, dass ein Wert nicht nil sein kann, der Typprüfer dies aber nicht beweisen kann.
+`!` ist ausschließlich eine Assertion für den Typprüfer: Sie verengt den Typ auf Nicht-`nil`, erzeugt aber keine Runtime-Prüfung. Ist der Wert tatsächlich `nil`, schlägt die folgende Operation mit dem üblichen Fehler fehl, etwa beim Indizieren von `nil`. Verwenden Sie die Assertion, wenn ein Wert sicher nicht `nil` sein kann, der Typprüfer dies aber nicht beweisen kann.
 
 ## Typ-Casts
 
-### Sicherer Cast (Validierung)
+### Runtime-Validierung
 
-Rufe einen Typ als Funktion auf, um zu validieren und zu casten:
+Rufen Sie einen Typ als Funktion auf, um einen Wert zu validieren. Die Validierung gibt den ursprünglichen Wert mit dem angeforderten statischen Typ zurück; sie konvertiert oder koerziert ihn nicht:
 
 ```lua
 local data: any = get_json()
@@ -249,21 +253,23 @@ local user = User(data)              -- validates and returns User
 local name = user.name               -- safe field access
 ```
 
-Funktioniert mit Primitiven und benutzerdefinierten Typen:
+Dies funktioniert mit primitiven und benutzerdefinierten Typen:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- cast to string
-local n = integer(x)                 -- cast to integer
-local b = boolean(x)                 -- cast to boolean
+local s = string(x)                  -- requires an existing string
+local n = integer(x)                 -- requires an existing integer
+local b = boolean(x)                 -- requires an existing boolean
 
 type Point = {x: number, y: number}
 local p = Point(data)                -- validates record structure
 ```
 
-### Type:is()-Methode
+Beispielsweise löst `string(42)` einen Validierungsfehler aus; verwenden Sie `tostring(42)`, wenn eine Konvertierung beabsichtigt ist.
 
-Validiert ohne zu werfen, gibt `(value, nil)` oder `(nil, error)` zurück:
+### `Type:is()`-Methode
+
+`Type:is` validiert, ohne einen Fehler auszulösen, und gibt entweder `(value, nil)` oder `(nil, error)` zurück:
 
 ```lua
 type Point = {x: number, y: number}
@@ -277,7 +283,7 @@ else
 end
 ```
 
-Das Ergebnis verfeinert sich in Conditionals:
+Das Ergebnis verengt den Typ in Bedingungen:
 
 ```lua
 if Point:is(data) then
@@ -287,7 +293,7 @@ end
 
 ### Unsicherer Cast
 
-Verwende `::` oder `as` für ungeprüfte Casts:
+Verwenden Sie `::` oder `as` für ungeprüfte Casts:
 
 ```lua
 local data: any = get_data()
@@ -295,16 +301,17 @@ local user = data :: User            -- no runtime check
 local user = data as User            -- same as ::
 ```
 
-Sparsam verwenden. Unsichere Casts umgehen die Validierung und können Laufzeitfehler verursachen, wenn der Wert nicht zum Typ passt.
+Verwenden Sie diese sparsam. Unsichere Casts umgehen die Validierung und können Runtime-Fehler verursachen, wenn der Wert nicht zum Typ passt.
 
 ## Typ-Reflektion
 
-Typen sind First-Class-Werte mit Introspektionsmethoden.
+Typen sind erstklassige Werte mit Introspektionsmethoden.
 
 ### Kind und Name
 
 ```lua
-print(Number:kind())                 -- "number"
+type NumberType = number
+print(NumberType:kind())             -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -333,23 +340,20 @@ print(nameType:kind())               -- "string"
 ### Collection-Typen
 
 ```lua
-local arr: {number} = {1, 2, 3}
-local arrType = typeof(arr)
-print(arrType:elem():kind())         -- "number"
+type NumberArray = {number}
+print(NumberArray:elem():kind())     -- "number"
 
-local map: {[string]: number} = {}
-local mapType = typeof(map)
-print(mapType:key():kind())          -- "string"
-print(mapType:val():kind())          -- "number"
+type NumberMap = {[string]: number}
+print(NumberMap:key():kind())        -- "string"
+print(NumberMap:val():kind())        -- "number"
 ```
 
 ### Optionale Typen
 
 ```lua
-local opt: number? = nil
-local optType = typeof(opt)
-print(optType:kind())                -- "optional"
-print(optType:inner():kind())        -- "number"
+type OptionalNumber = number?
+print(OptionalNumber:kind())         -- "optional"
+print(OptionalNumber:inner():kind()) -- "number"
 ```
 
 ### Union-Typen
@@ -365,31 +369,37 @@ end
 ### Funktionstypen
 
 ```lua
-local fn: (number, string) -> boolean
-
-local fnType = typeof(fn)
-for param in fnType:params() do
+type Predicate = (number, string) -> boolean
+for param in Predicate:params() do
     print(param:kind())
 end
-print(fnType:ret():kind())           -- "boolean"
+print(Predicate:ret():kind())        -- "boolean"
 ```
+
+`typeof(expression)` ist Typsyntax und keine Runtime-Reflektionsfunktion. Verwenden Sie sie in einem Alias wie `type Config = typeof(default_config)`; der resultierende Alias ist der Runtime-Typwert.
 
 ### Typ-Vergleich
 
 ```lua
-print(Number == Number)              -- true
-print(Integer <= Number)             -- true (subtype)
-print(Integer < Number)              -- true (strict subtype)
+type NumberType = number
+type IntegerType = integer
+
+print(NumberType == NumberType)      -- true
+print(IntegerType <= NumberType)     -- true (subtype)
+print(IntegerType < NumberType)      -- true (strict subtype)
 ```
 
 ### Typen als Tabellenschlüssel
 
 ```lua
-local handlers = {}
-handlers[Number] = function() return "number handler" end
-handlers[String] = function() return "string handler" end
+type NumberType = number
+type StringType = string
 
-local h = handlers[typeof(value)]
+local handlers = {}
+handlers[NumberType] = function() return "number handler" end
+handlers[StringType] = function() return "string handler" end
+
+local h = handlers[NumberType]
 if h then h() end
 ```
 
@@ -413,31 +423,29 @@ type StringMap = {[string]: number}
 
 ## Typ-Validatoren
 
-Füge Typen Laufzeit-Validierungs-Constraints über Annotationen hinzu:
+Hängen Sie Typaliasen mit Annotationen Validierungsbedingungen an. Rufen Sie anschließend den Typ auf oder verwenden Sie `Type:is()`, um sie zur Laufzeit durchzusetzen:
 
 ```lua
--- Single validator
-local x: number @min(0) = 1
+type NonNegative = number @min(0)
+type Percentage = number @min(0) @max(100)
+type Email = string @pattern("^.+@.+$")
 
--- Multiple validators
-local x: number @min(0) @max(100) = 50
-
--- String pattern
-local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- No-arg validator
-local x: number @integer = 42
+local x = NonNegative(1)
+local percent, err = Percentage:is(50)
+local email = Email("test@example.com")
 ```
+
+Eine Annotation an einer lokalen Variable wird vom Linter statisch geprüft. Sie fügt bei der Zuweisung keine automatische Runtime-Prüfung ein; die Durchsetzung zur Laufzeit erfolgt, wenn ein Typwert einen Wert validiert.
 
 ### Eingebaute Validatoren
 
 | Validator | Gilt für | Beispiel |
 |-----------|------------|---------|
-| `@min(n)` | number | `local x: number @min(0) = 1` |
-| `@max(n)` | number | `local x: number @max(100) = 50` |
-| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
-| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
-| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+| `@min(n)` | number | `type Positive = number @min(1)` |
+| `@max(n)` | number | `type Percentage = number @max(100)` |
+| `@min_len(n)` | string, array | `type NonEmpty = string @min_len(1)` |
+| `@max_len(n)` | string, array | `type ShortName = string @max_len(10)` |
+| `@pattern(regex)` | string | `type Email = string @pattern("^.+@.+$")` |
 
 ### Validatoren für Record-Felder
 
@@ -465,7 +473,7 @@ local id: number @min(1) | string @min_len(1) = 1
 | Position | Varianz | Beschreibung |
 |----------|----------|-------------|
 | Readonly-Feld | Kovariant | Subtyp erlaubt |
-| Veränderliches Feld | Invariant | Muss exakt übereinstimmen |
+| Veränderliches Feld | Quasi-invariant | Normalerweise invariant; frische Literale und Verengungen können auf ihren Basistyp erweitert werden |
 | Funktionsparameter | Kontravariant | Supertyp erlaubt |
 | Funktions-Rückgabe | Kovariant | Subtyp erlaubt |
 
@@ -478,7 +486,7 @@ local id: number @min(1) | string @min_len(1) = 1
 
 ## Schrittweise Einführung
 
-Typen inkrementell hinzufügen — untypisierter Code funktioniert weiterhin:
+Typen lassen sich schrittweise hinzufügen; untypisierter Code funktioniert weiterhin:
 
 ```lua
 -- Existing code works unchanged
@@ -492,17 +500,18 @@ function new_function(x: number): number
 end
 ```
 
-Beginne damit, Typen hinzuzufügen zu:
+Sinnvolle Ausgangspunkte sind:
+
 1. Funktionssignaturen an API-Grenzen
 2. HTTP-Handler und Queue-Konsumenten
 3. Kritischer Geschäftslogik
 
 ## Typprüfung
 
-Den Typprüfer ausführen:
+Führen Sie den Typprüfer aus mit:
 
 ```bash
 wippy lint
 ```
 
-Meldet Typfehler, ohne Code auszuführen.
+Der Befehl meldet Typfehler, ohne Code auszuführen.

@@ -41,18 +41,18 @@
   {
     "title": "Lua Runtime",
     "children": [
-      {"title": "Overview", "path": "lua/overview"},
+      {"title": "Lua-Runtime", "path": "lua/overview"},
       {"title": "Warum Lua", "path": "lua/why-lua"},
-      {"title": "Types", "path": "lua/types"},
-      {"title": "Entries", "path": "lua/entries"},
+      {"title": "Typsystem", "path": "lua/types"},
+      {"title": "Lua-Entry-Kinds", "path": "lua/entries"},
       {
         "title": "Core",
         "children": [
-          {"title": "Base", "path": "lua/core/base"},
-          {"title": "Errors", "path": "lua/core/errors"},
-          {"title": "Time", "path": "lua/core/time"},
-          {"title": "Channels", "path": "lua/core/channel"},
-          {"title": "Process", "path": "lua/core/process"},
+          {"title": "Standardbibliotheken", "path": "lua/core/base"},
+          {"title": "Fehler", "path": "lua/core/errors"},
+          {"title": "Zeit und Dauer", "path": "lua/core/time"},
+          {"title": "Channels und Coroutinen", "path": "lua/core/channel"},
+          {"title": "Prozessverwaltung", "path": "lua/core/process"},
           {"title": "Prozessgruppen", "path": "lua/core/pg"},
           {"title": "Functions", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},

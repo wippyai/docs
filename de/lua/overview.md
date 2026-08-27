@@ -1,51 +1,56 @@
 ---
-title: "Lua-Laufzeitumgebung"
-description: "Die primäre Laufzeitumgebung von Wippy, optimiert für E/A-gebundene Workloads und Geschäftslogik. Code läuft in isolierten Prozessen, die über…"
+title: "Lua-Runtime"
+description: "Wie Lua-Code in Wippy-Prozessen läuft, über Channels kommuniziert, Module lädt und Fehler behandelt."
 ---
 
-# Lua-Laufzeitumgebung
+# Lua-Runtime
 
-Die primäre Laufzeitumgebung von Wippy, optimiert für E/A-gebundene Workloads und Geschäftslogik. Code läuft in isolierten Prozessen, die über Nachrichtenübergabe kommunizieren - kein gemeinsamer Speicher, keine Sperren.
+Lua ist Wippys primäre Runtime für E/A-gebundene Arbeit und Geschäftslogik. Code läuft in isolierten Prozessen, die über Nachrichten statt über gemeinsamen Speicher kommunizieren.
 
-Wippy ist als polyglotte Laufzeitumgebung konzipiert. Während Lua die primäre Sprache ist, werden zukünftige Versionen zusätzliche Sprachen über WebAssembly und Temporal-Integration für rechenintensive oder spezialisierte Workloads unterstützen.
+Diese Seite bietet einen konzeptionellen Überblick. Ihre Codeblöcke sind isolierte Referenz-Snippets; Namen wie `inbox`, `events` und `handle_message` stehen für Werte oder Callbacks aus der umgebenden Anwendung.
+
+Die Designabwägungen hinter Lua und das Verhältnis zu WebAssembly erläutert [Warum Wippy Lua verwendet](why-lua.md).
 
 ## Prozesse
 
-Ihr Lua-Code läuft innerhalb von **Prozessen** - isolierten Ausführungskontexten, die vom Scheduler verwaltet werden. Jeder Prozess:
+Lua-Code läuft in **Prozessen**: isolierten Ausführungskontexten, die der Scheduler verwaltet. Jeder Prozess:
 
-- Hat seinen eigenen Speicherbereich
-- Gibt bei blockierenden Operationen ab (E/A, Channels)
-- Kann überwacht und beaufsichtigt werden
-- Skaliert auf Tausende pro Maschine
-
-<note>
-Ein typischer Lua-Prozess hat einen Basis-Speicher-Overhead von ca. 13 KB.
-</note>
+- besitzt einen eigenen Speicherbereich;
+- gibt die Ausführung bei blockierenden Operationen wie E/A und Channel-Zugriff frei;
+- kann überwacht und beaufsichtigt werden; und
+- kann neben Tausenden anderen Prozessen auf einem Rechner laufen.
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "task", {data = "work"})
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then
+    return nil, err
+end
+
+local sent, send_err = process.send(pid, "task", {data = "work"})
+if send_err then
+    return nil, send_err
+end
 ```
 
-Siehe [Prozessverwaltung](lua/core/process.md) für Spawning, Linking und Überwachung.
+Ausführbare Lua-Einträge erhalten `process` als ambienten globalen Wert. Das Modul lässt sich auch mit `require("process")` laden, ohne es in die `modules`-Liste des Eintrags aufzunehmen. Siehe [Prozessverwaltung](core/process.md) für Spawning, Linking und Überwachung.
 
 ## Channels
 
-Go-ähnliche Channels für Kommunikation:
+Channels ermöglichen die Kommunikation zwischen nebenläufigen Tasks:
 
 ```lua
-local ch = channel.new()        -- ungepuffert
+local sync_ch = channel.new()   -- unbuffered
 local buffered = channel.new(10)
 
-ch:send(value)                  -- blockiert bis empfangen
-local val, ok = ch:receive()    -- blockiert bis bereit
+buffered:send("work")           -- completes while buffer space is available
+local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-Siehe [Channels](lua/core/channel.md) für Select und Muster.
+Siehe [Channels](core/channel.md) für Select und Muster.
 
 ## Coroutinen
 
-Innerhalb eines Prozesses können Sie leichtgewichtige Coroutinen starten:
+Verwenden Sie innerhalb eines Prozesses leichtgewichtige Coroutinen für nebenläufige Arbeit:
 
 ```lua
 coroutine.spawn(function()
@@ -53,14 +58,14 @@ coroutine.spawn(function()
     ch:send(data)
 end)
 
-do_other_work()  -- setzt sofort fort
+do_other_work()  -- continues immediately
 ```
 
-Gespawnte Coroutinen werden vom Scheduler verwaltet - kein manuelles Yield/Resume.
+Der Scheduler verwaltet gestartete Coroutinen; Aufrufer müssen sie nicht manuell pausieren oder fortsetzen.
 
 ## Select
 
-Behandeln Sie mehrere Ereignisquellen:
+Verwenden Sie `channel.select`, um auf mehrere Ereignisquellen zu warten:
 
 ```lua
 local r = channel.select {
@@ -70,7 +75,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- Timeout aufgetreten
+    -- timed out
 elseif r.channel == events then
     handle_event(r.value)
 else
@@ -78,39 +83,42 @@ else
 end
 ```
 
-## Globale Variablen
+## Globale Werte
 
-Diese sind immer ohne `require` verfügbar und müssen nicht in `modules:` aufgeführt werden:
+Die folgenden globalen Werte sind ohne `require` verfügbar und müssen nicht in `modules:` aufgeführt werden:
 
-- `process` - Prozesse spawnen, Nachrichten senden, überwachen und verknüpfen
 - `channel` - Go-ähnliche Channels
-- `payload` - das Eingabe-Payload des Entrys
+- `payload` - Eingabe-Payload des Eintrags
+- `process` - Prozesse starten, Nachrichten senden, überwachen und den Lebenszyklus verwalten
 - `print`, `subscribe`, `unsubscribe` - Logging und Pub/Sub
 - `os`, `table`, `math`, `string`, `coroutine`, `errors` - Standardbibliotheken
 
 ## Module
 
-Alles andere wird mit `require()` geladen und muss in der `modules:`-Allowlist des Entrys erscheinen:
+Nicht ambiente, integrierte Runtime-Module werden mit `require()` geladen und müssen in der `modules:`-Allowlist des Eintrags stehen. Ausführbare Einträge erhalten `process` als ambienten globalen Wert; `require("process")` ist ebenfalls ohne `modules:`-Deklaration erlaubt.
 
 ```lua
+local process = require("process")
 local json = require("json")
 local sql = require("sql")
 local http = require("http_client")
 ```
 
-Verfügbare Module hängen von der Entry-Konfiguration ab. Siehe [Entry-Definitionen](lua/entries.md).
+Verfügbare Module hängen von der Eintragskonfiguration ab. Siehe [Eintragsdefinitionen](entries.md).
 
-## Externe Bibliotheken
+Registry-Bibliotheken verwenden dieselbe Syntax `require("alias")`, werden aber separat in der `imports:`-Map des Eintrags deklariert.
 
-Wippy verwendet Lua 5.3-Syntax mit einem [graduellen Typsystem](lua/types.md), inspiriert von Luau. Typen sind erstklassige Laufzeitwerte - aufrufbar zur Validierung, als Argumente übergebbar und introspektierbar - was den Bedarf an Schema-Bibliotheken wie Zod oder Pydantic ersetzt.
+## Sprach- und Bibliotheksunterstützung
 
-Externe Lua-Bibliotheken (LuaRocks, etc.) werden nicht unterstützt. Die Laufzeitumgebung stellt ihr eigenes Modulsystem mit integrierten Erweiterungen für E/A, Netzwerk und Systemintegration bereit.
+Wippy verwendet Lua-5.3-Syntax mit einem von Luau inspirierten [graduellen Typsystem](types.md). Typen sind erstklassige Runtime-Werte, die sich zur Validierung verwenden, als Argumente übergeben und zur Laufzeit untersuchen lassen.
 
-Für benutzerdefinierte Erweiterungen siehe [Module](internals/modules.md) in der Internals-Dokumentation.
+Externe Lua-Bibliotheken (LuaRocks usw.) werden nicht unterstützt. Die Runtime stellt ihr eigenes Modulsystem mit integrierten Erweiterungen für E/A, Netzwerk und Systemintegration bereit.
+
+Benutzerdefinierte Erweiterungen behandelt [Module](../internals/modules.md) in der Internals-Dokumentation.
 
 ## Fehlerbehandlung
 
-Funktionen geben `result, error`-Paare zurück:
+Funktionen geben häufig `result, error`-Paare zurück:
 
 ```lua
 local data, err = json.decode(input)
@@ -119,11 +127,11 @@ if err then
 end
 ```
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für Muster.
+Dieses Snippet setzt voraus, dass `json` in der `modules`-Liste des Eintrags aktiviert ist und `input` den zu dekodierenden String enthält. Siehe [Fehlerbehandlung](core/errors.md) für Muster.
 
 ## Nächste Schritte
 
-- [Entry-Definitionen](lua/entries.md) - Einstiegspunkte konfigurieren
-- [Channels](lua/core/channel.md) - Channel-Muster
-- [Prozessverwaltung](lua/core/process.md) - Spawning und Überwachung
-- [Funktionen](lua/core/funcs.md) - Prozessübergreifende Aufrufe
+- [Eintragsdefinitionen](entries.md) - Einstiegspunkte konfigurieren
+- [Channels](core/channel.md) - Channel-Muster
+- [Prozessverwaltung](core/process.md) - Spawning und Überwachung
+- [Funktionen](core/funcs.md) - Prozessübergreifende Aufrufe

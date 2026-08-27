@@ -1,6 +1,6 @@
 ---
 title: "Standard-Lua-Bibliotheken"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Integrierte Lua-Globals sowie APIs für Tabellen, Strings, Mathematik, Coroutinen und strukturierte Fehler in Wippy-Einträgen."
 ---
 
 # Standard-Lua-Bibliotheken
@@ -8,40 +8,42 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Kern-Lua-Bibliotheken, die automatisch in allen Wippy-Prozessen verfügbar sind. Kein `require()` erforderlich.
+Diese Lua-Kernbibliotheken sind in jedem ausführbaren Lua-Eintrag ohne `require()` verfügbar.
 
-## Globale Funktionen
+Diese Seite ist eine API-Referenz. Signaturblöcke führen verfügbare Funktionen auf; die längeren Blöcke sind isolierte Beispiele oder partielle Muster und keine vollständigen Einträge. Namen wie `check_health` und `process_request` stehen für Callbacks der Anwendung.
+
+## Integrierte globale Funktionen
 
 ### Typ und Konvertierung
 
 ```lua
-type(value)         -- Gibt zurück: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
-tonumber(s [,base]) -- Zu Zahl konvertieren, optionale Basis (2-36)
-tostring(value)     -- Zu String konvertieren, ruft __tostring-Metamethode auf
+type(value)         -- Returns: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
+tonumber(s [,base]) -- Convert to number, optional base (2-36)
+tostring(value)     -- Convert to string, calls __tostring metamethod
 ```
 
 ### Assertions und Fehler
 
 ```lua
-assert(v [,msg])    -- Wirft Fehler wenn v false/nil ist, gibt sonst v zurück
-error(msg [,level]) -- Wirft Fehler auf angegebenem Stack-Level (Standard 1)
-pcall(fn, ...)      -- Geschützter Aufruf, gibt ok, result_or_error zurück
-xpcall(fn, errh)    -- Geschützter Aufruf mit Fehlerhandler-Funktion
+assert(v [,msg])    -- Raises error if v is false/nil, returns v otherwise
+error(msg [,level]) -- Raises error at specified stack level (default 1)
+pcall(fn, ...)      -- Protected call, returns ok, result_or_error
+xpcall(fn, errh)    -- Protected call with error handler function
 ```
 
 ### Tabelleniteration
 
 ```lua
-pairs(t)            -- Iteriert alle Schlüssel-Wert-Paare
-ipairs(t)           -- Iteriert Array-Teil (1, 2, 3, ...)
-next(t [,index])    -- Holt nächstes Schlüssel-Wert-Paar nach Index
+pairs(t)            -- Iterate all key-value pairs
+ipairs(t)           -- Iterate array portion (1, 2, 3, ...)
+next(t [,index])    -- Get next key-value pair after index
 ```
 
 ### Metatables
 
 ```lua
-getmetatable(obj)       -- Holt Metatable (oder __metatable-Feld wenn geschützt)
-setmetatable(t, mt)     -- Setzt Metatable, gibt t zurück
+getmetatable(obj)       -- Get metatable (or __metatable field if protected)
+setmetatable(t, mt)     -- Set metatable, returns t
 ```
 
 ### Roher Tabellenzugriff
@@ -49,38 +51,37 @@ setmetatable(t, mt)     -- Setzt Metatable, gibt t zurück
 Umgeht Metamethoden für direkten Tabellenzugriff:
 
 ```lua
-rawget(t, k)        -- Holt t[k] ohne __index
-rawset(t, k, v)     -- Setzt t[k]=v ohne __newindex
-rawequal(a, b)      -- Vergleicht ohne __eq
+rawget(t, k)        -- Get t[k] without __index
+rawset(t, k, v)     -- Set t[k]=v without __newindex
+rawequal(a, b)      -- Compare without __eq
 ```
 
 ### Hilfsfunktionen
 
 ```lua
-select(index, ...)  -- Gibt Argumente ab Index zurück
-select("#", ...)    -- Gibt Anzahl der Argumente zurück
-unpack(t [,i [,j]]) -- Gibt t[i] bis t[j] als mehrere Werte zurück
-print(...)          -- Gibt Werte aus (verwendet strukturiertes Logging in Wippy)
+select(index, ...)  -- Return args from index onwards
+select("#", ...)    -- Return number of args
+unpack(t [,i [,j]]) -- Return t[i] through t[j] as multiple values
+print(...)          -- Print values (uses structured logging in Wippy)
 ```
 
 ### Globale Variablen
 
 ```lua
-_G        -- Die globale Umgebungstabelle
-_VERSION  -- Lua-Versionsstring
+_G        -- The global environment table
+_VERSION  -- Lua version string
 ```
 
 ## Tabellenmanipulation
 
-Funktionen zur Modifikation von Tabellen:
+Die Bibliothek `table` stellt direkte Array-Operationen, Sortierung, Verkettung und Entpacken bereit:
 
 ```lua
-table.insert(t, [pos,] value)  -- Fügt Wert an Position ein (Standard: Ende)
-table.remove(t [,pos])         -- Entfernt und gibt Element an Position zurück (Standard: letztes)
-table.concat(t [,sep [,i [,j]]]) -- Verkettet Array-Elemente mit Trennzeichen
-table.sort(t [,comp])          -- Sortiert in-place, comp(a,b) gibt true zurück wenn a < b
-table.pack(...)                -- Packt varargs in Tabelle mit 'n'-Feld
-table.unpack(t [,i [,j]])      -- Entpackt Tabellen-Elemente als mehrere Werte
+table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
+table.remove(t [,pos])         -- Remove and return element at pos (default: last)
+table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
+table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
+table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
 ```
 
 ```lua
@@ -88,65 +89,65 @@ local items = {"a", "b", "c"}
 
 table.insert(items, "d")           -- {"a", "b", "c", "d"}
 table.insert(items, 2, "x")        -- {"a", "x", "b", "c", "d"}
-table.remove(items, 2)             -- {"a", "b", "c", "d"}, gibt "x" zurück
+table.remove(items, 2)             -- {"a", "b", "c", "d"}, returns "x"
 
 local csv = table.concat(items, ",")  -- "a,b,c,d"
 
 table.sort(items, function(a, b)
-    return a > b  -- Absteigende Reihenfolge
+    return a > b  -- Descending order
 end)
 ```
 
 ## String-Operationen
 
-String-Manipulationsfunktionen. Auch als Methoden auf String-Werten verfügbar:
+String-Funktionen sind auch als Methoden auf String-Werten verfügbar.
 
 ### Musterabgleich
 
 ```lua
-string.find(s, pattern [,init [,plain]])   -- Findet Muster, gibt start, end, captures zurück
-string.match(s, pattern [,init])           -- Extrahiert passenden Substring
-string.gmatch(s, pattern)                  -- Iterator über alle Treffer
-string.gsub(s, pattern, repl [,n])         -- Ersetzt Treffer, gibt string, count zurück
+string.find(s, pattern [,init [,plain]])   -- Find pattern, returns start, end, captures
+string.match(s, pattern [,init])           -- Extract matching substring
+string.gmatch(s, pattern)                  -- Iterator over all matches
+string.gsub(s, pattern, repl [,n])         -- Replace matches, returns string, count
 ```
 
-### Gross-/Kleinschreibung
+### Groß-/Kleinschreibung
 
 ```lua
-string.upper(s)   -- Zu Großbuchstaben konvertieren
-string.lower(s)   -- Zu Kleinbuchstaben konvertieren
+string.upper(s)   -- Convert to uppercase
+string.lower(s)   -- Convert to lowercase
 ```
 
 ### Substrings und Zeichen
 
 ```lua
-string.sub(s, i [,j])      -- Substring von i bis j (negative Indizes vom Ende)
-string.len(s)              -- String-Länge (oder #s verwenden)
-string.byte(s [,i [,j]])   -- Numerische Codes der Zeichen
-string.char(...)           -- Erstellt String aus Zeichencodes
-string.rep(s, n [,sep])    -- Wiederholt String n-mal mit Trennzeichen
-string.reverse(s)          -- Kehrt String um
+string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
+string.len(s)              -- String length (or use #s)
+string.byte(s [,i [,j]])   -- Numeric codes of characters
+string.char(...)           -- Create string from character codes
+string.rep(s, n)           -- Repeat string n times
+string.reverse(s)          -- Reverse string
 ```
 
 ### Formatierung
 
 ```lua
-string.format(fmt, ...)    -- Printf-artige Formatierung
+string.format(fmt, ...)    -- Printf-style formatting
 ```
 
-Format-Spezifizierer: `%d` (Integer), `%f` (Float), `%s` (String), `%q` (quoted), `%x` (Hex), `%o` (Oktal), `%e` (wissenschaftlich), `%%` (literales %)
+Format-Spezifizierer: `%d` (Integer), `%f` (Gleitkommazahl), `%s` (String), `%q` (in Anführungszeichen), `%x` (hexadezimal), `%o` (oktal), `%e` (wissenschaftlich), `%%` (literales %)
 
 ```lua
 local s = "Hello, World!"
 
--- Musterabgleich
+-- Pattern matching
 local start, stop = string.find(s, "World")  -- 8, 12
 local word = string.match(s, "%w+")          -- "Hello"
 
 -- Substitution
 local new = string.gsub(s, "World", "Wippy") -- "Hello, Wippy!"
 
--- Methoden-Syntax
+-- Method syntax
 local upper = s:upper()                       -- "HELLO, WORLD!"
 local part = s:sub(1, 5)                      -- "Hello"
 ```
@@ -179,88 +180,94 @@ Großbuchstaben-Versionen (`%A`, `%D`, etc.) treffen auf das Komplement.
 
 ## Mathematische Funktionen
 
-Mathematische Funktionen und Konstanten:
+Die Bibliothek `math` stellt numerische Konstanten und übliche mathematische Operationen bereit.
 
 ### Konstanten {id="math-constants"}
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Unendlich
-math.mininteger  -- Minimaler Integer
-math.maxinteger  -- Maximaler Integer
+math.huge     -- Infinity
+math.mininteger  -- Minimum integer
+math.maxinteger  -- Maximum integer
 ```
 
 ### Grundoperationen
 
 ```lua
-math.abs(x)           -- Absolutwert
-math.min(...)         -- Minimum der Argumente
-math.max(...)         -- Maximum der Argumente
-math.floor(x)         -- Abrunden
-math.ceil(x)          -- Aufrunden
-math.modf(x)          -- Ganzzahl- und Bruchteil
-math.fmod(x, y)       -- Gleitkomma-Rest
+math.abs(x)           -- Absolute value
+math.min(...)         -- Minimum of arguments
+math.max(...)         -- Maximum of arguments
+math.floor(x)         -- Round down
+math.ceil(x)          -- Round up
+math.modf(x)          -- Integer and fractional parts
+math.fmod(x, y)       -- Floating-point remainder
 ```
 
 ### Potenzen und Wurzeln
 
 ```lua
-math.sqrt(x)          -- Quadratwurzel
-math.pow(x, y)        -- x^y (oder x^y-Operator verwenden)
+math.sqrt(x)          -- Square root
+math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Natürlicher Log (oder Log zur Basis n)
+math.log(x)           -- Natural log
+math.log10(x)         -- Base-10 log
 ```
 
 ### Trigonometrie
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- Radiant
-math.asin(x)  math.acos(x)  math.atan(y [,x])
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolisch
-math.deg(r)   -- Radiant zu Grad
-math.rad(d)   -- Grad zu Radiant
+math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Arc tangent of y/x
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
+math.deg(r)   -- Radians to degrees
+math.rad(d)   -- Degrees to radians
 ```
 
 ### Zufallszahlen
 
 ```lua
-math.random()         -- Zufälliger Float [0,1)
-math.random(n)        -- Zufälliger Integer [1,n]
-math.random(m, n)     -- Zufälliger Integer [m,n]
-math.randomseed(x)    -- Zufalls-Seed setzen
+math.random()         -- Random float [0,1)
+math.random(n)        -- Random integer [1,n]
+math.random(m, n)     -- Random integer [m,n]
+math.randomseed(x)    -- Compatibility no-op; does not seed math.random
 ```
+
+`math.random` ist nichtdeterministisch. Verwenden Sie es nicht für Entscheidungen, die ein Workflow beim Replay identisch ausführen muss; `math.randomseed` kann es nicht deterministisch machen.
 
 ### Typkonvertierung
 
 ```lua
-math.tointeger(x)     -- Zu Integer konvertieren oder nil
-math.type(x)          -- "integer", "float", oder nil
-math.ult(m, n)        -- Unsigned Kleiner-als-Vergleich
+math.tointeger(x)     -- Convert to integer or nil
+math.type(x)          -- "integer", "float", or nil
+math.ult(m, n)        -- Unsigned less-than comparison
 ```
 
 ## Coroutinen
 
-Coroutine-Erstellung und -Steuerung. Siehe [Channels und Coroutinen](lua/core/channel.md) für Channels und Nebenläufigkeitsmuster:
+Die Bibliothek `coroutine` stellt Erstellung und Steuerung von Coroutinen bereit. Siehe [Channels und Coroutinen](channel.md) für Channel-basierte Nebenläufigkeitsmuster.
 
 ```lua
-coroutine.create(fn)        -- Erstellt Coroutine aus Funktion
-coroutine.resume(co, ...)   -- Startet/setzt Coroutine fort
-coroutine.yield(...)        -- Unterbricht Coroutine, gibt Werte an resume zurück
+coroutine.create(fn)        -- Create coroutine from function
+coroutine.resume(co, ...)   -- Start/continue coroutine
+coroutine.yield(...)        -- Suspend coroutine, return values to resume
 coroutine.status(co)        -- "running", "suspended", "normal", "dead"
-coroutine.running()         -- Aktuelle Coroutine (nil wenn Hauptthread)
-coroutine.wrap(fn)          -- Erstellt Coroutine als aufrufbare Funktion
+coroutine.running()         -- Current coroutine (nil if main thread)
+coroutine.wrap(fn)          -- Create coroutine as callable function
 ```
 
 ### Nebenläufige Coroutinen spawnen
 
-Spawnt eine nebenläufige Coroutine, die unabhängig läuft (Wippy-spezifisch):
+Wippy ergänzt `coroutine.spawn` für vom Scheduler verwaltete nebenläufige Arbeit:
 
 ```lua
-coroutine.spawn(fn)         -- Spawnt Funktion als nebenläufige Coroutine
+coroutine.spawn(fn)         -- Spawn function as concurrent coroutine
 ```
 
 ```lua
--- Hintergrundaufgabe spawnen
+local time = require("time")
+
+-- Spawn background task
 coroutine.spawn(function()
     while true do
         check_health()
@@ -268,37 +275,39 @@ coroutine.spawn(function()
     end
 end)
 
--- Hauptausführung setzt sofort fort
+-- Continue main execution immediately
 process_request()
 ```
 
+Dieses partielle Muster setzt voraus, dass der Eintrag `time` unter `modules:` aufführt und die Funktionen `check_health` und `process_request` bereitstellt. Die gestartete Coroutine läuft nebenläufig im selben Lua-Prozess; `process_request()` wird sofort erreicht, und auf jede Gesundheitsprüfung folgt eine Pause von 30 Sekunden.
+
 ## Fehlerbehandlung
 
-Strukturierte Fehlererstellung und -klassifizierung. Siehe [Fehlerbehandlung](lua/core/errors.md) für vollständige Dokumentation:
+Die globale Tabelle `errors` erstellt und klassifiziert strukturierte Fehler. Die vollständige API beschreibt [Fehlerbehandlung](errors.md).
 
 ### Konstanten {id="error-constants"}
 
 ```lua
-errors.UNKNOWN           -- Nicht klassifizierter Fehler
-errors.INVALID           -- Ungültiges Argument oder Eingabe
-errors.NOT_FOUND         -- Ressource nicht gefunden
-errors.ALREADY_EXISTS    -- Ressource existiert bereits
-errors.PERMISSION_DENIED -- Berechtigung verweigert
-errors.TIMEOUT           -- Operation hat Zeitlimit überschritten
-errors.CANCELED          -- Operation wurde abgebrochen
-errors.UNAVAILABLE       -- Service nicht verfügbar
-errors.INTERNAL          -- Interner Fehler
-errors.CONFLICT          -- Konflikt (z.B. gleichzeitige Änderung)
-errors.RATE_LIMITED      -- Rate-Limit überschritten
+errors.UNKNOWN           -- Unclassified error
+errors.INVALID           -- Invalid argument or input
+errors.NOT_FOUND         -- Resource not found
+errors.ALREADY_EXISTS    -- Resource already exists
+errors.PERMISSION_DENIED -- Permission denied
+errors.TIMEOUT           -- Operation timed out
+errors.CANCELED          -- Operation cancelled
+errors.UNAVAILABLE       -- Service unavailable
+errors.INTERNAL          -- Internal error
+errors.CONFLICT          -- Conflict (e.g., concurrent modification)
+errors.RATE_LIMITED      -- Rate limit exceeded
 ```
 
 ### Funktionen {id="error-functions"}
 
 ```lua
--- Fehler aus String erstellen
+-- Create error from string
 local err = errors.new("something went wrong")
 
--- Fehler mit Metadaten erstellen
+-- Create error with metadata
 local err = errors.new({
     message = "User not found",
     kind = errors.NOT_FOUND,
@@ -306,82 +315,48 @@ local err = errors.new({
     details = {user_id = 123}
 })
 
--- Existierenden Fehler mit Kontext wrappen
+-- Wrap existing error with context
 local wrapped = errors.wrap(err, "failed to load profile")
 
--- Fehlerart prüfen
+-- Check error kind
 if errors.is(err, errors.NOT_FOUND) then
-    -- nicht gefunden behandeln
+    -- handle not found
 end
 
--- Aufrufstack aus Fehler holen
+-- Get call stack from error
 local stack = errors.call_stack(err)
 ```
 
 ### Fehlermethoden
 
 ```lua
-err:message()    -- Fehlermeldungsstring holen
-err:kind()       -- Fehlerart holen (z.B. "NOT_FOUND")
-err:retryable()  -- true, false, oder nil (unbekannt)
-err:details()    -- Details-Tabelle holen oder nil
-err:stack()      -- Stack-Trace als String holen
-```
-
-## UTF-8 Unicode
-
-Unicode UTF-8 String-Behandlung:
-
-### Konstanten {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Muster das einzelnes UTF-8-Zeichen matcht
-```
-
-### Funktionen {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Erstellt String aus Unicode-Codepoints
-utf8.codes(s)            -- Iterator über Codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Holt Codepoints an Positionen i bis j
-utf8.len(s [,i [,j]])    -- Zählt UTF-8-Zeichen (nicht Bytes)
-utf8.offset(s, n [,i])   -- Byte-Position des n-ten Zeichens ab Position i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Zeichen zählen (nicht Bytes)
-print(utf8.len(s))  -- 9
-
--- Über Codepoints iterieren
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Codepoint an Position holen
-local code = utf8.codepoint(s, 8)  -- Erstes chinesisches Zeichen
-
--- String aus Codepoints erstellen
-local emoji = utf8.char(0x1F600)  -- Grinsendes Gesicht
+err:message()    -- Get error message string
+err:kind()       -- Get error kind (e.g., "NOT_FOUND")
+err:retryable()  -- true, false, or nil (unknown)
+err:details()    -- Get details table or nil
+err:stack()      -- Get stack trace as string
 ```
 
 ## Eingeschränkte Features
 
-Die folgenden Standard-Lua-Features sind aus Sicherheitsgründen NICHT verfügbar:
+Die folgenden Standard-Lua-Features sind in Wippy-Prozessen nicht verfügbar:
 
 | Feature | Alternative |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | [Dynamische Auswertung](lua/dynamic/eval.md)-Modul verwenden |
+| `load`, `loadstring`, `loadfile`, `dofile` | Modul [Dynamische Auswertung](../dynamic/eval.md) verwenden |
 | `collectgarbage` | Automatische GC |
 | `rawlen` | `#`-Operator verwenden |
-| `io.*` | [Dateisystem](lua/storage/filesystem.md)-Modul verwenden |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [Befehlsausführung](lua/dynamic/exec.md), [Umgebung](lua/system/env.md)-Module verwenden |
-| `debug.*` (außer traceback) | Nicht verfügbar |
+| `string.dump` | Nicht unterstützt |
+| `io.*` | [Dateisystem](../storage/filesystem.md) für Dateien oder [Terminal-E/A](../system/io.md) für Terminal-Streams verwenden |
+| `os.execute` | [Befehlsausführung](../dynamic/exec.md) verwenden |
+| `os.remove`, `os.rename` | [Dateisystem](../storage/filesystem.md) verwenden |
+| `os.exit`, `os.tmpname` | Kein direktes Standardbibliotheksäquivalent |
+| `debug.*` | Nicht verfügbar |
+| `utf8.*` | Nicht verfügbar |
 | `package.loadlib` | Native Bibliotheken nicht unterstützt |
 
 ## Siehe auch
 
-- [Channels und Coroutinen](lua/core/channel.md) - Go-artige Channels für Nebenläufigkeit
-- [Fehlerbehandlung](lua/core/errors.md) - Strukturierte Fehler erstellen und behandeln
-- [OS-Zeit](lua/system/ostime.md) - Systemzeit-Funktionen
+- [Channels und Coroutinen](channel.md) - Go-artige Channels für Nebenläufigkeit
+- [Fehlerbehandlung](errors.md) - Strukturierte Fehler erstellen und behandeln
+- [OS-Zeit](../system/ostime.md) - Systemzeit-Funktionen

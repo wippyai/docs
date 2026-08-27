@@ -1,6 +1,6 @@
 ---
 title: "Fehler"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Strukturierte Fehler in Lua-Einträgen erstellen, umschließen, untersuchen und klassifizieren."
 ---
 
 # Fehler
@@ -8,15 +8,17 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Strukturierte Fehlerbehandlung mit Kategorisierung und Retry-Metadaten. Die globale `errors`-Tabelle ist ohne require verfügbar.
+Die globale Tabelle `errors` erstellt und untersucht strukturierte Fehler mit Kategorien, Details und Wiederholungsmetadaten. Sie ist ohne `require` verfügbar.
+
+Diese Seite ist eine API-Referenz. Jeder Codeblock ist ein isoliertes Snippet und kein vollständiger Eintrag. Variablen wie `err` stehen für einen Fehler, den der umgebende Anwendungscode zurückgibt oder erstellt; das Wrapping-Beispiel setzt voraus, dass `db` ein von der Anwendung bereitgestellter Datenbank-Client ist.
 
 ## Fehler erstellen
 
 ```lua
--- Einfache Nachricht (Art standardmäßig UNKNOWN)
+-- Simple message (kind defaults to UNKNOWN)
 local err = errors.new("something went wrong")
 
--- Mit Art, retryable und Details
+-- With kind, retryable, and details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -27,12 +29,12 @@ local err = errors.new({
 
 `errors.new` akzeptiert entweder eine String-Nachricht oder eine Tabelle mit mindestens einem `message`-Feld. Die Form `(kind, message)` wird nicht unterstützt.
 
-## Fehler wrappen
+## Fehler umschließen
 
-Kontext hinzufügen und dabei Art, retryable und Details beibehalten:
+Umschließen Sie einen Fehler, um Kontext hinzuzufügen und dabei Art, Wiederholungsmetadaten und Details beizubehalten:
 
 ```lua
-local data, err = db.query("SELECT * FROM users")
+local data, err = db:query("SELECT * FROM users")
 if err then
     return nil, errors.wrap(err, "failed to load users")
 end
@@ -40,47 +42,47 @@ end
 
 ## Fehlermethoden
 
-| Methode | Gibt zurück | Beschreibung |
-|--------|---------|-------------|
+| Methode | Rückgabewert | Beschreibung |
+|---------|--------------|--------------|
 | `err:kind()` | string | Fehlerkategorie |
 | `err:message()` | string | Fehlermeldung |
 | `err:retryable()` | boolean/nil | Ob die Operation wiederholt werden kann |
 | `err:details()` | table/nil | Strukturierte Metadaten |
-| `err:stack()` | string | Lua-Stack-Trace |
+| `err:stack()` | string | Lua-Stacktrace |
 | `tostring(err)` | string | Vollständige Darstellung |
 
 ## Art prüfen
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- ungültige Eingabe behandeln
+    -- handle invalid input
 end
 
--- Oder direkt vergleichen
+-- Or compare directly
 if err:kind() == errors.NOT_FOUND then
-    -- fehlende Ressource behandeln
+    -- handle missing resource
 end
 ```
 
 ## Fehlerarten
 
 | Konstante | Anwendungsfall |
-|----------|----------|
-| `errors.NOT_FOUND` | Ressource existiert nicht |
-| `errors.ALREADY_EXISTS` | Ressource existiert bereits |
+|-----------|----------------|
+| `errors.NOT_FOUND` | Ressource ist nicht vorhanden |
+| `errors.ALREADY_EXISTS` | Ressource ist bereits vorhanden |
 | `errors.INVALID` | Ungültige Eingabe oder Argumente |
 | `errors.PERMISSION_DENIED` | Zugriff verweigert |
 | `errors.UNAVAILABLE` | Service vorübergehend nicht verfügbar |
 | `errors.INTERNAL` | Interner Fehler |
 | `errors.CANCELED` | Operation wurde abgebrochen |
-| `errors.CONFLICT` | Ressourcenzustandskonflikt |
-| `errors.TIMEOUT` | Operation hat Zeitlimit überschritten |
+| `errors.CONFLICT` | Konflikt im Ressourcenzustand |
+| `errors.TIMEOUT` | Zeitlimit der Operation überschritten |
 | `errors.RATE_LIMITED` | Zu viele Anfragen |
 | `errors.UNKNOWN` | Nicht spezifizierter Fehler |
 
 ## Aufrufstack
 
-Strukturierten Aufrufstack abrufen:
+Mit `errors.call_stack` untersuchen Sie einen strukturierten Aufrufstack:
 
 ```lua
 local stack = errors.call_stack(err)
@@ -94,16 +96,11 @@ end
 
 ## Wiederholbare Fehler
 
-| Typischerweise wiederholbar | Nicht wiederholbar |
-|---------------------|---------------|
-| `TIMEOUT` | `INVALID` |
-| `UNAVAILABLE` | `NOT_FOUND` |
-| `RATE_LIMITED` | `PERMISSION_DENIED` |
-| | `ALREADY_EXISTS` |
+Die Wiederholbarkeit ist eine Fehlermetadatenangabe und keine Eigenschaft, die eine Fehlerart garantiert. Prüfen Sie den Rückgabewert von `err:retryable()`, statt ihn aus `err:kind()` abzuleiten. `nil` bedeutet, dass der Fehler keine Aussage dazu enthält, ob ein weiterer Versuch sinnvoll ist.
 
 ```lua
 if err:retryable() then
-    -- sicher zu wiederholen
+    -- safe to retry
 end
 ```
 
