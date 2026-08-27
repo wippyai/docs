@@ -5,11 +5,13 @@ description: "Middleware processa requisições HTTP antes e depois do tratament
 
 # Middleware HTTP
 
-Middleware processa requisições HTTP antes e depois do tratamento de rotas.
+O middleware HTTP é executado em uma de duas cadeias do roteador: antes de os metadados do endpoint serem anexados ou depois de a rota fornecer seus parâmetros e o ID do endpoint.
+
+**Classificação: referência de middleware.** Cada bloco YAML é um fragmento de roteador; ele pressupõe que o middleware nomeado esteja registrado e que qualquer token store, sistema de arquivos, endpoint, ator e política referenciados existam.
 
 ## Como Middleware Funciona
 
-Middleware encapsula handlers HTTP para adicionar lógica de processamento. Cada middleware recebe um mapa de opções e retorna um wrapper de handler:
+Cada middleware recebe um mapa de opções e retorna um wrapper de handler:
 
 ```yaml
 middleware:
@@ -20,23 +22,24 @@ options:
   ratelimit.requests: "100"
 ```
 
-Opções usam notação de ponto: `nome_middleware.opcao.nome`. Formato legado com underscore é suportado para compatibilidade retroativa.
+As opções usam notação de ponto: `middleware_name.option.name`. O formato legado com underscore é aceito por compatibilidade retroativa.
 
-## Pre-Match vs Pós-Match
+## Pré-handler e pós-match
 
 <tip>
-<b>Pre-match</b> executa antes do match de rota - para preocupações transversais como CORS e compressão.
-<b>Pós-match</b> executa após a rota ser correspondida - para autorização que precisa de info da rota.
+O middleware de <b>pré-handler</b> é executado depois que o servidor seleciona uma rota, mas antes de os metadados da rota serem anexados, para recursos como CORS e compressão.
+O middleware de <b>pós-match</b> é executado depois que os metadados da rota são anexados, para autorizações que precisam do ID do endpoint.
+Nenhuma das cadeias é executada em uma requisição sem rota correspondente.
 </tip>
 
 ```yaml
-middleware:        # Pre-match
+middleware:        # Before endpoint metadata
   - cors
   - compress
 options:
   cors.allow.origins: "*"
 
-post_middleware:   # Pós-match
+post_middleware:   # Post-match
   - endpoint_firewall
 post_options:
   endpoint_firewall.action: "access"
@@ -48,7 +51,7 @@ post_options:
 
 ### CORS {#cors}
 
-<note>Pre-match</note>
+<note>Pré-handler</note>
 
 Cross-Origin Resource Sharing para requisições de navegador.
 
@@ -76,7 +79,7 @@ Requisições OPTIONS preflight são tratadas automaticamente.
 
 ### Rate Limiting {#ratelimit}
 
-<note>Pre-match</note>
+<note>Pré-handler</note>
 
 Rate limiting com token bucket e rastreamento por chave.
 
@@ -101,13 +104,13 @@ options:
 
 **Estratégias de chave:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Retorna `429 Too Many Requests` com headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Retorna `429 Too Many Requests` com os headers `X-RateLimit-Limit` e `X-RateLimit-Window`.
 
 ---
 
 ### Compressão {#compress}
 
-<note>Pre-match</note>
+<note>Pré-handler</note>
 
 Compressão Gzip para respostas.
 
@@ -130,7 +133,7 @@ Comprime apenas quando cliente envia `Accept-Encoding: gzip`.
 
 ### Real IP {#real_ip}
 
-<note>Pre-match</note>
+<note>Pré-handler</note>
 
 Extrai IP do cliente de headers de proxy.
 
@@ -143,7 +146,7 @@ options:
 
 | Opção | Padrão | Descrição |
 |-------|--------|-----------|
-| `real_ip.trusted.subnets` | Redes privadas | CIDRs de proxies confiáveis |
+| `real_ip.trusted.subnets` | Loopback, redes privadas RFC 1918, link-local IPv4, CGNAT, ULA IPv6 e link-local IPv6 | CIDRs de proxies confiáveis |
 | `real_ip.trust_all` | `false` | Confia em todas as fontes (inseguro) |
 
 **Prioridade de header:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -152,9 +155,9 @@ options:
 
 ### Token Auth {#token_auth}
 
-<note>Pre-match</note>
+<note>Pré-handler</note>
 
-Autenticação baseada em token. Veja [Segurança](system/security.md) para configuração de token store.
+Autenticação baseada em token. Veja [Segurança](../system/security.md) para configurar o token store.
 
 ```yaml
 middleware:
@@ -177,9 +180,9 @@ Define ator e escopo de segurança no contexto para middleware downstream. Não 
 
 ### Métricas {#metrics}
 
-<note>Pre-match</note>
+<note>Pré-handler</note>
 
-Métricas HTTP estilo Prometheus. Sem opções de configuração.
+Métricas HTTP no estilo Prometheus. Esse middleware só é registrado quando há um coletor de métricas disponível e não possui opções de configuração.
 
 ```yaml
 middleware:
@@ -198,7 +201,7 @@ middleware:
 
 <warning>Pós-match</warning>
 
-Autorização baseada no endpoint correspondido. Requer ator do `token_auth`.
+Autorização baseada no endpoint correspondente. Exige um ator e um escopo de segurança no contexto da requisição; `token_auth` é uma forma de fornecê-los.
 
 ```yaml
 post_middleware:
@@ -238,7 +241,7 @@ post_options:
 
 ### Sendfile {#sendfile}
 
-<note>Pre-match</note>
+<note>Pré-handler</note>
 
 Serve arquivos via header `X-Sendfile` de handlers.
 
@@ -264,7 +267,7 @@ Suporta requisições de range para downloads resumíveis.
 
 <warning>Pós-match</warning>
 
-Retransmite conexões WebSocket para processos. Veja [Relay WebSocket](http/websocket-relay.md).
+Retransmite conexões WebSocket para processos. Veja [Relay WebSocket](./websocket-relay.md).
 
 ```yaml
 post_middleware:
@@ -279,7 +282,7 @@ post_options:
 
 <warning>Post-match</warning>
 
-Transmite Server-Sent Events de processos. Veja [Server-Sent Events](http/sse.md).
+Transmite Server-Sent Events de processos. Veja [Server-Sent Events](./sse.md).
 
 ```yaml
 post_middleware:
@@ -292,7 +295,7 @@ post_options:
 
 ### OpenTelemetry {#otel}
 
-<warning>Pre-match</warning>
+<note>Pré-handler</note>
 
 Registra spans e métricas OpenTelemetry para requisições recebidas. Registrado automaticamente quando OTel está habilitado; caso contrário atua como no-op.
 
@@ -307,25 +310,25 @@ Não aceita opções. Funciona junto com o middleware `metrics`; habilite ambos 
 
 ## Ordem de Middleware
 
-Middleware executa na ordem listada. Sequência recomendada:
+Nas requisições, o middleware é executado na ordem listada; o processamento da resposta é desenrolado na ordem inversa. Sequência recomendada:
 
 ```yaml
 middleware:
-  - real_ip       # 1. Extrai IP real primeiro
-  - cors          # 2. Trata preflight CORS
-  - compress      # 3. Configura compressão de resposta
-  - ratelimit     # 4. Verifica limites de taxa
-  - metrics       # 5. Registra métricas
-  - token_auth    # 6. Autentica requisições
+  - real_ip       # 1. Extract real IP first
+  - cors          # 2. Handle CORS preflight
+  - compress      # 3. Set up response compression
+  - ratelimit     # 4. Check rate limits
+  - metrics       # 5. Record metrics
+  - token_auth    # 6. Authenticate requests
 
 post_middleware:
-  - endpoint_firewall  # Autoriza após match de rota
+  - endpoint_firewall  # Authorize after route match
 ```
 
 ## Veja Também
 
-- [Roteamento](http/router.md) - Configuração de roteador
-- [Segurança](system/security.md) - Token stores e políticas
-- [Relay WebSocket](http/websocket-relay.md) - Tratamento de WebSocket
-- [Server-Sent Events](http/sse.md) - Streaming SSE
-- [Terminal](system/terminal.md) - Serviço de terminal
+- [Roteamento](./router.md) - Configuração de roteador
+- [Segurança](../system/security.md) - Token stores e políticas
+- [Relay WebSocket](./websocket-relay.md) - Tratamento de WebSocket
+- [Server-Sent Events](./sse.md) - Streaming SSE
+- [Terminal](../system/terminal.md) - Serviço de terminal

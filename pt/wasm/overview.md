@@ -1,74 +1,81 @@
 ---
 title: "Runtime WebAssembly"
-description: "O Wippy executa modulos WebAssembly como entradas de registro de primeira classe junto com codigo Lua. Funcoes e processos WASM sao executados dentro…"
+description: "Execute funções WAT e WASM ou processos WASM junto com Lua por meio de entradas do registro."
 ---
 
 # Runtime WebAssembly
 
-> O runtime WASM e uma extensao experimental. A configuracao e estavel, mas os detalhes internos do runtime podem mudar entre versoes.
+> O runtime WASM é uma extensão experimental. A configuração é estável, mas os detalhes internos do runtime podem mudar entre versões.
 
-O Wippy executa modulos WebAssembly como entradas de registro de primeira classe junto com codigo Lua. Funcoes e processos WASM sao executados dentro do mesmo agendador, compartilham o mesmo modelo de seguranca e interoperam com Lua atraves do registro de funcoes.
+O Wippy registra módulos WebAssembly junto com código Lua. Entradas de função participam do registro de funções e são executadas por pools de funções; entradas de processo registram fábricas de processos e são executadas sob hosts de processos. Ambas usam o agendador e o modelo de segurança do runtime.
 
-## Tipos de Entradas
+**Classificação: visão geral conceitual.** O bloco Lua contém padrões de chamada independentes e pressupõe que as entradas WASM nomeadas e seus contratos WIT já estejam registrados. Consulte o tutorial de Rust/WASM para ver um projeto com um componente compilado.
 
-| Kind | Descricao |
+## Tipos de entradas
+
+| Kind | Descrição |
 |------|-----------|
-| `function.wat` | Funcao em formato WebAssembly Text inline definida em YAML |
-| `function.wasm` | Binario WASM pre-compilado carregado de uma entrada de sistema de arquivos |
-| `process.wasm` | Binario WASM executado como processo (comandos CLI ou longa duracao) |
+| `function.wat` | Função em formato WebAssembly Text inline definida em YAML |
+| `function.wasm` | Binário WASM pré-compilado carregado de uma entrada de sistema de arquivos |
+| `process.wasm` | Binário WASM executado como processo, para comandos CLI ou tarefas de longa duração |
 
 ## Como Funciona
 
-1. Modulos WASM sao declarados como entradas de registro em `_index.yaml`
-2. Na inicializacao, os modulos sao compilados e colocados em pools de workers
-3. Codigo Lua (ou outro WASM) os chama via `funcs.call()`
-4. Argumentos e valores de retorno sao mapeados automaticamente entre tabelas Lua e tipos WIT
-5. Operacoes assincronas (I/O, sleep, HTTP) cedem controle atraves do dispatcher, da mesma forma que Lua
+1. Módulos WASM são declarados como entradas do registro em `_index.yaml`.
+2. Na inicialização, entradas `function.wat` e `function.wasm` são compiladas, registradas como funções e colocadas nos pools de funções configurados.
+3. Lua chama essas entradas de função por `funcs.call()`.
+4. Entradas `process.wasm` registram fábricas de processos e são iniciadas sob um host de processos.
+5. Argumentos de função e valores de retorno são mapeados entre tabelas Lua e tipos WIT.
+6. Operações com bridge do dispatcher, incluindo polling de relógio e HTTP de saída, cedem a execução para que o agendador execute outros trabalhos.
 
-## Modelo de Componentes
+## Component Model
 
-O Wippy suporta o WebAssembly Component Model com WIT (WebAssembly Interface Types). Modulos de componentes recebem mapeamento completo de tipos entre o host e o guest:
+O Wippy suporta o WebAssembly Component Model com WIT (WebAssembly Interface Types). Módulos de componentes mapeiam estes tipos entre host e guest:
 
-- Records mapeiam para tabelas Lua com campos nomeados
-- Lists mapeiam para arrays Lua
-- Results mapeiam para tuplas de retorno `(value, error)`
-- Primitivos (`s32`, `f64`, `string`, etc.) mapeiam diretamente
+- Records são mapeados para tabelas Lua com campos nomeados.
+- Lists são mapeadas para arrays Lua.
+- Results são mapeados para tuplas de retorno `(value, error)`.
+- Primitivos (`s32`, `f64`, `string` etc.) são mapeados diretamente.
 
-Modulos WASM raw/core tambem sao suportados com assinaturas WIT explicitas.
+Módulos WASM raw/core também são compatíveis com assinaturas WIT explícitas.
 
 ## Chamando WASM a partir de Lua
 
-Funcoes WASM sao chamadas da mesma forma que qualquer outra funcao no registro:
+Chame uma função WASM por seu ID no registro usando `funcs.call()`:
 
 ```lua
 local funcs = require("funcs")
 
--- Sem argumentos
+-- No arguments
 local result, err = funcs.call("myns:answer_wat")
+if err then return nil, err end
 
--- Com argumentos
-local result, err = funcs.call("myns:compute", 6, 7)
+-- With arguments
+local computed, compute_err = funcs.call("myns:compute", 6, 7)
+if compute_err then return nil, compute_err end
 
--- Com dados complexos
+-- With complex data
 local users = {
     {id = 1, name = "Alice", tags = {"admin"}, active = true},
     {id = 2, name = "Bob", tags = {"user"}, active = false},
 }
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 ```
 
-## Seguranca
+## Segurança
 
-Execucoes WASM herdam o contexto de seguranca do chamador por padrao:
+Execuções WASM herdam o contexto de segurança do chamador por padrão:
 
-- A identidade do ator e herdada
-- O escopo e herdado
-- O contexto da requisicao e herdado
+- A identidade do ator é herdada.
+- O escopo é herdado.
+- O contexto da requisição é herdado.
 
-Capacidades do host sao opt-in atraves de imports explicitos. Cada entrada declara exatamente quais interfaces WASI precisa (`wasi:cli`, `wasi:filesystem`, etc.), limitando a superficie de acesso do modulo.
+As capacidades do host são opt-in por imports explícitos. Cada entrada declara os perfis de host necessários, como `funcs`, `wasi1`, `wasi:cli` ou `wasi:filesystem`, limitando a superfície de acesso do módulo. Ativar um perfil não ignora as verificações de segurança do runtime em operações como chamadas de função, sockets ou HTTP de saída.
 
-## Veja Tambem
+## Veja também
 
-- [Funcoes](wasm/functions.md) - Configuracao de entradas de funcoes WASM
-- [Funcoes Host](wasm/hosts.md) - Interfaces WASI e Wippy host disponiveis
-- [Processos](wasm/processes.md) - Executando WASM como processos de longa duracao
+- [Funções](./functions.md) - Configuração de entradas de funções WASM
+- [Funções do host](./hosts.md) - Interfaces WASI e Wippy disponíveis no host
+- [Processos](./processes.md) - Execução de WASM como processos de longa duração
+- [Tutorial de Rust/WASM](../tutorials/rust-wasm.md) - Compile e registre um componente
