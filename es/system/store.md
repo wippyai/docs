@@ -5,7 +5,9 @@ description: "Almacenes clave-valor con soporte TTL: en memoria, respaldados por
 
 # Store (Clave-Valor)
 
-Almacenes clave-valor con soporte TTL: en memoria, respaldados por SQL y replicados en cluster (Raft y CRDT).
+Wippy proporciona almacenes clave-valor con TTL respaldados por memoria, SQL, Raft o un CRDT.
+
+Esta página es una referencia de configuración de entradas. Los fences YAML son fragmentos para una lista de entradas existente, y el fence SQL es la preparación del esquema que debe ejecutarse antes de que se inicie una entrada `store.sql`.
 
 ## Tipos de Entrada
 
@@ -29,7 +31,7 @@ Almacenes clave-valor con soporte TTL: en memoria, respaldados por SQL y replica
 
 | Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `max_size` | int | 10000 | Entradas máximas (0 = ilimitado) |
+| `max_size` | int | 10000 | Número máximo de entradas; 0 se sustituye por el valor predeterminado (10000) |
 | `cleanup_interval` | duration | 5m | Intervalo de limpieza de entradas expiradas |
 
 Cuando se alcanza `max_size`, se rechazan nuevas entradas. Los datos se pierden al reiniciar.
@@ -55,21 +57,21 @@ Cuando se alcanza `max_size`, se rechazan nuevas entradas. Los datos se pierden 
 | `expire_column_name` | string | expires_at | Columna para expiración |
 | `cleanup_interval` | duration | 0 | Intervalo de limpieza de entradas expiradas |
 
-Los nombres de columna se validan contra inyección SQL. Cree la tabla antes de usar:
+Los nombres de columna se validan contra inyección SQL. El siguiente requisito previo es DDL de PostgreSQL; use los tipos binario/blob y timestamp equivalentes para MySQL o SQLite:
 
 ```sql
 CREATE TABLE kv_store (
     key VARCHAR(255) PRIMARY KEY,
     value BYTEA NOT NULL,
-    expires_at BIGINT
+    expires_at TIMESTAMPTZ NULL
 );
 
 CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL;
 ```
 
-## Almacenes KV de Cluster {id=cluster-kv-stores}
+## Almacenes KV de cluster
 
-`store.kv.raft` y `store.kv.crdt` replican datos clave-valor entre los nodos del cluster. Ambos requieren que el [clustering](guides/cluster.md) esté habilitado y reutilizan la misma API Lua del [Módulo Store](lua/storage/store.md). Cada entrada es una vista con namespace sobre un único motor a nivel de nodo; `namespace` aísla las claves de esta entrada y debe coincidir con `^[a-z][a-z0-9._-]*$` (no puede comenzar con `_`).
+`store.kv.raft` y `store.kv.crdt` replican datos clave-valor entre los nodos del cluster. Ambos requieren que el [clustering](../guides/cluster.md) esté habilitado y reutilizan la misma API Lua del [módulo Store](../lua/storage/store.md). Cada entrada es una vista con namespace sobre un único motor a nivel de nodo; `namespace` aísla las claves de esta entrada y debe coincidir con `^[a-z][a-z0-9._-]*$` (no puede comenzar con `_`).
 
 ### Raft (consistencia fuerte)
 
@@ -83,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |-------|------|----------|-------------|
 | `namespace` | string | Sí | Namespace de claves en el motor compartido |
 
-Las escrituras se proponen a través del Raft compartido (los seguidores las reenvían al líder); las lecturas son linealizables. Se soportan escrituras condicionales (`put` con `only_if_absent`/`if_version`). El estado de Raft es durable en disco por defecto bajo `cluster.raft.data_dir` (por defecto `~/.wippy/store`); ver [Configuración](guides/configuration.md#cluster).
+Las escrituras se proponen a través del Raft compartido (los seguidores las reenvían al líder); las lecturas son linealizables. Se soportan escrituras condicionales (`put` con `only_if_absent`/`if_version`). El estado de Raft es duradero en disco por defecto bajo `cluster.raft.data_dir` (por defecto `~/.wippy/store`); consulte [Configuración](../guides/configuration.md#cluster).
 
 ### CRDT (consistencia eventual)
 
@@ -107,13 +109,18 @@ Las escrituras mutan el estado local y se diseminan por gossip; las escrituras c
 
 ## Comportamiento TTL
 
-Ambos almacenes soportan tiempo de vida. Las entradas expiradas persisten brevemente hasta que la limpieza se ejecuta en `cleanup_interval`. Establezca a `0` para deshabilitar la limpieza automática.
+Los cuatro tipos de almacén aceptan valores de tiempo de vida, pero la visibilidad de la expiración varía según el backend.
+
+- `store.memory` trata una clave expirada como ausente al leerla y elimina las entradas expiradas según su `cleanup_interval`, que de forma predeterminada es `5m`. Un valor cero configurado se sustituye por ese valor predeterminado.
+- `store.sql` filtra las filas expiradas al leer y las elimina según `cleanup_interval`; su valor predeterminado `0` deshabilita la limpieza en segundo plano sin volver legibles las filas expiradas.
+- `store.kv.raft` adjunta las claves con expiración a leases gestionadas por el líder. El barrido de leases, aproximadamente cada segundo, propone la eliminación a través de Raft, por lo que una clave puede seguir siendo legible hasta que se aplica por consenso esa eliminación.
+- `store.kv.crdt` también elimina las claves expiradas durante su barrido de leases, aproximadamente cada segundo, y luego propaga el tombstone resultante por gossip. El plazo del lease es local al nodo que aceptó la escritura; si ese origen falla antes de la expiración, otro nodo no reproduce de forma independiente el plazo y la clave puede permanecer hasta que un estado posterior o una limpieza administrativa la eliminen.
 
 ## API Lua
 
-Consulte el [Módulo Store](lua/storage/store.md) para operaciones: `get`, `set`, `has`, `delete`, además de `put`, `entry`, `list` e `info` para acceso versionado y condicional.
+Consulte el [módulo Store](../lua/storage/store.md) para las operaciones `get`, `set`, `has` y `delete`, además de `put`, `entry`, `list` e `info` para acceso versionado y condicional.
 
 ## Ver También
 
-- [Módulo Store](lua/storage/store.md) - Referencia de la API Lua
-- [Base de Datos](system/database.md) - Respaldo SQL para `store.sql`
+- [Módulo Store](../lua/storage/store.md) - Referencia de la API Lua
+- [Base de datos](./database.md) - Respaldo SQL para `store.sql`
