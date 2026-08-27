@@ -1,11 +1,13 @@
 ---
 title: "Executor"
-description: "Befehlsausführer führen externe Prozesse mit kontrollierten Umgebungen aus. Zwei Executor-Typen sind verfügbar: native OS-Prozesse und Docker-Container."
+description: "Konfigurieren Sie native oder Docker-Befehls-Executors, Arbeitsverzeichnisse, Umgebungen, Allowlists und Ressourcensteuerung."
 ---
 
 # Executor
 
-Befehlsausführer führen externe Prozesse mit kontrollierten Umgebungen aus. Zwei Executor-Typen sind verfügbar: native OS-Prozesse und Docker-Container.
+Executor-Einträge führen externe Befehle als native Betriebssystemprozesse oder in Docker-Containern aus.
+
+Diese Seite ist eine Konfigurations- und API-Referenz. Entry-Blöcke sind Fragmente für eine bestehende Entry-Liste; das Lua-Beispiel setzt einen Executor namens `app:shell` und einen erlaubten Befehl `git status` voraus.
 
 ## Entry-Typen
 
@@ -16,7 +18,7 @@ Befehlsausführer führen externe Prozesse mit kontrollierten Umgebungen aus. Zw
 
 ## Native Executor
 
-Führt Befehle direkt auf dem Host-Betriebssystem aus.
+Der native Executor führt Befehle direkt auf dem Host-Betriebssystem aus.
 
 ```yaml
 - name: shell
@@ -41,9 +43,13 @@ Führt Befehle direkt auf dem Host-Betriebssystem aus.
 Native Executors verwenden standardmäßig eine saubere Umgebung. Nur explizit konfigurierte Umgebungsvariablen werden an Kindprozesse übergeben.
 </note>
 
+Befehle werden in eine ausführbare Datei und eine Argumentliste geparst und nicht über eine Shell ausgeführt. Pipes, Umleitungen, Variablenerweiterung und andere Shell-Syntax besitzen keine besondere Bedeutung. Um einen Shell-Ausdruck auszuführen, müssen Sie die Shell ausdrücklich erlauben und aufrufen, einschließlich ihres Befehlsflags und des Ausdrucks als Argumente.
+
 ## Docker Executor
 
-Führt Befehle in isolierten Docker-Containern aus.
+Der Docker-Executor führt Befehle in Docker-Containern aus.
+
+Auch Docker-Befehle werden direkt in eine ausführbare Datei und Argumente geparst und als Containerbefehl gesetzt. Eine Shell-Erweiterung findet nur statt, wenn der Befehl ausdrücklich eine Shell aufruft.
 
 ```yaml
 - name: sandbox
@@ -67,11 +73,11 @@ Führt Befehle in isolierten Docker-Containern aus.
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `image` | string | **erforderlich** | Zu verwendendes Docker-Image |
-| `host` | string | Unix Socket | Docker-Daemon-URL |
+| `host` | string | Standardwert des Docker-Clients | Docker-Daemon-URL; fehlt sie, verwendet der Client seine Umgebungs- und Plattformstandards |
 | `default_work_dir` | string | - | Arbeitsverzeichnis im Container |
 | `default_env` | map | - | Umgebungsvariablen |
-| `command_whitelist` | string[] | - | Erlaubte Befehle (exakter Match) |
-| `network_mode` | string | bridge | Netzwerkmodus: `host`, `bridge`, `none` |
+| `command_whitelist` | string[] | - | Erlaubte Befehle (exakte Übereinstimmung) |
+| `network_mode` | string | Docker-Standard | Docker-Netzwerkmodus wie `host`, `bridge` oder `none` |
 | `volumes` | string[] | - | Volume-Mounts: `host:container[:ro]` |
 | `user` | string | - | Benutzer zum Ausführen im Container |
 | `memory_limit` | int | 0 | Speicherlimit in Bytes (0 = unbegrenzt) |
@@ -86,7 +92,7 @@ Führt Befehle in isolierten Docker-Containern aus.
 
 ## Befehls-Whitelist
 
-Beide Executor-Typen unterstützen Befehls-Whitelisting. Wenn konfiguriert, sind nur exakte Befehls-Matches erlaubt:
+Beide Executor-Typen unterstützen Befehls-Allowlists. Wenn die Liste nicht leer ist, sind nur exakte Übereinstimmungen mit dem ursprünglichen Befehlsstring erlaubt:
 
 ```yaml
 command_whitelist:
@@ -96,9 +102,11 @@ command_whitelist:
 
 Befehle, die nicht in der Whitelist sind, werden mit einem Fehler abgelehnt.
 
+Eine fehlende oder leere Allowlist erlaubt jeden Befehl, der die Sicherheitsrichtlinie erfüllt. Die Lua-API prüft zusätzlich `exec.get` für die Executor-ID und `exec.run` für den exakten Befehlsstring.
+
 ## Lua-API
 
-Das [Exec-Modul](lua/dynamic/exec.md) bietet Befehlsausführung:
+Das [Exec-Modul](../lua/dynamic/exec.md) bietet Befehlsausführung:
 
 ```lua
 local exec = require("exec")
@@ -106,21 +114,54 @@ local exec = require("exec")
 local executor, err = exec.get("app:shell")
 if err then return nil, err end
 
-local proc = executor:exec("git status", {
+local proc, proc_err = executor:exec("git status", {
     work_dir = "/app/repo"
 })
+if proc_err then
+    executor:release()
+    return nil, proc_err
+end
 
-local stdout = proc:stdout_stream()
-proc:start()
-local output = stdout:read()
-proc:wait()
+local stdout, stream_err = proc:stdout_stream()
+if stream_err then
+    proc:close()
+    executor:release()
+    return nil, stream_err
+end
 
-stdout:close()
-executor:release()
+local ok, start_err = proc:start()
+if start_err then
+    stdout:close()
+    proc:close()
+    executor:release()
+    return nil, start_err
+end
+
+local chunks = {}
+while true do
+    local chunk, read_err = stdout:read(4096)
+    if read_err then
+        stdout:close()
+        proc:close(true)
+        executor:release()
+        return nil, read_err
+    end
+    if chunk == nil then break end
+    chunks[#chunks + 1] = chunk
+end
+
+local exit_code, wait_err = proc:wait()
+local _, stream_close_err = stdout:close()
+local _, release_err = executor:release()
+
+if wait_err then return nil, wait_err end
+if stream_close_err then return nil, stream_close_err end
+if release_err then return nil, release_err end
+return table.concat(chunks), exit_code
 ```
 
 ## Siehe auch
 
-- [Exec-Modul](lua/dynamic/exec.md) - Lua-API-Referenz
-- [Process Host](system/process-host.md) - Host, der Wippy-Prozesse ausführt
-- [Dateisystem](system/filesystem.md) - Als Arbeitsverzeichnisse genutzte Dateisystem-Einträge
+- [Exec-Modul](../lua/dynamic/exec.md) - Lua-API-Referenz
+- [Process Host](./process-host.md) - Host, der Wippy-Prozesse ausführt
+- [Dateisystem](./filesystem.md) - Als Arbeitsverzeichnisse genutzte Dateisystem-Einträge
