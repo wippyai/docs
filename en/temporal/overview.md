@@ -5,6 +5,8 @@ description: "Wippy integrates with Temporal.io for durable workflow execution, 
 
 # Temporal Integration
 
+This page is a configuration reference for Temporal clients and workers. The final registry fragment shows how the entries connect; it is not a standalone project.
+
 The `temporal.client` and `temporal.worker` entry kinds connect Wippy workflows and activities to [Temporal](https://temporal.io).
 
 ## Client Configuration
@@ -81,7 +83,7 @@ Provide the API key via one of these methods:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Auth and credential fields resolve `${env:NAME}` placeholders through the [environment registry](system/env.md) at decode time. The legacy `api_key_env` / `key_pem_env` directives resolve the same way but are deprecated; prefer `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
+Auth and credential fields resolve `${env:NAME}` placeholders through the [environment registry](../system/env.md) at decode time. The legacy `api_key_env` / `key_pem_env` directives resolve the same way but are deprecated; prefer `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -140,7 +142,7 @@ The `temporal.worker` entry kind defines a worker that executes workflows and ac
   task_queue: "my-app-queue"
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app:temporal_client
 ```
 
@@ -202,7 +204,7 @@ Configure worker behavior:
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Credential and identifier fields resolve `${env:NAME}` placeholders through the [environment registry](system/env.md) at decode time. The legacy `build_id_env` directive resolves the same way but is deprecated; prefer `build_id: ${env:NAME}`.
+Credential and identifier fields resolve `${env:NAME}` placeholders through the [environment registry](../system/env.md) at decode time. The legacy `build_id_env` directive resolves the same way but is deprecated; prefer `build_id: ${env:NAME}`.
 
 ### Versioning Behavior
 
@@ -231,7 +233,9 @@ Credential and identifier fields resolve `${env:NAME}` placeholders through the 
 | `max_concurrent_workflow_task_pollers` | 20 |
 | `sticky_schedule_to_start_timeout` | 5s |
 
-## Complete Example
+## Configuration Example
+
+This registry fragment connects one workflow and one activity to a worker. It assumes a reachable Temporal server at `localhost:7233` and the two referenced Lua source files; see the workflow and activity pages for their implementations.
 
 ```yaml
 version: "1.0"
@@ -251,7 +255,7 @@ entries:
     task_queue: "orders"
     lifecycle:
       auto_start: true
-      depends_on:
+      requires:
         - app:temporal_client
 
   - name: order_workflow
@@ -271,6 +275,8 @@ entries:
     source: file://payment.lua
     method: charge
     modules:
+      - env
+      - errors
       - http_client
       - json
     meta:
@@ -281,5 +287,5 @@ entries:
 
 ## See Also
 
-- [Activities](temporal/activities.md) - Activity definitions
-- [Workflows](temporal/workflows.md) - Workflow implementation
+- [Activities](./activities.md) - Activity definitions
+- [Workflows](./workflows.md) - Workflow implementation
