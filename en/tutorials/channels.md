@@ -1,11 +1,21 @@
 ---
-title: "Channels and Concurrency"
-description: "Use channels to coordinate coroutines with buffering, selection, fan-out, and fan-in patterns."
+title: "Channels and Concurrency Primer"
+description: "Review channel operations and coroutine coordination patterns."
 ---
 
-# Channels and Concurrency
+# Channels and Concurrency Primer
 
 This page introduces channels for coordinating coroutines within a process. The examples cover buffering, selection, producer-consumer flows, fan-out, fan-in, and channel closure.
+
+**Classification:** Reference/API primer. The snippets are independent examples,
+not a standalone application.
+
+## Context and Dependencies
+
+Run these snippets inside an exported function of an executable Lua entry such as
+`process.lua`. The `channel` and `coroutine` APIs are ambient globals in that
+execution context; they do not need `require()` calls or `modules` declarations.
+Each snippet creates its own channels and should be evaluated separately.
 
 ## Creating Channels
 
@@ -188,9 +198,10 @@ local items_per_producer = 5
 
 -- Spawn producers
 for p = 1, producer_count do
+    local producer_id = p
     coroutine.spawn(function()
         for i = 1, items_per_producer do
-            output:send({producer = p, item = i})
+            output:send({producer = producer_id, item = i})
         end
     end)
 end
@@ -240,14 +251,15 @@ local total = done:receive()
 Channel operations:
 
 - `channel.new(capacity)` — Create a channel with the specified buffer size
-- `ch:send(value)` — Send a value, blocking if the buffer is full
+- `ch:send(value)` — Send a value, blocking if the buffer is full; sending to a closed channel raises an error
 - `ch:receive()` — Receive a value and return `value, ok`
-- `ch:close()` — Close the channel
+- `ch:close()` — Close the channel; closing it again raises an error
 - `ch:case_send(value)` — Create a send case for `select`
 - `ch:case_receive()` — Create a receive case for `select`
-- `channel.select{cases...}` — Wait on multiple operations
+- `channel.select{cases...}` — Wait on multiple operations and return `channel`, `value`, and `ok`
+- `channel.select{cases..., default = true}` — Return `{default = true, ok = true}` immediately when no case is ready
 
 ## Next Steps
 
-- [Channel Module Reference](lua/core/channel.md) — Channel API documentation
-- [Processes](tutorials/processes.md) — Inter-process communication
+- [Channel Module Reference](../lua/core/channel.md) — Channel API documentation
+- [Processes](processes.md) — Inter-process communication
