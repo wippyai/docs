@@ -10,11 +10,15 @@ description: "Connect to WebSocket servers, send and receive messages, use compr
 
 The `websocket` module creates bidirectional client connections to WebSocket servers.
 
+This is an API reference with partial connection and subscription recipes. Endpoint URLs, tokens, message handlers, and application data come from the surrounding application. The lifecycle examples close the client on every terminal or checked error path; smaller method snippets assume an enclosing owner performs that cleanup.
+
 ## Loading
 
 ```lua
 local websocket = require("websocket")
 ```
+
+Add `websocket` to the executable entry's `modules:` list before requiring it. The `channel` global is always available; JSON and timeout recipes also require `json` and `time`.
 
 ## Connecting
 
@@ -41,6 +45,9 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
     read_timeout = "30s",
     compression = websocket.COMPRESSION.CONTEXT_TAKEOVER
 })
+if err then
+    return nil, err
+end
 ```
 
 | Parameter | Type | Description |
@@ -80,10 +87,12 @@ local json = require("json")
 client:send("Hello, Server!")
 
 -- Send JSON
-client:send(json.encode({
+local payload, encode_err = json.encode({
     type = "subscribe",
     channel = "orders"
-}))
+})
+if encode_err then return nil, encode_err end
+client:send(payload)
 ```
 
 ### Binary Messages
@@ -120,6 +129,7 @@ The call yields until the ping command completes and returns no values. In runti
 ```lua
 local ch, err = client:channel()
 if err then
+    client:close()
     return nil, err
 end
 
@@ -128,6 +138,9 @@ if ok then
     print("Type:", msg.type)  -- "text" or "binary"
     print("Data:", msg.data)
 end
+
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ### Message Loop
@@ -137,6 +150,7 @@ local json = require("json")
 
 local ch, err = client:channel()
 if err then
+    client:close()
     return nil, err
 end
 
@@ -147,10 +161,17 @@ while true do
     end
 
     if msg.type == "text" then
-        local data = json.decode(msg.data)
+        local data, decode_err = json.decode(msg.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         handle_message(data)
     end
 end
+
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ### With Select
@@ -161,11 +182,13 @@ local time = require("time")
 
 local ch, ch_err = client:channel()
 if ch_err then
+    client:close()
     return nil, ch_err
 end
 
 local timeout, timeout_err = time.after("30s")
 if timeout_err then
+    client:close()
     return nil, timeout_err
 end
 
@@ -179,15 +202,23 @@ while true do
         client:ping()  -- Keep-alive
         timeout, timeout_err = time.after("30s")
         if timeout_err then
+            client:close()
             return nil, timeout_err
         end
     elseif not r.ok then
         break
     else
-        local data = json.decode(r.value.data)
+        local data, decode_err = json.decode(r.value.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         process(data)
     end
 end
+
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ### Message Object
@@ -202,14 +233,11 @@ end
 Close the connection with an optional status code and reason:
 
 ```lua
--- Normal close (code 1000)
-client:close()
+local _, close_err = client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
+if close_err then return nil, close_err end
 
--- With code and reason
-client:close(websocket.CLOSE_CODES.NORMAL, "Session ended")
-
--- Error close
-client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
+-- Omitting both arguments also uses normal close code 1000.
+-- Use INTERNAL_ERROR with an application-owned reason for a failed session.
 ```
 
 | Parameter | Type | Description |
@@ -217,7 +245,9 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Close code (1000-4999), default 1000 |
 | `reason` | string | Close reason (optional) |
 
-The call yields until the close command completes. Success returns no values; a close failure returns `nil, error`. Values outside the accepted numeric range are ignored and the default code `1000` is used.
+The call yields until the close command completes. Success returns no values; a close failure returns `nil, error`. Capture two results when checking it, because the error is the second result. Values outside the accepted numeric range are ignored and the default code `1000` is used.
+
+The receive channel is owned by the client; do not close it directly. A remote terminal event closes the channel. Calling `client:close()` unsubscribes the receive channel and stops the client-side producer, so use it promptly rather than relying on process shutdown cleanup.
 
 ## Constants
 
@@ -268,7 +298,8 @@ websocket.COMPRESSION.NO_CONTEXT       -- 2 (per-message)
 | `TLS_HANDSHAKE` | 1015 | TLS handshake failure |
 
 ```lua
-client:close(websocket.CLOSE_CODES.NORMAL, "Done")
+local _, close_err = client:close(websocket.CLOSE_CODES.NORMAL, "Done")
+if close_err then return nil, close_err end
 ```
 
 ## Examples
@@ -278,7 +309,7 @@ client:close(websocket.CLOSE_CODES.NORMAL, "Done")
 ```lua
 local json = require("json")
 
-local function connect_chat(room_id, on_message)
+local function connect_chat(room_id, token, on_message)
     local client, err = websocket.connect("wss://chat.example.com/ws", {
         headers = {["Authorization"] = "Bearer " .. token}
     })
@@ -286,11 +317,16 @@ local function connect_chat(room_id, on_message)
         return nil, err
     end
 
-    -- Join room
-    client:send(json.encode({
+    -- Join room. Runtime v0.3.32a does not expose transport send failures.
+    local join_payload, encode_err = json.encode({
         type = "join",
         room = room_id
-    }))
+    })
+    if encode_err then
+        client:close()
+        return nil, encode_err
+    end
+    client:send(join_payload)
 
     -- Message loop
     local ch, channel_err = client:channel()
@@ -302,11 +338,17 @@ local function connect_chat(room_id, on_message)
         local msg, ok = ch:receive()
         if not ok then break end
 
-        local data = json.decode(msg.data)
+        local data, decode_err = json.decode(msg.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         on_message(data)
     end
 
-    client:close()
+    local _, close_err = client:close()
+    if close_err then return nil, close_err end
+    return true
 end
 ```
 
@@ -321,10 +363,15 @@ if err then
     return nil, err
 end
 
-client:send(json.encode({
+local subscribe_payload, encode_err = json.encode({
     action = "subscribe",
     symbols = {"BTC-USD", "ETH-USD"}
-}))
+})
+if encode_err then
+    client:close()
+    return nil, encode_err
+end
+client:send(subscribe_payload)
 
 local ch, channel_err = client:channel()
 if channel_err then
@@ -354,12 +401,17 @@ while true do
     elseif not r.ok then
         break  -- Connection closed
     else
-        local price = json.decode(r.value.data)
+        local price, decode_err = json.decode(r.value.data)
+        if decode_err then
+            client:close()
+            return nil, decode_err
+        end
         update_price(price.symbol, price.value)
     end
 end
 
-client:close()
+local _, close_err = client:close()
+if close_err then return nil, close_err end
 ```
 
 ## Permissions
@@ -373,7 +425,7 @@ WebSocket connections are evaluated against the active security policy.
 | `websocket.connect` | - | Allow/deny WebSocket connections |
 | `websocket.connect.url` | URL | Allow/deny connections to specific URLs |
 
-See [Security Model](system/security.md) for policy configuration.
+See [Security Model](../../system/security.md) for policy configuration.
 
 ## Errors
 
@@ -402,4 +454,4 @@ if err then
 end
 ```
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

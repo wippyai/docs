@@ -10,11 +10,15 @@ description: "Send HTTP requests with headers, authentication, forms, uploads, T
 
 The `http_client` module sends HTTP requests with headers, query parameters, forms, file uploads, authentication, TLS options, streaming responses, and concurrent batches.
 
+This is an API reference with partial request recipes. URLs, tokens, credentials, request data, and certificate material come from the surrounding application. Examples check `Response, error` before consuming a response and close streamed bodies explicitly.
+
 ## Loading
 
 ```lua
 local http_client = require("http_client")
 ```
+
+Add `http_client` to the executable entry's `modules:` list before requiring it. JSON and filesystem recipes also require `json` and `fs`.
 
 ## HTTP Methods
 
@@ -39,10 +43,15 @@ print(resp.body)         -- response body
 Send a `POST` request.
 
 ```lua
+local json = require("json")
+
+local body, body_err = json.encode({name = "Alice", email = "alice@example.com"})
+if body_err then return nil, body_err end
 local resp, err = http_client.post("https://api.example.com/users", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice", email = "alice@example.com"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### PUT
@@ -50,10 +59,13 @@ local resp, err = http_client.post("https://api.example.com/users", {
 Send a `PUT` request.
 
 ```lua
+local body, body_err = json.encode({name = "Alice Smith"})
+if body_err then return nil, body_err end
 local resp, err = http_client.put("https://api.example.com/users/123", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice Smith"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### PATCH
@@ -61,9 +73,13 @@ local resp, err = http_client.put("https://api.example.com/users/123", {
 Send a `PATCH` request.
 
 ```lua
+local body, body_err = json.encode({status = "active"})
+if body_err then return nil, body_err end
 local resp, err = http_client.patch("https://api.example.com/users/123", {
-    body = json.encode({status = "active"})
+    headers = {["Content-Type"] = "application/json"},
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### DELETE
@@ -74,6 +90,7 @@ Send a `DELETE` request.
 local resp, err = http_client.delete("https://api.example.com/users/123", {
     headers = {["Authorization"] = "Bearer " .. token}
 })
+if err then return nil, err end
 ```
 
 ### HEAD
@@ -82,6 +99,7 @@ A `HEAD` request returns headers without a response body.
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
+if err then return nil, err end
 local size = resp.headers["Content-Length"]
 ```
 
@@ -93,6 +111,7 @@ Send a request using an explicit HTTP method string.
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
     headers = {["Depth"] = "1"}
 })
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -117,7 +136,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | Max response size in bytes (0 = default) |
 | `unix_socket` | string | Connect via Unix socket path |
 | `tls` | table | Per-request TLS configuration (see [TLS Options](#tls-options)) |
-| `overlay_network` | string | Route through a [network overlay](system/network.md) — registry ID of a `network.socks5` / `network.tailscale` / `network.i2p` entry |
+| `overlay_network` | string | Route through a [network overlay](../../system/network.md) — registry ID of a `network.socks5` / `network.tailscale` / `network.i2p` entry |
 
 Selecting `overlay_network` requires `network.select` permission on that network ID.
 
@@ -131,6 +150,7 @@ local resp, err = http_client.get("https://api.example.com/search", {
         limit = "20"
     }
 })
+if err then return nil, err end
 ```
 
 ### Headers and Authentication
@@ -142,22 +162,27 @@ local resp, err = http_client.get("https://api.example.com/data", {
         ["Accept"] = "application/json"
     }
 })
+if err then return nil, err end
 
 -- Or use basic auth
 local resp, err = http_client.get("https://api.example.com/data", {
-    auth = {user = "admin", pass = "secret"}
+    auth = {user = service_user, pass = service_password}
 })
+if err then return nil, err end
 ```
+
+Load authentication values from application-owned secret storage and send them only over TLS.
 
 ### Form Data
 
 ```lua
 local resp, err = http_client.post("https://api.example.com/login", {
     form = {
-        username = "alice",
-        password = "secret123"
+        username = username,
+        password = password
     }
 })
+if err then return nil, err end
 ```
 
 ### File Upload
@@ -174,6 +199,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
         }
     }
 })
+if err then return nil, err end
 ```
 
 | File Field | Type | Required | Description |
@@ -186,16 +212,18 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 
 \* Either `content` or `reader` is required.
 
+The pinned runtime fully reads a `reader` into memory before dispatch, does not close it, and does not surface a non-EOF read failure separately; it can send the bytes accumulated before that failure. Prefer `content` for already-bounded data, and close caller-owned readers after the request. The `content_type` field is parsed but not forwarded by runtime `v0.3.32a`, so uploaded parts use the transport default.
+
+Reader-backed files are supported only by single-request calls in this release. `request_batch` forwards the `content` field but drops a parsed `reader`, so batch file uploads must provide `content`.
+
 ### Timeout
 
 ```lua
 -- Number: seconds
 local resp, err = http_client.get(url, {timeout = 30})
+if err then return nil, err end
 
--- String: Go duration format
-local resp, err = http_client.get(url, {timeout = "30s"})
-local resp, err = http_client.get(url, {timeout = "1m30s"})
-local resp, err = http_client.get(url, {timeout = "1h"})
+-- String alternatives use Go duration format: "30s", "1m30s", or "1h".
 ```
 
 ### TLS Options
@@ -216,9 +244,12 @@ For mutual TLS, provide `cert` and `key` together. The `ca` field replaces the s
 
 ```lua
 local fs = require("fs")
-local certs = assert(fs.get("app:certs"))
-local cert_pem = assert(certs:readfile("client.crt"))
-local key_pem = assert(certs:readfile("client.key"))
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local cert_pem, cert_err = certs:readfile("client.crt")
+if cert_err then return nil, cert_err end
+local key_pem, key_err = certs:readfile("client.key")
+if key_err then return nil, key_err end
 
 local resp, err = http_client.get("https://secure.example.com/api", {
     tls = {
@@ -226,14 +257,17 @@ local resp, err = http_client.get("https://secure.example.com/api", {
         key = key_pem,
     }
 })
+if err then return nil, err end
 ```
 
 #### Custom CA
 
 ```lua
 local fs = require("fs")
-local certs = assert(fs.get("app:certs"))
-local ca_pem = assert(certs:readfile("internal-ca.crt"))
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local ca_pem, ca_err = certs:readfile("internal-ca.crt")
+if ca_err then return nil, ca_err end
 
 local resp, err = http_client.get("https://internal.example.com/api", {
     tls = {
@@ -241,6 +275,7 @@ local resp, err = http_client.get("https://internal.example.com/api", {
         server_name = "internal.example.com",
     }
 })
+if err then return nil, err end
 ```
 
 #### Insecure Skip Verify
@@ -253,7 +288,10 @@ local resp, err = http_client.get("https://localhost:8443/api", {
         insecure_skip_verify = true,
     }
 })
+if err then return nil, err end
 ```
+
+Use `insecure_skip_verify` only for a controlled diagnostic endpoint. It disables both certificate-chain and hostname verification.
 
 ## Response Object
 
@@ -274,7 +312,8 @@ if err then
 end
 
 if resp.status_code == 200 then
-    local data = json.decode(resp.body)
+    local data, decode_err = json.decode(resp.body)
+    if decode_err then return nil, decode_err end
     print("Content-Type:", resp.headers["Content-Type"])
 end
 ```
@@ -292,12 +331,16 @@ if err then
 end
 
 -- Process in chunks
+local read_err
 while true do
-    local chunk, err = resp.stream:read(65536)
-    if err or not chunk then break end
+    local chunk
+    chunk, read_err = resp.stream:read(65536)
+    if read_err or not chunk then break end
     -- process chunk
 end
-resp.stream:close()
+local _, close_err = resp.stream:close()
+if read_err then return nil, read_err end
+if close_err then return nil, close_err end
 ```
 
 | Stream Method | Returns | Description |
@@ -305,21 +348,27 @@ resp.stream:close()
 | `read(n?)` | string, error | Read up to `n` bytes (default: implementation buffer) |
 | `close()` | boolean, error | Close the stream |
 
-`resp.stream` is a full [stream](lua/core/stream.md) object — `seek`, `stat`, and `scanner` are also available.
+`resp.stream` is a full [stream](../core/stream.md) object — `seek`, `stat`, and `scanner` are also available. The caller owns a streamed response body and should close it on every exit; task cleanup is a fallback, not a substitute for prompt release.
 
 ## Batch Requests
 
 `request_batch` executes multiple requests concurrently.
 
 ```lua
-local responses, errors = http_client.request_batch({
+local requests = {
     {"GET", "https://api.example.com/users"},
     {"GET", "https://api.example.com/products"},
     {"POST", "https://api.example.com/log", {body = "event"}}
-})
+}
+local responses, batch_errors = http_client.request_batch(requests)
 
-if errors then
-    for i, err in ipairs(errors) do
+if not responses then
+    return nil, batch_errors  -- whole-batch dispatch or validation failure
+end
+
+if batch_errors then
+    for i = 1, #requests do
+        local err = batch_errors[i]
         if err then
             print("Request " .. i .. " failed:", err)
         end
@@ -342,6 +391,7 @@ end
 
 - Requests execute concurrently
 - Streaming (`stream = true`) is not supported in batch
+- Reader-backed file uploads are not supported in batch; use `files[].content`
 - Result arrays match request order (1-indexed)
 
 ## URL Encoding
@@ -363,6 +413,7 @@ Decode a string previously encoded with `http_client.encode_uri`.
 
 ```lua
 local decoded, err = http_client.decode_uri("hello+world")
+if err then return nil, err end
 -- "hello world"
 ```
 
@@ -386,7 +437,8 @@ HTTP requests are evaluated against the active security policy.
 local security = require("security")
 
 if security.can("http_client.request", "https://api.example.com/users") then
-    local resp = http_client.get("https://api.example.com/users")
+    local resp, request_err = http_client.get("https://api.example.com/users")
+    if request_err then return nil, request_err end
 end
 ```
 
@@ -399,7 +451,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-See [Security Model](system/security.md) for policy configuration.
+See [Security Model](../../system/security.md) for policy configuration.
 
 ## Errors
 
@@ -409,10 +461,12 @@ See [Security Model](system/security.md) for policy configuration.
 | Private IP blocked | `errors.PERMISSION_DENIED` | no |
 | Unix socket denied | `errors.PERMISSION_DENIED` | no |
 | Insecure TLS denied | `errors.PERMISSION_DENIED` | no |
-| Invalid URL or options | `errors.INVALID` | no |
+| Invalid batch item, batch streaming, or invalid URI escape | `errors.INVALID` | no |
 | No context | `errors.INTERNAL` | no |
-| Network failure | `errors.INTERNAL` | yes |
+| Malformed transport URL or network failure | `errors.INTERNAL` | yes |
 | Timeout | `errors.INTERNAL` | yes |
+
+Many unsupported option values are ignored rather than returned as structured errors. Invalid Lua argument types and an empty batch raise Lua argument errors. Validate application-supplied option tables before calling the client.
 
 ```lua
 local resp, err = http_client.get(url)
@@ -426,4 +480,4 @@ if err then
 end
 ```
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

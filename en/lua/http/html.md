@@ -12,11 +12,15 @@ The `html` module sanitizes untrusted HTML with policies based on [bluemonday](h
 
 Sanitization parses an HTML fragment and filters it through an allowlist policy. Elements and attributes that the policy does not allow are removed, and the remaining fragment is normalized during serialization.
 
+This is an API reference. Constructor blocks are self-contained policy snippets; later method blocks are partial configuration snippets that assume `policy` is an already-created policy. Sanitized output is suitable only for an HTML element-content context. It is not safe for JavaScript, CSS, URL, or HTML attribute interpolation; use an encoder for the actual output context.
+
 ## Loading
 
 ```lua
 local html = require("html")
 ```
+
+Add `html` to the executable entry's `modules:` list before requiring it.
 
 ## Preset Policies
 
@@ -36,6 +40,7 @@ Create an empty policy, then add the elements and attributes it should allow:
 
 ```lua
 local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 
 policy:allow_elements("p", "strong", "em")
 policy:allow_attrs("class"):globally()
@@ -50,7 +55,8 @@ local clean = policy:sanitize(user_input)
 Create a policy configured for common user-generated formatting:
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 
 local safe = policy:sanitize('<p>Hello <strong>world</strong></p>')
 -- '<p>Hello <strong>world</strong></p>'
@@ -66,7 +72,8 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 Create a strict policy that removes HTML and returns plain text:
 
 ```lua
-local policy = html.sanitize.strict_policy()
+local policy, err = html.sanitize.strict_policy()
+if err then return nil, err end
 
 local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 -- 'Hello world!'
@@ -81,7 +88,8 @@ local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 Allow specific HTML elements:
 
 ```lua
-local policy = html.sanitize.new_policy()
+local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 policy:allow_elements("p", "strong", "em", "br")
 policy:allow_elements("h1", "h2", "h3")
 policy:allow_elements("a", "img")
@@ -285,6 +293,8 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 **Returns:** `Policy`
 
+When opening untrusted links in a new tab, also enable `require_noreferrer_on_links(true)` to suppress referrer leakage and mitigate opener access.
+
 ## Convenience Methods
 
 ### Allow Images
@@ -361,7 +371,8 @@ policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
 Apply a policy to an HTML string:
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 policy:require_nofollow_on_links(true)
 
 local dirty = '<p>Hello</p><script>alert("xss")</script>'
@@ -375,10 +386,12 @@ local clean = policy:sanitize(dirty)
 
 **Returns:** `string`
 
+`sanitize` returns only a string. In runtime `v0.3.32a`, the underlying fragment parser can turn malformed input that it cannot parse into an empty string, and the Lua wrapper cannot distinguish that case from valid input whose content the policy removed. Treat sanitization as output filtering, not input validation; validate required content separately when an empty result matters.
+
 ## Errors
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Invalid regex pattern | `errors.INVALID` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.
