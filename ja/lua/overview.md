@@ -1,51 +1,56 @@
 ---
 title: "Luaランタイム"
-description: "WippyのプライマリコンピュートランタイムはI/Oバウンドおよびビジネスロジックワークロード向けに最適化されています。コードはメッセージパッシングで通信する分離されたプロセス内で実行されます—共有メモリもロックもありません。"
+description: "LuaコードがWippyプロセスで実行され、チャネルで通信し、モジュールを読み込み、エラーを処理する仕組み。"
 ---
 
 # Luaランタイム
 
-WippyのプライマリコンピュートランタイムはI/Oバウンドおよびビジネスロジックワークロード向けに最適化されています。コードはメッセージパッシングで通信する分離されたプロセス内で実行されます—共有メモリもロックもありません。
+Luaは、I/Oバウンドの処理とビジネスロジックに使用されるWippyの主要ランタイムです。コードは分離されたプロセス内で実行され、共有メモリではなくメッセージパッシングを介して通信します。
 
-Wippyはポリグロットランタイムとして設計されています。Luaがプライマリ言語ですが、将来のバージョンではWebAssemblyおよびTemporal統合を通じて、計算集約型または特殊なワークロード向けの追加言語をサポートする予定です。
+このページは概念の概要です。各コードブロックは独立した参照用スニペットであり、`inbox`、`events`、`handle_message` などの名前は、周囲のアプリケーションから提供される値やコールバックを表します。
+
+Luaを採用した設計上のトレードオフとWebAssemblyとの関係については、[WippyがLuaを使用する理由](why-lua.md)を参照してください。
 
 ## プロセス
 
-Luaコードは**プロセス**内で実行されます—スケジューラによって管理される分離された実行コンテキストです。各プロセスは：
+Luaコードは、スケジューラが管理する分離された実行コンテキストである**プロセス**内で実行されます。各プロセスには次の特性があります。
 
-- 独自のメモリ空間を持つ
-- ブロッキング操作（I/O、チャネル）でyieldする
-- 監視およびスーパーバイズ可能
-- マシンあたり数千にスケール
-
-<note>
-一般的なLuaプロセスのベースラインメモリオーバーヘッドは約13 KBです。
-</note>
+- 独自のメモリ空間を持ちます。
+- I/Oやチャネルアクセスなどのブロッキング操作中は実行を譲ります。
+- 監視とスーパービジョンが可能です。
+- 1台のマシン上で数千のプロセスと並行して実行できます。
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "task", {data = "work"})
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then
+    return nil, err
+end
+
+local sent, send_err = process.send(pid, "task", {data = "work"})
+if send_err then
+    return nil, send_err
+end
 ```
 
-スポーン、リンク、スーパービジョンについては[プロセス管理](lua/core/process.md)を参照。
+実行可能なLuaエントリでは、`process` がグローバルとして提供されます。エントリの `modules` リストに追加せずに `require("process")` で読み込むこともできます。スポーン、リンク、スーパービジョンについては[プロセス管理](core/process.md)を参照してください。
 
 ## チャネル
 
-Go形式のチャネルで通信：
+チャネルは、並行タスク間の通信を提供します。
 
 ```lua
-local ch = channel.new()        -- アンバッファード
+local sync_ch = channel.new()   -- unbuffered
 local buffered = channel.new(10)
 
-ch:send(value)                  -- 受信されるまでブロック
-local val, ok = ch:receive()    -- 準備できるまでブロック
+buffered:send("work")           -- completes while buffer space is available
+local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-selectとパターンについては[チャネル](lua/core/channel.md)を参照。
+selectとパターンについては[チャネル](core/channel.md)を参照してください。
 
 ## コルーチン
 
-プロセス内で軽量コルーチンをスポーン：
+プロセス内では、軽量なコルーチンを使用して処理を並行実行できます。
 
 ```lua
 coroutine.spawn(function()
@@ -53,14 +58,14 @@ coroutine.spawn(function()
     ch:send(data)
 end)
 
-do_other_work()  -- 即座に続行
+do_other_work()  -- continues immediately
 ```
 
-スポーンされたコルーチンはスケジューラ管理—手動のyield/resumeは不要。
+スポーンされたコルーチンはスケジューラが管理するため、呼び出し側で手動のyieldやresumeを行う必要はありません。
 
 ## Select
 
-複数のイベントソースを処理：
+複数のイベントソースを待機するには、`channel.select` を使用します。
 
 ```lua
 local r = channel.select {
@@ -70,7 +75,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- タイムアウト
+    -- timed out
 elseif r.channel == events then
     handle_event(r.value)
 else
@@ -80,37 +85,40 @@ end
 
 ## グローバル
 
-`require` なしで常に利用可能で、`modules:` に記載する必要はありません：
+次のグローバルは `require` なしで利用でき、`modules:` に記載する必要もありません。
 
-- `process` - プロセスのスポーン、メッセージ送信、監視、リンク
 - `channel` - Go形式チャネル
 - `payload` - エントリの入力 payload
+- `process` - プロセスのスポーン、メッセージ送信、監視、ライフサイクル操作
 - `print`、`subscribe`、`unsubscribe` - ロギングと pub/sub
 - `os`、`table`、`math`、`string`、`coroutine`、`errors` - 標準ライブラリ
 
 ## モジュール
 
-その他はすべて `require()` で読み込み、エントリの `modules:` 許可リストに含める必要があります：
+グローバルではない組み込みランタイムモジュールは `require()` で読み込み、エントリの `modules:` 許可リストに含める必要があります。実行可能なエントリでは `process` がグローバルとして提供され、`require("process")` も `modules:` 宣言なしで使用できます。
 
 ```lua
+local process = require("process")
 local json = require("json")
 local sql = require("sql")
 local http = require("http_client")
 ```
 
-利用可能なモジュールはエントリ設定に依存します。[エントリ定義](lua/entries.md)を参照。
+利用可能なモジュールはエントリ設定に依存します。[エントリ定義](entries.md)を参照してください。
 
-## 外部ライブラリ
+レジストリライブラリも同じ `require("alias")` 構文を使用しますが、エントリの `imports:` マップで別途宣言します。
 
-Wippyは[漸進的型システム](lua/types.md)を持つLua 5.3構文を使用し、Luauにインスパイアされています。型はファーストクラスのランタイム値—検証のために呼び出し可能、引数として渡すことが可能、イントロスペクション可能—ZodやPydanticのようなスキーマライブラリの必要性を置き換えます。
+## 言語とライブラリのサポート
+
+Wippyは、Luauに着想を得た[漸進的型システム](types.md)を備えるLua 5.3構文を使用します。型はファーストクラスのランタイム値であり、検証に使用したり、引数として渡したり、実行時に調査したりできます。
 
 外部Luaライブラリ（LuaRocksなど）はサポートされていません。ランタイムはI/O、ネットワーキング、システム統合のための組み込み拡張を持つ独自のモジュールシステムを提供します。
 
-カスタム拡張については、internalsドキュメントの[モジュール](internals/modules.md)を参照。
+カスタム拡張については、internalsドキュメントの[モジュール](../internals/modules.md)を参照してください。
 
 ## エラー処理
 
-関数は`result, error`ペアを返します：
+関数は一般に `result, error` ペアを返します。
 
 ```lua
 local data, err = json.decode(input)
@@ -119,12 +127,11 @@ if err then
 end
 ```
 
-パターンについては[エラー処理](lua/core/errors.md)を参照。
+このスニペットでは、エントリの `modules` リストで `json` が有効になっており、`input` にデコード対象の文字列が含まれているものとします。パターンについては[エラー処理](core/errors.md)を参照してください。
 
 ## 次のステップ
 
-- [エントリ定義](lua/entries.md) - エントリポイントを設定
-- [チャネル](lua/core/channel.md) - チャネルパターン
-- [プロセス管理](lua/core/process.md) - スポーンとスーパービジョン
-- [関数](lua/core/funcs.md) - クロスプロセス呼び出し
-
+- [エントリ定義](entries.md) - エントリポイントの設定
+- [チャネル](core/channel.md) - チャネルパターン
+- [プロセス管理](core/process.md) - スポーンとスーパービジョン
+- [関数](core/funcs.md) - プロセス間の呼び出し

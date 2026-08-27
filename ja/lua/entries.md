@@ -5,7 +5,9 @@ description: "Luaベースエントリの設定：関数、プロセス、ワー
 
 # Luaエントリ種別
 
-Luaベースエントリの設定：関数、プロセス、ワークフロー、ライブラリ。
+Luaエントリ種別は、ソースコードを関数、プロセス、ワークフロー、ライブラリとして読み込み、実行する方法を定義します。
+
+このページは設定リファレンスです。YAMLブロックはWippyインデックスの `entries:` マッピング配下に配置する部分的なエントリ定義であり、単独で完全なアプリケーションを構成するものではありません。参照するソースファイル、インポート、依存関係、プロセスホスト、セキュリティポリシーは、周囲のプロジェクト内に存在する必要があります。
 
 ## エントリ種別
 
@@ -15,9 +17,10 @@ Luaベースエントリの設定：関数、プロセス、ワークフロー�
 | `process.lua` | 状態を持つ長時間実行アクター |
 | `workflow.lua` | 耐久性のあるワークフロー（Temporal） |
 | `library.lua` | 他のエントリにインポートされる共有コード |
-| `module.lua` | モジュール表面（複数メソッドのライブラリ） |
 
-各種別には事前コンパイル済みのバイトコード対応版（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）があり、`wippy pack --bytecode` によって生成されます。作成者は `.lua` エントリを書き、バイトコード種別はパック時に自動生成されます。
+各種別には事前コンパイル済みのバイトコード対応版（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）があり、`wippy pack --bytecode '**'`（または `--bytecode 'app:**'` のようなパターン）によって生成されます。作成者は `.lua` エントリを書き、バイトコード種別はこのフラグを指定してパックすると出力されます。
+
+`module.lua` は、ランタイムが作成する組み込みモジュール定義の予約種別です。ソースエントリとして作成することはできず、対応するバイトコード種別もありません。
 
 ## 共通フィールド
 
@@ -27,15 +30,17 @@ Luaベースエントリの設定：関数、プロセス、ワークフロー�
 |-----------|------|------|
 | `name` | yes | 名前空間内で一意の名前 |
 | `kind` | yes | 上記のLua種別の1つ |
-| `source` | yes | Luaファイルパス（`file://path.lua`） |
+| `source` | yes | インラインLuaソース、またはレジストリ読み込み時に解決される `file://path.lua` 参照 |
 | `method` | function/process/workflow | エクスポートする関数（ライブラリでは使用しない） |
 | `modules` | no | `require()`で許可されるモジュール |
 | `imports` | no | ローカルモジュールとしての他のエントリ |
 | `meta` | no | 検索可能なメタデータ |
 
-## function.lua
+`pool` は `function.lua` にのみ適用されます。`security` は `function.lua` と `process.lua` に適用されます。
 
-オンデマンドで呼び出されるステートレス関数。各呼び出しは独立。
+## `function.lua`
+
+`function.lua` エントリはオンデマンドで実行され、各呼び出しは独立して処理されます。
 
 ```yaml
 - name: handler
@@ -47,11 +52,11 @@ Luaベースエントリの設定：関数、プロセス、ワークフロー�
     - json
 ```
 
-用途：HTTPハンドラ、データ変換、ユーティリティ。
+関数は、HTTPハンドラ、データ変換、ユーティリティに使用します。
 
-## process.lua
+## `process.lua`
 
-メッセージ間で状態を維持する長時間実行アクター。メッセージパッシングで通信。
+`process.lua` エントリは、状態を維持しながらメッセージで通信する長時間実行アクターです。
 
 ```yaml
 - name: worker
@@ -59,11 +64,10 @@ Luaベースエントリの設定：関数、プロセス、ワークフロー�
   source: file://worker.lua
   method: main
   modules:
-    - process
     - sql
 ```
 
-用途：バックグラウンドワーカー、サービスデーモン、ステートフルアクター。
+バックグラウンドワーカー、サービスデーモン、ステートフルアクターにはプロセスを選択します。
 
 スーパーバイズされたサービスとして実行：
 
@@ -78,9 +82,9 @@ Luaベースエントリの設定：関数、プロセス、ワークフロー�
       max_attempts: 10
 ```
 
-## workflow.lua
+## `workflow.lua`
 
-再起動に耐えるdurableワークフロー。状態はTemporalに永続化。
+`workflow.lua` エントリは、状態をTemporalに永続化する耐久性のあるワークフローを定義します。
 
 ```yaml
 - name: order_processor
@@ -92,11 +96,11 @@ Luaベースエントリの設定：関数、プロセス、ワークフロー�
     - time
 ```
 
-用途：マルチステップビジネスプロセス、長時間実行オーケストレーション。
+ワークフローは、複数ステップのビジネスプロセスや長時間実行されるオーケストレーションに使用します。
 
-## library.lua
+## `library.lua`
 
-他のエントリにインポートできる共有コード。
+`library.lua` エントリは、他のエントリからインポートできる共有コードを提供します。
 
 ```yaml
 - name: helpers
@@ -134,17 +138,13 @@ modules:
   - http
   - json
   - sql
-  - process
 ```
 
-`channel`、`print`、`subscribe`、`unsubscribe` は Lua のグローバルとしてロードされ、`modules:` に記載する必要はありません。
+`channel`、`payload`、`print`、`process`、`subscribe`、`unsubscribe` はLuaのグローバルとして読み込まれるため、`modules:` に記載する必要はありません。`require("process")` も `modules:` 宣言なしで使用できます。
 
-リストされたモジュールのみ利用可能。これにより：
-- セキュリティ：システムモジュールへのアクセスを防止
-- 明示的な依存関係：コードが必要とするものが明確
-- 決定論性：ワークフローは決定論的モジュールのみ取得
+一覧に含まれる組み込みモジュールと、`imports` で宣言されたエイリアスだけを利用できます。モジュール許可リストは、ランタイム機能へのアクセスを制限し、依存関係を明示し、ワークフローで利用できるモジュールクラスを互換性のあるものに限定します。
 
-利用可能なモジュールについては[Luaランタイム](lua/overview.md)を参照。
+利用可能なモジュールについては[Luaランタイム](overview.md)を参照してください。
 
 ## インポート
 
@@ -158,9 +158,9 @@ imports:
 
 キーはLuaコード内のモジュール名になります。値はエントリID（`namespace:name`）。
 
-## プール設定
+## 関数プール
 
-関数の実行プールを設定：
+関数エントリの実行方法を設定するには、`pool` を使用します。
 
 ```yaml
 - name: handler
@@ -168,30 +168,37 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # デフォルト
-    size: 4           # 初期ワーカー数
-    max_size: 16      # エラスティックプールの上限
+    type: adaptive    # explicit; omit to use auto-select (lazy)
+    max_size: 16      # cap for elastic growth
 ```
 
 | フィールド | プール | 説明 |
 |-----------|--------|------|
 | `type` | すべて | スケジューラ実装（下表参照） |
-| `size` | static, lazy, adaptive | 初期ワーカー数 |
-| `workers` | engine v2 | ワーカースレッド数 |
-| `buffer` | static, adaptive | タスクキュー容量（デフォルト `workers * 64`） |
-| `warm_start` | adaptive | 起動時にエントリを事前コンパイル |
-| `max_size` | lazy, adaptive | エラスティック拡張の上限（デフォルト 16） |
+| `workers` | static | ワーカー数。設定した場合、設定検証時に `size` も正の値である必要があります |
+| `size` | static | `workers` が未設定の場合のワーカー数。`type` を省略した場合、正の `size` だけを指定すると `inline` が選択されます |
+| `buffer` | static | タスクキュー容量（デフォルト：`workers * 64`） |
+| `max_size` | lazy, adaptive | 弾力的な拡張の上限（明示的な種別ではデフォルト16） |
+| `warm_start` | すべて | 受け付けられる設定フラグ。このランタイムリリースでは効果がありません |
 
 | タイプ | 動作 |
 |--------|------|
-| `inline` | 呼び出し元のゴルーチンで同期実行。最低レイテンシ、呼び出し間に分離なし。 |
+| `inline` | 呼び出し元のゴルーチンで同期実行。呼び出し間の分離はありません。 |
 | `lazy` | アイドル時はワーカーなし、オンデマンドで生成、アイドルで破棄。 |
 | `static` | チャンネルベースの固定サイズプール。安定負荷で予測可能。 |
-| `adaptive` | 自動スケーリングプール — 負荷時に拡大、アイドル時に縮小。デフォルト。 |
+| `adaptive` | 自動スケーリングプール — 負荷時に拡大し、アイドル時に縮小します。 |
+
+`type` を省略すると、ランタイムは次の規則で選択します。
+
+- `workers` が正なら `static`
+- `workers` が0で、`size` が0または `max_size` が正なら `lazy`
+- `size` が正で `max_size` が0なら `inline`
+
+自動選択されたlazyプールは、`max_size` が正ならその値を使用し、それ以外はデフォルトで100になります。明示的な `lazy` または `adaptive` プールでは、`max_size` のデフォルトは16です。明示的な `static` プールでは、`workers`、`size`、8の順でワーカー数を決定し、デフォルトのバッファは選択されたワーカー数の64倍です。
 
 ## メタデータ
 
-ルーティングと発見に`meta`を使用：
+検索可能なルーティングとディスカバリのフィールドを付加するには、`meta` を使用します。
 
 ```yaml
 - name: api_handler
@@ -205,18 +212,23 @@ imports:
   modules:
     - http
     - json
+    - registry
 ```
 
 メタデータはレジストリで検索可能：
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers, err = registry.find({["meta.type"] = "handler"})
+if err then
+    return nil, err
+end
 ```
+
+このクエリは、一致するすべてのレジストリエントリを返します。Luaコードは、上記の `api_handler` のように、`modules` リストに `registry` を含む実行可能エントリに属します。
 
 ## 関連項目
 
-- [エントリ種別](guides/entry-kinds.md) - 全エントリ種別リファレンス
-- [コンピュートユニット](concepts/compute-units.md) - 関数 vs プロセス vs ワークフロー
-- [Luaランタイム](lua/overview.md) - 利用可能なモジュール
-
+- [エントリ種別](../guides/entry-kinds.md) - すべてのエントリ種別のリファレンス
+- [コンピュートユニット](../concepts/compute-units.md) - 関数、プロセス、ワークフローの比較
+- [Luaランタイム](overview.md) - 利用可能なモジュール

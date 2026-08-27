@@ -1,6 +1,6 @@
 ---
 title: "エラー"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Luaエントリで構造化エラーを作成、ラップ、検査、分類する方法。"
 ---
 
 # エラー
@@ -8,15 +8,17 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-カテゴリ分けとリトライメタデータ付きの構造化エラー処理。グローバル`errors`テーブルはrequireなしで利用可能。
+グローバルな `errors` テーブルは、カテゴリ、詳細、再試行メタデータを持つ構造化エラーを作成し、検査します。`require` なしで利用できます。
+
+このページはAPIリファレンスです。各コードブロックは独立したスニペットであり、完全なエントリではありません。`err` などの変数は周囲のアプリケーションコードから返されるか作成されたエラーを指します。ラップの例では、`db` がアプリケーションから提供されるデータベースクライアントであると想定しています。
 
 ## エラーの作成
 
 ```lua
--- シンプルなメッセージ（kindはデフォルトでUNKNOWN）
+-- Simple message (kind defaults to UNKNOWN)
 local err = errors.new("something went wrong")
 
--- kind、retryable、details付き
+-- With kind, retryable, and details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -29,10 +31,10 @@ local err = errors.new({
 
 ## エラーのラップ
 
-kind、retryable、detailsを保持しながらコンテキストを追加：
+エラーをラップすると、kind、再試行メタデータ、detailsを保持したままコンテキストを追加できます。
 
 ```lua
-local data, err = db.query("SELECT * FROM users")
+local data, err = db:query("SELECT * FROM users")
 if err then
     return nil, errors.wrap(err, "failed to load users")
 end
@@ -53,12 +55,12 @@ end
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- 無効な入力を処理
+    -- Handle invalid input
 end
 
--- または直接比較
+-- Or compare directly
 if err:kind() == errors.NOT_FOUND then
-    -- 見つからないリソースを処理
+    -- Handle missing resource
 end
 ```
 
@@ -80,7 +82,7 @@ end
 
 ## コールスタック
 
-構造化されたコールスタックを取得：
+構造化されたコールスタックを調べるには、`errors.call_stack` を使用します。
 
 ```lua
 local stack = errors.call_stack(err)
@@ -94,16 +96,11 @@ end
 
 ## 再試行可能なエラー
 
-| 通常再試行可能 | 再試行不可 |
-|---------------------|---------------|
-| `TIMEOUT` | `INVALID` |
-| `UNAVAILABLE` | `NOT_FOUND` |
-| `RATE_LIMITED` | `PERMISSION_DENIED` |
-| | `ALREADY_EXISTS` |
+再試行可能性はエラーのメタデータであり、エラー種別によって保証される特性ではありません。`err:kind()` から推測せず、`err:retryable()` の戻り値を確認してください。`nil` は、再試行が適切かどうかをエラーが指定していないことを意味します。
 
 ```lua
 if err:retryable() then
-    -- 安全に再試行
+    -- Safe to retry
 end
 ```
 
@@ -126,4 +123,3 @@ for _, e in ipairs(details.errors) do
     print(e.field, e.message)
 end
 ```
-
