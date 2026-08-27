@@ -1,64 +1,64 @@
 ---
 title: "Linter"
-description: "O Wippy inclui um linter integrado que realiza verificacao de tipos e analise estatica em codigo Lua. Execute-o com wippy lint."
+description: "Use o linter Lua integrado para verificação de tipos, análise estática, filtragem, cache e saída para CI."
 ---
 
 # Linter
 
-O Wippy inclui um linter integrado que realiza verificacao de tipos e analise estatica em codigo Lua. Execute-o com `wippy lint`.
+Execute `wippy lint` para verificar tipos e analisar estaticamente entradas Lua.
 
 ## Uso
 
 ```bash
-wippy lint                        # Verifica todas as entradas Lua
-wippy lint --level hint           # Mostra todos os diagnosticos incluindo hints
-wippy lint --json                 # Saida em formato JSON
-wippy lint --ns app               # Verifica apenas o namespace app
-wippy lint --summary              # Agrupa resultados por codigo de erro
+wippy lint                        # Check all Lua entries
+wippy lint --level hint           # Show all diagnostics including hints
+wippy lint --json                 # Output in JSON format
+wippy lint --ns app               # Check only the app namespace
+wippy lint --summary              # Group results by error code
 ```
 
-## O Que e Verificado
+## O Que É Verificado
 
-O linter valida todos os tipos de entradas Lua:
+O linter valida todos os kinds de entrada Lua:
 
-- `function.lua` - Funcoes
-- `library.lua` - Bibliotecas
-- `process.lua` - Processos
-- `workflow.lua` - Workflows
+- `function.lua` — Funções
+- `library.lua` — Bibliotecas
+- `process.lua` — Processos
+- `workflow.lua` — Workflows
 
-Suas variantes pre-compiladas `.bc` (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) tambem sao analisadas.
+Entradas de bytecode contêm bytecode compilado (fs/path/hash), não código-fonte, portanto não podem ser analisadas sintaticamente nem ter seus tipos verificados. O linter verifica somente entradas Lua que contêm código-fonte; suas variantes `.bc` são ignoradas, embora ainda possam aparecer na contagem total de entradas.
 
-Cada entrada e analisada sintaticamente, verificada quanto a tipos e analisada para problemas de corretude.
+Cada entrada é analisada sintaticamente, tem seus tipos verificados e é examinada em busca de problemas de correção.
 
-## Niveis de Severidade
+## Níveis de Severidade
 
-Os diagnosticos possuem tres niveis de severidade:
+Os diagnósticos têm três níveis de severidade:
 
-| Nivel | Descricao |
+| Nível | Descrição |
 |-------|-----------|
-| `error` | Erros de tipo e problemas de corretude que devem ser corrigidos |
-| `warning` | Provaveis bugs ou padroes problematicos |
-| `hint` | Sugestoes de estilo e notas informativas |
+| `error` | Erros de tipo e problemas de correção que precisam ser corrigidos |
+| `warning` | Bugs prováveis ou padrões problemáticos |
+| `hint` | Sugestões de estilo e notas informativas |
 
-Controle quais niveis aparecem com `--level`:
+Controle quais níveis aparecem com `--level`:
 
 ```bash
-wippy lint --level error          # Apenas erros
-wippy lint --level warning        # Warnings e erros (padrao)
-wippy lint --level hint           # Tudo
+wippy lint --level error          # Errors only
+wippy lint --level warning        # Warnings and errors (default)
+wippy lint --level hint           # Everything
 ```
 
-## Codigos de Erro
+## Códigos de Erro
 
-### Erros de Parse
+### Erros de Análise Sintática
 
-| Codigo | Descricao |
+| Código | Descrição |
 |--------|-----------|
-| `P0001` | Erro de sintaxe Lua - codigo-fonte nao pode ser analisado |
+| `P0001` | Erro de sintaxe Lua — o código-fonte não pode ser analisado |
 
-### Erros de Verificacao de Tipos (serie E)
+### Erros de Verificação de Tipos (Série E)
 
-Os erros do verificador de tipos (`E0001`+) reportam problemas encontrados pelo sistema de tipos: incompatibilidades de tipo, variaveis indefinidas, operacoes invalidas e problemas de corretude similares. Estes sao sempre reportados como erros.
+Os erros do verificador de tipos (`E0001`+) informam problemas encontrados pelo sistema de tipos: incompatibilidades de tipo, variáveis indefinidas, operações inválidas e problemas semelhantes de correção. Eles sempre são apresentados como erros.
 
 ```lua
 local x: number = "hello"         -- E: string not assignable to number
@@ -70,15 +70,15 @@ end
 add("one", "two")                  -- E: string not assignable to number
 ```
 
-### Requires Nao Declarados
+### Requires Não Declarados
 
-Um `require("name")` com literal de string cujo modulo nao esta nas declaracoes `imports`/`modules` da entrada nem e um builtin ambiente falha com:
+Um `require("name")` com literal de string cujo módulo não esteja nas declarações `imports`/`modules` da entrada nem seja um builtin ambiente falha com:
 
 ```
 require("name") is not declared in _index.yaml imports or modules
 ```
 
-Essa verificacao sempre executa (nao depende de `--rules`) e reporta como erro. Declare o modulo para satisfaze-la:
+Essa verificação sempre é executada — não depende de `--rules` — e é apresentada como erro. Declare o módulo para satisfazê-la:
 
 ```yaml
 imports:
@@ -87,45 +87,45 @@ modules:
   - funcs                    # bare module name
 ```
 
-Requires dinamicos (`require(variable)`) nao sao inspecionados. O conjunto ambiente — modulos disponiveis sem declaracao, como `process` em tipos executaveis — e compartilhado entre o linter e o runtime, entao a resolucao em tempo de lint e em tempo de execucao nao pode divergir.
+Requires dinâmicos (`require(variable)`) não são inspecionados. O linter e o runtime compartilham o conjunto de módulos ambientes, que inclui módulos disponíveis sem declaração, como `process` em kinds executáveis.
 
-### Avisos de Regras de Lint (Serie W)
+### Avisos das Regras de Lint (Série W)
 
-As regras de lint fornecem verificacoes de estilo e qualidade. Ative-as com `--rules`:
+As regras de lint realizam verificações de estilo e qualidade. Habilite-as com `--rules`:
 
 ```bash
 wippy lint --rules
 ```
 
-| Codigo | Regra | Descricao |
+| Código | Regra | Descrição |
 |--------|-------|-----------|
-| `W0001` | no-empty-blocks | Blocos de instrucoes vazios |
-| `W0002` | no-global-assign | Atribuicao a variaveis globais |
-| `W0003` | no-self-compare | Comparacao de um valor consigo mesmo |
-| `W0004` | no-unused-vars | Variaveis locais nao utilizadas |
-| `W0005` | no-unused-params | Parametros de funcao nao utilizados |
-| `W0006` | no-unused-imports | Importacoes nao utilizadas |
-| `W0007` | no-shadowed-vars | Variavel oculta o escopo externo |
+| `W0001` | no-empty-blocks | Blocos de instruções vazios |
+| `W0002` | no-global-assign | Atribuição a variáveis globais |
+| `W0003` | no-self-compare | Comparação de um valor consigo mesmo |
+| `W0004` | no-unused-vars | Variáveis locais não utilizadas |
+| `W0005` | no-unused-params | Parâmetros de função não utilizados |
+| `W0006` | no-unused-imports | Instruções de importação não utilizadas |
+| `W0007` | no-shadowed-vars | Variável que oculta um escopo externo |
 
-Sem `--rules`, apenas a verificacao de tipos (codigos P e E) e realizada.
+Sem `--rules`, somente a verificação de tipos — códigos P e E — é realizada.
 
 ## Filtragem
 
 ### Por Namespace
 
-Verifique namespaces especificos usando `--ns`:
+Verifique namespaces específicos com `--ns`:
 
 ```bash
-wippy lint --ns app               # Correspondencia exata de namespace
-wippy lint --ns "app.*"           # Tudo dentro de app
-wippy lint --ns app --ns lib      # Multiplos namespaces
+wippy lint --ns app               # Exact namespace match
+wippy lint --ns "app.*"           # All under app
+wippy lint --ns app --ns lib      # Multiple namespaces
 ```
 
-Dependencias das entradas selecionadas sao carregadas para verificacao de tipos, mas seus diagnosticos nao sao reportados.
+As dependências das entradas selecionadas são carregadas para a verificação de tipos, mas seus diagnósticos não são apresentados.
 
-### Por Codigo de Erro
+### Por Código de Erro
 
-Filtre diagnosticos por codigo:
+Filtre diagnósticos por código:
 
 ```bash
 wippy lint --code E0001
@@ -134,27 +134,27 @@ wippy lint --code E0001 --code E0004
 
 ### Por Quantidade
 
-Limite o numero de diagnosticos exibidos:
+Limite o número de diagnósticos exibidos:
 
 ```bash
-wippy lint --limit 10             # Mostra os primeiros 10 problemas
+wippy lint --limit 10             # Show first 10 issues
 ```
 
-## Formatos de Saida
+## Formatos de Saída
 
-### Formato Tabela (Padrao)
+### Formato de Tabela (Padrão)
 
-Cada diagnostico e exibido com contexto do codigo-fonte, localizacao do arquivo e a mensagem de erro. Os resultados sao ordenados por entrada, severidade e numero de linha.
+Cada diagnóstico é exibido com o contexto do código-fonte, a localização do arquivo e a mensagem de erro. Os resultados são ordenados por entrada, severidade e número da linha.
 
-Uma linha de resumo mostra os totais:
+Uma linha de resumo apresenta os totais:
 
 ```
 Checked 42 entries: 5 errors, 12 warnings
 ```
 
-### Formato Resumo
+### Formato de Resumo
 
-Agrupa diagnosticos por namespace e codigo de erro:
+Agrupa os diagnósticos por namespace e código de erro:
 
 ```bash
 wippy lint --summary
@@ -176,7 +176,7 @@ Checked 42 entries: 5 errors, 12 warnings
 
 ### Formato JSON
 
-Saida legivel por maquina para integracao com CI/CD:
+Saída legível por máquina para processamento em CI/CD:
 
 ```bash
 wippy lint --json
@@ -203,7 +203,7 @@ wippy lint --json
 
 ## Cache
 
-O linter armazena resultados em cache para acelerar execucoes repetidas. As chaves de cache sao baseadas no hash do codigo-fonte, nome do metodo, dependencias e configuracao do sistema de tipos.
+O linter mantém os resultados em cache entre execuções. As chaves do cache incluem o hash do código-fonte, o nome do método, as dependências e a configuração do sistema de tipos.
 
 Limpe o cache se os resultados parecerem desatualizados:
 
@@ -211,40 +211,48 @@ Limpe o cache se os resultados parecerem desatualizados:
 wippy lint --cache-reset
 ```
 
-## Integracao CI/CD
+## Integração com CI
 
-Use a saida JSON e codigos de saida para verificacoes automatizadas:
+Nos modos de tabela e resumo, o comando retorna um código diferente de zero quando o resultado filtrado contém erros. Warnings e hints não afetam o código de saída, mesmo quando `--level warning` ou `--level hint` os exibe.
+
+O modo JSON é diferente: depois de codificar o resultado com sucesso, `wippy lint --json` retorna o código 0 mesmo quando `error_count` é diferente de zero. Um job de CI que use a saída JSON precisa analisar `error_count` por conta própria. Para usar o código de saída do comando como critério, execute uma chamada sem JSON:
+
+```bash
+wippy lint --level error
+```
+
+Você pode gerar um relatório separadamente, sem tratar seu código de saída como o resultado do lint:
 
 ```bash
 wippy lint --json --level error > lint-results.json
 ```
 
-O linter retorna codigo de saida 0 quando nenhum erro e encontrado, e diferente de zero quando ha erros.
-
-Exemplo de step no GitHub Actions:
+Exemplo de etapa do GitHub Actions:
 
 ```yaml
 - name: Lint
   run: wippy lint --level warning
 ```
 
-## Referencia de Flags
+## Referência de Flags
 
-| Flag | Curta | Padrao | Descricao |
+| Flag | Curta | Padrão | Descrição |
 |------|-------|--------|-----------|
-| `--level` | | warning | Nivel minimo de severidade (error, warning, hint) |
-| `--json` | | false | Saida em formato JSON |
-| `--ns` | | | Filtrar por padroes de namespace |
-| `--code` | | | Filtrar por codigos de erro |
-| `--limit` | | 0 | Maximo de diagnosticos a exibir (0 = ilimitado) |
-| `--summary` | | false | Agrupar por codigo de erro |
-| `--no-color` | | false | Desabilitar saida colorida |
-| `--rules` | | false | Ativar regras de lint (verificacoes de estilo/qualidade serie W) |
-| `--cache-reset` | | false | Limpar cache antes de executar o lint |
-| `--lock-file` | `-l` | wippy.lock | Caminho para o arquivo de lock |
+| `--level` | | warning | Nível mínimo de severidade (error, warning, hint) |
+| `--json` | | false | Saída em formato JSON |
+| `--ns` | | | Filtrar por padrões de namespace |
+| `--code` | | | Filtrar por códigos de erro |
+| `--limit` | | 0 | Número máximo de diagnósticos exibidos (0 = ilimitado) |
+| `--summary` | | false | Agrupar por código de erro |
+| `--no-color` | | false | Desabilitar a saída colorida |
+| `--rules` | | false | Habilitar regras de lint (verificações de estilo/qualidade da série W) |
+| `--cache-reset` | | false | Limpar o cache antes do lint |
+| `--profile` | | | Aplicar um profile do workspace a partir da configuração de runtime mesclada; repita para aplicar profiles em ordem |
+| `--set` | | | Sobrescrever um valor da configuração mesclada como `section.path=value`; repita para várias sobrescritas |
+| `--lock-file` | `-l` | wippy.lock | Caminho do arquivo de lock |
 
-## Veja Tambem
+## Consulte Também
 
-- [CLI](guides/cli.md) - Referencia completa da CLI
-- [Tipos](lua/types.md) - Documentacao do sistema de tipos
-- [LSP](guides/lsp.md) - Integracao com editor com diagnosticos em tempo real
+- [CLI](./cli.md) — Referência completa do CLI
+- [Tipos](../lua/types.md) — Documentação do sistema de tipos
+- [LSP](./lsp.md) — Integração com editores e diagnósticos em tempo real

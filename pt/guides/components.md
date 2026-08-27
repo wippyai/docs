@@ -1,13 +1,13 @@
 ---
 title: "Construindo Componentes"
-description: "Criando módulos reutilizáveis: declarando interfaces de requirements com ns.requirement e como os hosts fornecem valores através de parâmetros de dependência."
+description: "Declare requirements de módulos reutilizáveis com ns.requirement e forneça-os pelo host por meio de parâmetros de dependência."
 ---
 
 # Construindo Componentes
 
 Um **componente** é um módulo Wippy reutilizável — um slice de funcionalidade publicado no hub e montado em uma aplicação host. O desafio que um componente enfrenta é que ele não pode nomear as coisas de que depende: ele precisa de *um* banco de dados, *um* host de processos, *um* roteador, mas não sabe quais o host lhe dará. O Wippy resolve isso com uma **interface de requirements** — o componente declara buracos, o host os preenche.
 
-Este guia cobre o lado do autor: declarar essa interface e entender como os valores fluem para as suas entradas. Para o lado do consumidor (arquivos de lock, restrições de versão, `wippy add`/`update`) veja [Gerenciamento de Dependências](guides/dependency-management.md). Para como um componente é estruturado internamente veja [Arquitetura de Aplicações](concepts/architecture.md).
+Este guia cobre o lado do autor: declarar essa interface e entender como os valores fluem para as suas entradas. Para o lado do consumidor (arquivos de lock, restrições de versão, `wippy add`/`update`) veja [Gerenciamento de Dependências](./dependency-management.md). Para como um componente é estruturado internamente veja [Arquitetura de Aplicações](../concepts/architecture.md).
 
 ## Os três tipos
 
@@ -24,14 +24,14 @@ Um por módulo, obrigatório para publicação. Carrega o nome de exibição do 
 ```yaml
 - name: definition
   kind: ns.definition
-  module: jobs                # optional; defaults to the entry name
+  module: jobs                # optional module metadata
   readme: file://README.md    # path to the module's documentation
   meta:
     title: Durable Jobs
     description: Leased job queue with retry and dead-lettering.
 ```
 
-Apenas `module` e `readme` são dados do componente; `meta` é metadado comum de entrada para UIs de gestão. Notas de release são fornecidas no momento da publicação, não aqui.
+`module`, `readme` e `wiki` são dados da definição; todos são opcionais. `meta` contém metadados comuns da entrada para interfaces de gerenciamento. Notas de release são fornecidas no momento da publicação, não aqui.
 
 ## ns.requirement
 
@@ -61,7 +61,7 @@ O campo `default` decide se o host *deve* fornecer um valor:
 Um default explicitamente vazio (<code>default: ""</code>) é distinto de nenhum default. String vazia significa "opcional, recai em nada"; ausente significa "o host deve fornecer isto." Use um default para infraestrutura que tem uma convenção interna sensata (<code>app:db</code>, <code>app:processes</code>); omita-o para valores que só o host pode conhecer.
 </note>
 
-### targets — onde o valor aterrissa
+### `targets`: locais de injeção
 
 Cada alvo é um par `{entry, path}`:
 
@@ -143,11 +143,11 @@ Testes unitários exercitam um slice em isolamento; eles não conseguem ver se o
 - cada id iniciado via spawn ou agendado resolve para uma entrada real,
 - o armazenamento de cada `env.variable` está registrado.
 
-Estas são as costuras de integração que as suítes unitárias isoladas mascaram — as brechas que deixam um supervisor referenciar um worker que nunca foi registrado, ou um fixture de teste vazar um id de armazenamento exclusivo do harness para um boot montado. Veja [Supervisão](guides/supervision.md) e o framework de [Testes](framework/testing.md).
+Estas são as costuras de integração que as suítes unitárias isoladas mascaram — as brechas que deixam um supervisor referenciar um worker que nunca foi registrado, ou um fixture de teste vazar um id de armazenamento exclusivo do harness para um boot montado. Veja [Supervisão](./supervision.md) e o framework de [Testes](../framework/testing.md).
 
 ## Veja Também
 
-- [Arquitetura de Aplicações](concepts/architecture.md) — como um componente é estruturado internamente
-- [Gerenciamento de Dependências](guides/dependency-management.md) — arquivos de lock, versões, o fluxo do consumidor
-- [Publicando Módulos](guides/publishing.md) — colocando um componente no hub
-- [Guia de Tipos de Entradas](guides/entry-kinds.md) — referência de `ns.definition`, `ns.requirement`, `ns.dependency`
+- [Arquitetura de Aplicações](../concepts/architecture.md) — como um componente é estruturado internamente
+- [Gerenciamento de Dependências](./dependency-management.md) — arquivos de lock, versões, o fluxo do consumidor
+- [Publicando Módulos](./publishing.md) — colocando um componente no hub
+- [Guia de Tipos de Entradas](./entry-kinds.md) — referência de `ns.definition`, `ns.requirement`, `ns.dependency`

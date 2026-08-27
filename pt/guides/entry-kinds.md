@@ -1,18 +1,20 @@
 ---
 title: "Referência de Tipos de Entradas"
-description: "Referência completa de todos os tipos de entradas disponíveis no Wippy."
+description: "Referência dos kinds de entrada Wippy nos sistemas de runtime, armazenamento, rede, segurança, execução e ciclo de vida."
 ---
 
 # Referência de Tipos de Entradas
 
-Referência completa de todos os tipos de entradas disponíveis no Wippy.
+Esta página resume os kinds de entrada disponíveis e aponta para suas referências detalhadas de módulos e sistemas.
+
+Os blocos YAML e Lua são fragmentos de referência, não uma única aplicação. IDs do registro, credenciais, objetos de dados e helpers como `get_users` ou `delete_user` são ilustrativos; consulte as páginas de módulos vinculadas para ver os contratos completos de retorno e erro.
 
 > Entradas referenciam umas às outras usando o formato `namespace:name`. O registro automaticamente conecta dependências baseado nessas referências, garantindo que recursos sejam inicializados na ordem correta.
 
 ## Veja Também
 
-- [Registro](concepts/registry.md) - Como entradas são armazenadas e resolvidas
-- [Configuração](guides/configuration.md) - Formato de configuração YAML
+- [Registro](../concepts/registry.md) - Como entradas são armazenadas e resolvidas
+- [Configuração](./configuration.md) - Formato de configuração YAML
 
 ## Runtime Lua
 
@@ -37,7 +39,7 @@ Referência completa de todos os tipos de entradas disponíveis no Wippy.
     - http
     - json
   imports:
-    utils: app.lib:helpers  # Importa outra entrada como módulo
+    utils: app.lib:helpers  # Import another entry as module
 ```
 
 <tip>
@@ -54,14 +56,14 @@ Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam di
 | `http.static` | Serviço de arquivos estáticos |
 
 ```yaml
-# Servidor HTTP
+# HTTP server
 - name: gateway
   kind: http.service
   addr: ":8080"
   lifecycle:
     auto_start: true
 
-# Roteador com middleware
+# Router with middleware
 - name: api
   kind: http.router
   meta:
@@ -69,7 +71,7 @@ Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam di
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Endpoint
 - name: users_list
@@ -81,14 +83,15 @@ Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam di
   func: list_handler
 ```
 
-**API Lua:** Veja [Módulo HTTP](lua/http/http.md)
+**API Lua:** Veja [Módulo HTTP](../lua/http/http.md)
 
 ```lua
 local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Bancos de Dados
@@ -98,6 +101,7 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | Banco de dados SQLite |
 | `db.sql.postgres` | Banco de dados PostgreSQL |
 | `db.sql.mysql` | Banco de dados MySQL |
+| `db.cdc.postgres` | Fonte de Change Data Capture do Postgres (consulte [CDC](../system/cdc.md)) |
 
 ### SQLite
 
@@ -108,7 +112,7 @@ resp:status(200):json({users = get_users()})
   lifecycle:
     auto_start: true
 
-# Em memória para testes
+# In-memory for testing
 - name: testdb
   kind: db.sql.sqlite
   file: ":memory:"
@@ -150,16 +154,16 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-Veja [Database](system/database.md) para referências de segredos `${env:NAME}`, opções TLS e ajuste do pool de conexões. Quando um valor vindo de env por trás de uma entrada de banco de dados muda, o pool é trocado ao vivo — empréstimos ativos terminam com as configurações de conexão antigas.
+Veja [Database](../system/database.md) para referências de segredos `${env:NAME}`, opções TLS e ajuste do pool de conexões. Quando um valor vindo de env por trás de uma entrada de banco de dados muda, o pool é trocado ao vivo — empréstimos ativos terminam com as configurações de conexão antigas.
 
-**API Lua:** Veja [Módulo SQL](lua/storage/sql.md)
+**API Lua:** Veja [Módulo SQL](../lua/storage/sql.md)
 
 ```lua
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
@@ -173,35 +177,35 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 | `store.kv.crdt` | KV replicado em cluster, eventualmente consistente (gossip/CRDT) |
 
 ```yaml
-# Armazenamento em memória
+# Memory store
 - name: cache
   kind: store.memory
   lifecycle:
     auto_start: true
 
-# Armazenamento com backend SQL
+# SQL-backed store
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
-# Armazenamento replicado em cluster (requer clustering)
+# Cluster-replicated store (requires clustering)
 - name: deployments
   kind: store.kv.raft
   namespace: deploy
 ```
 
-Os tipos `store.kv.*` precisam do [clustering](guides/cluster.md) habilitado. Veja [Store](system/store.md#cluster-kv-stores) para os tradeoffs de consistência.
+Os tipos `store.kv.*` precisam do [clustering](./cluster.md) habilitado. Veja [Store](../system/store.md#cluster-kv-stores) para os tradeoffs de consistência.
 
-**API Lua:** Veja [Módulo Store](lua/storage/store.md)
+**API Lua:** Veja [Módulo Store](../lua/storage/store.md)
 
 ```lua
 local store = require("store")
 local s, err = store.get("app:cache")
 
-s:set("user:123", user_data, 3600)  -- TTL em segundos
+s:set("user:123", user_data, 3600)  -- TTL in seconds
 local data = s:get("user:123")
 ```
 
@@ -222,12 +226,12 @@ local data = s:get("user:123")
   lifecycle:
     auto_start: true
 
-# Fila
+# Queue
 - name: jobs
   kind: queue.queue
   driver: queue_driver
 
-# Consumidor
+# Consumer
 - name: job_consumer
   kind: queue.consumer
   queue: app:jobs
@@ -238,17 +242,22 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**API Lua:** Veja [Módulo Queue](lua/storage/queue.md)
+**API Lua:** Veja [Módulo Queue](../lua/storage/queue.md)
 
 ```lua
 local queue = require("queue")
 
--- Publica uma mensagem
+-- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- No handler do consumidor, acessa mensagem atual
-local msg = queue.message()
-local data = msg:body_json()
+-- In a consumer handler: the message body is the handler's argument
+local function main(data)
+    -- access delivery metadata via the current message
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
@@ -262,25 +271,26 @@ O <code>func</code> do consumidor é invocado para cada mensagem. Use <code>queu
 | `process.host` | Host de execução de processos |
 | `process.service` | Processo supervisionado (encapsula process.lua) |
 | `terminal.host` | Host de terminal/CLI |
+| `pg.scope` | Escopo de grupo de processos (consulte [Grupos de Processos](../system/process-groups.md)) |
 
 ```yaml
-# Host de processos (onde processos executam)
+# Process host (where processes run)
 - name: processes
   kind: process.host
   host:
-    workers: 32             # Goroutines workers (padrão: NumCPU)
-    queue_size: 1024        # Capacidade da fila global
-    local_queue_size: 256   # Fila por worker
+    workers: 32             # Worker goroutines (default: NumCPU)
+    queue_size: 1024        # Global queue capacity
+    local_queue_size: 256   # Per-worker queue
   lifecycle:
     auto_start: true
 
-# Definição de processo
+# Process definition
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# Serviço de processo supervisionado
+# Supervised process service
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -339,24 +349,24 @@ Atualizar uma entrada `process.host` ao vivo redimensiona `host.workers` no luga
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
   config: app:aws
   bucket: "my-uploads"
-  endpoint: ""  # Opcional, para serviços compatíveis com S3
+  endpoint: ""  # Optional, for S3-compatible services
 ```
 
-**API Lua:** Veja [Módulo Cloud Storage](lua/storage/cloud.md)
+**API Lua:** Veja [Módulo Cloud Storage](../lua/storage/cloud.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- seconds, default 3600
 ```
 
 <tip>
@@ -374,11 +384,11 @@ Use <code>endpoint</code> para conectar a serviços compatíveis com S3 como Min
 - name: data_dir
   kind: fs.directory
   directory: "./data"
-  auto_init: true   # Cria se não existir
-  mode: "0755"      # Permissões
+  auto_init: true   # Create if not exists
+  mode: "0755"      # Permissions
 ```
 
-**API Lua:** Veja [Módulo Filesystem](lua/storage/filesystem.md)
+**API Lua:** Veja [Módulo Filesystem](../lua/storage/filesystem.md)
 
 ```lua
 local fs = require("fs")
@@ -423,7 +433,7 @@ file:close()
     - app:defaults
 ```
 
-**API Lua:** Veja [Módulo Env](lua/system/env.md)
+**API Lua:** Veja [Módulo Env](../lua/system/env.md)
 
 ```lua
 local env = require("env")
@@ -444,7 +454,7 @@ O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; es
 | `template.set` | Configuração de conjunto de templates |
 
 ```yaml
-# Conjunto de templates com configuração do motor
+# Template set with engine configuration
 - name: templates
   kind: template.set
   engine:
@@ -453,14 +463,14 @@ O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; es
       - ".jet"
       - ".html.jet"
 
-# Template individual
+# Individual template
 - name: email_template
   kind: template.jet
   source: file://templates/email.jet
   set: app:templates
 ```
 
-**API Lua:** Veja [Módulo Template](lua/text/template.md)
+**API Lua:** Veja [Módulo Template](../lua/text/template.md)
 
 ```lua
 local templates = require("templates")
@@ -468,7 +478,7 @@ local set, err = templates.get("app:templates")
 
 local html = set:render("email", {
     user = "Alice",
-    message = "Bem-vindo!"
+    message = "Welcome!"
 })
 ```
 
@@ -481,7 +491,7 @@ local html = set:render("email", {
 | `security.token_store` | Armazenamento de tokens |
 
 ```yaml
-# Política baseada em condições
+# Condition-based policy
 - name: admin_policy
   kind: security.policy
   policy:
@@ -493,7 +503,7 @@ local html = set:render("email", {
         operator: eq
         value: "admin"
 
-# Política baseada em expressão
+# Expression-based policy
 - name: owner_policy
   kind: security.policy.expr
   policy:
@@ -503,17 +513,17 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**API Lua:** Veja [Módulo Security](lua/security/security.md)
+**API Lua:** Veja [Módulo Security](../lua/security/security.md)
 
 ```lua
 local security = require("security")
 
--- Verifica permissão antes da ação
+-- Check permission before action
 if security.can("delete", "users", {user_id = id}) then
     delete_user(id)
 end
 
--- Obtém ator atual
+-- Get current actor
 local actor = security.actor()
 ```
 
@@ -529,14 +539,14 @@ Políticas são avaliadas em ordem. A primeira política correspondente determin
 | `contract.binding` | Mapeia métodos de contrato para implementações de funções |
 
 ```yaml
-# Define a interface do contrato
+# Define the contract interface
 - name: greeter
   kind: contract.definition
   methods:
     - name: greet
-      description: Retorna uma mensagem de saudação
+      description: Returns a greeting message
     - name: greet_with_name
-      description: Retorna uma saudação personalizada
+      description: Returns a personalized greeting
       input_schemas:
         - format: "application/schema+json"
           definition: {"type": "string"}
@@ -544,7 +554,7 @@ Políticas são avaliadas em ordem. A primeira política correspondente determin
         - format: "application/schema+json"
           definition: {"type": "string"}
 
-# Funções de implementação
+# Implementation functions
 - name: greeter_greet
   kind: function.lua
   source: file://greeter_greet.lua
@@ -555,7 +565,7 @@ Políticas são avaliadas em ordem. A primeira política correspondente determin
   source: file://greeter_greet_name.lua
   method: main
 
-# Vincula métodos do contrato a implementações
+# Bind contract methods to implementations
 - name: greeter_impl
   kind: contract.binding
   contracts:
@@ -571,18 +581,18 @@ Uso no Lua:
 ```lua
 local contract = require("contract")
 
--- Abre binding pelo ID
+-- Open binding by ID
 local greeter, err = contract.open("app:greeter_impl")
 
--- Chama métodos
+-- Call methods
 local result = greeter:greet()
 local personalized = greeter:greet_with_name("Alice")
 
--- Verifica se instância implementa contrato
+-- Check if instance implements contract
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**API Lua:** Veja [Módulo Contract](lua/core/contract.md)
+**API Lua:** Veja [Módulo Contract](../lua/core/contract.md)
 
 <tip>
 Marque um binding como <code>default: true</code> para usá-lo ao abrir um contrato sem especificar um ID de binding (funciona apenas quando nenhum campo <code>context_required</code> está definido).
@@ -625,10 +635,10 @@ Marque um binding como <code>default: true</code> para usá-lo ao abrir um contr
 - name: sum
   kind: function.wasm
   source: file://sum.wasm
-  transport: payload   # ou wasi-http
+  transport: payload   # or wasi-http
 ```
 
-Veja [Visão Geral do WASM](wasm/overview.md).
+Veja [Visão Geral do WASM](../wasm/overview.md).
 
 ## Redes
 
@@ -639,7 +649,7 @@ Veja [Visão Geral do WASM](wasm/overview.md).
 | `network.i2p` | Overlay de rede I2P |
 | `network.tailscale` | Overlay do Tailscale |
 
-Referenciado por `http.service` via `network:`, por `funcs`/`process` via a opcao `network` e por `http_client` via a opcao `overlay_network`. Veja [Rede](system/network.md).
+Referenciado por `http.service` via `network:`, por `funcs`/`process` via a opcao `network` e por `http_client` via a opcao `overlay_network`. Veja [Rede](../system/network.md).
 
 ## Primitivas do Registro
 
@@ -650,27 +660,25 @@ Referenciado por `http.service` via `network:`, por `funcs`/`process` via a opca
 | `ns.requirement` | Declaração de requisito de namespace |
 | `ns.dependency` | Dependência de namespace |
 
-São produzidas pelo carregador do registro a partir do frontmatter de `_index.yaml` e das declarações de dependências. Autores geralmente não as definem diretamente — aparecem como resultado da resolução dos blocos `version:`, `namespace:` e de dependências.
+`registry.entry` é um descritor interno. Os autores definem entradas `ns.definition`, `ns.requirement` e `ns.dependency` diretamente em `_index.yaml`; os campos `version` e `namespace` do arquivo não as geram.
 
 ## Configuração de Ciclo de Vida
 
 A maioria das entradas suporta configuração de ciclo de vida:
 
 ```yaml
-- name: service
-  kind: some.kind
-  lifecycle:
-    auto_start: true          # Inicia automaticamente
-    start_timeout: 10s        # Tempo máximo de inicialização
-    stop_timeout: 10s         # Tempo máximo de encerramento
-    stable_threshold: 5s      # Tempo para considerar estável
-    depends_on:
-      - app:database
-    restart:                  # Política de retry
-      initial_delay: 1s
-      max_delay: 90s
-      backoff_factor: 2.0
-      max_attempts: 0         # 0 = infinito
+lifecycle:
+  auto_start: true          # Start automatically
+  start_timeout: 10s        # Max startup time
+  stop_timeout: 10s         # Max shutdown time
+  stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
+  requires:
+    - app:database
+  restart:                  # Retry policy
+    initial_delay: 1s
+    max_delay: 90s
+    backoff_factor: 2.0
+    max_attempts: 0         # 0 = infinite
 ```
 
 <note>
@@ -682,13 +690,13 @@ Use <code>depends_on</code> para garantir que entradas iniciem na ordem correta.
 Entradas são referenciadas usando o formato `namespace:name`:
 
 ```yaml
-# Definição
+# Definition
 namespace: app.users
 entries:
   - name: handler
     kind: function.lua
 
-# Referência de outra entrada
+# Reference from another entry
 func: app.users:handler
 ```
 
@@ -698,10 +706,10 @@ Qualquer campo de uma entrada — incluindo seu `kind` — pode ser sobrescrito 
 
 ```yaml
 override:
-  app:gateway:addr: ":9090"        # campo de dados (um path simples mira data.*)
-  app:worker:meta.priority: high    # campo meta
-  app:db:kind: db.sql.postgres      # o kind tipado da entrada
-  app:db:data.kind: custom          # um campo do payload literalmente chamado "kind"
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
 ```
 
 | Path | Mira |
@@ -716,4 +724,4 @@ Os mesmos overrides se aplicam a partir do CLI:
 wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
 ```
 
-Valores do CLI (`-o`) são convertidos pela forma (`true`/`false` para bool, números para números, caso contrário string); valores da seção `override:` mantêm seu tipo YAML. Para sobrescrever seções globais de [configuração](guides/configuration.md) em vez de entradas, use `--set`.
+Valores do CLI (`-o`) são convertidos pela forma (`true`/`false` para bool, números para números, caso contrário string); valores da seção `override:` mantêm seu tipo YAML. Para sobrescrever seções globais de [configuração](./configuration.md) em vez de entradas, use `--set`.
