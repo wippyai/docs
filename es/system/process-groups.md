@@ -1,13 +1,13 @@
 ---
 title: "Grupos de Proceso"
-description: "Los grupos de proceso permiten que los procesos se unan a grupos con nombre y reciban difusiones dirigidas a un grupo, con la membresía rastreada en…"
+description: "Configura grupos de procesos con nombre y reconocimiento del clúster, con pertenencia descentralizada, difusiones, supervisión y reconciliación."
 ---
 
 # Grupos de Proceso
 
-Los grupos de proceso permiten que los procesos se unan a grupos con nombre y reciban difusiones dirigidas a un grupo, con la membresía rastreada en todos los nodos del cluster. El modelo sigue `pg` de Erlang/OTP: los grupos se crean al primer join, un proceso puede pertenecer a muchos grupos (y unirse a un grupo varias veces), y la membresía es descentralizada — cada nodo mantiene su propio estado y se reconcilia con los peers a través de la malla internode.
+Un ámbito `pg.scope` permite que los procesos se unan a grupos con nombre y reciban difusiones dirigidas a un grupo. El modelo sigue `pg` de Erlang/OTP: los grupos se crean con la primera incorporación, un proceso puede pertenecer a muchos grupos y unirse varias veces al mismo, y cada nodo del clúster mantiene su propio estado de pertenencia y lo reconcilia con sus pares a través de la malla entre nodos. Esta página es una referencia de configuración y comportamiento; los bloques YAML son fragmentos de entrada.
 
-La API Lua está documentada en [Grupos de Proceso](lua/core/pg.md); esta página cubre el tipo de entrada de ámbito y su configuración. Ver la [Guía de Cluster](guides/cluster.md) para el modelo de membresía circundante.
+La API Lua está documentada en [Grupos de procesos](../lua/core/pg.md); esta página cubre el tipo de entrada de ámbito y su configuración. Consulta la [guía de clústeres](../guides/cluster.md) para conocer el modelo de pertenencia que la rodea.
 
 ## Tipo de Entrada
 
@@ -26,16 +26,16 @@ Cada ámbito está aislado: los grupos y miembros en un ámbito son invisibles p
 
 ## Configuración
 
-Todos los campos son opcionales y tienen valores por defecto ajustados para un cluster típico.
+Todos los campos son opcionales. La tabla muestra sus valores predeterminados.
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `protocol_timeout` | duration | 5s | Tiempo de espera para operaciones de sincronización/descubrimiento entre nodos |
 | `broadcast_timeout` | duration | 5s | Tiempo de espera para entregar una difusión a un solo miembro |
-| `anti_entropy_interval` | duration | 30s | Cadencia del bucle de reconciliación; se sincroniza un peer por tick (0 deshabilita) |
+| `anti_entropy_interval` | duration | 30s | Cadencia del bucle de reconciliación; se sincroniza un par por ciclo |
 | `circuit_breaker_failures` | int | 3 | Fallos de envío consecutivos a un nodo antes de que su circuito se abra |
 | `circuit_breaker_reset_time` | duration | 10s | Espera antes de que un circuito abierto pase a semi-abierto para un envío de prueba |
-| `max_retries` | int | 3 | Intentos de reintento para una difusión fallida (0 deshabilita los reintentos) |
+| `max_retries` | int | 3 | Intentos de reintento para una difusión fallida |
 | `retry_base_delay` | duration | 100ms | Retraso de backoff inicial entre reintentos |
 | `retry_max_delay` | duration | 1s | Retraso de backoff máximo |
 | `action_queue_size` | int | 256 | Profundidad en la que se registra una advertencia de "aproximándose a la capacidad" |
@@ -70,10 +70,10 @@ Todos los campos son opcionales y tienen valores por defecto ajustados para un c
 
 ## Observabilidad
 
-Una verificación de liveness (`pg.broadcast_recent.<scope>`) reporta unhealthy si un ámbito no ve tráfico de difusión durante un período prolongado, detectando un bucle de eventos bloqueado o una partición persistente. Ver la [Guía de Observabilidad](guides/observability.md).
+Una comprobación de actividad (`pg.broadcast_recent.<scope>`) informa de un estado no saludable si un ámbito no observa tráfico de difusión durante un período prolongado, lo que permite detectar un bucle de eventos bloqueado o una partición persistente. Consulta la [guía de observabilidad](../guides/observability.md).
 
 ## Ver También
 
-- [Grupos de Proceso](lua/core/pg.md) - La API Lua
-- [Cluster](guides/cluster.md) - Membresía y el modelo de clustering
-- [Modelo de Procesos](concepts/process-model.md) - Procesos, PIDs y mensajería
+- [Grupos de procesos](../lua/core/pg.md) - La API Lua
+- [Clúster](../guides/cluster.md) - La pertenencia y el modelo de clúster
+- [Modelo de procesos](../concepts/process-model.md) - Procesos, PID y mensajería

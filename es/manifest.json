@@ -230,20 +230,20 @@
   {
     "title": "System Components",
     "children": [
-      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Host de Procesos", "path": "system/process-host"},
       {"title": "Grupos de Proceso", "path": "system/process-groups"},
       {"title": "Terminal", "path": "system/terminal"},
       {"title": "Database", "path": "system/database"},
       {"title": "Captura de cambios de datos", "path": "system/cdc"},
       {"title": "Store", "path": "system/store"},
       {"title": "Queue", "path": "system/queue"},
-      {"title": "Network", "path": "system/network"},
+      {"title": "Superposiciones de red", "path": "system/network"},
       {"title": "Filesystem", "path": "system/filesystem"},
       {"title": "Cloud Storage", "path": "system/cloudstorage"},
       {"title": "Environment", "path": "system/env"},
-      {"title": "Template", "path": "system/template"},
-      {"title": "Security", "path": "system/security"},
-      {"title": "Exec", "path": "system/exec"}
+      {"title": "Motor de plantillas", "path": "system/template"},
+      {"title": "Modelo de Seguridad", "path": "system/security"},
+      {"title": "Ejecutor", "path": "system/exec"}
     ]
   },
   {
