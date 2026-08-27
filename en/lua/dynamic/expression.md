@@ -8,7 +8,7 @@ description: "Compile and evaluate expr-lang expressions from Lua."
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `expr` module compiles and evaluates safe [expr-lang](https://expr-lang.org/) expressions for filtering, validation, calculations, and rule evaluation without running Lua source code. This page is the canonical Lua reference for the expression API and syntax; see [Dynamic Evaluation](./eval.md) when choosing between expressions and sandboxed Lua.
+The `expr` module compiles and evaluates [expr-lang](https://expr-lang.org/) expressions for filtering, validation, calculations, and rule evaluation without running Lua source code. This page is the canonical Lua API reference; its examples run inside an existing Wippy Lua process whose entry declares the `expr` module, but they are not standalone Wippy applications. See [Dynamic Evaluation](./eval.md) when choosing between expressions and capability-restricted Lua.
 
 ## Loading
 
