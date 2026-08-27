@@ -16,38 +16,18 @@ wippy add wippy/agent
 wippy install
 ```
 
-The agent module requires `wippy/llm` and a process host. Declare both dependencies:
+The agent module declares its `wippy/llm` dependency itself. Add the agent
+dependency to source when it is not already present:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: dep.llm
-    kind: ns.dependency
-    component: wippy/llm
-    version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
-
   - name: dep.agent
     kind: ns.dependency
     component: wippy/agent
     version: "*"
-    parameters:
-      - name: process_host
-        value: app:processes
 ```
 
 ## Agent Definitions
@@ -80,7 +60,7 @@ entries:
 | `prompt` | string | System prompt |
 | `model` | string | Model name or class |
 | `max_tokens` | number | Maximum output tokens (default `512`) |
-| `temperature` | number | Sampling temperature (default `0`; range provider-dependent) |
+| `temperature` | number | Optional sampling temperature; omitted by default, with range and support determined by the provider |
 | `thinking_effort` | number | Forwarded to the model only when `> 0` (provider-defined scale) |
 | `tools` | array | Tool registry IDs |
 | `traits` | array | Trait references |
@@ -95,6 +75,7 @@ Create an agent context, configure it as needed, and then load an agent:
 ```yaml
 imports:
   agent_context: wippy.agent:context
+  prompt: wippy.llm:prompt
 ```
 
 ```lua
@@ -138,7 +119,7 @@ local ctx = agent_context.new({
 |--------|-------------|
 | `context` | Base runtime context forwarded to tools and delegates |
 | `delegate_tools` | Default delegate-tool configuration (overridden by `configure_delegate_tools`) |
-| `enable_cache` | Enable prompt cache markers (Claude models). Defaults to `true`. |
+| `enable_cache` | Prompt cache marker setting for Claude models. The current implementation always enables markers, including when this option is `false`. |
 
 ### Loading by Inline Spec
 
@@ -319,7 +300,7 @@ local function execute_and_continue(runner, conversation)
                 result_str = json.encode(result)
             end
 
-            conversation:add_function_call(tc.name, tc.arguments, tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -339,7 +320,7 @@ end
 Use <code>funcs.call(tc.registry_id, tc.arguments)</code> to execute tools. The <code>registry_id</code> field maps directly to the tool's entry in the registry.
 </note>
 
-For how agent tool access and observability are secured, see the [Security Model](concepts/security-model.md).
+For how agent tool access and observability are secured, see the [Security Model](../concepts/security-model.md).
 
 ## Streaming
 
@@ -616,6 +597,6 @@ Custom resolution can load agent definitions outside the framework registry, inc
 
 ## See Also
 
-- [LLM](framework/llm.md) — Underlying model interface
-- [Building an LLM Agent](tutorials/llm-agent.md) — Build an agent step by step
-- [Framework Overview](framework/overview.md) — Install and import framework modules
+- [LLM](./llm.md) — Underlying model interface
+- [Building an LLM Agent](../tutorials/llm-agent.md) — Build an agent step by step
+- [Framework Overview](./overview.md) — Install and import framework modules

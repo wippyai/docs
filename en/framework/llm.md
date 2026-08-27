@@ -16,33 +16,24 @@ wippy add wippy/llm
 wippy install
 ```
 
-Declare the dependency in your `_index.yaml`. The LLM module requires an environment storage (for API keys) and a process host:
+Declare the dependency in your `_index.yaml`:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
     version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
 ```
 
-The `env.storage.os` entry exposes operating-system environment variables to the LLM providers. Set provider API keys through variables such as `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
+The module supplies an OS environment storage and defaults its background
+process host to `wippy.terminal:host`. Override the `env_storage` or
+`process_host` dependency parameter only when the application needs a different
+entry. Set provider API keys through variables such as `OPENAI_API_KEY` and
+`ANTHROPIC_API_KEY`.
 
 ## Text Generation
 
@@ -83,7 +74,7 @@ The first argument to `generate()` can be a string prompt, a prompt builder, or 
 | Option | Type | Description |
 |--------|------|-------------|
 | `model` | string | Model name or class (required) |
-| `temperature` | number | Randomness control, 0-1 |
+| `temperature` | number | Randomness control, 0-2 (provider support may vary) |
 | `max_tokens` | number | Maximum tokens to generate |
 | `top_p` | number | Nucleus sampling parameter |
 | `top_k` | number | Top-k filtering |
@@ -305,7 +296,7 @@ if response.tool_calls and #response.tool_calls > 0 then
         local result = { temperature = 22, condition = "sunny" }
 
         -- add the exchange to the conversation
-        conversation:add_function_call(tc.name, tc.arguments, tc.id)
+        conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
         conversation:add_function_result(tc.name, json.encode(result), tc.id)
     end
 
@@ -579,6 +570,6 @@ io.print(response.result)
 
 ## See Also
 
-- [Agents](framework/agents.md) — Agent framework with tools, delegates, and memory
-- [Building an LLM Agent](tutorials/llm-agent.md) — Build an agent step by step
-- [Framework Overview](framework/overview.md) — Install and import framework modules
+- [Agents](./agents.md) — Agent framework with tools, delegates, and memory
+- [Building an LLM Agent](../tutorials/llm-agent.md) — Build an agent step by step
+- [Framework Overview](./overview.md) — Install and import framework modules

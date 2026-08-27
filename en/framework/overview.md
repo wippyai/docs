@@ -28,7 +28,7 @@ entries:
   - name: dependency.test
     kind: ns.dependency
     component: wippy/test
-    version: "^0.3.0"
+    version: "^0.4.0"
 ```
 
 Then resolve and install:
@@ -81,6 +81,6 @@ wippy search wippy
 
 ## See Also
 
-- [Dependency Management](guides/dependency-management.md) — Lock files and version constraints
-- [Publishing](guides/publishing.md) — Publish a module
-- [CLI Reference](guides/cli.md) — Module-management commands
+- [Dependency Management](../guides/dependency-management.md) — Lock files and version constraints
+- [Publishing](../guides/publishing.md) — Publish a module
+- [CLI Reference](../guides/cli.md) — Module-management commands

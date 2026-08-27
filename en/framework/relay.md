@@ -259,7 +259,7 @@ The central hub runs under its own security group (`wippy.relay.security:root`) 
 
 ## See Also
 
-- [WebSocket Relay](http/websocket-relay.md) — HTTP WebSocket endpoint configuration
-- [Process Model](concepts/process-model.md) — Process lifecycle and messaging
-- [Security](system/security.md) — Security actors and scopes
-- [Framework Overview](framework/overview.md) — Install and import framework modules
+- [WebSocket Relay](../http/websocket-relay.md) — HTTP WebSocket endpoint configuration
+- [Process Model](../concepts/process-model.md) — Process lifecycle and messaging
+- [Security](../system/security.md) — Security actors and scopes
+- [Framework Overview](./overview.md) — Install and import framework modules
