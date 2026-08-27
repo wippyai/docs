@@ -73,6 +73,8 @@ export async function webComponent() {
 define(import.meta.url, ExampleControlsElement)
 ```
 
+### Package metadata contract
+
 The package metadata must identify the same custom element:
 
 ```json
@@ -93,6 +95,9 @@ The package metadata must identify the same custom element:
   }
 }
 ```
+
+Valid package `wippy.type` values are `"component"` and `"widget"`. Do not use
+the registry kind `view.component` as a package `wippy.type` value.
 
 The component build uses the strict Wippy component plugin and the complete
 pinned target-host import-map snapshot:
@@ -118,6 +123,9 @@ export default defineConfig({
   },
 })
 ```
+
+Keep `preserveEntrySignatures: 'strict'`. Other Rollup values do not satisfy the
+Wippy component build contract documented here.
 
 Use the shared Wippy Tailwind preset when this component authors Tailwind
 utilities. PrimeVue itself does not require a module to invent Tailwind
