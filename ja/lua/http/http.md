@@ -10,7 +10,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 HTTPリクエストを処理しレスポンスを構築。リクエストデータ、ルートパラメータ、ヘッダー、ボディ内容にアクセス。ステータスコード、ヘッダー、ストリーミングサポート付きでレスポンスを構築。
 
-サーバー設定については[HTTPサーバー](http/server.md)を参照。
+サーバー設定については[HTTPサーバー](../../http/server.md)を参照。
 
 ## ロード
 
@@ -644,4 +644,4 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | ヘッダーが既に送信済み | `errors.INVALID` | no |
 | 書き込み失敗 | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+エラーの処理については[エラー処理](../core/errors.md)を参照。

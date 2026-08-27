@@ -629,6 +629,6 @@ print(response.result)
 
 ## 関連項目
 
-- [エージェント](framework/agents.md) - ツール、デリゲート、メモリを備えたエージェントフレームワーク
-- [LLM エージェントの構築](tutorials/llm-agent.md) - ステップバイステップのチュートリアル
-- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの使用方法
+- [エージェント](./agents.md) - ツール、デリゲート、メモリを備えたエージェントフレームワーク
+- [LLM エージェントの構築](../tutorials/llm-agent.md) - ステップバイステップのチュートリアル
+- [フレームワーク概要](./overview.md) - フレームワークモジュールの使用方法

@@ -11,7 +11,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 I/Oストリームを完全に制御して外部コマンドとシェルスクリプトを実行します。
 
-エグゼキュータの設定については[エグゼキュータ](system/exec.md)を参照。
+エグゼキュータの設定については[エグゼキュータ](../../system/exec.md)を参照。
 
 ## ロード
 
@@ -282,4 +282,4 @@ Exec操作はセキュリティポリシー評価の対象です。
 | プロセスが開始されていない | `errors.INVALID` | no |
 | 既に開始済み | `errors.INVALID` | no |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+エラーの処理については[エラー処理](../core/errors.md)を参照。

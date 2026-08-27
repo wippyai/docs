@@ -10,7 +10,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 設定値、シークレット、ランタイム設定のための環境変数へのアクセス。
 
-変数にアクセスする前に[環境システム](system/env.md)で定義する必要がある。システムは値を提供するストレージバックエンド（OS、ファイル、メモリ）と変数が読み取り専用かどうかを制御。
+変数にアクセスする前に[環境システム](../../system/env.md)で定義する必要がある。システムは値を提供するストレージバックエンド（OS、ファイル、メモリ）と変数が読み取り専用かどうかを制御。
 
 ## ロード
 
@@ -118,7 +118,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-ポリシー設定については[セキュリティモデル](system/security.md)を参照。
+ポリシー設定については[セキュリティモデル](../../system/security.md)を参照。
 
 ## エラー
 
@@ -128,8 +128,8 @@ end
 | 変数が見つからない | `errors.NOT_FOUND` | no |
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+エラーの処理については[エラー処理](../core/errors.md)を参照。
 
 ## 関連項目
 
-- [環境システム](system/env.md) - ストレージバックエンドと変数定義の設定
+- [環境システム](../../system/env.md) - ストレージバックエンドと変数定義の設定
