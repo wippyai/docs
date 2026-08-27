@@ -7,7 +7,11 @@ description: "Run WAT and WASM functions or WASM processes alongside Lua through
 
 > The WASM runtime is an experimental extension. Configuration is stable, but runtime internals may change between releases.
 
-Wippy registers WebAssembly modules alongside Lua code. WASM functions and processes use the same scheduler and security model and interoperate with Lua through the function registry.
+Wippy registers WebAssembly modules alongside Lua code. Function entries join the function registry and run through function pools; process entries register process factories and run under process hosts. Both use the runtime scheduler and security model.
+
+**Classification: conceptual overview.** The Lua block contains independent call
+patterns and assumes the named WASM entries and their WIT contracts are already
+registered. See the Rust/WASM tutorial for a project with a compiled component.
 
 ## Entry Kinds
 
@@ -20,10 +24,11 @@ Wippy registers WebAssembly modules alongside Lua code. WASM functions and proce
 ## How It Works
 
 1. WASM modules are declared as registry entries in `_index.yaml`
-2. At boot, modules are compiled and placed into worker pools
-3. Lua (or other WASM) code calls them via `funcs.call()`
-4. Arguments and return values are automatically mapped between Lua tables and WIT types
-5. Async operations (I/O, sleep, HTTP) yield through the dispatcher, same as Lua
+2. At boot, `function.wat` and `function.wasm` entries are compiled, registered as functions, and placed into their configured function pools
+3. Lua calls those function entries through `funcs.call()`
+4. `process.wasm` entries instead register process factories and are spawned under a process host
+5. Function arguments and return values are mapped between Lua tables and WIT types
+6. Supported dispatcher-bridged operations, including clock polling and outgoing HTTP, yield so the scheduler can run other work
 
 ## Component Model
 
@@ -45,9 +50,11 @@ local funcs = require("funcs")
 
 -- No arguments
 local result, err = funcs.call("myns:answer_wat")
+if err then return nil, err end
 
 -- With arguments
-local result, err = funcs.call("myns:compute", 6, 7)
+local computed, compute_err = funcs.call("myns:compute", 6, 7)
+if compute_err then return nil, compute_err end
 
 -- With complex data
 local users = {
@@ -55,6 +62,7 @@ local users = {
     {id = 2, name = "Bob", tags = {"user"}, active = false},
 }
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 ```
 
 ## Security
@@ -69,6 +77,7 @@ Host capabilities are opt-in through explicit imports. Each entry declares the h
 
 ## See Also
 
-- [Functions](wasm/functions.md) - WASM function entry configuration
-- [Host Functions](wasm/hosts.md) - Available WASI and Wippy host interfaces
-- [Processes](wasm/processes.md) - Running WASM as long-lived processes
+- [Functions](./functions.md) - WASM function entry configuration
+- [Host Functions](./hosts.md) - Available WASI and Wippy host interfaces
+- [Processes](./processes.md) - Running WASM as long-lived processes
+- [Rust/WASM Tutorial](../tutorials/rust-wasm.md) - Build and register a component

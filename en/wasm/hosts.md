@@ -7,6 +7,10 @@ description: "Enable Wippy function calls, WASI Preview 1 compatibility, or sele
 
 Each entry opts into the host interfaces listed below through its `imports` field.
 
+**Classification: host-interface reference.** The YAML block is a partial entry:
+replace the filesystem ID, path, method, and hash with values from a compiled
+module. The digest must be the module's actual SHA-256 value.
+
 ## Import Types
 
 | Import | Description |
@@ -125,6 +129,6 @@ Enabling `wasi:sockets` makes the interfaces available but does not authorize ne
 
 ## See Also
 
-- [Overview](wasm/overview.md) - WebAssembly runtime overview
-- [Functions](wasm/functions.md) - WASM function configuration
-- [Processes](wasm/processes.md) - Running WASM as processes
+- [Overview](./overview.md) - WebAssembly runtime overview
+- [Functions](./functions.md) - WASM function configuration
+- [Processes](./processes.md) - Running WASM as processes

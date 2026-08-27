@@ -7,6 +7,11 @@ description: "Configure inline WAT functions and precompiled WASM functions as r
 
 Use `function.wat` for inline WebAssembly Text source and `function.wasm` for precompiled binaries.
 
+**Classification: function configuration reference.** WAT blocks are small
+registry examples. Precompiled examples assume an external component build, a
+filesystem entry, exported methods matching the guest WIT, and a SHA-256 digest
+calculated from the exact binary. Real-looking sample hashes are illustrative.
+
 ## Inline WAT Functions
 
 Define a WAT function directly in `_index.yaml`:
@@ -96,7 +101,7 @@ Each WASM function uses a pool of pre-compiled instances. The pool type controls
 
 | Type | Description |
 |------|-------------|
-| `inline` | Synchronous, single-threaded. New instance per call. |
+| `inline` | Mutex-serialized. Sequential synchronous calls reuse one warm instance; asyncified calls close it after each call, and retained-memory policy can also trigger replacement. |
 | `lazy` | Zero idle workers. Scales on demand up to `max_size`. |
 | `static` | Fixed number of workers with request queue. |
 | `adaptive` | Auto-scaling elastic pool. |
@@ -173,6 +178,7 @@ The default transport passes arguments directly. Lua values are transcoded to Go
 ```lua
 -- Arguments passed directly as WASM function parameters
 local result, err = funcs.call("myns:compute", 6, 7)
+if err then return nil, err end
 -- result: 42
 ```
 
@@ -292,14 +298,16 @@ local users = {
 
 -- Transform: adds display field and tag count
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 
 -- Filter: returns only active users
-local active, err = funcs.call("myns:filter_active", users)
+local active, filter_err = funcs.call("myns:filter_active", users)
+if filter_err then return nil, filter_err end
 ```
 
 ### Async Sleep with WASI Clocks
 
-WASM components that import `wasi:clocks` and `wasi:io` can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
+WASM components that import `wasi:clocks`, `wasi:io`, and the separate `wasi:poll` profile can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
 
 ```yaml
   - name: sleep_ms
@@ -310,6 +318,7 @@ WASM components that import `wasi:clocks` and `wasi:io` can use clocks and polli
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline
@@ -319,7 +328,7 @@ The `#` separator in the method field references an interface method: `test-slee
 
 ## See Also
 
-- [Overview](wasm/overview.md) - WebAssembly runtime overview
-- [Host Functions](wasm/hosts.md) - Available host interfaces
-- [Processes](wasm/processes.md) - Running WASM as processes
-- [Entry Kinds](guides/entry-kinds.md) - All registry entry kinds
+- [Overview](./overview.md) - WebAssembly runtime overview
+- [Host Functions](./hosts.md) - Available host interfaces
+- [Processes](./processes.md) - Running WASM as processes
+- [Entry Kinds](../guides/entry-kinds.md) - All registry entry kinds

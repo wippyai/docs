@@ -7,6 +7,11 @@ description: "Run WASM modules under a Wippy process host with process.wasm."
 
 A `process.wasm` entry runs a WASM module under a Wippy process host with spawning, monitoring, and supervised shutdown.
 
+**Classification: process configuration and lifecycle reference.** Binary-backed
+blocks assume an external component build and application-owned filesystem,
+process host, environment, and policy entries. Placeholder hashes must be
+replaced with the exact binary digest.
+
 ## Entry Configuration
 
 ```yaml
@@ -95,8 +100,6 @@ WASM processes follow the Init/Step/Close lifecycle model:
 Spawn a WASM process and monitor it for completion:
 
 ```lua
-local process = require("process")
-
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
@@ -105,14 +108,18 @@ local pid, err = process.spawn_monitored(
 )
 
 if err then
-    error("spawn failed: " .. tostring(err))
+    return nil, err
 end
 
 -- Wait for the process to complete
 local events = process.events()
-local event = events:receive()
-if event and event.kind == process.event.EXIT then
-    local result = event.result.value  -- return value from the WASM function
+while true do
+    local event, open = events:receive()
+    if not open then return nil, errors.new("process event channel closed") end
+    if event.kind == process.event.EXIT and event.from == pid then
+        local result = event.result.value  -- return value from the WASM function
+        return result, event.result.error
+    end
 end
 ```
 
