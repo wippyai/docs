@@ -1,6 +1,6 @@
 ---
 title: "Canales y Corrutinas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Crea canales con y sin búfer, intercambia valores, selecciona entre operaciones y coordina trabajo concurrente."
 ---
 
 # Canales y Corrutinas
@@ -8,40 +8,42 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
+Los canales intercambian valores entre tareas concurrentes. Pueden tener o no búfer y combinarse con `channel.select` para coordinar varias operaciones.
 
-Canales estilo Go para comunicación entre corrutinas. Crear canales con o sin buffer, enviar y recibir valores, y coordinar entre procesos concurrentes usando sentencias select.
+Esta es una referencia de API. Los bloques básicos son fragmentos aislados; las secciones de tiempo de espera, fan-in y comprobación no bloqueante son patrones parciales cuyos canales y callbacks con nombre proceden de la aplicación circundante. El bloque del pool de trabajadores es un ejemplo completo dentro del proceso.
 
-El global `channel` siempre esta disponible.
+Los globales `channel` y `coroutine` están siempre disponibles. Los canales coordinan corrutinas dentro de un único proceso Lua; para cruzar límites de proceso, usa mensajería de procesos, funciones o colas.
 
-## Crear Canales
+## Creación de canales
 
-Los canales sin buffer (tamano 0) requieren que tanto el emisor como el receptor esten listos antes de que la transferencia complete. Los canales con buffer permiten que los envios completen inmediatamente mientras haya espacio disponible:
+Un canal sin búfer (tamaño 0) requiere que un emisor y un receptor estén listos antes de completar la transferencia. Un canal con búfer permite completar los envíos mientras haya espacio disponible.
 
 ```lua
--- Sin buffer: sincroniza emisor y receptor
+-- Unbuffered: synchronizes sender and receiver
 local sync_ch = channel.new()
 
--- Con buffer: encolar hasta 10 mensajes
+-- Buffered: queue up to 10 messages
 local work_queue = channel.new(10)
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `size` | integer | Capacidad del buffer (por defecto: 0 para sin buffer) |
+| `size` | integer | Capacidad del búfer (valor predeterminado: 0, sin búfer) |
 
 **Devuelve:** `channel`
 
-## Enviar Valores
+## Envío de valores
 
-Enviar un valor al canal. Bloquea hasta que un receptor este listo (sin buffer) o haya espacio en el buffer (con buffer):
+El envío se bloquea hasta que haya un receptor listo en un canal sin búfer o hasta que haya espacio disponible en un canal con búfer.
 
 ```lua
--- Enviar trabajo a un pool de trabajadores
+-- Send work to a worker pool
+local tasks = {"task-a", "task-b"}
 local jobs = channel.new(100)
 for i, task in ipairs(tasks) do
-    jobs:send(task)  -- Bloquea si buffer lleno
+    jobs:send(task)  -- Blocks if buffer full
 end
-jobs:close()  -- Senalar que no hay mas trabajo
+jobs:close()  -- Signal no more work
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -50,45 +52,49 @@ jobs:close()  -- Senalar que no hay mas trabajo
 
 **Devuelve:** `boolean`
 
-Genera error si el canal esta cerrado.
+Enviar a un canal cerrado genera un error.
 
-## Recibir Valores
+## Recepción de valores
 
-Recibir un valor del canal. Bloquea hasta que un valor este disponible o el canal este cerrado:
+La recepción se bloquea hasta que haya un valor disponible o el canal esté cerrado.
 
 ```lua
--- Trabajador consumiendo de cola de trabajos
+-- Worker consuming from job queue
 while true do
-    local job, ok = work:receive()
+    local job, ok = jobs:receive()
     if not ok then
-        break  -- Canal cerrado, no mas trabajo
+        break  -- Channel closed, no more work
     end
     process(job)
 end
 ```
 
+Aquí, `jobs` es la cola proporcionada por la aplicación y `process` es su callback de procesamiento de tareas.
+
 **Devuelve:** `any, boolean`
 
-- `value, true` - Recibio un valor
-- `nil, false` - Canal cerrado y vacio
+- `value, true` — se recibió un valor
+- `nil, false` — el canal está cerrado y vacío
 
-## Cerrar Canales
+## Cierre de canales
 
-Cerrar el canal. Los emisores pendientes obtienen un error, los receptores pendientes obtienen `nil, false`. Genera error si ya esta cerrado:
+Cerrar un canal hace que los emisores pendientes reciban un error y que los receptores pendientes reciban `nil, false`. Cerrar un canal ya cerrado no hace nada.
 
 ```lua
 local results = channel.new(10)
 
--- Productor llena resultados
+-- Producer fills results
 for _, item in ipairs(data) do
     results:send(process(item))
 end
-results:close()  -- Senalar completacion
+results:close()  -- Signal completion
 ```
 
-## Seleccionar de Multiples Canales
+Este fragmento aislado de productor presupone que la aplicación proporciona `data` y el callback `process`.
 
-Esperar en multiples operaciones de canal simultaneamente. Esencial para manejar multiples fuentes de eventos, implementar timeouts y construir sistemas responsivos:
+## Selección entre varios canales
+
+`channel.select` espera simultáneamente en varias operaciones de canal. Permite coordinar fuentes de eventos, tiempos de espera y comprobaciones no bloqueantes.
 
 ```lua
 local result = channel.select(cases)
@@ -97,19 +103,25 @@ local result = channel.select(cases)
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `cases` | table | Array de casos select |
-| `default` | boolean | Si true, devuelve inmediatamente cuando ningun caso este listo |
+| `default` | boolean | Si es true, devuelve inmediatamente cuando ningún caso está listo |
 
-**Devuelve:** `table` con campos: `channel`, `value`, `ok`, `default`
+**Devuelve:** `table`
 
-### Patrón de Timeout
+- Para un caso de canal: `{channel, value, ok}` — `channel` es el canal del caso, `value` es el valor recibido o enviado y `ok` es false para una recepción de un canal cerrado.
+- Para la rama predeterminada (cuando ningún caso está listo y `default = true`): `{default = true, ok = true}`.
 
-Esperar resultado con timeout usando `time.after()`.
+### Patrón de tiempo de espera
+
+Usa `time.after()` para añadir un tiempo de espera a una operación de canal.
 
 ```lua
 local time = require("time")
 
-local result_ch = worker:response()
-local timeout = time.after("5s")
+local result_ch = application_response_channel
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     result_ch:case_receive(),
@@ -117,14 +129,24 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
+end
+if not r.ok then
+    return nil, errors.new("Response channel closed")
 end
 return r.value
 ```
 
+Este patrón parcial presupone que la entrada incluye `time` en `modules:` y que la aplicación proporciona `application_response_channel`. `time.after` devuelve un canal en caso de éxito; las duraciones no válidas o no positivas devuelven `nil, error`.
+
 ### Patrón Fan-in
 
-Fusionar multiples fuentes en un manejador.
+Maneja valores de varias fuentes en un único bucle.
+
+Este patrón de entrada de proceso usa el `process` ambiental, mientras que la aplicación proporciona la señal de cierre y las dos funciones manejadoras.
 
 ```lua
 local events = process.events()
@@ -148,9 +170,11 @@ while true do
 end
 ```
 
-### Verificacion No Bloqueante
+### Comprobación no bloqueante
 
-Verificar si hay datos disponibles sin bloquear.
+Usa un caso predeterminado para comprobar si hay datos disponibles sin bloquearse.
+
+En este patrón aislado, `ch` y el callback `process` proceden de la aplicación.
 
 ```lua
 local r = channel.select {
@@ -159,42 +183,61 @@ local r = channel.select {
 }
 
 if r.default then
-    -- Nada disponible, hacer algo mas
+    -- Nothing available, do something else
+elseif not r.ok then
+    -- The channel is closed
 else
     process(r.value)
 end
 ```
 
-## Crear Casos Select
+## Creación de casos select
 
-Crear casos para usar con `channel.select`:
+Crea casos de envío y recepción para `channel.select`:
 
 ```lua
--- Caso send - completa cuando el canal puede aceptar valor
+-- Send case - completes when channel can accept value
 ch:case_send(value)
 
--- Caso receive - completa cuando hay valor disponible
+-- Receive case - completes when value available
 ch:case_receive()
 ```
 
-## Patrón de Pool de Trabajadores
+Los valores de la tabla de casos que no sean casos de envío o recepción se ignoran. Asegúrate de que la tabla contenga al menos un caso válido, a menos que también tenga una rama predeterminada.
+
+## Patrón de pool de trabajadores
 
 ```lua
-local work = channel.new(100)
-local results = channel.new(100)
+local items = {1, 2, 3, 4}
+local num_workers = 2
 
--- Crear trabajadores
-for i = 1, num_workers do
-    process.spawn("app.workers:processor", "app:processes", work, results)
+local function process_item(item)
+    return item * 2
 end
 
--- Alimentar trabajo
+local work = channel.new(#items)
+local results = channel.new(#items)
+
+-- Spawn workers
+for _ = 1, num_workers do
+    coroutine.spawn(function()
+        while true do
+            local item, ok = work:receive()
+            if not ok then
+                return
+            end
+            results:send(process_item(item))
+        end
+    end)
+end
+
+-- Feed work
 for _, item in ipairs(items) do
     work:send(item)
 end
 work:close()
 
--- Recolectar resultados
+-- Collect results
 local processed = {}
 while #processed < #items do
     local result, ok = results:receive()
@@ -203,16 +246,16 @@ while #processed < #items do
 end
 ```
 
+Después del bucle, `processed` contiene `2`, `4`, `6` y `8`; el orden de los resultados depende de la planificación de las corrutinas. Los trabajadores comparten los canales porque son corrutinas del mismo proceso Lua.
+
 ## Errores
 
-| Condición | Tipo | Reintentable |
+| Condición | Clase | Reintentable |
 |-----------|------|--------------|
-| Enviar en canal cerrado | error de runtime | no |
-| Cerrar canal cerrado | error de runtime | no |
-| Caso invalido en select | error de runtime | no |
+| Envío a un canal cerrado | error de runtime | n/a |
 
-## Vea También
+## Véase también
 
-- [Gestión de Procesos](lua/core/process.md) - Creacion de procesos y comunicación
-- [Cola de Mensajes](lua/storage/queue.md) - Mensajeria basada en colas
-- [Funciones](lua/core/funcs.md) - Invocacion de funciones
+- [Gestión de procesos](process.md) - Creación de procesos y comunicación
+- [Cola de mensajes](../storage/queue.md) - Mensajería basada en colas
+- [Funciones](funcs.md) - Invocación de funciones

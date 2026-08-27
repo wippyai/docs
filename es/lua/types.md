@@ -9,6 +9,8 @@ description: "Wippy incluye un sistema de tipos gradual con verificación sensib
 
 Wippy incluye un sistema de tipos gradual con verificación sensible al flujo. Los tipos no son anulables por defecto.
 
+Esta página es una referencia del lenguaje, no un programa completo. Cada bloque de código es un ejemplo aislado de comprobación de tipos, y las alternativas dentro de un bloque no están pensadas necesariamente para combinarse. Nombres como `get_data`, `get_user`, `call` y `User` representan código de la aplicación; las líneas marcadas `ERROR` muestran diagnósticos intencionadamente. Estos ejemplos usan sintaxis del lenguaje y valores de tipo integrados, por lo que no requieren módulos del runtime.
+
 ## Primitivos
 
 ```lua
@@ -16,20 +18,22 @@ local n: number = 3.14
 local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- explicit dynamic (opt-out of checking)
-local u: unknown = something  -- must narrow before use
+local a: any = "anything"     -- dynamic member and method access
+local u: unknown = { source = "example" }  -- must narrow before use
 ```
 
-### any vs unknown
+### `any` y `unknown`
 
 ```lua
--- any: opt-out of type checking
+-- any: dynamic member and method access
 local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
+local s: string = a          -- ERROR: any is not assignable to string
 
--- unknown: safe unknown, must narrow before use
+-- unknown: safe unknown, must narrow before use as a concrete type
 local u: unknown = get_data()
-u.foo                        -- ERROR: cannot access property of unknown
+u.foo                        -- no error: member access on unknown behaves like any
+local n: number = u          -- ERROR: unknown not assignable to number, narrow first
 if type(u) == "table" then
     -- u narrowed to table here
 end
@@ -183,11 +187,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -202,7 +206,7 @@ local function render(state: LoadState): string
 end
 ```
 
-## El Tipo never
+## El tipo `never`
 
 `never` es el tipo de fondo — no existen valores:
 
@@ -214,7 +218,7 @@ end
 
 ## Patrón de Manejo de Errores
 
-El verificador entiende el modismo de error de Lua:
+El checker entiende el patrón habitual de retorno `value, error` de Lua:
 
 ```lua
 local value, err = call()
@@ -232,10 +236,10 @@ Use `!` para afirmar que una expresión no es nil:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- assert user is non-nil
+local name = (user!).name            -- assert user is non-nil
 ```
 
-Si el valor es nil en tiempo de ejecución, se lanza un error. Úselo cuando sepa que un valor no puede ser nil pero el verificador de tipos no puede demostrarlo.
+`!` es solo una aserción del checker: estrecha el tipo a no nil, pero no emite ninguna comprobación durante la ejecución. Si el valor es realmente nil, la operación siguiente falla con el error habitual (por ejemplo, al indexar nil). Úsalo cuando sepas que un valor no puede ser nil, pero el checker no pueda demostrarlo.
 
 ## Casts de Tipo
 
@@ -253,17 +257,19 @@ Funciona con primitivos y tipos personalizados:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- cast to string
-local n = integer(x)                 -- cast to integer
-local b = boolean(x)                 -- cast to boolean
+local s = string(x)                  -- requires an existing string
+local n = integer(x)                 -- requires an existing integer
+local b = boolean(x)                 -- requires an existing boolean
 
 type Point = {x: number, y: number}
 local p = Point(data)                -- validates record structure
 ```
 
+Por ejemplo, `string(42)` genera un error de validación; usa `tostring(42)` cuando quieras convertir el valor.
+
 ### Método Type:is()
 
-Valida sin lanzar excepción, retorna `(value, nil)` o `(nil, error)`:
+`Type:is` valida sin lanzar una excepción y devuelve `(value, nil)` o `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -304,7 +310,8 @@ Los tipos son valores de primera clase con métodos de introspección.
 ### Kind y Nombre
 
 ```lua
-print(Number:kind())                 -- "number"
+type NumberType = number
+print(NumberType:kind())             -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -333,23 +340,20 @@ print(nameType:kind())               -- "string"
 ### Tipos de Colección
 
 ```lua
-local arr: {number} = {1, 2, 3}
-local arrType = typeof(arr)
-print(arrType:elem():kind())         -- "number"
+type NumberArray = {number}
+print(NumberArray:elem():kind())     -- "number"
 
-local map: {[string]: number} = {}
-local mapType = typeof(map)
-print(mapType:key():kind())          -- "string"
-print(mapType:val():kind())          -- "number"
+type NumberMap = {[string]: number}
+print(NumberMap:key():kind())        -- "string"
+print(NumberMap:val():kind())        -- "number"
 ```
 
 ### Tipos Opcionales
 
 ```lua
-local opt: number? = nil
-local optType = typeof(opt)
-print(optType:kind())                -- "optional"
-print(optType:inner():kind())        -- "number"
+type OptionalNumber = number?
+print(OptionalNumber:kind())         -- "optional"
+print(OptionalNumber:inner():kind()) -- "number"
 ```
 
 ### Tipos Unión
@@ -365,31 +369,37 @@ end
 ### Tipos de Función
 
 ```lua
-local fn: (number, string) -> boolean
-
-local fnType = typeof(fn)
-for param in fnType:params() do
+type Predicate = (number, string) -> boolean
+for param in Predicate:params() do
     print(param:kind())
 end
-print(fnType:ret():kind())           -- "boolean"
+print(Predicate:ret():kind())        -- "boolean"
 ```
+
+`typeof(expression)` es sintaxis de tipos, no una función de reflexión durante la ejecución. Úsala en un alias como `type Config = typeof(default_config)`; el alias resultante es el valor de tipo durante la ejecución.
 
 ### Comparación de Tipos
 
 ```lua
-print(Number == Number)              -- true
-print(Integer <= Number)             -- true (subtype)
-print(Integer < Number)              -- true (strict subtype)
+type NumberType = number
+type IntegerType = integer
+
+print(NumberType == NumberType)      -- true
+print(IntegerType <= NumberType)     -- true (subtype)
+print(IntegerType < NumberType)      -- true (strict subtype)
 ```
 
 ### Tipos como Claves de Tabla
 
 ```lua
-local handlers = {}
-handlers[Number] = function() return "number handler" end
-handlers[String] = function() return "string handler" end
+type NumberType = number
+type StringType = string
 
-local h = handlers[typeof(value)]
+local handlers = {}
+handlers[NumberType] = function() return "number handler" end
+handlers[StringType] = function() return "string handler" end
+
+local h = handlers[NumberType]
 if h then h() end
 ```
 
@@ -413,31 +423,27 @@ type StringMap = {[string]: number}
 
 ## Validadores de Tipo
 
-Agregue restricciones de validación en tiempo de ejecución a los tipos usando anotaciones:
+Adjunta restricciones de validación a alias de tipo mediante anotaciones y después llama al tipo o usa `Type:is()` para aplicarlas durante la ejecución:
 
 ```lua
--- Single validator
-local x: number @min(0) = 1
+type NonNegative = number @min(0)
+type Percentage = number @min(0) @max(100)
+type Email = string @pattern("^.+@.+$")
 
--- Multiple validators
-local x: number @min(0) @max(100) = 50
-
--- String pattern
-local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- No-arg validator
-local x: number @integer = 42
+local x = NonNegative(1)
+local percent, err = Percentage:is(50)
+local email = Email("test@example.com")
 ```
 
 ### Validadores Integrados
 
 | Validador | Aplica a | Ejemplo |
 |-----------|----------|---------|
-| `@min(n)` | number | `local x: number @min(0) = 1` |
-| `@max(n)` | number | `local x: number @max(100) = 50` |
-| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
-| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
-| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+| `@min(n)` | number | `type Positive = number @min(1)` |
+| `@max(n)` | number | `type Percentage = number @max(100)` |
+| `@min_len(n)` | string, array | `type NonEmpty = string @min_len(1)` |
+| `@max_len(n)` | string, array | `type ShortName = string @max_len(10)` |
+| `@pattern(regex)` | string | `type Email = string @pattern("^.+@.+$")` |
 
 ### Validadores de Campo de Registro
 

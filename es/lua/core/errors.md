@@ -1,6 +1,6 @@
 ---
 title: "Errores"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Crea, envuelve, inspecciona y clasifica errores estructurados en entradas Lua."
 ---
 
 # Errores
@@ -8,15 +8,17 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Manejo de errores estructurados con categorizacion y metadatos de reintento. Tabla global `errors` disponible sin require.
+La tabla global `errors` crea e inspecciona errores estructurados con categorías, detalles y metadatos de reintento. Está disponible sin `require`.
 
-## Crear Errores
+Esta es una referencia de API. Cada bloque de código es un fragmento aislado, no una entrada completa. Variables como `err` hacen referencia a un error devuelto o creado por el código circundante de la aplicación; el ejemplo de envoltura presupone que `db` es un cliente de base de datos proporcionado por la aplicación.
+
+## Creación de errores
 
 ```lua
--- Mensaje simple (tipo por defecto UNKNOWN)
+-- Simple message (kind defaults to UNKNOWN)
 local err = errors.new("something went wrong")
 
--- Con tipo, reintentable y detalles
+-- With kind, retryable, and details
 local err = errors.new({
     message = "user not found",
     kind = errors.NOT_FOUND,
@@ -25,62 +27,62 @@ local err = errors.new({
 })
 ```
 
-`errors.new` acepta un mensaje string o una tabla con al menos un campo `message`. La forma `(kind, message)` no está soportada.
+`errors.new` acepta un mensaje de cadena o una tabla con al menos un campo `message`. La forma `(kind, message)` no es compatible.
 
-## Envolver Errores
+## Envoltura de errores
 
-Agregar contexto preservando tipo, reintentable y detalles:
+Envuelve un error para añadir contexto conservando su clase, los metadatos de reintento y los detalles:
 
 ```lua
-local data, err = db.query("SELECT * FROM users")
+local data, err = db:query("SELECT * FROM users")
 if err then
     return nil, errors.wrap(err, "failed to load users")
 end
 ```
 
-## Metodos de Error
+## Métodos de error
 
 | Método | Devuelve | Descripción |
 |--------|----------|-------------|
-| `err:kind()` | string | Categoria de error |
+| `err:kind()` | string | Categoría de error |
 | `err:message()` | string | Mensaje de error |
 | `err:retryable()` | boolean/nil | Si la operación puede reintentarse |
 | `err:details()` | table/nil | Metadatos estructurados |
 | `err:stack()` | string | Traza de pila Lua |
-| `tostring(err)` | string | Representacion completa |
+| `tostring(err)` | string | Representación completa |
 
-## Verificar Tipo
+## Comprobación de la clase
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- manejar entrada invalida
+    -- handle invalid input
 end
 
--- O comparar directamente
+-- Or compare directly
 if err:kind() == errors.NOT_FOUND then
-    -- manejar recurso faltante
+    -- handle missing resource
 end
 ```
 
-## Tipos de Error
+## Clases de error
 
-| Constante | Caso de Uso |
+| Constante | Caso de uso |
 |----------|----------|
-| `errors.NOT_FOUND` | Recurso no existe |
+| `errors.NOT_FOUND` | El recurso no existe |
 | `errors.ALREADY_EXISTS` | Recurso ya existe |
-| `errors.INVALID` | Entrada o argumentos invalidos |
+| `errors.INVALID` | Entrada o argumentos no válidos |
 | `errors.PERMISSION_DENIED` | Acceso denegado |
-| `errors.UNAVAILABLE` | Servicio temporalmente caido |
+| `errors.UNAVAILABLE` | Servicio temporalmente no disponible |
 | `errors.INTERNAL` | Error interno |
 | `errors.CANCELED` | Operación cancelada |
 | `errors.CONFLICT` | Conflicto de estado de recurso |
-| `errors.TIMEOUT` | Operación agoto tiempo |
+| `errors.TIMEOUT` | La operación agotó el tiempo de espera |
 | `errors.RATE_LIMITED` | Demasiadas solicitudes |
 | `errors.UNKNOWN` | Error no especificado |
 
-## Pila de Llamadas
+## Pila de llamadas
 
-Obtener pila de llamadas estructurada:
+Usa `errors.call_stack` para inspeccionar una pila de llamadas estructurada:
 
 ```lua
 local stack = errors.call_stack(err)
@@ -92,22 +94,17 @@ if stack then
 end
 ```
 
-## Errores Reintentables
+## Errores reintentables
 
-| Tipicamente Reintentable | No Reintentable |
-|--------------------------|-----------------|
-| `TIMEOUT` | `INVALID` |
-| `UNAVAILABLE` | `NOT_FOUND` |
-| `RATE_LIMITED` | `PERMISSION_DENIED` |
-| | `ALREADY_EXISTS` |
+La posibilidad de reintentar es un metadato del error, no una propiedad garantizada por su clase. Comprueba el valor devuelto por `err:retryable()` en lugar de inferirlo de `err:kind()`. Un resultado `nil` significa que el error no especifica si resulta apropiado volver a intentarlo.
 
 ```lua
 if err:retryable() then
-    -- seguro para reintentar
+    -- safe to retry
 end
 ```
 
-## Detalles de Error
+## Detalles del error
 
 ```lua
 local err = errors.new({
