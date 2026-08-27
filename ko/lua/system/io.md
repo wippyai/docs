@@ -70,7 +70,7 @@ io.eprint("Error:", message)
 
 ## 바이트 읽기
 
-stdin에서 최대 n 바이트를 읽습니다:
+stdin에서 최대 `n` 바이트를 읽습니다:
 
 ```lua
 local data, err = io.read(1024)

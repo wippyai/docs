@@ -68,6 +68,8 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
+`flush`는 버퍼링된 데이터를 기본 대상으로 기록합니다.
+
 버퍼된 데이터를 기본 스토리지로 플러시합니다.
 
 ## 스트림 정보

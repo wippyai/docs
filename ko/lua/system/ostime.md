@@ -148,7 +148,7 @@ UTC 날짜 테이블은 `"!*t"`를 사용하세요.
 
 ## 경과 시간 측정
 
-current runtime time reference와 OS-time module initialization time 사이의 초를 읽습니다.
+현재 런타임 시간 기준과 OS-time 모듈 초기화 시간 사이의 초를 읽습니다. `os.time()` 및 `os.date()`와는 다른 기준입니다.
 
 ```lua
 local start = os.clock()
@@ -188,7 +188,7 @@ print(days)  -- 365
 
 ## 플랫폼 상수
 
-런타임을 식별하는 상수:
+`os.platform` 상수는 런타임을 식별합니다:
 
 ```lua
 os.platform  -- "wippy"

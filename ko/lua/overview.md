@@ -46,7 +46,7 @@ buffered:send("work")           -- completes while buffer space is available
 local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-select와 pattern은 [채널](core/channel.md)을 참조하십시오.
+`channel.select`와 pattern은 [채널](core/channel.md)을 참조하십시오.
 
 ## 코루틴
 

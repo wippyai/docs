@@ -61,7 +61,7 @@ end
 
 ## 표현식 컴파일
 
-반복 평가를 위해 표현식을 재사용 가능한 Program 객체로 컴파일합니다:
+반복 평가를 위해 표현식을 재사용 가능한 `Program` 객체로 컴파일합니다:
 
 ```lua
 -- Compile once for repeated use

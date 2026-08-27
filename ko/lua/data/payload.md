@@ -154,7 +154,7 @@ if err then
 end
 ```
 
-`data()`와 `unmarshal()`은 기존 Lua 값을 반환하거나 Lua가 아닌 페이로드를 Lua 형식으로 트랜스코딩합니다. 트랜스코더가 잘못된 결과를 만들면 `unmarshal()`이 더 엄격하게 동작합니다. `unmarshal()`은 `errors.INTERNAL` 오류를 반환하지만 `data()`는 `nil`을 반환합니다.
+`data()`와 `unmarshal()`은 기존 Lua 값을 반환하거나 Lua가 아닌 페이로드를 Lua 형식으로 트랜스코딩합니다. 트랜스코더가 잘못된 결과를 만들면 후자가 더 엄격하게 동작합니다. `unmarshal()`은 `errors.INTERNAL` 오류를 반환하지만 `data()`는 `nil`을 반환합니다.
 
 **반환:** `any, error`
 
