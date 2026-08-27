@@ -14,7 +14,7 @@
       {"title": "Configuration", "path": "guides/configuration"},
       {"title": "클러스터", "path": "guides/cluster"},
       {"title": "Linter", "path": "guides/linter"},
-      {"title": "Language Server", "path": "guides/lsp"},
+      {"title": "언어 서버", "path": "guides/lsp"},
       {"title": "Dependency Management", "path": "guides/dependency-management"},
       {"title": "빌드 시점 아티팩트", "path": "guides/artifacts"},
       {"title": "컴포넌트 구축", "path": "guides/components"},
