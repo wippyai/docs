@@ -10,6 +10,8 @@ description: "Read runtime time, format dates, and calculate time differences wi
 
 The global `os` table provides timestamps, date formatting, elapsed-time measurement, and time-difference calculations. In a workflow, current-time reads use the workflow's time reference; outside a workflow they use the system clock.
 
+This is an API reference. Timestamp literals and formatted outputs are illustrative; current values depend on the runtime or workflow clock and timezone.
+
 ## Loading
 
 The `os` table is global and does not require loading with `require`.

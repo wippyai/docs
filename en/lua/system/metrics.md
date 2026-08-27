@@ -10,6 +10,8 @@ description: "Record application counters, gauges, and histogram observations."
 
 The `metrics` module records application counters, gauges, and histogram observations.
 
+This is an API reference. The snippets show one observation at a time and propagate collector errors.
+
 Every function returns `true, nil` after passing the observation to the active collector. If the execution context has no collector, it returns `nil` and a non-retryable `errors.INTERNAL` error.
 
 Labels are optional. Only entries with both a string key and a string value are recorded; other entries are silently ignored. A non-table labels argument is treated as if no labels were supplied.
@@ -29,7 +31,9 @@ local metrics = require("metrics")
 Increment a counter by one.
 
 ```lua
-metrics.counter_inc("requests_total", {method = "POST"})
+local recorded, err = metrics.counter_inc("requests_total", {method = "POST"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Type | Description |
@@ -44,7 +48,9 @@ metrics.counter_inc("requests_total", {method = "POST"})
 Add a value to a counter.
 
 ```lua
-metrics.counter_add("bytes_total", 1024, {direction = "out"})
+local recorded, err = metrics.counter_add("bytes_total", 1024, {direction = "out"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Type | Description |
@@ -64,7 +70,9 @@ The runtime forwards the value unchanged and does not require it to be positive.
 Set a gauge to the current value.
 
 ```lua
-metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+local recorded, err = metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Type | Description |
@@ -80,7 +88,9 @@ metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 Increment a gauge by one.
 
 ```lua
-metrics.gauge_inc("connections", {pool = "db"})
+local recorded, err = metrics.gauge_inc("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Type | Description |
@@ -95,7 +105,9 @@ metrics.gauge_inc("connections", {pool = "db"})
 Decrement a gauge by one.
 
 ```lua
-metrics.gauge_dec("connections", {pool = "db"})
+local recorded, err = metrics.gauge_dec("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Type | Description |
@@ -112,7 +124,9 @@ metrics.gauge_dec("connections", {pool = "db"})
 Record a histogram observation.
 
 ```lua
-metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+local recorded, err = metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+if err then return nil, err end
+return recorded
 ```
 
 | Parameter | Type | Description |
@@ -131,4 +145,4 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 
 Invalid name or value types raise Lua argument errors instead of returning structured errors.
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

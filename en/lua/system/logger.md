@@ -11,6 +11,8 @@ description: "Write structured log messages and create child loggers with persis
 
 The `logger` module writes structured messages at debug, info, warn, and error levels.
 
+This is an API reference. Each snippet is an isolated logging operation and assumes an execution context with the desired logger configuration.
+
 Log calls return no values. When the execution context provides them, each call also adds the process `pid` and the source `location` derived from the current frame.
 
 ## Loading
@@ -71,8 +73,11 @@ For `logger:error`, a field named `error` is emitted as an error field and remov
 Create a child logger that adds the same fields to every message.
 
 ```lua
-local child = logger:with({request_id = id})
-child:info("message")
+local function request_logger(request_id)
+    return logger:with({request_id = request_id})
+end
+
+request_logger("req-123"):info("message")
 ```
 
 | Parameter | Type | Description |

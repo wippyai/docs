@@ -7,6 +7,8 @@ description: "Browse Wippy Hub metadata and artifacts, manage credentials, and i
 
 The `hub` module reads Wippy Hub modules, versions, dependencies, files, artifacts, and READMEs. It also manages the runtime's Hub credential override and can remove unpinned artifacts from the local cache.
 
+This is an API reference. Catalog coordinates are illustrative; artifact, authentication, and cache operations require matching network access, credentials, lock state, and security policies.
+
 ## Loading
 
 ```lua
@@ -66,6 +68,7 @@ local result, err = hub.modules.list({
 local readme, err = hub.modules.readme("wippy/terminal", {
     version = "1.2.3"
 })
+if err then return nil, err end
 print(readme.content)
 ```
 
@@ -95,14 +98,17 @@ local v, err = hub.versions.get("wippy/terminal", "1.0.0")
 
 ```lua
 local pkg, err = hub.versions.open("wippy/terminal", "1.2.3")
+if err then return nil, err end
 
-local entries, err = pkg:entries({
+local entries, entries_err = pkg:entries({
     kind = "function.lua",       -- string or string[], omit for all kinds
     include_data = false,        -- default true
 })
 -- each entry: { id = "ns:name", kind = "...", meta = {...}, data = <any> }
-
-pkg:close()
+local _, close_err = pkg:close()
+if entries_err then return nil, entries_err end
+if close_err then return nil, close_err end
+return entries
 ```
 
 | Method | Description |
@@ -171,6 +177,8 @@ local status, err = hub.auth.status()
 local ok, err = hub.auth.logout()
 ```
 
+The token strings above are placeholders. Load real credentials from a secret-backed environment entry or another protected source; do not commit them in Lua or registry YAML.
+
 | Function | Description |
 |----------|-------------|
 | `hub.auth.authenticate(token, registry?)` | Validate the token against the registry and, on success, install it as the runtime override |
@@ -185,5 +193,5 @@ Each top-level `hub.*` operation checks the matching action name, such as `hub.m
 
 ## See Also
 
-- [CLI Reference](guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
-- [Publishing Guide](guides/publishing.md)
+- [CLI Reference](../../guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
+- [Publishing Guide](../../guides/publishing.md)

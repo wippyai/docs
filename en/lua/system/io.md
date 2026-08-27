@@ -10,8 +10,10 @@ description: "Read terminal input and write to standard output and standard erro
 
 The `io` module reads from standard input and writes to standard output and standard error in terminal applications.
 
+This is an API reference. Its snippets are isolated calls; a terminal process should propagate returned structured Lua errors when the result affects control flow.
+
 <note>
-This module is available only to processes running on a <a href="system/terminal.md">Terminal Host</a>, not to regular functions.
+This module is available only to processes running on a <a href="../../system/terminal.md">Terminal Host</a>, not to regular functions.
 </note>
 
 ## Loading
@@ -32,7 +34,7 @@ local ok, err = io.write("text", "more")
 |-----------|------|-------------|
 | `...` | any | Variable number of values to write (coerced to string) |
 
-**Returns:** `boolean, error` (`error` is a plain string)
+**Returns:** `boolean, error`
 
 ## Print with Newline
 
@@ -46,7 +48,7 @@ io.print("value1", "value2", 123)
 |-----------|------|-------------|
 | `...` | any | Variable number of values to print |
 
-**Returns:** `boolean, error` (`error` is a plain string)
+**Returns:** `boolean, error`
 
 After terminal context lookup succeeds, output write errors are ignored and the function returns `true`. A missing terminal context returns `nil, "no terminal context"`.
 
@@ -62,7 +64,7 @@ io.eprint("Error:", message)
 |-----------|------|-------------|
 | `...` | any | Variable number of values to print |
 
-**Returns:** `boolean, error` (`error` is a plain string)
+**Returns:** `boolean, error`
 
 After terminal context lookup succeeds, output write errors are ignored and the function returns `true`. A missing terminal context returns `nil, "no terminal context"`.
 
@@ -78,7 +80,7 @@ local data, err = io.read(1024)
 |-----------|------|-------------|
 | `n` | integer | Number of bytes to read (default: 1024, values <= 0 become 1024) |
 
-**Returns:** `string, error` (`error` is a plain string). A successful read may return fewer than `n` bytes or an empty string.
+**Returns:** `string, error`. A successful read may return fewer than `n` bytes or an empty string.
 
 ## Reading a Line
 
@@ -88,7 +90,7 @@ Read one line from standard input:
 local line, err = io.readline()
 ```
 
-**Returns:** `string, error` (`error` is a plain string). The trailing `\n` and `\r` are removed. EOF after partial input returns that partial line; EOF without input returns `nil` and an error string.
+**Returns:** `string, error`. The trailing `\n` and `\r` are removed. EOF after partial input returns that partial line; EOF without input returns `nil` and a structured error.
 
 ## Raw Mode
 
@@ -103,7 +105,7 @@ local ok, err = io.raw(false)  -- disable
 |-----------|------|-------------|
 | `enable` | boolean | `true` to enable, `false` to disable (default: `true`) |
 
-**Returns:** `boolean, error` (`error` is a plain string)
+**Returns:** `boolean, error`
 
 Raw mode is reference-counted: each `io.raw(true)` call must be matched by an `io.raw(false)` call. The terminal returns to normal mode automatically when the process exits.
 
@@ -115,7 +117,7 @@ Flush the standard-output buffer:
 local ok, err = io.flush()
 ```
 
-**Returns:** `boolean, error` (`error` is a plain string). The call is a successful no-op when standard output does not implement `Sync()`.
+**Returns:** `boolean, error`. The call is a successful no-op when standard output does not implement `Sync()`.
 
 ## Command Line Arguments
 
@@ -131,4 +133,4 @@ local args = io.args()
 
 ## Errors
 
-This module returns plain error strings rather than structured `errors.*` values. Errors include `"no terminal context"`, `"raw terminal control unavailable"`, and the underlying read, write, raw-mode, or flush error text. `io.args()` has no error return.
+This module returns structured Lua errors. A missing terminal context uses `errors.UNAVAILABLE`; direct write/flush and invalid yield-response failures use `errors.INTERNAL`. Dispatcher-backed read, readline, and raw-mode failures preserve underlying error metadata when available. `io.args()` has no error return.

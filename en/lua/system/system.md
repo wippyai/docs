@@ -10,6 +10,8 @@ description: "Inspect runtime, process, host, supervisor, and cluster state, and
 
 The `system` module reports runtime, memory, process, host, supervisor, and cluster state. It also exposes selected runtime controls.
 
+This is an API reference. Most snippets show one isolated operation; controls such as shutdown, runtime tuning, and distributed locks require explicit policy authorization and application-specific failure handling.
+
 ## Loading
 
 ```lua
@@ -335,7 +337,7 @@ Each state table has the same format as `system.supervisor.state()`.
 
 ## Cluster Primitives
 
-The `system.node`, `system.cluster`, `system.raft`, and `system.lock` subtables expose the clustering layer. When [clustering is not enabled](guides/cluster.md), `system.raft.*` reports "raft not available," `system.cluster` reports only the local node, and `system.lock` is unavailable because it requires the global registry.
+The `system.node`, `system.cluster`, `system.raft`, and `system.lock` subtables expose the clustering layer. When [clustering is not enabled](../../guides/cluster.md), `system.raft.*` reports "raft not available," `system.cluster` reports only the local node, and `system.lock` is unavailable because it requires the global registry.
 
 Read calls report this node's local view of committed state and do not block on the network.
 
@@ -414,10 +416,18 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- critical section: only one holder cluster-wide
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
 Acquisition is fail-fast: when a lock is already held, the call returns `false` immediately instead of blocking. Callers provide any required retry and backoff. Only the current holder can release a lock; a release attempt by another process is a no-op.
@@ -468,7 +478,8 @@ Security policy evaluation applies to system operations.
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Permission denied (deployment source loading) | `errors.PERMISSION_DENIED` | no |
-| Permission denied (other system operations) | `errors.INVALID` | no |
+| Permission denied (non-source operations except distributed locks) | `errors.INVALID` | no |
+| Permission denied (distributed lock acquire/release) | `errors.PERMISSION_DENIED` | no |
 | Invalid argument | `errors.INVALID` | no |
 | Missing required argument | `errors.INVALID` | no |
 | Code manager unavailable | `errors.INTERNAL` | no |
@@ -478,4 +489,4 @@ Security policy evaluation applies to system operations.
 | Membership unavailable | `errors.INTERNAL` | no |
 | Lock already held | `errors.ALREADY_EXISTS` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

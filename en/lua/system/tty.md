@@ -9,8 +9,10 @@ description: "Handle terminal input events and render styled terminal layouts."
 
 The `tty` module handles raw terminal input events and provides styled-output and layout utilities.
 
+This is an API reference. The input loop is a partial terminal-process recipe; the styling and layout snippets are independent examples.
+
 <note>
-This module is available only to processes running on a <a href="system/terminal.md">Terminal Host</a>, not to regular functions.
+This module is available only to processes running on a <a href="../../system/terminal.md">Terminal Host</a>, not to regular functions.
 </note>
 
 ## Loading
@@ -28,25 +30,36 @@ local tty = require("tty")
 local io = require("io")
 
 local function handler()
-    tty.start()
-    local events = tty.events()
+    local events, events_err = tty.events()
+    if events_err then return nil, events_err end
+
+    -- Subscribe before starting so the initial start event cannot be missed.
+    local started, start_err = tty.start()
+    if start_err then return nil, start_err end
+
+    local loop_err
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -222,7 +235,8 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
 ### `tty.style()`
@@ -362,5 +376,5 @@ The input-control functions return structured errors:
 
 ## See Also
 
-- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
-- [Terminal Host](system/terminal.md) — Terminal host configuration
+- [Terminal I/O](./io.md) — stdin/stdout/stderr operations
+- [Terminal Host](../../system/terminal.md) — Terminal host configuration
