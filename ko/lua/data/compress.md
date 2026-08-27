@@ -1,6 +1,6 @@
 ---
 title: "압축"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "gzip, Brotli, Zstandard, 원시 DEFLATE, zlib으로 문자열을 압축하고 해제합니다."
 ---
 
 # 압축
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-gzip, deflate, zlib, brotli, zstd 알고리즘을 사용하여 데이터를 압축 및 해제합니다.
+`compress` 모듈은 gzip, Brotli, Zstandard, 원시 DEFLATE, zlib으로 문자열을 인코딩하고 디코딩합니다.
+
+이 페이지는 부분적인 HTTP 및 스토리지 레시피를 포함한 API 참조입니다. 모든 작업은 전체 입력과 출력을 Lua 문자열로 구체화합니다. 데이터를 스트리밍 상태로 유지해야 한다면 아카이브 또는 스트림 API를 사용하세요. 예제에서는 엔트리가 `compress`와 `json`, `http`처럼 별도로 필요한 모듈을 활성화한다고 가정합니다.
 
 ## 로딩
 
@@ -17,29 +19,36 @@ gzip, deflate, zlib, brotli, zstd 알고리즘을 사용하여 데이터를 압�
 local compress = require("compress")
 ```
 
+require하기 전에 실행 엔트리의 `modules:` 목록에 `compress`를 추가하세요.
+
 ## GZIP
 
-가장 널리 지원되는 형식 (RFC 1952).
+Gzip은 RFC 1952에 정의되어 있습니다.
 
 ### 압축 {id="gzip-compress"}
 
 ```lua
--- HTTP 응답용 압축
-local body = json.encode(large_response)
+-- Compress for HTTP response
+local body, json_err = json.encode(large_response)
+if json_err then return nil, json_err end
 local compressed, err = compress.gzip.encode(body)
 if err then
     return nil, err
 end
 
--- Content-Encoding 헤더 설정
-res:set_header("Content-Encoding", "gzip")
-res:write(compressed)
+-- Set Content-Encoding header
+local header_err = res:set_header("Content-Encoding", "gzip")
+if header_err then return nil, header_err end
+local write_err = res:write(compressed)
+if write_err then return nil, write_err end
 
--- 저장용 최대 압축
-local archived = compress.gzip.encode(data, {level = 9})
+-- Maximum compression for storage
+local archived, archive_err = compress.gzip.encode(data, {level = 9})
+if archive_err then return nil, archive_err end
 
--- 실시간용 빠른 압축
-local fast = compress.gzip.encode(data, {level = 1})
+-- Fast compression for real-time
+local fast, fast_err = compress.gzip.encode(data, {level = 1})
+if fast_err then return nil, fast_err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -58,21 +67,23 @@ local fast = compress.gzip.encode(data, {level = 1})
 ### 압축 해제 {id="gzip-decompress"}
 
 ```lua
--- HTTP 요청 압축 해제
-local content_encoding = req:header("Content-Encoding")
+-- Decompress HTTP request
+local content_encoding, header_err = req:header("Content-Encoding")
+if header_err then return nil, header_err end
 if content_encoding == "gzip" then
-    local body = req:body()
+    local body, body_err = req:body()
+    if body_err then return nil, body_err end
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.new("INVALID", "Invalid gzip data")
+        return nil, errors.wrap(err, "gzip request body could not be decoded")
     end
     body = decompressed
 end
 
--- 크기 제한과 함께 압축 해제 (zip 폭탄 방지)
+-- Decompress with size limit (prevent zip bombs)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.new("INVALID", "Decompressed size exceeds 10MB limit")
+    return nil, errors.wrap(err, "gzip decode failed")
 end
 ```
 
@@ -91,19 +102,20 @@ end
 
 ## Brotli
 
-텍스트용 최상의 압축률 (RFC 7932).
+Brotli는 RFC 7932에 정의되어 있으며 압축된 텍스트 콘텐츠에 일반적으로 사용됩니다.
 
 ### 압축 {id="brotli-compress"}
 
 ```lua
--- 정적 에셋과 텍스트 콘텐츠에 최적
-local compressed = compress.brotli.encode(html_content, {level = 11})
+-- Best for static assets and text content
+local compressed, err = compress.brotli.encode(html_content, {level = 11})
+if err then return nil, err end
 
--- 압축된 에셋 캐시
-cache:set("static:" .. hash, compressed)
+-- Store `compressed` through the application's cache contract if needed.
 
--- API 응답용 적당한 압축
-local compressed = compress.brotli.encode(json_data, {level = 4})
+-- Moderate compression for API responses
+local compressed, err = compress.brotli.encode(json_data, {level = 4})
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -127,8 +139,9 @@ if err then
     return nil, err
 end
 
--- 크기 제한과 함께
-local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
+-- With size limit
+local decompressed, err = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -146,19 +159,22 @@ local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 
 ## Zstandard
 
-좋은 압축률과 빠른 속도 (RFC 8878).
+Zstandard는 RFC 8878에 정의된 범용 압축 형식입니다.
 
 ### 압축 {id="zstd-compress"}
 
 ```lua
--- 속도와 압축률의 좋은 균형
-local compressed = compress.zstd.encode(binary_data)
+-- Good balance of speed and ratio
+local compressed, err = compress.zstd.encode(binary_data)
+if err then return nil, err end
 
--- 아카이브용 높은 압축
-local archived = compress.zstd.encode(data, {level = 19})
+-- Higher compression for archival
+local archived, archive_err = compress.zstd.encode(data, {level = 19})
+if archive_err then return nil, archive_err end
 
--- 실시간 스트리밍용 빠른 모드
-local fast = compress.zstd.encode(data, {level = 1})
+-- Fast mode for latency-sensitive payloads
+local fast, fast_err = compress.zstd.encode(data, {level = 1})
+if fast_err then return nil, fast_err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -200,12 +216,15 @@ end
 
 ### 사전 {id="zstd-dictionaries"}
 
-샘플 데이터로 사전을 학습시켜 작고 비슷한 페이로드가 많은 경우의 압축률을 개선할 수 있습니다. 학습된 사전을 `encode`/`decode`의 `dict` 옵션으로 전달하세요 — 양쪽 모두 동일한 사전을 사용해야 합니다.
+비슷한 샘플 페이로드로 사전을 학습한 뒤 `dict` 옵션을 통해 `encode`와 `decode`에 전달합니다. 디코딩에는 인코딩에 사용한 것과 같은 사전이 필요합니다.
 
 ```lua
 local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
-local packed   = compress.zstd.encode(data, { dict = dict })
-local original = compress.zstd.decode(packed, { dict = dict })
+if err then return nil, err end
+local packed, pack_err = compress.zstd.encode(data, { dict = dict })
+if pack_err then return nil, pack_err end
+local original, decode_err = compress.zstd.decode(packed, { dict = dict })
+if decode_err then return nil, decode_err end
 ```
 
 #### train_dict(samples, options?)
@@ -232,7 +251,8 @@ local original = compress.zstd.decode(packed, { dict = dict })
 ### 압축 {id="deflate-compress"}
 
 ```lua
-local compressed = compress.deflate.encode(data, {level = 6})
+local compressed, err = compress.deflate.encode(data, {level = 6})
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -251,7 +271,8 @@ local compressed = compress.deflate.encode(data, {level = 6})
 ### 압축 해제 {id="deflate-decompress"}
 
 ```lua
-local decompressed = compress.deflate.decode(compressed)
+local decompressed, err = compress.deflate.decode(compressed)
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -274,7 +295,8 @@ local decompressed = compress.deflate.decode(compressed)
 ### 압축 {id="zlib-compress"}
 
 ```lua
-local compressed = compress.zlib.encode(data, {level = 6})
+local compressed, err = compress.zlib.encode(data, {level = 6})
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -293,7 +315,8 @@ local compressed = compress.zlib.encode(data, {level = 6})
 ### 압축 해제 {id="zlib-decompress"}
 
 ```lua
-local decompressed = compress.zlib.decode(compressed)
+local decompressed, err = compress.zlib.decode(compressed)
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -315,24 +338,83 @@ local decompressed = compress.zlib.decode(compressed)
 |----------|----------|------|--------|-----------|
 | gzip | HTTP, 넓은 호환성 | 중간 | 좋음 | 1-9 |
 | brotli | 정적 에셋, 텍스트 | 느림 | 최고 | 0-11 |
-| zstd | 대용량 파일, 스트리밍 | 빠름 | 좋음 | 1-22 |
+| zstd | 바이너리 페이로드, 빠른 압축 | 빠름 | 좋음 | 1-22 |
 | deflate/zlib | 저수준, 특정 프로토콜 | 중간 | 좋음 | 1-9 |
 
 ```lua
--- Accept-Encoding 기반 HTTP 응답
-local accept = req:header("Accept-Encoding") or ""
-local body = json.encode(response_data)
+-- HTTP response based on Accept-Encoding
+local accept, header_err = req:header("Accept-Encoding")
+if header_err then return nil, header_err end
+accept = accept or ""
+local body, json_err = json.encode(response_data)
+if json_err then return nil, json_err end
 
-if accept:find("br") then
-    res:set_header("Content-Encoding", "br")
-    res:write(compress.brotli.encode(body))
-elseif accept:find("gzip") then
-    res:set_header("Content-Encoding", "gzip")
-    res:write(compress.gzip.encode(body))
+local qualities = {}
+for item in accept:gmatch("[^,]+") do
+    local coding = item:match("^%s*([^;%s]+)")
+    local has_q = item:match(";%s*[qQ]%s*=") ~= nil
+    local q_text = item:match(";%s*[qQ]%s*=%s*([^;%s,]+)")
+    local q
+    if not has_q then
+        q = 1
+    elseif q_text == "0" or q_text == "1" or
+           (q_text and q_text:match("^0%.%d?%d?%d?$")) or
+           (q_text and q_text:match("^1%.0?0?0?$")) then
+        q = tonumber(q_text)
+    end
+    if coding and q and q >= 0 and q <= 1 then
+        coding = coding:lower()
+        qualities[coding] = math.max(qualities[coding] or 0, q)
+    end
+end
+
+local function quality(coding)
+    if qualities[coding] ~= nil then return qualities[coding] end
+    if coding == "identity" then
+        return qualities["*"] == 0 and 0 or 1
+    end
+    return qualities["*"] or 0
+end
+
+local selected, selected_q = nil, -1
+for _, coding in ipairs({"br", "gzip", "identity"}) do
+    local q = quality(coding)
+    if q > selected_q then
+        selected, selected_q = coding, q
+    end
+end
+
+-- Include every field used by this handler or its surrounding middleware.
+local vary_fields = {"Accept-Encoding"}
+local vary_err = res:set_header("Vary", table.concat(vary_fields, ", "))
+if vary_err then return nil, vary_err end
+
+if selected_q <= 0 then
+    local status_err = res:set_status(http.STATUS.NOT_ACCEPTABLE)
+    if status_err then return nil, status_err end
+    local write_err = res:write("No acceptable content encoding")
+    if write_err then return nil, write_err end
+elseif selected == "br" then
+    local compressed, compress_err = compress.brotli.encode(body)
+    if compress_err then return nil, compress_err end
+    local set_err = res:set_header("Content-Encoding", "br")
+    if set_err then return nil, set_err end
+    local write_err = res:write(compressed)
+    if write_err then return nil, write_err end
+elseif selected == "gzip" then
+    local compressed, compress_err = compress.gzip.encode(body)
+    if compress_err then return nil, compress_err end
+    local set_err = res:set_header("Content-Encoding", "gzip")
+    if set_err then return nil, set_err end
+    local write_err = res:write(compressed)
+    if write_err then return nil, write_err end
 else
-    res:write(body)
+    local write_err = res:write(body)
+    if write_err then return nil, write_err end
 end
 ```
+
+이 부분 핸들러는 정확한 코딩 토큰과 RFC q-value를 파싱하고, `br;q=0` 같은 명시적 거부를 준수하며, `Vary: Accept-Encoding`을 내보냅니다. `set_header`는 기존 `Vary` 값을 대체하므로, 설정 전에 주변 미들웨어가 사용하는 다른 필드를 모두 `vary_fields`에 추가하세요. 완전한 HTTP 스택은 공유 협상 도우미를 제공할 수도 있습니다.
 
 ## 에러
 
@@ -343,4 +425,4 @@ end
 | 잘못된 압축 데이터 | `errors.INVALID` | 아니오 |
 | 압축 해제 크기 제한 초과 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
