@@ -1,32 +1,34 @@
 ---
 title: "モジュールの公開"
-description: "再利用可能なコードを Wippy Hub で共有します。"
+description: "Wippy Hubを通じてモジュールを準備、検証、公開、設定、利用します。"
 ---
 
 # モジュールの公開
 
-再利用可能なコードを Wippy Hub で共有します。
+公開ではモジュールをパッケージ化し、バージョンまたは可変ラベルをWippy Hubから利用できるようにします。
+
+このページは、公開ワークフローとリファレンスです。`acme/*` モジュール、URL、トークン、認証情報、サンプルソースは例示用です。所属する組織が所有するリソースに置き換えてください。
 
 ## 前提条件
 
-1. [hub.wippy.ai](https://hub.wippy.ai) でアカウントを作成する
-2. 組織を作成するか、既存の組織に参加する
-3. 組織内でモジュール名を登録する
+1. [hub.wippy.ai](https://hub.wippy.ai) でアカウントを作成します。
+2. 組織を作成するか、既存の組織に参加します。
+3. モジュール名を選択します。アカウントに権限があれば、初回公開時に存在しない名前を登録できます。アップロード前に登録してプロパティを明示的に設定するには `--create` を使用します。
 
 ## モジュール構造
 
 ```
 mymodule/
-├── wippy.yaml      # モジュールマニフェスト
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # エントリ定義
-│   └── *.lua       # ソースファイル
-└── README.md       # ドキュメント（任意）
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-モジュールマニフェスト：
+`wippy.yaml` にモジュールのメタデータを定義します。
 
 ```yaml
 organization: acme
@@ -52,11 +54,11 @@ keywords:
 | `homepage` | いいえ | プロジェクトホームページ |
 | `keywords` | いいえ | 検索キーワード |
 
-`type` は、ハブがモジュールをどう分類するかの信頼できる情報源であり、後の公開で変更できます。`--module-type` は単一の公開に対してこれを上書きします。省略した場合、新規作成されるモジュールは非推奨警告とともにデフォルトで `application` になります。
+`type` はHubでのモジュール分類を制御し、後から公開する際に変更できます。`--module-type` フラグは、1回の公開に限りこの値を上書きします。省略した場合、新しく作成されるモジュールは非推奨の警告とともにデフォルトで `application` になります。
 
 ## エントリ定義
 
-エントリは `_index.yaml` で定義します：
+モジュールのエントリは `_index.yaml` で定義します。
 
 ```yaml
 version: "1.0"
@@ -81,11 +83,11 @@ entries:
       - json
 ```
 
-`ns.definition` の `wiki:` マップは、readme に加えて追加のドキュメントページを公開します：キーはページパス、値は `file://` 参照です。内容はパック時にインライン化され、ハブがモジュールごとの閲覧可能な wiki として提供します。
+`ns.definition` の `wiki:` マップは、READMEとともにドキュメントページを公開します。キーはページパス、値は `file://` 参照です。内容はパッキング時にインライン化され、HubからモジュールWikiとして提供されます。
 
 ## 依存関係
 
-他のモジュールへの依存関係を宣言します：
+他のモジュールへの依存関係を宣言します。
 
 ```yaml
 entries:
@@ -97,7 +99,7 @@ entries:
     version: ">=0.3.0"
 ```
 
-バージョン制約：
+バージョン制約:
 
 | 制約 | 意味 |
 |------------|---------|
@@ -108,7 +110,7 @@ entries:
 
 ## 要件
 
-利用者が指定する必要のある設定を定義します：
+利用者が指定する必要のある設定を定義します。
 
 ```yaml
 entries:
@@ -122,13 +124,14 @@ entries:
     default: "https://api.example.com"
 ```
 
-ターゲットは値が注入される場所を指定します：
-- `entry` - 設定対象のエントリ ID
-- `path` - 値を注入する JSONPath
+ターゲットは値を注入する場所を指定します。
+
+- `entry` — 設定対象の完全なエントリID
+- `path` — 値を注入する対象エントリ内のドットパス
 
 `default` は任意のスカラー型を受け付けます — `default: 20` は数値ターゲットに文字列ではなく数値として流れ込みます。同じことは `ns.dependency` エントリの `parameters[].value` にも当てはまり、どちらも `${env:NAME}` 参照を受け付けます。参照はそのまま保持され、ターゲットエントリのデコード時に解決されます。
 
-利用者はオーバーライドで設定します。`-o` フラグは `namespace:entry:field=value` のトリプルを受け取ります：
+利用者はオーバーライドを通じて対象を設定できます。`-o` フラグは `namespace:entry:field=value` 形式の値を受け取ります。
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
@@ -136,7 +139,7 @@ wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
 
 ## インポート
 
-他のエントリを参照します：
+他のエントリを参照します。
 
 ```yaml
 - name: handler
@@ -145,12 +148,12 @@ wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
   modules:
     - json
   imports:
-    client: acme.http:client           # 同じ名前空間
-    utils: acme.utils:helpers          # 異なる名前空間
-    base_registry: :registry           # 組み込み
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
-Lua 内：
+Luaでは次のように使用します。
 
 ```lua
 local client = require("client")
@@ -159,7 +162,7 @@ local utils = require("utils")
 
 ## コントラクト
 
-公開インターフェースを定義します：
+公開インターフェースを定義します。
 
 ```yaml
 - name: http_contract
@@ -230,18 +233,25 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### 静的ファイルの埋め込み
 
-`fs.directory` エントリ（静的アセット、テンプレート、公開ファイル）を含むモジュールは、それらを公開パッケージに含めるために `--embed` を使用する必要があります。これがない場合、`fs.directory` エントリは除外されます。
+埋め込み対象の `fs.directory` エントリは、`--embed` またはプロジェクトマニフェストの永続的な `embed:` リストで選択します。選択されたエントリは `fs.embed` リソースへ変換されます。選択されていない `fs.directory` エントリはパックに残りますが、参照先ディレクトリの内容は含まれません。
+
+```yaml
+# wippy.yaml
+embed:
+  - app:public_files
+  - app:assets
+```
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-`--embed` フラグは、エントリ ID または `fs.directory` エントリに一致する名前を受け取ります。同じフラグは `wippy pack` でも利用できます。
+マニフェストのリストと `--embed` フラグは、`fs.directory` エントリに一致するエントリIDまたは名前を受け付けます。同じCLIフラグは `wippy pack` でも使用でき、CLIでの選択はその呼び出しに限りマニフェストのリストを上書きします。
 
 ### 初回公開
 
-モジュールを初めて公開すると、自動的にハブに登録され（デフォルトでは private）、公開が一度リトライされます。事前に登録してプロパティを設定するには `--create` を渡します。
+初回公開時、モジュールはデフォルトでprivateとしてHubに登録され、公開が1回再試行されます。公開前に登録してプロパティを設定するには `--create` を使用します。
 
 ```bash
 wippy publish --create --version 0.1.0 \
@@ -250,7 +260,7 @@ wippy publish --create --version 0.1.0 \
   --module-display-name "HTTP Utils"
 ```
 
-`--create` は冪等です — すでに登録済みのモジュールでは create ステップは何もしません。アカウントが組織内でモジュールを作成できない場合、ハブは公開する代わりに権限エラーを返します。
+`--create` は冪等です。すでに登録済みのモジュールでは作成ステップは何も行いません。アカウントが組織内でモジュールを作成できない場合、Hubは公開せず権限エラーを返します。
 
 ### ローカルハブへの公開
 
@@ -267,9 +277,9 @@ wippy publish --registry http://localhost:8080 --create --version 0.1.0
 
 組織のプライベートモジュールクォータが使い切られている場合、公開は `cannot publish: Private-module quota exhausted (5 of 5)...` のようなメッセージで失敗します。モジュールを public にするか、組織管理者にクォータの引き上げを依頼してください。アップロードとダウンロードは、一時的なネットワークエラー時に自動でリトライされます。
 
-## ランタイムデフォルトの公開 {#publishing-runtime-defaults}
+## 公開時のランタイムデフォルト
 
-アプリケーション（`type: application` のみ）は、`wippy.yaml` の `publish.runtime` を通じて、ランタイム設定のデフォルトをパック内に同梱できます：
+`type: application` のアプリケーションは、`wippy.yaml` の `publish.runtime` を通じて、ランタイム設定のデフォルトをパックに含めることができます。
 
 ```yaml
 type: application
@@ -293,9 +303,9 @@ publish:
 - マシンローカルのセクション `boot`、`extensions`、`workspace` はエクスポートできません。
 - ホストのランタイムデフォルトを提供するのはメインのアプリケーションパックのみで、依存パック内のランタイムメタデータは無視されます。
 
-デプロイ先では、設定は低い方から高い方の順に適用されます：アプリパックのデフォルト、ランタイムの組み込みデフォルト、ローカル設定ファイル、選択されたプロファイル、CLI の上書き。
+利用先での設定優先順位は、アプリケーションパックのデフォルト、ランタイムデフォルト、ローカル設定ファイル、選択したプロファイル、最後にCLIオーバーライドの順です。
 
-## プロファイルの公開 {#publishing-profiles}
+## プロファイルの公開
 
 ルートアプリケーションのプロファイルは、パックの `runtime.profiles` メタデータにエクスポートされます。公開時にプロファイルが選択されたり焼き込まれたりすることはありません — 利用者が実行時に `wippy run --profile <name>` で選択します：
 
@@ -307,7 +317,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []` は何も公開しません。未知の名前は公開を失敗させます。`workspace` サブセクションは、公開されるプロファイルの中にあってもエクスポートされることはありません。プロファイルの宣言については[設定](guides/configuration.md#profiles)を参照してください。
+`include: []` では何も公開されず、未知の名前を指定すると公開に失敗します。`workspace` サブセクションは、公開されるプロファイル内にあってもエクスポートされません。プロファイルの宣言については、[設定](./configuration.md#profiles)を参照してください。
 
 ## 公開モジュールの利用
 
@@ -351,12 +361,13 @@ entries:
       http: acme.http:client
 ```
 
-## 完全な例
+## サンプルモジュール
 
 **wippy.yaml:**
 ```yaml
 organization: acme
 module: cache
+type: library
 description: In-memory caching with TTL
 license: MIT
 keywords:
@@ -375,19 +386,8 @@ entries:
     meta:
       title: Cache Module
 
-  - name: max_size
-    kind: ns.requirement
-    meta:
-      description: Maximum cache entries
-    targets:
-      - entry: acme.cache:cache
-        path: ".meta.max_size"
-    default: 1000
-
   - name: cache
     kind: library.lua
-    meta:
-      max_size: 1000
     source: file://cache.lua
     modules:
       - time
@@ -399,12 +399,8 @@ local time = require("time")
 
 local cache = {}
 local store = {}
-local max_size = 1000
 
 function cache.set(key, value, ttl)
-    if #store >= max_size then
-        cache.evict_oldest()
-    end
     store[key] = {
         value = value,
         expires = ttl and (time.now():unix() + ttl) or nil
@@ -424,15 +420,17 @@ end
 return cache
 ```
 
-公開：
+公開:
 
 ```bash
-wippy init && wippy update && wippy lint
+wippy init
+wippy update
+wippy lint
 wippy publish --version 1.0.0
 ```
 
 ## 関連項目
 
-- [CLI リファレンス](guides/cli.md)
-- [エントリ種別](guides/entry-kinds.md)
-- [設定](guides/configuration.md)
+- [CLIリファレンス](./cli.md) — 公開コマンドとフラグ
+- [エントリ種別](./entry-kinds.md) — モジュールと依存関係のエントリ
+- [設定](./configuration.md) — ランタイム設定とプロファイル
