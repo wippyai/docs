@@ -11,11 +11,15 @@ description: "Encode Lua tables as YAML and decode YAML documents into Lua value
 
 The `yaml` module serializes Lua tables as YAML and parses YAML documents into Lua values.
 
+This is an API reference. Output-only expressions illustrate successful encoding; examples that consume a value capture the optional second `error` return.
+
 ## Loading
 
 ```lua
 local yaml = require("yaml")
 ```
+
+Add `yaml` to the executable entry's `modules:` list before requiring it.
 
 ## Encoding
 
@@ -30,10 +34,9 @@ local config = {
     port = 8080,
     debug = true
 }
-local out = yaml.encode(config)
--- name: myapp
--- port: 8080
--- debug: true
+local out, err = yaml.encode(config)
+if err then return nil, err end
+-- YAML mapping containing name, port, and debug.
 
 -- Arrays become YAML lists
 local items = {"apple", "banana", "cherry"}
@@ -78,10 +81,11 @@ local entry = {
 }
 
 -- Fields appear in specified order, remaining sorted alphabetically
-local result = yaml.encode(entry, {
+local result, encode_err = yaml.encode(entry, {
     field_order = {"name", "kind"},
     sort_unordered = true
 })
+if encode_err then return nil, encode_err end
 -- name: test
 -- kind: demo
 -- alpha: 2
@@ -132,7 +136,7 @@ if err then
 end
 
 -- Handle mixed types
-local data = yaml.decode([[
+local data, data_err = yaml.decode([[
 name: test
 count: 42
 ratio: 3.14
@@ -141,6 +145,7 @@ tags:
   - lua
   - wippy
 ]])
+if data_err then return nil, data_err end
 print(type(data.count))    -- "number"
 print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
@@ -161,4 +166,4 @@ print(type(data.tags))     -- "table"
 | Empty string (decode) | `errors.INVALID` | no |
 | Invalid YAML syntax | `errors.INTERNAL` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

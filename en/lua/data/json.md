@@ -11,11 +11,15 @@ description: "Encode Lua values as JSON, decode JSON strings, and validate value
 
 The `json` module encodes Lua values as JSON, decodes JSON strings, and validates data with JSON Schema.
 
+This is an API reference. Short expression examples show successful return values; examples that consume the result capture the optional second `error` return.
+
 ## Loading
 
 ```lua
 local json = require("json")
 ```
+
+Add `json` to the executable entry's `modules:` list before requiring it.
 
 ## Encoding
 
@@ -36,7 +40,7 @@ json.encode({"a", "b"})     -- '["a","b"]'
 
 -- Objects (string keys)
 local user = {name = "Alice", age = 30}
-json.encode(user)           -- '{"name":"Alice","age":30}'
+json.encode(user)           -- JSON object with name="Alice" and age=30; member order is unspecified
 
 -- Nested structures
 local order = {
@@ -48,7 +52,7 @@ local order = {
     total = 99.50
 }
 json.encode(order)
--- '{"id":"ord-123","items":[{"sku":"ABC","qty":2},{"sku":"XYZ","qty":1}],"total":99.5}'
+-- Structurally equivalent JSON; object-member order is unspecified
 ```
 
 | Parameter | Type | Description |
@@ -85,12 +89,13 @@ print(user.name)    -- "Bob"
 print(user.active)  -- true
 
 -- Parse array
-local items = json.decode('[10, 20, 30]')
+local items, items_err = json.decode('[10, 20, 30]')
+if items_err then return nil, items_err end
 print(items[1])     -- 10
 print(#items)       -- 3
 
 -- Parse nested data
-local response = json.decode([[
+local response, response_err = json.decode([[
 {
     "status": "ok",
     "data": {
@@ -101,6 +106,7 @@ local response = json.decode([[
     }
 }
 ]])
+if response_err then return nil, response_err end
 print(response.data.users[1].name)  -- "Alice"
 
 -- Handle errors
@@ -141,6 +147,7 @@ local valid, err = json.validate(user_schema, {
     email = "alice@example.com",
     age = 30
 })
+if err then return nil, err end
 print(valid)  -- true
 
 -- Invalid data fails with details
@@ -154,7 +161,8 @@ end
 
 -- Schema can also be a JSON string
 local schema_json = '{"type":"number","minimum":0}'
-local valid = json.validate(schema_json, 42)
+local valid, schema_err = json.validate(schema_json, 42)
+if schema_err then return nil, schema_err end
 ```
 
 | Parameter | Type | Description |
@@ -190,7 +198,8 @@ if not valid then
 end
 
 -- Now safe to decode
-local request = json.decode(body)
+local request, decode_err = json.decode(body)
+if decode_err then return nil, decode_err end
 ```
 
 | Parameter | Type | Description |
@@ -212,4 +221,4 @@ local request = json.decode(body)
 | Schema compilation failed | `errors.INVALID` | no |
 | Validation failed | `errors.INVALID` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

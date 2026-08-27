@@ -11,11 +11,17 @@ description: "Encode strings and binary data as standard RFC 4648 Base64 and dec
 
 The `base64` module encodes strings and binary data using standard RFC 4648 Base64 and decodes them back to bytes.
 
+This is an API reference. Output-only expressions show successful values; filesystem and transport examples check the optional second `error` return before consuming data. Names such as `username`, `password`, `encoded_image`, and `user_input` are application-supplied strings.
+
+Base64 is an encoding, not encryption or authentication. Do not use it to conceal secrets or to verify that data has not been modified. Send Basic authentication credentials only over TLS and obtain them from application-owned secret storage rather than literals.
+
 ## Loading
 
 ```lua
 local base64 = require("base64")
 ```
+
+Add `base64` to the executable entry's `modules:` list before requiring it. Filesystem and JSON examples also require `fs` and `json` respectively.
 
 ## Encoding
 
@@ -25,22 +31,27 @@ Encodes a string, including binary data, as Base64.
 
 ```lua
 -- Encode text
-local encoded = base64.encode("Hello, World!")
+local encoded, err = base64.encode("Hello, World!")
+if err then return nil, err end
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
 -- Encode binary data from a configured filesystem volume
 local fs = require("fs")
 local assets = assert(fs.get("app:assets"))
 local image_data = assert(assets:readfile("photo.jpg"))
-local image_b64 = base64.encode(image_data)
+local image_b64, encode_err = base64.encode(image_data)
+if encode_err then return nil, encode_err end
 
 -- Encode JSON for transport
 local json = require("json")
-local payload = json.encode({user = "alice", action = "login"})
-local token_part = base64.encode(payload)
+local payload, json_err = json.encode({user = "alice", action = "login"})
+if json_err then return nil, json_err end
+local token_part, token_err = base64.encode(payload)
+if token_err then return nil, token_err end
 
 -- Encode credentials
-local credentials = base64.encode("username:password")
+local credentials, credentials_err = base64.encode(username .. ":" .. password)
+if credentials_err then return nil, credentials_err end
 local auth_header = "Basic " .. credentials
 ```
 
@@ -58,7 +69,8 @@ Decodes a Base64 string to its original bytes.
 
 ```lua
 -- Decode text
-local decoded = base64.decode("SGVsbG8sIFdvcmxkIQ==")
+local decoded, decode_err = base64.decode("SGVsbG8sIFdvcmxkIQ==")
+if decode_err then return nil, decode_err end
 print(decoded)  -- "Hello, World!"
 
 -- Decode with error handling
@@ -71,8 +83,7 @@ if err then
 end
 
 -- Decode binary data
-local image_b64 = request.body
-local image_data, err = base64.decode(image_b64)
+local image_data, err = base64.decode(encoded_image)
 if err then
     return nil, err
 end
@@ -84,10 +95,17 @@ if write_err then
 end
 
 -- Decode the first field from a dot-delimited value
-local value = base64.encode("header") .. "." .. base64.encode("payload")
+local encoded_header, header_err = base64.encode("header")
+if header_err then return nil, header_err end
+local encoded_payload, payload_err = base64.encode("payload")
+if payload_err then return nil, payload_err end
+local value = encoded_header .. "." .. encoded_payload
 local encoded_field = assert(value:match("^([^.]+)"))
 local field, err = base64.decode(encoded_field)
+if err then return nil, err end
 ```
+
+The final block demonstrates delimiter handling only. It does not parse or verify a signed token format.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -103,4 +121,4 @@ local field, err = base64.decode(encoded_field)
 | Invalid base64 characters | `errors.INVALID` | no |
 | Corrupted padding | `errors.INVALID` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.

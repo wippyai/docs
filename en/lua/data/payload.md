@@ -10,6 +10,8 @@ description: "Create typed payloads, inspect their format, extract values, and t
 
 Payloads carry typed values between functions, processes, services, and workflows. They can be inspected, extracted, or transcoded between supported formats.
 
+This is an API reference with partial transport recipes. Values such as `p`, `input_data`, and the asynchronous target entry come from the surrounding application.
+
 ## Loading
 
 `payload` is a global namespace and does not require `require()`.
@@ -129,7 +131,10 @@ if err then
 end
 
 -- Convert to YAML
-local yaml_p, err = p:transcode(payload.format.YAML)
+local yaml_p, yaml_err = p:transcode(payload.format.YAML)
+if yaml_err then
+    return nil, yaml_err
+end
 ```
 
 | Parameter | Type | Description |
@@ -144,6 +149,9 @@ Decode a payload to a Lua value regardless of its source format:
 
 ```lua
 local data, err = p:unmarshal()
+if err then
+    return nil, err
+end
 ```
 
 Both `data()` and `unmarshal()` return the existing Lua value or transcode a non-Lua payload to the Lua format. `unmarshal()` is stricter when a transcoder produces an invalid result: it returns an `errors.INTERNAL` error, while `data()` returns `nil`.
@@ -153,6 +161,8 @@ Both `data()` and `unmarshal()` return the existing Lua value or transcode a non
 ## Async Results
 
 Asynchronous function calls return their values in payloads:
+
+This example assumes `app.process:compute` returns exactly one value. With no result, `future:result()` returns `nil`; with multiple results, it returns a Lua table rather than one `Payload`, so callers must handle those shapes separately.
 
 ```lua
 local funcs = require("funcs")
@@ -164,9 +174,17 @@ end
 
 -- Wait for result
 local ch = future:response()
-local result_payload, ok = ch:receive()
+local _, ok = ch:receive()
 if not ok then
     return nil, errors.new("channel closed")
+end
+
+local result_payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+if result_payload == nil then
+    return nil, errors.new("compute returned no result")
 end
 
 -- Extract data from payload
@@ -185,4 +203,4 @@ print(result.computed_value)
 | Transcoding failure | `errors.INTERNAL` | no |
 | Result not valid Lua value | `errors.INTERNAL` | no |
 
-See [Error Handling](lua/core/errors.md) for working with errors.
+See [Error Handling](../core/errors.md) for working with errors.
