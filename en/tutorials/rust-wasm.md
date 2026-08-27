@@ -407,12 +407,12 @@ Available commands:
 
 ```bash
 # Run greet
-wippy run greet
+wippy run greet World
 ```
 
 ```bash
 # Run ls to list mounted directory
-wippy run ls
+wippy run ls /data
 ```
 
 ### Run as a Service
@@ -424,7 +424,7 @@ wippy run
 This starts the HTTP server on port 8090. Test the endpoint:
 
 ```bash
-curl -X POST http://localhost:8090/greet
+curl -X POST --data 'World' http://localhost:8090/greet
 ```
 
 ### Call from Lua
