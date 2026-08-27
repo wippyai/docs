@@ -8,7 +8,7 @@ description: "Define server-rendered pages, frontend applications, web component
 The `wippy/views` module defines pages and components, manages their resources, and maps environment variables into rendered output. It supports two page models:
 
 - **Jet template pages** (`kind: template.jet`) render HTML on the server after assembling the page's data and resources. See [Template Pages](#template-pages).
-- **Registry-entry frontends** (`kind: registry.entry`) describe micro frontend applications (`view.page`) and reusable web components (`view.component`) served from a CDN or static mount. The registry entry contains routing and deployment policy; proxy and CSS injection are defined in the frontend package's `package.json`. See [Component Pages](#component-pages) and [View Components](#view-components).
+- **Registry-entry frontends** (`kind: registry.entry`) describe micro frontend applications (`view.page`) and reusable web components (`view.component`) served from a CDN or static mount. The registry entry contains routing and deployment policy. Frontend-owned metadata comes from the package's generated `wippy-meta.json`, with explicit registry fields taking precedence. See [Component Pages](#component-pages) and [View Components](#view-components).
 
 ## Setup
 
@@ -85,9 +85,9 @@ entries:
 | `meta.group_order` | number | `9999` | Group sort order |
 | `meta.group_placement` | string | `"default"` | Placement: `"default"`, `"sidebar"` |
 | `meta.secure` | boolean | `false` | Requires authentication |
-| `meta.public` | boolean | `false` | Publicly accessible |
-| `meta.announced` | boolean | `= public` | Show in navigation |
-| `meta.inline` | boolean | `false` | Hidden from UI |
+| `meta.public` | boolean | `false` | Makes the page announced when true; it does not bypass `meta.secure` access control |
+| `meta.announced` | boolean | `false` | Show in navigation. The current resolver uses `announced or public`, so `public: true` overrides an explicit `announced: false` |
+| `meta.inline` | boolean | `false` | Returned by `/pages/list` as the numeric `hidden` marker |
 | `meta.content_type` | string | `text/html` | Response MIME type |
 | `meta.parent` | string | — | Parent page ID |
 
@@ -95,11 +95,11 @@ entries:
 
 | Field | Description |
 |-------|-------------|
-| `data.set` | Template set registry ID |
+| `data.set` | Required template set registry ID |
 | `data.data_func` | Function ID that returns page data |
 | `data.resources` | Array of resource registry IDs |
 
-The `data_func` receives `{ params, query }` and returns a table that becomes the `data` context in the template.
+The `data_func` receives `{ params, query }` and returns a table that becomes the `data` context in the template. Omitting `data.data_func`, or returning `nil` from it, produces an empty table. A configured function that cannot be resolved, or a function that returns an error, aborts rendering.
 
 ### Rendering Pipeline
 
@@ -107,12 +107,12 @@ The `data_func` receives `{ params, query }` and returns a table that becomes th
 2. Check access (security)
 3. Call `data_func` if defined
 4. Collect resources: globals + template set resources + page-specific resources
-5. Load environment variables
+5. Load environment variables (mapping failures are logged and produce an empty `env` table)
 6. Render Jet template with context: `{ data, resources, query_params, route_params, env }`
 
 ## Component Pages
 
-Component pages point to external single-page applications (SPAs or micro frontends) that the Web Host loads inside an iframe. Their registry entries define URL serving, access control, the mount route, and per-page configuration overrides:
+Component pages point to external single-page applications (SPAs or micro frontends) that the Web Host loads with its configured page engine: an iframe by default, or a Web Fragment when enabled. Their registry entries define URL serving, access control, the mount route, and per-page configuration overrides:
 
 > **Required registry shape:** component pages are `kind: registry.entry` with `meta.type: view.page`. `view.page` is never a `kind` value. Proxy deployment overrides live at `meta.proxy`, not `data.proxy`.
 
@@ -137,23 +137,28 @@ entries:
             "--p-primary": "#7c9ed9"
 ```
 
-The API returns a component descriptor with the resolved base URL. The Web Host renders the SPA in an iframe and applies the proxy injections the frontend package requested.
+The API returns a component descriptor with the resolved base URL. The Web Host then renders the SPA with the selected iframe or Web Fragment engine. Iframe pages apply the proxy injections requested by the frontend package; the Fragment gateway uses its own fixed transformation and Host-CSS injection path.
 
 ### Component Page Fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| `meta.name` | string | — | Page name. Keep it in registry YAML because `/pages/list` does not load bundled metadata |
+| `meta.title` | string | — | Display title. Keep it in registry YAML because `/pages/list` sorts raw registry titles |
 | `meta.url` | string | — | Base URL prefix where the bundle is mounted (CDN origin or `http.static` path) |
 | `meta.base_path` | string | — | Subdirectory within the static mount |
-| `meta.entry_point` | string | `index.html` | HTML entry file; combined as `<url>/<base_path>/<entry_point>` |
+| `meta.entry_point` | string | bundled `wippy.path`, then `index.html` | HTML entry file; combined as `<url>/<base_path>/<entry_point>` |
 | `meta.mountRoute` | string | — | Claims a URL path in the host router; only the catch-all form `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*` is allowed — arbitrary Vue Router patterns are rejected (HTTP 500). See [view-page.md](../frontend/frontend-registry/view-page.md) / [dynamic-routing.md](../frontend/frontend-registry/dynamic-routing.md) |
-| `meta.announced` | boolean | — | Show in navigation and `pages/list` |
+| `meta.announced` | boolean | `announced or public or false` | Show in navigation and `/pages/list`; `public: true` wins over an explicit `announced: false` |
 | `meta.secure` | boolean | `false` | Requires authentication |
+| `meta.render_engine` | string | bundled `wippy.renderEngine` | Per-page engine preference: `auto`, `iframe`, or `fragment` |
 | `meta.config_overrides` | object | — | Per-page AppConfig overrides (camelCase), deep-merged over the bundled defaults |
+
+For component pages, `wippy/views` requests `wippy-meta.json` from the resolved bundle root when building the content descriptor. Registry YAML wins field by field; bundled metadata fills omitted frontend-owned fields such as package version, entry path, proxy settings, render engine, and config overrides. If the metadata file cannot be used, the module falls back to the legacy YAML descriptor. Keep `meta.name` and `meta.title` in registry YAML: `/pages/list` consumes raw registry fields without fetching the bundle metadata, and missing titles can break same-order sorting. `config_overrides` supports `customization`, `axiosDefaults`, `routePrefix`, `apiRoutes`, and `themeMode`.
 
 ### Proxy Injection
 
-For SPA pages, configure proxy injection in the frontend package's camelCase `wippy.proxy.injections` block. The build records this configuration in `wippy-meta.json`. A deployment can override it with a camelCase `proxy:` block under the registry entry's `meta:` field, using the same shape and `injections` wrapper as the package's `wippy.proxy` block. The host deep-merges the deployment value over the bundled configuration, with YAML values taking precedence at each nested key. There is no snake_case form or casing normalization. `config_overrides` deep-merges only `customization`, `axiosDefaults`, `routePrefix`, and `apiRoutes`; it does not affect `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
+For SPA pages, configure proxy injection in the frontend package's camelCase `wippy.proxy.injections` block. The build records this configuration in `wippy-meta.json`. A deployment can override it with a camelCase `proxy:` block under the registry entry's `meta:` field, using the same shape and `injections` wrapper as the package's `wippy.proxy` block. The host deep-merges the deployment value over the bundled configuration, with YAML values taking precedence at each nested key. There is no snake_case form or casing normalization. `config_overrides` deep-merges only `customization`, `axiosDefaults`, `routePrefix`, `apiRoutes`, and `themeMode`; it does not affect `proxy.injections`. See [Micro Frontend Apps (view.page)](../frontend/frontend-registry/view-page.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
 Deployment override example:
 
@@ -164,7 +169,6 @@ entries:
     meta:
       type: view.page
       proxy:
-        enabled: true
         injections:
           css:
             themeConfig: true
@@ -192,7 +196,7 @@ entries:
       entry_point: index.js
 ```
 
-Components use `meta.type: view.component` instead of `view.page`, identify themselves by `meta.tag_name`, and default to `index.js` as the entry point. Proxy injection and theme CSS for components are likewise authored in the FE package.json (camelCase) and, for shadow-DOM CSS, declared via `hostCssKeys` — not in the registry YAML. See [Web Components (view.component)](../frontend/frontend-registry/view-component.md) and [CSS Injection](../frontend/web-host/css-injection.md).
+Components use `meta.type: view.component` instead of `view.page`. YAML can override `tag_name`, `entry_point`, `props`, and `events`; otherwise those frontend-owned fields come from `wippy-meta.json`, with `index.js` as the final entry-point fallback. Components do not use the page iframe's proxy-injection block. Shadow-DOM platform CSS is requested by the component implementation through `hostCssKeys`. See [Web Components (view.component)](../frontend/frontend-registry/view-component.md) and [CSS Injection](../frontend/web-host/css-injection.md).
 
 ## Resources
 
@@ -240,13 +244,13 @@ entries:
 
 ### Resource Collection
 
-Resources are collected in three layers, merged in order:
+Resources are selected cumulatively from three sources:
 
 1. **Global resources** — `global: true`, applied to all pages
 2. **Template set resources** — matched by `template_set` ID
 3. **Page resources** — listed in `data.resources` array
 
-Within each layer, resources are grouped by `resource_type` and sorted by `order`.
+After collection, resources are grouped by `resource_type` and each group is sorted by `order`. The three source layers do not establish a separate output order.
 
 ## Environment Variable Mapping
 
@@ -279,7 +283,7 @@ Each mapping entry associates context keys (used in templates as `env.api_endpoi
 | 20–29 | Application mappings | Application-specific mappings |
 | 30–100 | Environment overrides | Runtime overrides |
 
-Higher priority wins when multiple mappings define the same context key.
+Higher priority wins when multiple mappings define the same context key. Do not define the same key more than once at a single priority: equal-priority ordering is not defined.
 
 ### Using in Templates
 
@@ -340,7 +344,7 @@ The `css` injection flags are `themeConfig`, `iframe`, `primevue`, `markdown`, `
 
 When the Web Host renders a page with the [fragment render engine](../frontend/web-host/render-engines.md), the page is mounted as `<web-fragment src="/@fragment/{id}/">`. `wippy/views` serves that reframing contract through a dedicated gateway endpoint at **`/@fragment/{id}/{path...}`**.
 
-Unlike the view API, which mounts on the consumer's `api_router`, the gateway is provided by `wippy/views` version 0.5.9 and later. The module declares its own top-level `/@fragment` `http.router`, making it CDN-cache-routable and independent of `token_auth`. Authentication is handled client-side through the injected fragment proxy's handshake with the host. Consumers do not need a router entry or `fragment_router` parameter, and applications using the iframe engine do not require fragment configuration.
+Unlike the view API, which mounts on the consumer's `api_router`, the gateway declares its own top-level `/@fragment` `http.router`, making it CDN-cache-routable and independent of `token_auth`. Authentication is handled client-side through the injected fragment proxy's handshake with the host. Consumers do not need a router entry or `fragment_router` parameter, and applications using the iframe engine do not require fragment configuration.
 
 The self-mounted router binds to a `server` requirement that defaults to `app:gateway`. If the application's `http.service` entry has another ID, set the `wippy/views` `server` parameter to that entry:
 
@@ -368,7 +372,7 @@ The gateway answers the same `/@fragment/{id}/` URL three ways, discriminated by
 | Request | Response |
 |---------|----------|
 | Realm iframe load (`Sec-Fetch-Dest: iframe`) | A tiny **reframed stub** carrying the host import map + `loading.js` + `proxy-fragment.js`. |
-| Document fetch (empty subpath) | The page's app HTML, transformed for the realm (`<base>`, host-CSS links, `<html>`/`<head>`/`<body>` → `<wf-*>` renaming). |
+| Document fetch (empty subpath) | The page's app HTML, transformed for the realm: remove the first import map and development placeholder, rewrite relative `href="./…"` and `src="./…"` attributes, inject Host CSS links, and rename `<html>`/`<head>`/`<body>` to `<wf-*>`. The gateway does not inject `<base>`. |
 | Asset (non-empty subpath) | Proxied to the page's real `base_url` + subpath. |
 
 Responses carry `Cache-Control`: the stub is shared-cacheable (`public, max-age=300`); the access-gated document and assets are `private` (they pass a per-user `can_access` check, so a shared cache would leak across users). Runtime errors are explicit HTTP responses — `400 Missing fragment id`, `404 Fragment page not found`, `401 Access denied`, `502 Fragment document fetch failed: … (url: …)`.
