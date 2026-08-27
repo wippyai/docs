@@ -1,11 +1,13 @@
 ---
 title: "Relay"
-description: "wippy/relay 모듈은 2계층 허브 아키텍처를 갖춘 WebSocket 릴레이 인프라를 제공합니다. 중앙 허브는 사용자별 허브를 관리하고, 사용자별 허브는 WebSocket 클라이언트 연결을 관리하며 메시지를 플러그인으로 라우팅합니다."
+description: "Wippy Relay 허브, WebSocket 클라이언트, 접두사 기반 플러그인, 사용자 격리와 연결 수명주기를 구성합니다."
 ---
 
 # Relay
 
-`wippy/relay` 모듈은 2계층 허브 아키텍처를 갖춘 WebSocket 릴레이 인프라를 제공합니다. 중앙 허브는 사용자별 허브를 관리하고, 사용자별 허브는 WebSocket 클라이언트 연결을 관리하며 메시지를 플러그인으로 라우팅합니다.
+`wippy/relay` 모듈은 중앙 허브와 사용자별 허브를 통해 WebSocket 연결을 라우팅합니다. 사용자 허브는 클라이언트 연결을 관리하고 접두사 기반 플러그인에 메시지를 전달합니다.
+
+이 페이지는 독립 실행형 WebSocket 애플리케이션이 아니라 부분 통합 레시피이자 프로토콜 레퍼런스입니다. 설정과 플러그인 블록은 기존 Wippy 프로젝트, 구성된 `user_security_scope`의 실제 보안 스코프, [WebSocket 릴레이](../http/websocket-relay.md)에 설명된 대로 릴레이에 연결된 HTTP WebSocket 엔드포인트를 전제로 합니다. 프로토콜 페이로드와 수명주기 블록은 레퍼런스 형태입니다.
 
 ## 아키텍처
 
@@ -22,7 +24,7 @@ Central Hub
 └── ...
 ```
 
-중앙 허브는 서비스로 실행됩니다. WebSocket 클라이언트가 연결되면 중앙 허브는 해당 사용자의 사용자 허브를 찾거나 생성합니다. 사용자 허브는 클라이언트의 수명을 관리하고 명령 접두사를 기반으로 메시지를 플러그인으로 라우팅합니다.
+중앙 허브는 서비스로 실행됩니다. WebSocket 클라이언트가 연결되면 해당 사용자의 허브를 찾거나 생성합니다. 사용자 허브는 연결 수명주기를 관리하고 명령 접두사에 따라 메시지를 라우팅합니다.
 
 ## 설정
 
@@ -90,7 +92,7 @@ entries:
 }
 ```
 
-플러그인 `status`는 `"not_started"`(등록됨, 시작된 적 없음), `"pending"`(시작 진행 중), `"running"`, `"failed"`, `"stopped"` 중 하나입니다.
+플러그인 `status`는 `"not_started"`(등록되었지만 시작된 적 없음), `"pending"`(시작 진행 중), `"running"`, `"failed"`, `"stopped"` 중 하나입니다.
 
 ## 메시지 라우팅
 
@@ -100,14 +102,14 @@ entries:
 { "type": "session_get_state", "data": { "key": "value" } }
 ```
 
-`session_` 접두사는 session 플러그인과 일치합니다. 허브는 접두사를 제거하고 제거된 타입을 토픽으로 하여 플러그인 프로세스에 메시지를 보냅니다:
+`session_` 접두사는 session 플러그인을 선택합니다. 허브는 접두사를 제거하고 남은 타입을 토픽으로 사용해 메시지를 플러그인 프로세스에 보냅니다:
 
 ```lua
--- 프로세스 토픽: "get_state"
--- 페이로드:
+-- process topic: "get_state"
+-- payload:
 {
     conn_pid = client_pid,
-    type = "session_get_state",  -- 원래 전체 타입 보존됨
+    type = "session_get_state",  -- original full type preserved
     data = { key = "value" },
     request_id = "...",
     session_id = "..."
@@ -144,7 +146,7 @@ entries:
 
 ### 플러그인 라이프사이클
 
-플러그인은 사용자 허브에서 생성됩니다. 시작 시 플러그인은 다음을 받습니다:
+사용자 허브는 다음 시작 인수로 각 플러그인을 생성합니다:
 
 ```lua
 function run(args)
@@ -166,18 +168,32 @@ end
 
 ### 플러그인 구현
 
-플러그인은 프로세스 수신함에서 메시지를 받습니다. 각 메시지에는 토픽(제거된 명령 접두사)과 클라이언트로 응답을 보내기 위한 `conn_pid`를 포함한 원본 메시지 데이터가 담긴 페이로드가 있습니다.
+플러그인은 프로세스 수신함을 통해 메시지를 받습니다. 각 메시지에는 명령 타입에서 파생된 토픽과 응답용 `conn_pid`를 포함한 원본 메시지 데이터 페이로드가 있습니다.
 
 ```lua
 local json = require("json")
 
 local function handle_message(topic, payload)
     if topic == "get_state" then
-        process.send(payload.conn_pid, "ws.message", json.encode({
+        if not payload.conn_pid then
+            return nil, "Relay message is missing conn_pid"
+        end
+
+        local encoded, encode_err = json.encode({
             type = "session_state",
             data = { status = "active" }
-        }))
+        })
+        if encode_err then
+            return nil, encode_err
+        end
+
+        local sent, send_err = process.send(payload.conn_pid, "ws.message", encoded)
+        if not sent then
+            return nil, send_err or "Relay response was not sent"
+        end
     end
+
+    return true
 end
 
 local function run(args)
@@ -198,11 +214,14 @@ local function run(args)
             local payload = msg:payload():data()
 
             if topic == "resume" then
-                -- 첫 번째 클라이언트 연결됨
+                -- first client connected
             elseif topic == "shutdown" then
-                -- 마지막 클라이언트 연결 해제됨
+                -- last client disconnected
             else
-                handle_message(topic, payload)
+                local ok, err = handle_message(topic, payload)
+                if not ok then
+                    error("Failed to handle relay message: " .. tostring(err))
+                end
             end
         elseif result.channel == events then
             local event = result.value
@@ -218,7 +237,7 @@ return { run = run }
 
 ## 오류 처리
 
-릴레이는 클라이언트에 구조화된 오류 메시지를 보냅니다:
+릴레이는 다음 코드로 클라이언트 오류를 보고합니다:
 
 | 오류 코드 | 설명 |
 |------------|-------------|
@@ -234,7 +253,7 @@ return { run = run }
 
 ### 사용자 허브 생성
 
-사용자 허브는 사용자의 첫 클라이언트가 연결될 때 요청에 따라 생성됩니다. 허브는 사용자의 보안 액터와 스코프로 생성됩니다.
+사용자의 첫 클라이언트 연결이 해당 사용자 허브를 생성합니다. 허브는 사용자의 보안 액터와 스코프로 실행됩니다.
 
 ### 가비지 컬렉션
 
@@ -259,7 +278,7 @@ GC 확인 간격은 자동으로 계산됩니다: `inactivity_timeout / 2.5`.
 
 ## 참고
 
-- [WebSocket Relay](http/websocket-relay.md) - HTTP WebSocket 엔드포인트 설정
-- [프로세스 모델](concepts/process-model.md) - 프로세스 라이프사이클 및 메시징
-- [보안](system/security.md) - 보안 액터 및 스코프
-- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
+- [WebSocket 릴레이](../http/websocket-relay.md) — HTTP WebSocket 엔드포인트 설정
+- [프로세스 모델](../concepts/process-model.md) — 프로세스 수명주기와 메시징
+- [보안](../system/security.md) — 보안 액터와 스코프
+- [프레임워크 개요](./overview.md) — 프레임워크 모듈 설치와 가져오기
