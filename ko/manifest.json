@@ -30,7 +30,7 @@
     "children": [
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "아키텍처", "path": "concepts/architecture"},
-      {"title": "Registry", "path": "concepts/registry"},
+      {"title": "레지스트리", "path": "concepts/registry"},
       {"title": "보안 모델", "path": "concepts/security-model"},
       {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "클러스터", "path": "concepts/cluster"},
