@@ -25,17 +25,15 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.usage
     kind: ns.dependency
     component: wippy/usage
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.usage.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
 When the application starts, `wippy/migration` runs the module's `01_create_token_usage_table` migration, which creates the `token_usage` table along with indexes on `user_id`, `context_id`, `model_id`, and `timestamp`.

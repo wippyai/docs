@@ -54,7 +54,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/<release-tag>` | Base CDN URL for the frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.56` | Base CDN URL for the frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 | `fe_mode` | no | `compat` | Which shell the facade page loads: `compat` loads `module.js` (the default chat shell); `managed` loads `managed-layout.js` (opt-in declarative multi-panel layout). Surfaced on `/facade/config` as `mode`/`module_file`. |
 | `host_config_layout` | no | `{}` | JSON layout config emitted as `hostConfig.layout`; consumed by the **managed** shell only. |
@@ -91,23 +91,25 @@ Only the exact string `fragment` opts in; **any other value — including a typo
 | `start_nav_open` | `false` | Navigation drawer open by default |
 | `show_admin` | `true` | Show admin panel toggle |
 | `allow_select_model` | `false` | Allow user to select LLM model |
-| `session_type` | `non-persistent` | Auth token storage: `non-persistent` (in-memory) or `cookie`. The Web Host treats any value other than `cookie` as `non-persistent`. |
+| `session_type` | `non-persistent` | Web Host session policy: `cookie` stores a secondary token cookie; any other value is normalized to `non-persistent` and does not use that cookie. |
 | `history_mode` | `hash` | Browser history mode: `hash` or `browser`. The Web Host treats any value other than `browser` as `hash`. |
 | `hide_session_selector` | `false` | Hide the session picker UI |
 
+The facade shell's bootstrap token is separate from `session_type`. The shell always reads `localStorage["@wippy_token_info"]`, parses its JSON `token` field, and redirects to `login_path` when the value is missing or invalid. It passes that token to the Web Host. In `cookie` mode the Web Host also stores the token in its `@wippy-gen2/token` cookie; in `non-persistent` mode it does not use that secondary cookie.
+
 ### Theming
 
-Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — sidebar, chat, page area), and **children** (both child `view.page` iframes **and** `view.component` web components). For which surface each knob reaches, see the [CSS Delivery Matrix](../frontend/web-host/css-injection.md#css-delivery-matrix).
+Three scopes apply: **global** (everywhere), **host** (the Web Host chrome — sidebar, chat, page area), and **children** (child `view.page` render contexts and `view.component` web components). For which surface each knob reaches, see the [CSS Delivery Matrix](../frontend/web-host/css-injection.md#css-delivery-matrix).
 
 | Parameter | Scope | Default | Description |
 |-----------|-------|---------|-------------|
-| `custom_css` | global | Google Fonts import | Global CSS — reaches host chrome, `view.page` iframes, and `view.component` shadow roots (1.0.43+). |
+| `custom_css` | global | Google Fonts import | Global CSS — reaches host chrome, `view.page` render contexts, and `view.component` shadow roots (1.0.43+). |
 | `css_variables` | global | `{}` | JSON map of arbitrary CSS custom properties; compiled for Auto and forced modes and bridged into component shadow roots. |
-| `icon_sets` | global | `[]` | Iconify icon-set URLs (inline JSON only — no `fs://`) |
+| `icon_sets` | global | `{}` | Iconify icon sets keyed by prefix (inline JSON only — no `fs://`) |
 | `host_custom_css` | host | `""` | CSS for the host chrome only — not children. Scope class-based rules to `.wippy-host-app`. |
 | `host_css_variables` | host | `{}` | CSS custom properties for the host chrome only |
-| `host_icon_sets` | host | `[]` | Icon sets for host only (inline JSON only) |
-| `children_custom_css` | children | `""` | CSS for children only — injected into `view.page` iframes and `view.component` shadow roots (1.0.43+), not host chrome |
+| `host_icon_sets` | host | `{}` | Icon sets keyed by prefix for host only (inline JSON only) |
+| `children_custom_css` | children | `""` | CSS for children only — injected into `view.page` render contexts and `view.component` shadow roots (1.0.43+), not host chrome |
 | `children_css_variables` | children | `{}` | CSS custom properties for children only |
 
 Put shared brand styling in the global `custom_css` and `css_variables` parameters so it reaches every surface. Use `host_custom_css` and `host_css_variables` for host-only elements such as the sidebar, chat panel, and splitters. A `view.component` can opt out of shadow-root `*_custom_css` with `customCss: false`.
@@ -185,9 +187,9 @@ The facade registers `GET /facade/config` on the configured public router, so th
 
 ```json
 {
-    "facade_url": "https://web-host.wippy.ai/<release-tag>",
+    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
     "iframe_origin": "https://web-host.wippy.ai",
-    "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
+    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
     "login_redirect_param": null,
     "mode": "compat",
@@ -199,6 +201,9 @@ The facade registers `GET /facade/config` on the configured public router, so th
         "APP_WEBSOCKET_URL": "wss://api.example.com"
     },
     "routePrefix": "https://api.example.com",
+    "themeMode": "auto",
+    "themePersist": "none",
+    "themeStorageKey": "@wippy-theme-mode",
     "apiRoutes":     { "...": "..." },
     "axiosDefaults": { "...": "..." },
     "tanstack":      { "lists": { "refetchOnWindowFocus": true } },
@@ -219,7 +224,7 @@ The facade registers `GET /facade/config` on the configured public router, so th
         "hideSessionSelector": false,
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
-        "allowAdditionalTags": [],
+        "allowAdditionalTags": { "w-chart": ["data", "type"] },
         "chat":              { "...": "..." }
     }
 }
