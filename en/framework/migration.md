@@ -9,6 +9,8 @@ The `wippy/migration` module provides a DSL for schema changes, a runner that di
 
 Migrations support SQLite, PostgreSQL, and MySQL. Each migration can define driver-specific `up` and `down` implementations together.
 
+This page is a partial migration recipe and runner reference, not a complete application. The definition below can be adapted after the module and database are wired; later runner calls and result tables are reference snippets. Create backups before applying migrations to data you need to keep, and test both `up` and `down` against a disposable database first.
+
 ## Setup
 
 Add the module to your project:
@@ -37,6 +39,8 @@ entries:
 
 The migration bootloader registers with `wippy/bootloader` at order `20`. When the application starts, it discovers every migration entry in the registry, groups them by `meta.target_db`, and runs pending migrations against each database.
 
+If you use the relative SQLite path shown above, create the `data` directory before starting the application. Verify the result with `runner:status()`; use `runner:rollback()` only when the migration's `down` implementation is safe for the test data.
+
 ## Defining a Migration
 
 A migration is a `function.lua` entry with `meta.type: migration`. The entry returns a function produced by `migration.define(...)`.
@@ -59,7 +63,7 @@ return require("migration").define(function()
     migration("Create users table", function()
         database("sqlite", function()
             up(function(db)
-                local ok, err = db:execute([[
+                local _, err = db:execute([[
                     CREATE TABLE users (
                         id    INTEGER PRIMARY KEY,
                         name  TEXT NOT NULL,
@@ -70,23 +74,26 @@ return require("migration").define(function()
             end)
 
             down(function(db)
-                db:execute("DROP TABLE IF EXISTS users")
+                local _, err = db:execute("DROP TABLE IF EXISTS users")
+                if err then error(err) end
             end)
         end)
 
         database("postgres", function()
             up(function(db)
-                db:execute([[
+                local _, err = db:execute([[
                     CREATE TABLE users (
                         id    SERIAL PRIMARY KEY,
                         name  TEXT NOT NULL,
                         email TEXT NOT NULL UNIQUE
                     )
                 ]])
+                if err then error(err) end
             end)
 
             down(function(db)
-                db:execute("DROP TABLE IF EXISTS users")
+                local _, err = db:execute("DROP TABLE IF EXISTS users")
+                if err then error(err) end
             end)
         end)
     end)
@@ -248,6 +255,6 @@ The runner creates a `_migrations` table in each target database on first run. A
 
 ## See Also
 
-- [SQL Driver](system/database.md) — Database resource configuration
-- [Bootloader](framework/bootloader.md) — Bootloader ordering and hooks
-- [Framework Overview](framework/overview.md) — Framework module usage
+- [SQL Driver](../system/database.md) — Database resource configuration
+- [Bootloader](./bootloader.md) — Bootloader ordering and hooks
+- [Framework Overview](./overview.md) — Framework module usage

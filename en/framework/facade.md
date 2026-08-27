@@ -9,6 +9,8 @@ The `wippy/facade` module serves a page that loads and configures the Wippy Web 
 
 For isolated or partial-page integrations, the host can still be embedded manually through `iframe.html` and a `SetConfig` postMessage handshake. The facade itself does not use this delivery mode.
 
+This page is a partial deployment recipe and configuration reference. The setup block can be adapted to an existing Wippy project, while the theming, config-response, navigation, and publishing blocks are independent reference snippets. Provide any login page, filesystem entries, static assets, and frontend view entries that an adapted snippet names. For a complete runnable facade project, follow [Serve the Web Host with Facade](../tutorials/facade.md).
+
 ## Setup
 
 Add the module to your project:

@@ -10,6 +10,8 @@ The `wippy/views` module defines pages and components, manages their resources, 
 - **Jet template pages** (`kind: template.jet`) render HTML on the server after assembling the page's data and resources. See [Template Pages](#template-pages).
 - **Registry-entry frontends** (`kind: registry.entry`) describe micro frontend applications (`view.page`) and reusable web components (`view.component`) served from a CDN or static mount. The registry entry contains routing and deployment policy. Frontend-owned metadata comes from the package's generated `wippy-meta.json`, with explicit registry fields taking precedence. See [Component Pages](#component-pages) and [View Components](#view-components).
 
+This page is a registry and HTTP API reference. Its YAML, HTML, and JSON blocks are independent reference snippets, not one runnable project. Before adapting them, provide the `http.router`, environment storage, and HTTP service referenced by the dependency, plus any template sets, functions, resources, or frontend bundles named by the selected example.
+
 ## Setup
 
 Add the module to your project:

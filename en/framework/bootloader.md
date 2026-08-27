@@ -7,6 +7,8 @@ description: "Discover and run ordered application initialization functions at s
 
 The `wippy/bootloader` module discovers and runs application initialization functions in a defined order at startup. Framework modules use bootloaders for tasks such as encryption-key setup and database migrations.
 
+This page is a partial integration recipe and API reference, not a standalone application. The definition below is structurally complete, but `apply_seed()` represents application code that must implement the actual seed operation and its idempotency check. Any persistent cleanup or reversal depends on that application-specific operation.
+
 ## Setup
 
 Add the module to your project:

@@ -7,6 +7,8 @@ description: "Generate, store, and search vector embeddings with PostgreSQL pgve
 
 The `wippy/embeddings` module generates embeddings through `wippy/llm`, stores them in an application database, and performs vector similarity searches. It supports PostgreSQL with pgvector and SQLite with sqlite-vec.
 
+This page is an API primer with reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a configured database, and the embedding model, provider, and credentials described below. Remote embedding calls may incur provider charges. For a complete application that indexes and searches content, follow [Build a RAG Pipeline](../tutorials/rag.md).
+
 ## Setup
 
 Add the module to your project:
@@ -43,6 +45,8 @@ entries:
 ```
 
 On startup, `wippy/migration` picks up the `01_create_embeddings_table` migration and creates the `embeddings_512` table for the configured database driver.
+
+If you use the relative SQLite path shown above, create the `data` directory before starting the application.
 
 ## Current Fixed Constants
 
@@ -98,6 +102,8 @@ At the pinned framework baseline, the single-item helper passes the nested resul
 
 ### add_batch
 
+The following uses SQLite-compatible application IDs. For PostgreSQL, replace `doc-1` with a UUID because the PostgreSQL schema stores `origin_id` as `UUID`.
+
 ```lua
 local result, err = embeddings.add_batch({
     { content = "...", content_type = "chunk", origin_id = "doc-1" },
@@ -106,6 +112,8 @@ local result, err = embeddings.add_batch({
 ```
 
 Embeds and stores multiple items in one call. If the total estimated token count exceeds `MAX_TOKENS_PER_REQUEST`, the method splits the batch into chunks. Each repository chunk is transactional, but a split high-level batch is not atomic across chunks: earlier chunks remain stored if a later chunk fails. Returns `{ count, items = { ... } }`.
+
+To remove records created while testing, use the repository API's `delete_by_origin(origin_id)` method for each sample origin.
 
 ### search
 
@@ -125,7 +133,11 @@ Embeds the query string and performs a similarity search against stored vectors.
 ### find_by_type
 
 ```lua
-local hits, err = embeddings.find_by_type(query, content_type, { limit = 10 })
+local hits, err = embeddings.find_by_type(
+    "how do migrations work?",
+    "document_chunk",
+    { limit = 10 }
+)
 ```
 
 Calls `search` with a single `content_type`. The default limit is `10`.
@@ -133,7 +145,7 @@ Calls `search` with a single `content_type`. The default limit is `10`.
 ### find_by_origin
 
 ```lua
-local hits, err = embeddings.find_by_origin(query, origin_id, {
+local hits, err = embeddings.find_by_origin("how do migrations work?", "doc-1", {
     content_type = "document_chunk",
     context_id   = "section-2",
     limit        = 5,
