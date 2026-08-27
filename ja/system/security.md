@@ -1,35 +1,37 @@
 ---
 title: "セキュリティモデル"
-description: "Wippyは属性ベースのアクセス制御を実装します。すべてのリクエストはアクター（誰が）とスコープ（どのポリシーが適用されるか）を持ちます。ポリシーはアクション、リソース、およびアクターとリソース両方からのメタデータに基づいてアクセスを評価します。"
+description: "アクター、ポリシースコープ、条件、トークンストア、strict モードを使用した属性ベースのアクセス制御を設定します。"
 ---
 
 # セキュリティモデル
 
-Wippyは属性ベースのアクセス制御を実装します。すべてのリクエストはアクター（誰が）とスコープ（どのポリシーが適用されるか）を持ちます。ポリシーはアクション、リソース、およびアクターとリソース両方からのメタデータに基づいてアクセスを評価します。
+Wippy は、アクターとポリシースコープを使用した属性ベースのアクセス制御を実装します。ポリシーは、アクターおよびリソースのメタデータを使用してアクションとリソースを評価します。
+
+このページは設定および API のリファレンスです。完全な例では必要なレジストリエントリに名前を付けています。短い Lua および YAML のコードブロックは、既存のセキュリティコンテキスト内での 1 つの操作または設定の断片を示します。
 
 ```mermaid
 flowchart LR
-    A[Actor + Scope] --> PE[ポリシー評価] --> AD[許可/拒否]
-    A -.->|アイデンティティ<br/>メタデータ| PE
-    PE -.->|条件<br/>actor, resource, action| AD
+    A[Actor + Scope] --> PE[Policy Evaluation] --> AD[Allow/Deny]
+    A -.->|Identity<br/>Metadata| PE
+    PE -.->|Conditions<br/>actor, resource, action| AD
 ```
 
 ## エントリ種別
 
 | 種別 | 説明 |
 |------|------|
-| `security.policy` | 条件付き宣言的ポリシー |
+| `security.policy` | 条件付きの宣言的ポリシー |
 | `security.policy.expr` | 式ベースのポリシー |
-| `security.token_store` | トークンストレージと検証 |
+| `security.token_store` | トークンの保存と検証 |
 
 ## アクター
 
-アクターはアクションを実行している人を表します。
+アクターは、アクションを実行するプリンシパルを識別します。
 
 ```lua
 local security = require("security")
 
--- メタデータ付きアクターを作成
+-- Create actor with metadata
 local actor = security.new_actor("user:123", {
     role = "admin",
     team = "backend",
@@ -37,7 +39,7 @@ local actor = security.new_actor("user:123", {
     clearance = 3
 })
 
--- アクタープロパティにアクセス
+-- Access actor properties
 local id = actor:id()        -- "user:123"
 local meta = actor:meta()    -- {role="admin", ...}
 ```
@@ -45,16 +47,21 @@ local meta = actor:meta()    -- {role="admin", ...}
 ### コンテキスト内のアクター
 
 ```lua
--- コンテキストから現在のアクターを取得
+-- Get current actor from context
+local errors = require("errors")
+
 local actor = security.actor()
 if not actor then
-    return nil, errors.new("UNAUTHORIZED", "No actor in context")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "No actor in context"
+    })
 end
 ```
 
 ## ポリシー
 
-ポリシーはアクション、リソース、条件、効果を持つアクセスルールを定義します。
+ポリシーは、アクション、リソース、条件、効果を持つアクセスルールを定義します。
 
 ### 宣言的ポリシー
 
@@ -64,7 +71,7 @@ version: "1.0"
 namespace: app.security
 
 entries:
-  # 管理者フルアクセス
+  # Admin full access
   - name: admin_policy
     kind: security.policy
     policy:
@@ -78,7 +85,7 @@ entries:
     groups:
       - admin
 
-  # 読み取り専用アクセス
+  # Read-only access
   - name: readonly_policy
     kind: security.policy
     policy:
@@ -91,7 +98,7 @@ entries:
     groups:
       - default
 
-  # リソース所有者アクセス
+  # Resource owner access
   - name: owner_policy
     kind: security.policy
     policy:
@@ -108,7 +115,7 @@ entries:
     groups:
       - default
 
-  # クリアランスなしで機密を拒否
+  # Deny confidential without clearance
   - name: deny_confidential
     kind: security.policy
     policy:
@@ -128,22 +135,22 @@ entries:
 
 ### ポリシー構造
 
-```yaml
+```text
 policy:
   actions: "*" | "action" | ["action1", "action2"]
   resources: "*" | "resource" | ["res1", "res2"]
   effect: allow | deny
-  conditions:  # オプション
+  conditions:  # Optional
     - field: "field.path"
       operator: "eq"
       value: "static_value"
-      # または
+      # OR
       value_from: "other.field.path"
 ```
 
 ### 式ベースのポリシー
 
-複雑なロジックには式ポリシーを使用：
+複雑なロジックには式ポリシーを使用します。
 
 ```yaml
 - name: flexible_access
@@ -164,17 +171,17 @@ policy:
 
 ## 条件
 
-条件はアクター、アクション、リソース、メタデータに基づいた動的ポリシー評価を可能にします。
+条件は、実行時にアクター、アクション、リソース、メタデータのフィールドを評価します。
 
 ### フィールドパス
 
 | パス | 説明 |
 |------|------|
-| `actor.id` | アクターの一意識別子 |
-| `actor.meta.*` | アクターメタデータ（ネストをサポート） |
-| `action` | 実行されているアクション |
-| `resource` | リソース識別子 |
-| `meta.*` | リソースメタデータ |
+| `actor.id` | アクターの一意な識別子 |
+| `actor.meta.*` | アクターのメタデータ（ネストをサポート） |
+| `action` | 実行されるアクション |
+| `resource` | リソースの識別子 |
+| `meta.*` | リソースのメタデータ |
 
 ### 演算子
 
@@ -186,37 +193,37 @@ policy:
 | `gt` | より大きい | `actor.meta.clearance gt 2` |
 | `lte` | 以下 | `meta.size lte 1000` |
 | `gte` | 以上 | `actor.meta.level gte 3` |
-| `in` | 配列内の値 | `action in ["read", "write"]` |
-| `nin` | 配列内にない値 | `meta.status nin ["deleted", "archived"]` |
-| `exists` | フィールドが存在 | `meta.owner exists true` |
+| `in` | 配列内に値がある | `action in ["read", "write"]` |
+| `nin` | 配列内に値がない | `meta.status nin ["deleted", "archived"]` |
+| `exists` | フィールドが存在する | `meta.owner exists true` |
 | `nexists` | フィールドが存在しない | `meta.deleted nexists true` |
 | `contains` | 文字列を含む | `resource contains "sensitive"` |
 | `ncontains` | 文字列を含まない | `resource ncontains "public"` |
-| `matches` | 正規表現マッチ | `resource matches "^doc:.*"` |
-| `nmatches` | 正規表現マッチしない | `actor.id nmatches "^system:.*"` |
+| `matches` | 正規表現に一致する | `resource matches "^doc:.*"` |
+| `nmatches` | 正規表現に一致しない | `actor.id nmatches "^system:.*"` |
 
 ### 条件の例
 
 ```yaml
-# アクターロールをマッチ
+# Match actor role
 conditions:
   - field: actor.meta.role
     operator: eq
     value: admin
 
-# フィールドを比較
+# Compare fields
 conditions:
   - field: meta.owner
     operator: eq
     value_from: actor.id
 
-# 数値比較
+# Numeric comparison
 conditions:
   - field: actor.meta.clearance
     operator: gte
     value: 3
 
-# 配列メンバーシップ
+# Array membership
 conditions:
   - field: actor.meta.role
     operator: in
@@ -224,13 +231,13 @@ conditions:
       - admin
       - moderator
 
-# パターンマッチング
+# Pattern matching
 conditions:
   - field: resource
     operator: matches
     value: "^api:/v[0-9]+/admin/.*"
 
-# 複数条件（AND）
+# Multiple conditions (AND)
 conditions:
   - field: actor.meta.department
     operator: eq
@@ -242,33 +249,36 @@ conditions:
 
 ## スコープ
 
-スコープは複数のポリシーをセキュリティコンテキストに組み合わせます。
+スコープは、複数のポリシーを 1 つのセキュリティコンテキストにまとめます。
 
 ```lua
 local security = require("security")
 
--- ポリシーを取得
-local admin_policy = security.policy("app.security:admin_policy")
-local readonly_policy = security.policy("app.security:readonly_policy")
+-- Get policies
+local admin_policy, admin_err = security.policy("app.security:admin_policy")
+if admin_err then return nil, admin_err end
+local readonly_policy, readonly_err = security.policy("app.security:readonly_policy")
+if readonly_err then return nil, readonly_err end
 
--- ポリシー付きスコープを作成
+-- Create scope with policies
 local scope = security.new_scope()
 scope = scope:with(admin_policy)
 scope = scope:with(readonly_policy)
 
--- スコープは不変 - :with()は新しいスコープを返す
+-- Scopes are immutable - :with() returns new scope
 ```
 
 ### 名前付きスコープ（ポリシーグループ）
 
-グループからすべてのポリシーをロード：
+グループに割り当てられたポリシーを読み込みます。
 
 ```lua
--- グループ内のすべてのポリシーを持つスコープをロード
+-- Load scope with all policies in group
 local scope, err = security.named_scope("app.security:admin")
+if err then return nil, err end
 ```
 
-ポリシーは`groups`フィールドでグループに割り当てられます：
+ポリシーは `groups` フィールドを使用してグループに割り当てます。
 
 ```yaml
 - name: admin_policy
@@ -276,75 +286,100 @@ local scope, err = security.named_scope("app.security:admin")
   policy:
     # ...
   groups:
-    - admin      # このポリシーは"admin"グループ内
-    - default    # 複数グループに所属可能
+    - admin      # This policy is in "admin" group
+    - default    # Can be in multiple groups
 ```
 
-### スコープ操作
+### スコープの操作
 
 ```lua
--- ポリシーを追加
+-- Add policy
 local new_scope = scope:with(policy)
 
--- ポリシーを削除
+-- Remove policy
 local new_scope = scope:without("app.security:temp_policy")
 
--- ポリシーがスコープ内にあるかチェック
+-- Check if policy is in scope
 local has = scope:contains("app.security:admin_policy")
 
--- すべてのポリシーを取得
+-- Get all policies
 local policies = scope:policies()
 ```
+
+### モジュール権限
+
+strict モードでは、トークン操作だけでなく、アクター、ポリシー、スコープの構築にも権限チェックが適用されます。
+
+| アクション | リソース | 使用箇所 | 拒否時の動作 |
+|-----------|----------|----------|--------------|
+| `security.actor.create` | アクター ID | `security.new_actor` | Lua エラーを発生 |
+| `security.policy.get` | ポリシーのレジストリ ID | `security.policy` | `nil, error` を返す |
+| `security.policy_group.get` | ポリシーグループ ID | `security.named_scope` | `nil, error` を返す |
+| `security.scope.create` | `custom`、`with`、`without` | それぞれ `security.new_scope`、`scope:with`、`scope:without` | Lua エラーを発生 |
+
+呼び出し元に必要な操作と ID だけを許可してください。このページのアクター、スコープ、トークンの例では、操作固有のトークン権限に加え、これらの権限も付与されていることを前提としています。
 
 ## ポリシー評価
 
 ### 評価フロー
 
 ```
-1. スコープ内の各ポリシーをチェック
-2. いずれかのポリシーがDenyを返す → 結果はDeny
-3. 少なくとも1つのAllowがありDenyがない → 結果はAllow
-4. 適用可能なポリシーがない → 結果はUndefined
+1. Evaluate policies until a deny is found or the scope is exhausted
+2. If ANY policy returns Deny → Result is Deny
+3. If at least one Allow and no Deny → Result is Allow
+4. No applicable policies → Result is Undefined
 ```
 
 ### 評価結果
 
 | 結果 | 意味 |
 |------|------|
-| `allow` | アクセス許可 |
-| `deny` | アクセス明示的に拒否 |
-| `undefined` | ポリシーがマッチしなかった |
+| `allow` | アクセスを許可 |
+| `deny` | アクセスを明示的に拒否 |
+| `undefined` | 一致するポリシーがない |
 
 ```lua
--- 直接評価
+local errors = require("errors")
+
+-- Evaluate directly
 local result = scope:evaluate(actor, "read", "document:123", {
     owner = "user:456",
     classification = "internal"
 })
 
 if result == "deny" then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Access denied"
+    })
 elseif result == "undefined" then
-    -- ポリシーがマッチしなかった - strictモードに依存
+    -- No policy matched; treat this as denied unless the caller handles it explicitly.
 end
 ```
 
-### クイック権限チェック
+### 簡易権限チェック
 
 ```lua
--- 現在のコンテキストのアクターとスコープに対してチェック
+local errors = require("errors")
+
+-- Check against current context's actor and scope
 local allowed = security.can("read", "document:123", {
     owner = "user:456"
 })
 
 if not allowed then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Access denied"
+    })
 end
 ```
 
 ## トークンストア
 
-トークンストアはセキュアなトークン作成、検証、失効を提供します。
+トークンストアは、認証トークンを作成、検証、失効します。
+
+Lua の操作は権限によってゲートされます。アクティブなスコープでは、取得に対して `security.token_store.get` を許可し、対応する操作に対して `security.token.create`、`security.token.validate`、または `security.token.revoke` を許可する必要があります。これは、デフォルトの strict モードでも、明示的に設定したセキュリティコンテキストでも同様です。アクターを作成したり名前付きスコープを読み込んだりする例では、`security.actor.create` と `security.policy_group.get` も必要です。
 
 ### 設定
 
@@ -354,7 +389,7 @@ version: "1.0"
 namespace: app.auth
 
 entries:
-  # 環境変数を登録
+  # Register environment variable
   - name: os_env
     kind: env.storage.os
 
@@ -363,121 +398,134 @@ entries:
     variable: AUTH_SECRET_KEY
     storage: app.auth:os_env
 
-  # トークン用バッキングストア
+  # Backing store for tokens
   - name: token_data
     kind: store.memory
     lifecycle:
       auto_start: true
 
-  # トークンストア
+  # Token store
   - name: tokens
     kind: security.token_store
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
-### トークンストアオプション
+### トークンストアのオプション
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
-| `store` | 必須 | バッキングキーバリューストア参照 |
-| `token_length` | 32 | トークンサイズ（バイト、256ビット） |
-| `default_expiration` | 24h | デフォルトトークンTTL |
-| `token_key` | なし | HMAC-SHA256署名キー（直接値） |
-| `token_key_env` | なし | 署名キー用環境変数名 |
+|-----------|------------|------|
+| `store` | 必須 | バックエンドのキーバリューストア参照 |
+| `token_length` | 32 | トークンサイズ（バイト、256 ビット） |
+| `default_expiration` | 24h | トークンのデフォルト TTL |
+| `token_key` | なし | HMAC-SHA256 署名キー（直接の値、または[環境変数レジストリ](./env.md)から取得する `${env:NAME}`） |
 
-本番環境ではエントリにシークレットを埋め込まないよう`token_key_env`を使用してください。環境変数の登録については[環境変数システム](system/env.md)を参照してください。
+エントリにシークレットを埋め込まないよう、本番環境では `token_key: ${env:NAME}` を使用してください。従来の `token_key_env` ディレクティブも環境変数レジストリを読み取りますが、検索結果が見つからないか空の場合は、インライン値またはゼロ値を保持します。デフォルトのない最新のプレースホルダーは、変数が見つからない場合に失敗します。従来のディレクティブは非推奨です。
 
 ### トークンの作成
 
 ```lua
 local security = require("security")
 
--- トークンストアを取得
+-- Get token store
 local store, err = security.token_store("app.auth:tokens")
 if err then
     return nil, err
 end
 
--- アクターとスコープを作成
+-- Create actor and scope
 local actor = security.new_actor("user:123", {
     role = "user",
     email = "user@example.com"
 })
 
-local scope, _ = security.named_scope("app.security:default")
+local scope, scope_err = security.named_scope("app.security:default")
+if scope_err then
+    store:close()
+    return nil, scope_err
+end
 
--- トークンを作成
-local token, err = store:create(actor, scope, {
-    expiration = "7d",  -- デフォルト有効期限をオーバーライド
+-- Create token
+local token, create_err = store:create(actor, scope, {
+    expiration = "7d",  -- Override default expiration
     meta = {
         device = "mobile",
         ip = "192.168.1.1"
     }
 })
+store:close()
+if create_err then return nil, create_err end
+return token
 
-if err then
-    return nil, err
-end
-
--- トークン形式: base64_token.hmac_signature（token_keyが設定されている場合）
--- 例: "dGVzdHRva2VuMTIz.a1b2c3d4e5f6"
+-- Token format: base64_token.hmac_signature (if token_key set)
+-- Example: "dGVzdHRva2VuMTIz.a1b2c3d4e5f6"
 ```
 
 ### トークンの検証
 
 ```lua
--- トークンを検証
+local errors = require("errors")
+
+-- Validate token
 local actor, scope, err = store:validate(token)
+store:close()
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Invalid token")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Invalid token"
+    })
 end
 
--- アクターとスコープは保存されたデータから再構築される
+-- Actor and scope are reconstructed from stored data
 print(actor:id())  -- "user:123"
 ```
 
 ### トークンの失効
 
 ```lua
--- 単一トークンを失効
+-- Revoke single token
 local ok, err = store:revoke(token)
+if err then
+    store:close()
+    return nil, err
+end
 
--- 完了したらストアを閉じる
+-- Close store when done
 store:close()
+return ok
 ```
 
 ## コンテキストフロー
 
-セキュリティコンテキストは関数呼び出しを通じて伝播します。
+アクターとスコープは継承可能なフレームコンテキストです。関数呼び出しと生成されたプロセスは、呼び出し元が置き換え用のコンテキストを指定しない限り、両方を継承します。生成するプロセスのアクターまたはスコープを明示的に変更するには、`process.security` 権限が必要です。一方、`funcs.new():with_actor(...)` または `:with_scope(...)` を通じて関数呼び出しのセキュリティコンテキストを変更するには、`funcs.security` が `security` に対して必要です。
 
 ### コンテキストの設定
 
 ```lua
 local funcs = require("funcs")
 
--- セキュリティコンテキスト付きで関数を呼び出し
-local result, err = funcs.new()
-    :with_actor(actor)
-    :with_scope(scope)
-    :call("app.api:protected_endpoint", data)
+-- Call function with security context
+local caller, err = funcs.new():with_actor(actor)
+if err then return nil, err end
+caller, err = caller:with_scope(scope)
+if err then return nil, err end
+local result, call_err = caller:call("app.api:protected_endpoint", data)
+if call_err then return nil, call_err end
 ```
 
-### コンテキスト継承
+### コンテキストの継承
 
 | コンポーネント | 継承 |
 |---------------|------|
-| アクター | はい - 子呼び出しに渡される |
-| スコープ | はい - 子呼び出しに渡される |
-| Strictモード | いいえ - アプリケーション全体 |
+| アクター | はい - 子呼び出しと生成されたプロセスに渡される |
+| スコープ | はい - 子呼び出しと生成されたプロセスに渡される |
+| strict モード | いいえ - アプリケーション全体に適用 |
 
-関数は呼び出し元のセキュリティコンテキストを継承します。生成されたプロセスは新規に開始します。
+## サービスレベルのセキュリティ
 
-## サービスレベルセキュリティ
-
-サービスのデフォルトセキュリティを設定：
+サービスのデフォルトアクターとポリシーを設定します。
 
 ```yaml
 - name: worker_service
@@ -497,76 +545,104 @@ local result, err = funcs.new()
         - workers
 ```
 
-## Strictモード
+## strict モード
 
-セキュリティコンテキストが欠落している場合にアクセスを拒否するためstrictモードを有効化：
+strict モードはデフォルトで有効で、アクターまたはスコープのいずれかが欠けている場合にアクセスを拒否します。デプロイで従来の寛容な動作が意図的に必要な場合に限り、`false` に設定してください。
 
 ```yaml
-# wippy.yaml
+# .wippy.yaml
 security:
   strict_mode: true
 ```
 
-| モード | 欠落コンテキスト | 動作 |
-|--------|-----------------|------|
-| 通常 | アクター/スコープなし | 許可（寛容） |
-| Strict | アクター/スコープなし | 拒否（セキュアデフォルト） |
+| `strict_mode` | 欠落しているコンテキスト | 動作 |
+|---------------|--------------------------|------|
+| `false` | アクターまたはスコープがない | 許可（寛容） |
+| `true`（デフォルト） | アクターまたはスコープがない | 拒否 |
+
+アクターとスコープが両方存在する場合、ポリシーは常に評価されます。strict モードを無効にしても、`undefined` の結果が許可に変換されることはありません。`security.can(...)` は `false` を返しますが、評価が `allow` の場合だけは真になります。
 
 ## 認証フロー
 
-HTTPハンドラでのトークン検証：
+HTTP ハンドラーでトークンを検証します。
 
 ```lua
 local http = require("http")
 local security = require("security")
 
 local function protected_handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- トークンを抽出して検証
-    local auth = req:header("Authorization")
+    local function respond(status, body)
+        local content_type_err = res:set_header("Content-Type", "application/json")
+        if content_type_err then return nil, content_type_err end
+        local status_err = res:set_status(status)
+        if status_err then return nil, status_err end
+        local write_err = res:write_json(body)
+        if write_err then return nil, write_err end
+        return true
+    end
+
+    -- Extract and validate token
+    local auth, header_err = req:header("Authorization")
+    if header_err then return nil, header_err end
     if not auth then
-        return res:set_status(401):write_json({error = "Missing authorization"})
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Missing authorization"})
     end
 
-    local token = auth:gsub("^Bearer%s+", "")
-    local store, _ = security.token_store("app.auth:tokens")
-    local actor, scope, err = store:validate(token)
-    if err then
-        return res:set_status(401):write_json({error = "Invalid token"})
+    local token = auth:match("^Bearer%s+(.+)$")
+    if not token then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Expected a bearer token"})
+    end
+    local store, store_err = security.token_store("app.auth:tokens")
+    if store_err then
+        return respond(http.STATUS.INTERNAL_ERROR, {error = "Token store unavailable"})
     end
 
-    -- 権限をチェック
-    if not security.can("api.users.read", "users") then
-        return res:set_status(403):write_json({error = "Forbidden"})
+    local actor, scope, validate_err = store:validate(token)
+    store:close()
+    if validate_err then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Invalid token"})
     end
 
-    res:write_json({user = actor:id()})
+    -- Evaluate the actor and scope reconstructed from this token.
+    if scope:evaluate(actor, "api.users.read", "users") ~= "allow" then
+        return respond(http.STATUS.FORBIDDEN, {error = "Forbidden"})
+    end
+
+    return respond(http.STATUS.OK, {user = actor:id()})
 end
 
 return { handler = protected_handler }
 ```
 
-ログイン時のトークン作成：
+ログイン時にトークンを作成します。
 
 ```lua
 local actor = security.new_actor("user:" .. user.id, {role = user.role})
-local scope, _ = security.named_scope("app.security:" .. user.role)
+local scope, scope_err = security.named_scope("app.security:" .. user.role)
+if scope_err then return nil, scope_err end
 
-local store, _ = security.token_store("app.auth:tokens")
-local token, err = store:create(actor, scope, {expiration = "24h"})
+local store, store_err = security.token_store("app.auth:tokens")
+if store_err then return nil, store_err end
+local token, token_err = store:create(actor, scope, {expiration = "24h"})
+store:close()
+if token_err then return nil, token_err end
+return token
 ```
 
 ## ベストプラクティス
 
-1. **最小権限** - 必要最小限の権限を付与
-2. **デフォルトで拒否** - 明示的な許可ポリシーを使用し、strictモードを有効化
-3. **ポリシーグループを使用** - ロール/機能ごとにポリシーを整理
-4. **トークンに署名** - 本番環境では常に`token_key_env`を設定
-5. **短い有効期限** - 機密操作には短いトークン寿命を使用
-6. **コンテキストで条件付け** - 静的ポリシーより動的条件を使用
-7. **機密アクションを監査** - セキュリティ関連の操作をログ
+1. **最小権限** - 必要最小限の権限を付与する
+2. **デフォルトで拒否** - 明示的な許可ポリシーを使用し、strict モードを有効にする
+3. **ポリシーグループを使用** - ロールや機能ごとにポリシーを整理する
+4. **トークンに署名** - 本番環境では必ず `token_key` を `${env:NAME}` 参照から設定する
+5. **短い有効期限** - 機密性の高い操作では短いトークン有効期間を使用する
+6. **コンテキストで条件付け** - 静的なポリシーより動的な条件を使用する
+7. **機密性の高いアクションを監査** - セキュリティ関連の操作をログに記録する
 
 ## セキュリティモジュールリファレンス
 
@@ -574,9 +650,9 @@ local token, err = store:create(actor, scope, {expiration = "24h"})
 |------|------|
 | `security.actor()` | コンテキストから現在のアクターを取得 |
 | `security.scope()` | コンテキストから現在のスコープを取得 |
-| `security.can(action, resource, meta?)` | 権限をチェック |
+| `security.can(action, resource, meta?)` | 権限を確認 |
 | `security.new_actor(id, meta?)` | 新しいアクターを作成 |
-| `security.new_scope(policies?)` | 空またはシード付きスコープを作成 |
-| `security.policy(id)` | IDでポリシーを取得 |
-| `security.named_scope(group_id)` | グループのすべてのポリシーを持つスコープを取得 |
+| `security.new_scope(policies?)` | 空または初期ポリシー付きのスコープを作成 |
+| `security.policy(id)` | ID でポリシーを取得 |
+| `security.named_scope(group_id)` | グループ内のすべてのポリシーを持つスコープを取得 |
 | `security.token_store(id)` | トークンストアを取得 |
