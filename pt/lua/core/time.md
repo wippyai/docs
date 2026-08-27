@@ -14,6 +14,8 @@ Esta página é uma referência de API. Os blocos de código são exemplos isola
 
 ## Carregamento
 
+Adicione `time` à lista `modules:` da entrada executável antes de importá-lo. Os globais ambientes `channel` e `errors` usados nos exemplos de agendamento não exigem declaração de módulo.
+
 ```lua
 local time = require("time")
 ```
@@ -22,7 +24,9 @@ Adicione `time` à lista `modules:` da entrada executável antes de carregá-lo.
 
 ## Tempo Atual
 
-### now
+### `now`
+
+Os valores exibidos de timestamp e duração transcorrida são ilustrativos; `time.now()` fornece o tempo atual ou o tempo registrado no workflow.
 
 Retorna o tempo atual. Em workflows, retorna o tempo gravado da referência de tempo do workflow para replay deterministico.
 
@@ -68,7 +72,7 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 | `minute` | number | Minuto (0-59) |
 | `second` | number | Segundo (0-59) |
 | `nanosecond` | number | Nanossegundo (0-999999999) |
-| `location` | Location | Fuso horario (opcional, padrão e local) |
+| `location` | Location | Fuso horário (opcional, padrão local) |
 
 **Retorna:** `Time`
 
@@ -119,7 +123,7 @@ local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 |-----------|------|-----------|
 | `layout` | string | Layout de formato de tempo Go |
 | `value` | string | String para parse |
-| `location` | Location | Fuso horario padrão (opcional) |
+| `location` | Location | Fuso horário padrão (opcional) |
 
 **Retorna:** `Time, error`
 
@@ -295,6 +299,10 @@ d:nanoseconds()   -- 5445500000000
 
 ### Carregar por Nome
 
+Carregue um fuso por seu nome IANA, como `America/New_York`, `Europe/London` ou `Asia/Tokyo`.
+
+O parâmetro `location` seleciona o fuso horário usado na construção e no parsing.
+
 Carregar fuso horario por nome IANA (ex: "America/New_York", "Europe/London", "Asia/Tokyo").
 
 ```lua
@@ -349,7 +357,7 @@ time.localtz  -- Local system timezone
 
 ## Agendamento
 
-### sleep
+### `sleep`
 
 Pausar execução pela duração específicada. Em workflows, gravado e reproduzido corretamente.
 
@@ -369,7 +377,7 @@ end
 |-----------|------|-----------|
 | `duration` | number/string/Duration | Tempo de sleep |
 
-### after
+### `after`
 
 Retorna um channel que recebe uma vez apos a duração. Funciona com `channel.select`.
 
@@ -398,9 +406,9 @@ end
 |-----------|------|-----------|
 | `duration` | number/string/Duration | Tempo de espera |
 
-**Retorna:** `Channel`
+**Retorna:** `Channel, error`
 
-### timer
+### `timer`
 
 Timer de disparo único que dispara apos duração. Pode ser parado ou resetado.
 
@@ -449,7 +457,7 @@ timer:stop()
 | `stop()` | - | boolean | Cancelar timer |
 | `reset(duration)` | number/string/Duration | boolean | Resetar com nova duração |
 
-### ticker
+### `ticker`
 
 Timer repetitivo que dispara em intervalos regulares.
 
@@ -568,9 +576,9 @@ time.SATURDAY   -- 6
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Formato de duração inválido | `errors.INVALID` | não |
-| Parse falhou | `errors.INTERNAL` | não |
+| Parse falhou | `errors.INVALID` | não |
 | Nome de location vazio | `errors.INVALID` | não |
-| Location não encontrada | `errors.INTERNAL` | não |
+| Location não encontrada | `errors.NOT_FOUND` | não |
 | Duração <= 0 (timer/ticker) | `errors.INVALID` | não |
 
 ```lua

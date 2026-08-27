@@ -136,8 +136,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 |-------|------|-----------|
 | `kind` | string | Constante de tipo de evento |
 | `from` | string | PID de origem |
-| `result` | any | Para EXIT: o valor retornado (presente em saída normal) |
-| `error` | any | Para EXIT: o erro (presente em saída anormal) |
+| `result` | table | Para EXIT/LINK_DOWN: registro {value, error}; o valor retornado pelo processo fica em `result.value` e qualquer erro em `result.error` |
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 | `sources` | string[] | Para OUTDATED: IDs de registro que mudaram ou foram afetados transitivamente |
 

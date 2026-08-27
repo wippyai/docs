@@ -9,7 +9,7 @@ description: "Abra bindings de serviços tipados, inspecione contratos, chame im
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Invoque serviços através de contracts tipados. Chame APIs remotas, workflows e funções com validação de schema e suporte a execução assíncrona.
+O módulo `contract` abre bindings de serviços tipados para APIs remotas, workflows e funções, com validação de schema, chamadas assíncronas e propagação do contexto. Esta página é uma referência de API; IDs e valores como `current_user` pertencem à aplicação.
 
 ## Carregamento
 
@@ -83,6 +83,8 @@ end
 ```
 
 ### Definição de Method
+
+Cada elemento do schema contém uma string `format` e pode incluir um valor `definition`.
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
@@ -182,6 +184,8 @@ if data_err then return nil, data_err end
 Veja [Futures](./future.md) para os métodos de future.
 
 ## Abrindo via Contract
+
+Abra um binding por um objeto contract. As chamadas abaixo são alternativas; verifique o erro retornado por `contract.get()` e pela chamada `open()` escolhida antes de usar a instância.
 
 Abrir binding através de objeto contract:
 
@@ -289,4 +293,5 @@ Sem `with_actor`/`with_scope` explícitos, um contract aberto herda o ator e o e
 | Método não encontrado | `errors.NOT_FOUND` |
 | Sem binding padrão | `errors.NOT_FOUND` |
 | Permissão negada | `errors.PERMISSION_DENIED` |
-| Chamada falhou | `errors.INTERNAL` |
+| Falha no dispatcher do contract ou na conversão da resposta | `errors.INTERNAL` |
+| A implementação retornou um erro | Preserva o tipo do erro da implementação |

@@ -9,9 +9,9 @@ description: "Crie channels com e sem buffer, troque valores, selecione operaç�
 <secondary-label ref="workflow"/>
 
 
-Channels estilo Go para comunicação entre corrotinas. Crie channels com ou sem buffer, envie e receba valores, e coordene entre processos concorrentes usando instruções select.
+Channels estilo Go coordenam corrotinas dentro de um processo Lua. Os globais `channel` e `coroutine` estão sempre disponíveis; entre processos, use mensagens de processo, funções ou filas.
 
-O global `channel` está sempre disponível.
+Nos padrões parciais abaixo, `jobs` é a fila fornecida pela aplicação e `process` é seu callback de processamento; em outro exemplo, `data` e o callback `process` também vêm da aplicação. Um caso de channel selecionado retorna `{channel, value, ok}`; o branch padrão retorna `{default = true, ok = true}` quando nenhum caso está pronto e `default = true`. O padrão de timeout exige `time` em `modules:`, recebe `application_response_channel` da aplicação e usa `time.after`, que retorna um channel ou `nil, error`. Outros padrões usam o global ambiente `process`, ou recebem `ch` e o callback `process` da aplicação. No worker pool, `processed` contém `2`, `4`, `6` e `8`, em ordem dependente do agendamento.
 
 ## Criando Channels
 
@@ -235,8 +235,6 @@ end
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Send em channel fechado | erro runtime | não |
-| Close de channel fechado | erro runtime | não |
-| Caso inválido em select | erro runtime | não |
 
 ## Veja Também
 

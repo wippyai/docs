@@ -8,7 +8,7 @@ description: "Chame funções registradas de forma síncrona ou assíncrona e pr
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-A forma principal de chamar outras funções no Wippy. Execute funções registradas síncronamente ou assíncronamente entre processos, com suporte completo para propagação de contexto, credenciais de segurança e timeouts. Este módulo é central para construir aplicações distribuídas onde componentes precisam comunicar.
+O módulo `funcs` chama funções registradas de modo síncrono ou assíncrono. Um executor pode propagar contexto de requisição, identidade de segurança e opções específicas da implementação. IDs de destino, argumentos e dados pertencem à aplicação.
 
 ## Carregamento
 
@@ -16,7 +16,7 @@ A forma principal de chamar outras funções no Wippy. Execute funções registr
 local funcs = require("funcs")
 ```
 
-## call
+## `call`
 
 Chama uma função registrada síncronamente. Use quando precisar de um resultado imediato e puder aguardar por ele.
 
@@ -37,7 +37,9 @@ print(result.name)
 
 A string target segue o padrão `namespace:name` onde namespace identifica o módulo e name identifica a função específica.
 
-## async
+## `async`
+
+Inicia a chamada e retorna um `Future` imediatamente.
 
 Inicia uma chamada de função assíncrona e retorna imediatamente com um Future. Use para operações de longa duração onde você não quer bloquear, ou quando quer executar múltiplas operações em paralelo.
 
@@ -72,7 +74,7 @@ if data_err then return nil, data_err end
 
 **Retorna:** `Future, error`
 
-## new
+## `new`
 
 Cria um novo Executor para construir chamadas de função com contexto customizado. Use quando precisar propagar contexto de requisição, definir credenciais de segurança ou configurar timeouts.
 
@@ -86,7 +88,7 @@ local exec = funcs.new()
 
 Builder para chamadas de função com opções de contexto customizado. Métodos retornam novas instâncias de Executor (encadeamento imutável), então você pode reutilizar uma configuração base.
 
-### with_context
+### `with_context`
 
 Adiciona valores de contexto que estarão disponíveis para a função chamada. Use para propagar dados com escopo de requisição como trace IDs, sessões de usuário ou feature flags.
 
@@ -113,7 +115,7 @@ if err then return nil, err end
 
 **Retorna:** `Executor, error`
 
-### with_actor
+### `with_actor`
 
 Define o ator de segurança para verificações de autorização na função chamada. Use ao chamar uma função em nome de um usuário específico.
 
@@ -139,7 +141,7 @@ end
 
 **Retorna:** `Executor, error`
 
-### with_scope
+### `with_scope`
 
 Define o escopo de segurança para funções chamadas. Escopos definem as permissões disponíveis para a chamada.
 
@@ -157,7 +159,7 @@ if err then return nil, err end
 
 **Retorna:** `Executor, error`
 
-### with_options
+### `with_options`
 
 Define opções de chamada. As implementações podem definir opções próprias; o runtime também reconhece `network` para selecionar uma rede de saída.
 
@@ -185,7 +187,7 @@ A opção definida pelo runtime é:
 
 Selecionar uma rede exige a permissão `network.select` no ID dessa rede.
 
-### call / async
+### call / async (`call` / `async`)
 
 Versões Executor de call e async que usam o contexto configurado.
 
@@ -207,7 +209,9 @@ if posts_err then return nil, posts_err end
 
 Retornado por chamadas `async()`. Representa uma operação assíncrona em andamento.
 
-### response / channel
+### response / channel (`response` / `channel`)
+
+O channel de resposta sinaliza a conclusão. Quando ele estiver pronto, chame `future:result()` para obter o valor em cache ou o erro da função chamada. Ele pode ser combinado com `channel.select`.
 
 Retorna o channel subjacente para receber o resultado.
 
@@ -233,7 +237,7 @@ local result = channel.select {
 
 **Retorna:** `Channel`
 
-### is_complete
+### `is_complete`
 
 Verificação não-bloqueante se o future completou.
 
@@ -248,9 +252,9 @@ local result, err = future:result()
 
 **Retorna:** `boolean`
 
-### is_canceled
+### `is_canceled`
 
-Retorna true se `cancel()` foi chamado neste future.
+Retorna `true` se o future foi marcado como cancelado pelo provider.
 
 ```lua
 if future:is_canceled() then
@@ -260,7 +264,9 @@ end
 
 **Retorna:** `boolean`
 
-### result
+### `result`
+
+Retorna o resultado em cache quando concluído ou `nil` enquanto a operação ainda está pendente.
 
 Retorna o resultado em cache se completo, ou nil se ainda pendente.
 
@@ -275,9 +281,11 @@ elseif value then
 end
 ```
 
-**Retorna:** `Payload|nil, error|nil`
+**Retorna:** `Payload|table|nil, error|nil`
 
-### error
+### `error`
+
+Este método retorna um wrapper `INTERNAL` não retentável para uma operação que falhou. Use `result()` para preservar os metadados originais do erro.
 
 Retorna o erro se o future falhou.
 
@@ -290,7 +298,7 @@ end
 
 **Retorna:** `error|nil, boolean`
 
-### cancel
+### `cancel`
 
 Cancela a operação assíncrona.
 
@@ -371,6 +379,7 @@ Operações de função estão sujeitas a avaliação de política de segurança
 | Nome ausente | `errors.INVALID` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Falha de inscrição | `errors.INTERNAL` | não |
+| Falha ao despachar o início assíncrono | `errors.INTERNAL` | não |
 | Erro da função | varia | varia |
 
 Veja [Futures](./future.md) para o contrato assíncrono e [Tratamento de Erros](./errors.md) para trabalhar com erros.

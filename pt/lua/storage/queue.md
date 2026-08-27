@@ -9,7 +9,9 @@ description: "Publique mensagens e processe entregas de filas configuradas."
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Publique e consuma mensagens de filas distribuidas. Suporta multiplos backends incluindo RabbitMQ e outros brokers compativeis com AMQP.
+O módulo `queue` publica mensagens e processa entregas de filas distribuídas configuradas, incluindo RabbitMQ e outros brokers compatíveis com AMQP.
+
+Esta página é uma referência de API. Os exemplos de publicação pressupõem que as entradas e permissões já existam. A seção de consumer é uma receita parcial para um handler invocado por `queue.consumer`, não um deployment de fila independente.
 
 Para configurar a fila, veja [Fila](../../system/queue.md).
 
@@ -43,6 +45,8 @@ end
 **Retorna:** `boolean, error`
 
 ### Headers de Mensagem
+
+Consumers recebem todos os valores de headers como strings. As chaves `x_original_queue`, `x_dead_letter_reason`, `x_dead_letter_time` e `attempts` são reservadas para controle de entrega e dead letter e não devem ser definidas pelos publishers.
 
 Headers habilitam roteamento, prioridade e rastreamento:
 
@@ -81,11 +85,13 @@ Disponível apenas ao processar mensagens de fila em contexto de consumer.
 
 ## Métodos de Message
 
+Uma `Message` é válida somente durante a execução do handler do consumer; o runtime faz ack automático em sucesso e nack automático em erro.
+
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `id()` | `string, error` | Identificador único da mensagem |
-| `header(key)` | `any, error` | Valor de header único (nil se ausente) |
-| `headers()` | `table, error` | Todos os headers da mensagem |
+| `header(key)` | `string?, error` | Valor string normalizado, ou nil se ausente |
+| `headers()` | `{[string]: string}, error` | Todos os headers com valores string normalizados |
 | `ack()` | `boolean, error` | Confirmar processamento (single-shot) |
 | `nack()` | `boolean, error` | Sinalizar falha para reentrega ou dead-letter (single-shot) |
 
@@ -102,6 +108,8 @@ if err then return nil, err end
 **Retorna:** `table, error`
 
 ## Padrão de Consumer
+
+Uma entrada `queue.consumer` vincula a fila ao handler referenciado por `func`. O handler recebe diretamente o payload da mensagem. O fragmento pressupõe que `app:emails` e a função `app:email_handler` já existam; o código da função pressupõe que a aplicação forneça `deliver_email(payload)`.
 
 Consumers de fila sao definidos como entry points que recebem o payload diretamente:
 
@@ -152,10 +160,12 @@ Ambas as permissões sao verificadas: primeiro a permissão geral, depois a espe
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID da fila vazio | `errors.INVALID` | não |
-| Dados da mensagem vazios | `errors.INVALID` | não |
+| Argumento da mensagem ausente ou uma tabela vazia | `errors.INVALID` | não |
 | Sem contexto de entrega | `errors.INVALID` | não |
+| Mensagem liberada ou já finalizada | `errors.INVALID` | não |
 | Publicação não permitida | `errors.INVALID` | não |
 | Publicação falhou | `errors.INTERNAL` | não |
+| Fila ou driver não encontrado por `info` | `errors.INTERNAL` | não |
 
 Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
 

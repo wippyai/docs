@@ -9,7 +9,9 @@ description: "Leia, grave e gerencie arquivos em um volume de filesystem configu
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Leia, escreva e gerencie arquivos dentro de volumes de filesystem em sandbox.
+O módulo `fs` lê, grava e gerencia arquivos em volumes de filesystem configurados.
+
+Esta página é uma referência de API. Os exemplos pressupõem um volume configurado e permissão para adquiri-lo. Cada bloco é uma operação isolada ou receita parcial; valores e callbacks da aplicação, como `config`, `message`, `process` e `report_cleanup_error`, já devem existir. `report_cleanup_error(err)` registra uma falha de fechamento sem substituir um erro anterior da operação.
 
 Para configurar o filesystem, veja [Filesystem](../../system/filesystem.md).
 
@@ -193,6 +195,8 @@ print(info.size, info.modified, info.type)
 
 ## Operações de Diretorio
 
+`mkdir` cria um único diretório e não cria pais ausentes. `remove` aceita apenas arquivos e diretórios vazios.
+
 ```lua
 local vol, get_err = fs.get("app:data")
 if get_err then return nil, get_err end
@@ -233,6 +237,8 @@ Ao usar `vol:open()` para streaming:
 Sempre chame `close()` ao terminar com um file handle.
 
 ## Scanner
+
+`scanner:scan()` retorna somente um booleano. Quando retornar `false`, chame `scanner:err()` para distinguir EOF limpo de falha de tokenização ou leitura. `scanner:err()` retorna um erro estruturado `INTERNAL` ou `nil`.
 
 Para processamento linha por linha:
 
@@ -290,7 +296,7 @@ fs.seek.END       -- from end
 | `isdir(path)` | `boolean, error` | Verificar se e diretorio |
 | `mkdir(path)` | `boolean, error` | Criar diretorio |
 | `remove(path)` | `boolean, error` | Remover arquivo/diretorio vazio |
-| `readdir(path)` | `iterator` | Listar diretorio |
+| `readdir(path)` | `iterator, state` | Listar diretório, para uso em loop genérico `for` |
 | `open(path, mode)` | `File, error` | Abrir file handle |
 | `chdir(path)` | `boolean, error` | Mudar diretorio de trabalho |
 | `pwd()` | `string, error` | Obter diretorio de trabalho |
@@ -305,13 +311,20 @@ Acesso ao filesystem está sujeito a avaliação de política de segurança.
 
 ## Erros
 
+`unspecified` significa que `err:retryable()` retorna `nil`; não é equivalente a `false`.
+
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Caminho vazio | `errors.INVALID` | não |
-| Modo inválido | `errors.INVALID` | não |
-| Arquivo fechado | `errors.INVALID` | não |
-| Caminho não encontrado | `errors.NOT_FOUND` | não |
-| Caminho ja existe | `errors.ALREADY_EXISTS` | não |
+| Caminho vazio | `errors.INVALID` | não especificado |
+| Caminho contém um byte nulo | `errors.INVALID` | não |
+| Modo inválido | `errors.INVALID` | não especificado |
+| `scanner()` chamado em um arquivo fechado | `errors.INVALID` | não especificado |
+| Leitura, escrita, seek, stat ou sync em arquivo fechado | `errors.INTERNAL` | não |
+| `close()` chamado em um arquivo já fechado | sucesso | não aplicável |
+| Leitura pelo handle chegou ao EOF | `errors.NOT_FOUND` | não especificado |
+| Caminho não encontrado | `errors.NOT_FOUND` | preservado do erro subjacente quando disponível |
+| Caminho já existe | `errors.ALREADY_EXISTS` | não especificado |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Falha de tokenização ou leitura no scanner | `errors.INTERNAL` | preservado do erro subjacente quando disponível |
 
 Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.

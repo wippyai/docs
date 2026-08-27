@@ -9,7 +9,9 @@ description: "Armazene e recupere valores com expiração opcional e gravações
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Armazenamento key-value rapido com suporte a TTL. Ideal para cache, sessoes e estado temporario.
+O módulo `store` fornece armazenamento key-value com TTL opcional. Ele pode manter dados em cache, sessões e outros estados temporários.
+
+Esta página é uma referência de API. Os exemplos pressupõem um store configurado, as permissões listadas abaixo e valores fornecidos pela aplicação, como `owner` ou `new_value`. Depois da aquisição, os exemplos usam um handle `cache` ativo já existente e não são funções independentes.
 
 Para configurar o store, veja [Store](../../system/store.md).
 
@@ -272,21 +274,27 @@ Operações de store estao sujeitas a avaliação de política de segurança.
 | Ação | Recurso | Atributos | Descrição |
 |------|---------|-----------|-----------|
 | `store.get` | ID do Store | - | Adquirir um recurso store |
-| `store.key.get` | ID do Store | `key` | Ler valor de uma chave |
-| `store.key.set` | ID do Store | `key` | Escrever valor de uma chave |
+| `store.info` | ID do Store | - | Inspecionar recursos disponíveis no store |
+| `store.key.get` | ID do Store | `key` | Ler o valor de uma chave (também `entry`) |
+| `store.key.set` | ID do Store | `key` | Escrever o valor de uma chave (também `put`) |
 | `store.key.delete` | ID do Store | `key` | Deletar uma chave |
 | `store.key.has` | ID do Store | `key` | Verificar existencia de chave |
+| `store.key.list` | ID do Store | `prefix` | Listar entradas |
 
 ## Erros
 
-`store.get()` e todos os métodos do handle do store (`get`, `set`, `has`, `delete`) retornam erros estruturados (use `err:kind()`).
+Negações de `store.get`, `get`, `set`, `delete` e `has` geram um erro Lua. Os métodos `info`, `entry`, `list` e `put` retornam `errors.PERMISSION_DENIED`. Conceda as ações necessárias antes de chamar código que não tolere uma negação gerada.
+
+Falhas de entrada, lookup, backend e capacidades retornam erros estruturados; inspecione-as com `err:kind()`. As negações de permissão seguem o comportamento dividido descrito acima.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID de recurso vazio | `errors.INVALID` | não |
-| Recurso não encontrado | `errors.NOT_FOUND` | não |
+| Registry de recursos indisponível | `errors.NOT_FOUND` | não |
+| Falha ao adquirir recurso, incluindo recurso ausente | `errors.INTERNAL` | não |
 | Store liberado | `errors.INVALID` | não |
-| Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada por `info`, `entry`, `list` ou `put` | `errors.PERMISSION_DENIED` | não |
+| Permissão negada por `store.get`, `get`, `set`, `delete` ou `has` | gera erro Lua | não aplicável |
 | `only_if_absent` e chave existe | `errors.ALREADY_EXISTS` | não |
 | Divergência de `if_version` | `errors.CONFLICT` | sim |
 | Escrita condicional em store sem suporte | `errors.INVALID` | não |

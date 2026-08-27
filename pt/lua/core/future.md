@@ -54,7 +54,7 @@ end
 
 ## Verificação de Cancelamento
 
-Verificar se `cancel()` foi chamado:
+Verificar se o future foi cancelado:
 
 ```lua
 if future:is_canceled() then
@@ -77,6 +77,8 @@ local val, err = future:result()
 - Sucesso: `Payload, nil` ou `table, nil` (multiplos payloads)
 
 ## Obtendo Erro
+
+Quando a operação falha, `error()` retorna um wrapper `INTERNAL` não retentável. Use `result()` quando for necessário preservar o tipo e a retentabilidade originais do erro da função chamada.
 
 Obter erro se future falhou:
 
@@ -184,3 +186,6 @@ return value
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Operação cancelada por `result()` | `errors.CANCELED` | não |
+| Falha da operação retornada por `result()` | varia | preservado do erro da função |
+| Falha da operação retornada por `error()` | `errors.INTERNAL` | não |
+| Falha no despacho do cancelamento | `errors.INTERNAL` | não |

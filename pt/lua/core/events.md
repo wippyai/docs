@@ -22,6 +22,8 @@ local events = require("events")
 
 ## Inscrevendo-se em Eventos
 
+Uma assinatura pode filtrar sistema e tipo, por exemplo, `events.subscribe("users", "user.created")`; omitir o tipo aceita todos os eventos do sistema.
+
 Inscreva-se em eventos do event bus:
 
 ```lua
@@ -105,6 +107,8 @@ Campos do evento: `system`, `kind`, `path`, `data`
 
 ### Fechando Subscription
 
+O fechamento é idempotente. Depois que o channel fecha e os eventos em buffer são drenados, `receive()` retorna `nil, false`.
+
 Cancelar inscrição e fechar o channel:
 
 ```lua
@@ -126,5 +130,6 @@ local closed = sub:close() -- true
 | Tipo vazio | `errors.INVALID` | não |
 | Caminho vazio | `errors.INVALID` | não |
 | Política negou | `errors.INVALID` | não |
+| Contexto de execução ou processo ausente | `errors.INTERNAL` | não |
 
 Veja [Tratamento de Erros](./errors.md) para trabalhar com erros.
