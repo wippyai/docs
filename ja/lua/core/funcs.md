@@ -293,6 +293,10 @@ if err then return nil, err end
 
 **戻り値:** `boolean, error`
 
+<warning>
+ランタイムv0.3.32aでは、関数Futureとcontract Futureがプロセス全体で1つのキャンセルコールバックを共有します。両方のproviderが読み込まれている場合、<code>cancel()</code>と<code>is_canceled()</code>はproviderをまたぐ安定した契約ではありません。アプリケーションの正しさをキャンセルに依存させず、ローカルでタイムアウトし、ランタイムがproviderごとのキャンセルを分離するまでは遅れて届いた結果を無視してください。
+</warning>
+
 ## 並行操作
 
 asyncとchannel.selectを使用して複数の操作を並行に実行。
@@ -360,4 +364,4 @@ end
 | サブスクライブ失敗 | `errors.INTERNAL` | no |
 | 関数エラー | 様々 | 様々 |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+エラーの処理については[エラー処理](errors.md)を参照してください。

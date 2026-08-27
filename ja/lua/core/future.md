@@ -99,6 +99,12 @@ local canceled, err = future:cancel()
 
 操作が既に進行中の場合でも完了する可能性あり。
 
+**戻り値:** `boolean, error`
+
+<warning>
+ランタイムv0.3.32aでは、関数Futureとcontract Futureがプロセス全体で1つのキャンセルコールバックを共有します。両方のproviderが読み込まれている場合、<code>cancel()</code>と<code>is_canceled()</code>はproviderをまたぐ安定した契約ではありません。アプリケーションの正しさをキャンセルに依存させず、ローカルでタイムアウトし、ランタイムがproviderごとのキャンセルを分離するまでは遅れて届いた結果を無視してください。
+</warning>
+
 ## タイムアウトパターン
 
 ```lua

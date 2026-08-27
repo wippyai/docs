@@ -277,7 +277,7 @@ wippy publish --registry http://localhost:8080 --create --version 0.1.0
 
 組織のプライベートモジュールクォータが使い切られている場合、公開は `cannot publish: Private-module quota exhausted (5 of 5)...` のようなメッセージで失敗します。モジュールを public にするか、組織管理者にクォータの引き上げを依頼してください。アップロードとダウンロードは、一時的なネットワークエラー時に自動でリトライされます。
 
-## 公開時のランタイムデフォルト
+## 公開時のランタイムデフォルト {#publishing-runtime-defaults}
 
 `type: application` のアプリケーションは、`wippy.yaml` の `publish.runtime` を通じて、ランタイム設定のデフォルトをパックに含めることができます。
 
@@ -305,7 +305,7 @@ publish:
 
 利用先での設定優先順位は、アプリケーションパックのデフォルト、ランタイムデフォルト、ローカル設定ファイル、選択したプロファイル、最後にCLIオーバーライドの順です。
 
-## プロファイルの公開
+## プロファイルの公開 {#publishing-profiles}
 
 ルートアプリケーションのプロファイルは、パックの `runtime.profiles` メタデータにエクスポートされます。公開時にプロファイルが選択されたり焼き込まれたりすることはありません — 利用者が実行時に `wippy run --profile <name>` で選択します：
 

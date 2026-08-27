@@ -700,7 +700,7 @@ entries:
 func: app.users:handler
 ```
 
-## エントリの上書き
+## エントリの上書き {#overriding-entries}
 
 任意のエントリのフィールド（その `kind` を含む）は、ソース YAML を編集することなく、`override:` 設定セクションまたは `-o` CLI フラグを使って起動時に上書きできます。キーは `namespace:entry:path` 形式を使用します。
 

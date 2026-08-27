@@ -137,7 +137,7 @@ if err then
 end
 
 for _, pid in ipairs(members) do
-    -- Current members at subscription time
+    -- current members at subscription time
 end
 
 local ch = sub:channel()

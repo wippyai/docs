@@ -411,7 +411,7 @@ end
 OpenAI モデルの場合、すべてのプロパティを <code>required</code> 配列に含める必要があります。オプションフィールドにはユニオン型を使用してください: <code>type = {"string", "null"}</code>。<code>additionalProperties = false</code> を設定してください。
 </tip>
 
-## モデル設定
+## モデル設定 {#model-configuration}
 
 モデルは `meta.type: llm.model` を持つレジストリエントリとして定義されます:
 

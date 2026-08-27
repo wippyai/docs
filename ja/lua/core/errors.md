@@ -55,12 +55,12 @@ end
 
 ```lua
 if errors.is(err, errors.INVALID) then
-    -- Handle invalid input
+    -- handle invalid input
 end
 
 -- Or compare directly
 if err:kind() == errors.NOT_FOUND then
-    -- Handle missing resource
+    -- handle missing resource
 end
 ```
 
@@ -100,7 +100,7 @@ end
 
 ```lua
 if err:retryable() then
-    -- Safe to retry
+    -- safe to retry
 end
 ```
 
