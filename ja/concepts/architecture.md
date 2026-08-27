@@ -5,13 +5,13 @@ description: "レジストリグラフが成長しても構成可能・テスト
 
 # アプリケーションアーキテクチャ
 
-Wippy アプリケーションはソースファイルのツリーではありません — それは**レジストリエントリのグラフ**です。コードは `function.lua` と `process.lua` のエントリに存在し、それらを結び付けるすべて — どの関数が HTTP ルートに応答するか、サービスがどのプロセスを監督するか、どのライブラリがどれをインポートするか — は `_index.yaml` で宣言されます。アプリを構造化するとは、そのグラフが成長しても構成可能・テスト可能・起動可能であり続けるように、**グラフを名前空間へどう分割するか**を決めることです。
+Wippy application は、source file で表現された**registry entry の graph**です。コードは `function.lua` や `process.lua` などの entry に置かれ、`_index.yaml` file が function、route、service、library の接続を宣言します。application structure は、その graph が成長しても構成可能、test 可能、boot 可能であり続けるよう、namespace への分割方法を決定します。
 
-このページはレイアウトの背後にある考え方を扱います。機械的なルール（ファイル形式、命名、`_index.yaml` の配置場所）については [YAML & プロジェクト構造](start/structure.md)を、エントリ種別そのものについては[エントリ種別ガイド](guides/entry-kinds.md)を参照してください。
+このページでは、その graph を整理する方法の 1 つを説明します。file format、命名、`_index.yaml` の配置については [YAML とプロジェクト構造](../start/structure.md)、entry definition については[エントリ種別ガイド](../guides/entry-kinds.md)を参照してください。
 
-## 単位はスライス
+## Feature slice :id=feature-slices
 
-ファイルの種類ではなく、**機能**で整理します。スライスは 1 つのケイパビリティをエンドツーエンドで所有し — そのデータベースアクセス、長時間稼働するプロセス、HTTP サーフェス、そしてそれらが共有する語彙 — 1 つの名前空間プレフィックスの下に存在します：
+有用な既定方針は、file type ではなく **feature** で整理することです。slice は 1 つの capability を end-to-end で所有し、その database access、長時間実行される process、HTTP surface、shared vocabulary を 1 つの namespace prefix の下に置きます。
 
 ```
 src/app/jobs/          namespace: app.jobs
@@ -19,11 +19,11 @@ src/app/auth/          namespace: app.auth
 src/app/billing/       namespace: app.billing
 ```
 
-その代替案 — トップレベルの `handlers/`、`models/`、`services/` という分割 — は、すべての機能をツリー全体に散在させ、近接によって互いを結合させます。スライスは機能の影響範囲を 1 つのフォルダの中に閉じ込めます。プロジェクト全体で参照を追いかけることなく、読むことも、テストすることも、削除することもできます。
+feature slice は関連する動作を 1 つの folder にまとめます。top-level の `handlers/`、`models/`、`services/` directory 全体を追跡せずに、capability を読み、test し、変更し、削除しやすくなります。
 
-## スライス内のレイヤー
+## Slice 内の layer :id=layers-within-a-slice
 
-スライスの内部は、**外部の世界に触れるもの**という軸に沿って分割します。これはポーツ・アンド・アダプターズ（ヘキサゴナル）アーキテクチャを、**サブ名前空間**として表現したものです：
+大きな slice では、**外部の世界に触れるもの**を基準にコードを分離します。これは ports-and-adapters（hexagonal）architecture を **sub-namespace** で適用する方法です。
 
 ```
 src/app/jobs/                  namespace: app.jobs          ← shared vocabulary
@@ -33,44 +33,44 @@ src/app/jobs/                  namespace: app.jobs          ← shared vocabular
   api/                         namespace: app.jobs.api      ← http.endpoints
 ```
 
-インポートは**一方向のみ**、最外層から最内層へ流れます：
+import は outer layer から inner layer へ流します。
 
 ```
 api  →  service  →  persist  →  { consts, config, types }
 ```
 
-スライスのルート（共有語彙）は自身の子から何もインポートしません。子はルートをインポートします。どのレイヤーも上に手を伸ばさず、**スライスが別のスライスを直接インポートすることもありません** — スライス間の共有は共通の親名前空間（例：`app.core:types`）を経由し、決して横方向には行いません。
+slice root は shared vocabulary を保持し、自身の child を import しません。child は root を import できます。slice 間の直接 import は避け、shared definition は `app.core:types` など共通の parent namespace に置きます。
 
 <note>
-名前空間の境界は見た目のためではありません。それはランタイムが依存関係を注入し、起動順序を解決する継ぎ目です。インポートの方向こそが、有効な起動順序の存在を保証するものです — <a href="#why-this-shape">なぜこの形なのか</a>を参照してください。
+namespace は entry ID を整理しますが、それだけで dependency や injection seam が生まれるわけではありません。明示的な <code>imports</code>、kind 固有の reference、<code>ns.requirement</code> target がそれらの関係を作ります。一貫した方向にすることで、結果の graph が明示的になります。<a href="#why-this-shape">この形を使う理由</a>を参照してください。
 </note>
 
-より小さなスライスでは形式を畳み込めます — ライブラリと 1 つのエンドポイントを持つ単一の `_index.yaml` で構いません。どの規模でも生き残るルールは、フォルダの数ではなく**インポートの方向**です。
+小さな slice では、library と endpoint を 1 つの `_index.yaml` にまとめられます。重要なのは folder の数ではなく **import の方向**です。
 
 ## 共有語彙
 
-よく構造化されたスライスのルートには 3 つのファイルが繰り返し現れます。それらは、すべてのレイヤーが読むが、どのレイヤー*でもない*ものを保持します：
+slice root には通常、3 つの file が置かれます。slice の layer が共有する definition を保持します。
 
 | ファイル | 保持するもの | ケイパビリティ |
 |------|--------------|--------------|
 | `consts.lua` | ステートマシン、列挙、キューの階層、プロセスのレジストリ ID。データベースの `CHECK` 制約を反映する値。 | なし |
-| `config.lua` | コード上のデフォルトにフォールバックする、環境変数で調整可能なノブ（`env.get(KEY) or DEFAULT`）。値を任意にするために `env.variable` エントリを必要としない。 | `env` |
+| `config.lua` | `env.get(KEY)` が `errors.NOT_FOUND` を返した場合にだけ code default を適用し、permission error や backend error は伝播する helper を持つ env-tunable knob。値を任意にするための `env.variable` entry は不要。 | `env` |
 | `types.lua` | エンティティの形（`type Job = { ... }`）— 永続化レイヤーが返す行。 | なし |
 
-`consts` と `types` は**ホストケイパビリティを一切宣言しません** — テーブルを返す純粋な `library.lua` です。これは意図的です：ドメイン語彙は I/O を実行できないため、ビジネスロジックへと漂流することがなく、データベースもプロセスホストもなしにユニットテストできます。
+`consts` と `types` は **host capability を宣言しない**、table を返す純粋な `library.lua` entry です。domain vocabulary を I/O から分離すると、database や process host なしで test できます。
 
-この語彙は**スライスプライベート**に保ちます。スライス間で共有される定数と型は共通の親に置き、そこへのインポートを通じて参照します — 決して各スライスへコピーしません。
+この vocabulary は **slice-private** に保ちます。slice 間で共有する constant と type は共通の parent namespace に置き、copy ではなく import します。
 
-## ケイパビリティはレイヤーごとに揃う
+## Layer ごとの capability :id=capabilities-by-layer
 
-各エントリは必要なホストケイパビリティを `modules:` で宣言します。レイヤー化されたスライスでは、これらはきれいに揃います：
+Lua entry は非 ambient module を `modules:`、registry-backed dependency を `imports:` で宣言します。layered slice では、dependency を責務に合わせて配置できます。
 
-- `persist/*` は `sql` を宣言 — そしてそれ以外はデータベースアクセスを得ません。
-- `service/*` は `channel` とプロセスホストのケイパビリティを宣言 — そしてそれ以外はスポーンも監督もしません。
-- `api/*` はエンドポイントがリクエストを整形するのに必要なものを宣言します。
-- ルートの語彙は何も宣言しません。
+- `persist/*` は `sql` を宣言し、database access を persistence layer に保ちます。
+- `service/*` は process orchestration と service dependency を service layer に保ちます。`process` と `channel` global は ambient なので `modules:` 宣言は不要です。
+- `api/*` は `http` などの module を宣言し、呼び出す function や library を import します。
+- root vocabulary には非 ambient module も infrastructure import も不要です。
 
-その見返りは、あらゆるケイパビリティの影響範囲がちょうど 1 つのレイヤーに収まることです。データベースに書き込めるすべてのコードを知りたければ、`persist/` を読めばよいのです。依存関係逆転は抽象的な原則であることをやめ、grep できるプロパティになります。
+これにより module visibility が既知の layer に限定されます。ただし authorization grant ではありません。`db.get` など保護対象 operation を runtime で許可するかは ABAC policy が別に判断します。database handle を要求できるコードを review するには、`persist/`、その module 宣言、execution context に適用された policy を確認します。
 
 ## アプリケーションとコンポーネント
 
@@ -78,36 +78,34 @@ api  →  service  →  persist  →  { consts, config, types }
 
 **アプリケーション**は、トップレベルのデプロイ可能なグラフです。具体的なインフラストラクチャ — `http.service`、`process.host`、データベース接続 — をルート名前空間（慣例として `app`）の下に所有し、すべてを自分で配線します。
 
-**コンポーネント**は、ホストに*マウントされる*公開可能なモジュールです。ホストのデータベースやルーターを知らないため、それらを名指しできません。代わりに**穴のインターフェース** — `ns.requirement` エントリ — を宣言し、ホストがコンポーネントに依存するときにそれを埋めます。内部的には、コンポーネントはアプリケーションスライスとまったく同じ構造です：同じレイヤー、同じ語彙、同じインポート方向。唯一の追加は、その縁にある要件インターフェースです。
+**コンポーネント**は host に mount される publish 可能な module です。host の database ID や router ID を知らないため、host が提供する `ns.requirement` entry の interface を宣言します。内部では application slice と同じ layer、vocabulary、import direction を使えます。
 
 これは 2 つのカテゴリではなくスペクトラムです：
 
 - **単一アプリ、内部スライス** — スライスは `src/app/` の下に存在し、`app:db` や `app:processes` を参照してアプリのインフラストラクチャを直接共有します。要件インターフェースは不要です。外部から何もマウントされません。（フォーカスされたサービスはこのように構築します。）
 - **マルチコンポーネント構成** — 各コンポーネントは、`ns.definition` と `ns.requirement` インターフェースを持つ独立した公開可能なモジュールで、ホストが `ns.dependency` を通じて構成します。ホストは各要件（データベース、プロセスホスト、ルーター）を一度だけ埋めます。（再利用可能なパーツのプラットフォームはこのように構築します。）
 
-スライスが**自分の管理下にないものに消費される**ことを意図しているかどうかで選択します。そうであれば、要件インターフェースを与えて公開します。そうでなければ、アプリのインフラストラクチャを直接参照させ、形式を省きます。レイヤリングは両端で不変です。再利用に応じてスケールするのはパッケージングです。
+slice が**管理外の host に利用される**かどうかで選びます。再利用可能な component には requirement interface が必要です。internal slice は application infrastructure を直接参照できます。再利用に応じて packaging は変わりますが、内部 layering は同じままにできます。
 
-要件/依存関係のメカニズムについては[コンポーネントの構築](guides/components.md)を、ロックファイル側については[依存関係管理](guides/dependency-management.md)を参照してください。
+requirement/dependency mechanism は[コンポーネントの構築](../guides/components.md)、lock file は[依存関係管理](../guides/dependency-management.md)を参照してください。
 
-## なぜこの形なのか {#why-this-shape}
+## この形を使う理由 :id=why-this-shape
 
-上記の規律はスタイルではありません。各ルールは、ランタイムがグラフを構成し起動する方法にとって、荷重を支える存在です：
+この構造は composition、capability review、boot-order analysis を支えます。
 
-**名前空間の境界は注入の継ぎ目です。** レイヤーは明示的な `imports:` のみを通じてリンクし、別々の名前空間に存在するため、`ns.requirement` メカニズムには注入する具体的なターゲットがあります — ホストは自分のデータベースを `persist` レイヤーのエントリに、プロセスホストを `service` レイヤーのエントリに向けます。もし `persist` が `app:db` を直接つかんでいたら、そのコンポーネントは別のホストにマウントできません：埋めるべき穴が存在しないからです。レイヤリングこそが、コンポーネントを**再配置可能**にするものです。
+**Requirement target が injection seam です。** 異なる namespace は target ID を読みやすくしますが、injection を行うのは `ns.requirement.targets` です。host は database ID を persistence entry に、process-host ID を service entry に提供できます。代わりに `app:db` を直接参照すると、component がその host convention に結合します。
 
-**一方向のインポートは、起動順序の存在を保証します。** ランタイムは起動時にエントリグラフを解決し、トポロジカル順序を見つけなければなりません。`api → service → persist → root`、決して横にも上にも向かわない — これはグラフが構造上非巡回であることを意味します。共有の親を経由してルーティングされるスライス間の結合は、ローダーが順序付けできないサイクルへとスライスを絡ませる代わりに、各スライスを独立してマウント可能に保ちます。
+**一方向の reference は registry transition を解決可能に保ちます。** registry は宣言済み dependency path を抽出し、dependency が dependent より先に作成され、後に削除されるよう変更を topological order に並べます。`api → service → persist → root` という方向は graph を acyclic に保ちやすくします。parent namespace は整理上の convention にすぎず、shared entry には明示的な reference が必要です。
 
-**レイヤーごとにスコープされたケイパビリティは、影響範囲を限定します。** ホストケイパビリティはエントリ単位で付与されます。`persist` のみが `sql` を宣言していれば、データベースに到達できるコードの集合は 1 つのディレクトリであり、一目で監査できます — アプリ全体から創発する性質ではありません。
+**layer ごとに scope した module は明確な boundary を持ちます。** 各 Lua chunk は宣言済み import と非 ambient module を resolve でき、未宣言の registry module は module resolution で fail closed します。runtime policy check は別の boundary です。persistence entry だけが `sql` を宣言すれば、database handle を要求できるコードを特定して audit しやすくなります。
 
-**レイヤリングはテスト容易性の勾配を生みます。** 純粋な語彙は外部の世界なしにテストできます。`persist` のテストはデータベースには触れますが、ワーカーには触れません。そしてモジュール全体の**マウントテスト**が、ユニットテストが意図的に見ない継ぎ目を監査します — 監督されるすべてのサービスが実在のプロセスを指していること、スポーンされるすべての ID が解決されること、すべての要件が埋まっていること。この勾配が得られるのは、レイヤーが実際に分離可能な場合だけです。
+**layering は異なる test scope を支えます。** vocabulary は infrastructure なしで test できます。persistence test は worker を起動せずに database を利用できます。module 全体の **mount test** では、supervise 対象の全 service が process を指すこと、spawn 対象の全 ID が resolve されること、全 requirement が満たされることを確認します。
 
-短く言えば：ここでのヘキサゴナルなレイヤリングは、要件注入、レイヤー単位のケイパビリティスコープ、非巡回な起動解決のすべてが同時に成立する唯一の形です。ランタイムの構成モデルが機能するには、ポーツ・アンド・アダプターズの分割が*必要*なのです — この規律こそが、起動するグラフと、他者がマウントできるコンポーネントを買い取る対価です。
+## 関連項目 :id=see-also
 
-## 関連項目
-
-- [YAML & プロジェクト構造](start/structure.md) — ファイル形式、命名、名前空間
-- [コンポーネントの構築](guides/components.md) — `ns.definition`、`ns.requirement`、マウント
-- [依存関係管理](guides/dependency-management.md) — ロックファイル、モジュールの利用
-- [レジストリ](concepts/registry.md) — エントリの保存と解決のしくみ
-- [エントリ種別ガイド](guides/entry-kinds.md) — すべてのエントリ種別
-- [プロセスモデル](concepts/process-model.md) — サービス、スーパービジョン、ホスト
+- [YAML とプロジェクト構造](../start/structure.md) — file format、命名、namespace
+- [コンポーネントの構築](../guides/components.md) — `ns.definition`、`ns.requirement`、mount
+- [依存関係管理](../guides/dependency-management.md) — lock file、module の利用
+- [レジストリ](./registry.md) — entry の保存と resolve
+- [エントリ種別ガイド](../guides/entry-kinds.md) — すべての entry kind
+- [プロセスモデル](./process-model.md) — service、supervision、host

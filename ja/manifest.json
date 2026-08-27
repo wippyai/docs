@@ -28,14 +28,14 @@
   {
     "title": "Core Concepts",
     "children": [
-      {"title": "Compute Units", "path": "concepts/compute-units"},
-      {"title": "アーキテクチャ", "path": "concepts/architecture"},
-      {"title": "Registry", "path": "concepts/registry"},
+      {"title": "コンピュートユニット", "path": "concepts/compute-units"},
+      {"title": "アプリケーションアーキテクチャ", "path": "concepts/architecture"},
+      {"title": "レジストリ", "path": "concepts/registry"},
       {"title": "セキュリティモデル", "path": "concepts/security-model"},
-      {"title": "Process Model", "path": "concepts/process-model"},
-      {"title": "クラスタ", "path": "concepts/cluster"},
-      {"title": "Functions", "path": "concepts/functions"},
-      {"title": "Workflows", "path": "concepts/workflows"}
+      {"title": "プロセスモデル", "path": "concepts/process-model"},
+      {"title": "クラスター", "path": "concepts/cluster"},
+      {"title": "関数", "path": "concepts/functions"},
+      {"title": "ワークフロー", "path": "concepts/workflows"}
     ]
   },
   {
