@@ -261,12 +261,12 @@
   {
     "title": "Tutorials",
     "children": [
-      {"title": "Hello World", "path": "tutorials/hello-world"},
-      {"title": "CLI Applications", "path": "tutorials/cli"},
-      {"title": "Echo Service", "path": "tutorials/echo-service"},
-      {"title": "Channels", "path": "tutorials/channels"},
-      {"title": "Processes", "path": "tutorials/processes"},
-      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Hola mundo", "path": "tutorials/hello-world"},
+      {"title": "Aplicaciones CLI", "path": "tutorials/cli"},
+      {"title": "Servicio de Eco", "path": "tutorials/echo-service"},
+      {"title": "Introducción a canales y concurrencia", "path": "tutorials/channels"},
+      {"title": "Introducción a procesos y mensajería", "path": "tutorials/processes"},
+      {"title": "Recetas de supervisión de procesos", "path": "tutorials/supervision"},
       {"title": "Task Queue", "path": "tutorials/task-queue"},
       {"title": "Testing", "path": "tutorials/testing"},
       {"title": "Authentication", "path": "tutorials/auth"},
