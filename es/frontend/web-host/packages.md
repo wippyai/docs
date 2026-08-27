@@ -321,10 +321,11 @@ subpaths como `primevue/button` y `primevue/dialog`. Las superficies
 `view.page`, `view.component` y `w-iframe` comparten esas claves mediante
 `wippy/views`, pero conservan sus límites de renderizado.
 
-El helper `customElements.define(...)` puede declarar una etiqueta mediante
-`?declare-tag=tagName`; una declaración ausente suele producir
-`[Vue warn]: Failed to resolve component`. En Pinia, `defineStore` registra el
-store. El helper genérico se exporta literalmente como
+El helper del paquete `define(import.meta.url, Class)` lee
+`?declare-tag=tagName` para el autoload. `define('tag-name', Class)` y
+`customElements.define(...)` son formas de registro manual fuera de ese sistema;
+una declaración ausente suele producir `[Vue warn]: Failed to resolve component`.
+En Pinia, `defineStore` registra el store. El helper genérico se exporta literalmente como
 `export const useComponentProps = () => useProps<ComponentProps>()`, y sus
 constantes compartidas viven en `src/constants.ts`.
 

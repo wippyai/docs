@@ -260,15 +260,21 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 |--------|-------------|
 | `.snapshot` | Snapshot síncrono o `null` fuera de managed |
 | `.resizePanel(id, size)` | Redimensiona en el breakpoint activo |
-| `.collapsePanel(id)` / `.expandPanel(id)` | Colapsa/expande un panel collapsible |
-| `.openDrawer(id)` / `.closeDrawer(id)` / `.toggleDrawer(id)` | Controla drawer |
+| `.collapsePanel(id)` | Colapsa un panel declarado con `collapsible: true` |
+| `.expandPanel(id)` | Expande un panel colapsado |
+| `.openDrawer(id)` | Abre un panel en modo drawer |
+| `.closeDrawer(id)` | Cierra un panel en modo drawer |
+| `.toggleDrawer(id)` | Alterna un panel en modo drawer |
 | `.movePanel(id, target)` | Mueve en el árbol |
 | `.removePanel(id)` | Elimina de todos los breakpoints |
 | `.updatePanel(id, def)` | Aplica patch; `props` se fusiona superficialmente y los campos superiores sustituyen |
-| `.addFloating(id, def)` / `.removeFloating(id)` | Gestiona flotantes |
+| `.addFloating(id, def)` | Añade un panel flotante |
+| `.removeFloating(id)` | Elimina un panel flotante |
 | `.openModal(id, def)` | Abre modal; en 0.0.56 `def` es obligatorio y se fusiona con la declaración. Usa `<dialog>.showModal()` salvo `useNativeDialog: false`. Reabrir el mismo ID no hace nada |
 | `.closeModal(id)` | Cierra modal |
-| broadcast / send / on | Bus |
+| `.broadcast(channel, payload)` | Publica a todos los paneles |
+| `.send(target, channel, payload)` | Publica a un panel |
+| `.on(channel, handler)` | Se suscribe a un canal del bus |
 
 `openModal()` documenta infraestructura interna; la interfaz Vue debe usar `Dialog` de PrimeVue o confirmación del host.
 
@@ -424,9 +430,11 @@ activo. Use `useHostVisibilityRefresh()` para el refresco al reaparecer.
 La API de bus presenta las firmas `.broadcast(channel, payload)`,
 `.send(target, channel, payload)` y `.on(channel, handler)`. Las operaciones
 subyacentes son `broadcast`, `send` y `on`; el coordinador vuelve a usar
-`broadcast`, `send` y `on` al distribuir intents de `@HOST/intent`. El wrapper
-con scope debe obtenerse desde `@wippy-fe/proxy`, nunca importando un host sin
-scope.
+`broadcast`, `send` y `on` al distribuir intents de `@HOST/intent`. No importe
+`host` directamente desde `@wippy-fe/proxy` para un componente, porque pierde
+el `sourcePanelId`. Obtenga el wrapper con scope mediante `getWippyHost(this)`
+de `@wippy-fe/webcomponent-core` o `useHost()` de
+`@wippy-fe/webcomponent-vue`.
 
 La API del layout incluye `host.layout.snapshot`,
 `host.layout.updatePanel(id, def)`, `host.layout.openDrawer(id)`,

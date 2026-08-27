@@ -111,7 +111,8 @@ El sobre es `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`; e
 | `CmdSetContext` | `cmd-set-context` | Hijo → Host | Contexto de chat |
 | `CmdHandleError` | `cmd-handle-error` | Hijo → Host | Error |
 | `CmdLogout` | `cmd-logout` | Hijo → Host | Logout |
-| `CmdSubscribe` / `CmdUnSubscribe` | `cmd-subscribe` / `cmd-unsubscribe` | Hijo → Host | Suscripción |
+| `CmdSubscribe` | `cmd-subscribe` | Hijo → Host | Se suscribe a un topic WebSocket |
+| `CmdUnSubscribe` | `cmd-unsubscribe` | Hijo → Host | Cancela la suscripción a un topic |
 | `OnSubscription` | `on-subscription` | Host → Hijo | Evento de suscripción |
 | `CmdStateGet` | `cmd-state-get` | Hijo → Host | Lee una clave de estado persistido |
 | `CmdStateSet` | `cmd-state-set` | Hijo → Host | Escribe una clave de estado persistido |
@@ -169,7 +170,12 @@ frame.srcdoc = sourceHtml
 | `nav-owner-route` | objeto con ruta y navId opcional | Ruta hija; bubbles y composed |
 | `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | Bridge |
 
-Métodos: `post(channel, payload?)` y `request<T>(channel, payload?, { timeoutMs }?)`. Parts: `loader`, `error`, `frame`.
+| Método | Descripción |
+|--------|-------------|
+| `post(channel, payload?)` | Envía al hijo un mensaje de bridge sin esperar respuesta. |
+| `request<T>(channel, payload?, { timeoutMs }?)` | Envía una solicitud de bridge y se resuelve con el valor devuelto por el handler. |
+
+Parts de Shadow DOM: `loader`, `error`, `frame`.
 
 Con `nav-owner`, no se actualiza URL ni se devuelve `UrlWasUpdatedInParent`. `path` es la ruta interna sin prefijo; el padre la mapea:
 
@@ -238,7 +244,13 @@ Resuelve metadatos y contenido y delega tipos iframe a `<w-iframe>`. Detecta HTM
 
 ### Eventos
 
-Eventos: `loading`, `load`, `error`, `nav-owner-route` y `wippy-message`, con los mismos detalles del iframe.
+| Evento | Cuándo | Detalle |
+|--------|--------|---------|
+| `loading` | Antes de iniciar el fetch | — |
+| `load` | Después de cargar el iframe | — |
+| `error` | Falla el fetch o el renderizado | Error original |
+| `nav-owner-route` | Cambia la ruta hija con nav-owner | `{ path: string, navId?: number }` |
+| `wippy-message` | Mensaje de bridge del iframe anidado | `{ channel, payload, requestId?, respond?, reject? }` |
 
 ### Estado CSS y parts
 
@@ -257,17 +269,22 @@ w-artifact::part(frame)  { border: 0; }
 | Inyecta runtime | Sí | Sí | No |
 | Resuelve metadatos | No | Sí | No |
 | Fetch autenticado | Sí, HTML | Sí, resolver | No |
-| Estado/WebSocket/bridge/nav-owner | Sí | Sí | No |
+| Relay de estado | Sí | Sí | No |
+| Relay de WebSocket | Sí | Sí | No |
+| Bridge padre-hijo | Sí | Sí | No |
+| Compatibilidad con nav-owner | Sí | Sí | No |
 | Detecta contenido | No | Sí | No |
-| Parts y `status` | Sí | Sí | No |
+| Parts CSS | `loader`, `error`, `frame` | `loader`, `error`, `frame` | — |
+| Atributo `status` | Sí | Sí | No |
 
 Use `<w-artifact>` con ID Wippy, `<w-iframe>` con HTML ya disponible y un iframe bruto solo para contenido externo sin API Wippy.
 
 **Detalles normativos del transporte**
 
 La superficie pública se importa siempre desde `@wippy-fe/proxy`. El paquete
-`@wippy-fe/proxy` expone getters síncronos para `host`, `api`, `on` y `config`,
-incluidos `$W.host()` y `$W.api()`.
+`@wippy-fe/proxy` expone getters síncronos para `host`, `api`, `on` y `config`.
+Los accesores `$W.host()` y `$W.api()` pertenecen al global interno `window.$W`:
+las aplicaciones y los componentes no deben leerlos ni asignarlos.
 Los contextos `view.page` iframe y Fragment consumen `@wippy-fe/proxy`, y un
 `view.component` directo también consume `@wippy-fe/proxy`. En total, el
 runtime, los ejemplos de página, el bridge, el router y la inyección HTML
@@ -288,8 +305,9 @@ El embedding manual `iframe.html?waitForCustomConfig` también espera
 `AppConfig`. El resultado final es el mismo `AppConfig` que reciben la página
 y sus hijos; un cuarto snapshot de `AppConfig` se mantiene en el runtime.
 
-El protocolo se identifica con `IFrameMessageType` y el valor de `type`
-predeterminado `'@gen2-chat'`; el sobre tiene otro campo `type` para la acción.
+El protocolo se identifica con `IFrameMessageType`. El sobre usa el campo
+`type` con el valor predeterminado `'@gen2-chat'` y un campo distinto, `action`,
+para la acción.
 Los cambios de ruta usan `CmdRouteChanged` y el host vuelve a tratar
 `CmdRouteChanged` al proyectar navegación. El evento público
 `nav-owner-route` transporta `{ path: string, navId?: number }`; el mismo
@@ -320,8 +338,8 @@ duplicados mediante `console.warn`.
 `<w-iframe>` admite `src`, `srcdoc`, `auto-height`, `nav-owner` y un `id` de
 recurso. La propiedad `element.srcdoc = html` actualiza el `srcdoc`; un segundo
 `srcdoc` aparece en la composición anidada. El elemento `<w-iframe>` expone
-parts `loader`, `frame` y `status`; tanto `loader` como `frame` mantienen el
-mismo significado en `<w-artifact>`. El evento `nav-owner-route` se compone
+los parts `loader`, `error` y `frame`, además del atributo `status`; esos parts
+mantienen el mismo significado en `<w-artifact>`. El evento `nav-owner-route` se compone
 con `composed`. La base se resuelve desde `document.baseURI` y el título desde
 `document.title`.
 

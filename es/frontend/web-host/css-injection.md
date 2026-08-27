@@ -16,14 +16,14 @@ La fachada expone ámbitos **global** (`custom_css`, `css_variables`, `icon_sets
 - Las propiedades CSS (`*_css_variables`) heredan a un host WC. WippyElement puentea nombres globales y children/page por su raíz interna de tema. Esto es independiente de `customCss`; los nombres solo host dependen de la herencia ordinaria.
 - Los selectores (`*_custom_css`) no cruzan por sí solos iframe o shadow. El runtime los inyecta en `view.page` y, desde Host 1.0.43, en shadow roots de `view.component`, salvo que el componente desactive `customCss`.
 
-| Ajuste | Host | Página hija | Shadow de componente |
-|--------|------|-------------|----------------------|
-| `custom_css` global | ✓ | ✓¹ | ✓ 1.0.43+¹ |
-| `css_variables` global | ✓ | ✓ | ✓ heredado + bridge |
-| `host_custom_css` | ✓ | ✗ | ✗ |
-| `host_css_variables` | ✓ | ✗ | Solo WC montados en host² |
-| `children_custom_css` | ✗ | ✓¹ | ✓ 1.0.43+¹ |
-| `children_css_variables` | ✗ | ✓ | Solo WC dentro de página² |
+| Ajuste de la fachada | Entrega | Documento del shell host | Realm hijo `view.page` | Shadow root de `view.component` |
+|----------------------|---------|---------------------------|-------------------------|---------------------------------|
+| `custom_css` (global) | Reglas de selectores | ✓ inyectadas | ✓ inyectadas¹ | ✓ inyectadas (1.0.43+, opt-out)¹ |
+| `css_variables` (global) | Propiedades personalizadas | ✓ bloques del modo efectivo | ✓ bloques del modo efectivo | ✓ heredadas y puenteadas |
+| `host_custom_css` (host) | Reglas de selectores | ✓ inyectadas | ✗ | ✗ |
+| `host_css_variables` (host) | Propiedades personalizadas | ✓ `:root` | ✗ | Solo WC montados en el host² |
+| `children_custom_css` (children) | Reglas de selectores | ✗ | ✓ inyectadas¹ | ✓ inyectadas (1.0.43+, opt-out)¹ |
+| `children_css_variables` (children) | Propiedades personalizadas | ✗ | ✓ `:root` | Solo WC de página² |
 
 ¹ Para hijos se compone CSS global + children; los flags iframe/componente son gates. Fragment aplica la hoja compuesta sin el flag iframe.
 
@@ -297,11 +297,14 @@ theming: {
 | `--wippy-host-message-shadow` | `0 1px 2px 0 rgba(...)` | Sombra |
 | `--wippy-host-message-font-size` | `0.875rem` | Texto |
 | `--wippy-host-message-radius` | `1rem` | Radio |
-| `--wippy-host-message-padding-x` / `--wippy-host-message-padding-y` | `1rem` / `0.5rem` | Padding |
-| `--wippy-host-message-gap` / `--wippy-host-message-spacing` | `0.5rem` / `1rem` | Espaciado |
+| `--wippy-host-message-padding-x` | `1rem` | Padding horizontal |
+| `--wippy-host-message-padding-y` | `0.5rem` | Padding vertical |
+| `--wippy-host-message-gap` | `0.5rem` | Separación interna |
+| `--wippy-host-message-spacing` | `1rem` | Separación entre mensajes |
 | `--wippy-host-message-user-bg` | `primary-50` | Usuario |
 | `--wippy-host-message-agent-bg` | `yellow-50/surface-800` | Agente |
-| `--wippy-host-tool-bg` / `--wippy-host-tool-border` | `help-50` / `help-300` | Herramienta |
+| `--wippy-host-tool-bg` | `help-50` | Fondo de herramienta |
+| `--wippy-host-tool-border` | `help-300` | Borde de herramienta |
 | `--wippy-host-avatar-size` | `2rem` | Avatar |
 
 ### Variables de input

@@ -116,7 +116,7 @@ facade shell의 bootstrap token은 `session_type`과 별개입니다. shell은 �
 
 공유 brand styling은 모든 surface에 닿도록 전역 `custom_css`와 `css_variables`에 두세요. sidebar, chat panel, splitter 같은 host 전용 요소에는 `host_custom_css`와 `host_css_variables`를 사용합니다. `view.component`는 `customCss: false`로 shadow-root `*_custom_css`를 opt out할 수 있습니다.
 
-#### Theme Mode and Persistence
+#### 테마 모드 및 유지
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -265,7 +265,7 @@ entries:
 | Field | Description |
 |-------|-------------|
 | `group` | sidebar에 표시되는 category 이름 |
-| `group_icon` | category header icon |
+| `group_icon` | 카테고리 헤더 아이콘 |
 | `group_order` | group 정렬 위치(낮을수록 위) |
 | `group_placement` | `"sidebar"`(sidebar) 또는 `"default"`(main 영역에만 표시) |
 
@@ -292,9 +292,9 @@ wippy publish --embed facade:public_files
 
 ## 참고
 
-- [Views](./views.md) — Page and component system
-- [HTTP Server](../http/server.md) — HTTP service configuration
-- [Framework Overview](./overview.md) — Framework module usage
+- [Views](./views.md) — 페이지 및 컴포넌트 시스템
+- [HTTP 서버](../http/server.md) — HTTP 서비스 구성
+- [프레임워크 개요](./overview.md) — 프레임워크 모듈 사용법
 - [Facade Entry Point](../frontend/web-host/entry-point.md) — Facade가 Web Host를 시작하는 방식
 - [CSS Injection](../frontend/web-host/css-injection.md) — Facade 테마가 자식 iframe에 도달하는 방식
 - [Render Engines](../frontend/web-host/render-engines.md) — iframe 및 Web Fragment 페이지 rendering
