@@ -57,7 +57,7 @@ sequenceDiagram
     A->>A: execute doc_search
     A->>L: step(conversation + tool result)
     L->>A: tool_call: create_tool(name, source, schema)
-    A->>R: evaluate deny policies + changeset create
+    A->>R: apply namespace denylist + changeset create
     R->>A: ok
     A->>L: step(conversation + tool result)
     L->>A: tool_call: load_tool("app.generated:current_time")
@@ -156,7 +156,7 @@ entries:
 
 ### Security Policies
 
-Two `security.policy` entries restrict which namespaces the agent can write to:
+Two `security.policy` entries form an application-level namespace denylist:
 
 ```yaml
   - name: deny_core_ns
@@ -178,7 +178,13 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
       - agent_security
 ```
 
-These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
+These policies are loaded as a named scope (`app:agent_security`) by
+`create_tool`. The helper rejects an explicit `deny` for `app:*` (core entries,
+models, and the agent definition) or `app.tools:*` (built-in tools), but treats
+the unmatched `undefined` result for `app.generated:*` as passing its bespoke
+filter. This is not Wippy runtime authorization: guarded operations require an
+explicit `allow` from the execution context, including the security-module
+operations shown below and `registry.apply` inside `changes:apply()`.
 
 See [Security Model](../system/security.md) for details on policy evaluation.
 
@@ -284,7 +290,9 @@ The prompt gives the agent three operating rules:
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
+The process runs as a terminal command. `create_tool` applies the package's
+denylist before writing, but that filter does not supply the command's runtime
+security context.
 
 Imports:
 
@@ -367,7 +375,8 @@ return { handler = handler }
 
 ### create_tool
 
-This tool evaluates namespace deny policies and creates a `function.lua` registry entry with inline Lua source.
+This tool evaluates the package's namespace denylist and creates a
+`function.lua` registry entry with inline Lua source.
 
 The `modules` field on the generated entry controls which non-ambient runtime modules the
 tool can require. The `process` module is ambient for every executable Lua entry, so
@@ -390,7 +399,10 @@ local ALLOWED_MODULES = {
 }
 ```
 
-**Policy evaluation** — `create_tool` loads the `agent_security` named scope and evaluates the deny policies against the target entry ID. Writes to `app:*` or `app.tools:*` are denied; writes to `app.generated:*` pass (no matching deny policy):
+**Denylist evaluation** — `create_tool` loads the `agent_security` named scope.
+Writes to `app:*` or `app.tools:*` are rejected when the scope returns `deny`;
+an unmatched `app.generated:*` target returns `undefined` and passes this
+application filter:
 
 ```lua
 local actor = security.new_actor("service:agent", { role = "agent" })
@@ -404,6 +416,10 @@ if result == "deny" then
     return { error = "policy denied: " .. action .. " on " .. id }
 end
 ```
+
+This check does not authorize the registry mutation. The current command also
+needs a runtime actor and scope that explicitly allow the security-module calls
+and `registry.apply`.
 
 **Registry write** — the entry is written with source in `data.source` and only the allowed modules:
 
@@ -562,11 +578,12 @@ session.conversation:add_system("Conversation summary:\n\n" .. summary)
 
 ## Security Model
 
-Namespace deny policies and module-level access controls constrain generated tools.
+An application denylist and module-level access controls constrain generated
+tools, but they do not replace runtime authorization.
 
 ```mermaid
 flowchart TD
-    LLM[LLM generates tool] --> P{Namespace Deny Policies}
+    LLM[LLM generates tool] --> P{Application Namespace Denylist}
     P -->|scope:evaluate| Check{Target namespace?}
     Check -->|app.generated:*| OK[No deny match]
     Check -->|app:* or app.tools:*| Deny[Policy Denied]
@@ -577,14 +594,18 @@ flowchart TD
     R --> A[Ambient process API remains available]
 ```
 
-### Namespace Deny Policies
+### Namespace Denylist
 
 | Policy | Resources | Effect |
 |--------|-----------|--------|
 | `deny_core_ns` | `app:*` | deny |
 | `deny_tools_ns` | `app.tools:*` | deny |
 
-`create_tool` loads the `agent_security` policy group and evaluates against the target entry ID. Since deny policies only match `app:*` and `app.tools:*`, writes to `app.generated:*` pass through (result is `undefined`, meaning "not denied").
+`create_tool` loads the `agent_security` policy group and evaluates the target
+entry ID. It deliberately treats `undefined` as "not denied" for this
+application-level filter. Wippy's guarded authorization does not: it permits an
+operation only on explicit `allow`. The context that runs this code must still
+carry the required runtime permissions.
 
 This prevents the agent from:
 - Modifying its own prompt or agent definition (`app:dev_assistant`)
@@ -603,12 +624,12 @@ This tutorial does not define policies for `process.spawn` or `process.exec`. It
 tools are therefore not a complete sandbox: add runtime policies for ambient process
 operations before allowing untrusted tool source.
 
-## Run
+## Run and Current Package Limitation
 
-The runnable artifact is the Hub module. Start in a fresh empty directory that does
-not contain `wippy.lock`; Hub bootstrap rejects an unrelated or multi-root lock.
-The first run creates the deployment lock, and later runs from the same directory
-reuse that matching lock.
+The published artifact is the Hub module. Start in a fresh empty directory that
+does not contain `wippy.lock`; Hub bootstrap rejects an unrelated or multi-root
+lock. The first run creates the deployment lock, and later runs from the same
+directory reuse that matching lock.
 
 ```bash
 mkdir micro-agi-deploy
@@ -619,31 +640,19 @@ wippy run wippy/micro-agi agent
 The command downloads the selected module version, resolves its declared
 dependencies, and invokes its `agent` command.
 
-It still requires the provider credentials and model configuration expected by that
-module, plus registry/network access for Hub download and documentation search. This
-page does not provide a local clone or lockfile, so it does not claim a reproducible
-source build.
+It still requires the provider credentials and model configuration expected by
+that module, plus registry/network access for Hub download and documentation
+search. This page does not provide a local clone or lockfile, so it does not
+claim a reproducible source build.
 
-Illustrative interaction (model text, generated names, timestamps, and addresses vary):
-
-```text
-dev assistant (quit to exit)
-
-> what time is it?
-  [doc_search] ok
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:current_time_utc
-  [current_time_utc] ok
-The current UTC time is 2026-02-13T03:13:41Z.
-
-> fetch https://httpbin.org/get and show my ip
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:http_get
-  [http_get] ok
-Your IP is 203.0.113.42.
-```
+At the reviewed release, `wippy/micro-agi` v0.3.1 declares no
+`meta.command.security` context for `agent`. With default strict mode, the
+guarded tool paths—including `funcs.call`, registry reads and writes, and the
+documentation search HTTP request—do not receive the explicit allows they
+require. The tool and self-modification flows above are therefore reference
+designs, not successful default-strict-mode runs. Do not disable strict mode to
+make an untrusted code generator work; the package should first add a least-
+privilege command scope for its required actions.
 
 ## Next Steps
 

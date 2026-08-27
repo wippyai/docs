@@ -81,7 +81,7 @@ iframe/Web Fragment channel.
 
 ### Internals (do not use)
 
-The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. The names are listed to prevent collisions; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
+The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. The names are listed to prevent collisions; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals-do-not-read-or-override).
 
 > `@wippy-fe/proxy` (documented here) is the API your child code uses. The host's own bootstrap, `initWippyApp(config, rootContainer?)`, mounts the whole Web Host on the module-embed / facade path — child app code never calls it.
 

@@ -48,7 +48,7 @@ Related helpers (not proxy access):
 
 `window.$W` and `window.getWippyApi` are **internal** globals installed by the
 runtime. Do not use them directly (see
-[Proxy & Isolation § Internals](./proxy-isolation.md#internals--do-not-read-or-override)).
+[Proxy & Isolation § Internals](./proxy-isolation.md#internals-do-not-read-or-override)).
 
 ## Packages
 

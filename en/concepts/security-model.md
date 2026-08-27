@@ -1,6 +1,6 @@
 ---
 title: "Security Model: Process Isolation and Policy Checks"
-description: How Wippy limits Lua and WASM execution environments and authorizes guarded runtime operations with actors, scopes, and policies.
+description: "How Wippy limits Lua and WASM execution environments and authorizes guarded runtime operations with actors, scopes, and policies."
 ---
 
 # Security Model

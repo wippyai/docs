@@ -151,7 +151,7 @@ attributes should be rewritten to the fragment gateway's asset URLs.
 ```javascript
 window.__WIPPY_PROXY_CONFIG__  // internal — must exist in iframe-hosted mode
 ```
-Undefined means the proxy was not injected before your app ran. App code never reads this directly; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
+Undefined means the proxy was not injected before your app ran. App code never reads this directly; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals-do-not-read-or-override).
 
 **3. Confirm `base: ''` in vite.config.ts:**
 Without `base: ''`, Vite emits absolute asset paths. The app loads fine on your local dev server (which serves from `/`) but 404s when served from a CDN subdirectory.

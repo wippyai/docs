@@ -187,7 +187,7 @@ Those members may change without becoming an application API.
 | `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Child | Per-panel live state delta |
 | `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Child | Layout bus broadcast delivery |
 
-## `<w-iframe>` Custom Element
+## `<w-iframe>` Custom Element :id=w-iframe-custom-element
 
 `<w-iframe>` is the low-level child-page primitive built into the proxy runtime.
 It accepts raw source HTML and, in the normal iframe path, injects the full Wippy
@@ -291,7 +291,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 If you omit `options.timeoutMs`, `host.bridge.request()` (and the parent-side `frame.request()`) default to a 10-second (`10000` ms) deadline. On timeout the returned Promise rejects with an `Error` whose message is `Bridge request <id> timed out after <ms>ms`. A request to a channel the other side has no handler for rejects immediately with `No handler registered for channel "<channel>"` rather than waiting out the deadline.
 
-## `<w-artifact>` Custom Element
+## `<w-artifact>` Custom Element :id=w-artifact-custom-element
 
 `<w-artifact>` resolves artifact or page metadata and content, then delegates iframe-backed types to `<w-iframe>` internally. It handles content-type detection (HTML, Markdown, web page packages, ESM packages, direct-tag components) and provides a higher-level API than raw `<w-iframe>`.
 
