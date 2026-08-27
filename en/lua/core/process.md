@@ -18,7 +18,7 @@ It is available without `require()` and does not need to be listed in `modules:`
 Read the current frame ID or process ID:
 
 ```lua
-local frame_id = process.id()  -- Call chain identifier
+local frame_id = process.id()  -- Registry ID of the current function, process, or workflow definition
 local pid = process.pid()       -- Process ID
 ```
 
@@ -60,12 +60,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 | `host` | string | Host ID (e.g., `"app:processes"`) |
 | `...` | any | Arguments passed to spawned process |
 
-**Permissions:**
-
-- `process.spawn` on process id
-- `process.host` on host id
-- `process.spawn.monitored` on process id (for monitored variants)
-- `process.spawn.linked` on process id (for linked variants)
+All variants require `process.spawn` on the process ID. The monitored variants also require `process.spawn.monitored`, and the linked variants require `process.spawn.linked`. At runtime v0.3.32a, only the module-level `spawn()` checks `process.host` on the host ID; the specialized module-level variants do not perform that host permission check.
 
 ## Process Control
 
@@ -239,7 +234,7 @@ spawner:spawn_linked(id, host, ...)
 spawner:spawn_linked_monitored(id, host, ...)
 ```
 
-These methods require the same permissions as their module-level counterparts.
+All `SpawnBuilder` spawn methods require `process.host` on the host ID in addition to the applicable `process.spawn`, `process.spawn.monitored`, and `process.spawn.linked` permissions.
 
 ### Spawner Exec
 
@@ -326,7 +321,7 @@ Policies can allow or deny an operation based on:
 | `process.spawn` | `spawn*()` | process id |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | process id |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | process id |
-| `process.host` | `spawn*()`, `exec()` | host id |
+| `process.host` | module-level `spawn()`, all `SpawnBuilder` spawn methods, `exec()` | host id |
 | `process.send` | `send()` | target PID |
 | `process.exec` | `exec()` | process id |
 | `process.terminate` | `terminate()` | target PID |
@@ -350,9 +345,13 @@ Some operations require multiple permissions:
 | Operation | Required Permissions |
 |-----------|---------------------|
 | `spawn()` | `process.spawn` + `process.host` |
-| `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
-| `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
-| `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
+| module-level `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` |
+| module-level `spawn_linked()` | `process.spawn` + `process.spawn.linked` |
+| module-level `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` |
+| `SpawnBuilder:spawn()` | `process.spawn` + `process.host` |
+| `SpawnBuilder:spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
+| `SpawnBuilder:spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
+| `SpawnBuilder:spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
 | `exec()` | `process.exec` + `process.host` |
 | spawn with custom actor/scope | spawn permissions + `process.security` |
 
@@ -360,11 +359,10 @@ Some operations require multiple permissions:
 
 | Condition | Kind |
 |-----------|------|
-| No context found | `errors.INVALID` |
-| Frame context not found | `errors.INVALID` |
+| No context found | `errors.INTERNAL` |
+| Frame context not found | `errors.INTERNAL` |
 | Missing required arguments | `errors.INVALID` |
 | Reserved topic prefix (`@`) | `errors.INVALID` |
-| Invalid duration format | `errors.INVALID` |
 | Name not registered | `errors.NOT_FOUND` |
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Name already registered | `errors.ALREADY_EXISTS` |

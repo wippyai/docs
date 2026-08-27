@@ -135,10 +135,14 @@ local future, err = processor:process_async(large_dataset)
 
 -- Wait for result
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
 end
+
+local payload, result_err = future:result()
+if result_err then return nil, result_err end
+local result = payload:data()
 ```
 
 See [Futures](lua/core/future.md) for future methods.
@@ -168,10 +172,11 @@ Create a wrapper with preconfigured context values:
 ```lua
 local c, err = contract.get("app.services:user")
 
-local wrapped = c:with_context({
+local wrapped, err = c:with_context({
     request_id = ctx.get("request_id"),
     user_id = current_user.id
 })
+if err then return nil, err end
 
 local instance, err = wrapped:open()
 ```
@@ -205,7 +210,11 @@ Set the actor and scope used for authorization:
 local security = require("security")
 local c, err = contract.get("app.services:admin")
 
-local secured = c:with_actor(security.actor()):with_scope(security.scope())
+local secured, err = c:with_actor(security.actor())
+if err then return nil, err end
+
+secured, err = secured:with_scope(security.scope())
+if err then return nil, err end
 
 local admin, err = secured:open()
 ```
@@ -233,4 +242,5 @@ Without explicit `with_actor`/`with_scope`, an opened contract inherits the call
 | Method not found | `errors.NOT_FOUND` |
 | No default binding | `errors.NOT_FOUND` |
 | Permission denied | `errors.PERMISSION_DENIED` |
-| Call failed | `errors.INTERNAL` |
+| Contract dispatcher or response conversion failed | `errors.INTERNAL` |
+| Implementation returned an error | Preserves the implementation error kind |

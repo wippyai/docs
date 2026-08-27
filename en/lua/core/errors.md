@@ -32,7 +32,7 @@ local err = errors.new({
 Wrap an error to add context while preserving its kind, retry metadata, and details:
 
 ```lua
-local data, err = db.query("SELECT * FROM users")
+local data, err = db:query("SELECT * FROM users")
 if err then
     return nil, errors.wrap(err, "failed to load users")
 end
@@ -94,12 +94,7 @@ end
 
 ## Retryable Errors
 
-| Typically Retryable | Not Retryable |
-|---------------------|---------------|
-| `TIMEOUT` | `INVALID` |
-| `UNAVAILABLE` | `NOT_FOUND` |
-| `RATE_LIMITED` | `PERMISSION_DENIED` |
-| | `ALREADY_EXISTS` |
+Retryability is error metadata, not a property guaranteed by an error kind. Check the value returned by `err:retryable()` rather than inferring it from `err:kind()`. A result of `nil` means the error does not specify whether retrying is appropriate.
 
 ```lua
 if err:retryable() then

@@ -13,11 +13,16 @@ Streams provide incremental I/O for HTTP, filesystem, and other modules. The mod
 
 ```lua
 -- From HTTP request body
-local stream = req:stream()
+local stream, err = req:stream()
+if err then return nil, err end
 
 -- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## Reading
@@ -111,16 +116,29 @@ local err_msg = scanner:err()          -- scanner error if any
 while true do
     local has_token, err = scanner:scan()
     if err then return nil, err end
-    if not has_token then break end  -- EOF
+    if not has_token then
+        local scan_err = scanner:err()
+        if scan_err then return nil, scan_err end  -- raw scanner error string
+        break  -- clean EOF
+    end
     process(scanner:text())
 end
 ```
+
+When `scan()` returns `false`, check `scanner:err()` before treating the result
+as EOF. Tokenization and underlying read failures are stored on the scanner and
+do not appear in `scan()`'s second return value.
 
 ## Errors
 
 | Condition | Kind |
 |-----------|------|
-| Invalid whence/split type | `INVALID` |
-| Stream closed | `INTERNAL` |
-| Not readable/writable | `INTERNAL` |
-| Read/write failure | `INTERNAL` |
+| Stream closed | `errors.INTERNAL` |
+| Not readable/writable | `errors.INTERNAL` |
+| Read/write/seek failure | `errors.INTERNAL` |
+| Seek on a non-seekable stream | `errors.INTERNAL` |
+| Close, flush, or stat failure | `errors.INTERNAL` |
+| Scanner creation or scan dispatch failure | `errors.INTERNAL` |
+| Scanner tokenization or underlying read failure | Unstructured string from `scanner:err()` |
+
+An unsupported `whence` or scanner split value raises a Lua argument error instead of returning a structured error value.

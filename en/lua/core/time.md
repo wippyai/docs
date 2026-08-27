@@ -368,12 +368,14 @@ Returns a channel that receives one value after the duration. The channel can be
 
 ```lua
 -- Simple timeout
-local timeout = time.after("5s")
+local timeout, err = time.after("5s")
+if err then return nil, err end
 timeout:receive()  -- blocks for 5 seconds
 
 -- Timeout with select
 local response_ch = make_request()
-local timeout_ch = time.after("30s")
+local timeout_ch, err = time.after("30s")
+if err then return nil, err end
 
 local result = channel.select{
     response_ch:case_receive(),
@@ -389,7 +391,7 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Time to wait |
 
-**Returns:** `Channel`
+**Returns:** `Channel, error`
 
 ### `timer`
 
@@ -484,7 +486,8 @@ time.HOUR          -- 60 * MINUTE
 
 -- Example usage
 time.sleep(5 * time.SECOND)
-local timeout = time.after(30 * time.SECOND)
+local timeout, err = time.after(30 * time.SECOND)
+if err then return nil, err end
 ```
 
 ### Format Layouts
