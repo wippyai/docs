@@ -1,12 +1,12 @@
 ---
 title: "클라우드 스토리지"
-description: "<secondary-label ref='external'/"
+description: "AWS credential 및 S3 호환 object storage를 설정합니다."
 ---
 
 # 클라우드 스토리지
 <secondary-label ref="external"/>
 
-사전 서명 URL이 있는 S3 호환 오브젝트 스토리지.
+cloud storage 엔트리는 Lua storage API가 사용하는 AWS credential과 S3 호환 bucket을 설정합니다. 이 페이지는 설정 레퍼런스이며 snippet은 이름이 지정된 bucket과 credential 또는 SDK credential chain이 이미 존재한다고 가정합니다.
 
 ## 엔트리 종류
 
@@ -17,31 +17,40 @@ description: "<secondary-label ref='external'/"
 
 ## AWS 설정
 
+environment system을 통해 등록한 static credential:
+
 ```yaml
 - name: aws_config
   kind: config.aws
-  region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  region: ${env:AWS_REGION}
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
+```
+
+AWS SDK 기본 credential chain(예: IAM role 또는 instance profile):
+
+```yaml
+- name: aws_config
+  kind: config.aws
+  region: ${env:AWS_REGION}
 ```
 
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|----------|-------------|
-| `region` | string | 조건부 | AWS 리전. `region_env`가 설정되지 않은 경우 필수 |
-| `region_env` | string | 조건부 | 리전을 담은 환경 변수 이름 |
-| `access_key_id_env` | string | 아니오 | 액세스 키용 환경 변수 이름 |
-| `secret_access_key_env` | string | 아니오 | 시크릿 키용 환경 변수 이름 |
+| `region` | string | 예 | AWS region. deployment마다 다르면 `${env:NAME}`으로 제공 |
+| `access_key_id` | string | 아니오 | AWS access key ID(inline 또는 `${env:NAME}`) |
+| `secret_access_key` | string | 아니오 | AWS secret access key(inline 또는 `${env:NAME}`) |
 
-자격 증명은 지정된 환경 변수에서 로드됩니다. 정적 자격 증명이 적용되려면 `access_key_id_env`와 `secret_access_key_env`가 모두 비어 있지 않은 값으로 해석되어야 합니다. 그렇지 않으면 AWS SDK 기본 자격 증명 체인(IAM 역할, 인스턴스 프로필 등)이 사용됩니다.
+credential field는 decode 시점에 [environment registry](./env.md)에서 resolve됩니다. default가 없는 modern `${env:NAME}` placeholder는 변수가 없으면 decode에 실패하므로 AWS SDK 기본 credential chain을 사용하려면 `access_key_id`와 `secret_access_key`를 생략하십시오. 두 field가 모두 비어 있지 않은 값으로 resolve될 때만 static credential이 적용됩니다.
 
 요청은 AWS SDK가 해석된 자격 증명을 사용하여 AWS Signature Version 4로 서명합니다. 별도의 서명 설정은 필요하지 않습니다.
 
 <note>
-값이 배포마다 다를 때는 <code>_env</code> 변형(<code>region_env</code>, 아래의 <code>bucket_env</code>/<code>endpoint_env</code>)을 사용하세요. 변수 이름은 시작 시 환경 레지스트리에서 해석됩니다.
+이전 설정은 environment registry도 조회하는 sibling <code>&lt;field&gt;_env</code> directive(<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>)를 사용합니다. default가 없는 modern placeholder와 달리 등록되지 않았거나 비어 있는 legacy lookup은 inline 또는 zero value를 유지합니다. legacy 형식은 <b>deprecated</b>입니다. 동등한 fallback 동작에 필요한 placeholder default를 추가하면서 의도적으로 migrate하십시오.
 </note>
 
 <note>
-AWS 설정은 향후 릴리스에서 다른 AWS 서비스(SQS 등)와 공유될 예정입니다.
+하나의 <code>config.aws</code> 엔트리를 AWS-backed service 전체에서 재사용할 수 있습니다. <code>queue.driver.sqs</code>는 <code>config:</code> 필드로 같은 엔트리를 참조합니다.
 </note>
 
 ## S3 스토리지
@@ -55,11 +64,9 @@ AWS 설정은 향후 릴리스에서 다른 AWS 서비스(SQS 등)와 공유될 
 
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|----------|-------------|
-| `bucket` | string | 조건부 | S3 버킷 이름. `bucket_env`가 설정되지 않은 경우 필수 |
-| `bucket_env` | string | 조건부 | 버킷 이름을 담은 환경 변수 이름 |
+| `bucket` | string | 예 | S3 bucket name. deployment마다 다르면 `${env:NAME}`으로 제공 |
 | `config` | reference | 예 | AWS 설정 엔트리 참조 |
-| `endpoint` | string | 아니오 | S3 호환 서비스용 커스텀 엔드포인트 |
-| `endpoint_env` | string | 아니오 | 커스텀 엔드포인트를 담은 환경 변수 이름 |
+| `endpoint` | string | 아니오 | S3 호환 service용 custom endpoint(inline 또는 `${env:NAME}`) |
 
 ### S3 호환 서비스
 
@@ -77,10 +84,10 @@ MinIO 또는 기타 S3 호환 서비스의 경우 커스텀 엔드포인트를 �
 
 ## Lua API
 
-작업(list, upload, download, delete, 사전 서명 URL)은 [클라우드 스토리지 모듈](lua/storage/cloud.md)을 참조하세요.
+작업(list, upload, download, delete, presigned URL)은 [클라우드 스토리지 모듈](../lua/storage/cloud.md)을 참조하십시오.
 
 ## 참고
 
-- [클라우드 스토리지 모듈](lua/storage/cloud.md) - Lua API 레퍼런스
-- [파일시스템](system/filesystem.md) - 로컬 파일시스템 엔트리
-- [큐](system/queue.md) - SQS 핸들러는 동일한 `config.aws` 엔트리를 공유합니다
+- [클라우드 스토리지 모듈](../lua/storage/cloud.md) - Lua API 레퍼런스
+- [파일시스템](./filesystem.md) - 로컬 파일시스템 엔트리
+- [큐](./queue.md) - SQS handler는 같은 `config.aws` 엔트리를 공유
