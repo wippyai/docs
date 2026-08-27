@@ -5,7 +5,7 @@ description: "Configuration for Lua-based entries: functions, processes, workflo
 
 # Lua Entry Kinds
 
-Lua entry kinds define how source code is loaded and executed as a function, process, workflow, library, or module surface.
+Lua entry kinds define how source code is loaded and executed as a function, process, workflow, or library.
 
 ## Entry Kinds
 
@@ -15,9 +15,10 @@ Lua entry kinds define how source code is loaded and executed as a function, pro
 | `process.lua` | Long-running actor with state |
 | `workflow.lua` | Durable workflow (Temporal) |
 | `library.lua` | Shared code imported by other entries |
-| `module.lua` | Module surface (multi-method library) |
 
 Each kind has a precompiled bytecode counterpart (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) produced by `wippy pack --bytecode '**'` (or a pattern like `--bytecode 'app:**'`). Authors write `.lua` entries; the bytecode kinds are emitted when packing with that flag.
+
+`module.lua` is reserved for built-in module definitions created by the runtime. It is not an authorable source entry and has no bytecode counterpart.
 
 ## Common Fields
 
@@ -27,11 +28,13 @@ All Lua entries share these fields:
 |-------|----------|-------------|
 | `name` | yes | Unique name within namespace |
 | `kind` | yes | One of the Lua kinds above |
-| `source` | yes | Lua file path (`file://path.lua`) |
+| `source` | yes | Inline Lua source or a `file://path.lua` reference resolved when the registry is loaded |
 | `method` | function/process/workflow | Function to export (libraries don't use it) |
 | `modules` | no | Allowed modules for `require()` |
 | `imports` | no | Other entries as local modules |
 | `meta` | no | Searchable metadata |
+
+`pool` applies only to `function.lua`. `security` applies to `function.lua` and `process.lua`.
 
 ## `function.lua`
 
@@ -59,7 +62,6 @@ A `process.lua` entry is a long-running actor that maintains state and communica
   source: file://worker.lua
   method: main
   modules:
-    - process
     - sql
 ```
 
@@ -134,12 +136,11 @@ modules:
   - http
   - json
   - sql
-  - process
 ```
 
-`channel`, `print`, `subscribe`, and `unsubscribe` are loaded as Lua globals — they don't need to appear in `modules:`.
+`channel`, `payload`, `print`, `process`, `subscribe`, and `unsubscribe` are loaded as Lua globals — they don't need to appear in `modules:`. `require("process")` is also allowed without a `modules:` declaration.
 
-Only listed modules are available. The allowlist limits access to system modules, makes dependencies explicit, and restricts workflows to deterministic modules.
+Only listed built-in modules and aliases declared under `imports` are available. The module allowlist limits access to runtime capabilities, makes dependencies explicit, and restricts workflows to workflow-compatible module classes.
 
 See [Lua Runtime](lua/overview.md) for available modules.
 
@@ -172,10 +173,11 @@ Use `pool` to configure how a function entry executes:
 | Field | Pools | Description |
 |-------|-------|-------------|
 | `type` | all | Scheduler implementation (see table below) |
-| `workers` | static | Worker thread count (falls back to `size`, then 8) |
-| `size` | static | Worker count when `workers` is unset; also steers auto-select toward a static pool |
+| `workers` | static | Worker count; when set, `size` must also be positive during configuration validation |
+| `size` | static | Worker count when `workers` is unset; with omitted `type`, a positive `size` alone selects `inline` |
 | `buffer` | static | Task queue capacity (default: `workers * 64`) |
-| `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16) |
+| `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16 for an explicit type) |
+| `warm_start` | all | Accepted configuration flag; it has no effect in this runtime release |
 
 | Type | Behavior |
 |------|----------|
@@ -184,7 +186,13 @@ Use `pool` to configure how a function entry executes:
 | `static` | Fixed-size channel-based pool. Predictable under steady load. |
 | `adaptive` | Auto-scaling pool — grows under load, shrinks when idle. |
 
-When `type` is omitted, the runtime selects a lazy pool by default or a static pool when `workers` is set.
+When `type` is omitted, the runtime selects:
+
+- `static` when `workers` is positive;
+- `lazy` when `workers` is zero and either `size` is zero or `max_size` is positive; or
+- `inline` when `size` is positive and `max_size` is zero.
+
+The auto-selected lazy pool uses `max_size` when positive and otherwise defaults to 100. An explicit `lazy` or `adaptive` pool defaults `max_size` to 16. An explicit `static` pool uses `workers`, then `size`, then 8; its default buffer is the selected worker count multiplied by 64.
 
 ## Metadata
 

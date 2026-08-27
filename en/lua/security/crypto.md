@@ -9,7 +9,7 @@ description: "Generate random values, authenticate data, encrypt content, verify
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-The `crypto` module generates random values, computes HMACs, encrypts and decrypts data, encodes and verifies JWTs, and derives keys. Its operations are adapted for workflow execution.
+The `crypto` module generates random values, computes HMACs, encrypts and decrypts data, encodes and verifies JWTs, and derives keys. In deterministic workflows, random generation and encryption (which creates a random nonce) run as recorded side effects; replay returns the recorded bytes. Other operations, including HMAC, decryption, JWT processing, PBKDF2, and comparison, run directly.
 
 ## Loading
 
@@ -111,7 +111,7 @@ local encrypted, err = crypto.encrypt.chacha20(data, key, aad)
 | `key` | string | Must be 32 bytes |
 | `aad` | string? | Additional authenticated data |
 
-**Returns:** `string, error`
+**Returns:** `string, error` (nonce prepended)
 
 ## Decryption
 
@@ -176,9 +176,11 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | JWT token to verify |
 | `key` | string | Secret (HMAC) or PEM public key (RSA) |
 | `alg` | string? | Expected algorithm (default: HS256) |
-| `require_exp` | boolean? | Validate expiration (default: true) |
+| `require_exp` | boolean? | Require an `exp` claim (default: true) |
 
 **Returns:** `table, error`
+
+Whenever present, `exp` and `nbf` are validated against the JWT library's current wall clock, not the workflow time reference. Setting `require_exp = false` permits a missing `exp` claim; it does not disable validation of a claim that is present. Do not use either time-dependent result for replay-sensitive workflow control; perform the check in an activity or validate time against an explicitly replay-safe value.
 
 ## Key Derivation
 
@@ -213,6 +215,8 @@ local equal = crypto.constant_time_compare(a, b)
 | `b` | string | Second string |
 
 **Returns:** `boolean`
+
+The result is `false` when lengths differ. The underlying constant-time comparison guarantee applies to equal-length inputs, so compare fixed-length digests or other same-length secrets.
 
 ## Errors
 

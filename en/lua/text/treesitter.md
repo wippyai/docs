@@ -298,7 +298,7 @@ local query, err = treesitter.query("go", [[
 -- Get all captures (flattened)
 local captures = query:captures(root, source_code)
 for _, capture in ipairs(captures) do
-    print(capture.name)   -- "@func_name"
+    print(capture.name)   -- "func_name"
     print(capture.text)   -- actual text
     print(capture.index)  -- capture index
     -- capture.node is the Node object

@@ -142,6 +142,7 @@ Jet uses `{{ }}` for expressions and control structures and `{* *}` for comments
 | Empty ID | `errors.INVALID` | no |
 | Empty template name | `errors.INVALID` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
+| Template set missing, unavailable, or wrong resource type | `errors.INTERNAL` | no |
 | Template not found | `errors.NOT_FOUND` | no |
 | Render error | `errors.INTERNAL` | no |
 | Set already released | `errors.INTERNAL` | no |

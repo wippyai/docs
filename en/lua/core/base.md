@@ -228,8 +228,10 @@ math.rad(d)   -- Degrees to radians
 math.random()         -- Random float [0,1)
 math.random(n)        -- Random integer [1,n]
 math.random(m, n)     -- Random integer [m,n]
-math.randomseed(x)    -- Set random seed
+math.randomseed(x)    -- Compatibility no-op; does not seed math.random
 ```
+
+`math.random` is nondeterministic. Do not use it for decisions that must replay identically in a workflow; `math.randomseed` cannot make it deterministic.
 
 ### Type Conversion
 
@@ -338,8 +340,11 @@ The following standard Lua features are unavailable in Wippy processes:
 | `load`, `loadstring`, `loadfile`, `dofile` | Use [Dynamic Evaluation](lua/dynamic/eval.md) module |
 | `collectgarbage` | Automatic GC |
 | `rawlen` | Use `#` operator |
-| `io.*` | Use [File System](lua/storage/filesystem.md) module |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) modules |
+| `string.dump` | Not supported |
+| `io.*` | Use [File System](lua/storage/filesystem.md) for files or [Terminal I/O](lua/system/io.md) for terminal streams |
+| `os.execute` | Use [Command Execution](lua/dynamic/exec.md) |
+| `os.remove`, `os.rename` | Use [File System](lua/storage/filesystem.md) |
+| `os.exit`, `os.tmpname` | No direct standard-library equivalent |
 | `debug.*` | Not available |
 | `utf8.*` | Not available |
 | `package.loadlib` | Native libraries not supported |

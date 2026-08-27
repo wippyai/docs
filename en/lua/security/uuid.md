@@ -8,7 +8,7 @@ description: "Generate, validate, inspect, parse, and format UUIDs."
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `uuid` module generates, validates, inspects, parses, and formats UUIDs. In workflows, random UUIDs return their recorded values during replay.
+The `uuid` module generates, validates, inspects, parses, and formats UUIDs. In deterministic workflows, v1, v4, and v7 generation runs as a recorded side effect and returns the recorded value during replay. Namespace-based v3 and v5 generation is deterministic and runs directly.
 
 ## Loading
 
@@ -93,7 +93,7 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | Value to check |
 
-**Returns:** `boolean, error`
+**Returns:** `boolean, nil`. Non-string and malformed inputs return `false`; validation does not raise a structured error.
 
 ### `version`
 

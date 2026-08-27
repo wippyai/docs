@@ -32,7 +32,7 @@ local ok, err = io.write("text", "more")
 |-----------|------|-------------|
 | `...` | any | Variable number of values to write (coerced to string) |
 
-**Returns:** `boolean, error`
+**Returns:** `boolean, error` (`error` is a plain string)
 
 ## Print with Newline
 
@@ -46,7 +46,9 @@ io.print("value1", "value2", 123)
 |-----------|------|-------------|
 | `...` | any | Variable number of values to print |
 
-**Returns:** `boolean, error`
+**Returns:** `boolean, error` (`error` is a plain string)
+
+After terminal context lookup succeeds, output write errors are ignored and the function returns `true`. A missing terminal context returns `nil, "no terminal context"`.
 
 ## Writing to Stderr
 
@@ -60,7 +62,9 @@ io.eprint("Error:", message)
 |-----------|------|-------------|
 | `...` | any | Variable number of values to print |
 
-**Returns:** `boolean, error`
+**Returns:** `boolean, error` (`error` is a plain string)
+
+After terminal context lookup succeeds, output write errors are ignored and the function returns `true`. A missing terminal context returns `nil, "no terminal context"`.
 
 ## Reading Bytes
 
@@ -74,7 +78,7 @@ local data, err = io.read(1024)
 |-----------|------|-------------|
 | `n` | integer | Number of bytes to read (default: 1024, values <= 0 become 1024) |
 
-**Returns:** `string, error`
+**Returns:** `string, error` (`error` is a plain string). A successful read may return fewer than `n` bytes or an empty string.
 
 ## Reading a Line
 
@@ -84,7 +88,7 @@ Read one line from standard input:
 local line, err = io.readline()
 ```
 
-**Returns:** `string, error`
+**Returns:** `string, error` (`error` is a plain string). The trailing `\n` and `\r` are removed. EOF after partial input returns that partial line; EOF without input returns `nil` and an error string.
 
 ## Raw Mode
 
@@ -99,7 +103,7 @@ local ok, err = io.raw(false)  -- disable
 |-----------|------|-------------|
 | `enable` | boolean | `true` to enable, `false` to disable (default: `true`) |
 
-**Returns:** `boolean, error`
+**Returns:** `boolean, error` (`error` is a plain string)
 
 Raw mode is reference-counted: each `io.raw(true)` call must be matched by an `io.raw(false)` call. The terminal returns to normal mode automatically when the process exits.
 
@@ -111,7 +115,7 @@ Flush the standard-output buffer:
 local ok, err = io.flush()
 ```
 
-**Returns:** `boolean, error`
+**Returns:** `boolean, error` (`error` is a plain string). The call is a successful no-op when standard output does not implement `Sync()`.
 
 ## Command Line Arguments
 
@@ -123,13 +127,8 @@ local args = io.args()
 
 **Returns:** `string[]`
 
+`io.args()` never fails. It returns an empty table when no terminal context is available.
+
 ## Errors
 
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| No terminal context | `errors.UNAVAILABLE` | no |
-| Write operation failed | `errors.INTERNAL` | no |
-| Read operation failed | `errors.INTERNAL` | no |
-| Flush operation failed | `errors.INTERNAL` | no |
-
-See [Error Handling](lua/core/errors.md) for working with errors.
+This module returns plain error strings rather than structured `errors.*` values. Errors include `"no terminal context"`, `"raw terminal control unavailable"`, and the underlying read, write, raw-mode, or flush error text. `io.args()` has no error return.

@@ -187,10 +187,12 @@ end
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `keys` | string[] | Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Required. Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | Optional. `{key = "...", desc = "..."}` for help text |
 
 **Returns:** `KeyBinding`
+
+The type schema requires `keys`. At runtime, an omitted or empty `keys` table creates a binding that never matches.
 
 ### KeyBinding Methods
 
@@ -347,6 +349,16 @@ tty.text.position.CENTER   -- 0.5
 tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
+
+## Errors
+
+The input-control functions return structured errors:
+
+| Condition | Kind | Retryable |
+|-----------|------|-----------|
+| No terminal context or input controller | `errors.UNAVAILABLE` | no |
+| Event subscription has no runtime or process context | `errors.INTERNAL` | no |
+| Terminal yield response is invalid | `errors.INTERNAL` | no |
 
 ## See Also
 

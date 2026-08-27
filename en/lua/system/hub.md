@@ -1,11 +1,11 @@
 ---
 title: "Hub"
-description: "Read Wippy Hub module metadata, versions, dependencies, files, artifacts, and READMEs from Lua."
+description: "Browse Wippy Hub metadata and artifacts, manage credentials, and inspect the local artifact cache from Lua."
 ---
 
 # Hub
 
-The `hub` module provides read-only access to Wippy Hub modules, versions, dependencies, files, artifacts, and READMEs. Its authentication API manages the runtime's Hub credential override.
+The `hub` module reads Wippy Hub modules, versions, dependencies, files, artifacts, and READMEs. It also manages the runtime's Hub credential override and can remove unpinned artifacts from the local cache.
 
 ## Loading
 
@@ -15,7 +15,7 @@ local hub = require("hub")
 
 ## Per-call Options
 
-Each call accepts an optional options table. These keys are common to all calls:
+Network-backed catalog and artifact calls accept an optional options table with these common keys:
 
 | Key | Type | Description |
 |-----|------|-------------|
@@ -24,6 +24,8 @@ Each call accepts an optional options table. These keys are common to all calls:
 | `timeout` | duration/number | Request timeout (e.g. `"3m"` or seconds) |
 
 Pagination-aware calls also accept `page` and `page_size`.
+
+Authentication calls take a registry URL directly. Cache calls and package-handle methods use their own options described below.
 
 ## Modules
 
@@ -113,6 +115,28 @@ pkg:close()
 
 Entry `data` is returned without resolving `${env:...}` references.
 
+## Local Artifact Cache
+
+```lua
+local entries, err = hub.cache.list()
+
+local removed, err = hub.cache.remove("wippy/terminal", "1.2.3", {
+    force = false,
+})
+
+local candidates, err = hub.cache.prune({
+    dry_run = true,
+})
+```
+
+| Function | Description |
+|----------|-------------|
+| `hub.cache.list()` | List cached artifacts as `{module, version, size, pinned}` records |
+| `hub.cache.remove(module, version, opts?)` | Remove one cached artifact; `opts.force = true` permits removal when the lock file pins it |
+| `hub.cache.prune(opts?)` | Remove artifacts not referenced by the lock file; `opts.dry_run = true` only reports candidates |
+
+`hub.cache.remove` and `hub.cache.prune` delete files from the lock-resolved vendor directory unless their dry-run or pin protections apply.
+
 ## Dependencies
 
 ```lua
@@ -155,7 +179,9 @@ local ok, err = hub.auth.logout()
 
 `status` contains `authenticated`, `registry`, and `orgs`. Identity fields (`username`, `user_id`, `scope`, `expires_at`, `expired`) are present only when authenticated. A token that fails validation is not stored; `authenticate` returns `authenticated = false`. The runtime override takes precedence over `WIPPY_TOKEN` and stored credentials.
 
-**Permissions:** `hub.auth.authenticate`, `hub.auth.status`, `hub.auth.logout`
+## Permissions
+
+Each top-level `hub.*` operation checks the matching action name, such as `hub.modules.list`, `hub.versions.open`, `hub.dependencies.get`, `hub.files.list`, `hub.auth.status`, or `hub.cache.prune`. Actions that address a module use the supplied module reference as the security resource; authentication actions use the registry URL. Package-handle methods do not perform another permission check after the authorized `hub.versions.open` call.
 
 ## See Also
 

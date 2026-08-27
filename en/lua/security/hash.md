@@ -1,6 +1,6 @@
 ---
 title: "Hash Functions"
-description: "Compute cryptographic hashes, HMAC values, and FNV hashes."
+description: "Compute cryptographic hashes, HMAC values, PBKDF2 keys, and FNV-1 hashes."
 ---
 
 # Hash Functions
@@ -9,7 +9,7 @@ description: "Compute cryptographic hashes, HMAC values, and FNV hashes."
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-The `hash` module computes cryptographic hashes, HMAC values, and non-cryptographic FNV hashes.
+The `hash` module computes cryptographic hashes, HMAC values, PBKDF2-derived keys, and non-cryptographic FNV-1 hashes.
 
 ## Loading
 
@@ -20,6 +20,8 @@ local hash = require("hash")
 ## Cryptographic Hashes
 
 ### MD5
+
+MD5 is not collision-resistant. Use it only for compatibility with protocols that require MD5, not for security decisions.
 
 ```lua
 local hex = hash.md5("data")
@@ -34,6 +36,8 @@ local raw = hash.md5("data", true)
 **Returns:** `string, error`
 
 ### SHA-1
+
+SHA-1 is not collision-resistant. Use it only for compatibility with protocols that require SHA-1, not for security decisions.
 
 ```lua
 local hex = hash.sha1("data")
@@ -139,7 +143,7 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 ## Non-Cryptographic Hashes
 
-### FNV-32
+### FNV-1 32-bit
 
 Compute a hash for uses such as hash tables and partitioning.
 
@@ -153,7 +157,7 @@ local n = hash.fnv32("data")
 
 **Returns:** `number, error`
 
-### FNV-64
+### FNV-1 64-bit
 
 Compute a wider hash for uses such as hash tables and partitioning, reducing collision probability.
 
@@ -167,11 +171,33 @@ local n = hash.fnv64("data")
 
 **Returns:** `number, error`
 
+## Key Derivation
+
+### PBKDF2-HMAC
+
+Derive raw key bytes with PBKDF2-HMAC-SHA256 or PBKDF2-HMAC-SHA512:
+
+```lua
+local key, err = hash.pbkdf2(password, salt, 600000, 32)
+local key512, err = hash.pbkdf2(password, salt, 600000, 32, "sha512")
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `password` | string | Non-empty password or secret input |
+| `salt` | string | Non-empty salt bytes |
+| `iterations` | integer | Positive iteration count, at most 10,000,000 |
+| `key_length` | integer | Positive output length in bytes |
+| `algo` | string? | `sha256` (default) or `sha512` |
+
+**Returns:** `string, error` (raw derived key bytes)
+
 ## Errors
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Input not a string | `errors.INVALID` | no |
 | Secret not a string (HMAC) | `errors.INVALID` | no |
+| PBKDF2 password/salt empty, limits invalid, or algorithm unsupported | `errors.INVALID` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

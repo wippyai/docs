@@ -18,11 +18,9 @@ Lua code runs inside **processes**: isolated execution contexts managed by the s
 - can be monitored and supervised; and
 - can run alongside thousands of other processes on one machine.
 
-<note>
-A typical Lua process has a baseline memory overhead of ~13 KB.
-</note>
-
 ```lua
+local process = require("process")
+
 local pid = process.spawn("app.workers:handler", "app:processes")
 process.send(pid, "task", {data = "work"})
 ```
@@ -82,23 +80,26 @@ end
 
 The following globals are available without `require` and do not need to be listed in `modules:`:
 
-- `process` - spawn, message, monitor, and link processes
 - `channel` - Go-style channels
 - `payload` - the entry's input payload
+- `process` - process spawning, messaging, monitoring, and lifecycle operations
 - `print`, `subscribe`, `unsubscribe` - logging and pub/sub
 - `os`, `table`, `math`, `string`, `coroutine`, `errors` - standard libraries
 
 ## Modules
 
-Everything else is loaded with `require()` and must appear in the entry's `modules:` allowlist:
+Built-in runtime modules that are not ambient are loaded with `require()` and must appear in the entry's `modules:` allowlist. Executable entries receive `process` as an ambient global; `require("process")` is also allowed and does not require a `modules:` declaration.
 
 ```lua
+local process = require("process")
 local json = require("json")
 local sql = require("sql")
 local http = require("http_client")
 ```
 
 Available modules depend on entry configuration. See [Entry Definitions](lua/entries.md).
+
+Registry libraries use the same `require("alias")` syntax but are declared separately in the entry's `imports:` map.
 
 ## Language and Library Support
 

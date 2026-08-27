@@ -1,6 +1,6 @@
 ---
 title: "OS Time"
-description: "Read wall-clock time, format dates, and calculate time differences with Lua's global os table."
+description: "Read runtime time, format dates, and calculate time differences with Lua's global os table."
 ---
 
 # OS Time
@@ -8,7 +8,7 @@ description: "Read wall-clock time, format dates, and calculate time differences
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The global `os` table provides wall-clock timestamps, date formatting, elapsed-time measurement, and time-difference calculations.
+The global `os` table provides timestamps, date formatting, elapsed-time measurement, and time-difference calculations. In a workflow, current-time reads use the workflow's time reference; outside a workflow they use the system clock.
 
 ## Loading
 
@@ -114,6 +114,7 @@ local t = os.date("*t", now)
 | `%w` | Weekday (0-6, Sunday=0) | 6 |
 | `%j` | Day of year (001-366) | 167 |
 | `%U` | ISO 8601 week number (01-53, week starts Monday) | 24 |
+| `%W` | ISO 8601 week number (01-53, week starts Monday) | 24 |
 | `%z` | Timezone offset | -0700 |
 | `%Z` | Timezone name | PDT |
 | `%c` | Full date/time | Sat Jun 15 14:30:45 2024 |
@@ -139,13 +140,13 @@ local t = os.date("*t")
 | `sec` | number | Second (0-59) | 45 |
 | `wday` | number | Weekday (1-7, Sunday=1) | 7 |
 | `yday` | number | Day of year (1-366) | 167 |
-| `isdst` | boolean | Daylight saving time | false |
+| `isdst` | boolean | `true` when the zone's UTC offset is nonzero in this release; not a reliable DST indicator | false |
 
 Use `"!*t"` for UTC date table.
 
 ## Measuring Elapsed Time
 
-Read the seconds elapsed since the Lua runtime started:
+Read the seconds between the current runtime time reference and the OS-time module's initialization time:
 
 ```lua
 local start = os.clock()
@@ -158,6 +159,8 @@ print(string.format("Took %.3f seconds", elapsed))
 ```
 
 **Signature:** `os.clock() -> number`
+
+Unlike standard Lua's CPU-time definition, this implementation is based on elapsed time. In workflows, it uses the workflow time reference.
 
 ## Time Difference
 

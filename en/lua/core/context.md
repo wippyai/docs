@@ -33,10 +33,12 @@ local value, err = ctx.get("key")
 ### Get All Values
 
 ```lua
-local values, err = ctx.all()
+local values = ctx.all()
 ```
 
-**Returns:** `table, error`
+**Returns:** `table, nil`
+
+`ctx.all()` always succeeds. It returns an empty table when no request context or no context values are available.
 
 ## Errors
 
@@ -44,6 +46,6 @@ local values, err = ctx.all()
 |-----------|------|-----------|
 | Empty key | `errors.INVALID` | no |
 | Key not found | `errors.NOT_FOUND` | no |
-| No context available | `errors.INTERNAL` | no |
+| No context available (`ctx.get` only) | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
