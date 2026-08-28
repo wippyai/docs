@@ -383,6 +383,6 @@ declare a separate process or terminal host solely to run `wippy test`.
 
 ## See Also
 
-- [Framework Overview](./overview.md) — Install and import framework modules
-- [CLI Reference](../guides/cli.md) — Test command and flags
-- [Functions](../concepts/functions.md) — Function entries and invocation
+- [Framework Overview](framework/overview.md) — Install and import framework modules
+- [CLI Reference](guides/cli.md) — Test command and flags
+- [Functions](concepts/functions.md) — Function entries and invocation

@@ -599,4 +599,4 @@ if err then
 end
 ```
 
-Veja [Tratamento de Erros](errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

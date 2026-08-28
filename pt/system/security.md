@@ -420,7 +420,7 @@ entries:
 | `store` | obrigatório | Referência do store chave-valor de apoio |
 | `token_length` | 32 | Tamanho do token em bytes (256 bits) |
 | `default_expiration` | 24h | TTL padrão do token |
-| `token_key` | nenhum | Chave de assinatura HMAC-SHA256, direta ou `${env:NAME}` pelo [registro de ambiente](./env.md) |
+| `token_key` | nenhum | Chave de assinatura HMAC-SHA256, direta ou `${env:NAME}` pelo [registro de ambiente](system/env.md) |
 
 Use `token_key: ${env:NAME}` em produção para não incorporar segredos nas entradas. A diretiva legada `token_key_env` também consulta o registro de ambiente, mas preserva o valor inline ou zero quando a busca está ausente ou vazia; um placeholder moderno sem default falha se a variável não existir. A diretiva legada está obsoleta.
 

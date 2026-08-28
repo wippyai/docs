@@ -427,6 +427,6 @@ Type messages to echo. Ctrl+C to exit.
 
 ## 다음 단계
 
-- [프로세스 관리](../lua/core/process.md) — 프로세스 API 참조
-- [채널](../lua/core/channel.md) — 채널 API 참조
-- [시간과 기간](../lua/core/time.md) — 시간 API 참조
+- [프로세스 관리](lua/core/process.md) — 프로세스 API 참조
+- [채널](lua/core/channel.md) — 채널 API 참조
+- [시간과 기간](lua/core/time.md) — 시간 API 참조

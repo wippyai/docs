@@ -139,5 +139,5 @@ El registry llama `Begin` antes de procesar un batch, luego `Commit` en éxito o
 
 ## Ver También
 
-- [Registry](./registry.md) - Almacenamiento de entradas
-- [Architecture](./architecture.md) - Secuencia de boot
+- [Registry](internals/registry.md) - Almacenamiento de entradas
+- [Architecture](internals/architecture.md) - Secuencia de boot

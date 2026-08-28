@@ -89,7 +89,7 @@ SQLite는 항상 단일 연결로 실행되며(<code>max_open</code>과 <code>ma
 
 ### 시크릿과 환경 값
 
-디코드 시점에 해석되는 `${env:NAME}` 플레이스홀더를 사용하여 [환경 레지스트리](./env.md)에서
+디코드 시점에 해석되는 `${env:NAME}` 플레이스홀더를 사용하여 [환경 레지스트리](system/env.md)에서
 연결 값을 가져옵니다. `NAME`은 등록된 변수의 공개 이름이나 엔트리 ID(예:
 `app.secrets:db_password`)이며 원시 OS 환경 변수가 아닙니다.
 
@@ -278,14 +278,14 @@ entries:
 
 ## 런타임 등록
 
-[레지스트리 모듈](../lua/core/registry.md)을 사용하여 런타임에 데이터베이스를 등록할 수 있습니다.
+[레지스트리 모듈](lua/core/registry.md)을 사용하여 런타임에 데이터베이스를 등록할 수 있습니다.
 
 ## Lua API
 
-쿼리, 트랜잭션, 연결 작업은 [SQL 모듈](../lua/storage/sql.md)을 참조하세요.
+쿼리, 트랜잭션, 연결 작업은 [SQL 모듈](lua/storage/sql.md)을 참조하세요.
 
 ## 참고
 
-- [SQL 모듈](../lua/storage/sql.md) - Lua API 레퍼런스
-- [Store](./store.md) - `db.sql.*` 데이터베이스 기반 키-값 저장소
-- [Queue](./queue.md) - SQL 기반 큐 핸들러
+- [SQL 모듈](lua/storage/sql.md) - Lua API 레퍼런스
+- [Store](system/store.md) - `db.sql.*` 데이터베이스 기반 키-값 저장소
+- [Queue](system/queue.md) - SQL 기반 큐 핸들러

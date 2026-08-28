@@ -7,7 +7,7 @@ description: "Konfigurieren Sie clusterfähige benannte Prozessgruppen mit dezen
 
 Ein `pg.scope` ermöglicht Prozessen, benannten Gruppen beizutreten und an eine Gruppe adressierte Broadcasts zu empfangen. Das Modell folgt Erlang/OTP `pg`: Gruppen entstehen beim ersten Beitritt, ein Prozess kann mehreren Gruppen angehören und derselben Gruppe mehrfach beitreten, und jeder Cluster-Knoten verwaltet seinen eigenen Mitgliedschaftszustand und gleicht ihn über das Internode-Mesh mit Peers ab. Diese Seite ist eine Konfigurations- und Verhaltensreferenz; die YAML-Blöcke sind Entry-Fragmente.
 
-Die Lua-API ist unter [Prozessgruppen](../lua/core/pg.md) dokumentiert; diese Seite behandelt den Scope-Entry-Typ und seine Konfiguration. Siehe den [Cluster-Leitfaden](../guides/cluster.md) für das umgebende Mitgliedschaftsmodell.
+Die Lua-API ist unter [Prozessgruppen](lua/core/pg.md) dokumentiert; diese Seite behandelt den Scope-Entry-Typ und seine Konfiguration. Siehe den [Cluster-Leitfaden](guides/cluster.md) für das umgebende Mitgliedschaftsmodell.
 
 ## Eintragstyp
 
@@ -70,10 +70,10 @@ Alle Felder sind optional. Die Tabelle führt ihre Standardwerte auf.
 
 ## Observability
 
-Ein Liveness-Health-Check (`pg.broadcast_recent.<scope>`) meldet einen ungesunden Zustand, wenn ein Scope über längere Zeit keinen Broadcast-Verkehr erkennt, und macht dadurch eine blockierte Event-Loop oder anhaltende Partition sichtbar. Siehe den [Observability-Leitfaden](../guides/observability.md).
+Ein Liveness-Health-Check (`pg.broadcast_recent.<scope>`) meldet einen ungesunden Zustand, wenn ein Scope über längere Zeit keinen Broadcast-Verkehr erkennt, und macht dadurch eine blockierte Event-Loop oder anhaltende Partition sichtbar. Siehe den [Observability-Leitfaden](guides/observability.md).
 
 ## Siehe auch
 
-- [Prozessgruppen](../lua/core/pg.md) - Die Lua-API
-- [Cluster](../guides/cluster.md) - Mitgliedschaft und das Clustering-Modell
-- [Prozessmodell](../concepts/process-model.md) - Prozesse, PIDs und Messaging
+- [Prozessgruppen](lua/core/pg.md) - Die Lua-API
+- [Cluster](guides/cluster.md) - Mitgliedschaft und das Clustering-Modell
+- [Prozessmodell](concepts/process-model.md) - Prozesse, PIDs und Messaging

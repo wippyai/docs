@@ -84,10 +84,10 @@ Wenn ein Endpunkt angegeben wird, wird Pfadstil-Zugriff automatisch aktiviert.
 
 ## Lua-API
 
-Siehe [Cloud-Storage-Modul](../lua/storage/cloud.md) für Operationen (list, upload, download, delete, vorsignierte URLs).
+Siehe [Cloud-Storage-Modul](lua/storage/cloud.md) für Operationen (list, upload, download, delete, vorsignierte URLs).
 
 ## Siehe auch
 
-- [Cloud-Storage-Modul](../lua/storage/cloud.md) - Lua-API-Referenz
-- [Dateisystem](./filesystem.md) - Lokale Dateisystem-Einträge
-- [Queue](./queue.md) - Der SQS-Handler nutzt dieselben `config.aws`-Einträge
+- [Cloud-Storage-Modul](lua/storage/cloud.md) - Lua-API-Referenz
+- [Dateisystem](system/filesystem.md) - Lokale Dateisystem-Einträge
+- [Queue](system/queue.md) - Der SQS-Handler nutzt dieselben `config.aws`-Einträge

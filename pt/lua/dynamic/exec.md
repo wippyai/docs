@@ -13,7 +13,7 @@ O módulo `exec` inicia executáveis externos e fornece acesso à entrada, saíd
 
 O executor analisa uma string de comando em executável e argumentos; ele não invoca um shell. Operadores shell como pipes, redirects, expansão de variáveis e substituição de comandos não são interpretados. Um script executável só pode ser iniciado diretamente quando o backend e o sistema operacional selecionados oferecem suporte.
 
-Antes de usar os exemplos, configure um recurso de executor e sua allowlist de comandos conforme descrito em [Executor](../../system/exec.md), e conceda `exec.get` e `exec.run` para os recursos exatos utilizados. Os exemplos usam comandos e caminhos Unix; substitua-os por comandos disponíveis no host do executor.
+Antes de usar os exemplos, configure um recurso de executor e sua allowlist de comandos conforme descrito em [Executor](system/exec.md), e conceda `exec.get` e `exec.run` para os recursos exatos utilizados. Os exemplos usam comandos e caminhos Unix; substitua-os por comandos disponíveis no host do executor.
 
 ## Carregamento
 
@@ -300,4 +300,4 @@ Operações de exec estao sujeitas a avaliação de política de segurança.
 
 No runtime v0.3.32a, as negações de política de `exec.get` e `exec.run` usam `errors.INVALID`, não `errors.PERMISSION_DENIED`.
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

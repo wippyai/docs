@@ -195,9 +195,9 @@ description: "メモリ、ファイル、オペレーティングシステム、
 
 ## ランタイムアクセス
 
-- [env モジュール](../lua/system/env.md) - Lua ランタイムアクセス
+- [env モジュール](lua/system/env.md) - Lua ランタイムアクセス
 
 ## 関連項目
 
-- [セキュリティモデル](./security.md) - 環境変数のアクセス制御
-- [設定ガイド](../guides/configuration.md) - アプリケーション設定パターン
+- [セキュリティモデル](system/security.md) - 環境変数のアクセス制御
+- [設定ガイド](guides/configuration.md) - アプリケーション設定パターン

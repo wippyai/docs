@@ -86,7 +86,7 @@ SQLite verwendet immer eine einzelne Verbindung (<code>max_open</code> und <code
 
 ### Secrets und Umgebungswerte
 
-Übernehmen Sie Verbindungswerte mit `${env:NAME}`-Platzhaltern aus der [Umgebungs-Registry](./env.md); sie werden beim Dekodieren aufgelöst. `NAME` ist der öffentliche Name einer registrierten Variable oder ihre Entry-ID, zum Beispiel `app.secrets:db_password`, und keine rohe OS-Umgebungsvariable.
+Übernehmen Sie Verbindungswerte mit `${env:NAME}`-Platzhaltern aus der [Umgebungs-Registry](system/env.md); sie werden beim Dekodieren aufgelöst. `NAME` ist der öffentliche Name einer registrierten Variable oder ihre Entry-ID, zum Beispiel `app.secrets:db_password`, und keine rohe OS-Umgebungsvariable.
 
 ```yaml
 - name: prod_db
@@ -265,14 +265,14 @@ entries:
 
 ## Laufzeitregistrierung
 
-Datenbanken können zur Laufzeit mit dem [Registry-Modul](../lua/core/registry.md) registriert werden.
+Datenbanken können zur Laufzeit mit dem [Registry-Modul](lua/core/registry.md) registriert werden.
 
 ## Lua-API
 
-Siehe [SQL-Modul](../lua/storage/sql.md) für Abfragen, Transaktionen und Verbindungsoperationen.
+Siehe [SQL-Modul](lua/storage/sql.md) für Abfragen, Transaktionen und Verbindungsoperationen.
 
 ## Siehe auch
 
-- [SQL-Modul](../lua/storage/sql.md) - Lua-API-Referenz
-- [Store](./store.md) - Key-Value-Store auf Basis einer `db.sql.*`-Datenbank
-- [Queue](./queue.md) - SQL-gestützter Queue-Handler
+- [SQL-Modul](lua/storage/sql.md) - Lua-API-Referenz
+- [Store](system/store.md) - Key-Value-Store auf Basis einer `db.sql.*`-Datenbank
+- [Queue](system/queue.md) - SQL-gestützter Queue-Handler

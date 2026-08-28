@@ -7,7 +7,7 @@ description: "Construye y ejecuta un pequeño workflow de wippy/dataflow con est
 
 **Clasificación: tutorial ejecutable.** Esta página construye un proyecto
 `wippy/dataflow` completo y sin proveedor. No usa embeddings ni un LLM; para
-ese caso de uso, consulta [Generación aumentada por recuperación](./rag.md).
+ese caso de uso, consulta [Generación aumentada por recuperación](tutorials/rag.md).
 
 El workflow envía una entrada a través de dos nodos de función:
 
@@ -316,5 +316,5 @@ workflow asíncrono.
 
 - [Framework Dataflow](../framework/dataflow.md) — Enrutado, nodos paralelos,
   ciclos, agentes, señales y la API de cliente
-- [Generación aumentada por recuperación](./rag.md) — Recuperación respaldada por embeddings
+- [Generación aumentada por recuperación](tutorials/rag.md) — Recuperación respaldada por embeddings
 - [Keeper mediante MCP](./keeper-mcp.md) — Inspeccionar workflows en ejecución desde un cliente MCP

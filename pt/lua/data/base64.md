@@ -121,4 +121,4 @@ O bloco final demonstra apenas o tratamento de delimitadores. Ele não analisa n
 | Caracteres Base64 inválidos | `errors.INVALID` | não |
 | Padding corrompido | `errors.INVALID` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

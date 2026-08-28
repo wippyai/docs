@@ -41,7 +41,7 @@ AWS SDK default credential chain (for example, IAM roles or instance profiles):
 | `access_key_id` | string | No | AWS access key ID (inline or `${env:NAME}`) |
 | `secret_access_key` | string | No | AWS secret access key (inline or `${env:NAME}`) |
 
-Credential fields resolve from the [environment registry](./env.md) at decode time. A modern `${env:NAME}` placeholder without a default fails decoding when its variable is missing, so omit `access_key_id` and `secret_access_key` to use the AWS SDK default credential chain. Static credentials apply only when both fields resolve to non-empty values.
+Credential fields resolve from the [environment registry](system/env.md) at decode time. A modern `${env:NAME}` placeholder without a default fails decoding when its variable is missing, so omit `access_key_id` and `secret_access_key` to use the AWS SDK default credential chain. Static credentials apply only when both fields resolve to non-empty values.
 
 Requests are signed with AWS Signature Version 4 by the AWS SDK using the resolved credentials. No signing configuration is required.
 
@@ -84,10 +84,10 @@ When an endpoint is provided, path-style access is enabled automatically.
 
 ## Lua API
 
-See [Cloud Storage Module](../lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs).
+See [Cloud Storage Module](lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs).
 
 ## See Also
 
-- [Cloud Storage Module](../lua/storage/cloud.md) - Lua API reference
-- [Filesystem](./filesystem.md) - Local filesystem entries
-- [Queue](./queue.md) - SQS handler shares the same `config.aws` entries
+- [Cloud Storage Module](lua/storage/cloud.md) - Lua API reference
+- [Filesystem](system/filesystem.md) - Local filesystem entries
+- [Queue](system/queue.md) - SQS handler shares the same `config.aws` entries

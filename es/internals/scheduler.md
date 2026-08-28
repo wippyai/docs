@@ -135,5 +135,5 @@ Durante el apagado, el scheduler envía eventos de cancelación a todos los proc
 
 ## Ver También
 
-- [Command Dispatch](./dispatch.md) - Cómo yields llegan a handlers
-- [Process Model](../concepts/process-model.md) - Conceptos de alto nivel
+- [Command Dispatch](internals/dispatch.md) - Cómo yields llegan a handlers
+- [Process Model](concepts/process-model.md) - Conceptos de alto nivel

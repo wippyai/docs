@@ -221,4 +221,4 @@ if decode_err then return nil, decode_err end
 | スキーマコンパイル失敗 | `errors.INVALID` | いいえ |
 | 検証失敗 | `errors.INVALID` | いいえ |
 
-エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

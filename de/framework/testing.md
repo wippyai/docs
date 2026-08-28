@@ -398,6 +398,6 @@ auszuführen.
 
 ## Siehe auch
 
-- [Framework-Übersicht](./overview.md) — Framework-Module installieren und importieren
-- [CLI-Referenz](../guides/cli.md) — Testbefehl und Optionen
-- [Funktionen](../concepts/functions.md) — Funktionseinträge und Aufrufe
+- [Framework-Übersicht](framework/overview.md) — Framework-Module installieren und importieren
+- [CLI-Referenz](guides/cli.md) — Testbefehl und Optionen
+- [Funktionen](concepts/functions.md) — Funktionseinträge und Aufrufe

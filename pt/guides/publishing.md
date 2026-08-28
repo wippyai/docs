@@ -317,7 +317,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []` não publica nenhum; um nome desconhecido faz a publicação falhar. Subseções `workspace` nunca são exportadas, mesmo dentro de um profile publicado. Consulte [Configuração](./configuration.md#profiles) para declarar profiles.
+`include: []` não publica nenhum; um nome desconhecido faz a publicação falhar. Subseções `workspace` nunca são exportadas, mesmo dentro de um profile publicado. Consulte [Configuração](guides/configuration.md#profiles) para declarar profiles.
 
 ## Usando Módulos Publicados
 
@@ -431,6 +431,6 @@ wippy publish --version 1.0.0
 
 ## Consulte Também
 
-- [Referência do CLI](./cli.md) — Comandos e flags de publicação
-- [Kinds de Entrada](./entry-kinds.md) — Entradas de módulo e dependência
-- [Configuração](./configuration.md) — Configuração de runtime e profiles
+- [Referência do CLI](guides/cli.md) — Comandos e flags de publicação
+- [Kinds de Entrada](guides/entry-kinds.md) — Entradas de módulo e dependência
+- [Configuração](guides/configuration.md) — Configuração de runtime e profiles

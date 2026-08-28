@@ -159,6 +159,6 @@ network_service:
 
 ## 関連項目
 
-- [セキュリティ](./security.md) - ポリシーとアクター
-- [HTTP サービス](../http/server.md) - サーバーのバインド
-- [HTTP クライアント](../lua/http/client.md) - 呼び出しごとのオーバーレイ選択
+- [セキュリティ](system/security.md) - ポリシーとアクター
+- [HTTP サービス](http/server.md) - サーバーのバインド
+- [HTTP クライアント](lua/http/client.md) - 呼び出しごとのオーバーレイ選択

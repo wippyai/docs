@@ -13,7 +13,7 @@ Das Modul `fs` liest, schreibt und verwaltet Dateien in konfigurierten Dateisyst
 
 Diese Seite ist eine API-Referenz. Ihre Ausschnitte setzen ein konfiguriertes Volume und die Berechtigung voraus, es abzurufen. Jeder Block ist eine einzelne Operation oder ein Teilrezept; Anwendungswerte und Callbacks wie `config`, `message`, `process` und `report_cleanup_error` müssen bereits vorhanden sein. `report_cleanup_error(err)` zeichnet einen Fehler beim Schließen auf, ohne einen bereits aufgetretenen Operationsfehler zu ersetzen.
 
-Informationen zur Dateisystemkonfiguration finden Sie unter [Dateisystem](../../system/filesystem.md).
+Informationen zur Dateisystemkonfiguration finden Sie unter [Dateisystem](system/filesystem.md).
 
 ## Laden
 
@@ -327,4 +327,4 @@ Die Sicherheitsrichtlinie wird beim Abrufen eines Volumes ausgewertet.
 
 `nicht angegeben` bedeutet, dass `err:retryable()` den Wert `nil` zurückgibt; dies ist nicht gleichbedeutend mit `false`.
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

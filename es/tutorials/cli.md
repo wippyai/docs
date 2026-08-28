@@ -334,6 +334,6 @@ end
 
 ## Siguientes Pasos
 
-- [Módulo I/O](../lua/system/io.md) — Referencia de la API de E/S
-- [Módulo System](../lua/system/system.md) — Información del entorno de ejecución y del sistema
-- [Servicio Echo](echo-service.md) — Crea una aplicación multiproceso
+- [Módulo I/O](lua/system/io.md) — Referencia de la API de E/S
+- [Módulo System](lua/system/system.md) — Información del entorno de ejecución y del sistema
+- [Servicio Echo](tutorials/echo-service.md) — Crea una aplicación multiproceso

@@ -20,7 +20,7 @@ Wippyは2つの評価システムを提供しています:
 
 ## `expr` による式評価
 
-`expr` モジュールは expr-lang 構文の式を評価します。完全な Lua プログラムではなく式に使用してください。完全な Lua API と構文のリファレンスは[式言語](./expression.md)です。
+`expr` モジュールは expr-lang 構文の式を評価します。完全な Lua プログラムではなく式に使用してください。完全な Lua API と構文のリファレンスは[式言語](lua/dynamic/expression.md)です。
 
 ```lua
 local expr = require("expr")
@@ -394,5 +394,5 @@ end
 ## 関連項目
 
 - [式言語](./expression.md) - 式言語リファレンス
-- [コマンド実行](./exec.md) - システムコマンド実行
-- [セキュリティ](../security/security.md) - セキュリティポリシー
+- [コマンド実行](lua/dynamic/exec.md) - システムコマンド実行
+- [セキュリティ](lua/security/security.md) - セキュリティポリシー

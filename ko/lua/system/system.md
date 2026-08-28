@@ -337,7 +337,7 @@ local states, err = system.supervisor.states()
 
 ## 클러스터 프리미티브
 
-`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 비활성화된](../../guides/cluster.md) 경우 `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 글로벌 레지스트리가 필요하므로 사용할 수 없습니다.
+`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 비활성화된](guides/cluster.md) 경우 `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 글로벌 레지스트리가 필요하므로 사용할 수 없습니다.
 
 모든 읽기 호출은 로컬이고 저렴합니다: 커밋된 상태에 대한 이 노드의 뷰를 보고하며, 네트워크를 차단하지 않습니다.
 
@@ -489,4 +489,4 @@ return released
 | 멤버십 사용 불가 | `errors.INTERNAL` | 아니오 |
 | 잠금 이미 보유됨 | `errors.ALREADY_EXISTS` | 아니오 |
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

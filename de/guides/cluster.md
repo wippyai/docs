@@ -15,7 +15,7 @@ Clustering ist deaktiviert, bis `cluster.enabled` auf `true` gesetzt wird.
 - **Clusterweite Prozessnamen** — einen Prozess unter einem Namen registrieren, der von jedem Knoten aus auflösbar ist, mit Wahl der Konsistenzgarantien (siehe [Benennung](#benennung-und-namens-scopes)).
 - **Verteilte Sperren** — `system.lock` bietet clusterweiten gegenseitigen Ausschluss mit automatischer Freigabe, wenn der Halter abstirbt (siehe [Verteilte Sperren](#verteilte-sperren)).
 - **Prozessgruppen** — an jedes Mitglied einer benannten Gruppe über alle Knoten hinweg senden (siehe [Prozessgruppen](#prozessgruppen)).
-- **Replizierte Key-Value-Stores** — `store.kv.raft` (stark) und `store.kv.crdt` (eventuell konsistent) replizieren KV-Daten zwischen Knoten (siehe [Store](../system/store.md#cluster-kv-stores)).
+- **Replizierte Key-Value-Stores** — `store.kv.raft` (stark) und `store.kv.crdt` (eventuell konsistent) replizieren KV-Daten zwischen Knoten (siehe [Store](system/store.md#cluster-kv-stores)).
 - **Ein Konsenskern** — ein kleiner, begrenzter Raft-Cluster bietet das linearisierbare Fundament, auf dem die Benennungs- und Sperr-Primitive aufbauen.
 
 ## Architektur: begrenztes Raft
@@ -93,7 +93,7 @@ Später startende Knoten sehen einen bereits gebildeten Cluster und überspringe
 
 ## Raft-Konsenskern
 
-Der Raft-Zustand ist **standardmäßig dateisystempersistent**: Logs und Snapshots liegen unter `cluster.raft.data_dir` (standardmäßig `~/.wippy/store`, in `_sys/raft`), und [`store.kv.raft`](../system/store.md#cluster-kv-stores) repliziert über denselben Kern. Ein neu gestarteter Knoten tritt Gossip wieder bei und holt den Zustand von Peers nach. Ein Knoten läuft nur dann ohne Datenträger, wenn kein Datenverzeichnis aufgelöst werden kann — siehe [Wiederherstellung](#wiederherstellung-und-fehlermodi).
+Der Raft-Zustand ist **standardmäßig dateisystempersistent**: Logs und Snapshots liegen unter `cluster.raft.data_dir` (standardmäßig `~/.wippy/store`, in `_sys/raft`), und [`store.kv.raft`](system/store.md#cluster-kv-stores) repliziert über denselben Kern. Ein neu gestarteter Knoten tritt Gossip wieder bei und holt den Zustand von Peers nach. Ein Knoten läuft nur dann ohne Datenträger, wenn kein Datenverzeichnis aufgelöst werden kann — siehe [Wiederherstellung](#wiederherstellung-und-fehlermodi).
 
 Raft öffnet keinen eigenen Listener-Port. Es nutzt das **Internode-Mesh**, also dieselben TCP-Verbindungen wie der Relay-Verkehr zwischen Knoten. Der Internode-Port wird beim Start automatisch ausgewählt, festgelegt und in Gossip angekündigt. Knoten müssen einander sowohl am Gossip-Port als auch an ihren angekündigten Internode-TCP-Ports erreichen können.
 
@@ -119,7 +119,7 @@ Auswahlhilfe:
 
 Namen werden automatisch freigegeben: Local beim Prozessende; Consistent und Strong beim Prozessende (über Topology-Monitoring) und beim Knotenausscheiden; Eventual beim Knotenausscheiden. Die Auflösung für Messaging (`process.send`, `process.terminate` und ähnliche) konsultiert die Ebenen der Reihe nach — Consistent, dann Eventual, dann Local — sodass ein Consistent-Name einen Eventual-Namen mit derselben Zeichenkette überschattet.
 
-Die Lua-Oberfläche für Benennung liegt auf `process.registry` — siehe die [Prozessreferenz](../lua/core/process.md).
+Die Lua-Oberfläche für Benennung liegt auf `process.registry` — siehe die [Prozessreferenz](lua/core/process.md).
 
 ## Prozessgruppen
 
@@ -127,7 +127,7 @@ Prozessgruppen sind eine cluster-aware Publish/Subscribe- und Mitgliedschaftsein
 
 Typische Operationen: einer Gruppe beitreten/verlassen, an alle Mitglieder senden (oder nur lokale), Mitglieder auflisten und eine Gruppe auf Beitritts-/Verlassens-Ereignisse überwachen. Wenn ein neuer Knoten beitritt, reconcilen die Gruppen ihre Mitgliedschaft durch einen direkten Sync-Handshake, und eine Hintergrund-Anti-Entropy-Schleife behebt Abweichungen über die Zeit.
 
-Siehe [Prozessgruppen](../lua/core/pg.md) für die Lua-API und den [`pg.scope`-Entry-Kind](../system/process-groups.md) für die Konfiguration.
+Siehe [Prozessgruppen](lua/core/pg.md) für die Lua-API und den [`pg.scope`-Entry-Kind](system/process-groups.md) für die Konfiguration.
 
 ## Verteilte Sperren
 
@@ -149,11 +149,11 @@ end
 return released
 ```
 
-Erwerben ist fail-fast (nicht-blockierend): wenn die Sperre gehalten wird, kehrt es sofort zurück, sodass Aufrufer eigenes Retry/Backoff hinzufügen. Die Sperre wird automatisch freigegeben, wenn der Halterprozess endet oder sein Knoten ausscheidet, sodass Bereinigung automatisch erfolgt. Siehe die [System](../lua/system/system.md)-Referenz für die genauen Signaturen.
+Erwerben ist fail-fast (nicht-blockierend): wenn die Sperre gehalten wird, kehrt es sofort zurück, sodass Aufrufer eigenes Retry/Backoff hinzufügen. Die Sperre wird automatisch freigegeben, wenn der Halterprozess endet oder sein Knoten ausscheidet, sodass Bereinigung automatisch erfolgt. Siehe die [System](lua/system/system.md)-Referenz für die genauen Signaturen.
 
 ## Konfiguration
 
-Zugehörige Einstellungen beschreibt die [Konfiguration](./configuration.md#cluster). Die folgenden minimalen Formen enthalten die verpflichtenden Internode-Identitätseinstellungen.
+Zugehörige Einstellungen beschreibt die [Konfiguration](guides/configuration.md#cluster). Die folgenden minimalen Formen enthalten die verpflichtenden Internode-Identitätseinstellungen.
 
 Es handelt sich um Konfigurationsfragmente, nicht um ein vollständiges Deployment-Manifest. Ersetzen Sie Knotennamen, Adressen, Failure Domains, Pfade und jeden `${env:...}`-Identitätsplatzhalter durch für Ihren Cluster erzeugte und verteilte Werte.
 
@@ -220,7 +220,7 @@ Raft wird über das Internode-Mesh gemultiplext und verwendet keinen separaten P
 
 ## Observability
 
-Die Cluster-Gesundheit wird über den standardmäßigen [Prometheus-Endpoint](./observability.md) und Liveness-Prüfungen bereitgestellt.
+Die Cluster-Gesundheit wird über den standardmäßigen [Prometheus-Endpoint](guides/observability.md) und Liveness-Prüfungen bereitgestellt.
 
 Wichtige zu überwachende Metriken:
 
@@ -250,8 +250,8 @@ Der Raft-Zustand ist fs-dauerhaft, aber die primäre Dauerhaftigkeit des Cluster
 
 ## Siehe auch
 
-- [Konfiguration](./configuration.md#cluster) — zugehörige Cluster-Einstellungen
-- [Prozess](../lua/core/process.md) — Prozesse nach Namen registrieren und auflösen
-- [System](../lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
-- [Observability](./observability.md) — Metriken und Health-Endpoints
-- [Prozessmodell](../concepts/process-model.md) — Aktoren, PIDs und Nachrichten
+- [Konfiguration](guides/configuration.md#cluster) — zugehörige Cluster-Einstellungen
+- [Prozess](lua/core/process.md) — Prozesse nach Namen registrieren und auflösen
+- [System](lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
+- [Observability](guides/observability.md) — Metriken und Health-Endpoints
+- [Prozessmodell](concepts/process-model.md) — Aktoren, PIDs und Nachrichten

@@ -344,7 +344,7 @@ entries:
 The signing key, wildcard user policy, raw API-key storage, and memory token store are
 appropriate only for this loopback demo. In production, use `token_key_env`, hash API
 keys before storage, narrow policy actions and resources, restrict allowed origins, and
-use a durable token store. See [Environment System](../system/env.md).
+use a durable token store. See [Environment System](system/env.md).
 
 ## Token Exchange
 
@@ -890,6 +890,6 @@ A successful response contains `token`, `user_id: "demo"`, `role: "user"`, and
 
 ## Next Steps
 
-- [WebSocket Relay](../http/websocket-relay.md) — Middleware configuration
-- [Security Module](../lua/security/security.md) — Actors, policies, and token stores
-- [Process Management](../lua/core/process.md) — Process spawning and messaging
+- [WebSocket Relay](http/websocket-relay.md) — Middleware configuration
+- [Security Module](lua/security/security.md) — Actors, policies, and token stores
+- [Process Management](lua/core/process.md) — Process spawning and messaging

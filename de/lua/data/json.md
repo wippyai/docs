@@ -220,4 +220,4 @@ if decode_err then return nil, decode_err end
 | Schema-Kompilierung fehlgeschlagen | `errors.INVALID` | nein |
 | Validierung fehlgeschlagen | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

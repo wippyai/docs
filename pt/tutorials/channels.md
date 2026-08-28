@@ -257,5 +257,5 @@ Operações disponíveis:
 
 ## Próximos Passos
 
-- [Referência do Módulo Channel](../lua/core/channel.md) - Documentação da API de canais
-- [Processos](processes.md) - Comunicação entre processos
+- [Referência do Módulo Channel](lua/core/channel.md) - Documentação da API de canais
+- [Processos](tutorials/processes.md) - Comunicação entre processos

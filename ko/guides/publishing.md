@@ -317,7 +317,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []`는 아무것도 게시하지 않습니다. 알 수 없는 이름은 게시를 실패시킵니다. `workspace` 하위 섹션은 게시된 프로파일 안에서도 절대 내보내지지 않습니다. 프로파일 선언은 [설정](./configuration.md#profiles)을 참고하세요.
+`include: []`는 아무것도 게시하지 않습니다. 알 수 없는 이름은 게시를 실패시킵니다. `workspace` 하위 섹션은 게시된 프로파일 안에서도 절대 내보내지지 않습니다. 프로파일 선언은 [설정](guides/configuration.md#profiles)을 참고하세요.
 
 ## 게시된 모듈 사용
 
@@ -431,6 +431,6 @@ wippy publish --version 1.0.0
 
 ## 참고
 
-- [CLI 참조](./cli.md) - 게시 명령과 플래그
-- [엔트리 종류](./entry-kinds.md) - 모듈과 의존성 엔트리
-- [설정](./configuration.md) - 런타임 설정과 프로파일
+- [CLI 참조](guides/cli.md) - 게시 명령과 플래그
+- [엔트리 종류](guides/entry-kinds.md) - 모듈과 의존성 엔트리
+- [설정](guides/configuration.md) - 런타임 설정과 프로파일

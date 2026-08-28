@@ -178,6 +178,6 @@ La migracion crea el esquema apropiado para el driver de base de datos en `targe
 
 ## Ver Tambien
 
-- [LLM](./llm.md) — `llm.embed(...)` para generación raw de embeddings
-- [Migraciones](./migration.md) — Ejecutor de migraciones que aprovisiona la tabla
-- [Visión general del framework](./overview.md) — Uso de módulos del framework
+- [LLM](framework/llm.md) — `llm.embed(...)` para generación raw de embeddings
+- [Migraciones](framework/migration.md) — Ejecutor de migraciones que aprovisiona la tabla
+- [Visión general del framework](framework/overview.md) — Uso de módulos del framework

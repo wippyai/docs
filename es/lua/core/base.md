@@ -245,7 +245,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## Corrutinas
 
-La biblioteca `coroutine` permite crear y controlar corrutinas. Consulta [Canales y corrutinas](channel.md) para ver patrones de concurrencia basados en canales.
+La biblioteca `coroutine` permite crear y controlar corrutinas. Consulta [Canales y corrutinas](lua/core/channel.md) para ver patrones de concurrencia basados en canales.
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -283,7 +283,7 @@ Este patrón parcial presupone que la entrada incluye `time` en `modules:` y pro
 
 ## Manejo de errores
 
-La tabla global `errors` crea y clasifica errores estructurados. Consulta [Manejo de errores](errors.md) para ver la API completa.
+La tabla global `errors` crea y clasifica errores estructurados. Consulta [Manejo de errores](lua/core/errors.md) para ver la API completa.
 
 ### Constantes {id="error-constants"}
 
@@ -343,12 +343,12 @@ Las siguientes funciones estándar de Lua no están disponibles en los procesos 
 
 | Función | Alternativa |
 |----------------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Usa el módulo [Evaluación dinámica](../dynamic/eval.md) |
+| `load`, `loadstring`, `loadfile`, `dofile` | Usa el módulo [Evaluación dinámica](lua/dynamic/eval.md) |
 | `collectgarbage` | Recolección de basura automática |
 | `rawlen` | Usa el operador `#` |
 | `string.dump` | No compatible |
-| `io.*` | Usa [Sistema de archivos](../storage/filesystem.md) para archivos o [E/S de terminal](../system/io.md) para flujos de terminal |
-| `os.execute` | Usa [Ejecución de comandos](../dynamic/exec.md) |
+| `io.*` | Usa [Sistema de archivos](lua/storage/filesystem.md) para archivos o [E/S de terminal](../system/io.md) para flujos de terminal |
+| `os.execute` | Usa [Ejecución de comandos](lua/dynamic/exec.md) |
 | `os.remove`, `os.rename` | Usa [Sistema de archivos](../storage/filesystem.md) |
 | `os.exit`, `os.tmpname` | Sin equivalente directo en la biblioteca estándar |
 | `debug.*` | No disponible |
@@ -357,6 +357,6 @@ Las siguientes funciones estándar de Lua no están disponibles en los procesos 
 
 ## Véase también
 
-- [Canales y corrutinas](channel.md) - Canales al estilo de Go para concurrencia
-- [Manejo de errores](errors.md) - Creación y manejo de errores estructurados
-- [Hora del sistema operativo](../system/ostime.md) - Funciones de hora del sistema
+- [Canales y corrutinas](lua/core/channel.md) - Canales al estilo de Go para concurrencia
+- [Manejo de errores](lua/core/errors.md) - Creación y manejo de errores estructurados
+- [Hora del sistema operativo](lua/system/ostime.md) - Funciones de hora del sistema

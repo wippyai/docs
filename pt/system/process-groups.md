@@ -7,7 +7,7 @@ description: "Configure grupos de processos nomeados e cientes do cluster, com a
 
 Um `pg.scope` permite que processos entrem em grupos nomeados e recebam broadcasts destinados a um grupo. O modelo segue o `pg` do Erlang/OTP: grupos são criados no primeiro join, um processo pode pertencer a vários grupos e entrar no mesmo grupo mais de uma vez, e cada nó do cluster mantém seu próprio estado de associação e o reconcilia com os peers pela malha internode. Esta página é uma referência de configuração e comportamento; os blocos YAML são fragmentos de entradas.
 
-A API Lua está documentada em [Grupos de Processos](../lua/core/pg.md); esta página cobre o tipo de entrada do escopo e sua configuração. Consulte o [Guia de cluster](../guides/cluster.md) para o modelo de associação circundante.
+A API Lua está documentada em [Grupos de Processos](lua/core/pg.md); esta página cobre o tipo de entrada do escopo e sua configuração. Consulte o [Guia de cluster](guides/cluster.md) para o modelo de associação circundante.
 
 ## Tipo de Entrada
 
@@ -70,10 +70,10 @@ Todos os campos são opcionais. A tabela mostra seus valores padrão.
 
 ## Observabilidade
 
-Uma verificação de liveness (`pg.broadcast_recent.<scope>`) reporta estado não saudável se um escopo não observar tráfego de broadcast por um período prolongado, revelando um loop de eventos travado ou uma partição persistente. Consulte o [Guia de observabilidade](../guides/observability.md).
+Uma verificação de liveness (`pg.broadcast_recent.<scope>`) reporta estado não saudável se um escopo não observar tráfego de broadcast por um período prolongado, revelando um loop de eventos travado ou uma partição persistente. Consulte o [Guia de observabilidade](guides/observability.md).
 
 ## Consulte também
 
-- [Grupos de Processos](../lua/core/pg.md) — A API Lua
-- [Cluster](../guides/cluster.md) — Associação e o modelo de clustering
-- [Modelo de Processos](../concepts/process-model.md) — Processos, PIDs e mensagens
+- [Grupos de Processos](lua/core/pg.md) — A API Lua
+- [Cluster](guides/cluster.md) — Associação e o modelo de clustering
+- [Modelo de Processos](concepts/process-model.md) — Processos, PIDs e mensagens

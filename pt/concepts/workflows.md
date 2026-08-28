@@ -206,6 +206,6 @@ Consulte o [Temporal](https://temporal.io) para a infraestrutura de workflows em
 
 ## Consulte também
 
-- [Funções](./functions.md) — Chamadas no escopo da requisição
-- [Modelo de Processos](./process-model.md) — Trabalho em segundo plano com estado
-- [Supervisão](../guides/supervision.md) — Políticas de reinicialização de processos
+- [Funções](concepts/functions.md) — Chamadas no escopo da requisição
+- [Modelo de Processos](concepts/process-model.md) — Trabalho em segundo plano com estado
+- [Supervisão](guides/supervision.md) — Políticas de reinicialização de processos

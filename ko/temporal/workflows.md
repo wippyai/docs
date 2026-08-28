@@ -1165,8 +1165,8 @@ end
 
 ## 참고
 
-- [개요](./overview.md) - 클라이언트 및 워커 설정
-- [액티비티](./activities.md) - 액티비티 정의 및 옵션
-- [Process](../lua/core/process.md) - 프로세스 관리 API
-- [함수](../lua/core/funcs.md) - 함수 호출
-- [채널](../lua/core/channel.md) - 채널 작업
+- [개요](temporal/overview.md) - 클라이언트 및 워커 설정
+- [액티비티](temporal/activities.md) - 액티비티 정의 및 옵션
+- [Process](lua/core/process.md) - 프로세스 관리 API
+- [함수](lua/core/funcs.md) - 함수 호출
+- [채널](lua/core/channel.md) - 채널 작업

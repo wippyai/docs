@@ -157,7 +157,7 @@ options:
 
 <note>プリハンドラ</note>
 
-トークンベースの認証です。トークンストアの設定については[セキュリティ](../system/security.md)を参照してください。
+トークンベースの認証です。トークンストアの設定については[セキュリティ](system/security.md)を参照してください。
 
 ```yaml
 middleware:
@@ -267,7 +267,7 @@ options:
 
 <warning>マッチ後</warning>
 
-WebSocket接続をプロセスへ中継します。[WebSocketリレー](./websocket-relay.md)を参照してください。
+WebSocket接続をプロセスへ中継します。[WebSocketリレー](http/websocket-relay.md)を参照してください。
 
 ```yaml
 post_middleware:
@@ -282,7 +282,7 @@ post_options:
 
 <warning>マッチ後</warning>
 
-プロセスからServer-Sent Eventsをストリーミングします。[Server-Sent Events](./sse.md)を参照してください。
+プロセスからServer-Sent Eventsをストリーミングします。[Server-Sent Events](http/sse.md)を参照してください。
 
 ```yaml
 post_middleware:
@@ -327,8 +327,8 @@ post_middleware:
 
 ## 関連項目
 
-- [ルーティング](./router.md) - ルーター設定
-- [セキュリティ](../system/security.md) - トークンストアとポリシー
-- [WebSocketリレー](./websocket-relay.md) - WebSocket処理
-- [Server-Sent Events](./sse.md) - SSEストリーミング
-- [ターミナル](../system/terminal.md) - ターミナルサービス
+- [ルーティング](http/router.md) - ルーター設定
+- [セキュリティ](system/security.md) - トークンストアとポリシー
+- [WebSocketリレー](http/websocket-relay.md) - WebSocket処理
+- [Server-Sent Events](http/sse.md) - SSEストリーミング
+- [ターミナル](system/terminal.md) - ターミナルサービス

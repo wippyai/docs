@@ -7,7 +7,7 @@ description: "Deklarieren Sie Anforderungen wiederverwendbarer Module mit ns.req
 
 Eine **Komponente** ist ein wiederverwendbares Wippy-Modul, das im Hub veröffentlicht und in eine Host-Anwendung eingebunden wird. Eine Komponente kann von einer Datenbank, einem Process Host oder einem Router abhängen, ohne die Entry-IDs des Hosts zu kennen. Sie deklariert diese Abhängigkeiten über eine **Requirement-Schnittstelle**, und der Host stellt ihre Werte bereit.
 
-Dieser Leitfaden behandelt die Autorenseite: die Deklaration dieser Schnittstelle und den Wertefluss in Einträge. Die Verbraucherseite mit Lock-Dateien, Versionsbeschränkungen und `wippy add`/`update` beschreibt die [Abhängigkeitsverwaltung](./dependency-management.md). Die interne Struktur einer Komponente behandelt die [Anwendungsarchitektur](../concepts/architecture.md).
+Dieser Leitfaden behandelt die Autorenseite: die Deklaration dieser Schnittstelle und den Wertefluss in Einträge. Die Verbraucherseite mit Lock-Dateien, Versionsbeschränkungen und `wippy add`/`update` beschreibt die [Abhängigkeitsverwaltung](guides/dependency-management.md). Die interne Struktur einer Komponente behandelt die [Anwendungsarchitektur](concepts/architecture.md).
 
 ## Die drei Entry-Kinds
 
@@ -143,11 +143,11 @@ Unit-Tests prüfen nicht die Registry-Beziehungen des zusammengesetzten Moduls. 
 - jede gespawnte oder geplante ID löst zu einem realen Eintrag auf,
 - der Speicher jeder `env.variable` ist registriert.
 
-Damit werden unaufgelöste Beziehungen sichtbar, etwa ein Supervisor, der einen nicht registrierten Worker referenziert, oder ein Test-Fixture mit einer nur im Harness vorhandenen Storage-ID. Siehe [Supervision](./supervision.md) und das [Test-Framework](../framework/testing.md).
+Damit werden unaufgelöste Beziehungen sichtbar, etwa ein Supervisor, der einen nicht registrierten Worker referenziert, oder ein Test-Fixture mit einer nur im Harness vorhandenen Storage-ID. Siehe [Supervision](guides/supervision.md) und das [Test-Framework](framework/testing.md).
 
 ## Siehe auch
 
-- [Anwendungsarchitektur](../concepts/architecture.md) — interne Struktur einer Komponente
-- [Abhängigkeitsverwaltung](./dependency-management.md) — Lock-Dateien, Versionen und Verbraucher-Workflow
-- [Module veröffentlichen](./publishing.md) — eine Komponente im Hub veröffentlichen
-- [Leitfaden zu Entry-Kinds](./entry-kinds.md) — Referenz für `ns.definition`, `ns.requirement` und `ns.dependency`
+- [Anwendungsarchitektur](concepts/architecture.md) — interne Struktur einer Komponente
+- [Abhängigkeitsverwaltung](guides/dependency-management.md) — Lock-Dateien, Versionen und Verbraucher-Workflow
+- [Module veröffentlichen](guides/publishing.md) — eine Komponente im Hub veröffentlichen
+- [Leitfaden zu Entry-Kinds](guides/entry-kinds.md) — Referenz für `ns.definition`, `ns.requirement` und `ns.dependency`

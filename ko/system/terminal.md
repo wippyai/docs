@@ -42,7 +42,7 @@ description: "터미널 호스트는 stdin/stdout/stderr 접근이 있는 Lua �
 
 ## Lua API
 
-[IO 모듈](../lua/system/io.md)은 터미널 작업을 제공합니다.
+[IO 모듈](lua/system/io.md)은 터미널 작업을 제공합니다.
 
 ```lua
 local io = require("io")
@@ -63,5 +63,5 @@ local args = io.args()
 
 ## 참고
 
-- [Terminal I/O](../lua/system/io.md) — stdin/stdout/stderr 작업
-- [TTY](../lua/system/tty.md) — raw 입력 이벤트, style 및 layout
+- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr 작업
+- [TTY](lua/system/tty.md) — raw 입력 이벤트, style 및 layout

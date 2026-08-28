@@ -430,7 +430,7 @@ Las conexiones WebSocket estan sujetas a evaluacion de politica de seguridad.
 | `websocket.connect` | - | Permitir/denegar conexiones WebSocket |
 | `websocket.connect.url` | URL | Permitir/denegar conexiones a URLs especificas |
 
-Consulta [Modelo de seguridad](../../system/security.md) para configurar políticas.
+Consulta [Modelo de seguridad](system/security.md) para configurar políticas.
 
 ## Errores
 
@@ -461,4 +461,4 @@ if err then
 end
 ```
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

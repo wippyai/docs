@@ -16,7 +16,7 @@ Esta es una referencia de API con recetas parciales de handlers. Nombres como `i
 solicitud suelen devolver `value, error` y las mutaciones de respuesta devuelven
 `error`; los ejemplos comprueban los resultados que consumen.
 
-Para configurar el servidor, consulta [Servidor HTTP](../../http/server.md).
+Para configurar el servidor, consulta [Servidor HTTP](http/server.md).
 
 ## Carga
 
@@ -697,4 +697,4 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | Cabeceras ya enviadas | `errors.INVALID` | no |
 | Escritura fallida | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

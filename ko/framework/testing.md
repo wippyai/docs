@@ -380,6 +380,6 @@ entries:
 
 ## 참고 항목
 
-- [프레임워크 개요](./overview.md) — 프레임워크 모듈 설치 및 임포트
-- [CLI 레퍼런스](../guides/cli.md) — 테스트 명령과 플래그
-- [함수](../concepts/functions.md) — 함수 엔트리와 호출
+- [프레임워크 개요](framework/overview.md) — 프레임워크 모듈 설치 및 임포트
+- [CLI 레퍼런스](guides/cli.md) — 테스트 명령과 플래그
+- [함수](concepts/functions.md) — 함수 엔트리와 호출

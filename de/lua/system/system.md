@@ -337,7 +337,7 @@ Jede Status-Tabelle hat das gleiche Format wie `system.supervisor.state()`.
 
 ## Cluster-Primitive
 
-Die Subtabellen `system.node`, `system.cluster`, `system.raft` und `system.lock` legen die Clustering-Schicht frei. Wenn [Clustering nicht aktiviert ist](../../guides/cluster.md), meldet `system.raft.*` "raft not available", `system.cluster` nur den lokalen Knoten, und `system.lock` ist nicht verfügbar, weil es die globale Registry benötigt.
+Die Subtabellen `system.node`, `system.cluster`, `system.raft` und `system.lock` legen die Clustering-Schicht frei. Wenn [Clustering nicht aktiviert ist](guides/cluster.md), meldet `system.raft.*` "raft not available", `system.cluster` nur den lokalen Knoten, und `system.lock` ist nicht verfügbar, weil es die globale Registry benötigt.
 
 Alle Leseaufrufe sind lokal und günstig: sie melden die Sicht dieses Knotens auf den committierten Zustand, ohne je das Netzwerk zu blockieren.
 
@@ -489,4 +489,4 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Mitgliedschaft nicht verfügbar | `errors.INTERNAL` | nein |
 | Sperre bereits gehalten | `errors.ALREADY_EXISTS` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

@@ -298,7 +298,7 @@ curl -X POST http://localhost:8080/api/v1/ask \
 
 ## 次のステップ
 
-- [LLMフレームワーク](../framework/llm.md) — `llm.generate`、`llm.embed`、プロンプト構築
-- [エージェント](../framework/agents.md) — リトリーバーをエージェントツールとしてラップ
-- [SQLモジュール](../lua/storage/sql.md) — 基礎となるデータベースアクセス
-- [Textモジュール](../lua/text/text.md) — 文字ベースのテキスト分割
+- [LLMフレームワーク](framework/llm.md) — `llm.generate`、`llm.embed`、プロンプト構築
+- [エージェント](framework/agents.md) — リトリーバーをエージェントツールとしてラップ
+- [SQLモジュール](lua/storage/sql.md) — 基礎となるデータベースアクセス
+- [Textモジュール](lua/text/text.md) — 文字ベースのテキスト分割

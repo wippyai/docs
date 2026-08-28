@@ -124,7 +124,7 @@ end
 
 ## 핸들러 함수
 
-엔드포인트 핸들러는 `http` 모듈을 사용하여 요청 및 응답 객체에 접근합니다. 전체 API는 [HTTP 모듈](../lua/http/http.md)을 참조하세요.
+엔드포인트 핸들러는 `http` 모듈을 사용하여 요청 및 응답 객체에 접근합니다. 전체 API는 [HTTP 모듈](lua/http/http.md)을 참조하세요.
 
 ```lua
 local http = require("http")
@@ -305,7 +305,7 @@ entries:
 
 ## 참고
 
-- [서버](./server.md) - HTTP 서버 설정
-- [정적 파일](./static.md) - 정적 파일 서빙
-- [미들웨어](./middleware.md) - 사용 가능한 미들웨어
-- [HTTP 모듈](../lua/http/http.md) - Lua HTTP API
+- [서버](http/server.md) - HTTP 서버 설정
+- [정적 파일](http/static.md) - 정적 파일 서빙
+- [미들웨어](http/middleware.md) - 사용 가능한 미들웨어
+- [HTTP 모듈](lua/http/http.md) - Lua HTTP API

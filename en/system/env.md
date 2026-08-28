@@ -199,9 +199,9 @@ Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (for
 
 ## Runtime Access
 
-- [env module](../lua/system/env.md) - Lua runtime access
+- [env module](lua/system/env.md) - Lua runtime access
 
 ## See Also
 
-- [Security Model](./security.md) - Access control for environment variables
-- [Configuration Guide](../guides/configuration.md) - Application configuration patterns
+- [Security Model](system/security.md) - Access control for environment variables
+- [Configuration Guide](guides/configuration.md) - Application configuration patterns

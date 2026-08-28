@@ -37,7 +37,7 @@ HTTP 서버(`http.service`)는 포트에서 리스닝하고 라우터, 엔드포
 | `timeouts.idle` | duration | - | Keep-alive 연결 타임아웃 |
 | `host.buffer_size` | int | 1024 | 메시지 릴레이 버퍼 크기 |
 | `host.worker_count` | int | NumCPU | 메시지 릴레이 워커 수 |
-| `network` | 레지스트리 ID | - | [네트워크 오버레이](../system/network.md)를 통해 리스너 바인딩 (예: Tailscale, I2P) |
+| `network` | 레지스트리 ID | - | [네트워크 오버레이](system/network.md)를 통해 리스너 바인딩 (예: Tailscale, I2P) |
 | `tls` | object | - | TLS 종료 ([TLS](#tls) 참조) |
 
 ## 타임아웃
@@ -92,7 +92,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-이는 모든 요청에 대한 기본 액터와 정책을 설정합니다. 인증된 요청의 경우, [token_auth 미들웨어](./middleware.md)가 검증된 토큰을 기반으로 액터를 재정의하여 사용자별 보안 정책을 가능하게 합니다.
+이는 모든 요청에 대한 기본 액터와 정책을 설정합니다. 인증된 요청의 경우, [token_auth 미들웨어](http/middleware.md)가 검증된 토큰을 기반으로 액터를 재정의하여 사용자별 보안 정책을 가능하게 합니다.
 
 ## Lifecycle
 
@@ -167,7 +167,7 @@ entries:
 
 ### 수동 인증서
 
-`mode: manual`에서 `cert`와 `key`는 PEM 콘텐츠를 담습니다. 각 필드에는 인라인 PEM, manifest 기준 `file://` 참조, 또는 디코딩 시 등록된 [환경 변수](../system/env.md)에서 읽는 `${env:NAME}` 참조 중 하나를 사용하세요.
+`mode: manual`에서 `cert`와 `key`는 PEM 콘텐츠를 담습니다. 각 필드에는 인라인 PEM, manifest 기준 `file://` 참조, 또는 디코딩 시 등록된 [환경 변수](system/env.md)에서 읽는 `${env:NAME}` 참조 중 하나를 사용하세요.
 
 ```yaml
 - name: api
@@ -224,8 +224,8 @@ tls:
 
 ## 참고
 
-- [라우팅](./router.md) - 라우터 및 엔드포인트
-- [정적 파일](./static.md) - 정적 파일 서빙
-- [미들웨어](./middleware.md) - 사용 가능한 미들웨어
-- [보안](../system/security.md) - 보안 정책
-- [WebSocket 릴레이](./websocket-relay.md) - WebSocket 메시징
+- [라우팅](http/router.md) - 라우터 및 엔드포인트
+- [정적 파일](http/static.md) - 정적 파일 서빙
+- [미들웨어](http/middleware.md) - 사용 가능한 미들웨어
+- [보안](system/security.md) - 보안 정책
+- [WebSocket 릴레이](http/websocket-relay.md) - WebSocket 메시징

@@ -24,7 +24,7 @@ Disponíveis em todos os comandos:
 
 Prioridade do limite de memória: flag `--memory-limit` > variável de ambiente `GOMEMLIMIT` > padrão de 1GB.
 
-`--config` pode ser passado múltiplas vezes para compor arquivos de configuração. Os arquivos são mesclados da esquerda para a direita: arquivos posteriores sobrescrevem valores correspondentes e mantêm todo o resto. Todo arquivo nomeado explicitamente deve existir; sem `--config`, o `.wippy.yaml` padrão é opcional. O primeiro arquivo ancora o diretório usado para resolver caminhos relativos. A configuração é aplicada em ordem: composição de arquivos, seleções de `--profile` e sobrescritas de `--set`. Consulte [Configuração](./configuration.md#config-composition).
+`--config` pode ser passado múltiplas vezes para compor arquivos de configuração. Os arquivos são mesclados da esquerda para a direita: arquivos posteriores sobrescrevem valores correspondentes e mantêm todo o resto. Todo arquivo nomeado explicitamente deve existir; sem `--config`, o `.wippy.yaml` padrão é opcional. O primeiro arquivo ancora o diretório usado para resolver caminhos relativos. A configuração é aplicada em ordem: composição de arquivos, seleções de `--profile` e sobrescritas de `--set`. Consulte [Configuração](guides/configuration.md#config-composition).
 
 `wippy publish` oculta a opção global com uma opção local `--config <dir>`. Nesse comando, o valor é o diretório que contém `wippy.yaml`, não um arquivo repetível de configuração do runtime.
 
@@ -514,5 +514,5 @@ override:
 
 ## Veja Também
 
-- [Configuração](./configuration.md) - Referência do arquivo de configuração
-- [Observabilidade](./observability.md) - Monitoramento e logging
+- [Configuração](guides/configuration.md) - Referência do arquivo de configuração
+- [Observabilidade](guides/observability.md) - Monitoramento e logging

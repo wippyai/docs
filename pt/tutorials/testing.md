@@ -203,6 +203,6 @@ Depois de sair de `testing-demo`, remova o diretório quando não precisar mais 
 
 ## Próximos Passos
 
-- [Hello World](hello-world.md) — Estrutura mínima de projeto
-- [Tipos de Entrada](../guides/entry-kinds.md) — `function.lua`, `library.lua` e entradas relacionadas
-- [Framework de Testes](../framework/testing.md) — Referência do runner e protocolo de eventos
+- [Hello World](tutorials/hello-world.md) — Estrutura mínima de projeto
+- [Tipos de Entrada](guides/entry-kinds.md) — `function.lua`, `library.lua` e entradas relacionadas
+- [Framework de Testes](framework/testing.md) — Referência do runner e protocolo de eventos

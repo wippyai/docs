@@ -359,9 +359,9 @@ akzeptiert Eintrags-IDs oder Namen passender `fs.directory`-Einträge.
 
 ## Siehe auch
 
-- [Views](./views.md) — Seiten- und Komponentensystem
-- [HTTP-Server](../http/server.md) — Konfiguration des HTTP-Service
-- [Framework-Übersicht](./overview.md) — Verwendung von Framework-Modulen
+- [Views](framework/views.md) — Seiten- und Komponentensystem
+- [HTTP-Server](http/server.md) — Konfiguration des HTTP-Service
+- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen
 - [Facade-Einstiegspunkt](../frontend/web-host/entry-point.md) — Start des Web Hosts durch die Facade
 - [CSS-Injektion](../frontend/web-host/css-injection.md) — Auslieferung des Facade-Themes an Child-iframes
 - [Render-Engines](../frontend/web-host/render-engines.md) — Seiten-Rendering mit iframe und Web Fragment

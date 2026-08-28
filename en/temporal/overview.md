@@ -83,7 +83,7 @@ Provide the API key via one of these methods:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Auth and credential fields resolve `${env:NAME}` placeholders through the [environment registry](../system/env.md) at decode time. The legacy `api_key_env` / `key_pem_env` directives resolve the same way but are deprecated; prefer `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
+Auth and credential fields resolve `${env:NAME}` placeholders through the [environment registry](system/env.md) at decode time. The legacy `api_key_env` / `key_pem_env` directives resolve the same way but are deprecated; prefer `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -204,7 +204,7 @@ Configure worker behavior:
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Credential and identifier fields resolve `${env:NAME}` placeholders through the [environment registry](../system/env.md) at decode time. The legacy `build_id_env` directive resolves the same way but is deprecated; prefer `build_id: ${env:NAME}`.
+Credential and identifier fields resolve `${env:NAME}` placeholders through the [environment registry](system/env.md) at decode time. The legacy `build_id_env` directive resolves the same way but is deprecated; prefer `build_id: ${env:NAME}`.
 
 ### Versioning Behavior
 
@@ -287,5 +287,5 @@ entries:
 
 ## See Also
 
-- [Activities](./activities.md) - Activity definitions
-- [Workflows](./workflows.md) - Workflow implementation
+- [Activities](temporal/activities.md) - Activity definitions
+- [Workflows](temporal/workflows.md) - Workflow implementation

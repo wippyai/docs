@@ -427,7 +427,7 @@ entries:
 | `store` | 필수 | 백킹 키-값 스토어 참조 |
 | `token_length` | 32 | 토큰 크기 (바이트, 256비트) |
 | `default_expiration` | 24h | 기본 토큰 TTL |
-| `token_key` | 없음 | HMAC-SHA256 서명 키(직접 값 또는 [환경 레지스트리](./env.md)의 `${env:NAME}`) |
+| `token_key` | 없음 | HMAC-SHA256 서명 키(직접 값 또는 [환경 레지스트리](system/env.md)의 `${env:NAME}`) |
 
 프로덕션에서는 `token_key: ${env:NAME}`을 사용하여 엔트리에 시크릿을 포함시키지
 마세요. 레거시 `token_key_env` 지시자도 환경 레지스트리를 읽지만 조회 값이 없거나

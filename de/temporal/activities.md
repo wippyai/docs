@@ -390,7 +390,7 @@ end
 
 ## Siehe auch
 
-- [Übersicht](./overview.md) - Konfiguration
-- [Workflows](./workflows.md) - Workflow-Implementierung
-- [Funktionen](../lua/core/funcs.md) - Funktionsmodul
-- [Fehlerbehandlung](../lua/core/errors.md) - Fehlertypen und -muster
+- [Übersicht](temporal/overview.md) - Konfiguration
+- [Workflows](temporal/workflows.md) - Workflow-Implementierung
+- [Funktionen](lua/core/funcs.md) - Funktionsmodul
+- [Fehlerbehandlung](lua/core/errors.md) - Fehlertypen und -muster

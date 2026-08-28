@@ -10,7 +10,7 @@ description: "Render Jet templates from configured template sets."
 
 The `templates` module renders [Jet](https://github.com/CloudyKit/jet) templates from configured sets. Templates can use inheritance and includes. This page is an API reference with isolated rendering examples, not a standalone template deployment. The registry IDs and template sources must already be configured, and the executable entry must enable `templates` and have `template.get` permission for the requested set.
 
-For template set configuration, see [Template Engine](../../system/template.md).
+For template set configuration, see [Template Engine](system/template.md).
 
 ## Loading
 
@@ -151,4 +151,4 @@ Jet uses `{{ }}` for expressions and control structures and `{* *}` for comments
 | Render error | `errors.INTERNAL` | no |
 | Render attempted after the set was released | `errors.INTERNAL` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

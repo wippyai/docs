@@ -292,9 +292,9 @@ wippy publish --embed facade:public_files
 
 ## 関連項目
 
-- [Views](./views.md) — ページとコンポーネントの仕組み
-- [HTTP Server](../http/server.md) — HTTP service 設定
-- [Framework 概要](./overview.md) — Framework モジュールの利用
+- [Views](framework/views.md) — ページとコンポーネントの仕組み
+- [HTTP Server](http/server.md) — HTTP service 設定
+- [Framework 概要](framework/overview.md) — Framework モジュールの利用
 - [Facade エントリポイント](../frontend/web-host/entry-point.md) — Facade が Web Host を起動する仕組み
 - [CSS 注入](../frontend/web-host/css-injection.md) — Facade のテーマが子 iframe へ届く仕組み
 - [レンダーエンジン](../frontend/web-host/render-engines.md) — iframe と Web Fragment のページ描画

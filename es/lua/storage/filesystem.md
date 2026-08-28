@@ -13,7 +13,7 @@ El módulo `fs` lee, escribe y administra archivos dentro de volúmenes de siste
 
 Esta página es una referencia de API. Sus fragmentos presuponen un volumen configurado y permiso para adquirirlo. Cada bloque es una operación aislada o una receta parcial; los valores y callbacks de la aplicación, como `config`, `message`, `process` y `report_cleanup_error`, deben existir. `report_cleanup_error(err)` registra un fallo de cierre sin sustituir un error de operación ya producido.
 
-Para configurar el sistema de archivos, consulta [Sistema de archivos](../../system/filesystem.md).
+Para configurar el sistema de archivos, consulta [Sistema de archivos](system/filesystem.md).
 
 ## Carga
 
@@ -327,4 +327,4 @@ La evaluación de políticas de seguridad se aplica cuando se adquiere un volume
 
 `unspecified` significa que `err:retryable()` devuelve `nil`; no equivale a `false`.
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

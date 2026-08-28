@@ -166,4 +166,4 @@ end
 | 표현식 평가 실패 | `errors.INTERNAL` | 아니오 |
 | 결과 변환 실패 | `errors.INTERNAL` | 아니오 |
 
-[에러 처리](../core/errors.md)에서 error 사용법을 확인하십시오.
+[에러 처리](lua/core/errors.md)에서 error 사용법을 확인하십시오.

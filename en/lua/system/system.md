@@ -337,7 +337,7 @@ Each state table has the same format as `system.supervisor.state()`.
 
 ## Cluster Primitives
 
-The `system.node`, `system.cluster`, `system.raft`, and `system.lock` subtables expose the clustering layer. When [clustering is not enabled](../../guides/cluster.md), `system.raft.*` reports "raft not available," `system.cluster` reports only the local node, and `system.lock` is unavailable because it requires the global registry.
+The `system.node`, `system.cluster`, `system.raft`, and `system.lock` subtables expose the clustering layer. When [clustering is not enabled](guides/cluster.md), `system.raft.*` reports "raft not available," `system.cluster` reports only the local node, and `system.lock` is unavailable because it requires the global registry.
 
 Read calls report this node's local view of committed state and do not block on the network.
 
@@ -489,4 +489,4 @@ Security policy evaluation applies to system operations.
 | Membership unavailable | `errors.INTERNAL` | no |
 | Lock already held | `errors.ALREADY_EXISTS` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

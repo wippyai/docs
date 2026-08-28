@@ -168,7 +168,7 @@ entries:
 
 ## 참고
 
-- [서버](./server.md) - HTTP server configuration
-- [라우팅](./router.md) - router 및 endpoint
-- [파일시스템](../lua/storage/filesystem.md) - Filesystem module
-- [미들웨어](./middleware.md) - available middleware
+- [서버](http/server.md) - HTTP server configuration
+- [라우팅](http/router.md) - router 및 endpoint
+- [파일시스템](lua/storage/filesystem.md) - Filesystem module
+- [미들웨어](http/middleware.md) - available middleware

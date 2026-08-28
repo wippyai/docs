@@ -345,7 +345,7 @@ Der Signaturschlüssel, die Wildcard-User-Policy, die Speicherung unverarbeitete
 API-Keys und der Memory-Token-Store eignen sich nur für diese Loopback-Demo. Verwenden
 Sie in Produktion `token_key_env`, hashen Sie API-Keys vor dem Speichern, begrenzen
 Sie Policy-Aktionen und -Ressourcen, schränken Sie zulässige Origins ein und verwenden
-Sie einen dauerhaften Token-Store. Siehe [Umgebungssystem](../system/env.md).
+Sie einen dauerhaften Token-Store. Siehe [Umgebungssystem](system/env.md).
 
 ## Token-Austausch
 
@@ -896,6 +896,6 @@ Eine erfolgreiche Antwort enthält `token`, `user_id: "demo"`, `role: "user"` un
 
 ## Nächste Schritte
 
-- [WebSocket-Relay](../http/websocket-relay.md) — Middleware-Konfiguration
-- [Sicherheitsmodul](../lua/security/security.md) — Actors, Policies und Token-Stores
-- [Prozessverwaltung](../lua/core/process.md) — Starten von Prozessen und Messaging
+- [WebSocket-Relay](http/websocket-relay.md) — Middleware-Konfiguration
+- [Sicherheitsmodul](lua/security/security.md) — Actors, Policies und Token-Stores
+- [Prozessverwaltung](lua/core/process.md) — Starten von Prozessen und Messaging

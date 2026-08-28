@@ -71,7 +71,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Armazenamentos KV em Cluster {id=cluster-kv-stores}
 
-`store.kv.raft` e `store.kv.crdt` replicam dados chave-valor entre os nós do cluster. Ambos exigem que o [clustering](../guides/cluster.md) esteja habilitado e reutilizam a mesma API Lua do [módulo Store](../lua/storage/store.md). Cada entrada é uma visão com namespace de um único engine ao nível do nó; `namespace` isola as chaves desta entrada e deve corresponder a `^[a-z][a-z0-9._-]*$` (não pode começar com `_`).
+`store.kv.raft` e `store.kv.crdt` replicam dados chave-valor entre os nós do cluster. Ambos exigem que o [clustering](guides/cluster.md) esteja habilitado e reutilizam a mesma API Lua do [módulo Store](lua/storage/store.md). Cada entrada é uma visão com namespace de um único engine ao nível do nó; `namespace` isola as chaves desta entrada e deve corresponder a `^[a-z][a-z0-9._-]*$` (não pode começar com `_`).
 
 ### Raft (consistência forte)
 
@@ -85,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |-------|------|-------------|-----------|
 | `namespace` | string | Sim | Namespace de chaves no engine compartilhado |
 
-Escritas são propostas pelo Raft compartilhado (followers encaminham ao leader); leituras são linearizáveis. Escritas condicionais (`put` com `only_if_absent`/`if_version`) são aceitas. O estado do Raft é durável em disco por padrão, sob `cluster.raft.data_dir` (padrão `~/.wippy/store`); consulte [Configuração](../guides/configuration.md#cluster).
+Escritas são propostas pelo Raft compartilhado (followers encaminham ao leader); leituras são linearizáveis. Escritas condicionais (`put` com `only_if_absent`/`if_version`) são aceitas. O estado do Raft é durável em disco por padrão, sob `cluster.raft.data_dir` (padrão `~/.wippy/store`); consulte [Configuração](guides/configuration.md#cluster).
 
 ### CRDT (consistência eventual)
 
@@ -118,9 +118,9 @@ Os quatro tipos de store aceitam valores de time-to-live, mas a visibilidade da 
 
 ## API Lua
 
-Consulte o [módulo Store](../lua/storage/store.md) para as operações `get`, `set`, `has` e `delete`, além de `put`, `entry`, `list` e `info` para acesso versionado e condicional.
+Consulte o [módulo Store](lua/storage/store.md) para as operações `get`, `set`, `has` e `delete`, além de `put`, `entry`, `list` e `info` para acesso versionado e condicional.
 
 ## Consulte também
 
-- [Módulo Store](../lua/storage/store.md) — Referência da API Lua
-- [Banco de dados](./database.md) — Backend SQL para `store.sql`
+- [Módulo Store](lua/storage/store.md) — Referência da API Lua
+- [Banco de dados](system/database.md) — Backend SQL para `store.sql`

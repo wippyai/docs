@@ -38,7 +38,7 @@ if err then
 end
 ```
 
-Consulte o [módulo funcs](../lua/core/funcs.md) para a invocação de funções e as opções do executor.
+Consulte o [módulo funcs](lua/core/funcs.md) para a invocação de funções e as opções do executor.
 
 ## Propagação de contexto
 
@@ -64,7 +64,7 @@ if err then return nil, err end
 return result
 ```
 
-O contexto de segurança se propaga da mesma forma. As funções chamadas veem o ator do chamador e podem verificar permissões. Consulte o [módulo security](../lua/security/security.md) para as APIs de controle de acesso.
+O contexto de segurança se propaga da mesma forma. As funções chamadas veem o ator do chamador e podem verificar permissões. Consulte o [módulo security](lua/security/security.md) para as APIs de controle de acesso.
 
 ## Definição no registro
 

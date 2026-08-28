@@ -176,6 +176,6 @@ curl http://localhost:8080/hello
 
 ## 다음 단계
 
-- [에코 서비스](echo-service.md) — 다중 프로세스 CLI 서비스 구축
-- [태스크 큐](task-queue.md) — REST API와 백그라운드 처리 결합
-- [HTTP 라우터](../http/router.md) — 라우팅 패턴 검토
+- [에코 서비스](tutorials/echo-service.md) — 다중 프로세스 CLI 서비스 구축
+- [태스크 큐](tutorials/task-queue.md) — REST API와 백그라운드 처리 결합
+- [HTTP 라우터](http/router.md) — 라우팅 패턴 검토

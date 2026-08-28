@@ -24,7 +24,7 @@ Os IDs do registro também são usados como recursos por muitas verificações d
 
 ## Handlers de kind
 
-Quando uma entrada despachada é enviada, seu `kind` seleciona o handler registrado. O handler valida e reconcilia o recurso correspondente no runtime: uma entrada `http.service` gerencia um servidor HTTP, uma entrada `function.lua` gerencia um pool de funções e uma entrada `db.sql.postgres` gerencia um pool de conexões. Consulte o [Guia de Tipos de Entrada](../guides/entry-kinds.md) para conhecer os kinds disponíveis e [Tipos de Entrada Personalizados](../internals/kinds.md) para a implementação de handlers.
+Quando uma entrada despachada é enviada, seu `kind` seleciona o handler registrado. O handler valida e reconcilia o recurso correspondente no runtime: uma entrada `http.service` gerencia um servidor HTTP, uma entrada `function.lua` gerencia um pool de funções e uma entrada `db.sql.postgres` gerencia um pool de conexões. Consulte o [Guia de Tipos de Entrada](guides/entry-kinds.md) para conhecer os kinds disponíveis e [Tipos de Entrada Personalizados](internals/kinds.md) para a implementação de handlers.
 
 ## Atualizações em tempo real
 
@@ -32,10 +32,10 @@ Entradas podem ser adicionadas, atualizadas ou removidas enquanto o sistema est�
 
 O histórico de versões permite transições para trás e para frente quando está habilitado. O histórico em memória é o padrão e dura pelo tempo de vida do processo; os backends SQLite e PostgreSQL persistem o histórico entre reinicializações.
 
-Arquivos de definição YAML e JSON são manifests de origem que o boot loader converte em entradas. Eles não são snapshots serializados do registro. Consulte o [módulo Registry](../lua/core/registry.md) para acesso programático.
+Arquivos de definição YAML e JSON são manifests de origem que o boot loader converte em entradas. Eles não são snapshots serializados do registro. Consulte o [módulo Registry](lua/core/registry.md) para acesso programático.
 
 ## Consulte também
 
-- [YAML e Estrutura do Projeto](../start/structure.md) — Arquivos de definição
-- [Tipos de Entrada Personalizados](../internals/kinds.md) — Implementação de handlers de kind
-- [Modelo de Processos](./process-model.md) — Entenda a execução de processos
+- [YAML e Estrutura do Projeto](start/structure.md) — Arquivos de definição
+- [Tipos de Entrada Personalizados](internals/kinds.md) — Implementação de handlers de kind
+- [Modelo de Processos](concepts/process-model.md) — Entenda a execução de processos

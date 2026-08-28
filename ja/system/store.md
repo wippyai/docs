@@ -71,7 +71,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## クラスター KV ストア {id="cluster-kv-stores"}
 
-`store.kv.raft` と `store.kv.crdt` は、クラスターノード間でキーバリューデータをレプリケーションします。どちらも[クラスタリング](../guides/cluster.md)を有効にする必要があり、同じ[ストアモジュール](../lua/storage/store.md)の Lua API を再利用します。各エントリは、ノード全体で共有される単一のエンジンに対する名前空間付きのビューです。`namespace` はこのエントリのキーを分離し、`^[a-z][a-z0-9._-]*$` に一致する必要があります（`_` で始めることはできません）。
+`store.kv.raft` と `store.kv.crdt` は、クラスターノード間でキーバリューデータをレプリケーションします。どちらも[クラスタリング](guides/cluster.md)を有効にする必要があり、同じ[ストアモジュール](lua/storage/store.md)の Lua API を再利用します。各エントリは、ノード全体で共有される単一のエンジンに対する名前空間付きのビューです。`namespace` はこのエントリのキーを分離し、`^[a-z][a-z0-9._-]*$` に一致する必要があります（`_` で始めることはできません）。
 
 ### Raft（強整合性）
 
@@ -85,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |------------|-----|------|------|
 | `namespace` | string | はい | 共有エンジン内のキー名前空間 |
 
-書き込みは共有 Raft を通じて提案され（フォロワーはリーダーに転送）、読み取りは線形化可能です。条件付き書き込み（`put` で `only_if_absent`／`if_version` を指定）もサポートされます。Raft の状態はデフォルトで `cluster.raft.data_dir`（デフォルト: `~/.wippy/store`）の下にファイルシステムへ永続化されます。[設定](../guides/configuration.md#cluster)を参照してください。
+書き込みは共有 Raft を通じて提案され（フォロワーはリーダーに転送）、読み取りは線形化可能です。条件付き書き込み（`put` で `only_if_absent`／`if_version` を指定）もサポートされます。Raft の状態はデフォルトで `cluster.raft.data_dir`（デフォルト: `~/.wippy/store`）の下にファイルシステムへ永続化されます。[設定](guides/configuration.md#cluster)を参照してください。
 
 ### CRDT（結果整合性）
 
@@ -118,9 +118,9 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Lua API
 
-操作については、[ストアモジュール](../lua/storage/store.md)を参照してください。`get`、`set`、`has`、`delete` に加え、バージョン付きおよび条件付きアクセス用の `put`、`entry`、`list`、`info` を提供します。
+操作については、[ストアモジュール](lua/storage/store.md)を参照してください。`get`、`set`、`has`、`delete` に加え、バージョン付きおよび条件付きアクセス用の `put`、`entry`、`list`、`info` を提供します。
 
 ## 関連項目
 
-- [ストアモジュール](../lua/storage/store.md) - Lua API リファレンス
-- [データベース](./database.md) - `store.sql` の SQL バックエンド
+- [ストアモジュール](lua/storage/store.md) - Lua API リファレンス
+- [データベース](system/database.md) - `store.sql` の SQL バックエンド

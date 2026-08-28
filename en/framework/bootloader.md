@@ -147,7 +147,7 @@ Generates 32 random bytes, encodes them as a 64-character hexadecimal `ENCRYPTIO
 
 ### Migration Bootloader (order `20`)
 
-Provided by `wippy/migration`. Discovers every entry with `meta.type: migration`, groups them by `meta.target_db`, and applies the pending ones. See [Migrations](./migration.md).
+Provided by `wippy/migration`. Discovers every entry with `meta.type: migration`, groups them by `meta.target_db`, and applies the pending ones. See [Migrations](framework/migration.md).
 
 ## Observing Boot Status
 
@@ -159,6 +159,6 @@ Keep bootloaders idempotent. They run again whenever `bootloader.service` is sta
 
 ## See Also
 
-- [Migrations](./migration.md) — Migration bootloader and DSL
-- [Supervision](../guides/supervision.md) — Service lifecycle and restart policy
-- [Framework Overview](./overview.md) — Framework module usage
+- [Migrations](framework/migration.md) — Migration bootloader and DSL
+- [Supervision](guides/supervision.md) — Service lifecycle and restart policy
+- [Framework Overview](framework/overview.md) — Framework module usage

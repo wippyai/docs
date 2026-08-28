@@ -42,7 +42,7 @@ description: "ターミナルホストは、stdin、stdout、stderr にアクセ
 
 ## Lua API
 
-[IO モジュール](../lua/system/io.md)がターミナル操作を提供します。
+[IO モジュール](lua/system/io.md)がターミナル操作を提供します。
 
 ```lua
 local io = require("io")
@@ -63,5 +63,5 @@ local args = io.args()
 
 ## 関連項目
 
-- [Terminal I/O](../lua/system/io.md) — stdin、stdout、stderr の操作
-- [TTY](../lua/system/tty.md) — 生の入力イベント、スタイル、レイアウト
+- [Terminal I/O](lua/system/io.md) — stdin、stdout、stderr の操作
+- [TTY](lua/system/tty.md) — 生の入力イベント、スタイル、レイアウト

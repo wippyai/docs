@@ -483,8 +483,8 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 
 ## 다음 단계
 
-- [WASM 개요](../wasm/overview.md) — WebAssembly 런타임 개요
-- [WASM 함수](../wasm/functions.md) — 함수 구성 참조
-- [WASM 프로세스](../wasm/processes.md) — 프로세스 구성 참조
-- [호스트 함수](../wasm/hosts.md) — 사용 가능한 WASI 가져오기
-- [CLI 참조](../guides/cli.md) — CLI 명령 문서
+- [WASM 개요](wasm/overview.md) — WebAssembly 런타임 개요
+- [WASM 함수](wasm/functions.md) — 함수 구성 참조
+- [WASM 프로세스](wasm/processes.md) — 프로세스 구성 참조
+- [호스트 함수](wasm/hosts.md) — 사용 가능한 WASI 가져오기
+- [CLI 참조](guides/cli.md) — CLI 명령 문서

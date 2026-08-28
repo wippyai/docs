@@ -203,5 +203,5 @@ print(result.computed_value)
 | 変換失敗 | `errors.INTERNAL` | いいえ |
 | 結果が有効なLua値ではない | `errors.INTERNAL` | いいえ |
 
-エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。
 

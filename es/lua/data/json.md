@@ -220,4 +220,4 @@ if decode_err then return nil, decode_err end
 | Error al compilar el esquema | `errors.INVALID` | no |
 | Error de validación | `errors.INVALID` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

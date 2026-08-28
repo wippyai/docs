@@ -118,6 +118,6 @@ Full-document change notifications update the overlay used for diagnostics. Clie
 
 ## See Also
 
-- [Linter](./linter.md) — CLI-based code checking
-- [Types](../lua/types.md) — Type-system documentation
-- [Configuration](./configuration.md) — Runtime configuration
+- [Linter](guides/linter.md) — CLI-based code checking
+- [Types](lua/types.md) — Type-system documentation
+- [Configuration](guides/configuration.md) — Runtime configuration

@@ -195,6 +195,6 @@ sie nicht gesetzt, fällt der Browser auf `window.location.origin` zurück.
 
 ## Nächste Schritte
 
-- [Hello World](hello-world.md) — Minimales Projektlayout
-- [Authentifizierung](auth.md) — Den von der Shell erwarteten Login-Flow hinzufügen
-- [HTTP-Endpunkte](../http/endpoint.md) — Router, statische Dateien und Handler
+- [Hello World](tutorials/hello-world.md) — Minimales Projektlayout
+- [Authentifizierung](tutorials/auth.md) — Den von der Shell erwarteten Login-Flow hinzufügen
+- [HTTP-Endpunkte](http/endpoint.md) — Router, statische Dateien und Handler

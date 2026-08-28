@@ -26,7 +26,7 @@ Wippy CLI를 사용해 프로젝트를 초기화하고, 런타임을 실행하�
 
 메모리 제한 우선순위: `--memory-limit` 플래그 > `GOMEMLIMIT` 환경 변수 > 1GB 기본값.
 
-전역 `--config` 옵션은 설정 파일을 합성하기 위해 여러 번 전달할 수 있습니다. 파일은 왼쪽에서 오른쪽으로 병합됩니다. 뒤의 파일이 일치하는 값을 재정의하고 나머지는 모두 유지합니다. 명시적으로 지정된 파일은 모두 존재해야 하며, `--config`가 없으면 기본 `.wippy.yaml`은 선택 사항입니다. 첫 번째 파일이 상대 경로 해석에 사용되는 디렉토리를 고정합니다. 설정은 파일 합성, `--profile` 선택, `--set` 오버라이드 순서로 적용됩니다. [설정](./configuration.md#config-composition)을 참조하세요.
+전역 `--config` 옵션은 설정 파일을 합성하기 위해 여러 번 전달할 수 있습니다. 파일은 왼쪽에서 오른쪽으로 병합됩니다. 뒤의 파일이 일치하는 값을 재정의하고 나머지는 모두 유지합니다. 명시적으로 지정된 파일은 모두 존재해야 하며, `--config`가 없으면 기본 `.wippy.yaml`은 선택 사항입니다. 첫 번째 파일이 상대 경로 해석에 사용되는 디렉토리를 고정합니다. 설정은 파일 합성, `--profile` 선택, `--set` 오버라이드 순서로 적용됩니다. [설정](guides/configuration.md#config-composition)을 참조하세요.
 
 `wippy publish`는 전역 옵션 대신 명령어 로컬 `--config <dir>` 옵션을 사용합니다. 이 명령에서 값은 반복 가능한 런타임 설정 파일이 아니라 `wippy.yaml`이 있는 디렉토리입니다.
 
@@ -233,7 +233,7 @@ wippy publish --dry-run
 | `--module-type` | 모듈 타입: `library`, `application`, `agent`, 또는 `plugin` (wippy.yaml의 `type:`을 재정의) |
 | `--module-display-name` | 새로 생성되는 모듈의 표시 이름 (`--create` 전용) |
 
-모듈 타입은 일반적으로 `wippy.yaml`에 `type:`으로 선언합니다 ([게시](./publishing.md#wippy-yaml) 참조). `--module-type`은 단일 게시에 한해 이를 재정의합니다. 둘 다 설정되지 않으면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
+모듈 타입은 일반적으로 `wippy.yaml`에 `type:`으로 선언합니다 ([게시](guides/publishing.md#wippy-yaml) 참조). `--module-type`은 단일 게시에 한해 이를 재정의합니다. 둘 다 설정되지 않으면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
 
 ## wippy search
 
@@ -516,5 +516,5 @@ override:
 
 ## 참고
 
-- [설정](./configuration.md) - 설정 파일 레퍼런스
-- [관측성](./observability.md) - 모니터링 및 로깅
+- [설정](guides/configuration.md) - 설정 파일 레퍼런스
+- [관측성](guides/observability.md) - 모니터링 및 로깅

@@ -208,7 +208,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-As chaves sao `org/module`, os valores sao diretorios (caminhos relativos resolvem contra o diretorio do primeiro arquivo `--config`; o caminho deve existir e ser um diretorio). Definir uma substituicao como `null` desativa uma herdada de uma camada de configuracao ou profile anterior. Substituicoes tambem podem viver dentro de um [profile](./configuration.md#profiles) para ativarem apenas com `--profile workspace`.
+As chaves sao `org/module`, os valores sao diretorios (caminhos relativos resolvem contra o diretorio do primeiro arquivo `--config`; o caminho deve existir e ser um diretorio). Definir uma substituicao como `null` desativa uma herdada de uma camada de configuracao ou profile anterior. Substituicoes tambem podem viver dentro de um [profile](guides/configuration.md#profiles) para ativarem apenas com `--profile workspace`.
 
 Substituicoes de workspace afetam o grafo de carga no boot e nunca sao gravadas no `wippy.lock`. Mudancas no codigo-fonte local sao reconciliadas diretamente, sem contatar o hub. Os globs `exclude:` do `wippy.yaml` do modulo aplicam-se tambem a diretorios de substituicao, tanto ao carregar entradas quanto ao calcular o hash do conteudo.
 
@@ -230,7 +230,7 @@ O hash de conteúdo de uma entrada do lock é opcional até que a instalação o
 
 ## Veja Tambem
 
-- [Construindo Componentes](./components.md) — Declare requirements e forneça valores por meio de `parameters`
-- [CLI](./cli.md) — Referência de comandos
-- [Publicação](./publishing.md) — Publique módulos no Hub
-- [Estrutura do Projeto](../start/structure.md) — Layout do projeto
+- [Construindo Componentes](guides/components.md) — Declare requirements e forneça valores por meio de `parameters`
+- [CLI](guides/cli.md) — Referência de comandos
+- [Publicação](guides/publishing.md) — Publique módulos no Hub
+- [Estrutura do Projeto](start/structure.md) — Layout do projeto

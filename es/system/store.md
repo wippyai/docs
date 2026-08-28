@@ -71,7 +71,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Almacenes KV de cluster :id=cluster-kv-stores
 
-`store.kv.raft` y `store.kv.crdt` replican datos clave-valor entre los nodos del cluster. Ambos requieren que el [clustering](../guides/cluster.md) esté habilitado y reutilizan la misma API Lua del [módulo Store](../lua/storage/store.md). Cada entrada es una vista con namespace sobre un único motor a nivel de nodo; `namespace` aísla las claves de esta entrada y debe coincidir con `^[a-z][a-z0-9._-]*$` (no puede comenzar con `_`).
+`store.kv.raft` y `store.kv.crdt` replican datos clave-valor entre los nodos del cluster. Ambos requieren que el [clustering](guides/cluster.md) esté habilitado y reutilizan la misma API Lua del [módulo Store](lua/storage/store.md). Cada entrada es una vista con namespace sobre un único motor a nivel de nodo; `namespace` aísla las claves de esta entrada y debe coincidir con `^[a-z][a-z0-9._-]*$` (no puede comenzar con `_`).
 
 ### Raft (consistencia fuerte)
 
@@ -85,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |-------|------|----------|-------------|
 | `namespace` | string | Sí | Namespace de claves en el motor compartido |
 
-Las escrituras se proponen a través del Raft compartido (los seguidores las reenvían al líder); las lecturas son linealizables. Se soportan escrituras condicionales (`put` con `only_if_absent`/`if_version`). El estado de Raft es duradero en disco por defecto bajo `cluster.raft.data_dir` (por defecto `~/.wippy/store`); consulte [Configuración](../guides/configuration.md#cluster).
+Las escrituras se proponen a través del Raft compartido (los seguidores las reenvían al líder); las lecturas son linealizables. Se soportan escrituras condicionales (`put` con `only_if_absent`/`if_version`). El estado de Raft es duradero en disco por defecto bajo `cluster.raft.data_dir` (por defecto `~/.wippy/store`); consulte [Configuración](guides/configuration.md#cluster).
 
 ### CRDT (consistencia eventual)
 
@@ -118,9 +118,9 @@ Los cuatro tipos de almacén aceptan valores de tiempo de vida, pero la visibili
 
 ## API Lua
 
-Consulte el [módulo Store](../lua/storage/store.md) para las operaciones `get`, `set`, `has` y `delete`, además de `put`, `entry`, `list` e `info` para acceso versionado y condicional.
+Consulte el [módulo Store](lua/storage/store.md) para las operaciones `get`, `set`, `has` y `delete`, además de `put`, `entry`, `list` e `info` para acceso versionado y condicional.
 
 ## Ver También
 
-- [Módulo Store](../lua/storage/store.md) - Referencia de la API Lua
-- [Base de datos](./database.md) - Respaldo SQL para `store.sql`
+- [Módulo Store](lua/storage/store.md) - Referencia de la API Lua
+- [Base de datos](system/database.md) - Respaldo SQL para `store.sql`

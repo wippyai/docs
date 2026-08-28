@@ -593,4 +593,4 @@ if err then
 end
 ```
 
-Consulta [Manejo de errores](errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

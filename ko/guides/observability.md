@@ -45,7 +45,7 @@ logmanager:
 
 ### 자동 컨텍스트
 
-Lua에서 [logger 모듈](../lua/system/logger.md)을 통해 출력된 로그에는 자동으로 다음이 포함됩니다:
+Lua에서 [logger 모듈](lua/system/logger.md)을 통해 출력된 로그에는 자동으로 다음이 포함됩니다:
 
 - `pid` - 현재 프로세스 PID
 - `location` - 엔트리 ID와 호출 라인 (예: `app.api:handler:45`)
@@ -71,7 +71,7 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-Lua 메트릭 API는 [메트릭 모듈](../lua/system/metrics.md)을 참고하세요.
+Lua 메트릭 API는 [메트릭 모듈](lua/system/metrics.md)을 참고하세요.
 
 ## OpenTelemetry
 
@@ -208,6 +208,6 @@ local states, states_err = system.supervisor.states()
 
 ## 참고
 
-- [로거 모듈](../lua/system/logger.md) - Lua 로깅 API
-- [메트릭 모듈](../lua/system/metrics.md) - Lua 메트릭 API
-- [시스템 모듈](../lua/system/system.md) - 런타임 통계
+- [로거 모듈](lua/system/logger.md) - Lua 로깅 API
+- [메트릭 모듈](lua/system/metrics.md) - Lua 메트릭 API
+- [시스템 모듈](lua/system/system.md) - 런타임 통계

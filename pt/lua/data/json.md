@@ -220,4 +220,4 @@ if decode_err then return nil, decode_err end
 | Compilação de schema falhou | `errors.INVALID` | não |
 | Validação falhou | `errors.INVALID` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

@@ -378,4 +378,4 @@ Funktionsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Dispatch zum Start des asynchronen Aufrufs fehlgeschlagen | `errors.INTERNAL` | nein |
 | Funktionsfehler | variiert | variiert |
 
-Siehe [Fehlerbehandlung](./errors.md) für den Umgang mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für den Umgang mit Fehlern.

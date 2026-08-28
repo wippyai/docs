@@ -177,6 +177,6 @@ window.location.assign('/');
 
 ## 次のステップ
 
-- [Hello World](hello-world.md) — 最小限のプロジェクトレイアウト
-- [認証](auth.md) — シェルが期待するログインフローを接続する
-- [HTTP エンドポイント](../http/endpoint.md) — ルーター、静的ファイル、ハンドラ
+- [Hello World](tutorials/hello-world.md) — 最小限のプロジェクトレイアウト
+- [認証](tutorials/auth.md) — シェルが期待するログインフローを接続する
+- [HTTP エンドポイント](http/endpoint.md) — ルーター、静的ファイル、ハンドラ

@@ -1166,8 +1166,8 @@ As compensações são executadas na ordem inversa de registro. Se mais de uma c
 
 ## Veja também
 
-- [Visão geral](./overview.md) - Configuração de cliente e worker
-- [Atividades](./activities.md) - Definições e opções de atividades
-- [Processo](../lua/core/process.md) - API de gerenciamento de processos
-- [Funções](../lua/core/funcs.md) - Invocação de funções
-- [Channels](../lua/core/channel.md) - Operações de channel
+- [Visão geral](temporal/overview.md) - Configuração de cliente e worker
+- [Atividades](temporal/activities.md) - Definições e opções de atividades
+- [Processo](lua/core/process.md) - API de gerenciamento de processos
+- [Funções](lua/core/funcs.md) - Invocação de funções
+- [Channels](lua/core/channel.md) - Operações de channel

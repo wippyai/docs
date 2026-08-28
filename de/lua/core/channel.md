@@ -256,6 +256,6 @@ Nach der Schleife enthält `processed` die Werte `2`, `4`, `6` und `8`; ihre Rei
 
 ## Siehe auch
 
-- [Prozessverwaltung](process.md) - Prozesse starten und kommunizieren lassen
-- [Nachrichten-Queue](../storage/queue.md) - Queue-basierte Nachrichtenübermittlung
-- [Funktionen](funcs.md) - Funktionen aufrufen
+- [Prozessverwaltung](lua/core/process.md) - Prozesse starten und kommunizieren lassen
+- [Nachrichten-Queue](lua/storage/queue.md) - Queue-basierte Nachrichtenübermittlung
+- [Funktionen](lua/core/funcs.md) - Funktionen aufrufen

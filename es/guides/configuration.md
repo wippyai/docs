@@ -7,7 +7,7 @@ description: "Wippy se configura mediante archivos .wippy.yaml. Todas las opcion
 
 Wippy se configura mediante archivos `.wippy.yaml`. Todas las opciones tienen valores por defecto razonables.
 
-Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](./entry-kinds.md#overriding-entries).
+Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](guides/entry-kinds.md#overriding-entries).
 
 ## Composición de Configuración :id=config-composition
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - El primer archivo ancla el directorio usado para resolver rutas relativas.
 - Los nombres de archivo no tienen significado reservado; nada aparte del archivo por defecto se descubre automáticamente.
 
-La configuración se aplica en orden: composición de archivos, luego las selecciones de `--profile`, luego las sobrescrituras de `--set`. Para aplicaciones ejecutadas desde packs, los valores por defecto de runtime empaquetados se sitúan por debajo de todos estos (ver [Publicar valores por defecto del runtime](./publishing.md#publishing-runtime-defaults)).
+La configuración se aplica en orden: composición de archivos, luego las selecciones de `--profile`, luego las sobrescrituras de `--set`. Para aplicaciones ejecutadas desde packs, los valores por defecto de runtime empaquetados se sitúan por debajo de todos estos (ver [Publicar valores por defecto del runtime](guides/publishing.md#publishing-runtime-defaults)).
 
 ## Perfiles :id=profiles
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - La sección `disable` admite operaciones de lista dentro de perfiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — de modo que un perfil puede ajustar la lista base en lugar de reemplazarla.
 - Las referencias `${name}` se interpolan desde la sección `vars:` fusionada. Las referencias a variables de entorno del SO no están permitidas dentro de las vars de perfil; usa `${env:NAME}` en la configuración base, resuelta al cargar el archivo.
 
-`wippy run`, `test` y `pack` aceptan `--profile`; `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](./publishing.md#publishing-profiles).
+`wippy run`, `test` y `pack` aceptan `--profile`; `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## Gestor de Registros
 
-Controla el enrutamiento de registros del runtime. La salida en consola se configura mediante [flags de CLI](./cli.md) (`-v`, `-c`, `-s`).
+Controla el enrutamiento de registros del runtime. La salida en consola se configura mediante [flags de CLI](guides/cli.md) (`-v`, `-c`, `-s`).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-Ver: [Módulo Logger](../lua/system/logger.md)
+Ver: [Módulo Logger](lua/system/logger.md)
 
 ## Profiler
 
@@ -115,7 +115,7 @@ Acceso en `http://localhost:6060/debug/pprof/`
 
 ## Seguridad
 
-Comportamiento de seguridad global. Las políticas individuales se definen como [entradas security.policy](./entry-kinds.md).
+Comportamiento de seguridad global. Las políticas individuales se definen como [entradas security.policy](guides/entry-kinds.md).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
@@ -126,7 +126,7 @@ security:
   strict_mode: true
 ```
 
-Ver: [Sistema de Seguridad](../system/security.md), [Módulo de Seguridad](../lua/security/security.md)
+Ver: [Sistema de Seguridad](system/security.md), [Módulo de Seguridad](lua/security/security.md)
 
 ## Registro :id=registry
 
@@ -153,7 +153,7 @@ registry:
   history_schema: wippy_registry
 ```
 
-Ver: [Concepto de Registro](../concepts/registry.md), [Módulo de Registro](../lua/core/registry.md)
+Ver: [Concepto de Registro](concepts/registry.md), [Módulo de Registro](lua/core/registry.md)
 
 ## Relay
 
@@ -168,7 +168,7 @@ relay:
   node_name: worker-1
 ```
 
-Ver: [Modelo de Procesos](../concepts/process-model.md)
+Ver: [Modelo de Procesos](concepts/process-model.md)
 
 ## Supervisor
 
@@ -186,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-Ver: [Guía de Supervisión](./supervision.md)
+Ver: [Guía de Supervisión](guides/supervision.md)
 
 <note>
-Los workers y colas por `process.host` se configuran en la propia entrada (`workers`, `queue_size`, `local_queue_size`), no en esta sección global. Ver el tipo de entrada [Process Host](../system/process-host.md).
+Los workers y colas por `process.host` se configuran en la propia entrada (`workers`, `queue_size`, `local_queue_size`), no en esta sección global. Ver el tipo de entrada [Process Host](system/process-host.md).
 </note>
 
 ## Runtime de Lua
@@ -218,7 +218,7 @@ lua:
     enabled: true
 ```
 
-Ver: [Visión General de Lua](../lua/overview.md)
+Ver: [Visión General de Lua](lua/overview.md)
 
 ## Finder
 
@@ -271,7 +271,7 @@ otel:
 
 Las variables de entorno estándar de OTEL (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) sobrescriben los campos correspondientes.
 
-Ver: [Guía de Observabilidad](./observability.md)
+Ver: [Guía de Observabilidad](guides/observability.md)
 
 ## Apagado
 
@@ -303,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-Ver: [Módulo de Métricas](../lua/system/metrics.md), [Guía de Observabilidad](./observability.md)
+Ver: [Módulo de Métricas](lua/system/metrics.md), [Guía de Observabilidad](guides/observability.md)
 
 ## Prometheus
 
@@ -322,11 +322,11 @@ prometheus:
 
 Expone el endpoint `/metrics` para el scraping de Prometheus.
 
-Ver: [Guía de Observabilidad](./observability.md)
+Ver: [Guía de Observabilidad](guides/observability.md)
 
 ## Cluster
 
-Clustering multi-nodo: membresía por gossip más un núcleo de consenso Raft acotado. Ver la [Guía de Cluster](./cluster.md) para la arquitectura y el modelo operativo; esta sección es la referencia de claves de configuración.
+Clustering multi-nodo: membresía por gossip más un núcleo de consenso Raft acotado. Ver la [Guía de Cluster](guides/cluster.md) para la arquitectura y el modelo operativo; esta sección es la referencia de claves de configuración.
 
 ### Nivel superior
 
@@ -379,7 +379,7 @@ Cada nodo del cluster necesita su propia identidad privada internodo y un mapa d
 
 ### Raft (consenso)
 
-Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo `raft.data_dir` (por defecto `~/.wippy/store`); un nodo reiniciado aún se une al quórum desde sus peers. Las entradas [`store.kv.raft`](../system/store.md#cluster-kv-stores) se replican a través de él. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`).
+Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo `raft.data_dir` (por defecto `~/.wippy/store`); un nodo reiniciado aún se une al quórum desde sus peers. Las entradas [`store.kv.raft`](system/store.md#cluster-kv-stores) se replican a través de él. El bootstrap es dirigido por gossip (estilo Consul/Nomad `bootstrap_expect`).
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
@@ -479,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-Ver: [Guía de LSP](./lsp.md)
+Ver: [Guía de LSP](guides/lsp.md)
 
 ## Servicio de Red
 
@@ -496,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-Ver: [Redes Superpuestas](../system/network.md)
+Ver: [Redes Superpuestas](system/network.md)
 
 ## Despachador HTTP
 
@@ -554,7 +554,7 @@ extensions:
 
 ## Ver También
 
-- [Referencia de CLI](./cli.md) - Opciones de línea de comandos
-- [Guía de Cluster](./cluster.md) - Arquitectura y operaciones de clustering
-- [Tipos de Entrada](./entry-kinds.md) - Todos los tipos de entrada
-- [Guía de Observabilidad](./observability.md) - Registro, métricas, trazas
+- [Referencia de CLI](guides/cli.md) - Opciones de línea de comandos
+- [Guía de Cluster](guides/cluster.md) - Arquitectura y operaciones de clustering
+- [Tipos de Entrada](guides/entry-kinds.md) - Todos los tipos de entrada
+- [Guía de Observabilidad](guides/observability.md) - Registro, métricas, trazas

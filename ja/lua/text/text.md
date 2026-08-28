@@ -485,4 +485,4 @@ end
 | 無効なパターン構文 | `errors.INVALID` | いいえ |
 | 内部エラー | `errors.INTERNAL` | いいえ |
 
-エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。

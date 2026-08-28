@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - O primeiro arquivo ancora o diretório usado para resolver caminhos relativos.
 - Nomes de arquivo não carregam significado reservado; nada além do padrão é descoberto automaticamente.
 
-A configuração é aplicada nesta ordem: arquivos compostos, overlays selecionados com `--profile` e, por fim, sobrescritas `--set`. Para aplicações executadas a partir de packs, os padrões de runtime empacotados têm precedência menor que os três; consulte [Padrões de Runtime na Publicação](./publishing.md#publishing-runtime-defaults).
+A configuração é aplicada nesta ordem: arquivos compostos, overlays selecionados com `--profile` e, por fim, sobrescritas `--set`. Para aplicações executadas a partir de packs, os padrões de runtime empacotados têm precedência menor que os três; consulte [Padrões de Runtime na Publicação](guides/publishing.md#publishing-runtime-defaults).
 
 ## Perfis {#profiles}
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - A seção `disable` suporta operações de lista dentro de profiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — para que um profile possa ajustar a lista base em vez de substituí-la.
 - Referências `${name}` interpolam a partir da seção `vars:` mesclada. Referências a variáveis de ambiente do SO não são permitidas dentro de vars de profile; use `${env:NAME}` na configuração base, resolvido no carregamento do arquivo.
 
-`wippy run`, `test` e `pack` aceitam `--profile`; `install`, `update`, `lint` e `registry` também o aceitam para profiles de workspace (junto com `--set`). Aplicações podem incluir profiles nos packs — consulte [Publicando Profiles](./publishing.md#publishing-profiles).
+`wippy run`, `test` e `pack` aceitam `--profile`; `install`, `update`, `lint` e `registry` também o aceitam para profiles de workspace (junto com `--set`). Aplicações podem incluir profiles nos packs — consulte [Publicando Profiles](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## Gerenciador de Log
 
-Controla o roteamento de logs do runtime. A saída do console é configurada por [flags do CLI](./cli.md) (`-v`, `-c`, `-s`).
+Controla o roteamento de logs do runtime. A saída do console é configurada por [flags do CLI](guides/cli.md) (`-v`, `-c`, `-s`).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-Veja: [Módulo Logger](../lua/system/logger.md)
+Veja: [Módulo Logger](lua/system/logger.md)
 
 ## Profiler
 
@@ -115,7 +115,7 @@ Quando habilitado com o endereço padrão, o profiler fica disponível em `http:
 
 ## Segurança
 
-Comportamento global de segurança. Políticas individuais são definidas como [entradas security.policy](./entry-kinds.md).
+Comportamento global de segurança. Políticas individuais são definidas como [entradas security.policy](guides/entry-kinds.md).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -126,7 +126,7 @@ security:
   strict_mode: true
 ```
 
-Veja: [Sistema de Segurança](../system/security.md), [Módulo Security](../lua/security/security.md)
+Veja: [Sistema de Segurança](system/security.md), [Módulo Security](lua/security/security.md)
 
 ## Registro
 
@@ -153,7 +153,7 @@ registry:
   history_schema: wippy_registry
 ```
 
-Veja: [Conceito de Registro](../concepts/registry.md), [Módulo Registry](../lua/core/registry.md)
+Veja: [Conceito de Registro](concepts/registry.md), [Módulo Registry](lua/core/registry.md)
 
 ## Relay
 
@@ -168,7 +168,7 @@ relay:
   node_name: worker-1
 ```
 
-Veja: [Modelo de Processos](../concepts/process-model.md)
+Veja: [Modelo de Processos](concepts/process-model.md)
 
 ## Supervisor
 
@@ -186,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-Veja: [Guia de Supervisão](./supervision.md)
+Veja: [Guia de Supervisão](guides/supervision.md)
 
 <note>
-Workers e filas de cada `process.host` são configurados na própria entrada (`workers`, `queue_size`, `local_queue_size`), não nesta seção global. Consulte o kind de entrada [Process Host](../system/process-host.md).
+Workers e filas de cada `process.host` são configurados na própria entrada (`workers`, `queue_size`, `local_queue_size`), não nesta seção global. Consulte o kind de entrada [Process Host](system/process-host.md).
 </note>
 
 ## Runtime Lua
@@ -218,7 +218,7 @@ lua:
     enabled: true
 ```
 
-Veja: [Visão Geral Lua](../lua/overview.md)
+Veja: [Visão Geral Lua](lua/overview.md)
 
 ## Finder
 
@@ -271,7 +271,7 @@ otel:
 
 Variáveis de ambiente OTEL padrão (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) sobrescrevem os campos correspondentes.
 
-Veja: [Guia de Observabilidade](./observability.md)
+Veja: [Guia de Observabilidade](guides/observability.md)
 
 ## Encerramento :id=shutdown
 
@@ -303,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-Veja: [Módulo Metrics](../lua/system/metrics.md), [Guia de Observabilidade](./observability.md)
+Veja: [Módulo Metrics](lua/system/metrics.md), [Guia de Observabilidade](guides/observability.md)
 
 ## Prometheus
 
@@ -322,11 +322,11 @@ prometheus:
 
 Expõe endpoint `/metrics` para scraping do Prometheus.
 
-Veja: [Guia de Observabilidade](./observability.md)
+Veja: [Guia de Observabilidade](guides/observability.md)
 
 ## Cluster
 
-Clustering multinó: associação por gossip e um núcleo de consenso Raft limitado. Consulte o [Guia de Cluster](./cluster.md) para conhecer a arquitetura e o modelo operacional; esta seção é a referência das chaves de configuração.
+Clustering multinó: associação por gossip e um núcleo de consenso Raft limitado. Consulte o [Guia de Cluster](guides/cluster.md) para conhecer a arquitetura e o modelo operacional; esta seção é a referência das chaves de configuração.
 
 ### Nível superior
 
@@ -379,7 +379,7 @@ Cada nó do cluster precisa de sua própria identidade privada internó e de um 
 
 ### Raft (consenso)
 
-O núcleo Raft limitado armazena estado durável em `raft.data_dir` por padrão (`~/.wippy/store`). Um nó reiniciado volta a participar do quórum a partir de seus peers. As entradas [`store.kv.raft`](../system/store.md#cluster-kv-stores) são replicadas por esse núcleo, e o gossip coordena o bootstrap usando um modelo `bootstrap_expect`.
+O núcleo Raft limitado armazena estado durável em `raft.data_dir` por padrão (`~/.wippy/store`). Um nó reiniciado volta a participar do quórum a partir de seus peers. As entradas [`store.kv.raft`](system/store.md#cluster-kv-stores) são replicadas por esse núcleo, e o gossip coordena o bootstrap usando um modelo `bootstrap_expect`.
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -479,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-Veja: [Guia do LSP](./lsp.md)
+Veja: [Guia do LSP](guides/lsp.md)
 
 ## Serviço de Rede
 
@@ -496,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-Veja: [Overlays de Rede](../system/network.md)
+Veja: [Overlays de Rede](system/network.md)
 
 ## Dispatcher HTTP
 
@@ -554,7 +554,7 @@ extensions:
 
 ## Consulte Também
 
-- [Referência do CLI](./cli.md) — Opções da linha de comando
-- [Guia de Cluster](./cluster.md) — Arquitetura e operações de clustering
-- [Kinds de Entrada](./entry-kinds.md) — Kinds de entrada e seus campos
-- [Guia de Observabilidade](./observability.md) — Logs, métricas e tracing
+- [Referência do CLI](guides/cli.md) — Opções da linha de comando
+- [Guia de Cluster](guides/cluster.md) — Arquitetura e operações de clustering
+- [Kinds de Entrada](guides/entry-kinds.md) — Kinds de entrada e seus campos
+- [Guia de Observabilidade](guides/observability.md) — Logs, métricas e tracing

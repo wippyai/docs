@@ -5,7 +5,7 @@ description: "Crie e execute um pequeno workflow wippy/dataflow com estado persi
 
 # Dataflow: Execute um DAG Durável
 
-**Classificação: tutorial executável.** Esta página cria um projeto `wippy/dataflow` completo e independente de provedor. Ele não usa embeddings nem LLM; para esse caso, consulte [Geração Aumentada por Recuperação](./rag.md).
+**Classificação: tutorial executável.** Esta página cria um projeto `wippy/dataflow` completo e independente de provedor. Ele não usa embeddings nem LLM; para esse caso, consulte [Geração Aumentada por Recuperação](tutorials/rag.md).
 
 O workflow envia uma entrada por dois nós de função:
 
@@ -296,5 +296,5 @@ Use `:start()` em vez de `:run()` quando o chamador precisar receber imediatamen
 ## Próximos Passos
 
 - [Framework Dataflow](../framework/dataflow.md) — Roteamento, nós paralelos, ciclos, agentes, sinais e API do cliente
-- [Geração Aumentada por Recuperação](./rag.md) — Recuperação apoiada por embeddings
+- [Geração Aumentada por Recuperação](tutorials/rag.md) — Recuperação apoiada por embeddings
 - [Keeper por MCP](./keeper-mcp.md) — Inspecione workflows em execução por um cliente MCP

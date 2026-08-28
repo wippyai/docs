@@ -337,7 +337,7 @@ local states, err = system.supervisor.states()
 
 ## クラスタプリミティブ
 
-`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効でない](../../guides/cluster.md)場合、`system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告します。`system.lock` はグローバルレジストリを必要とするため利用できません。
+`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効でない](guides/cluster.md)場合、`system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告します。`system.lock` はグローバルレジストリを必要とするため利用できません。
 
 すべての読み取り呼び出しはローカルかつ安価です: このノードのコミット済み状態のビューを報告し、ネットワークをブロックしません。
 
@@ -489,4 +489,4 @@ return released
 | メンバーシップが利用不可 | `errors.INTERNAL` | いいえ |
 | ロックが既に保持中 | `errors.ALREADY_EXISTS` | いいえ |
 
-エラーの処理については[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

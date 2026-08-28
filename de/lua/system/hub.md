@@ -191,5 +191,5 @@ Jede Operation der obersten Ebene unter `hub.*` prüft den entsprechenden Aktion
 
 ## Siehe auch
 
-- [CLI-Referenz](../../guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
-- [Veröffentlichungsleitfaden](../../guides/publishing.md)
+- [CLI-Referenz](guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
+- [Veröffentlichungsleitfaden](guides/publishing.md)

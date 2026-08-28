@@ -118,6 +118,6 @@ LSP 서버는 빠른 조회를 위해 모든 코드 엔트리의 인덱스를 �
 
 ## 같이 보기
 
-- [린터](./linter.md) - CLI 기반 코드 검사
-- [타입](../lua/types.md) - 타입 시스템 문서
-- [구성](./configuration.md) - 런타임 구성
+- [린터](guides/linter.md) - CLI 기반 코드 검사
+- [타입](lua/types.md) - 타입 시스템 문서
+- [구성](guides/configuration.md) - 런타임 구성

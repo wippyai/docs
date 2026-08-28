@@ -348,7 +348,7 @@ if close_err then return nil, close_err end
 | `read(n?)` | string, error | Ler até `n` bytes (padrão: buffer da implementação) |
 | `close()` | boolean, error | Fechar o stream |
 
-`resp.stream` é um objeto [stream](../core/stream.md) completo — `seek`, `stat` e `scanner` também estão disponíveis. O chamador é responsável pelo corpo recebido em streaming e deve fechá-lo em toda saída; a limpeza da tarefa é um fallback, não um substituto para a liberação imediata.
+`resp.stream` é um objeto [stream](lua/core/stream.md) completo — `seek`, `stat` e `scanner` também estão disponíveis. O chamador é responsável pelo corpo recebido em streaming e deve fechá-lo em toda saída; a limpeza da tarefa é um fallback, não um substituto para a liberação imediata.
 
 ## Requisicoes em Lote
 
@@ -451,7 +451,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Veja [Modelo de Segurança](../../system/security.md) para configurar as políticas.
+Veja [Modelo de Segurança](system/security.md) para configurar as políticas.
 
 ## Erros
 
@@ -480,4 +480,4 @@ if err then
 end
 ```
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

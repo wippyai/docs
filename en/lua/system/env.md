@@ -12,7 +12,7 @@ The `env` module reads and updates environment variables exposed by the runtime.
 
 This is an API reference. Its snippets are isolated operations and assume the named variables and security policies already exist.
 
-Variables must be defined in the [Environment System](../../system/env.md) before they can be accessed. The system controls which storage backends (OS, file, memory) provide values and whether variables are read-only.
+Variables must be defined in the [Environment System](system/env.md) before they can be accessed. The system controls which storage backends (OS, file, memory) provide values and whether variables are read-only.
 
 ## Loading
 
@@ -121,7 +121,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-See [Security Model](../../system/security.md) for policy configuration.
+See [Security Model](system/security.md) for policy configuration.
 
 ## Errors
 
@@ -131,8 +131,8 @@ See [Security Model](../../system/security.md) for policy configuration.
 | Variable not found | `errors.NOT_FOUND` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Environment System](../../system/env.md) - Configure storage backends and variable definitions
+- [Environment System](system/env.md) - Configure storage backends and variable definitions

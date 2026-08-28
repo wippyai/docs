@@ -13,7 +13,7 @@ O módulo `fs` lê, grava e gerencia arquivos em volumes de filesystem configura
 
 Esta página é uma referência de API. Os exemplos pressupõem um volume configurado e permissão para adquiri-lo. Cada bloco é uma operação isolada ou receita parcial; valores e callbacks da aplicação, como `config`, `message`, `process` e `report_cleanup_error`, já devem existir. `report_cleanup_error(err)` registra uma falha de fechamento sem substituir um erro anterior da operação.
 
-Para configurar o filesystem, veja [Filesystem](../../system/filesystem.md).
+Para configurar o filesystem, veja [Filesystem](system/filesystem.md).
 
 ## Carregamento
 
@@ -327,4 +327,4 @@ Acesso ao filesystem está sujeito a avaliação de política de segurança.
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 | Falha de tokenização ou leitura no scanner | `errors.INTERNAL` | preservado do erro subjacente quando disponível |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

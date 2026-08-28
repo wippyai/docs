@@ -181,7 +181,7 @@ local result, data_err = payload:data()
 if data_err then return nil, data_err end
 ```
 
-Veja [Futures](./future.md) para os métodos de future.
+Veja [Futures](lua/core/future.md) para os métodos de future.
 
 ## Abrindo via Contract
 

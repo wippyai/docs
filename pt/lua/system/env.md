@@ -12,7 +12,7 @@ O módulo `env` lê e atualiza variáveis de ambiente expostas pelo runtime.
 
 Esta é uma referência de API. Seus exemplos são operações isoladas e pressupõem que as variáveis e políticas de segurança mencionadas já existam.
 
-As variáveis devem ser definidas no [Sistema de Ambiente](../../system/env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (SO, arquivo, memória) fornecem valores e se as variáveis são somente leitura.
+As variáveis devem ser definidas no [Sistema de Ambiente](system/env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (SO, arquivo, memória) fornecem valores e se as variáveis são somente leitura.
 
 ## Carregamento
 
@@ -121,7 +121,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Consulte o [Modelo de Segurança](../../system/security.md) para configurar políticas.
+Consulte o [Modelo de Segurança](system/security.md) para configurar políticas.
 
 ## Erros
 
@@ -131,8 +131,8 @@ Consulte o [Modelo de Segurança](../../system/security.md) para configurar pol�
 | Variável não encontrada | `errors.NOT_FOUND` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 
-Consulte [Tratamento de erros](../core/errors.md) para trabalhar com erros.
+Consulte [Tratamento de erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Sistema de Ambiente](../../system/env.md) - Configurar backends de armazenamento e definições de variáveis
+- [Sistema de Ambiente](system/env.md) - Configurar backends de armazenamento e definições de variáveis

@@ -402,11 +402,11 @@ data:
 
 ## 関連項目
 
-- [Facade](./facade.md) — フロントエンド facade とナビゲーションサイドバー
-- [Template](../system/template.md) — Jet テンプレートエンジン
-- [Security](../system/security.md) — セキュリティアクターとアクセス制御
-- [Environment](../system/env.md) — 環境変数ストレージ
-- [Framework 概要](./overview.md) — Framework モジュールの利用
+- [Facade](framework/facade.md) — フロントエンド facade とナビゲーションサイドバー
+- [Template](system/template.md) — Jet テンプレートエンジン
+- [Security](system/security.md) — セキュリティアクターとアクセス制御
+- [Environment](system/env.md) — 環境変数ストレージ
+- [Framework 概要](framework/overview.md) — Framework モジュールの利用
 - [マイクロフロントエンドアプリ（`view.page`）](../frontend/frontend-registry/view-page.md) — `view.page` メタデータとプロキシ注入の完全なリファレンス
 - [Web コンポーネント（`view.component`）](../frontend/frontend-registry/view-component.md) — `view.component` 自動読み込みと props の完全なリファレンス
 - [レンダーエンジン](../frontend/web-host/render-engines.md) — iframe と Web Fragment のページ描画

@@ -86,7 +86,7 @@ SQLite siempre funciona con una sola conexión (<code>max_open</code> y <code>ma
 
 ### Secretos y valores de entorno
 
-Obtenga los valores de conexión del [registro de entorno](./env.md) con marcadores `${env:NAME}`, resueltos al decodificarse. `NAME` es el nombre público de una variable registrada o su ID de entrada (por ejemplo, `app.secrets:db_password`); no es una variable de entorno sin procesar del sistema operativo.
+Obtenga los valores de conexión del [registro de entorno](system/env.md) con marcadores `${env:NAME}`, resueltos al decodificarse. `NAME` es el nombre público de una variable registrada o su ID de entrada (por ejemplo, `app.secrets:db_password`); no es una variable de entorno sin procesar del sistema operativo.
 
 ```yaml
 - name: prod_db
@@ -265,14 +265,14 @@ entries:
 
 ## Registro en Tiempo de Ejecución
 
-Las bases de datos pueden registrarse en tiempo de ejecución mediante el [módulo registry](../lua/core/registry.md).
+Las bases de datos pueden registrarse en tiempo de ejecución mediante el [módulo registry](lua/core/registry.md).
 
 ## API Lua
 
-Consulte el [módulo SQL](../lua/storage/sql.md) para las operaciones de consulta, transacción y conexión.
+Consulte el [módulo SQL](lua/storage/sql.md) para las operaciones de consulta, transacción y conexión.
 
 ## Ver También
 
-- [Módulo SQL](../lua/storage/sql.md) - Referencia de la API Lua
-- [Store](./store.md) - Almacén clave-valor respaldado por una base de datos `db.sql.*`
-- [Queue](./queue.md) - Handler de cola respaldado por SQL
+- [Módulo SQL](lua/storage/sql.md) - Referencia de la API Lua
+- [Store](system/store.md) - Almacén clave-valor respaldado por una base de datos `db.sql.*`
+- [Queue](system/queue.md) - Handler de cola respaldado por SQL

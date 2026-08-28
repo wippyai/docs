@@ -166,4 +166,4 @@ print(type(data.tags))     -- "table"
 | String vazia (decode) | `errors.INVALID` | não |
 | Sintaxe YAML invalida | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

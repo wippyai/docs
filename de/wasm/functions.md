@@ -328,7 +328,7 @@ Das Trennzeichen `#` im Methodenfeld verweist auf eine Schnittstellenmethode: `t
 
 ## Siehe auch
 
-- [Übersicht](./overview.md) - Übersicht über die WebAssembly-Runtime
-- [Host-Funktionen](./hosts.md) - Verfügbare Host-Schnittstellen
-- [Prozesse](./processes.md) - WASM als Prozesse ausführen
-- [Eintragsarten](../guides/entry-kinds.md) - Alle Arten von Registry-Einträgen
+- [Übersicht](wasm/overview.md) - Übersicht über die WebAssembly-Runtime
+- [Host-Funktionen](wasm/hosts.md) - Verfügbare Host-Schnittstellen
+- [Prozesse](wasm/processes.md) - WASM als Prozesse ausführen
+- [Eintragsarten](guides/entry-kinds.md) - Alle Arten von Registry-Einträgen

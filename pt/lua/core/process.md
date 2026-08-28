@@ -272,7 +272,7 @@ local ok, err = process.registry.unregister(name)
 
 ### Escopo
 
-O argumento opcional `scope` seleciona a garantia de consistência do nome e usa `LOCAL` por padrão. Consulte o [Guia de Cluster](../../guides/cluster.md#nomeação-e-escopos-de-nome) para o modelo completo.
+O argumento opcional `scope` seleciona a garantia de consistência do nome e usa `LOCAL` por padrão. Consulte o [Guia de Cluster](guides/cluster.md#nomeação-e-escopos-de-nome) para o modelo completo.
 
 | Constante | Visibilidade | Garantia |
 |-----------|--------------|----------|
@@ -281,7 +281,7 @@ O argumento opcional `scope` seleciona a garantia de consistência do nome e usa
 | `process.registry.CONSISTENT` | todo o cluster | Singleton linearizável (Raft) |
 | `process.registry.STRONG` | todo o cluster | Consistente + todos os nós ativos reconhecem |
 
-Em um nó standalone, apenas `LOCAL` está disponível; os escopos de cluster exigem [clustering](../../guides/cluster.md).
+Em um nó standalone, apenas `LOCAL` está disponível; os escopos de cluster exigem [clustering](guides/cluster.md).
 
 ### register
 
@@ -380,12 +380,12 @@ Algumas operações requerem múltiplas permissões:
 | Permissão negada | `errors.PERMISSION_DENIED` |
 | Nome já registrado | `errors.ALREADY_EXISTS` |
 
-Veja [Tratamento de Erros](errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Channels](channel.md) - Coordenação de corrotinas no processo
-- [Fila de Mensagens](../storage/queue.md) - Mensagens baseadas em fila
-- [Funções](funcs.md) - Invocação de funções
-- [Supervisão](../../guides/supervision.md) - Gerenciamento do ciclo de vida de processos
-- [Cluster](../../guides/cluster.md) - Escopos de nome e nomeação no cluster
+- [Channels](lua/core/channel.md) - Coordenação de corrotinas no processo
+- [Fila de Mensagens](lua/storage/queue.md) - Mensagens baseadas em fila
+- [Funções](lua/core/funcs.md) - Invocação de funções
+- [Supervisão](guides/supervision.md) - Gerenciamento do ciclo de vida de processos
+- [Cluster](guides/cluster.md) - Escopos de nome e nomeação no cluster

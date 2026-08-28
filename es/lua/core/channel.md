@@ -256,6 +256,6 @@ Después del bucle, `processed` contiene `2`, `4`, `6` y `8`; el orden de los re
 
 ## Véase también
 
-- [Gestión de procesos](process.md) - Creación de procesos y comunicación
-- [Cola de mensajes](../storage/queue.md) - Mensajería basada en colas
-- [Funciones](funcs.md) - Invocación de funciones
+- [Gestión de procesos](lua/core/process.md) - Creación de procesos y comunicación
+- [Cola de mensajes](lua/storage/queue.md) - Mensajería basada en colas
+- [Funciones](lua/core/funcs.md) - Invocación de funciones

@@ -337,7 +337,7 @@ Cada tabela de estado tem o mesmo formato que `system.supervisor.state()`.
 
 ## Primitivos de Cluster
 
-As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](../../guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o registro global que o clustering fornece.
+As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o registro global que o clustering fornece.
 
 Todas as chamadas de leitura são locais e baratas: reportam a visão deste nó do estado confirmado, sem bloquear na rede.
 
@@ -489,4 +489,4 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | Associação indisponível | `errors.INTERNAL` | não |
 | Lock já mantido | `errors.ALREADY_EXISTS` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

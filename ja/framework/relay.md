@@ -7,7 +7,7 @@ description: "Wippy Relay の hub、WebSocket client、prefix 付き plugin、us
 
 `wippy/relay` モジュールは WebSocket connection を central hub と user ごとの hub を通じてルーティングします。user hub は client connection を管理し、prefix 付き plugin へメッセージを dispatch します。
 
-このページは部分的な integration recipe と protocol リファレンスであり、独立した WebSocket アプリケーションではありません。setup と plugin の block は、既存の Wippy プロジェクト、設定済みの `user_security_scope` に存在する実際の security scope、[WebSocket Relay](../http/websocket-relay.md)で説明する Relay へ接続された HTTP WebSocket endpoint を前提としています。protocol payload と lifecycle block はリファレンスの形です。
+このページは部分的な integration recipe と protocol リファレンスであり、独立した WebSocket アプリケーションではありません。setup と plugin の block は、既存の Wippy プロジェクト、設定済みの `user_security_scope` に存在する実際の security scope、[WebSocket Relay](http/websocket-relay.md)で説明する Relay へ接続された HTTP WebSocket endpoint を前提としています。protocol payload と lifecycle block はリファレンスの形です。
 
 ## アーキテクチャ
 
@@ -279,6 +279,6 @@ GC のチェック間隔は自動的に導出されます：`inactivity_timeout 
 ## 関連項目
 
 - [WebSocket Relay](../http/websocket-relay.md) — HTTP WebSocket endpoint の設定
-- [プロセスモデル](../concepts/process-model.md) — process lifecycle と messaging
-- [セキュリティ](../system/security.md) — security actor と scope
-- [Framework 概要](./overview.md) — Framework モジュールのインストールと import
+- [プロセスモデル](concepts/process-model.md) — process lifecycle と messaging
+- [セキュリティ](system/security.md) — security actor と scope
+- [Framework 概要](framework/overview.md) — Framework モジュールのインストールと import

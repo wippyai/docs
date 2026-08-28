@@ -376,5 +376,5 @@ tty.text.position.RIGHT    -- 1
 
 ## 참고
 
-- [터미널 I/O](./io.md) — stdin/stdout/stderr 작업
-- [Terminal Host](../../system/terminal.md) — Terminal Host 설정
+- [터미널 I/O](lua/system/io.md) — stdin/stdout/stderr 작업
+- [Terminal Host](system/terminal.md) — Terminal Host 설정

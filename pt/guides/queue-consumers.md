@@ -166,7 +166,7 @@ Fila em memória embutida para desenvolvimento/testes:
 
 ## Veja Também
 
-- [Fila de Mensagens](../lua/storage/queue.md) - Referência do módulo de filas
-- [Configuração de Filas](../system/queue.md) - Drivers de fila e definições de entrada
-- [Árvores de Supervisão](./supervision.md) - Ciclo de vida do consumidor
-- [Gerenciamento de Processos](../lua/core/process.md) - Criação e comunicação de processos
+- [Fila de Mensagens](lua/storage/queue.md) - Referência do módulo de filas
+- [Configuração de Filas](system/queue.md) - Drivers de fila e definições de entrada
+- [Árvores de Supervisão](guides/supervision.md) - Ciclo de vida do consumidor
+- [Gerenciamento de Processos](lua/core/process.md) - Criação e comunicação de processos

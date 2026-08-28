@@ -764,6 +764,6 @@ wippy run
 
 ## 다음 단계
 
-- [프로세스](processes.md) — 프로세스 기본 개념
-- [채널](channels.md) — 메시지 전달 패턴
-- [프로세스 모듈](../lua/core/process.md) — 프로세스 API 참조
+- [프로세스](tutorials/processes.md) — 프로세스 기본 개념
+- [채널](tutorials/channels.md) — 메시지 전달 패턴
+- [프로세스 모듈](lua/core/process.md) — 프로세스 API 참조

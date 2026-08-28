@@ -281,7 +281,7 @@ local ok, err = process.registry.unregister(name)
 | `process.registry.CONSISTENT` | 클러스터 전체 | 선형화 가능한 싱글톤 (Raft) |
 | `process.registry.STRONG` | 클러스터 전체 | Consistent + 모든 살아있는 노드 승인 |
 
-독립 실행형 노드에서는 `LOCAL`만 사용할 수 있습니다. 클러스터 스코프에는 [클러스터링](../../guides/cluster.md)이 필요합니다.
+독립 실행형 노드에서는 `LOCAL`만 사용할 수 있습니다. 클러스터 스코프에는 [클러스터링](guides/cluster.md)이 필요합니다.
 
 ### register
 
@@ -380,12 +380,12 @@ local ok, err = process.registry.unregister(name, scope)
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
 | 이름 이미 등록됨 | `errors.ALREADY_EXISTS` |
 
-에러 처리는 [에러 처리](errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 참고
 
-- [채널](channel.md) - 프로세스 내 코루틴 조율
-- [메시지 큐](../storage/queue.md) - 큐 기반 메시징
-- [함수](funcs.md) - 함수 호출
-- [슈퍼비전](../../guides/supervision.md) - 프로세스 라이프사이클 관리
-- [클러스터](../../guides/cluster.md) - 이름 범위와 클러스터 전체 명명
+- [채널](lua/core/channel.md) - 프로세스 내 코루틴 조율
+- [메시지 큐](lua/storage/queue.md) - 큐 기반 메시징
+- [함수](lua/core/funcs.md) - 함수 호출
+- [슈퍼비전](guides/supervision.md) - 프로세스 라이프사이클 관리
+- [클러스터](guides/cluster.md) - 이름 범위와 클러스터 전체 명명

@@ -193,5 +193,5 @@ local ok, err = hub.auth.logout()
 
 ## 참고 항목
 
-- [CLI 참조](../../guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
-- [게시 가이드](../../guides/publishing.md)
+- [CLI 참조](guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
+- [게시 가이드](guides/publishing.md)

@@ -338,7 +338,7 @@ entries:
     func: app:ws_ticker
 ```
 
-서명 키, 와일드카드 사용자 정책, 원문 API 키 저장, 메모리 토큰 저장소는 이 루프백 데모에만 적합합니다. 프로덕션에서는 `token_key_env`를 사용하고, 저장 전에 API 키를 해시하고, 정책 작업과 리소스 및 허용 출처를 좁히고, 내구성 있는 토큰 저장소를 사용하세요. [환경 시스템](../system/env.md)을 참조하세요.
+서명 키, 와일드카드 사용자 정책, 원문 API 키 저장, 메모리 토큰 저장소는 이 루프백 데모에만 적합합니다. 프로덕션에서는 `token_key_env`를 사용하고, 저장 전에 API 키를 해시하고, 정책 작업과 리소스 및 허용 출처를 좁히고, 내구성 있는 토큰 저장소를 사용하세요. [환경 시스템](system/env.md)을 참조하세요.
 
 ## 토큰 교환
 
@@ -866,6 +866,6 @@ Invoke-RestMethod -Method Post `
 
 ## 다음 단계
 
-- [WebSocket 릴레이](../http/websocket-relay.md) — 미들웨어 구성
-- [보안 모듈](../lua/security/security.md) — 액터, 정책, 토큰 저장소
-- [프로세스 관리](../lua/core/process.md) — 프로세스 생성과 메시징
+- [WebSocket 릴레이](http/websocket-relay.md) — 미들웨어 구성
+- [보안 모듈](lua/security/security.md) — 액터, 정책, 토큰 저장소
+- [프로세스 관리](lua/core/process.md) — 프로세스 생성과 메시징

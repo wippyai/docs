@@ -187,7 +187,7 @@ jedoch als zulässig. Dies ist keine Wippy-Runtime-Autorisierung: Geschützte Op
 benötigen ein explizites `allow` aus dem Ausführungskontext. Dazu gehören die unten
 gezeigten Operationen des Sicherheitsmoduls und `registry.apply` innerhalb von `changes:apply()`.
 
-Siehe [Sicherheitsmodell](../system/security.md) für Einzelheiten zur Policy-Auswertung.
+Siehe [Sicherheitsmodell](system/security.md) für Einzelheiten zur Policy-Auswertung.
 
 ### Modelle
 
@@ -489,7 +489,7 @@ Die Agentenschleife in `src/agent.lua` behandelt Streaming, Tool-Ausführung, dy
 
 ### Streaming
 
-Verwendet dasselbe Coroutine- und Channel-Muster wie das [LLM-Agent-Tutorial](./llm-agent.md):
+Verwendet dasselbe Coroutine- und Channel-Muster wie das [LLM-Agent-Tutorial](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -657,8 +657,8 @@ erforderlichen Aktionen erhalten.
 
 ## Nächste Schritte
 
-- [LLM-Agent](./llm-agent.md) — Einen grundlegenden Agenten von Grund auf bauen
-- [Agent-Modul](../framework/agents.md) — Referenz des Agent-Frameworks
-- [Registry](../concepts/registry.md) — Registry-Konzepte
-- [Sicherheitsmodell](../system/security.md) — Deklarative Sicherheits-Policies
-- [Eintragsarten](../guides/entry-kinds.md) — Verfügbare Eintragsarten
+- [LLM-Agent](tutorials/llm-agent.md) — Einen grundlegenden Agenten von Grund auf bauen
+- [Agent-Modul](framework/agents.md) — Referenz des Agent-Frameworks
+- [Registry](concepts/registry.md) — Registry-Konzepte
+- [Sicherheitsmodell](system/security.md) — Deklarative Sicherheits-Policies
+- [Eintragsarten](guides/entry-kinds.md) — Verfügbare Eintragsarten

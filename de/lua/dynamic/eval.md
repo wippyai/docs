@@ -20,7 +20,7 @@ Wippy bietet zwei Auswertungssysteme:
 
 ## Ausdrucksauswertung mit `expr`
 
-Das Modul `expr` wertet Ausdrücke in der Syntax von expr-lang aus. Verwenden Sie es für Ausdrücke, nicht für vollständige Lua-Programme. [Ausdruckssprache](./expression.md) ist die vollständige Referenz für Lua-API und Syntax.
+Das Modul `expr` wertet Ausdrücke in der Syntax von expr-lang aus. Verwenden Sie es für Ausdrücke, nicht für vollständige Lua-Programme. [Ausdruckssprache](lua/dynamic/expression.md) ist die vollständige Referenz für Lua-API und Syntax.
 
 ```lua
 local expr = require("expr")
@@ -394,5 +394,5 @@ Dies ist ein Teilmuster für eine Integration, keine Sandbox für feindlichen Co
 ## Siehe auch
 
 - [Expression](./expression.md) – Referenz der Ausdruckssprache
-- [Exec](./exec.md) – Ausführung von Systembefehlen
-- [Security](../security/security.md) – Sicherheitsrichtlinien
+- [Exec](lua/dynamic/exec.md) – Ausführung von Systembefehlen
+- [Security](lua/security/security.md) – Sicherheitsrichtlinien

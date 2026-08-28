@@ -174,8 +174,8 @@ WASM プロセスは、対応するクロックのポーリングや送信 HTTP 
 
 ## 関連項目
 
-- [概要](./overview.md) - WebAssembly ランタイムの概要
-- [関数](./functions.md) - WASM 関数の設定
-- [ホスト関数](./hosts.md) - 利用可能なホストインターフェース
-- [プロセスモデル](../concepts/process-model.md) - プロセスライフサイクル
-- [監督](../guides/supervision.md) - プロセス監督ツリー
+- [概要](wasm/overview.md) - WebAssembly ランタイムの概要
+- [関数](wasm/functions.md) - WASM 関数の設定
+- [ホスト関数](wasm/hosts.md) - 利用可能なホストインターフェース
+- [プロセスモデル](concepts/process-model.md) - プロセスライフサイクル
+- [監督](guides/supervision.md) - プロセス監督ツリー

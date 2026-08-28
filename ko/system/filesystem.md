@@ -73,10 +73,10 @@ module 소유 엔트리에서 `base`를 생략하면 상대 directory는 소유 
 
 ## Lua API
 
-파일 작업은 [파일시스템 모듈](../lua/storage/filesystem.md)을 참조하십시오.
+파일 작업은 [파일시스템 모듈](lua/storage/filesystem.md)을 참조하십시오.
 
 ## 참고
 
-- [파일시스템 모듈](../lua/storage/filesystem.md) - Lua API 레퍼런스
-- [클라우드 스토리지](./cloudstorage.md) - S3 호환 객체 스토리지
-- [템플릿](./template.md) - 파일시스템에서 로드되는 template
+- [파일시스템 모듈](lua/storage/filesystem.md) - Lua API 레퍼런스
+- [클라우드 스토리지](system/cloudstorage.md) - S3 호환 객체 스토리지
+- [템플릿](system/template.md) - 파일시스템에서 로드되는 template

@@ -118,6 +118,6 @@ Las notificaciones de cambio del documento completo actualizan el overlay usado 
 
 ## Véase también
 
-- [Linter](./linter.md) — Comprobación de código desde CLI
-- [Tipos](../lua/types.md) — Documentación del sistema de tipos
-- [Configuración](./configuration.md) — Configuración del runtime
+- [Linter](guides/linter.md) — Comprobación de código desde CLI
+- [Tipos](lua/types.md) — Documentación del sistema de tipos
+- [Configuración](guides/configuration.md) — Configuración del runtime

@@ -83,7 +83,7 @@ description: "Wippy는 내구성 있는 워크플로우 실행, 자동 리플레
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-인증 및 자격 증명 필드는 디코딩 시 [환경 레지스트리](../system/env.md)를 통해 `${env:NAME}` 플레이스홀더를 해석합니다. 기존 `api_key_env` / `key_pem_env` 지시어도 같은 방식으로 해석되지만 더 이상 권장되지 않습니다. `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`을 사용하세요.
+인증 및 자격 증명 필드는 디코딩 시 [환경 레지스트리](system/env.md)를 통해 `${env:NAME}` 플레이스홀더를 해석합니다. 기존 `api_key_env` / `key_pem_env` 지시어도 같은 방식으로 해석되지만 더 이상 권장되지 않습니다. `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`을 사용하세요.
 
 #### mTLS
 
@@ -204,7 +204,7 @@ health_check:
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-자격 증명과 식별자 필드는 디코딩 시 [환경 레지스트리](../system/env.md)를 통해 `${env:NAME}` 플레이스홀더를 해석합니다. 기존 `build_id_env` 지시어도 같은 방식으로 해석되지만 더 이상 권장되지 않습니다. `build_id: ${env:NAME}`을 사용하세요.
+자격 증명과 식별자 필드는 디코딩 시 [환경 레지스트리](system/env.md)를 통해 `${env:NAME}` 플레이스홀더를 해석합니다. 기존 `build_id_env` 지시어도 같은 방식으로 해석되지만 더 이상 권장되지 않습니다. `build_id: ${env:NAME}`을 사용하세요.
 
 ### 버전 관리 동작
 
@@ -287,5 +287,5 @@ entries:
 
 ## 참고
 
-- [액티비티](./activities.md) - 액티비티 정의
-- [워크플로우](./workflows.md) - 워크플로우 구현
+- [액티비티](temporal/activities.md) - 액티비티 정의
+- [워크플로우](temporal/workflows.md) - 워크플로우 구현

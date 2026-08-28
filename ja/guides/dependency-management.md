@@ -209,7 +209,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-キーは `org/module`、値はディレクトリです（相対パスは最初の `--config` ファイルのディレクトリを基準に解決されます。パスは存在し、かつディレクトリでなければなりません）。リプレースメントを `null` に設定すると、前の設定レイヤーやプロファイルから継承したものを無効化できます。リプレースメントは[プロファイル](./configuration.md#profiles)の中に置くこともでき、その場合は `--profile workspace` を指定したときのみ有効になります。
+キーは `org/module`、値はディレクトリです（相対パスは最初の `--config` ファイルのディレクトリを基準に解決されます。パスは存在し、かつディレクトリでなければなりません）。リプレースメントを `null` に設定すると、前の設定レイヤーやプロファイルから継承したものを無効化できます。リプレースメントは[プロファイル](guides/configuration.md#profiles)の中に置くこともでき、その場合は `--profile workspace` を指定したときのみ有効になります。
 
 ワークスペースリプレースメントはブート時のロードグラフに作用し、`wippy.lock` に書き込まれることはありません。ローカルソースへの変更は、ハブに接続することなく直接反映されます。`wippy.yaml` のソース `exclude:` グロブは、エントリのロード時とコンテンツのハッシュ時の両方で、リプレースメントディレクトリにも適用されます。
 
@@ -231,7 +231,7 @@ wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 
 ## 関連項目
 
-- [コンポーネントの構築](./components.md) — `parameters` を通じて要件を宣言し、値を提供する方法
-- [CLI](./cli.md) — コマンドリファレンス
-- [公開](./publishing.md) — Hub へのモジュール公開
-- [プロジェクト構成](../start/structure.md) — プロジェクトレイアウト
+- [コンポーネントの構築](guides/components.md) — `parameters` を通じて要件を宣言し、値を提供する方法
+- [CLI](guides/cli.md) — コマンドリファレンス
+- [公開](guides/publishing.md) — Hub へのモジュール公開
+- [プロジェクト構成](start/structure.md) — プロジェクトレイアウト

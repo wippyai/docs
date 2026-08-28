@@ -1165,8 +1165,8 @@ Kompensationen werden in umgekehrter Registrierungsreihenfolge ausgeführt. Wenn
 
 ## Siehe auch
 
-- [Übersicht](./overview.md) - Client- und Worker-Konfiguration
-- [Activities](./activities.md) - Activity-Definitionen und Optionen
-- [Prozess](../lua/core/process.md) - Prozessverwaltungs-API
-- [Funktionen](../lua/core/funcs.md) - Funktionsaufruf
-- [Channels](../lua/core/channel.md) - Channel-Operationen
+- [Übersicht](temporal/overview.md) - Client- und Worker-Konfiguration
+- [Activities](temporal/activities.md) - Activity-Definitionen und Optionen
+- [Prozess](lua/core/process.md) - Prozessverwaltungs-API
+- [Funktionen](lua/core/funcs.md) - Funktionsaufruf
+- [Channels](lua/core/channel.md) - Channel-Operationen

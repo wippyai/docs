@@ -11,7 +11,7 @@ Aprenda as APIs de processos para criar trabalho isolado, trocar mensagens, moni
 
 Processos fornecem unidades de execução isoladas que se comunicam através de passagem de mensagens. Cada processo tem sua própria caixa de entrada e pode se inscrever em tópicos de mensagens específicos.
 
-**Classificação:** introdução de referência/API. Cada trecho ilustra uma operação isolada; esta página não é um projeto autônomo. Para uma aplicação completa, consulte [Serviço Echo](echo-service.md).
+**Classificação:** introdução de referência/API. Cada trecho ilustra uma operação isolada; esta página não é um projeto autônomo. Para uma aplicação completa, consulte [Serviço Echo](tutorials/echo-service.md).
 
 ## Contexto e Dependências
 
@@ -433,5 +433,5 @@ return { main = main }
 
 ## Próximos Passos
 
-- [Referência do Módulo Process](../lua/core/process.md) - Documentação da API de processos
-- [Canais](channels.md) - Operações de canal para tratamento de mensagens
+- [Referência do Módulo Process](lua/core/process.md) - Documentação da API de processos
+- [Canais](tutorials/channels.md) - Operações de canal para tratamento de mensagens

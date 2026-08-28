@@ -7,7 +7,7 @@ description: "Use wippy/llm for generation, prompts, streaming, tools, structure
 
 The `wippy/llm` module provides one interface for language models from OpenAI, Anthropic, Google, and local providers. It supports text generation, tool calling, structured output, embeddings, and streaming.
 
-This page is an API primer with composable reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a registered model and provider, and any credentials required by that provider. Replace example model names with one your registry exposes; remote generation and embedding calls may incur provider charges. For a complete runnable project, follow [Build an LLM Agent](../tutorials/llm-agent.md).
+This page is an API primer with composable reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a registered model and provider, and any credentials required by that provider. Replace example model names with one your registry exposes; remote generation and embedding calls may incur provider charges. For a complete runnable project, follow [Build an LLM Agent](tutorials/llm-agent.md).
 
 ## Setup
 
@@ -636,6 +636,6 @@ print(response.result)
 
 ## See Also
 
-- [Agents](./agents.md) — Agent framework with tools, delegates, and memory
+- [Agents](framework/agents.md) — Agent framework with tools, delegates, and memory
 - [Building an LLM Agent](../tutorials/llm-agent.md) — Build an agent step by step
-- [Framework Overview](./overview.md) — Install and import framework modules
+- [Framework Overview](framework/overview.md) — Install and import framework modules

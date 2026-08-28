@@ -13,7 +13,7 @@ The `fs` module reads, writes, and manages files within configured filesystem vo
 
 This page is an API reference. Its snippets assume a configured volume and permission to acquire it. Each block is an isolated operation or partial recipe; application values and callbacks such as `config`, `message`, `process`, and `report_cleanup_error` must already exist. `report_cleanup_error(err)` records a close failure without replacing an operation error that already occurred.
 
-For filesystem configuration, see [Filesystem](../../system/filesystem.md).
+For filesystem configuration, see [Filesystem](system/filesystem.md).
 
 ## Loading
 
@@ -327,4 +327,4 @@ Security policy evaluation applies when a volume is acquired.
 
 `unspecified` means `err:retryable()` returns `nil`; it is not equivalent to `false`.
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

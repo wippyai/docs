@@ -166,4 +166,4 @@ end
 | 式の評価が失敗 | `errors.INTERNAL` | いいえ |
 | 結果の変換が失敗 | `errors.INTERNAL` | いいえ |
 
-エラーの処理については[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

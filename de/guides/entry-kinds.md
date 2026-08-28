@@ -13,8 +13,8 @@ Die YAML- und Lua-Blöcke sind Referenzfragmente, keine einzelne Anwendung. Regi
 
 ## Siehe auch
 
-- [Registry](../concepts/registry.md) - Wie Einträge gespeichert und aufgelöst werden
-- [Konfiguration](./configuration.md) - YAML-Konfigurationsformat
+- [Registry](concepts/registry.md) - Wie Einträge gespeichert und aufgelöst werden
+- [Konfiguration](guides/configuration.md) - YAML-Konfigurationsformat
 
 ## Lua-Runtime
 
@@ -83,7 +83,7 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
   func: list_handler
 ```
 
-**Lua-API:** Siehe [HTTP-Modul](../lua/http/http.md)
+**Lua-API:** Siehe [HTTP-Modul](lua/http/http.md)
 
 ```lua
 local http = require("http")
@@ -154,9 +154,9 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-Siehe [Datenbank](../system/database.md) für `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
+Siehe [Datenbank](system/database.md) für `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
 
-**Lua-API:** Siehe [SQL-Modul](../lua/storage/sql.md)
+**Lua-API:** Siehe [SQL-Modul](lua/storage/sql.md)
 
 ```lua
 local sql = require("sql")
@@ -197,9 +197,9 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
   namespace: deploy
 ```
 
-Die `store.kv.*`-Typen benötigen aktiviertes [Clustering](./cluster.md). Siehe [Store](../system/store.md#cluster-kv-stores) für die Konsistenz-Abwägungen.
+Die `store.kv.*`-Typen benötigen aktiviertes [Clustering](guides/cluster.md). Siehe [Store](system/store.md#cluster-kv-stores) für die Konsistenz-Abwägungen.
 
-**Lua-API:** Siehe [Store-Modul](../lua/storage/store.md)
+**Lua-API:** Siehe [Store-Modul](lua/storage/store.md)
 
 ```lua
 local store = require("store")
@@ -242,7 +242,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua-API:** Siehe [Queue-Modul](../lua/storage/queue.md)
+**Lua-API:** Siehe [Queue-Modul](lua/storage/queue.md)
 
 ```lua
 local queue = require("queue")
@@ -359,7 +359,7 @@ Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers
   endpoint: ""  # Optional, for S3-compatible services
 ```
 
-**Lua-API:** Siehe [Cloud-Storage-Modul](../lua/storage/cloud.md)
+**Lua-API:** Siehe [Cloud-Storage-Modul](lua/storage/cloud.md)
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -388,7 +388,7 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
   mode: "0755"      # Permissions
 ```
 
-**Lua-API:** Siehe [Dateisystem-Modul](../lua/storage/filesystem.md)
+**Lua-API:** Siehe [Dateisystem-Modul](lua/storage/filesystem.md)
 
 ```lua
 local fs = require("fs")
@@ -433,7 +433,7 @@ file:close()
     - app:defaults
 ```
 
-**Lua-API:** Siehe [Env-Modul](../lua/system/env.md)
+**Lua-API:** Siehe [Env-Modul](lua/system/env.md)
 
 ```lua
 local env = require("env")
@@ -470,7 +470,7 @@ Der Router versucht Speicher der Reihe nach. Der erste Treffer gewinnt beim Lese
   set: app:templates
 ```
 
-**Lua-API:** Siehe [Template-Modul](../lua/text/template.md)
+**Lua-API:** Siehe [Template-Modul](lua/text/template.md)
 
 ```lua
 local templates = require("templates")
@@ -513,7 +513,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua-API:** Siehe [Sicherheitsmodul](../lua/security/security.md)
+**Lua-API:** Siehe [Sicherheitsmodul](lua/security/security.md)
 
 ```lua
 local security = require("security")
@@ -592,7 +592,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua-API:** Siehe [Contract-Modul](../lua/core/contract.md)
+**Lua-API:** Siehe [Contract-Modul](lua/core/contract.md)
 
 <tip>
 Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn ein Contract ohne Angabe einer Binding-ID geöffnet wird (funktioniert nur wenn keine <code>context_required</code>-Felder gesetzt sind).
@@ -638,7 +638,7 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
   transport: payload   # or wasi-http
 ```
 
-Siehe [WASM-Übersicht](../wasm/overview.md).
+Siehe [WASM-Übersicht](wasm/overview.md).
 
 ## Netzwerke
 
@@ -649,7 +649,7 @@ Siehe [WASM-Übersicht](../wasm/overview.md).
 | `network.i2p` | I2P-Netzwerk-Overlay |
 | `network.tailscale` | Tailscale-Overlay |
 
-Wird von `http.service` über `network:`, von `funcs`/`process` über die Option `network` und von `http_client` über die Option `overlay_network` referenziert. Siehe [Netzwerk](../system/network.md).
+Wird von `http.service` über `network:`, von `funcs`/`process` über die Option `network` und von `http_client` über die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
 
 ## Registry-Primitive
 
@@ -724,4 +724,4 @@ Dieselben Overrides gelten über die CLI:
 wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
 ```
 
-CLI-Werte (`-o`) werden anhand ihrer Form gecastet (`true`/`false` zu bool, Zahlen zu Zahlen, sonst string); Werte im Abschnitt `override:` behalten ihren YAML-Typ. Um globale [Konfigurations](./configuration.md)-Abschnitte statt Einträgen zu überschreiben, verwenden Sie `--set`.
+CLI-Werte (`-o`) werden anhand ihrer Form gecastet (`true`/`false` zu bool, Zahlen zu Zahlen, sonst string); Werte im Abschnitt `override:` behalten ihren YAML-Typ. Um globale [Konfigurations](guides/configuration.md)-Abschnitte statt Einträgen zu überschreiben, verwenden Sie `--set`.

@@ -222,6 +222,6 @@ Entfernen Sie das Verzeichnis `testing-demo`, sobald Sie das temporäre Projekt 
 
 ## Nächste Schritte
 
-- [Hello World](hello-world.md) — Minimales Projektlayout
-- [Eintragsarten](../guides/entry-kinds.md) — `function.lua`, `library.lua` und verwandte Einträge
-- [Test-Framework](../framework/testing.md) — Referenz für Runner und Event-Protokoll
+- [Hello World](tutorials/hello-world.md) — Minimales Projektlayout
+- [Eintragsarten](guides/entry-kinds.md) — `function.lua`, `library.lua` und verwandte Einträge
+- [Test-Framework](framework/testing.md) — Referenz für Runner und Event-Protokoll

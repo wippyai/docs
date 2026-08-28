@@ -257,6 +257,6 @@ end
 
 ## 関連項目
 
-- [プロセス管理](process.md) - プロセスのスポーンと通信
-- [メッセージキュー](../storage/queue.md) - キューベースのメッセージング
-- [関数](funcs.md) - 関数呼び出し
+- [プロセス管理](lua/core/process.md) - プロセスのスポーンと通信
+- [メッセージキュー](lua/storage/queue.md) - キューベースのメッセージング
+- [関数](lua/core/funcs.md) - 関数呼び出し

@@ -184,6 +184,6 @@ constrains how it may call tools.
 
 ## Next Steps
 
-- [Hello World](./hello-world.md) — Minimal project layout
-- [Authentication](./auth.md) — Admin identity and token concepts
-- [Agents](../framework/agents.md) — Agents and tools exposed by Keeper traits
+- [Hello World](tutorials/hello-world.md) — Minimal project layout
+- [Authentication](tutorials/auth.md) — Admin identity and token concepts
+- [Agents](framework/agents.md) — Agents and tools exposed by Keeper traits

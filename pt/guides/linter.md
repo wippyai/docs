@@ -253,6 +253,6 @@ Exemplo de etapa do GitHub Actions:
 
 ## Consulte Também
 
-- [CLI](./cli.md) — Referência completa do CLI
-- [Tipos](../lua/types.md) — Documentação do sistema de tipos
-- [LSP](./lsp.md) — Integração com editores e diagnósticos em tempo real
+- [CLI](guides/cli.md) — Referência completa do CLI
+- [Tipos](lua/types.md) — Documentação do sistema de tipos
+- [LSP](guides/lsp.md) — Integração com editores e diagnósticos em tempo real

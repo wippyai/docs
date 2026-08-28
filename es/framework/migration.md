@@ -255,6 +255,6 @@ El runner crea una tabla `_migrations` en cada base de datos destino en la prime
 
 ## Ver Tambien
 
-- [Driver SQL](../system/database.md) — Configuración del recurso de base de datos
-- [Bootloader](./bootloader.md) — Ordenamiento y hooks del bootloader
-- [Visión general del framework](./overview.md) — Uso de módulos del framework
+- [Driver SQL](system/database.md) — Configuración del recurso de base de datos
+- [Bootloader](framework/bootloader.md) — Ordenamiento y hooks del bootloader
+- [Visión general del framework](framework/overview.md) — Uso de módulos del framework

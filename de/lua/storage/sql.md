@@ -13,7 +13,7 @@ Das Modul `sql` führt Abfragen für konfigurierte PostgreSQL-, MySQL- und SQLit
 
 Diese Seite ist eine API-Referenz. Ihre Ausschnitte setzen eine konfigurierte Datenbank, die Berechtigung zum Abrufen dieser Datenbank und alle in der Abfrage genannten Tabellen voraus. Sie zeigen einzelne Aufrufe und keine eigenständige Anwendung. Das kombinierte Teilrezept am Ende nennt seine zusätzlichen Annahmen zu Schema und Treiber.
 
-Informationen zur Datenbankkonfiguration finden Sie unter [Datenbank](../../system/database.md).
+Informationen zur Datenbankkonfiguration finden Sie unter [Datenbank](system/database.md).
 
 ## Laden
 
@@ -1541,7 +1541,7 @@ Datenbankzugriff unterliegt der Auswertung der Sicherheitsrichtlinien.
 | Ungültiger Savepoint-Name | `errors.INVALID` | nein |
 | Treiber- oder Abfrageausführungsfehler | soweit verfügbar vom Treiber übernommen, andernfalls nicht angegeben | unterschiedlich |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).
 
 ## Kombiniertes Teilrezept
 

@@ -106,7 +106,7 @@ command_whitelist:
 
 ## Lua API
 
-[Exec モジュール](../lua/dynamic/exec.md)がコマンド実行を提供します。
+[Exec モジュール](lua/dynamic/exec.md)がコマンド実行を提供します。
 
 ```lua
 local exec = require("exec")
@@ -162,6 +162,6 @@ return table.concat(chunks), exit_code
 
 ## 関連項目
 
-- [Exec モジュール](../lua/dynamic/exec.md) - Lua API リファレンス
-- [プロセスホスト](./process-host.md) - Wippy プロセスを実行するホスト
-- [ファイルシステム](./filesystem.md) - 作業ディレクトリとして使用するファイルシステムエントリ
+- [Exec モジュール](lua/dynamic/exec.md) - Lua API リファレンス
+- [プロセスホスト](system/process-host.md) - Wippy プロセスを実行するホスト
+- [ファイルシステム](system/filesystem.md) - 作業ディレクトリとして使用するファイルシステムエントリ

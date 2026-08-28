@@ -10,7 +10,7 @@ description: "Inspecione o actor e scope atuais, avalie políticas e gerencie to
 
 O módulo `security` expõe actors de autenticação, scopes de autorização, políticas e token stores. Esta página é uma referência de API com receitas parciais de autorização. IDs de registry, actors, metadados de requisição, valores de tokens, objetos da aplicação como `user` e `doc` e callbacks como `show_admin_features` vêm da aplicação; os exemplos não formam um deployment completo de autenticação.
 
-O Wippy usa o modo de segurança estrito por padrão. A entrada executável deve habilitar `security`, ter um actor e um scope e autorizar exatamente as operações chamadas. Em particular, criar ou alterar scopes exige `security.actor.create` ou `security.scope.create`; consultas ao registro exigem `security.policy.get` ou `security.policy_group.get`; operações com tokens exigem `security.token_store.get` e a permissão específica da operação. `new_actor`, `new_scope`, `scope:with`, `scope:without` e a obtenção negada de `token_store` lançam erro Lua em vez de retornar um `error` estruturado. Conceda esses pré-requisitos no contexto de segurança da entrada. Veja [Modelo de Segurança](../../system/security.md) para configurar.
+O Wippy usa o modo de segurança estrito por padrão. A entrada executável deve habilitar `security`, ter um actor e um scope e autorizar exatamente as operações chamadas. Em particular, criar ou alterar scopes exige `security.actor.create` ou `security.scope.create`; consultas ao registro exigem `security.policy.get` ou `security.policy_group.get`; operações com tokens exigem `security.token_store.get` e a permissão específica da operação. `new_actor`, `new_scope`, `scope:with`, `scope:without` e a obtenção negada de `token_store` lançam erro Lua em vez de retornar um `error` estruturado. Conceda esses pré-requisitos no contexto de segurança da entrada. Veja [Modelo de Segurança](system/security.md) para configurar.
 
 ## Carregamento
 
@@ -394,7 +394,7 @@ Operações de segurança estao sujeitas a avaliação de política de seguranç
 | `security.token.create` | ID da Store | Criar tokens |
 | `security.token.revoke` | ID da Store | Revogar tokens |
 
-Veja [Modelo de Segurança](../../system/security.md) para configurar as políticas.
+Veja [Modelo de Segurança](system/security.md) para configurar as políticas.
 
 ## Erros
 
@@ -421,9 +421,9 @@ end
 store:close()
 ```
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
 - [Modelo de Segurança](../../system/security.md) - Configuração de actors, políticas e scopes
-- [Middleware HTTP](../../http/middleware.md) - Firewall de endpoint e recurso
+- [Middleware HTTP](http/middleware.md) - Firewall de endpoint e recurso

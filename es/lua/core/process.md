@@ -272,7 +272,7 @@ local ok, err = process.registry.unregister(name)
 
 ### Ámbito
 
-El argumento opcional `scope` selecciona la garantía de consistencia del nombre y su valor predeterminado es `LOCAL`. Consulta la [Guía del clúster](../../guides/cluster.md#naming-and-name-scopes) para ver el modelo completo.
+El argumento opcional `scope` selecciona la garantía de consistencia del nombre y su valor predeterminado es `LOCAL`. Consulta la [Guía del clúster](guides/cluster.md#naming-and-name-scopes) para ver el modelo completo.
 
 | Constante | Visibilidad | Garantía |
 |----------|-------------|----------|
@@ -281,7 +281,7 @@ El argumento opcional `scope` selecciona la garantía de consistencia del nombre
 | `process.registry.CONSISTENT` | en todo el clúster | Singleton linealizable (Raft) |
 | `process.registry.STRONG` | en todo el clúster | Consistente + reconocimiento de cada nodo activo |
 
-En un nodo independiente, solo está disponible `LOCAL`; los ámbitos del clúster requieren [clustering](../../guides/cluster.md).
+En un nodo independiente, solo está disponible `LOCAL`; los ámbitos del clúster requieren [clustering](guides/cluster.md).
 
 ### register
 
@@ -380,12 +380,12 @@ Algunas operaciones requieren múltiples permisos:
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Nombre ya registrado | `errors.ALREADY_EXISTS` |
 
-Consulta [Manejo de errores](errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
 ## Véase también
 
-- [Canales](channel.md) - Coordinación de corrutinas dentro del proceso
-- [Cola de mensajes](../storage/queue.md) - Mensajería basada en colas
-- [Funciones](funcs.md) - Invocación de funciones
-- [Supervisión](../../guides/supervision.md) - Gestión del ciclo de vida de procesos
-- [Clúster](../../guides/cluster.md) - Ámbitos de nombres y nombres en todo el clúster
+- [Canales](lua/core/channel.md) - Coordinación de corrutinas dentro del proceso
+- [Cola de mensajes](lua/storage/queue.md) - Mensajería basada en colas
+- [Funciones](lua/core/funcs.md) - Invocación de funciones
+- [Supervisión](guides/supervision.md) - Gestión del ciclo de vida de procesos
+- [Clúster](guides/cluster.md) - Ámbitos de nombres y nombres en todo el clúster

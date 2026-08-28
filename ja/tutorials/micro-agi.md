@@ -181,7 +181,7 @@ entries:
 これはWippyランタイムの認可ではありません。保護された操作には実行コンテキストからの明示的な`allow`が必要で、
 後述のsecurityモジュール操作や`changes:apply()`内の`registry.apply`も含まれます。
 
-ポリシー評価の詳細は[セキュリティモデル](../system/security.md)を参照してください。
+ポリシー評価の詳細は[セキュリティモデル](system/security.md)を参照してください。
 
 ### モデル
 
@@ -481,7 +481,7 @@ end
 
 ### ストリーミング
 
-[LLMエージェントチュートリアル](./llm-agent.md)と同じコルーチンとチャネルのパターンを使用します：
+[LLMエージェントチュートリアル](tutorials/llm-agent.md)と同じコルーチンとチャネルのパターンを使用します：
 
 ```lua
 coroutine.spawn(function()
@@ -634,8 +634,8 @@ strictモードを無効化せず、まずパッケージへ必要なactionだ�
 
 ## 次のステップ
 
-- [LLMエージェント](./llm-agent.md) — 基本的なエージェントをゼロから構築する
-- [エージェントモジュール](../framework/agents.md) — エージェントフレームワークリファレンス
-- [レジストリ](../concepts/registry.md) — レジストリの概念
-- [セキュリティモデル](../system/security.md) — 宣言的セキュリティポリシー
-- [エントリ種別](../guides/entry-kinds.md) — 利用可能なエントリ種別
+- [LLMエージェント](tutorials/llm-agent.md) — 基本的なエージェントをゼロから構築する
+- [エージェントモジュール](framework/agents.md) — エージェントフレームワークリファレンス
+- [レジストリ](concepts/registry.md) — レジストリの概念
+- [セキュリティモデル](system/security.md) — 宣言的セキュリティポリシー
+- [エントリ種別](guides/entry-kinds.md) — 利用可能なエントリ種別

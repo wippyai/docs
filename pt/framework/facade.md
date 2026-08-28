@@ -290,9 +290,9 @@ Sem `--embed`, entradas `fs.directory` são excluídas do pacote. A flag aceita 
 
 ## Veja Também
 
-- [Views](./views.md) — Sistema de páginas e componentes
-- [Servidor HTTP](../http/server.md) — Configuração do serviço HTTP
-- [Visão Geral do Framework](./overview.md) — Uso dos módulos do framework
+- [Views](framework/views.md) — Sistema de páginas e componentes
+- [Servidor HTTP](http/server.md) — Configuração do serviço HTTP
+- [Visão Geral do Framework](framework/overview.md) — Uso dos módulos do framework
 - [Ponto de Entrada da Facade](../frontend/web-host/entry-point.md) — Como a facade inicia o Web Host
 - [Injeção de CSS](../frontend/web-host/css-injection.md) — Como o tema chega aos iframes filhos
 - [Mecanismos de Renderização](../frontend/web-host/render-engines.md) — Renderização por iframe e Web Fragment

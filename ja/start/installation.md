@@ -30,7 +30,7 @@ cd myapp
 wippy init
 ```
 
-`wippy init` は dependency lock と、その source および module directory の設定を書き込みます。application source file や registry entry を scaffold するものではありません。[Hello World](../tutorials/hello-world.md)に従って実行可能な application を作成し、`wippy run` で起動してください。
+`wippy init` は dependency lock と、その source および module directory の設定を書き込みます。application source file や registry entry を scaffold するものではありません。[Hello World](tutorials/hello-world.md)に従って実行可能な application を作成し、`wippy run` で起動してください。
 
 runtime には HTTP、SQL、storage、process-hosting capability が含まれます。application で必要になったときに Hub から framework module を追加します。
 
@@ -58,7 +58,7 @@ wippy install
 | `wippy auth` | 認証を管理 |
 | `wippy version` | バージョン情報を表示 |
 
-完全な説明は [CLI リファレンス](../guides/cli.md)を参照してください。
+完全な説明は [CLI リファレンス](guides/cli.md)を参照してください。
 
 ## トラブルシューティング :id=troubleshooting
 
@@ -67,5 +67,5 @@ install 後に shell が `wippy` を見つけられない場合は shell を開�
 ## 次のステップ
 
 - [Hello World](../tutorials/hello-world.md) — 最初の application を作成
-- [プロジェクト構造](./structure.md) — project layout を理解
-- [CLI リファレンス](../guides/cli.md) — すべての command と option を確認
+- [プロジェクト構造](start/structure.md) — project layout を理解
+- [CLI リファレンス](guides/cli.md) — すべての command と option を確認

@@ -160,6 +160,6 @@ O worker extrai yields de `StepOutput` após cada passo e os despacha para handl
 
 ## Consulte também
 
-- [Scheduler](./scheduler.md) — Execução de processos
-- [Módulos](./modules.md) — Integração de módulos Lua
-- [Modelo de processos](../concepts/process-model.md) — Conceitos de alto nível
+- [Scheduler](internals/scheduler.md) — Execução de processos
+- [Módulos](internals/modules.md) — Integração de módulos Lua
+- [Modelo de processos](concepts/process-model.md) — Conceitos de alto nível

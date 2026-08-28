@@ -75,7 +75,7 @@ WASM 実行はデフォルトで呼び出し元のセキュリティコンテキ
 
 ## 関連項目
 
-- [関数](./functions.md) - WASM 関数エントリの設定
-- [ホスト関数](./hosts.md) - 利用可能な WASI および Wippy ホストインターフェース
-- [プロセス](./processes.md) - WASM を長時間実行プロセスとして実行
+- [関数](wasm/functions.md) - WASM 関数エントリの設定
+- [ホスト関数](wasm/hosts.md) - 利用可能な WASI および Wippy ホストインターフェース
+- [プロセス](wasm/processes.md) - WASM を長時間実行プロセスとして実行
 - [Rust/WASM チュートリアル](../tutorials/rust-wasm.md) - コンポーネントをビルドして登録

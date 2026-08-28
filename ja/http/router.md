@@ -126,7 +126,7 @@ end
 
 ## ハンドラ関数
 
-エンドポイントハンドラは`http`モジュールを使用して、リクエストオブジェクトとレスポンスオブジェクトにアクセスします。リクエストとレスポンスのAPIリファレンスについては、[HTTPモジュール](../lua/http/http.md)を参照してください。
+エンドポイントハンドラは`http`モジュールを使用して、リクエストオブジェクトとレスポンスオブジェクトにアクセスします。リクエストとレスポンスのAPIリファレンスについては、[HTTPモジュール](lua/http/http.md)を参照してください。
 
 ```lua
 local http = require("http")
@@ -307,7 +307,7 @@ entries:
 
 ## 関連項目
 
-- [サーバー](./server.md) - HTTPサーバー設定
-- [静的ファイル](./static.md) - 静的ファイルの配信
-- [ミドルウェア](./middleware.md) - 利用可能なミドルウェア
-- [HTTPモジュール](../lua/http/http.md) - Lua HTTP API
+- [サーバー](http/server.md) - HTTPサーバー設定
+- [静的ファイル](http/static.md) - 静的ファイルの配信
+- [ミドルウェア](http/middleware.md) - 利用可能なミドルウェア
+- [HTTPモジュール](lua/http/http.md) - Lua HTTP API

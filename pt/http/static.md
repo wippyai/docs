@@ -168,7 +168,7 @@ A correspondência de caminhos é baseada em prefixo. Um handler em <code>/</cod
 
 ## Veja Também
 
-- [Servidor](./server.md) - Configuração do servidor HTTP
-- [Roteamento](./router.md) - Roteadores e endpoints
-- [Sistema de arquivos](../lua/storage/filesystem.md) - Módulo de sistema de arquivos
-- [Middleware](./middleware.md) - Middleware disponível
+- [Servidor](http/server.md) - Configuração do servidor HTTP
+- [Roteamento](http/router.md) - Roteadores e endpoints
+- [Sistema de arquivos](lua/storage/filesystem.md) - Módulo de sistema de arquivos
+- [Middleware](http/middleware.md) - Middleware disponível

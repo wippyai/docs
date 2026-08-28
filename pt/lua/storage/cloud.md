@@ -14,7 +14,7 @@ O módulo `cloudstorage` faz upload, download, listagem e gerenciamento de objet
 
 Esta página é uma referência de API. Seus trechos pressupõem uma entrada de storage configurada, acesso a qualquer volume de filesystem mencionado e as permissões listadas abaixo. Os blocos de multipart e URLs pré-assinadas são receitas parciais de integração do cliente; a aplicação deve executar as transferências HTTP e fornecer os ETags retornados. Quando uma operação e a limpeza do recurso podem falhar, a aplicação fornece `report_cleanup_error(err)` para registrar a falha de limpeza sem substituir o erro inicial.
 
-Para configurar o armazenamento, veja [Cloud Storage](../../system/cloudstorage.md).
+Para configurar o armazenamento, veja [Cloud Storage](system/cloudstorage.md).
 
 ## Carregamento
 
@@ -534,4 +534,4 @@ Operações de cloud storage estao sujeitas a avaliação de política de segura
 | Permissão negada por `cloudstorage.get` | erro Lua lançado | não se aplica |
 | Falha de operação do provider | preservada do provider quando disponível; caso contrário, não especificada | varia |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

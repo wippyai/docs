@@ -174,8 +174,8 @@ WASM 프로세스는 지원되는 clock polling 및 outgoing HTTP를 포함해 �
 
 ## 참고
 
-- [개요](./overview.md) - WebAssembly 런타임 개요
-- [함수](./functions.md) - WASM 함수 설정
-- [호스트 함수](./hosts.md) - 사용 가능한 호스트 인터페이스
-- [프로세스 모델](../concepts/process-model.md) - 프로세스 생명주기
-- [슈퍼비전](../guides/supervision.md) - 프로세스 슈퍼비전 트리
+- [개요](wasm/overview.md) - WebAssembly 런타임 개요
+- [함수](wasm/functions.md) - WASM 함수 설정
+- [호스트 함수](wasm/hosts.md) - 사용 가능한 호스트 인터페이스
+- [프로세스 모델](concepts/process-model.md) - 프로세스 생명주기
+- [슈퍼비전](guides/supervision.md) - 프로세스 슈퍼비전 트리

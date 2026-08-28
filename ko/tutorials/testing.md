@@ -203,6 +203,6 @@ wippy test test calc_test
 
 ## 다음 단계
 
-- [Hello World](hello-world.md) — 최소 프로젝트 레이아웃
-- [엔트리 종류](../guides/entry-kinds.md) — `function.lua`, `library.lua` 및 관련 엔트리
-- [테스트 프레임워크](../framework/testing.md) — 러너와 이벤트 프로토콜 참조
+- [Hello World](tutorials/hello-world.md) — 최소 프로젝트 레이아웃
+- [엔트리 종류](guides/entry-kinds.md) — `function.lua`, `library.lua` 및 관련 엔트리
+- [테스트 프레임워크](framework/testing.md) — 러너와 이벤트 프로토콜 참조

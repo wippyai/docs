@@ -71,7 +71,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Cluster-KV-Stores
 
-`store.kv.raft` und `store.kv.crdt` replizieren Key-Value-Daten über Cluster-Knoten hinweg. Beide erfordern aktiviertes [Clustering](../guides/cluster.md) und nutzen dieselbe Lua-API des [Store-Moduls](../lua/storage/store.md). Jeder Eintrag ist eine Namespace-Sicht auf eine knotenweite Engine; `namespace` isoliert die Schlüssel dieses Eintrags und muss `^[a-z][a-z0-9._-]*$` entsprechen und darf nicht mit `_` beginnen.
+`store.kv.raft` und `store.kv.crdt` replizieren Key-Value-Daten über Cluster-Knoten hinweg. Beide erfordern aktiviertes [Clustering](guides/cluster.md) und nutzen dieselbe Lua-API des [Store-Moduls](lua/storage/store.md). Jeder Eintrag ist eine Namespace-Sicht auf eine knotenweite Engine; `namespace` isoliert die Schlüssel dieses Eintrags und muss `^[a-z][a-z0-9._-]*$` entsprechen und darf nicht mit `_` beginnen.
 
 ### Raft (starke Konsistenz)
 
@@ -85,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |------|-----|--------------|--------------|
 | `namespace` | string | Ja | Schlüssel-Namespace in der geteilten Engine |
 
-Schreibvorgänge werden über das geteilte Raft vorgeschlagen (Follower leiten an den Leader weiter); Lesevorgänge sind linearisierbar. Bedingte Schreibvorgänge (`put` mit `only_if_absent`/`if_version`) werden unterstützt. Der Raft-Zustand wird standardmäßig dauerhaft im Dateisystem unter `cluster.raft.data_dir` gespeichert (Standard `~/.wippy/store`); siehe [Konfiguration](../guides/configuration.md#cluster).
+Schreibvorgänge werden über das geteilte Raft vorgeschlagen (Follower leiten an den Leader weiter); Lesevorgänge sind linearisierbar. Bedingte Schreibvorgänge (`put` mit `only_if_absent`/`if_version`) werden unterstützt. Der Raft-Zustand wird standardmäßig dauerhaft im Dateisystem unter `cluster.raft.data_dir` gespeichert (Standard `~/.wippy/store`); siehe [Konfiguration](guides/configuration.md#cluster).
 
 ### CRDT (letztliche Konsistenz)
 
@@ -118,9 +118,9 @@ Alle vier Store-Typen akzeptieren Time-to-Live-Werte, die Sichtbarkeit abgelaufe
 
 ## Lua-API
 
-Siehe [Store-Modul](../lua/storage/store.md) für Operationen: `get`, `set`, `has`, `delete`, sowie `put`, `entry`, `list` und `info` für versionierten und bedingten Zugriff.
+Siehe [Store-Modul](lua/storage/store.md) für Operationen: `get`, `set`, `has`, `delete`, sowie `put`, `entry`, `list` und `info` für versionierten und bedingten Zugriff.
 
 ## Siehe auch
 
-- [Store-Modul](../lua/storage/store.md) - Lua-API-Referenz
-- [Datenbank](./database.md) - SQL-Backend für `store.sql`
+- [Store-Modul](lua/storage/store.md) - Lua-API-Referenz
+- [Datenbank](system/database.md) - SQL-Backend für `store.sql`

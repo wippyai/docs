@@ -374,4 +374,4 @@ end
 | async start の dispatch 失敗 | `errors.INTERNAL` | いいえ |
 | 関数エラー | 様々 | 様々 |
 
-エラーの処理については[エラー処理](errors.md)を参照してください。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

@@ -417,7 +417,7 @@ WebSocket 연결은 보안 정책 평가 대상입니다.
 | `websocket.connect` | - | WebSocket 연결 허용/거부 |
 | `websocket.connect.url` | URL | 특정 URL 연결 허용/거부 |
 
-정책 설정은 [보안 모델](../../system/security.md)을 참조하세요.
+정책 설정은 [보안 모델](system/security.md)을 참조하세요.
 
 ## 에러
 
@@ -446,4 +446,4 @@ if err then
 end
 ```
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

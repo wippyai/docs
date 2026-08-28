@@ -24,7 +24,7 @@ registry ID는 많은 authorization check에서 resource로도 사용됩니다. 
 
 ## Kind 핸들러
 
-dispatch된 엔트리가 제출되면 `kind`가 등록된 handler를 선택합니다. handler는 해당 runtime resource를 검증하고 reconcile합니다. 예를 들어 `http.service` 엔트리는 HTTP server, `function.lua` 엔트리는 function pool, `db.sql.postgres` 엔트리는 connection pool을 관리합니다. 사용 가능한 kind는 [엔트리 종류 가이드](../guides/entry-kinds.md), handler 구현은 [커스텀 엔트리 종류](../internals/kinds.md)를 참조하십시오.
+dispatch된 엔트리가 제출되면 `kind`가 등록된 handler를 선택합니다. handler는 해당 runtime resource를 검증하고 reconcile합니다. 예를 들어 `http.service` 엔트리는 HTTP server, `function.lua` 엔트리는 function pool, `db.sql.postgres` 엔트리는 connection pool을 관리합니다. 사용 가능한 kind는 [엔트리 종류 가이드](guides/entry-kinds.md), handler 구현은 [커스텀 엔트리 종류](internals/kinds.md)를 참조하십시오.
 
 ## 라이브 업데이트
 
@@ -32,10 +32,10 @@ dispatch된 엔트리가 제출되면 `kind`가 등록된 handler를 선택합�
 
 history가 활성화되면 version history가 backward 및 forward transition을 지원합니다. memory history는 기본값이며 process lifetime 동안 유지되고, SQLite 및 PostgreSQL backend는 restart 이후에도 history를 영속화합니다.
 
-YAML 및 JSON 정의 파일은 boot loader가 entry로 변환하는 source manifest이며 serialized registry snapshot이 아닙니다. 프로그래밍 방식 접근은 [레지스트리 모듈](../lua/core/registry.md)을 참조하십시오.
+YAML 및 JSON 정의 파일은 boot loader가 entry로 변환하는 source manifest이며 serialized registry snapshot이 아닙니다. 프로그래밍 방식 접근은 [레지스트리 모듈](lua/core/registry.md)을 참조하십시오.
 
 ## 참고
 
-- [YAML 및 프로젝트 구조](../start/structure.md) — 정의 파일
-- [커스텀 엔트리 종류](../internals/kinds.md) — kind handler 구현
-- [프로세스 모델](./process-model.md) — 프로세스 실행 이해하기
+- [YAML 및 프로젝트 구조](start/structure.md) — 정의 파일
+- [커스텀 엔트리 종류](internals/kinds.md) — kind handler 구현
+- [프로세스 모델](concepts/process-model.md) — 프로세스 실행 이해하기

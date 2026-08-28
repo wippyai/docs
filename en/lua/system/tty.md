@@ -376,5 +376,5 @@ The input-control functions return structured errors:
 
 ## See Also
 
-- [Terminal I/O](./io.md) — stdin/stdout/stderr operations
-- [Terminal Host](../../system/terminal.md) — Terminal host configuration
+- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
+- [Terminal Host](system/terminal.md) — Terminal host configuration

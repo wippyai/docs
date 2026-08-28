@@ -7,7 +7,7 @@ description: "재사용 가능한 모듈 작성하기: ns.requirement로 요구�
 
 **컴포넌트**는 Hub에 publish되어 host application에 mount되는 reusable Wippy module입니다. component는 host의 entry ID를 알지 못해도 database, process host 또는 router에 의존할 수 있습니다. 이러한 dependency를 **requirement interface**로 선언하고 host가 값을 제공합니다.
 
-이 guide는 author side, 즉 interface 선언과 value가 entry에 주입되는 방식을 다룹니다. consumer side(lock file, version constraint, `wippy add`/`update`)는 [의존성 관리](./dependency-management.md), component internal structure는 [애플리케이션 아키텍처](../concepts/architecture.md)를 참조하십시오.
+이 guide는 author side, 즉 interface 선언과 value가 entry에 주입되는 방식을 다룹니다. consumer side(lock file, version constraint, `wippy add`/`update`)는 [의존성 관리](guides/dependency-management.md), component internal structure는 [애플리케이션 아키텍처](concepts/architecture.md)를 참조하십시오.
 
 ## 세 가지 종류
 
@@ -143,11 +143,11 @@ unit test는 assembled module의 registry relationship을 검증하지 않습니
 - 스폰되거나 스케줄되는 모든 id가 실제 엔트리로 해석되는지,
 - 모든 `env.variable`의 스토리지가 등록되어 있는지.
 
-이 검사는 supervisor가 등록되지 않은 worker를 참조하거나 test fixture가 harness-only storage ID를 사용하는 것과 같은 unresolved relationship을 찾습니다. [슈퍼비전](./supervision.md)과 [테스트](../framework/testing.md)를 참조하십시오.
+이 검사는 supervisor가 등록되지 않은 worker를 참조하거나 test fixture가 harness-only storage ID를 사용하는 것과 같은 unresolved relationship을 찾습니다. [슈퍼비전](guides/supervision.md)과 [테스트](framework/testing.md)를 참조하십시오.
 
 ## 참고
 
-- [애플리케이션 아키텍처](../concepts/architecture.md) — component internal structure
-- [의존성 관리](./dependency-management.md) — lock file, version, consumer workflow
-- [모듈 게시](./publishing.md) — component를 Hub에 publish
-- [엔트리 종류 가이드](./entry-kinds.md) — `ns.definition`, `ns.requirement`, `ns.dependency` reference
+- [애플리케이션 아키텍처](concepts/architecture.md) — component internal structure
+- [의존성 관리](guides/dependency-management.md) — lock file, version, consumer workflow
+- [모듈 게시](guides/publishing.md) — component를 Hub에 publish
+- [엔트리 종류 가이드](guides/entry-kinds.md) — `ns.definition`, `ns.requirement`, `ns.dependency` reference

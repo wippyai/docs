@@ -774,6 +774,6 @@ Zu den Fehlerkategorien gehören Kompilierungsfehler, Client-Fehler, Fehler beim
 
 ## Siehe auch
 
-- [Agenten](./agents.md) – Agenten-Framework für Agentenknoten
-- [LLM](./llm.md) – von Agenten verwendete Modellschnittstelle
-- [Framework-Überblick](./overview.md) – Framework-Module installieren und importieren
+- [Agenten](framework/agents.md) – Agenten-Framework für Agentenknoten
+- [LLM](framework/llm.md) – von Agenten verwendete Modellschnittstelle
+- [Framework-Überblick](framework/overview.md) – Framework-Module installieren und importieren

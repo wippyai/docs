@@ -135,5 +135,5 @@ Durante o encerramento, o scheduler envia eventos de cancelamento a todos os pro
 
 ## Consulte também
 
-- [Despacho de comandos](./dispatch.md) — Como os yields chegam aos handlers
-- [Modelo de processos](../concepts/process-model.md) — Conceitos de alto nível
+- [Despacho de comandos](internals/dispatch.md) — Como os yields chegam aos handlers
+- [Modelo de processos](concepts/process-model.md) — Conceitos de alto nível

@@ -208,7 +208,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-Las keys son `org/module` y los valores, directorios. Los paths relativos se resuelven contra el directorio del primer archivo `--config`; el path debe existir y ser un directorio. Establecer un replacement en `null` deshabilita uno heredado de una capa o profile anterior. También pueden vivir dentro de un [profile](./configuration.md#profiles), de modo que solo se activen con `--profile workspace`.
+Las keys son `org/module` y los valores, directorios. Los paths relativos se resuelven contra el directorio del primer archivo `--config`; el path debe existir y ser un directorio. Establecer un replacement en `null` deshabilita uno heredado de una capa o profile anterior. También pueden vivir dentro de un [profile](guides/configuration.md#profiles), de modo que solo se activen con `--profile workspace`.
 
 Los workspace replacements afectan al grafo de carga en boot y nunca se escriben en `wippy.lock`. Los cambios del source local se reconcilian directamente, sin contactar con el Hub. Los globs `exclude:` del source del módulo en `wippy.yaml` también se aplican a los directorios replacement, tanto al cargar entradas como al calcular hashes.
 
@@ -230,7 +230,7 @@ El hash de contenido de una entrada del lock es opcional hasta que lo rellena la
 
 ## Véase también
 
-- [Creación de componentes](./components.md) — Declara requirements y proporciona valores mediante `parameters`
-- [CLI](./cli.md) — Referencia de comandos
-- [Publicación](./publishing.md) — Publica módulos en el Hub
-- [Estructura del proyecto](../start/structure.md) — Estructura del proyecto
+- [Creación de componentes](guides/components.md) — Declara requirements y proporciona valores mediante `parameters`
+- [CLI](guides/cli.md) — Referencia de comandos
+- [Publicación](guides/publishing.md) — Publica módulos en el Hub
+- [Estructura del proyecto](start/structure.md) — Estructura del proyecto

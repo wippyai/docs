@@ -8,7 +8,7 @@ description: "Anfragebezogene Werte lesen, die über Funktions- und Prozessaufru
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Das Modul `ctx` liest anfragebezogene Werte, die über [Funktionsaufrufe](./funcs.md) oder [Prozessoperationen](./process.md) weitergegeben werden. Diese Seite ist eine API-Referenz; die Ausschnitte zeigen einzelne Aufrufe innerhalb eines ausführbaren Lua-Entrys.
+Das Modul `ctx` liest anfragebezogene Werte, die über [Funktionsaufrufe](lua/core/funcs.md) oder [Prozessoperationen](lua/core/process.md) weitergegeben werden. Diese Seite ist eine API-Referenz; die Ausschnitte zeigen einzelne Aufrufe innerhalb eines ausführbaren Lua-Entrys.
 
 ## Laden
 
@@ -48,4 +48,4 @@ local values, err = ctx.all()
 | Schlüssel nicht gefunden | `errors.NOT_FOUND` | nein |
 | Kein Ausführungskontext verfügbar | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](./errors.md) für den Umgang mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für den Umgang mit Fehlern.

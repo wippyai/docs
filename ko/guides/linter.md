@@ -253,6 +253,6 @@ GitHub Actions 단계 예시:
 
 ## 같이 보기
 
-- [CLI](./cli.md) - 전체 CLI 참조
-- [타입](../lua/types.md) - 타입 시스템 문서
-- [LSP](./lsp.md) - 실시간 진단을 통한 에디터 통합
+- [CLI](guides/cli.md) - 전체 CLI 참조
+- [타입](lua/types.md) - 타입 시스템 문서
+- [LSP](guides/lsp.md) - 실시간 진단을 통한 에디터 통합

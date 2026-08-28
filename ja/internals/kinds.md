@@ -140,5 +140,5 @@ type TransactionListener interface {
 
 ## 関連項目
 
-- [レジストリ](./registry.md) - エントリストレージ
-- [アーキテクチャ](./architecture.md) - ブートシーケンス
+- [レジストリ](internals/registry.md) - エントリストレージ
+- [アーキテクチャ](internals/architecture.md) - ブートシーケンス

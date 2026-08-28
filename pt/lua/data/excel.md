@@ -376,8 +376,8 @@ Passar a `open` um valor que não seja `io.Reader`, ou passar a `write_to` um va
 
 Fechar um workbook também fecha seus cursores de linhas abertos. Workbooks são fechados automaticamente durante a limpeza do contexto de execução Lua, mas chamadas explícitas a `close()` liberam os recursos antes.
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Filesystem](../storage/filesystem.md) - Operações de arquivo para leitura e gravação de arquivos Excel
+- [Filesystem](lua/storage/filesystem.md) - Operações de arquivo para leitura e gravação de arquivos Excel

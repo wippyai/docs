@@ -317,7 +317,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []` では何も公開されず、未知の名前を指定すると公開に失敗します。`workspace` サブセクションは、公開されるプロファイル内にあってもエクスポートされません。プロファイルの宣言については、[設定](./configuration.md#profiles)を参照してください。
+`include: []` では何も公開されず、未知の名前を指定すると公開に失敗します。`workspace` サブセクションは、公開されるプロファイル内にあってもエクスポートされません。プロファイルの宣言については、[設定](guides/configuration.md#profiles)を参照してください。
 
 ## 公開モジュールの利用
 
@@ -431,6 +431,6 @@ wippy publish --version 1.0.0
 
 ## 関連項目
 
-- [CLIリファレンス](./cli.md) — 公開コマンドとフラグ
-- [エントリ種別](./entry-kinds.md) — モジュールと依存関係のエントリ
-- [設定](./configuration.md) — ランタイム設定とプロファイル
+- [CLIリファレンス](guides/cli.md) — 公開コマンドとフラグ
+- [エントリ種別](guides/entry-kinds.md) — モジュールと依存関係のエントリ
+- [設定](guides/configuration.md) — ランタイム設定とプロファイル

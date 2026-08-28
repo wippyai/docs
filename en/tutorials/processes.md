@@ -13,7 +13,7 @@ Processes provide isolated execution units that communicate through message pass
 
 **Classification:** Reference/API primer. Each snippet illustrates one operation in
 isolation; the page is not a standalone project. For a complete application that
-combines spawning, monitoring, and messaging, see the [Echo Service](echo-service.md)
+combines spawning, monitoring, and messaging, see the [Echo Service](tutorials/echo-service.md)
 tutorial.
 
 ## Context and Dependencies
@@ -450,5 +450,5 @@ return { main = main }
 
 ## Next Steps
 
-- [Process Module Reference](../lua/core/process.md) — Process API documentation
-- [Channels](channels.md) — Channel operations for message handling
+- [Process Module Reference](lua/core/process.md) — Process API documentation
+- [Channels](tutorials/channels.md) — Channel operations for message handling

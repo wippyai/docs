@@ -30,7 +30,7 @@ cd myapp
 wippy init
 ```
 
-`wippy init`은 의존성 lock과 source 및 module directory 설정을 작성합니다. 애플리케이션 source file이나 registry entry를 scaffold하지는 않습니다. 실행 가능한 애플리케이션을 만들려면 [Hello World](../tutorials/hello-world.md)를 따르고 `wippy run`으로 시작하십시오.
+`wippy init`은 의존성 lock과 source 및 module directory 설정을 작성합니다. 애플리케이션 source file이나 registry entry를 scaffold하지는 않습니다. 실행 가능한 애플리케이션을 만들려면 [Hello World](tutorials/hello-world.md)를 따르고 `wippy run`으로 시작하십시오.
 
 런타임에는 HTTP, SQL, storage 및 process-hosting 기능이 포함됩니다. 애플리케이션에 필요한 framework module을 Hub에서 추가하십시오.
 
@@ -58,7 +58,7 @@ wippy install
 | `wippy auth` | 인증 관리 |
 | `wippy version` | 버전 정보 출력 |
 
-전체 문서는 [CLI 레퍼런스](../guides/cli.md)를 참조하십시오.
+전체 문서는 [CLI 레퍼런스](guides/cli.md)를 참조하십시오.
 
 ## 문제 해결
 
@@ -67,5 +67,5 @@ wippy install
 ## 다음 단계
 
 - [Hello World](../tutorials/hello-world.md) — 첫 번째 애플리케이션 만들기
-- [프로젝트 구조](./structure.md) — 프로젝트 레이아웃 이해하기
-- [CLI 레퍼런스](../guides/cli.md) — 모든 명령과 옵션 검토하기
+- [프로젝트 구조](start/structure.md) — 프로젝트 레이아웃 이해하기
+- [CLI 레퍼런스](guides/cli.md) — 모든 명령과 옵션 검토하기

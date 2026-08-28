@@ -390,7 +390,7 @@ Las entradas `process.lua` también pueden registrarse como activities para oper
 
 ## Ver También
 
-- [Overview](./overview.md) - Configuración
-- [Workflows](./workflows.md) - Implementación de workflows
-- [Funciones](../lua/core/funcs.md) - Módulo de funciones
-- [Manejo de errores](../lua/core/errors.md) - Tipos de error y patrones
+- [Overview](temporal/overview.md) - Configuración
+- [Workflows](temporal/workflows.md) - Implementación de workflows
+- [Funciones](lua/core/funcs.md) - Módulo de funciones
+- [Manejo de errores](lua/core/errors.md) - Tipos de error y patrones

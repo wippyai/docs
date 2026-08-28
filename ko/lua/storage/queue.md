@@ -13,7 +13,7 @@ description: "설정된 큐에 메시지를 게시하고 전달을 처리합니�
 
 이 페이지는 API 레퍼런스입니다. 게시 예시는 큐 엔트리와 권한이 이미 있다고 가정합니다. 컨슈머 섹션은 `queue.consumer`가 호출하는 핸들러의 부분 예시이며 독립된 큐 배포가 아닙니다.
 
-큐 설정은 [큐](../../system/queue.md)를 참고하세요.
+큐 설정은 [큐](system/queue.md)를 참고하세요.
 
 ## 로딩
 
@@ -167,12 +167,12 @@ return {main = main}
 | 발행 실패 | `errors.INTERNAL` | 아니오 |
 | `info`에서 큐 또는 드라이버를 찾지 못함 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 참고
 
-- [큐 설정](../../system/queue.md) - 큐 드라이버 및 엔트리 정의
-- [큐 컨슈머 가이드](../../guides/queue-consumers.md) - 컨슈머 패턴 및 워커 풀
-- [프로세스 관리](../core/process.md) - 프로세스 스폰 및 통신
-- [채널](../core/channel.md) - 프로세스 간 통신 패턴
-- [함수](../core/funcs.md) - 비동기 함수 호출
+- [큐 설정](system/queue.md) - 큐 드라이버 및 엔트리 정의
+- [큐 컨슈머 가이드](guides/queue-consumers.md) - 컨슈머 패턴 및 워커 풀
+- [프로세스 관리](lua/core/process.md) - 프로세스 스폰 및 통신
+- [채널](lua/core/channel.md) - 프로세스 간 통신 패턴
+- [함수](lua/core/funcs.md) - 비동기 함수 호출

@@ -24,7 +24,7 @@ registry ID は、多くの authorization check でも resource として使わ�
 
 ## Kind handler :id=kind-handlers
 
-dispatch された entry が submit されると、その `kind` に登録された handler が選択されます。handler は対応する runtime resource を検証して reconcile します。`http.service` entry は HTTP server、`function.lua` entry は function pool、`db.sql.postgres` entry は connection pool を管理します。利用可能な kind は[エントリ種別ガイド](../guides/entry-kinds.md)、handler の実装は[カスタムエントリ種別](../internals/kinds.md)を参照してください。
+dispatch された entry が submit されると、その `kind` に登録された handler が選択されます。handler は対応する runtime resource を検証して reconcile します。`http.service` entry は HTTP server、`function.lua` entry は function pool、`db.sql.postgres` entry は connection pool を管理します。利用可能な kind は[エントリ種別ガイド](guides/entry-kinds.md)、handler の実装は[カスタムエントリ種別](internals/kinds.md)を参照してください。
 
 ## ライブ更新
 
@@ -32,10 +32,10 @@ system の実行中に entry を追加、更新、削除できます。dispatch 
 
 history が有効な場合、version history により backward transition と forward transition ができます。既定の memory history は process lifetime の間だけ存続します。SQLite backend と PostgreSQL backend では restart 後も history が永続化されます。
 
-YAML および JSON definition file は、boot loader が entry に変換する source manifest です。serialized registry snapshot ではありません。programmatic access については[Registry module](../lua/core/registry.md)を参照してください。
+YAML および JSON definition file は、boot loader が entry に変換する source manifest です。serialized registry snapshot ではありません。programmatic access については[Registry module](lua/core/registry.md)を参照してください。
 
 ## 関連項目 :id=see-also
 
-- [YAML とプロジェクト構造](../start/structure.md) — definition file
-- [カスタムエントリ種別](../internals/kinds.md) — kind handler の実装
-- [プロセスモデル](./process-model.md) — process execution の理解
+- [YAML とプロジェクト構造](start/structure.md) — definition file
+- [カスタムエントリ種別](internals/kinds.md) — kind handler の実装
+- [プロセスモデル](concepts/process-model.md) — process execution の理解

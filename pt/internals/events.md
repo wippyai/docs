@@ -271,5 +271,5 @@ result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 
 ## Consulte também
 
-- [Registro](./registry.md) — Principal produtor de eventos
-- [Despacho de comandos](./dispatch.md) — Roteamento de processos para handlers
+- [Registro](internals/registry.md) — Principal produtor de eventos
+- [Despacho de comandos](internals/dispatch.md) — Roteamento de processos para handlers

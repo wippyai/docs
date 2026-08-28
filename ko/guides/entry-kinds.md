@@ -13,8 +13,8 @@ YAML과 Lua 블록은 하나의 애플리케이션이 아니라 레퍼런스 조
 
 ## 참고
 
-- [레지스트리](../concepts/registry.md) - 엔트리 저장 및 해결 방법
-- [설정](./configuration.md) - YAML 설정 형식
+- [레지스트리](concepts/registry.md) - 엔트리 저장 및 해결 방법
+- [설정](guides/configuration.md) - YAML 설정 형식
 
 ## Lua 런타임
 
@@ -83,7 +83,7 @@ YAML과 Lua 블록은 하나의 애플리케이션이 아니라 레퍼런스 조
   func: list_handler
 ```
 
-**Lua API:** [HTTP 모듈](../lua/http/http.md) 참조
+**Lua API:** [HTTP 모듈](lua/http/http.md) 참조
 
 ```lua
 local http = require("http")
@@ -154,9 +154,9 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-`${env:NAME}` 비밀 참조, TLS 옵션 및 연결 풀 튜닝은 [Database](../system/database.md)를 참고하세요. 데이터베이스 엔트리 뒤의 환경 변수 기반 값이 변경되면 풀이 라이브로 교체됩니다. 사용 중인 연결은 이전 연결 설정으로 작업을 마칩니다.
+`${env:NAME}` 비밀 참조, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참고하세요. 데이터베이스 엔트리 뒤의 환경 변수 기반 값이 변경되면 풀이 라이브로 교체됩니다. 사용 중인 연결은 이전 연결 설정으로 작업을 마칩니다.
 
-**Lua API:** [SQL 모듈](../lua/storage/sql.md) 참조
+**Lua API:** [SQL 모듈](lua/storage/sql.md) 참조
 
 ```lua
 local sql = require("sql")
@@ -197,9 +197,9 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
   namespace: deploy
 ```
 
-`store.kv.*` 종류는 [클러스터링](./cluster.md)이 활성화되어 있어야 합니다. 일관성 트레이드오프는 [스토어](../system/store.md#cluster-kv-stores)를 참고하세요.
+`store.kv.*` 종류는 [클러스터링](guides/cluster.md)이 활성화되어 있어야 합니다. 일관성 트레이드오프는 [스토어](system/store.md#cluster-kv-stores)를 참고하세요.
 
-**Lua API:** [Store 모듈](../lua/storage/store.md) 참조
+**Lua API:** [Store 모듈](lua/storage/store.md) 참조
 
 ```lua
 local store = require("store")
@@ -242,7 +242,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua API:** [Queue 모듈](../lua/storage/queue.md) 참조
+**Lua API:** [Queue 모듈](lua/storage/queue.md) 참조
 
 ```lua
 local queue = require("queue")
@@ -359,7 +359,7 @@ end
   endpoint: ""  # Optional, for S3-compatible services
 ```
 
-**Lua API:** [클라우드 스토리지 모듈](../lua/storage/cloud.md) 참조
+**Lua API:** [클라우드 스토리지 모듈](lua/storage/cloud.md) 참조
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -388,7 +388,7 @@ MinIO나 DigitalOcean Spaces 같은 S3 호환 서비스에 연결하려면 <code
   mode: "0755"      # Permissions
 ```
 
-**Lua API:** [파일시스템 모듈](../lua/storage/filesystem.md) 참조
+**Lua API:** [파일시스템 모듈](lua/storage/filesystem.md) 참조
 
 ```lua
 local fs = require("fs")
@@ -433,7 +433,7 @@ file:close()
     - app:defaults
 ```
 
-**Lua API:** [Env 모듈](../lua/system/env.md) 참조
+**Lua API:** [Env 모듈](lua/system/env.md) 참조
 
 ```lua
 local env = require("env")
@@ -470,7 +470,7 @@ env.set("CACHE_TTL", "3600")
   set: app:templates
 ```
 
-**Lua API:** [템플릿 모듈](../lua/text/template.md) 참조
+**Lua API:** [템플릿 모듈](lua/text/template.md) 참조
 
 ```lua
 local templates = require("templates")
@@ -513,7 +513,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua API:** [보안 모듈](../lua/security/security.md) 참조
+**Lua API:** [보안 모듈](lua/security/security.md) 참조
 
 ```lua
 local security = require("security")
@@ -592,7 +592,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua API:** [계약 모듈](../lua/core/contract.md) 참조
+**Lua API:** [계약 모듈](lua/core/contract.md) 참조
 
 <tip>
 바인딩 ID 없이 계약을 열 때 기본으로 사용하려면 하나의 바인딩에 <code>default: true</code>를 설정하세요(<code>context_required</code> 필드가 설정되지 않은 경우에만 작동).
@@ -638,7 +638,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
   transport: payload   # or wasi-http
 ```
 
-[WASM 개요](../wasm/overview.md) 참조.
+[WASM 개요](wasm/overview.md) 참조.
 
 ## 네트워크
 
@@ -649,7 +649,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `network.i2p` | I2P 네트워크 오버레이 |
 | `network.tailscale` | Tailscale 오버레이 |
 
-`http.service`에서는 `network:`를 통해, `funcs`/`process`에서는 `network` 옵션을 통해, `http_client`에서는 `overlay_network` 옵션을 통해 참조됩니다. [네트워크](../system/network.md)를 참고하세요.
+`http.service`에서는 `network:`를 통해, `funcs`/`process`에서는 `network` 옵션을 통해, `http_client`에서는 `overlay_network` 옵션을 통해 참조됩니다. [네트워크](system/network.md)를 참고하세요.
 
 ## 레지스트리 프리미티브
 
@@ -724,4 +724,4 @@ override:
 wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
 ```
 
-CLI(`-o`) 값은 형태에 따라 변환됩니다(`true`/`false`는 bool로, 숫자는 숫자로, 그 외에는 string). `override:` 섹션 값은 YAML 타입을 그대로 유지합니다. 엔트리 대신 전역 [설정](./configuration.md) 섹션을 재정의하려면 `--set`을 사용하세요.
+CLI(`-o`) 값은 형태에 따라 변환됩니다(`true`/`false`는 bool로, 숫자는 숫자로, 그 외에는 string). `override:` 섹션 값은 YAML 타입을 그대로 유지합니다. 엔트리 대신 전역 [설정](guides/configuration.md) 섹션을 재정의하려면 `--set`을 사용하세요.

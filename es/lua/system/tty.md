@@ -376,5 +376,5 @@ Las funciones de control de entrada devuelven errores estructurados:
 
 ## Véase También
 
-- [I/O de Terminal](./io.md) — operaciones stdin/stdout/stderr
-- [Host de terminal](../../system/terminal.md) — Configuración del host de terminal
+- [I/O de Terminal](lua/system/io.md) — operaciones stdin/stdout/stderr
+- [Host de terminal](system/terminal.md) — Configuración del host de terminal

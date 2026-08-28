@@ -186,7 +186,7 @@ filtro próprio. Isso não é autorização do runtime Wippy: operações proteg
 um `allow` explícito do contexto de execução, incluindo as operações do módulo de
 segurança abaixo e `registry.apply` dentro de `changes:apply()`.
 
-Veja [Modelo de Segurança](../system/security.md) para detalhes sobre a avaliação de políticas.
+Veja [Modelo de Segurança](system/security.md) para detalhes sobre a avaliação de políticas.
 
 ### Modelos
 
@@ -491,7 +491,7 @@ O loop do agente em `src/agent.lua` trata streaming, execução de ferramentas, 
 
 ### Streaming
 
-Usa o mesmo padrão de coroutine + channel do [tutorial Agente LLM](./llm-agent.md):
+Usa o mesmo padrão de coroutine + channel do [tutorial Agente LLM](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -656,8 +656,8 @@ de privilégio mínimo para as ações necessárias.
 
 ## Próximos Passos
 
-- [Agente LLM](./llm-agent.md) — Construa um agente básico do zero
-- [Módulo Agent](../framework/agents.md) — Referência do framework de agentes
-- [Registro](../concepts/registry.md) — Conceitos do registro
-- [Modelo de Segurança](../system/security.md) — Políticas de segurança declarativas
-- [Tipos de Entradas](../guides/entry-kinds.md) — Tipos de entradas disponíveis
+- [Agente LLM](tutorials/llm-agent.md) — Construa um agente básico do zero
+- [Módulo Agent](framework/agents.md) — Referência do framework de agentes
+- [Registro](concepts/registry.md) — Conceitos do registro
+- [Modelo de Segurança](system/security.md) — Políticas de segurança declarativas
+- [Tipos de Entradas](guides/entry-kinds.md) — Tipos de entradas disponíveis

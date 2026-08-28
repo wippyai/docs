@@ -216,4 +216,4 @@ Aqui, `password` é fornecida pelo limite de secrets da aplicação e `salt` con
 | Secret não e string (HMAC) | `errors.INVALID` | não |
 | Senha/salt PBKDF2 vazios, limites inválidos ou algoritmo não suportado | `errors.INVALID` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

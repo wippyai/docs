@@ -325,7 +325,7 @@ method 필드의 `#` 구분자는 인터페이스 메서드를 참조합니다: 
 
 ## 참고
 
-- [개요](./overview.md) - WebAssembly 런타임 개요
-- [호스트 함수](./hosts.md) - 사용 가능한 호스트 인터페이스
-- [프로세스](./processes.md) - WASM을 프로세스로 실행하기
-- [엔트리 종류](../guides/entry-kinds.md) - 모든 레지스트리 엔트리 종류
+- [개요](wasm/overview.md) - WebAssembly 런타임 개요
+- [호스트 함수](wasm/hosts.md) - 사용 가능한 호스트 인터페이스
+- [프로세스](wasm/processes.md) - WASM을 프로세스로 실행하기
+- [엔트리 종류](guides/entry-kinds.md) - 모든 레지스트리 엔트리 종류

@@ -10,7 +10,7 @@ description: "Inspect the current actor and scope, evaluate policies, and manage
 
 The `security` module exposes authentication actors, authorization scopes, policies, and token stores. This page is an API reference with partial authorization recipes. Registry IDs, actors, request metadata, token values, application objects such as `user` and `doc`, and callbacks such as `show_admin_features` come from the surrounding application; the examples are not a complete authentication deployment.
 
-Wippy runs in strict security mode by default. The executable entry must enable `security`, have an actor and scope, and authorize the exact operations it calls. In particular, construction and scope changes need `security.actor.create` or `security.scope.create`; registry lookup needs `security.policy.get` or `security.policy_group.get`; token work needs `security.token_store.get` plus the operation-specific token permission. `new_actor`, `new_scope`, `scope:with`, `scope:without`, and permission-denied `token_store` acquisition raise a Lua error instead of returning a structured `error`. Grant these prerequisites in the entry's security context rather than trying to recover after a denial. See [Security Model](../../system/security.md) for configuration.
+Wippy runs in strict security mode by default. The executable entry must enable `security`, have an actor and scope, and authorize the exact operations it calls. In particular, construction and scope changes need `security.actor.create` or `security.scope.create`; registry lookup needs `security.policy.get` or `security.policy_group.get`; token work needs `security.token_store.get` plus the operation-specific token permission. `new_actor`, `new_scope`, `scope:with`, `scope:without`, and permission-denied `token_store` acquisition raise a Lua error instead of returning a structured `error`. Grant these prerequisites in the entry's security context rather than trying to recover after a denial. See [Security Model](system/security.md) for configuration.
 
 ## Loading
 
@@ -394,7 +394,7 @@ Security policy evaluation applies to security operations.
 | `security.token.create` | Store ID | Create tokens |
 | `security.token.revoke` | Store ID | Revoke tokens |
 
-See [Security Model](../../system/security.md) for policy configuration.
+See [Security Model](system/security.md) for policy configuration.
 
 ## Errors
 
@@ -421,9 +421,9 @@ end
 store:close()
 ```
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
 - [Security Model](../../system/security.md) - Actors, policies, scopes configuration
-- [HTTP Middleware](../../http/middleware.md) - Endpoint and resource firewall
+- [HTTP Middleware](http/middleware.md) - Endpoint and resource firewall

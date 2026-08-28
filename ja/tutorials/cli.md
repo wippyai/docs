@@ -342,6 +342,6 @@ end
 
 ## 次のステップ
 
-- [I/Oモジュール](../lua/system/io.md) — I/O APIリファレンス
-- [Systemモジュール](../lua/system/system.md) — ランタイムとシステム情報
-- [Echoサービス](echo-service.md) — マルチプロセスアプリケーションを構築する
+- [I/Oモジュール](lua/system/io.md) — I/O APIリファレンス
+- [Systemモジュール](lua/system/system.md) — ランタイムとシステム情報
+- [Echoサービス](tutorials/echo-service.md) — マルチプロセスアプリケーションを構築する

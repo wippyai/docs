@@ -184,8 +184,8 @@ Prozesse unterstützen dieselbe WASI-Konfiguration wie Funktionen:
 
 ## Siehe auch
 
-- [Übersicht](./overview.md) - Übersicht über die WebAssembly-Runtime
-- [Funktionen](./functions.md) - Konfiguration von WASM-Funktionen
-- [Host-Funktionen](./hosts.md) - Verfügbare Host-Schnittstellen
-- [Prozessmodell](../concepts/process-model.md) - Prozesslebenszyklus
-- [Supervision](../guides/supervision.md) - Prozess-Supervision-Trees
+- [Übersicht](wasm/overview.md) - Übersicht über die WebAssembly-Runtime
+- [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionen
+- [Host-Funktionen](wasm/hosts.md) - Verfügbare Host-Schnittstellen
+- [Prozessmodell](concepts/process-model.md) - Prozesslebenszyklus
+- [Supervision](guides/supervision.md) - Prozess-Supervision-Trees

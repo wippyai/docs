@@ -216,4 +216,4 @@ end
 | 비밀이 문자열이 아님(HMAC) | `errors.INVALID` | 아니요 |
 | PBKDF2 비밀번호/salt가 비었거나 제한이 잘못되었거나 알고리즘이 지원되지 않음 | `errors.INVALID` | 아니요 |
 
-오류 작업 방법은 [오류 처리](../core/errors.md)를 참고하세요.
+오류 작업 방법은 [오류 처리](lua/core/errors.md)를 참고하세요.

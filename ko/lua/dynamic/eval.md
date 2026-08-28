@@ -20,7 +20,7 @@ Wippy는 런타임에 제공된 코드를 위해 표현식 평가와 기능이 �
 
 ## `expr`를 사용한 표현식 평가
 
-`expr` 모듈은 expr-lang 문법으로 작성된 표현식을 평가합니다. 전체 Lua 프로그램이 아니라 표현식에 사용하세요. [표현식 언어](./expression.md)는 전체 Lua API 및 문법 레퍼런스입니다.
+`expr` 모듈은 expr-lang 문법으로 작성된 표현식을 평가합니다. 전체 Lua 프로그램이 아니라 표현식에 사용하세요. [표현식 언어](lua/dynamic/expression.md)는 전체 Lua API 및 문법 레퍼런스입니다.
 
 ```lua
 local expr = require("expr")
@@ -396,5 +396,5 @@ end
 ## 함께 보기
 
 - [표현식](./expression.md) - 표현식 언어 레퍼런스
-- [실행](./exec.md) - 시스템 명령 실행
-- [보안](../security/security.md) - 보안 정책
+- [실행](lua/dynamic/exec.md) - 시스템 명령 실행
+- [보안](lua/security/security.md) - 보안 정책

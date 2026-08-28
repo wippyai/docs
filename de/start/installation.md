@@ -32,7 +32,7 @@ cd myapp
 wippy init
 ```
 
-`wippy init` schreibt den Dependency-Lock sowie dessen Einstellungen für Quell- und Modulverzeichnisse. Der Befehl legt weder Quellcode für die Anwendung noch Registry-Einträge an. Folgen Sie [Hello World](../tutorials/hello-world.md), um eine ausführbare Anwendung zu erstellen, und starten Sie sie anschließend mit `wippy run`.
+`wippy init` schreibt den Dependency-Lock sowie dessen Einstellungen für Quell- und Modulverzeichnisse. Der Befehl legt weder Quellcode für die Anwendung noch Registry-Einträge an. Folgen Sie [Hello World](tutorials/hello-world.md), um eine ausführbare Anwendung zu erstellen, und starten Sie sie anschließend mit `wippy run`.
 
 Die Runtime umfasst HTTP-, SQL-, Storage- und Process-Hosting-Funktionen. Fügen Sie Framework-Module aus dem Hub hinzu, wenn die Anwendung sie benötigt:
 
@@ -60,7 +60,7 @@ wippy install
 | `wippy auth` | Authentifizierung verwalten |
 | `wippy version` | Versionsinformationen ausgeben |
 
-Die vollständige Dokumentation finden Sie in der [CLI-Referenz](../guides/cli.md).
+Die vollständige Dokumentation finden Sie in der [CLI-Referenz](guides/cli.md).
 
 ## Fehlerbehebung
 
@@ -69,5 +69,5 @@ Wenn die Shell `wippy` nach der Installation nicht findet, öffnen Sie sie erneu
 ## Nächste Schritte
 
 - [Hello World](../tutorials/hello-world.md) — Erstellen Sie Ihre erste Anwendung
-- [Projektstruktur](./structure.md) — Lernen Sie den Projektaufbau kennen
-- [CLI-Referenz](../guides/cli.md) — Sehen Sie sich alle Befehle und Optionen an
+- [Projektstruktur](start/structure.md) — Lernen Sie den Projektaufbau kennen
+- [CLI-Referenz](guides/cli.md) — Sehen Sie sich alle Befehle und Optionen an

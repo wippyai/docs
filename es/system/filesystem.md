@@ -73,10 +73,10 @@ Las operaciones de escritura en sistemas de archivos embebidos retornan un error
 
 ## API Lua
 
-Consulte el [módulo Filesystem](../lua/storage/filesystem.md) para las operaciones de archivos.
+Consulte el [módulo Filesystem](lua/storage/filesystem.md) para las operaciones de archivos.
 
 ## Ver También
 
-- [Módulo Filesystem](../lua/storage/filesystem.md) - Referencia de la API Lua
-- [Cloud Storage](./cloudstorage.md) - Almacenamiento de objetos compatible con S3
-- [Template](./template.md) - Plantillas cargadas desde sistemas de archivos
+- [Módulo Filesystem](lua/storage/filesystem.md) - Referencia de la API Lua
+- [Cloud Storage](system/cloudstorage.md) - Almacenamiento de objetos compatible con S3
+- [Template](system/template.md) - Plantillas cargadas desde sistemas de archivos

@@ -75,7 +75,7 @@ Las capacidades del host se habilitan mediante imports explícitos. Cada entrada
 
 ## Véase también
 
-- [Funciones](./functions.md) - Configuración de entradas de funciones WASM
-- [Funciones del host](./hosts.md) - Interfaces WASI y Wippy disponibles en el host
-- [Procesos](./processes.md) - Ejecución de WASM como procesos de larga duración
+- [Funciones](wasm/functions.md) - Configuración de entradas de funciones WASM
+- [Funciones del host](wasm/hosts.md) - Interfaces WASI y Wippy disponibles en el host
+- [Procesos](wasm/processes.md) - Ejecución de WASM como procesos de larga duración
 - [Tutorial de Rust/WASM](../tutorials/rust-wasm.md) - Compilación y registro de un componente

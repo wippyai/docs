@@ -380,6 +380,6 @@ entries:
 
 ## Ver Tambien
 
-- [Descripción general del framework](./overview.md) — Instalar e importar módulos del framework
-- [Referencia de la CLI](../guides/cli.md) — Comando e indicadores de prueba
-- [Funciones](../concepts/functions.md) — Entradas de función e invocación
+- [Descripción general del framework](framework/overview.md) — Instalar e importar módulos del framework
+- [Referencia de la CLI](guides/cli.md) — Comando e indicadores de prueba
+- [Funciones](concepts/functions.md) — Entradas de función e invocación

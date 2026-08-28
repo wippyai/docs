@@ -197,6 +197,6 @@ end
 
 ## See Also
 
-- [LLM](./llm.md) — LLM generation and the `usage_tracker` contract
-- [Migrations](./migration.md) — Migration runner that creates the schema
-- [Framework Overview](./overview.md) — Framework module usage
+- [LLM](framework/llm.md) — LLM generation and the `usage_tracker` contract
+- [Migrations](framework/migration.md) — Migration runner that creates the schema
+- [Framework Overview](framework/overview.md) — Framework module usage

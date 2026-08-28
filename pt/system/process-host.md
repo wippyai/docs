@@ -68,7 +68,7 @@ Os processos são executados de forma independente, cada um com seu próprio con
 
 ## Veja também
 
-- [Módulo Process](../lua/core/process.md) - Crie e gerencie processos em Lua
-- [Processos WASM](../wasm/processes.md) - Configure entradas `process.wasm`
-- [Modelo de processos](../concepts/process-model.md) - Conceitos de ciclo de vida e supervisão
-- [Supervisão](../guides/supervision.md) - Construa árvores de supervisão
+- [Módulo Process](lua/core/process.md) - Crie e gerencie processos em Lua
+- [Processos WASM](wasm/processes.md) - Configure entradas `process.wasm`
+- [Modelo de processos](concepts/process-model.md) - Conceitos de ciclo de vida e supervisão
+- [Supervisão](guides/supervision.md) - Construa árvores de supervisão

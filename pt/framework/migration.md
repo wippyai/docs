@@ -255,6 +255,6 @@ O runner cria uma tabela `_migrations` em cada banco de destino na primeira exec
 
 ## Veja Tambem
 
-- [Driver SQL](../system/database.md) — Configuração de recursos de banco de dados
-- [Bootloader](./bootloader.md) — Ordenação e hooks do bootloader
-- [Visão Geral do Framework](./overview.md) — Uso dos módulos do framework
+- [Driver SQL](system/database.md) — Configuração de recursos de banco de dados
+- [Bootloader](framework/bootloader.md) — Ordenação e hooks do bootloader
+- [Visão Geral do Framework](framework/overview.md) — Uso dos módulos do framework

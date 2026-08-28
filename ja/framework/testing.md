@@ -380,6 +380,6 @@ entries:
 
 ## 関連項目
 
-- [Framework 概要](./overview.md) — Framework モジュールのインストールと import
-- [CLI リファレンス](../guides/cli.md) — test command と flag
-- [関数](../concepts/functions.md) — function entry と呼び出し
+- [Framework 概要](framework/overview.md) — Framework モジュールのインストールと import
+- [CLI リファレンス](guides/cli.md) — test command と flag
+- [関数](concepts/functions.md) — function entry と呼び出し

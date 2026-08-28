@@ -32,7 +32,7 @@ if send_err then
 end
 ```
 
-Las entradas Lua ejecutables reciben `process` como global ambiental. También puede cargarse con `require("process")` sin añadirlo a la lista `modules` de la entrada. Consulta [Gestión de procesos](core/process.md) para creación, enlace y supervisión.
+Las entradas Lua ejecutables reciben `process` como global ambiental. También puede cargarse con `require("process")` sin añadirlo a la lista `modules` de la entrada. Consulta [Gestión de procesos](lua/core/process.md) para creación, enlace y supervisión.
 
 ## Canales
 
@@ -46,7 +46,7 @@ buffered:send("work")           -- completes while buffer space is available
 local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-Consulta [Canales](core/channel.md) para select y patrones.
+Consulta [Canales](lua/core/channel.md) para select y patrones.
 
 ## Corrutinas
 
@@ -104,17 +104,17 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Los módulos disponibles dependen de la configuración de la entrada. Consulta [Definiciones de entradas](entries.md).
+Los módulos disponibles dependen de la configuración de la entrada. Consulta [Definiciones de entradas](lua/entries.md).
 
 Las bibliotecas del registro usan la misma sintaxis `require("alias")`, pero se declaran por separado en el mapa `imports:` de la entrada.
 
 ## Compatibilidad del lenguaje y las bibliotecas
 
-Wippy usa sintaxis Lua 5.3 con un [sistema de tipos gradual](types.md) inspirado en Luau. Los tipos son valores de primera clase en tiempo de ejecución que pueden usarse para validación, pasarse como argumentos e inspeccionarse durante la ejecución.
+Wippy usa sintaxis Lua 5.3 con un [sistema de tipos gradual](lua/types.md) inspirado en Luau. Los tipos son valores de primera clase en tiempo de ejecución que pueden usarse para validación, pasarse como argumentos e inspeccionarse durante la ejecución.
 
 Las bibliotecas Lua externas (LuaRocks, etc.) no están soportadas. El runtime proporciona su propio sistema de módulos con extensiones incorporadas para I/O, redes e integración de sistema.
 
-Para extensiones personalizadas, consulta [Módulos](../internals/modules.md) en la documentación interna.
+Para extensiones personalizadas, consulta [Módulos](internals/modules.md) en la documentación interna.
 
 ## Manejo de Errores
 
@@ -127,11 +127,11 @@ if err then
 end
 ```
 
-Este fragmento presupone que `json` está habilitado en la lista `modules` de la entrada y que `input` contiene la cadena que se va a decodificar. Consulta [Manejo de errores](core/errors.md) para ver patrones.
+Este fragmento presupone que `json` está habilitado en la lista `modules` de la entrada y que `input` contiene la cadena que se va a decodificar. Consulta [Manejo de errores](lua/core/errors.md) para ver patrones.
 
 ## Siguiente
 
-- [Definiciones de entradas](entries.md) - Configurar puntos de entrada
-- [Canales](core/channel.md) - Patrones de canales
-- [Gestión de procesos](core/process.md) - Creación y supervisión
-- [Funciones](core/funcs.md) - Llamadas entre procesos
+- [Definiciones de entradas](lua/entries.md) - Configurar puntos de entrada
+- [Canales](lua/core/channel.md) - Patrones de canales
+- [Gestión de procesos](lua/core/process.md) - Creación y supervisión
+- [Funciones](lua/core/funcs.md) - Llamadas entre procesos

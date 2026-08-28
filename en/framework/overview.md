@@ -83,6 +83,6 @@ wippy search wippy
 
 ## See Also
 
-- [Dependency Management](../guides/dependency-management.md) — Lock files and version constraints
-- [Publishing](../guides/publishing.md) — Publish a module
-- [CLI Reference](../guides/cli.md) — Module-management commands
+- [Dependency Management](guides/dependency-management.md) — Lock files and version constraints
+- [Publishing](guides/publishing.md) — Publish a module
+- [CLI Reference](guides/cli.md) — Module-management commands

@@ -9,7 +9,7 @@ description: "Lee valores vinculados a la solicitud y propagados mediante llamad
 <secondary-label ref="workflow"/>
 
 El módulo `ctx` lee valores vinculados a la solicitud y propagados mediante
-[llamadas a funciones](./funcs.md) u [operaciones de procesos](./process.md). Esta
+[llamadas a funciones](lua/core/funcs.md) u [operaciones de procesos](lua/core/process.md). Esta
 página es una referencia de API; los fragmentos muestran llamadas individuales dentro
 de una entrada Lua ejecutable.
 
@@ -53,4 +53,4 @@ tiene valores de solicitud. Si no existe un contexto de ejecución, devuelve
 | Clave no encontrada | `errors.NOT_FOUND` | no |
 | Contexto de ejecución no disponible | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](./errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

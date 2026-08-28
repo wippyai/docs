@@ -20,7 +20,7 @@ Wippy fornece dois sistemas de avaliação:
 
 ## Avaliação de Expressões com `expr`
 
-O módulo `expr` avalia expressões escritas na sintaxe expr-lang. Use-o para expressões, não para programas Lua completos. [Linguagem de Expressões](./expression.md) é a referência completa da API Lua e da sintaxe.
+O módulo `expr` avalia expressões escritas na sintaxe expr-lang. Use-o para expressões, não para programas Lua completos. [Linguagem de Expressões](lua/dynamic/expression.md) é a referência completa da API Lua e da sintaxe.
 
 ```lua
 local expr = require("expr")
@@ -394,5 +394,5 @@ Este é um padrão parcial de integração, não um sandbox para código hostil.
 ## Veja Também
 
 - [Expressões](./expression.md) - Referência da linguagem de expressões
-- [Execução de Comandos](./exec.md) - Execução de comandos do sistema
-- [Segurança](../security/security.md) - Políticas de segurança
+- [Execução de Comandos](lua/dynamic/exec.md) - Execução de comandos do sistema
+- [Segurança](lua/security/security.md) - Políticas de segurança

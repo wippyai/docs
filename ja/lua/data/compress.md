@@ -425,4 +425,4 @@ end
 | 無効な圧縮データ | `errors.INVALID` | いいえ |
 | 解凍サイズが制限を超過 | `errors.INTERNAL` | いいえ |
 
-エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

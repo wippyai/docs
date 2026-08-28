@@ -7,7 +7,7 @@ description: "레지스트리 그래프가 성장하면서도 합성 가능하�
 
 Wippy 애플리케이션은 소스 파일의 트리가 아니라 **레지스트리 엔트리의 그래프**입니다. 코드는 `function.lua`와 `process.lua` 엔트리에 살고, 이들을 연결하는 모든 것 — 어떤 함수가 HTTP 라우트에 응답하는지, 서비스가 어떤 프로세스를 감독하는지, 어떤 라이브러리가 어떤 라이브러리를 임포트하는지 — 은 `_index.yaml`에 선언됩니다. 앱을 구조화한다는 것은 그래프가 성장하면서도 합성 가능하고, 테스트 가능하며, 부팅 가능하게 유지되도록 **그 그래프를 네임스페이스로 나누는** 방법을 결정하는 일입니다.
 
-이 페이지는 해당 graph를 구성하는 한 가지 방법을 설명합니다. file format, naming 및 `_index.yaml` 배치는 [YAML 및 프로젝트 구조](../start/structure.md), entry definition은 [엔트리 종류 가이드](../guides/entry-kinds.md)를 참조하십시오.
+이 페이지는 해당 graph를 구성하는 한 가지 방법을 설명합니다. file format, naming 및 `_index.yaml` 배치는 [YAML 및 프로젝트 구조](start/structure.md), entry definition은 [엔트리 종류 가이드](guides/entry-kinds.md)를 참조하십시오.
 
 ## 기능 슬라이스
 
@@ -87,7 +87,7 @@ Lua 엔트리는 non-ambient module을 `modules:`에, registry-backed dependency
 
 슬라이스가 **당신이 통제하지 않는 무언가에 의해 소비될** 것인지로 선택하세요. 그렇다면 요구사항 인터페이스를 주고 게시하세요. 아니라면 앱의 인프라를 직접 참조하게 하고 형식을 생략하세요. 레이어링은 양 끝에서 불변이고, 패키징이 재사용에 따라 확장되는 부분입니다.
 
-requirement/dependency mechanism은 [컴포넌트 구축](../guides/components.md), lock-file 측면은 [의존성 관리](../guides/dependency-management.md)를 참조하십시오.
+requirement/dependency mechanism은 [컴포넌트 구축](guides/components.md), lock-file 측면은 [의존성 관리](guides/dependency-management.md)를 참조하십시오.
 
 ## 이 형태를 사용하는 이유 :id=why-this-shape
 
@@ -103,9 +103,9 @@ requirement/dependency mechanism은 [컴포넌트 구축](../guides/components.m
 
 ## 참고
 
-- [YAML 및 프로젝트 구조](../start/structure.md) — file format, naming, namespace
-- [컴포넌트 구축](../guides/components.md) — `ns.definition`, `ns.requirement`, mounting
-- [의존성 관리](../guides/dependency-management.md) — lock file, module consuming
-- [레지스트리](./registry.md) — 엔트리가 저장되고 resolve되는 방식
-- [엔트리 종류 가이드](../guides/entry-kinds.md) — 모든 entry kind
-- [프로세스 모델](./process-model.md) — service, supervision, host
+- [YAML 및 프로젝트 구조](start/structure.md) — file format, naming, namespace
+- [컴포넌트 구축](guides/components.md) — `ns.definition`, `ns.requirement`, mounting
+- [의존성 관리](guides/dependency-management.md) — lock file, module consuming
+- [레지스트리](concepts/registry.md) — 엔트리가 저장되고 resolve되는 방식
+- [엔트리 종류 가이드](guides/entry-kinds.md) — 모든 entry kind
+- [프로세스 모델](concepts/process-model.md) — service, supervision, host

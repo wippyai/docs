@@ -208,4 +208,4 @@ end
 | Snapshot de overlay obsoleto | `errors.CONFLICT` (retentável) |
 | Registry não disponível | `errors.INTERNAL` |
 
-Veja [Tratamento de Erros](./errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

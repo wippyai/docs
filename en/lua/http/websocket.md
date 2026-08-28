@@ -425,7 +425,7 @@ WebSocket connections are evaluated against the active security policy.
 | `websocket.connect` | - | Allow/deny WebSocket connections |
 | `websocket.connect.url` | URL | Allow/deny connections to specific URLs |
 
-See [Security Model](../../system/security.md) for policy configuration.
+See [Security Model](system/security.md) for policy configuration.
 
 ## Errors
 
@@ -454,4 +454,4 @@ if err then
 end
 ```
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

@@ -14,7 +14,7 @@ El módulo `cloudstorage` carga, descarga, lista y administra objetos en almacen
 
 Esta página es una referencia de API. Sus fragmentos presuponen una entrada de almacenamiento configurada, acceso a cualquier volumen de sistema de archivos que nombren y los permisos indicados abajo. Los bloques de multipart y URL prefirmadas son recetas parciales de integración con clientes; la aplicación debe realizar las transferencias HTTP y proporcionar los ETags devueltos. Cuando una operación y la limpieza de recursos pueden fallar, la aplicación circundante proporciona `report_cleanup_error(err)` para registrar el fallo de limpieza conservando el error inicial.
 
-Para configurar el almacenamiento, consulta [Almacenamiento en la nube](../../system/cloudstorage.md).
+Para configurar el almacenamiento, consulta [Almacenamiento en la nube](system/cloudstorage.md).
 
 ## Carga
 
@@ -534,4 +534,4 @@ La evaluación de políticas de seguridad se aplica a las operaciones de almacen
 | Permiso denegado por `cloudstorage.get` | error Lua generado | no aplicable |
 | Fallo de operación del proveedor | se conserva del proveedor cuando está disponible; de lo contrario, sin especificar | varía |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

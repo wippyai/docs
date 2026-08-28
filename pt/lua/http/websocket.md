@@ -425,7 +425,7 @@ Conexoes WebSocket estao sujeitas a avaliação de política de segurança.
 | `websocket.connect` | - | Permitir/negar conexoes WebSocket |
 | `websocket.connect.url` | URL | Permitir/negar conexoes para URLs específicas |
 
-Veja [Modelo de Segurança](../../system/security.md) para configurar as políticas.
+Veja [Modelo de Segurança](system/security.md) para configurar as políticas.
 
 ## Erros
 
@@ -454,4 +454,4 @@ if err then
 end
 ```
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

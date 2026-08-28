@@ -1165,8 +1165,8 @@ end
 
 ## 関連項目
 
-- [概要](./overview.md) - クライアントとワーカーの設定
-- [アクティビティ](./activities.md) - アクティビティの定義とオプション
-- [プロセス](../lua/core/process.md) - プロセス管理API
-- [関数](../lua/core/funcs.md) - 関数呼び出し
-- [チャネル](../lua/core/channel.md) - チャネル操作
+- [概要](temporal/overview.md) - クライアントとワーカーの設定
+- [アクティビティ](temporal/activities.md) - アクティビティの定義とオプション
+- [プロセス](lua/core/process.md) - プロセス管理API
+- [関数](lua/core/funcs.md) - 関数呼び出し
+- [チャネル](lua/core/channel.md) - チャネル操作

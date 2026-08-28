@@ -12,7 +12,7 @@ The `http` module reads the current server-side request and builds its response,
 
 This is an API reference with partial handler recipes. Names such as `id`, `data`, `token`, and application callbacks come from the surrounding handler. Request accessors generally return `value, error`, and response mutations return `error`; examples that consume a result check those errors.
 
-For server configuration, see [HTTP Server](../../http/server.md).
+For server configuration, see [HTTP Server](http/server.md).
 
 ## Loading
 
@@ -685,4 +685,4 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | Headers already sent | `errors.INVALID` | no |
 | Write failed | `errors.INTERNAL` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

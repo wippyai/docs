@@ -14,7 +14,7 @@ Das Modul `cloudstorage` lädt Objekte in S3-kompatiblen Speicher hoch, lädt si
 
 Diese Seite ist eine API-Referenz. Ihre Ausschnitte setzen einen konfigurierten Speichereintrag, Zugriff auf jedes von ihnen genannte Dateisystem-Volume und die unten aufgeführten Berechtigungen voraus. Die Blöcke zu mehrteiligen Uploads und vorsignierten URLs sind Teilrezepte für die Client-Integration; die Anwendung muss die HTTP-Übertragungen ausführen und die zurückgegebenen ETags bereitstellen. Wenn sowohl eine Operation als auch die Ressourcenbereinigung fehlschlagen können, stellt die umgebende Anwendung `report_cleanup_error(err)` bereit. Die Funktion zeichnet den Bereinigungsfehler auf, ohne den ursprünglichen Fehler zu ersetzen.
 
-Informationen zur Speicherkonfiguration finden Sie unter [Cloud-Speicher](../../system/cloudstorage.md).
+Informationen zur Speicherkonfiguration finden Sie unter [Cloud-Speicher](system/cloudstorage.md).
 
 ## Laden
 
@@ -534,4 +534,4 @@ Cloud-Speicheroperationen unterliegen der Auswertung der Sicherheitsrichtlinien.
 | Berechtigung durch `cloudstorage.get` verweigert | ausgelöster Lua-Fehler | nicht anwendbar |
 | Provider-Operation fehlgeschlagen | soweit verfügbar vom Provider übernommen, andernfalls nicht angegeben | unterschiedlich |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

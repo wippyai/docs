@@ -785,6 +785,6 @@ restart. Stop the application with Ctrl+C when verification is complete.
 
 ## Next Steps
 
-- [Processes](processes.md) — Process fundamentals
-- [Channels](channels.md) — Message-passing patterns
-- [Process Module](../lua/core/process.md) — Process API reference
+- [Processes](tutorials/processes.md) — Process fundamentals
+- [Channels](tutorials/channels.md) — Message-passing patterns
+- [Process Module](lua/core/process.md) — Process API reference

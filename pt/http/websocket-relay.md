@@ -220,6 +220,6 @@ Para cenários complexos de múltiplas salas, crie um processo handler separado 
 
 ## Veja Também
 
-- [Middleware](./middleware.md) - Configuração de middleware
-- [Processo](../lua/core/process.md) - Mensagens de processo
-- [Cliente WebSocket](../lua/http/websocket.md) - Conexões WebSocket de saída
+- [Middleware](http/middleware.md) - Configuração de middleware
+- [Processo](lua/core/process.md) - Mensagens de processo
+- [Cliente WebSocket](lua/http/websocket.md) - Conexões WebSocket de saída

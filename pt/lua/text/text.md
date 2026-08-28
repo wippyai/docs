@@ -485,4 +485,4 @@ end
 | Sintaxe de padrão inválida | `errors.INVALID` | não |
 | Erro interno | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

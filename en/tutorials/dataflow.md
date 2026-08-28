@@ -7,7 +7,7 @@ description: "Build and run a small wippy/dataflow workflow with persisted state
 
 **Classification: runnable tutorial.** This page builds a complete, provider-free
 `wippy/dataflow` project. It does not use embeddings or an LLM; for that use case,
-see [Retrieval-Augmented Generation](./rag.md).
+see [Retrieval-Augmented Generation](tutorials/rag.md).
 
 The workflow sends one input through two function nodes:
 
@@ -313,5 +313,5 @@ terminate, revive, or signal an asynchronous workflow.
 
 - [Dataflow Framework](../framework/dataflow.md) — routing, parallel nodes,
   cycles, agents, signals, and the client API
-- [Retrieval-Augmented Generation](./rag.md) — embeddings-backed retrieval
+- [Retrieval-Augmented Generation](tutorials/rag.md) — embeddings-backed retrieval
 - [Keeper over MCP](./keeper-mcp.md) — inspect running workflows from an MCP client

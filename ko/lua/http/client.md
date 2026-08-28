@@ -346,7 +346,7 @@ if close_err then return nil, close_err end
 | `read(n?)` | string, error | 최대 `n` 바이트 읽기 (기본값: 구현 버퍼) |
 | `close()` | boolean, error | 스트림 닫기 |
 
-`resp.stream`은 완전한 [스트림](../core/stream.md) 객체입니다 — `seek`, `stat`, `scanner`도 사용할 수 있습니다. 스트리밍 응답 본문은 호출자가 소유하며 모든 종료 경로에서 닫아야 합니다.
+`resp.stream`은 완전한 [스트림](lua/core/stream.md) 객체입니다 — `seek`, `stat`, `scanner`도 사용할 수 있습니다. 스트리밍 응답 본문은 호출자가 소유하며 모든 종료 경로에서 닫아야 합니다.
 
 ## 배치 요청
 
@@ -446,7 +446,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-정책 설정은 [보안 모델](../../system/security.md)을 참조하세요.
+정책 설정은 [보안 모델](system/security.md)을 참조하세요.
 
 ## 에러
 
@@ -475,4 +475,4 @@ if err then
 end
 ```
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

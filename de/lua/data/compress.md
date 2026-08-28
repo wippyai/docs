@@ -425,4 +425,4 @@ Dieser partielle Handler parst exakte Coding-Tokens und RFC-q-Werte, berücksich
 | Ungültige komprimierte Daten | `errors.INVALID` | nein |
 | Dekomprimierte Größe überschreitet Limit | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

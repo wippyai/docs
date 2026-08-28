@@ -75,7 +75,7 @@ WASM 실행은 기본적으로 호출자의 보안 컨텍스트를 상속합니�
 
 ## 참고
 
-- [함수](./functions.md) - WASM 함수 엔트리 설정
-- [호스트 함수](./hosts.md) - 사용 가능한 WASI 및 Wippy 호스트 인터페이스
-- [프로세스](./processes.md) - WASM을 장기 실행 프로세스로 실행하기
+- [함수](wasm/functions.md) - WASM 함수 엔트리 설정
+- [호스트 함수](wasm/hosts.md) - 사용 가능한 WASI 및 Wippy 호스트 인터페이스
+- [프로세스](wasm/processes.md) - WASM을 장기 실행 프로세스로 실행하기
 - [Rust/WASM 튜토리얼](../tutorials/rust-wasm.md) - 컴포넌트 빌드 및 등록

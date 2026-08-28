@@ -771,6 +771,6 @@ Categorias de erro: erros de compilação, erros do cliente, erros de criação 
 
 ## Veja também
 
-- [Agents](./agents.md) — Framework de agentes usado pelos nós agente
-- [LLM](./llm.md) — Interface de modelos usada pelos agentes
-- [Visão Geral do Framework](./overview.md) — Instalação e importação de módulos do framework
+- [Agents](framework/agents.md) — Framework de agentes usado pelos nós agente
+- [LLM](framework/llm.md) — Interface de modelos usada pelos agentes
+- [Visão Geral do Framework](framework/overview.md) — Instalação e importação de módulos do framework

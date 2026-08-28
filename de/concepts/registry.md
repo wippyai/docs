@@ -24,7 +24,7 @@ Registry-IDs dienen bei vielen Autorisierungsprüfungen auch als Ressourcen. Die
 
 ## Kind-Handler
 
-Beim Übermitteln eines versendeten Eintrags wählt dessen `kind` den registrierten Handler. Der Handler validiert die zugehörige Runtime-Ressource und gleicht sie ab: Ein `http.service`-Eintrag verwaltet einen HTTP-Server, ein `function.lua`-Eintrag einen Funktionspool und ein `db.sql.postgres`-Eintrag einen Verbindungspool. Verfügbare Kinds finden Sie im [Leitfaden zu Entry-Kinds](../guides/entry-kinds.md), die Handler-Implementierung unter [Benutzerdefinierte Entry-Kinds](../internals/kinds.md).
+Beim Übermitteln eines versendeten Eintrags wählt dessen `kind` den registrierten Handler. Der Handler validiert die zugehörige Runtime-Ressource und gleicht sie ab: Ein `http.service`-Eintrag verwaltet einen HTTP-Server, ein `function.lua`-Eintrag einen Funktionspool und ein `db.sql.postgres`-Eintrag einen Verbindungspool. Verfügbare Kinds finden Sie im [Leitfaden zu Entry-Kinds](guides/entry-kinds.md), die Handler-Implementierung unter [Benutzerdefinierte Entry-Kinds](internals/kinds.md).
 
 ## Live-Updates
 
@@ -32,10 +32,10 @@ Einträge können während des Betriebs hinzugefügt, aktualisiert oder entfernt
 
 Wenn Historie aktiviert ist, unterstützt der Versionsverlauf Übergänge vorwärts und rückwärts. Die standardmäßige In-Memory-Historie gilt für die Lebensdauer des Prozesses; SQLite- und PostgreSQL-Backends speichern sie über Neustarts hinweg.
 
-YAML- und JSON-Definitionsdateien sind Quellmanifeste, die der Bootloader in Einträge umwandelt. Sie sind keine serialisierten Registry-Snapshots. Siehe [Registry-Modul](../lua/core/registry.md) für den programmatischen Zugriff.
+YAML- und JSON-Definitionsdateien sind Quellmanifeste, die der Bootloader in Einträge umwandelt. Sie sind keine serialisierten Registry-Snapshots. Siehe [Registry-Modul](lua/core/registry.md) für den programmatischen Zugriff.
 
 ## Siehe auch
 
-- [YAML und Projektstruktur](../start/structure.md) — Definitionsdateien
-- [Benutzerdefinierte Entry-Kinds](../internals/kinds.md) — Kind-Handler implementieren
-- [Prozessmodell](./process-model.md) — Prozessausführung verstehen
+- [YAML und Projektstruktur](start/structure.md) — Definitionsdateien
+- [Benutzerdefinierte Entry-Kinds](internals/kinds.md) — Kind-Handler implementieren
+- [Prozessmodell](concepts/process-model.md) — Prozessausführung verstehen

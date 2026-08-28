@@ -84,10 +84,10 @@ Cuando se proporciona un endpoint, el acceso por estilo de ruta se habilita auto
 
 ## API Lua
 
-Consulte el [módulo Cloud Storage](../lua/storage/cloud.md) para las operaciones (listar, subir, descargar, eliminar y URLs prefirmadas).
+Consulte el [módulo Cloud Storage](lua/storage/cloud.md) para las operaciones (listar, subir, descargar, eliminar y URLs prefirmadas).
 
 ## Ver También
 
-- [Módulo Cloud Storage](../lua/storage/cloud.md) - Referencia de la API Lua
-- [Filesystem](./filesystem.md) - Entradas de filesystem local
-- [Queue](./queue.md) - El handler SQS comparte las mismas entradas `config.aws`
+- [Módulo Cloud Storage](lua/storage/cloud.md) - Referencia de la API Lua
+- [Filesystem](system/filesystem.md) - Entradas de filesystem local
+- [Queue](system/queue.md) - El handler SQS comparte las mismas entradas `config.aws`

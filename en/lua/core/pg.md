@@ -12,7 +12,7 @@ Process groups organize processes under dynamic names and broadcast messages to 
 
 This is an API reference. Its snippets assume an existing `pg.scope`, an executable entry running with process context, and policies that authorize the documented operations. The blocks demonstrate individual calls or partial subscription flows rather than a standalone application.
 
-For the scope entry kind and its configuration, see [Process Groups](../../system/process-groups.md). For the broader clustering model, see the [Cluster Guide](../../guides/cluster.md).
+For the scope entry kind and its configuration, see [Process Groups](system/process-groups.md). For the broader clustering model, see the [Cluster Guide](guides/cluster.md).
 
 ## Loading
 
@@ -231,10 +231,10 @@ group:release()
 | Service stopped, backpressure, or open circuit | `errors.UNAVAILABLE` |
 | Broadcast timed out | `errors.TIMEOUT` (retryable) |
 
-See [Error Handling](errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Process Groups](../../system/process-groups.md) - Scope entry kind and configuration
-- [Cluster](../../guides/cluster.md) - Membership, naming, and the clustering model
-- [Process Management](process.md) - Spawning and messaging individual processes
+- [Process Groups](system/process-groups.md) - Scope entry kind and configuration
+- [Cluster](guides/cluster.md) - Membership, naming, and the clustering model
+- [Process Management](lua/core/process.md) - Spawning and messaging individual processes

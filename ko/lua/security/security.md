@@ -10,7 +10,7 @@ description: "현재 액터와 스코프를 확인하고, 정책을 평가하며
 
 `security` 모듈은 인증 액터, 권한 부여 스코프, 정책, 토큰 스토어를 제공합니다. 이 페이지는 부분적인 권한 부여 레시피를 포함한 API 참조입니다. 레지스트리 ID, 액터, 요청 메타데이터, 토큰 값, `user` 및 `doc` 같은 애플리케이션 객체, `show_admin_features` 같은 콜백은 주변 애플리케이션에서 제공되며, 예제만으로 완전한 인증 배포가 구성되지는 않습니다.
 
-Wippy는 기본적으로 엄격한 보안 모드에서 실행됩니다. 실행 엔트리는 `security`를 활성화하고 액터와 스코프를 가지며 호출하는 정확한 작업을 허가해야 합니다. 특히 생성 및 스코프 변경에는 `security.actor.create` 또는 `security.scope.create`, 레지스트리 조회에는 `security.policy.get` 또는 `security.policy_group.get`, 토큰 작업에는 `security.token_store.get`과 작업별 토큰 권한이 필요합니다. `new_actor`, `new_scope`, `scope:with`, `scope:without`, 권한이 거부된 `token_store` 획득은 구조화된 `error`를 반환하지 않고 Lua 오류를 발생시킵니다. 거부 후 복구하려 하지 말고 엔트리의 보안 컨텍스트에서 이러한 사전 요구 사항을 허가하세요. 구성 방법은 [보안 모델](../../system/security.md)을 참조하세요.
+Wippy는 기본적으로 엄격한 보안 모드에서 실행됩니다. 실행 엔트리는 `security`를 활성화하고 액터와 스코프를 가지며 호출하는 정확한 작업을 허가해야 합니다. 특히 생성 및 스코프 변경에는 `security.actor.create` 또는 `security.scope.create`, 레지스트리 조회에는 `security.policy.get` 또는 `security.policy_group.get`, 토큰 작업에는 `security.token_store.get`과 작업별 토큰 권한이 필요합니다. `new_actor`, `new_scope`, `scope:with`, `scope:without`, 권한이 거부된 `token_store` 획득은 구조화된 `error`를 반환하지 않고 Lua 오류를 발생시킵니다. 거부 후 복구하려 하지 말고 엔트리의 보안 컨텍스트에서 이러한 사전 요구 사항을 허가하세요. 구성 방법은 [보안 모델](system/security.md)을 참조하세요.
 
 ## 로딩
 
@@ -394,7 +394,7 @@ store:close()
 | `security.token.create` | 스토어 ID | 토큰 생성 |
 | `security.token.revoke` | 스토어 ID | 토큰 폐기 |
 
-정책 설정은 [보안 모델](../../system/security.md)을 참조하세요.
+정책 설정은 [보안 모델](system/security.md)을 참조하세요.
 
 ## 에러
 
@@ -421,9 +421,9 @@ end
 store:close()
 ```
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 참고
 
 - [보안 모델](../../system/security.md) - 액터, 정책, 스코프 설정
-- [HTTP 미들웨어](../../http/middleware.md) - 엔드포인트 및 리소스 방화벽
+- [HTTP 미들웨어](http/middleware.md) - 엔드포인트 및 리소스 방화벽

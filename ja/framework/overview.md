@@ -83,6 +83,6 @@ wippy search wippy
 
 ## 関連項目
 
-- [依存関係の管理](../guides/dependency-management.md) — lock file と version constraint
-- [公開](../guides/publishing.md) — モジュールの公開
-- [CLI リファレンス](../guides/cli.md) — モジュール管理コマンド
+- [依存関係の管理](guides/dependency-management.md) — lock file と version constraint
+- [公開](guides/publishing.md) — モジュールの公開
+- [CLI リファレンス](guides/cli.md) — モジュール管理コマンド

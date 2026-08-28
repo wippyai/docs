@@ -216,4 +216,4 @@ Here, `password` is supplied through the application's secret boundary and `salt
 | Secret not a string (HMAC) | `errors.INVALID` | no |
 | PBKDF2 password/salt empty, limits invalid, or algorithm unsupported | `errors.INVALID` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

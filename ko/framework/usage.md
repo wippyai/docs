@@ -197,6 +197,6 @@ end
 
 ## 참고 항목
 
-- [LLM](./llm.md) - LLM generation 및 `usage_tracker` contract
-- [마이그레이션](./migration.md) - schema를 생성하는 migration runner
-- [프레임워크 개요](./overview.md) - framework module 사용법
+- [LLM](framework/llm.md) - LLM generation 및 `usage_tracker` contract
+- [마이그레이션](framework/migration.md) - schema를 생성하는 migration runner
+- [프레임워크 개요](framework/overview.md) - framework module 사용법

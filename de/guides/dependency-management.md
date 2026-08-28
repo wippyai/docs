@@ -208,7 +208,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-Schlüssel sind `org/module`, Werte sind Verzeichnisse. Relative Pfade werden gegen das Verzeichnis der ersten `--config`-Datei aufgelöst; der Pfad muss existieren und ein Verzeichnis sein. `null` deaktiviert eine aus einer früheren Konfigurationsschicht oder einem Profil geerbte Ersetzung. Ersetzungen können auch in einem [Profil](./configuration.md#profiles) liegen und dadurch nur mit `--profile workspace` aktiv werden.
+Schlüssel sind `org/module`, Werte sind Verzeichnisse. Relative Pfade werden gegen das Verzeichnis der ersten `--config`-Datei aufgelöst; der Pfad muss existieren und ein Verzeichnis sein. `null` deaktiviert eine aus einer früheren Konfigurationsschicht oder einem Profil geerbte Ersetzung. Ersetzungen können auch in einem [Profil](guides/configuration.md#profiles) liegen und dadurch nur mit `--profile workspace` aktiv werden.
 
 Workspace-Ersetzungen wirken auf den Ladegraphen beim Start und werden nie in `wippy.lock` geschrieben. Änderungen an der lokalen Quelle werden direkt abgeglichen, ohne den Hub zu kontaktieren. Die `exclude:`-Globs aus der `wippy.yaml` des Moduls gelten auch für Ersetzungsverzeichnisse, sowohl beim Laden von Einträgen als auch beim Hashen des Inhalts.
 
@@ -230,7 +230,7 @@ Der Inhalts-Hash eines Lock-Eintrags ist optional, bis die Installation ihn erg�
 
 ## Siehe auch
 
-- [Komponenten erstellen](./components.md) — Requirements definieren und Werte über `parameters` bereitstellen
-- [CLI](./cli.md) — Befehlsreferenz
-- [Veröffentlichung](./publishing.md) — Module im Hub veröffentlichen
-- [Projektstruktur](../start/structure.md) — Projektaufbau
+- [Komponenten erstellen](guides/components.md) — Requirements definieren und Werte über `parameters` bereitstellen
+- [CLI](guides/cli.md) — Befehlsreferenz
+- [Veröffentlichung](guides/publishing.md) — Module im Hub veröffentlichen
+- [Projektstruktur](start/structure.md) — Projektaufbau

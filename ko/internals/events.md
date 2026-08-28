@@ -271,5 +271,5 @@ result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 
 ## 참고
 
-- [레지스트리](./registry.md) - 주요 이벤트 생산자
-- [명령 디스패치](./dispatch.md) - 프로세스-핸들러 라우팅
+- [레지스트리](internals/registry.md) - 주요 이벤트 생산자
+- [명령 디스패치](internals/dispatch.md) - 프로세스-핸들러 라우팅

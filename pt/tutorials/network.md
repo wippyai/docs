@@ -250,7 +250,7 @@ Sobreposições herdadas ignoram essa verificação — elas foram autorizadas n
 
 ## Próximos Passos
 
-- [Sistema de Rede](../system/network.md) - Referência de tipos de entrada
-- [Cliente HTTP](../lua/http/client.md) - Opções de overlay por chamada
-- [Modelo de Segurança](../system/security.md) - Políticas e escopos
-- [Autenticação](auth.md) - Segurança baseada em tokens
+- [Sistema de Rede](system/network.md) - Referência de tipos de entrada
+- [Cliente HTTP](lua/http/client.md) - Opções de overlay por chamada
+- [Modelo de Segurança](system/security.md) - Políticas e escopos
+- [Autenticação](tutorials/auth.md) - Segurança baseada em tokens

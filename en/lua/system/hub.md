@@ -193,5 +193,5 @@ Each top-level `hub.*` operation checks the matching action name, such as `hub.m
 
 ## See Also
 
-- [CLI Reference](../../guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
-- [Publishing Guide](../../guides/publishing.md)
+- [CLI Reference](guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
+- [Publishing Guide](guides/publishing.md)

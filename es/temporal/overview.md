@@ -83,7 +83,7 @@ Proporcione la API key mediante uno de estos métodos:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Los campos de autenticación y credenciales resuelven los marcadores `${env:NAME}` mediante el [registro de entorno](../system/env.md) al decodificarse. Las directivas heredadas `api_key_env` y `key_pem_env` se resuelven del mismo modo, pero están obsoletas; prefiera `api_key: ${env:NAME}` y `key_pem: ${env:NAME}`.
+Los campos de autenticación y credenciales resuelven los marcadores `${env:NAME}` mediante el [registro de entorno](system/env.md) al decodificarse. Las directivas heredadas `api_key_env` y `key_pem_env` se resuelven del mismo modo, pero están obsoletas; prefiera `api_key: ${env:NAME}` y `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -204,7 +204,7 @@ Ajuste fino del comportamiento del worker:
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Los campos de credenciales e identificadores resuelven los marcadores `${env:NAME}` mediante el [registro de entorno](../system/env.md) al decodificarse. La directiva heredada `build_id_env` se resuelve del mismo modo, pero está obsoleta; prefiera `build_id: ${env:NAME}`.
+Los campos de credenciales e identificadores resuelven los marcadores `${env:NAME}` mediante el [registro de entorno](system/env.md) al decodificarse. La directiva heredada `build_id_env` se resuelve del mismo modo, pero está obsoleta; prefiera `build_id: ${env:NAME}`.
 
 ### Comportamiento de Versionado
 
@@ -287,5 +287,5 @@ entries:
 
 ## Ver También
 
-- [Activities](./activities.md) - Definiciones de activities
-- [Workflows](./workflows.md) - Implementación de workflows
+- [Activities](temporal/activities.md) - Definiciones de activities
+- [Workflows](temporal/workflows.md) - Implementación de workflows

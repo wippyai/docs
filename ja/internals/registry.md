@@ -124,7 +124,7 @@ resolver.RegisterPattern(registry.DependencyPattern{
 | Memory | `history_type` 未設定時のデフォルト。テスト |
 | Nil | 履歴なし |
 
-SQLite は、バージョン、変更セット（MessagePack エンコード）、メタデータのテーブルを WAL モードで使用します。PostgreSQL は `registry.history_type: postgres` と `history_dsn`/`history_schema` で選択します（[設定](../guides/configuration.md#registry)を参照）。
+SQLite は、バージョン、変更セット（MessagePack エンコード）、メタデータのテーブルを WAL モードで使用します。PostgreSQL は `registry.history_type: postgres` と `history_dsn`/`history_schema` で選択します（[設定](guides/configuration.md#registry)を参照）。
 
 履歴は各バージョンの正確な依存関係解決も永続化します。`ns.dependency` の変更が適用されると、解決済みモジュールグラフが変更セットとともに content-addressed 形式で格納されます。起動とロールバックでは再解決せず、格納されたグラフを再生するため、バージョンは常に解決時と同じバージョン群と整合します。履歴スキーマはアップグレード後の初回起動時に自動移行されます。既存バージョンは初回アクセス時に一度解決され、checkpoint されます。
 
@@ -157,5 +157,5 @@ glob マッチングはルートフィールド `.kind`、`.name`、`.ns`、`.id
 
 ## 関連項目
 
-- [レジストリ](../concepts/registry.md) - 高レベルの概念
-- [イベント](./events.md) - イベントバスの詳細
+- [レジストリ](concepts/registry.md) - 高レベルの概念
+- [イベント](internals/events.md) - イベントバスの詳細

@@ -129,6 +129,6 @@ Das Aktivieren von `wasi:sockets` stellt die Schnittstellen bereit, autorisiert 
 
 ## Siehe auch
 
-- [Übersicht](./overview.md) - Übersicht über die WebAssembly-Runtime
-- [Funktionen](./functions.md) - Konfiguration von WASM-Funktionen
-- [Prozesse](./processes.md) - WASM als Prozesse ausführen
+- [Übersicht](wasm/overview.md) - Übersicht über die WebAssembly-Runtime
+- [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionen
+- [Prozesse](wasm/processes.md) - WASM als Prozesse ausführen

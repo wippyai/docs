@@ -193,5 +193,5 @@ Cada operação `hub.*` de nível superior verifica o nome de ação corresponde
 
 ## Veja também
 
-- [Referência da CLI](../../guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
-- [Guia de Publicação](../../guides/publishing.md)
+- [Referência da CLI](guides/cli.md) — `wippy readme`, `wippy search`, `wippy publish`
+- [Guia de Publicação](guides/publishing.md)

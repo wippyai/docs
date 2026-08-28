@@ -420,7 +420,7 @@ entries:
 | `store` | erforderlich | Backing-Key-Value-Store-Referenz |
 | `token_length` | 32 | Token-Größe in Bytes (256 Bits) |
 | `default_expiration` | 24h | Standard-Token-TTL |
-| `token_key` | keiner | HMAC-SHA256-Signaturschlüssel, als direkter Wert oder `${env:NAME}` aus der [Env-Registry](./env.md) |
+| `token_key` | keiner | HMAC-SHA256-Signaturschlüssel, als direkter Wert oder `${env:NAME}` aus der [Env-Registry](system/env.md) |
 
 Verwenden Sie in Produktion `token_key: ${env:NAME}`, damit Secrets nicht in Einträge eingebettet werden. Die veraltete Direktive `token_key_env` liest ebenfalls aus der Umgebungs-Registry, behält aber bei einer fehlenden oder leeren Auflösung den Inline- oder Nullwert bei; ein moderner Platzhalter ohne Standardwert schlägt bei einer fehlenden Variable fehl.
 

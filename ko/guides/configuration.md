@@ -7,7 +7,7 @@ description: "런타임 설정 필드, 프로파일, 합성 규칙, 환경 변�
 
 Wippy는 `.wippy.yaml` 파일에서 런타임 설정을 읽습니다.
 
-아래 설정 필드는 실행 시 반복 가능한 `wippy run --set section.path=value` 옵션으로 재정의할 수 있습니다. 설정 섹션이 아니라 개별 레지스트리 *엔트리*를 재정의하려면 `override:` 섹션이나 `-o`를 사용하세요. [엔트리 재정의](./entry-kinds.md#overriding-entries)를 참고하세요.
+아래 설정 필드는 실행 시 반복 가능한 `wippy run --set section.path=value` 옵션으로 재정의할 수 있습니다. 설정 섹션이 아니라 개별 레지스트리 *엔트리*를 재정의하려면 `override:` 섹션이나 `-o`를 사용하세요. [엔트리 재정의](guides/entry-kinds.md#overriding-entries)를 참고하세요.
 
 ## 설정 합성 {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - 첫 번째 파일이 상대 경로 해석에 사용되는 디렉토리를 고정합니다.
 - 파일 이름에는 예약된 의미가 없습니다; 기본값 외에는 아무것도 자동 발견되지 않습니다.
 
-설정은 파일 합성, `--profile` 선택, `--set` 재정의 순서로 적용됩니다. 팩에서 실행되는 애플리케이션의 경우 팩된 런타임 기본값은 이 세 단계보다 우선순위가 낮습니다. [런타임 기본값 게시](./publishing.md#publishing-runtime-defaults)를 참고하세요.
+설정은 파일 합성, `--profile` 선택, `--set` 재정의 순서로 적용됩니다. 팩에서 실행되는 애플리케이션의 경우 팩된 런타임 기본값은 이 세 단계보다 우선순위가 낮습니다. [런타임 기본값 게시](guides/publishing.md#publishing-runtime-defaults)를 참고하세요.
 
 ## 프로파일 {#profiles}
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` 섹션은 프로파일 안에서 리스트 연산을 지원합니다 — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — 그래서 프로파일이 기본 리스트를 교체하는 대신 조정할 수 있습니다.
 - `${name}` 참조는 병합된 `vars:` 섹션에서 보간됩니다. 프로파일 vars 안에서는 OS 환경 참조가 허용되지 않습니다; 기본 설정에서 `${env:NAME}`을 사용하세요 (파일 로드 시 해석됨).
 
-`wippy run`, `test`, `pack`은 `--profile`을 받습니다. `install`, `update`, `lint`, `registry`도 워크스페이스 프로파일용으로 이를 `--set`과 함께 받습니다. 애플리케이션은 팩 안에 프로파일을 실어 보낼 수 있습니다. [프로파일 게시](./publishing.md#publishing-profiles)를 참고하세요.
+`wippy run`, `test`, `pack`은 `--profile`을 받습니다. `install`, `update`, `lint`, `registry`도 워크스페이스 프로파일용으로 이를 `--set`과 함께 받습니다. 애플리케이션은 팩 안에 프로파일을 실어 보낼 수 있습니다. [프로파일 게시](guides/publishing.md#publishing-profiles)를 참고하세요.
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## 로그 매니저
 
-런타임 로그 라우팅을 제어합니다. 콘솔 출력은 [CLI 플래그](./cli.md) (`-v`, `-c`, `-s`)로 설정됩니다.
+런타임 로그 라우팅을 제어합니다. 콘솔 출력은 [CLI 플래그](guides/cli.md) (`-v`, `-c`, `-s`)로 설정됩니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-참조: [Logger 모듈](../lua/system/logger.md)
+참조: [Logger 모듈](lua/system/logger.md)
 
 ## 프로파일러
 
@@ -115,7 +115,7 @@ profiler:
 
 ## 보안
 
-전역 보안 동작입니다. 개별 정책은 [security.policy 엔트리](./entry-kinds.md)로 정의됩니다.
+전역 보안 동작입니다. 개별 정책은 [security.policy 엔트리](guides/entry-kinds.md)로 정의됩니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
@@ -126,7 +126,7 @@ security:
   strict_mode: true
 ```
 
-참조: [보안 시스템](../system/security.md), [보안 모듈](../lua/security/security.md)
+참조: [보안 시스템](system/security.md), [보안 모듈](lua/security/security.md)
 
 ## 레지스트리
 
@@ -153,7 +153,7 @@ registry:
   history_schema: wippy_registry
 ```
 
-참조: [레지스트리 개념](../concepts/registry.md), [레지스트리 모듈](../lua/core/registry.md)
+참조: [레지스트리 개념](concepts/registry.md), [레지스트리 모듈](lua/core/registry.md)
 
 ## 릴레이
 
@@ -168,7 +168,7 @@ relay:
   node_name: worker-1
 ```
 
-참조: [프로세스 모델](../concepts/process-model.md)
+참조: [프로세스 모델](concepts/process-model.md)
 
 ## 슈퍼바이저
 
@@ -186,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-참조: [슈퍼비전 가이드](./supervision.md)
+참조: [슈퍼비전 가이드](guides/supervision.md)
 
 <note>
-`process.host`별 워커와 큐는 이 전역 섹션이 아니라 엔트리 자체에서 (`workers`, `queue_size`, `local_queue_size`) 설정합니다. [Process Host](../system/process-host.md) 엔트리 종류를 참조하세요.
+`process.host`별 워커와 큐는 이 전역 섹션이 아니라 엔트리 자체에서 (`workers`, `queue_size`, `local_queue_size`) 설정합니다. [Process Host](system/process-host.md) 엔트리 종류를 참조하세요.
 </note>
 
 ## Lua 런타임
@@ -218,7 +218,7 @@ lua:
     enabled: true
 ```
 
-참조: [Lua 개요](../lua/overview.md)
+참조: [Lua 개요](lua/overview.md)
 
 ## Finder
 
@@ -271,7 +271,7 @@ otel:
 
 표준 OTEL 환경 변수(`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`)는 해당 필드를 재정의합니다.
 
-참조: [관측성 가이드](./observability.md)
+참조: [관측성 가이드](guides/observability.md)
 
 ## 셧다운
 
@@ -303,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-참조: [메트릭 모듈](../lua/system/metrics.md), [관측성 가이드](./observability.md)
+참조: [메트릭 모듈](lua/system/metrics.md), [관측성 가이드](guides/observability.md)
 
 ## Prometheus
 
@@ -322,11 +322,11 @@ prometheus:
 
 Prometheus 스크레이핑을 위해 `/metrics` 엔드포인트 노출.
 
-참조: [관측성 가이드](./observability.md)
+참조: [관측성 가이드](guides/observability.md)
 
 ## 클러스터
 
-멀티 노드 클러스터링은 gossip 멤버십과 제한된 Raft 합의 코어로 구성됩니다. 아키텍처와 운영 모델은 [클러스터 가이드](./cluster.md)를 참고하세요. 이 섹션은 설정 키 레퍼런스입니다.
+멀티 노드 클러스터링은 gossip 멤버십과 제한된 Raft 합의 코어로 구성됩니다. 아키텍처와 운영 모델은 [클러스터 가이드](guides/cluster.md)를 참고하세요. 이 섹션은 설정 키 레퍼런스입니다.
 
 ### 최상위
 
@@ -379,7 +379,7 @@ memberlist를 통한 SWIM gossip. 노드 디스커버리, 장애 감지, 메타�
 
 ### Raft (합의)
 
-제한된 Raft 코어는 기본적으로 `raft.data_dir`(`~/.wippy/store`) 아래에 내구성 상태를 저장합니다. 재시작된 노드는 피어를 통해 쿼럼에 다시 참여합니다. [`store.kv.raft`](../system/store.md#cluster-kv-stores) 엔트리는 이 코어를 통해 복제되며, gossip은 `bootstrap_expect` 모델로 부트스트랩을 조정합니다.
+제한된 Raft 코어는 기본적으로 `raft.data_dir`(`~/.wippy/store`) 아래에 내구성 상태를 저장합니다. 재시작된 노드는 피어를 통해 쿼럼에 다시 참여합니다. [`store.kv.raft`](system/store.md#cluster-kv-stores) 엔트리는 이 코어를 통해 복제되며, gossip은 `bootstrap_expect` 모델로 부트스트랩을 조정합니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
@@ -479,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-참조: [LSP 가이드](./lsp.md)
+참조: [LSP 가이드](guides/lsp.md)
 
 ## 네트워크 서비스
 
@@ -496,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-참조: [네트워크 오버레이](../system/network.md)
+참조: [네트워크 오버레이](system/network.md)
 
 ## HTTP 디스패처
 
@@ -554,7 +554,7 @@ extensions:
 
 ## 참고
 
-- [CLI 레퍼런스](./cli.md) - 커맨드라인 옵션
-- [클러스터 가이드](./cluster.md) - 클러스터링 아키텍처 및 운영
-- [엔트리 종류](./entry-kinds.md) - 엔트리 타입과 필드
-- [관측성 가이드](./observability.md) - 로깅, 메트릭, 트레이싱
+- [CLI 레퍼런스](guides/cli.md) - 커맨드라인 옵션
+- [클러스터 가이드](guides/cluster.md) - 클러스터링 아키텍처 및 운영
+- [엔트리 종류](guides/entry-kinds.md) - 엔트리 타입과 필드
+- [관측성 가이드](guides/observability.md) - 로깅, 메트릭, 트레이싱

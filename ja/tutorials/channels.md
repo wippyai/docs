@@ -262,5 +262,5 @@ local total = done:receive()
 
 ## 次のステップ
 
-- [チャネルモジュールリファレンス](../lua/core/channel.md) — チャネルAPIドキュメント
-- [プロセス](processes.md) — プロセス間通信
+- [チャネルモジュールリファレンス](lua/core/channel.md) — チャネルAPIドキュメント
+- [プロセス](tutorials/processes.md) — プロセス間通信

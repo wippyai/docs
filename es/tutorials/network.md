@@ -281,7 +281,7 @@ límite del caller. Solo se controla la nueva selección explícita en un límit
 
 ## Siguientes Pasos
 
-- [Sistema de red](../system/network.md) — Referencia de tipos de entrada
-- [Cliente HTTP](../lua/http/client.md) — Opciones de superposición por llamada
-- [Modelo de seguridad](../system/security.md) — Políticas y scopes
-- [Autenticación](auth.md) — Seguridad basada en tokens
+- [Sistema de red](system/network.md) — Referencia de tipos de entrada
+- [Cliente HTTP](lua/http/client.md) — Opciones de superposición por llamada
+- [Modelo de seguridad](system/security.md) — Políticas y scopes
+- [Autenticación](tutorials/auth.md) — Seguridad basada en tokens

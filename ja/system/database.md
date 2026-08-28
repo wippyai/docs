@@ -86,7 +86,7 @@ SQLite は常に単一接続で動作し（<code>max_open</code> と <code>max_i
 
 ### シークレットと環境変数の値
 
-接続値は、デコード時に解決される `${env:NAME}` プレースホルダーを使用して[環境変数レジストリ](./env.md)から取得します。`NAME` は登録済み変数の公開名またはエントリ ID（例: `app.secrets:db_password`）であり、生の OS 環境変数ではありません。
+接続値は、デコード時に解決される `${env:NAME}` プレースホルダーを使用して[環境変数レジストリ](system/env.md)から取得します。`NAME` は登録済み変数の公開名またはエントリ ID（例: `app.secrets:db_password`）であり、生の OS 環境変数ではありません。
 
 ```yaml
 - name: prod_db
@@ -265,14 +265,14 @@ entries:
 
 ## ランタイム登録
 
-データベースは、[レジストリモジュール](../lua/core/registry.md)を使用して実行時に登録できます。
+データベースは、[レジストリモジュール](lua/core/registry.md)を使用して実行時に登録できます。
 
 ## Lua API
 
-クエリ、トランザクション、接続の操作については、[SQL モジュール](../lua/storage/sql.md)を参照してください。
+クエリ、トランザクション、接続の操作については、[SQL モジュール](lua/storage/sql.md)を参照してください。
 
 ## 関連項目
 
-- [SQL モジュール](../lua/storage/sql.md) - Lua API リファレンス
-- [ストア](./store.md) - `db.sql.*` データベースをバックエンドとするキーバリューストア
-- [キュー](./queue.md) - SQL をバックエンドとするキューハンドラー
+- [SQL モジュール](lua/storage/sql.md) - Lua API リファレンス
+- [ストア](system/store.md) - `db.sql.*` データベースをバックエンドとするキーバリューストア
+- [キュー](system/queue.md) - SQL をバックエンドとするキューハンドラー

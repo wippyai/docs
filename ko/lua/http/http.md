@@ -12,7 +12,7 @@ description: "서버 측 HTTP 요청을 읽고 상태, 헤더, JSON, 스트리�
 
 이 페이지는 부분적인 handler 예제를 제공하는 API 레퍼런스입니다. `id`, `data`, `token`과 애플리케이션 callback은 주변 handler가 제공합니다. 요청 accessor는 일반적으로 `value, error`를 반환하고 응답 변경은 `error`를 반환하므로 결과를 사용하는 예제는 에러를 확인합니다.
 
-서버 설정은 [HTTP 서버](../../http/server.md)를 참조하세요.
+서버 설정은 [HTTP 서버](http/server.md)를 참조하세요.
 
 ## 로딩
 
@@ -669,4 +669,4 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | 헤더 이미 전송됨 | `errors.INVALID` | 아니오 |
 | 쓰기 실패 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

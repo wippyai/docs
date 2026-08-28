@@ -38,7 +38,7 @@ if err then
 end
 ```
 
-function invocation과 executor option은 [funcs 모듈](../lua/core/funcs.md)을 참조하십시오.
+function invocation과 executor option은 [funcs 모듈](lua/core/funcs.md)을 참조하십시오.
 
 ## 컨텍스트 전파
 
@@ -64,7 +64,7 @@ if err then return nil, err end
 return result
 ```
 
-security context도 같은 방식으로 propagate됩니다. called function은 caller actor를 보고 permission을 확인할 수 있습니다. access-control API는 [보안 모듈](../lua/security/security.md)을 참조하십시오.
+security context도 같은 방식으로 propagate됩니다. called function은 caller actor를 보고 permission을 확인할 수 있습니다. access-control API는 [보안 모듈](lua/security/security.md)을 참조하십시오.
 
 ## 레지스트리 정의
 

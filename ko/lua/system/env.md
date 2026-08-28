@@ -12,7 +12,7 @@ description: "구성된 environment system이 노출하는 environment variable�
 
 이 페이지는 API reference입니다. snippet은 독립된 operation이며 이름이 지정된 variable과 security policy가 이미 존재한다고 가정합니다.
 
-variable은 접근하기 전에 [환경 시스템](../../system/env.md)에서 정의해야 합니다. system은 value를 제공할 storage backend(OS, file, memory)와 variable의 read-only 여부를 제어합니다.
+variable은 접근하기 전에 [환경 시스템](system/env.md)에서 정의해야 합니다. system은 value를 제공할 storage backend(OS, file, memory)와 variable의 read-only 여부를 제어합니다.
 
 ## 로딩
 
@@ -121,7 +121,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-policy configuration은 [보안 모델](../../system/security.md)을 참조하십시오.
+policy configuration은 [보안 모델](system/security.md)을 참조하십시오.
 
 ## 에러
 
@@ -131,8 +131,8 @@ policy configuration은 [보안 모델](../../system/security.md)을 참조하�
 | 변수를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
 
-[에러 처리](../core/errors.md)에서 error 사용법을 확인하십시오.
+[에러 처리](lua/core/errors.md)에서 error 사용법을 확인하십시오.
 
 ## 참고
 
-- [환경 시스템](../../system/env.md) - storage backend와 variable definition 구성
+- [환경 시스템](system/env.md) - storage backend와 variable definition 구성

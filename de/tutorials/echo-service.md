@@ -441,6 +441,6 @@ eine leere Zeile, um das Programm sauber zu beenden.
 
 ## Nächste Schritte
 
-- [Prozessverwaltung](../lua/core/process.md) — Referenz der Prozess-API
-- [Channels](../lua/core/channel.md) — Referenz der Channel-API
-- [Zeit und Dauer](../lua/core/time.md) — Referenz der Zeit-API
+- [Prozessverwaltung](lua/core/process.md) — Referenz der Prozess-API
+- [Channels](lua/core/channel.md) — Referenz der Channel-API
+- [Zeit und Dauer](lua/core/time.md) — Referenz der Zeit-API

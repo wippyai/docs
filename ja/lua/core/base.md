@@ -245,7 +245,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## コルーチン
 
-`coroutine` ライブラリは、コルーチンの作成と制御を提供します。チャネルを使った並行処理パターンについては[チャネルとコルーチン](channel.md)を参照してください。
+`coroutine` ライブラリは、コルーチンの作成と制御を提供します。チャネルを使った並行処理パターンについては[チャネルとコルーチン](lua/core/channel.md)を参照してください。
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -283,7 +283,7 @@ process_request()
 
 ## エラー処理
 
-グローバルな `errors` テーブルは、構造化エラーを作成し、分類します。完全なAPIについては[エラー処理](errors.md)を参照してください。
+グローバルな `errors` テーブルは、構造化エラーを作成し、分類します。完全なAPIについては[エラー処理](lua/core/errors.md)を参照してください。
 
 ### 定数 {id="error-constants"}
 
@@ -343,12 +343,12 @@ err:stack()      -- Get stack trace as string
 
 | 機能 | 代替 |
 |---------|-------------|
-| `load`、`loadstring`、`loadfile`、`dofile` | [動的評価](../dynamic/eval.md)モジュールを使用 |
+| `load`、`loadstring`、`loadfile`、`dofile` | [動的評価](lua/dynamic/eval.md)モジュールを使用 |
 | `collectgarbage` | 自動GC |
 | `rawlen` | `#`演算子を使用 |
 | `string.dump` | サポートなし |
-| `io.*` | ファイルには[ファイルシステム](../storage/filesystem.md)、端末ストリームには[ターミナルI/O](../system/io.md)を使用 |
-| `os.execute` | [コマンド実行](../dynamic/exec.md)を使用 |
+| `io.*` | ファイルには[ファイルシステム](lua/storage/filesystem.md)、端末ストリームには[ターミナルI/O](../system/io.md)を使用 |
+| `os.execute` | [コマンド実行](lua/dynamic/exec.md)を使用 |
 | `os.remove`、`os.rename` | [ファイルシステム](../storage/filesystem.md)を使用 |
 | `os.exit`、`os.tmpname` | 標準ライブラリに直接の代替なし |
 | `debug.*` | 利用不可 |
@@ -357,6 +357,6 @@ err:stack()      -- Get stack trace as string
 
 ## 関連項目
 
-- [チャネルとコルーチン](channel.md) - 並行処理のためのGo形式チャネル
-- [エラー処理](errors.md) - 構造化エラーの作成と処理
-- [OS Time](../system/ostime.md) - システム時間関数
+- [チャネルとコルーチン](lua/core/channel.md) - 並行処理のためのGo形式チャネル
+- [エラー処理](lua/core/errors.md) - 構造化エラーの作成と処理
+- [OS Time](lua/system/ostime.md) - システム時間関数

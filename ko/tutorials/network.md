@@ -249,7 +249,7 @@ network_service:
 
 ## 다음 단계
 
-- [네트워크 시스템](../system/network.md) — 엔트리 종류 참조
-- [HTTP 클라이언트](../lua/http/client.md) — 호출별 오버레이 옵션
-- [보안 모델](../system/security.md) — 정책과 범위
-- [인증](auth.md) — 토큰 기반 보안
+- [네트워크 시스템](system/network.md) — 엔트리 종류 참조
+- [HTTP 클라이언트](lua/http/client.md) — 호출별 오버레이 옵션
+- [보안 모델](system/security.md) — 정책과 범위
+- [인증](tutorials/auth.md) — 토큰 기반 보안

@@ -160,6 +160,6 @@ type Yield struct {
 
 ## 참고
 
-- [스케줄러](./scheduler.md) - process execution
-- [모듈](./modules.md) - Lua module integration
-- [프로세스 모델](../concepts/process-model.md) - high-level concept
+- [스케줄러](internals/scheduler.md) - process execution
+- [모듈](internals/modules.md) - Lua module integration
+- [프로세스 모델](concepts/process-model.md) - high-level concept

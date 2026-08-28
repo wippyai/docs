@@ -210,6 +210,6 @@ Die Migration erzeugt das Schema passend zum Datenbanktreiber bei `target_db`:
 
 ## Siehe auch
 
-- [LLM](./llm.md) — `llm.embed(...)` zur Erzeugung roher Embeddings
-- [Migrationen](./migration.md) — Migrations-Runner zum Erstellen der Tabelle
-- [Framework-Übersicht](./overview.md) — Verwendung von Framework-Modulen
+- [LLM](framework/llm.md) — `llm.embed(...)` zur Erzeugung roher Embeddings
+- [Migrationen](framework/migration.md) — Migrations-Runner zum Erstellen der Tabelle
+- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen

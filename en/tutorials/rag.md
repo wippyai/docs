@@ -310,7 +310,7 @@ depend on the provider and indexed content:
 
 ## Next Steps
 
-- [LLM Framework](../framework/llm.md) — `llm.generate`, `llm.embed`, and prompt construction
-- [Agents](../framework/agents.md) — Wrap the retriever as an agent tool
-- [SQL Module](../lua/storage/sql.md) — Underlying database access
-- [Text Module](../lua/text/text.md) — Character-based text splitters
+- [LLM Framework](framework/llm.md) — `llm.generate`, `llm.embed`, and prompt construction
+- [Agents](framework/agents.md) — Wrap the retriever as an agent tool
+- [SQL Module](lua/storage/sql.md) — Underlying database access
+- [Text Module](lua/text/text.md) — Character-based text splitters

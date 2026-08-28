@@ -45,7 +45,7 @@ logmanager:
 
 ### 自動コンテキスト
 
-Lua から[logger モジュール](../lua/system/logger.md)経由で出力されるログには、以下が自動的に含まれます：
+Lua から[logger モジュール](lua/system/logger.md)経由で出力されるログには、以下が自動的に含まれます：
 
 - `pid` - 現在のプロセスのPID
 - `location` - エントリIDと呼び出し行（例：`app.api:handler:45`）
@@ -71,7 +71,7 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-Lua メトリクス API については[メトリクスモジュール](../lua/system/metrics.md)を参照してください。
+Lua メトリクス API については[メトリクスモジュール](lua/system/metrics.md)を参照してください。
 
 ## OpenTelemetry
 
@@ -208,6 +208,6 @@ local states, states_err = system.supervisor.states()
 
 ## 関連項目
 
-- [ロガーモジュール](../lua/system/logger.md) — Lua ロギング API
-- [メトリクスモジュール](../lua/system/metrics.md) — Lua メトリクス API
-- [システムモジュール](../lua/system/system.md) — ランタイム統計
+- [ロガーモジュール](lua/system/logger.md) — Lua ロギング API
+- [メトリクスモジュール](lua/system/metrics.md) — Lua メトリクス API
+- [システムモジュール](lua/system/system.md) — ランタイム統計

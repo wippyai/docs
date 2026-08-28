@@ -73,10 +73,10 @@ description: "ディレクトリをバックエンドとするファイルシス
 
 ## Lua API
 
-ファイル操作については、[ファイルシステムモジュール](../lua/storage/filesystem.md)を参照してください。
+ファイル操作については、[ファイルシステムモジュール](lua/storage/filesystem.md)を参照してください。
 
 ## 関連項目
 
-- [ファイルシステムモジュール](../lua/storage/filesystem.md) - Lua API リファレンス
-- [クラウドストレージ](./cloudstorage.md) - S3 互換オブジェクトストレージ
-- [テンプレート](./template.md) - ファイルシステムから読み込まれるテンプレート
+- [ファイルシステムモジュール](lua/storage/filesystem.md) - Lua API リファレンス
+- [クラウドストレージ](system/cloudstorage.md) - S3 互換オブジェクトストレージ
+- [テンプレート](system/template.md) - ファイルシステムから読み込まれるテンプレート

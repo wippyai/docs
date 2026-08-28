@@ -271,5 +271,5 @@ result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 
 ## See Also
 
-- [Registry](./registry.md) - Primary event producer
-- [Command Dispatch](./dispatch.md) - Process-to-handler routing
+- [Registry](internals/registry.md) - Primary event producer
+- [Command Dispatch](internals/dispatch.md) - Process-to-handler routing

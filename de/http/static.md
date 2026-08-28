@@ -169,7 +169,7 @@ Der Pfadabgleich ist präfixbasiert. Ein Handler unter <code>/</code> fängt all
 
 ## Siehe auch
 
-- [Server](./server.md) – HTTP-Server-Konfiguration
-- [Routing](./router.md) – Router und Endpunkte
-- [Dateisystem](../lua/storage/filesystem.md) – Dateisystemmodul
-- [Middleware](./middleware.md) – Verfügbare Middleware
+- [Server](http/server.md) – HTTP-Server-Konfiguration
+- [Routing](http/router.md) – Router und Endpunkte
+- [Dateisystem](lua/storage/filesystem.md) – Dateisystemmodul
+- [Middleware](http/middleware.md) – Verfügbare Middleware

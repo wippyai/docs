@@ -551,7 +551,7 @@ local field_id = lang:field_id_for_name("name")
 
 Fechar um parser, uma árvore, uma consulta ou um cursor que já esteja fechado é seguro. Chamar qualquer outro método em um handle fechado gera um erro de argumento Lua.
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Referência da sintaxe de consultas
 

@@ -1165,8 +1165,8 @@ Las compensaciones se ejecutan en orden inverso al de registro. Si falla más de
 
 ## Ver También
 
-- [Visión general](./overview.md) - Configuración de cliente y worker
-- [Activities](./activities.md) - Definiciones y opciones de activities
-- [Process](../lua/core/process.md) - API de gestión de procesos
-- [Funciones](../lua/core/funcs.md) - Invocación de funciones
-- [Canales](../lua/core/channel.md) - Operaciones de canales
+- [Visión general](temporal/overview.md) - Configuración de cliente y worker
+- [Activities](temporal/activities.md) - Definiciones y opciones de activities
+- [Process](lua/core/process.md) - API de gestión de procesos
+- [Funciones](lua/core/funcs.md) - Invocación de funciones
+- [Canales](lua/core/channel.md) - Operaciones de canales

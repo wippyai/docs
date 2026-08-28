@@ -497,8 +497,8 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 
 ## 次のステップ
 
-- [WASM概要](../wasm/overview.md) — WebAssemblyランタイムの概要
-- [WASM関数](../wasm/functions.md) — 関数設定リファレンス
-- [WASMプロセス](../wasm/processes.md) — プロセス設定リファレンス
-- [ホスト関数](../wasm/hosts.md) — 利用可能なWASIインポート
-- [CLIリファレンス](../guides/cli.md) — CLIコマンドドキュメント
+- [WASM概要](wasm/overview.md) — WebAssemblyランタイムの概要
+- [WASM関数](wasm/functions.md) — 関数設定リファレンス
+- [WASMプロセス](wasm/processes.md) — プロセス設定リファレンス
+- [ホスト関数](wasm/hosts.md) — 利用可能なWASIインポート
+- [CLIリファレンス](guides/cli.md) — CLIコマンドドキュメント

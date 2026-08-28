@@ -253,6 +253,6 @@ Ejemplo de paso en GitHub Actions:
 
 ## Ver Tambien
 
-- [CLI](./cli.md) - Referencia completa del CLI
-- [Tipos](../lua/types.md) - Documentación del sistema de tipos
-- [LSP](./lsp.md) - Integración con editores con diagnósticos en vivo
+- [CLI](guides/cli.md) - Referencia completa del CLI
+- [Tipos](lua/types.md) - Documentación del sistema de tipos
+- [LSP](guides/lsp.md) - Integración con editores con diagnósticos en vivo

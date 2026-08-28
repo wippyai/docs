@@ -282,6 +282,6 @@ Migration an.
 
 ## Siehe auch
 
-- [SQL-Treiber](../system/database.md) — Konfiguration der Datenbankressource
-- [Bootloader](./bootloader.md) — Bootloader-Reihenfolge und Hooks
-- [Framework-Übersicht](./overview.md) — Verwendung von Framework-Modulen
+- [SQL-Treiber](system/database.md) — Konfiguration der Datenbankressource
+- [Bootloader](framework/bootloader.md) — Bootloader-Reihenfolge und Hooks
+- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen

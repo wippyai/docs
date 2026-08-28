@@ -32,7 +32,7 @@ cd myapp
 wippy init
 ```
 
-`wippy init` writes the dependency lock and its source and module directory settings. It does not scaffold application source files or registry entries. Follow [Hello World](../tutorials/hello-world.md) to create a runnable application, then start it with `wippy run`.
+`wippy init` writes the dependency lock and its source and module directory settings. It does not scaffold application source files or registry entries. Follow [Hello World](tutorials/hello-world.md) to create a runnable application, then start it with `wippy run`.
 
 The runtime includes HTTP, SQL, storage, and process-hosting capabilities. Add framework modules from the Hub when the application needs them:
 
@@ -60,7 +60,7 @@ wippy install
 | `wippy auth` | Manage authentication |
 | `wippy version` | Print version info |
 
-See [CLI Reference](../guides/cli.md) for full documentation.
+See [CLI Reference](guides/cli.md) for full documentation.
 
 ## Troubleshooting
 
@@ -69,5 +69,5 @@ If the shell cannot find `wippy` after installation, reopen the shell and verify
 ## Next Steps
 
 - [Hello World](../tutorials/hello-world.md) — Create your first application
-- [Project Structure](./structure.md) — Understand the project layout
-- [CLI Reference](../guides/cli.md) — Review all commands and options
+- [Project Structure](start/structure.md) — Understand the project layout
+- [CLI Reference](guides/cli.md) — Review all commands and options

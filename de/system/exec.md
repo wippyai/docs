@@ -106,7 +106,7 @@ Eine fehlende oder leere Allowlist erlaubt jeden Befehl, der die Sicherheitsrich
 
 ## Lua-API
 
-Das [Exec-Modul](../lua/dynamic/exec.md) bietet Befehlsausführung:
+Das [Exec-Modul](lua/dynamic/exec.md) bietet Befehlsausführung:
 
 ```lua
 local exec = require("exec")
@@ -162,6 +162,6 @@ return table.concat(chunks), exit_code
 
 ## Siehe auch
 
-- [Exec-Modul](../lua/dynamic/exec.md) - Lua-API-Referenz
-- [Process Host](./process-host.md) - Host, der Wippy-Prozesse ausführt
-- [Dateisystem](./filesystem.md) - Als Arbeitsverzeichnisse genutzte Dateisystem-Einträge
+- [Exec-Modul](lua/dynamic/exec.md) - Lua-API-Referenz
+- [Process Host](system/process-host.md) - Host, der Wippy-Prozesse ausführt
+- [Dateisystem](system/filesystem.md) - Als Arbeitsverzeichnisse genutzte Dateisystem-Einträge

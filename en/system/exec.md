@@ -114,7 +114,7 @@ the exact command string.
 
 ## Lua API
 
-The [Exec Module](../lua/dynamic/exec.md) provides command execution:
+The [Exec Module](lua/dynamic/exec.md) provides command execution:
 
 ```lua
 local exec = require("exec")
@@ -170,6 +170,6 @@ return table.concat(chunks), exit_code
 
 ## See Also
 
-- [Exec Module](../lua/dynamic/exec.md) - Lua API reference
-- [Process Host](./process-host.md) - Host that runs Wippy processes
-- [Filesystem](./filesystem.md) - Filesystem entries used as work directories
+- [Exec Module](lua/dynamic/exec.md) - Lua API reference
+- [Process Host](system/process-host.md) - Host that runs Wippy processes
+- [Filesystem](system/filesystem.md) - Filesystem entries used as work directories

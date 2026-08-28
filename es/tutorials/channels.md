@@ -257,5 +257,5 @@ Operaciones disponibles:
 
 ## Siguientes Pasos
 
-- [Referencia del módulo Channel](../lua/core/channel.md) — Documentación de la API de canales
-- [Procesos](processes.md) — Comunicación entre procesos
+- [Referencia del módulo Channel](lua/core/channel.md) — Documentación de la API de canales
+- [Procesos](tutorials/processes.md) — Comunicación entre procesos

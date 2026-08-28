@@ -13,7 +13,7 @@ The `sql` module runs queries against configured PostgreSQL, MySQL, and SQLite d
 
 This page is an API reference. Its snippets assume a configured database, permission to acquire it, and any tables named by the query. They illustrate individual calls rather than a standalone application. The combined recipe at the end states its additional schema and driver assumptions.
 
-For database configuration, see [Database](../../system/database.md).
+For database configuration, see [Database](system/database.md).
 
 ## Loading
 
@@ -1545,7 +1545,7 @@ Database access is subject to security policy evaluation.
 | Invalid savepoint name | `errors.INVALID` | no |
 | Driver or query execution error | preserved from the driver when available; otherwise unspecified | varies |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## Combined Partial Recipe
 

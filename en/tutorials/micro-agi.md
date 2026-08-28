@@ -186,7 +186,7 @@ filter. This is not Wippy runtime authorization: guarded operations require an
 explicit `allow` from the execution context, including the security-module
 operations shown below and `registry.apply` inside `changes:apply()`.
 
-See [Security Model](../system/security.md) for details on policy evaluation.
+See [Security Model](system/security.md) for details on policy evaluation.
 
 ### Models
 
@@ -491,7 +491,7 @@ The agent loop in `src/agent.lua` handles streaming, tool execution, dynamic loa
 
 ### Streaming
 
-Uses the same coroutine + channel pattern from the [LLM Agent tutorial](./llm-agent.md):
+Uses the same coroutine + channel pattern from the [LLM Agent tutorial](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -656,8 +656,8 @@ privilege command scope for its required actions.
 
 ## Next Steps
 
-- [LLM Agent](./llm-agent.md) — Build a basic agent from scratch
-- [Agent Module](../framework/agents.md) — Agent framework reference
-- [Registry](../concepts/registry.md) — Registry concepts
-- [Security Model](../system/security.md) — Declarative security policies
-- [Entry Kinds](../guides/entry-kinds.md) — Available entry types
+- [LLM Agent](tutorials/llm-agent.md) — Build a basic agent from scratch
+- [Agent Module](framework/agents.md) — Agent framework reference
+- [Registry](concepts/registry.md) — Registry concepts
+- [Security Model](system/security.md) — Declarative security policies
+- [Entry Kinds](guides/entry-kinds.md) — Available entry types

@@ -181,6 +181,6 @@ network_service:
 
 ## 참고
 
-- [보안](./security.md) - 정책 및 액터
-- [HTTP 서비스](../http/server.md) - 서버 바인딩
-- [HTTP 클라이언트](../lua/http/client.md) - 호출별 오버레이 선택
+- [보안](system/security.md) - 정책 및 액터
+- [HTTP 서비스](http/server.md) - 서버 바인딩
+- [HTTP 클라이언트](lua/http/client.md) - 호출별 오버레이 선택

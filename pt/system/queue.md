@@ -317,7 +317,7 @@ if publish_err then return nil, publish_err end
 return published
 ```
 
-Consulte o [Módulo Queue](../lua/storage/queue.md) para a API de publicação e mensagens em Lua.
+Consulte o [Módulo Queue](lua/storage/queue.md) para a API de publicação e mensagens em Lua.
 
 ## Encerramento Gracioso
 
@@ -330,6 +330,6 @@ Ao parar consumidor:
 
 ## Veja Também
 
-- [Módulo Queue](../lua/storage/queue.md) - Referência da API Lua
-- [Guia de Consumidores de Filas](../guides/queue-consumers.md) - Padrões de consumidor e pools de workers
-- [Supervisão](../guides/supervision.md) - Gerenciamento de ciclo de vida do consumidor
+- [Módulo Queue](lua/storage/queue.md) - Referência da API Lua
+- [Guia de Consumidores de Filas](guides/queue-consumers.md) - Padrões de consumidor e pools de workers
+- [Supervisão](guides/supervision.md) - Gerenciamento de ciclo de vida do consumidor

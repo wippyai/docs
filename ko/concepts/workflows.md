@@ -206,6 +206,6 @@ return ok
 
 ## 함께 보기
 
-- [함수](./functions.md) — 요청 범위 호출
-- [프로세스 모델](./process-model.md) — 상태를 갖는 백그라운드 작업
-- [감독](../guides/supervision.md) — 프로세스 재시작 정책
+- [함수](concepts/functions.md) — 요청 범위 호출
+- [프로세스 모델](concepts/process-model.md) — 상태를 갖는 백그라운드 작업
+- [감독](guides/supervision.md) — 프로세스 재시작 정책

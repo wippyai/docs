@@ -425,7 +425,7 @@ entries:
 | `store` | required | Backing key-value store reference |
 | `token_length` | 32 | Token size in bytes (256 bits) |
 | `default_expiration` | 24h | Default token TTL |
-| `token_key` | none | HMAC-SHA256 signing key (direct value, or `${env:NAME}` to pull from the [env registry](./env.md)) |
+| `token_key` | none | HMAC-SHA256 signing key (direct value, or `${env:NAME}` to pull from the [env registry](system/env.md)) |
 
 Use `token_key: ${env:NAME}` in production to avoid embedding secrets in entries. The legacy `token_key_env` directive also reads the environment registry but preserves the inline or zero value for a missing or empty lookup; a modern placeholder without a default fails when its variable is missing. The legacy directive is deprecated.
 

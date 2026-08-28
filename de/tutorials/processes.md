@@ -14,7 +14,7 @@ Prozesse bieten isolierte Ausführungseinheiten, die durch Message-Passing kommu
 **Klassifizierung:** Referenz/API-Einführung. Jedes Snippet zeigt eine einzelne Operation
 isoliert; die Seite ist kein eigenständiges Projekt. Eine vollständige Anwendung,
 die Starten, Überwachen und Messaging kombiniert, finden Sie im Tutorial
-[Echo-Service](echo-service.md).
+[Echo-Service](tutorials/echo-service.md).
 
 ## Kontext und Abhängigkeiten
 
@@ -449,5 +449,5 @@ return { main = main }
 
 ## Nächste Schritte
 
-- [Prozessmodul-Referenz](../lua/core/process.md) — Dokumentation der Prozess-API
-- [Channels](channels.md) — Channel-Operationen für die Nachrichtenverarbeitung
+- [Prozessmodul-Referenz](lua/core/process.md) — Dokumentation der Prozess-API
+- [Channels](tutorials/channels.md) — Channel-Operationen für die Nachrichtenverarbeitung

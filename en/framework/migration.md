@@ -255,6 +255,6 @@ The runner creates a `_migrations` table in each target database on first run. A
 
 ## See Also
 
-- [SQL Driver](../system/database.md) — Database resource configuration
-- [Bootloader](./bootloader.md) — Bootloader ordering and hooks
-- [Framework Overview](./overview.md) — Framework module usage
+- [SQL Driver](system/database.md) — Database resource configuration
+- [Bootloader](framework/bootloader.md) — Bootloader ordering and hooks
+- [Framework Overview](framework/overview.md) — Framework module usage

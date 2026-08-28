@@ -13,8 +13,8 @@ YAML と Lua のブロックは、単一アプリケーションの全体では�
 
 ## 関連項目
 
-- [レジストリ](../concepts/registry.md) — エントリの保存と解決方法
-- [設定](./configuration.md) — YAML 設定形式
+- [レジストリ](concepts/registry.md) — エントリの保存と解決方法
+- [設定](guides/configuration.md) — YAML 設定形式
 
 ## Luaランタイム
 
@@ -83,7 +83,7 @@ YAML と Lua のブロックは、単一アプリケーションの全体では�
   func: list_handler
 ```
 
-**Lua API:** [HTTP モジュール](../lua/http/http.md)を参照
+**Lua API:** [HTTP モジュール](lua/http/http.md)を参照
 
 ```lua
 local http = require("http")
@@ -154,9 +154,9 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-`${env:NAME}` シークレット参照、TLS オプション、接続プールの調整については[データベース](../system/database.md)を参照してください。データベースエントリの背後にある env ベースの値が変更されると、プールはライブで入れ替わり、使用中の接続は古い設定のまま処理を完了します。
+`${env:NAME}` シークレット参照、TLS オプション、接続プールの調整については[データベース](system/database.md)を参照してください。データベースエントリの背後にある env ベースの値が変更されると、プールはライブで入れ替わり、使用中の接続は古い設定のまま処理を完了します。
 
-**Lua API:** [SQL モジュール](../lua/storage/sql.md)を参照
+**Lua API:** [SQL モジュール](lua/storage/sql.md)を参照
 
 ```lua
 local sql = require("sql")
@@ -197,9 +197,9 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
   namespace: deploy
 ```
 
-`store.kv.*` 種別では[クラスタリング](./cluster.md)を有効にする必要があります。整合性のトレードオフについては[ストア](../system/store.md#cluster-kv-stores)を参照してください。
+`store.kv.*` 種別では[クラスタリング](guides/cluster.md)を有効にする必要があります。整合性のトレードオフについては[ストア](system/store.md#cluster-kv-stores)を参照してください。
 
-**Lua API:** [ストアモジュール](../lua/storage/store.md)を参照
+**Lua API:** [ストアモジュール](lua/storage/store.md)を参照
 
 ```lua
 local store = require("store")
@@ -242,7 +242,7 @@ local data = s:get("user:123")
     auto_start: true
 ```
 
-**Lua API:** [キューモジュール](../lua/storage/queue.md)を参照
+**Lua API:** [キューモジュール](lua/storage/queue.md)を参照
 
 ```lua
 local queue = require("queue")
@@ -359,7 +359,7 @@ end
   endpoint: ""  # Optional, for S3-compatible services
 ```
 
-**Lua API:** [クラウドストレージモジュール](../lua/storage/cloud.md)を参照
+**Lua API:** [クラウドストレージモジュール](lua/storage/cloud.md)を参照
 
 ```lua
 local cloudstorage = require("cloudstorage")
@@ -388,7 +388,7 @@ MinIOやDigitalOcean SpacesなどのS3互換サービスに接続するには<co
   mode: "0755"      # Permissions
 ```
 
-**Lua API:** [ファイルシステムモジュール](../lua/storage/filesystem.md)を参照
+**Lua API:** [ファイルシステムモジュール](lua/storage/filesystem.md)を参照
 
 ```lua
 local fs = require("fs")
@@ -433,7 +433,7 @@ file:close()
     - app:defaults
 ```
 
-**Lua API:** [Env モジュール](../lua/system/env.md)を参照
+**Lua API:** [Env モジュール](lua/system/env.md)を参照
 
 ```lua
 local env = require("env")
@@ -470,7 +470,7 @@ env.set("CACHE_TTL", "3600")
   set: app:templates
 ```
 
-**Lua API:** [テンプレートモジュール](../lua/text/template.md)を参照
+**Lua API:** [テンプレートモジュール](lua/text/template.md)を参照
 
 ```lua
 local templates = require("templates")
@@ -513,7 +513,7 @@ local html = set:render("email", {
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
 ```
 
-**Lua API:** [セキュリティモジュール](../lua/security/security.md)を参照
+**Lua API:** [セキュリティモジュール](lua/security/security.md)を参照
 
 ```lua
 local security = require("security")
@@ -592,7 +592,7 @@ local personalized = greeter:greet_with_name("Alice")
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
-**Lua API:** [コントラクトモジュール](../lua/core/contract.md)を参照
+**Lua API:** [コントラクトモジュール](lua/core/contract.md)を参照
 
 <tip>
 1つのバインディングを<code>default: true</code>としてマークすると、バインディングIDを指定せずにコントラクトを開くときに使用されます（<code>context_required</code>フィールドが設定されていない場合のみ動作）。
@@ -638,7 +638,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
   transport: payload   # or wasi-http
 ```
 
-[WASM の概要](../wasm/overview.md)を参照してください。
+[WASM の概要](wasm/overview.md)を参照してください。
 
 ## ネットワーク
 
@@ -649,7 +649,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `network.i2p` | I2Pネットワークオーバーレイ |
 | `network.tailscale` | Tailscaleオーバーレイ |
 
-`http.service` からは `network:`、`funcs`/`process` からは `network` オプション、`http_client` からは `overlay_network` オプションで参照されます。[ネットワーク](../system/network.md)を参照してください。
+`http.service` からは `network:`、`funcs`/`process` からは `network` オプション、`http_client` からは `overlay_network` オプションで参照されます。[ネットワーク](system/network.md)を参照してください。
 
 ## レジストリプリミティブ
 
@@ -724,4 +724,4 @@ override:
 wippy run -o app:db:kind=db.sql.postgres -o app:gateway:addr=:9090
 ```
 
-CLI（`-o`）の値は形状に応じて型変換されます（`true`/`false` は bool、数値は数値、それ以外は文字列）。`override:` セクションの値は YAML の型を保持します。エントリではなくグローバルな[設定](./configuration.md)セクションを上書きするには、`--set` を使用します。
+CLI（`-o`）の値は形状に応じて型変換されます（`true`/`false` は bool、数値は数値、それ以外は文字列）。`override:` セクションの値は YAML の型を保持します。エントリではなくグローバルな[設定](guides/configuration.md)セクションを上書きするには、`--set` を使用します。

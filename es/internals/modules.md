@@ -254,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-El despachador enruta el comando a un controlador. Consulte [Despacho de comandos](./dispatch.md) para implementar controladores.
+El despachador enruta el comando a un controlador. Consulte [Despacho de comandos](internals/dispatch.md) para implementar controladores.
 
 ## Manejo de Errores
 
@@ -484,5 +484,5 @@ Consulte `runtime/lua/modules/time/integration_test.go` para ver un ejemplo de p
 
 ## Véase También
 
-- [Despacho de Comandos](./dispatch.md) - Manejo de comandos de yield
-- [Planificador](./scheduler.md) - Ejecución de procesos
+- [Despacho de Comandos](internals/dispatch.md) - Manejo de comandos de yield
+- [Planificador](internals/scheduler.md) - Ejecución de procesos

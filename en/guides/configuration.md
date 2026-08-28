@@ -7,7 +7,7 @@ description: "Runtime configuration fields, profiles, composition rules, environ
 
 Wippy reads runtime configuration from `.wippy.yaml` files.
 
-Use the repeatable `wippy run --set section.path=value` option to override the configuration fields below at launch. To override individual registry *entries* rather than configuration sections, use the `override:` section or `-o`; see [Overriding Entries](./entry-kinds.md#overriding-entries).
+Use the repeatable `wippy run --set section.path=value` option to override the configuration fields below at launch. To override individual registry *entries* rather than configuration sections, use the `override:` section or `-o`; see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
 
 ## Config Composition
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - The first file anchors the directory used to resolve relative paths.
 - Filenames carry no reserved meaning; nothing besides the default is auto-discovered.
 
-Configuration applies in this order: composed files, selected `--profile` overlays, and then `--set` overrides. For applications run from packs, packed runtime defaults have lower precedence than all three; see [Publishing Runtime Defaults](./publishing.md#publishing-runtime-defaults).
+Configuration applies in this order: composed files, selected `--profile` overlays, and then `--set` overrides. For applications run from packs, packed runtime defaults have lower precedence than all three; see [Publishing Runtime Defaults](guides/publishing.md#publishing-runtime-defaults).
 
 ## Profiles
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - The `disable` section supports list operations inside profiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — so a profile can adjust the base list instead of replacing it.
 - `${name}` references interpolate from the merged `vars:` section. OS environment references are not allowed inside profile vars; use `${env:NAME}` in the base config, resolved at file load.
 
-`wippy run`, `test`, and `pack` accept `--profile`; `install`, `update`, `lint`, and `registry` accept it as well for workspace profiles (together with `--set`). Applications can ship profiles inside packs — see [Publishing Profiles](./publishing.md#publishing-profiles).
+`wippy run`, `test`, and `pack` accept `--profile`; `install`, `update`, `lint`, and `registry` accept it as well for workspace profiles (together with `--set`). Applications can ship profiles inside packs — see [Publishing Profiles](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## Log Manager
 
-Controls runtime log routing. Console output is configured via [CLI flags](./cli.md) (`-v`, `-c`, `-s`).
+Controls runtime log routing. Console output is configured via [CLI flags](guides/cli.md) (`-v`, `-c`, `-s`).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-See: [Logger Module](../lua/system/logger.md)
+See: [Logger Module](lua/system/logger.md)
 
 ## Profiler
 
@@ -115,7 +115,7 @@ When enabled with the default address, the profiler is available at `http://loca
 
 ## Security
 
-Global security behavior. Individual policies are defined as [security.policy entries](./entry-kinds.md).
+Global security behavior. Individual policies are defined as [security.policy entries](guides/entry-kinds.md).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -126,7 +126,7 @@ security:
   strict_mode: true
 ```
 
-See: [Security System](../system/security.md), [Security Module](../lua/security/security.md)
+See: [Security System](system/security.md), [Security Module](lua/security/security.md)
 
 ## Registry
 
@@ -153,7 +153,7 @@ registry:
   history_schema: wippy_registry
 ```
 
-See: [Registry Concept](../concepts/registry.md), [Registry Module](../lua/core/registry.md)
+See: [Registry Concept](concepts/registry.md), [Registry Module](lua/core/registry.md)
 
 ## Relay
 
@@ -168,7 +168,7 @@ relay:
   node_name: worker-1
 ```
 
-See: [Process Model](../concepts/process-model.md)
+See: [Process Model](concepts/process-model.md)
 
 ## Supervisor
 
@@ -186,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-See: [Supervision Guide](./supervision.md)
+See: [Supervision Guide](guides/supervision.md)
 
 <note>
-Per-`process.host` workers and queues are configured on the entry itself (`workers`, `queue_size`, `local_queue_size`), not in this global section. See the [Process Host](../system/process-host.md) entry kind.
+Per-`process.host` workers and queues are configured on the entry itself (`workers`, `queue_size`, `local_queue_size`), not in this global section. See the [Process Host](system/process-host.md) entry kind.
 </note>
 
 ## Lua Runtime
@@ -218,7 +218,7 @@ lua:
     enabled: true
 ```
 
-See: [Lua Overview](../lua/overview.md)
+See: [Lua Overview](lua/overview.md)
 
 ## Finder
 
@@ -271,7 +271,7 @@ otel:
 
 Standard OTEL environment variables (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) override the matching fields.
 
-See: [Observability Guide](./observability.md)
+See: [Observability Guide](guides/observability.md)
 
 ## Shutdown
 
@@ -303,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-See: [Metrics Module](../lua/system/metrics.md), [Observability Guide](./observability.md)
+See: [Metrics Module](lua/system/metrics.md), [Observability Guide](guides/observability.md)
 
 ## Prometheus
 
@@ -322,11 +322,11 @@ prometheus:
 
 Exposes `/metrics` endpoint for Prometheus scraping.
 
-See: [Observability Guide](./observability.md)
+See: [Observability Guide](guides/observability.md)
 
 ## Cluster
 
-Multi-node clustering: gossip membership plus a bounded Raft consensus core. See the [Cluster Guide](./cluster.md) for the architecture and operational model; this section is the config-key reference.
+Multi-node clustering: gossip membership plus a bounded Raft consensus core. See the [Cluster Guide](guides/cluster.md) for the architecture and operational model; this section is the config-key reference.
 
 ### Top-level
 
@@ -379,7 +379,7 @@ Every clustered node needs its own internode private identity and a trusted-publ
 
 ### Raft (consensus)
 
-The bounded Raft core stores durable state under `raft.data_dir` by default (`~/.wippy/store`). A restarted node rejoins quorum from its peers. [`store.kv.raft`](../system/store.md#cluster-kv-stores) entries replicate through this core, and gossip coordinates bootstrap using a `bootstrap_expect` model.
+The bounded Raft core stores durable state under `raft.data_dir` by default (`~/.wippy/store`). A restarted node rejoins quorum from its peers. [`store.kv.raft`](system/store.md#cluster-kv-stores) entries replicate through this core, and gossip coordinates bootstrap using a `bootstrap_expect` model.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -479,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-See: [LSP Guide](./lsp.md)
+See: [LSP Guide](guides/lsp.md)
 
 ## Network Service
 
@@ -496,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-See: [Network Overlays](../system/network.md)
+See: [Network Overlays](system/network.md)
 
 ## HTTP Dispatcher
 
@@ -554,7 +554,7 @@ extensions:
 
 ## See Also
 
-- [CLI Reference](./cli.md) — Command-line options
-- [Cluster Guide](./cluster.md) — Clustering architecture and operations
-- [Entry Kinds](./entry-kinds.md) — Entry types and fields
-- [Observability Guide](./observability.md) — Logging, metrics, and tracing
+- [CLI Reference](guides/cli.md) — Command-line options
+- [Cluster Guide](guides/cluster.md) — Clustering architecture and operations
+- [Entry Kinds](guides/entry-kinds.md) — Entry types and fields
+- [Observability Guide](guides/observability.md) — Logging, metrics, and tracing

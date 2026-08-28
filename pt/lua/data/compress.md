@@ -425,4 +425,4 @@ Este handler parcial analisa tokens exatos de codificação e valores `q` da RFC
 | Dados comprimidos inválidos | `errors.INVALID` | não |
 | Tamanho descomprimido excede limite | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

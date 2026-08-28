@@ -286,7 +286,7 @@ curl -X POST http://localhost:8080/api/v1/ask \
 
 ## 다음 단계
 
-- [LLM 프레임워크](../framework/llm.md) — `llm.generate`, `llm.embed`, 프롬프트 구성
-- [에이전트](../framework/agents.md) — 검색기를 에이전트 도구로 래핑
-- [SQL 모듈](../lua/storage/sql.md) — 기반 데이터베이스 접근
-- [텍스트 모듈](../lua/text/text.md) — 문자 기반 텍스트 분할기
+- [LLM 프레임워크](framework/llm.md) — `llm.generate`, `llm.embed`, 프롬프트 구성
+- [에이전트](framework/agents.md) — 검색기를 에이전트 도구로 래핑
+- [SQL 모듈](lua/storage/sql.md) — 기반 데이터베이스 접근
+- [텍스트 모듈](lua/text/text.md) — 문자 기반 텍스트 분할기

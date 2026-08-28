@@ -1167,8 +1167,8 @@ failure through `compensation_error`.
 
 ## See Also
 
-- [Overview](./overview.md) - Client and worker configuration
-- [Activities](./activities.md) - Activity definitions and options
-- [Process](../lua/core/process.md) - Process management API
-- [Functions](../lua/core/funcs.md) - Function invocation
-- [Channels](../lua/core/channel.md) - Channel operations
+- [Overview](temporal/overview.md) - Client and worker configuration
+- [Activities](temporal/activities.md) - Activity definitions and options
+- [Process](lua/core/process.md) - Process management API
+- [Functions](lua/core/funcs.md) - Function invocation
+- [Channels](lua/core/channel.md) - Channel operations

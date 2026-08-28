@@ -141,7 +141,7 @@ Lua エラーを発生させるブートローダーは `error` として扱わ�
 
 ### マイグレーションブートローダー（順序 `20`）
 
-`wippy/migration` によって提供されます。`meta.type: migration` を持つすべてのエントリを検出し、`meta.target_db` でグループ化し、保留中のものを適用します。[マイグレーション](./migration.md) を参照してください。
+`wippy/migration` によって提供されます。`meta.type: migration` を持つすべてのエントリを検出し、`meta.target_db` でグループ化し、保留中のものを適用します。[マイグレーション](framework/migration.md) を参照してください。
 
 ## ブートステータスの観察
 
@@ -153,6 +153,6 @@ Lua エラーを発生させるブートローダーは `error` として扱わ�
 
 ## 関連項目
 
-- [マイグレーション](./migration.md) - マイグレーションブートローダーと DSL
-- [スーパービジョン](../guides/supervision.md) - サービスのライフサイクルと再起動ポリシー
-- [フレームワーク概要](./overview.md) - フレームワークモジュールの使用法
+- [マイグレーション](framework/migration.md) - マイグレーションブートローダーと DSL
+- [スーパービジョン](guides/supervision.md) - サービスのライフサイクルと再起動ポリシー
+- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの使用法

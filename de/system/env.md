@@ -194,9 +194,9 @@ Die Auflösung geschieht nur zur Dekodierzeit: Der gespeicherte Registry-Eintrag
 
 ## Laufzeitzugriff
 
-- [env-Modul](../lua/system/env.md) - Lua-Laufzeitzugriff
+- [env-Modul](lua/system/env.md) - Lua-Laufzeitzugriff
 
 ## Siehe auch
 
-- [Sicherheitsmodell](./security.md) - Zugriffskontrolle für Umgebungsvariablen
-- [Konfigurationsanleitung](../guides/configuration.md) - Anwendungskonfigurationsmuster
+- [Sicherheitsmodell](system/security.md) - Zugriffskontrolle für Umgebungsvariablen
+- [Konfigurationsanleitung](guides/configuration.md) - Anwendungskonfigurationsmuster

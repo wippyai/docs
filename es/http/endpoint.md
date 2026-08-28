@@ -333,6 +333,6 @@ El middleware de autorización se configura en el router padre, no en el endpoin
 
 ## Véase también
 
-- [Router](./router.md) - Agrupación de rutas
-- [Módulo HTTP](../lua/http/http.md) - API de solicitud y respuesta
-- [Middleware](./middleware.md) - Procesamiento de solicitudes
+- [Router](http/router.md) - Agrupación de rutas
+- [Módulo HTTP](lua/http/http.md) - API de solicitud y respuesta
+- [Middleware](http/middleware.md) - Procesamiento de solicitudes

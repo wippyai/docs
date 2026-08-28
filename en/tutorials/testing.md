@@ -219,6 +219,6 @@ disposable project.
 
 ## Next Steps
 
-- [Hello World](hello-world.md) — Minimal project layout
-- [Entry Kinds](../guides/entry-kinds.md) — `function.lua`, `library.lua`, and related entries
-- [Test Framework](../framework/testing.md) — Runner and event-protocol reference
+- [Hello World](tutorials/hello-world.md) — Minimal project layout
+- [Entry Kinds](guides/entry-kinds.md) — `function.lua`, `library.lua`, and related entries
+- [Test Framework](framework/testing.md) — Runner and event-protocol reference

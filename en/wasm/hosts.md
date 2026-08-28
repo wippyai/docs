@@ -129,6 +129,6 @@ Enabling `wasi:sockets` makes the interfaces available but does not authorize ne
 
 ## See Also
 
-- [Overview](./overview.md) - WebAssembly runtime overview
-- [Functions](./functions.md) - WASM function configuration
-- [Processes](./processes.md) - Running WASM as processes
+- [Overview](wasm/overview.md) - WebAssembly runtime overview
+- [Functions](wasm/functions.md) - WASM function configuration
+- [Processes](wasm/processes.md) - Running WASM as processes

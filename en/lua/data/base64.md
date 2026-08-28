@@ -121,4 +121,4 @@ The final block demonstrates delimiter handling only. It does not parse or verif
 | Invalid base64 characters | `errors.INVALID` | no |
 | Corrupted padding | `errors.INVALID` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

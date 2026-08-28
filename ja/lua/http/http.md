@@ -12,7 +12,7 @@ description: "サーバー側 HTTP リクエストを読み取り、ステータ
 
 これは部分的なハンドラーレシピを含む API リファレンスです。`id`、`data`、`token` などの名前やアプリケーションのコールバックは、周囲のハンドラーから提供されます。リクエストアクセサーは通常 `value, error` を返し、レスポンスの変更操作は `error` を返します。結果を使用する例では、それらのエラーを確認しています。
 
-サーバー設定については[HTTPサーバー](../../http/server.md)を参照。
+サーバー設定については[HTTPサーバー](http/server.md)を参照。
 
 ## ロード
 
@@ -656,4 +656,4 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | ヘッダーが既に送信済み | `errors.INVALID` | いいえ |
 | 書き込み失敗 | `errors.INTERNAL` | いいえ |
 
-エラーの処理については[エラー処理](../core/errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。

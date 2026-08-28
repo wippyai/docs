@@ -173,7 +173,7 @@ Path matching is prefix-based. A handler at <code>/</code> catches all unmatched
 
 ## See Also
 
-- [Server](./server.md) - HTTP server configuration
-- [Routing](./router.md) - Routers and endpoints
-- [Filesystem](../lua/storage/filesystem.md) - Filesystem module
-- [Middleware](./middleware.md) - Available middleware
+- [Server](http/server.md) - HTTP server configuration
+- [Routing](http/router.md) - Routers and endpoints
+- [Filesystem](lua/storage/filesystem.md) - Filesystem module
+- [Middleware](http/middleware.md) - Available middleware

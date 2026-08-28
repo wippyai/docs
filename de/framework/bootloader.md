@@ -172,7 +172,7 @@ noch keiner vorhanden ist. Ist die Variable bereits gesetzt, wird der Schritt ü
 
 Bereitgestellt von `wippy/migration`. Entdeckt alle Einträge mit
 `meta.type: migration`, gruppiert sie nach `meta.target_db` und wendet ausstehende
-Migrationen an. Siehe [Migrationen](./migration.md).
+Migrationen an. Siehe [Migrationen](framework/migration.md).
 
 ## Boot-Status beobachten
 
@@ -191,6 +191,6 @@ Umgebungsvariable bereits vorhanden ist — bevor Sie Änderungen vornehmen.
 
 ## Siehe auch
 
-- [Migrationen](./migration.md) — Migrations-Bootloader und DSL
-- [Supervision](../guides/supervision.md) — Service-Lebenszyklus und Neustartrichtlinie
-- [Framework-Übersicht](./overview.md) — Verwendung von Framework-Modulen
+- [Migrationen](framework/migration.md) — Migrations-Bootloader und DSL
+- [Supervision](guides/supervision.md) — Service-Lebenszyklus und Neustartrichtlinie
+- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen

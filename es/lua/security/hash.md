@@ -216,4 +216,4 @@ Aquí, `password` se proporciona a través del límite de secretos de la aplicac
 | Secreto no es string (HMAC) | `errors.INVALID` | no |
 | Contraseña o sal PBKDF2 vacía, límites no válidos o algoritmo no compatible | `errors.INVALID` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

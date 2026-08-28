@@ -7,7 +7,7 @@ description: "Wie eine Wippy-Anwendung in Namespaces, Slices und Schichten gegli
 
 Eine Wippy-Anwendung ist ein durch Quelldateien dargestellter **Graph aus Registry-Einträgen**. Code liegt in Einträgen wie `function.lua` und `process.lua`; `_index.yaml`-Dateien deklarieren, wie Funktionen, Routen, Services und Bibliotheken verbunden sind. Die Anwendungsstruktur bestimmt, wie dieser Graph in Namespaces aufgeteilt wird, damit er beim Wachsen komponierbar, testbar und bootfähig bleibt.
 
-Diese Seite beschreibt eine mögliche Organisation dieses Graphen. Dateiformat, Benennung und Platzierung von `_index.yaml` behandelt [YAML und Projektstruktur](../start/structure.md). Definitionen der Einträge finden Sie im [Leitfaden zu Entry-Kinds](../guides/entry-kinds.md).
+Diese Seite beschreibt eine mögliche Organisation dieses Graphen. Dateiformat, Benennung und Platzierung von `_index.yaml` behandelt [YAML und Projektstruktur](start/structure.md). Definitionen der Einträge finden Sie im [Leitfaden zu Entry-Kinds](guides/entry-kinds.md).
 
 ## Feature-Slices
 
@@ -87,7 +87,7 @@ Dies sind zwei Punkte auf einem Spektrum:
 
 Entscheiden Sie danach, ob der Slice **von einem Host verwendet wird, den Sie nicht kontrollieren**. Wiederverwendbare Komponenten benötigen eine Requirement-Schnittstelle; interne Slices dürfen Infrastruktur der Anwendung direkt referenzieren. Die Verpackung ändert sich mit der Wiederverwendung, die interne Schichtung kann gleich bleiben.
 
-Siehe [Komponenten erstellen](../guides/components.md) für den Requirement-/Dependency-Mechanismus und [Abhängigkeitsverwaltung](../guides/dependency-management.md) für die Lock-Datei.
+Siehe [Komponenten erstellen](guides/components.md) für den Requirement-/Dependency-Mechanismus und [Abhängigkeitsverwaltung](guides/dependency-management.md) für die Lock-Datei.
 
 ## Warum diese Form :id=why-this-shape
 
@@ -103,9 +103,9 @@ Diese Struktur unterstützt Komposition, Capability-Prüfung und Analyse der Boo
 
 ## Siehe auch
 
-- [YAML und Projektstruktur](../start/structure.md) — Dateiformat, Benennung und Namespaces
-- [Komponenten erstellen](../guides/components.md) — `ns.definition`, `ns.requirement` und Einbindung
-- [Abhängigkeitsverwaltung](../guides/dependency-management.md) — Lock-Dateien und Modulkonsum
-- [Registry](./registry.md) — Speicherung und Auflösung von Einträgen
-- [Leitfaden zu Entry-Kinds](../guides/entry-kinds.md) — alle Entry-Kinds
-- [Prozessmodell](./process-model.md) — Services, Supervision und Hosts
+- [YAML und Projektstruktur](start/structure.md) — Dateiformat, Benennung und Namespaces
+- [Komponenten erstellen](guides/components.md) — `ns.definition`, `ns.requirement` und Einbindung
+- [Abhängigkeitsverwaltung](guides/dependency-management.md) — Lock-Dateien und Modulkonsum
+- [Registry](concepts/registry.md) — Speicherung und Auflösung von Einträgen
+- [Leitfaden zu Entry-Kinds](guides/entry-kinds.md) — alle Entry-Kinds
+- [Prozessmodell](concepts/process-model.md) — Services, Supervision und Hosts

@@ -194,9 +194,9 @@ Configurações mais antigas usam uma diretiva irmã <code>&lt;campo&gt;_env</co
 
 ## Acesso em Tempo de Execução
 
-- [módulo env](../lua/system/env.md) - Acesso em runtime pelo Lua
+- [módulo env](lua/system/env.md) - Acesso em runtime pelo Lua
 
 ## Veja Também
 
-- [Modelo de Segurança](./security.md) - Controle de acesso para variáveis de ambiente
-- [Guia de Configuração](../guides/configuration.md) - Padrões de configuração da aplicação
+- [Modelo de Segurança](system/security.md) - Controle de acesso para variáveis de ambiente
+- [Guia de Configuração](guides/configuration.md) - Padrões de configuração da aplicação

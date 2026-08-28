@@ -190,7 +190,7 @@ UI 표시용 정보는 `meta`에 지정합니다:
 | `http.endpoint` | HTTP 핸들러 |
 | `process.host` | 프로세스 실행 host |
 
-엔트리 kind 레퍼런스는 [엔트리 종류 가이드](../guides/entry-kinds.md)를 참조하십시오.
+엔트리 kind 레퍼런스는 [엔트리 종류 가이드](guides/entry-kinds.md)를 참조하십시오.
 
 ## 설정 파일
 
@@ -212,7 +212,7 @@ supervisor:
     worker_count: 16
 ```
 
-런타임 설정 필드는 [설정 가이드](../guides/configuration.md)를 참조하십시오.
+런타임 설정 필드는 [설정 가이드](guides/configuration.md)를 참조하십시오.
 
 ### wippy.lock
 
@@ -268,7 +268,7 @@ myapp/
 
 ## 참고
 
-- [애플리케이션 아키텍처](../concepts/architecture.md) — 애플리케이션을 slice와 layer로 구성하기
-- [엔트리 종류 가이드](../guides/entry-kinds.md) — 사용 가능한 엔트리 kind 검토하기
-- [설정 가이드](../guides/configuration.md) — 런타임 옵션 설정하기
-- [커스텀 엔트리 종류](../internals/kinds.md) — handler 구현하기(고급)
+- [애플리케이션 아키텍처](concepts/architecture.md) — 애플리케이션을 slice와 layer로 구성하기
+- [엔트리 종류 가이드](guides/entry-kinds.md) — 사용 가능한 엔트리 kind 검토하기
+- [설정 가이드](guides/configuration.md) — 런타임 옵션 설정하기
+- [커스텀 엔트리 종류](internals/kinds.md) — handler 구현하기(고급)

@@ -330,7 +330,7 @@ if close_err then return nil, close_err end
 | `read(n?)` | string, error | Bis zu `n` Bytes lesen (Standard: Implementierungspuffer) |
 | `close()` | boolean, error | Stream schließen |
 
-`resp.stream` ist ein vollständiges [Stream](../core/stream.md)-Objekt; `seek`, `stat` und `scanner` stehen ebenfalls bereit. Der Aufrufer besitzt einen gestreamten Response-Body und sollte ihn auf jedem Rückkehrpfad schließen. Task-Cleanup ist nur ein Fallback, kein Ersatz für eine zeitnahe Freigabe.
+`resp.stream` ist ein vollständiges [Stream](lua/core/stream.md)-Objekt; `seek`, `stat` und `scanner` stehen ebenfalls bereit. Der Aufrufer besitzt einen gestreamten Response-Body und sollte ihn auf jedem Rückkehrpfad schließen. Task-Cleanup ist nur ein Fallback, kein Ersatz für eine zeitnahe Freigabe.
 
 ## Batch-Anfragen
 
@@ -428,7 +428,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Siehe [Sicherheitsmodell](../../system/security.md) zur Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) zur Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -457,7 +457,7 @@ end
 
 Viele nicht unterstützte Optionswerte werden ignoriert, statt als strukturierte Fehler zurückgegeben zu werden. Ungültige Lua-Argumenttypen und ein leerer Batch lösen Lua-Argumentfehler aus. Validieren Sie von der Anwendung bereitgestellte Optionstabellen vor dem Aufruf des Clients.
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 Fügen Sie `http_client` zur Liste `modules:` des ausführbaren Eintrags hinzu, bevor Sie es per `require` laden. JSON- und Dateisystemrezepte erfordern außerdem `json` und `fs`.
 
 Laden Sie Authentifizierungswerte aus einem anwendungseigenen Secret-Speicher und senden Sie sie nur über TLS.

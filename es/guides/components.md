@@ -7,7 +7,7 @@ description: "Declara requisitos de módulos reutilizables con ns.requirement y 
 
 Un **componente** es un módulo Wippy reutilizable que se publica en el Hub y se monta en una aplicación Host. Puede depender de una base de datos, process host o router sin conocer los ID de entradas del Host. Declara esas dependencias mediante una **interfaz de requirements**, y el Host proporciona sus valores.
 
-Esta guía cubre el lado del author: declarar la interfaz y comprender cómo fluyen los valores hacia las entradas. Para el lado del consumer (lock files, constraints de versión, `wippy add`/`update`), consulta [Gestión de dependencias](./dependency-management.md). Para la estructura interna de un componente, consulta [Arquitectura de aplicaciones](../concepts/architecture.md).
+Esta guía cubre el lado del author: declarar la interfaz y comprender cómo fluyen los valores hacia las entradas. Para el lado del consumer (lock files, constraints de versión, `wippy add`/`update`), consulta [Gestión de dependencias](guides/dependency-management.md). Para la estructura interna de un componente, consulta [Arquitectura de aplicaciones](concepts/architecture.md).
 
 ## Los tres tipos de entrada
 
@@ -143,11 +143,11 @@ Las unit tests no verifican las relaciones del registro del módulo ensamblado. 
 - cada ID creado o programado resuelve a una entrada real,
 - el storage de cada `env.variable` está registrado.
 
-Esto detecta relaciones sin resolver, como un supervisor que referencia un worker no registrado o un fixture de prueba que usa un ID de storage propio del harness. Consulta [Supervisión](./supervision.md) y el framework de [Testing](../framework/testing.md).
+Esto detecta relaciones sin resolver, como un supervisor que referencia un worker no registrado o un fixture de prueba que usa un ID de storage propio del harness. Consulta [Supervisión](guides/supervision.md) y el framework de [Testing](framework/testing.md).
 
 ## Véase también
 
-- [Arquitectura de aplicaciones](../concepts/architecture.md) — estructura interna de un componente
-- [Gestión de dependencias](./dependency-management.md) — lock files, versiones y workflow del consumer
-- [Publicación de módulos](./publishing.md) — publicar un componente en el Hub
-- [Guía de tipos de entrada](./entry-kinds.md) — referencia de `ns.definition`, `ns.requirement`, `ns.dependency`
+- [Arquitectura de aplicaciones](concepts/architecture.md) — estructura interna de un componente
+- [Gestión de dependencias](guides/dependency-management.md) — lock files, versiones y workflow del consumer
+- [Publicación de módulos](guides/publishing.md) — publicar un componente en el Hub
+- [Guía de tipos de entrada](guides/entry-kinds.md) — referencia de `ns.definition`, `ns.requirement`, `ns.dependency`

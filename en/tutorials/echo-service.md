@@ -439,6 +439,6 @@ confirm that each response is uppercase. Submit an empty line to exit cleanly.
 
 ## Next Steps
 
-- [Process Management](../lua/core/process.md) — Process API reference
-- [Channels](../lua/core/channel.md) — Channel API reference
-- [Time and Duration](../lua/core/time.md) — Time API reference
+- [Process Management](lua/core/process.md) — Process API reference
+- [Channels](lua/core/channel.md) — Channel API reference
+- [Time and Duration](lua/core/time.md) — Time API reference

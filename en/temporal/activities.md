@@ -390,7 +390,7 @@ end
 
 ## See Also
 
-- [Overview](./overview.md) - Configuration
-- [Workflows](./workflows.md) - Workflow implementation
-- [Functions](../lua/core/funcs.md) - Function module
-- [Error Handling](../lua/core/errors.md) - Error types and patterns
+- [Overview](temporal/overview.md) - Configuration
+- [Workflows](temporal/workflows.md) - Workflow implementation
+- [Functions](lua/core/funcs.md) - Function module
+- [Error Handling](lua/core/errors.md) - Error types and patterns

@@ -10,7 +10,7 @@ description: "Inspecciona el actor y el alcance actuales, evalúa políticas y g
 
 El módulo `security` expone actores de autenticación, alcances de autorización, políticas y almacenes de tokens. Esta página es una referencia de API con recetas parciales de autorización. Los ID de registro, actores, metadatos de solicitud, valores de token, objetos de la aplicación como `user` y `doc` y callbacks como `show_admin_features` proceden de la aplicación contenedora; los ejemplos no son un despliegue completo de autenticación.
 
-Wippy se ejecuta en modo de seguridad estricto de forma predeterminada. La entrada ejecutable debe habilitar `security`, tener un actor y un alcance y autorizar exactamente las operaciones que llama. En particular, la construcción y los cambios de alcance necesitan `security.actor.create` o `security.scope.create`; la consulta del registro necesita `security.policy.get` o `security.policy_group.get`; el trabajo con tokens necesita `security.token_store.get` además del permiso específico de la operación. `new_actor`, `new_scope`, `scope:with`, `scope:without` y una adquisición de `token_store` con permiso denegado generan un error Lua en vez de devolver un `error` estructurado. Concede estos prerrequisitos en el contexto de seguridad de la entrada, en lugar de intentar recuperarte tras una denegación. Consulta [Modelo de seguridad](../../system/security.md) para ver la configuración.
+Wippy se ejecuta en modo de seguridad estricto de forma predeterminada. La entrada ejecutable debe habilitar `security`, tener un actor y un alcance y autorizar exactamente las operaciones que llama. En particular, la construcción y los cambios de alcance necesitan `security.actor.create` o `security.scope.create`; la consulta del registro necesita `security.policy.get` o `security.policy_group.get`; el trabajo con tokens necesita `security.token_store.get` además del permiso específico de la operación. `new_actor`, `new_scope`, `scope:with`, `scope:without` y una adquisición de `token_store` con permiso denegado generan un error Lua en vez de devolver un `error` estructurado. Concede estos prerrequisitos en el contexto de seguridad de la entrada, en lugar de intentar recuperarte tras una denegación. Consulta [Modelo de seguridad](system/security.md) para ver la configuración.
 
 ## Carga
 
@@ -394,7 +394,7 @@ Las operaciones de seguridad estan sujetas a evaluacion de politica de seguridad
 | `security.token.create` | ID de Store | Crear tokens |
 | `security.token.revoke` | ID de Store | Revocar tokens |
 
-Consulta [Modelo de seguridad](../../system/security.md) para configurar políticas.
+Consulta [Modelo de seguridad](system/security.md) para configurar políticas.
 
 ## Errores
 
@@ -421,9 +421,9 @@ end
 store:close()
 ```
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
 ## Véase también
 
 - [Modelo de seguridad](../../system/security.md) - Configuración de actores, políticas y alcances
-- [Middleware HTTP](../../http/middleware.md) - Firewall de endpoints y recursos
+- [Middleware HTTP](http/middleware.md) - Firewall de endpoints y recursos

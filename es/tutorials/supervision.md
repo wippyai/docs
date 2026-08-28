@@ -764,6 +764,6 @@ Una salida anómala de un worker hace que el pool reciba `LINK_DOWN`; espera 100
 
 ## Próximos Pasos
 
-- [Procesos](processes.md) — Fundamentos de procesos
-- [Canales](channels.md) — Patrones de paso de mensajes
-- [Módulo Process](../lua/core/process.md) — Referencia de la API de procesos
+- [Procesos](tutorials/processes.md) — Fundamentos de procesos
+- [Canales](tutorials/channels.md) — Patrones de paso de mensajes
+- [Módulo Process](lua/core/process.md) — Referencia de la API de procesos

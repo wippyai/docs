@@ -45,7 +45,7 @@ El default embebido del log manager es `-1`, pero `wippy run` aplica al inicio s
 
 ### Contexto automático
 
-Los logs emitidos desde Lua mediante el [módulo logger](../lua/system/logger.md) incluyen automáticamente:
+Los logs emitidos desde Lua mediante el [módulo logger](lua/system/logger.md) incluyen automáticamente:
 
 - `pid` - PID del proceso actual
 - `location` - ID de entrada y línea del caller, por ejemplo `app.api:handler:45`
@@ -71,7 +71,7 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-Para la API de métricas Lua, consulta el [módulo Metrics](../lua/system/metrics.md).
+Para la API de métricas Lua, consulta el [módulo Metrics](lua/system/metrics.md).
 
 ## OpenTelemetry
 
@@ -208,6 +208,6 @@ Estas funciones devuelven `value, error`. Requieren el permiso `system.read` en 
 
 ## Véase también
 
-- [Módulo Logger](../lua/system/logger.md) — API de logging Lua
-- [Módulo Metrics](../lua/system/metrics.md) — API de métricas Lua
-- [Módulo System](../lua/system/system.md) — Estadísticas del runtime
+- [Módulo Logger](lua/system/logger.md) — API de logging Lua
+- [Módulo Metrics](lua/system/metrics.md) — API de métricas Lua
+- [Módulo System](lua/system/system.md) — Estadísticas del runtime

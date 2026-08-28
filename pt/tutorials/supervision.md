@@ -781,6 +781,6 @@ a aplicação com Ctrl+C ao terminar a verificação.
 
 ## Próximos Passos
 
-- [Processos](processes.md) — Fundamentos de processos
-- [Channels](channels.md) — Padrões de passagem de mensagens
-- [Módulo Process](../lua/core/process.md) — Referência da API de processos
+- [Processos](tutorials/processes.md) — Fundamentos de processos
+- [Channels](tutorials/channels.md) — Padrões de passagem de mensagens
+- [Módulo Process](lua/core/process.md) — Referência da API de processos

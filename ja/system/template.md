@@ -117,10 +117,10 @@ description: "Jet のテンプレートセット、ソース、名前、継承�
 
 ## Lua API
 
-レンダリング操作については、[テンプレートモジュール](../lua/text/template.md)を参照してください。
+レンダリング操作については、[テンプレートモジュール](lua/text/template.md)を参照してください。
 
 ## 関連項目
 
-- [テンプレートモジュール](../lua/text/template.md) - Lua API リファレンス
-- [ファイルシステム](./filesystem.md) - ディスクからテンプレートを読み込み
-- [HTTP エンドポイント](../http/endpoint.md) - リクエストハンドラーからテンプレートをレンダリング
+- [テンプレートモジュール](lua/text/template.md) - Lua API リファレンス
+- [ファイルシステム](system/filesystem.md) - ディスクからテンプレートを読み込み
+- [HTTP エンドポイント](http/endpoint.md) - リクエストハンドラーからテンプレートをレンダリング

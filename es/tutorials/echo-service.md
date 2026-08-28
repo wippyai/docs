@@ -427,6 +427,6 @@ El PID del worker se genera durante la ejecución y será diferente. Introduce v
 
 ## Siguientes Pasos
 
-- [Gestión de procesos](../lua/core/process.md) — Referencia de la API de procesos
-- [Canales](../lua/core/channel.md) — Referencia de la API de canales
-- [Tiempo y duración](../lua/core/time.md) — Referencia de la API de tiempo
+- [Gestión de procesos](lua/core/process.md) — Referencia de la API de procesos
+- [Canales](lua/core/channel.md) — Referencia de la API de canales
+- [Tiempo y duración](lua/core/time.md) — Referencia de la API de tiempo

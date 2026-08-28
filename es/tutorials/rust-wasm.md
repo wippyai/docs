@@ -515,8 +515,8 @@ local fib, err = funcs.call("demo.wasm:fibonacci_function", 10)
 
 ## Siguientes pasos
 
-- [Descripción general de WASM](../wasm/overview.md) — Descripción general del runtime WebAssembly
-- [Funciones WASM](../wasm/functions.md) — Referencia de configuración de funciones
-- [Procesos WASM](../wasm/processes.md) — Referencia de configuración de procesos
-- [Funciones Host](../wasm/hosts.md) — Imports WASI disponibles
-- [Referencia CLI](../guides/cli.md) — Documentación de comandos CLI
+- [Descripción general de WASM](wasm/overview.md) — Descripción general del runtime WebAssembly
+- [Funciones WASM](wasm/functions.md) — Referencia de configuración de funciones
+- [Procesos WASM](wasm/processes.md) — Referencia de configuración de procesos
+- [Funciones Host](wasm/hosts.md) — Imports WASI disponibles
+- [Referencia CLI](guides/cli.md) — Documentación de comandos CLI

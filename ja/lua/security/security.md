@@ -10,7 +10,7 @@ description: "現在のアクターとスコープの確認、ポリシー評価
 
 `security`モジュールは、認証アクター、認可スコープ、ポリシー、トークンストアを公開します。このページは、部分的な認可レシピを含むAPIリファレンスです。レジストリID、アクター、リクエストメタデータ、トークン値、`user`や`doc`などのアプリケーションオブジェクト、`show_admin_features`などのコールバックは周囲のアプリケーションから渡されます。例は完全な認証デプロイではありません。
 
-Wippyはデフォルトで厳格なセキュリティモードで動作します。実行エントリでは`security`を有効にし、アクターとスコープを設定して、呼び出す操作を正確に認可する必要があります。特に、アクター作成とスコープ変更には`security.actor.create`または`security.scope.create`、レジストリ検索には`security.policy.get`または`security.policy_group.get`、トークン操作には`security.token_store.get`と操作固有のトークン権限が必要です。`new_actor`、`new_scope`、`scope:with`、`scope:without`、権限拒否となる`token_store`取得は、構造化`error`を返さずLuaエラーを発生させます。拒否後の復旧を試みるのではなく、これらの前提条件をエントリのセキュリティコンテキストで付与してください。設定については[セキュリティモデル](../../system/security.md)を参照してください。
+Wippyはデフォルトで厳格なセキュリティモードで動作します。実行エントリでは`security`を有効にし、アクターとスコープを設定して、呼び出す操作を正確に認可する必要があります。特に、アクター作成とスコープ変更には`security.actor.create`または`security.scope.create`、レジストリ検索には`security.policy.get`または`security.policy_group.get`、トークン操作には`security.token_store.get`と操作固有のトークン権限が必要です。`new_actor`、`new_scope`、`scope:with`、`scope:without`、権限拒否となる`token_store`取得は、構造化`error`を返さずLuaエラーを発生させます。拒否後の復旧を試みるのではなく、これらの前提条件をエントリのセキュリティコンテキストで付与してください。設定については[セキュリティモデル](system/security.md)を参照してください。
 
 ## ロード
 
@@ -394,7 +394,7 @@ store:close()
 | `security.token.create` | ストアID | トークンの作成 |
 | `security.token.revoke` | ストアID | トークンの取り消し |
 
-ポリシー設定については、[セキュリティモデル](../../system/security.md)を参照してください。
+ポリシー設定については、[セキュリティモデル](system/security.md)を参照してください。
 
 ## エラー
 
@@ -421,9 +421,9 @@ end
 store:close()
 ```
 
-エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。
 
 ## 関連項目
 
 - [セキュリティモデル](../../system/security.md) - アクター、ポリシー、スコープの設定
-- [HTTPミドルウェア](../../http/middleware.md) - エンドポイントとリソースファイアウォール
+- [HTTPミドルウェア](http/middleware.md) - エンドポイントとリソースファイアウォール

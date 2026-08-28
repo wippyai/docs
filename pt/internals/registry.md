@@ -156,5 +156,5 @@ A correspondência glob se aplica aos campos raiz `.kind`, `.name`, `.ns` e `.id
 
 ## Consulte também
 
-- [Registro](../concepts/registry.md) — Conceitos de alto nível
-- [Eventos](./events.md) — Detalhes do event bus
+- [Registro](concepts/registry.md) — Conceitos de alto nível
+- [Eventos](internals/events.md) — Detalhes do event bus

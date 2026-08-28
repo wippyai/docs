@@ -206,6 +206,6 @@ production workflow infrastructure については [Temporal](https://temporal.i
 
 ## 関連項目 :id=see-also
 
-- [関数](./functions.md) — request-scoped call
-- [プロセスモデル](./process-model.md) — stateful background work
-- [スーパービジョン](../guides/supervision.md) — process restart policy
+- [関数](concepts/functions.md) — request-scoped call
+- [プロセスモデル](concepts/process-model.md) — stateful background work
+- [スーパービジョン](guides/supervision.md) — process restart policy

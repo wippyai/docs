@@ -842,7 +842,7 @@ Bye!
 
 ## Nächste Schritte
 
-- [LLM-Modul](../framework/llm.md) — Referenz der LLM-API
-- [Agent-Modul](../framework/agents.md) — Referenz des Agent-Frameworks
-- [CLI-Anwendungen](./cli.md) — Muster für Terminal-I/O
-- [Prozesse](./processes.md) — Prozessmodell und Kommunikation
+- [LLM-Modul](framework/llm.md) — Referenz der LLM-API
+- [Agent-Modul](framework/agents.md) — Referenz des Agent-Frameworks
+- [CLI-Anwendungen](tutorials/cli.md) — Muster für Terminal-I/O
+- [Prozesse](tutorials/processes.md) — Prozessmodell und Kommunikation

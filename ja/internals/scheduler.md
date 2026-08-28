@@ -135,5 +135,5 @@ wakeup フラグが競合を処理します。ワーカーがまだプロセス�
 
 ## 関連項目
 
-- [コマンドディスパッチ](./dispatch.md) - yield がハンドラへ到達する仕組み
-- [プロセスモデル](../concepts/process-model.md) - 高レベルの概念
+- [コマンドディスパッチ](internals/dispatch.md) - yield がハンドラへ到達する仕組み
+- [プロセスモデル](concepts/process-model.md) - 高レベルの概念

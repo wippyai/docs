@@ -194,6 +194,6 @@ Shutdown: http_server → handler → cache → database
 
 ## 함께 보기
 
-- [프로세스 모델](../concepts/process-model.md) — 프로세스 수명 주기
-- [구성](./configuration.md) — YAML 구성 형식
-- [보안 모듈](../lua/security/security.md) — Lua 권한 검사
+- [프로세스 모델](concepts/process-model.md) — 프로세스 수명 주기
+- [구성](guides/configuration.md) — YAML 구성 형식
+- [보안 모듈](lua/security/security.md) — Lua 권한 검사

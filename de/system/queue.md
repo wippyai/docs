@@ -319,7 +319,7 @@ if publish_err then return nil, publish_err end
 return published
 ```
 
-Siehe [Queue-Modul](../lua/storage/queue.md) für die Lua-API zum Publishing und für Nachrichten.
+Siehe [Queue-Modul](lua/storage/queue.md) für die Lua-API zum Publishing und für Nachrichten.
 
 ## Kontrolliertes Herunterfahren
 
@@ -332,6 +332,6 @@ Beim Stoppen des Consumers:
 
 ## Siehe auch
 
-- [Queue-Modul](../lua/storage/queue.md) - Lua-API-Referenz
-- [Queue-Consumer-Anleitung](../guides/queue-consumers.md) - Consumer-Muster und Worker-Pools
-- [Supervision](../guides/supervision.md) - Consumer-Lebenszyklusverwaltung
+- [Queue-Modul](lua/storage/queue.md) - Lua-API-Referenz
+- [Queue-Consumer-Anleitung](guides/queue-consumers.md) - Consumer-Muster und Worker-Pools
+- [Supervision](guides/supervision.md) - Consumer-Lebenszyklusverwaltung

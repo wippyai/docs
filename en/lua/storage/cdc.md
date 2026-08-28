@@ -8,7 +8,7 @@ description: "Subscribe to PostgreSQL change data capture streams and receive ro
 <secondary-label ref="stream"/>
 <secondary-label ref="nondeterministic"/>
 
-The `cdc` module subscribes to PostgreSQL change data capture streams from [`db.cdc.postgres`](../../system/cdc.md) sources. It lists configured sources, opens streams, and delivers row-level change events through channels.
+The `cdc` module subscribes to PostgreSQL change data capture streams from [`db.cdc.postgres`](system/cdc.md) sources. It lists configured sources, opens streams, and delivers row-level change events through channels.
 
 This page is an API reference with a partial subscription recipe. Its snippets require a configured and running CDC source; opening the delivery channel additionally requires an executing process context. Application callbacks such as `handle_new_user` are placeholders supplied by the caller.
 
@@ -30,7 +30,7 @@ for _, s in ipairs(sources) do
 end
 ```
 
-Each source is a table: `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary`, `snapshot`. See [CDC sources](../../system/cdc.md#source-info).
+Each source is a table: `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary`, `snapshot`. See [CDC sources](system/cdc.md#source-info).
 
 **Returns:** `table, error`
 
@@ -149,10 +149,10 @@ Each message received on the channel is a change table:
 | Process binding unavailable after subscription | `errors.INTERNAL` |
 | Source subscription failed on first `channel()` / `receive()` | source-dependent structured error |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Change Data Capture](../../system/cdc.md) - `db.cdc.postgres` source configuration
-- [Channel](../core/channel.md) - Channel semantics
-- [Database](../../system/database.md) - SQL database services
+- [Change Data Capture](system/cdc.md) - `db.cdc.postgres` source configuration
+- [Channel](lua/core/channel.md) - Channel semantics
+- [Database](system/database.md) - SQL database services

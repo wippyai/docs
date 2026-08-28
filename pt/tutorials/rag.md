@@ -309,7 +309,7 @@ similaridade e a ordem dos resultados dependem do provedor e do conteúdo indexa
 
 ## Próximos Passos
 
-- [Framework LLM](../framework/llm.md) — `llm.generate`, `llm.embed` e construção de prompts
-- [Agentes](../framework/agents.md) — Envolva o recuperador como uma ferramenta de agente
-- [Módulo SQL](../lua/storage/sql.md) — Acesso subjacente ao banco de dados
-- [Módulo Text](../lua/text/text.md) — Divisores de texto baseados em caracteres
+- [Framework LLM](framework/llm.md) — `llm.generate`, `llm.embed` e construção de prompts
+- [Agentes](framework/agents.md) — Envolva o recuperador como uma ferramenta de agente
+- [Módulo SQL](lua/storage/sql.md) — Acesso subjacente ao banco de dados
+- [Módulo Text](lua/text/text.md) — Divisores de texto baseados em caracteres

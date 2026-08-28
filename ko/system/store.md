@@ -71,7 +71,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Cluster KV Stores
 
-`store.kv.raft`와 `store.kv.crdt`는 cluster node 간에 key-value data를 복제합니다. 둘 다 [clustering](../guides/cluster.md)이 활성화되어야 하며 같은 [Store 모듈](../lua/storage/store.md) Lua API를 재사용합니다. 각 엔트리는 node-wide engine 하나의 namespaced view입니다. `namespace`는 이 엔트리의 key를 격리하며 `^[a-z][a-z0-9._-]*$`와 일치해야 합니다(`_`로 시작할 수 없음).
+`store.kv.raft`와 `store.kv.crdt`는 cluster node 간에 key-value data를 복제합니다. 둘 다 [clustering](guides/cluster.md)이 활성화되어야 하며 같은 [Store 모듈](lua/storage/store.md) Lua API를 재사용합니다. 각 엔트리는 node-wide engine 하나의 namespaced view입니다. `namespace`는 이 엔트리의 key를 격리하며 `^[a-z][a-z0-9._-]*$`와 일치해야 합니다(`_`로 시작할 수 없음).
 
 ### Raft (강한 일관성)
 
@@ -118,9 +118,9 @@ write는 shared Raft를 통해 propose되고 follower는 leader로 전달합니�
 
 ## Lua API
 
-작업은 [Store 모듈](../lua/storage/store.md)을 참조하십시오: `get`, `set`, `has`, `delete`, 그리고 versioned 및 conditional access를 위한 `put`, `entry`, `list`, `info`.
+작업은 [Store 모듈](lua/storage/store.md)을 참조하십시오: `get`, `set`, `has`, `delete`, 그리고 versioned 및 conditional access를 위한 `put`, `entry`, `list`, `info`.
 
 ## 참고
 
-- [Store 모듈](../lua/storage/store.md) - Lua API 레퍼런스
-- [데이터베이스](./database.md) - `store.sql`의 SQL backing
+- [Store 모듈](lua/storage/store.md) - Lua API 레퍼런스
+- [데이터베이스](system/database.md) - `store.sql`의 SQL backing

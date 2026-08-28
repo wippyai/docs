@@ -321,7 +321,7 @@ Reihenfolge der Treffer hängen vom Provider und den indizierten Inhalten ab:
 
 ## Nächste Schritte
 
-- [LLM-Framework](../framework/llm.md) — `llm.generate`, `llm.embed` und Prompt-Konstruktion
-- [Agenten](../framework/agents.md) — Den Retriever als Agenten-Tool einbinden
-- [SQL-Modul](../lua/storage/sql.md) — Zugrunde liegender Datenbankzugriff
-- [Text-Modul](../lua/text/text.md) — Zeichenbasierte Text-Splitter
+- [LLM-Framework](framework/llm.md) — `llm.generate`, `llm.embed` und Prompt-Konstruktion
+- [Agenten](framework/agents.md) — Den Retriever als Agenten-Tool einbinden
+- [SQL-Modul](lua/storage/sql.md) — Zugrunde liegender Datenbankzugriff
+- [Text-Modul](lua/text/text.md) — Zeichenbasierte Text-Splitter

@@ -292,9 +292,9 @@ wippy publish --embed facade:public_files
 
 ## 참고
 
-- [Views](./views.md) — 페이지 및 컴포넌트 시스템
-- [HTTP 서버](../http/server.md) — HTTP 서비스 구성
-- [프레임워크 개요](./overview.md) — 프레임워크 모듈 사용법
+- [Views](framework/views.md) — 페이지 및 컴포넌트 시스템
+- [HTTP 서버](http/server.md) — HTTP 서비스 구성
+- [프레임워크 개요](framework/overview.md) — 프레임워크 모듈 사용법
 - [Facade Entry Point](../frontend/web-host/entry-point.md) — Facade가 Web Host를 시작하는 방식
 - [CSS Injection](../frontend/web-host/css-injection.md) — Facade 테마가 자식 iframe에 도달하는 방식
 - [Render Engines](../frontend/web-host/render-engines.md) — iframe 및 Web Fragment 페이지 rendering

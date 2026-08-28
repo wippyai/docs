@@ -145,4 +145,4 @@ return recorded
 
 Tipos inválidos de nome ou valor geram erros de argumento Lua, em vez de retornar erros estruturados.
 
-Consulte [Tratamento de erros](../core/errors.md) para trabalhar com erros.
+Consulte [Tratamento de erros](lua/core/errors.md) para trabalhar com erros.

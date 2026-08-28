@@ -12,7 +12,7 @@ Prozessgruppen organisieren Prozesse unter dynamischen Namen und senden Nachrich
 
 Diese Seite ist eine API-Referenz. Ihre Snippets setzen einen vorhandenen `pg.scope`, einen ausführbaren Eintrag mit Prozesskontext und Richtlinien voraus, die die dokumentierten Operationen erlauben. Die Blöcke demonstrieren einzelne Aufrufe oder partielle Abonnementabläufe und keine eigenständige Anwendung.
 
-Den Scope-Entry-Kind und seine Konfiguration beschreibt [Prozessgruppen](../../system/process-groups.md). Das umfassendere Clustering-Modell behandelt der [Cluster-Leitfaden](../../guides/cluster.md).
+Den Scope-Entry-Kind und seine Konfiguration beschreibt [Prozessgruppen](system/process-groups.md). Das umfassendere Clustering-Modell behandelt der [Cluster-Leitfaden](guides/cluster.md).
 
 ## Laden
 
@@ -231,10 +231,10 @@ group:release()
 | Service gestoppt, Backpressure oder offener Circuit | `errors.UNAVAILABLE` |
 | Broadcast-Zeitlimit überschritten | `errors.TIMEOUT` (wiederholbar) |
 
-Siehe [Fehlerbehandlung](errors.md) für den Umgang mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für den Umgang mit Fehlern.
 
 ## Siehe auch
 
-- [Prozessgruppen](../../system/process-groups.md) - Scope-Entry-Kind und Konfiguration
-- [Cluster](../../guides/cluster.md) - Mitgliedschaft, Benennung und Clustering-Modell
-- [Prozessverwaltung](process.md) - Einzelne Prozesse starten und Nachrichten senden
+- [Prozessgruppen](system/process-groups.md) - Scope-Entry-Kind und Konfiguration
+- [Cluster](guides/cluster.md) - Mitgliedschaft, Benennung und Clustering-Modell
+- [Prozessverwaltung](lua/core/process.md) - Einzelne Prozesse starten und Nachrichten senden

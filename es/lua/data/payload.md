@@ -203,4 +203,4 @@ print(result.computed_value)
 | Fallo de transcodificación | `errors.INTERNAL` | no |
 | El resultado no es un valor Lua válido | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

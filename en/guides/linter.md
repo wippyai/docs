@@ -253,6 +253,6 @@ Example GitHub Actions step:
 
 ## See Also
 
-- [CLI](./cli.md) — Full CLI reference
-- [Types](../lua/types.md) — Type-system documentation
-- [LSP](./lsp.md) — Editor integration with live diagnostics
+- [CLI](guides/cli.md) — Full CLI reference
+- [Types](lua/types.md) — Type-system documentation
+- [LSP](guides/lsp.md) — Editor integration with live diagnostics

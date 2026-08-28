@@ -127,6 +127,6 @@ WASM モジュール内から送信する HTTP クライアントリクエスト
 
 ## 関連項目
 
-- [概要](./overview.md) - WebAssembly ランタイムの概要
-- [関数](./functions.md) - WASM 関数の設定
-- [プロセス](./processes.md) - WASM をプロセスとして実行
+- [概要](wasm/overview.md) - WebAssembly ランタイムの概要
+- [関数](wasm/functions.md) - WASM 関数の設定
+- [プロセス](wasm/processes.md) - WASM をプロセスとして実行

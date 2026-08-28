@@ -11,7 +11,7 @@ description: "best-effort runtime 및 application event를 publish하고 observe
 event bus는 monitoring, logging, metric, reactive side effect를 위해 runtime과 application activity를 publish합니다. 이 페이지는 API reference이며 snippet은 나열된 module과 permission을 가진 executable Lua entry를 가정합니다.
 
 <note>
-event bus는 reliable transport가 아니라 best-effort publish/subscribe channel입니다. business-critical delivery에 의존하지 마십시오. delivery가 application correctness의 일부라면 process messaging(`process.send`), channel 또는 [message queue](../storage/queue.md)를 사용하십시오.
+event bus는 reliable transport가 아니라 best-effort publish/subscribe channel입니다. business-critical delivery에 의존하지 마십시오. delivery가 application correctness의 일부라면 process messaging(`process.send`), channel 또는 [message queue](lua/storage/queue.md)를 사용하십시오.
 </note>
 
 ## 로딩
@@ -134,4 +134,4 @@ close는 idempotent합니다. channel이 닫힌 후 buffered event를 모두 dra
 | 정책 거부됨 | `errors.INVALID` | 아니오 |
 | execution 또는 process context 없음 | `errors.INTERNAL` | 아니오 |
 
-[에러 처리](./errors.md)에서 error 사용법을 확인하십시오.
+[에러 처리](lua/core/errors.md)에서 error 사용법을 확인하십시오.

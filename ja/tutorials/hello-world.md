@@ -183,6 +183,6 @@ curl http://localhost:8080/hello
 
 ## 次のステップ
 
-- [Echoサービス](echo-service.md) — マルチプロセスCLIサービスを構築する
-- [タスクキュー](task-queue.md) — REST APIとバックグラウンド処理を組み合わせる
-- [HTTPルーター](../http/router.md) — ルーティングパターンを確認する
+- [Echoサービス](tutorials/echo-service.md) — マルチプロセスCLIサービスを構築する
+- [タスクキュー](tutorials/task-queue.md) — REST APIとバックグラウンド処理を組み合わせる
+- [HTTPルーター](http/router.md) — ルーティングパターンを確認する

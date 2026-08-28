@@ -13,7 +13,7 @@ Das Modul `store` stellt Key-Value-Speicher mit optionalen TTLs bereit. Es eigne
 
 Diese Seite ist eine API-Referenz. Ihre Ausschnitte setzen einen konfigurierten Store, die unten aufgeführten Berechtigungen und von der Anwendung bereitgestellte Werte wie `owner` oder `new_value` voraus. Ausschnitte nach dem Abrufen verwenden ein bereits vorhandenes, aktives `cache`-Handle und sind keine eigenständigen Funktionen.
 
-Informationen zur Store-Konfiguration finden Sie unter [Store](../../system/store.md).
+Informationen zur Store-Konfiguration finden Sie unter [Store](system/store.md).
 
 ## Laden
 
@@ -299,4 +299,4 @@ Fehler bei Eingaben, Suche, Backend und Fähigkeiten werden als strukturierte Fe
 | `if_version`-Abweichung | `errors.CONFLICT` | ja |
 | Bedingter Schreibvorgang auf einem Store ohne Unterstützung | `errors.INVALID` | nein |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

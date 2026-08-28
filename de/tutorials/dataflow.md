@@ -8,7 +8,7 @@ description: "Einen kleinen wippy/dataflow-Workflow mit persistentem Zustand, au
 **Klassifizierung: ausführbares Tutorial.** Diese Seite erstellt ein vollständiges,
 Provider-unabhängiges Projekt mit `wippy/dataflow`. Es verwendet weder Embeddings
 noch ein LLM; für diesen Anwendungsfall siehe
-[Retrieval-Augmented Generation](./rag.md).
+[Retrieval-Augmented Generation](tutorials/rag.md).
 
 Der Workflow leitet eine Eingabe durch zwei Funktionsknoten:
 
@@ -314,5 +314,5 @@ asynchronen Workflow abbrechen, beenden, wiederbeleben oder signalisieren.
 
 - [Dataflow-Framework](../framework/dataflow.md) — Routing, parallele Knoten,
   Zyklen, Agenten, Signale und die Client-API
-- [Retrieval-Augmented Generation](./rag.md) — Abruf auf Basis von Embeddings
+- [Retrieval-Augmented Generation](tutorials/rag.md) — Abruf auf Basis von Embeddings
 - [Keeper über MCP](./keeper-mcp.md) — Laufende Workflows aus einem MCP-Client untersuchen

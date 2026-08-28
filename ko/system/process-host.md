@@ -68,7 +68,7 @@ live update는 `host.workers` 크기를 조정할 수 있습니다. queue size �
 
 ## 참고
 
-- [프로세스 모듈](../lua/core/process.md) - Lua에서 프로세스 spawn 및 관리
-- [WASM 프로세스](../wasm/processes.md) - `process.wasm` 엔트리 설정
-- [프로세스 모델](../concepts/process-model.md) - 생명주기 및 supervision 개념
-- [슈퍼비전](../guides/supervision.md) - supervision tree 구축
+- [프로세스 모듈](lua/core/process.md) - Lua에서 프로세스 spawn 및 관리
+- [WASM 프로세스](wasm/processes.md) - `process.wasm` 엔트리 설정
+- [프로세스 모델](concepts/process-model.md) - 생명주기 및 supervision 개념
+- [슈퍼비전](guides/supervision.md) - supervision tree 구축

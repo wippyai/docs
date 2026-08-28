@@ -13,7 +13,7 @@ description: "구성된 파일시스템 볼륨에서 파일을 읽고, 쓰고, �
 
 이 페이지는 API 레퍼런스입니다. 예제는 구성된 볼륨과 그 볼륨을 획득할 권한을 전제로 합니다. 각 블록은 독립적인 작업 또는 부분 레시피입니다. `config`, `message`, `process`, `report_cleanup_error`와 같은 애플리케이션 값과 콜백은 이미 존재해야 합니다. `report_cleanup_error(err)`는 이미 발생한 작업 오류를 대체하지 않고 close 실패를 기록합니다.
 
-파일시스템 설정은 [파일시스템](../../system/filesystem.md)을 참조하세요.
+파일시스템 설정은 [파일시스템](system/filesystem.md)을 참조하세요.
 
 ## 로딩
 
@@ -327,4 +327,4 @@ fs.seek.END       -- from end
 
 `unspecified`는 `err:retryable()`이 `nil`을 반환한다는 뜻이며, `false`와 같지 않습니다.
 
-오류 처리는 [오류 처리](../core/errors.md)를 참조하세요.
+오류 처리는 [오류 처리](lua/core/errors.md)를 참조하세요.

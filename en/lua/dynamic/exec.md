@@ -13,7 +13,7 @@ The `exec` module starts external executables and provides access to their input
 
 The executor parses a command string into an executable and arguments; it does not invoke a shell. Shell operators such as pipes, redirects, variable expansion, and command substitution are not interpreted. An executable script can be launched directly only when the selected backend and operating system support it.
 
-Before using these examples, configure an executor resource and its command allowlist as described in [Executor](../../system/exec.md), and grant `exec.get` and `exec.run` for the exact resources used. The examples use Unix commands and paths; substitute commands available to your executor host.
+Before using these examples, configure an executor resource and its command allowlist as described in [Executor](system/exec.md), and grant `exec.get` and `exec.run` for the exact resources used. The examples use Unix commands and paths; substitute commands available to your executor host.
 
 ## Loading
 
@@ -300,4 +300,4 @@ Security policy evaluation applies to command execution.
 
 At runtime v0.3.32a, `exec.get` and `exec.run` policy denials use `errors.INVALID`, not `errors.PERMISSION_DENIED`.
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

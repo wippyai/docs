@@ -218,6 +218,6 @@ wird als Text gespeichert und ist für die Anzeige, nicht zum Filtern vorgesehen
 
 ## Siehe auch
 
-- [LLM](./llm.md) — LLM-Generierung und der Vertrag `usage_tracker`
-- [Migrationen](./migration.md) — Migrations-Runner, der das Schema erstellt
-- [Framework-Übersicht](./overview.md) — Verwendung von Framework-Modulen
+- [LLM](framework/llm.md) — LLM-Generierung und der Vertrag `usage_tracker`
+- [Migrationen](framework/migration.md) — Migrations-Runner, der das Schema erstellt
+- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen

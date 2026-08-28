@@ -68,7 +68,7 @@ Los procesos se ejecutan de forma independiente con su propio contexto de frame 
 
 ## Ver También
 
-- [Módulo Process](../lua/core/process.md) - Crear y gestionar procesos desde Lua
-- [Procesos WASM](../wasm/processes.md) - Configuración de entradas `process.wasm`
-- [Modelo de procesos](../concepts/process-model.md) - Conceptos de lifecycle y supervisión
-- [Supervisión](../guides/supervision.md) - Construcción de árboles de supervisión
+- [Módulo Process](lua/core/process.md) - Crear y gestionar procesos desde Lua
+- [Procesos WASM](wasm/processes.md) - Configuración de entradas `process.wasm`
+- [Modelo de procesos](concepts/process-model.md) - Conceptos de lifecycle y supervisión
+- [Supervisión](guides/supervision.md) - Construcción de árboles de supervisión

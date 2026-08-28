@@ -12,7 +12,7 @@ Los grupos de procesos organizan procesos bajo nombres dinámicos y difunden men
 
 Esta es una referencia de API. Sus fragmentos presuponen un `pg.scope` existente, una entrada ejecutable que se ejecuta con contexto de proceso y políticas que autorizan las operaciones documentadas. Los bloques muestran llamadas individuales o flujos parciales de suscripción, no una aplicación independiente.
 
-Para el tipo de entrada de ámbito y su configuración, consulta [Grupos de procesos](../../system/process-groups.md). Para el modelo de clustering general, consulta la [Guía del clúster](../../guides/cluster.md).
+Para el tipo de entrada de ámbito y su configuración, consulta [Grupos de procesos](system/process-groups.md). Para el modelo de clustering general, consulta la [Guía del clúster](guides/cluster.md).
 
 ## Carga
 
@@ -231,10 +231,10 @@ group:release()
 | Servicio detenido, contrapresión o circuito abierto | `errors.UNAVAILABLE` |
 | La difusión agotó el tiempo de espera | `errors.TIMEOUT` (reintentable) |
 
-Consulta [Manejo de errores](errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
 ## Véase también
 
-- [Grupos de procesos](../../system/process-groups.md) - Tipo de entrada de ámbito y configuración
-- [Clúster](../../guides/cluster.md) - Membresía, nombres y modelo de clustering
-- [Gestión de procesos](process.md) - Creación y mensajería de procesos individuales
+- [Grupos de procesos](system/process-groups.md) - Tipo de entrada de ámbito y configuración
+- [Clúster](guides/cluster.md) - Membresía, nombres y modelo de clustering
+- [Gestión de procesos](lua/core/process.md) - Creación y mensajería de procesos individuales

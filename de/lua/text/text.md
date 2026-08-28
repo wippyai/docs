@@ -457,4 +457,4 @@ end
 | Ungültige Muster-Syntax | `errors.INVALID` | nein |
 | Interner Fehler | `errors.INTERNAL` | nein |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

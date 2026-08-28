@@ -169,7 +169,7 @@ entries:
 
 ## 関連項目
 
-- [サーバー](./server.md) - HTTPサーバー設定
-- [ルーティング](./router.md) - ルーターとエンドポイント
-- [ファイルシステム](../lua/storage/filesystem.md) - ファイルシステムモジュール
-- [ミドルウェア](./middleware.md) - 利用可能なミドルウェア
+- [サーバー](http/server.md) - HTTPサーバー設定
+- [ルーティング](http/router.md) - ルーターとエンドポイント
+- [ファイルシステム](lua/storage/filesystem.md) - ファイルシステムモジュール
+- [ミドルウェア](http/middleware.md) - 利用可能なミドルウェア

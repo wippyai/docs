@@ -32,7 +32,7 @@ if send_err then
 end
 ```
 
-executable Lua entry는 `process`를 ambient global로 받습니다. `modules` list에 추가하지 않고 `require("process")`로 load할 수도 있습니다. spawn, link, supervision은 [프로세스 관리](core/process.md)를 참조하십시오.
+executable Lua entry는 `process`를 ambient global로 받습니다. `modules` list에 추가하지 않고 `require("process")`로 load할 수도 있습니다. spawn, link, supervision은 [프로세스 관리](lua/core/process.md)를 참조하십시오.
 
 ## 채널
 
@@ -46,7 +46,7 @@ buffered:send("work")           -- completes while buffer space is available
 local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-`channel.select`와 pattern은 [채널](core/channel.md)을 참조하십시오.
+`channel.select`와 pattern은 [채널](lua/core/channel.md)을 참조하십시오.
 
 ## 코루틴
 
@@ -104,17 +104,17 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-사용 가능한 module은 entry configuration에 따라 다릅니다. [엔트리 정의](entries.md)를 참조하십시오.
+사용 가능한 module은 entry configuration에 따라 다릅니다. [엔트리 정의](lua/entries.md)를 참조하십시오.
 
 Registry library도 같은 `require("alias")` syntax를 사용하지만 entry의 `imports:` map에 별도로 선언합니다.
 
 ## 언어와 라이브러리 지원
 
-Wippy는 Luau에서 영감을 받은 [점진적 타입 시스템](types.md)과 함께 Lua 5.3 syntax를 사용합니다. type은 validation에 사용하고 argument로 전달하며 runtime에 inspect할 수 있는 first-class runtime value입니다.
+Wippy는 Luau에서 영감을 받은 [점진적 타입 시스템](lua/types.md)과 함께 Lua 5.3 syntax를 사용합니다. type은 validation에 사용하고 argument로 전달하며 runtime에 inspect할 수 있는 first-class runtime value입니다.
 
 외부 Lua 라이브러리(LuaRocks 등)는 지원되지 않습니다. 런타임은 I/O, 네트워킹, 시스템 통합을 위한 내장 확장과 함께 자체 모듈 시스템을 제공합니다.
 
-custom extension은 internals 문서의 [모듈](../internals/modules.md)을 참조하십시오.
+custom extension은 internals 문서의 [모듈](internals/modules.md)을 참조하십시오.
 
 ## 오류 처리
 
@@ -127,11 +127,11 @@ if err then
 end
 ```
 
-이 snippet은 `json`이 entry의 `modules` list에 있고 `input`이 decode할 문자열을 포함한다고 가정합니다. pattern은 [오류 처리](core/errors.md)를 참조하십시오.
+이 snippet은 `json`이 entry의 `modules` list에 있고 `input`이 decode할 문자열을 포함한다고 가정합니다. pattern은 [오류 처리](lua/core/errors.md)를 참조하십시오.
 
 ## 다음은
 
-- [엔트리 정의](entries.md) - entry point 설정
-- [채널](core/channel.md) - channel pattern
-- [프로세스 관리](core/process.md) - spawning과 supervision
-- [함수](core/funcs.md) - cross-process call
+- [엔트리 정의](lua/entries.md) - entry point 설정
+- [채널](lua/core/channel.md) - channel pattern
+- [프로세스 관리](lua/core/process.md) - spawning과 supervision
+- [함수](lua/core/funcs.md) - cross-process call

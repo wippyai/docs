@@ -217,7 +217,7 @@ flowchart LR
 
 ## 참고
 
-- [스케줄러](./scheduler.md) - 프로세스 실행
-- [이벤트 버스](./events.md) - Pub/sub 시스템
-- [레지스트리](./registry.md) - 상태 관리
-- [명령 디스패치](./dispatch.md) - Yield 처리
+- [스케줄러](internals/scheduler.md) - 프로세스 실행
+- [이벤트 버스](internals/events.md) - Pub/sub 시스템
+- [레지스트리](internals/registry.md) - 상태 관리
+- [명령 디스패치](internals/dispatch.md) - Yield 처리

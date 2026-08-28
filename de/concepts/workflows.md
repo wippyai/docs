@@ -218,6 +218,6 @@ Produktionsinfrastruktur für Workflows beschreibt [Temporal](https://temporal.i
 
 ## Siehe auch
 
-- [Funktionen](./functions.md) — Anfragegebundene Aufrufe
-- [Prozessmodell](./process-model.md) — Zustandsbehaftete Hintergrundarbeit
-- [Supervision](../guides/supervision.md) — Richtlinien für Prozessneustarts
+- [Funktionen](concepts/functions.md) — Anfragegebundene Aufrufe
+- [Prozessmodell](concepts/process-model.md) — Zustandsbehaftete Hintergrundarbeit
+- [Supervision](guides/supervision.md) — Richtlinien für Prozessneustarts

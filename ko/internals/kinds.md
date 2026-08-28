@@ -139,5 +139,5 @@ type TransactionListener interface {
 
 ## 참고
 
-- [레지스트리](./registry.md) - entry storage
-- [아키텍처](./architecture.md) - boot sequence
+- [레지스트리](internals/registry.md) - entry storage
+- [아키텍처](internals/architecture.md) - boot sequence

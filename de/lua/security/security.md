@@ -10,7 +10,7 @@ description: "Aktuellen Actor und Scope untersuchen, Richtlinien auswerten und A
 
 Das Modul `security` stellt Authentifizierungs-Actors, Autorisierungs-Scopes, Richtlinien und Token-Stores bereit. Diese Seite ist eine API-Referenz mit Teilrezepten zur Autorisierung. Registry-IDs, Actors, Anfragemetadaten, Token-Werte, Anwendungsobjekte wie `user` und `doc` sowie Callbacks wie `show_admin_features` stammen aus der umgebenden Anwendung; die Beispiele bilden keine vollständige Authentifizierungsbereitstellung.
 
-Wippy verwendet standardmäßig den strikten Sicherheitsmodus. Der ausführbare Eintrag muss `security` aktivieren, einen Actor und Scope besitzen und genau die aufgerufenen Operationen autorisieren. Insbesondere erfordern Konstruktion und Scope-Änderungen `security.actor.create` oder `security.scope.create`; Registry-Abfragen benötigen `security.policy.get` oder `security.policy_group.get`; Token-Operationen erfordern `security.token_store.get` sowie die operationsspezifische Token-Berechtigung. `new_actor`, `new_scope`, `scope:with`, `scope:without` und das bei einer Berechtigungsverweigerung ausgeführte Abrufen eines `token_store` lösen einen Lua-Fehler aus, anstatt einen strukturierten `error` zurückzugeben. Gewähren Sie diese Voraussetzungen im Sicherheitskontext des Eintrags, statt nach einer Verweigerung eine Fehlerbehandlung zu versuchen. Informationen zur Konfiguration finden Sie unter [Sicherheitsmodell](../../system/security.md).
+Wippy verwendet standardmäßig den strikten Sicherheitsmodus. Der ausführbare Eintrag muss `security` aktivieren, einen Actor und Scope besitzen und genau die aufgerufenen Operationen autorisieren. Insbesondere erfordern Konstruktion und Scope-Änderungen `security.actor.create` oder `security.scope.create`; Registry-Abfragen benötigen `security.policy.get` oder `security.policy_group.get`; Token-Operationen erfordern `security.token_store.get` sowie die operationsspezifische Token-Berechtigung. `new_actor`, `new_scope`, `scope:with`, `scope:without` und das bei einer Berechtigungsverweigerung ausgeführte Abrufen eines `token_store` lösen einen Lua-Fehler aus, anstatt einen strukturierten `error` zurückzugeben. Gewähren Sie diese Voraussetzungen im Sicherheitskontext des Eintrags, statt nach einer Verweigerung eine Fehlerbehandlung zu versuchen. Informationen zur Konfiguration finden Sie unter [Sicherheitsmodell](system/security.md).
 
 ## Laden
 
@@ -394,7 +394,7 @@ Sicherheitsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `security.token.create` | Store-ID | Tokens erstellen |
 | `security.token.revoke` | Store-ID | Tokens widerrufen |
 
-Informationen zur Richtlinienkonfiguration finden Sie unter [Sicherheitsmodell](../../system/security.md).
+Informationen zur Richtlinienkonfiguration finden Sie unter [Sicherheitsmodell](system/security.md).
 
 ## Fehler
 
@@ -421,9 +421,9 @@ end
 store:close()
 ```
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).
 
 ## Siehe auch
 
 - [Sicherheitsmodell](../../system/security.md) – Konfiguration von Actors, Richtlinien und Scopes
-- [HTTP-Middleware](../../http/middleware.md) – Firewall für Endpoints und Ressourcen
+- [HTTP-Middleware](http/middleware.md) – Firewall für Endpoints und Ressourcen

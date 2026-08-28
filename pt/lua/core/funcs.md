@@ -382,4 +382,4 @@ Operações de função estão sujeitas a avaliação de política de segurança
 | Falha ao despachar o início assíncrono | `errors.INTERNAL` | não |
 | Erro da função | varia | varia |
 
-Veja [Futures](./future.md) para o contrato assíncrono e [Tratamento de Erros](./errors.md) para trabalhar com erros.
+Veja [Futures](./future.md) para o contrato assíncrono e [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

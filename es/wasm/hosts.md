@@ -127,6 +127,6 @@ Habilitar `wasi:sockets` hace que las interfaces estén disponibles, pero no aut
 
 ## Véase también
 
-- [Descripción general](./overview.md) - Descripción general del entorno de ejecución WebAssembly
-- [Funciones](./functions.md) - Configuración de funciones WASM
-- [Procesos](./processes.md) - Ejecución de WASM como procesos
+- [Descripción general](wasm/overview.md) - Descripción general del entorno de ejecución WebAssembly
+- [Funciones](wasm/functions.md) - Configuración de funciones WASM
+- [Procesos](wasm/processes.md) - Ejecución de WASM como procesos

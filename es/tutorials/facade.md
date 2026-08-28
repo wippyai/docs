@@ -200,6 +200,6 @@ no está definida, el navegador recurre a `window.location.origin`.
 
 ## Siguientes Pasos
 
-- [Hello World](hello-world.md) — Disposición mínima de un proyecto
-- [Autenticación](auth.md) — Añade el flujo de inicio de sesión que espera el shell
-- [Endpoints HTTP](../http/endpoint.md) — Routers, archivos estáticos y handlers
+- [Hello World](tutorials/hello-world.md) — Disposición mínima de un proyecto
+- [Autenticación](tutorials/auth.md) — Añade el flujo de inicio de sesión que espera el shell
+- [Endpoints HTTP](http/endpoint.md) — Routers, archivos estáticos y handlers

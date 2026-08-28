@@ -136,7 +136,7 @@ if err then return nil, err end
 | `max_response_body` | number | Max response size in bytes (0 = default) |
 | `unix_socket` | string | Connect via Unix socket path |
 | `tls` | table | Per-request TLS configuration (see [TLS Options](#tls-options)) |
-| `overlay_network` | string | Route through a [network overlay](../../system/network.md) — registry ID of a `network.socks5` / `network.tailscale` / `network.i2p` entry |
+| `overlay_network` | string | Route through a [network overlay](system/network.md) — registry ID of a `network.socks5` / `network.tailscale` / `network.i2p` entry |
 
 Selecting `overlay_network` requires `network.select` permission on that network ID.
 
@@ -348,7 +348,7 @@ if close_err then return nil, close_err end
 | `read(n?)` | string, error | Read up to `n` bytes (default: implementation buffer) |
 | `close()` | boolean, error | Close the stream |
 
-`resp.stream` is a full [stream](../core/stream.md) object — `seek`, `stat`, and `scanner` are also available. The caller owns a streamed response body and should close it on every exit; task cleanup is a fallback, not a substitute for prompt release.
+`resp.stream` is a full [stream](lua/core/stream.md) object — `seek`, `stat`, and `scanner` are also available. The caller owns a streamed response body and should close it on every exit; task cleanup is a fallback, not a substitute for prompt release.
 
 ## Batch Requests
 
@@ -451,7 +451,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-See [Security Model](../../system/security.md) for policy configuration.
+See [Security Model](system/security.md) for policy configuration.
 
 ## Errors
 
@@ -480,4 +480,4 @@ if err then
 end
 ```
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

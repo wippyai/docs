@@ -328,7 +328,7 @@ The `#` separator in the method field references an interface method: `test-slee
 
 ## See Also
 
-- [Overview](./overview.md) - WebAssembly runtime overview
-- [Host Functions](./hosts.md) - Available host interfaces
-- [Processes](./processes.md) - Running WASM as processes
-- [Entry Kinds](../guides/entry-kinds.md) - All registry entry kinds
+- [Overview](wasm/overview.md) - WebAssembly runtime overview
+- [Host Functions](wasm/hosts.md) - Available host interfaces
+- [Processes](wasm/processes.md) - Running WASM as processes
+- [Entry Kinds](guides/entry-kinds.md) - All registry entry kinds

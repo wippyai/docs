@@ -245,7 +245,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## Coroutines
 
-The `coroutine` library provides coroutine creation and control. See [Channels and Coroutines](channel.md) for channel-based concurrency patterns.
+The `coroutine` library provides coroutine creation and control. See [Channels and Coroutines](lua/core/channel.md) for channel-based concurrency patterns.
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -283,7 +283,7 @@ This partial pattern assumes the entry lists `time` in `modules:` and provides t
 
 ## Error Handling
 
-The global `errors` table creates and classifies structured errors. See [Error Handling](errors.md) for the complete API.
+The global `errors` table creates and classifies structured errors. See [Error Handling](lua/core/errors.md) for the complete API.
 
 ### Constants {id="error-constants"}
 
@@ -343,12 +343,12 @@ The following standard Lua features are unavailable in Wippy processes:
 
 | Feature | Alternative |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Use [Dynamic Evaluation](../dynamic/eval.md) module |
+| `load`, `loadstring`, `loadfile`, `dofile` | Use [Dynamic Evaluation](lua/dynamic/eval.md) module |
 | `collectgarbage` | Automatic GC |
 | `rawlen` | Use `#` operator |
 | `string.dump` | Not supported |
-| `io.*` | Use [File System](../storage/filesystem.md) for files or [Terminal I/O](../system/io.md) for terminal streams |
-| `os.execute` | Use [Command Execution](../dynamic/exec.md) |
+| `io.*` | Use [File System](lua/storage/filesystem.md) for files or [Terminal I/O](../system/io.md) for terminal streams |
+| `os.execute` | Use [Command Execution](lua/dynamic/exec.md) |
 | `os.remove`, `os.rename` | Use [File System](../storage/filesystem.md) |
 | `os.exit`, `os.tmpname` | No direct standard-library equivalent |
 | `debug.*` | Not available |
@@ -357,6 +357,6 @@ The following standard Lua features are unavailable in Wippy processes:
 
 ## See Also
 
-- [Channels and Coroutines](channel.md) - Go-style channels for concurrency
-- [Error Handling](errors.md) - Creating and handling structured errors
-- [OS Time](../system/ostime.md) - System time functions
+- [Channels and Coroutines](lua/core/channel.md) - Go-style channels for concurrency
+- [Error Handling](lua/core/errors.md) - Creating and handling structured errors
+- [OS Time](lua/system/ostime.md) - System time functions

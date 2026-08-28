@@ -12,7 +12,7 @@ Das Modul `env` liest und aktualisiert von der Runtime bereitgestellte Umgebungs
 
 Diese Seite ist eine API-Referenz. Ihre Ausschnitte zeigen einzelne Operationen und setzen voraus, dass die genannten Variablen und Sicherheitsrichtlinien bereits vorhanden sind.
 
-Variablen müssen im [Umgebungssystem](../../system/env.md) definiert sein, bevor darauf zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschützt sind.
+Variablen müssen im [Umgebungssystem](system/env.md) definiert sein, bevor darauf zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschützt sind.
 
 ## Laden
 
@@ -120,7 +120,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Siehe [Sicherheitsmodell](../../system/security.md) zur Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) zur Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -130,8 +130,8 @@ Siehe [Sicherheitsmodell](../../system/security.md) zur Richtlinienkonfiguration
 | Variable nicht gefunden | `errors.NOT_FOUND` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
-- [Umgebungssystem](../../system/env.md) – Speicher-Backends und Variablendefinitionen konfigurieren
+- [Umgebungssystem](system/env.md) – Speicher-Backends und Variablendefinitionen konfigurieren

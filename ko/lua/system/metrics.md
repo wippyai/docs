@@ -145,4 +145,4 @@ return recorded
 
 잘못된 name 또는 value type은 structured error를 반환하지 않고 Lua argument error를 raise합니다.
 
-[에러 처리](../core/errors.md)에서 error 사용법을 확인하십시오.
+[에러 처리](lua/core/errors.md)에서 error 사용법을 확인하십시오.

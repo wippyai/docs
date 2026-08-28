@@ -162,6 +162,6 @@ window.location.assign('/');
 
 ## 다음 단계
 
-- [Hello World](hello-world.md) — 최소 프로젝트 레이아웃
-- [인증](auth.md) — 셸이 기대하는 로그인 흐름 추가
-- [HTTP 엔드포인트](../http/endpoint.md) — 라우터, 정적 파일, 핸들러
+- [Hello World](tutorials/hello-world.md) — 최소 프로젝트 레이아웃
+- [인증](tutorials/auth.md) — 셸이 기대하는 로그인 흐름 추가
+- [HTTP 엔드포인트](http/endpoint.md) — 라우터, 정적 파일, 핸들러

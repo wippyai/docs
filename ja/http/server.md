@@ -39,7 +39,7 @@ description: "HTTPサーバー（http.service）はポートで待ち受け、�
 | `timeouts.idle` | duration | - | Keep-Alive接続のタイムアウト |
 | `host.buffer_size` | int | 1024 | メッセージリレーのバッファサイズ |
 | `host.worker_count` | int | NumCPU | メッセージリレーのワーカー数 |
-| `network` | Registry ID | - | [ネットワークオーバーレイ](../system/network.md)（Tailscale、I2Pなど）を介してリスナーをバインド |
+| `network` | Registry ID | - | [ネットワークオーバーレイ](system/network.md)（Tailscale、I2Pなど）を介してリスナーをバインド |
 | `tls` | object | - | TLS終端（[TLS](#tls)を参照） |
 
 ## タイムアウト
@@ -94,7 +94,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-これにより、すべてのリクエストに基本となるアクターとポリシーが設定されます。認証されたリクエストでは、[token_authミドルウェア](./middleware.md)が検証済みトークンに基づいてアクターを上書きし、ユーザーごとのセキュリティポリシーを適用できるようにします。
+これにより、すべてのリクエストに基本となるアクターとポリシーが設定されます。認証されたリクエストでは、[token_authミドルウェア](http/middleware.md)が検証済みトークンに基づいてアクターを上書きし、ユーザーごとのセキュリティポリシーを適用できるようにします。
 
 ## ライフサイクル
 
@@ -173,7 +173,7 @@ entries:
 
 1. **インラインPEM** — PEM文字列のリテラル。
 2. **`file://`参照** — マニフェスト相対パス。読み込み時に安全に解決され、インライン展開されます。
-3. **環境レジストリ参照** — `${env:NAME}`プレースホルダーを使用し、登録済みの[環境変数](../system/env.md)からデコード時にPEMを取得します。
+3. **環境レジストリ参照** — `${env:NAME}`プレースホルダーを使用し、登録済みの[環境変数](system/env.md)からデコード時にPEMを取得します。
 
 ```yaml
 - name: api
@@ -230,8 +230,8 @@ tls:
 
 ## 関連項目
 
-- [ルーティング](./router.md) - ルーターとエンドポイント
-- [静的ファイル](./static.md) - 静的ファイルの配信
-- [ミドルウェア](./middleware.md) - 利用可能なミドルウェア
-- [セキュリティ](../system/security.md) - セキュリティポリシー
-- [WebSocketリレー](./websocket-relay.md) - WebSocketメッセージング
+- [ルーティング](http/router.md) - ルーターとエンドポイント
+- [静的ファイル](http/static.md) - 静的ファイルの配信
+- [ミドルウェア](http/middleware.md) - 利用可能なミドルウェア
+- [セキュリティ](system/security.md) - セキュリティポリシー
+- [WebSocketリレー](http/websocket-relay.md) - WebSocketメッセージング

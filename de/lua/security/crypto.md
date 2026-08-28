@@ -240,4 +240,4 @@ Bei unterschiedlichen Längen ist das Ergebnis `false`. Die Garantie des zugrund
 | Entschlüsselung fehlgeschlagen | `errors.INTERNAL` | nein |
 | Token abgelaufen | `errors.INTERNAL` | nein |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

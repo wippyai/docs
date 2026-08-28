@@ -334,7 +334,7 @@ if publish_err then return nil, publish_err end
 return published
 ```
 
-Lua 발행 및 메시지 API는 [Queue 모듈](../lua/storage/queue.md)을 참조하세요.
+Lua 발행 및 메시지 API는 [Queue 모듈](lua/storage/queue.md)을 참조하세요.
 
 ## 정상 종료
 
@@ -347,6 +347,6 @@ Lua 발행 및 메시지 API는 [Queue 모듈](../lua/storage/queue.md)을 참�
 
 ## 참고
 
-- [Queue 모듈](../lua/storage/queue.md) - Lua API 참조
-- [큐 컨슈머 가이드](../guides/queue-consumers.md) - 컨슈머 패턴 및 워커 풀
-- [슈퍼비전](../guides/supervision.md) - 컨슈머 라이프사이클 관리
+- [Queue 모듈](lua/storage/queue.md) - Lua API 참조
+- [큐 컨슈머 가이드](guides/queue-consumers.md) - 컨슈머 패턴 및 워커 풀
+- [슈퍼비전](guides/supervision.md) - 컨슈머 라이프사이클 관리

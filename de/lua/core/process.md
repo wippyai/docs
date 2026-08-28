@@ -272,7 +272,7 @@ local ok, err = process.registry.unregister(name)
 
 ### Scope
 
-Das optionale Argument `scope` wählt die Konsistenzgarantie des Namens und verwendet standardmäßig `LOCAL`. Das vollständige Modell beschreibt der [Cluster-Leitfaden](../../guides/cluster.md#benennung-und-namens-scopes).
+Das optionale Argument `scope` wählt die Konsistenzgarantie des Namens und verwendet standardmäßig `LOCAL`. Das vollständige Modell beschreibt der [Cluster-Leitfaden](guides/cluster.md#benennung-und-namens-scopes).
 
 | Konstante | Sichtbarkeit | Garantie |
 |-----------|--------------|----------|
@@ -281,7 +281,7 @@ Das optionale Argument `scope` wählt die Konsistenzgarantie des Namens und verw
 | `process.registry.CONSISTENT` | clusterweit | Linearisierbarer Singleton (Raft) |
 | `process.registry.STRONG` | clusterweit | Konsistent + jeder lebende Knoten bestätigt |
 
-Auf einem Einzelknoten ist nur `LOCAL` verfügbar; Cluster-Scopes erfordern [Clustering](../../guides/cluster.md).
+Auf einem Einzelknoten ist nur `LOCAL` verfügbar; Cluster-Scopes erfordern [Clustering](guides/cluster.md).
 
 ### register
 
@@ -380,12 +380,12 @@ Einige Operationen erfordern mehrere Berechtigungen:
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
 | Name bereits registriert | `errors.ALREADY_EXISTS` |
 
-Siehe [Fehlerbehandlung](errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
-- [Channels](channel.md) - Koordination von Coroutinen innerhalb eines Prozesses
-- [Nachrichten-Queue](../storage/queue.md) - Queue-basierte Nachrichtenübermittlung
-- [Funktionen](funcs.md) - Funktionen aufrufen
-- [Supervision](../../guides/supervision.md) - Prozesslebenszyklen verwalten
-- [Cluster](../../guides/cluster.md) - Namens-Scopes und clusterweite Benennung
+- [Channels](lua/core/channel.md) - Koordination von Coroutinen innerhalb eines Prozesses
+- [Nachrichten-Queue](lua/storage/queue.md) - Queue-basierte Nachrichtenübermittlung
+- [Funktionen](lua/core/funcs.md) - Funktionen aufrufen
+- [Supervision](guides/supervision.md) - Prozesslebenszyklen verwalten
+- [Cluster](guides/cluster.md) - Namens-Scopes und clusterweite Benennung

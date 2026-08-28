@@ -43,7 +43,7 @@ if err then
 end
 ```
 
-See the [funcs module](../lua/core/funcs.md) for function invocation and executor options.
+See the [funcs module](lua/core/funcs.md) for function invocation and executor options.
 
 ## Context Propagation
 
@@ -69,7 +69,7 @@ if err then return nil, err end
 return result
 ```
 
-Security context propagates the same way. Called functions see the caller's actor and can check permissions. See the [security module](../lua/security/security.md) for access control APIs.
+Security context propagates the same way. Called functions see the caller's actor and can check permissions. See the [security module](lua/security/security.md) for access control APIs.
 
 ## Registry Definition
 

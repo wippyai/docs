@@ -8,7 +8,7 @@ description: "함수 및 프로세스 호출을 통해 전파되는 request-scop
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-`ctx` 모듈은 [함수 호출](./funcs.md) 또는 [프로세스 작업](./process.md)을 통해 전파된 request-scoped value를 읽습니다. 이 페이지는 API 레퍼런스이며 snippet은 실행 가능한 Lua 엔트리 안의 개별 호출을 보여 줍니다.
+`ctx` 모듈은 [함수 호출](lua/core/funcs.md) 또는 [프로세스 작업](lua/core/process.md)을 통해 전파된 request-scoped value를 읽습니다. 이 페이지는 API 레퍼런스이며 snippet은 실행 가능한 Lua 엔트리 안의 개별 호출을 보여 줍니다.
 
 ## 로딩
 
@@ -48,4 +48,4 @@ local values, err = ctx.all()
 | 키를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 사용 가능한 실행 context 없음 | `errors.INTERNAL` | 아니오 |
 
-error 처리는 [에러 처리](./errors.md)를 참조하십시오.
+error 처리는 [에러 처리](lua/core/errors.md)를 참조하십시오.

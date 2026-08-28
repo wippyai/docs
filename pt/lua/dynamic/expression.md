@@ -166,4 +166,4 @@ Outras funções integradas incluem `min`, `abs`, `ceil`, `floor`, `len`, `lower
 | Avaliação de expressao falhou | `errors.INTERNAL` | não |
 | Conversao de resultado falhou | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

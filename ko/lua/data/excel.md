@@ -376,8 +376,8 @@ if second_close_err then return nil, second_close_err end
 
 워크북을 닫으면 열려 있는 행 커서도 닫힙니다. Lua 실행 컨텍스트가 정리될 때 워크북은 자동으로 닫히지만, 명시적인 `close()` 호출은 리소스를 더 빨리 해제합니다.
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ## 참고
 
-- [파일시스템](../storage/filesystem.md) - Excel 파일 읽기/쓰기를 위한 파일 작업
+- [파일시스템](lua/storage/filesystem.md) - Excel 파일 읽기/쓰기를 위한 파일 작업

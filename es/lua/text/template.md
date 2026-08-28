@@ -10,7 +10,7 @@ description: "Renderiza plantillas Jet desde conjuntos de plantillas configurado
 
 El módulo `templates` renderiza plantillas [Jet](https://github.com/CloudyKit/jet) desde conjuntos configurados. Las plantillas pueden usar herencia e inclusiones. Esta página es una referencia de API con ejemplos de renderizado aislados, no un despliegue independiente de plantillas. Los ID de registro y los orígenes de las plantillas ya deben estar configurados, y la entrada ejecutable debe habilitar `templates` y tener permiso `template.get` para el conjunto solicitado.
 
-Para configurar conjuntos de plantillas, consulta [Motor de plantillas](../../system/template.md).
+Para configurar conjuntos de plantillas, consulta [Motor de plantillas](system/template.md).
 
 ## Carga
 
@@ -151,4 +151,4 @@ Jet usa `{{ }}` para expresiones y estructuras de control, `{* *}` para comentar
 | Error de renderizado | `errors.INTERNAL` | no |
 | Intento de renderizar después de liberar el conjunto | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

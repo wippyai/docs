@@ -45,7 +45,7 @@ The embedded log-manager default is `-1`, but `wippy run` applies its CLI loggin
 
 ### Automatic Context
 
-Logs emitted from Lua via the [logger module](../lua/system/logger.md) automatically include:
+Logs emitted from Lua via the [logger module](lua/system/logger.md) automatically include:
 
 - `pid` - Current process PID
 - `location` - Entry ID and caller line (e.g., `app.api:handler:45`)
@@ -71,7 +71,7 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-For the Lua metrics API, see [Metrics Module](../lua/system/metrics.md).
+For the Lua metrics API, see [Metrics Module](lua/system/metrics.md).
 
 ## OpenTelemetry
 
@@ -208,6 +208,6 @@ These functions return `value, error`. They require the `system.read` permission
 
 ## See Also
 
-- [Logger Module](../lua/system/logger.md) — Lua logging API
-- [Metrics Module](../lua/system/metrics.md) — Lua metrics API
-- [System Module](../lua/system/system.md) — Runtime statistics
+- [Logger Module](lua/system/logger.md) — Lua logging API
+- [Metrics Module](lua/system/metrics.md) — Lua metrics API
+- [System Module](lua/system/system.md) — Runtime statistics

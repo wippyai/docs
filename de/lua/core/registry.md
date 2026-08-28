@@ -208,4 +208,4 @@ end
 | Veralteter Overlay-Snapshot | `errors.CONFLICT` (wiederholbar) |
 | Registry nicht verfügbar | `errors.INTERNAL` |
 
-Siehe [Fehlerbehandlung](./errors.md) für den Umgang mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für den Umgang mit Fehlern.

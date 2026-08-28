@@ -333,6 +333,6 @@ Autorisierungs-Middleware wird auf dem übergeordneten Router und nicht auf dem 
 
 ## Siehe auch
 
-- [Router](./router.md) – Routengruppierung
-- [HTTP-Modul](../lua/http/http.md) – Request-/Response-API
-- [Middleware](./middleware.md) – Request-Verarbeitung
+- [Router](http/router.md) – Routengruppierung
+- [HTTP-Modul](lua/http/http.md) – Request-/Response-API
+- [Middleware](http/middleware.md) – Request-Verarbeitung

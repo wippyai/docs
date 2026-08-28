@@ -240,6 +240,6 @@ end
 
 ## Veja Também
 
-- [Gerenciamento de Processos](process.md) - Criação e comunicação de processos
-- [Fila de Mensagens](../storage/queue.md) - Mensagens baseadas em fila
-- [Funções](funcs.md) - Invocação de funções
+- [Gerenciamento de Processos](lua/core/process.md) - Criação e comunicação de processos
+- [Fila de Mensagens](lua/storage/queue.md) - Mensagens baseadas em fila
+- [Funções](lua/core/funcs.md) - Invocação de funções

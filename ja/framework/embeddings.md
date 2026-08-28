@@ -178,6 +178,6 @@ Migration は `target_db` のデータベースドライバーに適した schem
 
 ## 関連項目
 
-- [LLM](./llm.md) — raw embedding 生成用の `llm.embed(...)`
-- [Migration](./migration.md) — table を用意する migration runner
-- [Framework 概要](./overview.md) — Framework モジュールの使用方法
+- [LLM](framework/llm.md) — raw embedding 生成用の `llm.embed(...)`
+- [Migration](framework/migration.md) — table を用意する migration runner
+- [Framework 概要](framework/overview.md) — Framework モジュールの使用方法

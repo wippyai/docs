@@ -292,9 +292,9 @@ Sin `--embed`, las entradas `fs.directory` se excluyen del paquete publicado. El
 
 ## Véase también
 
-- [Views](./views.md) — Sistema de páginas y componentes
-- [Servidor HTTP](../http/server.md) — Configuración del servicio HTTP
-- [Visión general del framework](./overview.md) — Uso de módulos del framework
+- [Views](framework/views.md) — Sistema de páginas y componentes
+- [Servidor HTTP](http/server.md) — Configuración del servicio HTTP
+- [Visión general del framework](framework/overview.md) — Uso de módulos del framework
 - [Entry point del facade](../frontend/web-host/entry-point.md) — Cómo inicia Web Host el facade
 - [Inyección CSS](../frontend/web-host/css-injection.md) — Cómo llega la tematización a los children
 - [Motores de renderizado](../frontend/web-host/render-engines.md) — Renderizado de páginas con iframe y Web Fragment

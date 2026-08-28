@@ -68,7 +68,7 @@ Prozesse laufen unabhängig mit ihrem eigenen Frame-Kontext und kommunizieren ü
 
 ## Siehe auch
 
-- [Prozess-Modul](../lua/core/process.md) - Prozesse aus Lua starten und verwalten
-- [WASM-Prozesse](../wasm/processes.md) - Konfiguration von `process.wasm`-Einträgen
-- [Prozessmodell](../concepts/process-model.md) - Konzepte zu Lebenszyklus und Supervision
-- [Supervision](../guides/supervision.md) - Aufbau von Supervision-Bäumen
+- [Prozess-Modul](lua/core/process.md) - Prozesse aus Lua starten und verwalten
+- [WASM-Prozesse](wasm/processes.md) - Konfiguration von `process.wasm`-Einträgen
+- [Prozessmodell](concepts/process-model.md) - Konzepte zu Lebenszyklus und Supervision
+- [Supervision](guides/supervision.md) - Aufbau von Supervision-Bäumen

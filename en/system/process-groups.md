@@ -7,7 +7,7 @@ description: "Configure cluster-aware named process groups with decentralized me
 
 A `pg.scope` lets processes join named groups and receive broadcasts addressed to a group. The model follows Erlang/OTP `pg`: groups are created on first join, a process can belong to many groups and join one group multiple times, and each cluster node maintains its own membership state and reconciles with peers over the internode mesh. This page is a configuration and behavior reference; the YAML blocks are entry fragments.
 
-The Lua API is documented in [Process Groups](../lua/core/pg.md); this page covers the scope entry kind and its configuration. See the [Cluster Guide](../guides/cluster.md) for the surrounding membership model.
+The Lua API is documented in [Process Groups](lua/core/pg.md); this page covers the scope entry kind and its configuration. See the [Cluster Guide](guides/cluster.md) for the surrounding membership model.
 
 ## Entry Kind
 
@@ -70,10 +70,10 @@ All fields are optional. The table lists their defaults.
 
 ## Observability
 
-A liveness health check (`pg.broadcast_recent.<scope>`) reports unhealthy if a scope sees no broadcast traffic for an extended period, surfacing a wedged event loop or a persistent partition. See the [Observability Guide](../guides/observability.md).
+A liveness health check (`pg.broadcast_recent.<scope>`) reports unhealthy if a scope sees no broadcast traffic for an extended period, surfacing a wedged event loop or a persistent partition. See the [Observability Guide](guides/observability.md).
 
 ## See Also
 
-- [Process Groups](../lua/core/pg.md) - The Lua API
-- [Cluster](../guides/cluster.md) - Membership and the clustering model
-- [Process Model](../concepts/process-model.md) - Processes, PIDs, and messaging
+- [Process Groups](lua/core/pg.md) - The Lua API
+- [Cluster](guides/cluster.md) - Membership and the clustering model
+- [Process Model](concepts/process-model.md) - Processes, PIDs, and messaging

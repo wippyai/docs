@@ -400,11 +400,11 @@ data:
 
 ## Véase También
 
-- [Facade](./facade.md) — Facade frontend y sidebar de navegación
-- [Template](../system/template.md) — Motor Jet
-- [Seguridad](../system/security.md) — Actores y control de acceso
-- [Entorno](../system/env.md) — Almacenamiento de variables de entorno
-- [Resumen del framework](./overview.md) — Uso del módulo
+- [Facade](framework/facade.md) — Facade frontend y sidebar de navegación
+- [Template](system/template.md) — Motor Jet
+- [Seguridad](system/security.md) — Actores y control de acceso
+- [Entorno](system/env.md) — Almacenamiento de variables de entorno
+- [Resumen del framework](framework/overview.md) — Uso del módulo
 - [Apps micro frontend (`view.page`)](../frontend/frontend-registry/view-page.md) — Metadatos y proxy
 - [Web components (`view.component`)](../frontend/frontend-registry/view-component.md) — Autoload y props
 - [Motores de renderizado](../frontend/web-host/render-engines.md) — Iframe y Web Fragment

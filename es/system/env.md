@@ -194,9 +194,9 @@ Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env<
 
 ## Acceso en Tiempo de Ejecución
 
-- [Módulo env](../lua/system/env.md) - Acceso en tiempo de ejecución Lua
+- [Módulo env](lua/system/env.md) - Acceso en tiempo de ejecución Lua
 
 ## Ver También
 
-- [Modelo de seguridad](./security.md) - Control de acceso para variables de entorno
-- [Guía de configuración](../guides/configuration.md) - Patrones de configuración de aplicaciones
+- [Modelo de seguridad](system/security.md) - Control de acceso para variables de entorno
+- [Guía de configuración](guides/configuration.md) - Patrones de configuración de aplicaciones

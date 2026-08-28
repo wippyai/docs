@@ -193,6 +193,6 @@ unset, the browser falls back to `window.location.origin`.
 
 ## Next Steps
 
-- [Hello World](hello-world.md) — Minimal project layout
-- [Authentication](auth.md) — Add the login flow expected by the shell
-- [HTTP Endpoints](../http/endpoint.md) — Routers, static files, and handlers
+- [Hello World](tutorials/hello-world.md) — Minimal project layout
+- [Authentication](tutorials/auth.md) — Add the login flow expected by the shell
+- [HTTP Endpoints](http/endpoint.md) — Routers, static files, and handlers

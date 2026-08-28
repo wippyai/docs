@@ -394,4 +394,4 @@ local clean = policy:sanitize(dirty)
 |----------|------|------------|
 | Padrão regex inválido | `errors.INVALID` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

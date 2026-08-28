@@ -11,7 +11,7 @@ description: "Publish and observe best-effort runtime and application events."
 The event bus publishes runtime and application activity for monitoring, logging, metrics, and reactive side effects. This page is an API reference; the snippets assume an executable Lua entry with the listed module and permissions.
 
 <note>
-The event bus is a best-effort publish/subscribe channel, not a reliable transport. Do not depend on it for business-critical delivery. Use process messaging (`process.send`), channels, or the [message queue](../storage/queue.md) when delivery is part of application correctness.
+The event bus is a best-effort publish/subscribe channel, not a reliable transport. Do not depend on it for business-critical delivery. Use process messaging (`process.send`), channels, or the [message queue](lua/storage/queue.md) when delivery is part of application correctness.
 </note>
 
 ## Loading
@@ -139,4 +139,4 @@ Closing is idempotent. After the channel is closed, `receive()` returns
 | Policy denied | `errors.INVALID` | no |
 | Missing execution or process context | `errors.INTERNAL` | no |
 
-See [Error Handling](./errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

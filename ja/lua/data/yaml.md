@@ -166,4 +166,4 @@ print(type(data.tags))     -- "table"
 | 空文字列（decode） | `errors.INVALID` | いいえ |
 | 無効なYAML構文 | `errors.INTERNAL` | いいえ |
 
-エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

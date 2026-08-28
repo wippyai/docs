@@ -118,6 +118,6 @@ LSP サーバーはコードエントリのインデックスを維持します�
 
 ## 関連項目
 
-- [リンター](./linter.md) — CLI ベースのコードチェック
-- [型](../lua/types.md) — 型システムのドキュメント
-- [設定](./configuration.md) — ランタイム設定
+- [リンター](guides/linter.md) — CLI ベースのコードチェック
+- [型](lua/types.md) — 型システムのドキュメント
+- [設定](guides/configuration.md) — ランタイム設定

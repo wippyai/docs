@@ -13,7 +13,7 @@ Das Modul `exec` startet externe Programme und stellt deren Ein- und Ausgabe, Le
 
 Der Executor zerlegt eine Befehlszeichenkette in Programm und Argumente; er startet keine Shell. Shell-Operatoren wie Pipes, Umleitungen, Variablenexpansion und Command-Substitution werden nicht interpretiert. Ein ausführbares Skript kann nur direkt gestartet werden, wenn Backend und Betriebssystem dies unterstützen.
 
-Konfigurieren Sie vor diesen Beispielen eine Executor-Ressource und deren Befehls-Allowlist wie unter [Executor](../../system/exec.md) beschrieben. Gewähren Sie `exec.get` und `exec.run` für die tatsächlich verwendeten Ressourcen. Die Beispiele verwenden Unix-Befehle und -Pfade; ersetzen Sie sie durch auf dem Executor-Host verfügbare Befehle.
+Konfigurieren Sie vor diesen Beispielen eine Executor-Ressource und deren Befehls-Allowlist wie unter [Executor](system/exec.md) beschrieben. Gewähren Sie `exec.get` und `exec.run` für die tatsächlich verwendeten Ressourcen. Die Beispiele verwenden Unix-Befehle und -Pfade; ersetzen Sie sie durch auf dem Executor-Host verfügbare Befehle.
 
 ## Laden
 
@@ -300,4 +300,4 @@ Exec-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 In Runtime v0.3.32a verwenden verweigerte Richtlinien für `exec.get` und `exec.run` den Fehler `errors.INVALID`, nicht `errors.PERMISSION_DENIED`.
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

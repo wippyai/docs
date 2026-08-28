@@ -20,7 +20,7 @@ comandos. Solo puede lanzar directamente un script ejecutable cuando lo admiten 
 backend y el sistema operativo seleccionados.
 
 Antes de usar los ejemplos, configura un recurso executor y su allowlist como explica
-[Executor](../../system/exec.md), y concede `exec.get` y `exec.run` para los recursos
+[Executor](system/exec.md), y concede `exec.get` y `exec.run` para los recursos
 exactos. Los ejemplos usan comandos y rutas Unix; sustitúyelos por otros disponibles
 en el host del executor.
 
@@ -325,4 +325,4 @@ Las operaciones de exec estan sujetas a evaluacion de politica de seguridad.
 En el runtime v0.3.32a, las denegaciones de política de `exec.get` y `exec.run` usan
 `errors.INVALID`, no `errors.PERMISSION_DENIED`.
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

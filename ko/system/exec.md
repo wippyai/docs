@@ -106,7 +106,7 @@ allowlist를 생략하거나 비워 두면 security policy를 통과한 모든 c
 
 ## Lua API
 
-[Exec 모듈](../lua/dynamic/exec.md)은 command execution을 제공합니다.
+[Exec 모듈](lua/dynamic/exec.md)은 command execution을 제공합니다.
 
 ```lua
 local exec = require("exec")
@@ -162,6 +162,6 @@ return table.concat(chunks), exit_code
 
 ## 참고
 
-- [Exec 모듈](../lua/dynamic/exec.md) - Lua API reference
-- [프로세스 호스트](./process-host.md) - Wippy process를 실행하는 host
-- [파일시스템](./filesystem.md) - work directory로 사용하는 filesystem entry
+- [Exec 모듈](lua/dynamic/exec.md) - Lua API reference
+- [프로세스 호스트](system/process-host.md) - Wippy process를 실행하는 host
+- [파일시스템](system/filesystem.md) - work directory로 사용하는 filesystem entry

@@ -261,5 +261,5 @@ Channel operations:
 
 ## Next Steps
 
-- [Channel Module Reference](../lua/core/channel.md) — Channel API documentation
-- [Processes](processes.md) — Inter-process communication
+- [Channel Module Reference](lua/core/channel.md) — Channel API documentation
+- [Processes](tutorials/processes.md) — Inter-process communication

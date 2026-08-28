@@ -13,7 +13,7 @@ O módulo `store` fornece armazenamento key-value com TTL opcional. Ele pode man
 
 Esta página é uma referência de API. Os exemplos pressupõem um store configurado, as permissões listadas abaixo e valores fornecidos pela aplicação, como `owner` ou `new_value`. Depois da aquisição, os exemplos usam um handle `cache` ativo já existente e não são funções independentes.
 
-Para configurar o store, veja [Store](../../system/store.md).
+Para configurar o store, veja [Store](system/store.md).
 
 ## Carregamento
 
@@ -299,4 +299,4 @@ Falhas de entrada, lookup, backend e capacidades retornam erros estruturados; in
 | Divergência de `if_version` | `errors.CONFLICT` | sim |
 | Escrita condicional em store sem suporte | `errors.INVALID` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

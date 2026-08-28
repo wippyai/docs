@@ -203,4 +203,4 @@ print(result.computed_value)
 | 트랜스코딩 실패 | `errors.INTERNAL` | 아니요 |
 | 결과가 유효한 Lua 값이 아님 | `errors.INTERNAL` | 아니요 |
 
-오류 작업 방법은 [오류 처리](../core/errors.md)를 참고하세요.
+오류 작업 방법은 [오류 처리](lua/core/errors.md)를 참고하세요.

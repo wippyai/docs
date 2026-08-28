@@ -208,4 +208,4 @@ end
 | 오래된 오버레이 스냅샷 | `errors.CONFLICT` (재시도 가능) |
 | 레지스트리 사용 불가 | `errors.INTERNAL` |
 
-오류 작업 방법은 [오류 처리](./errors.md)를 참고하세요.
+오류 작업 방법은 [오류 처리](lua/core/errors.md)를 참고하세요.

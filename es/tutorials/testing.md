@@ -225,6 +225,6 @@ el proyecto desechable.
 
 ## Siguientes pasos
 
-- [Hello World](hello-world.md) — Disposición mínima de un proyecto
-- [Tipos de entrada](../guides/entry-kinds.md) — `function.lua`, `library.lua` y entradas relacionadas
-- [Framework de pruebas](../framework/testing.md) — Referencia del runner y del protocolo de eventos
+- [Hello World](tutorials/hello-world.md) — Disposición mínima de un proyecto
+- [Tipos de entrada](guides/entry-kinds.md) — `function.lua`, `library.lua` y entradas relacionadas
+- [Framework de pruebas](framework/testing.md) — Referencia del runner y del protocolo de eventos

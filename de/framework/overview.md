@@ -87,6 +87,6 @@ wippy search wippy
 
 ## Siehe auch
 
-- [Abhängigkeitsverwaltung](../guides/dependency-management.md) — Lock-Dateien und Versionsbeschränkungen
-- [Veröffentlichen](../guides/publishing.md) — Ein Modul veröffentlichen
-- [CLI-Referenz](../guides/cli.md) — Befehle zur Modulverwaltung
+- [Abhängigkeitsverwaltung](guides/dependency-management.md) — Lock-Dateien und Versionsbeschränkungen
+- [Veröffentlichen](guides/publishing.md) — Ein Modul veröffentlichen
+- [CLI-Referenz](guides/cli.md) — Befehle zur Modulverwaltung

@@ -206,6 +206,6 @@ Consulte [Temporal](https://temporal.io) para infraestructura de flujos de traba
 
 ## Véase también :id=see-also
 
-- [Funciones](./functions.md) — Llamadas con ámbito de solicitud
-- [Modelo de procesos](./process-model.md) — Trabajo en segundo plano con estado
-- [Supervisión](../guides/supervision.md) — Políticas de reinicio de procesos
+- [Funciones](concepts/functions.md) — Llamadas con ámbito de solicitud
+- [Modelo de procesos](concepts/process-model.md) — Trabajo en segundo plano con estado
+- [Supervisión](guides/supervision.md) — Políticas de reinicio de procesos

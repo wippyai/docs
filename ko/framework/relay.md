@@ -7,7 +7,7 @@ description: "Wippy Relay 허브, WebSocket 클라이언트, 접두사 기반 �
 
 `wippy/relay` 모듈은 중앙 허브와 사용자별 허브를 통해 WebSocket 연결을 라우팅합니다. 사용자 허브는 클라이언트 연결을 관리하고 접두사 기반 플러그인에 메시지를 전달합니다.
 
-이 페이지는 독립 실행형 WebSocket 애플리케이션이 아니라 부분 통합 레시피이자 프로토콜 레퍼런스입니다. 설정과 플러그인 블록은 기존 Wippy 프로젝트, 구성된 `user_security_scope`의 실제 보안 스코프, [WebSocket 릴레이](../http/websocket-relay.md)에 설명된 대로 릴레이에 연결된 HTTP WebSocket 엔드포인트를 전제로 합니다. 프로토콜 페이로드와 수명주기 블록은 레퍼런스 형태입니다.
+이 페이지는 독립 실행형 WebSocket 애플리케이션이 아니라 부분 통합 레시피이자 프로토콜 레퍼런스입니다. 설정과 플러그인 블록은 기존 Wippy 프로젝트, 구성된 `user_security_scope`의 실제 보안 스코프, [WebSocket 릴레이](http/websocket-relay.md)에 설명된 대로 릴레이에 연결된 HTTP WebSocket 엔드포인트를 전제로 합니다. 프로토콜 페이로드와 수명주기 블록은 레퍼런스 형태입니다.
 
 ## 아키텍처
 
@@ -279,6 +279,6 @@ GC 확인 간격은 자동으로 계산됩니다: `inactivity_timeout / 2.5`.
 ## 참고
 
 - [WebSocket 릴레이](../http/websocket-relay.md) — HTTP WebSocket 엔드포인트 설정
-- [프로세스 모델](../concepts/process-model.md) — 프로세스 수명주기와 메시징
-- [보안](../system/security.md) — 보안 액터와 스코프
-- [프레임워크 개요](./overview.md) — 프레임워크 모듈 설치와 가져오기
+- [프로세스 모델](concepts/process-model.md) — 프로세스 수명주기와 메시징
+- [보안](system/security.md) — 보안 액터와 스코프
+- [프레임워크 개요](framework/overview.md) — 프레임워크 모듈 설치와 가져오기

@@ -317,7 +317,7 @@ if publish_err then return nil, publish_err end
 return published
 ```
 
-Lua の発行 API とメッセージ API については、[キューモジュール](../lua/storage/queue.md)を参照してください。
+Lua の発行 API とメッセージ API については、[キューモジュール](lua/storage/queue.md)を参照してください。
 
 ## グレースフルシャットダウン
 
@@ -330,6 +330,6 @@ Lua の発行 API とメッセージ API については、[キューモジュ�
 
 ## 関連項目
 
-- [キューモジュール](../lua/storage/queue.md) - Lua API リファレンス
-- [キューコンシューマーガイド](../guides/queue-consumers.md) - コンシューマーのパターンとワーカープール
-- [スーパービジョン](../guides/supervision.md) - コンシューマーのライフサイクル管理
+- [キューモジュール](lua/storage/queue.md) - Lua API リファレンス
+- [キューコンシューマーガイド](guides/queue-consumers.md) - コンシューマーのパターンとワーカープール
+- [スーパービジョン](guides/supervision.md) - コンシューマーのライフサイクル管理

@@ -39,7 +39,7 @@ Un `http.service` posee un listener y aloja routers, endpoints y handlers de arc
 | `timeouts.idle` | duration | - | Timeout de conexión keep-alive |
 | `host.buffer_size` | int | 1024 | Tamaño del buffer del relay de mensajes |
 | `host.worker_count` | int | NumCPU | Workers del relay de mensajes |
-| `network` | ID de Registro | - | Vincula el listener a través de una [red superpuesta](../system/network.md) (p. ej., Tailscale o I2P) |
+| `network` | ID de Registro | - | Vincula el listener a través de una [red superpuesta](system/network.md) (p. ej., Tailscale o I2P) |
 | `tls` | object | - | Terminación TLS (ver [TLS](#tls)) |
 
 ## Timeouts
@@ -94,7 +94,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Esto establece un actor y políticas de base para todas las solicitudes. Para las solicitudes autenticadas, el [middleware token_auth](./middleware.md) sustituye el actor según el token validado, lo que permite políticas de seguridad por usuario.
+Esto establece un actor y políticas de base para todas las solicitudes. Para las solicitudes autenticadas, el [middleware token_auth](http/middleware.md) sustituye el actor según el token validado, lo que permite políticas de seguridad por usuario.
 
 ## Lifecycle
 
@@ -173,7 +173,7 @@ Con `mode: manual`, `cert` y `key` contienen datos PEM. Proporcione ese contenid
 
 1. **PEM en línea** — la cadena PEM literal.
 2. **Referencia `file://`** — ruta relativa al manifiesto, resuelta e insertada al cargar de forma segura frente a traversal.
-3. **Referencia al registro de entorno** — obtiene el PEM de una [variable de entorno](../system/env.md) registrada al decodificar, mediante un marcador `${env:NAME}`.
+3. **Referencia al registro de entorno** — obtiene el PEM de una [variable de entorno](system/env.md) registrada al decodificar, mediante un marcador `${env:NAME}`.
 
 ```yaml
 - name: api
@@ -230,8 +230,8 @@ tls:
 
 ## Véase también
 
-- [Enrutamiento](./router.md) - Routers y endpoints
-- [Archivos estáticos](./static.md) - Servicio de archivos estáticos
-- [Middleware](./middleware.md) - Middleware disponible
-- [Seguridad](../system/security.md) - Políticas de seguridad
-- [Relay WebSocket](./websocket-relay.md) - Mensajería WebSocket
+- [Enrutamiento](http/router.md) - Routers y endpoints
+- [Archivos estáticos](http/static.md) - Servicio de archivos estáticos
+- [Middleware](http/middleware.md) - Middleware disponible
+- [Seguridad](system/security.md) - Políticas de seguridad
+- [Relay WebSocket](http/websocket-relay.md) - Mensajería WebSocket

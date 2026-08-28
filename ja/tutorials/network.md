@@ -260,7 +260,7 @@ network_service:
 
 ## 次のステップ
 
-- [ネットワークシステム](../system/network.md) — エントリ種別リファレンス
-- [HTTPクライアント](../lua/http/client.md) — 呼び出しごとのオーバーレイオプション
-- [セキュリティモデル](../system/security.md) — ポリシーとスコープ
-- [認証](auth.md) — トークンベースのセキュリティ
+- [ネットワークシステム](system/network.md) — エントリ種別リファレンス
+- [HTTPクライアント](lua/http/client.md) — 呼び出しごとのオーバーレイオプション
+- [セキュリティモデル](system/security.md) — ポリシーとスコープ
+- [認証](tutorials/auth.md) — トークンベースのセキュリティ

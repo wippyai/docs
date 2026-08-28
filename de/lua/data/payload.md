@@ -203,4 +203,4 @@ Dieses Beispiel setzt voraus, dass `app.process:compute` genau einen Wert zurüc
 | Transkodierung fehlgeschlagen | `errors.INTERNAL` | nein |
 | Ergebnis ist kein gültiger Lua-Wert | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

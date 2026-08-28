@@ -166,4 +166,4 @@ print(type(data.tags))     -- "table"
 | Cadena vacía (decode) | `errors.INVALID` | no |
 | Sintaxis YAML no válida | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

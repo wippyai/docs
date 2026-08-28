@@ -13,7 +13,7 @@ El módulo `queue` publica mensajes y procesa entregas de colas distribuidas con
 
 Esta página es una referencia de API. Los fragmentos de publicación presuponen que las entradas de cola y los permisos ya existen. La sección de consumidor es una receta parcial para un handler invocado por `queue.consumer`; no es un despliegue de cola independiente.
 
-Para configurar colas, consulta [Cola](../../system/queue.md).
+Para configurar colas, consulta [Cola](system/queue.md).
 
 ## Carga
 
@@ -167,12 +167,12 @@ Ambos permisos se verifican: primero el permiso general, luego el específico de
 | Error de publicación | `errors.INTERNAL` | no |
 | No se encontró la cola o el driver para `info` | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
 ## Véase también
 
-- [Configuración de colas](../../system/queue.md) - Drivers de cola y definiciones de entradas
-- [Guía de consumidores de cola](../../guides/queue-consumers.md) - Patrones de consumidor y pools de workers
-- [Gestión de procesos](../core/process.md) - Creación y comunicación de procesos
-- [Canales](../core/channel.md) - Patrones de comunicación entre procesos
-- [Funciones](../core/funcs.md) - Invocación asíncrona de funciones
+- [Configuración de colas](system/queue.md) - Drivers de cola y definiciones de entradas
+- [Guía de consumidores de cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
+- [Gestión de procesos](lua/core/process.md) - Creación y comunicación de procesos
+- [Canales](lua/core/channel.md) - Patrones de comunicación entre procesos
+- [Funciones](lua/core/funcs.md) - Invocación asíncrona de funciones

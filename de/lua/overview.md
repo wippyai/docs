@@ -32,7 +32,7 @@ if send_err then
 end
 ```
 
-Ausführbare Lua-Einträge erhalten `process` als ambienten globalen Wert. Das Modul lässt sich auch mit `require("process")` laden, ohne es in die `modules`-Liste des Eintrags aufzunehmen. Siehe [Prozessverwaltung](core/process.md) für Spawning, Linking und Überwachung.
+Ausführbare Lua-Einträge erhalten `process` als ambienten globalen Wert. Das Modul lässt sich auch mit `require("process")` laden, ohne es in die `modules`-Liste des Eintrags aufzunehmen. Siehe [Prozessverwaltung](lua/core/process.md) für Spawning, Linking und Überwachung.
 
 ## Channels
 
@@ -46,7 +46,7 @@ buffered:send("work")           -- completes while buffer space is available
 local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-Siehe [Channels](core/channel.md) für Select und Muster.
+Siehe [Channels](lua/core/channel.md) für Select und Muster.
 
 ## Coroutinen
 
@@ -104,17 +104,17 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Verfügbare Module hängen von der Eintragskonfiguration ab. Siehe [Eintragsdefinitionen](entries.md).
+Verfügbare Module hängen von der Eintragskonfiguration ab. Siehe [Eintragsdefinitionen](lua/entries.md).
 
 Registry-Bibliotheken verwenden dieselbe Syntax `require("alias")`, werden aber separat in der `imports:`-Map des Eintrags deklariert.
 
 ## Sprach- und Bibliotheksunterstützung
 
-Wippy verwendet Lua-5.3-Syntax mit einem von Luau inspirierten [graduellen Typsystem](types.md). Typen sind erstklassige Runtime-Werte, die sich zur Validierung verwenden, als Argumente übergeben und zur Laufzeit untersuchen lassen.
+Wippy verwendet Lua-5.3-Syntax mit einem von Luau inspirierten [graduellen Typsystem](lua/types.md). Typen sind erstklassige Runtime-Werte, die sich zur Validierung verwenden, als Argumente übergeben und zur Laufzeit untersuchen lassen.
 
 Externe Lua-Bibliotheken (LuaRocks usw.) werden nicht unterstützt. Die Runtime stellt ihr eigenes Modulsystem mit integrierten Erweiterungen für E/A, Netzwerk und Systemintegration bereit.
 
-Benutzerdefinierte Erweiterungen behandelt [Module](../internals/modules.md) in der Internals-Dokumentation.
+Benutzerdefinierte Erweiterungen behandelt [Module](internals/modules.md) in der Internals-Dokumentation.
 
 ## Fehlerbehandlung
 
@@ -127,11 +127,11 @@ if err then
 end
 ```
 
-Dieses Snippet setzt voraus, dass `json` in der `modules`-Liste des Eintrags aktiviert ist und `input` den zu dekodierenden String enthält. Siehe [Fehlerbehandlung](core/errors.md) für Muster.
+Dieses Snippet setzt voraus, dass `json` in der `modules`-Liste des Eintrags aktiviert ist und `input` den zu dekodierenden String enthält. Siehe [Fehlerbehandlung](lua/core/errors.md) für Muster.
 
 ## Nächste Schritte
 
-- [Eintragsdefinitionen](entries.md) - Einstiegspunkte konfigurieren
-- [Channels](core/channel.md) - Channel-Muster
-- [Prozessverwaltung](core/process.md) - Spawning und Überwachung
-- [Funktionen](core/funcs.md) - Prozessübergreifende Aufrufe
+- [Eintragsdefinitionen](lua/entries.md) - Einstiegspunkte konfigurieren
+- [Channels](lua/core/channel.md) - Channel-Muster
+- [Prozessverwaltung](lua/core/process.md) - Spawning und Überwachung
+- [Funktionen](lua/core/funcs.md) - Prozessübergreifende Aufrufe

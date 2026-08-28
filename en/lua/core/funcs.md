@@ -378,4 +378,4 @@ Function operations are subject to security policy evaluation.
 | Async start dispatch failed | `errors.INTERNAL` | no |
 | Function error | varies | varies |
 
-See [Error Handling](./errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

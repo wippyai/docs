@@ -12,7 +12,7 @@ Das Modul `http` liest die aktuelle serverseitige Anfrage und erstellt ihre Resp
 
 Diese Seite ist eine API-Referenz mit Teilrezepten für Handler. Namen wie `id`, `data`, `token` und Anwendungs-Callbacks stammen aus dem umgebenden Handler. Request-Accessors liefern im Allgemeinen `value, error`, Response-Mutationen `error`; Beispiele, die ein Ergebnis verwenden, prüfen diese Fehler.
 
-Zur Serverkonfiguration siehe [HTTP-Server](../../http/server.md).
+Zur Serverkonfiguration siehe [HTTP-Server](http/server.md).
 
 ## Laden
 
@@ -646,7 +646,7 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | Header bereits gesendet | `errors.INVALID` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 Fügen Sie `http` zur Liste `modules:` des ausführbaren Eintrags hinzu, bevor Sie es per `require` laden. Beispiele mit `uuid`, `fs` oder `time` erfordern diese Module separat.
 
 `body()`, `body_json()`, `stream()` und `parse_multipart()` verbrauchen denselben Request-Body. Wählen Sie pro Handler genau einen Lesepfad. `body()` und `body_json()` wenden Timeout und Größenlimit des Request-Objekts an; `stream()` liest inkrementell und verwendet diese beiden Optionen nicht.

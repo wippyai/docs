@@ -162,6 +162,6 @@ A URL base da API e a URL WebSocket são derivadas em runtime de `PUBLIC_API_URL
 
 ## Próximos Passos
 
-- [Hello World](hello-world.md) — Estrutura mínima do projeto
-- [Autenticação](auth.md) — Adicione o login esperado pelo shell
-- [Endpoints HTTP](../http/endpoint.md) — Routers, arquivos estáticos e handlers
+- [Hello World](tutorials/hello-world.md) — Estrutura mínima do projeto
+- [Autenticação](tutorials/auth.md) — Adicione o login esperado pelo shell
+- [Endpoints HTTP](http/endpoint.md) — Routers, arquivos estáticos e handlers

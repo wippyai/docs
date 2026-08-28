@@ -240,4 +240,4 @@ El resultado es `false` cuando las longitudes difieren. La garantía de comparac
 | Descifrado fallido | `errors.INTERNAL` | no |
 | Token expirado | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

@@ -42,7 +42,7 @@ Skripte, die auf einem Terminal-Host laufen, erhalten einen Terminal-Kontext mit
 
 ## Lua-API
 
-Das [IO-Modul](../lua/system/io.md) bietet Terminal-Operationen:
+Das [IO-Modul](lua/system/io.md) bietet Terminal-Operationen:
 
 ```lua
 local io = require("io")
@@ -63,5 +63,5 @@ local args = io.args()
 
 ## Siehe auch
 
-- [Terminal I/O](../lua/system/io.md) — stdin/stdout/stderr-Operationen
-- [TTY](../lua/system/tty.md) — Rohe Eingabeereignisse, Styles und Layout
+- [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr-Operationen
+- [TTY](lua/system/tty.md) — Rohe Eingabeereignisse, Styles und Layout

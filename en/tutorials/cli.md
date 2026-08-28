@@ -349,6 +349,6 @@ end
 
 ## Next Steps
 
-- [I/O Module](../lua/system/io.md) — I/O API reference
-- [System Module](../lua/system/system.md) — Runtime and system information
-- [Echo Service](echo-service.md) — Build a multi-process application
+- [I/O Module](lua/system/io.md) — I/O API reference
+- [System Module](lua/system/system.md) — Runtime and system information
+- [Echo Service](tutorials/echo-service.md) — Build a multi-process application

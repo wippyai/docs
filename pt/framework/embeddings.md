@@ -178,6 +178,6 @@ A migração cria o esquema apropriado para o driver do banco em `target_db`:
 
 ## Consulte também
 
-- [LLM](./llm.md) — `llm.embed(...)` para geração direta de embeddings
-- [Migrações](./migration.md) — Executor de migrações que provisiona a tabela
-- [Visão geral do framework](./overview.md) — Uso dos módulos do framework
+- [LLM](framework/llm.md) — `llm.embed(...)` para geração direta de embeddings
+- [Migrações](framework/migration.md) — Executor de migrações que provisiona a tabela
+- [Visão geral do framework](framework/overview.md) — Uso dos módulos do framework

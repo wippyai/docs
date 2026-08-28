@@ -7,7 +7,7 @@ description: "レジストリグラフが成長しても構成可能・テスト
 
 Wippy application は、source file で表現された**registry entry の graph**です。コードは `function.lua` や `process.lua` などの entry に置かれ、`_index.yaml` file が function、route、service、library の接続を宣言します。application structure は、その graph が成長しても構成可能、test 可能、boot 可能であり続けるよう、namespace への分割方法を決定します。
 
-このページでは、その graph を整理する方法の 1 つを説明します。file format、命名、`_index.yaml` の配置については [YAML とプロジェクト構造](../start/structure.md)、entry definition については[エントリ種別ガイド](../guides/entry-kinds.md)を参照してください。
+このページでは、その graph を整理する方法の 1 つを説明します。file format、命名、`_index.yaml` の配置については [YAML とプロジェクト構造](start/structure.md)、entry definition については[エントリ種別ガイド](guides/entry-kinds.md)を参照してください。
 
 ## 機能スライス :id=feature-slices
 
@@ -87,7 +87,7 @@ Lua entry は非 ambient module を `modules:`、registry-backed dependency を 
 
 slice が**管理外の host に利用される**かどうかで選びます。再利用可能な component には requirement interface が必要です。internal slice は application infrastructure を直接参照できます。再利用に応じて packaging は変わりますが、内部 layering は同じままにできます。
 
-requirement/dependency mechanism は[コンポーネントの構築](../guides/components.md)、lock file は[依存関係管理](../guides/dependency-management.md)を参照してください。
+requirement/dependency mechanism は[コンポーネントの構築](guides/components.md)、lock file は[依存関係管理](guides/dependency-management.md)を参照してください。
 
 ## この形を使う理由 :id=why-this-shape
 
@@ -103,9 +103,9 @@ requirement/dependency mechanism は[コンポーネントの構築](../guides/c
 
 ## 関連項目 :id=see-also
 
-- [YAML とプロジェクト構造](../start/structure.md) — file format、命名、namespace
-- [コンポーネントの構築](../guides/components.md) — `ns.definition`、`ns.requirement`、mount
-- [依存関係管理](../guides/dependency-management.md) — lock file、module の利用
-- [レジストリ](./registry.md) — entry の保存と resolve
-- [エントリ種別ガイド](../guides/entry-kinds.md) — すべての entry kind
-- [プロセスモデル](./process-model.md) — service、supervision、host
+- [YAML とプロジェクト構造](start/structure.md) — file format、命名、namespace
+- [コンポーネントの構築](guides/components.md) — `ns.definition`、`ns.requirement`、mount
+- [依存関係管理](guides/dependency-management.md) — lock file、module の利用
+- [レジストリ](concepts/registry.md) — entry の保存と resolve
+- [エントリ種別ガイド](guides/entry-kinds.md) — すべての entry kind
+- [プロセスモデル](concepts/process-model.md) — service、supervision、host

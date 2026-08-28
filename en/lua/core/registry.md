@@ -208,4 +208,4 @@ end
 | Stale overlay snapshot | `errors.CONFLICT` (retryable) |
 | Registry not available | `errors.INTERNAL` |
 
-See [Error Handling](./errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

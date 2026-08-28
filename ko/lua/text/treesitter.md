@@ -550,7 +550,7 @@ local field_id = lang:field_id_for_name("name")
 
 이미 닫힌 파서, 트리, 쿼리 또는 커서를 다시 닫아도 안전합니다. 닫힌 핸들에서 다른 메서드를 호출하면 Lua 인자 오류가 발생합니다.
 
-오류 처리 방법은 [오류 처리](../core/errors.md)를 참조하세요.
+오류 처리 방법은 [오류 처리](lua/core/errors.md)를 참조하세요.
 
 ## 쿼리 구문 레퍼런스
 

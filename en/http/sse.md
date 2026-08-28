@@ -43,7 +43,7 @@ Direct streaming is suitable for short-lived request-response flows like progres
 
 ## SSE Relay
 
-The SSE Relay middleware creates long-lived SSE streams backed by processes. It follows the same relay pattern as [WebSocket Relay](./websocket-relay.md).
+The SSE Relay middleware creates long-lived SSE streams backed by processes. It follows the same relay pattern as [WebSocket Relay](http/websocket-relay.md).
 
 ### How It Works
 
@@ -267,6 +267,6 @@ When the target changes, the relay first monitors and sends `sse.join` to the ne
 
 ## See Also
 
-- [Middleware](./middleware.md) — Middleware configuration
-- [WebSocket Relay](./websocket-relay.md) — WebSocket equivalent
-- [Process](../lua/core/process.md) — Process messaging
+- [Middleware](http/middleware.md) — Middleware configuration
+- [WebSocket Relay](http/websocket-relay.md) — WebSocket equivalent
+- [Process](lua/core/process.md) — Process messaging

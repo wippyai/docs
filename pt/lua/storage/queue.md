@@ -13,7 +13,7 @@ O módulo `queue` publica mensagens e processa entregas de filas distribuídas c
 
 Esta página é uma referência de API. Os exemplos de publicação pressupõem que as entradas e permissões já existam. A seção de consumer é uma receita parcial para um handler invocado por `queue.consumer`, não um deployment de fila independente.
 
-Para configurar a fila, veja [Fila](../../system/queue.md).
+Para configurar a fila, veja [Fila](system/queue.md).
 
 ## Carregamento
 
@@ -167,12 +167,12 @@ Ambas as permissões sao verificadas: primeiro a permissão geral, depois a espe
 | Publicação falhou | `errors.INTERNAL` | não |
 | Fila ou driver não encontrado por `info` | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Configuração de Filas](../../system/queue.md) - Drivers de fila e definições de entrada
-- [Guia de Consumidores de Fila](../../guides/queue-consumers.md) - Padrões de consumer e pools de workers
-- [Gerenciamento de Processos](../core/process.md) - Criação de processos e comunicação
-- [Channels](../core/channel.md) - Padrões de comunicação entre processos
-- [Funções](../core/funcs.md) - Invocação de funções assíncronas
+- [Configuração de Filas](system/queue.md) - Drivers de fila e definições de entrada
+- [Guia de Consumidores de Fila](guides/queue-consumers.md) - Padrões de consumer e pools de workers
+- [Gerenciamento de Processos](lua/core/process.md) - Criação de processos e comunicação
+- [Channels](lua/core/channel.md) - Padrões de comunicação entre processos
+- [Funções](lua/core/funcs.md) - Invocação de funções assíncronas

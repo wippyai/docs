@@ -486,7 +486,7 @@ as linhas concluídas sobrevivem a reinicializações em `data/tasks.db`.
 
 ## Próximos Passos
 
-- [Módulo HTTP](../lua/http/http.md) — Tratamento de solicitações e respostas
-- [Módulo Queue](../lua/storage/queue.md) — Operações de fila de mensagens
-- [Módulo SQL](../lua/storage/sql.md) — Acesso ao banco de dados
-- [Consumidores de Fila](../guides/queue-consumers.md) — Configuração de filas
+- [Módulo HTTP](lua/http/http.md) — Tratamento de solicitações e respostas
+- [Módulo Queue](lua/storage/queue.md) — Operações de fila de mensagens
+- [Módulo SQL](lua/storage/sql.md) — Acesso ao banco de dados
+- [Consumidores de Fila](guides/queue-consumers.md) — Configuração de filas

@@ -7,7 +7,7 @@ description: "분산 멤버십, broadcast, monitoring 및 reconciliation을 제�
 
 `pg.scope`를 사용하면 프로세스가 named group에 join하고 group으로 전송된 broadcast를 받을 수 있습니다. 모델은 Erlang/OTP `pg`를 따릅니다. group은 첫 join에서 생성되고, 프로세스는 여러 group에 속하거나 같은 group에 여러 번 join할 수 있으며, 각 cluster node는 자체 membership state를 유지하고 internode mesh를 통해 peer와 reconcile합니다. 이 페이지는 설정 및 동작 레퍼런스이며 YAML 블록은 entry fragment입니다.
 
-Lua API는 [프로세스 그룹](../lua/core/pg.md)에 문서화되어 있습니다. 이 페이지는 scope entry kind와 설정을 다룹니다. 주변 membership model은 [클러스터 가이드](../guides/cluster.md)를 참조하십시오.
+Lua API는 [프로세스 그룹](lua/core/pg.md)에 문서화되어 있습니다. 이 페이지는 scope entry kind와 설정을 다룹니다. 주변 membership model은 [클러스터 가이드](guides/cluster.md)를 참조하십시오.
 
 ## 엔트리 종류
 
@@ -70,10 +70,10 @@ Lua API는 [프로세스 그룹](../lua/core/pg.md)에 문서화되어 있습니
 
 ## 관측성
 
-활성 상태 health check(`pg.broadcast_recent.<scope>`)는 scope가 장기간 broadcast traffic을 보지 못하면 unhealthy를 보고하여 막힌 event loop나 지속적인 partition을 표시합니다. [관측성 가이드](../guides/observability.md)를 참조하십시오.
+활성 상태 health check(`pg.broadcast_recent.<scope>`)는 scope가 장기간 broadcast traffic을 보지 못하면 unhealthy를 보고하여 막힌 event loop나 지속적인 partition을 표시합니다. [관측성 가이드](guides/observability.md)를 참조하십시오.
 
 ## 참고
 
-- [프로세스 그룹](../lua/core/pg.md) - Lua API
-- [클러스터](../guides/cluster.md) - 멤버십과 클러스터링 모델
-- [프로세스 모델](../concepts/process-model.md) - 프로세스, PID 및 메시징
+- [프로세스 그룹](lua/core/pg.md) - Lua API
+- [클러스터](guides/cluster.md) - 멤버십과 클러스터링 모델
+- [프로세스 모델](concepts/process-model.md) - 프로세스, PID 및 메시징

@@ -145,4 +145,4 @@ return recorded
 
 Los nombres o valores de tipo no válido generan errores de argumentos Lua en lugar de devolver errores estructurados.
 
-Consulte [Manejo de Errores](../core/errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

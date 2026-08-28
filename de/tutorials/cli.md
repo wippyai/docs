@@ -351,6 +351,6 @@ end
 
 ## Nächste Schritte
 
-- [I/O-Modul](../lua/system/io.md) — Referenz der I/O-API
-- [Systemmodul](../lua/system/system.md) — Runtime- und Systeminformationen
-- [Echo-Service](echo-service.md) — Eine Anwendung mit mehreren Prozessen bauen
+- [I/O-Modul](lua/system/io.md) — Referenz der I/O-API
+- [Systemmodul](lua/system/system.md) — Runtime- und Systeminformationen
+- [Echo-Service](tutorials/echo-service.md) — Eine Anwendung mit mehreren Prozessen bauen

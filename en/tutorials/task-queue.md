@@ -484,7 +484,7 @@ non-durable, but completed rows survive restarts in `data/tasks.db`.
 
 ## Next Steps
 
-- [HTTP Module](../lua/http/http.md) — Request and response handling
-- [Queue Module](../lua/storage/queue.md) — Message queue operations
-- [SQL Module](../lua/storage/sql.md) — Database access
-- [Queue Consumers](../guides/queue-consumers.md) — Queue configuration
+- [HTTP Module](lua/http/http.md) — Request and response handling
+- [Queue Module](lua/storage/queue.md) — Message queue operations
+- [SQL Module](lua/storage/sql.md) — Database access
+- [Queue Consumers](guides/queue-consumers.md) — Queue configuration

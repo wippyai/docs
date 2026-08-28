@@ -121,4 +121,4 @@ if err then return nil, err end
 | 無効なbase64文字 | `errors.INVALID` | いいえ |
 | 破損したパディング | `errors.INVALID` | いいえ |
 
-エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

@@ -255,6 +255,6 @@ runner は初回実行時、各 target database に `_migrations` table を作�
 
 ## 関連項目
 
-- [SQL Driver](../system/database.md) — データベースリソースの設定
-- [Bootloader](./bootloader.md) — Bootloader の順序と hook
-- [Framework 概要](./overview.md) — Framework モジュールの使用方法
+- [SQL Driver](system/database.md) — データベースリソースの設定
+- [Bootloader](framework/bootloader.md) — Bootloader の順序と hook
+- [Framework 概要](framework/overview.md) — Framework モジュールの使用方法

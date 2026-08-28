@@ -376,8 +376,8 @@ Wird ein Wert, der kein `io.Reader` ist, an `open` oder ein Wert, der kein Userd
 
 Das Schließen einer Arbeitsmappe schließt auch ihre offenen Zeilencursor. Arbeitsmappen werden bei der Bereinigung ihres Lua-Ausführungskontexts automatisch geschlossen; explizite `close()`-Aufrufe geben Ressourcen früher frei.
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
-- [Dateisystem](../storage/filesystem.md) - Dateioperationen zum Lesen und Schreiben von Excel-Dateien
+- [Dateisystem](lua/storage/filesystem.md) - Dateioperationen zum Lesen und Schreiben von Excel-Dateien

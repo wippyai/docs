@@ -399,4 +399,4 @@ Las operaciones de función estan sujetas a evaluacion de politica de seguridad.
 | Fallo al iniciar el dispatch asíncrono | `errors.INTERNAL` | no |
 | Error de función | varia | varia |
 
-Consulta [Manejo de errores](./errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

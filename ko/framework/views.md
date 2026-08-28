@@ -402,11 +402,11 @@ data:
 
 ## 참고 항목
 
-- [Facade](./facade.md) — 프론트엔드 파사드와 내비게이션 사이드바
-- [Template](../system/template.md) — Jet 템플릿 엔진
-- [보안](../system/security.md) — 보안 액터와 접근 제어
-- [환경](../system/env.md) — 환경 변수 스토리지
-- [프레임워크 개요](./overview.md) — 프레임워크 모듈 사용법
+- [Facade](framework/facade.md) — 프론트엔드 파사드와 내비게이션 사이드바
+- [Template](system/template.md) — Jet 템플릿 엔진
+- [보안](system/security.md) — 보안 액터와 접근 제어
+- [환경](system/env.md) — 환경 변수 스토리지
+- [프레임워크 개요](framework/overview.md) — 프레임워크 모듈 사용법
 - [마이크로 프론트엔드 앱(`view.page`)](../frontend/frontend-registry/view-page.md) — 전체 `view.page` 메타데이터 및 프록시 주입 레퍼런스
 - [웹 컴포넌트(`view.component`)](../frontend/frontend-registry/view-component.md) — 전체 `view.component` 자동 로드 및 props 레퍼런스
 - [렌더 엔진](../frontend/web-host/render-engines.md) — iframe 및 웹 프래그먼트 페이지 렌더링

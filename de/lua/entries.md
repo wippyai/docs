@@ -144,7 +144,7 @@ modules:
 
 Nur aufgeführte integrierte Module und unter `imports` deklarierte Aliasse sind verfügbar. Die Modul-Allowlist begrenzt den Zugriff auf Runtime-Capabilities, macht Abhängigkeiten explizit und beschränkt Workflows auf workflowkompatible Modulklassen.
 
-Verfügbare Module behandelt [Lua-Runtime](overview.md).
+Verfügbare Module behandelt [Lua-Runtime](lua/overview.md).
 
 ## Imports
 
@@ -229,6 +229,6 @@ Die Abfrage gibt alle passenden Registry-Einträge zurück. Der Lua-Code gehört
 
 ## Siehe auch
 
-- [Entry-Kinds](../guides/entry-kinds.md) - Referenz aller Entry-Kinds
-- [Compute Units](../concepts/compute-units.md) - Funktionen, Prozesse und Workflows im Vergleich
-- [Lua-Runtime](overview.md) - Verfügbare Module
+- [Entry-Kinds](guides/entry-kinds.md) - Referenz aller Entry-Kinds
+- [Compute Units](concepts/compute-units.md) - Funktionen, Prozesse und Workflows im Vergleich
+- [Lua-Runtime](lua/overview.md) - Verfügbare Module

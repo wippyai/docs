@@ -30,7 +30,7 @@ cd myapp
 wippy init
 ```
 
-`wippy init` escribe el lock de dependencias y la configuración de sus directorios de fuentes y módulos. No crea el código fuente de la aplicación ni entradas del registro. Sigue [Hello World](../tutorials/hello-world.md) para crear una aplicación ejecutable y después iníciala con `wippy run`.
+`wippy init` escribe el lock de dependencias y la configuración de sus directorios de fuentes y módulos. No crea el código fuente de la aplicación ni entradas del registro. Sigue [Hello World](tutorials/hello-world.md) para crear una aplicación ejecutable y después iníciala con `wippy run`.
 
 El runtime incluye capacidades de HTTP, SQL, almacenamiento y alojamiento de procesos. Añade módulos del framework desde el Hub cuando la aplicación los necesite:
 
@@ -58,7 +58,7 @@ wippy install
 | `wippy auth` | Gestiona la autenticación |
 | `wippy version` | Muestra información de la versión |
 
-Consulta la [Referencia de CLI](../guides/cli.md) para ver la documentación completa.
+Consulta la [Referencia de CLI](guides/cli.md) para ver la documentación completa.
 
 ## Solución de problemas
 
@@ -67,5 +67,5 @@ Si el shell no encuentra `wippy` después de la instalación, vuelve a abrirlo y
 ## Siguientes pasos
 
 - [Hello World](../tutorials/hello-world.md) — Crea tu primera aplicación
-- [Estructura del proyecto](./structure.md) — Comprende la estructura del proyecto
-- [Referencia de CLI](../guides/cli.md) — Revisa todos los comandos y opciones
+- [Estructura del proyecto](start/structure.md) — Comprende la estructura del proyecto
+- [Referencia de CLI](guides/cli.md) — Revisa todos los comandos y opciones

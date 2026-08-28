@@ -441,6 +441,6 @@ forma limpa.
 
 ## Próximos Passos
 
-- [Gerenciamento de Processos](../lua/core/process.md) — Referência da API de processos
-- [Channels](../lua/core/channel.md) — Referência da API de channels
-- [Tempo e Duração](../lua/core/time.md) — Referência da API de tempo
+- [Gerenciamento de Processos](lua/core/process.md) — Referência da API de processos
+- [Channels](lua/core/channel.md) — Referência da API de channels
+- [Tempo e Duração](lua/core/time.md) — Referência da API de tempo

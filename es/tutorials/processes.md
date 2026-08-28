@@ -11,7 +11,7 @@ Aprende las API de procesos para crear trabajo aislado, intercambiar mensajes, s
 
 Los procesos proporcionan unidades de ejecución aisladas que se comunican mediante paso de mensajes. Cada proceso tiene su propio inbox y puede suscribirse a temas de mensajes específicos.
 
-**Clasificación:** introducción de referencia/API. Cada fragmento ilustra una operación de forma aislada; la página no es un proyecto autónomo. Para ver una aplicación completa que combina creación, supervisión y mensajería, consulta el tutorial de [Servicio Echo](echo-service.md).
+**Clasificación:** introducción de referencia/API. Cada fragmento ilustra una operación de forma aislada; la página no es un proyecto autónomo. Para ver una aplicación completa que combina creación, supervisión y mensajería, consulta el tutorial de [Servicio Echo](tutorials/echo-service.md).
 
 ## Contexto y dependencias
 
@@ -433,5 +433,5 @@ return { main = main }
 
 ## Siguientes Pasos
 
-- [Referencia del módulo Process](../lua/core/process.md) — Documentación de la API de procesos
-- [Canales](channels.md) — Operaciones de canales para gestionar mensajes
+- [Referencia del módulo Process](lua/core/process.md) — Documentación de la API de procesos
+- [Canales](tutorials/channels.md) — Operaciones de canales para gestionar mensajes

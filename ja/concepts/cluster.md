@@ -7,7 +7,7 @@ description: "Wippy node が peer を発見し、process message を routing し
 
 単一の Wippy node だけでも完全な runtime です。**クラスター**は複数の node を接続し、process が cluster-wide name を使い、node 間で message を routing し、lock、group、shared consensus core を介して協調できるようにします。
 
-clustering は opt-in（`cluster.enabled`）です。このページではコードから見える model を説明します。topology、configuration、operation については[クラスターガイド](../guides/cluster.md)を参照してください。
+clustering は opt-in（`cluster.enabled`）です。このページではコードから見える model を説明します。topology、configuration、operation については[クラスターガイド](guides/cluster.md)を参照してください。
 
 ## クラスターモデル :id=cluster-model
 
@@ -26,7 +26,7 @@ process は通常 PID で address 指定します。クラスター内では **n
 | **Consistent** | クラスター全体 | Raft による linearizable singleton | 標準的な cluster-wide named service |
 | **Strong** | クラスター全体 | Consistent に加え、name が active になる前にすべての live node が acknowledge | control-plane singleton と lock |
 
-scope は consistency と coordination cost の順に `Local < Eventual < Consistent < Strong` と並びます。必要な保証を満たすうち、cost が最も低い scope を選んでください。name は [`process.registry`](../lua/core/process.md) で登録します。Local name は process の終了時に削除されます。Consistent name と Strong name も process の終了または node の離脱時に回収されます。Eventual name は明示的に削除するか、その origin node が離脱したときに削除され、所有する process だけが終了しても自動削除されません。
+scope は consistency と coordination cost の順に `Local < Eventual < Consistent < Strong` と並びます。必要な保証を満たすうち、cost が最も低い scope を選んでください。name は [`process.registry`](lua/core/process.md) で登録します。Local name は process の終了時に削除されます。Consistent name と Strong name も process の終了または node の離脱時に回収されます。Eventual name は明示的に削除するか、その origin node が離脱したときに削除され、所有する process だけが終了しても自動削除されません。
 
 ## ルーティング
 
@@ -43,18 +43,18 @@ application は authority node を直接 address 指定せずに name を登録�
 
 clustering は少数の coordination building block を公開します。
 
-- **membership と identity** — live node の集合と、この node の identity および role。peer の発見や work の shard に使います。[`system.cluster`](../lua/system/system.md)と[`system.node`](../lua/system/system.md)を参照してください。
-- **consensus state** — Raft leader、term、この node の role。diagnostics や leader-aware logic に使います。[`system.raft`](../lua/system/system.md)を参照してください。
-- **cluster-wide name** — name と scope で process を登録・resolve します。他のすべての基盤です。[`process.registry`](../lua/core/process.md)を参照してください。
-- **distributed lock** — クラスター全体の mutual exclusion で、holder は最大 1 つです。holder が終了すると自動解放されます。[`system.lock`](../lua/system/system.md)を参照してください。
-- **process group** — named group に参加し、すべての node の全 member に Erlang style で broadcast します。[プロセスグループ](../lua/core/pg.md)を参照してください。
+- **membership と identity** — live node の集合と、この node の identity および role。peer の発見や work の shard に使います。[`system.cluster`](lua/system/system.md)と[`system.node`](lua/system/system.md)を参照してください。
+- **consensus state** — Raft leader、term、この node の role。diagnostics や leader-aware logic に使います。[`system.raft`](lua/system/system.md)を参照してください。
+- **cluster-wide name** — name と scope で process を登録・resolve します。他のすべての基盤です。[`process.registry`](lua/core/process.md)を参照してください。
+- **distributed lock** — クラスター全体の mutual exclusion で、holder は最大 1 つです。holder が終了すると自動解放されます。[`system.lock`](lua/system/system.md)を参照してください。
+- **process group** — named group に参加し、すべての node の全 member に Erlang style で broadcast します。[プロセスグループ](lua/core/pg.md)を参照してください。
 
 これらの primitive は membership と routing infrastructure を共有します。Consistent name、Strong name、distributed lock は Raft core を使います。process group は gossip membership で peer を発見し、relay 経由で変更を送信し、完全な state を定期交換して収束します。
 
 ## 関連情報 :id=see-also
 
-- [クラスターガイド](../guides/cluster.md) — topology、configuration、operation
-- [プロセス管理](../lua/core/process.md) — spawn、messaging、name registry
-- [プロセスグループ](../lua/core/pg.md) — named group と broadcast
-- [システム](../lua/system/system.md) — `system.cluster`、`system.node`、`system.raft`、`system.lock`
-- [プロセスモデル](./process-model.md) — process、PID、messaging
+- [クラスターガイド](guides/cluster.md) — topology、configuration、operation
+- [プロセス管理](lua/core/process.md) — spawn、messaging、name registry
+- [プロセスグループ](lua/core/pg.md) — named group と broadcast
+- [システム](lua/system/system.md) — `system.cluster`、`system.node`、`system.raft`、`system.lock`
+- [プロセスモデル](concepts/process-model.md) — process、PID、messaging

@@ -190,7 +190,7 @@ Verwenden Sie `registry.entry`-Kind für Konfiguration auf Anwendungsebene:
 | `http.endpoint` | HTTP-Handler |
 | `process.host` | Host für die Prozessausführung |
 
-Die Entry-Kinds beschreibt der [Leitfaden zu Entry-Kinds](../guides/entry-kinds.md).
+Die Entry-Kinds beschreibt der [Leitfaden zu Entry-Kinds](guides/entry-kinds.md).
 
 ## Konfigurationsdateien
 
@@ -212,7 +212,7 @@ supervisor:
     worker_count: 16
 ```
 
-Die Runtime-Konfigurationsfelder beschreibt der [Konfigurationsleitfaden](../guides/configuration.md).
+Die Runtime-Konfigurationsfelder beschreibt der [Konfigurationsleitfaden](guides/configuration.md).
 
 ### wippy.lock
 
@@ -268,7 +268,7 @@ myapp/
 
 ## Siehe auch
 
-- [Anwendungsarchitektur](../concepts/architecture.md) — Anwendung in Slices und Schichten organisieren
-- [Leitfaden zu Entry-Kinds](../guides/entry-kinds.md) — Verfügbare Entry-Kinds
-- [Konfigurationsleitfaden](../guides/configuration.md) — Runtime-Optionen konfigurieren
-- [Benutzerdefinierte Entry-Kinds](../internals/kinds.md) — Handler implementieren (fortgeschritten)
+- [Anwendungsarchitektur](concepts/architecture.md) — Anwendung in Slices und Schichten organisieren
+- [Leitfaden zu Entry-Kinds](guides/entry-kinds.md) — Verfügbare Entry-Kinds
+- [Konfigurationsleitfaden](guides/configuration.md) — Runtime-Optionen konfigurieren
+- [Benutzerdefinierte Entry-Kinds](internals/kinds.md) — Handler implementieren (fortgeschritten)

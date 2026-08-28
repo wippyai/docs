@@ -137,4 +137,4 @@ return recorded
 
 Ungültige Typen für Name oder Wert lösen Lua-Argumentfehler aus, statt strukturierte Fehler zurückzugeben.
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

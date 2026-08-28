@@ -159,6 +159,6 @@ Negue `network.select` em um escopo para impedir que o código dentro dele escol
 
 ## Veja também
 
-- [Segurança](./security.md) - Políticas e atores
-- [Serviço HTTP](../http/server.md) - Vinculação do servidor
-- [Cliente HTTP](../lua/http/client.md) - Seleção de overlay por chamada
+- [Segurança](system/security.md) - Políticas e atores
+- [Serviço HTTP](http/server.md) - Vinculação do servidor
+- [Cliente HTTP](lua/http/client.md) - Seleção de overlay por chamada

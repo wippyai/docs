@@ -434,6 +434,6 @@ Type messages to echo. Ctrl+C to exit.
 
 ## 次のステップ
 
-- [プロセス管理](../lua/core/process.md) — プロセスAPIリファレンス
-- [チャネル](../lua/core/channel.md) — チャネルAPIリファレンス
-- [時間とDuration](../lua/core/time.md) — 時間APIリファレンス
+- [プロセス管理](lua/core/process.md) — プロセスAPIリファレンス
+- [チャネル](lua/core/channel.md) — チャネルAPIリファレンス
+- [時間とDuration](lua/core/time.md) — 時間APIリファレンス

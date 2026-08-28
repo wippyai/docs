@@ -144,7 +144,7 @@ modules:
 
 Solo están disponibles los módulos integrados incluidos en la lista y los aliases declarados en `imports`. La allowlist de módulos limita el acceso a capacidades del runtime, hace explícitas las dependencias y restringe los workflows a clases de módulos compatibles con workflows.
 
-Consulta [Runtime de Lua](overview.md) para ver los módulos disponibles.
+Consulta [Runtime de Lua](lua/overview.md) para ver los módulos disponibles.
 
 ## Imports
 
@@ -229,6 +229,6 @@ La consulta devuelve todas las entradas coincidentes del registro. El código Lu
 
 ## Vea También
 
-- [Tipos de entrada](../guides/entry-kinds.md) - Referencia de todos los tipos de entrada
-- [Unidades de cómputo](../concepts/compute-units.md) - Funciones vs. procesos vs. workflows
-- [Runtime de Lua](overview.md) - Módulos disponibles
+- [Tipos de entrada](guides/entry-kinds.md) - Referencia de todos los tipos de entrada
+- [Unidades de cómputo](concepts/compute-units.md) - Funciones vs. procesos vs. workflows
+- [Runtime de Lua](lua/overview.md) - Módulos disponibles

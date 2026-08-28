@@ -208,6 +208,6 @@ wippy test test calc_test
 
 ## 次のステップ
 
-- [Hello World](hello-world.md) — 最小限のプロジェクトレイアウト
-- [エントリの種類](../guides/entry-kinds.md) — `function.lua`、`library.lua`など
-- [テストフレームワーク](../framework/testing.md) — ランナーとイベントプロトコルのリファレンス
+- [Hello World](tutorials/hello-world.md) — 最小限のプロジェクトレイアウト
+- [エントリの種類](guides/entry-kinds.md) — `function.lua`、`library.lua`など
+- [テストフレームワーク](framework/testing.md) — ランナーとイベントプロトコルのリファレンス

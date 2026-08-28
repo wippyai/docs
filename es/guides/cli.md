@@ -26,7 +26,7 @@ Disponibles en todos los comandos:
 
 La prioridad del límite de memoria es `--memory-limit`, después `GOMEMLIMIT` y, finalmente, el valor predeterminado de 1 GB.
 
-La opción global `--config` puede repetirse para combinar archivos de configuración. Los archivos se fusionan de izquierda a derecha: los posteriores sobrescriben valores coincidentes y conservan el resto. Cada archivo indicado explícitamente debe existir; sin `--config`, el archivo predeterminado `.wippy.yaml` es opcional. El primer archivo fija el directorio usado para resolver rutas relativas. La configuración se aplica en este orden: composición de archivos, selecciones `--profile` y sobrescrituras `--set`. Consulta [Configuración](./configuration.md#config-composition).
+La opción global `--config` puede repetirse para combinar archivos de configuración. Los archivos se fusionan de izquierda a derecha: los posteriores sobrescriben valores coincidentes y conservan el resto. Cada archivo indicado explícitamente debe existir; sin `--config`, el archivo predeterminado `.wippy.yaml` es opcional. El primer archivo fija el directorio usado para resolver rutas relativas. La configuración se aplica en este orden: composición de archivos, selecciones `--profile` y sobrescrituras `--set`. Consulta [Configuración](guides/configuration.md#config-composition).
 
 `wippy publish` oculta la opción global con una opción local `--config <dir>`. Para ese comando, el valor es el directorio que contiene `wippy.yaml`, no un archivo repetible de configuración del runtime.
 
@@ -516,5 +516,5 @@ override:
 
 ## Ver También
 
-- [Configuración](./configuration.md) - Referencia del archivo de configuración
-- [Observabilidad](./observability.md) - Monitoreo y registro
+- [Configuración](guides/configuration.md) - Referencia del archivo de configuración
+- [Observabilidad](guides/observability.md) - Monitoreo y registro

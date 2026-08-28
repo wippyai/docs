@@ -11,7 +11,7 @@ description: "Execute queries SQL parametrizadas, transações e prepared statem
 
 Execute queries SQL em bancos de dados PostgreSQL, MySQL e SQLite. Recursos incluem queries parametrizadas, transacoes, prepared statements e um query builder fluente.
 
-Para configurar o banco de dados, veja [Banco de Dados](../../system/database.md).
+Para configurar o banco de dados, veja [Banco de Dados](system/database.md).
 
 ## Carregamento
 
@@ -1537,7 +1537,7 @@ Acesso a banco de dados está sujeito a avaliação de política de segurança.
 | Nome de savepoint inválido | `errors.INVALID` | não |
 | Erro do driver ou da execução da query | preservado do driver quando disponível; caso contrário, não especificado | varia |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Exemplo
 

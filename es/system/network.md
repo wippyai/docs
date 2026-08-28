@@ -159,6 +159,6 @@ Deniega `network.select` en un ámbito para impedir que el código dentro de él
 
 ## Véase también
 
-- [Seguridad](./security.md) - Políticas y actores
-- [Servicio HTTP](../http/server.md) - Vinculación del servidor
-- [Cliente HTTP](../lua/http/client.md) - Selección de superposición por llamada
+- [Seguridad](system/security.md) - Políticas y actores
+- [Servicio HTTP](http/server.md) - Vinculación del servidor
+- [Cliente HTTP](lua/http/client.md) - Selección de superposición por llamada

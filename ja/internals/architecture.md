@@ -217,7 +217,7 @@ graceful shutdown は依存関係の逆順で進みます。
 
 ## 関連項目
 
-- [スケジューラ](./scheduler.md) - プロセスの実行
-- [イベントバス](./events.md) - pub/sub システム
-- [レジストリ](./registry.md) - 状態管理
-- [コマンドディスパッチ](./dispatch.md) - yield の処理
+- [スケジューラ](internals/scheduler.md) - プロセスの実行
+- [イベントバス](internals/events.md) - pub/sub システム
+- [レジストリ](internals/registry.md) - 状態管理
+- [コマンドディスパッチ](internals/dispatch.md) - yield の処理

@@ -13,7 +13,7 @@ Diese Seite ist ein Teilrezept zur Integration und eine Protokollreferenz, keine
 eigenständige WebSocket-Anwendung. Die Konfigurations- und Pluginblöcke setzen ein
 bestehendes Wippy-Projekt, einen echten Sicherheits-Scope am konfigurierten
 `user_security_scope` und einen mit dem Relay verbundenen HTTP-WebSocket-Endpunkt
-gemäß [WebSocket-Relay](../http/websocket-relay.md) voraus. Protokoll-Payloads und
+gemäß [WebSocket-Relay](http/websocket-relay.md) voraus. Protokoll-Payloads und
 Lifecycle-Blöcke sind Referenzformen.
 
 ## Architektur
@@ -292,6 +292,6 @@ Der zentrale Hub läuft unter seiner eigenen Sicherheitsgruppe (`wippy.relay.sec
 ## Siehe auch
 
 - [WebSocket-Relay](../http/websocket-relay.md) — Konfiguration des HTTP-WebSocket-Endpunkts
-- [Prozessmodell](../concepts/process-model.md) — Prozesslebenszyklus und Messaging
-- [Sicherheit](../system/security.md) — Sicherheitsakteure und Scopes
-- [Framework-Übersicht](./overview.md) — Framework-Module installieren und importieren
+- [Prozessmodell](concepts/process-model.md) — Prozesslebenszyklus und Messaging
+- [Sicherheit](system/security.md) — Sicherheitsakteure und Scopes
+- [Framework-Übersicht](framework/overview.md) — Framework-Module installieren und importieren

@@ -7,7 +7,7 @@ description: "Define and run Wippy agents with tools, streaming, delegates, trai
 
 The `wippy/agent` module defines agents declaratively and runs them through a context and runner. Agents can use tools, stream responses, delegate work, apply traits, and recall memory.
 
-This page is an API primer with composable reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a registered LLM model and provider, configured provider credentials, and the agent, tool, or resolver entries referenced by each example. Later snippets build on variables such as `ctx`, `runner`, and `conversation` created in earlier sections. For a complete runnable project, follow [Build an LLM Agent](../tutorials/llm-agent.md).
+This page is an API primer with composable reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a registered LLM model and provider, configured provider credentials, and the agent, tool, or resolver entries referenced by each example. Later snippets build on variables such as `ctx`, `runner`, and `conversation` created in earlier sections. For a complete runnable project, follow [Build an LLM Agent](tutorials/llm-agent.md).
 
 ## Setup
 
@@ -330,7 +330,7 @@ end
 Use <code>funcs.call(tc.registry_id, tc.arguments)</code> to execute tools. The <code>registry_id</code> field maps directly to the tool's entry in the registry.
 </note>
 
-For how agent tool access and observability are secured, see the [Security Model](../concepts/security-model.md).
+For how agent tool access and observability are secured, see the [Security Model](concepts/security-model.md).
 
 ## Streaming
 
@@ -647,6 +647,6 @@ Custom resolution can load agent definitions outside the framework registry, inc
 
 ## See Also
 
-- [LLM](./llm.md) — Underlying model interface
+- [LLM](framework/llm.md) — Underlying model interface
 - [Building an LLM Agent](../tutorials/llm-agent.md) — Build an agent step by step
-- [Framework Overview](./overview.md) — Install and import framework modules
+- [Framework Overview](framework/overview.md) — Install and import framework modules

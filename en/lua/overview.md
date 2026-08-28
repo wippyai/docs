@@ -32,7 +32,7 @@ if send_err then
 end
 ```
 
-Executable Lua entries receive `process` as an ambient global. It can also be loaded with `require("process")` without adding it to the entry's `modules` list. See [Process Management](core/process.md) for spawning, linking, and supervision.
+Executable Lua entries receive `process` as an ambient global. It can also be loaded with `require("process")` without adding it to the entry's `modules` list. See [Process Management](lua/core/process.md) for spawning, linking, and supervision.
 
 ## Channels
 
@@ -46,7 +46,7 @@ buffered:send("work")           -- completes while buffer space is available
 local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-See [Channels](core/channel.md) for select and patterns.
+See [Channels](lua/core/channel.md) for select and patterns.
 
 ## Coroutines
 
@@ -104,17 +104,17 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-Available modules depend on entry configuration. See [Entry Definitions](entries.md).
+Available modules depend on entry configuration. See [Entry Definitions](lua/entries.md).
 
 Registry libraries use the same `require("alias")` syntax but are declared separately in the entry's `imports:` map.
 
 ## Language and Library Support
 
-Wippy uses Lua 5.3 syntax with a [gradual type system](types.md) inspired by Luau. Types are first-class runtime values that can be used for validation, passed as arguments, and inspected at runtime.
+Wippy uses Lua 5.3 syntax with a [gradual type system](lua/types.md) inspired by Luau. Types are first-class runtime values that can be used for validation, passed as arguments, and inspected at runtime.
 
 External Lua libraries (LuaRocks, etc.) are not supported. The runtime provides its own module system with built-in extensions for I/O, networking, and system integration.
 
-For custom extensions, see [Modules](../internals/modules.md) in the internals documentation.
+For custom extensions, see [Modules](internals/modules.md) in the internals documentation.
 
 ## Error Handling
 
@@ -127,11 +127,11 @@ if err then
 end
 ```
 
-This snippet assumes `json` is enabled in the entry's `modules` list and `input` contains the string to decode. See [Error Handling](core/errors.md) for patterns.
+This snippet assumes `json` is enabled in the entry's `modules` list and `input` contains the string to decode. See [Error Handling](lua/core/errors.md) for patterns.
 
 ## What's Next
 
-- [Entry Definitions](entries.md) - Configure entry points
-- [Channels](core/channel.md) - Channel patterns
-- [Process Management](core/process.md) - Spawning and supervision
-- [Functions](core/funcs.md) - Cross-process calls
+- [Entry Definitions](lua/entries.md) - Configure entry points
+- [Channels](lua/core/channel.md) - Channel patterns
+- [Process Management](lua/core/process.md) - Spawning and supervision
+- [Functions](lua/core/funcs.md) - Cross-process calls

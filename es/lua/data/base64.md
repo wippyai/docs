@@ -121,4 +121,4 @@ El bloque final solo muestra el manejo de delimitadores. No analiza ni verifica 
 | Caracteres Base64 no válidos | `errors.INVALID` | no |
 | Padding corrupto | `errors.INVALID` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

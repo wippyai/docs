@@ -13,7 +13,7 @@ The `store` module provides key-value storage with optional TTLs. It can hold ca
 
 This page is an API reference. Its snippets assume a configured store, the permissions listed below, and application-provided values such as `owner` or `new_value`. Snippets after acquisition use an existing live `cache` handle and are not standalone functions.
 
-For store configuration, see [Store](../../system/store.md).
+For store configuration, see [Store](system/store.md).
 
 ## Loading
 
@@ -299,4 +299,4 @@ Input, lookup, backend, and capability failures are returned as structured error
 | `if_version` mismatch | `errors.CONFLICT` | yes |
 | Conditional write on a store without support | `errors.INVALID` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

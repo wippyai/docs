@@ -193,5 +193,5 @@ local ok, err = hub.auth.logout()
 
 ## 関連項目
 
-- [CLI リファレンス](../../guides/cli.md) — `wippy readme`、`wippy search`、`wippy publish`
-- [公開ガイド](../../guides/publishing.md)
+- [CLI リファレンス](guides/cli.md) — `wippy readme`、`wippy search`、`wippy publish`
+- [公開ガイド](guides/publishing.md)

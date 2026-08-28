@@ -84,10 +84,10 @@ MinIO 또는 기타 S3 호환 서비스의 경우 커스텀 엔드포인트를 �
 
 ## Lua API
 
-작업(list, upload, download, delete, presigned URL)은 [클라우드 스토리지 모듈](../lua/storage/cloud.md)을 참조하십시오.
+작업(list, upload, download, delete, presigned URL)은 [클라우드 스토리지 모듈](lua/storage/cloud.md)을 참조하십시오.
 
 ## 참고
 
-- [클라우드 스토리지 모듈](../lua/storage/cloud.md) - Lua API 레퍼런스
-- [파일시스템](./filesystem.md) - 로컬 파일시스템 엔트리
-- [큐](./queue.md) - SQS handler는 같은 `config.aws` 엔트리를 공유
+- [클라우드 스토리지 모듈](lua/storage/cloud.md) - Lua API 레퍼런스
+- [파일시스템](system/filesystem.md) - 로컬 파일시스템 엔트리
+- [큐](system/queue.md) - SQS handler는 같은 `config.aws` 엔트리를 공유

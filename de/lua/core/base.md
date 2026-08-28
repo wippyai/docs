@@ -245,7 +245,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## Coroutinen
 
-Die Bibliothek `coroutine` stellt Erstellung und Steuerung von Coroutinen bereit. Siehe [Channels und Coroutinen](channel.md) für Channel-basierte Nebenläufigkeitsmuster.
+Die Bibliothek `coroutine` stellt Erstellung und Steuerung von Coroutinen bereit. Siehe [Channels und Coroutinen](lua/core/channel.md) für Channel-basierte Nebenläufigkeitsmuster.
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -283,7 +283,7 @@ Dieses partielle Muster setzt voraus, dass der Eintrag `time` unter `modules:` a
 
 ## Fehlerbehandlung
 
-Die globale Tabelle `errors` erstellt und klassifiziert strukturierte Fehler. Die vollständige API beschreibt [Fehlerbehandlung](errors.md).
+Die globale Tabelle `errors` erstellt und klassifiziert strukturierte Fehler. Die vollständige API beschreibt [Fehlerbehandlung](lua/core/errors.md).
 
 ### Konstanten {id="error-constants"}
 
@@ -343,12 +343,12 @@ Die folgenden Standard-Lua-Features sind in Wippy-Prozessen nicht verfügbar:
 
 | Feature | Alternative |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Modul [Dynamische Auswertung](../dynamic/eval.md) verwenden |
+| `load`, `loadstring`, `loadfile`, `dofile` | Modul [Dynamische Auswertung](lua/dynamic/eval.md) verwenden |
 | `collectgarbage` | Automatische GC |
 | `rawlen` | `#`-Operator verwenden |
 | `string.dump` | Nicht unterstützt |
-| `io.*` | [Dateisystem](../storage/filesystem.md) für Dateien oder [Terminal-E/A](../system/io.md) für Terminal-Streams verwenden |
-| `os.execute` | [Befehlsausführung](../dynamic/exec.md) verwenden |
+| `io.*` | [Dateisystem](lua/storage/filesystem.md) für Dateien oder [Terminal-E/A](../system/io.md) für Terminal-Streams verwenden |
+| `os.execute` | [Befehlsausführung](lua/dynamic/exec.md) verwenden |
 | `os.remove`, `os.rename` | [Dateisystem](../storage/filesystem.md) verwenden |
 | `os.exit`, `os.tmpname` | Kein direktes Standardbibliotheksäquivalent |
 | `debug.*` | Nicht verfügbar |
@@ -357,6 +357,6 @@ Die folgenden Standard-Lua-Features sind in Wippy-Prozessen nicht verfügbar:
 
 ## Siehe auch
 
-- [Channels und Coroutinen](channel.md) - Go-artige Channels für Nebenläufigkeit
-- [Fehlerbehandlung](errors.md) - Strukturierte Fehler erstellen und behandeln
-- [OS-Zeit](../system/ostime.md) - Systemzeit-Funktionen
+- [Channels und Coroutinen](lua/core/channel.md) - Go-artige Channels für Nebenläufigkeit
+- [Fehlerbehandlung](lua/core/errors.md) - Strukturierte Fehler erstellen und behandeln
+- [OS-Zeit](lua/system/ostime.md) - Systemzeit-Funktionen

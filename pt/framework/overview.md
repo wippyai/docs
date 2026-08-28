@@ -83,6 +83,6 @@ wippy search wippy
 
 ## Consulte também
 
-- [Gerenciamento de dependências](../guides/dependency-management.md) — Arquivos de lock e restrições de versão
-- [Publicação](../guides/publishing.md) — Como publicar um módulo
-- [Referência da CLI](../guides/cli.md) — Comandos de gerenciamento de módulos
+- [Gerenciamento de dependências](guides/dependency-management.md) — Arquivos de lock e restrições de versão
+- [Publicação](guides/publishing.md) — Como publicar um módulo
+- [Referência da CLI](guides/cli.md) — Comandos de gerenciamento de módulos

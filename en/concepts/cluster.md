@@ -7,7 +7,7 @@ description: "How Wippy nodes discover peers, route process messages, and coordi
 
 A single Wippy node is a complete runtime. A **cluster** connects several nodes so processes can use cluster-wide names, route messages across nodes, and coordinate through locks, groups, and a shared consensus core.
 
-Clustering is opt-in (`cluster.enabled`). This page explains the model your code sees; for topology, configuration, and operations see the [Cluster Guide](../guides/cluster.md).
+Clustering is opt-in (`cluster.enabled`). This page explains the model your code sees; for topology, configuration, and operations see the [Cluster Guide](guides/cluster.md).
 
 ## Cluster Model
 
@@ -26,7 +26,7 @@ A process is normally addressed by its PID. In a cluster, it can also be registe
 | **Consistent** | cluster-wide | linearizable singleton via Raft | the standard cluster-wide named service |
 | **Strong** | cluster-wide | Consistent, plus every live node acknowledges before the name is active | control-plane singletons and locks |
 
-The scopes are ordered as `Local < Eventual < Consistent < Strong` by consistency and coordination cost. Select the least costly scope that meets the required guarantee. Names are registered through [`process.registry`](../lua/core/process.md). Local names are removed when the process exits; Consistent and Strong names are also reaped on process exit or node departure. Eventual names are removed explicitly or when their origin node leaves, not automatically when only the owning process exits.
+The scopes are ordered as `Local < Eventual < Consistent < Strong` by consistency and coordination cost. Select the least costly scope that meets the required guarantee. Names are registered through [`process.registry`](lua/core/process.md). Local names are removed when the process exits; Consistent and Strong names are also reaped on process exit or node departure. Eventual names are removed explicitly or when their origin node leaves, not automatically when only the owning process exits.
 
 ## Routing
 
@@ -43,18 +43,18 @@ Applications register and resolve names without addressing the authority node di
 
 Clustering exposes a small set of coordination building blocks:
 
-- **Membership and identity** — the live set of nodes and this node's identity and role. Use it to discover peers or shard work. See [`system.cluster`](../lua/system/system.md) and [`system.node`](../lua/system/system.md).
-- **Consensus state** — the Raft leader, term, and this node's role, for diagnostics and leader-aware logic. See [`system.raft`](../lua/system/system.md).
-- **Cluster-wide names** — register and resolve processes by name and scope, the foundation everything else builds on. See [`process.registry`](../lua/core/process.md).
-- **Distributed locks** — cluster-wide mutual exclusion with at most one holder, released automatically if the holder dies. See [`system.lock`](../lua/system/system.md).
-- **Process groups** — join named groups and broadcast to every member across all nodes, Erlang-style. See [Process Groups](../lua/core/pg.md).
+- **Membership and identity** — the live set of nodes and this node's identity and role. Use it to discover peers or shard work. See [`system.cluster`](lua/system/system.md) and [`system.node`](lua/system/system.md).
+- **Consensus state** — the Raft leader, term, and this node's role, for diagnostics and leader-aware logic. See [`system.raft`](lua/system/system.md).
+- **Cluster-wide names** — register and resolve processes by name and scope, the foundation everything else builds on. See [`process.registry`](lua/core/process.md).
+- **Distributed locks** — cluster-wide mutual exclusion with at most one holder, released automatically if the holder dies. See [`system.lock`](lua/system/system.md).
+- **Process groups** — join named groups and broadcast to every member across all nodes, Erlang-style. See [Process Groups](lua/core/pg.md).
 
 These primitives share membership and routing infrastructure. Consistent and Strong names and distributed locks use the Raft core. Process groups use gossip membership to discover peers, send changes over the relay, and periodically exchange full state for convergence.
 
 ## See Also
 
-- [Cluster Guide](../guides/cluster.md) — Topology, configuration, and operations
-- [Process Management](../lua/core/process.md) — Spawning, messaging, and the name registry
-- [Process Groups](../lua/core/pg.md) — Named groups and broadcast
-- [System](../lua/system/system.md) — `system.cluster`, `system.node`, `system.raft`, `system.lock`
-- [Process Model](./process-model.md) — Processes, PIDs, and messaging
+- [Cluster Guide](guides/cluster.md) — Topology, configuration, and operations
+- [Process Management](lua/core/process.md) — Spawning, messaging, and the name registry
+- [Process Groups](lua/core/pg.md) — Named groups and broadcast
+- [System](lua/system/system.md) — `system.cluster`, `system.node`, `system.raft`, `system.lock`
+- [Process Model](concepts/process-model.md) — Processes, PIDs, and messaging

@@ -7,7 +7,7 @@ description: "Como os nós do Wippy descobrem peers, roteiam mensagens de proces
 
 Um único nó Wippy é um runtime completo. Um **cluster** conecta vários nós para que processos possam usar nomes válidos em todo o cluster, rotear mensagens entre nós e se coordenar por meio de locks, grupos e um núcleo de consenso compartilhado.
 
-O clustering é opcional (`cluster.enabled`). Esta página explica o modelo visto pelo código; para topologia, configuração e operações, consulte o [Guia de Cluster](../guides/cluster.md).
+O clustering é opcional (`cluster.enabled`). Esta página explica o modelo visto pelo código; para topologia, configuração e operações, consulte o [Guia de Cluster](guides/cluster.md).
 
 ## Modelo de cluster
 
@@ -26,7 +26,7 @@ Normalmente, um processo é endereçado por seu PID. Em um cluster, ele também 
 | **Consistent** | todo o cluster | singleton linearizável via Raft | o serviço nomeado padrão para todo o cluster |
 | **Strong** | todo o cluster | Consistent, mais a confirmação de todos os nós ativos antes de o nome ser ativado | singletons e locks do plano de controle |
 
-Os escopos são ordenados como `Local < Eventual < Consistent < Strong` segundo a consistência e o custo de coordenação. Selecione o escopo de menor custo que satisfaça a garantia necessária. Os nomes são registrados por meio de [`process.registry`](../lua/core/process.md). Nomes locais são removidos quando o processo encerra; nomes Consistent e Strong também são removidos quando o processo encerra ou o nó sai. Nomes Eventual são removidos explicitamente ou quando seu nó de origem sai, não automaticamente quando apenas o processo proprietário encerra.
+Os escopos são ordenados como `Local < Eventual < Consistent < Strong` segundo a consistência e o custo de coordenação. Selecione o escopo de menor custo que satisfaça a garantia necessária. Os nomes são registrados por meio de [`process.registry`](lua/core/process.md). Nomes locais são removidos quando o processo encerra; nomes Consistent e Strong também são removidos quando o processo encerra ou o nó sai. Nomes Eventual são removidos explicitamente ou quando seu nó de origem sai, não automaticamente quando apenas o processo proprietário encerra.
 
 ## Roteamento
 
@@ -43,18 +43,18 @@ As aplicações registram e resolvem nomes sem endereçar diretamente o nó que 
 
 O clustering expõe um pequeno conjunto de blocos de coordenação:
 
-- **Associação e identidade** — o conjunto de nós ativos e a identidade e o papel deste nó. Use-os para descobrir peers ou particionar trabalho. Consulte [`system.cluster`](../lua/system/system.md) e [`system.node`](../lua/system/system.md).
-- **Estado de consenso** — o líder Raft, o term e o papel deste nó, para diagnósticos e lógica que considera o líder. Consulte [`system.raft`](../lua/system/system.md).
-- **Nomes válidos em todo o cluster** — registre e resolva processos por nome e escopo, a base de todos os outros recursos. Consulte [`process.registry`](../lua/core/process.md).
-- **Locks distribuídos** — exclusão mútua em todo o cluster com no máximo um detentor, liberada automaticamente se o detentor morrer. Consulte [`system.lock`](../lua/system/system.md).
-- **Grupos de processos** — participe de grupos nomeados e faça broadcast para todos os membros em todos os nós, no estilo Erlang. Consulte [Grupos de Processos](../lua/core/pg.md).
+- **Associação e identidade** — o conjunto de nós ativos e a identidade e o papel deste nó. Use-os para descobrir peers ou particionar trabalho. Consulte [`system.cluster`](lua/system/system.md) e [`system.node`](lua/system/system.md).
+- **Estado de consenso** — o líder Raft, o term e o papel deste nó, para diagnósticos e lógica que considera o líder. Consulte [`system.raft`](lua/system/system.md).
+- **Nomes válidos em todo o cluster** — registre e resolva processos por nome e escopo, a base de todos os outros recursos. Consulte [`process.registry`](lua/core/process.md).
+- **Locks distribuídos** — exclusão mútua em todo o cluster com no máximo um detentor, liberada automaticamente se o detentor morrer. Consulte [`system.lock`](lua/system/system.md).
+- **Grupos de processos** — participe de grupos nomeados e faça broadcast para todos os membros em todos os nós, no estilo Erlang. Consulte [Grupos de Processos](lua/core/pg.md).
 
 Esses primitivos compartilham a infraestrutura de associação e roteamento. Nomes Consistent e Strong e locks distribuídos usam o núcleo Raft. Grupos de processos usam a associação por gossip para descobrir peers, enviam mudanças pelo relay e trocam periodicamente o estado completo para convergir.
 
 ## Consulte também
 
-- [Guia de Cluster](../guides/cluster.md) — Topologia, configuração e operações
-- [Gerenciamento de Processos](../lua/core/process.md) — Spawn, mensagens e o registro de nomes
-- [Grupos de Processos](../lua/core/pg.md) — Grupos nomeados e broadcast
-- [Sistema](../lua/system/system.md) — `system.cluster`, `system.node`, `system.raft`, `system.lock`
-- [Modelo de Processos](./process-model.md) — Processos, PIDs e mensagens
+- [Guia de Cluster](guides/cluster.md) — Topologia, configuração e operações
+- [Gerenciamento de Processos](lua/core/process.md) — Spawn, mensagens e o registro de nomes
+- [Grupos de Processos](lua/core/pg.md) — Grupos nomeados e broadcast
+- [Sistema](lua/system/system.md) — `system.cluster`, `system.node`, `system.raft`, `system.lock`
+- [Modelo de Processos](concepts/process-model.md) — Processos, PIDs e mensagens

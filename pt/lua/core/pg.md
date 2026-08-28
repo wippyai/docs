@@ -12,7 +12,7 @@ Os grupos de processos organizam processos sob nomes dinâmicos e transmitem men
 
 Esta página é uma referência de API. Seus trechos pressupõem um `pg.scope` existente, uma entrada executável com contexto de processo e políticas que autorizem as operações documentadas. Os blocos demonstram chamadas individuais ou fluxos parciais de inscrição, não uma aplicação independente.
 
-Para o tipo de entrada de escopo e sua configuração, veja [Grupos de Processos](../../system/process-groups.md). Para o modelo de clustering mais amplo, veja o [Guia de Cluster](../../guides/cluster.md).
+Para o tipo de entrada de escopo e sua configuração, veja [Grupos de Processos](system/process-groups.md). Para o modelo de clustering mais amplo, veja o [Guia de Cluster](guides/cluster.md).
 
 ## Carregamento
 
@@ -231,10 +231,10 @@ group:release()
 | Serviço interrompido, backpressure ou circuito aberto | `errors.UNAVAILABLE` |
 | Timeout no broadcast | `errors.TIMEOUT` (retentável) |
 
-Veja [Tratamento de Erros](errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Grupos de Processos](../../system/process-groups.md) - Tipo de entrada de escopo e configuração
-- [Cluster](../../guides/cluster.md) - Associação, nomes e modelo de clustering
-- [Gerenciamento de Processos](process.md) - Criação de processos individuais e envio de mensagens
+- [Grupos de Processos](system/process-groups.md) - Tipo de entrada de escopo e configuração
+- [Cluster](guides/cluster.md) - Associação, nomes e modelo de clustering
+- [Gerenciamento de Processos](lua/core/process.md) - Criação de processos individuais e envio de mensagens

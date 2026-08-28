@@ -159,6 +159,6 @@ Verweigern Sie `network.select` für einen Scope, um Code innerhalb davon daran 
 
 ## Siehe auch
 
-- [Sicherheit](./security.md) - Richtlinien und Actors
-- [HTTP-Service](../http/server.md) - Server-Binding
-- [HTTP-Client](../lua/http/client.md) - Overlay-Auswahl pro Aufruf
+- [Sicherheit](system/security.md) - Richtlinien und Actors
+- [HTTP-Service](http/server.md) - Server-Binding
+- [HTTP-Client](lua/http/client.md) - Overlay-Auswahl pro Aufruf

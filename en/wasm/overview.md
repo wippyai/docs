@@ -77,7 +77,7 @@ Host capabilities are opt-in through explicit imports. Each entry declares the h
 
 ## See Also
 
-- [Functions](./functions.md) - WASM function entry configuration
-- [Host Functions](./hosts.md) - Available WASI and Wippy host interfaces
-- [Processes](./processes.md) - Running WASM as long-lived processes
+- [Functions](wasm/functions.md) - WASM function entry configuration
+- [Host Functions](wasm/hosts.md) - Available WASI and Wippy host interfaces
+- [Processes](wasm/processes.md) - Running WASM as long-lived processes
 - [Rust/WASM Tutorial](../tutorials/rust-wasm.md) - Build and register a component

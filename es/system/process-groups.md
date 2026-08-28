@@ -7,7 +7,7 @@ description: "Configura grupos de procesos con nombre y reconocimiento del clús
 
 Un ámbito `pg.scope` permite que los procesos se unan a grupos con nombre y reciban difusiones dirigidas a un grupo. El modelo sigue `pg` de Erlang/OTP: los grupos se crean con la primera incorporación, un proceso puede pertenecer a muchos grupos y unirse varias veces al mismo, y cada nodo del clúster mantiene su propio estado de pertenencia y lo reconcilia con sus pares a través de la malla entre nodos. Esta página es una referencia de configuración y comportamiento; los bloques YAML son fragmentos de entrada.
 
-La API Lua está documentada en [Grupos de procesos](../lua/core/pg.md); esta página cubre el tipo de entrada de ámbito y su configuración. Consulta la [guía de clústeres](../guides/cluster.md) para conocer el modelo de pertenencia que la rodea.
+La API Lua está documentada en [Grupos de procesos](lua/core/pg.md); esta página cubre el tipo de entrada de ámbito y su configuración. Consulta la [guía de clústeres](guides/cluster.md) para conocer el modelo de pertenencia que la rodea.
 
 ## Tipo de Entrada
 
@@ -70,10 +70,10 @@ Todos los campos son opcionales. La tabla muestra sus valores predeterminados.
 
 ## Observabilidad
 
-Una comprobación de actividad (`pg.broadcast_recent.<scope>`) informa de un estado no saludable si un ámbito no observa tráfico de difusión durante un período prolongado, lo que permite detectar un bucle de eventos bloqueado o una partición persistente. Consulta la [guía de observabilidad](../guides/observability.md).
+Una comprobación de actividad (`pg.broadcast_recent.<scope>`) informa de un estado no saludable si un ámbito no observa tráfico de difusión durante un período prolongado, lo que permite detectar un bucle de eventos bloqueado o una partición persistente. Consulta la [guía de observabilidad](guides/observability.md).
 
 ## Ver También
 
-- [Grupos de procesos](../lua/core/pg.md) - La API Lua
-- [Clúster](../guides/cluster.md) - La pertenencia y el modelo de clúster
-- [Modelo de procesos](../concepts/process-model.md) - Procesos, PID y mensajería
+- [Grupos de procesos](lua/core/pg.md) - La API Lua
+- [Clúster](guides/cluster.md) - La pertenencia y el modelo de clúster
+- [Modelo de procesos](concepts/process-model.md) - Procesos, PID y mensajería

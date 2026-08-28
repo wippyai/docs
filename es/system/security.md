@@ -420,7 +420,7 @@ entries:
 | `store` | requerido | Referencia al almacén clave-valor de respaldo |
 | `token_length` | 32 | Tamaño del token en bytes (256 bits) |
 | `default_expiration` | 24h | TTL predeterminado del token |
-| `token_key` | ninguno | Clave de firma HMAC-SHA256 (valor directo o `${env:NAME}` para obtenerlo del [registro de entorno](./env.md)) |
+| `token_key` | ninguno | Clave de firma HMAC-SHA256 (valor directo o `${env:NAME}` para obtenerlo del [registro de entorno](system/env.md)) |
 
 Utiliza `token_key: ${env:NAME}` en producción para evitar incrustar secretos en las entradas. La directiva heredada `token_key_env` también lee el registro de entorno, pero conserva el valor directo o cero cuando la búsqueda no existe o está vacía; un marcador moderno sin valor predeterminado falla si la variable no existe. La directiva heredada está obsoleta.
 

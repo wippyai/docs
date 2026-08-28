@@ -240,4 +240,4 @@ O resultado é `false` quando os tamanhos diferem. A garantia de comparação em
 | Descriptografia falhou | `errors.INTERNAL` | não |
 | Token expirado | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

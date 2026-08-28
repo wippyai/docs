@@ -12,7 +12,7 @@ description: "클러스터 전체 프로세스 그룹, 멤버십, 브로드캐�
 
 이 페이지는 API 참조입니다. 스니펫은 기존 `pg.scope`, 프로세스 컨텍스트로 실행되는 실행 가능 엔트리, 문서화된 작업을 허용하는 정책을 전제로 합니다. 블록은 독립 애플리케이션이 아니라 개별 호출 또는 부분 구독 흐름을 보여 줍니다.
 
-scope 엔트리 종류와 구성은 [프로세스 그룹](../../system/process-groups.md)을 참고하세요. 더 넓은 클러스터링 모델은 [클러스터 가이드](../../guides/cluster.md)를 참고하세요.
+scope 엔트리 종류와 구성은 [프로세스 그룹](system/process-groups.md)을 참고하세요. 더 넓은 클러스터링 모델은 [클러스터 가이드](guides/cluster.md)를 참고하세요.
 
 ## 로드
 
@@ -231,10 +231,10 @@ group:release()
 | 서비스 중지, 백프레셔 또는 회로 열림 | `errors.UNAVAILABLE` |
 | 브로드캐스트 시간 초과 | `errors.TIMEOUT` (재시도 가능) |
 
-오류 작업 방법은 [오류 처리](errors.md)를 참고하세요.
+오류 작업 방법은 [오류 처리](lua/core/errors.md)를 참고하세요.
 
 ## 참고 항목
 
-- [프로세스 그룹](../../system/process-groups.md) - Scope 엔트리 종류와 구성
-- [클러스터](../../guides/cluster.md) - 멤버십, 명명, 클러스터링 모델
-- [프로세스 관리](process.md) - 개별 프로세스 생성 및 메시징
+- [프로세스 그룹](system/process-groups.md) - Scope 엔트리 종류와 구성
+- [클러스터](guides/cluster.md) - 멤버십, 명명, 클러스터링 모델
+- [프로세스 관리](lua/core/process.md) - 개별 프로세스 생성 및 메시징

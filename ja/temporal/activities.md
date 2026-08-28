@@ -390,7 +390,7 @@ end
 
 ## 関連項目
 
-- [概要](./overview.md) - 設定
-- [ワークフロー](./workflows.md) - ワークフローの実装
-- [関数](../lua/core/funcs.md) - 関数モジュール
-- [エラー処理](../lua/core/errors.md) - エラーの種別とパターン
+- [概要](temporal/overview.md) - 設定
+- [ワークフロー](temporal/workflows.md) - ワークフローの実装
+- [関数](lua/core/funcs.md) - 関数モジュール
+- [エラー処理](lua/core/errors.md) - エラーの種別とパターン

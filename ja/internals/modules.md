@@ -254,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-ディスパッチャーはコマンドをハンドラへルーティングします。ハンドラの実装については[コマンドディスパッチ](./dispatch.md)を参照してください。
+ディスパッチャーはコマンドをハンドラへルーティングします。ハンドラの実装については[コマンドディスパッチ](internals/dispatch.md)を参照してください。
 
 ## エラー処理
 
@@ -484,5 +484,5 @@ func TestYieldDispatcher(t *testing.T) {
 
 ## 関連項目
 
-- [コマンドディスパッチ](./dispatch.md) - yield コマンドの処理
-- [スケジューラ](./scheduler.md) - プロセスの実行
+- [コマンドディスパッチ](internals/dispatch.md) - yield コマンドの処理
+- [スケジューラ](internals/scheduler.md) - プロセスの実行

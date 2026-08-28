@@ -174,4 +174,4 @@ Otras funciones integradas son `min`, `abs`, `ceil`, `floor`, `len`, `lower` y
 | Evaluacion de expresion falla | `errors.INTERNAL` | no |
 | Conversion de resultado falla | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

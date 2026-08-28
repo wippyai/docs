@@ -7,7 +7,7 @@ description: "ランタイム設定のフィールド、プロファイル、合
 
 Wippy は `.wippy.yaml` ファイルからランタイム設定を読み取ります。
 
-以下の設定フィールドは、繰り返し指定できる `wippy run --set section.path=value` オプションを使用して起動時に上書きできます。これらの設定セクションではなく個々のレジストリ*エントリ*を上書きするには、`override:` セクションまたは `-o` を使用します。[エントリの上書き](./entry-kinds.md#overriding-entries)を参照してください。
+以下の設定フィールドは、繰り返し指定できる `wippy run --set section.path=value` オプションを使用して起動時に上書きできます。これらの設定セクションではなく個々のレジストリ*エントリ*を上書きするには、`override:` セクションまたは `-o` を使用します。[エントリの上書き](guides/entry-kinds.md#overriding-entries)を参照してください。
 
 ## 設定の合成 {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - 最初のファイルが、相対パスの解決に使われるディレクトリを決めます。
 - ファイル名に予約された意味はありません。デフォルト以外は何も自動探索されません。
 
-設定は、合成されたファイル、選択された `--profile` オーバーレイ、`--set` の上書きの順に適用されます。パックから実行されるアプリケーションでは、パックされたランタイムデフォルトの優先順位はこれら 3 つより低くなります。[ランタイムデフォルトの公開](./publishing.md#publishing-runtime-defaults)を参照してください。
+設定は、合成されたファイル、選択された `--profile` オーバーレイ、`--set` の上書きの順に適用されます。パックから実行されるアプリケーションでは、パックされたランタイムデフォルトの優先順位はこれら 3 つより低くなります。[ランタイムデフォルトの公開](guides/publishing.md#publishing-runtime-defaults)を参照してください。
 
 ## プロファイル {#profiles}
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` セクションはプロファイル内でのリスト操作をサポートします — `namespaces.add`、`namespaces.remove`、`entries.add`、`entries.remove` — これにより、プロファイルはベースのリストを置き換えるのではなく調整できます。
 - `${name}` 参照はマージ後の `vars:` セクションから補間されます。プロファイルの vars 内で OS 環境変数を参照することはできません。ベース設定で `${env:NAME}` を使用してください。これはファイルのロード時に解決されます。
 
-`wippy run`、`test`、`pack` は `--profile` を受け付けます。`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます。[プロファイルの公開](./publishing.md#publishing-profiles)を参照してください。
+`wippy run`、`test`、`pack` は `--profile` を受け付けます。`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます。[プロファイルの公開](guides/publishing.md#publishing-profiles)を参照してください。
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## ログマネージャ
 
-ランタイムログルーティングを制御します。コンソール出力は [CLI フラグ](./cli.md)（`-v`, `-c`, `-s`）で設定します。
+ランタイムログルーティングを制御します。コンソール出力は [CLI フラグ](guides/cli.md)（`-v`, `-c`, `-s`）で設定します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-参照: [ロガーモジュール](../lua/system/logger.md)
+参照: [ロガーモジュール](lua/system/logger.md)
 
 ## プロファイラ
 
@@ -115,7 +115,7 @@ profiler:
 
 ## セキュリティ
 
-グローバルなセキュリティ動作です。個別のポリシーは [security.policy エントリ](./entry-kinds.md)として定義されます。
+グローバルなセキュリティ動作です。個別のポリシーは [security.policy エントリ](guides/entry-kinds.md)として定義されます。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
@@ -126,7 +126,7 @@ security:
   strict_mode: true
 ```
 
-参照: [セキュリティシステム](../system/security.md), [セキュリティモジュール](../lua/security/security.md)
+参照: [セキュリティシステム](system/security.md), [セキュリティモジュール](lua/security/security.md)
 
 ## レジストリ {#registry}
 
@@ -153,7 +153,7 @@ registry:
   history_schema: wippy_registry
 ```
 
-参照: [レジストリコンセプト](../concepts/registry.md), [レジストリモジュール](../lua/core/registry.md)
+参照: [レジストリコンセプト](concepts/registry.md), [レジストリモジュール](lua/core/registry.md)
 
 ## リレー
 
@@ -168,7 +168,7 @@ relay:
   node_name: worker-1
 ```
 
-参照: [プロセスモデル](../concepts/process-model.md)
+参照: [プロセスモデル](concepts/process-model.md)
 
 ## スーパーバイザ
 
@@ -186,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-参照: [スーパービジョンガイド](./supervision.md)
+参照: [スーパービジョンガイド](guides/supervision.md)
 
 <note>
-`process.host` ごとのワーカーとキューは、このグローバルセクションではなく、エントリ自体（`workers`、`queue_size`、`local_queue_size`）で設定します。[Process Host](../system/process-host.md) エントリ種別を参照してください。
+`process.host` ごとのワーカーとキューは、このグローバルセクションではなく、エントリ自体（`workers`、`queue_size`、`local_queue_size`）で設定します。[Process Host](system/process-host.md) エントリ種別を参照してください。
 </note>
 
 ## Luaランタイム
@@ -218,7 +218,7 @@ lua:
     enabled: true
 ```
 
-参照: [Lua概要](../lua/overview.md)
+参照: [Lua概要](lua/overview.md)
 
 ## ファインダー
 
@@ -271,7 +271,7 @@ otel:
 
 標準 OTEL 環境変数（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）は一致するフィールドを上書きします。
 
-参照: [可観測性ガイド](./observability.md)
+参照: [可観測性ガイド](guides/observability.md)
 
 ## シャットダウン
 
@@ -303,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-参照: [メトリクスモジュール](../lua/system/metrics.md), [可観測性ガイド](./observability.md)
+参照: [メトリクスモジュール](lua/system/metrics.md), [可観測性ガイド](guides/observability.md)
 
 ## Prometheus
 
@@ -322,11 +322,11 @@ prometheus:
 
 Prometheusスクレイピング用の`/metrics`エンドポイントを公開します。
 
-参照: [可観測性ガイド](./observability.md)
+参照: [可観測性ガイド](guides/observability.md)
 
 ## クラスタ {#cluster}
 
-マルチノードクラスタリング: ゴシップメンバーシップと有界 Raft コンセンサスコア。アーキテクチャと運用モデルについては[クラスタガイド](./cluster.md)を参照してください。このセクションは設定キーのリファレンスです。
+マルチノードクラスタリング: ゴシップメンバーシップと有界 Raft コンセンサスコア。アーキテクチャと運用モデルについては[クラスタガイド](guides/cluster.md)を参照してください。このセクションは設定キーのリファレンスです。
 
 ### トップレベル
 
@@ -379,7 +379,7 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 
 ### Raft（コンセンサス）
 
-有界 Raft コアは、デフォルトで `raft.data_dir`（`~/.wippy/store`）の下に永続状態を保存します。再起動したノードはピアからクォーラムに再参加します。[`store.kv.raft`](../system/store.md#cluster-kv-stores) エントリはこのコアを通じてレプリケートされ、ゴシップが `bootstrap_expect` モデルによるブートストラップを調整します。
+有界 Raft コアは、デフォルトで `raft.data_dir`（`~/.wippy/store`）の下に永続状態を保存します。再起動したノードはピアからクォーラムに再参加します。[`store.kv.raft`](system/store.md#cluster-kv-stores) エントリはこのコアを通じてレプリケートされ、ゴシップが `bootstrap_expect` モデルによるブートストラップを調整します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
@@ -479,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-参照: [LSPガイド](./lsp.md)
+参照: [LSPガイド](guides/lsp.md)
 
 ## ネットワークサービス
 
@@ -496,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-参照: [ネットワークオーバーレイ](../system/network.md)
+参照: [ネットワークオーバーレイ](system/network.md)
 
 ## HTTPディスパッチャ
 
@@ -554,7 +554,7 @@ extensions:
 
 ## 関連項目
 
-- [CLIリファレンス](./cli.md) — コマンドラインオプション
-- [クラスタガイド](./cluster.md) — クラスタリングのアーキテクチャと運用
-- [エントリ種別](./entry-kinds.md) — エントリの種類とフィールド
-- [可観測性ガイド](./observability.md) — ロギング、メトリクス、トレーシング
+- [CLIリファレンス](guides/cli.md) — コマンドラインオプション
+- [クラスタガイド](guides/cluster.md) — クラスタリングのアーキテクチャと運用
+- [エントリ種別](guides/entry-kinds.md) — エントリの種類とフィールド
+- [可観測性ガイド](guides/observability.md) — ロギング、メトリクス、トレーシング

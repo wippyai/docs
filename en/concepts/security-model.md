@@ -32,7 +32,7 @@ security:
 
 Keep strict mode enabled in deployments that must fail closed, and ensure services start with the actor and scope their work requires. Disabling strict mode does not turn a complete scope's `undefined` result into an allow.
 
-See the [Security reference](../system/security.md) for policy syntax, actors, scopes, and token stores.
+See the [Security reference](system/security.md) for policy syntax, actors, scopes, and token stores.
 
 ## Lua Isolation
 
@@ -113,7 +113,7 @@ Wippy's execution and policy boundaries do not replace infrastructure controls:
 - host administration, SSH access, and database-administrator actions require infrastructure audit logging;
 - per-tenant CPU and memory quotas require deployment-level resource controls.
 
-OpenTelemetry can trace configured runtime and framework operations, but trace coverage depends on the enabled instrumentation. See [Observability](../guides/observability.md).
+OpenTelemetry can trace configured runtime and framework operations, but trace coverage depends on the enabled instrumentation. See [Observability](guides/observability.md).
 
 ## Review Checklist
 
@@ -128,8 +128,8 @@ OpenTelemetry can trace configured runtime and framework operations, but trace c
 
 ## See Also
 
-- [Security reference](../system/security.md) — Policies, scopes, actors, strict mode, and token stores
+- [Security reference](system/security.md) — Policies, scopes, actors, strict mode, and token stores
 - [Entry Registry](../lua/core/registry.md) — Registry read, mutation, and overlay permissions
 - [Process Management](../lua/core/process.md) — Spawn, context, and process security permissions
-- [Process Model](./process-model.md) — Process isolation and lifecycle
-- [Agents](../framework/agents.md) — Agent definitions and tool selection
+- [Process Model](concepts/process-model.md) — Process isolation and lifecycle
+- [Agents](framework/agents.md) — Agent definitions and tool selection

@@ -225,6 +225,6 @@ See [Temporal](https://temporal.io) for production workflow infrastructure.
 
 ## See Also
 
-- [Functions](./functions.md) — Request-scoped calls
-- [Process Model](./process-model.md) — Stateful background work
-- [Supervision](../guides/supervision.md) — Process restart policies
+- [Functions](concepts/functions.md) — Request-scoped calls
+- [Process Model](concepts/process-model.md) — Stateful background work
+- [Supervision](guides/supervision.md) — Process restart policies

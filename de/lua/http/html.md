@@ -392,5 +392,5 @@ local clean = policy:sanitize(dirty)
 |-----------|------|-----------|
 | Ungültiges Regex-Muster | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 Fügen Sie `html` zur Liste `modules:` des ausführbaren Eintrags hinzu, bevor Sie es per `require` laden.

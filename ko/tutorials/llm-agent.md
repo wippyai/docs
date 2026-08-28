@@ -829,7 +829,7 @@ Bye!
 
 ## 다음 단계
 
-- [LLM 모듈](../framework/llm.md) — LLM API 참조
-- [에이전트 모듈](../framework/agents.md) — 에이전트 프레임워크 참조
-- [CLI 애플리케이션](./cli.md) — 터미널 I/O 패턴
-- [프로세스](./processes.md) — 프로세스 모델과 통신
+- [LLM 모듈](framework/llm.md) — LLM API 참조
+- [에이전트 모듈](framework/agents.md) — 에이전트 프레임워크 참조
+- [CLI 애플리케이션](tutorials/cli.md) — 터미널 I/O 패턴
+- [프로세스](tutorials/processes.md) — 프로세스 모델과 통신

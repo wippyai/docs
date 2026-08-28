@@ -117,10 +117,10 @@ Las plantillas pueden extender plantillas padre y sobrescribir bloques:
 
 ## API Lua
 
-Consulte el [módulo Template](../lua/text/template.md) para las operaciones de renderizado.
+Consulte el [módulo Template](lua/text/template.md) para las operaciones de renderizado.
 
 ## Ver También
 
-- [Módulo Template](../lua/text/template.md) - Referencia de la API Lua
-- [Filesystem](./filesystem.md) - Carga de plantillas desde disco
-- [HTTP Endpoint](../http/endpoint.md) - Renderizado de plantillas desde handlers de solicitudes
+- [Módulo Template](lua/text/template.md) - Referencia de la API Lua
+- [Filesystem](system/filesystem.md) - Carga de plantillas desde disco
+- [HTTP Endpoint](http/endpoint.md) - Renderizado de plantillas desde handlers de solicitudes

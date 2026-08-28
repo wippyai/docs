@@ -28,7 +28,7 @@ Available on all commands:
 
 Memory-limit precedence is `--memory-limit`, then `GOMEMLIMIT`, then the 1 GB default.
 
-The global `--config` option may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](./configuration.md#config-composition).
+The global `--config` option may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
 
 `wippy publish` shadows the global option with a command-local `--config <dir>` option. For that command, the value is the directory containing `wippy.yaml`, not a repeatable runtime configuration file.
 
@@ -524,5 +524,5 @@ override:
 
 ## See Also
 
-- [Configuration](./configuration.md) — Configuration file reference
-- [Observability](./observability.md) — Monitoring and logging
+- [Configuration](guides/configuration.md) — Configuration file reference
+- [Observability](guides/observability.md) — Monitoring and logging

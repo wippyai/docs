@@ -257,5 +257,5 @@ Channel-Operationen:
 
 ## Nächste Schritte
 
-- [Channel-Modulreferenz](../lua/core/channel.md) — Dokumentation der Channel-API
-- [Prozesse](processes.md) — Kommunikation zwischen Prozessen
+- [Channel-Modulreferenz](lua/core/channel.md) — Dokumentation der Channel-API
+- [Prozesse](tutorials/processes.md) — Kommunikation zwischen Prozessen

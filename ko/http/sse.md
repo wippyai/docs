@@ -38,7 +38,7 @@ end
 
 ## SSE Relay
 
-SSE Relay 미들웨어는 프로세스가 백킹하는 장기 SSE 스트림을 생성합니다. [WebSocket Relay](./websocket-relay.md)와 동일한 릴레이 패턴을 따릅니다.
+SSE Relay 미들웨어는 프로세스가 백킹하는 장기 SSE 스트림을 생성합니다. [WebSocket Relay](http/websocket-relay.md)와 동일한 릴레이 패턴을 따릅니다.
 
 ### 동작 방식
 
@@ -261,6 +261,6 @@ if transfer_err then return nil, transfer_err end
 
 ## 참고
 
-- [미들웨어](./middleware.md) — 미들웨어 설정
-- [WebSocket Relay](./websocket-relay.md) — WebSocket 동등 기능
-- [프로세스](../lua/core/process.md) — 프로세스 메시징
+- [미들웨어](http/middleware.md) — 미들웨어 설정
+- [WebSocket Relay](http/websocket-relay.md) — WebSocket 동등 기능
+- [프로세스](lua/core/process.md) — 프로세스 메시징

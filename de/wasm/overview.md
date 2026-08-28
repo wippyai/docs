@@ -77,7 +77,7 @@ Host-Fähigkeiten werden durch explizite Imports einzeln aktiviert. Jeder Eintra
 
 ## Siehe auch
 
-- [Funktionen](./functions.md) - Konfiguration von WASM-Funktionseinträgen
-- [Host-Funktionen](./hosts.md) - Verfügbare WASI- und Wippy-Host-Schnittstellen
-- [Prozesse](./processes.md) - WASM als langlebige Prozesse ausführen
+- [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionseinträgen
+- [Host-Funktionen](wasm/hosts.md) - Verfügbare WASI- und Wippy-Host-Schnittstellen
+- [Prozesse](wasm/processes.md) - WASM als langlebige Prozesse ausführen
 - [Rust/WASM-Tutorial](../tutorials/rust-wasm.md) - Eine Komponente bauen und registrieren

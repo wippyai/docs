@@ -488,7 +488,7 @@ nicht dauerhaft, abgeschlossene Zeilen überstehen jedoch Neustarts in `data/tas
 
 ## Nächste Schritte
 
-- [HTTP-Modul](../lua/http/http.md) — Verarbeitung von Requests und Responses
-- [Queue-Modul](../lua/storage/queue.md) — Message-Queue-Operationen
-- [SQL-Modul](../lua/storage/sql.md) — Datenbankzugriff
-- [Queue-Consumer](../guides/queue-consumers.md) — Queue-Konfiguration
+- [HTTP-Modul](lua/http/http.md) — Verarbeitung von Requests und Responses
+- [Queue-Modul](lua/storage/queue.md) — Message-Queue-Operationen
+- [SQL-Modul](lua/storage/sql.md) — Datenbankzugriff
+- [Queue-Consumer](guides/queue-consumers.md) — Queue-Konfiguration

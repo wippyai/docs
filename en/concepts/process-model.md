@@ -46,7 +46,7 @@ Each process executes under an actor identity and security policy. This is typic
 
 Access control applies at multiple levels. Security policy can restrict individual process operations and message delivery between hosts. The policy attached to the current actor determines which operations are permitted.
 
-For the security implications of process isolation, see the [Security Model](./security-model.md).
+For the security implications of process isolation, see the [Security Model](concepts/security-model.md).
 
 ## Spawning Processes
 

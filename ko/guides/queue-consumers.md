@@ -167,7 +167,7 @@ built-in driver는 현재 attempt를 count하거나 `dead_letter` block에서 me
 
 ## 참고
 
-- [메시지 큐](../lua/storage/queue.md) - Queue module reference
-- [큐 설정](../system/queue.md) - queue driver 및 entry definition
-- [슈퍼비전](./supervision.md) - consumer lifecycle
-- [프로세스 관리](../lua/core/process.md) - process spawning 및 communication
+- [메시지 큐](lua/storage/queue.md) - Queue module reference
+- [큐 설정](system/queue.md) - queue driver 및 entry definition
+- [슈퍼비전](guides/supervision.md) - consumer lifecycle
+- [프로세스 관리](lua/core/process.md) - process spawning 및 communication

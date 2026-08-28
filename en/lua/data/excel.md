@@ -376,8 +376,8 @@ Passing a value that is not an `io.Reader` to `open`, or a non-userdata value to
 
 Closing a workbook also closes its open row cursors. Workbooks are closed automatically when their Lua execution context is cleaned up, but explicit `close()` calls release resources sooner.
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Filesystem](../storage/filesystem.md) - File operations for reading/writing Excel files
+- [Filesystem](lua/storage/filesystem.md) - File operations for reading/writing Excel files

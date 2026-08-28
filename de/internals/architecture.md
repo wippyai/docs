@@ -217,7 +217,7 @@ Zweites Signal erzwingt sofortigen Exit.
 
 ## Siehe auch
 
-- [Scheduler](./scheduler.md) – Prozessausführung
-- [Event-Bus](./events.md) – Pub/Sub-System
-- [Registry](./registry.md) – Zustandsverwaltung
-- [Command-Dispatch](./dispatch.md) – Yield-Behandlung
+- [Scheduler](internals/scheduler.md) – Prozessausführung
+- [Event-Bus](internals/events.md) – Pub/Sub-System
+- [Registry](internals/registry.md) – Zustandsverwaltung
+- [Command-Dispatch](internals/dispatch.md) – Yield-Behandlung

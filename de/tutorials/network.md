@@ -268,7 +268,7 @@ Vererbte Overlays umgehen diese Prüfung — sie wurden am Aufruf-Übergang des 
 
 ## Nächste Schritte
 
-- [Netzwerksystem](../system/network.md) — Referenz der Eintragsarten
-- [HTTP-Client](../lua/http/client.md) — Overlay-Optionen pro Aufruf
-- [Sicherheitsmodell](../system/security.md) — Policies und Scopes
-- [Authentifizierung](auth.md) — Token-basierte Sicherheit
+- [Netzwerksystem](system/network.md) — Referenz der Eintragsarten
+- [HTTP-Client](lua/http/client.md) — Overlay-Optionen pro Aufruf
+- [Sicherheitsmodell](system/security.md) — Policies und Scopes
+- [Authentifizierung](tutorials/auth.md) — Token-basierte Sicherheit

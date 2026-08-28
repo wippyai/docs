@@ -127,6 +127,6 @@ Ativar `wasi:sockets` disponibiliza as interfaces, mas não autoriza acesso à r
 
 ## Veja também
 
-- [Visão geral](./overview.md) - Visão geral do runtime WebAssembly
-- [Funções](./functions.md) - Configuração de funções WASM
-- [Processos](./processes.md) - Execução de WASM como processos
+- [Visão geral](wasm/overview.md) - Visão geral do runtime WebAssembly
+- [Funções](wasm/functions.md) - Configuração de funções WASM
+- [Processos](wasm/processes.md) - Execução de WASM como processos

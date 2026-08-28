@@ -245,7 +245,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## Corrotinas
 
-A biblioteca `coroutine` fornece criação e controle de corrotinas. Veja [Channels e Corrotinas](channel.md) para padrões de concorrência baseados em channels.
+A biblioteca `coroutine` fornece criação e controle de corrotinas. Veja [Channels e Corrotinas](lua/core/channel.md) para padrões de concorrência baseados em channels.
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -283,7 +283,7 @@ Esse padrão parcial pressupõe que a entrada liste `time` em `modules:` e forne
 
 ## Tratamento de Erros
 
-A tabela global `errors` cria e classifica erros estruturados. Veja [Tratamento de Erros](errors.md) para a API completa.
+A tabela global `errors` cria e classifica erros estruturados. Veja [Tratamento de Erros](lua/core/errors.md) para a API completa.
 
 ### Constantes {id="error-constants"}
 
@@ -343,12 +343,12 @@ Os seguintes recursos padrão de Lua não estão disponíveis nos processos do W
 
 | Recurso | Alternativa |
 |---------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Use o módulo [Avaliação Dinâmica](../dynamic/eval.md) |
+| `load`, `loadstring`, `loadfile`, `dofile` | Use o módulo [Avaliação Dinâmica](lua/dynamic/eval.md) |
 | `collectgarbage` | GC automático |
 | `rawlen` | Use operador `#` |
 | `string.dump` | Não suportado |
-| `io.*` | Use [Filesystem](../storage/filesystem.md) para arquivos ou [I/O de Terminal](../system/io.md) para streams de terminal |
-| `os.execute` | Use [Execução de Comandos](../dynamic/exec.md) |
+| `io.*` | Use [Filesystem](lua/storage/filesystem.md) para arquivos ou [I/O de Terminal](../system/io.md) para streams de terminal |
+| `os.execute` | Use [Execução de Comandos](lua/dynamic/exec.md) |
 | `os.remove`, `os.rename` | Use [Filesystem](../storage/filesystem.md) |
 | `os.exit`, `os.tmpname` | Sem equivalente direto na biblioteca padrão |
 | `debug.*` | Não disponível |
@@ -357,6 +357,6 @@ Os seguintes recursos padrão de Lua não estão disponíveis nos processos do W
 
 ## Veja Também
 
-- [Channels e Corrotinas](channel.md) - Channels no estilo Go para concorrência
-- [Tratamento de Erros](errors.md) - Criação e tratamento de erros estruturados
-- [Tempo do SO](../system/ostime.md) - Funções de tempo do sistema
+- [Channels e Corrotinas](lua/core/channel.md) - Channels no estilo Go para concorrência
+- [Tratamento de Erros](lua/core/errors.md) - Criação e tratamento de erros estruturados
+- [Tempo do SO](lua/system/ostime.md) - Funções de tempo do sistema

@@ -167,7 +167,7 @@ Flow:
 
 ## 関連項目
 
-- [メッセージキュー](../lua/storage/queue.md) — キューモジュールのリファレンス
-- [キュー設定](../system/queue.md) — キュードライバとエントリ定義
-- [スーパービジョン](./supervision.md) — コンシューマのライフサイクル
-- [プロセス管理](../lua/core/process.md) — プロセスの生成と通信
+- [メッセージキュー](lua/storage/queue.md) — キューモジュールのリファレンス
+- [キュー設定](system/queue.md) — キュードライバとエントリ定義
+- [スーパービジョン](guides/supervision.md) — コンシューマのライフサイクル
+- [プロセス管理](lua/core/process.md) — プロセスの生成と通信

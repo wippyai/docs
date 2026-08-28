@@ -269,7 +269,7 @@ Inherited overlays bypass this check — they were authorized at the caller's ed
 
 ## Next Steps
 
-- [Network System](../system/network.md) — Entry-kind reference
-- [HTTP Client](../lua/http/client.md) — Per-call overlay options
-- [Security Model](../system/security.md) — Policies and scopes
-- [Authentication](auth.md) — Token-based security
+- [Network System](system/network.md) — Entry-kind reference
+- [HTTP Client](lua/http/client.md) — Per-call overlay options
+- [Security Model](system/security.md) — Policies and scopes
+- [Authentication](tutorials/auth.md) — Token-based security

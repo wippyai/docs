@@ -184,6 +184,6 @@ The request should return HTTP status 200 with `Content-Type: application/json`.
 
 ## Next Steps
 
-- [Echo Service](echo-service.md) — Build a multi-process CLI service
-- [Task Queue](task-queue.md) — Combine a REST API with background processing
-- [HTTP Router](../http/router.md) — Review routing patterns
+- [Echo Service](tutorials/echo-service.md) — Build a multi-process CLI service
+- [Task Queue](tutorials/task-queue.md) — Combine a REST API with background processing
+- [HTTP Router](http/router.md) — Review routing patterns

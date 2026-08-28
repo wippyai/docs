@@ -7,7 +7,7 @@ description: "O módulo wippy/relay fornece infraestrutura de relay WebSocket co
 
 O módulo `wippy/relay` fornece infraestrutura de relay WebSocket com uma arquitetura de hub de duas camadas. Um hub central gerencia hubs por usuário, que por sua vez gerenciam conexões de clientes WebSocket e roteiam mensagens para plugins.
 
-Esta página é uma receita parcial de integração e uma referência de protocolo, não uma aplicação WebSocket independente. Os blocos de configuração e plugin pressupõem um projeto Wippy existente, um escopo de segurança real no `user_security_scope` configurado e um endpoint HTTP WebSocket conectado ao relay, conforme descrito em [Relay WebSocket](../http/websocket-relay.md). Os payloads de protocolo e os blocos de ciclo de vida são modelos de referência.
+Esta página é uma receita parcial de integração e uma referência de protocolo, não uma aplicação WebSocket independente. Os blocos de configuração e plugin pressupõem um projeto Wippy existente, um escopo de segurança real no `user_security_scope` configurado e um endpoint HTTP WebSocket conectado ao relay, conforme descrito em [Relay WebSocket](http/websocket-relay.md). Os payloads de protocolo e os blocos de ciclo de vida são modelos de referência.
 
 ## Arquitetura
 
@@ -279,6 +279,6 @@ O hub central executa sob seu próprio grupo de segurança (`wippy.relay.securit
 ## Veja Também
 
 - [WebSocket Relay](../http/websocket-relay.md) — Configuração do endpoint WebSocket HTTP
-- [Modelo de Processos](../concepts/process-model.md) — Ciclo de vida e mensageria de processos
-- [Segurança](../system/security.md) — Atores e escopos de segurança
-- [Visão Geral do Framework](./overview.md) — Instalação e importação de módulos do framework
+- [Modelo de Processos](concepts/process-model.md) — Ciclo de vida e mensageria de processos
+- [Segurança](system/security.md) — Atores e escopos de segurança
+- [Visão Geral do Framework](framework/overview.md) — Instalação e importação de módulos do framework

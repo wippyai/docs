@@ -197,6 +197,6 @@ end
 
 ## 関連項目
 
-- [LLM](./llm.md) — LLM generation と `usage_tracker` contract
-- [Migration](./migration.md) — schema を作成する migration runner
-- [Framework 概要](./overview.md) — Framework モジュールの使用方法
+- [LLM](framework/llm.md) — LLM generation と `usage_tracker` contract
+- [Migration](framework/migration.md) — schema を作成する migration runner
+- [Framework 概要](framework/overview.md) — Framework モジュールの使用方法

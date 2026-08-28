@@ -190,7 +190,7 @@ Use o kind `registry.entry` para configurações no nível da aplicação:
 | `http.endpoint` | Handler HTTP |
 | `process.host` | Host de execução de processos |
 
-Consulte o [Guia de Kinds de Entrada](../guides/entry-kinds.md) para ver a referência de kinds de entrada.
+Consulte o [Guia de Kinds de Entrada](guides/entry-kinds.md) para ver a referência de kinds de entrada.
 
 ## Arquivos de Configuração
 
@@ -212,7 +212,7 @@ supervisor:
     worker_count: 16
 ```
 
-Consulte o [Guia de Configuração](../guides/configuration.md) para conhecer os campos de configuração do runtime.
+Consulte o [Guia de Configuração](guides/configuration.md) para conhecer os campos de configuração do runtime.
 
 ### wippy.lock
 
@@ -268,7 +268,7 @@ myapp/
 
 ## Consulte Também
 
-- [Arquitetura de Aplicações](../concepts/architecture.md) — Organize uma aplicação em partes e camadas
-- [Guia de Kinds de Entrada](../guides/entry-kinds.md) — Consulte os kinds de entrada disponíveis
-- [Guia de Configuração](../guides/configuration.md) — Configure as opções do runtime
-- [Kinds de Entrada Personalizados](../internals/kinds.md) — Implemente handlers (avançado)
+- [Arquitetura de Aplicações](concepts/architecture.md) — Organize uma aplicação em partes e camadas
+- [Guia de Kinds de Entrada](guides/entry-kinds.md) — Consulte os kinds de entrada disponíveis
+- [Guia de Configuração](guides/configuration.md) — Configure as opções do runtime
+- [Kinds de Entrada Personalizados](internals/kinds.md) — Implemente handlers (avançado)

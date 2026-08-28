@@ -167,7 +167,7 @@ El driver integrado en memoria está pensado para desarrollo y pruebas:
 
 ## Véase también
 
-- [Message Queue](../lua/storage/queue.md) — Referencia del módulo Queue
-- [Configuración de queue](../system/queue.md) — Drivers y definiciones de entradas
-- [Supervisión](./supervision.md) — Ciclo de vida del consumer
-- [Gestión de procesos](../lua/core/process.md) — Creación y comunicación de procesos
+- [Message Queue](lua/storage/queue.md) — Referencia del módulo Queue
+- [Configuración de queue](system/queue.md) — Drivers y definiciones de entradas
+- [Supervisión](guides/supervision.md) — Ciclo de vida del consumer
+- [Gestión de procesos](lua/core/process.md) — Creación y comunicación de procesos

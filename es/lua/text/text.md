@@ -485,4 +485,4 @@ end
 | Sintaxis de patrón no válida | `errors.INVALID` | no |
 | Error interno | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

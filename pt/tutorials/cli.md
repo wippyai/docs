@@ -329,6 +329,6 @@ end
 
 ## Próximos Passos
 
-- [Módulo I/O](../lua/system/io.md) - Referência da API de I/O
-- [Módulo System](../lua/system/system.md) - Informações de runtime e sistema
-- [Serviço Echo](echo-service.md) - Aplicações multiprocesso
+- [Módulo I/O](lua/system/io.md) - Referência da API de I/O
+- [Módulo System](lua/system/system.md) - Informações de runtime e sistema
+- [Serviço Echo](tutorials/echo-service.md) - Aplicações multiprocesso

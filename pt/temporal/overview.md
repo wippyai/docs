@@ -83,7 +83,7 @@ Forneça a chave de API via um destes métodos:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Campos de autenticação e credenciais resolvem placeholders `${env:NAME}` pelo [registro de ambiente](../system/env.md) durante a decodificação. As diretivas legadas `api_key_env` e `key_pem_env` funcionam da mesma forma, mas estão obsoletas; prefira `api_key: ${env:NAME}` e `key_pem: ${env:NAME}`.
+Campos de autenticação e credenciais resolvem placeholders `${env:NAME}` pelo [registro de ambiente](system/env.md) durante a decodificação. As diretivas legadas `api_key_env` e `key_pem_env` funcionam da mesma forma, mas estão obsoletas; prefira `api_key: ${env:NAME}` e `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -204,7 +204,7 @@ Configure o comportamento do worker:
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Campos de credenciais e identificadores resolvem placeholders `${env:NAME}` pelo [registro de ambiente](../system/env.md) durante a decodificação. A diretiva legada `build_id_env` funciona da mesma forma, mas está obsoleta; prefira `build_id: ${env:NAME}`.
+Campos de credenciais e identificadores resolvem placeholders `${env:NAME}` pelo [registro de ambiente](system/env.md) durante a decodificação. A diretiva legada `build_id_env` funciona da mesma forma, mas está obsoleta; prefira `build_id: ${env:NAME}`.
 
 ### Comportamento de Versionamento
 
@@ -287,5 +287,5 @@ entries:
 
 ## Veja Também
 
-- [Atividades](./activities.md) - Definições de atividades
-- [Workflows](./workflows.md) - Implementação de workflows
+- [Atividades](temporal/activities.md) - Definições de atividades
+- [Workflows](temporal/workflows.md) - Implementação de workflows

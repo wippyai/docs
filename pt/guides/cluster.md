@@ -15,7 +15,7 @@ O clustering permanece desabilitado até que `cluster.enabled` seja definido com
 - **Nomes de processo em todo o cluster** — registre um processo sob um nome que pode ser resolvido de qualquer nó, com opção de garantias de consistência (veja [Nomeação](#nomeação-e-escopos-de-nome)).
 - **Locks distribuídos** — `system.lock` fornece exclusão mútua em todo o cluster com liberação automática quando o detentor morre (veja [Locks distribuídos](#locks-distribuídos)).
 - **Grupos de processos** — publique para todos os membros de um grupo nomeado em todos os nós (veja [Grupos de processos](#grupos-de-processos)).
-- **Armazenamentos chave-valor replicados** — `store.kv.raft` (forte) e `store.kv.crdt` (eventual) replicam dados KV entre os nós (veja [Store](../system/store.md#cluster-kv-stores)).
+- **Armazenamentos chave-valor replicados** — `store.kv.raft` (forte) e `store.kv.crdt` (eventual) replicam dados KV entre os nós (veja [Store](system/store.md#cluster-kv-stores)).
 - **Um núcleo de consenso** — um cluster Raft pequeno e limitado fornece a espinha dorsal linearizável sobre a qual os primitivos de nomeação e lock são construídos.
 
 ## Arquitetura: Raft limitado
@@ -93,7 +93,7 @@ Nós que iniciam depois veem um cluster já formado e pulam o bootstrap — o re
 
 ## Núcleo de consenso Raft
 
-O estado do Raft é **durável em disco por padrão**: logs e snapshots são persistidos sob `cluster.raft.data_dir` (padrão `~/.wippy/store`, em `_sys/raft`), e [`store.kv.raft`](../system/store.md#cluster-kv-stores) replica através do mesmo núcleo. Um nó que reinicia ainda rejunta o gossip e se atualiza a partir de seus peers, de modo que o cluster também tolera a perda do disco de um nó; a durabilidade vem tanto do quórum ativo quanto do estado em disco. Um nó executa sem disco apenas quando nenhum diretório de dados é resolvido (nenhum caminho configurado e nenhum diretório home) — veja [Recuperação](#recuperação-e-modos-de-falha).
+O estado do Raft é **durável em disco por padrão**: logs e snapshots são persistidos sob `cluster.raft.data_dir` (padrão `~/.wippy/store`, em `_sys/raft`), e [`store.kv.raft`](system/store.md#cluster-kv-stores) replica através do mesmo núcleo. Um nó que reinicia ainda rejunta o gossip e se atualiza a partir de seus peers, de modo que o cluster também tolera a perda do disco de um nó; a durabilidade vem tanto do quórum ativo quanto do estado em disco. Um nó executa sem disco apenas quando nenhum diretório de dados é resolvido (nenhum caminho configurado e nenhum diretório home) — veja [Recuperação](#recuperação-e-modos-de-falha).
 
 O Raft não abre sua própria porta de escuta. Ele usa a **malha internós** — as mesmas conexões TCP usadas para tráfego de relay entre nós — multiplexada com yamux. A porta internós é selecionada automaticamente no boot (faixa 7950-7959, depois efêmera), fixada e anunciada via gossip para que os peers possam alcançá-la. A única porta que você normalmente expõe é a porta gossip.
 
@@ -119,7 +119,7 @@ Como escolher:
 
 Nomes são liberados automaticamente: Local na saída do processo; Consistent e Strong na saída do processo (via monitoramento de topologia) e na partida do nó; Eventual na partida do nó. A resolução para mensagens (`process.send`, `process.terminate` e similares) consulta os planos em ordem — Consistent, depois Eventual, depois Local — de modo que um nome Consistent ofusca um Eventual com a mesma string.
 
-A superfície Lua para nomeação vive em `process.registry` (register/lookup/unregister com escopo) — veja a referência de [Process](../lua/core/process.md).
+A superfície Lua para nomeação vive em `process.registry` (register/lookup/unregister com escopo) — veja a referência de [Process](lua/core/process.md).
 
 ## Grupos de processos
 
@@ -127,7 +127,7 @@ Grupos de processos são uma facilidade de publish/subscribe e associação cien
 
 Operações típicas: entrar/sair de um grupo, fazer broadcast para todos os membros (ou apenas membros locais), listar membros e monitorar um grupo para eventos de entrada/saída. Quando um novo nó entra, os grupos reconciliam sua associação através de um handshake de sincronização direta, e um loop de anti-entropia de fundo repara qualquer divergência ao longo do tempo.
 
-Veja [Grupos de Processos](../lua/core/pg.md) para a API Lua e o [tipo de entrada `pg.scope`](../system/process-groups.md) para configuração.
+Veja [Grupos de Processos](lua/core/pg.md) para a API Lua e o [tipo de entrada `pg.scope`](system/process-groups.md) para configuração.
 
 ## Locks distribuídos
 
@@ -149,11 +149,11 @@ end
 return released
 ```
 
-A aquisição é fail-fast (não bloqueante): se o lock estiver mantido, retorna imediatamente; portanto, os chamadores implementam retry e backoff. O lock é liberado se o processo detentor sair ou se seu nó deixar o cluster. Consulte a referência de [System](../lua/system/system.md) para ver as assinaturas exatas.
+A aquisição é fail-fast (não bloqueante): se o lock estiver mantido, retorna imediatamente; portanto, os chamadores implementam retry e backoff. O lock é liberado se o processo detentor sair ou se seu nó deixar o cluster. Consulte a referência de [System](lua/system/system.md) para ver as assinaturas exatas.
 
 ## Configuração
 
-Consulte [Configuração](./configuration.md#cluster) para conhecer as configurações relacionadas ao cluster. Estas formas mínimas incluem as configurações obrigatórias de identidade internó.
+Consulte [Configuração](guides/configuration.md#cluster) para conhecer as configurações relacionadas ao cluster. Estas formas mínimas incluem as configurações obrigatórias de identidade internó.
 
 Estes são fragmentos de configuração, não um manifesto completo de implantação. Substitua nomes de nós, endereços, domínios de falha, caminhos e cada placeholder de identidade `${env:...}` por valores gerados e distribuídos para seu próprio cluster.
 
@@ -220,7 +220,7 @@ Não há porta Raft separada — o Raft é multiplexado sobre a malha internós.
 
 ## Observabilidade
 
-A saúde do cluster é exposta através do [endpoint Prometheus](./observability.md) padrão e de verificações de liveness.
+A saúde do cluster é exposta através do [endpoint Prometheus](guides/observability.md) padrão e de verificações de liveness.
 
 Métricas principais a observar:
 
@@ -250,8 +250,8 @@ O estado do Raft é durável em disco, mas a durabilidade primária do cluster a
 
 ## Veja também
 
-- [Configuração](./configuration.md#cluster) — todas as chaves de configuração do cluster
-- [Process](../lua/core/process.md) — registrando e resolvendo processos por nome
-- [System](../lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
-- [Observabilidade](./observability.md) — métricas e endpoints de saúde
-- [Modelo de Processos](../concepts/process-model.md) — atores, PIDs e mensagens
+- [Configuração](guides/configuration.md#cluster) — todas as chaves de configuração do cluster
+- [Process](lua/core/process.md) — registrando e resolvendo processos por nome
+- [System](lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
+- [Observabilidade](guides/observability.md) — métricas e endpoints de saúde
+- [Modelo de Processos](concepts/process-model.md) — atores, PIDs e mensagens

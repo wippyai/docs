@@ -171,7 +171,7 @@ entries:
 
 `create_tool`은 이 정책들을 명명된 범위(`app:agent_security`)로 로드합니다. 헬퍼는 `app:*`(핵심 엔트리, 모델, 에이전트 정의) 또는 `app.tools:*`(기본 제공 도구)에 대한 명시적 `deny`를 거부하지만, 일치하지 않는 `app.generated:*`의 `undefined` 결과는 자체 필터에서 통과시킵니다. 이것은 Wippy 런타임 권한 부여가 아닙니다. 보호되는 연산에는 아래 보안 모듈 연산과 `changes:apply()` 내부의 `registry.apply`를 포함하여 실행 컨텍스트의 명시적 `allow`가 필요합니다.
 
-정책 평가에 대한 자세한 내용은 [보안 모델](../system/security.md)을 참조하세요.
+정책 평가에 대한 자세한 내용은 [보안 모델](system/security.md)을 참조하세요.
 
 ### 모델
 
@@ -465,7 +465,7 @@ end
 
 ### 스트리밍
 
-[LLM 에이전트 튜토리얼](./llm-agent.md)과 같은 코루틴 및 채널 패턴을 사용합니다.
+[LLM 에이전트 튜토리얼](tutorials/llm-agent.md)과 같은 코루틴 및 채널 패턴을 사용합니다.
 
 ```lua
 coroutine.spawn(function()
@@ -605,8 +605,8 @@ wippy run wippy/micro-agi agent
 
 ## 다음 단계
 
-- [LLM 에이전트](./llm-agent.md) — 기본 에이전트를 처음부터 만들기
-- [에이전트 모듈](../framework/agents.md) — 에이전트 프레임워크 참조
-- [레지스트리](../concepts/registry.md) — 레지스트리 개념
-- [보안 모델](../system/security.md) — 선언적 보안 정책
-- [엔트리 종류](../guides/entry-kinds.md) — 사용 가능한 엔트리 유형
+- [LLM 에이전트](tutorials/llm-agent.md) — 기본 에이전트를 처음부터 만들기
+- [에이전트 모듈](framework/agents.md) — 에이전트 프레임워크 참조
+- [레지스트리](concepts/registry.md) — 레지스트리 개념
+- [보안 모델](system/security.md) — 선언적 보안 정책
+- [엔트리 종류](guides/entry-kinds.md) — 사용 가능한 엔트리 유형

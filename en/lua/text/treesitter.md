@@ -550,7 +550,7 @@ local field_id = lang:field_id_for_name("name")
 
 Closing an already closed parser, tree, query, or cursor is safe. Calling any other method on a closed handle raises a Lua argument error.
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## Query Syntax Reference
 

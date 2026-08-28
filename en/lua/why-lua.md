@@ -68,7 +68,7 @@ Lua and WASM process entries use Wippy's process model; Lua and WASM functions a
 
 ## See Also
 
-- [Lua Runtime Overview](./overview.md) - The Lua runtime and its modules
-- [Types](./types.md) - Type annotations, generics, and unions
-- [Linter](../guides/linter.md) - Static analysis for Lua
-- [WASM Runtime](../wasm/overview.md) - Running compiled code in the sandbox
+- [Lua Runtime Overview](lua/overview.md) - The Lua runtime and its modules
+- [Types](lua/types.md) - Type annotations, generics, and unions
+- [Linter](guides/linter.md) - Static analysis for Lua
+- [WASM Runtime](wasm/overview.md) - Running compiled code in the sandbox

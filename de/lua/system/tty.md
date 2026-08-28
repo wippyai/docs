@@ -376,5 +376,5 @@ Die Funktionen zur Eingabesteuerung geben strukturierte Fehler zurück:
 
 ## Siehe auch
 
-- [Terminal-I/O](./io.md) — stdin/stdout/stderr-Operationen
-- [Terminal-Host](../../system/terminal.md) — Konfiguration des Terminal-Hosts
+- [Terminal-I/O](lua/system/io.md) — stdin/stdout/stderr-Operationen
+- [Terminal-Host](system/terminal.md) — Konfiguration des Terminal-Hosts

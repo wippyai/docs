@@ -178,6 +178,6 @@ The migration creates the schema appropriate for the database driver at `target_
 
 ## See Also
 
-- [LLM](./llm.md) — `llm.embed(...)` for raw embedding generation
-- [Migrations](./migration.md) — Migration runner that provisions the table
-- [Framework Overview](./overview.md) — Framework module usage
+- [LLM](framework/llm.md) — `llm.embed(...)` for raw embedding generation
+- [Migrations](framework/migration.md) — Migration runner that provisions the table
+- [Framework Overview](framework/overview.md) — Framework module usage

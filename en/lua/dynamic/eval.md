@@ -20,7 +20,7 @@ Choose the evaluation system according to the code being run:
 
 ## Expression Evaluation with `expr`
 
-The `expr` module evaluates expressions written in expr-lang syntax. Use it for expressions rather than full Lua programs. [Expression Language](./expression.md) is the complete Lua API and syntax reference.
+The `expr` module evaluates expressions written in expr-lang syntax. Use it for expressions rather than full Lua programs. [Expression Language](lua/dynamic/expression.md) is the complete Lua API and syntax reference.
 
 ```lua
 local expr = require("expr")
@@ -396,5 +396,5 @@ This is a partial integration pattern, not a hostile-code sandbox. Validate who 
 ## See Also
 
 - [Expression](./expression.md) - Expression language reference
-- [Exec](./exec.md) - System command execution
-- [Security](../security/security.md) - Security policies
+- [Exec](lua/dynamic/exec.md) - System command execution
+- [Security](lua/security/security.md) - Security policies

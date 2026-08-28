@@ -271,5 +271,5 @@ result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 
 ## 関連項目
 
-- [レジストリ](./registry.md) - 主なイベント生成元
-- [コマンドディスパッチ](./dispatch.md) - プロセスからハンドラへのルーティング
+- [レジストリ](internals/registry.md) - 主なイベント生成元
+- [コマンドディスパッチ](internals/dispatch.md) - プロセスからハンドラへのルーティング

@@ -209,9 +209,9 @@ description: "메모리, 파일, 운영 체제, 정적 값 또는 스토리지 �
 
 ## 런타임 접근
 
-- [env 모듈](../lua/system/env.md) - Lua 런타임 접근
+- [env 모듈](lua/system/env.md) - Lua 런타임 접근
 
 ## 참고
 
-- [보안 모델](./security.md) - 환경 변수에 대한 접근 제어
-- [설정 가이드](../guides/configuration.md) - 애플리케이션 설정 패턴
+- [보안 모델](system/security.md) - 환경 변수에 대한 접근 제어
+- [설정 가이드](guides/configuration.md) - 애플리케이션 설정 패턴

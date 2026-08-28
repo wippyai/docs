@@ -86,7 +86,7 @@ O SQLite sempre usa uma única conexão (<code>max_open</code> e <code>max_idle<
 
 ### Valores Secretos e de Ambiente
 
-Obtenha valores do [registro de ambiente](./env.md) com placeholders `${env:NAME}`, resolvidos durante a decodificação. `NAME` é o nome público de uma variável registrada ou seu ID de entrada, como `app.secrets:db_password`; não é uma variável bruta do sistema operacional.
+Obtenha valores do [registro de ambiente](system/env.md) com placeholders `${env:NAME}`, resolvidos durante a decodificação. `NAME` é o nome público de uma variável registrada ou seu ID de entrada, como `app.secrets:db_password`; não é uma variável bruta do sistema operacional.
 
 ```yaml
 - name: prod_db
@@ -265,14 +265,14 @@ entries:
 
 ## Registro em Tempo de Execução
 
-Bancos de dados podem ser registrados em runtime com o [módulo registry](../lua/core/registry.md).
+Bancos de dados podem ser registrados em runtime com o [módulo registry](lua/core/registry.md).
 
 ## API Lua
 
-Consulte o [Módulo SQL](../lua/storage/sql.md) para consultas, transações e operações de conexão.
+Consulte o [Módulo SQL](lua/storage/sql.md) para consultas, transações e operações de conexão.
 
 ## Veja Também
 
-- [Módulo SQL](../lua/storage/sql.md) - Referência da API Lua
-- [Store](./store.md) - Armazenamento chave-valor baseado em um banco `db.sql.*`
-- [Queue](./queue.md) - Handler de fila baseado em SQL
+- [Módulo SQL](lua/storage/sql.md) - Referência da API Lua
+- [Store](system/store.md) - Armazenamento chave-valor baseado em um banco `db.sql.*`
+- [Queue](system/queue.md) - Handler de fila baseado em SQL

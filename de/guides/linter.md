@@ -253,6 +253,6 @@ Beispiel für einen GitHub-Actions-Schritt:
 
 ## Siehe auch
 
-- [CLI](./cli.md) — Vollständige CLI-Referenz
-- [Typen](../lua/types.md) — Dokumentation des Typsystems
-- [LSP](./lsp.md) — Editorintegration mit Live-Diagnosen
+- [CLI](guides/cli.md) — Vollständige CLI-Referenz
+- [Typen](lua/types.md) — Dokumentation des Typsystems
+- [LSP](guides/lsp.md) — Editorintegration mit Live-Diagnosen

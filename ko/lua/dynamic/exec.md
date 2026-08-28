@@ -13,7 +13,7 @@ description: "외부 프로세스를 시작하고 스트림 데이터를 교환�
 
 실행기는 명령 문자열을 실행 파일과 인수로 파싱하며 셸을 호출하지 않습니다. 파이프, 리디렉션, 변수 확장, 명령 치환 같은 셸 연산자는 해석되지 않습니다. 선택한 백엔드와 운영 체제가 지원할 때만 실행 가능한 스크립트를 직접 시작할 수 있습니다.
 
-예제를 사용하기 전에 [실행기](../../system/exec.md)의 설명대로 실행기 리소스와 명령 allowlist를 구성하고, 사용하는 정확한 리소스에 `exec.get`과 `exec.run`을 허가하세요. 예제는 Unix 명령과 경로를 사용하므로 실행기 호스트에서 사용할 수 있는 명령으로 바꾸세요.
+예제를 사용하기 전에 [실행기](system/exec.md)의 설명대로 실행기 리소스와 명령 allowlist를 구성하고, 사용하는 정확한 리소스에 `exec.get`과 `exec.run`을 허가하세요. 예제는 Unix 명령과 경로를 사용하므로 실행기 호스트에서 사용할 수 있는 명령으로 바꾸세요.
 
 ## 로딩
 
@@ -300,4 +300,4 @@ if close_err then return nil, close_err end
 
 런타임 v0.3.32a에서 `exec.get`과 `exec.run` 정책 거부는 `errors.PERMISSION_DENIED`가 아니라 `errors.INVALID`를 사용합니다.
 
-에러 처리는 [에러 처리](../core/errors.md)를 참조하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

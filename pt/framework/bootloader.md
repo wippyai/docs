@@ -145,7 +145,7 @@ Gera 32 bytes aleatórios, codifica-os como uma `ENCRYPTION_KEY` hexadecimal de 
 
 ### Bootloader de Migracao (ordem `20`)
 
-Fornecido por `wippy/migration`. Descobre cada entrada com `meta.type: migration`, agrupa-as por `meta.target_db` e aplica as pendentes. Veja [Migrações](./migration.md).
+Fornecido por `wippy/migration`. Descobre cada entrada com `meta.type: migration`, agrupa-as por `meta.target_db` e aplica as pendentes. Veja [Migrações](framework/migration.md).
 
 ## Observando o Status de Boot
 
@@ -157,6 +157,6 @@ Mantenha os bootloaders idempotentes. Eles executam novamente sempre que `bootlo
 
 ## Veja Tambem
 
-- [Migrações](./migration.md) — Bootloader de migração e DSL
-- [Supervisão](../guides/supervision.md) — Ciclo de vida do serviço e política de reinicialização
-- [Visão Geral do Framework](./overview.md) — Uso dos módulos do framework
+- [Migrações](framework/migration.md) — Bootloader de migração e DSL
+- [Supervisão](guides/supervision.md) — Ciclo de vida do serviço e política de reinicialização
+- [Visão Geral do Framework](framework/overview.md) — Uso dos módulos do framework

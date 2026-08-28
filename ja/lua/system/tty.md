@@ -376,5 +376,5 @@ tty.text.position.RIGHT    -- 1
 
 ## 関連項目
 
-- [ターミナル I/O](./io.md) — stdin/stdout/stderr 操作
-- [ターミナルホスト](../../system/terminal.md) — ターミナルホスト設定
+- [ターミナル I/O](lua/system/io.md) — stdin/stdout/stderr 操作
+- [ターミナルホスト](system/terminal.md) — ターミナルホスト設定

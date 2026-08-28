@@ -83,7 +83,7 @@ Stellen Sie den API-Schlüssel über eine dieser Methoden bereit:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Authentifizierungs- und Zugangsdatenfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](../system/env.md) auf. Die veralteten Direktiven `api_key_env` und `key_pem_env` werden auf dieselbe Weise aufgelöst; verwenden Sie stattdessen `api_key: ${env:NAME}` beziehungsweise `key_pem: ${env:NAME}`.
+Authentifizierungs- und Zugangsdatenfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die veralteten Direktiven `api_key_env` und `key_pem_env` werden auf dieselbe Weise aufgelöst; verwenden Sie stattdessen `api_key: ${env:NAME}` beziehungsweise `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -204,7 +204,7 @@ Worker-Verhalten konfigurieren:
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Zugangsdaten- und Bezeichnerfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](../system/env.md) auf. Die veraltete Direktive `build_id_env` wird auf dieselbe Weise aufgelöst; verwenden Sie stattdessen `build_id: ${env:NAME}`.
+Zugangsdaten- und Bezeichnerfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die veraltete Direktive `build_id_env` wird auf dieselbe Weise aufgelöst; verwenden Sie stattdessen `build_id: ${env:NAME}`.
 
 ### Versionierungsverhalten
 
@@ -287,5 +287,5 @@ entries:
 
 ## Siehe auch
 
-- [Activities](./activities.md) - Activity-Definitionen
-- [Workflows](./workflows.md) - Workflow-Implementierung
+- [Activities](temporal/activities.md) - Activity-Definitionen
+- [Workflows](temporal/workflows.md) - Workflow-Implementierung

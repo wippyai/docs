@@ -7,7 +7,7 @@ description: "Runtime-Konfigurationsfelder, Profile, Kompositionsregeln, Umgebun
 
 Wippy liest seine Runtime-Konfiguration aus `.wippy.yaml`-Dateien.
 
-Verwenden Sie die wiederholbare Option `wippy run --set section.path=value`, um die folgenden Konfigurationsfelder beim Start zu überschreiben. Für einzelne Registry-*Einträge* statt Konfigurationsabschnitte verwenden Sie `override:` oder `-o`; siehe [Einträge überschreiben](./entry-kinds.md#overriding-entries).
+Verwenden Sie die wiederholbare Option `wippy run --set section.path=value`, um die folgenden Konfigurationsfelder beim Start zu überschreiben. Für einzelne Registry-*Einträge* statt Konfigurationsabschnitte verwenden Sie `override:` oder `-o`; siehe [Einträge überschreiben](guides/entry-kinds.md#overriding-entries).
 
 ## Konfigurations-Komposition {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - Die erste Datei verankert das Verzeichnis, gegen das relative Pfade aufgelöst werden.
 - Dateinamen tragen keine reservierte Bedeutung; nichts außer dem Standard wird automatisch entdeckt.
 
-Die Konfiguration wird in dieser Reihenfolge angewendet: komponierte Dateien, ausgewählte `--profile`-Overlays und anschließend `--set`-Überschreibungen. Bei Anwendungen aus Packs haben gepackte Runtime-Defaults eine niedrigere Priorität; siehe [Runtime-Defaults veröffentlichen](./publishing.md#publishing-runtime-defaults).
+Die Konfiguration wird in dieser Reihenfolge angewendet: komponierte Dateien, ausgewählte `--profile`-Overlays und anschließend `--set`-Überschreibungen. Bei Anwendungen aus Packs haben gepackte Runtime-Defaults eine niedrigere Priorität; siehe [Runtime-Defaults veröffentlichen](guides/publishing.md#publishing-runtime-defaults).
 
 ## Profile {#profiles}
 
@@ -59,7 +59,7 @@ wippy run --profile pg
 - Der Abschnitt `disable` unterstützt Listenoperationen innerhalb von Profilen — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — sodass ein Profil die Basisliste anpassen kann, statt sie zu ersetzen.
 - `${name}`-Referenzen interpolieren aus dem zusammengeführten `vars:`-Abschnitt. OS-Umgebungsreferenzen sind innerhalb von Profil-Vars nicht erlaubt; verwenden Sie `${env:NAME}` in der Basiskonfiguration, aufgelöst beim Laden der Datei.
 
-`wippy run`, `test` und `pack` akzeptieren `--profile`; `install`, `update`, `lint` und `registry` akzeptieren es ebenfalls für Workspace-Profile (zusammen mit `--set`). Anwendungen können Profile in Packs ausliefern — siehe [Profile veröffentlichen](./publishing.md#publishing-profiles).
+`wippy run`, `test` und `pack` akzeptieren `--profile`; `install`, `update`, `lint` und `registry` akzeptieren es ebenfalls für Workspace-Profile (zusammen mit `--set`). Anwendungen können Profile in Packs ausliefern — siehe [Profile veröffentlichen](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -76,7 +76,7 @@ logger:
 
 ## Log-Manager
 
-Steuert das Runtime-Log-Routing. Konsolenausgabe wird über [CLI-Flags](./cli.md) (`-v`, `-c`, `-s`) konfiguriert.
+Steuert das Runtime-Log-Routing. Konsolenausgabe wird über [CLI-Flags](guides/cli.md) (`-v`, `-c`, `-s`) konfiguriert.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
@@ -91,7 +91,7 @@ logmanager:
   min_level: 0
 ```
 
-Siehe: [Logger-Modul](../lua/system/logger.md)
+Siehe: [Logger-Modul](lua/system/logger.md)
 
 ## Profiler
 
@@ -115,7 +115,7 @@ Zugriff unter `http://localhost:6060/debug/pprof/`
 
 ## Sicherheit
 
-Globales Sicherheitsverhalten. Individuelle Richtlinien werden als [security.policy-Einträge](./entry-kinds.md) definiert.
+Globales Sicherheitsverhalten. Individuelle Richtlinien werden als [security.policy-Einträge](guides/entry-kinds.md) definiert.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
@@ -126,7 +126,7 @@ security:
   strict_mode: true
 ```
 
-Siehe: [Sicherheitssystem](../system/security.md), [Sicherheitsmodul](../lua/security/security.md)
+Siehe: [Sicherheitssystem](system/security.md), [Sicherheitsmodul](lua/security/security.md)
 
 ## Registry
 
@@ -153,7 +153,7 @@ registry:
   history_schema: wippy_registry
 ```
 
-Siehe: [Registry-Konzept](../concepts/registry.md), [Registry-Modul](../lua/core/registry.md)
+Siehe: [Registry-Konzept](concepts/registry.md), [Registry-Modul](lua/core/registry.md)
 
 ## Relay
 
@@ -168,7 +168,7 @@ relay:
   node_name: worker-1
 ```
 
-Siehe: [Prozessmodell](../concepts/process-model.md)
+Siehe: [Prozessmodell](concepts/process-model.md)
 
 ## Supervisor
 
@@ -186,10 +186,10 @@ supervisor:
     worker_count: 32
 ```
 
-Siehe: [Supervision-Anleitung](./supervision.md)
+Siehe: [Supervision-Anleitung](guides/supervision.md)
 
 <note>
-Worker und Warteschlangen pro `process.host` werden am Eintrag selbst konfiguriert (`workers`, `queue_size`, `local_queue_size`), nicht in diesem globalen Abschnitt. Siehe den [Process Host](../system/process-host.md)-Eintragstyp.
+Worker und Warteschlangen pro `process.host` werden am Eintrag selbst konfiguriert (`workers`, `queue_size`, `local_queue_size`), nicht in diesem globalen Abschnitt. Siehe den [Process Host](system/process-host.md)-Eintragstyp.
 </note>
 
 ## Lua-Runtime
@@ -218,7 +218,7 @@ lua:
     enabled: true
 ```
 
-Siehe: [Lua-Übersicht](../lua/overview.md)
+Siehe: [Lua-Übersicht](lua/overview.md)
 
 ## Finder
 
@@ -271,7 +271,7 @@ otel:
 
 Standard-OTEL-Umgebungsvariablen (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) überschreiben die entsprechenden Felder.
 
-Siehe: [Observability-Anleitung](./observability.md)
+Siehe: [Observability-Anleitung](guides/observability.md)
 
 ## Herunterfahren :id=shutdown
 
@@ -303,7 +303,7 @@ metrics:
     enabled: true
 ```
 
-Siehe: [Metriken-Modul](../lua/system/metrics.md), [Observability-Anleitung](./observability.md)
+Siehe: [Metriken-Modul](lua/system/metrics.md), [Observability-Anleitung](guides/observability.md)
 
 ## Prometheus
 
@@ -322,11 +322,11 @@ prometheus:
 
 Stellt `/metrics`-Endpunkt für Prometheus-Scraping bereit.
 
-Siehe: [Observability-Anleitung](./observability.md)
+Siehe: [Observability-Anleitung](guides/observability.md)
 
 ## Cluster
 
-Multi-Node-Clustering: Gossip-Mitgliedschaft plus ein begrenzter Raft-Konsenskern. Siehe den [Cluster-Leitfaden](./cluster.md) für Architektur und Betriebsmodell; dieser Abschnitt ist die Konfigurationsschlüssel-Referenz.
+Multi-Node-Clustering: Gossip-Mitgliedschaft plus ein begrenzter Raft-Konsenskern. Siehe den [Cluster-Leitfaden](guides/cluster.md) für Architektur und Betriebsmodell; dieser Abschnitt ist die Konfigurationsschlüssel-Referenz.
 
 ### Oberste Ebene
 
@@ -379,7 +379,7 @@ Jeder Clusterknoten benötigt eine eigene private Internode-Identität und eine 
 
 ### Raft (Konsens)
 
-Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unter `raft.data_dir` (Standard `~/.wippy/store`) gespeichert; ein neugestarteter Knoten tritt dem Quorum dennoch von Peers wieder bei. [`store.kv.raft`](../system/store.md#cluster-kv-stores)-Einträge replizieren darüber. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
+Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unter `raft.data_dir` (Standard `~/.wippy/store`) gespeichert; ein neugestarteter Knoten tritt dem Quorum dennoch von Peers wieder bei. [`store.kv.raft`](system/store.md#cluster-kv-stores)-Einträge replizieren darüber. Bootstrap ist gossip-gesteuert (Consul/Nomad `bootstrap_expect`-Stil).
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
@@ -479,7 +479,7 @@ lsp:
   http_enabled: true
 ```
 
-Siehe: [LSP-Anleitung](./lsp.md)
+Siehe: [LSP-Anleitung](guides/lsp.md)
 
 ## Netzwerkdienst
 
@@ -496,7 +496,7 @@ network_service:
   default_network: app:tailscale
 ```
 
-Siehe: [Netzwerk-Overlays](../system/network.md)
+Siehe: [Netzwerk-Overlays](system/network.md)
 
 ## HTTP-Dispatcher
 
@@ -554,7 +554,7 @@ extensions:
 
 ## Siehe auch
 
-- [CLI-Referenz](./cli.md) — Kommandozeilenoptionen
-- [Cluster-Leitfaden](./cluster.md) — Clustering-Architektur und Betrieb
-- [Entry-Kinds](./entry-kinds.md) — Entry-Kinds und Felder
-- [Observability](./observability.md) — Logging, Metriken und Tracing
+- [CLI-Referenz](guides/cli.md) — Kommandozeilenoptionen
+- [Cluster-Leitfaden](guides/cluster.md) — Clustering-Architektur und Betrieb
+- [Entry-Kinds](guides/entry-kinds.md) — Entry-Kinds und Felder
+- [Observability](guides/observability.md) — Logging, Metriken und Tracing

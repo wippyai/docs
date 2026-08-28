@@ -227,4 +227,4 @@ end
 | Snapshot de overlay obsoleto | `errors.CONFLICT` (reintentable) |
 | Registro no disponible | `errors.INTERNAL` |
 
-Consulta [Manejo de errores](./errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

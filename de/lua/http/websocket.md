@@ -417,7 +417,7 @@ WebSocket-Verbindungen unterliegen der Sicherheitsrichtlinienauswertung.
 | `websocket.connect` | - | WebSocket-Verbindungen erlauben/verweigern |
 | `websocket.connect.url` | URL | Verbindungen zu bestimmten URLs erlauben/verweigern |
 
-Siehe [Sicherheitsmodell](../../system/security.md) zur Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) zur Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -446,7 +446,7 @@ end
 
 Eine leere URL, ein nicht tabellarischer Optionswert, ungültige Argumenttypen sowie ein fehlender Ausführungskontext oder Prozess-PID beim Anfordern des Empfangs-Channels lösen Lua-Fehler aus. Sie werden nicht als strukturierte Fehler zurückgegeben. Runtime `v0.3.32a` stellt Transportfehler beim Senden oder Ping für Lua-Aufrufer nicht bereit.
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 Fügen Sie `websocket` zur Liste `modules:` des ausführbaren Eintrags hinzu, bevor Sie es per `require` laden. Das Global `channel` ist immer verfügbar; JSON- und Timeout-Rezepte erfordern außerdem `json` und `time`.
 
 Nachrichtenobjekte im Empfangs-Channel verwenden nur `"text"` und `"binary"`. Der Transport verarbeitet Ping- und Pong-Frames; ein Terminalereignis schließt den Channel, statt ein Objekt vom Typ `"close"` zu erzeugen.

@@ -13,7 +13,7 @@ El módulo `store` proporciona almacenamiento clave-valor con TTL opcionales. Pu
 
 Esta página es una referencia de API. Sus fragmentos presuponen un almacén configurado, los permisos indicados abajo y valores proporcionados por la aplicación, como `owner` o `new_value`. Los fragmentos posteriores a la adquisición usan un handle `cache` existente y activo; no son funciones independientes.
 
-Para configurar el almacén, consulta [Almacén](../../system/store.md).
+Para configurar el almacén, consulta [Almacén](system/store.md).
 
 ## Carga
 
@@ -299,4 +299,4 @@ Los fallos de entrada, búsqueda, backend y capacidades se devuelven como errore
 | Discrepancia de `if_version` | `errors.CONFLICT` | sí |
 | Escritura condicional en un almacén sin soporte | `errors.INVALID` | no |
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

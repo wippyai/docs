@@ -338,7 +338,7 @@ entries:
     func: app:ws_ticker
 ```
 
-A chave de assinatura, a política curinga de usuário, o armazenamento bruto de API keys e o token store em memória são apropriados apenas para esta demonstração em loopback. Em produção, use `token_key_env`, aplique hash às API keys antes do armazenamento, restrinja as ações e os recursos das políticas, limite as origens permitidas e use um token store durável. Consulte o [Sistema de Ambiente](../system/env.md).
+A chave de assinatura, a política curinga de usuário, o armazenamento bruto de API keys e o token store em memória são apropriados apenas para esta demonstração em loopback. Em produção, use `token_key_env`, aplique hash às API keys antes do armazenamento, restrinja as ações e os recursos das políticas, limite as origens permitidas e use um token store durável. Consulte o [Sistema de Ambiente](system/env.md).
 
 ## Troca de Token
 
@@ -865,6 +865,6 @@ Uma resposta bem-sucedida contém `token`, `user_id: "demo"`, `role: "user"` e `
 
 ## Próximos Passos
 
-- [Relay WebSocket](../http/websocket-relay.md) — Configuração do middleware
-- [Módulo de Segurança](../lua/security/security.md) — Atores, políticas e token stores
-- [Gerenciamento de Processos](../lua/core/process.md) — Criação de processos e mensagens
+- [Relay WebSocket](http/websocket-relay.md) — Configuração do middleware
+- [Módulo de Segurança](lua/security/security.md) — Atores, políticas e token stores
+- [Gerenciamento de Processos](lua/core/process.md) — Criação de processos e mensagens

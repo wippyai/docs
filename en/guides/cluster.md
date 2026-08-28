@@ -15,7 +15,7 @@ Clustering is disabled until `cluster.enabled` is set to `true`.
 - **Cluster-wide process names** — register a process under a name that resolves from any node, with a choice of consistency guarantees (see [Naming](#naming-and-name-scopes)).
 - **Distributed locks** — `system.lock` provides cluster-wide mutual exclusion with automatic release when the holder dies (see [Distributed locks](#distributed-locks)).
 - **Process groups** — publish to every member of a named group across all nodes (see [Process groups](#process-groups)).
-- **Replicated key-value stores** — `store.kv.raft` (strong) and `store.kv.crdt` (eventual) replicate KV data across nodes (see [Store](../system/store.md#cluster-kv-stores)).
+- **Replicated key-value stores** — `store.kv.raft` (strong) and `store.kv.crdt` (eventual) replicate KV data across nodes (see [Store](system/store.md#cluster-kv-stores)).
 - **A consensus core** — a small, bounded Raft cluster provides the linearizable backbone the naming and lock primitives build on.
 
 ## Architecture: Bounded Raft
@@ -93,7 +93,7 @@ Nodes that start later see an already-formed cluster and skip bootstrap entirely
 
 ## Raft Consensus Core
 
-Raft state is **fs-durable by default**: logs and snapshots are persisted under `cluster.raft.data_dir` (default `~/.wippy/store`, in `_sys/raft`), and [`store.kv.raft`](../system/store.md#cluster-kv-stores) replicates through the same core. A restarting node still rejoins gossip and catches up from its peers, so the cluster also tolerates losing a node's disk; durability comes from both the live quorum and on-disk state. A node runs diskless only when no data directory resolves (no configured path and no home directory) — see [Recovery](#recovery-and-failure-modes).
+Raft state is **fs-durable by default**: logs and snapshots are persisted under `cluster.raft.data_dir` (default `~/.wippy/store`, in `_sys/raft`), and [`store.kv.raft`](system/store.md#cluster-kv-stores) replicates through the same core. A restarting node still rejoins gossip and catches up from its peers, so the cluster also tolerates losing a node's disk; durability comes from both the live quorum and on-disk state. A node runs diskless only when no data directory resolves (no configured path and no home directory) — see [Recovery](#recovery-and-failure-modes).
 
 Raft does not open its own listening port. It rides the **internode mesh** — the same TCP connections used for relay traffic between nodes — carrying its RPCs as internode request/reply frames over the mesh's reliable per-class channels. The internode port is auto-selected at boot (range 7950-7959, then ephemeral), pinned, and advertised in gossip so peers can reach it. Nodes must be mutually reachable on both the gossip port and their advertised internode TCP ports.
 
@@ -119,7 +119,7 @@ How to choose:
 
 Names are released automatically: Local on process exit; Consistent and Strong on process exit (via topology monitoring) and on node departure; Eventual on node departure. Resolution for messaging (`process.send`, `process.terminate`, and similar) consults the planes most-authoritative first — Consistent and Strong (Raft), then Eventual (gossip), then Local — so a cluster-wide name shadows a local one with the same string.
 
-The Lua surface for naming lives on `process.registry` (register/lookup/unregister with a scope) — see the [Process](../lua/core/process.md) reference.
+The Lua surface for naming lives on `process.registry` (register/lookup/unregister with a scope) — see the [Process](lua/core/process.md) reference.
 
 ## Process Groups
 
@@ -127,7 +127,7 @@ Process groups are a cluster-aware publish/subscribe and membership facility mod
 
 Typical operations: join/leave a group, broadcast to all members (or local members only), list members, and monitor a group for join/leave events. On a new node joining, groups reconcile their membership through a direct sync handshake, and a background anti-entropy loop repairs any divergence over time.
 
-See [Process Groups](../lua/core/pg.md) for the Lua API and the [`pg.scope` entry kind](../system/process-groups.md) for configuration.
+See [Process Groups](lua/core/pg.md) for the Lua API and the [`pg.scope` entry kind](system/process-groups.md) for configuration.
 
 ## Distributed Locks
 
@@ -149,11 +149,11 @@ end
 return released
 ```
 
-Acquire is fail-fast (non-blocking): if the lock is held, it returns immediately, so callers provide their own retry and backoff. The lock is released if the holder process exits or its node leaves. See the [System](../lua/system/system.md) reference for exact signatures.
+Acquire is fail-fast (non-blocking): if the lock is held, it returns immediately, so callers provide their own retry and backoff. The lock is released if the holder process exits or its node leaves. See the [System](lua/system/system.md) reference for exact signatures.
 
 ## Configuration
 
-See [Configuration](./configuration.md#cluster) for related cluster settings. These minimal shapes include the mandatory internode identity settings.
+See [Configuration](guides/configuration.md#cluster) for related cluster settings. These minimal shapes include the mandatory internode identity settings.
 
 These are configuration fragments, not a complete deployment manifest. Replace
 node names, addresses, failure domains, paths, and every `${env:...}` identity
@@ -222,7 +222,7 @@ Raft is multiplexed over the internode mesh rather than using a separate port. T
 
 ## Observability
 
-Cluster health is exposed through the standard [Prometheus endpoint](./observability.md) and through liveness health checks.
+Cluster health is exposed through the standard [Prometheus endpoint](guides/observability.md) and through liveness health checks.
 
 Key metrics to watch:
 
@@ -252,8 +252,8 @@ Raft state is fs-durable, but the cluster's primary durability still comes from 
 
 ## See Also
 
-- [Configuration](./configuration.md#cluster) — related cluster settings
-- [Process](../lua/core/process.md) — registering and resolving processes by name
-- [System](../lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
-- [Observability](./observability.md) — metrics and health endpoints
-- [Process Model](../concepts/process-model.md) — actors, PIDs, and messaging
+- [Configuration](guides/configuration.md#cluster) — related cluster settings
+- [Process](lua/core/process.md) — registering and resolving processes by name
+- [System](lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
+- [Observability](guides/observability.md) — metrics and health endpoints
+- [Process Model](concepts/process-model.md) — actors, PIDs, and messaging

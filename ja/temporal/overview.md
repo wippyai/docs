@@ -83,7 +83,7 @@ description: "WippyはTemporal.ioと統合し、耐久性のあるワークフ�
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-認証フィールドと資格情報フィールドに含まれる`${env:NAME}`プレースホルダーは、デコード時に[環境レジストリ](../system/env.md)を通じて解決されます。従来の`api_key_env` / `key_pem_env`ディレクティブも同じ方法で解決されますが、非推奨です。`api_key: ${env:NAME}` / `key_pem: ${env:NAME}`を使用してください。
+認証フィールドと資格情報フィールドに含まれる`${env:NAME}`プレースホルダーは、デコード時に[環境レジストリ](system/env.md)を通じて解決されます。従来の`api_key_env` / `key_pem_env`ディレクティブも同じ方法で解決されますが、非推奨です。`api_key: ${env:NAME}` / `key_pem: ${env:NAME}`を使用してください。
 
 #### mTLS
 
@@ -204,7 +204,7 @@ health_check:
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-資格情報フィールドと識別子フィールドに含まれる`${env:NAME}`プレースホルダーは、デコード時に[環境レジストリ](../system/env.md)を通じて解決されます。従来の`build_id_env`ディレクティブも同じ方法で解決されますが、非推奨です。`build_id: ${env:NAME}`を使用してください。
+資格情報フィールドと識別子フィールドに含まれる`${env:NAME}`プレースホルダーは、デコード時に[環境レジストリ](system/env.md)を通じて解決されます。従来の`build_id_env`ディレクティブも同じ方法で解決されますが、非推奨です。`build_id: ${env:NAME}`を使用してください。
 
 ### バージョニング動作
 
@@ -287,5 +287,5 @@ entries:
 
 ## 関連項目
 
-- [アクティビティ](./activities.md) - アクティビティの定義
-- [ワークフロー](./workflows.md) - ワークフローの実装
+- [アクティビティ](temporal/activities.md) - アクティビティの定義
+- [ワークフロー](temporal/workflows.md) - ワークフローの実装

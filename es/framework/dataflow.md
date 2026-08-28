@@ -773,6 +773,6 @@ Categorías de error: errores de compilación, errores del cliente, errores de c
 
 ## Véase también
 
-- [Agents](./agents.md) — Framework de agentes usado por los nodos agente
-- [LLM](./llm.md) — Interfaz de modelos usada por los agentes
-- [Descripción general del Framework](./overview.md) — Instalar e importar módulos del framework
+- [Agents](framework/agents.md) — Framework de agentes usado por los nodos agente
+- [LLM](framework/llm.md) — Interfaz de modelos usada por los agentes
+- [Descripción general del Framework](framework/overview.md) — Instalar e importar módulos del framework

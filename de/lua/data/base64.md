@@ -119,5 +119,5 @@ if err then return nil, err end
 | Ungültige Base64-Zeichen | `errors.INVALID` | nein |
 | Beschädigtes Padding | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](../core/errors.md) für die Arbeit mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 Der letzte Block demonstriert nur den Umgang mit Trennzeichen. Er parst oder verifiziert kein signiertes Tokenformat.

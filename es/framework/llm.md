@@ -7,7 +7,7 @@ description: "Usa wippy/llm para generación, prompts, streaming, herramientas, 
 
 El módulo `wippy/llm` proporciona una interfaz para modelos de OpenAI, Anthropic, Google y providers locales. Admite generación de texto, llamadas a herramientas, salida estructurada, embeddings y streaming.
 
-Esta página es una introducción a la API con fragmentos de referencia componibles, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, un modelo y provider registrados y las credenciales que requiera ese provider. Sustituya los nombres de ejemplo por un modelo expuesto por su registro; las llamadas remotas pueden generar cargos. Para un proyecto ejecutable completo, siga [Construir un agente LLM](../tutorials/llm-agent.md).
+Esta página es una introducción a la API con fragmentos de referencia componibles, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, un modelo y provider registrados y las credenciales que requiera ese provider. Sustituya los nombres de ejemplo por un modelo expuesto por su registro; las llamadas remotas pueden generar cargos. Para un proyecto ejecutable completo, siga [Construir un agente LLM](tutorials/llm-agent.md).
 
 ## Configuracion
 
@@ -632,6 +632,6 @@ print(response.result)
 
 ## Ver Tambien
 
-- [Agentes](./agents.md) — Framework de agentes con herramientas, delegates y memoria
+- [Agentes](framework/agents.md) — Framework de agentes con herramientas, delegates y memoria
 - [Construir un agente LLM](../tutorials/llm-agent.md) — Crear un agente paso a paso
-- [Visión general del framework](./overview.md) — Instalar e importar módulos del framework
+- [Visión general del framework](framework/overview.md) — Instalar e importar módulos del framework

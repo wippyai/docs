@@ -550,7 +550,7 @@ local field_id = lang:field_id_for_name("name")
 
 Das Schließen eines bereits geschlossenen Parsers, Baums, einer Abfrage oder eines Cursors ist sicher. Der Aufruf jeder anderen Methode für ein geschlossenes Handle löst einen Lua-Argumentfehler aus.
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).
 
 ## Query-Syntax-Referenz
 

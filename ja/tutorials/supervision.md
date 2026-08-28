@@ -777,6 +777,6 @@ wippy run
 
 ## 次のステップ
 
-- [プロセス](processes.md) — プロセスの基礎
-- [チャネル](channels.md) — メッセージパッシングのパターン
-- [プロセスモジュール](../lua/core/process.md) — APIリファレンス
+- [プロセス](tutorials/processes.md) — プロセスの基礎
+- [チャネル](tutorials/channels.md) — メッセージパッシングのパターン
+- [プロセスモジュール](lua/core/process.md) — APIリファレンス

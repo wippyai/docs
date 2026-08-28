@@ -10,7 +10,7 @@ description: "구성된 template set에서 Jet template을 render합니다."
 
 `templates` 모듈은 구성된 set의 [Jet](https://github.com/CloudyKit/jet) template을 render합니다. template은 inheritance와 include를 사용할 수 있습니다. 이 페이지는 독립된 template deployment가 아니라 isolated rendering example을 포함한 API reference입니다. registry ID와 template source가 이미 구성되어 있어야 하며 executable entry는 `templates`를 enable하고 요청한 set에 대한 `template.get` permission을 가져야 합니다.
 
-template set configuration은 [템플릿 엔진](../../system/template.md)을 참조하십시오.
+template set configuration은 [템플릿 엔진](system/template.md)을 참조하십시오.
 
 ## 로딩
 
@@ -149,4 +149,4 @@ Jet은 표현식과 제어 구조에 `{{ }}`를, 주석에 `{* *}`를 사용합�
 | 렌더링 에러 | `errors.INTERNAL` | 아니오 |
 | release된 set에서 render 시도 | `errors.INTERNAL` | 아니오 |
 
-[에러 처리](../core/errors.md)에서 error 사용법을 확인하십시오.
+[에러 처리](lua/core/errors.md)에서 error 사용법을 확인하십시오.

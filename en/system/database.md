@@ -86,7 +86,7 @@ SQLite always runs with a single connection (<code>max_open</code> and <code>max
 
 ### Secret and Environment Values
 
-Pull connection values from the [environment registry](./env.md) with `${env:NAME}` placeholders, resolved at decode time. `NAME` is a registered variable's public name or its entry ID (e.g. `app.secrets:db_password`); it is not a raw OS env var.
+Pull connection values from the [environment registry](system/env.md) with `${env:NAME}` placeholders, resolved at decode time. `NAME` is a registered variable's public name or its entry ID (e.g. `app.secrets:db_password`); it is not a raw OS env var.
 
 ```yaml
 - name: prod_db
@@ -265,14 +265,14 @@ entries:
 
 ## Runtime Registration
 
-Databases can be registered at runtime using the [registry module](../lua/core/registry.md).
+Databases can be registered at runtime using the [registry module](lua/core/registry.md).
 
 ## Lua API
 
-See [SQL Module](../lua/storage/sql.md) for query, transaction, and connection operations.
+See [SQL Module](lua/storage/sql.md) for query, transaction, and connection operations.
 
 ## See Also
 
-- [SQL Module](../lua/storage/sql.md) - Lua API reference
-- [Store](./store.md) - Key-value store backed by a `db.sql.*` database
-- [Queue](./queue.md) - SQL-backed queue handler
+- [SQL Module](lua/storage/sql.md) - Lua API reference
+- [Store](system/store.md) - Key-value store backed by a `db.sql.*` database
+- [Queue](system/queue.md) - SQL-backed queue handler

@@ -13,7 +13,7 @@ El módulo `sql` ejecuta consultas en bases de datos PostgreSQL, MySQL y SQLite 
 
 Esta página es una referencia de API. Sus fragmentos presuponen una base de datos configurada, permiso para adquirirla y las tablas mencionadas por la consulta. Ilustran llamadas individuales, no una aplicación independiente. La receta combinada del final indica sus supuestos adicionales de esquema y controlador.
 
-Para configurar la base de datos, consulta [Base de datos](../../system/database.md).
+Para configurar la base de datos, consulta [Base de datos](system/database.md).
 
 ## Carga
 
@@ -1545,7 +1545,7 @@ El acceso a la base de datos está sujeto a la evaluación de políticas de segu
 | Nombre de savepoint inválido | `errors.INVALID` | no |
 | Error del controlador o de ejecución de la consulta | se conserva el del controlador cuando está disponible; de lo contrario, no se especifica | varía |
 
-Consulte [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulte [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
 ## Receta parcial combinada
 

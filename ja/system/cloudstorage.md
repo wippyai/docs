@@ -84,10 +84,10 @@ MinIO または他の S3 互換サービスには、カスタムエンドポイ�
 
 ## Lua API
 
-操作（一覧取得、アップロード、ダウンロード、削除、署名付き URL）については、[クラウドストレージモジュール](../lua/storage/cloud.md)を参照してください。
+操作（一覧取得、アップロード、ダウンロード、削除、署名付き URL）については、[クラウドストレージモジュール](lua/storage/cloud.md)を参照してください。
 
 ## 関連項目
 
-- [クラウドストレージモジュール](../lua/storage/cloud.md) - Lua API リファレンス
-- [ファイルシステム](./filesystem.md) - ローカルファイルシステムエントリ
-- [キュー](./queue.md) - SQS ハンドラーは同じ `config.aws` エントリを共有
+- [クラウドストレージモジュール](lua/storage/cloud.md) - Lua API リファレンス
+- [ファイルシステム](system/filesystem.md) - ローカルファイルシステムエントリ
+- [キュー](system/queue.md) - SQS ハンドラーは同じ `config.aws` エントリを共有

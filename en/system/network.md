@@ -55,7 +55,7 @@ each dial instead of using the configured credentials.
 | Field | Type | Description |
 |-------|------|-------------|
 | `hostname` | string | tsnet node name (used in per-node state directory) |
-| `auth_key` | string | Tailnet auth key — inline or `${env:NAME}` resolved via the [env registry](./env.md) |
+| `auth_key` | string | Tailnet auth key — inline or `${env:NAME}` resolved via the [env registry](system/env.md) |
 | `state_dir` | string | Override for tsnet state directory |
 | `control_url` | string | Alternate coordination server |
 | `ephemeral` | bool | Register as an ephemeral tailnet node |
@@ -174,6 +174,6 @@ Deny `network.select` on a scope to stop code inside it from choosing an overlay
 
 ## See Also
 
-- [Security](./security.md) - Policies and actors
-- [HTTP Service](../http/server.md) - Server binding
-- [HTTP Client](../lua/http/client.md) - Per-call overlay selection
+- [Security](system/security.md) - Policies and actors
+- [HTTP Service](http/server.md) - Server binding
+- [HTTP Client](lua/http/client.md) - Per-call overlay selection

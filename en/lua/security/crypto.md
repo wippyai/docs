@@ -240,4 +240,4 @@ The result is `false` when lengths differ. The underlying constant-time comparis
 | Decryption failed | `errors.INTERNAL` | no |
 | Token expired | `errors.INTERNAL` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

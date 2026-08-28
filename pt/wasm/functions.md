@@ -325,7 +325,7 @@ O separador `#` no campo method faz referência a um método de interface: `test
 
 ## Veja também
 
-- [Visão geral](./overview.md) - Visão geral do runtime WebAssembly
-- [Funções do host](./hosts.md) - Interfaces de host disponíveis
-- [Processos](./processes.md) - Execução de WASM como processos
-- [Tipos de entradas](../guides/entry-kinds.md) - Todos os tipos de entrada do registro
+- [Visão geral](wasm/overview.md) - Visão geral do runtime WebAssembly
+- [Funções do host](wasm/hosts.md) - Interfaces de host disponíveis
+- [Processos](wasm/processes.md) - Execução de WASM como processos
+- [Tipos de entradas](guides/entry-kinds.md) - Todos os tipos de entrada do registro

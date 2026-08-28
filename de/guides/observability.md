@@ -45,7 +45,7 @@ Der eingebettete Standard des Log-Managers ist `-1`, aber `wippy run` wendet bei
 
 ### Automatischer Kontext
 
-Logs, die aus Lua über das [Logger-Modul](../lua/system/logger.md) ausgegeben werden, enthalten automatisch:
+Logs, die aus Lua über das [Logger-Modul](lua/system/logger.md) ausgegeben werden, enthalten automatisch:
 
 - `pid` - Aktuelle Prozess-PID
 - `location` - Entry-ID und aufrufende Zeile (z.B. `app.api:handler:45`)
@@ -71,7 +71,7 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-Die Lua-Metrik-API beschreibt das [Metrik-Modul](../lua/system/metrics.md).
+Die Lua-Metrik-API beschreibt das [Metrik-Modul](lua/system/metrics.md).
 
 ## OpenTelemetry
 
@@ -207,6 +207,6 @@ Diese Funktionen geben `value, error` zurück. Sie erfordern im aktuellen Securi
 
 ## Siehe auch
 
-- [Logger-Modul](../lua/system/logger.md) — Lua-Logging-API
-- [Metrik-Modul](../lua/system/metrics.md) — Lua-Metrik-API
-- [System-Modul](../lua/system/system.md) — Runtime-Statistiken
+- [Logger-Modul](lua/system/logger.md) — Lua-Logging-API
+- [Metrik-Modul](lua/system/metrics.md) — Lua-Metrik-API
+- [System-Modul](lua/system/system.md) — Runtime-Statistiken

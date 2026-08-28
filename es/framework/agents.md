@@ -7,7 +7,7 @@ description: "Define y ejecuta agentes Wippy con herramientas, streaming, delega
 
 El módulo `wippy/agent` define agentes declarativamente y los ejecuta mediante un contexto y un runner. Los agentes pueden usar herramientas, hacer streaming, delegar trabajo, aplicar traits y recordar memoria.
 
-Esta página es una introducción a la API con fragmentos de referencia componibles, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, modelo y provider LLM registrados, credenciales configuradas y las entradas de agente, herramienta o resolver que referencia cada ejemplo. Los fragmentos posteriores usan variables como `ctx`, `runner` y `conversation` creadas antes. Para un proyecto ejecutable completo, siga [Construir un agente LLM](../tutorials/llm-agent.md).
+Esta página es una introducción a la API con fragmentos de referencia componibles, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, modelo y provider LLM registrados, credenciales configuradas y las entradas de agente, herramienta o resolver que referencia cada ejemplo. Los fragmentos posteriores usan variables como `ctx`, `runner` y `conversation` creadas antes. Para un proyecto ejecutable completo, siga [Construir un agente LLM](tutorials/llm-agent.md).
 
 ## Configuracion
 
@@ -644,6 +644,6 @@ La resolución personalizada puede cargar definiciones fuera del registro del fr
 
 ## Ver Tambien
 
-- [LLM](./llm.md) — Interfaz de modelos subyacente
+- [LLM](framework/llm.md) — Interfaz de modelos subyacente
 - [Construir un agente LLM](../tutorials/llm-agent.md) — Crear un agente paso a paso
-- [Visión general del framework](./overview.md) — Instalar e importar módulos del framework
+- [Visión general del framework](framework/overview.md) — Instalar e importar módulos del framework

@@ -135,5 +135,5 @@ scheduler는 process로 message를 route하기 위해 `relay.Receiver`를 구현
 
 ## 참고
 
-- [명령 디스패치](./dispatch.md) - yield가 handler에 도달하는 방식
-- [프로세스 모델](../concepts/process-model.md) - high-level concept
+- [명령 디스패치](internals/dispatch.md) - yield가 handler에 도달하는 방식
+- [프로세스 모델](concepts/process-model.md) - high-level concept

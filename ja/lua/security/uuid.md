@@ -168,4 +168,4 @@ local formatted, err = uuid.format(id, "urn")
 | サポートされていないフォーマットタイプ | `errors.INVALID` | いいえ |
 | 生成失敗 | `errors.INTERNAL` | いいえ |
 
-エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。

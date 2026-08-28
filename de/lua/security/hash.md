@@ -216,4 +216,4 @@ Hier wird `password` über die Geheimnisgrenze der Anwendung bereitgestellt; `sa
 | Secret ist kein String (HMAC) | `errors.INVALID` | nein |
 | PBKDF2-Passwort oder -Salt leer, Grenzwerte ungültig oder Algorithmus nicht unterstützt | `errors.INVALID` | nein |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

@@ -176,6 +176,6 @@ A requisição deve retornar status HTTP 200 com `Content-Type: application/json
 
 ## Próximos Passos
 
-- [Serviço Echo](echo-service.md) — Crie um serviço CLI multiprocesso
-- [Fila de Tarefas](task-queue.md) — Combine uma API REST com processamento em background
-- [Router HTTP](../http/router.md) — Revise padrões de roteamento
+- [Serviço Echo](tutorials/echo-service.md) — Crie um serviço CLI multiprocesso
+- [Fila de Tarefas](tutorials/task-queue.md) — Combine uma API REST com processamento em background
+- [Router HTTP](http/router.md) — Revise padrões de roteamento

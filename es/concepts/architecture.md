@@ -7,7 +7,7 @@ description: "Cómo dividir una aplicación Wippy en namespaces, slices y capas 
 
 Una aplicación Wippy es un **grafo de entradas del registro** representado por archivos fuente. El código vive en entradas como `function.lua` y `process.lua`; los archivos `_index.yaml` declaran cómo se conectan funciones, routes, servicios y libraries. La estructura de la aplicación determina cómo se divide ese grafo en namespaces para que siga siendo componible, comprobable y arrancable a medida que crece.
 
-Esta página explica una forma de organizar el grafo. Para el formato de archivos, nombres y ubicación de `_index.yaml`, consulta [YAML y estructura del proyecto](../start/structure.md). Para las definiciones de entradas, consulta la [Guía de tipos de entrada](../guides/entry-kinds.md).
+Esta página explica una forma de organizar el grafo. Para el formato de archivos, nombres y ubicación de `_index.yaml`, consulta [YAML y estructura del proyecto](start/structure.md). Para las definiciones de entradas, consulta la [Guía de tipos de entrada](guides/entry-kinds.md).
 
 ## Slices por funcionalidad
 
@@ -87,7 +87,7 @@ Son dos puntos de un continuo:
 
 Elige según si el slice será **consumido por un Host que no controlas**. Los componentes reutilizables necesitan una interfaz de requirements; los slices internos pueden referenciar directamente la infraestructura de la aplicación. El packaging cambia con la reutilización, pero las capas internas pueden mantenerse.
 
-Consulta [Creación de componentes](../guides/components.md) para el mecanismo de requirement/dependency y [Gestión de dependencias](../guides/dependency-management.md) para el lock file.
+Consulta [Creación de componentes](guides/components.md) para el mecanismo de requirement/dependency y [Gestión de dependencias](guides/dependency-management.md) para el lock file.
 
 ## Por qué usar esta forma :id=why-this-shape
 
@@ -103,9 +103,9 @@ Esta estructura facilita la composición, la revisión de capacidades y el anál
 
 ## Véase también
 
-- [YAML y estructura del proyecto](../start/structure.md) — formato, nombres y namespaces
-- [Creación de componentes](../guides/components.md) — `ns.definition`, `ns.requirement` y montaje
-- [Gestión de dependencias](../guides/dependency-management.md) — lock files y consumo de módulos
-- [Registro](./registry.md) — cómo se almacenan y resuelven las entradas
-- [Guía de tipos de entrada](../guides/entry-kinds.md) — todos los tipos de entrada
-- [Modelo de procesos](./process-model.md) — servicios, supervisión y hosts
+- [YAML y estructura del proyecto](start/structure.md) — formato, nombres y namespaces
+- [Creación de componentes](guides/components.md) — `ns.definition`, `ns.requirement` y montaje
+- [Gestión de dependencias](guides/dependency-management.md) — lock files y consumo de módulos
+- [Registro](concepts/registry.md) — cómo se almacenan y resuelven las entradas
+- [Guía de tipos de entrada](guides/entry-kinds.md) — todos los tipos de entrada
+- [Modelo de procesos](concepts/process-model.md) — servicios, supervisión y hosts

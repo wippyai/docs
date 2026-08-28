@@ -333,6 +333,6 @@ entries:
 
 ## 関連項目
 
-- [ルーター](./router.md) - ルートのグループ化
-- [HTTPモジュール](../lua/http/http.md) - リクエスト／レスポンスAPI
-- [ミドルウェア](./middleware.md) - リクエスト処理
+- [ルーター](http/router.md) - ルートのグループ化
+- [HTTPモジュール](lua/http/http.md) - リクエスト／レスポンスAPI
+- [ミドルウェア](http/middleware.md) - リクエスト処理

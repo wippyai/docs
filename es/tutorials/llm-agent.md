@@ -829,7 +829,7 @@ Bye!
 
 ## Siguientes Pasos
 
-- [Módulo LLM](../framework/llm.md) — Referencia de la API LLM
-- [Módulo de Agentes](../framework/agents.md) — Referencia del framework de agentes
-- [Aplicaciones CLI](./cli.md) — Patrones de E/S de terminal
-- [Procesos](./processes.md) — Modelo de procesos y comunicación
+- [Módulo LLM](framework/llm.md) — Referencia de la API LLM
+- [Módulo de Agentes](framework/agents.md) — Referencia del framework de agentes
+- [Aplicaciones CLI](tutorials/cli.md) — Patrones de E/S de terminal
+- [Procesos](tutorials/processes.md) — Modelo de procesos y comunicación

@@ -394,4 +394,4 @@ local clean = policy:sanitize(dirty)
 |-----------|------|-----------|
 | 無効な正規表現パターン | `errors.INVALID` | いいえ |
 
-エラーの処理については[エラー処理](../core/errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。

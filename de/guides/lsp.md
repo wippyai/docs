@@ -118,6 +118,6 @@ Benachrichtigungen über vollständige Dokumentänderungen aktualisieren das fü
 
 ## Siehe auch
 
-- [Linter](./linter.md) — Codeprüfung über die CLI
-- [Typen](../lua/types.md) — Dokumentation des Typsystems
-- [Konfiguration](./configuration.md) — Runtime-Konfiguration
+- [Linter](guides/linter.md) — Codeprüfung über die CLI
+- [Typen](lua/types.md) — Dokumentation des Typsystems
+- [Konfiguration](guides/configuration.md) — Runtime-Konfiguration

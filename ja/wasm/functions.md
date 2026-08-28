@@ -325,7 +325,7 @@ if filter_err then return nil, filter_err end
 
 ## 関連項目
 
-- [概要](./overview.md) - WebAssembly ランタイムの概要
-- [ホスト関数](./hosts.md) - 利用可能なホストインターフェース
-- [プロセス](./processes.md) - WASM をプロセスとして実行
-- [エントリ種別](../guides/entry-kinds.md) - すべてのレジストリエントリ種別
+- [概要](wasm/overview.md) - WebAssembly ランタイムの概要
+- [ホスト関数](wasm/hosts.md) - 利用可能なホストインターフェース
+- [プロセス](wasm/processes.md) - WASM をプロセスとして実行
+- [エントリ種別](guides/entry-kinds.md) - すべてのレジストリエントリ種別

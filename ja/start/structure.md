@@ -192,7 +192,7 @@ UI向けの情報には`meta`を使用します：
 | `http.endpoint` | HTTPハンドラ |
 | `process.host` | process execution host |
 
-entry-kind reference は[エントリ種別ガイド](../guides/entry-kinds.md)を参照してください。
+entry-kind reference は[エントリ種別ガイド](guides/entry-kinds.md)を参照してください。
 
 ## 設定ファイル
 
@@ -214,7 +214,7 @@ supervisor:
     worker_count: 16
 ```
 
-runtime configuration field は[設定ガイド](../guides/configuration.md)を参照してください。
+runtime configuration field は[設定ガイド](guides/configuration.md)を参照してください。
 
 ### wippy.lock
 
@@ -270,7 +270,7 @@ myapp/
 
 ## 関連項目
 
-- [アプリケーションアーキテクチャ](../concepts/architecture.md) — application を slice と layer に整理
-- [エントリ種別ガイド](../guides/entry-kinds.md) — 利用可能な entry kind
-- [設定ガイド](../guides/configuration.md) — runtime option
-- [カスタムエントリ種別](../internals/kinds.md) — handler の実装（上級）
+- [アプリケーションアーキテクチャ](concepts/architecture.md) — application を slice と layer に整理
+- [エントリ種別ガイド](guides/entry-kinds.md) — 利用可能な entry kind
+- [設定ガイド](guides/configuration.md) — runtime option
+- [カスタムエントリ種別](internals/kinds.md) — handler の実装（上級）

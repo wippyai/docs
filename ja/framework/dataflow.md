@@ -771,6 +771,6 @@ flow.create()
 
 ## 関連項目
 
-- [Agents](./agents.md) — Agent ノードが使うエージェントフレームワーク
-- [LLM](./llm.md) — エージェントが使うモデルインターフェース
-- [Framework 概要](./overview.md) — Framework モジュールのインストールと利用
+- [Agents](framework/agents.md) — Agent ノードが使うエージェントフレームワーク
+- [LLM](framework/llm.md) — エージェントが使うモデルインターフェース
+- [Framework 概要](framework/overview.md) — Framework モジュールのインストールと利用

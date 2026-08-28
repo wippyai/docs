@@ -394,4 +394,4 @@ local clean = policy:sanitize(dirty)
 |-----------|------|--------------|
 | Patrón de expresión regular no válido | `errors.INVALID` | no |
 
-Consulte [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulte [Manejo de errores](lua/core/errors.md) para trabajar con errores.

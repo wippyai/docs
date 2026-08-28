@@ -13,7 +13,7 @@ Das Modul `queue` veröffentlicht Nachrichten und verarbeitet Zustellungen aus k
 
 Diese Seite ist eine API-Referenz. Die Ausschnitte zum Veröffentlichen setzen voraus, dass die Queue-Einträge und Berechtigungen bereits vorhanden sind. Der Consumer-Abschnitt ist ein Teilrezept für einen von `queue.consumer` aufgerufenen Handler und keine eigenständige Queue-Bereitstellung.
 
-Informationen zur Queue-Konfiguration finden Sie unter [Queue](../../system/queue.md).
+Informationen zur Queue-Konfiguration finden Sie unter [Queue](system/queue.md).
 
 ## Laden
 
@@ -167,12 +167,12 @@ Die Runtime prüft zuerst die allgemeine und anschließend die Queue-spezifische
 | Veröffentlichung fehlgeschlagen | `errors.INTERNAL` | nein |
 | Queue oder Treiber für `info` nicht gefunden | `errors.INTERNAL` | nein |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).
 
 ## Siehe auch
 
-- [Queue-Konfiguration](../../system/queue.md) – Queue-Treiber und Eintragsdefinitionen
-- [Leitfaden für Queue-Consumer](../../guides/queue-consumers.md) – Consumer-Muster und Worker-Pools
-- [Prozessverwaltung](../core/process.md) – Prozesse starten und mit ihnen kommunizieren
-- [Channels](../core/channel.md) – Muster für die Kommunikation zwischen Prozessen
-- [Funktionen](../core/funcs.md) – Asynchrone Funktionsaufrufe
+- [Queue-Konfiguration](system/queue.md) – Queue-Treiber und Eintragsdefinitionen
+- [Leitfaden für Queue-Consumer](guides/queue-consumers.md) – Consumer-Muster und Worker-Pools
+- [Prozessverwaltung](lua/core/process.md) – Prozesse starten und mit ihnen kommunizieren
+- [Channels](lua/core/channel.md) – Muster für die Kommunikation zwischen Prozessen
+- [Funktionen](lua/core/funcs.md) – Asynchrone Funktionsaufrufe

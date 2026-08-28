@@ -217,7 +217,7 @@ Segundo sinal força saída imediata.
 
 ## Consulte também
 
-- [Scheduler](./scheduler.md) — Execução de processos
-- [Event bus](./events.md) — Sistema pub/sub
-- [Registro](./registry.md) — Gerenciamento de estado
-- [Despacho de comandos](./dispatch.md) — Tratamento de yields
+- [Scheduler](internals/scheduler.md) — Execução de processos
+- [Event bus](internals/events.md) — Sistema pub/sub
+- [Registro](internals/registry.md) — Gerenciamento de estado
+- [Despacho de comandos](internals/dispatch.md) — Tratamento de yields

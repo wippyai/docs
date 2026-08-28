@@ -281,7 +281,7 @@ local ok, err = process.registry.unregister(name)
 | `process.registry.CONSISTENT` | クラスタ全体 | 線形化可能なシングルトン（Raft） |
 | `process.registry.STRONG` | クラスタ全体 | Consistent かつすべてのライブノードが確認 |
 
-スタンドアロンノードでは `LOCAL` だけを利用できます。クラスタスコープには[クラスタリング](../../guides/cluster.md)が必要です。
+スタンドアロンノードでは `LOCAL` だけを利用できます。クラスタスコープには[クラスタリング](guides/cluster.md)が必要です。
 
 ### register
 
@@ -381,12 +381,12 @@ local ok, err = process.registry.unregister(name, scope)
 | 権限拒否 | `errors.PERMISSION_DENIED` |
 | 名前が既に登録済み | `errors.ALREADY_EXISTS` |
 
-エラーの処理については[エラー処理](errors.md)を参照してください。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。
 
 ## 関連項目
 
-- [チャネル](channel.md) - プロセス内のコルーチン調整
-- [メッセージキュー](../storage/queue.md) - キューベースのメッセージング
-- [関数](funcs.md) - 関数呼び出し
-- [スーパービジョン](../../guides/supervision.md) - プロセスライフサイクル管理
-- [クラスタ](../../guides/cluster.md) - 名前スコープとクラスタ全体の名前付け
+- [チャネル](lua/core/channel.md) - プロセス内のコルーチン調整
+- [メッセージキュー](lua/storage/queue.md) - キューベースのメッセージング
+- [関数](lua/core/funcs.md) - 関数呼び出し
+- [スーパービジョン](guides/supervision.md) - プロセスライフサイクル管理
+- [クラスタ](guides/cluster.md) - 名前スコープとクラスタ全体の名前付け

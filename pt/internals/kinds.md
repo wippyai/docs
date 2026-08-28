@@ -139,5 +139,5 @@ O registro chama `Begin` antes de processar um lote e, depois, `Commit` em caso 
 
 ## Consulte também
 
-- [Registro](./registry.md) — Armazenamento de entradas
-- [Arquitetura](./architecture.md) — Sequência de boot
+- [Registro](internals/registry.md) — Armazenamento de entradas
+- [Arquitetura](internals/architecture.md) — Sequência de boot

@@ -286,7 +286,7 @@ Una respuesta correcta tiene esta forma; el texto, los valores de similitud y el
 
 ## Siguientes Pasos
 
-- [Framework LLM](../framework/llm.md) — `llm.generate`, `llm.embed` y construcción de prompts
-- [Agentes](../framework/agents.md) — Envuelve el retriever como herramienta de agente
-- [Módulo SQL](../lua/storage/sql.md) — Acceso subyacente a base de datos
-- [Módulo Text](../lua/text/text.md) — Splitters de texto basados en caracteres
+- [Framework LLM](framework/llm.md) — `llm.generate`, `llm.embed` y construcción de prompts
+- [Agentes](framework/agents.md) — Envuelve el retriever como herramienta de agente
+- [Módulo SQL](lua/storage/sql.md) — Acceso subyacente a base de datos
+- [Módulo Text](lua/text/text.md) — Splitters de texto basados en caracteres

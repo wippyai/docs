@@ -8,7 +8,7 @@ description: "Leia valores com escopo de requisição propagados por chamadas de
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-O módulo `ctx` lê valores com escopo de requisição propagados por [chamadas de funções](./funcs.md) ou [operações de processos](./process.md). Esta página é uma referência de API; os trechos mostram chamadas individuais dentro de uma entrada Lua executável.
+O módulo `ctx` lê valores com escopo de requisição propagados por [chamadas de funções](lua/core/funcs.md) ou [operações de processos](lua/core/process.md). Esta página é uma referência de API; os trechos mostram chamadas individuais dentro de uma entrada Lua executável.
 
 ## Carregamento
 
@@ -48,4 +48,4 @@ local values, err = ctx.all()
 | Chave não encontrada | `errors.NOT_FOUND` | não |
 | Nenhum contexto de execução disponível | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](./errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

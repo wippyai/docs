@@ -166,7 +166,7 @@ Der integrierte In-Memory-Treiber ist für Entwicklung und Tests vorgesehen:
 
 ## Siehe auch
 
-- [Message Queue](../lua/storage/queue.md) — Referenz des Queue-Moduls
-- [Queue-Konfiguration](../system/queue.md) — Queue-Treiber und Entry-Definitionen
-- [Supervision](./supervision.md) — Consumer-Lebenszyklus
-- [Prozessverwaltung](../lua/core/process.md) — Prozessstart und Kommunikation
+- [Message Queue](lua/storage/queue.md) — Referenz des Queue-Moduls
+- [Queue-Konfiguration](system/queue.md) — Queue-Treiber und Entry-Definitionen
+- [Supervision](guides/supervision.md) — Consumer-Lebenszyklus
+- [Prozessverwaltung](lua/core/process.md) — Prozessstart und Kommunikation

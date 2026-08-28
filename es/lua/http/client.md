@@ -358,7 +358,7 @@ if close_err then return nil, close_err end
 | `read(n?)` | string, error | Leer hasta `n` bytes (predeterminado: buffer de implementación) |
 | `close()` | boolean, error | Cerrar el stream |
 
-`resp.stream` es un objeto [stream](../core/stream.md) completo: también dispone de
+`resp.stream` es un objeto [stream](lua/core/stream.md) completo: también dispone de
 `seek`, `stat` y `scanner`. El caller es propietario del cuerpo y debe cerrarlo en
 todas las salidas; la limpieza de la tarea es solo un fallback.
 
@@ -460,7 +460,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Consulta [Modelo de seguridad](../../system/security.md) para configurar políticas.
+Consulta [Modelo de seguridad](system/security.md) para configurar políticas.
 
 ## Errores
 
@@ -491,4 +491,4 @@ Muchos valores de opciones no compatibles se ignoran en lugar de producir errore
 estructurados. Los tipos de argumentos Lua no válidos y un lote vacío lanzan errores
 de argumento. Valida las tablas suministradas por la aplicación antes de llamar.
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

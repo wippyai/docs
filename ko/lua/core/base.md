@@ -245,7 +245,7 @@ math.ult(m, n)        -- Unsigned less-than comparison
 
 ## 코루틴
 
-`coroutine` 라이브러리는 코루틴 생성과 제어를 제공합니다. 채널 기반 동시성 패턴은 [채널과 코루틴](channel.md)을 참조하세요.
+`coroutine` 라이브러리는 코루틴 생성과 제어를 제공합니다. 채널 기반 동시성 패턴은 [채널과 코루틴](lua/core/channel.md)을 참조하세요.
 
 ```lua
 coroutine.create(fn)        -- Create coroutine from function
@@ -283,7 +283,7 @@ process_request()
 
 ## 에러 처리
 
-전역 `errors` 테이블은 구조화된 오류를 만들고 분류합니다. 전체 API는 [에러 처리](errors.md)를 참조하세요.
+전역 `errors` 테이블은 구조화된 오류를 만들고 분류합니다. 전체 API는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ### 상수 {id="error-constants"}
 
@@ -343,12 +343,12 @@ err:stack()      -- Get stack trace as string
 
 | 기능 | 대안 |
 |------|------|
-| `load`, `loadstring`, `loadfile`, `dofile` | [동적 평가](../dynamic/eval.md) 모듈 사용 |
+| `load`, `loadstring`, `loadfile`, `dofile` | [동적 평가](lua/dynamic/eval.md) 모듈 사용 |
 | `collectgarbage` | 자동 GC |
 | `rawlen` | `#` 연산자 사용 |
 | `string.dump` | 지원되지 않음 |
-| `io.*` | 파일에는 [파일 시스템](../storage/filesystem.md), 터미널 스트림에는 [터미널 I/O](../system/io.md) 사용 |
-| `os.execute` | [명령 실행](../dynamic/exec.md) 사용 |
+| `io.*` | 파일에는 [파일 시스템](lua/storage/filesystem.md), 터미널 스트림에는 [터미널 I/O](../system/io.md) 사용 |
+| `os.execute` | [명령 실행](lua/dynamic/exec.md) 사용 |
 | `os.remove`, `os.rename` | [파일 시스템](../storage/filesystem.md) 사용 |
 | `os.exit`, `os.tmpname` | 직접 대응하는 표준 라이브러리 없음 |
 | `debug.*` | 사용할 수 없음 |
@@ -357,6 +357,6 @@ err:stack()      -- Get stack trace as string
 
 ## 참고
 
-- [채널과 코루틴](channel.md) - 동시성을 위한 Go 스타일 채널
-- [에러 처리](errors.md) - 구조화된 에러 생성 및 처리
-- [OS 시간](../system/ostime.md) - 시스템 시간 함수
+- [채널과 코루틴](lua/core/channel.md) - 동시성을 위한 Go 스타일 채널
+- [에러 처리](lua/core/errors.md) - 구조화된 에러 생성 및 처리
+- [OS 시간](lua/system/ostime.md) - 시스템 시간 함수

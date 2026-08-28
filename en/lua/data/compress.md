@@ -425,4 +425,4 @@ This partial handler parses exact coding tokens and RFC q-values, honors explici
 | Invalid compressed data | `errors.INVALID` | no |
 | Decompressed size exceeds limit | `errors.INTERNAL` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

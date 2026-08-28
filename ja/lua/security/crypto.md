@@ -240,4 +240,4 @@ local equal = crypto.constant_time_compare(a, b)
 | 復号失敗 | `errors.INTERNAL` | いいえ |
 | トークン期限切れ | `errors.INTERNAL` | いいえ |
 
-エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。

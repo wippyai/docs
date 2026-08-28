@@ -13,7 +13,7 @@ Diese Seite ist eine API-Einführung mit kombinierbaren Referenz-Snippets, kein
 eigenständiges Tutorial. Vorausgesetzt werden ein bestehendes Wippy-Projekt, ein
 registriertes Modell samt Provider und dessen Zugangsdaten. Ersetzen Sie Beispielmodelle
 durch einen Namen aus Ihrer Registry; Remote-Aufrufe können Providerkosten verursachen.
-Ein vollständiges Projekt zeigt [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md).
+Ein vollständiges Projekt zeigt [Einen LLM-Agenten erstellen](tutorials/llm-agent.md).
 
 ## Einrichtung
 
@@ -644,6 +644,6 @@ print(response.result)
 
 ## Siehe auch
 
-- [Agenten](./agents.md) — Agenten-Framework mit Tools, Delegaten und Memory
+- [Agenten](framework/agents.md) — Agenten-Framework mit Tools, Delegaten und Memory
 - [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md) — Agent schrittweise erstellen
-- [Framework-Übersicht](./overview.md) — Framework-Module installieren und importieren
+- [Framework-Übersicht](framework/overview.md) — Framework-Module installieren und importieren

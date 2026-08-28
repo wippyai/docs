@@ -82,7 +82,7 @@ process.
 
 ## See Also
 
-- [Process Module](../lua/core/process.md) - Spawn and manage processes from Lua
-- [WASM Processes](../wasm/processes.md) - Configuring `process.wasm` entries
-- [Process Model](../concepts/process-model.md) - Lifecycle and supervision concepts
-- [Supervision](../guides/supervision.md) - Building supervision trees
+- [Process Module](lua/core/process.md) - Spawn and manage processes from Lua
+- [WASM Processes](wasm/processes.md) - Configuring `process.wasm` entries
+- [Process Model](concepts/process-model.md) - Lifecycle and supervision concepts
+- [Supervision](guides/supervision.md) - Building supervision trees

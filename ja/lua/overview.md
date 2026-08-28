@@ -32,7 +32,7 @@ if send_err then
 end
 ```
 
-実行可能なLuaエントリでは、`process` がグローバルとして提供されます。エントリの `modules` リストに追加せずに `require("process")` で読み込むこともできます。スポーン、リンク、スーパービジョンについては[プロセス管理](core/process.md)を参照してください。
+実行可能なLuaエントリでは、`process` がグローバルとして提供されます。エントリの `modules` リストに追加せずに `require("process")` で読み込むこともできます。スポーン、リンク、スーパービジョンについては[プロセス管理](lua/core/process.md)を参照してください。
 
 ## チャネル
 
@@ -46,7 +46,7 @@ buffered:send("work")           -- completes while buffer space is available
 local val, ok = buffered:receive()  -- val is "work" and ok is true
 ```
 
-selectとパターンについては[チャネル](core/channel.md)を参照してください。
+selectとパターンについては[チャネル](lua/core/channel.md)を参照してください。
 
 ## コルーチン
 
@@ -104,17 +104,17 @@ local sql = require("sql")
 local http = require("http_client")
 ```
 
-利用可能なモジュールはエントリ設定に依存します。[エントリ定義](entries.md)を参照してください。
+利用可能なモジュールはエントリ設定に依存します。[エントリ定義](lua/entries.md)を参照してください。
 
 レジストリライブラリも同じ `require("alias")` 構文を使用しますが、エントリの `imports:` マップで別途宣言します。
 
 ## 言語とライブラリのサポート
 
-Wippyは、Luauに着想を得た[漸進的型システム](types.md)を備えるLua 5.3構文を使用します。型はファーストクラスのランタイム値であり、検証に使用したり、引数として渡したり、実行時に調査したりできます。
+Wippyは、Luauに着想を得た[漸進的型システム](lua/types.md)を備えるLua 5.3構文を使用します。型はファーストクラスのランタイム値であり、検証に使用したり、引数として渡したり、実行時に調査したりできます。
 
 外部Luaライブラリ（LuaRocksなど）はサポートされていません。ランタイムはI/O、ネットワーキング、システム統合のための組み込み拡張を持つ独自のモジュールシステムを提供します。
 
-カスタム拡張については、internalsドキュメントの[モジュール](../internals/modules.md)を参照してください。
+カスタム拡張については、internalsドキュメントの[モジュール](internals/modules.md)を参照してください。
 
 ## エラー処理
 
@@ -127,11 +127,11 @@ if err then
 end
 ```
 
-このスニペットでは、エントリの `modules` リストで `json` が有効になっており、`input` にデコード対象の文字列が含まれているものとします。パターンについては[エラー処理](core/errors.md)を参照してください。
+このスニペットでは、エントリの `modules` リストで `json` が有効になっており、`input` にデコード対象の文字列が含まれているものとします。パターンについては[エラー処理](lua/core/errors.md)を参照してください。
 
 ## 次のステップ
 
-- [エントリ定義](entries.md) - エントリポイントの設定
-- [チャネル](core/channel.md) - チャネルパターン
-- [プロセス管理](core/process.md) - スポーンとスーパービジョン
-- [関数](core/funcs.md) - プロセス間の呼び出し
+- [エントリ定義](lua/entries.md) - エントリポイントの設定
+- [チャネル](lua/core/channel.md) - チャネルパターン
+- [プロセス管理](lua/core/process.md) - スポーンとスーパービジョン
+- [関数](lua/core/funcs.md) - プロセス間の呼び出し

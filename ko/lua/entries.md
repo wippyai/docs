@@ -144,7 +144,7 @@ modules:
 
 나열된 내장 모듈과 `imports`에 선언한 별칭만 사용할 수 있습니다. 모듈 허용 목록은 런타임 기능에 대한 접근을 제한하고, 의존성을 명시하며, 워크플로우를 호환되는 모듈 클래스로 제한합니다.
 
-사용 가능한 모듈은 [Lua 런타임](overview.md)을 참고하세요.
+사용 가능한 모듈은 [Lua 런타임](lua/overview.md)을 참고하세요.
 
 ## 임포트
 
@@ -229,6 +229,6 @@ end
 
 ## 참고
 
-- [엔트리 종류](../guides/entry-kinds.md) - 모든 엔트리 종류 참조
-- [컴퓨팅 단위](../concepts/compute-units.md) - 함수 vs 프로세스 vs 워크플로우
-- [Lua 런타임](overview.md) - 사용 가능한 모듈
+- [엔트리 종류](guides/entry-kinds.md) - 모든 엔트리 종류 참조
+- [컴퓨팅 단위](concepts/compute-units.md) - 함수 vs 프로세스 vs 워크플로우
+- [Lua 런타임](lua/overview.md) - 사용 가능한 모듈

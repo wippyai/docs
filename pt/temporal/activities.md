@@ -390,7 +390,7 @@ Entradas `process.lua` também podem ser registradas como atividades para opera�
 
 ## Veja também
 
-- [Visão geral](./overview.md) - Configuração
-- [Workflows](./workflows.md) - Implementação de workflows
-- [Funções](../lua/core/funcs.md) - Módulo de funções
-- [Tratamento de erros](../lua/core/errors.md) - Tipos e padrões de erro
+- [Visão geral](temporal/overview.md) - Configuração
+- [Workflows](temporal/workflows.md) - Implementação de workflows
+- [Funções](lua/core/funcs.md) - Módulo de funções
+- [Tratamento de erros](lua/core/errors.md) - Tipos e padrões de erro

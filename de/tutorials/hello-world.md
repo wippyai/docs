@@ -185,6 +185,6 @@ Die Anfrage sollte den HTTP-Status 200 mit `Content-Type: application/json` zur�
 
 ## Nächste Schritte
 
-- [Echo-Service](echo-service.md) — Einen CLI-Dienst mit mehreren Prozessen bauen
-- [Task-Queue](task-queue.md) — Eine REST-API mit Hintergrundverarbeitung kombinieren
-- [HTTP-Router](../http/router.md) — Routing-Muster nachschlagen
+- [Echo-Service](tutorials/echo-service.md) — Einen CLI-Dienst mit mehreren Prozessen bauen
+- [Task-Queue](tutorials/task-queue.md) — Eine REST-API mit Hintergrundverarbeitung kombinieren
+- [HTTP-Router](http/router.md) — Routing-Muster nachschlagen

@@ -208,7 +208,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-키는 `org/module`, 값은 디렉토리입니다 (상대 경로는 첫 번째 `--config` 파일의 디렉토리를 기준으로 해석됩니다; 경로는 존재해야 하며 디렉토리여야 합니다). 교체를 `null`로 설정하면 이전 설정 레이어나 프로파일에서 상속된 교체가 비활성화됩니다. 교체는 [프로파일](./configuration.md#profiles) 안에도 둘 수 있어 `--profile workspace`와 함께할 때만 활성화됩니다.
+키는 `org/module`, 값은 디렉토리입니다 (상대 경로는 첫 번째 `--config` 파일의 디렉토리를 기준으로 해석됩니다; 경로는 존재해야 하며 디렉토리여야 합니다). 교체를 `null`로 설정하면 이전 설정 레이어나 프로파일에서 상속된 교체가 비활성화됩니다. 교체는 [프로파일](guides/configuration.md#profiles) 안에도 둘 수 있어 `--profile workspace`와 함께할 때만 활성화됩니다.
 
 워크스페이스 교체는 부트 시 로드 그래프에 영향을 주며 `wippy.lock`에는 절대 기록되지 않습니다. 로컬 소스의 변경은 허브에 접속하지 않고 직접 반영됩니다. 모듈의 `wippy.yaml`에 있는 소스 `exclude:` 글롭은 교체 디렉토리에도 적용됩니다 — 엔트리를 로드할 때와 콘텐츠를 해싱할 때 모두.
 
@@ -230,7 +230,7 @@ wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 
 ## 같이 보기
 
-- [컴포넌트 구축](./components.md) - 작성자 측: 요구사항을 작성하고 `parameters`를 통해 값 공급
-- [CLI](./cli.md) - 명령어 참조
-- [게시](./publishing.md) - 허브에 모듈 게시
-- [프로젝트 구조](../start/structure.md) - 프로젝트 레이아웃
+- [컴포넌트 구축](guides/components.md) - 작성자 측: 요구사항을 작성하고 `parameters`를 통해 값 공급
+- [CLI](guides/cli.md) - 명령어 참조
+- [게시](guides/publishing.md) - 허브에 모듈 게시
+- [프로젝트 구조](start/structure.md) - 프로젝트 레이아웃

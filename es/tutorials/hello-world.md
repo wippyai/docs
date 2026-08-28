@@ -176,6 +176,6 @@ La solicitud debe devolver el estado HTTP 200 con `Content-Type: application/jso
 
 ## Siguientes Pasos
 
-- [Servicio Echo](echo-service.md) — Crea un servicio CLI multiproceso
-- [Cola de tareas](task-queue.md) — Combina una API REST con procesamiento en segundo plano
-- [Router HTTP](../http/router.md) — Consulta los patrones de enrutamiento
+- [Servicio Echo](tutorials/echo-service.md) — Crea un servicio CLI multiproceso
+- [Cola de tareas](tutorials/task-queue.md) — Combina una API REST con procesamiento en segundo plano
+- [Router HTTP](http/router.md) — Consulta los patrones de enrutamiento

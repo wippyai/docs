@@ -68,7 +68,7 @@ description: "プロセスホストは、ワークスティーリングスケジ
 
 ## 関連項目
 
-- [プロセスモジュール](../lua/core/process.md) - Lua からプロセスを生成および管理
-- [WASM プロセス](../wasm/processes.md) - `process.wasm` エントリの設定
-- [プロセスモデル](../concepts/process-model.md) - ライフサイクルとスーパービジョンの概念
-- [スーパービジョン](../guides/supervision.md) - スーパービジョンツリーの構築
+- [プロセスモジュール](lua/core/process.md) - Lua からプロセスを生成および管理
+- [WASM プロセス](wasm/processes.md) - `process.wasm` エントリの設定
+- [プロセスモデル](concepts/process-model.md) - ライフサイクルとスーパービジョンの概念
+- [スーパービジョン](guides/supervision.md) - スーパービジョンツリーの構築

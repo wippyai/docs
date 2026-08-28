@@ -106,7 +106,7 @@ Si la lista se omite o está vacía, se permite cualquier comando que supere la 
 
 ## API Lua
 
-El [módulo Exec](../lua/dynamic/exec.md) permite ejecutar comandos:
+El [módulo Exec](lua/dynamic/exec.md) permite ejecutar comandos:
 
 ```lua
 local exec = require("exec")
@@ -162,6 +162,6 @@ return table.concat(chunks), exit_code
 
 ## Ver También
 
-- [Módulo Exec](../lua/dynamic/exec.md) - Referencia de la API Lua
-- [Host de procesos](./process-host.md) - Host que ejecuta procesos Wippy
-- [Sistema de archivos](./filesystem.md) - Entradas de sistema de archivos utilizadas como directorios de trabajo
+- [Módulo Exec](lua/dynamic/exec.md) - Referencia de la API Lua
+- [Host de procesos](system/process-host.md) - Host que ejecuta procesos Wippy
+- [Sistema de archivos](system/filesystem.md) - Entradas de sistema de archivos utilizadas como directorios de trabajo

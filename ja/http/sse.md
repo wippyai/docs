@@ -40,7 +40,7 @@ end
 
 ## SSEリレー
 
-SSEリレーミドルウェアは、プロセスを基盤とする長時間のSSEストリームを作成します。[WebSocketリレー](./websocket-relay.md)と同じリレーパターンに従います。
+SSEリレーミドルウェアは、プロセスを基盤とする長時間のSSEストリームを作成します。[WebSocketリレー](http/websocket-relay.md)と同じリレーパターンに従います。
 
 ### 仕組み
 
@@ -263,6 +263,6 @@ if transfer_err then return nil, transfer_err end
 
 ## 関連項目
 
-- [ミドルウェア](./middleware.md) — ミドルウェア設定
-- [WebSocketリレー](./websocket-relay.md) — WebSocketでの同等機能
-- [プロセス](../lua/core/process.md) — プロセスメッセージング
+- [ミドルウェア](http/middleware.md) — ミドルウェア設定
+- [WebSocketリレー](http/websocket-relay.md) — WebSocketでの同等機能
+- [プロセス](lua/core/process.md) — プロセスメッセージング

@@ -7,7 +7,7 @@ description: "Declare requirements de módulos reutilizáveis com ns.requirement
 
 Um **componente** é um módulo Wippy reutilizável — um slice de funcionalidade publicado no hub e montado em uma aplicação host. O desafio que um componente enfrenta é que ele não pode nomear as coisas de que depende: ele precisa de *um* banco de dados, *um* host de processos, *um* roteador, mas não sabe quais o host lhe dará. O Wippy resolve isso com uma **interface de requirements** — o componente declara buracos, o host os preenche.
 
-Este guia cobre o lado do autor: declarar essa interface e entender como os valores fluem para as suas entradas. Para o lado do consumidor (arquivos de lock, restrições de versão, `wippy add`/`update`) veja [Gerenciamento de Dependências](./dependency-management.md). Para como um componente é estruturado internamente veja [Arquitetura de Aplicações](../concepts/architecture.md).
+Este guia cobre o lado do autor: declarar essa interface e entender como os valores fluem para as suas entradas. Para o lado do consumidor (arquivos de lock, restrições de versão, `wippy add`/`update`) veja [Gerenciamento de Dependências](guides/dependency-management.md). Para como um componente é estruturado internamente veja [Arquitetura de Aplicações](concepts/architecture.md).
 
 ## Os três tipos
 
@@ -143,11 +143,11 @@ Testes unitários exercitam um slice em isolamento; eles não conseguem ver se o
 - cada id iniciado via spawn ou agendado resolve para uma entrada real,
 - o armazenamento de cada `env.variable` está registrado.
 
-Estas são as costuras de integração que as suítes unitárias isoladas mascaram — as brechas que deixam um supervisor referenciar um worker que nunca foi registrado, ou um fixture de teste vazar um id de armazenamento exclusivo do harness para um boot montado. Veja [Supervisão](./supervision.md) e o framework de [Testes](../framework/testing.md).
+Estas são as costuras de integração que as suítes unitárias isoladas mascaram — as brechas que deixam um supervisor referenciar um worker que nunca foi registrado, ou um fixture de teste vazar um id de armazenamento exclusivo do harness para um boot montado. Veja [Supervisão](guides/supervision.md) e o framework de [Testes](framework/testing.md).
 
 ## Veja Também
 
-- [Arquitetura de Aplicações](../concepts/architecture.md) — como um componente é estruturado internamente
-- [Gerenciamento de Dependências](./dependency-management.md) — arquivos de lock, versões, o fluxo do consumidor
-- [Publicando Módulos](./publishing.md) — colocando um componente no hub
-- [Guia de Tipos de Entradas](./entry-kinds.md) — referência de `ns.definition`, `ns.requirement`, `ns.dependency`
+- [Arquitetura de Aplicações](concepts/architecture.md) — como um componente é estruturado internamente
+- [Gerenciamento de Dependências](guides/dependency-management.md) — arquivos de lock, versões, o fluxo do consumidor
+- [Publicando Módulos](guides/publishing.md) — colocando um componente no hub
+- [Guia de Tipos de Entradas](guides/entry-kinds.md) — referência de `ns.definition`, `ns.requirement`, `ns.dependency`

@@ -489,11 +489,11 @@ data:
 
 ## Siehe auch
 
-- [Facade](./facade.md) — Frontend-Facade und Navigationsleiste
-- [Template](../system/template.md) — Jet-Template-Engine
-- [Sicherheit](../system/security.md) — Sicherheitsakteure und Zugriffskontrolle
-- [Umgebung](../system/env.md) — Speicherung von Umgebungsvariablen
-- [Framework-Übersicht](./overview.md) — Verwendung von Framework-Modulen
+- [Facade](framework/facade.md) — Frontend-Facade und Navigationsleiste
+- [Template](system/template.md) — Jet-Template-Engine
+- [Sicherheit](system/security.md) — Sicherheitsakteure und Zugriffskontrolle
+- [Umgebung](system/env.md) — Speicherung von Umgebungsvariablen
+- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen
 - [Micro-Frontend-Anwendungen (`view.page`)](../frontend/frontend-registry/view-page.md) — Vollständige Metadaten- und Proxy-Injektionsreferenz für `view.page`
 - [Web Components (`view.component`)](../frontend/frontend-registry/view-component.md) — Vollständige Referenz für Autoload und Props von `view.component`
 - [Render-Engines](../frontend/web-host/render-engines.md) — Seiten-Rendering mit iframe und Web Fragment

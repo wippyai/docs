@@ -10,7 +10,7 @@ description: "Jet-Templates aus konfigurierten Template-Sets rendern."
 
 Das Modul `templates` rendert [Jet](https://github.com/CloudyKit/jet)-Templates aus konfigurierten Sets. Templates können Vererbung und Includes verwenden. Diese Seite ist eine API-Referenz mit einzelnen Rendering-Beispielen und keine eigenständige Template-Bereitstellung. Die Registry-IDs und Template-Quellen müssen bereits konfiguriert sein; der ausführbare Eintrag muss `templates` aktivieren und für das angeforderte Set die Berechtigung `template.get` besitzen.
 
-Informationen zur Konfiguration von Template-Sets finden Sie unter [Template-Engine](../../system/template.md).
+Informationen zur Konfiguration von Template-Sets finden Sie unter [Template-Engine](system/template.md).
 
 ## Laden
 
@@ -149,4 +149,4 @@ Jet verwendet `{{ }}` für Ausdrücke und Kontrollstrukturen, `{* *}` für Komme
 | Render-Fehler | `errors.INTERNAL` | nein |
 | Rendering nach der Freigabe des Sets versucht | `errors.INTERNAL` | nein |
 
-Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](../core/errors.md).
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

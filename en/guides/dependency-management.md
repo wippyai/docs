@@ -209,7 +209,7 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-Keys are `org/module`, values are directories (relative paths resolve against the first `--config` file's directory; the path must exist and be a directory). Setting a replacement to `null` disables one inherited from an earlier config layer or profile. Replacements can also live inside a [profile](./configuration.md#profiles) so they activate only with `--profile workspace`.
+Keys are `org/module`, values are directories (relative paths resolve against the first `--config` file's directory; the path must exist and be a directory). Setting a replacement to `null` disables one inherited from an earlier config layer or profile. Replacements can also live inside a [profile](guides/configuration.md#profiles) so they activate only with `--profile workspace`.
 
 Workspace replacements affect the load graph at boot and are never written to `wippy.lock`. Changes to the local source are reconciled directly, without contacting the hub. The module's source `exclude:` globs from `wippy.yaml` apply to replacement directories too, both when loading entries and when hashing content.
 
@@ -235,7 +235,7 @@ downloaded module that fails verification is removed and the install fails.
 
 ## See Also
 
-- [Building Components](./components.md) — Author requirements and supply values through `parameters`
-- [CLI](./cli.md) — Command reference
-- [Publishing](./publishing.md) — Publish modules to the Hub
-- [Project Structure](../start/structure.md) — Project layout
+- [Building Components](guides/components.md) — Author requirements and supply values through `parameters`
+- [CLI](guides/cli.md) — Command reference
+- [Publishing](guides/publishing.md) — Publish modules to the Hub
+- [Project Structure](start/structure.md) — Project layout

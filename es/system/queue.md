@@ -317,7 +317,7 @@ if publish_err then return nil, publish_err end
 return published
 ```
 
-Consulte el [módulo Queue](../lua/storage/queue.md) para la API Lua de publicación y mensajes.
+Consulte el [módulo Queue](lua/storage/queue.md) para la API Lua de publicación y mensajes.
 
 ## Apagado Graceful
 
@@ -330,6 +330,6 @@ Al detener el consumidor:
 
 ## Ver También
 
-- [Módulo Queue](../lua/storage/queue.md) - Referencia de API Lua
-- [Guía de consumidores de cola](../guides/queue-consumers.md) - Patrones de consumidor y pools de workers
-- [Supervisión](../guides/supervision.md) - Gestión del lifecycle del consumidor
+- [Módulo Queue](lua/storage/queue.md) - Referencia de API Lua
+- [Guía de consumidores de cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
+- [Supervisión](guides/supervision.md) - Gestión del lifecycle del consumidor

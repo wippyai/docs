@@ -40,7 +40,7 @@ Direktes Streaming eignet sich für kurzlebige Request-Response-Abläufe wie For
 
 ## SSE-Relay
 
-Die SSE-Relay-Middleware erstellt langlebige, von Prozessen gestützte SSE-Streams. Sie folgt demselben Relay-Muster wie der [WebSocket-Relay](./websocket-relay.md).
+Die SSE-Relay-Middleware erstellt langlebige, von Prozessen gestützte SSE-Streams. Sie folgt demselben Relay-Muster wie der [WebSocket-Relay](http/websocket-relay.md).
 
 ### Funktionsweise
 
@@ -263,6 +263,6 @@ Wenn sich das Ziel ändert, überwacht der Relay zunächst das neue Ziel und sen
 
 ## Siehe auch
 
-- [Middleware](./middleware.md) — Middleware-Konfiguration
-- [WebSocket-Relay](./websocket-relay.md) — WebSocket-Äquivalent
-- [Prozess](../lua/core/process.md) — Prozessnachrichten
+- [Middleware](http/middleware.md) — Middleware-Konfiguration
+- [WebSocket-Relay](http/websocket-relay.md) — WebSocket-Äquivalent
+- [Prozess](lua/core/process.md) — Prozessnachrichten

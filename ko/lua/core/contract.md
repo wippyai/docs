@@ -181,7 +181,7 @@ local result, data_err = payload:data()
 if data_err then return nil, data_err end
 ```
 
-Future 메서드는 [Futures](./future.md)를 참조하세요.
+Future 메서드는 [Futures](lua/core/future.md)를 참조하세요.
 
 ## 계약을 통해 열기
 

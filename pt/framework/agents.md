@@ -7,7 +7,7 @@ description: "O modulo wippy/agent fornece um framework para construir agentes d
 
 O módulo `wippy/agent` fornece um framework para construir agentes de IA com ferramentas, streaming, delegação, traits e memória. Os agentes são definidos declarativamente e executados por um padrão de contexto/runner.
 
-Esta página é uma introdução à API com snippets de referência combináveis, não um tutorial independente. Os snippets pressupõem um projeto Wippy existente, um modelo e provedor LLM registrados, credenciais do provedor configuradas e as entradas de agente, ferramenta ou resolver referenciadas em cada exemplo. Snippets posteriores usam variáveis como `ctx`, `runner` e `conversation`, criadas nas seções anteriores. Para ver um projeto executável completo, siga [Criar um Agente LLM](../tutorials/llm-agent.md).
+Esta página é uma introdução à API com snippets de referência combináveis, não um tutorial independente. Os snippets pressupõem um projeto Wippy existente, um modelo e provedor LLM registrados, credenciais do provedor configuradas e as entradas de agente, ferramenta ou resolver referenciadas em cada exemplo. Snippets posteriores usam variáveis como `ctx`, `runner` e `conversation`, criadas nas seções anteriores. Para ver um projeto executável completo, siga [Criar um Agente LLM](tutorials/llm-agent.md).
 
 ## Configuracao
 
@@ -646,6 +646,6 @@ Esse padrao habilita aplicacoes multi-tenant onde agentes sao configurados por u
 
 ## Veja Tambem
 
-- [LLM](./llm.md) — Interface de modelos subjacente
+- [LLM](framework/llm.md) — Interface de modelos subjacente
 - [Construindo um Agente LLM](../tutorials/llm-agent.md) — Crie um agente passo a passo
-- [Visão Geral do Framework](./overview.md) — Instalação e importação de módulos do framework
+- [Visão Geral do Framework](framework/overview.md) — Instalação e importação de módulos do framework

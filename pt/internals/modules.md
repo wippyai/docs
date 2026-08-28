@@ -254,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-O dispatcher roteia o comando para um handler. Consulte [Despacho de comandos](./dispatch.md) para implementar handlers.
+O dispatcher roteia o comando para um handler. Consulte [Despacho de comandos](internals/dispatch.md) para implementar handlers.
 
 ## Tratamento de Erros
 
@@ -484,5 +484,5 @@ Consulte `runtime/lua/modules/time/integration_test.go` para um exemplo de teste
 
 ## Consulte também
 
-- [Despacho de comandos](./dispatch.md) — Tratamento de comandos yield
-- [Scheduler](./scheduler.md) — Execução de processos
+- [Despacho de comandos](internals/dispatch.md) — Tratamento de comandos yield
+- [Scheduler](internals/scheduler.md) — Execução de processos

@@ -10,7 +10,7 @@ description: "Renderize templates Jet a partir de conjuntos de templates configu
 
 O módulo `templates` renderiza templates [Jet](https://github.com/CloudyKit/jet) a partir de conjuntos configurados. Os templates podem usar herança e includes. Esta página é uma referência de API com exemplos isolados de renderização, não um deployment de templates independente. Os IDs do registry e as fontes dos templates já devem estar configurados, e a entrada executável deve habilitar `templates` e ter a permissão `template.get` para o conjunto solicitado.
 
-Para configurar conjuntos de templates, veja [Template Engine](../../system/template.md).
+Para configurar conjuntos de templates, veja [Template Engine](system/template.md).
 
 ## Carregamento
 
@@ -151,4 +151,4 @@ Jet usa `{{ }}` para expressões e estruturas de controle e `{* *}` para coment�
 | Erro de renderização | `errors.INTERNAL` | não |
 | Tentativa de renderização após liberar o conjunto | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

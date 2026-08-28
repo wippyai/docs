@@ -168,4 +168,4 @@ Other built-ins include `min`, `abs`, `ceil`, `floor`, `len`, `lower`, and
 | Expression evaluation fails | `errors.INTERNAL` | no |
 | Result conversion fails | `errors.INTERNAL` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

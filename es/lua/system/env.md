@@ -12,7 +12,7 @@ El módulo `env` lee y actualiza las variables de entorno expuestas por el entor
 
 Esta es una referencia de API. Sus fragmentos son operaciones aisladas y suponen que las variables y políticas de seguridad indicadas ya existen.
 
-Las variables deben definirse en el [Sistema de Entorno](../../system/env.md) antes de poder acceder a ellas. El sistema controla qué backends de almacenamiento (OS, archivo, memoria) proporcionan valores y si las variables son de solo lectura.
+Las variables deben definirse en el [Sistema de Entorno](system/env.md) antes de poder acceder a ellas. El sistema controla qué backends de almacenamiento (OS, archivo, memoria) proporcionan valores y si las variables son de solo lectura.
 
 ## Carga
 
@@ -121,7 +121,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Consulte [Modelo de Seguridad](../../system/security.md) para configuración de politicas.
+Consulte [Modelo de Seguridad](system/security.md) para configuración de politicas.
 
 ## Errores
 
@@ -131,8 +131,8 @@ Consulte [Modelo de Seguridad](../../system/security.md) para configuración de 
 | Variable no encontrada | `errors.NOT_FOUND` | no |
 | Permiso denegado | `errors.PERMISSION_DENIED` | no |
 
-Consulte [Manejo de Errores](../core/errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 
 ## Vea También
 
-- [Sistema de Entorno](../../system/env.md) - Configurar backends de almacenamiento y definiciones de variables
+- [Sistema de Entorno](system/env.md) - Configurar backends de almacenamiento y definiciones de variables

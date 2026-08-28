@@ -101,7 +101,7 @@ Configure TLS under `tls`:
     insecure_skip_verify: false
 ```
 
-`cert`/`key`/`ca` carry PEM content — inline, via `file://`, or via a `${env:NAME}` placeholder resolved through the [env registry](./env.md). `insecure_skip_verify` disables certificate verification (development only). Legacy `cert_env`/`key_env`/`ca_env` directives also read the environment registry, but preserve an inline or zero value when the lookup is missing or empty; modern placeholders without defaults fail on missing variables. The legacy directives are deprecated.
+`cert`/`key`/`ca` carry PEM content — inline, via `file://`, or via a `${env:NAME}` placeholder resolved through the [env registry](system/env.md). `insecure_skip_verify` disables certificate verification (development only). Legacy `cert_env`/`key_env`/`ca_env` directives also read the environment registry, but preserve an inline or zero value when the lookup is missing or empty; modern placeholders without defaults fail on missing variables. The legacy directives are deprecated.
 
 ### SQS Driver
 
@@ -317,7 +317,7 @@ if publish_err then return nil, publish_err end
 return published
 ```
 
-See [Queue Module](../lua/storage/queue.md) for the Lua publishing and message API.
+See [Queue Module](lua/storage/queue.md) for the Lua publishing and message API.
 
 ## Graceful Shutdown
 
@@ -330,6 +330,6 @@ On consumer stop:
 
 ## See Also
 
-- [Queue Module](../lua/storage/queue.md) - Lua API reference
-- [Queue Consumers Guide](../guides/queue-consumers.md) - Consumer patterns and worker pools
-- [Supervision](../guides/supervision.md) - Consumer lifecycle management
+- [Queue Module](lua/storage/queue.md) - Lua API reference
+- [Queue Consumers Guide](guides/queue-consumers.md) - Consumer patterns and worker pools
+- [Supervision](guides/supervision.md) - Consumer lifecycle management

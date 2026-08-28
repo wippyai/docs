@@ -13,7 +13,7 @@ The `queue` module publishes messages and processes deliveries from configured d
 
 This page is an API reference. Publishing snippets assume the queue entries and permissions already exist. The consumer section is a partial recipe for a handler invoked by `queue.consumer`; it is not a standalone queue deployment.
 
-For queue configuration, see [Queue](../../system/queue.md).
+For queue configuration, see [Queue](system/queue.md).
 
 ## Loading
 
@@ -167,12 +167,12 @@ The runtime checks the general permission first and the queue-specific permissio
 | Publish failed | `errors.INTERNAL` | no |
 | Queue or driver not found for `info` | `errors.INTERNAL` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Queue Configuration](../../system/queue.md) - Queue drivers and entry definitions
-- [Queue Consumers Guide](../../guides/queue-consumers.md) - Consumer patterns and worker pools
-- [Process Management](../core/process.md) - Process spawning and communication
-- [Channels](../core/channel.md) - Inter-process communication patterns
-- [Functions](../core/funcs.md) - Async function invocation
+- [Queue Configuration](system/queue.md) - Queue drivers and entry definitions
+- [Queue Consumers Guide](guides/queue-consumers.md) - Consumer patterns and worker pools
+- [Process Management](lua/core/process.md) - Process spawning and communication
+- [Channels](lua/core/channel.md) - Inter-process communication patterns
+- [Functions](lua/core/funcs.md) - Async function invocation

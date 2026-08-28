@@ -272,7 +272,7 @@ local ok, err = process.registry.unregister(name)
 
 ### Scope
 
-The optional `scope` argument selects the name's consistency guarantee and defaults to `LOCAL`. See the [Cluster Guide](../../guides/cluster.md#naming-and-name-scopes) for the complete model.
+The optional `scope` argument selects the name's consistency guarantee and defaults to `LOCAL`. See the [Cluster Guide](guides/cluster.md#naming-and-name-scopes) for the complete model.
 
 | Constant | Visibility | Guarantee |
 |----------|------------|-----------|
@@ -281,7 +281,7 @@ The optional `scope` argument selects the name's consistency guarantee and defau
 | `process.registry.CONSISTENT` | cluster-wide | Linearizable singleton (Raft) |
 | `process.registry.STRONG` | cluster-wide | Consistent + every live node acknowledges |
 
-On a standalone node, only `LOCAL` is available; cluster scopes require [clustering](../../guides/cluster.md).
+On a standalone node, only `LOCAL` is available; cluster scopes require [clustering](guides/cluster.md).
 
 ### register
 
@@ -381,12 +381,12 @@ Some operations require multiple permissions:
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Name already registered | `errors.ALREADY_EXISTS` |
 
-See [Error Handling](errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Channels](channel.md) - In-process coroutine coordination
-- [Message Queue](../storage/queue.md) - Queue-based messaging
-- [Functions](funcs.md) - Function invocation
-- [Supervision](../../guides/supervision.md) - Process lifecycle management
-- [Cluster](../../guides/cluster.md) - Name scopes and cluster-wide naming
+- [Channels](lua/core/channel.md) - In-process coroutine coordination
+- [Message Queue](lua/storage/queue.md) - Queue-based messaging
+- [Functions](lua/core/funcs.md) - Function invocation
+- [Supervision](guides/supervision.md) - Process lifecycle management
+- [Cluster](guides/cluster.md) - Name scopes and cluster-wide naming

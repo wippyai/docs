@@ -71,7 +71,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 ## Cluster KV Stores
 
-`store.kv.raft` and `store.kv.crdt` replicate key-value data across cluster nodes. Both require [clustering](../guides/cluster.md) to be enabled and reuse the same [Store Module](../lua/storage/store.md) Lua API. Each entry is a namespaced view into one node-wide engine; `namespace` isolates this entry's keys and must match `^[a-z][a-z0-9._-]*$` (it may not start with `_`).
+`store.kv.raft` and `store.kv.crdt` replicate key-value data across cluster nodes. Both require [clustering](guides/cluster.md) to be enabled and reuse the same [Store Module](lua/storage/store.md) Lua API. Each entry is a namespaced view into one node-wide engine; `namespace` isolates this entry's keys and must match `^[a-z][a-z0-9._-]*$` (it may not start with `_`).
 
 ### Raft (strong consistency)
 
@@ -85,7 +85,7 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 |-------|------|----------|-------------|
 | `namespace` | string | Yes | Key namespace in the shared engine |
 
-Writes are proposed through the shared Raft (followers forward to the leader); reads are linearizable. Conditional writes (`put` with `only_if_absent`/`if_version`) are supported. Raft state is fs-durable by default under `cluster.raft.data_dir` (default `~/.wippy/store`); see [Configuration](../guides/configuration.md#cluster).
+Writes are proposed through the shared Raft (followers forward to the leader); reads are linearizable. Conditional writes (`put` with `only_if_absent`/`if_version`) are supported. Raft state is fs-durable by default under `cluster.raft.data_dir` (default `~/.wippy/store`); see [Configuration](guides/configuration.md#cluster).
 
 ### CRDT (eventual consistency)
 
@@ -118,9 +118,9 @@ All four store kinds accept time-to-live values, but expiry visibility differs b
 
 ## Lua API
 
-See [Store Module](../lua/storage/store.md) for operations: `get`, `set`, `has`, `delete`, plus `put`, `entry`, `list`, and `info` for versioned and conditional access.
+See [Store Module](lua/storage/store.md) for operations: `get`, `set`, `has`, `delete`, plus `put`, `entry`, `list`, and `info` for versioned and conditional access.
 
 ## See Also
 
-- [Store Module](../lua/storage/store.md) - Lua API reference
-- [Database](./database.md) - SQL backing for `store.sql`
+- [Store Module](lua/storage/store.md) - Lua API reference
+- [Database](system/database.md) - SQL backing for `store.sql`

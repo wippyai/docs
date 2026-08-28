@@ -345,11 +345,11 @@ The writer does not close an externally supplied file or stream used as an entry
 | Source or destination I/O failure | `errors.INTERNAL` |
 | Read a stale streamed entry after the walk advanced | `errors.INTERNAL` |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Filesystem](../storage/filesystem.md) - Source and destination filesystems
+- [Filesystem](lua/storage/filesystem.md) - Source and destination filesystems
 - [Cloud Storage](../storage/cloud.md) - Ranged readers for cloud-hosted archives
-- [Stream](../core/stream.md) - Stream objects handed to and from archives
-- [Compression](./compress.md) - In-memory gzip/deflate/zstd
+- [Stream](lua/core/stream.md) - Stream objects handed to and from archives
+- [Compression](lua/data/compress.md) - In-memory gzip/deflate/zstd

@@ -342,7 +342,7 @@ entries:
 
 署名キー、ワイルドカードのユーザーポリシー、生のAPIキー保存、メモリトークンストアは、このループバックデモ専用です。
 本番環境では`token_key_env`を使用し、APIキーをハッシュ化して保存し、ポリシーのactionとresourceを限定し、
-許可オリジンを制限して永続トークンストアを使用してください。[環境システム](../system/env.md)を参照してください。
+許可オリジンを制限して永続トークンストアを使用してください。[環境システム](system/env.md)を参照してください。
 
 ## トークン交換
 
@@ -881,6 +881,6 @@ Invoke-RestMethod -Method Post `
 
 ## 次のステップ
 
-- [WebSocketリレー](../http/websocket-relay.md) — ミドルウェア設定
-- [セキュリティモジュール](../lua/security/security.md) — アクター、ポリシー、トークンストア
-- [プロセス管理](../lua/core/process.md) — 生成とメッセージング
+- [WebSocketリレー](http/websocket-relay.md) — ミドルウェア設定
+- [セキュリティモジュール](lua/security/security.md) — アクター、ポリシー、トークンストア
+- [プロセス管理](lua/core/process.md) — 生成とメッセージング

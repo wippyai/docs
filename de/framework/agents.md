@@ -7,7 +7,7 @@ description: "Wippy-Agenten mit Tools, Streaming, Delegation, Traits, Memory und
 
 Das Modul `wippy/agent` definiert Agenten deklarativ und führt sie über einen Kontext und einen `runner` aus. Agenten können Tools verwenden, Antworten streamen, Aufgaben delegieren, Traits anwenden und Memory abrufen.
 
-Diese Seite ist eine API-Einführung mit kombinierbaren Referenzausschnitten, kein eigenständiges Tutorial. Die Beispiele setzen ein vorhandenes Wippy-Projekt, ein registriertes LLM-Modell samt Provider, konfigurierte Provider-Zugangsdaten sowie die jeweils referenzierten Agenten-, Tool- oder Resolver-Einträge voraus. Spätere Ausschnitte bauen auf zuvor erzeugten Variablen wie `ctx`, `runner` und `conversation` auf. Ein vollständiges ausführbares Projekt finden Sie unter [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md).
+Diese Seite ist eine API-Einführung mit kombinierbaren Referenzausschnitten, kein eigenständiges Tutorial. Die Beispiele setzen ein vorhandenes Wippy-Projekt, ein registriertes LLM-Modell samt Provider, konfigurierte Provider-Zugangsdaten sowie die jeweils referenzierten Agenten-, Tool- oder Resolver-Einträge voraus. Spätere Ausschnitte bauen auf zuvor erzeugten Variablen wie `ctx`, `runner` und `conversation` auf. Ein vollständiges ausführbares Projekt finden Sie unter [Einen LLM-Agenten erstellen](tutorials/llm-agent.md).
 
 ## Einrichtung
 
@@ -647,6 +647,6 @@ Wie Toolzugriff und Observability von Agenten abgesichert werden, beschreibt das
 
 ## Siehe auch
 
-- [LLM](./llm.md) – zugrunde liegendes LLM-Modul
+- [LLM](framework/llm.md) – zugrunde liegendes LLM-Modul
 - [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md) – vollständiges Tutorial
-- [Framework-Überblick](./overview.md) – Framework-Module verwenden
+- [Framework-Überblick](framework/overview.md) – Framework-Module verwenden

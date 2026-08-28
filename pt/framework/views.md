@@ -402,11 +402,11 @@ data:
 
 ## Veja Também
 
-- [Facade](./facade.md) — Facade do frontend e barra lateral de navegação
-- [Template](../system/template.md) — Motor de templates Jet
-- [Segurança](../system/security.md) — Atores e controle de acesso
-- [Ambiente](../system/env.md) — Armazenamento de variáveis de ambiente
-- [Visão Geral do Framework](./overview.md) — Uso dos módulos do framework
+- [Facade](framework/facade.md) — Facade do frontend e barra lateral de navegação
+- [Template](system/template.md) — Motor de templates Jet
+- [Segurança](system/security.md) — Atores e controle de acesso
+- [Ambiente](system/env.md) — Armazenamento de variáveis de ambiente
+- [Visão Geral do Framework](framework/overview.md) — Uso dos módulos do framework
 - [Aplicações de Micro Frontend (`view.page`)](../frontend/frontend-registry/view-page.md) — Referência completa de metadados e injeção de proxy de `view.page`
 - [Componentes Web (`view.component`)](../frontend/frontend-registry/view-component.md) — Referência de autoload e props de `view.component`
 - [Mecanismos de Renderização](../frontend/web-host/render-engines.md) — Renderização de páginas por iframe e Web Fragment

@@ -348,7 +348,7 @@ La clave de firma, la política wildcard de usuario, el almacenamiento sin hash 
 API keys y el almacén de tokens en memoria solo son apropiados para esta demostración
 en loopback. En producción, usa `token_key_env`, aplica hash a las API keys antes de
 guardarlas, limita las acciones y recursos de las políticas, restringe los orígenes
-permitidos y usa un almacén de tokens duradero. Consulta el [sistema de entorno](../system/env.md).
+permitidos y usa un almacén de tokens duradero. Consulta el [sistema de entorno](system/env.md).
 
 ## Intercambio de Token
 
@@ -897,6 +897,6 @@ Una respuesta correcta contiene `token`, `user_id: "demo"`, `role: "user"` y
 
 ## Siguientes Pasos
 
-- [WebSocket Relay](../http/websocket-relay.md) — Configuración de middleware
-- [Módulo Security](../lua/security/security.md) — Actores, políticas y almacenes de tokens
-- [Gestión de procesos](../lua/core/process.md) — Generación y mensajería
+- [WebSocket Relay](http/websocket-relay.md) — Configuración de middleware
+- [Módulo Security](lua/security/security.md) — Actores, políticas y almacenes de tokens
+- [Gestión de procesos](lua/core/process.md) — Generación y mensajería

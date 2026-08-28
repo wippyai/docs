@@ -83,6 +83,6 @@ wippy search wippy
 
 ## 참고
 
-- [의존성 관리](../guides/dependency-management.md) — 잠금 파일 및 버전 제약 조건
-- [게시](../guides/publishing.md) — 모듈 게시
-- [CLI 레퍼런스](../guides/cli.md) — 모듈 관리 명령
+- [의존성 관리](guides/dependency-management.md) — 잠금 파일 및 버전 제약 조건
+- [게시](guides/publishing.md) — 모듈 게시
+- [CLI 레퍼런스](guides/cli.md) — 모듈 관리 명령

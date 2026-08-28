@@ -376,8 +376,8 @@ Pasar a `open` un valor que no sea un `io.Reader`, o a `write_to` un valor que n
 
 Al cerrar un libro también se cierran sus cursores de filas abiertos. Los libros se cierran automáticamente cuando se limpia su contexto de ejecución Lua, pero las llamadas explícitas a `close()` liberan antes los recursos.
 
-Consulta [Manejo de errores](../core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
 ## Véase también
 
-- [Sistema de archivos](../storage/filesystem.md) - Operaciones para leer y escribir archivos de Excel
+- [Sistema de archivos](lua/storage/filesystem.md) - Operaciones para leer y escribir archivos de Excel

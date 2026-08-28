@@ -39,7 +39,7 @@ Um `http.service` possui um listener e hospeda roteadores, endpoints e handlers 
 | `timeouts.idle` | duration | - | Timeout de conexão keep-alive |
 | `host.buffer_size` | int | 1024 | Tamanho do buffer do relay de mensagens |
 | `host.worker_count` | int | NumCPU | Workers do relay de mensagens |
-| `network` | ID do Registro | - | Vincula o listener por uma [rede overlay](../system/network.md), como Tailscale ou I2P |
+| `network` | ID do Registro | - | Vincula o listener por uma [rede overlay](system/network.md), como Tailscale ou I2P |
 | `tls` | object | - | Terminação TLS (ver [TLS](#tls)) |
 
 ## Timeouts
@@ -94,7 +94,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Isso define um ator e políticas de base para todas as requisições. Para requisições autenticadas, o [middleware token_auth](./middleware.md) substitui o ator com base no token validado, permitindo políticas de segurança por usuário.
+Isso define um ator e políticas de base para todas as requisições. Para requisições autenticadas, o [middleware token_auth](http/middleware.md) substitui o ator com base no token validado, permitindo políticas de segurança por usuário.
 
 ## Lifecycle
 
@@ -173,7 +173,7 @@ Sob `mode: manual`, `cert` e `key` contêm o conteúdo PEM. Forneça esse conte�
 
 1. **PEM inline** — a string PEM literal.
 2. **Referência `file://`** — caminho relativo ao manifesto, resolvido e incorporado no carregamento com proteção contra travessia de diretório.
-3. **Referência ao registro de ambiente** — obtém o PEM de uma [variável de ambiente](../system/env.md) registrada durante a decodificação, com um placeholder `${env:NAME}`.
+3. **Referência ao registro de ambiente** — obtém o PEM de uma [variável de ambiente](system/env.md) registrada durante a decodificação, com um placeholder `${env:NAME}`.
 
 ```yaml
 - name: api
@@ -230,8 +230,8 @@ tls:
 
 ## Veja Também
 
-- [Roteamento](./router.md) - Roteadores e endpoints
-- [Arquivos Estáticos](./static.md) - Serviço de arquivos estáticos
-- [Middleware](./middleware.md) - Middleware disponível
-- [Segurança](../system/security.md) - Políticas de segurança
-- [WebSocket Relay](./websocket-relay.md) - Mensageria WebSocket
+- [Roteamento](http/router.md) - Roteadores e endpoints
+- [Arquivos Estáticos](http/static.md) - Serviço de arquivos estáticos
+- [Middleware](http/middleware.md) - Middleware disponível
+- [Segurança](system/security.md) - Políticas de segurança
+- [WebSocket Relay](http/websocket-relay.md) - Mensageria WebSocket

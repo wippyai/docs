@@ -123,7 +123,7 @@ Backends de historial:
 | Memory | Por defecto cuando `history_type` no está definido; testing |
 | Nil | Sin historial |
 
-SQLite usa modo WAL con tablas para versiones, changesets (codificados MessagePack), y metadatos. PostgreSQL se selecciona con `registry.history_type: postgres` más `history_dsn`/`history_schema` (ver [Configuración](../guides/configuration.md#registry)).
+SQLite usa modo WAL con tablas para versiones, changesets (codificados MessagePack), y metadatos. PostgreSQL se selecciona con `registry.history_type: postgres` más `history_dsn`/`history_schema` (ver [Configuración](guides/configuration.md#registry)).
 
 El historial también persiste la resolución exacta de dependencias de cada versión: cuando se aplica un cambio de `ns.dependency`, el grafo de módulos resuelto se almacena direccionado por contenido junto al changeset. El arranque y el rollback reproducen el grafo almacenado en lugar de volver a resolver, de modo que una versión siempre se reconcilia con las versiones con las que fue resuelta. El esquema del historial migra automáticamente en el primer arranque tras una actualización; una versión preexistente se resuelve una vez en la primera visita y se registra como punto de control.
 
@@ -156,5 +156,5 @@ La coincidencia glob se aplica a los campos raíz `.kind`, `.name`, `.ns` y `.id
 
 ## Ver También
 
-- [Registry](../concepts/registry.md) - Conceptos de alto nivel
-- [Events](./events.md) - Detalles del event bus
+- [Registry](concepts/registry.md) - Conceptos de alto nivel
+- [Events](internals/events.md) - Detalles del event bus

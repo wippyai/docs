@@ -8,7 +8,7 @@ description: "Read request-scoped values propagated through function and process
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-The `ctx` module reads request-scoped values propagated through [function calls](./funcs.md) or [process operations](./process.md). This page is an API reference; the snippets show individual calls inside an executable Lua entry.
+The `ctx` module reads request-scoped values propagated through [function calls](lua/core/funcs.md) or [process operations](lua/core/process.md). This page is an API reference; the snippets show individual calls inside an executable Lua entry.
 
 ## Loading
 
@@ -48,4 +48,4 @@ local values, err = ctx.all()
 | Key not found | `errors.NOT_FOUND` | no |
 | No execution context available | `errors.INTERNAL` | no |
 
-See [Error Handling](./errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

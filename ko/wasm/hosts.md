@@ -127,6 +127,6 @@ outgoing 요청에는 URL에 대한 `http_client.request` 권한이 필요합니
 
 ## 참고
 
-- [개요](./overview.md) - WebAssembly 런타임 개요
-- [함수](./functions.md) - WASM 함수 설정
-- [프로세스](./processes.md) - WASM을 프로세스로 실행하기
+- [개요](wasm/overview.md) - WebAssembly 런타임 개요
+- [함수](wasm/functions.md) - WASM 함수 설정
+- [프로세스](wasm/processes.md) - WASM을 프로세스로 실행하기

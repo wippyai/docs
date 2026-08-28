@@ -376,8 +376,8 @@ if second_close_err then return nil, second_close_err end
 
 ワークブックを閉じると、開いている行カーソルも閉じられます。Lua実行コンテキストのクリーンアップ時にワークブックは自動的に閉じられますが、明示的に`close()`を呼ぶとリソースをより早く解放できます。
 
-エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。
 
 ## 関連項目
 
-- [ファイルシステム](../storage/filesystem.md) - Excelファイルの読み書きに使用するファイル操作
+- [ファイルシステム](lua/storage/filesystem.md) - Excelファイルの読み書きに使用するファイル操作

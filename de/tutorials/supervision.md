@@ -786,6 +786,6 @@ Beenden Sie die Anwendung nach der Prüfung mit Strg+C.
 
 ## Nächste Schritte
 
-- [Prozesse](processes.md) — Prozessgrundlagen
-- [Channels](channels.md) — Muster für Message-Passing
-- [Prozessmodul](../lua/core/process.md) — Referenz der Prozess-API
+- [Prozesse](tutorials/processes.md) — Prozessgrundlagen
+- [Channels](tutorials/channels.md) — Muster für Message-Passing
+- [Prozessmodul](lua/core/process.md) — Referenz der Prozess-API

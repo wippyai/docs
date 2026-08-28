@@ -14,7 +14,7 @@ The `cloudstorage` module uploads, downloads, lists, and manages objects in S3-c
 
 This page is an API reference. Its snippets assume a configured storage entry, access to any filesystem volume they name, and the permissions listed below. Multipart and presigned-URL blocks are partial client-integration recipes; the application must perform the HTTP transfers and supply returned ETags. Where an operation and resource cleanup can both fail, the surrounding application supplies `report_cleanup_error(err)` to record the cleanup failure while preserving the initiating error.
 
-For storage configuration, see [Cloud Storage](../../system/cloudstorage.md).
+For storage configuration, see [Cloud Storage](system/cloudstorage.md).
 
 ## Loading
 
@@ -534,4 +534,4 @@ Security policy evaluation applies to cloud storage operations.
 | Permission denied by `cloudstorage.get` | raised Lua error | not applicable |
 | Provider operation failed | preserved from the provider when available; otherwise unspecified | varies |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

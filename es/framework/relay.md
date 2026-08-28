@@ -7,7 +7,7 @@ description: "Configura hubs de Wippy Relay, clientes WebSocket, plugins con pre
 
 El módulo `wippy/relay` enruta conexiones WebSocket mediante un hub central y hubs por usuario. Los hubs de usuario administran conexiones de clientes y despachan mensajes a plugins con prefijo.
 
-Esta página es una receta de integración parcial y una referencia de protocolo, no una aplicación WebSocket independiente. Los bloques de configuración y plugin suponen un proyecto Wippy existente, un scope de seguridad real en el `user_security_scope` configurado y un endpoint HTTP WebSocket conectado al relay como se describe en [WebSocket Relay](../http/websocket-relay.md). Los payloads del protocolo y bloques de ciclo de vida son formas de referencia.
+Esta página es una receta de integración parcial y una referencia de protocolo, no una aplicación WebSocket independiente. Los bloques de configuración y plugin suponen un proyecto Wippy existente, un scope de seguridad real en el `user_security_scope` configurado y un endpoint HTTP WebSocket conectado al relay como se describe en [WebSocket Relay](http/websocket-relay.md). Los payloads del protocolo y bloques de ciclo de vida son formas de referencia.
 
 ## Arquitectura
 
@@ -279,6 +279,6 @@ El hub central se ejecuta bajo su propio grupo de seguridad (`wippy.relay.securi
 ## Véase También
 
 - [WebSocket Relay](../http/websocket-relay.md) — Configuración del endpoint HTTP WebSocket
-- [Modelo de procesos](../concepts/process-model.md) — Ciclo de vida y mensajería de procesos
-- [Seguridad](../system/security.md) — Actores y scopes de seguridad
-- [Resumen del framework](./overview.md) — Instalar e importar módulos del framework
+- [Modelo de procesos](concepts/process-model.md) — Ciclo de vida y mensajería de procesos
+- [Seguridad](system/security.md) — Actores y scopes de seguridad
+- [Resumen del framework](framework/overview.md) — Instalar e importar módulos del framework

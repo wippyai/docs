@@ -38,7 +38,7 @@ if err then
 end
 ```
 
-function invocation と executor option については [funcs module](../lua/core/funcs.md)を参照してください。
+function invocation と executor option については [funcs module](lua/core/funcs.md)を参照してください。
 
 ## コンテキスト伝播
 
@@ -64,7 +64,7 @@ if err then return nil, err end
 return result
 ```
 
-security context も同じように伝播します。呼び出された関数は呼び出し元の actor を参照し、permission を確認できます。access control API については [security module](../lua/security/security.md)を参照してください。
+security context も同じように伝播します。呼び出された関数は呼び出し元の actor を参照し、permission を確認できます。access control API については [security module](lua/security/security.md)を参照してください。
 
 ## レジストリ定義
 

@@ -253,6 +253,6 @@ GitHub Actionsステップの例:
 
 ## 関連項目
 
-- [CLI](./cli.md) — CLI 完全リファレンス
-- [型](../lua/types.md) — 型システムのドキュメント
-- [LSP](./lsp.md) — ライブ診断によるエディタ統合
+- [CLI](guides/cli.md) — CLI 完全リファレンス
+- [型](lua/types.md) — 型システムのドキュメント
+- [LSP](guides/lsp.md) — ライブ診断によるエディタ統合

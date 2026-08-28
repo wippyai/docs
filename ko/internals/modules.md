@@ -254,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-dispatcher는 command를 handler로 라우팅합니다. handler 구현은 [명령 디스패치](./dispatch.md)를 참고하세요.
+dispatcher는 command를 handler로 라우팅합니다. handler 구현은 [명령 디스패치](internals/dispatch.md)를 참고하세요.
 
 ## 에러 처리
 
@@ -484,5 +484,5 @@ func TestYieldDispatcher(t *testing.T) {
 
 ## 참고
 
-- [명령 디스패치](./dispatch.md) - yield 명령 처리
-- [스케줄러](./scheduler.md) - 프로세스 실행
+- [명령 디스패치](internals/dispatch.md) - yield 명령 처리
+- [스케줄러](internals/scheduler.md) - 프로세스 실행

@@ -140,5 +140,5 @@ Die Registry ruft `Begin` vor Verarbeitung eines Batches auf, dann `Commit` bei 
 
 ## Siehe auch
 
-- [Registry](./registry.md) – Speicherung von Einträgen
-- [Architektur](./architecture.md) – Boot-Sequenz
+- [Registry](internals/registry.md) – Speicherung von Einträgen
+- [Architektur](internals/architecture.md) – Boot-Sequenz

@@ -256,6 +256,6 @@ After the loop, `processed` contains `2`, `4`, `6`, and `8`; result order depend
 
 ## See Also
 
-- [Process Management](process.md) - Process spawning and communication
-- [Message Queue](../storage/queue.md) - Queue-based messaging
-- [Functions](funcs.md) - Function invocation
+- [Process Management](lua/core/process.md) - Process spawning and communication
+- [Message Queue](lua/storage/queue.md) - Queue-based messaging
+- [Functions](lua/core/funcs.md) - Function invocation

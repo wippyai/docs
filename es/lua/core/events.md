@@ -15,7 +15,7 @@ los fragmentos presuponen una entrada Lua ejecutable con el módulo y permisos i
 <note>
 El bus de eventos es un canal publish/subscribe de mejor esfuerzo, no un transporte
 fiable. No dependas de él para entregas críticas para el negocio. Usa mensajería de
-procesos (`process.send`), canales o la [cola de mensajes](../storage/queue.md) cuando
+procesos (`process.send`), canales o la [cola de mensajes](lua/storage/queue.md) cuando
 la entrega forme parte de la corrección de la aplicación.
 </note>
 
@@ -144,4 +144,4 @@ El cierre es idempotente. Después de cerrar el canal, `receive()` devuelve
 | Política denegada | `errors.INVALID` | no |
 | Falta el contexto de ejecución o proceso | `errors.INTERNAL` | no |
 
-Consulta [Manejo de errores](./errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

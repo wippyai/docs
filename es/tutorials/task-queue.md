@@ -470,7 +470,7 @@ La fila devuelta debe tener `status: "completed"`; su campo `result` es una cade
 
 ## Siguientes Pasos
 
-- [Módulo HTTP](../lua/http/http.md) — Gestión de solicitudes y respuestas
-- [Módulo Queue](../lua/storage/queue.md) — Operaciones de cola de mensajes
-- [Módulo SQL](../lua/storage/sql.md) — Acceso a bases de datos
-- [Consumidores de cola](../guides/queue-consumers.md) — Configuración de colas
+- [Módulo HTTP](lua/http/http.md) — Gestión de solicitudes y respuestas
+- [Módulo Queue](lua/storage/queue.md) — Operaciones de cola de mensajes
+- [Módulo SQL](lua/storage/sql.md) — Acceso a bases de datos
+- [Consumidores de cola](guides/queue-consumers.md) — Configuración de colas

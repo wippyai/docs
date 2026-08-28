@@ -171,7 +171,7 @@ Dos entradas `security.policy` forman una denylist de namespaces a nivel de apli
 
 `create_tool` carga estas políticas como un scope con nombre (`app:agent_security`). El helper rechaza un `deny` explícito para `app:*` (entradas core, modelos y definición del agente) o `app.tools:*` (herramientas integradas), pero trata el resultado `undefined` no coincidente de `app.generated:*` como aprobado por su filtro específico. Esto no es autorización del runtime de Wippy: las operaciones protegidas requieren un `allow` explícito del contexto de ejecución, incluidas las operaciones del módulo de seguridad mostradas más abajo y `registry.apply` dentro de `changes:apply()`.
 
-Consulta [Modelo de seguridad](../system/security.md) para más detalles sobre la evaluación de políticas.
+Consulta [Modelo de seguridad](system/security.md) para más detalles sobre la evaluación de políticas.
 
 ### Modelos
 
@@ -464,7 +464,7 @@ El bucle del agente en `src/agent.lua` maneja streaming, ejecución de herramien
 
 ### Streaming
 
-Usa el mismo patrón de coroutine + canal del [tutorial de Agente LLM](./llm-agent.md):
+Usa el mismo patrón de coroutine + canal del [tutorial de Agente LLM](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -603,8 +603,8 @@ En la release revisada, `wippy/micro-agi` v0.3.1 no declara ningún contexto `me
 
 ## Siguientes Pasos
 
-- [Agente LLM](./llm-agent.md) — Construir un agente básico desde cero
-- [Módulo de Agente](../framework/agents.md) — Referencia del framework de agentes
-- [Registro](../concepts/registry.md) — Conceptos del registro
-- [Modelo de Seguridad](../system/security.md) — Políticas de seguridad declarativas
-- [Tipos de Entrada](../guides/entry-kinds.md) — Tipos de entrada disponibles
+- [Agente LLM](tutorials/llm-agent.md) — Construir un agente básico desde cero
+- [Módulo de Agente](framework/agents.md) — Referencia del framework de agentes
+- [Registro](concepts/registry.md) — Conceptos del registro
+- [Modelo de Seguridad](system/security.md) — Políticas de seguridad declarativas
+- [Tipos de Entrada](guides/entry-kinds.md) — Tipos de entrada disponibles

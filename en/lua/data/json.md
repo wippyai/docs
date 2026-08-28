@@ -221,4 +221,4 @@ if decode_err then return nil, decode_err end
 | Schema compilation failed | `errors.INVALID` | no |
 | Validation failed | `errors.INVALID` | no |
 
-See [Error Handling](../core/errors.md) for working with errors.
+See [Error Handling](lua/core/errors.md) for working with errors.

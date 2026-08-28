@@ -257,6 +257,6 @@ end
 
 ## 참고
 
-- [프로세스 관리](process.md) - 프로세스 스폰과 통신
-- [메시지 큐](../storage/queue.md) - 큐 기반 메시징
-- [함수](funcs.md) - 함수 호출
+- [프로세스 관리](lua/core/process.md) - 프로세스 스폰과 통신
+- [메시지 큐](lua/storage/queue.md) - 큐 기반 메시징
+- [함수](lua/core/funcs.md) - 함수 호출

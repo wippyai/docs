@@ -39,7 +39,7 @@ Ein `http.service` besitzt einen Listener und hostet Router, Endpunkte und Handl
 | `timeouts.idle` | duration | - | Keep-Alive-Verbindungs-Timeout |
 | `host.buffer_size` | int | 1024 | Nachrichten-Relay-Puffergröße |
 | `host.worker_count` | int | NumCPU | Nachrichten-Relay-Worker |
-| `network` | Registry-ID | - | Listener über ein [Netzwerk-Overlay](../system/network.md) binden, etwa Tailscale oder I2P |
+| `network` | Registry-ID | - | Listener über ein [Netzwerk-Overlay](system/network.md) binden, etwa Tailscale oder I2P |
 | `tls` | object | - | TLS-Terminierung (siehe [TLS](#tls)) |
 
 ## Timeouts
@@ -94,7 +94,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Dies setzt einen Basis-Actor und Richtlinien für alle Anfragen. Bei authentifizierten Anfragen überschreibt die [token_auth-Middleware](./middleware.md) den Actor anhand des validierten Tokens und ermöglicht damit benutzerspezifische Sicherheitsrichtlinien.
+Dies setzt einen Basis-Actor und Richtlinien für alle Anfragen. Bei authentifizierten Anfragen überschreibt die [token_auth-Middleware](http/middleware.md) den Actor anhand des validierten Tokens und ermöglicht damit benutzerspezifische Sicherheitsrichtlinien.
 
 ## Lebenszyklus
 
@@ -173,7 +173,7 @@ Unter `mode: manual` enthalten `cert` und `key` PEM-Inhalt. Stellen Sie diesen I
 
 1. **Inline-PEM** — Die wörtliche PEM-Zeichenkette.
 2. **`file://`-Referenz** — Ein manifestrelativer Pfad, der beim Laden traversal-sicher aufgelöst und eingebettet wird.
-3. **Referenz auf die Umgebungs-Registry** — Den PEM-Inhalt beim Dekodieren über einen `${env:NAME}`-Platzhalter aus einer registrierten [Umgebungsvariablen](../system/env.md) abrufen.
+3. **Referenz auf die Umgebungs-Registry** — Den PEM-Inhalt beim Dekodieren über einen `${env:NAME}`-Platzhalter aus einer registrierten [Umgebungsvariablen](system/env.md) abrufen.
 
 ```yaml
 - name: api
@@ -230,8 +230,8 @@ tls:
 
 ## Siehe auch
 
-- [Routing](./router.md) – Router und Endpunkte
-- [Statische Dateien](./static.md) – Bereitstellung statischer Dateien
-- [Middleware](./middleware.md) – Verfügbare Middleware
-- [Sicherheit](../system/security.md) – Sicherheitsrichtlinien
-- [WebSocket-Relay](./websocket-relay.md) – WebSocket-Nachrichten
+- [Routing](http/router.md) – Router und Endpunkte
+- [Statische Dateien](http/static.md) – Bereitstellung statischer Dateien
+- [Middleware](http/middleware.md) – Verfügbare Middleware
+- [Sicherheit](system/security.md) – Sicherheitsrichtlinien
+- [WebSocket-Relay](http/websocket-relay.md) – WebSocket-Nachrichten

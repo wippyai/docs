@@ -390,7 +390,7 @@ end
 
 ## 참고
 
-- [개요](./overview.md) - 설정
-- [워크플로우](./workflows.md) - 워크플로우 구현
-- [함수](../lua/core/funcs.md) - 함수 모듈
-- [에러 처리](../lua/core/errors.md) - 에러 타입과 패턴
+- [개요](temporal/overview.md) - 설정
+- [워크플로우](temporal/workflows.md) - 워크플로우 구현
+- [함수](lua/core/funcs.md) - 함수 모듈
+- [에러 처리](lua/core/errors.md) - 에러 타입과 패턴

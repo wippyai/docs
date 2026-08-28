@@ -26,7 +26,7 @@ Verfügbar bei allen Befehlen:
 
 Die Reihenfolge für das Speicherlimit ist `--memory-limit`, dann `GOMEMLIMIT`, dann der Standard von 1 GB.
 
-Die globale Option `--config` kann mehrfach übergeben werden, um Konfigurationsdateien zu komponieren. Dateien werden von links nach rechts zusammengeführt. Jede explizit benannte Datei muss existieren; ohne `--config` ist `.wippy.yaml` optional. Die erste Datei verankert relative Pfade. Danach werden `--profile`-Overlays und zuletzt `--set`-Überschreibungen angewendet. Siehe [Konfiguration](./configuration.md#config-composition).
+Die globale Option `--config` kann mehrfach übergeben werden, um Konfigurationsdateien zu komponieren. Dateien werden von links nach rechts zusammengeführt. Jede explizit benannte Datei muss existieren; ohne `--config` ist `.wippy.yaml` optional. Die erste Datei verankert relative Pfade. Danach werden `--profile`-Overlays und zuletzt `--set`-Überschreibungen angewendet. Siehe [Konfiguration](guides/configuration.md#config-composition).
 
 `wippy publish` überschattet die globale Option mit dem befehlsspezifischen `--config <dir>`. Dort ist der Wert das Verzeichnis mit `wippy.yaml`, nicht eine wiederholbare Runtime-Konfigurationsdatei.
 
@@ -516,5 +516,5 @@ override:
 
 ## Siehe auch
 
-- [Konfiguration](./configuration.md) — Referenz der Konfigurationsdatei
-- [Observability](./observability.md) — Monitoring und Logging
+- [Konfiguration](guides/configuration.md) — Referenz der Konfigurationsdatei
+- [Observability](guides/observability.md) — Monitoring und Logging

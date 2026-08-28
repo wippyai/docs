@@ -832,7 +832,7 @@ Bye!
 
 ## 次のステップ
 
-- [LLMモジュール](../framework/llm.md) — LLM APIリファレンス
-- [エージェントモジュール](../framework/agents.md) — エージェントフレームワークリファレンス
-- [CLIアプリケーション](./cli.md) — ターミナルI/Oパターン
-- [プロセス](./processes.md) — プロセスモデルと通信
+- [LLMモジュール](framework/llm.md) — LLM APIリファレンス
+- [エージェントモジュール](framework/agents.md) — エージェントフレームワークリファレンス
+- [CLIアプリケーション](tutorials/cli.md) — ターミナルI/Oパターン
+- [プロセス](tutorials/processes.md) — プロセスモデルと通信

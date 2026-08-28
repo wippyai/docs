@@ -11,7 +11,7 @@ description: "Best-Effort-Events der Runtime und Anwendung veröffentlichen und 
 Der Event-Bus veröffentlicht Runtime- und Anwendungsaktivität für Monitoring, Logging, Metriken und reaktive Nebeneffekte. Diese Seite ist eine API-Referenz; die Ausschnitte setzen einen ausführbaren Lua-Entry mit dem aufgeführten Modul und den erforderlichen Berechtigungen voraus.
 
 <note>
-Der Event-Bus ist ein Best-Effort-Publish/Subscribe-Kanal, kein zuverlässiger Transport. Verlassen Sie sich bei geschäftskritischer Zustellung nicht darauf. Verwenden Sie Prozess-Messaging (`process.send`), Channels oder die [Nachrichten-Queue](../storage/queue.md), wenn die Zustellung für die Korrektheit der Anwendung erforderlich ist.
+Der Event-Bus ist ein Best-Effort-Publish/Subscribe-Kanal, kein zuverlässiger Transport. Verlassen Sie sich bei geschäftskritischer Zustellung nicht darauf. Verwenden Sie Prozess-Messaging (`process.send`), Channels oder die [Nachrichten-Queue](lua/storage/queue.md), wenn die Zustellung für die Korrektheit der Anwendung erforderlich ist.
 </note>
 
 ## Laden
@@ -134,4 +134,4 @@ Das Schließen ist idempotent. Nachdem der Channel geschlossen wurde, gibt `rece
 | Policy abgelehnt | `errors.INVALID` | nein |
 | Ausführungs- oder Prozesskontext fehlt | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](./errors.md) für den Umgang mit Fehlern.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für den Umgang mit Fehlern.

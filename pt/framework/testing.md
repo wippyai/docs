@@ -380,6 +380,6 @@ O `wippy/test` depende de `wippy/terminal`, que fornece o `wippy.terminal:host` 
 
 ## Veja Tambem
 
-- [Visão Geral do Framework](./overview.md) — Instalação e importação de módulos do framework
-- [Referência da CLI](../guides/cli.md) — Comando de teste e opções
-- [Funções](../concepts/functions.md) — Entradas de função e invocação
+- [Visão Geral do Framework](framework/overview.md) — Instalação e importação de módulos do framework
+- [Referência da CLI](guides/cli.md) — Comando de teste e opções
+- [Funções](concepts/functions.md) — Entradas de função e invocação

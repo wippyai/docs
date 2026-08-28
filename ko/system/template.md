@@ -117,10 +117,10 @@ relative `file://` reference는 entry가 포함된 manifest 기준으로 로드�
 
 ## Lua API
 
-rendering 작업은 [템플릿 모듈](../lua/text/template.md)을 참조하십시오.
+rendering 작업은 [템플릿 모듈](lua/text/template.md)을 참조하십시오.
 
 ## 참고
 
-- [템플릿 모듈](../lua/text/template.md) - Lua API 레퍼런스
-- [파일시스템](./filesystem.md) - disk에서 template 로드
-- [HTTP 엔드포인트](../http/endpoint.md) - request handler에서 template rendering
+- [템플릿 모듈](lua/text/template.md) - Lua API 레퍼런스
+- [파일시스템](system/filesystem.md) - disk에서 template 로드
+- [HTTP 엔드포인트](http/endpoint.md) - request handler에서 template rendering

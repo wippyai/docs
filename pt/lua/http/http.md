@@ -12,7 +12,7 @@ O módulo `http` lê a requisição atual no servidor e constrói sua resposta, 
 
 Esta página é uma referência de API com receitas parciais de handlers. Nomes como `id`, `data`, `token` e callbacks da aplicação vêm do handler ao redor. Os acessores da requisição geralmente retornam `value, error`, e as mutações da resposta retornam `error`; os exemplos que consomem um resultado verificam esses erros.
 
-Para configurar o servidor, veja [Servidor HTTP](../../http/server.md).
+Para configurar o servidor, veja [Servidor HTTP](http/server.md).
 
 ## Carregamento
 
@@ -685,4 +685,4 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | Headers já enviados | `errors.INVALID` | não |
 | Escrita falhou | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](../core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

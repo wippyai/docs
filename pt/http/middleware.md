@@ -157,7 +157,7 @@ options:
 
 <note>Pré-handler</note>
 
-Autenticação baseada em token. Veja [Segurança](../system/security.md) para configurar o token store.
+Autenticação baseada em token. Veja [Segurança](system/security.md) para configurar o token store.
 
 ```yaml
 middleware:
@@ -267,7 +267,7 @@ Suporta requisições de range para downloads resumíveis.
 
 <warning>Pós-match</warning>
 
-Retransmite conexões WebSocket para processos. Veja [Relay WebSocket](./websocket-relay.md).
+Retransmite conexões WebSocket para processos. Veja [Relay WebSocket](http/websocket-relay.md).
 
 ```yaml
 post_middleware:
@@ -282,7 +282,7 @@ post_options:
 
 <warning>Post-match</warning>
 
-Transmite Server-Sent Events de processos. Veja [Server-Sent Events](./sse.md).
+Transmite Server-Sent Events de processos. Veja [Server-Sent Events](http/sse.md).
 
 ```yaml
 post_middleware:
@@ -327,8 +327,8 @@ post_middleware:
 
 ## Veja Também
 
-- [Roteamento](./router.md) - Configuração de roteador
-- [Segurança](../system/security.md) - Token stores e políticas
-- [Relay WebSocket](./websocket-relay.md) - Tratamento de WebSocket
-- [Server-Sent Events](./sse.md) - Streaming SSE
-- [Terminal](../system/terminal.md) - Serviço de terminal
+- [Roteamento](http/router.md) - Configuração de roteador
+- [Segurança](system/security.md) - Token stores e políticas
+- [Relay WebSocket](http/websocket-relay.md) - Tratamento de WebSocket
+- [Server-Sent Events](http/sse.md) - Streaming SSE
+- [Terminal](system/terminal.md) - Serviço de terminal

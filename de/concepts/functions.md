@@ -43,7 +43,7 @@ if err then
 end
 ```
 
-Aufruf und Executor-Optionen beschreibt das [funcs-Modul](../lua/core/funcs.md).
+Aufruf und Executor-Optionen beschreibt das [funcs-Modul](lua/core/funcs.md).
 
 ## Kontextweitergabe
 
@@ -69,7 +69,7 @@ if err then return nil, err end
 return result
 ```
 
-Sicherheitskontext wird auf dieselbe Weise weitergegeben. Aufgerufene Funktionen sehen den Akteur des Aufrufers und können Berechtigungen prüfen. Zugriffskontroll-APIs beschreibt das [security-Modul](../lua/security/security.md).
+Sicherheitskontext wird auf dieselbe Weise weitergegeben. Aufgerufene Funktionen sehen den Akteur des Aufrufers und können Berechtigungen prüfen. Zugriffskontroll-APIs beschreibt das [security-Modul](lua/security/security.md).
 
 ## Registry-Definition
 

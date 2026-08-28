@@ -102,7 +102,7 @@ Comandos ausentes da allowlist são rejeitados. Uma lista omitida ou vazia permi
 
 ## API Lua
 
-O [Módulo Exec](../lua/dynamic/exec.md) fornece execução de comandos:
+O [Módulo Exec](lua/dynamic/exec.md) fornece execução de comandos:
 
 ```lua
 local exec = require("exec")
@@ -158,6 +158,6 @@ return table.concat(chunks), exit_code
 
 ## Veja Também
 
-- [Módulo Exec](../lua/dynamic/exec.md) - Referência da API Lua
-- [Process Host](./process-host.md) - Host que executa processos Wippy
-- [Filesystem](./filesystem.md) - Entradas de filesystem usadas como diretórios de trabalho
+- [Módulo Exec](lua/dynamic/exec.md) - Referência da API Lua
+- [Process Host](system/process-host.md) - Host que executa processos Wippy
+- [Filesystem](system/filesystem.md) - Entradas de filesystem usadas como diretórios de trabalho
