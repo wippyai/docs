@@ -233,7 +233,7 @@ wippy publish --dry-run
 | `--module-type` | 모듈 타입: `library`, `application`, `agent`, 또는 `plugin` (wippy.yaml의 `type:`을 재정의) |
 | `--module-display-name` | 새로 생성되는 모듈의 표시 이름 (`--create` 전용) |
 
-모듈 타입은 일반적으로 `wippy.yaml`에 `type:`으로 선언합니다 ([게시](./publishing.md#wippyyaml) 참조). `--module-type`은 단일 게시에 한해 이를 재정의합니다. 둘 다 설정되지 않으면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
+모듈 타입은 일반적으로 `wippy.yaml`에 `type:`으로 선언합니다 ([게시](./publishing.md#wippy-yaml) 참조). `--module-type`은 단일 게시에 한해 이를 재정의합니다. 둘 다 설정되지 않으면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
 
 ## wippy search
 

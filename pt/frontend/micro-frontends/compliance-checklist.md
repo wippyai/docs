@@ -64,8 +64,8 @@ A evidência de runtime permanece fora do repositório. Defina:
 
 - `WIPPY_THEME_ROOT` para o pacote `@wippy-fe/theme` selecionado;
 - `WIPPY_FE_EVIDENCE_ROOT` para o diretório de evidências da release contendo
-  `runtime-acceptance-evidence.json`, `visual-evidence-index.json`, their
-  relative scenario manifests, and screenshots.
+  `runtime-acceptance-evidence.json`, `visual-evidence-index.json`, seus
+  manifestos de cenário relativos e as capturas de tela.
 - `WIPPY_FE_RUNTIME_EVIDENCE_SHA256` para o SHA-256 em minúsculas dos bytes
   exatos de `runtime-acceptance-evidence.json`.
 
