@@ -44,7 +44,7 @@ page は `package.json` の `wippy` block にある `wippy.renderEngine` で opt
 |-------|----------|
 | `"auto"`（デフォルト） | global switch に従う |
 | `"iframe"` | switch にかかわらず常に srcdoc iframe で render し、fragment を opt out する |
-| `"fragment"` | fragment engine を優先する。global-`fragment` deployment では常に使用。global-`iframe` deployment では runtime **capability probe**（`GET /@fragment/{id}/`、session 単位で cache）が gateway + proxy の存在を確認した場合のみ使用し、それ以外は安全に iframe へ fallback |
+| `"fragment"` | fragment エンジンを優先する。全体が `fragment` の配置では常に使用。全体が `iframe` の配置では実行時の**機能検査**（`GET /@fragment/{id}/`、セッション単位でキャッシュ）がゲートウェイとプロキシの存在を確認した場合のみ使用し、それ以外は安全に iframe へフォールバック |
 
 [Micro Frontend App → Render engine](../frontend-registry/view-page.md#render-engine)も参照してください。
 
@@ -73,7 +73,7 @@ consumer application で fragment engine を有効にするには、互換性の
 1. **Framework module** — `render_engine` switch と self-mounting fragment gateway を公開する、現在互換性のある `wippy/facade` と `wippy/views` の組み合わせを使います。exact release は現在の Wippy module documentation で確認してください。
 2. **Switch** — facade の `render_engine` を `fragment` に設定（global）するか、page 単位に `wippy.renderEngine` で opt in します。
 
-> `/@fragment` gateway は現在の `wippy/views` が自己提供します。module が top-level router を宣言し、デフォルトで `app:gateway` を指す `server` requirement に bind します。consumer 側の fragment wiring は不要で、fragment が有効かどうかにかかわらず通常どおり iframe engine で boot します。`http.service` id が `app:gateway` でない場合だけ `server` parameter を上書きしてください。通常は iframe の deployment で page が個別に fragment を選ぶと、runtime capability probe が gateway + `proxy-fragment.js` を確認してから切り替え、確認できなければ iframe を維持します。global `render_engine: fragment` switch は operator を信頼し、probe しません。[Views → Web Fragments gateway](../../framework/views.md)を参照してください。
+> `/@fragment` ゲートウェイは現在の `wippy/views` が直接提供します。モジュールがトップレベルルーターを宣言し、デフォルトで `app:gateway` を指す `server` 要件にバインドします。利用側で fragment の接続設定を追加する必要はなく、fragment が有効かどうかにかかわらず通常どおり iframe エンジンで起動します。`http.service` ID が `app:gateway` でない場合だけ `server` パラメータを上書きしてください。通常、全体が iframe の配置でページが個別に fragment を選ぶと、実行時の機能検査がゲートウェイと `proxy-fragment.js` を確認してから切り替え、確認できなければ iframe を維持します。全体の `render_engine: fragment` 切り替えは運用者を信頼し、検査しません。[Views → Web Fragment ゲートウェイ](../../framework/views.md)を参照してください。
 
 frontend app 自体に fragment 固有 code は不要です。`proxy-fragment.js` は CDN から配信される host artifact であり、app が bundle するものではありません。
 

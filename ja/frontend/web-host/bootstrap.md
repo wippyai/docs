@@ -177,7 +177,7 @@ interface AppContext {
 
 > **現在の facade の制約。** Web Host は `AppConfig.tanstack` を受け付け、facade config endpoint は設定済み `tanstack` object を返します。しかし標準 facade shell は現在、その field を `initWippyApp` へ渡す `AppConfig` に copy しません。その forwarding が実装されるまで、標準 shell path では facade の `tanstack` parameter に依存しないでください。manual embedder は自身が組み立てる `AppConfig` に含められます。
 
-## Configuration source と優先順位
+## 設定ソースと優先順位
 
 Web Host は複数の source から設定を解決します。低いものから高いものへの優先順は次のとおりです。
 

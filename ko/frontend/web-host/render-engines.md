@@ -73,7 +73,7 @@ parameter 설명은 [Facade → 렌더 엔진](../../framework/facade.md#render-
 1. **Framework 모듈** — `render_engine` switch와 self-mounting Fragment gateway를 노출하는 현재 호환 `wippy/facade` 및 `wippy/views` 조합을 사용합니다. 현재 Wippy 모듈 문서에서 정확한 릴리스를 확인하십시오.
 2. **Switch** — facade `render_engine`을 전역 `fragment`로 설정하거나 페이지별 `wippy.renderEngine`으로 opt-in합니다.
 
-> `/@fragment` gateway는 현재 `wippy/views`가 직접 제공합니다. 모듈이 자체 최상위 router를 선언하고 기본 `app:gateway`인 `server` 요구사항에 연결합니다. 소비자는 Fragment 연결을 추가할 필요가 없고 Fragment 활성화 여부와 관계없이 iframe 엔진으로 정상 부팅합니다. `http.service` ID가 `app:gateway`와 다를 때만 `server` parameter를 재정의합니다. 전역적으로 iframe인 배포에서 페이지별로 Fragment를 선택하면 런타임 capability probe가 gateway와 `proxy-fragment.js`를 확인한 후 전환하며, 그렇지 않으면 iframe을 유지합니다. 전역 `render_engine: fragment` switch는 운영자를 신뢰하고 probe하지 않습니다. [Views → Web Fragments gateway](../../framework/views.md#웹-프래그먼트-게이트웨이)를 참고하십시오.
+> `/@fragment` 게이트웨이는 현재 `wippy/views`가 직접 제공합니다. 모듈이 자체 최상위 라우터를 선언하고 기본값이 `app:gateway`인 `server` 요구사항에 연결합니다. 소비자는 Fragment 연결을 추가할 필요가 없고 Fragment 활성화 여부와 관계없이 iframe 엔진으로 정상 부팅합니다. `http.service` ID가 `app:gateway`와 다를 때만 `server` 매개변수를 재정의합니다. 전체가 iframe인 배포에서 페이지별로 Fragment를 선택하면 런타임 기능 검사가 게이트웨이와 `proxy-fragment.js`를 확인한 후 전환하며, 그렇지 않으면 iframe을 유지합니다. 전체 `render_engine: fragment` 전환은 운영자를 신뢰하며 별도로 검사하지 않습니다. [Views → Web Fragment 게이트웨이](../../framework/views.md#웹-프래그먼트-게이트웨이)를 참고하십시오.
 
 프런트엔드 앱 자체에는 Fragment 전용 코드가 필요 없습니다. `proxy-fragment.js`는 앱이 번들하는 것이 아니라 CDN에서 제공되는 호스트 아티팩트입니다.
 

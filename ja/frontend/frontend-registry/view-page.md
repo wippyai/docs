@@ -30,7 +30,7 @@ description: "view.page micro frontend application の宣言、routing、serving
 |-------|--------|
 | `"auto"` _（デフォルト、または省略）_ | deployment の global switch（facade の [`render_engine`](../../framework/facade.md) parameter が設定する `hostConfig.renderEngine`）に従う |
 | `"iframe"` | switch にかかわらず常に srcdoc iframe で render する。pointer hit-testing（`elementFromPoint`）、viewport-unit（`vh`/`vw`、`matchMedia`）layout、`position: fixed` など、reframed と互換性のない技術を使うページ向け |
-| `"fragment"` | [Web Fragment](../web-host/render-engines.md) engine を優先する。global-`fragment` deployment では常に使い、global-`iframe` deployment では runtime capability probe が [`/@fragment` gateway](../../framework/views.md) と proxy の存在を確認した場合のみ使う（それ以外は安全に iframe へフォールバック） |
+| `"fragment"` | [Web Fragment](../web-host/render-engines.md) エンジンを優先する。全体が `fragment` の配置では常に使い、全体が `iframe` の配置では実行時の機能検査が [`/@fragment` ゲートウェイ](../../framework/views.md) とプロキシの存在を確認した場合のみ使う（それ以外は安全に iframe へフォールバック） |
 
 ```json
 {
