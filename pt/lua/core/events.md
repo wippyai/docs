@@ -1,5 +1,5 @@
 ---
-title: "Event Bus"
+title: "Barramento de eventos"
 description: "Publique e observe eventos best-effort do runtime e da aplicação."
 ---
 
@@ -11,7 +11,7 @@ description: "Publique e observe eventos best-effort do runtime e da aplicação
 Publique e inscreva-se em eventos para observabilidade — monitoramento de atividade do runtime e da aplicação e reação a ela.
 
 <note>
-Use o event bus apenas para observação: monitoramento, logging, métricas e efeitos colaterais reativos. É um canal publish/subscribe de melhor esforço, não um transporte confiável — não construa lógica de negócio sobre ele nem dependa dele para entrega garantida. Para mensagens críticas de negócio, use mensagens de processo (`process.send`), channels ou a [fila de mensagens](../storage/queue.md).
+Use o barramento de eventos apenas para observação: monitoramento, registro, métricas e efeitos colaterais reativos. É um canal de publicação e assinatura de melhor esforço, não um transporte confiável — não construa lógica de negócio sobre ele nem dependa dele para entrega garantida. Para mensagens críticas de negócio, use mensagens de processo (`process.send`), canais ou a [fila de mensagens](../storage/queue.md).
 </note>
 
 ## Carregamento

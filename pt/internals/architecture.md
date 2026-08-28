@@ -76,7 +76,7 @@ Componentes são serviços Go que participam do ciclo de vida da aplicação.
 | Start | `Start(ctx) error` | Iniciar operação ativa |
 | Stop | `Stop(ctx) error` | Encerramento gracioso |
 
-Componentes declaram dependências. O loader constrói um grafo acíclico direcionado e executa em ordem topológica. Shutdown ocorre em ordem reversa.
+Os componentes declaram dependências. O carregador constrói um grafo acíclico direcionado e executa em ordem topológica. O encerramento ocorre em ordem reversa.
 
 ### Componentes Padrão
 

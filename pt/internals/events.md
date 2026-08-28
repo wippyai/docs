@@ -1,6 +1,6 @@
 ---
-title: "Event Bus"
-description: "Ações do event bus, inscrições com wildcards, entrega, ponte para processos Lua, helpers de request-response e encerramento."
+title: "Barramento de eventos"
+description: "Ações do barramento de eventos, inscrições com curingas, entrega, ponte para processos Lua, funções auxiliares de solicitação-resposta e encerramento."
 ---
 
 # Barramento de eventos :id=event-bus

@@ -185,7 +185,7 @@ Der Supervisor überführt Dienste durch diese Zustände:
 
 **Start**: Erst Abhängigkeiten, dann Abhängige. Dienste auf derselben Abhängigkeitsebene können parallel starten.
 
-**Shutdown**: Erst Abhängige, dann Abhängigkeiten. Dies stellt sicher, dass abhängige Dienste fertig werden, bevor ihre Abhängigkeiten stoppen.
+**Herunterfahren**: Erst Abhängige, dann Abhängigkeiten. Dies stellt sicher, dass abhängige Dienste fertig werden, bevor ihre Abhängigkeiten stoppen.
 
 ```
 Startup:  database → cache → handler → http_server

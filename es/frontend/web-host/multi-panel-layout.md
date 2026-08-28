@@ -32,11 +32,11 @@ Use una familia compatible con la versión exacta de Web Host y verifique su imp
 
 ### Mapa de releases
 
-| Release | Adiciones managed |
+| Versión | Adiciones administradas |
 |---------|-------------------|
 | Host `1.0.50`, FE `0.0.50` | Intents compat tipados, `@HOST/compat-coordinator`, sincronización URL, tabs laterales, flotantes anclados y `useSwapBuffer()`. |
 | `1.0.51` / `0.0.51` | Control reactivo de sesión/token de `<wippy-chat>`, handles de splitter, límites por eje, correcciones de drawers y source map del proxy. |
-| `1.0.52` / `0.0.52` | Visibilidad tipada de WC retenidos, `useHostVisibilityRefresh()`, readiness inmediata con fallback de 14 s, rechazo de claves obsoletas, actualización de props y capa de splitter. |
+| `1.0.52` / `0.0.52` | Visibilidad tipada de WC retenidos, `useHostVisibilityRefresh()`, disponibilidad inmediata con una alternativa tras 14 s, rechazo de claves obsoletas, actualización de props y capa de splitter. |
 | `1.0.53` / `0.0.53` | Tokens de tema correctos al forzar claro u oscuro. |
 | `1.0.54` / `0.0.54` | Contrato de superficies v1 para iframe y Fragment. |
 | `1.0.55` / `0.0.55` | Contratos de artefactos managed y chat independiente, deep links fríos y splitters temáticos. |

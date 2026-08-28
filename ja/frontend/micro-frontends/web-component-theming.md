@@ -134,7 +134,7 @@ theme に依存する色に `var(--p-surface-N)` を使わないでください�
 
 派生 shade には `color-mix(in srgb, var(--p-content-background) 85%, var(--p-text-color) 15%)` を使えます。
 
-### Defensive fallback
+### 防御的なフォールバック :id=defensive-fallback
 
 WC は host-less dev mode（parent page なし）で動作する場合があるため、fallback を使えます。
 

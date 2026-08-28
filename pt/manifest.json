@@ -173,7 +173,7 @@
             "path": "lua/core/context"
           },
           {
-            "title": "Event Bus",
+            "title": "Barramento de eventos",
             "path": "lua/core/events"
           },
           {
@@ -811,7 +811,7 @@
         "path": "internals/dispatch"
       },
       {
-        "title": "Event Bus",
+        "title": "Barramento de eventos",
         "path": "internals/events"
       },
       {

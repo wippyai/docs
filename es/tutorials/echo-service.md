@@ -233,7 +233,7 @@ coroutine.spawn(stats_reporter)
 
 Esto inicia una coroutine que comparte memoria con la función principal. Las coroutines ceden el control en operaciones de E/S como `time.sleep`.
 
-**Channel Select**
+**Selección de canales**
 
 ```lua
 local r = channel.select {

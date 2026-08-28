@@ -44,7 +44,7 @@ parameter 설명은 [Facade → 렌더 엔진](../../framework/facade.md#render-
 |-------|----------|
 | `"auto"`(기본값) | 전역 switch를 따름 |
 | `"iframe"` | switch와 관계없이 항상 srcdoc iframe으로 렌더링해 Fragment를 사용하지 않음 |
-| `"fragment"` | Fragment 엔진을 우선. 전역 `fragment` 배포에서는 항상 사용. 전역 `iframe` 배포에서는 런타임 **capability probe**(세션별 cache되는 `GET /@fragment/{id}/`)가 gateway와 proxy가 있음을 확인할 때만 사용하고, 그렇지 않으면 안전하게 iframe으로 fallback |
+| `"fragment"` | Fragment 엔진을 우선. 전역 `fragment` 배포에서는 항상 사용. 전역 `iframe` 배포에서는 런타임 **기능 탐색**(세션별로 캐시되는 `GET /@fragment/{id}/`)이 게이트웨이와 프록시가 있음을 확인할 때만 사용하고, 그렇지 않으면 안전하게 iframe으로 대체 |
 
 [마이크로 프런트엔드 앱 → 렌더 엔진](../frontend-registry/view-page.md#렌더-엔진)을 참고하십시오.
 

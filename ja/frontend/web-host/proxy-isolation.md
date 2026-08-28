@@ -125,15 +125,15 @@ message は `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }` �
 | `CmdStateGetAll` | `cmd-state-get-all` | Child → Host | Read all persisted state |
 | `OnStateResult` | `on-state-result` | Host → Child | Delivers state read result |
 | `OnStateError` | `on-state-error` | Host → Child | Reports state operation failure |
-| `CmdWsSend` | `cmd-ws-send` | Child → Host | Forward a WebSocket command through host connection |
-| `CmdBodySize` | `cmd-body-size` | Child → Host | Report body size for `auto-height` |
-| `CmdBridgePost` | `cmd-bridge-post` | Child ↔ Parent | Fire-and-forget channel message via `host.bridge` |
-| `CmdBridgeRequest` | `cmd-bridge-request` | Child ↔ Parent | Request/response channel message via `host.bridge` |
-| `CmdClaimNavOwner` | `cmd-claim-nav-owner` | Child → Host | Claim navigation ownership (nav-owner mode) |
-| `CmdReleaseNavOwner` | `cmd-release-nav-owner` | Child → Host | Release navigation ownership |
-| `CmdLayoutSubscribe` | `cmd-layout-subscribe` | Child → Host | Subscribe to managed-layout updates |
-| `CmdLayoutUpdatePanel` | `cmd-layout-update-panel` | Child → Host | Patch a panel definition |
-| `CmdLayoutBroadcast` | `cmd-layout-broadcast` | Child ↔ Host | In-tab layout bus message |
+| `CmdWsSend` | `cmd-ws-send` | Child → Host | ホスト接続を介して WebSocket コマンドを転送 |
+| `CmdBodySize` | `cmd-body-size` | Child → Host | `auto-height` 用に本体サイズを報告 |
+| `CmdBridgePost` | `cmd-bridge-post` | Child ↔ Parent | `host.bridge` を介して応答を待たずにチャンネルメッセージを送信 |
+| `CmdBridgeRequest` | `cmd-bridge-request` | Child ↔ Parent | `host.bridge` を介して要求・応答チャンネルメッセージを送信 |
+| `CmdClaimNavOwner` | `cmd-claim-nav-owner` | Child → Host | ナビゲーションの所有権を取得（ナビゲーション所有者モード） |
+| `CmdReleaseNavOwner` | `cmd-release-nav-owner` | Child → Host | ナビゲーションの所有権を解放 |
+| `CmdLayoutSubscribe` | `cmd-layout-subscribe` | Child → Host | 管理レイアウトの更新を購読 |
+| `CmdLayoutUpdatePanel` | `cmd-layout-update-panel` | Child → Host | パネル定義にパッチを適用 |
+| `CmdLayoutBroadcast` | `cmd-layout-broadcast` | Child ↔ Host | タブ内レイアウトバスのメッセージ |
 | `OnLayoutChange` | `on-layout-change` | Host → Child | Full layout snapshot update |
 | `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Child | Per-panel live state delta |
 | `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Child | Layout bus broadcast delivery |

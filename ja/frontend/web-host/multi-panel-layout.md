@@ -34,15 +34,15 @@ Web Host、facade、`@wippy-fe/*` package は exact release に対応する 1 fa
 
 | リリース | Managed-layout の追加内容 |
 |---|---|
-| `1.0.50` / `0.0.50` | typed compat intent、coordinator、URL 同期、panel tab、floating panel、`useSwapBuffer()` |
-| `1.0.51` / `0.0.51` | race-safe chat control、splitter handle、axis constraint、drawer fix、proxy source map |
-| `1.0.52` / `0.0.52` | retained-WC visibility、即時 readiness、stale key rejection、in-place prop update、splitter layer |
-| `1.0.53` / `0.0.53` | forced light/dark で configured token を正しく伝播 |
-| `1.0.54` / `0.0.54` | surface portability contract v1 |
-| `1.0.55` / `0.0.55` | managed artifact/chat、cold deep-link、stable artifact、themed splitter handle |
-| `1.0.56` / `0.0.56` | artifact/modal、artifact-open reason、chat selector/slot lifecycle の修正 |
+| `1.0.50` / `0.0.50` | 型付き互換意図、コーディネーター、URL 同期、パネルタブ、フローティングパネル、`useSwapBuffer()` |
+| `1.0.51` / `0.0.51` | 競合に強いチャット制御、スプリッターハンドル、軸制約、ドロワー修正、プロキシソースマップ |
+| `1.0.52` / `0.0.52` | 保持された WC の可視性、即時準備完了、古いキーの拒否、インプレースのプロパティ更新、スプリッター層 |
+| `1.0.53` / `0.0.53` | 強制ライト・ダークモードで設定済みトークンを正しく伝播 |
+| `1.0.54` / `0.0.54` | サーフェスポータビリティ契約 v1 |
+| `1.0.55` / `0.0.55` | 管理対象のアーティファクト・チャット、コールドディープリンク、安定したアーティファクト、テーマ対応スプリッターハンドル |
+| `1.0.56` / `0.0.56` | アーティファクト・モーダル、アーティファクトを開いた理由、チャットセレクター・スロットのライフサイクル修正 |
 
-14 秒の page reveal は 1.0.52 の fallback です。retained direct WC visibility は Web Host 1.0.52 と core/vue/shared 0.0.52 以上が必要です。
+14 秒後のページ表示は 1.0.52 のフォールバックです。保持された直接 WC の可視性には Web Host 1.0.52 と core/vue/shared 0.0.52 以上が必要です。
 
 ### 保持された Web Component の動作
 

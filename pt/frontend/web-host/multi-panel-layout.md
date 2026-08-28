@@ -45,10 +45,10 @@ O layout gerenciado abrange o Web Host, a facade e vários pacotes `@wippy-fe/*`
 
 ### Mapa de releases
 
-| Release | Adições ao layout gerenciado |
+| Versão | Adições ao layout gerenciado |
 |---|---|
-| Web Host `1.0.50`, Wippy FE `0.0.50` | Intents compat tipados, `@HOST/compat-coordinator`, sincronização da URL e de Voltar/Avançar, tabs integradas, painéis flutuantes ancorados e `useSwapBuffer()`. |
-| Web Host `1.0.51`, Wippy FE `0.0.51` | Controle reativo e seguro contra corridas de sessão/token de `<wippy-chat>`, alças tematizadas opcionais, restrições apenas no eixo de divisão, correções de drawers e source map do proxy. |
+| Web Host `1.0.50`, Wippy FE `0.0.50` | Intenções de compatibilidade tipadas, `@HOST/compat-coordinator`, sincronização da URL e de Voltar/Avançar, abas integradas, painéis flutuantes ancorados e `useSwapBuffer()`. |
+| Web Host `1.0.51`, Wippy FE `0.0.51` | Controle reativo e seguro contra corridas de sessão/token de `<wippy-chat>`, alças tematizadas opcionais, restrições apenas no eixo de divisão, correções de gavetas e do mapa de código-fonte do proxy. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Visibilidade tipada de WC retido, `useHostVisibilityRefresh()`, prontidão imediata, rejeição de chaves obsoletas, atualização de props no lugar e camada isolada do splitter. |
 | Web Host `1.0.53`, Wippy FE `0.0.53` | Tokens de tema configurados propagam-se corretamente quando o modo claro ou escuro é forçado. |
 | Web Host `1.0.54`, Wippy FE `0.0.54` | Contrato v1 de portabilidade de superfície para páginas iframe e Web Fragment, com registro de layout gerenciado e dimensionamento reativo. |

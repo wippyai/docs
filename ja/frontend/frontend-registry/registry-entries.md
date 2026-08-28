@@ -102,7 +102,7 @@ component author は display metadata を `package.json` の `wippy` block に�
 | `name` | string | entry name | API response で使う identifier |
 | `title` | string | — | 人が読める表示名 |
 | `icon` | string | — | Iconify reference（例：`tabler:layout-dashboard`） |
-| `announced` | boolean | — | listing API への表示を制御。semantics は type ごとに異なる（下記参照） |
+| `announced` | boolean | — | 一覧 API への表示を制御。意味は `type` ごとに異なる（下記参照） |
 | `secure` | boolean | `false` | access に authentication が必要 |
 | `url` | string | — | static file serving の base URL prefix（CDN origin または local mount path） |
 | `entry_point` | string | `index.html` / `index.js` | static directory 内の entry file name |

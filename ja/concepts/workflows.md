@@ -130,7 +130,7 @@ if err then return nil, err end
 return ok
 ```
 
-呼び出し元は同じ spawn API を使います。entry が `temporal.worker` と `process.host` のどちらで実行されるかは host が決定します。persisted history と replay が適用されるのは Temporal-hosted path だけです。通常の process host で実行した workflow entry は in-memory process semantics となり、Temporal durability は得られません。
+呼び出し元は同じ生成 API を使います。エントリが `temporal.worker` と `process.host` のどちらで実行されるかはホストが決定します。永続化された履歴と再生が適用されるのは、Temporal でホストされる経路だけです。通常のプロセスホストで実行したワークフローエントリはメモリ内プロセスのセマンティクスとなり、Temporal の永続性は得られません。
 
 <tip>
 workflow が <code>process.spawn()</code> で child を生成すると、同じ provider 上の child workflow となり、durability guarantee が維持されます。

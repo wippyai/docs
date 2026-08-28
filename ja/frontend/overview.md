@@ -14,10 +14,10 @@ Wippy フロントエンドモジュールは、デフォルトで移植可能�
 1. 設定されたページエンジン（従来の `about:srcdoc` iframe または Web Fragment）でレンダリングするアプリケーションには `view.page` を使用します。
 2. ホストドキュメント内で、通常は shadow root を使ってレンダリングする custom element には `view.component` を使用します。
 3. UI がボタン、入力、フォームフィールド、メニュー、overlay、その他 PrimeVue に類するコントロールを描画する場合、PrimeVue で必要な semantics と affordance を提供できない場合を除いて PrimeVue を使用します。
-4. コントロールを含まない Chart.js visualization など、コンテンツ専用コンポーネントでは PrimeVue と Tailwind を省略できます。
-5. custom control が必要な場合は、[Portable UI 契約](./portable-ui-contract.md)と[カスタムコンポジット](./micro-frontends/custom-composites.md)に従います。
+4. コントロールを含まない Chart.js の可視化など、コンテンツ専用コンポーネントでは PrimeVue と Tailwind を省略できます。
+5. カスタムコントロールが必要な場合は、[ポータブル UI 契約](./portable-ui-contract.md)と[カスタムコンポジット](./micro-frontends/custom-composites.md)に従います。
 
-PrimeVue は共有コンポーネント vocabulary です。Wippy Tailwind preset はサポート対象のビルド時 vocabulary です。コンパイル後も facade のテーマ変更へ応答するのは、runtime-backed と明記された utility だけです。
+PrimeVue は共有コンポーネントの語彙です。Wippy Tailwind プリセットはサポート対象のビルド時語彙です。コンパイル後もファサードのテーマ変更へ応答するのは、実行時に裏付けられると明記されたユーティリティだけです。
 
 ## 所有関係マップ
 
@@ -39,8 +39,8 @@ module source
 - [プラットフォームトポロジー](./platform-topology.md)：ランタイム境界、ルーティング、CSS 配信、overlay、所有関係。
 - [Portable UI 契約](./portable-ui-contract.md)：コンポーネントと styling の規範的な規則。
 - [テーマの作成](./micro-frontends/theming.md)：facade の `custom_css`、PrimeVue theme CSS、モジュールのどこに何を置くか。
-- [Tailwind 契約](./micro-frontends/tailwind-contract.md)：runtime-backed utility とコンパイル済み定数の違い。
-- [トークンカタログ](./micro-frontends/token-catalogue.md)：生成された token reference と provenance。
+- [Tailwind 契約](./micro-frontends/tailwind-contract.md)：ランタイムに支えられたユーティリティとコンパイル済み定数の違い。
+- [トークンカタログ](./micro-frontends/token-catalogue.md)：生成されたトークン参照と来歴。
 - [デザインレイヤー](./design-layer.md)：複数の自作モジュールで必要とし、テーマに対応コンポーネントがないものの配置先。
 - [ページレシピ](./micro-frontends/micro-frontend-app.md)と [Web Component レシピ](./micro-frontends/web-component.md)。
 - [ビルドと依存関係の契約](./micro-frontends/build-system.md)。

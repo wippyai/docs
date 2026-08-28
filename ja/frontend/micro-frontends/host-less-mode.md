@@ -62,7 +62,7 @@ canonical app の `app.html` には、load 時に boot path を決める script 
 | 属性 | 役割 | 使用者 |
 |---|---|---|
 | `data-role="@wippy/scripts"` | Host の marker。Host は iframe を配信する前にこの `<script>` を削除し、その位置より前へ自身の `loading.js`、`proxy.js`、importmap、AppConfig を注入します。hosted mode では element が消えます。 | Wippy Web Host |
-| `src="…/dev-proxy.js"` | Host がない場合の fallback URL。browser が直接 `dev-proxy.js` を読み、page を bootstrap します。hosted mode では element 自体がないため `src=` は無関係です。 | standalone browser load |
+| `src="…/dev-proxy.js"` | ホストがない場合のフォールバック URL。ブラウザーが直接 `dev-proxy.js` を読み、ページを起動します。ホストモードでは要素自体がないため `src=` は無関係です。 | スタンドアロンのブラウザー読み込み |
 
 environment に合う URL を選びます。path には release-tag segment が必須で、facade の `fe_facade_url` と同じ release を使います。Host root 直下の `/dev-proxy.js` は無効です。`/<release-tag>/dev-proxy.js` へ pin してください。同じ bundle を local iteration、CI、共有 preview link に使えます。
 

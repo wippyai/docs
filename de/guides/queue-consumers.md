@@ -1,6 +1,6 @@
 ---
 title: "Queue-Konsumenten"
-description: "Konfigurieren Sie Queue-Consumer, Worker-Pools, Bestätigungen, Shutdown-Verhalten und den In-Memory-Treiber."
+description: "Konfigurieren Sie Queue-Konsumenten, Worker-Pools, Bestätigungen, das Verhalten beim Herunterfahren und den speicherinternen Treiber."
 ---
 
 # Queue-Konsumenten

@@ -109,12 +109,12 @@ Web Host의 채팅 메시지 sanitizer는 투영된 descriptor의 `wippy.props.p
 | 필드 | 유형 | 기본값 | 설명 |
 |---|---|---|---|
 | `tag_name` | string | `wippy.tagName` | `package.json`의 `wippy.tagName`으로 FE가 작성(vite plugin 필수). YAML 키가 번들 값을 재정의함. 브라우저에서 유효하고 plugin이 허용하는 작성 이름과 동기화할 것 |
-| `announced` | boolean | `false` | `/api/public/components/list`에 나타나려면 `true`여야 함. 설정되어 있으면 `meta.public`으로 fallback |
+| `announced` | boolean | `false` | `/api/public/components/list`에 나타나려면 `true`여야 함. 설정되어 있으면 `meta.public`을 대체값으로 사용 |
 | `auto_register` | boolean | `false` | `true` → 시작 시 Web Host가 컴포넌트를 autoload하고 등록 |
 | `secure` | boolean | `false` | 인증 필요 |
 | `url` | string | — | 컴포넌트 빌드 번들의 정적 마운트 경로 |
 | `base_path` | string | `""` | 프로젝트 root를 만들기 위해 `url`에 추가하는 선택적 하위 경로. 번들 URL은 `<url>/<base_path>/<entry_point>`로 조합됨. 현재 app-template 컴포넌트 엔트리는 생략하지만 페이지와 동일하게 적용 |
-| `entry_point` | string | `wippy.browser` → `index.js` | `package.json` 최상위 `browser` 필드로 FE가 작성(`wippy-meta.json`에 포함). YAML 키가 번들 값을 재정의하고 `index.js`로 fallback. 호스트가 `<script type="module">`로 주입하는 엔트리 모듈 파일 |
+| `entry_point` | string | `wippy.browser` → `index.js` | `package.json` 최상위 `browser` 필드로 FE가 작성(`wippy-meta.json`에 포함). YAML 키가 번들 값을 재정의하며 대체값은 `index.js`. 호스트가 `<script type="module">`로 주입하는 엔트리 모듈 파일 |
 
 최소 엔트리 예제:
 
