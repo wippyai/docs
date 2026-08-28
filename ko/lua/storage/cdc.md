@@ -154,5 +154,5 @@ channel에서 받은 각 message는 change table입니다.
 ## 관련 문서
 
 - [Change Data Capture](../../system/cdc.md) - `db.cdc.postgres` source 설정
-- [Channel](../core/channel.md) - Channel semantics
+- [채널](../core/channel.md) - 채널 의미론
 - [데이터베이스](../../system/database.md) - SQL 데이터베이스 서비스

@@ -20,7 +20,7 @@ Host-less mode では、Wippy Web Host の wrapper なしで Wippy Micro Fronten
 - [Host stub — standalone `host` API](#host-stubs-the-standalone-host-api)
 - [Web Component — host-less playground と test](#web-components-host-less-playground-and-tests)
 - [一般的な逸脱と見分け方](#common-deviations-and-how-to-spot-them)
-- [Troubleshooting](#troubleshooting)
+- [トラブルシューティング](#troubleshooting)
 - [関連ドキュメント](#related-docs)
 
 ---
@@ -305,7 +305,7 @@ it('reads host wrapper attached by resolver as __wippyHost', () => {
 
 ---
 
-## Troubleshooting :id=troubleshooting
+## トラブルシューティング :id=troubleshooting
 
 **`Proxy globals not found`。** real proxy も dev-proxy も `window.__WIPPY_APP_API__` を初期化していません。page の script tag と URL reachability を確認します。production-host mode では Host の proxy injection failure なので Host log を確認します。
 

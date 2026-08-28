@@ -65,31 +65,31 @@ interface funcs {
 
 ### wasi:clocks
 
-**Interfaces:** `wasi:clocks/wall-clock`, `wasi:clocks/monotonic-clock`
+**인터페이스:** `wasi:clocks/wall-clock`, `wasi:clocks/monotonic-clock`
 
 시간 연산을 위한 벽시계 및 모노토닉 클럭. 모노토닉 클럭은 비동기 슬립을 위해 Wippy 디스패처와 통합됩니다.
 
 ### wasi:io
 
-**Interfaces:** `wasi:io/error`, `wasi:io/streams`
+**인터페이스:** `wasi:io/error`, `wasi:io/streams`
 
 스트림 읽기/쓰기 연산과 오류 처리입니다. `wasi:io/poll` 인터페이스는 별도의 `wasi:poll` import가 제공합니다.
 
 ### wasi:poll
 
-**Interfaces:** `wasi:io/poll`
+**인터페이스:** `wasi:io/poll`
 
 비동기 polling입니다. poll 인터페이스는 dispatcher를 통한 cooperative yielding을 활성화합니다.
 
 ### wasi:cli
 
-**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
+**인터페이스:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 환경 변수, 프로세스 종료 코드, 표준 I/O 스트림에 대한 접근. 환경 변수는 WASI 설정을 통해 Wippy 환경 레지스트리에서 매핑됩니다.
 
 ### wasi:filesystem
 
-**Interfaces:** `wasi:filesystem/types`, `wasi:filesystem/preopens`
+**인터페이스:** `wasi:filesystem/types`, `wasi:filesystem/preopens`
 
 마운트된 디렉터리를 통한 파일 시스템 접근. 마운트는 엔트리별로 설정되며 Wippy 파일시스템 엔트리를 게스트 경로에 매핑합니다.
 
@@ -103,19 +103,19 @@ wasi:
 
 ### wasi:random
 
-**Interfaces:** `wasi:random/random`, `wasi:random/insecure`, `wasi:random/insecure-seed`
+**인터페이스:** `wasi:random/random`, `wasi:random/insecure`, `wasi:random/insecure-seed`
 
 암호학적으로 안전한 난수 및 비보안 난수 생성.
 
 ### wasi:sockets
 
-**Interfaces:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
+**인터페이스:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
 
 DNS 확인 기능이 포함된 TCP 및 UDP 네트워킹. 소켓 연산은 비동기 I/O를 위해 디스패처와 통합됩니다.
 
 ### wasi:http
 
-**Interfaces:** `wasi:http/types`, `wasi:http/outgoing-handler`
+**인터페이스:** `wasi:http/types`, `wasi:http/outgoing-handler`
 
 WASM 모듈 내에서의 아웃바운드 HTTP 클라이언트 요청. WASI HTTP 사양에서 정의된 요청/응답 타입을 지원합니다.
 
