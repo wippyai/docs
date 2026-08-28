@@ -144,7 +144,7 @@ config endpoint は、module parameter と実行 environment から `wippy/facad
 
 **Shell / integration field** — standard shell または custom embedder が使用します。
 
-| Field | 説明 |
+| フィールド | 説明 |
 |-------|-------------|
 | `facade_url` | Web Host bundle の Base CDN URL。module entry と vendor script の解決に使う |
 | `iframe_origin` | CDN の `Origin` header 値。manual iframe embedding で PostMessage の `targetOrigin` として使う |
@@ -159,7 +159,7 @@ config endpoint は、module parameter と実行 environment から `wippy/facad
 
 **endpoint が返す Web Host field** — page が組み立てる `AppConfig` へ選択的に copy します。
 
-| Field | 説明 |
+| フィールド | 説明 |
 |-------|-------------|
 | `env` | top-level `AppConfig.env` として注入する runtime URL |
 | `routePrefix` | child app へ転送する API URL prefix |
@@ -172,7 +172,7 @@ config endpoint は、module parameter と実行 environment から `wippy/facad
 
 standard shell 自身が次の required `AppConfig` field を追加します。
 
-| Field | Source |
+| フィールド | ソース |
 |-------|--------|
 | `$schema` | `<facade_url>/schemas/wippy-context-2.0.xsd` |
 | `auth` | `@wippy_token_info` から読んだ token。現在の shell は initialization から 1 日後の expiry を生成 |
@@ -182,7 +182,7 @@ standard shell 自身が次の required `AppConfig` field を追加します。
 
 **`env` field:**
 
-| Field | Source | 説明 |
+| フィールド | ソース | 説明 |
 |-------|--------|-------------|
 | `APP_API_URL` | `PUBLIC_API_URL` env var | 全 backend HTTP call の Base URL |
 | `APP_AUTH_API_URL` | `APP_API_URL` と同じ | Auth endpoint URL（custom setup では異なる場合がある） |
@@ -190,7 +190,7 @@ standard shell 自身が次の required `AppConfig` field を追加します。
 
 **`theming` scope:**
 
-| Scope | 適用先 |
+| スコープ | 適用先 |
 |-------|-----------|
 | `global` | host chrome と全 child page render context の両方 |
 | `host` | host chrome のみ。sidebar に表示する app title、icon、name の `i18n.app` も持つ |
@@ -198,7 +198,7 @@ standard shell 自身が次の required `AppConfig` field を追加します。
 
 **`hostConfig` field:**
 
-| Field | Type | Default | 説明 |
+| フィールド | 型 | デフォルト | 説明 |
 |-------|------|---------|-------------|
 | `session.type` | `"non-persistent"` \| `"cookie"` | `"non-persistent"` | token storage mode |
 | `history` | `"hash"` \| `"browser"` | `"hash"` | Vue Router history mode |

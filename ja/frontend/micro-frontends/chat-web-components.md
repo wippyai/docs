@@ -15,7 +15,7 @@ Wippy chat UI は Host が chat shell を注入する context で **composable c
 
 ## Element
 
-| Tag | Render | 主要 attribute | Event |
+| タグ | 描画内容 | 主要な属性 | イベント |
 |---|---|---|---|
 | `<wippy-chat>` | header + messages + input | `session-id`、`start-token`、`agent`、`show-selector`、`hide-header` | `session-started`、`error` |
 | `<wippy-chat-messages>` | message list | `session-id` | — |
@@ -36,7 +36,7 @@ implementation dependency は `chat-internals.[hash].js` chunk に code-split �
 
 reactive session control には Web Host `1.0.51` 以上が必要です。element shell は public package ではなく Host-injected asset で、older Host は initial mount だけを確実に support します。
 
-| Attribute | 型 | Default | 説明 |
+| 属性 | 型 | デフォルト | 説明 |
 |---|---|---|---|
 | `session-id` | string | — | existing session UUID を render |
 | `start-token` | string | — | `session-id` がなければ mount 時に新 session を開始する agent start token |
@@ -46,7 +46,7 @@ reactive session control には Web Host `1.0.51` 以上が必要です。elemen
 
 `CustomEvent` は `event.detail` を読みます。
 
-| Event | `detail` | 発生時 |
+| イベント | `detail` | 発生時 |
 |---|---|---|
 | `session-started` | `{ sessionId: string }` | start-token または user action で session を開始 |
 | `error` | `{ message: string }` | session initialization failure |
@@ -103,13 +103,13 @@ message list/composer を別 element として custom layout できます。各 
 
 shared active session を駆動する session picker です。`active-session-id` は highlight 対象を指定します。`select` event の detail は `{ sessionId: string }` です。
 
-| Attribute | 型 | Default | 説明 |
+| 属性 | 型 | デフォルト | 説明 |
 |-----------|----|---------|------|
 | `active-session-id` | string | — | この session を active として highlight する |
 
 **Event:**
 
-| Event | `detail` | 発生時 |
+| イベント | `detail` | 発生時 |
 |-------|----------|--------|
 | `select` | `{ sessionId: string }` | user が session を選択したとき。選択した session が shared active session になる |
 
@@ -150,7 +150,7 @@ document.querySelector('wippy-session-selector')
 - **Inherited CSS variable。** theme property は shadow boundary を継承します。PrimeVue/markdown/Tailwind selector は `chat-elements.css` として root 内へ注入します。`PrimeVuePlugin` は default body/null Portal target を owning shadow root 内の pinned overlay layer へ redirect します。`appendTo: 'self'` は scrolling Dialog/Drawer 内で clip し得る明示的 inline placement なので常用しません。Toast は proxy 経由で host native toast に委譲します。
 - **Per-instance override。** `custom-css` は shadow root の最後に append する raw CSS、`css-variables` は `:host` に適用する JSON object です。key は leading `--` を省略できます。
 
-| Attribute | 型 | 効果 |
+| 属性 | 型 | 効果 |
 |-----------|----|------|
 | `custom-css` | string | raw CSS を element の shadow root の最後に追加するため、順序によって優先される |
 | `css-variables` | object（JSON） | instance ごとの CSS variable override を `:host` に適用する。key の先頭の `--` は省略可能 |

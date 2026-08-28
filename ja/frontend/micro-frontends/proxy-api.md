@@ -224,7 +224,7 @@ transport です。内部 store を変更したり、以前 import した config
 host.startChat(agentToken: string, options?: { sidebar?: boolean }): void
 ```
 
-| Parameter | Type | Default | 説明 |
+| パラメーター | 型 | デフォルト | 説明 |
 |-----------|------|---------|-------------|
 | `agentToken` | `string` | — | 起動する agent を識別する token |
 | `options.sidebar` | `boolean` | `false` | `true` なら右 sidebar panel、`false` なら main area に chat を開く |
@@ -725,7 +725,7 @@ Web Host がこの app に割り当てた領域の geometry です。その領�
 const { contract, revision, engine, sizing, width, widthUnit, height, heightUnit } = host.surface.snapshot
 ```
 
-| Field | Type | 注記 |
+| フィールド | 型 | 注記 |
 |-------|------|-------|
 | `contract` | `1` | contract の version |
 | `revision` | `number` | 単調増加。geometry が変わると進む |
@@ -1155,7 +1155,7 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 
 ### Merge 規則 :id=merge-rules
 
-| Field | Merge 動作 |
+| フィールド | マージ動作 |
 |-------|---------------|
 | `cssVariables` | host の value を**置換**。page が独自 theme を提供する |
 | `customCSS` | host の value を**置換** |
@@ -1223,7 +1223,7 @@ app.use(router)
 
 theme-aware color を使う fullscreen loading spinner です。
 
-| Attribute | 説明 |
+| 属性 | 説明 |
 |-----------|-------------|
 | `title` | main text（例: "Loading..."） |
 | `subtitle` | 補助 text |
@@ -1238,7 +1238,7 @@ theme-aware color を使う fullscreen loading spinner です。
 
 severity に応じた色を使う fullscreen error display です。
 
-| Attribute | 値 | Default |
+| 属性 | 値 | デフォルト |
 |-----------|--------|---------|
 | `title` | 任意の string | "Something went wrong" |
 | `message` | 任意の string | （空） |

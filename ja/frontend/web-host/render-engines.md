@@ -9,7 +9,7 @@ description: "view.page application が srcdoc iframe または Web Fragment で
 
 Wippy Web Host は 2 種類の **page-render engine** のいずれかで micro frontend app（`view.page`）を render します。engine は operator switch で選ぶ delivery 上の関心事であり、page 単位の任意 override もあります。portable app は Wippy proxy と router API を使用し、特定の engine に依存しない behavior を実現します。
 
-| Engine | page の render 方法 | Isolation | Routing |
+| エンジン | ページの描画方法 | 分離 | ルーティング |
 |--------|--------------------|-----------|---------|
 | **Iframe**（デフォルト） | `proxy.js` を注入した srcdoc `<iframe>` | 完全な document isolation | memory-history のみ（srcdoc に実 URL はない） |
 | **Web Fragment** | [`reframed`](https://web-fragments.dev) の same-origin realm を `<web-fragment>` shadow root に反映し、`proxy-fragment.js` を使用 | realm isolation、共有 DOM tree | 実際の `window.history`（URL router が動作する） |
@@ -52,7 +52,7 @@ page は `package.json` の `wippy` block にある `wippy.renderEngine` で opt
 
 一部の browser API は reframed realm 内で、**誤った動作をしても何も通知しません**。次のいずれかに依存する page は `wippy.renderEngine: "iframe"` に固定してください。
 
-| API / feature | realm 内の動作 | 影響 |
+| API / 機能 | realm 内の動作 | 影響 |
 |---------------|---------------------|--------|
 | `document.elementFromPoint` | panel size に**かかわらず** `null` を返す | drag & drop、sortable list、Popper/floating-ui、virtual scroller の pointer hit-testing が壊れる |
 | `matchMedia`、`vh`/`vw` unit、`position: fixed` | fragment panel ではなく **host** viewport に対して解決する | full-size panel では約 1px のずれ。小さい panel（sidebar/modal）では重大な誤差 |

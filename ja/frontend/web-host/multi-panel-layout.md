@@ -387,7 +387,7 @@ coordinator がまだなければ boot-time intent は最初の subscription ま
 
 **Panel-local** — form draft、modal state、transient UI。panel 自身の Pinia store/ref に留めます。
 
-## 標準の coordination パターン
+## 標準のコーディネーションパターン :id=canonical-coordination-pattern
 
 bus event → coordinator → `updatePanel` → panel router の順です。
 

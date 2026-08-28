@@ -28,7 +28,7 @@ facade の global theming scope で設定した CSS variable は、engine の CS
 
 facade は、Host chrome 用と child page 用に、現在の schema で別々の scope を公開します。
 
-| Schema scope | 適用先 | 用途 |
+| スキーマスコープ | 適用先 | 用途 |
 |---|---|---|
 | `theming.host` | Host UI chrome のみ | Sidebar、chat message、splitter — Host の BEM override |
 | `theming.children` | Child page のみ | child app 内に適用し、Host には漏らしてはならない CSS |

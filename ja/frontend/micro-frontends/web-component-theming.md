@@ -54,7 +54,7 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 }
 ```
 
-| Key | 読み込むもの | 相対コスト | 含める場合 |
+| キー | 読み込むもの | 相対コスト | 含める場合 |
 |---|---|---|---|
 | `themeConfigUrl` | `theme-config.css` — 完全な `--p-*` CSS variable system | 小 | WC が Host semantic token、dark mode、themed chrome を使う場合。presentation-neutral な canvas/SVG/chart では省略できます。 |
 | `primeVueCssUrl` | PrimeVue component CSS（unstyled mode）全体と Tailwind utility | 大 | WC が PrimeVue component（`<Button>`、`<Dialog>` など）を描画するか、Shadow Root 内で Tailwind utility class を作成する場合だけ。 |

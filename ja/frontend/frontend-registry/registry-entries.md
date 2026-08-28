@@ -96,7 +96,7 @@ component author は display metadata を `package.json` の `wippy` block に�
 
 これらの field は、`view.page` と `view.component` の両方の `meta` block に現れます。
 
-| field | type | default | 説明 |
+| フィールド | 型 | デフォルト | 説明 |
 |---|---|---|---|
 | `type` | string | — | `view.page` または `view.component`（必須） |
 | `name` | string | entry name | API response で使う identifier |

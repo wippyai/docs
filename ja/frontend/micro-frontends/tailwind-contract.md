@@ -9,7 +9,7 @@ description: "utility name、compiled value、runtime-backed utility、portable 
 
 「Tailwind token」は曖昧です。代わりに次の四つの用語を使います。
 
-| Layer | 例 | Theme behavior |
+| レイヤー | 例 | テーマの動作 |
 |---|---|---|
 | Utility name | `px-3`, `rounded-md`, `bg-primary` | source vocabulary のみ |
 | Compile-time Tailwind value | `px-3` は固定 spacing value を出力 | module bundle に埋め込まれる |

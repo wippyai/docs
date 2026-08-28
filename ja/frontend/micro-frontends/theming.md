@@ -13,7 +13,7 @@ Wippy は現在 PrimeVue を `theme: 'none'` で動かします。component appe
 
 ## Style の配置先
 
-| Styling concern | Owner |
+| スタイリング対象 | 管理元 |
 |---|---|
 | product 全体で共有する PrimeVue component appearance | `custom_css` と public theme variable 内の Facade PrimeVue theme |
 | Host shell chrome のみ | `.wippy-host-app` に scope した Facade CSS |

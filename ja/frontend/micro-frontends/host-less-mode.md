@@ -59,7 +59,7 @@ canonical app の `app.html` には、load 時に boot path を決める script 
 
 完全な `app.html` scaffold は [Micro Frontend App](./micro-frontend-app.md) にあります。
 
-| Attribute | Role | 使用者 |
+| 属性 | 役割 | 使用者 |
 |---|---|---|
 | `data-role="@wippy/scripts"` | Host の marker。Host は iframe を配信する前にこの `<script>` を削除し、その位置より前へ自身の `loading.js`、`proxy.js`、importmap、AppConfig を注入します。hosted mode では element が消えます。 | Wippy Web Host |
 | `src="…/dev-proxy.js"` | Host がない場合の fallback URL。browser が直接 `dev-proxy.js` を読み、page を bootstrap します。hosted mode では element 自体がないため `src=` は無関係です。 | standalone browser load |
@@ -182,7 +182,7 @@ modal または `localStorage['@wippy-dev/config']` の編集で上書きしま�
 
 development overlay は Shadow DOM Web Component（`<wippy-dev-overlay>`）です。右下 FAB、waiting mode の speech bubble、FAB で開く panel を描画します。panel には Monitor、editable JSON の App Config、全 proxy injection flag の checkbox、auto-accept option、Reset/Accept footer があります。Reset は全 `@wippy-dev/*` key を消し、Accept は config を保存して boot promise を解決します。
 
-| Key | 保存内容 |
+| キー | 保存内容 |
 |---|---|
 | `@wippy-dev/config` | accepted `ChildAppConfig` JSON |
 | `@wippy-dev/proxy-config` | accepted partial `ProxyConfig`（injection flag） |
@@ -223,7 +223,7 @@ stub は要求された Host side effect を console に記録します。`host.
 
 Web Component も同じ dual-mode design ですが iframe ではなく ES module として読み込みます。proxy contract は `@wippy-fe/proxy` からの import で、real proxy または dev-proxy が設定する `window.__WIPPY_APP_API__` を runtime に読みます。
 
-### Playground / デモ用 HTML ページ
+### プレイグラウンド / デモ用 HTML ページ :id=playground-demo-html-page
 
 ```html
 <!-- demo.html in your WC project -->

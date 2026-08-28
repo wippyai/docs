@@ -96,7 +96,7 @@ runtime が内部で使う wire protocol で、application code は message を�
 
 message は `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }` 形状の JSON envelope です。`type` は `APP_CONFIG_IFRAME_EVENT_TYPE` で変更できますがデフォルトは `'@gen2-chat'`。次は public behavior の説明に必要な transport member で、internal enum の全件ではありません。
 
-| Enum member | Wire value | Direction | Description |
+| 列挙メンバー | ワイヤー値 | 方向 | 説明 |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | Child → Host | Initial handshake: child requests its `AppConfig` |
 | `SetConfig` | `set-config` | Host → Child | Host delivers `AppConfig` in response to `GetConfig` |
@@ -146,7 +146,7 @@ source HTML に対して authenticated API、state/WebSocket relay、nav-owner r
 
 ### Attribute と property
 
-| Attribute / property | Required | Default | Description |
+| 属性 / プロパティ | 必須 | デフォルト | 説明 |
 |---|---|---|---|
 | `src` | No | — | proxy `api` で raw source HTML として取得する URL |
 | `srcdoc` | No | — | Raw source HTML。大きな string は `element.srcdoc = html` でも設定可能 |
@@ -168,7 +168,7 @@ frame.srcdoc = sourceHtml
 
 ### Event と method
 
-| Event | Detail | Description |
+| イベント | 詳細 | 説明 |
 |---|---|---|
 | `loading` | — | fetch/process/render 開始前 |
 | `load` | — | sandbox iframe load 後 |
@@ -176,7 +176,7 @@ frame.srcdoc = sourceHtml
 | `nav-owner-route` | `{ path: string, navId?: number }` | `nav-owner` 時の child route change。bubble し `composed` |
 | `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | child からの bridge message |
 
-| Method | Description |
+| メソッド | 説明 |
 |---|---|
 | `post(channel, payload?)` | child への fire-and-forget bridge message |
 | `request<T>(channel, payload?, { timeoutMs }?)` | request/response bridge。handler return value で resolve |
@@ -239,7 +239,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 ### Attribute
 
-| Attribute | Required | Values | Default | Description |
+| 属性 | 必須 | 値 | デフォルト | 説明 |
 |---|---|---|---|---|
 | `id` | Yes | Artifact / Page UUID | — | Content identifier |
 | `type` | No | `artifact` \| `page` | `artifact` | REST endpoint を決定 |
@@ -250,7 +250,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 ### Event
 
-| Event | When | Detail |
+| イベント | 発生時 | 詳細 |
 |---|---|---|
 | `loading` | fetch 前 | — |
 | `load` | iframe load 後 | — |
@@ -272,7 +272,7 @@ w-artifact::part(frame)  { border: 0; }
 
 ## `<w-iframe>` / `<w-artifact>` / raw `<iframe>`
 
-| Feature | `<w-iframe>` | `<w-artifact>` | Raw `<iframe>` |
+| 機能 | `<w-iframe>` | `<w-artifact>` | 生の `<iframe>` |
 |---|---|---|---|
 | Wippy runtime 注入 | Yes | Yes（`<w-iframe>` 経由） | No |
 | metadata 解決 | No | Yes | No |

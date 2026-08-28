@@ -17,7 +17,7 @@ persistence は全面的に facade 側にあります。Web Host は storage-agn
 
 2 つの facade parameter が制御します（[Frontend Facade](../../framework/facade.md)参照）。
 
-| Parameter | Default | Values | 説明 |
+| パラメーター | デフォルト | 値 | 説明 |
 |-----------|---------|--------|-------------|
 | `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | 選択した mode の保存先。`none` は現在の動作 |
 | `theme_storage_key` | `@wippy-theme-mode` | string | Cookie / localStorage key |

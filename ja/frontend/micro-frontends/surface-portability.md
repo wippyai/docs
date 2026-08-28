@@ -35,7 +35,7 @@ app が占有する空間に応答するものには、`@media (min-width: 640px
 
 四つの custom property が geometry を単純な pixel length として伝えます。
 
-| Property | 意味 |
+| プロパティ | 意味 |
 |----------|------|
 | `--wippy-surface-width` | surface 全体の width |
 | `--wippy-surface-width-unit` | surface width の 1% |

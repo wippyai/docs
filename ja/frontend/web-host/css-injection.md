@@ -88,7 +88,7 @@ meta:
 
 ### CSS flag
 
-| Flag | Default | 内容 |
+| フラグ | デフォルト | 内容 |
 |---|---|---|
 | `themeConfig` | `true` | semantic variable を持つ `theme-config.css` |
 | `iframe` | `true` | themed scrollbar の `iframe.css`。layout reset ではない |
@@ -101,7 +101,7 @@ font 専用 flag はなく、Google Fonts は global customCSS の `@import` と
 
 ### Non-CSS injection flag
 
-| Flag | Default | 動作 |
+| フラグ | デフォルト | 動作 |
 |---|---|---|
 | `tailwindConfig` | `true` | CDN Tailwind runtime の `window.tailwind.config` |
 | `resizeObserver` | `true` | child body size relay |
@@ -152,7 +152,7 @@ static get wippyConfig() {
 
 利用できる `hostCss` key は次のとおりです。
 
-| Key | 内容 | bundle への影響 |
+| キー | 内容 | bundle への影響 |
 |---|---|---|
 | `hostCss.themeConfigUrl` | CSS variable（`--p-primary-*`、light + dark） | 小 |
 | `hostCss.primeVueCssUrl` | PrimeVue component + Tailwind utility | 大 |
@@ -187,7 +187,7 @@ iframe の `cssVariables` と non-import customCSS は document stylesheet よ�
 
 ### 3 つの theming scope
 
-| Scope | 適用先 | 用途 |
+| スコープ | 適用先 | 用途 |
 |---|---|---|
 | `global` | host と全 child | brand/shared |
 | `host` | host のみ | sidebar/chat |
@@ -236,7 +236,7 @@ theming: {
 
 ### Layout variable
 
-| Variable | Default | 説明 |
+| 変数 | デフォルト | 説明 |
 |---|---|---|
 | `--wippy-host-sidebar-width-open` | `16rem` | expanded sidebar width |
 | `--wippy-host-sidebar-width-closed` | `3.5rem` | collapsed sidebar width |
@@ -249,7 +249,7 @@ theming: {
 
 ### Message variable
 
-| Variable | Default | 説明 |
+| 変数 | デフォルト | 説明 |
 |---|---|---|
 | `--wippy-host-message-bg` | `surface-50/700` | default message background |
 | `--wippy-host-message-border-color` | `surface-200/600` | bubble border |
@@ -268,7 +268,7 @@ theming: {
 
 ### Input variable
 
-| Variable | Default | 説明 |
+| 変数 | デフォルト | 説明 |
 |---|---|---|
 | `--wippy-host-input-bg` | `surface-50/700` | input bar background |
 | `--wippy-host-input-border-color` | `surface-200/600` | input bar top border |
@@ -280,7 +280,7 @@ theming: {
 
 ### Prompt variable
 
-| Variable | Default | 説明 |
+| 変数 | デフォルト | 説明 |
 |---|---|---|
 | `--wippy-host-prompt-bg` | `surface-100/800` | suggestion background |
 | `--wippy-host-prompt-border-color` | `surface-300/600` | suggestion border |
