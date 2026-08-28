@@ -61,7 +61,7 @@ entries:
 
 token 数は `ceil(#text / 4)` と推定されます。上限を超える batch は item 間で分割されます。1 item が budget より大きい場合、その item 自体は分割されず、LLM 呼び出し前に該当 sub-batch が失敗します。
 
-## Import
+## インポート :id=import
 
 ```yaml
 entries:
@@ -86,7 +86,7 @@ local result, err = embeddings.add(content, content_type, origin_id, context_id,
 
 `content` の embedding を生成して永続化します。
 
-| Parameter | 型 | 必須 | 説明 |
+| パラメーター | 型 | 必須 | 説明 |
 |-----------|------|----------|-------------|
 | `content` | string | はい | embedding を生成する text |
 | `content_type` | string | はい | `"document_chunk"` や `"question"` などの label。PostgreSQL では 32 文字に制限 |

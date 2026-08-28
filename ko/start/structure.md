@@ -56,7 +56,7 @@ entries:
     func: get_user
 ```
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
 | `version` | No | manifest version marker(관례적으로 `"1.0"`) |
 | `namespace` | Yes | 이 파일의 엔트리 namespace |
@@ -180,7 +180,7 @@ UI 표시용 정보는 `meta`에 지정합니다:
 
 ## 일반적인 엔트리 종류
 
-| Kind | 목적 |
+| 종류 | 목적 |
 |------|---------|
 | `registry.entry` | 일반 event dispatch 없이 저장되는 범용 데이터 |
 | `function.lua` | 호출 가능한 Lua 함수 |

@@ -76,30 +76,30 @@ entries:
 
 Solo el string exacto `fragment` activa este modo; **cualquier otro valor, incluido un typo como `fragmnet`, se limita a `iframe`** de forma segura pero silenciosa. El motor fragment también requiere el [gateway `/@fragment`](./views.md#gateway-de-web-fragments), proporcionado por `wippy/views` (≥ 0.5.9), sin configuración del consumidor. Una página puede sobrescribir el valor por despliegue mediante [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#motor-de-renderizado).
 
-### App Identity
+### Identidad de la aplicación :id=app-identity
 
-| Parameter | Default | Description |
+| Parámetro | Predeterminado | Descripción |
 |-----------|---------|-------------|
-| `app_title` | `Wippy` | Title shown in sidebar |
-| `app_name` | `Wippy AI` | Full application name |
-| `app_icon` | `wippy:logo` | Iconify icon reference |
+| `app_title` | `Wippy` | Título mostrado en la barra lateral |
+| `app_name` | `Wippy AI` | Nombre completo de la aplicación |
+| `app_icon` | `wippy:logo` | Referencia de icono de Iconify |
 
-### Feature Flags
+### Indicadores de funcionalidad :id=feature-flags
 
-| Parameter | Default | Description |
+| Parámetro | Predeterminado | Descripción |
 |-----------|---------|-------------|
-| `hide_nav_bar` | `false` | Hide the left navigation sidebar |
-| `disable_right_panel` | `false` | Disable the right sidebar panel |
-| `start_nav_open` | `false` | Navigation drawer open by default |
-| `show_admin` | `true` | Show admin panel toggle |
-| `allow_select_model` | `false` | Allow user to select LLM model |
+| `hide_nav_bar` | `false` | Ocultar la barra lateral de navegación izquierda |
+| `disable_right_panel` | `false` | Desactivar el panel lateral derecho |
+| `start_nav_open` | `false` | Abrir de forma predeterminada el panel de navegación |
+| `show_admin` | `true` | Mostrar el control del panel de administración |
+| `allow_select_model` | `false` | Permitir que el usuario seleccione el modelo LLM |
 | `session_type` | `non-persistent` | Política de sesión de Web Host: `cookie` guarda una cookie de token secundaria; cualquier otro valor se normaliza a `non-persistent` y no usa esa cookie. |
 | `history_mode` | `hash` | Modo de historial del navegador: `hash` o `browser`; cualquier valor distinto de `browser` se trata como `hash`. |
 | `hide_session_selector` | `false` | Oculta la interfaz de seleccion de sesion |
 
 El token de bootstrap del shell facade es independiente de `session_type`. El shell siempre lee `localStorage["@wippy_token_info"]`, analiza su campo JSON `token` y redirige a `login_path` si el valor falta o no es válido. Después pasa el token a Web Host. En modo `cookie`, Web Host también guarda el token en su cookie `@wippy-gen2/token`; en modo `non-persistent` no usa esa cookie secundaria.
 
-### Theming
+### Tematización :id=theming
 
 Se aplican tres ámbitos: **global** (en todas partes), **host** (el chrome de Web Host: sidebar, chat y área de página) y **children** (contextos de renderizado `view.page` y web components `view.component`). Consulte la [matriz de entrega CSS](../frontend/web-host/css-injection.md#matriz-de-entrega-css) para saber a qué superficie llega cada ajuste.
 
@@ -236,7 +236,7 @@ La URL de la API se lee de `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` se deriva susti
 
 Los campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` y `module_file` pertenecen al shell de embedding, no al `AppConfig` hijo. `iframe_origin` e `iframe_url` solo los consumen embeddings iframe manuales sin facade. `mode` es el `fe_mode` normalizado (`compat` o `managed`) y `module_file` es `/module.js` para compat o `/managed-layout.js` para managed.
 
-## Sidebar de navegación
+## Barra lateral de navegación :id=sidebar-de-navegacion
 
 Las páginas registradas mediante `wippy/views` aparecen automáticamente en el sidebar según sus metadatos:
 
@@ -258,7 +258,7 @@ entries:
       url: https://cdn.example.com/dashboard/
 ```
 
-### Grupos del sidebar
+### Grupos de la barra lateral :id=grupos-del-sidebar
 
 Las páginas con el mismo valor `group` se agrupan en secciones plegables. Los grupos se ordenan por `group_order` de menor a mayor y las páginas por `order`.
 
@@ -280,7 +280,7 @@ Las páginas sin `group` aparecen como elementos top-level.
 | `inline: true` | Página interna, oculta de todos los listados de UI |
 | `hide_nav_bar: true` | Parámetro del facade que oculta todo el sidebar izquierdo |
 
-## Publicar con assets embebidos
+## Publicar con recursos embebidos :id=publicar-con-assets-embebidos
 
 Al publicar un componente con archivos estáticos, como el directorio `public/` del facade, use `--embed` para incluir entradas `fs.directory` en el paquete:
 

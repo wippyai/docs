@@ -149,7 +149,7 @@ up(function(db)
 end)
 ```
 
-## Runner API
+## ランナー API :id=runner-api
 
 runner はプログラムから使用できる library として公開されます。
 
@@ -186,7 +186,7 @@ local status = runner:status()   -- list applied + pending migrations
 
 Option:
 
-| Option | 説明 |
+| オプション | 説明 |
 |--------|-------------|
 | `tags` | tag の配列。`meta.tags` が交差する migration だけを対象とする |
 
@@ -202,7 +202,7 @@ runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict t
 
 Option:
 
-| Option | 説明 |
+| オプション | 説明 |
 |--------|-------------|
 | `count` | rollback する migration 数。デフォルトは `1` |
 | `allowed_ids` | migration ID の配列。これらだけを rollback 対象にする |
@@ -228,7 +228,7 @@ Option:
 
 適用済み migration が先に `applied_at` 順で並び、その後に未適用 migration が `meta.timestamp`、次いで ID の順で並びます。
 
-## Registry API
+## レジストリ API :id=registry-api
 
 `wippy.migration:registry` は直接 registry query を提供します。
 
@@ -241,7 +241,7 @@ Option:
 
 bootloader はこれらを使用し、起動時に target database の完全な集合を発見します。
 
-## Migration Tracking
+## マイグレーション追跡 :id=migration-tracking
 
 runner は初回実行時、各 target database に `_migrations` table を作成します。適用済み migration は ID で記録されるため、後続の実行では skip されます。tracking table は自動作成されます。これを作成する独自 migration は記述しないでください。
 

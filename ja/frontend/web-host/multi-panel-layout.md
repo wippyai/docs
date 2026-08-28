@@ -32,7 +32,7 @@ Web Host、facade、`@wippy-fe/*` package は exact release に対応する 1 fa
 
 ### リリース対応表
 
-| Release | Managed-layout の追加内容 |
+| リリース | Managed-layout の追加内容 |
 |---|---|
 | `1.0.50` / `0.0.50` | typed compat intent、coordinator、URL 同期、panel tab、floating panel、`useSwapBuffer()` |
 | `1.0.51` / `0.0.51` | race-safe chat control、splitter handle、axis constraint、drawer fix、proxy source map |
@@ -294,7 +294,7 @@ nested object は replace され、prop key は削除できず overwrite のみ�
 
 これらの composable は proxy layout API を reactive な Vue 3 ref でラップします。基盤の subscription は module scope にあり、iframe の存続期間中維持されるため、component の unmount ごとの cleanup はありません。
 
-| Composable | 戻り値 |
+| コンポーザブル | 戻り値 |
 |------------|--------|
 | `useWippyLayout()` | layout state と変更メソッド全体 |
 | `useWippyPanel(panelId)` | 指定した panel の live state（`panelId` は必須で、`string`、`Ref<string>`、getter のいずれか） |

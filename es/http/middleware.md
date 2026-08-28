@@ -67,8 +67,8 @@ options:
 |--------|-------------|-------------|
 | `cors.allow.origins` | `*` | Orígenes permitidos (separados por coma, soporta `*.example.com`) |
 | `cors.allow.methods` | `GET,POST,PUT,DELETE,OPTIONS,PATCH` | Métodos permitidos |
-| `cors.allow.headers` | `Origin,Content-Type,Accept,Authorization,X-Requested-With` | Headers de solicitud permitidos |
-| `cors.expose.headers` | - | Headers expuestos al cliente |
+| `cors.allow.headers` | `Origin,Content-Type,Accept,Authorization,X-Requested-With` | Cabeceras de solicitud permitidas |
+| `cors.expose.headers` | - | Cabeceras expuestas al cliente |
 | `cors.allow.credentials` | `false` | Permitir cookies/auth |
 | `cors.max.age` | `86400` | Caché de preflight (segundos) |
 | `cors.allow.private.network` | `false` | Acceso a red privada |

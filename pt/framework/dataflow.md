@@ -276,7 +276,7 @@ Executa uma entrada `function.lua` registrada:
 })
 ```
 
-| Option | Type | Description |
+| Opção | Tipo | Descrição |
 |--------|------|-------------|
 | `args` | table | Argumentos base mesclados com as entradas do nó |
 | `inputs` | table | Requisitos de entrada: `{ required = {...}, optional = {...} }` |
@@ -312,7 +312,7 @@ Executa um agente com chamada de ferramentas e saída estruturada opcional:
 })
 ```
 
-| Option | Type | Description |
+| Opção | Tipo | Descrição |
 |--------|------|-------------|
 | `model` | string | Sobrescrever modelo |
 | `arena.prompt` | string | Prompt do sistema |
@@ -400,7 +400,7 @@ function my_cycle(cycle_context)
 end
 ```
 
-| Option | Type | Description |
+| Opção | Tipo | Descrição |
 |--------|------|-------------|
 | `func_id` | string | Função de iteração (mutuamente exclusiva com `template`) |
 | `template` | FlowBuilder | Template para cada iteração (mutuamente exclusivo com `func_id`) |
@@ -455,7 +455,7 @@ Processa itens de um array por um template reutilizável:
 })
 ```
 
-| Option | Type | Description |
+| Opção | Tipo | Descrição |
 |--------|------|-------------|
 | `source_array_key` | string | Chave de entrada contendo um array não vazio (obrigatório) |
 | `template` | FlowBuilder | Template para cada item (obrigatório, deve rotear para `@success`) |
@@ -501,7 +501,7 @@ Pausa um nó até que um sinal externo chegue. Isso atende a aprovações humana
 })
 ```
 
-| Option | Type | Description |
+| Opção | Tipo | Descrição |
 |--------|------|-------------|
 | `signal_id` | string | Nome do sinal comparado com `client:signal()`. Se vazio ou omitido, um UUID v7 é gerado em tempo de execução |
 | `timeout` | string/number | Duração positiva ou milissegundos positivos e finitos; ao expirar, emite `{ timeout = true, code = "SIGNAL_TIMEOUT" }` |
@@ -603,7 +603,7 @@ Coleta múltiplas entradas antes de prosseguir:
 })
 ```
 
-| Option | Type | Description |
+| Opção | Tipo | Descrição |
 |--------|------|-------------|
 | `output_mode` | string | `"object"` (padrão) ou `"array"` (ordem de chegada) |
 | `ignored_keys` | array | Chaves de entrada excluídas da saída |
@@ -686,7 +686,7 @@ local client = require("client")
 local c, err = client.new()
 ```
 
-| Method | Description |
+| Método | Descrição |
 |--------|-------------|
 | `client.new()` | Criar cliente (requer o ator e o escopo de segurança atuais) |
 | `:create_workflow(commands, options?)` | Criar workflow, retorna `dataflow_id` |
@@ -701,7 +701,7 @@ local c, err = client.new()
 
 ## Status do workflow
 
-| Status | Description |
+| Estado | Descrição |
 |--------|-------------|
 | `pending` | Criado, mas ainda não executado |
 | `running` | Execução do workflow ativa |

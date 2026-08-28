@@ -3,7 +3,7 @@ title: "Change Data Capture"
 description: "db.cdc.postgres를 사용하여 Postgres 논리 복제의 row-level 변경을 스트리밍합니다."
 ---
 
-# Change Data Capture
+# 변경 데이터 캡처
 
 `db.cdc.postgres` source는 `pgoutput` plugin을 통해 Postgres 논리 복제의 row-level 변경을 스트리밍합니다. replication slot을 생성하고 기존 row를 snapshot한 다음 insert, update, delete 변경을 내보낼 수 있습니다. 이 페이지는 설정 참조입니다. 예제는 기존 데이터베이스, publication 또는 table 집합, replication credential, 환경 값이 있다고 가정합니다. source는 엔트리 ID로 지정하며 Lua에서는 [`cdc` 모듈](../lua/storage/cdc.md)로 사용합니다.
 
@@ -30,7 +30,7 @@ description: "db.cdc.postgres를 사용하여 Postgres 논리 복제의 row-leve
     auto_start: true
 ```
 
-| Field | Type | Default | Description |
+| 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `host` | string | required | Postgres host |
 | `port` | int | required | Postgres port(0보다 커야 함) |
@@ -64,7 +64,7 @@ credential은 decode 시점에 [환경 레지스트리](./env.md)를 통해 `${e
 
 각 source는 다음 info record로 설명됩니다.
 
-| Field | Description |
+| 필드 | 설명 |
 |-------|-------------|
 | `name` | source 이름(엔트리 ID) |
 | `slot` | replication slot 이름 |

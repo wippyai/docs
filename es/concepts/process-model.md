@@ -75,7 +75,7 @@ if err then return nil, err end
 return ok
 ```
 
-Los mensajes de un mismo sender llegan en orden. Los de senders distintos pueden intercalarse. La entrega es fire-and-forget; usa patrones request-response si necesitas confirmación.
+Los mensajes de un mismo remitente llegan en orden. Los de remitentes distintos pueden intercalarse. La entrega se realiza sin esperar respuesta; usa patrones de solicitud-respuesta si necesitas confirmación.
 
 <note>
 Los procesos pueden registrarse en un registro local de nombres y dirigirse por nombre en vez de PID (por ejemplo, `session_manager`). También se pueden registrar nombres globales para dirigirse entre nodos mediante `process.registry` con scopes EVENTUAL (basado en gossip), CONSISTENT o STRONG (ambos respaldados por Raft).

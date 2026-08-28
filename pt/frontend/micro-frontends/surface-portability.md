@@ -44,7 +44,7 @@ Use isso em vez de `@media (min-width: 640px)` para tudo que responde ao espaço
 
 Quatro propriedades personalizadas transportam a geometria como comprimentos simples em pixels:
 
-| Property | Meaning |
+| Propriedade | Significado |
 |----------|---------|
 | `--wippy-surface-width` | largura total da superfície |
 | `--wippy-surface-width-unit` | 1% da largura da superfície |
@@ -77,7 +77,7 @@ No dimensionamento pelo conteúdo, as propriedades de altura são deliberadament
 
 **O modo recebido pelo app não é uma escolha do autor**, e nada em `package.json` o altera. O dimensionamento é definido por *onde o Web Host renderiza o app*:
 
-| Rendered as | Sizing |
+| Renderizado como | Dimensionamento |
 |---|---|
 | uma página roteada, um painel de layout, o painel direito, uma aba do registro | **container** |
 | an embedded artifact, an inline artifact block, a navbar widget | **content** |
@@ -140,7 +140,7 @@ Nesse caso, o snapshot informa `width: 0`, `height: null`, `sizing: 'content'`, 
 
 Container queries substituem media queries no **CSS**. Estes mecanismos ficam fora do CSS e continuam seguindo a janela do navegador:
 
-| Mechanism | Why | What to do |
+| Mecanismo | Motivo | Ação |
 |---|---|---|
 | `<picture>` / `<source media>` | seleção de recursos HTML; não há forma de container query | Controle por `host.surface.onChange` ou mova a direção de arte para um `background-image` CSS sob `@container` |
 | `srcset` + `sizes` | resolvidos em relação ao viewport | Derive `sizes` da superfície ou defina a fonte via JS |

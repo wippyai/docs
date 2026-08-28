@@ -13,7 +13,7 @@ description: "터미널 호스트는 stdin/stdout/stderr 접근이 있는 Lua �
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `terminal.host` | 터미널 세션 호스트 |
 

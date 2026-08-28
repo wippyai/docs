@@ -3,7 +3,7 @@ title: "Archive"
 description: "ZIP, TAR, gzip-compressed TAR, Zstandard-compressed TAR archive를 읽고 scan, extract, 생성합니다."
 ---
 
-# Archive
+# 아카이브
 <secondary-label ref="function"/>
 <secondary-label ref="io"/>
 <secondary-label ref="encoding"/>
@@ -20,11 +20,11 @@ local archive = require("archive")
 
 require하기 전에 실행 가능 엔트리의 `modules:` 목록에 `archive`를 추가하십시오. 파일 시스템, cloud reader, HTTP stream을 사용하는 recipe에는 해당 기능과 security policy도 필요합니다.
 
-## Format
+## 형식
 
 모듈은 magic byte에서 built-in format을 감지하거나 `opts.format`으로 지정한 format을 사용합니다.
 
-| Format | Random read | Sequential scan | Write |
+| 형식 | 임의 읽기 | 순차 스캔 | 쓰기 |
 |--------|:-----------:|:---------------:|:-----:|
 | `zip` | yes | yes (local headers) | yes |
 | `tar` | yes | yes | yes |
@@ -37,11 +37,11 @@ require하기 전에 실행 가능 엔트리의 `modules:` 목록에 `archive`�
 local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
 ```
 
-## Option
+## 옵션
 
 모든 entry point는 optional `opts` table을 받습니다.
 
-| Key | Default | Meaning |
+| 키 | 기본값 | 의미 |
 |-----|---------|---------|
 | `format` | auto | `"zip"`, `"tar"`, `"tar.gz"`, `"tar.zst"`; auto는 magic을 sniff하고 없으면 extension 사용 |
 | `max_entries` | 100000 | 더 많은 entry를 가진 archive 거부(decompression bomb 방어) |
@@ -52,7 +52,7 @@ local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
 
 `max_file_bytes`는 각 entry를 제한하고 `max_total_bytes`는 reader 및 walker의 `extract_all()`에서만 적용됩니다. `read()`, `stream()`, 단일 entry `extract()`, manual walking을 사용하는 애플리케이션은 자체 누적 budget을 적용해야 합니다. `max_inline_bytes`는 `read()`가 materialize하는 entry data를 제한하며 `buffer_bytes`는 제한하지 않습니다. 이 limit에는 모든 metadata와 codec allocation이 포함되지는 않습니다.
 
-## 읽기 — Random access
+## 읽기 — 임의 접근
 
 `archive.open(source, ...)`은 완전한 random access를 위해 **seekable** source를 엽니다. zip central directory는 먼저 읽고 entry는 요청할 때 decompress합니다. source는 `fs.FS` handle과 path, 열린 `fs.File`, cloud storage reader 또는 raw byte가 될 수 있습니다. byte는 archive 전체를 RAM에 보관하므로 작은 archive에만 사용하십시오.
 
@@ -193,7 +193,7 @@ local ok, err = r:close()
 if err then return nil, err end
 ```
 
-## 읽기 — Sequential scan
+## 읽기 — 순차 스캔
 
 `archive.scan(source, opts?)`은 HTTP upload body나 multipart file stream 같은 **forward-only** source를 엽니다. entry는 archive 순서대로 방문하며 각 entry reader는 walk가 다음으로 진행될 때까지만 유효합니다. random `read(name)` access는 사용할 수 없습니다.
 
@@ -333,7 +333,7 @@ writer는 entry source 또는 archive destination으로 외부에서 전달한 f
 
 ## 오류
 
-| Condition | Kind |
+| 조건 | 종류 |
 |-----------|------|
 | 알 수 없거나 일치하지 않는 format | `errors.INVALID` |
 | 현재 Lua wrapper가 보고한 corrupt 또는 truncated archive | `errors.INTERNAL` |

@@ -507,7 +507,7 @@ Retorna tabela com campos:
 - `max_idle_time_closed` - Conexoes fechadas por timeout de idle
 - `max_lifetime_closed` - Conexoes fechadas por max lifetime
 
-## Prepared Statements
+## Instruções preparadas
 
 Prepared statement retornado por `db:prepare()`.
 

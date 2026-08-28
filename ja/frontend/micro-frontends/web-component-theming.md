@@ -96,7 +96,7 @@ static get wippyConfig() {
 }
 ```
 
-### Local dev fallback
+### ローカル開発用フォールバック :id=local-dev-fallback
 
 Host のない local development では、fallback variable value を得るため `styles.css` に `theme-config.css` を直接 import します。
 

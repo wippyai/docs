@@ -11,7 +11,7 @@ Wippy는 memory, SQL, Raft 또는 CRDT 기반의 TTL-aware key-value store를 �
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `store.memory` | 자동 정리가 있는 인메모리 스토어 |
 | `store.sql` | 지속성이 있는 SQL 기반 스토어 |

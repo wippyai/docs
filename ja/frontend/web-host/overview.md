@@ -34,7 +34,7 @@ Page (wippy/facade HTML — loads module.js / managed-layout.js)
 
 Web Host CDN は、同じ versioned directory から複数の entry point を配信します。integration に応じて選びます。各 entry は `/<release-tag>/module.js` のように `<release-tag>/<entry>` で利用できます。
 
-| Entry | ユースケース |
+| エントリ | ユースケース |
 |-------|----------|
 | `module.js` | **compat** mode の full app。標準的な nav-sidebar + page-area + chat-right-panel shell。`window.initWippyApp()` により page へ直接 mount し、page 全体と browser history を引き継ぐ。現在の `wippy/facade` がデフォルトで配信する entry |
 | `managed-layout.js` | **managed** mode の full app。宣言的な multi-panel layout。`fe_mode = managed` の場合に facade が配信する。early access（[Multi-Panel Layout](./multi-panel-layout.md)参照） |
@@ -45,7 +45,7 @@ Web Host CDN は、同じ versioned directory から複数の entry point を配
 
 標準的な `wippy/facade` deployment では、これらの path を直接参照しません。facade が設定から `fe_facade_url` を読み、`fe_mode` に合う JS-module entry（compat は `module.js`、managed は `managed-layout.js`）を選択し、正しい URL を自動的に構成します。
 
-## CDN Versioning
+## CDN バージョン管理 :id=cdn-versioning
 
 Web Host は git tag で versioning されます。production URL の canonical pattern は次のとおりです。
 
@@ -66,7 +66,7 @@ https://web-host.wippy.ai/<release-tag>/
 
 これにより deployment 全体がその build に固定されます。runtime で設定する `-o` / `--override` syntax は [CLI override](../../guides/cli.md)を参照してください。
 
-## Tech Stack
+## 技術スタック :id=tech-stack
 
 Web Host は Vue 3（Composition API）、UI component に PrimeVue + Tailwind CSS 3、state management に Pinia、navigation に Vue Router、HTTP に Axios を使用します。
 

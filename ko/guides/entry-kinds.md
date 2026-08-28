@@ -18,7 +18,7 @@ YAML과 Lua 블록은 하나의 애플리케이션이 아니라 레퍼런스 조
 
 ## Lua 런타임
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `function.lua` | Lua 함수 진입점 |
 | `process.lua` | 장기 실행 Lua 프로세스 |
@@ -48,7 +48,7 @@ YAML과 Lua 블록은 하나의 애플리케이션이 아니라 레퍼런스 조
 
 ## HTTP 서비스
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `http.service` | HTTP 서버 (포트 바인딩) |
 | `http.router` | 라우트 프리픽스와 미들웨어 |
@@ -96,7 +96,7 @@ resp:write_json({users = get_users()})
 
 ## 데이터베이스
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `db.sql.sqlite` | SQLite 데이터베이스 |
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
@@ -169,7 +169,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 
 ## 키-값 스토어
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `store.memory` | 인메모리 키-값 스토어 |
 | `store.sql` | SQL 기반 키-값 스토어 |
@@ -211,7 +211,7 @@ local data = s:get("user:123")
 
 ## 큐
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `queue.driver.memory` | 인메모리 큐 드라이버 |
 | `queue.driver.amqp` | AMQP (RabbitMQ) 드라이버 |
@@ -266,7 +266,7 @@ end
 
 ## 프로세스 관리
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `process.host` | 프로세스 실행 호스트 |
 | `process.service` | 슈퍼바이즈드 프로세스 (process.lua 래핑) |
@@ -315,7 +315,7 @@ end
 
 ## Temporal (워크플로우)
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `temporal.client` | Temporal 클라이언트 연결 |
 | `temporal.worker` | Temporal 워커 |
@@ -340,7 +340,7 @@ end
 
 ## 클라우드 스토리지
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `config.aws` | AWS 설정 |
 | `cloudstorage.s3` | S3 버킷 접근 |
@@ -375,7 +375,7 @@ MinIO나 DigitalOcean Spaces 같은 S3 호환 서비스에 연결하려면 <code
 
 ## 파일 시스템
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `fs.directory` | 디렉토리 접근 |
 | `fs.embed` | 읽기 전용 내장 파일 시스템 |
@@ -401,7 +401,7 @@ file:close()
 
 ## 환경
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `env.storage.memory` | 인메모리 환경 스토리지 |
 | `env.storage.file` | 파일 기반 환경 스토리지 |
@@ -448,7 +448,7 @@ env.set("CACHE_TTL", "3600")
 
 ## 템플릿
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `template.jet` | 개별 Jet 템플릿 |
 | `template.set` | 템플릿 세트 설정 |
@@ -484,7 +484,7 @@ local html = set:render("email", {
 
 ## 보안
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `security.policy` | 조건이 있는 보안 정책 |
 | `security.policy.expr` | 표현식 기반 정책 |
@@ -533,7 +533,7 @@ local actor = security.actor()
 
 ## 계약 (의존성 주입)
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `contract.definition` | 메서드 명세가 있는 인터페이스 |
 | `contract.binding` | 계약 메서드를 함수 구현에 매핑 |
@@ -600,7 +600,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## 실행
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `exec.native` | 네이티브 명령 실행 |
 | `exec.docker` | Docker 컨테이너 실행 |
@@ -625,7 +625,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## WASM 런타임
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `function.wat` | WebAssembly 함수 (WAT 텍스트 형식) |
 | `function.wasm` | WebAssembly 함수 (바이너리) |
@@ -642,7 +642,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## 네트워크
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `network` | 기본 네트워크 오버레이 |
 | `network.socks5` | SOCKS5 프록시 오버레이 |
@@ -653,7 +653,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## 레지스트리 프리미티브
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `registry.entry` | 엔트리 디스크립터 (내부) |
 | `ns.definition` | 네임스페이스 정의 |

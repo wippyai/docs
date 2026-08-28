@@ -35,7 +35,7 @@ application code 実行時には getter は**同期的**で、`host`、`api`、`
 
 ## Page application への config delivery
 
-### Iframe engine
+### iframe エンジン :id=iframe-engine
 
 host は `view.page` 読込時に `srcdoc` を作り、**app script より前に順番どおり**次を注入します。
 
@@ -51,7 +51,7 @@ host は `view.page` 読込時に `srcdoc` を作り、**app script より前に
 
 config global が `proxy.js` より先に設定されるため runtime は同期的に初期化され、getter は即時利用できます。page がこれらの script を直接参照することはなく、`<script data-role="@wippy/scripts">` placeholder を host が正しい順序の tag に置換します。page 単位 override は `window.__WIPPY_CONFIG_OVERRIDES__` として届きます（[Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)参照）。
 
-### Web Fragment engine
+### Web Fragment エンジン :id=web-fragment-engine
 
 fragment gateway は Web Host import map、`loading.js`、`proxy-fragment.js` を含む reframed realm stub を配信します。server は client-held auth token を注入できないため、fragment runtime は same-origin channel 上の `GetConfig`/`SetConfig` handshake で host から child config を得て、`@wippy-fe/proxy` が使う同じ authenticated API と config global を構築します。
 
@@ -59,7 +59,7 @@ web component は別 page realm ではなく host page で動くため、host pa
 
 ## App と web component の違い
 
-| | Page: iframe engine | Page: Web Fragment engine | Web component |
+| | ページ: iframe エンジン | ページ: Web Fragment エンジン | Web コンポーネント |
 |---|---|---|---|
 | 実行場所 | sandboxed `srcdoc` iframe | shadow root に反映された reframed same-origin realm | host page DOM（Shadow DOM） |
 | Runtime delivery | `srcdoc` に `proxy.js` を注入 | fragment gateway が `proxy-fragment.js` を読み込む | host page に runtime が存在 |
@@ -79,7 +79,7 @@ top-level でも深い nested child でも code は同一です。以下の [`<w
 
 `proxy.js` / `proxy-fragment.js` が内部用に次を導入します。application/component code は読み取りも代入もせず `@wippy-fe/proxy` を使ってください。
 
-| Global | 内容 |
+| グローバル | 内容 |
 |---|---|
 | `window.$W` | async accessor object。internal |
 | `window.getWippyApi` / `window.initWippyApi` | async instance resolver。internal（`initWippyApi` は deprecated） |
@@ -138,7 +138,7 @@ message は `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }` �
 | `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Child | Per-panel live state delta |
 | `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Child | Layout bus broadcast delivery |
 
-## `<w-iframe>` Custom Element :id=w-iframe-custom-element
+## `<w-iframe>` カスタム要素 :id=w-iframe-custom-element :id=w-iframe-custom-element
 
 `<w-iframe>` は proxy runtime 組み込みの low-level child-page primitive です。raw source HTML を受け取り、通常の iframe path では full Wippy runtime（base URL、import map、`loading.js`、`proxy.js`、child config）を sandboxed `srcdoc` iframe に注入します。fragment-rendered page 内では nested registered `view.page` が nested Web Fragment を使い、それ以外は `srcdoc` のままです。
 
@@ -191,7 +191,7 @@ frame.addEventListener('nav-owner-route', (event) => {
 })
 ```
 
-### Parent-child bridge
+### 親子ブリッジ :id=parent-child-bridge
 
 named channel を使うため raw `postMessage` envelope は不要です。
 
@@ -233,7 +233,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 `host.bridge.on()` は unsubscribe function を返します。**1 channel = 1 active handler** で、同じ channel の最新 handler が `post()` と `request()` をすべて処理します。重複時は `console.warn`、最新 handler を unsubscribe すると前の handler が再び active になります。複数 listener には別 channel 名を使います。timeout 省略時は 10 秒（`10000` ms）。timeout は `Bridge request <id> timed out after <ms>ms`、handler 不在は待たずに `No handler registered for channel "<channel>"` で reject します。
 
-## `<w-artifact>` Custom Element :id=w-artifact-custom-element
+## `<w-artifact>` カスタム要素 :id=w-artifact-custom-element :id=w-artifact-custom-element
 
 `<w-artifact>` は artifact/page metadata と content を解決し、iframe-backed type を内部の `<w-iframe>` へ委譲します。HTML、Markdown、web page package、ESM package、direct-tag component を判別します。
 
@@ -287,7 +287,7 @@ w-artifact::part(frame)  { border: 0; }
 
 Wippy artifact UUID/page ID には `<w-artifact>`、source HTML がある場合は `<w-iframe>`、Wippy API 不要の完全な external content だけに raw `<iframe>` を使います。
 
-## Advanced HTML Injection
+## 高度な HTML 注入 :id=advanced-html-injection
 
 element を mount せず source-HTML-to-srcdoc transform が必要なら `html.inject(...)` を使います。
 

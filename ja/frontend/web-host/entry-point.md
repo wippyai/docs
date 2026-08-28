@@ -140,7 +140,7 @@ config endpoint は、module parameter と実行 environment から `wippy/facad
 }
 ```
 
-### Field Reference
+### フィールドリファレンス :id=field-reference
 
 **Shell / integration field** — standard shell または custom embedder が使用します。
 
@@ -214,7 +214,7 @@ standard shell 自身が次の required `AppConfig` field を追加します。
 | `allowAdditionalTags` | object | `{}` | HTML sanitizer tag whitelist（`Record<string, string[]>`、tag → allowed attribute） |
 | `chat` | object | `{}` | Chat UI override（paste-to-file behavior など） |
 
-## Authentication Flow
+## 認証フロー :id=authentication-flow
 
 facade は client-held bearer token を知る前に HTML shell と public config response を配信します。browser で shell が localStorage の `@wippy_token_info` を読みます。値がない、または invalid JSON なら `login_path` へ redirect します。`login_redirect_param` が設定されていれば、現在の path、query、hash を追加し、login flow が requested URL に user を戻せるようにします。
 

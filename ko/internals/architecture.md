@@ -121,7 +121,7 @@ sequenceDiagram
 
 이벤트에는 별도의 `System`과 `Kind` 필드가 있습니다. 내장 시스템은 다음을 발행합니다.
 
-| System | Kind | 목적 |
+| 시스템 | 종류 | 목적 |
 |--------|------|------|
 | `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | 엔트리 변경 |
 | `registry` | `registry.begin`, `registry.commit`, `registry.discard` | 트랜잭션 경계 |

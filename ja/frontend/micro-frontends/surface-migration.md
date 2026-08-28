@@ -3,13 +3,13 @@ title: "Surface Migration"
 description: "viewport-based responsive rule を Wippy surface contract へ変換する recipe。"
 ---
 
-# Surface Migration
+# サーフェスマイグレーション :id=surface-migration
 
 **分類: 部分的な migration recipe 集。** 各 before/after block は一つの pattern だけを変換します。stylesheet 全体へ decision tree を適用し、両 render engine と両 sizing mode で page を検証してください。
 
 既存 Micro Frontend App を viewport-based responsiveness から [surface contract](./surface-portability.md) へ変換する recipe です。
 
-| Label | 意味 |
+| ラベル | 意味 |
 |---|---|
 | **automatic** | 機械的変換で意味が変わらない。 |
 | **conditional** | 記載した前提条件を満たす場合だけ安全。必ず確認する。 |

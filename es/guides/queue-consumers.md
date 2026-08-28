@@ -21,10 +21,10 @@ flowchart LR
 
 ## Configuración
 
-| Opción | Default | Máximo | Descripción |
+| Opción | Predeterminado | Máximo | Descripción |
 |--------|---------|-----|-------------|
-| `queue` | Required | - | ID de queue en el registro |
-| `func` | Required | - | ID de función handler en el registro |
+| `queue` | Obligatorio | - | ID de la cola en el registro |
+| `func` | Obligatorio | - | ID de la función controladora en el registro |
 | `concurrency` | 1 | 1000 | Número de workers |
 | `prefetch` | 10 | 10000 | Tamaño del buffer compartido de deliveries; AMQP también lo aplica como número de prefetch QoS del channel |
 | `auto_ack` | false | - | Opción auto-ack específica del backend; para AMQP, `true` pide al broker confirmar al entregar |
@@ -112,7 +112,7 @@ Flow:
 4. Backpressure when all workers busy and buffer full
 ```
 
-## Shutdown ordenado
+## Apagado ordenado :id=shutdown-ordenado
 
 Durante el shutdown, el consumer:
 

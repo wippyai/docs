@@ -821,7 +821,7 @@ class MyEl extends HTMLElement {
 
 ### 組込 topic :id=built-in-topics
 
-| Topic | Handler payload | 説明 |
+| トピック | ハンドラーペイロード | 説明 |
 |-------|-----------------|-------------|
 | `@history` | `{ path: string }` | Host URL が変更された（SPA navigation）。parent が新しい route を push したときに発火。 |
 | `@visibility` | `boolean` | Iframe/Web Fragment の visibility が変更された。直接実行される web component は代わりに型付き host-visibility contract を使う。 |

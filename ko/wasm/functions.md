@@ -45,7 +45,7 @@ entries:
 
 ### WAT 설정 필드
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
 | `source` | Yes | 인라인 WAT 소스 또는 `file://` 참조 |
 | `method` | Yes | 호출할 내보내기된 함수 이름 |
@@ -79,7 +79,7 @@ entries:
 
 ### WASM 설정 필드
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
 | `fs` | Yes | 바이너리가 포함된 파일시스템 엔트리 ID |
 | `path` | Yes | 파일시스템 내 `.wasm` 파일 경로 |
@@ -96,7 +96,7 @@ entries:
 
 각 WASM 함수는 사전 컴파일된 인스턴스 풀을 사용합니다. 풀 타입은 동시성과 리소스 사용을 제어합니다.
 
-| Type | Description |
+| 타입 | 설명 |
 |------|-------------|
 | `inline` | mutex 직렬화. 순차 동기 호출은 하나의 warm instance를 재사용하고, asyncified 호출은 매 호출 후 닫히며 retained-memory 정책도 교체를 유발할 수 있음. |
 | `lazy` | 유휴 워커 없음. 요청 시 `max_size`까지 확장. |
@@ -152,7 +152,7 @@ scheduler:
 
 트랜스포트는 런타임과 WASM 모듈 간의 입출력 매핑 방식을 제어합니다.
 
-| Transport | Description |
+| 트랜스포트 | 설명 |
 |-----------|-------------|
 | `payload` | 런타임 페이로드를 WASM 호출 인자에 직접 매핑 (기본값) |
 | `wasi-http` | HTTP 요청/응답 컨텍스트를 WASM 인자 및 결과에 매핑 |
@@ -212,7 +212,7 @@ limits:
   retained_memory_check_interval: 16
 ```
 
-| Field | Default | Description |
+| 필드 | 기본값 | 설명 |
 |-------|---------|-------------|
 | `max_execution_ms` | `0` | 최대 호출 시간(밀리초); `0`은 timeout 비활성화 |
 | `max_retained_memory_bytes` | 64 MiB | 호출 후 retained memory가 이 값을 넘으면 warm worker instance를 재활용; 명시적 `0`은 재활용 비활성화 |
@@ -242,7 +242,7 @@ wasi:
       guest: /output
 ```
 
-| Field | Description |
+| 필드 | 설명 |
 |-------|-------------|
 | `args` | 게스트에 전달되는 커맨드라인 인자 |
 | `cwd` | 게스트 내부의 작업 디렉터리 (절대 경로여야 함) |

@@ -3,7 +3,7 @@ title: "Host-less Mode"
 description: "Web Host なしで Wippy Micro Frontend App と Web Component を実行・test する方法。"
 ---
 
-# Host-less Mode
+# ホストレスモード :id=host-less-mode
 
 Host-less mode では、Wippy Web Host の wrapper なしで Wippy Micro Frontend App または Web Component を build、実行、test できます。
 
@@ -66,7 +66,7 @@ canonical app の `app.html` には、load 時に boot path を決める script 
 
 environment に合う URL を選びます。path には release-tag segment が必須で、facade の `fe_facade_url` と同じ release を使います。Host root 直下の `/dev-proxy.js` は無効です。`/<release-tag>/dev-proxy.js` へ pin してください。同じ bundle を local iteration、CI、共有 preview link に使えます。
 
-| Environment | `src=` の例 |
+| 環境 | `src=` の例 |
 |---|---|
 | Public CDN（標準） | `https://web-host.wippy.ai/<release-tag>/dev-proxy.js` |
 | Self-hosted Wippy deployment | `https://<your-wippy-host>/<release-tag>/dev-proxy.js` |

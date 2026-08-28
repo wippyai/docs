@@ -11,7 +11,7 @@ Wippy frontend code は Web Host の isolation boundary 内で動きます。構
 
 ## Micro frontend app と web component
 
-| | Micro Frontend App（`view.page`） | Web component（`view.component`） |
+| | マイクロフロントエンドアプリ（`view.page`） | Web コンポーネント（`view.component`） |
 |---|---|---|
 | **render 形式** | page surface: srcdoc iframe または Web Fragment | page 内の Shadow DOM custom element |
 | **固有 URL / nav entry** | あり — backend `mountRoute` を受け持つ | なし — 別 page または chat artifact 内に embed |

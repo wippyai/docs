@@ -12,7 +12,7 @@ template 엔트리는 [CloudyKit Jet](https://github.com/CloudyKit/jet) set과 t
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `template.set` | 공유 설정이 있는 템플릿 세트 |
 | `template.jet` | 개별 템플릿 |

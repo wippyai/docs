@@ -129,7 +129,7 @@ Cada proceso tiene una cola de eventos MPSC (multi-producer, single-consumer):
 
 El scheduler implementa `relay.Receiver` para enrutar mensajes a procesos. Cuando `Send()` es llamado, busca el PID destino en el mapa `byPID`, pushea el mensaje como evento a la cola del proceso, y despierta el proceso si está idle pusheándolo a la cola global.
 
-## Shutdown
+## Apagado :id=shutdown
 
 En shutdown, el scheduler envía eventos de cancelación a todos los procesos rastreados y espera que completen o timeout. Workers salen una vez que no queda trabajo.
 

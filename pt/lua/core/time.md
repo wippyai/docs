@@ -259,7 +259,7 @@ t:truncate(minute_duration)  -- truncate to 15-minute boundary
 | `round(duration)` | Duration | Time | Arredondar para multiplo mais proximo |
 | `truncate(duration)` | Duration | Time | Truncar para multiplo |
 
-## Duration
+## Duração
 
 ### Criando Duracoes
 
@@ -282,7 +282,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 
 **Retorna:** `Duration, error`
 
-### Métodos de Duration
+### Métodos de duração
 
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")

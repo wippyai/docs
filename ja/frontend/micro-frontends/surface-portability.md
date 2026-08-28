@@ -3,7 +3,7 @@ title: "Surface Portability"
 description: "container query、surface variable、host.surface を使い、browser viewport から独立して view.page application を size 調整する方法。"
 ---
 
-# Surface Portability
+# サーフェスポータビリティ :id=surface-portability
 
 **分類: focused example を含む rendering contract reference。** CSS、JavaScript、package metadata block は個別の契約 rule を示すもので、完全な application fixture ではありません。
 
@@ -59,7 +59,7 @@ application はこの四つの名前を宣言または代入してはいけま�
 
 ## Container sizing と content sizing
 
-| | Inline axis | Block axis |
+| | インライン軸 | ブロック軸 |
 |---|---|---|
 | **Container sizing** — Host が両方の dimension を指定 | available | available |
 | **Content sizing** — app content が height を決定 | available | **not available** |
@@ -68,7 +68,7 @@ content sizing では height property が意図的に invalid です。そのた
 
 **app author は sizing を選べず**、`package.json` の設定でも変更できません。Web Host が app を描画する場所によって決まります。
 
-| 描画方法 | Sizing |
+| 描画方法 | サイジング |
 |---|---|
 | routed page、layout panel、right panel、registry tab | **container** |
 | embedded artifact、inline artifact block、navbar widget | **content** |
@@ -131,7 +131,7 @@ layout には CSS を優先してください。JavaScript API は canvas sizing
 
 container query が media query を置き換えるのは **CSS** の中だけです。次の mechanism は CSS の外にあり、browser window に従い続けます。
 
-| Mechanism | 理由 | 対応 |
+| メカニズム | 理由 | 対応 |
 |---|---|---|
 | `<picture>` / `<source media>` | HTML resource selection であり container-query 形式がない | `host.surface.onChange` で制御するか、`@container` 下の CSS `background-image` に art direction を移す |
 | `srcset` + `sizes` | viewport に対して解決される | surface から `sizes` を導出するか JS で source を設定 |

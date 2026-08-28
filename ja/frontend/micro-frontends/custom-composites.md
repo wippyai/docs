@@ -9,7 +9,7 @@ description: "必要な affordance を PrimeVue で提供できない control �
 
 custom control は例外であり、別の component library ではありません。
 
-## Admission test
+## 受け入れテスト :id=admission-test
 
 custom control が認められるのは次をすべて満たす場合だけです。
 
@@ -23,7 +23,7 @@ custom control が認められるのは次をすべて満たす場合だけで�
 
 data-shape equivalence は affordance equivalence ではありません。3 値の `SelectButton` が sliding three-position toggle と同じ見た目・動作とは限りません。逆に `ToggleSwitch` に `positions` prop を発明してはいけません。本当に affordance requirement がある場合だけ reviewed custom sibling を作ります。
 
-## Module contract
+## モジュール契約 :id=module-contract
 
 reviewed exception を module-root `wippy-fe.contract.json` に保存します。
 

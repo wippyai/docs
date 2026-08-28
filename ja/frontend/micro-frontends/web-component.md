@@ -3,13 +3,13 @@ title: "Web Component Recipe"
 description: "content-only と control-bearing custom element 向けの portable view.component recipe。"
 ---
 
-# Web Component Recipe
+# Web コンポーネントレシピ :id=web-component-recipe
 
 web component は `view.component` として登録され、通常 shadow root に render します。最小限の有効な setup を選びます。
 
 以下は既存 Vue/Vite project 向け integration recipe で、standalone scaffold ではなく Wippy 固有 element、metadata、build configuration を示します。
 
-## Variant A: content-only
+## バリアント A: コンテンツのみ :id=variant-a-content-only
 
 chart、diagram、renderer、visualization は control を render せず shared Tailwind utility も author しない場合、PrimeVue と Tailwind を省略できます。
 
@@ -23,7 +23,7 @@ chart、diagram、renderer、visualization は control を render せず shared 
 
 button、input、form、menu、その他 PrimeVue 相当 control を追加した時点で exemption は終了します。
 
-## Variant B: control-bearing
+## バリアント B: コントロール付き :id=variant-b-control-bearing
 
 control を持つ component は Wippy PrimeVue plugin で PrimeVue を導入し、host theme と PrimeVue CSS を受け取ります。web-component package は全 host CSS key をデフォルトで読みます。次の explicit list は example が使う asset と shared iframe/scrollbar CSS に絞ります。
 
@@ -68,7 +68,7 @@ export async function webComponent() {
 define(import.meta.url, ExampleControlsElement)
 ```
 
-### Package metadata contract
+### パッケージメタデータ契約 :id=package-metadata-contract
 
 package metadata は同じ custom element を識別する必要があります。
 

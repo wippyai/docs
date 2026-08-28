@@ -18,7 +18,7 @@ facade는 **global**(`custom_css`, `css_variables`, `icon_sets`), **host**(`host
 - **CSS 사용자 정의 속성(`*_css_variables`)은 WC host로 상속됩니다.** WippyElement는 로컬 테마 기본값이 reset하지 못하도록 effective global 및 children/page map의 이름을 forced-theme inner root를 통해 bridge합니다. 이는 `customCss`와 무관합니다. host 전용 이름은 일반 상속에 의존하며 로컬 테마 CSS가 inner root에 다시 선언하면 가려질 수 있습니다.
 - **CSS 선택자 규칙(`*_custom_css`)은 iframe 또는 shadow 경계를 스스로 넘지 못합니다.** 런타임이 선택된 `view.page` realm과 **Web Host 1.0.43부터** 각 `view.component` shadow root에 주입합니다(컴포넌트 `customCss` flag로 opt-out). 1.0.43 전에는 변수만 컴포넌트 shadow root에 도달했습니다.
 
-| Facade knob | 전달 내용 | Host shell 문서 | `view.page` 자식 realm | `view.component` shadow root |
+| Facade 설정 | 전달 내용 | Host shell 문서 | `view.page` 자식 realm | `view.component` shadow root |
 |---|---|---|---|---|
 | `custom_css`(global) | 선택자 규칙 | ✓ 주입 | ✓ 주입¹ | ✓ 주입(1.0.43+, opt-out)¹ |
 | `css_variables`(global) | 사용자 정의 속성 | ✓ effective mode block | ✓ effective mode block | ✓ 상속 + bridge |
@@ -99,9 +99,9 @@ meta:
 }
 ```
 
-### CSS flag
+### CSS 플래그
 
-| Flag | 기본값 | 주입 내용 |
+| 플래그 | 기본값 | 주입 내용 |
 |------|---------|-----------------|
 | `themeConfig` | `true` | `theme-config.css` — 모든 `--p-primary-*`, `--p-surface-*`, `--p-secondary-*`, PrimeVue 시맨틱 변수. 끄면 플랫폼 테마 계층만 제거되며 활성 `customVariables`, `customCss`는 독립 적용 |
 | `iframe` | `true` | `iframe.css` — 기본 테마 스크롤바 스타일. 역사적 이름이며 iframe 레이아웃 규칙을 뜻하지 않음. 스크롤바 일관성을 위해 모든 페이지에서 유지 |
@@ -116,7 +116,7 @@ meta:
 
 이 flag는 `injections` 블록의 `css` 옆에 있습니다.
 
-| Flag | 기본값 | 동작 |
+| 플래그 | 기본값 | 동작 |
 |------|---------|--------------|
 | `tailwindConfig` | `true` | CDN Tailwind 런타임(`<script src="https://cdn.tailwindcss.com">`)을 쓰는 앱에 `window.tailwind.config` 노출. 빌드 시 Tailwind를 컴파일하는 Vite 빌드에는 불필요 |
 | `resizeObserver` | `true` | 자식 document body를 관찰하고 크기 update를 호스트에 전달. 브라우저 API polyfill이 아니라 body-size relay |

@@ -98,7 +98,7 @@ managed 엔트리를 선택하면 facade는 `module.js` 대신 `managed-layout.j
 
 `panels`, `floating`, `modals`, `coordinators`의 각 엔트리는 `kind` 기준 tagged union입니다.
 
-| Kind | 설명 | 필수 필드 |
+| 종류 | 설명 | 필수 필드 |
 |------|-------------|-----------------|
 | `page` | 선택된 iframe 또는 Web Fragment 엔진을 통해 마운트되는 Wippy page 모듈 | `id`(page registry ID) |
 | `artifact` | 호스트 artifact/page resolver로 렌더링되는 Wippy artifact | `id`(artifact UUID) |
@@ -194,7 +194,7 @@ host.layout.addFloating('inspector', {
 host.layout.removeFloating('inspector')
 ```
 
-## Headless Coordinator
+## 헤드리스 코디네이터
 
 Coordinator는 숨겨진 host에 마운트되는 컴포넌트입니다. 보이는 slot은 없지만 패널 범위 host API를 받습니다. 표시 패널이 렌더링에 집중하도록 횡단 로직에 사용합니다. 이전 `services` 필드는 deprecated 호환 별칭입니다.
 
@@ -318,11 +318,11 @@ host.layout.updatePanel('right', { route: '/x' })
 
 두 주의점이 있습니다. props merge는 **shallow**이므로 `props` 안의 중첩 객체는 deep merge되지 않고 완전히 교체됩니다. 그리고 shallow merge로 prop 키를 삭제할 수는 없으며 덮어쓸 수만 있습니다.
 
-## Vue Composable — `@wippy-fe/vue-host`
+## Vue 컴포저블 — `@wippy-fe/vue-host`
 
 이 composable은 proxy layout API를 반응형 Vue 3 ref로 감쌉니다. 내부 subscription은 module 범위이고 iframe lifetime 동안 유지되므로 컴포넌트 unmount별 정리는 없습니다.
 
-| Composable | 반환값 |
+| 컴포저블 | 반환값 |
 |------------|---------|
 | `useWippyLayout()` | 전체 layout 상태와 mutation 메서드 |
 | `useWippyPanel(panelId)` | 이름 있는 패널의 live 상태(`panelId` 필수: `string`, `Ref<string>`, getter) |

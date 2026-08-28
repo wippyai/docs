@@ -22,7 +22,7 @@ description: "view.page micro frontend application の宣言、routing、serving
 | `type` | string | — | `"page"` でなければならない |
 | `path` | string | — | bundle output directory 内にあるビルド済み HTML entry file への path |
 
-### Render engine
+### 描画エンジン :id=render-engine
 
 `renderEngine` は、このページ（`view.page` のみ）の[page render engine](../web-host/render-engines.md)を選択します。proxy API は engine 間で portable ですが、ブラウザの layout と DOM の挙動は異なる場合があります。fragment engine を選ぶ前に、その制約を確認してください。
 
@@ -137,7 +137,7 @@ Web Host 1.0.56 は、これらのフラグを Fragment engine へ変換しま�
 
 `announced: false` は navigation から page を隠しますが、load を防ぎません。page は引き続き embed でき、route から到達できます。`inline: true` はさらに厳しく、public-facing listing のすべてから page を除外します。
 
-### Mount Route
+### マウントルート :id=mount-route
 
 | フィールド | 型 | デフォルト | 説明 |
 |---|---|---|---|

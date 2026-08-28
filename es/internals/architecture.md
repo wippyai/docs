@@ -92,7 +92,7 @@ Los componentes declaran dependencias. El loader construye un grafo acíclico di
 | Factory | ninguna | Generación de procesos |
 | Functions | Registry | Ejecución de funciones mediante pool |
 
-## Event Bus
+## Bus de eventos :id=event-bus
 
 Pub/sub asíncrono para comunicación entre componentes.
 
@@ -197,14 +197,14 @@ Diccionario sellado para referencias de componentes.
 
 | Propiedad | Comportamiento |
 |-----------|----------------|
-| Before seal | Escrituras de un solo hilo durante el arranque |
-| After seal | Lecturas sin lock, panic en escritura |
+| Antes del sellado | Escrituras de un solo hilo durante el arranque |
+| Después del sellado | Lecturas sin bloqueo, pánico en escritura |
 | Duplicate keys | Panic |
-| Type safety | Funciones getter tipadas |
+| Seguridad de tipos | Funciones de obtención tipadas |
 
 Los componentes adjuntan servicios durante la fase Load. Cuando termina el arranque, AppContext se sella, lo que permite lecturas sin bloqueos e impide nuevas escrituras.
 
-## Shutdown
+## Apagado :id=shutdown
 
 El apagado graceful procede en orden reverso de dependencias:
 
@@ -218,6 +218,6 @@ Segunda señal fuerza salida inmediata.
 ## Ver También
 
 - [Scheduler](./scheduler.md) - Ejecución de procesos
-- [Event Bus](./events.md) - Sistema pub/sub
+- [Bus de eventos](./events.md) - Sistema pub/sub
 - [Registry](./registry.md) - Gestión de estado
 - [Command Dispatch](./dispatch.md) - Manejo de yields

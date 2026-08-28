@@ -9,11 +9,11 @@ description: "Web Host page engine と web-component shadow root にわたる CS
 
 iframe は parent CSS を継承しないため、Host が child `srcdoc` に style asset を注入し、`ProxyConfig` が layer を制御します。Web Fragment は別 path を使います。このページが `proxy.injections` CSS flag と runtime default の canonical reference です。developer-facing guide は [Theming](../micro-frontends/theming.md)を参照してください。
 
-## CSS Delivery Matrix
+## CSS 配信マトリクス :id=css-delivery-matrix
 
 facade は global、host、children の 3 scope を公開します。主なルールは、custom property は WC host に継承し、selector rule は iframe/shadow boundary を自然には越えないため runtime injection が必要ということです。WippyElement は forced-theme inner root を通して effective global と children/page の property 名を bridge するため、local theme default はそれらを reset できません。host-only 名は通常の継承に依存し、inner root の local theme CSS が再宣言すると shadow され得ます。Web Host 1.0.43 以降は composed global + children custom CSS が component shadow root にも届き、`customCss` で opt out できます。
 
-| Facade knob | 配信内容 | Host shell document | `view.page` child realm | `view.component` shadow root |
+| Facade 設定 | 配信内容 | Host シェルドキュメント | `view.page` 子レルム | `view.component` Shadow Root |
 |---|---|---|---|---|
 | `custom_css`（global） | selector rule | ✓ 注入 | ✓ 注入¹ | ✓ 注入（1.0.43+、opt-out 可）¹ |
 | `css_variables`（global） | custom property | ✓ effective mode block | ✓ effective mode block | ✓ 継承 + bridge |
@@ -113,7 +113,7 @@ font 専用 flag はなく、Google Fonts は global customCSS の `@import` と
 
 省略時は permissive default ですが、Vite app は依存する値を明示してください。
 
-### Web Fragment delivery
+### Web Fragment の配信 :id=web-fragment-delivery
 
 Fragment は iframe switch を使いません。gateway が固定 CSS asset を追加し、adapter が handshake 後に effective variables/customCSS を ordinary `<style>` として reflected head に適用します。error capture も unconditional です。
 
@@ -152,7 +152,7 @@ static get wippyConfig() {
 
 利用できる `hostCss` key は次のとおりです。
 
-| キー | 内容 | bundle への影響 |
+| キー | 内容 | バンドルへの影響 |
 |---|---|---|
 | `hostCss.themeConfigUrl` | CSS variable（`--p-primary-*`、light + dark） | 小 |
 | `hostCss.primeVueCssUrl` | PrimeVue component + Tailwind utility | 大 |

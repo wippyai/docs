@@ -11,7 +11,7 @@ Executor entry는 external command를 native operating-system process 또는 Doc
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `exec.native` | 호스트 OS에서 직접 명령 실행 |
 | `exec.docker` | Docker 컨테이너 내에서 명령 실행 |

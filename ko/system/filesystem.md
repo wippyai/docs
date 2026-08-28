@@ -9,7 +9,7 @@ description: "directory-backed 및 read-only embedded 파일 시스템을 설정
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `fs.directory` | 디렉토리 기반 파일시스템 |
 | `fs.embed` | 읽기 전용 임베디드 파일시스템 |

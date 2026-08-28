@@ -9,7 +9,7 @@ description: "normative frontend compliance rule、checker ownership、publicati
 
 このページが deterministic checker と publication requirement を所有します。[Portable UI Contract](../portable-ui-contract.md)が underlying rule statement、linked guide が実装詳細を所有します。public `@wippy-fe/*` 0.0.56 は module-compliance CLI を提供しません。repository documentation checker は documentation example と generated catalogue freshness を検証し、module が選択した compliance workflow が次の application-facing check を実装します。
 
-| ルール | 詳細 guide | 決定論的な結果 |
+| ルール | 詳細ガイド | 決定論的な結果 |
 |---|---|---|
 | FE-PORT-001 | [Portable UI Contract](../portable-ui-contract.md) | private portability assumption を拒否 |
 | FE-UI-001 | 同上 | raw/hand-rolled standard control を拒否 |

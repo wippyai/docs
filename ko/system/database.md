@@ -12,7 +12,7 @@ Wippy는 PostgreSQL과 MySQL용 풀링 SQL 데이터베이스 엔트리와 단�
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
 | `db.sql.mysql` | MySQL 데이터베이스 |

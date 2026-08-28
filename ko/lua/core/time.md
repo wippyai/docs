@@ -125,7 +125,7 @@ local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 
 **반환:** `Time, error`
 
-## Time 메서드
+## 시간 메서드
 
 ### 산술
 
@@ -257,7 +257,7 @@ t:truncate(minute_duration)  -- truncate to 15-minute boundary
 | `round(duration)` | Duration | Time | 가장 가까운 배수로 반올림 |
 | `truncate(duration)` | Duration | Time | 배수로 자르기 |
 
-## Duration
+## 기간
 
 ### 기간 만들기
 
@@ -280,7 +280,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 
 **반환:** `Duration, error`
 
-### Duration 메서드
+### 기간 메서드
 
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
@@ -444,7 +444,7 @@ timer:stop()
 
 **반환:** `Timer, error`
 
-| Timer 메서드 | 파라미터 | 반환 | 설명 |
+| 타이머 메서드 | 파라미터 | 반환 | 설명 |
 |--------------|----------|------|------|
 | `response()` | - | Channel | 타이머 채널 가져오기 |
 | `channel()` | - | Channel | response()의 별칭 |
@@ -490,7 +490,7 @@ ticker:stop()
 
 **반환:** `Ticker, error`
 
-| Ticker 메서드 | 파라미터 | 반환 | 설명 |
+| 티커 메서드 | 파라미터 | 반환 | 설명 |
 |---------------|----------|------|------|
 | `response()` | - | Channel | 티커 채널 가져오기 |
 | `channel()` | - | Channel | response()의 별칭 |

@@ -52,7 +52,7 @@ entries:
 
 ### 설정 파라미터
 
-| Parameter | Required | Default | Description |
+| 파라미터 | 필수 | 기본값 | 설명 |
 |-----------|----------|---------|-------------|
 | `server` | yes | — | 정적 콘텐츠 및 페이지를 제공할 HTTP 서버 |
 | `router` | yes | — | 설정 endpoint를 위한 공개 API router |
@@ -65,7 +65,7 @@ entries:
 | `login_redirect_param` | no | `""` (off) | `login_path`로 redirect할 때 로그인 후 반환 URL을 추가할 query 파라미터 이름. 빈 값은 추가 비활성화 |
 | `extra_scripts` | no | `[]` | facade 페이지가 로드할 추가 script URL의 JSON 배열. `/facade/config`에서 `extraScripts`로 방출 |
 
-### Render Engine
+### 렌더 엔진 :id=render-engine
 
 `render_engine`은 전체 배포의 [페이지 render engine](../frontend/web-host/render-engines.md)을 선택합니다. `hostConfig.renderEngine`으로 방출되고 Web Host의 단일 페이지 rendering 분기에서 읽습니다.
 
@@ -78,7 +78,7 @@ entries:
 
 ### 앱 ID
 
-| Parameter | Default | Description |
+| 파라미터 | 기본값 | 설명 |
 |-----------|---------|-------------|
 | `app_title` | `Wippy` | sidebar에 표시되는 제목 |
 | `app_name` | `Wippy AI` | 전체 애플리케이션 이름 |
@@ -86,7 +86,7 @@ entries:
 
 ### 기능 플래그
 
-| Parameter | Default | Description |
+| 파라미터 | 기본값 | 설명 |
 |-----------|---------|-------------|
 | `hide_nav_bar` | `false` | 왼쪽 탐색 sidebar 숨김 |
 | `disable_right_panel` | `false` | 오른쪽 sidebar panel 비활성화 |
@@ -103,7 +103,7 @@ facade shell의 bootstrap token은 `session_type`과 별개입니다. shell은 �
 
 세 가지 범위가 적용됩니다. **global**은 모든 곳, **host**는 sidebar·chat·page 영역을 포함한 Web Host chrome, **children**은 자식 `view.page` render context와 `view.component` web component에 적용됩니다. 각 설정이 닿는 surface는 [CSS 전달 매트릭스](../frontend/web-host/css-injection.md#css-전달-행렬)를 참고하세요.
 
-| Parameter | 범위 | Default | Description |
+| 파라미터 | 범위 | 기본값 | 설명 |
 |-----------|---------|----------|--------------|
 | `custom_css` | global | Google Fonts import | host chrome, `view.page` render context, `view.component` shadow root(1.0.43 이상)에 적용되는 전역 CSS |
 | `css_variables` | global | `{}` | 임의 CSS custom property의 JSON map. Auto 및 강제 모드용으로 compile되고 component shadow root에 bridge됨 |
@@ -118,7 +118,7 @@ facade shell의 bootstrap token은 `session_type`과 별개입니다. shell은 �
 
 #### 테마 모드 및 유지
 
-| Parameter | Default | Description |
+| 파라미터 | 기본값 | 설명 |
 |-----------|---------|-------------|
 | `theme_mode` | `auto` | host와 child에 강제할 theme: OS를 따르는 `auto`, `light`, `dark`. `/facade/config`에서 `themeMode`로 방출 |
 | `theme_persist` | `none` | reload 사이 사용자 theme 선택 유지: `none`, `cookie`, `localStorage`. `cookie` 모드에서는 Jet-rendered shell이 server side에서 cookie를 읽고 첫 paint 전에 `w-theme-*` class 적용. `themePersist`로 방출 |
@@ -168,7 +168,7 @@ content_fs:    app:app_fs
 
 아래 네 개는 프런트엔드 `hostConfig` 아래에 그대로 제공됩니다.
 
-| Parameter | Default | Description |
+| 파라미터 | 기본값 | 설명 |
 |-----------|----------|--------------|
 | `additional_nav_items` | `[]` | 추가 sidebar 엔트리 |
 | `state_cache` | `{}` | 프런트엔드 state cache 설정 |
@@ -177,7 +177,7 @@ content_fs:    app:app_fs
 
 아래 세 개는 `hostConfig` 아래가 아니라 **최상위** `AppConfig` 필드로 방출됩니다.
 
-| Parameter | Emitted as | Default | Description |
+| 파라미터 | 출력 형식 | 기본값 | 설명 |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | 프런트엔드 route override |
 | `axios_defaults` | `axiosDefaults` | `{}` | 프런트엔드 axios HTTP client 기본값 |
@@ -262,7 +262,7 @@ entries:
 
 같은 `group` 값을 가진 페이지는 접을 수 있는 section으로 모입니다. group은 `group_order` 오름차순, group 안의 페이지는 `order` 순으로 정렬됩니다.
 
-| Field | Description |
+| 필드 | 설명 |
 |-------|-------------|
 | `group` | sidebar에 표시되는 category 이름 |
 | `group_icon` | 카테고리 헤더 아이콘 |
@@ -273,7 +273,7 @@ entries:
 
 ### 표시 여부 제어
 
-| Field | Effect |
+| 필드 | 효과 |
 |-------|--------|
 | `announced: true` | sidebar 탐색에 페이지 표시 |
 | `announced: false` | 탐색에서는 숨기지만 URL로 접근 가능 |

@@ -35,7 +35,7 @@ El módulo dataflow depende de `wippy/agent`, `wippy/llm`, `wippy/session`, `wip
 
 El módulo publica una entrada `env.variable` `userspace.dataflow.env:web_host_origin` (por defecto `https://front.wippy.ai`) que los flujos descendentes pueden leer para construir URLs públicas. Sobrescríbela a través del router de env o una requirement.
 
-## Flow Builder
+## Constructor de flujos :id=flow-builder
 
 El flow builder proporciona una interfaz fluida para componer workflows. Impórtalo en la entrada que define el flujo:
 
@@ -276,7 +276,7 @@ Ejecuta una entrada `function.lua` registrada.
 })
 ```
 
-| Option | Type | Description |
+| Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `args` | table | Argumentos base fusionados con las entradas del nodo |
 | `inputs` | table | Requisitos de entrada: `{ required = {...}, optional = {...} }` |
@@ -312,7 +312,7 @@ Ejecuta un agente con llamada a herramientas y una salida estructurada opcional.
 })
 ```
 
-| Option | Type | Description |
+| Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `model` | string | Sobrescribir el modelo |
 | `arena.prompt` | string | Prompt del sistema |
@@ -402,7 +402,7 @@ function my_cycle(cycle_context)
 end
 ```
 
-| Option | Type | Description |
+| Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `func_id` | string | Función de iteración (mutuamente exclusiva con `template`) |
 | `template` | FlowBuilder | Plantilla para cada iteración (mutuamente exclusiva con `func_id`) |
@@ -457,7 +457,7 @@ Procesa elementos de un array mediante una plantilla reutilizable.
 })
 ```
 
-| Option | Type | Description |
+| Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `source_array_key` | string | Clave de entrada que contiene un array no vacío (requerido) |
 | `template` | FlowBuilder | Plantilla para cada ítem (requerido, debe enrutar a `@success`) |
@@ -491,7 +491,7 @@ Procesa elementos de un array mediante una plantilla reutilizable.
 }):as("processor")
 ```
 
-### Nodo signal
+### Nodo de señal :id=nodo-signal
 
 Pausa un nodo hasta que llega una señal externa. Esto permite aprobaciones humanas, eventos externos y workflows por etapas:
 
@@ -503,7 +503,7 @@ Pausa un nodo hasta que llega una señal externa. Esto permite aprobaciones huma
 })
 ```
 
-| Option | Type | Description |
+| Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `signal_id` | string | Nombre de la señal comparado con `client:signal()`. Si está vacío u omitido, se genera un UUID v7 en tiempo de ejecución |
 | `timeout` | string/number | Cadena de duración positiva o milisegundos positivos finitos; al vencer emite `{ timeout = true, code = "SIGNAL_TIMEOUT" }` |
@@ -535,7 +535,7 @@ El yield de la señal es parte del estado del workflow, persistido a través del
 
 Los yields de señal huérfanos (yields cuyo proceso padre salió sin completar) son limpiados por el manejador de salida de proceso del estado del workflow.
 
-#### Patrones de pipeline
+#### Patrones de flujo :id=patrones-de-pipeline
 
 Los nodos signal participan en cualquier topología. Añade el binding del cliente junto al import de `flow` mostrado anteriormente:
 
@@ -593,7 +593,7 @@ if finance_err then return nil, finance_err end
 
 Los datos almacenados de la señal se exponen como salida del nodo. Los nodos descendentes reciben el payload enviado, salvo que los datos omitidos, `nil` o `false` se normalizan a `{}`.
 
-### Nodo join
+### Nodo de unión :id=nodo-join
 
 Recolecta múltiples entradas antes de proceder:
 
@@ -605,7 +605,7 @@ Recolecta múltiples entradas antes de proceder:
 })
 ```
 
-| Option | Type | Description |
+| Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `output_mode` | string | `"object"` (por defecto) o `"array"` (orden de llegada) |
 | `ignored_keys` | array | Claves de entrada excluidas de la salida |
@@ -688,7 +688,7 @@ local client = require("client")
 local c, err = client.new()
 ```
 
-| Method | Description |
+| Método | Descripción |
 |--------|-------------|
 | `client.new()` | Crear cliente (requiere el actor y scope de seguridad actuales) |
 | `:create_workflow(commands, options?)` | Crear workflow, devuelve `dataflow_id` |
@@ -703,7 +703,7 @@ local c, err = client.new()
 
 ## Estado del workflow
 
-| Status | Description |
+| Estado | Descripción |
 |--------|-------------|
 | `pending` | Creado, pero aún sin ejecutar |
 | `running` | La ejecución del workflow está activa |

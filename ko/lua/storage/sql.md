@@ -513,7 +513,7 @@ local stats, err = db:stats()
 - `max_idle_time_closed` - 유휴 타임아웃으로 닫힌 연결
 - `max_lifetime_closed` - 최대 수명으로 닫힌 연결
 
-## Prepared Statement
+## 준비된 문
 
 `db:prepare()`가 반환한 prepared statement는 반복해서 쿼리하거나 실행할 수 있습니다.
 

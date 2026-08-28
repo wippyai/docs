@@ -187,7 +187,7 @@ Cada aserción lanza un error en caso de fallo; los type guards también retorna
 | `test.ok(v)` / `test.fail(msg)` | Valor verdadero / forzar un fallo |
 | `test.is_nil(v)` / `test.not_nil(v)` | Nil / no nil |
 | `test.is_true(v)` / `test.is_false(v)` | Valor booleano |
-| `test.is_string/number/table/function/boolean(v)` | Type guards (retornan `v`) |
+| `test.is_string/number/table/function/boolean(v)` | Comprobaciones de tipo (retornan `v`) |
 | `test.contains(str, sub)` / `test.matches(str, pattern)` | Subcadena / patrón Lua |
 | `test.has_key(tbl, key)` / `test.len(v, n)` | Clave de mapa / longitud |
 | `test.gt/gte/lt/lte(a, b)` | Comparación numérica |

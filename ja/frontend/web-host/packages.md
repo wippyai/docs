@@ -19,7 +19,7 @@ npm install @wippy-fe/proxy@0.0.56 @wippy-fe/webcomponent-vue@0.0.56 @wippy-fe/r
 
 micro frontend app と web component はどちらも `@wippy-fe/proxy` の synchronous named import を直接使います。application code が API getter を await したり handshake を管理したりする必要はありません。
 
-| 目的 | `@wippy-fe/proxy` からの import |
+| 目的 | `@wippy-fe/proxy` からのインポート |
 |---|---|
 | 認証済み HTTP | `api`（axios instance） |
 | Host との通信 | `host` |
@@ -206,7 +206,7 @@ direct shell author は stable panel mount に `LayoutManagerView`、flash の�
 
 managed-layout panel 内の page module 向けに proxy layout API を reactive ref で包む Vue 3 composable です。return 自体は `null` にならず、host 不在時は内部 `.value` が null/false/empty に degrade し、mutation は no-op になります。return 値の null check ではなく `layout.isManaged.value` または `layout.snapshot.value !== null` で guard します。subscription は module-scoped で page runtime lifetime 中存続します。
 
-| Composable | 戻り値 |
+| コンポーザブル | 戻り値 |
 |------------|---------|
 | `useWippyLayout()` | reactive な `snapshot`、`activeBreakpoint`、`panels`、`isManaged` と `resizePanel`、`collapsePanel`、`expandPanel`、`movePanel`、`removePanel`、`closeModal`、`removeFloating` |
 | `useWippyPanel(panelId)` | named panel の live state を表す `ComputedRef`（不在なら `null`）。`panelId` は必須の `string \| Ref<string> \| getter` |
@@ -336,7 +336,7 @@ Web Host が build する heavy Markdown renderer（markdown-it + Shiki）で、
 
 ---
 
-## Host Import Map
+## Host インポートマップ :id=host-import-map
 
 `fe_facade_url` と同じ pinned `<version-tag>` の release artifact を開発時に一度取得します。
 

@@ -41,7 +41,7 @@ description: "Web Host が AppConfig を受け取り、store、routing、theming
 
 4. **初期化を続行する。** ここから Path A と同じ内部 path です。
 
-## Internal Init Sequence
+## 内部初期化シーケンス :id=internal-init-sequence
 
 いずれかの path で `AppConfig` を得ると、Web Host は次の startup sequence を実行します。
 
@@ -57,7 +57,7 @@ description: "Web Host が AppConfig を受け取り、store、routing、theming
 
 **6. 要求されたとき WebSocket client を作成する。** WebSocket setup は固定の最後の bootstrap step ではなく consumer-driven です。consumer component または composable が要求すると `useWsClientRaw()` が client を作ります。`hostConfig.lazyWS` が true でなければ接続は eager に開始し、lazy mode では subscription が必要になったとき開始します。
 
-## AppConfig TypeScript Interface
+## AppConfig TypeScript インターフェース :id=appconfig-typescript-interface
 
 次の抜粋は `initWippyApp` と `SetConfig` が受け付ける主要 field を示します。supporting type と使用頻度の低い field については、pin された Web Host の `app-config/types.ts` が正です。この抜粋を shipped schema の代用にしないでください。`AppConfig` に `feature` や `fe_mode` field はありません。`fe_mode` は module entry を選ぶ facade requirement parameter で、managed mode は `hostConfig.layout` で伝えます。
 
@@ -188,7 +188,7 @@ Web Host は複数の source から設定を解決します。低いものから
 
 production deployment では通常 `initWippyApp()`（facade path）または PostMessage（manual iframe embedding）を使います。URL parameter は token 付きで host を browser に直接読み込むための development convenience です。
 
-## Bootstrap Diagram
+## ブートストラップ図 :id=bootstrap-diagram
 
 標準 facade（JS-module）path は次のとおりです。
 

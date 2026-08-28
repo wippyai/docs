@@ -3,7 +3,7 @@ title: "Quickstart"
 description: "Vue Micro Frontend App または Web Component を登録するための Wippy 固有の integration recipe。"
 ---
 
-# Quickstart
+# クイックスタート :id=quickstart
 
 このページでは、公開 [`wippyai/app`](https://github.com/wippyai/app) repository から構成した、二つの簡潔な Vue integration recipe、**Micro Frontend App** と **Web Component** を紹介します。スニペットは Web Host 1.0.56 と public `@wippy-fe/*` 0.0.56 package family を対象とします。Wippy 固有の metadata、entry code、registry declaration に焦点を当て、一般的な Vite scaffolding、dependency installation、backend setup は省略しています。これらの抜粋を standalone project とみなさず、完全な application には link 先 repository を使ってください。
 
@@ -207,7 +207,7 @@ build 後は任意の page または chat artifact で tag を使えます。
 
 [`app`](https://github.com/wippyai/app) repository は [`frontend/web-components/`](https://github.com/wippyai/app/tree/master/frontend/web-components) に複数の実行可能な Web Component を収録しています。
 
-| Component | 示す内容 |
+| コンポーネント | 示す内容 |
 |---|---|
 | `reaction-bar` | Prop と event emission |
 | `counter-persist` | `@wippy-fe/pinia-persist` により reload 後も残る state |

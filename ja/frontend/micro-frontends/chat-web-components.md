@@ -143,7 +143,7 @@ document.querySelector('wippy-session-selector')
 <wippy-chat></wippy-chat>                            <!-- follows the selector -->
 ```
 
-## Theming
+## テーマ設定 :id=theming
 
 各 element は shadow root 内に render し、host page selector は leak しません。
 
@@ -166,7 +166,7 @@ document.querySelector('wippy-session-selector')
 
 `css-variables` 省略が通常の facade-respecting path です。instance color override は deliberate embedding isolation 用で、routine restyling ではありません。
 
-## Runtime wiring
+## ランタイム配線 :id=runtime-wiring
 
 srcdoc iframe child では追加 setup は不要です。auth/config は injected proxy runtime、REST/WebSocket は config env URL から得ます。mount 時に shell が internals を demand-load して既存 session に接続します。Fragment/direct-host の availability limit は[読込方法](#how-they-load)のとおりです。
 

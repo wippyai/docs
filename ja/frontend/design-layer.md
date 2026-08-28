@@ -46,7 +46,7 @@ theme は**自分が所有していない** markup にも style を適用しま�
 
 Host が提供する PrimeVue と Tailwind は、あらゆる component に推奨される backbone です。component は opt out **できます**が、一般的な UI を少しでも render した時点で選択肢は狭まり、この段階は一方向にしか進みません。
 
-| component の性質 | 読み込むもの |
+| コンポーネントの性質 | 読み込むもの |
 |---|---|
 | presentation-neutral — canvas、SVG、control・token・utility・scrolling のない chart | 何もなし: `hostCssKeys: []` |
 | semantic token または dark mode を使う | `themeConfigUrl` |

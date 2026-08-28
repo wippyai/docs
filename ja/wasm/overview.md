@@ -28,7 +28,7 @@ Wippy は WebAssembly モジュールを Lua コードとともに登録しま�
 5. 関数の引数と戻り値は Lua テーブルと WIT 型の間でマッピングされます
 6. クロックのポーリングや送信 HTTP など、対応するディスパッチャーブリッジ操作は yield し、スケジューラが他の処理を実行できるようにします
 
-## Component Model
+## コンポーネントモデル :id=component-model
 
 Wippy は WIT（WebAssembly Interface Types）を使用する WebAssembly Component Model に対応しています。コンポーネントモジュールは、ホストとゲストの間で次の型をマッピングします。
 

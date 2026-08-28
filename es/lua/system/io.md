@@ -13,7 +13,7 @@ El módulo `io` lee de la entrada estándar y escribe en la salida estándar y l
 Esta es una referencia de API. Sus fragmentos son llamadas aisladas; un proceso de terminal debe propagar los errores Lua estructurados devueltos cuando el resultado afecte al flujo de control.
 
 <note>
-Este módulo solo está disponible para procesos ejecutados en un <a href="../../system/terminal.md">Terminal Host</a>, no para funciones regulares.
+Este módulo solo está disponible para procesos ejecutados en un <a href="../../system/terminal.md">host de terminal</a>, no para funciones regulares.
 </note>
 
 ## Carga

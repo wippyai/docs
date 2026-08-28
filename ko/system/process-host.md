@@ -13,7 +13,7 @@ description: "프로세스 호스트는 work-stealing scheduler를 사용하여 
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `process.host` | 스케줄러가 있는 프로세스 실행 호스트 |
 
@@ -58,7 +58,7 @@ live update는 `host.workers` 크기를 조정할 수 있습니다. queue size �
 
 프로세스 호스트는 다음 종류의 엔트리를 실행합니다:
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `process.lua` | 소스 기반 Lua 프로세스 |
 | `process.lua.bc` | 사전 컴파일된 Lua 바이트코드 |

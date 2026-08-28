@@ -63,7 +63,7 @@ end
 
 | Opcion | Tipo | Descripción |
 |--------|------|-------------|
-| `headers` | table | Headers HTTP string-to-string; se ignoran otras entradas |
+| `headers` | table | Cabeceras HTTP de cadena a cadena; se ignoran otras entradas |
 | `protocols` | table | Subprotocolos string; se ignoran entradas no string |
 | `dial_timeout` | number/string | Timeout; `0` no impone deadline global, pero siguen los defaults del transporte |
 | `read_timeout` | number/string | Timeout por mensaje; `0` lo desactiva |

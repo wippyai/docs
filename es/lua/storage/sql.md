@@ -142,7 +142,7 @@ local value = sql.as.null()
 
 **Devuelve:** `userdata`
 
-## Builder de consultas
+## Constructor de consultas :id=builder-de-consultas
 
 ### `sql.builder.select`
 

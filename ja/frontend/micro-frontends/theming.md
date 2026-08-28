@@ -28,7 +28,7 @@ global `.p-drawer-content` rule は host/child の全 Drawer 向けなら有効�
 
 重複 module CSS を facade に移しても dependency は消えません。selector が shared PrimeVue theme vocabulary に属さないなら private facade contract を作ります。自作 module 間の共有 vocabulary は published package に置きます。
 
-## Semantic equality
+## セマンティックな等価性 :id=semantic-equality
 
 semantically equivalent な control は同等に見えるべきです。PrimeVue component を直接使います。本当に custom control が必要なら PrimeVue visual sibling を特定し、color、border、focus、state と theme-variable に分類された geometry に同じ public runtime property を使います。
 
@@ -45,7 +45,7 @@ custom part が所有できるのは sibling にない新規 structure だけで
 
 page style transport は engine に従います。iframe は proxy injection、Web Fragment は gateway platform CSS と reflected head の page override、web component は shadow root 内へ delivery できます。これは CSS が効く場所の説明であり、任意 facade selector への依存を許可するものではありません。
 
-## Runtime mode switching
+## ランタイムモードの切り替え :id=runtime-mode-switching
 
 public theme-mode contract は AppConfig + `@wippy-fe/proxy` です。
 

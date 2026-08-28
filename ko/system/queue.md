@@ -31,7 +31,7 @@ flowchart LR
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `queue.driver.memory` | 인메모리 큐 드라이버 |
 | `queue.driver.amqp` | AMQP (RabbitMQ) 드라이버 |

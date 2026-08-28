@@ -121,7 +121,7 @@ sequenceDiagram
 
 イベントは独立した `System` と `Kind` フィールドを持ちます。組み込みシステムは次のイベントを発行します。
 
-| System | Kind | 目的 |
+| システム | 種別 | 目的 |
 |--------|------|---------|
 | `registry` | `entry.create`、`entry.update`、`entry.delete`、`entry.accept`、`entry.reject` | エントリの変更 |
 | `registry` | `registry.begin`、`registry.commit`、`registry.discard` | トランザクション境界 |

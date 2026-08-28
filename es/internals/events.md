@@ -1,11 +1,11 @@
 ---
-title: "Event Bus"
-description: "Acciones del event bus, suscripciones wildcard, entrega, puente a procesos Lua, helpers request-response y shutdown."
+title: "Bus de eventos"
+description: "Acciones del bus de eventos, suscripciones con comodines, entrega, puente a procesos Lua, funciones auxiliares de solicitud-respuesta y apagado."
 ---
 
-# Event Bus
+# Bus de eventos :id=event-bus
 
-El event bus procesa acciones pub/sub encoladas en una goroutine dispatcher y entrega los eventos coincidentes a los canales de los suscriptores.
+El bus de eventos procesa acciones pub/sub encoladas en una goroutine despachadora y entrega los eventos coincidentes a los canales de los suscriptores.
 
 Los fragmentos Go son partes de implementación y extensión. Suponen un contexto de componentes, logger, handlers y tipos de eventos de la aplicación ya existentes.
 
@@ -63,7 +63,7 @@ type Bus struct {
 }
 ```
 
-Todas las mutaciones pasan por la goroutine dispatcher, eliminando condiciones de carrera sin locking complejo.
+Todas las mutaciones pasan por la goroutine despachadora, lo que elimina las condiciones de carrera sin bloqueos complejos.
 
 ## Acciones
 
@@ -73,14 +73,14 @@ Cuatro tipos de acciones fluyen a través de la cola:
 |--------|----------------|
 | Subscribe | Agrega subscriber al mapa, responde en canal done |
 | Unsubscribe | Remueve subscriber, responde en canal done |
-| Send | Entrega evento a subscribers matcheados |
-| Stop | Limpia subscribers, drena cola, sale del loop |
+| `Send` | Entrega el evento a los suscriptores coincidentes |
+| `Stop` | Limpia los suscriptores, drena la cola y sale del bucle |
 
-Subscribe y Unsubscribe bloquean hasta que el dispatcher confirma. Send es fire-and-forget. El bus acepta como máximo `DefaultMaxSubscribers` suscripciones (4096 de forma predeterminada); las que superan el límite fallan con `ErrSubscribersCapReached`.
+`Subscribe` y `Unsubscribe` bloquean hasta que el despachador confirma. `Send` envía sin esperar respuesta. El bus acepta como máximo `DefaultMaxSubscribers` suscripciones (4096 de forma predeterminada); las que superan el límite fallan con `ErrSubscribersCapReached`.
 
 ## Intercambio de Cola
 
-El dispatcher usa intercambio de slices para evitar asignaciones en estado estable:
+El despachador intercambia segmentos para evitar asignaciones en estado estable:
 
 ```go
 func (b *Bus) processActions() bool {
@@ -102,9 +102,9 @@ func (b *Bus) processActions() bool {
 }
 ```
 
-Dos slices alternan: uno para procesamiento, uno para nuevas llegadas. El canal `actionReady` tiene buffer de 1, así que la señalización nunca bloquea y múltiples encolas colapsan en un solo wakeup.
+Se alternan dos segmentos: uno para el procesamiento y otro para las nuevas llegadas. El canal `actionReady` tiene un búfer de 1, por lo que la señalización nunca bloquea y múltiples operaciones de encolado se agrupan en una sola activación.
 
-## Pattern Matching
+## Coincidencia de patrones :id=pattern-matching
 
 Las suscripciones compilan patrones una vez en tiempo de subscribe:
 
@@ -118,7 +118,7 @@ type sub struct {
 }
 ```
 
-El paquete wildcard soporta cuatro tipos de patrón:
+El paquete de comodines admite cuatro tipos de patrón:
 
 | Patrón | Matchea |
 |--------|---------|
@@ -131,7 +131,7 @@ Los patrones se dividen en `.` así que `registry.*` matchea `registry.create` p
 
 ## Entrega de Eventos
 
-Durante procesamiento de Send, el dispatcher itera subscribers:
+Durante el procesamiento de `Send`, el despachador recorre los suscriptores:
 
 ```go
 for id, s := range b.subscribers {
@@ -154,9 +154,9 @@ for id, s := range b.subscribers {
 
 Si el contexto de un subscriber es cancelado, se marca para remoción durante ese pase de entrega. El contexto del evento también puede cancelar entrega a mitad de iteración.
 
-## Bridge de Proceso Lua
+## Puente de procesos Lua :id=bridge-de-proceso-lua
 
-El dispatcher de eventos conecta eventos Go a procesos Lua. Se suscribe una vez a todos los eventos (`"**"`) y enruta internamente basado en suscripciones de procesos:
+El despachador de eventos conecta eventos de Go con procesos de Lua. Se suscribe una vez a todos los eventos (`"**"`) y enruta internamente según las suscripciones de los procesos:
 
 ```go
 type Dispatcher struct {
@@ -170,7 +170,7 @@ type Dispatcher struct {
 }
 ```
 
-Cuando un proceso Lua se suscribe vía `events.subscribe()`, el dispatcher almacena el patrón y PID destino. Eventos matcheados son empaquetados y enviados vía relay:
+Cuando un proceso Lua se suscribe mediante `events.subscribe()`, el despachador almacena el patrón y el PID de destino. Los eventos coincidentes se empaquetan y envían mediante el relé:
 
 ```go
 func (d *Dispatcher) routeEvent(evt event.Event) {
@@ -200,7 +200,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 }
 ```
 
-## Tipos Helper
+## Tipos auxiliares :id=tipos-helper
 
 ### Subscriber
 
@@ -237,7 +237,7 @@ Cada handler implementa `Pattern()` y `Handle()`. El router crea un Subscriber p
 
 ### AwaitService
 
-Proporciona request-response sobre pub/sub. Mantiene una sola suscripción por `(system, kind)` y enruta eventos a waiters mediante `Path`:
+Proporciona solicitud-respuesta sobre pub/sub. Mantiene una sola suscripción por `(system, kind)` y enruta los eventos a procesos en espera mediante `Path`:
 
 ```go
 svc := eventbus.NewAwaitService(bus)
@@ -257,16 +257,16 @@ bus.Send(ctx, triggeringEvent)
 result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 ```
 
-`Prepare` registra el waiter antes de enviar el evento que lo desencadena, evitando la carrera en la que la respuesta llega antes de registrar la espera. `Wait` bloquea hasta que llega un evento con `Path` coincidente o vence el timeout (de forma predeterminada `DefaultAwaitTimeout`, 30 s, cuando no es positivo). `Accepted` es true cuando el kind del evento es `accept`, `*.accept` o `*.accepted`; de lo contrario, el kind se trata como rechazo y cualquier `error` en `Data` aparece como `Error`. El método auxiliar `Await(ctx, system, kind, path, timeout)` combina Prepare y Wait. La infraestructura de boot registra un AwaitService en el contexto (`event.GetAwaitService`).
+`Prepare` registra el proceso en espera antes de enviar el evento que lo desencadena, lo que evita la carrera en la que la respuesta llega antes de registrar la espera. `Wait` bloquea hasta que llega un evento con un `Path` coincidente o vence el tiempo de espera (de forma predeterminada `DefaultAwaitTimeout`, 30 s, cuando no es positivo). `Accepted` es `true` cuando el `kind` del evento es `accept`, `*.accept` o `*.accepted`; de lo contrario, el `kind` se trata como rechazo y cualquier `error` de `Data` aparece como `Error`. El método auxiliar `Await(ctx, system, kind, path, timeout)` combina `Prepare` y `Wait`. La infraestructura de arranque registra un `AwaitService` en el contexto (`event.GetAwaitService`).
 
-## Shutdown
+## Apagado :id=shutdown
 
 1. `Stop()` atómicamente establece flag closed y encola acción Stop
-2. Dispatcher limpia mapa de subscribers
+2. El despachador limpia el mapa de suscriptores
 3. Acciones restantes en cola son drenadas:
    - Solicitudes Subscribe obtienen error "bus is closed"
    - Solicitudes Unsubscribe completan inmediatamente
-   - Eventos Send son descartados
+   - Los eventos `Send` se descartan
 4. WaitGroup completa
 
 ## Ver También

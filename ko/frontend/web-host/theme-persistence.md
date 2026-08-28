@@ -17,7 +17,7 @@ description: "facade가 light, dark 또는 자동 테마 모드를 cookie나 loc
 
 두 facade parameter가 이를 제어합니다([프런트엔드 Facade](../../framework/facade.md) 참고).
 
-| Parameter | 기본값 | 값 | 설명 |
+| 파라미터 | 기본값 | 값 | 설명 |
 |-----------|---------|--------|-------------|
 | `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | 선택한 모드를 저장할 위치. `none`은 현재 기본 동작 |
 | `theme_storage_key` | `@wippy-theme-mode` | string | Cookie/localStorage 키 |

@@ -63,7 +63,7 @@ if err then return nil, err end
 -- The caller owns stream until close(), release(), or task cleanup.
 ```
 
-| Parameter | Type | Description |
+| 파라미터 | 타입 | 설명 |
 |-----------|------|-------------|
 | `name` | string | source 레지스트리 ID 또는 replication slot 이름 |
 | `opts.tables` | []string | 해당 table만 필터링(설정된 모든 table은 생략) |
@@ -74,7 +74,7 @@ if err then return nil, err end
 
 Lua delivery channel은 별도로 64의 고정 capacity를 가집니다. `buffer` option은 이 channel이 아니라 PostgreSQL source subscription을 제어합니다.
 
-## Stream method
+## 스트림 메서드
 
 ### `channel`
 
@@ -117,11 +117,11 @@ local _, err = stream:close()
 if err then return nil, err end
 ```
 
-## Change event
+## 변경 이벤트
 
 channel에서 받은 각 message는 change table입니다.
 
-| Field | Description |
+| 필드 | 설명 |
 |-------|-------------|
 | `op` | 작업: `insert`, `update`, `delete`, `truncate`, `snapshot` |
 | `schema` | table schema |
@@ -138,7 +138,7 @@ channel에서 받은 각 message는 change table입니다.
 
 ## 오류
 
-| Condition | Kind |
+| 조건 | 종류 |
 |-----------|------|
 | stream 생성 시 Lua context 없음 | `errors.INTERNAL` |
 | 첫 subscription 시 process PID 없음 | raised Lua error |

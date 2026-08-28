@@ -35,7 +35,7 @@ dataflow 모듈은 `wippy/agent`, `wippy/llm`, `wippy/session`, `wippy/test`, `w
 
 이 모듈은 `env.variable` 항목 `userspace.dataflow.env:web_host_origin`(기본값 `https://front.wippy.ai`)을 게시하며, 다운스트림 플로우는 공개 URL을 구성하기 위해 이를 읽을 수 있습니다. env 라우터 또는 requirement를 통해 재정의하십시오.
 
-## Flow Builder
+## 플로 빌더
 
 flow builder는 워크플로우를 구성하기 위한 fluent 인터페이스를 제공합니다. flow를 정의하는 엔트리로 import하세요.
 
@@ -276,7 +276,7 @@ flow.create()
 })
 ```
 
-| Option | Type | Description |
+| 옵션 | 타입 | 설명 |
 |--------|------|-------------|
 | `args` | table | 노드 입력과 병합되는 기본 인수 |
 | `inputs` | table | 입력 요구사항: `{ required = {...}, optional = {...} }` |
@@ -312,7 +312,7 @@ flow.create()
 })
 ```
 
-| Option | Type | Description |
+| 옵션 | 타입 | 설명 |
 |--------|------|-------------|
 | `model` | string | 모델 오버라이드 |
 | `arena.prompt` | string | 시스템 프롬프트 |
@@ -402,7 +402,7 @@ function my_cycle(cycle_context)
 end
 ```
 
-| Option | Type | Description |
+| 옵션 | 타입 | 설명 |
 |--------|------|-------------|
 | `func_id` | string | 반복 함수(`template`과 상호 배타적) |
 | `template` | FlowBuilder | 각 반복의 템플릿(`func_id`와 상호 배타적) |
@@ -457,7 +457,7 @@ end
 })
 ```
 
-| Option | Type | Description |
+| 옵션 | 타입 | 설명 |
 |--------|------|-------------|
 | `source_array_key` | string | 비어 있지 않은 배열을 포함하는 입력 키(필수) |
 | `template` | FlowBuilder | 각 항목의 템플릿(필수, `@success`로 라우팅해야 함) |
@@ -503,7 +503,7 @@ end
 })
 ```
 
-| Option | Type | Description |
+| 옵션 | 타입 | 설명 |
 |--------|------|-------------|
 | `signal_id` | string | `client:signal()`과 매칭되는 시그널 이름. 비어 있거나 생략된 경우 런타임에 UUID v7이 생성됨 |
 | `timeout` | string/number | 양의 duration 문자열 또는 유한한 양의 밀리초. 만료 시 `{ timeout = true, code = "SIGNAL_TIMEOUT" }` 방출 |
@@ -605,7 +605,7 @@ if finance_err then return nil, finance_err end
 })
 ```
 
-| Option | Type | Description |
+| 옵션 | 타입 | 설명 |
 |--------|------|-------------|
 | `output_mode` | string | `"object"`(기본값) 또는 `"array"`(도착 순서) |
 | `ignored_keys` | array | 출력에서 제외되는 입력 키 |
@@ -688,7 +688,7 @@ local client = require("client")
 local c, err = client.new()
 ```
 
-| Method | Description |
+| 메서드 | 설명 |
 |--------|-------------|
 | `client.new()` | 클라이언트 생성(현재 보안 액터와 scope 필요) |
 | `:create_workflow(commands, options?)` | 워크플로우 생성, `dataflow_id` 반환 |
@@ -703,7 +703,7 @@ local c, err = client.new()
 
 ## 워크플로우 상태
 
-| Status | Description |
+| 상태 | 설명 |
 |--------|-------------|
 | `pending` | 생성되었지만 아직 실행되지 않음 |
 | `running` | 워크플로우 실행이 활성 상태 |

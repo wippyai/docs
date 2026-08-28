@@ -85,7 +85,7 @@ node가 자식을 호스팅하는 방식은 자식 kind에 따라 다릅니다.
 
 `proxy.js` 또는 `proxy-fragment.js`는 내부 사용을 위해 다음 global을 설치합니다. **애플리케이션과 컴포넌트 코드는 이를 읽거나 할당하지 말고** `@wippy-fe/proxy`를 사용해야 합니다. 충돌을 막기 위해 이름을 나열합니다.
 
-| Global | 내용 |
+| 전역 객체 | 내용 |
 |---|---|
 | `window.$W` | async accessor 객체(`$W.host()`, `$W.api()` 등). 내부 전용이며 지원 surface는 `@wippy-fe/proxy` |
 | `window.getWippyApi` / `window.initWippyApi` | async "인스턴스 해석" 함수. 내부 전용(`initWippyApi` deprecated) |
@@ -108,7 +108,7 @@ Web Fragment 페이지에서는 handshake가 초기 구성 소스입니다. real
 
 표에는 이 페이지의 공개 동작을 설명하는 데 필요한 전송 member만 나열합니다. 내부 enum을 완전히 복제하지 않습니다. 내부 enum에는 host lifecycle, chat, download, logging, bridge response, nav owner, layout mutation, breakpoint, drawer/modal, theme mode 메시지도 있으며 애플리케이션 API가 되지 않은 채 변경될 수 있습니다.
 
-| Enum member | Wire 값 | 방향 | 설명 |
+| 열거형 멤버 | 와이어 값 | 방향 | 설명 |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | 자식 → 호스트 | 초기 handshake: 자식이 `AppConfig` 요청 |
 | `SetConfig` | `set-config` | 호스트 → 자식 | `GetConfig` 응답으로 `AppConfig` 전달 |
@@ -158,7 +158,7 @@ source HTML이 있고 Wippy 마이크로 프런트엔드 앱과 같은 런타임
 
 ### Attribute와 property
 
-| Attribute / property | 필수 | 기본값 | 설명 |
+| 속성 / 프로퍼티 | 필수 | 기본값 | 설명 |
 |----------------------|----------|---------|-------------|
 | `src` | 아니요 | — | proxy `api`를 통해 raw source HTML로 가져올 URL |
 | `srcdoc` | 아니요 | — | raw source HTML. 큰 문자열에는 `element.srcdoc = html`로도 설정 가능 |
@@ -180,7 +180,7 @@ frame.srcdoc = sourceHtml
 
 ### Event와 메서드
 
-| Event | Detail | 설명 |
+| 이벤트 | 세부 정보 | 설명 |
 |-------|--------|-------------|
 | `loading` | — | fetch/process/render 시작 전 발생 |
 | `load` | — | sandbox iframe load 후 발생 |
@@ -255,7 +255,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 ### Attribute
 
-| Attribute | 필수 | 값 | 기본값 | 설명 |
+| 속성 | 필수 | 값 | 기본값 | 설명 |
 |-----------|----------|--------|---------|-------------|
 | `id` | 예 | Artifact/Page UUID | — | 콘텐츠 식별자 |
 | `type` | 아니요 | `artifact` \| `page` | `artifact` | 호출 REST endpoint 결정: `/api/v1/artifact/<id>/content` 또는 `/api/public/pages/content/<id>` |
@@ -266,7 +266,7 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 ### Event
 
-| Event | 시점 | Detail |
+| 이벤트 | 시점 | 세부 정보 |
 |-------|------|--------|
 | `loading` | fetch 시작 전 | — |
 | `load` | iframe load 후 | — |
@@ -288,7 +288,7 @@ w-artifact::part(frame)  { border: 0; }
 
 ## `<w-iframe>`과 `<w-artifact>`와 raw `<iframe>`
 
-| 기능 | `<w-iframe>` | `<w-artifact>` | Raw `<iframe>` |
+| 기능 | `<w-iframe>` | `<w-artifact>` | 원시 `<iframe>` |
 |---------|-------------|----------------|----------------|
 | Wippy 런타임 주입 | 예 | 예(`<w-iframe>` 경유) | 아니요 |
 | artifact/page 메타데이터 해석 | 아니요 | 예 | 아니요 |

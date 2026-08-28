@@ -12,7 +12,7 @@ El módulo `tty` gestiona eventos de entrada del terminal en bruto y proporciona
 Esta es una referencia de API. El bucle de entrada es una receta parcial de proceso de terminal; los fragmentos de estilo y diseño son ejemplos independientes.
 
 <note>
-Este módulo solo está disponible para procesos ejecutados en un <a href="../../system/terminal.md">Terminal Host</a>, no para funciones regulares.
+Este módulo solo está disponible para procesos ejecutados en un <a href="../../system/terminal.md">host de terminal</a>, no para funciones regulares.
 </note>
 
 ## Carga
@@ -377,4 +377,4 @@ Las funciones de control de entrada devuelven errores estructurados:
 ## Véase También
 
 - [I/O de Terminal](./io.md) — operaciones stdin/stdout/stderr
-- [Terminal Host](../../system/terminal.md) — Configuración del host de terminal
+- [Host de terminal](../../system/terminal.md) — Configuración del host de terminal

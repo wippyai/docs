@@ -104,7 +104,7 @@ end
 
 ## Compute model の選択 :id=choosing-a-compute-model
 
-| Use case | 選択 |
+| ユースケース | 選択 |
 |-------------|------|
 | HTTP request 処理 | 関数 |
 | Data transformation | 関数 |

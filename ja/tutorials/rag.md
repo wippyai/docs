@@ -3,7 +3,7 @@ title: "Retrieval-Augmented Generation (RAG)"
 description: "自分のドキュメントから質問に答えるナレッジベースを構築します。このチュートリアルでは、ベクトル検索に wippy/embeddings モジュールを、生成に LLM フレームワークを使用します。"
 ---
 
-# Retrieval-Augmented Generation (RAG)
+# 検索拡張生成（RAG） :id=retrieval-augmented-generation-rag
 
 自分のドキュメントから質問に答えるナレッジベースを構築します。このチュートリアルでは、ベクトル検索に `wippy/embeddings` モジュールを、生成に LLM フレームワークを使用します。
 

@@ -10,7 +10,7 @@ cloud storage 엔트리는 Lua storage API가 사용하는 AWS credential과 S3 
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `config.aws` | AWS 자격 증명 및 리전 설정 |
 | `cloudstorage.s3` | S3 버킷 연결 |

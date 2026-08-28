@@ -3,7 +3,7 @@ title: "Page Recipe"
 description: "対応 routing、theme delivery、dependency、build ownership を備えた portable view.page recipe。"
 ---
 
-# Page Recipe
+# ページレシピ :id=page-recipe
 
 page は legacy `about:srcdoc` iframe engine または Web Fragment engine で render される Vite-built application です。route と host context は browser location ではなく Wippy AppConfig と package から得ます。
 
@@ -38,13 +38,13 @@ app.mount('#app')
 
 exact exported signature は選択した package version で確認してください。local router synchronization layer は作りません。
 
-## Theme injection
+## テーマ注入 :id=theme-injection
 
 page は選択された page realm に配信される facade theme を利用します。public PrimeVue component、public theme variable、documented runtime-backed Tailwind utility、明示的に invariant な compile-time utility を使います。
 
 host query parameter を application fixture にしないでください。host context は AppConfig が所有します。
 
-## Build
+## ビルド :id=build
 
 Wippy module repository の Make target を呼び出します。recipe は deployment output に次を供給します。
 

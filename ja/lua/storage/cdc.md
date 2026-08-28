@@ -138,7 +138,7 @@ if err then return nil, err end
 
 ## エラー
 
-| 条件 | Kind |
+| 条件 | 種別 |
 |------|------|
 | ストリーム作成時に Lua コンテキストがない | `errors.INTERNAL` |
 | 最初の購読時にプロセス PID がない | 発生する Lua エラー |

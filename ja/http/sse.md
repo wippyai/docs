@@ -3,7 +3,7 @@ title: "Server-Sent Events"
 description: "短時間のハンドライベントまたはプロセスを基盤とする長時間のイベントを、Server-Sent Eventsでストリーミングします。"
 ---
 
-# Server-Sent Events
+# Server-Sent Events :id=server-sent-events
 
 SSEミドルウェアは、[Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html)プロトコルを使用して、サーバーからHTTPクライアントへイベントをストリーミングします。
 

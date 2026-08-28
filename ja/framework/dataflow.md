@@ -35,7 +35,7 @@ Dataflow モジュールは `wippy/agent`、`wippy/llm`、`wippy/session`、`wip
 
 モジュールは `userspace.dataflow.env:web_host_origin` という `env.variable` エントリ（既定値 `https://front.wippy.ai`）を公開します。下流のフローは公開 URL の構築にこの値を読み取れます。env ルーターまたは requirement で上書きしてください。
 
-## Flow Builder
+## フロービルダー :id=flow-builder
 
 Flow Builder はワークフローを構成する fluent インターフェースです。エントリにインポートします。
 
@@ -671,7 +671,7 @@ local dataflow_id, err = flow.create()
 
 `:start()` はネストされたコンテキストでは使用できません。
 
-## Client API
+## クライアント API :id=client-api
 
 プログラムからワークフローを管理します。
 

@@ -99,7 +99,7 @@ Raft no abre su propio puerto de escucha. Viaja por la **malla internodo** — l
 
 El FSM de Raft contiene el registro de nombres global: bindings activos `name -> PID` más reservas strong en vuelo. Eso es lo que las primitivas de naming que se describen a continuación leen y escriben.
 
-## Naming y ámbitos de nombre :id=naming-and-name-scopes
+## Nomenclatura y ámbitos de nombre :id=naming-and-name-scopes
 
 Un proceso puede registrarse bajo un nombre y ser alcanzado por ese nombre en lugar de su PID raw. La decisión clave es el **ámbito**, que selecciona la garantía de consistencia. Hay cuatro ámbitos disponibles, de más barato/débil a más fuerte:
 

@@ -1,13 +1,13 @@
 ---
-title: "Framework de Testing"
-description: "Define y ejecuta tests Wippy con suites BDD, assertions, hooks de ciclo de vida, mocks y funciones de test simples."
+title: "Framework de pruebas"
+description: "Define y ejecuta pruebas Wippy con suites BDD, aserciones, ganchos del ciclo de vida, simulaciones y funciones de prueba simples."
 ---
 
-# Framework de Testing
+# Framework de pruebas :id=framework-de-testing
 
-El módulo `wippy/test` proporciona suites BDD, assertions, hooks de ciclo de vida, mocks y un runner para entradas de test.
+El módulo `wippy/test` proporciona suites BDD, aserciones, ganchos del ciclo de vida, simulaciones y un ejecutor para entradas de prueba.
 
-Esta página es una introducción a la API. Sus bloques Lua, YAML, output y layout de proyecto son fragmentos de referencia que se pueden combinar en un proyecto Wippy existente; no forman un único proyecto copy-and-run. Nombres como `validate`, `format_name`, `db`, `connect` y `notify_user` representan funciones o módulos de aplicación proporcionados por el sujeto del test. Para un ejemplo ejecutable completo, siga [Probar una aplicación Wippy](../tutorials/testing.md).
+Esta página es una introducción a la API. Sus bloques de Lua, YAML, salida y estructura de proyecto son fragmentos de referencia que se pueden combinar en un proyecto Wippy existente; no forman un único proyecto listo para copiar y ejecutar. Nombres como `validate`, `format_name`, `db`, `connect` y `notify_user` representan funciones o módulos de aplicación proporcionados por el objeto de la prueba. Para un ejemplo ejecutable completo, siga [Probar una aplicación Wippy](../tutorials/testing.md).
 
 ## Configuracion
 
@@ -18,11 +18,11 @@ wippy add wippy/test
 wippy install
 ```
 
-El modulo registra el punto de entrada de test automaticamente (un comando con `use_case: test`). Una vez instalado, `wippy test` descubre y ejecuta todas las entradas de test en tu proyecto.
+El módulo registra automáticamente el punto de entrada de pruebas (un comando con `use_case: test`). Una vez instalado, `wippy test` descubre y ejecuta todas las entradas de prueba del proyecto.
 
-## Definir Tests
+## Definir pruebas :id=definir-tests
 
-Los tests son entradas `function.lua` con `meta.type: test`:
+Las pruebas son entradas `function.lua` con `meta.type: test`:
 
 ```yaml
 version: "1.0"
@@ -41,20 +41,20 @@ entries:
       test: wippy.test:test
 ```
 
-### Metadatos del Test
+### Metadatos de la prueba :id=metadatos-del-test
 
-| Field | Required | Description |
+| Campo | Obligatorio | Descripción |
 |-------|----------|-------------|
-| `type` | Yes | Debe ser `"test"` para que el runner lo descubra |
-| `suite` | No | Agrupa tests en la salida del runner |
-| `name` | No | Nombre mostrado en la salida del runner |
+| `type` | Sí | Debe ser `"test"` para que el ejecutor lo descubra |
+| `suite` | No | Agrupa pruebas en la salida del ejecutor |
+| `name` | No | Nombre mostrado en la salida del ejecutor |
 | `order` | No | Orden dentro de una suite (menor se ejecuta primero) |
 
-## Escribir Tests
+## Escribir pruebas :id=escribir-tests
 
 ### Estilo BDD
 
-Usa bloques `describe` e `it` para estructurar tests:
+Use bloques `describe` e `it` para estructurar las pruebas:
 
 ```lua
 local test = require("test")
@@ -108,7 +108,7 @@ test.describe("user", function()
 end)
 ```
 
-### Omitir Tests
+### Omitir pruebas :id=omitir-tests
 
 ```lua
 test.it_skip("not implemented yet", function()
@@ -116,7 +116,7 @@ test.it_skip("not implemented yet", function()
 end)
 ```
 
-Los tests omitidos aparecen en la salida pero no cuentan como fallos.
+Las pruebas omitidas aparecen en la salida pero no cuentan como fallos.
 
 ### Alias de Suites
 
@@ -167,7 +167,7 @@ test.is_function(val, msg?)
 test.is_boolean(val, msg?)
 ```
 
-### Strings y Colecciones
+### Cadenas y colecciones :id=strings-y-colecciones
 
 ```lua
 test.contains(str, substr, msg?)      -- substring match
@@ -195,7 +195,7 @@ test.no_error(val, err, msg?)         -- err is nil
 
 Todas las aserciones aceptan un mensaje opcional como ultimo argumento. En caso de fallo, el mensaje se incluye en la salida de error.
 
-## Hooks de Ciclo de Vida
+## Ganchos del ciclo de vida :id=hooks-de-ciclo-de-vida
 
 ```lua
 test.describe("database", function()
@@ -227,13 +227,13 @@ test.describe("database", function()
 end)
 ```
 
-Los hooks en suites anidadas se ejecutan en orden: el `before_each` del padre se ejecuta antes del `before_each` del hijo, y el `after_each` del hijo se ejecuta antes del `after_each` del padre.
+Los ganchos de las suites anidadas se ejecutan en orden: el `before_each` del padre se ejecuta antes del `before_each` del hijo, y el `after_each` del hijo se ejecuta antes del `after_each` del padre.
 
-## Mocking
+## Simulación :id=mocking
 
-El sistema de mock reemplaza campos de objetos globales y los restaura automaticamente despues de cada test.
+El sistema de simulación reemplaza campos de objetos globales y los restaura automáticamente después de cada prueba.
 
-### Mocking Basico
+### Simulación básica :id=mocking-basico
 
 ```lua
 test.describe("notifications", function()
@@ -250,7 +250,7 @@ test.describe("notifications", function()
 end)
 ```
 
-### API de Mock
+### API de simulación :id=api-de-mock
 
 ```lua
 test.mock("object.field", replacement)    -- replace a global field
@@ -259,15 +259,15 @@ test.restore_mock("object.field")         -- restore one mock
 test.restore_all_mocks()                  -- restore all mocks
 ```
 
-Las rutas de mock usan notacion de punto: `"process.send"` reemplaza `_G.process.send`.
+Las rutas de simulación usan notación de punto: `"process.send"` reemplaza `_G.process.send`.
 
-Los mocks para `process.send` redirigen automaticamente los mensajes del framework de testing a traves de la funcion original, para que el reporte de eventos de test continue funcionando cuando process.send esta mockeado.
+Las simulaciones de `process.send` redirigen automáticamente los mensajes del framework de pruebas a través de la función original, para que el informe de eventos de prueba siga funcionando cuando `process.send` está simulado.
 
-Todos los mocks se restauran automaticamente despues de cada test mediante el hook `after_each`.
+Todas las simulaciones se restauran automáticamente después de cada prueba mediante el gancho `after_each`.
 
-## Ejecutar Tests
+## Ejecutar pruebas :id=ejecutar-tests
 
-### Ejecutar Todos los Tests
+### Ejecutar todas las pruebas :id=ejecutar-todos-los-tests
 
 ```bash
 wippy test
@@ -296,9 +296,9 @@ Los filtros comparan substrings literales de los ID de entrada. Con varios patro
   1 suite | 2 passed | 1 failed | 0 skipped | 3ms
 ```
 
-## Tests Simples
+## Pruebas simples :id=tests-simples
 
-Para tests que no necesitan el framework BDD, define una funcion simple que retorne `true` o lance un error:
+Para pruebas que no necesitan el framework BDD, defina una función simple que devuelva `true` o genere un error:
 
 ```lua
 local funcs = require("funcs")
@@ -329,11 +329,11 @@ return { main = main }
       - funcs
 ```
 
-El runner detecta si un test usa eventos de casos BDD o retorna un valor simple. Ambos patrones funcionan con `wippy test`.
+El ejecutor detecta si una prueba usa eventos de casos BDD o devuelve un valor simple. Ambos patrones funcionan con `wippy test`.
 
 ## Estructura del Proyecto
 
-Un layout tipico de tests:
+Una estructura típica de pruebas:
 
 ```
 src/
@@ -346,7 +346,7 @@ src/
     integration_test.lua
 ```
 
-El `_index.yaml` de tests define el namespace y las entradas de test:
+El `_index.yaml` de pruebas define el espacio de nombres y las entradas de prueba:
 
 ```yaml
 version: "1.0"
@@ -374,12 +374,12 @@ entries:
       test: wippy.test:test
 ```
 
-## Terminal Host
+## Host de terminal :id=terminal-host
 
-`wippy/test` depende de `wippy/terminal`, que proporciona el `wippy.terminal:host` auto-start usado por el runner CLI. Las aplicaciones no necesitan declarar otro process host o terminal host solo para ejecutar `wippy test`.
+`wippy/test` depende de `wippy/terminal`, que proporciona el `wippy.terminal:host` de inicio automático usado por el ejecutor de la CLI. Las aplicaciones no necesitan declarar otro host de procesos o de terminal solo para ejecutar `wippy test`.
 
 ## Ver Tambien
 
 - [Descripción general del framework](./overview.md) — Instalar e importar módulos del framework
-- [Referencia CLI](../guides/cli.md) — Comando y flags de test
+- [Referencia de la CLI](../guides/cli.md) — Comando e indicadores de prueba
 - [Funciones](../concepts/functions.md) — Entradas de función e invocación

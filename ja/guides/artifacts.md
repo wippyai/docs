@@ -41,7 +41,7 @@ format adapter は、ディレクトリの検証方法、識別子、配置先�
 
 形式は、処理を行うバイナリに登録されている必要があります。ホストは追加形式を登録できますが、名前の重複と root の重複は拒否されます。
 
-## Materialization
+## 実体化 :id=materialization
 
 materialize された出力は、次の処理中に自動的に調整されます。
 

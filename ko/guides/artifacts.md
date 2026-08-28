@@ -29,11 +29,11 @@ entries:
 
 marker만으로 directory content가 포함되지는 않습니다. producer manifest의 `embed:` 목록 또는 publish/pack의 `--embed` flag로 `fs.directory` 엔트리를 선택하십시오. 선택하면 엔트리는 packed resource로 변환되고 artifact format을 검증합니다. 형식이 잘못된 선택 artifact는 WAPP 생성 전에 실패합니다.
 
-## Format
+## 형식
 
 format adapter는 directory 검증 방식, identity, 출력 위치를 결정합니다. Wippy에는 다음 built-in format이 있습니다.
 
-| Format | Owns subtree | Validates |
+| 형식 | 하위 트리 소유 | 검증 |
 |---|---|---|
 | `node-package` | `npm/` | `package.json` |
 
@@ -41,7 +41,7 @@ format adapter는 directory 검증 방식, identity, 출력 위치를 결정합�
 
 작업을 수행하는 binary에 format이 등록되어 있어야 합니다. host는 format을 추가로 등록할 수 있으며 중복 이름과 겹치는 root는 거부됩니다.
 
-## Materialization
+## 구체화
 
 materialize된 출력은 다음 작업 중 자동으로 reconcile됩니다.
 
@@ -115,7 +115,7 @@ npm install
 - **package는 더 큰 모듈 안의 directory가 아니라 자체 모듈입니다.** artifact는 자체 `package.json` version을 가지며, 관련 없는 이유로 변경되는 모듈에 묶으면 어느 한쪽이 바뀔 때마다 다른 쪽도 release해야 합니다.
 - **consumer는 일반 dependency로 resolve합니다.** materialize 이후 Wippy 전용 import path가 없으므로 같은 source를 monorepo 안과 밖에서 build할 수 있습니다.
 
-## End-to-end workflow
+## 엔드투엔드 워크플로
 
 ### Producer 작성
 
@@ -157,7 +157,7 @@ CSS-only package에서는 `sideEffects`가 중요합니다. 이 설정이 없으
 
 **package version은 module version과 같아야 합니다.** `wippy publish`는 이를 검증하고 불일치를 거부하므로 둘을 함께 bump하십시오. 공유 package에 자체 모듈을 제공해야 하는 이유이기도 합니다. 더 큰 모듈 안에 넣으면 host module의 관련 없는 변경이 package release를 강제하고 그 반대도 마찬가지입니다.
 
-### Publishing
+### 게시
 
 ```bash
 # validate without publishing

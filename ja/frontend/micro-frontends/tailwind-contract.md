@@ -24,7 +24,7 @@ Tailwind 3 は zero-runtime compiler です。utility name から runtime behavi
 
 想定する category には semantic color、content border、muted text、および生成 source が mapping を確認した場合の `rounded-border` が含まれます。選択した preset と package version から生成された entry だけがここに現れます。
 
-## Compile-time baseline
+## コンパイル時ベースライン :id=compile-time-baseline
 
 生成された catalogue は、constant に compile される spacing、sizing、default radius、font size、shadow、transition duration、timing function を別に記録します。
 

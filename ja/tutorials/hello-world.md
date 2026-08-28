@@ -3,7 +3,7 @@ title: "Hello World"
 description: "JSONを返す最小限のWippy HTTP APIを構築して実行します。"
 ---
 
-# Hello World
+# Hello World :id=hello-world
 
 JSONを返すHTTPエンドポイントを1つ備えた、最小限のWippyアプリケーションを構築します。
 

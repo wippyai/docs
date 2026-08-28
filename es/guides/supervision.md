@@ -39,7 +39,7 @@ Los servicios se registran en el supervisor mediante un bloque `lifecycle`. Para
 
 `host` debe referenciar un process host configurado. La entrada de `requires` debe resolver a otro servicio supervisado o, mediante la extracción de dependencias del registro, a un servicio supervisado propietario del recurso referenciado.
 
-| Campo | Default | Descripción |
+| Campo | Predeterminado | Descripción |
 |-------|---------|-------------|
 | `auto_start` | `false` | Inicia automáticamente al arrancar el supervisor |
 | `startup` | `required` | Policy de startup de una raíz auto-start: `required` bloquea el boot si falla; `optional` puede fallar y seguir reintentando sin bloquear branches independientes |
@@ -176,7 +176,7 @@ El supervisor hace pasar los servicios por estos estados:
 | `Unknown` | Registrado pero no iniciado |
 | `Starting` | Startup en curso |
 | `Running` | Funcionamiento normal |
-| `Stopping` | Shutdown ordenado en curso |
+| `Stopping` | Apagado ordenado en curso |
 | `Stopped` | Operación de stop completada; los detalles informados por el servicio aún pueden incluir un error |
 | `Exited` | Terminado por solicitud explícita o error no retryable/terminal |
 | `Failed` | Se produjo un error; puede reintentarse |
@@ -185,7 +185,7 @@ El supervisor hace pasar los servicios por estos estados:
 
 **Startup:** las dependencias se inician antes que los dependents. Los servicios del mismo nivel de dependencias pueden iniciarse en paralelo.
 
-**Shutdown:** los dependents se detienen antes que las dependencias, permitiéndoles terminar primero.
+**Apagado:** los dependientes se detienen antes que las dependencias, lo que les permite terminar primero.
 
 ```
 Startup:  database → cache → handler → http_server

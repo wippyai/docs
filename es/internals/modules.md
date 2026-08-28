@@ -7,7 +7,7 @@ description: "Define módulos de runtime Lua tipados con funciones síncronas, u
 
 Los módulos de runtime añaden al entorno Lua utilidades determinísticas, operaciones de E/S o comandos asíncronos.
 
-Esta página es una referencia de extensión Go. Sus fragmentos son ejemplos parciales a nivel de paquete y suponen los imports, la API de comandos, el dispatcher, los recursos de seguridad y las fixtures de prueba indicados en cada sección.
+Esta página es una referencia de extensión de Go. Sus fragmentos son ejemplos parciales a nivel de paquete y presuponen las importaciones, la API de comandos, el despachador, los recursos de seguridad y los datos de prueba indicados en cada sección.
 
 ## Definición de Módulo
 
@@ -102,7 +102,7 @@ Los módulos usan dos mecanismos de tipado separados pero complementarios.
 
 ### Definiciones de Tipos (Herramientas)
 
-El campo `Types` proporciona firmas de tipo para soporte en IDE y documentación. Los tipos se construyen con los builders fluidos del paquete `typ`:
+El campo `Types` proporciona firmas de tipo para compatibilidad con el IDE y la documentación. Los tipos se construyen con los constructores fluidos del paquete `typ`:
 
 ```go
 import (
@@ -139,12 +139,12 @@ func ModuleTypes() *io.Manifest {
 | `typ.LuaError` | Tipo error |
 | `typ.NewOptional(t)` | Valor opcional de tipo t |
 | `typ.NewInterface(name, methods)` | Objeto con métodos |
-| `typ.Func()` | Builder de firma de función |
-| `typ.NewRecord()` | Builder de tipo similar a struct (campos mediante `.Field`/`.OptField`) |
+| `typ.Func()` | Constructor de firma de función |
+| `typ.NewRecord()` | Constructor de tipo similar a una estructura (campos mediante `.Field`/`.OptField`) |
 | `typ.NewArray(t)` | Array de elementos de tipo t |
 | `typ.NewMap(k, v)` | Mapa con tipos de clave y valor |
 
-Los builders de funciones encadenan `Param`, `OptParam`, `Variadic` y `Returns`:
+Los constructores de funciones encadenan `Param`, `OptParam`, `Variadic` y `Returns`:
 
 ```go
 // (string, ...any) -> (string, error?)
@@ -165,7 +165,7 @@ typ.NewRecord().
     Build()
 ```
 
-Consulte el paquete `typ` en go-lua para builders y definiciones de tipo adicionales.
+Consulte el paquete `typ` en go-lua para ver constructores y definiciones de tipo adicionales.
 
 ### Bindings UserData (Runtime)
 
@@ -194,7 +194,7 @@ Las metatablas son inmutables y se cachean globalmente para una reutilización s
 
 ## Operaciones Asíncronas
 
-Para operaciones que esperan en sistemas externos, devuelva un yield en lugar de un resultado. El yield se despacha a un handler Go y el proceso se reanuda cuando el handler termina.
+Para operaciones que esperan en sistemas externos, devuelva una cesión en lugar de un resultado. La cesión se despacha a un controlador de Go y el proceso se reanuda cuando el controlador termina.
 
 ### Definir Yields
 
@@ -232,7 +232,7 @@ func fetchFunc(l *lua.LState) int {
 
 ### Implementación del Yield
 
-Los yields conectan los valores Lua con los comandos del dispatcher:
+Las cesiones conectan los valores de Lua con los comandos del despachador:
 
 ```go
 type FetchYield struct {
@@ -254,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-El dispatcher enruta el comando a un handler. Consulte [Despacho de Comandos](./dispatch.md) para implementar handlers.
+El despachador enruta el comando a un controlador. Consulte [Despacho de comandos](./dispatch.md) para implementar controladores.
 
 ## Manejo de Errores
 
@@ -320,7 +320,7 @@ func TestModule(t *testing.T) {
 
 ### Probar Módulos con Yields
 
-Para probar código Lua que usa funciones con yield, cree un planificador mínimo con los dispatchers requeridos:
+Para probar código Lua que usa funciones con cesión, cree un planificador mínimo con los despachadores requeridos:
 
 ```go
 type testScheduler struct {
@@ -409,7 +409,7 @@ func testPID() pid.PID {
 }
 ```
 
-Cree un proceso con el módulo que usa el script. Este ejemplo emplea el módulo time para que el dispatcher de clock registrado anteriormente gestione un yield real:
+Cree un proceso con el módulo que usa el script. Este ejemplo emplea el módulo de tiempo para que el despachador de reloj registrado anteriormente gestione una cesión real:
 
 ```go
 func bindTimeModule(l *lua.LState) error {

@@ -19,7 +19,7 @@ application から見える model は、**名前**、**routing**、**協調 prim
 
 process は通常 PID で address 指定します。クラスター内では **name** を付けて登録し、他の node からその name で到達することもできます。選択する **scope** によって consistency guarantee と coordination cost が決まります。
 
-| Scope | 可視範囲 | 保証 | 用途 |
+| スコープ | 可視範囲 | 保証 | 用途 |
 |----------|----------|------|------|
 | **Local** | この node | 即時、coordination なし | node-local helper |
 | **Eventual** | クラスター全体 | gossip 後に収束。競合を解決し、敗者へ通知 | service、group、限定的な presence name |

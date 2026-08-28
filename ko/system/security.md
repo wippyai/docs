@@ -20,7 +20,7 @@ flowchart LR
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `security.policy` | 조건이 있는 선언적 정책 |
 | `security.policy.expr` | 표현식 기반 정책 |

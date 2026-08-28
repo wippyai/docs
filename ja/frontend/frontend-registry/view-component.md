@@ -46,7 +46,7 @@ Web Component パッケージは `wippy` ブロック内で `"type": "widget"` �
 
 デプロイ時には operator の YAML にある `meta.tag_name` が優先され、バンドル値を上書きします。`package.json` から `wippy-meta.json` に埋め込まれた `wippy.tagName` は、YAML エントリで `tag_name` が省略された場合のフォールバックです（解決順: YAML `meta.tag_name` → バンドル済み `wippy.tagName`）。両者は同期してください。異なる場合は YAML が優先されます。
 
-### Props Schema
+### Props スキーマ :id=props-schema
 
 `package.json` の `wippy.props` キーは、コンポーネントが受け付ける属性を記述する JSON Schema オブジェクトです。Vite プラグインがこれを `wippy-meta.json` に含め、Web Host は chat artifact renderer や tag sanitizer などの利用者へコンポーネントメタデータを公開するときに使います。sanitizer は、正当な属性を判別して削除しないためにこの情報を必要とします。
 
@@ -75,7 +75,7 @@ Web Component パッケージは `wippy` ブロック内で `"type": "widget"` �
 
 `properties` 内の属性名には HTML 属性の慣例（kebab-case）を使います。スキーマの `default` 値は、属性がないときに web-component の prop parser が runtime でも適用します。
 
-### Events Schema
+### Events スキーマ :id=events-schema
 
 `wippy.events` キーは props と同様の形ですが、コンポーネントが `useEvents()` で発行するカスタム DOM イベントを記述します。各キーがイベント名で、その値はイベントの detail payload に対する JSON Schema です。
 

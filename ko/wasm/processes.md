@@ -27,7 +27,7 @@ entries:
 
 ### 설정 필드
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
 | `fs` | Yes | 바이너리가 포함된 파일시스템 엔트리 ID |
 | `path` | Yes | 파일시스템 내 `.wasm` 파일 경로 |
@@ -72,7 +72,7 @@ wippy run greet
 wippy run list
 ```
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
 | `name` | Yes | `wippy run <name>`에서 사용하는 명령 이름 |
 | `short` | No | `wippy run list`에 표시되는 간단한 설명 |

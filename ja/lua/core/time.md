@@ -444,7 +444,7 @@ timer:stop()
 
 **戻り値:** `Timer, error`
 
-| Timerメソッド | パラメータ | 戻り値 | 説明 |
+| Timer メソッド | パラメーター | 戻り値 | 説明 |
 |--------------|------------|---------|-------------|
 | `response()` | - | Channel | タイマーチャネルを取得 |
 | `channel()` | - | Channel | response()のエイリアス |
@@ -490,7 +490,7 @@ ticker:stop()
 
 **戻り値:** `Ticker, error`
 
-| Tickerメソッド | パラメータ | 戻り値 | 説明 |
+| Ticker メソッド | パラメーター | 戻り値 | 説明 |
 |---------------|------------|---------|-------------|
 | `response()` | - | Channel | tickerチャネルを取得 |
 | `channel()` | - | Channel | response()のエイリアス |

@@ -18,7 +18,7 @@ description: "UUID를 generate, validate, inspect, parse 및 format합니다."
 local uuid = require("uuid")
 ```
 
-## Nondeterministic UUID
+## 비결정적 UUID
 
 ### 버전 1
 

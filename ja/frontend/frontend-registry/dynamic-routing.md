@@ -89,7 +89,7 @@ iframe engine では、`preventLinkClicks: true` によって document-level hoo
 
 classifier は次の 4 種類の結果を返します。
 
-| `LinkKind` | 条件 | action |
+| `LinkKind` | 条件 | アクション |
 |---|---|---|
 | `host-nav` | top path segment が既知の `mountRoute` literal、組み込み system route（`chat`、`c`、`web`、`page`、`keeper`、`login`、`logout`）、または root-mount catch-all に match | `preventDefault` + `host.navigate(normalizedPath)` |
 | `child-nav` | child router が path を実在する（catch-all ではない）route として resolve、または他の何も claim していない | subapp の router が in-app で決定。host は `preventDefault` も page context の reload も行わない |

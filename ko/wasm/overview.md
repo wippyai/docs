@@ -13,7 +13,7 @@ Wippy는 WebAssembly 모듈을 Lua 코드와 함께 등록합니다. 함수 엔�
 
 ## 엔트리 종류
 
-| Kind | Description |
+| 종류 | 설명 |
 |------|-------------|
 | `function.wat` | YAML에서 정의된 인라인 WebAssembly Text 형식 함수 |
 | `function.wasm` | 파일시스템 엔트리에서 로드된 사전 컴파일된 WASM 바이너리 |

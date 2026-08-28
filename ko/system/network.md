@@ -14,7 +14,7 @@ HTTP 경계를 넘어 전파됩니다.
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `network.socks5` | 일반 SOCKS5 프록시 (Tor의 SOCKS5 리스너도 포함) |
 | `network.tailscale` | Tailscale tsnet 오버레이 노드 |

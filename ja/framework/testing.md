@@ -374,7 +374,7 @@ entries:
       test: wippy.test:test
 ```
 
-## Terminal Host
+## ターミナルホスト :id=terminal-host
 
 `wippy/test` は `wippy/terminal` に依存し、CLI runner が使用する auto-start の `wippy.terminal:host` はこのモジュールから提供されます。`wippy test` の実行だけを目的に、アプリケーションで別の process host や terminal host を宣言する必要はありません。
 

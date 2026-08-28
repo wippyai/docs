@@ -11,7 +11,7 @@ description: "엔트리 import를 통해 Wippy 함수 호출, WASI Preview 1 호
 
 ## 임포트 유형
 
-| Import | Description |
+| 임포트 | 설명 |
 |--------|-------------|
 | `funcs` | Component Model 모듈에서 Wippy 레지스트리 함수 호출 |
 | `wasi1` | raw/core 모듈을 위한 WASI Preview 1 호환성 |

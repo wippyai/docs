@@ -46,7 +46,7 @@ FE 개발자는 `package.json`의 `wippy` 블록에 이 필드를 작성합니�
 
 배포 시 운영자의 YAML `meta.tag_name`이 권위 있으며 번들 값을 재정의합니다. `package.json`에서 `wippy-meta.json`으로 포함된 `wippy.tagName`은 YAML 엔트리가 `tag_name`을 생략할 때 fallback입니다(해석 순서: YAML `meta.tag_name` → 번들 `wippy.tagName`). 두 값을 동기화하십시오. 다르면 YAML이 이깁니다.
 
-### Props Schema
+### Props 스키마
 
 `package.json`의 `wippy.props` 키는 컴포넌트가 받는 attribute를 설명하는 JSON Schema 객체입니다. vite plugin은 이를 `wippy-meta.json`에 포함하고, Web Host는 채팅 아티팩트 renderer나 tag sanitizer 같은 소비자에게 컴포넌트 메타데이터를 노출할 때 사용합니다. sanitizer는 정당한 attribute를 알아야 제거하지 않을 수 있습니다.
 
@@ -75,7 +75,7 @@ FE 개발자는 `package.json`의 `wippy` 블록에 이 필드를 작성합니�
 
 `properties`의 attribute 이름은 HTML attribute 관례(kebab-case)를 사용합니다. attribute가 없으면 web-component prop parser가 schema의 `default` 값도 런타임에 적용합니다.
 
-### Events Schema
+### 이벤트 스키마
 
 `wippy.events` 키는 props 형태를 따르지만 컴포넌트가 `useEvents()`로 내보내는 사용자 정의 DOM event를 설명합니다. 각 키는 event 이름이고 값은 event detail payload의 JSON Schema입니다.
 

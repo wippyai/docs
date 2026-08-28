@@ -25,7 +25,7 @@ security:
   strict_mode: false
 ```
 
-| Context | `strict_mode: false` | `strict_mode: true` |
+| 컨텍스트 | `strict_mode: false` | `strict_mode: true` |
 |---------|----------------------|---------------------|
 | Actor와 scope 있음 | policy를 평가하며 `allow`만 접근 허용 | 동일 |
 | Actor 또는 scope 없음 | 보호된 작업 허용 | 보호된 작업 거부 |
@@ -57,7 +57,7 @@ WASM socket 및 outgoing HTTP host 함수도 `socket.connect`, `socket.listen`, 
 
 많은 런타임 리소스는 레지스트리 엔트리입니다. 모듈은 엔트리 ID로 리소스를 획득하고 대응하는 action을 검사합니다. v0.3.32a의 예는 다음과 같습니다.
 
-| Operation | Check | Resource |
+| 작업 | 검사 | 리소스 |
 |-----------|-------|----------|
 | 레지스트리 엔트리 읽기 | `registry.get` | 엔트리 ID |
 | 함수 호출 | `funcs.call` | 함수 ID |

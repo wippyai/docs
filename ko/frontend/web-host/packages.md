@@ -19,7 +19,7 @@ npm install @wippy-fe/proxy@0.0.56 @wippy-fe/webcomponent-vue@0.0.56 @wippy-fe/r
 
 마이크로 프런트엔드 앱(`view.page`)과 웹 컴포넌트(`view.component`) 모두 같은 방식으로 호스트와 통신합니다. `@wippy-fe/proxy`의 동기식 named import를 직접 사용합니다. 애플리케이션 코드는 API getter를 await하거나 런타임 handshake를 관리하지 않습니다. 선택된 엔진의 proxy adapter가 앱 번들 실행 전에 API를 초기화합니다.
 
-| 목적 | `@wippy-fe/proxy` import |
+| 목적 | `@wippy-fe/proxy` 임포트 |
 |---|---|
 | 인증 HTTP | `api`(axios 인스턴스) |
 | 호스트 통신 | `host` |
@@ -206,7 +206,7 @@ Web Host managed-layout 엔진 내부에서 사용하는 순수 framework-agnost
 
 managed-layout 패널 안에서 실행되는 page 모듈용으로 proxy layout API를 반응형 ref로 감싼 Vue 3 composable입니다. composable은 `null`을 반환하지 않습니다. 항상 객체/ref를 반환하고 managed-layout host가 없으면 내부 `.value`가 저하됩니다. `snapshot.value`는 `null`, `isManaged.value`는 `false`이며 mutation은 조용한 no-op입니다. `useWippyBreakpoint().value`, `useWippyMainRoute().value`는 빈 문자열이고 없는 ID의 `useWippyPanel(id).value`는 `null`입니다. 반환값 자체의 `=== null`이 아니라 `layout.isManaged.value` 또는 `layout.snapshot.value !== null`로 host 존재를 검사합니다. 내부 layout subscription은 module 범위이고 page runtime lifetime 동안 유지되므로 unmount별 정리는 없습니다.
 
-| Composable | 반환값 |
+| 컴포저블 | 반환값 |
 |------------|---------|
 | `useWippyLayout()` | 반응형 `snapshot`, `activeBreakpoint`, `panels`, `isManaged`와 노출 mutation: `resizePanel`, `collapsePanel`, `expandPanel`, `movePanel`, `removePanel`, `closeModal`, `removeFloating` |
 | `useWippyPanel(panelId)` | 이름 있는 패널 live 상태의 `ComputedRef`(없으면 `null`). `panelId`는 필수 `string \| Ref<string> \| getter` |
@@ -336,7 +336,7 @@ Web Host 1.0.56에서 `<wippy-chat>`은 요소 교체 없이 `session-id`, `star
 
 ---
 
-## Host Import Map
+## 호스트 임포트 맵
 
 `fe_facade_url`과 같은 고정 `<version-tag>`를 사용하고 개발 중 릴리스 아티팩트를 한 번 가져옵니다.
 

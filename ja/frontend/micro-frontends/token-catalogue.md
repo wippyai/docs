@@ -3,7 +3,7 @@ title: "Token Catalogue"
 description: "生成された public Wippy theme token catalogue と compatibility metadata。"
 ---
 
-# Token Catalogue
+# トークンカタログ :id=token-catalogue
 
 **分類: 生成された token reference。** 既存の public token を選び、その provenance を調べるために使います。facade theme setup の解説ではなく、生成 package manifest にない名前を許可するものでもありません。
 
@@ -25,7 +25,7 @@ snapshot header は `schemaVersion`、`packageVersion`、`implementationRelease`
 
 declared は effective を意味しません。生成された package coverage は `inherited` のままです。公開には別途、commit されたすべての acceptance requirement に対する external かつ content-hashed な computed-style evidence と visual evidence が必要です。local evidence はこの check-in 済み catalogue に投影しません。一時的な animation variable は、Wippy が意図的に公開しない限り internal と分類されます。
 
-## Effective-contract ledger
+## 有効な契約の台帳 :id=effective-contract-ledger
 
 token の追加は proposed name ではなく evidence から始めます。Button、form field、ToggleSwitch、およびそれらの focus state で audit した各 appearance declaration または Tailwind utility について、生成 ledger は stable ID、source file または upstream object、selector または PrimeVue path、authored property/utility、利用可能な resolved value、参照する runtime variable、semantic-review state、mutation state、disposition、source evidence を記録します。
 
@@ -51,7 +51,7 @@ token の追加は proposed name ではなく evidence から始めます。Butt
 
 現在値が等しくても semantic が等しいとは確定しません。特に、generic content radius は、明示的な structured relationship なしにすべての control の radius contract にはなれません。
 
-## Runtime evidence
+## ランタイムの根拠 :id=runtime-evidence
 
 visible-browser test が実際の component を描画し、元の computed property を読み、token を mutate し、期待する property の変化を確認して値を復元するまで、生成 ledger は runtime proof を `pending-browser-proof` として記録します。pending record は runtime acceptance evidence ではありません。
 

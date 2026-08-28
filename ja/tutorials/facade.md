@@ -3,7 +3,7 @@ title: "Frontend Facade"
 description: "wippy/facade を使って、バックエンドのみのアプリから Wippy の Web UI を配信します。ファサードは薄い静的シェルです。Wippy Web Host のフロントエンドバンドルを CDN から読み込み、アプリが配信する JSON エンドポイントから構成します —…"
 ---
 
-# Frontend Facade
+# フロントエンド Facade :id=frontend-facade
 
 `wippy/facade` を使って、バックエンドのみのアプリから Wippy の Web UI を配信します。ファサードは薄い静的シェルです。Wippy Web Host のフロントエンドバンドルを CDN から読み込み、アプリが配信する JSON エンドポイントから構成します — プロジェクト側にフロントエンドのビルドステップはありません。ブランディング、テーマ設定、機能フラグはすべて依存関係のパラメータで駆動されます。
 

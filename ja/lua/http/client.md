@@ -327,7 +327,7 @@ if read_err then return nil, read_err end
 if close_err then return nil, close_err end
 ```
 
-| Streamメソッド | 戻り値 | 説明 |
+| Stream メソッド | 戻り値 | 説明 |
 |---------------|---------|-------------|
 | `read(n?)` | string, error | 最大`n`バイトを読み取り（デフォルト: 実装のバッファ） |
 | `close()` | boolean, error | ストリームを閉じる |

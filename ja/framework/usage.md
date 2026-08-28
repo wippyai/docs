@@ -42,7 +42,7 @@ entries:
 
 上記の相対 SQLite path を使用する場合は、アプリケーションを開始する前に `data` directory を作成してください。
 
-## Schema
+## スキーマ :id=schema
 
 ```
 token_usage
@@ -73,7 +73,7 @@ contracts:
 
 成功した各 LLM 呼び出しは、model ID、token count、任意の `context_id` を指定して `track_usage` を呼び出します。`user_id` は active な security actor から取得されます。user context 外の呼び出しは `"system"` として記録されます。
 
-## Tracker API
+## トラッカー API :id=tracker-api
 
 LLM flow 外の使用量を記録するには、tracker を直接 import します。
 
@@ -104,7 +104,7 @@ if err then
 end
 ```
 
-| Parameter | 型 | 説明 |
+| パラメーター | 型 | 説明 |
 |-----------|------|-------------|
 | `model_id` | string | canonical model ID |
 | `prompt_tokens` | number | input token |
@@ -118,7 +118,7 @@ end
 
 `usage_id` または `nil, err` を返します。
 
-## Repository API
+## リポジトリ API :id=repository-api
 
 `wippy.usage:token_usage_repo` は集計 query を提供します。
 

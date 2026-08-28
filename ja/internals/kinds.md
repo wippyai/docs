@@ -44,7 +44,7 @@ type EntryListener interface {
 
 ## リスナーとオブザーバー
 
-| 種類 | 目的 | Reject 可能 |
+| 種類 | 目的 | 拒否可能 |
 |------|---------|------------|
 | Listener | プライマリハンドラ | はい |
 | Observer | セカンダリハンドラ（logging、metrics） | いいえ |

@@ -30,7 +30,7 @@ lsp:
 
 ### Campos de configuración
 
-| Campo | Default | Descripción |
+| Campo | Predeterminado | Descripción |
 |-------|---------|-------------|
 | `enabled` | false | Habilita el servicio LSP y el servidor TCP |
 | `address` | :7777 | Dirección de escucha TCP |
