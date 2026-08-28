@@ -31,7 +31,7 @@ PrimeVue が必要な semantics、interaction、意図した affordance を提�
 
 同じ値を表現できるだけでは、2 つのコントロールが等価とは限りません。意図する affordance が見た目と動作の両方で toggle である場合、`SelectButton` が 3 position sliding toggle の自動的な代替になるわけではありません。
 
-### FE-UI-003：semantics と affordance が同じなら appearance も同じ
+### FE-UI-003：意味と操作性が同じなら外観も同じ
 
 等価なコントロールは、size、spacing、color、typography、border、shadow、focus、hover、disabled、invalid、motion の挙動を共有する必要があります。custom composite は PrimeVue の visual sibling を指定し、適用可能な共有 runtime property をすべて継承します。
 
