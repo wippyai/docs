@@ -9,7 +9,7 @@ description: "normative frontend compliance rule、checker ownership、publicati
 
 このページが deterministic checker と publication requirement を所有します。[Portable UI Contract](../portable-ui-contract.md)が underlying rule statement、linked guide が実装詳細を所有します。public `@wippy-fe/*` 0.0.56 は module-compliance CLI を提供しません。repository documentation checker は documentation example と generated catalogue freshness を検証し、module が選択した compliance workflow が次の application-facing check を実装します。
 
-| Rule | 詳細 guide | Deterministic result |
+| ルール | 詳細 guide | 決定論的な結果 |
 |---|---|---|
 | FE-PORT-001 | [Portable UI Contract](../portable-ui-contract.md) | private portability assumption を拒否 |
 | FE-UI-001 | 同上 | raw/hand-rolled standard control を拒否 |
@@ -26,7 +26,7 @@ description: "normative frontend compliance rule、checker ownership、publicati
 | FE-STYLE-001 | [Theme Authoring](./theming.md) | private facade class と module-local `.p-*` theming を拒否 |
 | FE-A11Y-001 | [Portable UI Contract](../portable-ui-contract.md) | invalid/inaccessible custom control を拒否 |
 
-## 必須 checker group
+## 必須チェッカーグループ
 
 - PostCSS で token CSS を parse し、generated snapshot を byte-for-byte compare。
 - actual Tailwind configuration を resolve し representative utility を compile。
@@ -41,7 +41,7 @@ description: "normative frontend compliance rule、checker ownership、publicati
 
 Promptmap は lead を生成できますが、token existence、utility resolution、reachability、deletion の evidence ではありません。
 
-## Generated publication gate
+## 生成された公開ゲート
 
 generated token/Tailwind section に pending marker を残せません。新 runtime token には real Wippy CSS consumer、computed-style mutation test、documented portable-consumer purpose が必要です。
 

@@ -70,7 +70,7 @@ finally {
 @exit /b %ERRORLEVEL%
 ```
 
-## Import-map snapshot algorithm
+## import map のスナップショットアルゴリズム
 
 target Web Host release が host-provided module を定義します。
 

@@ -22,7 +22,7 @@ description: "viewport-based responsive rule を Wippy surface contract へ変�
 
 ---
 
-## Decision tree: この rule は何に応答するか
+## 判断ツリー: このルールは何に応答するか
 
 変換前に intent を分類します。元の rule が surface-relative でなければ、機械的に正しい変換でも誤りです。
 
@@ -221,7 +221,7 @@ component query は追加的です。nested container の内側でも `wippy-sur
 
 ---
 
-## Viewport unit
+## ビューポート単位
 
 | 以前 | 使用するもの | 注記 |
 |---|---|---|
@@ -236,7 +236,7 @@ component query は追加的です。nested container の内側でも `wippy-sur
 
 `sv*` / `lv*` は実在する CSS unit であり、「surface」を意味しません。
 
-### Calculation
+### 計算
 
 ```css
 /* before */ block-size: calc(100vh - 4rem);
@@ -261,7 +261,7 @@ element が **parent** を満たすなら `100%` または `w-full` を使いま
 
 ---
 
-## Overlay
+## オーバーレイ
 
 surface contract は `position: fixed` を捕捉しません。`container-type` は layout containment なしに independent formatting context を確立するため query container は `contain: none` と compute され、何も anchor しません。Chromium、Firefox、WebKit で検証済みです。PrimeVue overlay と自作 fixed overlay は変更なしで動くため、**positioning の migration は不要**です。
 
@@ -273,7 +273,7 @@ Host-mediated overlay placement と `host.surface` scroll helper は **not yet s
 
 ---
 
-## Checklist
+## チェックリスト
 
 1. 各 rule を分類する（page / component / preference / deliberate window）。
 2. page-intent geometry を `@container wippy-surface` へ変換する。

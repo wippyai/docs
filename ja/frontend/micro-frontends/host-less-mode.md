@@ -25,7 +25,7 @@ Host-less mode では、Wippy Web Host の wrapper なしで Wippy Micro Fronten
 
 ---
 
-## Mental model — app と WC は standalone-aware :id=mental-model-apps-and-wcs-are-standalone-aware
+## メンタルモデル — アプリと WC はスタンドアロン対応 :id=mental-model-apps-and-wcs-are-standalone-aware
 
 すべての Wippy Micro Frontend App と Web Component は一つの runtime constraint に従います。
 
@@ -45,7 +45,7 @@ Host-less mode では、Wippy Web Host の wrapper なしで Wippy Micro Fronten
 
 ---
 
-## `@wippy/scripts` switchpoint — 一つの tag、二つの boot path :id=the-wippyscripts-switchpoint-one-tag-two-boot-paths
+## `@wippy/scripts` の切り替えポイント — 一つのタグ、二つのブート経路 :id=the-wippyscripts-switchpoint-one-tag-two-boot-paths
 
 canonical app の `app.html` には、load 時に boot path を決める script tag が**一つ**あります。次は body/boot の省略例です。[Import-map snapshot algorithm](./build-system.md#import-map-snapshot-algorithm) の完全で有効な response を挿入し、pin 済み Web Host tag の変更時に更新します。
 
@@ -90,7 +90,7 @@ curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/import-map.json" -o impor
 
 standalone `app.html` は copy した完全な map を解決し、hosted mode は同じ pin 済み release が配信する map を使います。
 
-### `package.json` を dev-proxy へ公開する canonical scaffold
+### `package.json` を dev-proxy へ公開する標準構成
 
 各 app の `package.json` には runtime default を決める metadata（proxy injection、page theme override、iconify collection など）があります。hosted mode では Host が registry から読み、host-less mode では dev-proxy に同じ data が必要です。
 
@@ -178,7 +178,7 @@ modal または `localStorage['@wippy-dev/config']` の編集で上書きしま�
 
 ---
 
-## dev overlay（config modal） :id=the-dev-overlay-config-modal
+## 開発用オーバーレイ（設定モーダル） :id=the-dev-overlay-config-modal
 
 development overlay は Shadow DOM Web Component（`<wippy-dev-overlay>`）です。右下 FAB、waiting mode の speech bubble、FAB で開く panel を描画します。panel には Monitor、editable JSON の App Config、全 proxy injection flag の checkbox、auto-accept option、Reset/Accept footer があります。Reset は全 `@wippy-dev/*` key を消し、Accept は config を保存して boot promise を解決します。
 
@@ -192,38 +192,38 @@ auto-accept 有効時は最後の accepted config で即 boot します。FAB �
 
 ---
 
-## Host stub — standalone `host` API :id=host-stubs-the-standalone-host-api
+## Host stub — スタンドアロンの `host` API :id=host-stubs-the-standalone-host-api
 
 real Host がない場合、dev-proxy は `src/proxy/dev/host-stubs.ts` の stub layer を使います。
 
-| Method | Standalone behavior |
+| メソッド | スタンドアロン時の動作 |
 |---|---|
-| `host.toast(message)` | Console-log のみ |
+| `host.toast(message)` | console へのログ出力のみ |
 | `host.confirm({ message })` | browser `window.confirm()` |
-| `host.startChat(token, options)` | Console-log |
-| `host.openSession(uuid, options)` | Console-log |
-| `host.openArtifact(uuid, options)` | Console-log |
-| `host.navigate(url)` | Console-log + child router 用 `@history` emit + overlay path 更新 |
-| `host.onRouteChanged(path)` | Console-log + overlay path 更新 |
+| `host.startChat(token, options)` | console へログ出力 |
+| `host.openSession(uuid, options)` | console へログ出力 |
+| `host.openArtifact(uuid, options)` | console へログ出力 |
+| `host.navigate(url)` | console へのログ出力 + child router 用 `@history` emit + overlay path 更新 |
+| `host.onRouteChanged(path)` | console へのログ出力 + overlay path 更新 |
 | `host.handleError(code, error)` | `console.error` |
-| `host.setContext(context, sessionUUID, source)` | Console-log |
+| `host.setContext(context, sessionUUID, source)` | console へログ出力 |
 | `host.formatUrl(rel)` | `${appConfig.routePrefix || ''}${rel}` を返す |
 | `host.classifyLink(href)` | accepted config の `mountRoutes` / `routePrefix` を使う real implementation |
 | `host.layout.*` | type contract を満たす no-op stub |
 | `host.surface` | width zero、content sizing、optional capability なしの standalone `host` descriptor |
 | `host.bridge.post/on/request` | `post` は log、`on` は no-op subscription、`request` は bridge unavailable で reject |
 | `host.setThemeMode(mode)` / `host.getThemeMode()` | mode を local に保存・報告し theme event を emit |
-| `host.logout()` | Console-log のみ |
+| `host.logout()` | console へのログ出力のみ |
 
 stub は要求された Host side effect を console に記録します。`host.openSession` が実際に session を開くことなど、正しさが effect に依存する path は Host 下で test してください。
 
 ---
 
-## Web Component — host-less playground と test :id=web-components-host-less-playground-and-tests
+## Web Component — host-less playground とテスト :id=web-components-host-less-playground-and-tests
 
 Web Component も同じ dual-mode design ですが iframe ではなく ES module として読み込みます。proxy contract は `@wippy-fe/proxy` からの import で、real proxy または dev-proxy が設定する `window.__WIPPY_APP_API__` を runtime に読みます。
 
-### Playground / demo HTML page
+### Playground / デモ用 HTML ページ
 
 ```html
 <!-- demo.html in your WC project -->

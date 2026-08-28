@@ -15,22 +15,22 @@ managed-layout mode は標準 Wippy chrome を declarative panel tree に置換�
 
 標準 `compat` mode が production のデフォルトです。custom chrome composition が必要な場合だけ `fe_mode = managed` を選びます。
 
-| Need | Compat | Managed |
+| 要件 | Compat | Managed |
 |---|---|---|
-| 標準 chat + nav | Yes | 置換可能 |
-| 複数 page slot | No | Yes |
-| custom sidebar/coordinator | 制限あり | Yes |
-| breakpoint ごとの responsive layout | No | Yes |
-| floating overlay | No | Yes |
-| headless coordinator | No | Yes（`coordinators`） |
+| 標準 chat + nav | はい | 置換可能 |
+| 複数 page slot | いいえ | はい |
+| custom sidebar/coordinator | 制限あり | はい |
+| breakpoint ごとの responsive layout | いいえ | はい |
+| floating overlay | いいえ | はい |
+| headless coordinator | いいえ | はい（`coordinators`） |
 | panel 単位 routing | main のみ | 全 `kind: page` |
-| cross-panel bus | No | Yes |
+| cross-panel bus | いいえ | はい |
 
 ## 互換性
 
 Web Host、facade、`@wippy-fe/*` package は exact release に対応する 1 family を使い、served import map を検証してください。無関係な release の version を混在させません。
 
-### Release map
+### リリース対応表
 
 | Release | Managed-layout の追加内容 |
 |---|---|
@@ -75,7 +75,7 @@ facade は `module.js` の代わりに `managed-layout.js` を配信します。
 
 backend `host_config.layout` から frontend `AppConfig.hostConfig.layout` へ投影される単一 object です。mount 前に検証され、`LayoutValidationError` は `{ kind, message, panelId? }` とともに console に出ます。
 
-| Field | Type | Description |
+| フィールド | 型 | 説明 |
 |---|---|---|
 | `layouts` | `Record<string, PanelTree> & { default: PanelTree }` | breakpoint-keyed tree。`default` 必須 |
 | `breakpoints?` | `Record<string, number>` | non-default key を有効にする pixel width |
@@ -86,9 +86,9 @@ backend `host_config.layout` から frontend `AppConfig.hostConfig.layout` へ�
 | `services?` | 同上 | deprecated alias |
 | `dragEnabled?` | boolean | splitter drag。default `true` |
 
-## Panel Kind
+## パネル種別
 
-| Kind | Description | Required |
+| 種別 | 説明 | 必須 |
 |---|---|---|
 | `page` | iframe/Fragment engine の Wippy page | `id` |
 | `artifact` | host resolver の artifact | `id` |
@@ -97,11 +97,11 @@ backend `host_config.layout` から frontend `AppConfig.hostConfig.layout` へ�
 
 tree 内 exactly one panel に `main: true` が必要です。browser URL ownership には `@HOST/compat-coordinator` 等の route sync が必要です。
 
-### Built-in Panel ID
+### 組み込みパネル ID
 
 `@HOST/` は framework-owned panel 用です。
 
-| ID | Render |
+| ID | 描画 |
 |---|---|
 | `@HOST/nav-sidebar` | 標準 nav sidebar |
 | `@HOST/chat-wrapper` | active session chat |
@@ -112,7 +112,7 @@ tree 内 exactly one panel に `main: true` が必要です。browser URL owners
 
 未知の `@HOST/<id>` は `LayoutValidationError` になります。
 
-## Breakpoint-keyed layout
+## breakpoint 別レイアウト
 
 `default` は常に存在し、より狭い breakpoint が一致したとき切り替わります。
 
@@ -146,11 +146,11 @@ host_config:
 
 同じ `id` の panel は stable content host を維持し、iframe、WC/Vue state、scroll position を保持します。iframe を reload する reparenting は避けます。
 
-### Drawer-mode panel
+### drawer モードのパネル
 
 `display: 'drawer-left' | 'drawer-right' | 'drawer-bottom'` は overlay drawer を作ります。track sizing に参加せず、edge に absolute position、layout API で開閉し、backdrop click で全 drawer を閉じます。`main: true` は禁止。左右は `drawerSize.width`、bottom は `height`、default は `320px`。
 
-## Floating Panel
+## フローティングパネル
 
 ```yaml
 floating:
@@ -174,7 +174,7 @@ host.layout.addFloating('inspector', {
 host.layout.removeFloating('inspector')
 ```
 
-## Headless Coordinator
+## ヘッドレスコーディネーター
 
 hidden host に mount され、panel-scoped API を受け取る component です。
 
@@ -206,7 +206,7 @@ class MyCoordinator extends WippyElement {
 customElements.define('my-coordinator', MyCoordinator)
 ```
 
-### Shipped compat coordinator
+### 同梱の compat coordinator
 
 managed layout は宣言済み surface だけを持つため compat command は `@HOST/intent` に typed intent を publish します。次を宣言して browser URL と main panel も bind します。
 
@@ -225,11 +225,11 @@ coordinators:
 
 標準 navigation contract では `routeSync: true` を保ちます。coordinator がなければ deep link、Back/Forward、sidebar navigation を panel route に反映できません。boot 中の intent は最初の subscriber まで bounded queue に保持されます。`@HOST/` traffic は ordinary panel から偽装できません。ただし host realm の direct component は security sandbox ではありません。boot parity table が不足を警告します。
 
-## In-tab Broadcast Bus
+## タブ内ブロードキャストバス
 
 current browser tab 内だけで通信します。multi-tab は custom WebSocket topic を使います。
 
-| Method | Description |
+| メソッド | 説明 |
 |---|---|
 | `broadcast` | 全 panel（sender 除外） |
 | `send` | 特定 panel |
@@ -252,9 +252,9 @@ const host = useHost<ProxyApiInstance['host']>()
 host?.layout.broadcast('open-chat', { token: 'abc' })
 ```
 
-## Layout API Reference（`host.layout`）
+## Layout API リファレンス（`host.layout`）
 
-| Method | 説明 |
+| メソッド | 説明 |
 |---|---|
 | `.snapshot` | full layout snapshot を同期的に返す。managed-layout 外では `null` |
 | `.resizePanel(id, size)` | active breakpoint の named panel を resize |
@@ -276,7 +276,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 
 `openModal()` は host-internal layout infrastructure の説明で、application component recipe ではありません。Vue product UI は custom native-dialog styling を複製せず、PrimeVue `Dialog` または host confirmation API を使います。
 
-### `updatePanel` merge semantics
+### `updatePanel` のマージセマンティクス
 
 `props` は shallow-merge、それ以外の top-level field は wholesale replace です。
 
@@ -290,7 +290,7 @@ host.layout.updatePanel('right', { route: '/x' })
 
 nested object は replace され、prop key は削除できず overwrite のみです。
 
-## Vue Composable — `@wippy-fe/vue-host`
+## Vue composable — `@wippy-fe/vue-host`
 
 これらの composable は proxy layout API を reactive な Vue 3 ref でラップします。基盤の subscription は module scope にあり、iframe の存続期間中維持されるため、component の unmount ごとの cleanup はありません。
 
@@ -303,7 +303,7 @@ nested object は replace され、prop key は削除できず overwrite のみ�
 
 composable 自体は `null` を返しません。managed-layout host がない場合は内部の `.value` が低機能状態になります。`useWippyLayout().snapshot.value` は `null`（`isManaged.value` は `false` で、変更操作は何もしません）、`useWippyBreakpoint().value` と `useWippyMainRoute().value` は空文字列、存在しない ID に対する `useWippyPanel(id).value` は `null` です。戻り値を `=== null` で確認するのではなく、`layout.isManaged.value`（または `layout.snapshot.value !== null`）で host の存在を確認してください。
 
-## Remount しない swap buffering
+## 再マウントしない swap buffering
 
 `useSwapBuffer()` は incoming content readiness まで outgoing surface を維持します。immutable `slot.index` を DOM key にし、index と content key の両方を readiness call に渡します。
 
@@ -323,19 +323,19 @@ swap.markReady(slot.index, slot.key)
 
 timeout は stale content を残さず content を reveal します。loading UI は `swap.showLoader` に bind。failed buffer は sibling から分離し、retry 前に `clearError(index)`。
 
-### Web Host page readiness
+### Web Host ページの準備完了
 
 Host も keyed readiness と 14 秒の最終 ceiling を使い、painted content は即時 reveal、ceiling は report しない content の fallback だけです。late stale event は拒否します。application loading delay として timer を追加しないでください。
 
-### Stable component update と panel sizing
+### 安定したコンポーネント更新とパネルサイジング
 
 component の prop change は既存 element の attribute を update/remove し、`tagName` 変更時だけ element を置換します。`minSize`/`maxSize` は active split axis だけを制限。drawer content は remount せず open 時だけ前面化します。
 
-## Splitter と handle styling
+## Splitter とハンドルのスタイル
 
 splitter layer は default z-index `700`。handle は opt-in です。
 
-| Variable | Default | Purpose |
+| 変数 | デフォルト | 目的 |
 |---|---|---|
 | `--wippy-layout-splitter-size` | `1px` | line thickness |
 | `--wippy-layout-splitter-hit-size` | `10px` | hit area、coarse pointer は `24px` |
@@ -348,9 +348,9 @@ splitter layer は default z-index `700`。handle は opt-in です。
 
 opt-in 時は size/fill/border/shadow/icon を一緒に設定します。
 
-## Mode ごとの効果 :id=what-works-in-which-mode
+## モードごとの効果 :id=what-works-in-which-mode
 
-### `host.layout` が効くのは managed mode のみ
+### `host.layout` が効くのは managed モードのみ
 
 layout 未宣言の compat mode では `snapshot` は null、全 mutation/bus call は silent no-op です。
 
@@ -363,11 +363,11 @@ if (host.layout.snapshot) {
 
 `addPanel` / `setLayout` はどちらの mode でも proxy に未公開です。
 
-### Compat shell を前提とする `host.*` command
+### Compat shell を前提とする `host.*` コマンド
 
 managed shell は宣言済み layout だけを render します。compat chrome を対象とする command は typed `@HOST/intent` を publish し、`@HOST/compat-coordinator` または同等の coordinator が panel へ対応付けます。
 
-| `host.*` command | Compat | Managed |
+| `host.*` コマンド | Compat | Managed |
 |---|---|---|
 | `setContext`、`toast`、`confirm`、`handleError`、`logout`、`bridge.*`、top-level `state` / `ws` / `on` | 動作 | global toast/confirm surface を含め直接動作 |
 | `openArtifact(id, ...)` | right panel または modal で開く | intent を publish。coordinator が `artifactPanel` / `modalId` を選ぶ |
@@ -377,7 +377,7 @@ managed shell は宣言済み layout だけを render します。compat chrome 
 
 coordinator がまだなければ boot-time intent は最初の subscription まで bounded queue に保持されます。handler 不在は boot parity table が報告し、reserved intent は `coordinators` entry だけが読めます。
 
-## State management
+## 状態管理
 
 次の 3 tier を順に使います。
 
@@ -387,7 +387,7 @@ coordinator がまだなければ boot-time intent は最初の subscription ま
 
 **Panel-local** — form draft、modal state、transient UI。panel 自身の Pinia store/ref に留めます。
 
-## Canonical coordination pattern
+## 標準の coordination パターン
 
 bus event → coordinator → `updatePanel` → panel router の順です。
 
