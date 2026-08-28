@@ -142,7 +142,7 @@ validiert es vor dem Mount. Jeder `LayoutValidationError` erscheint mit
 
 Jeder Eintrag in `panels`, `floating`, `modals` und `coordinators` ist über `kind` typisiert:
 
-| Kind | Beschreibung | Erforderliche Felder |
+| Art | Beschreibung | Erforderliche Felder |
 |---|---|---|
 | `page` | Wippy-Seitenmodul, das über die gewählte iframe- oder Web-Fragment-Engine gemountet wird | `id` (Registry-ID der Seite) |
 | `artifact` | Wippy-Artefakt, das über den Artefakt-/Seitenresolver des Hosts gerendert wird | `id` (Artefakt-UUID) |

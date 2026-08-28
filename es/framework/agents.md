@@ -189,7 +189,7 @@ end
 | `tool_calls` | table? | Llamadas a herramientas para ejecutar |
 | `delegate_calls` | table? | Invocaciones de delegados |
 
-### Estadisticas del Runner
+### Estadísticas del ejecutor :id=estadisticas-del-runner
 
 ```lua
 local stats = runner:get_stats()

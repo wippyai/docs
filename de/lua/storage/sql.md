@@ -140,7 +140,7 @@ local value = sql.as.null()
 
 **Gibt zurück:** `userdata`
 
-## Query Builder
+## Abfragegenerator :id=query-builder
 
 ### `sql.builder.select`
 
@@ -509,7 +509,7 @@ Gibt Table mit Feldern zurück:
 - `max_idle_time_closed` - Wegen idle Timeout geschlossene Verbindungen
 - `max_lifetime_closed` - Wegen max lifetime geschlossene Verbindungen
 
-## Prepared Statements
+## Vorbereitete Anweisungen :id=prepared-statements
 
 Eine von `db:prepare()` zurückgegebene vorbereitete Anweisung kann wiederholt abgefragt oder ausgeführt werden.
 
@@ -681,7 +681,7 @@ local ok, err = tx:release("sp1")
 
 **Gibt zurück:** `boolean, error`
 
-## SELECT Builder
+## SELECT-Generator :id=select-builder
 
 Fluent-Interface zum Erstellen von SELECT-Abfragen.
 
@@ -958,7 +958,7 @@ local rows, err = executor:query()
 
 **Gibt zurück:** `QueryExecutor, error`
 
-## INSERT Builder
+## INSERT-Generator :id=insert-builder
 
 Fluent-Interface zum Erstellen von INSERT-Abfragen.
 
@@ -1130,7 +1130,7 @@ local result, err = executor:exec()
 
 **Gibt zurück:** `QueryExecutor, error`
 
-## UPDATE Builder
+## UPDATE-Generator :id=update-builder
 
 Fluent-Interface zum Erstellen von UPDATE-Abfragen.
 
@@ -1339,7 +1339,7 @@ local result, err = executor:exec()
 
 **Gibt zurück:** `QueryExecutor, error`
 
-## DELETE Builder
+## DELETE-Generator :id=delete-builder
 
 Fluent-Interface zum Erstellen von DELETE-Abfragen.
 

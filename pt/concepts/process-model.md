@@ -75,7 +75,7 @@ if err then return nil, err end
 return ok
 ```
 
-Mensagens do mesmo remetente chegam em ordem. Mensagens de remetentes diferentes podem se intercalar. A entrega é fire-and-forget; use padrões de requisição e resposta quando precisar de confirmação.
+Mensagens do mesmo remetente chegam em ordem. Mensagens de remetentes diferentes podem se intercalar. A entrega não espera resposta; use padrões de requisição e resposta quando precisar de confirmação.
 
 <note>
 Processos podem se registrar em um registro local de nomes e ser endereçados pelo nome, em vez do PID (por exemplo, `session_manager`). Nomes também podem ser registrados em todo o cluster para endereçamento entre nós por meio de `process.registry`, usando os escopos EVENTUAL (baseado em gossip), CONSISTENT ou STRONG (ambos apoiados por Raft).

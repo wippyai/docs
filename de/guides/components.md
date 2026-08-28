@@ -11,7 +11,7 @@ Dieser Leitfaden behandelt die Autorenseite: die Deklaration dieser Schnittstell
 
 ## Die drei Entry-Kinds
 
-| Kind | Seite | Rolle |
+| Art | Seite | Rolle |
 |------|-------|-------|
 | `ns.definition` | Komponente | Modul-Metadaten; erforderlich zum Veröffentlichen. |
 | `ns.requirement` | Komponente | Ein Loch, das der Host füllen muss, und wohin der Wert injiziert wird. |

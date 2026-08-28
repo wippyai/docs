@@ -24,7 +24,7 @@ Lassen Sie das Feld `variable` weg, wenn eine Variable nur über ihre Entry-ID z
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `env.storage.memory` | In-Memory-Key-Value-Speicher |
 | `env.storage.file` | Dateibasierter Speicher (.env-Format) |

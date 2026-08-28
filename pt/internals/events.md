@@ -3,7 +3,7 @@ title: "Event Bus"
 description: "Ações do event bus, inscrições com wildcards, entrega, ponte para processos Lua, helpers de request-response e encerramento."
 ---
 
-# Event Bus
+# Barramento de eventos :id=event-bus
 
 O event bus processa ações pub/sub enfileiradas em uma única goroutine de dispatcher e entrega eventos correspondentes aos channels dos subscribers.
 

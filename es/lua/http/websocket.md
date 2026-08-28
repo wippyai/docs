@@ -176,7 +176,7 @@ local _, close_err = client:close()
 if close_err then return nil, close_err end
 ```
 
-### Con Select
+### Con selección :id=con-select
 
 ```lua
 local json = require("json")

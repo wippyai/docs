@@ -11,7 +11,7 @@ Diese Seite ist eine Konfigurations- und API-Referenz. Entry-Blöcke sind Fragme
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `exec.native` | Befehle direkt auf dem Host-OS ausführen |
 | `exec.docker` | Befehle in Docker-Containern ausführen |

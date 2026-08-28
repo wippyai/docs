@@ -235,11 +235,11 @@ Die Stubs protokollieren angeforderte Host-Seiteneffekte. Hängt die Korrektheit
 
 ---
 
-## Web Components: Playground und Tests ohne Host
+## Webkomponenten: Testumgebung und Tests ohne Host :id=web-components-playground-and-testing-without-the-host
 
 Web Components verwenden dieselben Imports aus `@wippy-fe/proxy`, werden aber als ES-Module statt in Iframes geladen.
 
-### Playground- oder Demo-Seite
+### Test- oder Demoseite :id=playground-or-demo-page
 
 ```html
 <!-- demo.html in your WC project -->

@@ -18,7 +18,7 @@ Die YAML- und Lua-Blöcke sind Referenzfragmente, keine einzelne Anwendung. Regi
 
 ## Lua-Runtime
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `function.lua` | Lua-Funktions-Entry-Point |
 | `process.lua` | Langlebiger Lua-Prozess |
@@ -48,7 +48,7 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
 
 ## HTTP-Dienste
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `http.service` | HTTP-Server (bindet Port) |
 | `http.router` | Routen-Präfix und Middleware |
@@ -96,7 +96,7 @@ resp:write_json({users = get_users()})
 
 ## Datenbanken
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `db.sql.sqlite` | SQLite-Datenbank |
 | `db.sql.postgres` | PostgreSQL-Datenbank |
@@ -169,7 +169,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 
 ## Key-Value-Stores
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `store.memory` | In-Memory-Key-Value-Store |
 | `store.sql` | SQL-basierter Key-Value-Store |
@@ -211,7 +211,7 @@ local data = s:get("user:123")
 
 ## Queues
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `queue.driver.memory` | In-Memory-Queue-Treiber |
 | `queue.driver.amqp` | AMQP-Treiber (RabbitMQ) |
@@ -266,7 +266,7 @@ Die <code>func</code> des Consumers wird für jede Nachricht aufgerufen. Verwend
 
 ## Prozessverwaltung
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `process.host` | Prozessausführungs-Host |
 | `process.service` | Überwachter Prozess (umhüllt process.lua) |
@@ -315,7 +315,7 @@ Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers
 
 ## Temporal (Workflows)
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `temporal.client` | Temporal-Client-Verbindung |
 | `temporal.worker` | Temporal-Worker |
@@ -340,7 +340,7 @@ Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers
 
 ## Cloud-Speicher
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `config.aws` | AWS-Konfiguration |
 | `cloudstorage.s3` | S3-Bucket-Zugriff |
@@ -375,7 +375,7 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
 
 ## Dateisysteme
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `fs.directory` | Verzeichniszugriff |
 | `fs.embed` | Schreibgeschuetztes eingebettetes Dateisystem |
@@ -401,7 +401,7 @@ file:close()
 
 ## Umgebung
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `env.storage.memory` | In-Memory-Umgebungsspeicher |
 | `env.storage.file` | Dateibasierter Umgebungsspeicher |
@@ -448,7 +448,7 @@ Der Router versucht Speicher der Reihe nach. Der erste Treffer gewinnt beim Lese
 
 ## Vorlagen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `template.jet` | Einzelne Jet-Vorlage |
 | `template.set` | Vorlagen-Set-Konfiguration |
@@ -484,7 +484,7 @@ local html = set:render("email", {
 
 ## Sicherheit
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `security.policy` | Sicherheitsrichtlinie mit Bedingungen |
 | `security.policy.expr` | Expression-basierte Richtlinie |
@@ -533,7 +533,7 @@ Die Reihenfolge der Richtlinien bestimmt den Zugriff nicht. Der Scope kombiniert
 
 ## Contracts (Dependency Injection)
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `contract.definition` | Schnittstelle mit Methodenspezifikationen |
 | `contract.binding` | Ordnet Contract-Methoden Funktionsimplementierungen zu |
@@ -600,7 +600,7 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
 
 ## Ausführung
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `exec.native` | Native Befehlsausführung |
 | `exec.docker` | Docker-Container-Ausführung |
@@ -625,7 +625,7 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
 
 ## WASM-Laufzeit
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `function.wat` | WebAssembly-Funktion (WAT-Textformat) |
 | `function.wasm` | WebAssembly-Funktion (binär) |
@@ -642,7 +642,7 @@ Siehe [WASM-Übersicht](../wasm/overview.md).
 
 ## Netzwerke
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `network` | Basis-Netzwerk-Overlay |
 | `network.socks5` | SOCKS5-Proxy-Overlay |
@@ -653,7 +653,7 @@ Wird von `http.service` über `network:`, von `funcs`/`process` über die Option
 
 ## Registry-Primitive
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `registry.entry` | Eintragsdeskriptor (intern) |
 | `ns.definition` | Namespace-Definition |

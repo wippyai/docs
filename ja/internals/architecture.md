@@ -155,7 +155,7 @@ flowchart LR
 | ステージ | 目的 |
 |-------|---------|
 | Override | 設定の override を適用 |
-| Disable | パターンでエントリを除外 |
+| 無効化 | パターンでエントリを除外 |
 | Link | requirement と dependency を解決 |
 | Bytecode | Lua を bytecode へコンパイル |
 | EmbedFS | ファイルシステムエントリを収集 |

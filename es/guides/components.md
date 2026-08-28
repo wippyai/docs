@@ -11,7 +11,7 @@ Esta guía cubre el lado del author: declarar la interfaz y comprender cómo flu
 
 ## Los tres tipos de entrada
 
-| Kind | Lado | Función |
+| Tipo | Lado | Función |
 |------|------|------|
 | `ns.definition` | componente | Metadatos del módulo; obligatorio para publicar. |
 | `ns.requirement` | componente | Un hueco que debe rellenar el Host y dónde inyectar el valor. |

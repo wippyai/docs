@@ -180,7 +180,7 @@ Verwenden Sie `registry.entry`-Kind für Konfiguration auf Anwendungsebene:
 
 ## Häufige Entry-Typen
 
-| Kind | Zweck |
+| Art | Zweck |
 |------|-------|
 | `registry.entry` | Allgemeine Daten, die ohne normalen Event-Versand gespeichert werden |
 | `function.lua` | Aufrufbare Lua-Funktion |

@@ -237,7 +237,7 @@ frame.srcdoc = sourceHtml
 | `post(channel, payload?)` | Mensagem de ponte sem resposta para o filho. |
 | `request<T>(channel, payload?, { timeoutMs }?)` | Mensagem de ponte de solicitação/resposta; resolve com o valor retornado pelo handler. |
 
-Shadow parts: `loader`, `error`, `frame`.
+Partes do Shadow DOM: `loader`, `error`, `frame`.
 
 Quando `nav-owner` está definido, o ciclo padrão de sincronização de rota é totalmente suprimido: o host **não** atualiza sua própria barra de URL nem envia `UrlWasUpdatedInParent` de volta ao filho. A propriedade da navegação é delegada por completo ao código parent que escuta `nav-owner-route`. O `path` no detalhe do evento é a **rota interna bruta** do filho, exatamente como ele a passou para `host.onRouteChanged(internalRoute, navId?)` — ela **não** recebe o prefixo de montagem (ao contrário do caminho padrão de `CmdRouteChanged`, em que o host acrescenta o prefixo de montagem da página). O parent incorporador é responsável por qualquer prefixação ou mapeamento do router:
 

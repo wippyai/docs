@@ -128,7 +128,7 @@ Use exatamente as três strings de status. Outro valor é registrado como `UNKNO
 
 Valores menores de `order` executam primeiro. Reserve ordens baixas para infraestrutura:
 
-| Order | Uso Tipico |
+| Ordem | Uso típico |
 |-------|-------------|
 | `10` | Segredos e chaves de criptografia (fornecido pelo modulo) |
 | `20` | Migracoes de schema (fornecido por `wippy/migration`) |

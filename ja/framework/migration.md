@@ -124,7 +124,7 @@ end)
 
 各 `up`/`down`/`after` 関数は raw connection ではなく transaction object を受け取ります。3 つの操作はすべて 1 transaction で実行され、エラー時に rollback されます。
 
-### Transaction Method
+### トランザクション方式 :id=transaction-method
 
 ```lua
 local rows, err  = db:query(sql, params)    -- SELECT, returns array of rows

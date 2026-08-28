@@ -11,7 +11,7 @@ Esta página es una referencia de configuración. Los bloques YAML son fragmento
 
 ## Tipos de entrada
 
-| Kind | Descripción |
+| Tipo | Descripción |
 |------|-------------|
 | `network.socks5` | Proxy SOCKS5 genérico (también cubre el escuchador SOCKS5 de Tor) |
 | `network.tailscale` | Nodo de superposición Tailscale tsnet |

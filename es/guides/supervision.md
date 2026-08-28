@@ -1,11 +1,11 @@
 ---
 title: "Supervisión"
-description: "Configura el orden de inicio de servicios, policies de restart, contexto de seguridad, transiciones de estado y shutdown ordenado."
+description: "Configura el orden de inicio de servicios, las políticas de reinicio, el contexto de seguridad, las transiciones de estado y el apagado ordenado."
 ---
 
 # Supervisión
 
-El supervisor gestiona el inicio de servicios, el orden de dependencias, los reinicios y el shutdown ordenado. Los servicios con `auto_start: true` se inician al arrancar la aplicación.
+El supervisor gestiona el inicio de servicios, el orden de dependencias, los reinicios y el apagado ordenado. Los servicios con `auto_start: true` se inician al arrancar la aplicación.
 
 ## Configuración del ciclo de vida
 
@@ -42,9 +42,9 @@ Los servicios se registran en el supervisor mediante un bloque `lifecycle`. Para
 | Campo | Predeterminado | Descripción |
 |-------|---------|-------------|
 | `auto_start` | `false` | Inicia automáticamente al arrancar el supervisor |
-| `startup` | `required` | Policy de startup de una raíz auto-start: `required` bloquea el boot si falla; `optional` puede fallar y seguir reintentando sin bloquear branches independientes |
-| `start_timeout` | `10s` | Tiempo máximo permitido para el startup |
-| `stop_timeout` | `10s` | Tiempo máximo para el shutdown ordenado |
+| `startup` | `required` | Política de inicio de una raíz con arranque automático: `required` bloquea el arranque si falla; `optional` puede fallar y seguir reintentando sin bloquear ramas independientes |
+| `start_timeout` | `10s` | Tiempo máximo permitido para el inicio |
+| `stop_timeout` | `10s` | Tiempo máximo para el apagado ordenado |
 | `stable_threshold` | `5s` | Tiempo de ejecución tras el cual un fallo posterior reinicia el contador de reintentos |
 | `requires` | `[]` | Servicios que deben estar running primero (alias legacy: `depends_on`) |
 
@@ -174,16 +174,16 @@ El supervisor hace pasar los servicios por estos estados:
 | Estado | Descripción |
 |-------|-------------|
 | `Unknown` | Registrado pero no iniciado |
-| `Starting` | Startup en curso |
+| `Starting` | Inicio en curso |
 | `Running` | Funcionamiento normal |
 | `Stopping` | Apagado ordenado en curso |
 | `Stopped` | Operación de stop completada; los detalles informados por el servicio aún pueden incluir un error |
 | `Exited` | Terminado por solicitud explícita o error no retryable/terminal |
 | `Failed` | Se produjo un error; puede reintentarse |
 
-## Orden de startup y shutdown
+## Orden de inicio y apagado :id=orden-de-startup-y-shutdown
 
-**Startup:** las dependencias se inician antes que los dependents. Los servicios del mismo nivel de dependencias pueden iniciarse en paralelo.
+**Inicio:** las dependencias se inician antes que los dependientes. Los servicios del mismo nivel de dependencias pueden iniciarse en paralelo.
 
 **Apagado:** los dependientes se detienen antes que las dependencias, lo que les permite terminar primero.
 

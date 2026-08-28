@@ -333,7 +333,7 @@ O writer não fecha um arquivo ou stream fornecido externamente e usado como fon
 
 ## Erros
 
-| Condição | Kind |
+| Condição | Tipo |
 |-----------|------|
 | Formato desconhecido ou incompatível | `errors.INVALID` |
 | Archive corrompido ou truncado informado pelo wrapper Lua atual | `errors.INTERNAL` |

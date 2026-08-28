@@ -139,7 +139,7 @@ return recorded
 
 ## Erros
 
-| Condição | Kind | Retentável |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Coletor não disponível | `errors.INTERNAL` | não |
 

@@ -53,7 +53,7 @@ materialize された出力は、次の処理中に自動的に調整されま�
 
 ローカルモジュール置換も packed resource と同じ検証および materialization ライフサイクルを通るため、置換されたモジュールのアーティファクトは公開済みのものと同様に動作します。
 
-### 明示的な Materialization
+### 明示的な実体化 :id=explicit-materialization
 
 ランタイムが関与する前にアーティファクトを必要とするビルドステップのため、CLI から直接操作できます。
 

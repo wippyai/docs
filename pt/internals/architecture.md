@@ -74,7 +74,7 @@ Componentes são serviços Go que participam do ciclo de vida da aplicação.
 |------|--------|-----------|
 | Load | `Load(ctx) (ctx, error)` | Inicializar e anexar ao contexto |
 | Start | `Start(ctx) error` | Iniciar operação ativa |
-| Stop | `Stop(ctx) error` | Shutdown gracioso |
+| Stop | `Stop(ctx) error` | Encerramento gracioso |
 
 Componentes declaram dependências. O loader constrói um grafo acíclico direcionado e executa em ordem topológica. Shutdown ocorre em ordem reversa.
 
@@ -92,7 +92,7 @@ Componentes declaram dependências. O loader constrói um grafo acíclico direci
 | Factory | nenhuma | Criação de processos |
 | Functions | Registry | Execução de funções em pool |
 
-## Event Bus
+## Barramento de eventos :id=event-bus
 
 Pub/sub assíncrono para comunicação entre componentes.
 
@@ -121,7 +121,7 @@ sequenceDiagram
 
 Os eventos têm campos `System` e `Kind` separados. Os sistemas integrados publicam:
 
-| Sistema | Kind | Propósito |
+| Sistema | Tipo | Propósito |
 |---------|------|-----------|
 | `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Mutações de entradas |
 | `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Limites de transação |
@@ -155,7 +155,7 @@ Estágios de pipeline transformam entradas:
 | Estágio | Propósito |
 |---------|-----------|
 | Override | Aplicar overrides de config |
-| Disable | Remover entradas por padrão |
+| Desativar | Remover entradas por padrão |
 | Link | Resolver requirements e dependências |
 | Bytecode | Compilar Lua para bytecode |
 | EmbedFS | Coletar entradas de filesystem |
@@ -200,13 +200,13 @@ Dicionário selado para referências de componentes.
 | Antes de selar | Escritas de thread única durante a inicialização |
 | Após selar | Leituras sem lock, panic em escrita |
 | Chaves duplicadas | Panic |
-| Type safety | Funções getter tipadas |
+| Segurança de tipos | Funções de acesso tipadas |
 
 Os componentes anexam serviços durante a fase Load. Quando o boot termina, o AppContext é selado, permitindo leituras sem lock e impedindo novas escritas.
 
-## Shutdown
+## Encerramento :id=shutdown
 
-Shutdown gracioso prossegue em ordem reversa de dependência:
+Encerramento gracioso prossegue em ordem reversa de dependência:
 
 1. SIGINT/SIGTERM aciona shutdown
 2. Supervisor para serviços gerenciados

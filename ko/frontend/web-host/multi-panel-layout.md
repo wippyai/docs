@@ -36,17 +36,17 @@ Managed layout은 Web Host, facade, 여러 `@wippy-fe/*` 패키지에 걸쳐 있
 
 | 릴리스 | Managed-layout 추가 사항 |
 |---|---|
-| Web Host `1.0.50`, Wippy FE `0.0.50` | typed compat intent, `@HOST/compat-coordinator`, 브라우저 URL 및 Back/Forward 동기화, 내장 panel tab, anchored floating 패널, `useSwapBuffer()` |
+| Web Host `1.0.50`, Wippy FE `0.0.50` | 타입이 지정된 compat 인텐트, `@HOST/compat-coordinator`, 브라우저 URL 및 뒤로/앞으로 동기화, 내장 패널 탭, 앵커 기반 플로팅 패널, `useSwapBuffer()` |
 | Web Host `1.0.51`, Wippy FE `0.0.51` | 반응형·race-safe `<wippy-chat>` session/token 제어, 선택적 테마 splitter handle, split axis 전용 크기 제약, drawer geometry/stacking 수정, 패키지 proxy source map |
-| Web Host `1.0.52`, Wippy FE `0.0.52` | typed retained-WC visibility와 `useHostVisibilityRefresh()`, 14초 fallback을 기다리지 않는 즉시 page readiness, 오래된 renderer key 거부, in-place 컴포넌트 prop 업데이트, `--wippy-layout-splitter-z-index`를 사용하는 격리 splitter 계층 |
+| Web Host `1.0.52`, Wippy FE `0.0.52` | 타입이 지정된 유지 WC 가시성과 `useHostVisibilityRefresh()`, 14초 폴백을 기다리지 않는 즉시 페이지 준비 완료, 오래된 렌더러 키 거부, 제자리 컴포넌트 prop 업데이트, `--wippy-layout-splitter-z-index`를 사용하는 격리 splitter 계층 |
 | Web Host `1.0.53`, Wippy FE `0.0.53` | light/dark 모드 강제 시 구성 테마 토큰의 올바른 전파 |
 | Web Host `1.0.54`, Wippy FE `0.0.54` | managed-layout 등록과 반응형 크기 변경을 포함한 iframe 및 Web Fragment 페이지용 surface portability contract v1 |
 | Web Host `1.0.55`, Wippy FE `0.0.55` | managed artifact와 독립 채팅 계약, cold deep-link 보존, 안정적인 managed artifact 렌더링, 테마 splitter handle |
 | Web Host `1.0.56`, Wippy FE `0.0.56` | managed artifact/modal 렌더링 수정, 공개 artifact-open reason, 채팅 selector 및 slot lifecycle 수정 |
 
-14초 페이지 reveal은 Web Host `1.0.52` fallback이며 1.0.51 기능이나 애플리케이션 loading delay가 아닙니다.
+14초 페이지 표시는 Web Host `1.0.52`의 폴백이며 1.0.51 기능이나 애플리케이션 로딩 지연이 아닙니다.
 
-유지된 direct web component visibility에는 Web Host `1.0.52`와 `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, `@wippy-fe/shared` `0.0.52`가 필요합니다. 이전 managed-layout 릴리스는 typed `data-wippy-visible` 계약이나 `useHostVisibilityRefresh()`를 제공하지 않습니다.
+유지된 직접 Web Component 가시성에는 Web Host `1.0.52`와 `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, `@wippy-fe/shared` `0.0.52`가 필요합니다. 이전 managed-layout 릴리스는 타입이 지정된 `data-wippy-visible` 계약이나 `useHostVisibilityRefresh()`를 제공하지 않습니다.
 
 ### 유지되는 웹 컴포넌트 activity
 
@@ -230,7 +230,7 @@ customElements.define('my-coordinator', MyCoordinator)
 
 ### 제공 compat coordinator
 
-Managed layout에는 선언한 surface만 존재합니다. 따라서 `host.openArtifact()`, `host.startChat()`, `host.openSession()`, `host.navigate()` 같은 호출은 예약 `@HOST/intent` channel에 typed intent를 publish합니다. 제공 coordinator를 선언하여 intent를 처리하고 브라우저 URL을 main 패널에 연결합니다.
+Managed layout에는 선언한 surface만 존재합니다. 따라서 `host.openArtifact()`, `host.startChat()`, `host.openSession()`, `host.navigate()` 같은 호출은 예약 `@HOST/intent` 채널에 타입이 지정된 인텐트를 발행합니다. 제공된 coordinator를 선언하여 인텐트를 처리하고 브라우저 URL을 main 패널에 연결합니다.
 
 ```yaml
 coordinators:
@@ -245,7 +245,7 @@ coordinators:
       wsActions: true
 ```
 
-표준 탐색 계약을 사용한다면 `routeSync: true`를 유지하십시오. coordinator나 동등한 소비자 로직이 없으면 deep link, Back/Forward, `@HOST/nav-sidebar` 탐색이 구동할 패널 경로가 없습니다. 자식 boot 중 발생한 intent는 첫 coordinator가 구독할 때까지 제한된 queue에 보관됩니다.
+표준 탐색 계약을 사용한다면 `routeSync: true`를 유지하십시오. coordinator나 동등한 소비자 로직이 없으면 딥 링크, 뒤로/앞으로, `@HOST/nav-sidebar` 탐색이 구동할 패널 경로가 없습니다. 자식 부팅 중 발생한 인텐트는 첫 coordinator가 구독할 때까지 제한된 큐에 보관됩니다.
 
 `@HOST/`는 양방향으로 예약되어 있습니다. 일반 패널은 시스템 traffic을 publish할 수 없고 `coordinators` 아래 엔트리만 지원 host API를 통해 받을 수 있습니다. 이 경계는 iframe/Web Fragment 패널에 강제됩니다. 호스트 realm에 직접 마운트된 컴포넌트는 host DOM을 공유하며 보안 sandbox가 아닙니다. boot 시 호스트는 coordinator 처리, modal target surface, main 패널 URL binding, 선언된 coordinator tag가 누락되면 parity table을 출력합니다. 완전한 선언은 warning을 만들지 않습니다.
 
@@ -353,7 +353,7 @@ swap.markReady(slot.index, slot.key)
 
 ### Web Host 페이지 readiness
 
-Web Host는 managed page surface에 같은 keyed readiness 규율을 사용하며 최종 reveal 상한은 14초입니다. Page와 직접 Web Component renderer는 Vue event listener를 통해 `load`/`error`를 내보내고 renderer가 소유한 immutable content key를 포함합니다. 그려진 콘텐츠는 즉시 reveal되며 상한은 보고하지 않는 콘텐츠용 fallback일 뿐입니다. evict된 renderer의 늦은 event는 해당 buffer index가 이미 재사용되었으면 거부됩니다.
+Web Host는 managed 페이지 surface에 같은 키 기반 준비 규율을 사용하며 최종 표시 상한은 14초입니다. 페이지와 직접 Web Component 렌더러는 Vue 이벤트 리스너를 통해 `load`/`error`를 내보내고 렌더러가 소유한 불변 콘텐츠 키를 포함합니다. 그려진 콘텐츠는 즉시 표시되며 상한은 보고하지 않는 콘텐츠용 폴백일 뿐입니다. 제거된 렌더러의 늦은 이벤트는 해당 버퍼 인덱스가 이미 재사용되었으면 거부됩니다.
 
 14초 호스트 상한을 애플리케이션 loading delay로 사용하거나 정상 page readiness 주위에 두 번째 timer를 추가하지 마십시오. 정기적으로 상한에 도달하는 페이지는 소유자가 수정해야 할 readiness 또는 lifecycle 경로가 망가진 것입니다.
 
@@ -399,7 +399,7 @@ if (host.layout.snapshot) {
 
 ### compat shell을 전제로 하는 `host.*` 명령
 
-managed shell은 **선언한 layout만** 렌더링합니다. Web Host 1.0.50부터 compat chrome을 대상으로 하던 명령은 조용히 실패하는 대신 typed `@HOST/intent` 메시지를 publish합니다. `@HOST/compat-coordinator`를 선언하거나 동등한 coordinator를 구현해 intent를 패널에 매핑합니다.
+managed shell은 **선언한 layout만** 렌더링합니다. Web Host 1.0.50부터 compat chrome을 대상으로 하던 명령은 조용히 실패하는 대신 타입이 지정된 `@HOST/intent` 메시지를 발행합니다. `@HOST/compat-coordinator`를 선언하거나 동등한 coordinator를 구현해 인텐트를 패널에 매핑합니다.
 
 | `host.*` 명령 | Compat(기본값) | Managed |
 |---|---|---|
@@ -446,7 +446,7 @@ Draft 1에서 아직 구현되지 않은 항목:
 
 - **proxy를 통한 `addPanel` / `setLayout`** — 제공되지 않습니다. 내부 `@wippy-fe/layout` `LayoutManager`에만 있고 iframe proxy 경계를 넘어 노출되지 않습니다. (`openModal`, `closeModal`, `movePanel`은 제공됩니다. Layout API 참조 참고.)
 - **패널 drag-to-rearrange UI** — 데이터 모델과 `movePanel()` API는 동작하지만 사용자 대상 drag는 아직 없습니다.
-- **Tabbed-container primitive** — 아직 없습니다. 제공 `@HOST/panel-tab`은 접힌 패널을 드러내는 edge control이며 일반 tabbed layout container가 아닙니다.
+- **탭 컨테이너 기본 요소** — 아직 없습니다. 제공된 `@HOST/panel-tab`은 접힌 패널을 드러내는 가장자리 컨트롤이며 일반 탭 레이아웃 컨테이너가 아닙니다.
 - **Grid-tile container** — 아직 없습니다.
 - **런타임 mutation 지속성** — reload 사이에 mutation이 유지되지 않습니다. 필요하면 직접 저장합니다.
   ```typescript

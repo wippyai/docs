@@ -138,7 +138,7 @@ local value = sql.as.null()
 
 **Retorna:** `userdata`
 
-## Query Builder
+## Construtor de consultas :id=query-builder
 
 Os builders produzem instruções `SELECT`, `INSERT`, `UPDATE` e `DELETE` e compõem cláusulas `FROM`, `JOIN`, `LEFT JOIN`, `RIGHT JOIN`, `INNER JOIN`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT`, `OFFSET` e `DISTINCT`. As expressões aceitam condições `LIKE`, `NOT LIKE`, `AND`, `OR` e o marcador `NULL`. Métodos `to_sql` retornam `string, table` em sucesso ou `nil, error` quando o estado do builder é inválido; métodos `run_with` retornam `QueryExecutor, error`.
 
@@ -677,7 +677,7 @@ local ok, err = tx:release("sp1")
 
 **Retorna:** `boolean, error`
 
-## SELECT Builder
+## Construtor SELECT :id=select-builder
 
 Interface fluente para construir queries SELECT.
 
@@ -954,7 +954,7 @@ local rows, err = executor:query()
 
 **Retorna:** `QueryExecutor, error`
 
-## INSERT Builder
+## Construtor INSERT :id=insert-builder
 
 Interface fluente para construir queries INSERT.
 
@@ -1126,7 +1126,7 @@ local result, err = executor:exec()
 
 **Retorna:** `QueryExecutor, error`
 
-## UPDATE Builder
+## Construtor UPDATE :id=update-builder
 
 Interface fluente para construir queries UPDATE.
 
@@ -1335,7 +1335,7 @@ local result, err = executor:exec()
 
 **Retorna:** `QueryExecutor, error`
 
-## DELETE Builder
+## Construtor DELETE :id=delete-builder
 
 Interface fluente para construir queries DELETE.
 

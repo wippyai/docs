@@ -32,13 +32,13 @@ description: "db.cdc.postgres를 사용하여 Postgres 논리 복제의 row-leve
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `host` | string | required | Postgres host |
-| `port` | int | required | Postgres port(0보다 커야 함) |
-| `database` | string | required | 데이터베이스 이름 |
-| `username` | string | required | replication 사용자(`REPLICATION` 권한 필요) |
-| `password` | string | required | password(inline 또는 `${env:NAME}`) |
-| `slot_name` | string | required | 논리 replication slot 이름 |
-| `publication` | string | - | Postgres publication. `tables`가 비어 있으면 필수 |
+| `host` | string | 필수 | Postgres 호스트 |
+| `port` | int | 필수 | Postgres 포트(0보다 커야 함) |
+| `database` | string | 필수 | 데이터베이스 이름 |
+| `username` | string | 필수 | 복제 사용자(`REPLICATION` 권한 필요) |
+| `password` | string | 필수 | 비밀번호(인라인 또는 `${env:NAME}`) |
+| `slot_name` | string | 필수 | 논리 복제 슬롯 이름 |
+| `publication` | string | - | Postgres 퍼블리케이션. `tables`가 비어 있으면 필수 |
 | `tables` | []string | - | capture할 table(`schema.table`). publication의 table을 사용하려면 생략 |
 | `snapshot` | bool | false | streaming 전에 기존 row를 초기 snapshot으로 내보냄 |
 | `streaming` | bool | false | snapshot 이후 진행되는 변경을 스트리밍 |
@@ -68,7 +68,7 @@ credential은 decode 시점에 [환경 레지스트리](./env.md)를 통해 `${e
 |-------|-------------|
 | `name` | source 이름(엔트리 ID) |
 | `slot` | replication slot 이름 |
-| `publication` | Postgres publication(있는 경우) |
+| `publication` | Postgres 퍼블리케이션(있는 경우) |
 | `tables` | capture하는 table(설정한 경우) |
 | `streaming` | streaming 활성화 여부 |
 | `failover` | failover mode 활성화 여부 |

@@ -13,7 +13,7 @@ Jeder Host plant Prozesse unabhängig voneinander. Die Last wird nicht automatis
 
 ## Entry-Typ
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `process.host` | Prozessausführungs-Host mit Scheduler |
 
@@ -58,7 +58,7 @@ Der Scheduler verwendet Work-Stealing: Jeder Worker hat eine lokale Deque, und u
 
 Process Hosts führen Einträge dieser Typen aus:
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `process.lua` | Quellbasierter Lua-Prozess |
 | `process.lua.bc` | Vorkompilierter Lua-Bytecode |

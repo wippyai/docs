@@ -11,7 +11,7 @@ Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind Entry- oder A
 
 ## Entry-Kinds
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `network.socks5` | Generischer SOCKS5-Proxy (deckt auch den SOCKS5-Listener von Tor ab) |
 | `network.tailscale` | Tailscale-tsnet-Overlay-Knoten |

@@ -11,7 +11,7 @@ Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind partielle Ein
 
 ## Entry-Kinds
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `function.lua` | Zustandslose Funktion, wird bei Bedarf ausgeführt |
 | `process.lua` | Lang laufender Aktor mit Zustand |

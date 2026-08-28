@@ -129,7 +129,7 @@ Cada processo tem uma fila de eventos MPSC (multi-producer, single-consumer):
 
 O scheduler implementa `relay.Receiver` para rotear mensagens aos processos. Quando `Send()` é chamado, ele procura o PID de destino no mapa `byPID`, insere a mensagem como evento na fila do processo e o acorda se estiver idle ou blocked. O reenfileiramento usa injectOrGlobal: quando o processo tem afinidade conhecida, ele é inserido na fila de injeção do último worker; caso contrário, volta para a fila global.
 
-## Shutdown
+## Encerramento :id=shutdown
 
 Durante o encerramento, o scheduler envia eventos de cancelamento a todos os processos rastreados e aguarda que terminem ou que o timeout expire. Os workers saem quando não há mais trabalho.
 

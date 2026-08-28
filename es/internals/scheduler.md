@@ -131,7 +131,7 @@ El scheduler implementa `relay.Receiver` para enrutar mensajes a procesos. Cuand
 
 ## Apagado :id=shutdown
 
-En shutdown, el scheduler envía eventos de cancelación a todos los procesos rastreados y espera que completen o timeout. Workers salen una vez que no queda trabajo.
+Durante el apagado, el scheduler envía eventos de cancelación a todos los procesos rastreados y espera a que terminen o venza el tiempo límite. Los workers salen cuando ya no queda trabajo.
 
 ## Ver También
 

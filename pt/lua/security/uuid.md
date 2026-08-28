@@ -161,7 +161,7 @@ local formatted, err = uuid.format(id, "urn")
 
 ## Erros
 
-| Condição | Kind | Retentável |
+| Condição | Tipo | Retentável |
 |----------|------|------------|
 | Tipo de input inválido | `errors.INVALID` | não |
 | Formato de UUID inválido | `errors.INVALID` | não |

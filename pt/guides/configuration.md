@@ -273,7 +273,7 @@ Variáveis de ambiente OTEL padrão (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVIC
 
 Veja: [Guia de Observabilidade](./observability.md)
 
-## Shutdown
+## Encerramento :id=shutdown
 
 Comportamento de encerramento gracioso.
 

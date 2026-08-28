@@ -259,7 +259,7 @@ result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 
 `Prepare` registriert den Wartenden vor dem Senden des auslösenden Events. Dadurch entsteht kein Rennen, bei dem die Antwort vor der Registrierung eintrifft. `Wait` blockiert bis zu einem Event mit passendem `Path` oder bis zum Timeout. Bei einem nicht positiven Timeout gilt `DefaultAwaitTimeout`, standardmäßig 30 Sekunden. `Accepted` ist wahr, wenn der Event-Kind `accept`, `*.accept` oder `*.accepted` lautet; andernfalls gilt er als Ablehnung, und ein Feld `error` in `Data` erscheint als `Error`. Die Komfortmethode `Await(ctx, system, kind, path, timeout)` kombiniert Prepare und Wait. Die Boot-Infrastruktur registriert einen AwaitService im Kontext, abrufbar über `event.GetAwaitService`.
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 1. `Stop()` setzt atomar closed-Flag und reiht Stop-Action ein
 2. Dispatcher leert Subscriber-Map

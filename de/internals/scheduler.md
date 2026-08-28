@@ -129,7 +129,7 @@ Jeder Prozess hat eine MPSC (Multi-Producer, Single-Consumer) Event-Queue:
 
 Der Scheduler implementiert `relay.Receiver`, um Nachrichten an Prozesse zu leiten. Bei `Send()` sucht er die Ziel-PID in der Map `byPID`, legt die Nachricht als Event in die Prozess-Queue und weckt den Prozess, wenn er idle oder blockiert ist. Die Wiedereinreihung erfolgt über `injectOrGlobal`: Bei bekannter Worker-Affinität landet der Prozess in der Inject-Queue seines letzten Workers, andernfalls in der globalen Queue.
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 Bei Shutdown sendet der Scheduler Cancel-Events an alle laufenden Prozesse und wartet auf deren Abschluss oder Timeout. Worker beenden sich sobald keine Arbeit mehr übrig ist.
 

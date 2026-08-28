@@ -10,7 +10,7 @@ Cloud-Storage-Einträge konfigurieren AWS-Zugangsdaten und S3-kompatible Buckets
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `config.aws` | AWS-Anmeldedaten und Regionskonfiguration |
 | `cloudstorage.s3` | S3-Bucket-Verbindung |

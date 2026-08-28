@@ -26,7 +26,7 @@ npm install @wippy-fe/proxy@0.0.56 @wippy-fe/webcomponent-vue@0.0.56 @wippy-fe/r
 
 Tanto os apps de micro frontend (`view.page`) quanto os web components (`view.component`) se comunicam com o host da mesma forma: imports nomeados síncronos de `@wippy-fe/proxy`, usados diretamente. O código da aplicação não aguarda um getter de API nem gerencia o handshake de runtime; o adaptador proxy do engine selecionado inicializa a API antes da execução do bundle do app.
 
-| Objetivo | Import de `@wippy-fe/proxy` |
+| Objetivo | Importação de `@wippy-fe/proxy` |
 |---|---|
 | HTTP autenticado | `api` (uma instância do axios) |
 | Comunicação com o host | `host` |

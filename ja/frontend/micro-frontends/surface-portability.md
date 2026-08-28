@@ -15,7 +15,7 @@ Micro Frontend App は Web Host が割り当てる長方形領域、**surface** 
 
 ## CSS contract
 
-### Container query
+### コンテナクエリ :id=container-query
 
 Host は app の box を `wippy-surface` と名付けるため、通常の CSS container と同様に query できます。
 

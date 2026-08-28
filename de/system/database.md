@@ -11,7 +11,7 @@ Diese Seite ist eine Konfigurationsreferenz. Wenn ein Block nicht `version`, `na
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `db.sql.postgres` | PostgreSQL-Datenbank |
 | `db.sql.mysql` | MySQL-Datenbank |

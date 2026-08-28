@@ -13,7 +13,7 @@ Ein Terminal-Host führt genau einen Prozess gleichzeitig aus. Der Prozess selbs
 
 ## Entry-Typ
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `terminal.host` | Terminal-Sitzungs-Host |
 

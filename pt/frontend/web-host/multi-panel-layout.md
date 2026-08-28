@@ -59,7 +59,7 @@ A revelação da página após 14 segundos é um fallback do Web Host `1.0.52`, 
 um recurso da 1.0.51 nem um atraso de carregamento da aplicação.
 
 A visibilidade retida de web components diretos exige Web Host `1.0.52` e
-`@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, and
+`@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue` e
 `@wippy-fe/shared` `0.0.52`. Releases anteriores do layout gerenciado não
 fornecem o contrato tipado `data-wippy-visible` nem `useHostVisibilityRefresh()`.
 
@@ -123,7 +123,7 @@ Todo o layout é descrito por um único objeto `HostLayoutDeclaration`, aninhado
 
 Cada entrada em `panels`, `floating`, `modals` e `coordinators` é uma união discriminada por `kind`:
 
-| Kind | Descrição | Campos obrigatórios |
+| Tipo | Descrição | Campos obrigatórios |
 |------|-------------|-----------------|
 | `page` | Módulo de página Wippy montado pelo engine de iframe ou Web Fragment selecionado | `id` (id no registro de páginas) |
 | `artifact` | Artefato Wippy renderizado pelo resolver de artefato/página do host | `id` (UUID do artefato) |

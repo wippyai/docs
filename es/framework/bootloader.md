@@ -130,7 +130,7 @@ Usa exactamente las tres cadenas de estado. Otro valor se registra como `UNKNOWN
 
 Los valores de `order` mas bajos se ejecutan primero. Reserva ordenes bajos para infraestructura:
 
-| Order | Uso Tipico |
+| Orden | Uso típico |
 |-------|-------------|
 | `10` | Secretos y claves de encriptacion (proporcionado por el modulo) |
 | `20` | Migraciones de esquema (proporcionado por `wippy/migration`) |

@@ -11,7 +11,7 @@ Diese Seite ist eine Entry-Konfigurationsreferenz. Die YAML-Blöcke sind Fragmen
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `store.memory` | In-Memory-Store mit automatischer Bereinigung |
 | `store.sql` | SQL-basierter Store mit Persistenz |

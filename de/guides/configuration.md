@@ -273,7 +273,7 @@ Standard-OTEL-Umgebungsvariablen (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_N
 
 Siehe: [Observability-Anleitung](./observability.md)
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 Verhalten beim kontrollierten Herunterfahren.
 

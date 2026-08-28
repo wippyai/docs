@@ -44,7 +44,7 @@ Dienste registrieren sich beim Supervisor mit einem `lifecycle`-Block. Für Proz
 | `auto_start` | `false` | Beim Start des Supervisors automatisch starten |
 | `startup` | `required` | Startrichtlinie für eine Auto-Start-Wurzel: `required` blockiert den Boot bei Fehlern; `optional` darf fehlschlagen und weitere Versuche ausführen, ohne unabhängige Zweige zu blockieren |
 | `start_timeout` | `10s` | Maximale erlaubte Zeit für den Start |
-| `stop_timeout` | `10s` | Maximale Zeit für Graceful Shutdown |
+| `stop_timeout` | `10s` | Maximale Zeit für geordnetes Herunterfahren |
 | `stable_threshold` | `5s` | Laufzeit, nach der ein späterer Fehler den Retry-Zähler zurücksetzt |
 | `requires` | `[]` | Services, die zuerst laufen müssen; älterer Alias: `depends_on` |
 
@@ -181,7 +181,7 @@ Der Supervisor überführt Dienste durch diese Zustände:
 | `Exited` | Durch explizite Anforderung oder einen nicht wiederholbaren beziehungsweise terminalen Fehler beendet |
 | `Failed` | Fehler aufgetreten, kann wiederholt werden |
 
-## Start- und Shutdown-Reihenfolge
+## Start- und Herunterfahrreihenfolge :id=startup-and-shutdown-order
 
 **Start**: Erst Abhängigkeiten, dann Abhängige. Dienste auf derselben Abhängigkeitsebene können parallel starten.
 

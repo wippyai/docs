@@ -109,8 +109,8 @@ message は `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }` �
 | `CmdOpenSession` | `cmd-open-session` | Child → Host | Navigate to an existing chat session |
 | `CmdOpenArtifact` | `cmd-open-artifact` | Child → Host | Open an artifact in sidebar or modal |
 | `CmdNavigate` | `cmd-navigate` | Child → Host | SPA navigation request |
-| `CmdShowToast` | `cmd-show-toast` | Child → Host | Show a toast notification |
-| `CmdShowConfirm` | `cmd-show-confirm` | Child → Host | Show a confirmation dialog |
+| `CmdShowToast` | `cmd-show-toast` | 子 → ホスト | トースト通知を表示 |
+| `CmdShowConfirm` | `cmd-show-confirm` | 子 → ホスト | 確認ダイアログを表示 |
 | `OnConfirmResult` | `on-confirm-result` | Host → Child | Delivers confirm dialog result |
 | `CmdSetContext` | `cmd-set-context` | Child → Host | Send context to a chat session |
 | `CmdHandleError` | `cmd-handle-error` | Child → Host | Report an error to the host |

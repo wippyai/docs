@@ -56,7 +56,7 @@ local val = ch:receive()  -- receives "from spawn"
 local completed = done:receive()
 ```
 
-## Channel Select
+## Selección de canales :id=channel-select
 
 `channel.select` espera en múltiples canales, retorna la primera operación lista:
 
@@ -77,7 +77,7 @@ result.value           -- "ch1_value"
 result.ok              -- true
 ```
 
-### Select con Send
+### Selección con envío :id=select-con-send
 
 Utiliza `case_send` para incluir una operación de envío en un select. Sin un caso predeterminado, `channel.select` espera hasta que uno esté listo. Añade `default = true` para que el intento no sea bloqueante:
 

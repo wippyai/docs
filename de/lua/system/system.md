@@ -18,7 +18,7 @@ Diese Seite ist eine API-Referenz. Die meisten Ausschnitte zeigen eine einzelne 
 local system = require("system")
 ```
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 Systemshutdown mit Exit-Code auslösen. Nützlich für Terminal-Apps; Aufruf aus laufenden Actors beendet das gesamte System:
 
@@ -471,7 +471,7 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `system.read` | `raft` | Raft-Zustand lesen |
 | `system.read` | `raft_stats` | Rohe Raft-Stats-Map lesen |
 | `system.lock` | `<Sperrenname>` | Eine verteilte Sperre erwerben oder freigeben |
-| `system.exit` | - | System-Shutdown auslösen |
+| `system.exit` | - | Herunterfahren des Systems auslösen |
 
 ## Fehler
 

@@ -11,7 +11,7 @@ Cada entrada opta pelas interfaces de host listadas abaixo pelo campo `imports`.
 
 ## Tipos de import
 
-| Import | Descrição |
+| Importação | Descrição |
 |--------|-------------|
 | `funcs` | Chamar funções do registro Wippy a partir de um módulo Component Model |
 | `wasi1` | Compatibilidade com WASI Preview 1 para módulos raw/core |
@@ -65,31 +65,31 @@ Cada import `wasi:*` ativa um grupo de interfaces relacionadas do WASI Preview 2
 
 ### wasi:clocks
 
-**Interfaces:** `wasi:clocks/wall-clock`, `wasi:clocks/monotonic-clock`
+**Interfaces disponíveis:** `wasi:clocks/wall-clock`, `wasi:clocks/monotonic-clock`
 
 Relógios de parede e monotônico para operações de tempo. O relógio monotônico se integra ao dispatcher do Wippy para suspensão assíncrona.
 
 ### wasi:io
 
-**Interfaces:** `wasi:io/error`, `wasi:io/streams`
+**Interfaces disponíveis:** `wasi:io/error`, `wasi:io/streams`
 
 Operações de leitura e escrita em streams e tratamento de erros. A interface `wasi:io/poll` é fornecida separadamente pelo import `wasi:poll`.
 
 ### wasi:poll
 
-**Interfaces:** `wasi:io/poll`
+**Interfaces disponíveis:** `wasi:io/poll`
 
 Polling assíncrono. A interface de poll permite yield cooperativo pelo dispatcher.
 
 ### wasi:cli
 
-**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
+**Interfaces disponíveis:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 Acesso a variáveis de ambiente, códigos de saída do processo e streams de E/S padrão. As variáveis de ambiente são mapeadas do registro de ambiente do Wippy pela configuração WASI.
 
 ### wasi:filesystem
 
-**Interfaces:** `wasi:filesystem/types`, `wasi:filesystem/preopens`
+**Interfaces disponíveis:** `wasi:filesystem/types`, `wasi:filesystem/preopens`
 
 Acesso ao sistema de arquivos por diretórios montados. As montagens são configuradas por entrada e mapeiam entradas do sistema de arquivos Wippy para caminhos no guest.
 
@@ -103,19 +103,19 @@ wasi:
 
 ### wasi:random
 
-**Interfaces:** `wasi:random/random`, `wasi:random/insecure`, `wasi:random/insecure-seed`
+**Interfaces disponíveis:** `wasi:random/random`, `wasi:random/insecure`, `wasi:random/insecure-seed`
 
 Geração de números aleatórios criptograficamente seguros e inseguros.
 
 ### wasi:sockets
 
-**Interfaces:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
+**Interfaces disponíveis:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
 
 Rede TCP e UDP com resolução DNS. As operações de socket se integram ao dispatcher para E/S assíncrona.
 
 ### wasi:http
 
-**Interfaces:** `wasi:http/types`, `wasi:http/outgoing-handler`
+**Interfaces disponíveis:** `wasi:http/types`, `wasi:http/outgoing-handler`
 
 Solicitações de cliente HTTP de saída feitas dentro de módulos WASM. Suporta os tipos de solicitação e resposta definidos pela especificação WASI HTTP.
 

@@ -149,7 +149,7 @@ policy:allow_attrs("id"):globally()
 
 **Retorna:** `Policy`
 
-### Com Pattern Matching
+### Com correspondência de padrões :id=with-pattern-matching
 
 Validar valores de atributo contra padrão regex.
 

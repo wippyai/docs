@@ -18,7 +18,7 @@ El modo sin host permite compilar, ejecutar y probar una aplicación micro front
 - [Qué hace realmente `dev-proxy.js`](#qué-hace-realmente-dev-proxyjs)
 - [Overlay de desarrollo (modal de configuración)](#overlay-de-desarrollo-modal-de-configuración)
 - [Stubs del host: la API `host` independiente](#stubs-del-host-la-api-host-independiente)
-- [Componentes web: playground y pruebas sin host](#componentes-web-playground-y-pruebas-sin-host)
+- [Componentes web: entorno de pruebas y pruebas sin host](#componentes-web-playground-y-pruebas-sin-host)
 - [Desviaciones comunes y cómo detectarlas](#desviaciones-comunes-y-cómo-detectarlas)
 - [Solución de problemas](#solución-de-problemas)
 - [Documentación relacionada](#documentación-relacionada)
@@ -37,7 +37,7 @@ En la práctica:
 - Las aplicaciones y WC **no** importan código de aplicaciones vecinas, del lado Lua del módulo padre, de Wippy Web Host ni de otro módulo del proyecto. Viven en su propia carpeta. Vite deriva todas las dependencias externas de Rollup del `import-map.json` fijado del host objetivo; `package.json` solo declara las dependencias npm y raíces peer que el artefacto importa realmente.
 - El mismo `app.ts` —o `index.ts` de WC— arranca correctamente en dos entornos:
   1. **Alojado:** dentro de Wippy Web Host, que inyecta `proxy.js`, AppConfig, importmap y CSS.
-  2. **Sin host:** ejecutando su `app.html` mediante un servidor de desarrollo Vite, una página de pruebas unitarias, un playground similar a Storybook u otro host HTTP de desarrollo.
+  2. **Sin host:** ejecutando su `app.html` mediante un servidor de desarrollo Vite, una página de pruebas unitarias, un entorno de pruebas similar a Storybook u otro host HTTP de desarrollo.
 
 Cada aplicación o WC es un pequeño programa con una superficie de E/S estandarizada. El host es un runtime posible; el independiente es otro. El código de aplicación no necesita distinguirlos.
 
@@ -261,11 +261,11 @@ Los stubs registran en consola los efectos solicitados al host. Si la correcció
 
 ---
 
-## Componentes web: playground y pruebas sin host
+## Componentes web: entorno de pruebas y pruebas sin host :id=componentes-web-playground-y-pruebas-sin-host
 
 Los componentes web comparten el diseño dual, pero se cargan como módulos ES en vez de iframes. Su contrato proxy es `import { api, host, on, ... } from '@wippy-fe/proxy'`, que en runtime lee `window.__WIPPY_APP_API__`, definida por proxy real o dev-proxy.
 
-### Página HTML de playground o demo
+### Página HTML del entorno de pruebas o demo :id=pagina-html-de-playground-o-demo
 
 ```html
 <!-- demo.html in your WC project -->
@@ -383,6 +383,6 @@ Los overrides de `config_overrides` alimentan también
 
 - [proxy-api.md](./proxy-api.md): referencia completa de `@wippy-fe/proxy`
 - [micro-frontend-app.md](./micro-frontend-app.md): aplicaciones micro frontend y patrón dual de `app.html`
-- [web-component.md](./web-component.md): componentes web, playground y pruebas
+- [web-component.md](./web-component.md): componentes web, entorno de pruebas y pruebas
 - [theming.md](./theming.md): overrides de tema por página
 - [compliance-checklist.md](./compliance-checklist.md): reglas completas de modo sin host

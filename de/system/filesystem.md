@@ -9,7 +9,7 @@ Dateisystem-Einträge stellen Laufzeitmodulen verzeichnisbasierten oder schreibg
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `fs.directory` | Verzeichnisbasiertes Dateisystem |
 | `fs.embed` | Schreibgeschütztes eingebettetes Dateisystem |

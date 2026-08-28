@@ -19,7 +19,7 @@ El modelo visible para la aplicación tiene tres partes: **nombres**, **routing*
 
 Normalmente se dirige un proceso por su PID. En un clúster también puede registrarse con un **nombre** y alcanzarse por ese nombre desde otros nodos. El **scope** elegido determina la garantía de consistencia y el coste de coordinación:
 
-| Scope | Visibilidad | Garantía | Úsalo para |
+| Ámbito | Visibilidad | Garantía | Úsalo para |
 |-------|------------|-----------|------------|
 | **Local** | este nodo | instantánea, sin coordinación | helpers locales del nodo |
 | **Eventual** | todo el clúster | converge tras gossip; los conflictos se resuelven y notifican al perdedor | nombres de servicios, grupos y presencia acotada |

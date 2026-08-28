@@ -18,7 +18,7 @@ Esta página é uma referência de API. A maioria dos trechos mostra uma operaç
 local system = require("system")
 ```
 
-## Shutdown
+## Encerramento :id=shutdown
 
 Acionar shutdown do sistema com código de saída. Útil para apps de terminal; chamar de actors em execução terminará o sistema inteiro:
 

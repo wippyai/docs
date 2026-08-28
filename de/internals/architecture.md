@@ -121,7 +121,7 @@ sequenceDiagram
 
 Events führen `System` und `Kind` als getrennte Felder. Die integrierten Systeme veröffentlichen:
 
-| System | Kind | Zweck |
+| System | Art | Zweck |
 |--------|------|-------|
 | `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Entry-Mutationen |
 | `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Transaktionsgrenzen |
@@ -155,7 +155,7 @@ Pipeline-Stufen transformieren Einträge:
 | Stufe | Zweck |
 |-------|-------|
 | Override | Konfigurations-Overrides anwenden |
-| Disable | Einträge nach Muster entfernen |
+| Deaktivieren | Einträge nach Muster entfernen |
 | Link | Requirements und Abhängigkeiten auflösen |
 | Bytecode | Lua zu Bytecode kompilieren |
 | EmbedFS | Dateisystem-Einträge sammeln |
@@ -204,7 +204,7 @@ Versiegeltes Dictionary für Komponentenreferenzen.
 
 Komponenten binden ihre Services während der Ladephase an. Nach Abschluss des Starts wird AppContext für optimale Leseleistung versiegelt.
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 Das kontrollierte Herunterfahren erfolgt in umgekehrter Abhängigkeitsreihenfolge:
 

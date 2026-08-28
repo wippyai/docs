@@ -17,7 +17,7 @@ npm install @wippy-fe/proxy@0.0.56 @wippy-fe/webcomponent-vue@0.0.56 @wippy-fe/r
 
 Páginas y componentes usan imports síncronos. El adaptador inicializa antes del bundle; la aplicación no espera un getter ni gestiona el handshake.
 
-| Objetivo | Import |
+| Objetivo | Importación |
 |----------|--------|
 | HTTP autenticado | `api` (Axios) |
 | Comunicación | `host` |

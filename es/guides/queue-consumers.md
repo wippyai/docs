@@ -1,6 +1,6 @@
 ---
 title: "Consumers de queue"
-description: "Configura consumers de queue, pools de workers, acknowledgments, comportamiento de shutdown y el driver en memoria."
+description: "Configura consumidores de cola, grupos de workers, confirmaciones, el comportamiento de apagado y el driver en memoria."
 ---
 
 # Consumers de queue
@@ -114,7 +114,7 @@ Flow:
 
 ## Apagado ordenado :id=shutdown-ordenado
 
-Durante el shutdown, el consumer:
+Durante el apagado, el consumidor:
 
 1. Deja de aceptar deliveries nuevos.
 2. Cancela los contextos de workers.

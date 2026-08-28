@@ -150,7 +150,7 @@ Bootloader nicht.
 
 Niedrigere `order`-Werte werden zuerst ausgeführt. Reservieren Sie niedrige Werte für Infrastruktur:
 
-| Order | Typische Verwendung |
+| Reihenfolge | Typische Verwendung |
 |-------|-------------|
 | `10` | Secrets und Verschlüsselungsschlüssel (vom Modul bereitgestellt) |
 | `20` | Schema-Migrationen (von `wippy/migration` bereitgestellt) |

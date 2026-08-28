@@ -9,7 +9,7 @@ Wippy application は、source file で表現された**registry entry の graph
 
 このページでは、その graph を整理する方法の 1 つを説明します。file format、命名、`_index.yaml` の配置については [YAML とプロジェクト構造](../start/structure.md)、entry definition については[エントリ種別ガイド](../guides/entry-kinds.md)を参照してください。
 
-## Feature slice :id=feature-slices
+## 機能スライス :id=feature-slices
 
 有用な既定方針は、file type ではなく **feature** で整理することです。slice は 1 つの capability を end-to-end で所有し、その database access、長時間実行される process、HTTP surface、shared vocabulary を 1 つの namespace prefix の下に置きます。
 

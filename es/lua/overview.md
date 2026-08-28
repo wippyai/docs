@@ -63,7 +63,7 @@ do_other_work()  -- continues immediately
 
 El scheduler gestiona las corrutinas creadas, por lo que los llamadores no hacen yield ni resume manualmente.
 
-## Select
+## Selección :id=select
 
 Usa `channel.select` para esperar múltiples fuentes de eventos:
 

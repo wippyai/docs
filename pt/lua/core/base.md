@@ -102,7 +102,7 @@ end)
 
 As funções de string também estão disponíveis como métodos nos valores string.
 
-### Pattern Matching
+### Correspondência de padrões :id=pattern-matching
 
 ```lua
 string.find(s, pattern [,init [,plain]])   -- Find pattern, returns start, end, captures

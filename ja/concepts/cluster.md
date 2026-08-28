@@ -21,7 +21,7 @@ process は通常 PID で address 指定します。クラスター内では **n
 
 | スコープ | 可視範囲 | 保証 | 用途 |
 |----------|----------|------|------|
-| **Local** | この node | 即時、coordination なし | node-local helper |
+| **ローカル** | このノード | 即時、協調なし | ノードローカルヘルパー |
 | **Eventual** | クラスター全体 | gossip 後に収束。競合を解決し、敗者へ通知 | service、group、限定的な presence name |
 | **Consistent** | クラスター全体 | Raft による linearizable singleton | 標準的な cluster-wide named service |
 | **Strong** | クラスター全体 | Consistent に加え、name が active になる前にすべての live node が acknowledge | control-plane singleton と lock |

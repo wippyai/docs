@@ -29,7 +29,7 @@ Mehrere Queues können einen Driver teilen. Mehrere Consumer können aus derselb
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `queue.driver.memory` | In-Memory-Queue-Treiber |
 | `queue.driver.amqp` | AMQP (RabbitMQ) Treiber |

@@ -47,7 +47,7 @@ entries:
 
 `wippy/views` が読み取るのは `meta` block です。`meta.type` field が、サポートされる 2 種類のアーティファクトを区別します。
 
-## `meta.type` discriminator
+## `meta.type` 識別子 :id=metatype-discriminator
 
 | 値 | 意味 |
 |---|---|
@@ -92,7 +92,7 @@ metadata の責務：
 
 component author は display metadata を `package.json` の `wippy` block に一度記述し、vite plugin が author default として `wippy-meta.json` に記録します。operator は YAML で routing と access policy を設定し、display field も override できます。
 
-## 共通 field
+## 共通フィールド
 
 これらの field は、`view.page` と `view.component` の両方の `meta` block に現れます。
 
@@ -107,7 +107,7 @@ component author は display metadata を `package.json` の `wippy` block に�
 | `url` | string | — | static file serving の base URL prefix（CDN origin または local mount path） |
 | `entry_point` | string | `index.html` / `index.js` | static directory 内の entry file name |
 
-### type ごとの `announced` semantics
+### 型ごとの `announced` の挙動
 
 `announced` flag の結果は `meta.type` によって異なります。
 
@@ -115,7 +115,7 @@ component author は display metadata を `package.json` の `wippy` block に�
 
 - **`view.component`**：`GET /api/public/components/list` への包含を制御します。`announced: false` の場合は endpoint から完全に除外されるため、Web Host は script tag を inject せず、`customElements.get(tagName)` は undefined のままです。autoload が必要な component では `announced: true` が必須です。詳しくは [view.component](./view-component.md)を参照してください。
 
-## serving field の組み合わせ
+## 配信用フィールドの組み合わせ
 
 micro frontend app では、3 つの field を組み合わせて Web Host が読み込む HTML URL を作ります。
 

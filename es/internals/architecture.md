@@ -22,9 +22,9 @@ Esta es una referencia de implementación. Los diagramas y tipos Go describen co
 
 Cada capa depende solo de capas debajo de ella. La capa Core proporciona primitivos fundamentales, mientras Services construye abstracciones de nivel más alto encima.
 
-## Secuencia de Boot
+## Secuencia de arranque :id=secuencia-de-boot
 
-El startup de la aplicación procede a través de cuatro fases.
+El arranque de la aplicación transcurre en cuatro fases.
 
 ### Fase 1: Infraestructura
 
@@ -50,10 +50,10 @@ Cada componente se adjunta al contexto durante Load, haciendo servicios disponib
 
 Después de que todos los componentes cargan:
 
-1. **Start runtime services** - Llama a `StartRuntimeServices(ctx)`
-2. **Freeze Dispatcher** - Bloquea registry de handlers de comandos para lookups sin lock
-3. **Seal AppContext** - No más escrituras permitidas, habilita lecturas sin lock
-4. **Start Components** - Llama `Start()` en cada componente con interfaz `Starter`
+1. **Iniciar los servicios de runtime** - Llama a `StartRuntimeServices(ctx)`
+2. **Congelar el Dispatcher** - Bloquea el registro de handlers de comandos para permitir búsquedas sin bloqueo
+3. **Sellar AppContext** - Impide nuevas escrituras y habilita lecturas sin bloqueo
+4. **Iniciar componentes** - Llama a `Start()` en cada componente con interfaz `Starter`
 
 ### Fase 4: Carga de Entradas
 
@@ -74,9 +74,9 @@ Los componentes son servicios Go que participan en el ciclo de vida de la aplica
 |------|--------|-----------|
 | Load | `Load(ctx) (ctx, error)` | Inicializar y adjuntar al contexto |
 | Start | `Start(ctx) error` | Comenzar operación activa |
-| Stop | `Stop(ctx) error` | Apagado graceful |
+| Stop | `Stop(ctx) error` | Apagado ordenado |
 
-Los componentes declaran dependencias. El loader construye un grafo acíclico dirigido y ejecuta en orden topológico. El shutdown ocurre en orden reverso.
+Los componentes declaran dependencias. El loader construye un grafo acíclico dirigido y ejecuta en orden topológico. El apagado ocurre en orden inverso.
 
 ### Componentes Estándar
 
@@ -121,7 +121,7 @@ sequenceDiagram
 
 Los eventos transportan campos `System` y `Kind` separados. Los sistemas integrados publican:
 
-| Sistema | Kind | Propósito |
+| Sistema | Tipo | Propósito |
 |---------|------|-----------|
 | `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Mutaciones de entradas |
 | `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Límites de transacción |
@@ -155,7 +155,7 @@ Etapas de pipeline transforman entradas:
 | Etapa | Propósito |
 |-------|-----------|
 | Override | Aplicar overrides de config |
-| Disable | Remover entradas por patrón |
+| Deshabilitar | Eliminar entradas por patrón |
 | Link | Resolver requirements y dependencias |
 | Bytecode | Compilar Lua a bytecode |
 | EmbedFS | Recolectar entradas de filesystem |
@@ -206,9 +206,9 @@ Los componentes adjuntan servicios durante la fase Load. Cuando termina el arran
 
 ## Apagado :id=shutdown
 
-El apagado graceful procede en orden reverso de dependencias:
+El apagado ordenado procede en orden inverso de dependencias:
 
-1. SIGINT/SIGTERM dispara shutdown
+1. SIGINT/SIGTERM inicia el apagado
 2. Supervisor detiene servicios gestionados
 3. Componentes con interfaz `Stopper` reciben `Stop()`
 4. Limpieza de infraestructura

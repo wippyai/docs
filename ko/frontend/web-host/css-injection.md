@@ -217,7 +217,7 @@ iframe 전달에서 `cssVariables`와 `customCSS`의 `@import`가 아닌 선언�
 
 facade는 서로 다른 렌더 계층을 대상으로 하는 세 `cssVariables` 범위를 지원합니다.
 
-| Scope 키 | 주입 대상 | 사용 사례 |
+| 범위 키 | 주입 대상 | 사용 사례 |
 |-----------|---------------|----------|
 | `theming.global` | Host chrome과 모든 자식 페이지 | brand 색상, primary palette, 공유 icon set |
 | `theming.host` | Host chrome만 | sidebar, header, chat, app title override |

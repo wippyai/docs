@@ -13,7 +13,7 @@ O Wippy registra módulos WebAssembly junto com código Lua. Entradas de funçã
 
 ## Tipos de entradas
 
-| Kind | Descrição |
+| Tipo | Descrição |
 |------|-----------|
 | `function.wat` | Função em formato WebAssembly Text inline definida em YAML |
 | `function.wasm` | Binário WASM pré-compilado carregado de uma entrada de sistema de arquivos |

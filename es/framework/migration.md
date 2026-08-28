@@ -149,7 +149,7 @@ up(function(db)
 end)
 ```
 
-## API del Runner
+## API del ejecutor :id=api-del-runner
 
 El runner se expone como una biblioteca para uso programatico:
 

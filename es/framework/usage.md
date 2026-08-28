@@ -198,5 +198,5 @@ end
 ## Ver Tambien
 
 - [LLM](./llm.md) — Generación LLM y contrato `usage_tracker`
-- [Migraciones](./migration.md) — Runner de migraciones que crea el esquema
+- [Migraciones](./migration.md) — Ejecutor de migraciones que crea el esquema
 - [Visión general del framework](./overview.md) — Uso de módulos del framework

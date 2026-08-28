@@ -180,7 +180,7 @@ Use o kind `registry.entry` para configurações no nível da aplicação:
 
 ## Kinds de Entrada Comuns
 
-| Kind | Finalidade |
+| Tipo | Finalidade |
 |------|------------|
 | `registry.entry` | Dados de uso geral armazenados sem o despacho normal de eventos |
 | `function.lua` | Função Lua invocável |

@@ -113,7 +113,7 @@ lifecycle:
 |-------|-------------|
 | `auto_start` | Iniciar cuando arranca la aplicación |
 | `start_timeout` | Tiempo máximo de espera para que el servidor inicie |
-| `stop_timeout` | Tiempo máximo para shutdown graceful |
+| `stop_timeout` | Tiempo máximo para el apagado ordenado |
 | `requires` | Iniciar después de que estas entradas estén listas (`depends_on` es la forma heredada) |
 
 ## Conectando Componentes

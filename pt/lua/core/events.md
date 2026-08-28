@@ -3,7 +3,7 @@ title: "Event Bus"
 description: "Publique e observe eventos best-effort do runtime e da aplicação."
 ---
 
-# Event Bus
+# Barramento de eventos :id=event-bus
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>

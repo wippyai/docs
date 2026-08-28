@@ -10,7 +10,7 @@ description: "Inspecciona el estado del runtime, proceso, host, supervisor y cl�
 
 El módulo `system` informa del estado del runtime, memoria, proceso, host, supervisor y clúster. También expone controles seleccionados del runtime.
 
-Esta es una referencia de API. La mayoría de fragmentos muestran una operación aislada; controles como el shutdown, los ajustes del runtime y los locks distribuidos requieren autorización explícita de políticas y un tratamiento de errores específico de la aplicación.
+Esta es una referencia de API. La mayoría de fragmentos muestran una operación aislada; controles como el apagado, los ajustes del runtime y los locks distribuidos requieren autorización explícita de políticas y un tratamiento de errores específico de la aplicación.
 
 ## Carga
 
@@ -20,7 +20,7 @@ local system = require("system")
 
 ## Apagado
 
-Solicita el shutdown del sistema con un código de salida. Llamar a esta función desde cualquier proceso o actor termina todo el sistema:
+Solicita el apagado del sistema con un código de salida. Llamar a esta función desde cualquier proceso o actor termina todo el sistema:
 
 ```lua
 local ok, err = system.exit(0)

@@ -18,7 +18,7 @@ flowchart LR
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `security.policy` | Deklarative Richtlinie mit Bedingungen |
 | `security.policy.expr` | Expression-basierte Richtlinie |

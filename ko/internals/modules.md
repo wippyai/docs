@@ -130,19 +130,19 @@ func ModuleTypes() *io.Manifest {
 
 | 타입 | 설명 |
 |------|-------------|
-| `typ.String` | 문자열 primitive |
+| `typ.String` | 문자열 원시 타입 |
 | `typ.Number` | 숫자 값 |
 | `typ.Integer` | 정수 값 |
-| `typ.Boolean` | boolean 값 |
+| `typ.Boolean` | 불리언 값 |
 | `typ.Any` | 모든 Lua 값 |
-| `typ.Self` | method receiver type |
-| `typ.LuaError` | 오류 type |
-| `typ.NewOptional(t)` | type t의 선택적 값 |
-| `typ.NewInterface(name, methods)` | method가 있는 객체 |
-| `typ.Func()` | 함수 signature builder |
-| `typ.NewRecord()` | `.Field`/`.OptField`를 사용하는 struct 형태 type builder |
-| `typ.NewArray(t)` | element type t의 배열 |
-| `typ.NewMap(k, v)` | key/value type을 가진 map |
+| `typ.Self` | 메서드 수신자 타입 |
+| `typ.LuaError` | 오류 타입 |
+| `typ.NewOptional(t)` | 타입 t의 선택적 값 |
+| `typ.NewInterface(name, methods)` | 메서드가 있는 객체 |
+| `typ.Func()` | 함수 시그니처 빌더 |
+| `typ.NewRecord()` | `.Field`/`.OptField`를 사용하는 구조체 형태의 타입 빌더 |
+| `typ.NewArray(t)` | 요소 타입 t의 배열 |
+| `typ.NewMap(k, v)` | 키/값 타입을 가진 맵 |
 
 함수 builder는 `Param`, `OptParam`, `Variadic`, `Returns`를 chain합니다.
 

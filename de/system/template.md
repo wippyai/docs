@@ -12,7 +12,7 @@ Diese Seite ist eine Konfigurationsreferenz. Ihre YAML-Bl√∂cke sind Fragmente f√
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `template.set` | Template-Set mit gemeinsamer Konfiguration |
 | `template.jet` | Einzelnes Template |

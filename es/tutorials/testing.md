@@ -195,7 +195,7 @@ Cada aserción lanza un error en caso de fallo; los type guards también retorna
 
 Todas aceptan un argumento de mensaje opcional al final.
 
-## Ciclo de vida y mocking
+## Ciclo de vida y simulación :id=ciclo-de-vida-y-mocking
 
 Llama a estas dentro de un bloque `describe`:
 

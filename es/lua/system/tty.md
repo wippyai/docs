@@ -368,7 +368,7 @@ tty.text.position.RIGHT    -- 1
 
 Las funciones de control de entrada devuelven errores estructurados:
 
-| Condición | Kind | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Sin contexto de terminal ni controlador de entrada | `errors.UNAVAILABLE` | no |
 | La suscripción de eventos no tiene contexto de runtime o proceso | `errors.INTERNAL` | no |
