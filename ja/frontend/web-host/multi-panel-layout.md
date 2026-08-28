@@ -44,7 +44,7 @@ Web Host、facade、`@wippy-fe/*` package は exact release に対応する 1 fa
 
 14 秒の page reveal は 1.0.52 の fallback です。retained direct WC visibility は Web Host 1.0.52 と core/vue/shared 0.0.52 以上が必要です。
 
-### Retained web-component activity
+### 保持された Web Component の動作
 
 panel は swap、breakpoint change、drawer cycle をまたいで mount を保持します。Host は direct custom element の接続前に `data-wippy-visible="true" | "false"` を設定し、logical ownership の変更時に in-place update します。CSS/viewport/document visibility ではなく remount も意味しません。Vue は `useHostVisibility()`、または mount 後と exact `false -> true` reveal 時だけ task を動かす `useHostVisibilityRefresh(task)` を使います。direct WC では iframe/Fragment channel の proxy `@visibility` を使いません。この reference は `webcomponents-1.0.56` と package `0.0.56` を基準にします。
 

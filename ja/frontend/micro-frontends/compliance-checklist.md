@@ -67,7 +67,7 @@ FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs
 
 checker は selected theme の canonical acceptance checker を evidence path/hash 付きで呼び、visual evidence を validate/recompute します。通常の freshness check は local release evidence を必要としません。
 
-## Deterministic visual verification
+## 決定論的なビジュアル検証
 
 appearance change の影響を受ける全 component は scenario manifest と immutable before/after/diff evidence を持ちます。baseline/candidate は同じ browser build、DPR、font、fixture data、theme、viewport、reduced motion、settling rule を使います。light/dark、interaction、overlay、disabled/error、product が support する desktop layout を capture し、desktop-only product に narrow/mobile requirement を発明しません。
 

@@ -246,7 +246,7 @@ Web Component も同じ dual-mode design ですが iframe ではなく ES module
 
 これは host-less boot script がないことを示します。
 
-### Partial Vitest / jsdom test excerpt
+### Vitest / jsdom の部分的なテスト抜粋
 
 unit test では UI のない dev overlay は不要です。Host が attach する wrapper object を直接 attach して Host context を fake します。次の抜粋は test module より前に setup file を読み込む `jsdom` environment を前提とします。setup は `window.__WIPPY_APP_API__` と `window.__WIPPY_APP_CONFIG__` を stub 化し、`ElementInternals.states` がない jsdom version では `CustomStateSet` surface も提供します。完全な Vitest project ではなく component-level assertion です。
 

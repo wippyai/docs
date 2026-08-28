@@ -7,7 +7,7 @@ description: "canonical output command、Windows wrapper、Web Host import-map s
 
 既存 repository 向け reference contract です。Makefile、PowerShell、batch、Vite block は focused fragment で、standalone project scaffold ではありません。
 
-## Canonical Wippy production build contract
+## Wippy の標準 production build 契約
 
 `wippy.exe` が起動する Wippy application/module repository の production artifact では repository Make target を呼びます。documented な `npm run dev` 等の local watch-mode command は有効ですが deployment build の代わりにはなりません。
 
