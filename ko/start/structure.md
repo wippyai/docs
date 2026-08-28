@@ -58,8 +58,8 @@ entries:
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `version` | No | manifest version marker(관례적으로 `"1.0"`) |
-| `namespace` | Yes | 이 파일의 엔트리 namespace |
+| `version` | 아니요 | manifest version marker(관례적으로 `"1.0"`) |
+| `namespace` | 예 | 이 파일의 엔트리 namespace |
 | `entries` | Conditional | 엔트리 정의 배열; top-level `name`과 `kind`를 사용할 때만 생략 |
 
 ### 명명 규칙

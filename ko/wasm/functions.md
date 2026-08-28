@@ -47,14 +47,14 @@ entries:
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `source` | Yes | 인라인 WAT 소스 또는 `file://` 참조 |
-| `method` | Yes | 호출할 내보내기된 함수 이름 |
-| `wit` | No | Raw/Core 모듈용 WIT 시그니처 |
-| `pool` | No | 워커 풀 설정 |
-| `transport` | No | 입출력 매핑 (기본값: `payload`) |
-| `imports` | No | 활성화할 호스트 임포트 (예: `wasi:cli`, `wasi:io`) |
-| `wasi` | No | WASI 설정 (args, env, mounts) |
-| `limits` | No | 실행 제한 |
+| `source` | 예 | 인라인 WAT 소스 또는 `file://` 참조 |
+| `method` | 예 | 호출할 내보내기된 함수 이름 |
+| `wit` | 아니요 | Raw/Core 모듈용 WIT 시그니처 |
+| `pool` | 아니요 | 워커 풀 설정 |
+| `transport` | 아니요 | 입출력 매핑 (기본값: `payload`) |
+| `imports` | 아니요 | 활성화할 호스트 임포트 (예: `wasi:cli`, `wasi:io`) |
+| `wasi` | 아니요 | WASI 설정 (args, env, mounts) |
+| `limits` | 아니요 | 실행 제한 |
 
 ## 사전 컴파일된 WASM 함수
 
@@ -81,16 +81,16 @@ entries:
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `fs` | Yes | 바이너리가 포함된 파일시스템 엔트리 ID |
-| `path` | Yes | 파일시스템 내 `.wasm` 파일 경로 |
-| `hash` | Yes | 무결성 검증을 위한 SHA-256 해시 (`sha256:...`) |
-| `method` | Yes | 호출할 내보내기된 함수 이름 |
-| `wit` | No | Raw/Core 모듈용 WIT 시그니처 |
-| `pool` | No | 워커 풀 설정 |
-| `transport` | No | 입출력 매핑 (기본값: `payload`) |
-| `imports` | No | 활성화할 호스트 임포트 |
-| `wasi` | No | WASI 설정 |
-| `limits` | No | 실행 제한 |
+| `fs` | 예 | 바이너리가 포함된 파일시스템 엔트리 ID |
+| `path` | 예 | 파일시스템 내 `.wasm` 파일 경로 |
+| `hash` | 예 | 무결성 검증을 위한 SHA-256 해시 (`sha256:...`) |
+| `method` | 예 | 호출할 내보내기된 함수 이름 |
+| `wit` | 아니요 | Raw/Core 모듈용 WIT 시그니처 |
+| `pool` | 아니요 | 워커 풀 설정 |
+| `transport` | 아니요 | 입출력 매핑 (기본값: `payload`) |
+| `imports` | 아니요 | 활성화할 호스트 임포트 |
+| `wasi` | 아니요 | WASI 설정 |
+| `limits` | 아니요 | 실행 제한 |
 
 ## 워커 풀
 

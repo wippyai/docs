@@ -29,15 +29,15 @@ entries:
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `fs` | Yes | 바이너리가 포함된 파일시스템 엔트리 ID |
-| `path` | Yes | 파일시스템 내 `.wasm` 파일 경로 |
-| `hash` | Yes | 무결성 검증을 위한 SHA-256 해시 |
-| `method` | Yes | 실행할 내보내기된 함수 이름 |
-| `transport` | No | 호출 전송: `payload` (기본값) 또는 `wasi-http` |
-| `wit` | No | raw/core 모듈용 WIT 시그니처 |
-| `imports` | No | 활성화할 호스트 임포트 |
-| `wasi` | No | WASI 설정 (`args`, `cwd`, `env`, `mounts`) |
-| `limits` | No | 실행 제한 |
+| `fs` | 예 | 바이너리가 포함된 파일시스템 엔트리 ID |
+| `path` | 예 | 파일시스템 내 `.wasm` 파일 경로 |
+| `hash` | 예 | 무결성 검증을 위한 SHA-256 해시 |
+| `method` | 예 | 실행할 내보내기된 함수 이름 |
+| `transport` | 아니요 | 호출 전송: `payload` (기본값) 또는 `wasi-http` |
+| `wit` | 아니요 | raw/core 모듈용 WIT 시그니처 |
+| `imports` | 아니요 | 활성화할 호스트 임포트 |
+| `wasi` | 아니요 | WASI 설정 (`args`, `cwd`, `env`, `mounts`) |
+| `limits` | 아니요 | 실행 제한 |
 
 <note>
 `process.wasm`은 `function.wasm`과 설정 구조체를 공유하므로 `pool` 블록은 스키마에서 수용되지만 무시됩니다 — 프로세스는 함수 풀이 아닌 프로세스 호스트 아래에서 실행됩니다.
@@ -74,11 +74,11 @@ wippy run list
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `name` | Yes | `wippy run <name>`에서 사용하는 명령 이름 |
-| `short` | No | `wippy run list`에 표시되는 간단한 설명 |
-| `main` | No | pack 또는 hub 모듈의 기본 명령으로 엔트리 지정 |
-| `use_case` | No | entrypoint category; 기본값 `run` |
-| `security` | No | 신뢰된 terminal launcher가 이 명령을 시작할 때만 적용되는 보안 컨텍스트 |
+| `name` | 예 | `wippy run <name>`에서 사용하는 명령 이름 |
+| `short` | 아니요 | `wippy run list`에 표시되는 간단한 설명 |
+| `main` | 아니요 | pack 또는 hub 모듈의 기본 명령으로 엔트리 지정 |
+| `use_case` | 아니요 | entrypoint category; 기본값 `run` |
+| `security` | 아니요 | 신뢰된 terminal launcher가 이 명령을 시작할 때만 적용되는 보안 컨텍스트 |
 
 CLI 명령에는 `terminal.host`가 있어야 합니다. terminal host가 명령 프로세스에 사용되는 scheduler를 소유하므로 별도 `process.host`는 필요하지 않습니다. terminal host가 여러 개이면 `--host`로 하나를 선택하십시오.
 
